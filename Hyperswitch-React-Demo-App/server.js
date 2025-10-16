@@ -145,6 +145,92 @@ app.get("/create-intent", limiter, async (req, res) => {
   }
 });
 
+app.get("/create-subscription-intent", limiter, async (req, res) => {
+  try {
+    const subscriptionRequest = {
+      item_price_id: "cbdemo_enterprise-suite-monthly",
+      plan_id: "cbdemo_enterprise-suite",
+      customer_id: "cus_UWZdcjmhuYMpjZwjN3Ei",
+      amount: 14100,
+      currency: "USD",
+      payment_details: {
+        authentication_type: "no_three_ds",
+        setup_future_usage: "off_session",
+        capture_method: "automatic",
+        return_url: "https://google.com",
+      },
+    };
+
+    // const subscriptionIntentData = await createSubscriptionIntent(
+    //   subscriptionRequest
+    // );
+
+    // Mocking the subscription intent response structure for demonstration
+    // In real implementation, use `subscriptionIntentData` directly
+
+    const subscriptionIntent = {
+      id: "sub_Ue5uPczEc4daRANZzDKQ",
+      merchant_reference_id: null,
+      status: "created",
+      plan_id: "cbdemo_enterprise-suite",
+      item_price_id: "cbdemo_enterprise-suite-monthly",
+      profile_id: "pro_KFLU7UDsPlfpvTMyaqqZ",
+      client_secret: "sub_Ue5uPczEc4daRANZzDKQ_secret_LJ9lajaRXJLst9iNKi9n",
+      merchant_id: "merchant_1760598696",
+      coupon_code: null,
+      customer_id: "cus_UWZdcjmhuYMpjZwjN3Ei",
+      payment: {
+        payment_id: "pay_Nb6v1iPZ40tSEAsf6cS4",
+        status: "requires_payment_method",
+        amount: 14100,
+        currency: "USD",
+        profile_id: "pro_KFLU7UDsPlfpvTMyaqqZ",
+        connector: null,
+        payment_method_id: null,
+        return_url: "https://google.com/",
+        next_action: null,
+        payment_experience: null,
+        error_code: null,
+        error_message: null,
+        payment_method_type: null,
+        client_secret: "pay_Nb6v1iPZ40tSEAsf6cS4_secret_sS5fU9tLUgaYnHHXC1JG",
+        billing: null,
+        shipping: null,
+        payment_type: null,
+      },
+      invoice: {
+        id: "invoice_vtQWR83ONymeItqY3kt9",
+        subscription_id: "sub_Ue5uPczEc4daRANZzDKQ",
+        merchant_id: "merchant_1760598696",
+        profile_id: "pro_KFLU7UDsPlfpvTMyaqqZ",
+        merchant_connector_id: "mca_FxiVnB2O8vpfQo0KOu1n",
+        payment_intent_id: "pay_Nb6v1iPZ40tSEAsf6cS4",
+        payment_method_id: null,
+        customer_id: "cus_UWZdcjmhuYMpjZwjN3Ei",
+        amount: 14100,
+        currency: "USD",
+        status: "invoice_created",
+      },
+    };
+
+    const response = {
+      clientSecret: subscriptionIntent.payment.client_secret,
+      subscriptionId: subscriptionIntent.id,
+      subscriptionSecret: subscriptionIntent.client_secret,
+    };
+
+    if (SDK_VERSION === "v2") {
+      response.paymentId = subscriptionIntent?.payment?.payment_id;
+    }
+
+    res.send(response);
+  } catch (err) {
+    res.status(400).send({
+      error: { message: err.message },
+    });
+  }
+});
+
 async function createPaymentIntent(request) {
   const baseUrl =
     process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
@@ -185,6 +271,33 @@ async function createPaymentIntent(request) {
   }
 
   return paymentIntent;
+}
+async function createSubscriptionIntent(request) {
+  const baseUrl =
+    process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
+    process.env.HYPERSWITCH_SERVER_URL;
+
+  let apiEndpoint = `${baseUrl}/subscriptions/create`;
+  let headers = {
+    "Content-Type": "application/json",
+    "api-key": process.env.HYPERSWITCH_SECRET_KEY,
+    "X-Profile-Id": process.env.PROFILE_ID,
+  };
+
+  const apiResponse = await fetch(apiEndpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(request),
+  });
+
+  const intent = await apiResponse.json();
+
+  if (intent.error) {
+    console.error("Payment Intent Error:", intent.error);
+    throw new Error(intent?.error?.message ?? "Something went wrong.");
+  }
+
+  return intent;
 }
 
 app.listen(PORT, () => {

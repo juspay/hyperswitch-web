@@ -20,6 +20,28 @@ export const getPaymentIntentData = async ({
   }
 };
 
+export const getSubscriptionIntentData = async ({
+  baseUrl,
+  isCypressTestMode,
+  clientSecretQueryParam,
+  setError,
+}) => {
+  try {
+    if (isCypressTestMode) {
+      return { clientSecret: clientSecretQueryParam };
+    }
+
+    const res = await fetch(`${baseUrl}/create-subscription-intent`);
+    if (!res.ok) throw new Error("Failed to fetch subscription intent");
+
+    return await res.json();
+  } catch (err) {
+    console.error("Error fetching subscription intent:", err);
+    setError("Failed to load subscription details. Please try again.");
+    return null;
+  }
+};
+
 export const getQueryParam = (param) =>
   new URLSearchParams(window.location.search).get(param);
 

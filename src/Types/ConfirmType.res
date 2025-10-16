@@ -6,6 +6,9 @@ type confirmParams = {
 
 type confirm = {
   doSubmit: bool,
+  confirmSubscription: bool,
+  subscriptionId: string,
+  subscriptionSecret: string,
   clientSecret: string,
   confirmParams: confirmParams,
   confirmTimestamp: float,
@@ -34,9 +37,12 @@ let getConfirmParams = (dict, str) => {
 let itemToObjMapper = dict => {
   {
     doSubmit: getBool(dict, "doSubmit", false),
+    confirmSubscription: getBool(dict, "confirmSubscription", false),
     clientSecret: getString(dict, "clientSecret", ""),
     confirmParams: getConfirmParams(dict, "confirmParams"),
     confirmTimestamp: getFloat(dict, "confirmTimestamp", 0.0),
     readyTimestamp: getFloat(dict, "readyTimestamp", 0.0),
+    subscriptionId: getString(dict, "subscriptionId", ""),
+    subscriptionSecret: getString(dict, "subscriptionSecret", ""),
   }
 }

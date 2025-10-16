@@ -15,7 +15,7 @@ import {
   paymentElementOptions,
 } from "./utils";
 
-export default function CheckoutForm() {
+export default function CheckoutForm({ subscriptionId, subscriptionSecret }) {
   const hyper = useHyper();
   const elements = useWidgets();
 
@@ -37,12 +37,22 @@ export default function CheckoutForm() {
 
     try {
       // Confirm the payment using Hyper.js SDK
-      const { error, status } = await hyper.confirmPayment({
-        elements,
+      // const { error, status } = await hyper.confirmPayment({
+      //   elements,
+      //   confirmParams: {
+      //     return_url: window.location.origin,
+      //   },
+      // });
+
+      const confirmSubscriptionResult = await HyperMethod.confirmSubscription({
+        subscription_id: subscriptionId,
+        subscription_secret: subscriptionSecret,
         confirmParams: {
           return_url: window.location.origin,
         },
       });
+
+      const { error, status } = confirmSubscriptionResult;
 
       if (error) {
         setMessage(error.message || "An unknown error occurred.");

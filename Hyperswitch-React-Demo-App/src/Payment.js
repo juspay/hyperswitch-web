@@ -5,6 +5,7 @@ import {
   getQueryParam,
   fetchConfigAndUrls,
   getPaymentIntentData,
+  getSubscriptionIntentData,
   loadHyperScript,
   hyperOptionsV1,
   hyperOptionsV2,
@@ -16,6 +17,8 @@ function Payment() {
   const [paymentId, setPaymentId] = useState("");
   const [error, setError] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [subscriptionId, setSubscriptionId] = useState("");
+  const [subscriptionSecret, setSubscriptionSecret] = useState("");
 
   const isCypressTestMode = getQueryParam("isCypressTestMode") === "true";
   const publishableKeyQueryParam = getQueryParam("publishableKey");
@@ -34,14 +37,24 @@ function Payment() {
           ? publishableKeyQueryParam
           : configData.publishableKey;
 
-        const paymentIntentData = await getPaymentIntentData({
+        // const paymentIntentData = await getPaymentIntentData({
+        //   baseUrl,
+        //   isCypressTestMode,
+        //   clientSecretQueryParam,
+        //   setError,
+        // });
+
+        const subscriptionIntentData = await getSubscriptionIntentData({
           baseUrl,
           isCypressTestMode,
           clientSecretQueryParam,
           setError,
         });
 
-        if (!paymentIntentData) return;
+        setSubscriptionId(subscriptionIntentData?.subscriptionId);
+        setSubscriptionSecret(subscriptionIntentData?.subscriptionSecret);
+
+        if (!subscriptionIntentData) return;
 
         const hyper = await loadHyperScript({
           clientUrl: urlsData.clientUrl,
@@ -53,9 +66,9 @@ function Payment() {
         });
 
         if (isMounted) {
-          setClientSecret(paymentIntentData.clientSecret);
+          setClientSecret(subscriptionIntentData?.clientSecret);
           if (SDK_VERSION === "v2") {
-            setPaymentId(paymentIntentData.paymentId);
+            setPaymentId(subscriptionIntentData?.paymentId);
           }
           setHyperPromise(Promise.resolve(hyper));
         }
@@ -89,7 +102,10 @@ function Payment() {
 
       {clientSecret && hyperPromise && (
         <HyperElements hyper={hyperPromise} options={selectedOptions}>
-          <CheckoutForm />
+          <CheckoutForm
+            subscriptionId={subscriptionId}
+            subscriptionSecret={subscriptionSecret}
+          />
         </HyperElements>
       )}
     </div>

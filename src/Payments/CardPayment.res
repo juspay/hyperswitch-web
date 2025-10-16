@@ -77,6 +77,7 @@ let make = (
   } = cvcProps
   let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let subscriptionIntent = PaymentHelpers.useSubscriptionHandler(~paymentType=Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
     RecoilAtoms.showPaymentMethodsScreen,
@@ -384,6 +385,19 @@ let make = (
               publishableKey,
             },
             ~handleUserError=true,
+          )
+        } else if confirm.confirmSubscription {
+          subscriptionIntent(
+            ~bodyArr=[
+              (
+                "payment_details",
+                cardBody->mergeAndFlattenToTuples(requiredFieldsBody)->Utils.getJsonFromArrayOfJson,
+              ),
+            ],
+            ~confirmParam=confirm.confirmParams,
+            ~optLogger=Some(loggerState),
+            ~subscriptionId=confirm.subscriptionId,
+            ~subscriptionSecret=confirm.subscriptionSecret,
           )
         } else {
           intent(

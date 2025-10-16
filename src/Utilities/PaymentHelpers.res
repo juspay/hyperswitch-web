@@ -323,14 +323,18 @@ let rec intentCall = (
 
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
   let isPostSessionTokens = uri->String.includes("/post_session_tokens")
+  let isSubscriptionFlow =
+    uri->String.includes("/subscriptions") && uri->String.includes("/confirm")
   let (eventName: HyperLoggerTypes.eventName, initEventName: HyperLoggerTypes.eventName) = switch (
     isConfirm,
     isCompleteAuthorize,
     isPostSessionTokens,
+    isSubscriptionFlow,
   ) {
-  | (true, _, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
-  | (_, true, _) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
-  | (_, _, true) => (POST_SESSION_TOKENS_CALL, POST_SESSION_TOKENS_CALL_INIT)
+  | (true, _, _, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
+  | (_, true, _, _) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
+  | (_, _, true, _) => (POST_SESSION_TOKENS_CALL, POST_SESSION_TOKENS_CALL_INIT)
+  | (_, _, _, true) => (CONFIRM_SUBSCRIPTION_CALL, CONFIRM_SUBSCRIPTION_INIT_CALL)
   | _ => (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
   }
   logApi(
@@ -499,7 +503,11 @@ let rec intentCall = (
               ~eventName,
               ~isPaymentSession,
             )
-            let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
+            let paymentIntent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
+            let subscriptionIntent = PaymentConfirmTypes.itemToObjMapperForSubscriptions(
+              data->getDictFromJson,
+            )
+            let intent = isSubscriptionFlow ? subscriptionIntent.payment : paymentIntent
             let paymentMethod = switch paymentType {
             | Card => "CARD"
             | _ => intent.payment_method_type
@@ -1097,6 +1105,65 @@ let useCompleteAuthorizeHandler = () => {
       postFailedSubmitResponse(
         ~errortype="complete_authorize_failed",
         ~message="Complete Authorize Failed. Try Again!",
+      )
+    }
+}
+
+let useSubscriptionHandler = (~paymentType) => {
+  open RecoilAtoms
+
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(isCompleteCallbackUsed)
+  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
+
+  (
+    ~bodyArr,
+    ~confirmParam: ConfirmType.confirmParams,
+    ~optLogger,
+    ~subscriptionId,
+    ~subscriptionSecret,
+  ) =>
+    switch keys.clientSecret {
+    | Some(cs) =>
+      let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
+      let uri = `${endpoint}/subscriptions/${subscriptionId}/confirm`
+
+      let finalHeaders = [
+        ("Content-Type", "application/json"),
+        ("api-key", confirmParam.publishableKey),
+        ("X-Profile-Id", keys.profileId),
+      ]
+      let bodyStr =
+        [("client_secret", subscriptionSecret->JSON.Encode.string)]
+        ->Array.concatMany([bodyArr, BrowserSpec.broswerInfo()])
+        ->getJsonFromArrayOfJson
+        ->JSON.stringify
+
+      intentCall(
+        ~fetchApi,
+        ~uri,
+        ~headers=finalHeaders,
+        ~bodyStr,
+        ~confirmParam,
+        ~clientSecret=cs,
+        ~optLogger,
+        ~handleUserError=false,
+        ~paymentType,
+        ~iframeId=keys.iframeId,
+        ~fetchMethod=#POST,
+        ~setIsManualRetryEnabled,
+        ~customPodUri,
+        ~sdkHandleOneClickConfirmPayment=false,
+        ~counter=0,
+        ~isCallbackUsedVal,
+        ~redirectionFlags,
+      )->ignore
+    | None =>
+      postFailedSubmitResponse(
+        ~errortype="confirm_subscription_failed",
+        ~message="Confirm Subscription Failed. Try Again!",
       )
     }
 }

@@ -360,7 +360,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
+      let confirmPaymentWrapper = (
+        payload,
+        isOneClick,
+        result,
+        ~isSdkButton=false,
+        ~isSubscription=false,
+      ) => {
         let confirmTimestamp = Date.now()
         let confirmParams =
           payload
@@ -369,6 +375,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.getOr(Dict.make()->JSON.Encode.object)
 
         let redirect = payload->getDictFromJson->getString("redirect", "if_required")
+        let subscriptionId = payload->getDictFromJson->getString("subscription_id", "")
+        let subscriptionSecret = payload->getDictFromJson->getString("subscription_secret", "")
 
         let url =
           confirmParams
@@ -429,6 +437,16 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
               | None => ()
               }
             }
+            let subscriptionData = isSubscription
+              ? [
+                  (
+                    "confirmSubscription",
+                    isSubscription ? true->JSON.Encode.bool : false->JSON.Encode.bool,
+                  ),
+                  ("subscriptionId", subscriptionId->JSON.Encode.string),
+                  ("subscriptionSecret", subscriptionSecret->JSON.Encode.string),
+                ]
+              : []
             let message = isOneClick
               ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
               : [
@@ -444,6 +462,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                       ("redirect", redirect->JSON.Encode.string),
                     ]->getJsonFromArrayOfJson,
                   ),
+                  ...subscriptionData,
                 ]->Dict.fromArray
             addSmartEventListener("message", handleMessage, "onSubmit")
             postSubmitMessage(message)
@@ -452,6 +471,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
           ->ignore
         })
+      }
+
+      let confirmSubscription = payload => {
+        confirmPaymentWrapper(payload, false, true, ~isSubscription=true)
       }
 
       let confirmPayment = payload => {
@@ -743,6 +766,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let returnObject: hyperInstance = {
         confirmOneClickPayment,
         confirmPayment,
+        confirmSubscription,
         elements,
         widgets: elements,
         confirmCardPayment: confirmCardPaymentFn,
