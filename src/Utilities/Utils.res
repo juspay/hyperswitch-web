@@ -853,10 +853,6 @@ let getHeaders = (
     ("Content-Type", "application/json"),
     ("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key")),
     ("X-Client-Version", Window.version),
-    ("X-Payment-Confirm-Source", "sdk"),
-    ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
-    ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
-    ("X-Client-Platform", "web"),
   ]
 
   let authHeader = switch (token, uri) {
