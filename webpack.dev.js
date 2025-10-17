@@ -9,7 +9,7 @@ const endpointMap = {
   prod: "https://api.hyperswitch.io/payments",
   sandbox: "https://sandbox.hyperswitch.io/payments",
   integ: "https://integ.hyperswitch.io/api/payments",
-  local: "https://sandbox.hyperswitch.io/payments", // Default or local environment endpoint
+  local: "http://localhost:8080/payments", // Default or local environment endpoint
 };
 
 const backendEndPoint = endpointMap[sdkEnv] || endpointMap.local;
@@ -32,7 +32,7 @@ const devServer = {
     },
     {
       context: ["/assets/v1/jsons/location/"],
-      target: "https://beta.hyperswitch.io",
+      target: "http://localhost:8080",
       changeOrigin: true,
       secure: true,
       pathRewrite: {
