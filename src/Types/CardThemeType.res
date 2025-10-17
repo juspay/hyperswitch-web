@@ -93,6 +93,8 @@ type configClass = {
   pmClientSecret: string,
   pmSessionId: string,
   clientSecret: string,
+  subscriptionSecret: string,
+  initSubscriptionsFlow: bool,
   fonts: array<fonts>,
   loader: showLoader,
 }

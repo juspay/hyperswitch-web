@@ -181,6 +181,19 @@ let getWarningString = (dict, key, default, ~logger) => {
   }
 }
 
+let getWarningBool = (dict, key, default, ~logger) => {
+  switch dict->Dict.get(key) {
+  | Some(val) =>
+    switch val->JSON.Decode.bool {
+    | Some(val) => val
+    | None =>
+      manageErrorWarning(TYPE_STRING_ERROR, ~dynamicStr=key, ~logger)
+      default
+    }
+  | None => default
+  }
+}
+
 let getDictFromObj = (dict, key) => {
   dict->Dict.get(key)->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
 }

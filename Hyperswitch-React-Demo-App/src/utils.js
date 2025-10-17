@@ -1,3 +1,5 @@
+import { init } from "@sentry/react";
+
 export const getPaymentIntentData = async ({
   baseUrl,
   isCypressTestMode,
@@ -16,6 +18,28 @@ export const getPaymentIntentData = async ({
   } catch (err) {
     console.error("Error fetching payment intent:", err);
     setError("Failed to load payment details. Please try again.");
+    return null;
+  }
+};
+
+export const getSubscriptionIntentData = async ({
+  baseUrl,
+  isCypressTestMode,
+  clientSecretQueryParam,
+  setError,
+}) => {
+  try {
+    if (isCypressTestMode) {
+      return { clientSecret: clientSecretQueryParam };
+    }
+
+    const res = await fetch(`${baseUrl}/create-subscription-intent`);
+    if (!res.ok) throw new Error("Failed to fetch subscription intent");
+
+    return await res.json();
+  } catch (err) {
+    console.error("Error fetching subscription intent:", err);
+    setError("Failed to load subscription details. Please try again.");
     return null;
   }
 };
@@ -90,8 +114,7 @@ export const handlePaymentStatus = (status, setMessage, setIsSuccess) => {
     failed: "Payment failed. Please check your payment method.",
   };
 
-  const messageToSet =
-    statusMessages[status] || `Unexpected payment status: ${status}`;
+  const messageToSet = statusMessages[status] || `status: ${status}`;
   setMessage(messageToSet);
   setIsSuccess(status === "succeeded");
 };
@@ -110,21 +133,12 @@ export const paymentElementOptions = {
   },
 };
 
-export const hyperOptionsV1 = (clientSecret) => {
+export const buildHyperOptions = (paymentIntentData, isSubscriptionsFlow) => {
   return {
-    clientSecret,
     appearance: {
       labels: "floating",
     },
-  };
-};
-
-export const hyperOptionsV2 = (clientSecret, paymentId) => {
-  return {
-    clientSecret,
-    paymentId,
-    appearance: {
-      labels: "floating",
-    },
+    initSubscriptionsFlow: isSubscriptionsFlow,
+    ...paymentIntentData,
   };
 };

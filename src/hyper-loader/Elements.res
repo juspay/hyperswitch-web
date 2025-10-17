@@ -91,6 +91,9 @@ let make = (
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
     let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
+    let subscriptionSecret = localOptions->getString("subscriptionSecret", "")
+    let initSubscriptionsFlow =
+      localOptions->getWarningBool("initSubscriptionsFlow", false, ~logger)
     let clientSecretReMatch = switch GlobalVars.sdkVersion {
     | V1 => Some(RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret))
     | V2 => None
@@ -386,6 +389,8 @@ let make = (
         let widgetOptions =
           [
             ("clientSecret", clientSecret->JSON.Encode.string),
+            ("subscriptionSecret", subscriptionSecret->JSON.Encode.string),
+            ("initSubscriptionsFlow", initSubscriptionsFlow->JSON.Encode.bool),
             ("appearance", appearance),
             ("locale", locale),
             ("loader", loader),

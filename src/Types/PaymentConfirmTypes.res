@@ -1,3 +1,5 @@
+open Utils
+
 type achCreditTransfer = {
   account_number: string,
   bank_name: string,
@@ -59,7 +61,15 @@ type intent = {
   manualRetryAllowed: bool,
   connectorTransactionId: string,
 }
-open Utils
+
+type subscriptionIntent = {
+  status: string,
+  id: string,
+  planId: string,
+  itemPriceId: string,
+  profileId: string,
+  payment: intent,
+}
 
 let defaultRedirectTourl = {
   returnUrl: "",
@@ -193,5 +203,16 @@ let itemToObjMapper = dict => {
     payment_method_type: getString(dict, "payment_method_type", ""),
     manualRetryAllowed: getBool(dict, "manual_retry_allowed", false),
     connectorTransactionId: getString(dict, "connector_transaction_id", ""),
+  }
+}
+
+let itemToObjMapperForSubscriptions = dict => {
+  {
+    status: getString(dict, "status", ""),
+    id: getString(dict, "id", ""),
+    planId: getString(dict, "plan_id", ""),
+    itemPriceId: getString(dict, "item_price_id", ""),
+    profileId: getString(dict, "profile_id", ""),
+    payment: itemToObjMapper(getDictFromDict(dict, "payment")),
   }
 }

@@ -3,6 +3,8 @@ type contentRect = {height: float}
 
 type keys = {
   clientSecret: option<string>,
+  subscriptionSecret: option<string>,
+  initSubscriptionsFlow: option<bool>,
   paymentId: string,
   ephemeralKey?: string,
   pmSessionId?: string,
@@ -139,6 +141,8 @@ let updateKeys = (dict, keyPair, setKeys) => {
 }
 let defaultkeys = {
   clientSecret: None,
+  subscriptionSecret: None,
+  initSubscriptionsFlow: None,
   publishableKey: "",
   profileId: "",
   paymentId: "",
