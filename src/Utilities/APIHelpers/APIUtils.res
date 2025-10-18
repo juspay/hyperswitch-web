@@ -1,3 +1,4 @@
+// V1 API Endpoints - Legacy payment APIs
 type apiCallV1 =
   | FetchPaymentMethodList
   | FetchCustomerPaymentMethodList
@@ -13,8 +14,20 @@ type apiCallV1 =
   | RetrieveStatus
   | ConfirmPayout
   | FetchBlockedBins
+  | ConfirmPaymentIntent
+  | CompleteAuthorize
+  | PostSessionTokens
 
-type apiCallV2 = FetchSessionsV2
+// V2 API Endpoints - New payment APIs
+type apiCallV2 =
+  | FetchSessionsV2
+  | FetchPaymentMethodListV2
+  | FetchPaymentManagementList
+  | DeletePaymentMethodV2
+  | UpdatePaymentMethod
+  | SavePaymentMethod
+  | SavePaymentMethodWithConfirm
+  | ConfirmIntentV2
 
 type apiCall =
   | V1(apiCallV1)
@@ -28,6 +41,8 @@ type apiParams = {
   forceSync: option<string>,
   pollId: option<string>,
   payoutId: option<string>,
+  paymentId: option<string>,
+  pmSessionId: option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
@@ -39,14 +54,18 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     forceSync,
     pollId,
     payoutId,
+    paymentId,
+    pmSessionId,
   } = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
   let publishableKeyVal = publishableKey->Option.getOr("")
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
+  let paymentIdVal = paymentId->Option.getOr(paymentIntentID)
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
   let pollIdVal = pollId->Option.getOr("")
   let payoutIdVal = payoutId->Option.getOr("")
+  let pmSessionIdVal = pmSessionId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -94,13 +113,17 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | CallAuthLink
     | CallAuthExchange
     | RetrieveStatus
-    | ConfirmPayout =>
+    | ConfirmPayout
+    | ConfirmPaymentIntent
+    | CompleteAuthorize
+    | PostSessionTokens =>
       list{}
     }
   | V2(_) => list{}
   }
 
   let path = switch apiCallType {
+  // V1 API Paths
   | V1(inner) =>
     switch inner {
     | FetchPaymentMethodList => "account/payment_methods"
@@ -117,10 +140,21 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | RetrieveStatus => `poll/status/${pollIdVal}`
     | ConfirmPayout => `payouts/${payoutIdVal}/confirm`
     | FetchBlockedBins => "blocklist"
+    | ConfirmPaymentIntent => `payments/${paymentIntentID}/confirm`
+    | CompleteAuthorize => `payments/${paymentIntentID}/complete_authorize`
+    | PostSessionTokens => `payments/${paymentIntentID}/post_session_tokens`
     }
+  // V2 API Paths
   | V2(inner) =>
     switch inner {
-    | FetchSessionsV2 => `v2/payments/${paymentIntentID}/create-external-sdk-tokens`
+    | FetchSessionsV2 => `v2/payments/${paymentIdVal}/create-external-sdk-tokens`
+    | FetchPaymentMethodListV2 => `v2/payments/${paymentIdVal}/payment-methods`
+    | FetchPaymentManagementList => `v2/payment-method-sessions/${pmSessionIdVal}/list-payment-methods`
+    | DeletePaymentMethodV2 => `v2/payment-method-sessions/${pmSessionIdVal}`
+    | UpdatePaymentMethod => `v2/payment-method-sessions/${pmSessionIdVal}/update-saved-payment-method`
+    | SavePaymentMethod
+    | SavePaymentMethodWithConfirm => `v2/payment-method-sessions/${pmSessionIdVal}/confirm`
+    | ConfirmIntentV2 => `v2/payments/${paymentIdVal}/confirm-intent`
     }
   }
 
