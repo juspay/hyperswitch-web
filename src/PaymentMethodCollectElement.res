@@ -100,12 +100,10 @@ let make = (~integrateError, ~logger) => {
         ~endpoint=ApiEndpoint.getApiEndPoint(),
         ~body=pmdBody,
       )
-      ->then(res => {
-        Console.warn2("DEBUGG RES", res)
+      ->then(_res => {
         resolve()
       })
-      ->catch(err => {
-        Console.error2("DEBUGG ERR", err)
+      ->catch(_err => {
         resolve()
       })
       ->finally(() => {
@@ -267,7 +265,7 @@ let make = (~integrateError, ~logger) => {
   }
 
   if integrateError {
-    <ErrorOccured />
+    <ErrorOccurred />
   } else {
     <div
       className="flex flex-col h-screen min-w-[320px] overflow-hidden

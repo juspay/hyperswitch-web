@@ -19,7 +19,7 @@ let checkIsSafari = () => {
 }
 
 let date = date()
-let broswerInfo = () => {
+let browserInfo = () => {
   let data = UAParser.make()
   let osType = data.os.name->Option.getOr("Unknown")
   let osVersion = data.os.version->Option.getOr("Unknown")
