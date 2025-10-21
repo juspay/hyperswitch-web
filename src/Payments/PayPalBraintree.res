@@ -7,7 +7,15 @@ let make = (~sessionObj: option<SessionsType.token>) => {
   let sessionToken = sessionObj->Option.getOr(SessionsType.defaultToken)
   let paypalSDKUrl = generatePayPalSDKUrl(sessionToken.token)
   let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
-  let {readyAll} = ScriptsHandler.useScripts([braintreeClientUrl, braintreePayPalUrl, paypalSDKUrl])
+  let globalVarsToValidate = Dict.fromArray([
+    (braintreeClientUrl, "braintree.client"),
+    (braintreePayPalUrl, "braintree.paypalCheckout"),
+    (paypalSDKUrl, "paypal"),
+  ])
+  let {readyAll} = ScriptsHandler.useScripts(
+    [braintreeClientUrl, braintreePayPalUrl, paypalSDKUrl],
+    ~opts=Some({validateGlobal: globalVarsToValidate}),
+  )
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (connectors, _) = paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
   let transactionInfo = sessionToken.transaction_info->getDictFromJson

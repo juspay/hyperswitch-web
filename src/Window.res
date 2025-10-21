@@ -72,13 +72,8 @@ external removeElementEventListener: (Dom.element, string, Dom.event => unit) =>
 
 /* DOM Element Properties and Methods */
 @get external elementReadyState: Dom.element => Nullable.t<string> = "readyState"
-@get external isConnected: Dom.element => bool = "isConnected"
 @get external dataset: Dom.element => {..} = "dataset"
-@set external setDatasetStatus: ({..}, string) => unit = "status"
 @get external getDatasetStatus: {..} => Nullable.t<string> = "status"
-
-@send external parentElement: Dom.element => Nullable.t<Dom.element> = "parentElement"
-@send external removeChild: (Dom.element, Dom.element) => unit = "removeChild"
 
 /* DOM Element Script Attributes */
 @set external setSrc: (Dom.element, string) => unit = "src"
@@ -93,13 +88,6 @@ external removeElementEventListener: (Dom.element, string, Dom.event => unit) =>
 /* Document Head Operations */
 @val @scope(("document", "head"))
 external appendChildToHead: Dom.element => unit = "appendChild"
-
-/* Performance API */
-@val @scope(("window", "performance"))
-external getEntriesByName: string => array<{..}> = "getEntriesByName"
-
-@val @scope("window")
-external performance: option<{..}> = "performance"
 
 /* External Methods */
 @scope("window") @get external cardNumberElement: window => option<window> = "cardNumber"

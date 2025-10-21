@@ -3,27 +3,15 @@ open Window
 
 type scriptStatus = Idle | Loading | Ready | Error
 
-type scriptAttrs = {
+type options = {
+  \"type"?: string,
   async?: bool,
   defer?: bool,
-  crossorigin?: string,
-  integrity?: string,
-  nomodule?: bool,
-  referrerpolicy?: string,
-  \"type"?: string,
-}
-
-type options = {
-  checkForExisting?: bool,
-  attrs?: Dict.t<scriptAttrs>,
-  defaultAsync?: bool,
-  unloadWhenNoSubscribers?: bool,
-  ordered?: bool,
+  validateGlobal?: Dict.t<string>,
 }
 
 type entry = {
   mutable status: scriptStatus,
-  mutable error: option<Dom.event>,
   mutable el: option<Dom.element>,
   mutable subscribers: array<scriptStatus => unit>,
   mutable promise: option<t<unit>>,
@@ -31,31 +19,51 @@ type entry = {
   mutable onErrorHandler: option<Dom.event => unit>,
 }
 
-type useScriptsResult<'a> = {
+type useScriptsResult = {
   statuses: Dict.t<scriptStatus>,
-  errors: Dict.t<option<Dom.event>>,
   readyAll: bool,
-  readyOf: string => bool,
-  whenReady: 'a => t<unit>,
 }
 
 type useScriptResult = {
   status: scriptStatus,
   ready: bool,
-  error: option<Dom.event>,
-  whenReady: unit => t<unit>,
-  readyOf: string => bool,
+}
+
+let isGlobalExists = globalVarName => {
+  let rec checkNestedProperty = (obj, keys, index) => {
+    switch obj->Nullable.toOption {
+    | Some(_) if index <= 15 =>
+      if index >= Array.length(keys) {
+        true
+      } else {
+        let key = keys->Array.get(index)
+        switch key {
+        | Some(_) => {
+            let nextValue = %raw(`obj[key]`)
+            checkNestedProperty(nextValue->Nullable.make, keys, index + 1)
+          }
+        | None => false
+        }
+      }
+    | _ => false
+    }
+  }
+  try {
+    let keys = globalVarName->String.split(".")
+    checkNestedProperty(window->Nullable.make, keys, 0)
+  } catch {
+  | _ => false
+  }
 }
 
 let store = Dict.make()
 
-let getOrInitEntry = src => {
+let getOrInitEntry = src =>
   switch store->Dict.get(src) {
   | Some(entry) => entry
   | None => {
       let entry = {
         status: Idle,
-        error: None,
         el: None,
         subscribers: [],
         promise: None,
@@ -66,100 +74,64 @@ let getOrInitEntry = src => {
       entry
     }
   }
-}
 
-let emit = (entry: entry, nextStatus) => {
+let emitAndMarkDataset = (entry: entry, nextStatus) => {
   entry.status = nextStatus
   entry.subscribers->Array.forEach(subscriber => subscriber(nextStatus))
-}
-
-let markDataset = (script, status) => {
-  try {
-    let statusStr = switch status {
-    | Idle => "idle"
-    | Loading => "loading"
-    | Ready => "ready"
-    | Error => "error"
+  switch entry.el {
+  | Some(script) =>
+    try {
+      let statusStr = switch nextStatus {
+      | Idle => "idle"
+      | Loading => "loading"
+      | Ready => "ready"
+      | Error => "error"
+      }
+      script->setAttribute("data-status", statusStr)
+    } catch {
+    | _ => ()
     }
-    script->setAttribute("data-status", statusStr)
-  } catch {
-  | _ => ()
+  | None => ()
   }
 }
 
-let isLikelyAlreadyLoaded = (script, src) => {
-  let readyState = script->elementReadyState->Nullable.toOption
-  let datasetStatus = script->dataset->getDatasetStatus->Nullable.toOption
-
-  if datasetStatus == Some("ready") {
-    true
-  } else {
-    switch readyState {
-    | Some("complete") | Some("loaded") => true
+let isLikelyAlreadyLoaded = (script, ~globalVarName=?) =>
+  switch script->dataset->getDatasetStatus->Nullable.toOption {
+  | Some("ready") => true
+  | _ =>
+    switch globalVarName {
+    | Some(varName) if isGlobalExists(varName) => true
     | _ =>
-      try {
-        switch performance {
-        | Some(_) => {
-            let entries = getEntriesByName(src)
-            let entriesLength = entries->Array.length
-            let connected = script->isConnected
-            let result = entriesLength > 0 && connected
-            result
-          }
-        | None => false
-        }
-      } catch {
+      switch script->elementReadyState->Nullable.toOption {
+      | Some("complete") | Some("loaded") => true
       | _ => false
       }
     }
   }
-}
 
-let applyScriptAttrs = (script, attrs) => {
-  switch attrs {
-  | None => ()
-  | Some(attrs) => {
-      attrs.async->Option.forEach(value => script->setAsync(value))
-      attrs.defer->Option.forEach(value => script->setDefer(value))
-      attrs.crossorigin->Option.forEach(value => script->setCrossorigin(value))
-      attrs.integrity->Option.forEach(value => script->setIntegrity(value))
-      attrs.nomodule->Option.forEach(value => script->setNomodule(value))
-      attrs.referrerpolicy->Option.forEach(value => script->setReferrerpolicy(value))
-      attrs.\"type"->Option.forEach(value => script->setType(value))
+let applyScriptAttrs = (script, opts) =>
+  switch opts {
+  | None => script->setAsync(true)
+  | Some(opts) => {
+      let async = opts.async->Option.getOr(true)
+      script->setAsync(async)
+      opts.defer->Option.forEach(value => script->setDefer(value))
+      opts.\"type"->Option.forEach(value => script->setType(value))
     }
   }
-}
 
 let cleanupDomListeners = entry =>
   switch entry.el {
   | Some(el) => {
-      entry.onLoadHandler->Option.forEach(handler => {
-        el->removeElementEventListener("load", handler)
-      })
-      entry.onErrorHandler->Option.forEach(handler => {
-        el->removeElementEventListener("error", handler)
-      })
+      entry.onLoadHandler->Option.forEach(h => el->removeElementEventListener("load", h))
+      entry.onErrorHandler->Option.forEach(h => el->removeElementEventListener("error", h))
       entry.onLoadHandler = None
       entry.onErrorHandler = None
     }
   | None => ()
   }
 
-let validateAndFixSRIAttrs = attrs =>
-  switch attrs {
-  | Some(attrs) =>
-    switch (attrs.integrity, attrs.crossorigin) {
-    | (Some(_), None) =>
-      Some({
-        ...attrs,
-        crossorigin: "anonymous",
-      })
-    | _ => Some(attrs)
-    }
-  | None => None
-  }
-
-let loadOnce = (src, opts) => {
+let loadOnce = (src, opts: option<options>) => {
   let entry = getOrInitEntry(src)
   switch entry.status {
   | Ready => resolve()
@@ -167,84 +139,51 @@ let loadOnce = (src, opts) => {
     switch entry.promise {
     | Some(existingPromise) => existingPromise
     | None => {
-        let checkForExisting = opts->Option.flatMap(o => o.checkForExisting)->Option.getOr(true)
-        let attrs = opts->Option.flatMap(o => o.attrs)->Option.getOr(Dict.make())
-        let defaultAsync = opts->Option.flatMap(o => o.defaultAsync)->Option.getOr(true)
-        let isOrdered = opts->Option.flatMap(o => o.ordered)->Option.getOr(false)
-
         let promise = make((resolve, reject) => {
-          let scriptRef = ref(None)
+          let existingScript = querySelector(`script[src="${src}"]`)->Nullable.toOption
+          let globalVarName = switch opts {
+          | Some(o) => o.validateGlobal->Option.getOr(Dict.make())->Dict.get(src)
+          | None => None
+          }
 
-          let existingScript = if checkForExisting {
-            querySelector(`script[src="${src}"]`)->Nullable.toOption
-          } else {
-            None
+          let shouldCreateNewScript = switch existingScript {
+          | Some(existing) if existing->isLikelyAlreadyLoaded(~globalVarName?) => {
+              entry.el = Some(existing)
+              emitAndMarkDataset(entry, Ready)
+              resolve()
+              false
+            }
+          | _ => true
           }
 
           let onLoad = _ => {
             cleanupDomListeners(entry)
-            entry.error = None
-            switch scriptRef.contents {
-            | Some(script) => markDataset(script, Ready)
-            | None => ()
+            emitAndMarkDataset(entry, Ready)
+            if shouldCreateNewScript {
+              existingScript->Option.forEach(script => script->remove)
             }
-            emit(entry, Ready)
             resolve()
           }
 
           let onError = ev => {
             cleanupDomListeners(entry)
-            entry.error = Some(ev)
             entry.promise = None
-            switch scriptRef.contents {
-            | Some(script) => markDataset(script, Error)
-            | None => ()
-            }
-            emit(entry, Error)
+            emitAndMarkDataset(entry, Error)
             reject(ev)
           }
 
           entry.onLoadHandler = Some(onLoad)
           entry.onErrorHandler = Some(onError)
 
-          switch existingScript {
-          | Some(existing) =>
-            if isLikelyAlreadyLoaded(existing, src) {
-              entry.el = Some(existing)
-              markDataset(existing, Ready)
-              emit(entry, Ready)
-              resolve()
-            } else {
-              scriptRef := Some(existing)
-              entry.el = Some(existing)
-              emit(entry, Loading)
-              existing->addElementEventListener("load", onLoad)
-              existing->addElementEventListener("error", onError)
-            }
-          | None => {
-              let newScript = createElement("script")
-              let scriptAttrs = attrs->Dict.get(src)->validateAndFixSRIAttrs
-              applyScriptAttrs(newScript, scriptAttrs)
-              let userSpecifiedAsync = scriptAttrs->Option.flatMap(a => a.async)->Option.isSome
-
-              if isOrdered {
-                newScript->setAsync(false)
-                newScript->setDefer(false)
-              } else if !userSpecifiedAsync && defaultAsync {
-                newScript->setAsync(true)
-              }
-
-              newScript->setSrc(src)
-              markDataset(newScript, Loading)
-              appendChildToHead(newScript)
-
-              scriptRef := Some(newScript)
-              entry.el = Some(newScript)
-              emit(entry, Loading)
-
-              newScript->addElementEventListener("load", onLoad)
-              newScript->addElementEventListener("error", onError)
-            }
+          if shouldCreateNewScript {
+            let newScript = createElement("script")
+            applyScriptAttrs(newScript, opts)
+            newScript->setSrc(src)
+            appendChildToHead(newScript)
+            entry.el = Some(newScript)
+            emitAndMarkDataset(entry, Loading)
+            newScript->addElementEventListener("load", onLoad)
+            newScript->addElementEventListener("error", onError)
           }
         })
         entry.promise = Some(promise)
@@ -254,200 +193,66 @@ let loadOnce = (src, opts) => {
   }
 }
 
-let unloadIfUnused = src => {
-  switch store->Dict.get(src) {
-  | Some(entry) if entry.subscribers->Array.length <= 0 =>
-    switch (entry.status, entry.el) {
-    | (Idle | Error, Some(element)) => {
-        cleanupDomListeners(entry)
-        switch element->parentElement->Nullable.toOption {
-        | Some(parent) => parent->removeChild(element)
-        | None => ()
-        }
-        store->Dict.delete(src)
-      }
-    | (Ready, _) => store->Dict.delete(src)
-    | (Loading, _) => ()
-    | (_, None) => store->Dict.delete(src)
-    }
-  | _ => ()
-  }
-}
-
-let useScripts = (srcs, ~opts=Some({ordered: false})) => {
+let useScripts = (srcs, ~opts=None) => {
   let list = React.useMemo(() => {
     srcs->Array.filter(src => src != "")
   }, [srcs])
 
-  let whenReady = React.useCallback(srcArray => {
-    let promises = srcArray->Array.map(src => {
-      switch store->Dict.get(src) {
-      | Some(entry) if entry.status == Ready => resolve()
-      | _ => loadOnce(src, opts)
-      }
-    })
-    all(promises)->then(_ => resolve())
-  }, [])
-
   let (statuses, setStatuses) = React.useState(() => {
-    let statusDict = Dict.make()
-    list->Array.forEach(src => {
+    list->Array.reduce(Dict.make(), (acc, src) => {
       let status = store->Dict.get(src)->Option.mapOr(Idle, entry => entry.status)
-      statusDict->Dict.set(src, status)
+      acc->Dict.set(src, status)
+      acc
     })
-    statusDict
-  })
-
-  let (errors, setErrors) = React.useState(() => {
-    let errorDict = Dict.make()
-    list->Array.forEach(src => {
-      let error = store->Dict.get(src)->Option.flatMap(entry => entry.error)
-      errorDict->Dict.set(src, error)
-    })
-    errorDict
   })
 
   React.useEffect(() => {
-    setStatuses(_ => {
-      let next = Dict.make()
-      list->Array.forEach(
-        src => {
-          let status = store->Dict.get(src)->Option.mapOr(Idle, entry => entry.status)
-          next->Dict.set(src, status)
-        },
+    if list->Array.length == 0 {
+      None
+    } else {
+      let subscriptions = ref([])
+
+      let subscribe = src => {
+        let entry = getOrInitEntry(src)
+        let handler = status =>
+          setStatuses(prev =>
+            prev->Dict.get(src) == Some(status)
+              ? prev
+              : {
+                  let newStatuses = Dict.fromArray(prev->Dict.toArray)
+                  newStatuses->Dict.set(src, status)
+                  newStatuses
+                }
+          )
+
+        entry.subscribers = entry.subscribers->Array.concat([handler])
+        subscriptions := subscriptions.contents->Array.concat([(src, handler)])
+        handler(entry.status)
+
+        if entry.status == Idle {
+          loadOnce(src, opts)->catch(_ => resolve())->ignore
+        }
+      }
+
+      list->Array.forEach(subscribe)
+
+      Some(
+        () =>
+          subscriptions.contents->Array.forEach(((src, handler)) =>
+            switch store->Dict.get(src) {
+            | Some(entry) => entry.subscribers = entry.subscribers->Array.filter(s => s !== handler)
+            | None => ()
+            }
+          ),
       )
-      next
-    })
-    setErrors(_ => {
-      let next = Dict.make()
-      list->Array.forEach(
-        src => {
-          let error = store->Dict.get(src)->Option.flatMap(entry => entry.error)
-          next->Dict.set(src, error)
-        },
-      )
-      next
-    })
-    None
+    }
   }, list)
 
-  React.useEffect(
-    () => {
-      if list->Array.length == 0 {
-        None
-      } else {
-        let subscriptions = ref([])
-
-        let subscribe = src => {
-          let entry = getOrInitEntry(src)
-
-          let handler = status => {
-            setStatuses(prev => {
-              prev->Dict.get(src) == Some(status)
-                ? prev
-                : {
-                    let newStatuses = Dict.fromArray(prev->Dict.toArray)
-                    newStatuses->Dict.set(src, status)
-                    newStatuses
-                  }
-            })
-            setErrors(prev => {
-              let newErrors = Dict.fromArray(prev->Dict.toArray)
-              let error = if status == Error {
-                store->Dict.get(src)->Option.flatMap(e => e.error)
-              } else {
-                None
-              }
-              newErrors->Dict.set(src, error)
-              newErrors
-            })
-          }
-
-          entry.subscribers = entry.subscribers->Array.concat([handler])
-          subscriptions := subscriptions.contents->Array.concat([(src, handler)])
-
-          handler(entry.status)
-
-          if entry.status == Idle {
-            loadOnce(src, opts)->catch(_ => resolve())->ignore
-          }
-        }
-
-        switch opts->Option.flatMap(o => o.ordered)->Option.getOr(false) {
-        | true => {
-            let loadSequentially = async () => {
-              for i in 0 to list->Array.length - 1 {
-                let src = list->Array.getUnsafe(i)
-                subscribe(src)
-                switch store->Dict.get(src) {
-                | Some(entry) if entry.status != Ready =>
-                  try {
-                    await loadOnce(src, opts)
-                  } catch {
-                  | _ => ()
-                  }
-                | _ => ()
-                }
-              }
-            }
-            loadSequentially()->ignore
-          }
-        | false => list->Array.forEach(subscribe)
-        }
-
-        Some(
-          () => {
-            subscriptions.contents->Array.forEach(((src, handler)) => {
-              switch store->Dict.get(src) {
-              | Some(entry) => {
-                  entry.subscribers = entry.subscribers->Array.filter(sub => sub !== handler)
-
-                  let shouldUnload =
-                    opts->Option.flatMap(o => o.unloadWhenNoSubscribers)->Option.getOr(false)
-                  if shouldUnload && entry.subscribers->Array.length == 0 {
-                    unloadIfUnused(src)
-                  }
-                }
-              | None => ()
-              }
-            })
-          },
-        )
-      }
-    },
-    (
-      list->Array.join("|"),
-      opts->Option.flatMap(o => o.ordered)->Option.getOr(false),
-      opts->Option.flatMap(o => o.checkForExisting)->Option.getOr(true),
-      opts->Option.flatMap(o => o.defaultAsync)->Option.getOr(true),
-      opts->Option.flatMap(o => o.unloadWhenNoSubscribers)->Option.getOr(false),
-      opts
-      ->Option.flatMap(o => o.attrs)
-      ->Option.mapOr("", attrs =>
-        attrs
-        ->Dict.toArray
-        ->Array.map(((k, v)) => `${k}:${JSON.stringify(v->Identity.anyTypeToJson)}`)
-        ->Array.join(",")
-      ),
-    ),
-  )
-
-  let readyAll =
-    list->Array.length > 0 &&
-      list->Array.every(src => {
-        statuses->Dict.get(src)->Option.getOr(Idle) == Ready
-      })
-
-  let readyOf = React.useCallback((src: string) => {
-    statuses->Dict.get(src)->Option.getOr(Idle) == Ready
-  }, [statuses])
+  let readyAll = list->Array.every(src => statuses->Dict.get(src)->Option.getOr(Idle) == Ready)
 
   {
     statuses,
-    errors,
     readyAll,
-    readyOf,
-    whenReady,
   }
 }
 
@@ -456,16 +261,11 @@ let useScript = (src, opts) => {
   let result = useScripts(srcArray, ~opts)
   let status = result.statuses->Dict.get(src)->Option.getOr(Idle)
   let ready = status == Ready
-  let error = result.errors->Dict.get(src)->Option.getOr(None)
-  let whenReady = React.useCallback1(() => result.whenReady([src]), [src])
 
   {
     status,
     ready,
-    error,
-    whenReady,
-    readyOf: result.readyOf,
   }
 }
 
-let preloadScript = (src, opts) => loadOnce(src, opts)
+let preloadScript = loadOnce
