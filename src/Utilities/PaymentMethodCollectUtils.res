@@ -400,6 +400,18 @@ let getPaymentMethodDataErrorString = (
   | (PayoutMethodData(CardExpDate(_)), false) => localeString.inCompleteExpiryErrorText
   | (PayoutMethodData(CardExpDate(_)), true) => localeString.pastExpiryErrorText
   | (PayoutMethodData(ACHRoutingNumber), false) => localeString.formFieldInvalidRoutingNumber
+  | (PayoutMethodData(BacsSortCode), _) =>
+    if value->String.trim->String.length === 0 {
+      localeString.sortCodeText->localeString.nameEmptyText
+    } else {
+      localeString.sortCodeInvalidText
+    }
+  | (PayoutMethodData(BacsAccountNumber), _) =>
+    if value->String.trim->String.length === 0 {
+      localeString.accountNumberText->localeString.nameEmptyText
+    } else {
+      localeString.accountNumberInvalidText
+    }
   | (PayoutMethodData(CardHolderName), _) =>
     if value->String.trim->String.length === 0 {
       localeString.cardHolderName->localeString.nameEmptyText

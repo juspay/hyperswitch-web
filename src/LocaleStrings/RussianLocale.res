@@ -20,6 +20,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   postalCodeLabel: `Почтовый индекс`,
   stateLabel: `Область`,
   accountNumberText: `Номер счета`,
+  accountNumberInvalidText: `Номер счета недействителен`,
+  sortCodeInvalidText: `Номер отделения банка недействителен`,
   emailLabel: `Электронная почта`,
   fullNameLabel: `Ф.И.О.`,
   fullNamePlaceholder: `Имя и фамилия`,
@@ -94,6 +96,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardHeader: `Информация о карте`,
   cardBrandConfiguredErrorText: str =>
     `${str} в данный момент не поддерживается.`,
+  blockedCardText: "Эта карта не разрешена для платежей.",
   currencyNetwork: `Валютные сети`,
   expiryPlaceholder: `MM / ГГ`,
   dateOfBirth: `Дата рождения`,

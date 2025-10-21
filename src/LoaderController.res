@@ -8,6 +8,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
+  let setBlockedBins = Recoil.useSetRecoilState(blockedBins)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
   let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
@@ -640,6 +641,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->Dict.get("applePaySessionObjNotPresent")->Option.isSome {
           setIsApplePayReady(prev => prev && false)
+        }
+        if dict->getDictIsSome("blockedBins") {
+          let blockedBins = dict->getJsonObjectFromDict("blockedBins")
+          setBlockedBins(_ => Loaded(blockedBins))
         }
       } catch {
       | _ => setIntegrateErrorError(_ => true)
