@@ -87,6 +87,7 @@ let make = (~sessions, ~walletOptions) => {
 
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
 
   <div role="region" ariaLabel="Wallet Section" className="flex flex-col gap-2 h-auto w-full">
     {walletOptions
@@ -99,8 +100,9 @@ let make = (~sessions, ~walletOptions) => {
           loaderComponent={<WalletShimmer />}
           componentName="PaymentRequestButtonElement"
           key={i->Int.toString}>
-          {switch clientSecret {
-          | Some(_) =>
+          {switch (clientSecret, testMode) {
+          | (Some(_), _)
+          | (_, true) =>
             switch item->paymentMode {
             | GPayWallet =>
               <SessionPaymentWrapper type_={Wallet}>
@@ -173,7 +175,7 @@ let make = (~sessions, ~walletOptions) => {
               </RenderIf>
             | NONE => React.null
             }
-          | None => React.null
+          | (None, _) => React.null
           }}
         </ReusableReactSuspense>
       </ErrorBoundary>

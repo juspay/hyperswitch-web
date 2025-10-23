@@ -52,39 +52,86 @@ let getMessageHandlerV1Elements = (
   ~customPodUri,
   ~endpoint,
   ~merchantHostname,
+  ~testMode=false,
 ) => {
-  let paymentMethodsPromise = PaymentHelpers.fetchPaymentMethodList(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+  let (
+    paymentMethodsPromise,
+    customerPaymentMethodsPromise,
+    sessionTokensPromise,
+    blockedBinsPromise,
+  ) = if testMode {
+    let mockPaymentMethods =
+      [
+        (
+          "payment_methods",
+          [
+            [
+              ("payment_method", "card"->JSON.Encode.string),
+              (
+                "payment_method_types",
+                [
+                  [("payment_method_type", "credit"->JSON.Encode.string)],
+                  [("payment_method_type", "debit"->JSON.Encode.string)],
+                ]
+                ->Array.map(Dict.fromArray)
+                ->Array.map(JSON.Encode.object)
+                ->JSON.Encode.array,
+              ),
+            ]
+            ->Dict.fromArray
+            ->JSON.Encode.object,
+          ]->JSON.Encode.array,
+        ),
+        ("is_tax_calculation_enabled", false->JSON.Encode.bool),
+      ]
+      ->Dict.fromArray
+      ->JSON.Encode.object
 
-  let customerPaymentMethodsPromise = PaymentHelpers.fetchCustomerPaymentMethodList(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+    let mockCustomerMethods = Dict.make()->JSON.Encode.object
 
-  let sessionTokensPromise = PaymentHelpers.fetchSessions(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-    ~merchantHostname,
-  )
+    let mockSessionTokens = Dict.make()->JSON.Encode.object
 
-  let blockedBinsPromise = PaymentHelpers.fetchBlockedBins(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+    let mockBlockedBins = Dict.make()->JSON.Encode.object
+
+    (
+      Promise.resolve(mockPaymentMethods),
+      Promise.resolve(mockCustomerMethods),
+      Promise.resolve(mockSessionTokens),
+      Promise.resolve(mockBlockedBins),
+    )
+  } else {
+    (
+      PaymentHelpers.fetchPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      ),
+      PaymentHelpers.fetchCustomerPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      ),
+      PaymentHelpers.fetchSessions(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~merchantHostname,
+      ),
+      PaymentHelpers.fetchBlockedBins(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      ),
+    )
+  }
 
   ev => {
     open Utils
@@ -197,6 +244,7 @@ module PreMountLoaderForElements = {
     ~merchantHostname,
     ~customPodUri,
     ~profileId,
+    ~testMode=false,
   ) => {
     useMessageHandler(() =>
       switch GlobalVars.sdkVersion {
@@ -208,6 +256,7 @@ module PreMountLoaderForElements = {
           ~customPodUri,
           ~endpoint,
           ~merchantHostname,
+          ~testMode,
         )
       | V2 =>
         getMessageHandlerV2Elements(
@@ -280,10 +329,22 @@ let make = (
     ~clientSecret,
   )
 
+  // Detect test mode from URL parameters
+  let url = RescriptReactRouter.useUrl()
+  let testMode = url.search->CardUtils.getQueryParamsDictforKey("testMode") === "true"
+
   switch hyperComponentName {
   | Elements =>
     <PreMountLoaderForElements
-      logger publishableKey clientSecret endpoint merchantHostname customPodUri profileId paymentId
+      logger
+      publishableKey
+      clientSecret
+      endpoint
+      merchantHostname
+      customPodUri
+      profileId
+      paymentId
+      testMode
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements

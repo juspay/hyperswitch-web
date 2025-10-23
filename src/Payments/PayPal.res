@@ -22,6 +22,7 @@ let make = (~walletOptions) => {
   let isWallet = walletOptions->Array.includes("paypal")
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
+  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
 
   let (_, _, labelType, _) = options.wallets.style.type_
   let _label = switch labelType {
@@ -45,49 +46,53 @@ let make = (~walletOptions) => {
     ~paymentType="paypal",
   )
   let onPaypalClick = _ev => {
-    loggerState.setLogInfo(
-      ~value="Paypal Button Clicked",
-      ~eventName=PAYPAL_FLOW,
-      ~paymentMethod="PAYPAL",
-    )
-    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
-    setPaypalClicked(_ => true)
-    open Promise
-    Utils.makeOneClickHandlerPromise(sdkHandleIsThere)
-    ->then(result => {
-      let result = result->JSON.Decode.bool->Option.getOr(false)
-      if result {
-        let body = switch GlobalVars.sdkVersion {
-        | V1 => PaymentBody.dynamicPaymentBody("wallet", "paypal")
-        | V2 => PaymentBodyV2.dynamicPaymentBodyV2("wallet", "paypal")
-        }
-        let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
-          ~isGuestCustomer,
-          ~paymentType=paymentMethodListValue.payment_type,
-          ~body,
-        )
-        let modifiedPaymentBody = if isWallet {
-          basePaymentBody
-        } else {
-          basePaymentBody->Utils.mergeAndFlattenToTuples(requiredFieldsBody)
-        }
+    if testMode {
+      Console.warn("PayPal button clicked in test mode - interaction disabled")
+    } else {
+      loggerState.setLogInfo(
+        ~value="Paypal Button Clicked",
+        ~eventName=PAYPAL_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
+      PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
+      setPaypalClicked(_ => true)
+      open Promise
+      Utils.makeOneClickHandlerPromise(sdkHandleIsThere)
+      ->then(result => {
+        let result = result->JSON.Decode.bool->Option.getOr(false)
+        if result {
+          let body = switch GlobalVars.sdkVersion {
+          | V1 => PaymentBody.dynamicPaymentBody("wallet", "paypal")
+          | V2 => PaymentBodyV2.dynamicPaymentBodyV2("wallet", "paypal")
+          }
+          let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
+            ~isGuestCustomer,
+            ~paymentType=paymentMethodListValue.payment_type,
+            ~body,
+          )
+          let modifiedPaymentBody = if isWallet {
+            basePaymentBody
+          } else {
+            basePaymentBody->Utils.mergeAndFlattenToTuples(requiredFieldsBody)
+          }
 
-        intent(
-          ~bodyArr=modifiedPaymentBody,
-          ~confirmParam={
-            return_url: options.wallets.walletReturnUrl,
-            publishableKey,
-          },
-          ~handleUserError=true,
-          ~manualRetry=isManualRetryEnabled,
-        )
-      } else {
-        setPaypalClicked(_ => false)
-      }
-      resolve()
-    })
-    ->catch(_ => resolve())
-    ->ignore
+          intent(
+            ~bodyArr=modifiedPaymentBody,
+            ~confirmParam={
+              return_url: options.wallets.walletReturnUrl,
+              publishableKey,
+            },
+            ~handleUserError=true,
+            ~manualRetry=isManualRetryEnabled,
+          )
+        } else {
+          setPaypalClicked(_ => false)
+        }
+        resolve()
+      })
+      ->catch(_ => resolve())
+      ->ignore
+    }
   }
 
   React.useEffect0(() => {

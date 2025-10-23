@@ -13,7 +13,7 @@ let make = () => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (klarnaClicked, setKlarnaClicked) = React.useState(_ => false)
-
+  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
   let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
   | Klarna(val) => val
@@ -24,35 +24,40 @@ let make = () => {
 
   let onKlarnaClick = async _ev => {
     try {
-      loggerState.setLogInfo(
-        ~value="Klarna Checkout Button Clicked",
-        ~eventName=KLARNA_CHECKOUT_FLOW,
-        ~paymentMethod="KLARNA",
-      )
-
-      setKlarnaClicked(_ => true)
-
-      let result = await Utils.makeOneClickHandlerPromise(sdkHandleIsThere)
-      let decodedResult = result->JSON.Decode.bool->Option.getOr(false)
-
-      if decodedResult {
-        let (connectors, _) =
-          paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
-        let body = PaymentBody.klarnaCheckoutBody(~connectors)
-
-        intent(
-          ~bodyArr=body,
-          ~confirmParam={
-            return_url: options.wallets.walletReturnUrl,
-            publishableKey,
-          },
-          ~handleUserError=true,
-          ~manualRetry=isManualRetryEnabled,
-        )
+      if testMode {
+        Console.warn("Klarna checkout button clicked in test mode - interaction disabled")
+        resolve()
       } else {
-        setKlarnaClicked(_ => false)
+        loggerState.setLogInfo(
+          ~value="Klarna Checkout Button Clicked",
+          ~eventName=KLARNA_CHECKOUT_FLOW,
+          ~paymentMethod="KLARNA",
+        )
+
+        setKlarnaClicked(_ => true)
+
+        let result = await Utils.makeOneClickHandlerPromise(sdkHandleIsThere)
+        let decodedResult = result->JSON.Decode.bool->Option.getOr(false)
+
+        if decodedResult {
+          let (connectors, _) =
+            paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
+          let body = PaymentBody.klarnaCheckoutBody(~connectors)
+
+          intent(
+            ~bodyArr=body,
+            ~confirmParam={
+              return_url: options.wallets.walletReturnUrl,
+              publishableKey,
+            },
+            ~handleUserError=true,
+            ~manualRetry=isManualRetryEnabled,
+          )
+        } else {
+          setKlarnaClicked(_ => false)
+        }
+        resolve()
       }
-      resolve()
     } catch {
     | _ => resolve()
     }

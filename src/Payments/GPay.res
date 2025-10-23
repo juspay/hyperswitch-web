@@ -38,6 +38,7 @@ let make = (
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("google_pay")
+  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
 
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
@@ -99,52 +100,58 @@ let make = (
   }
 
   let onGooglePaymentButtonClicked = () => {
-    loggerState.setLogInfo(
-      ~value="GooglePay Button Clicked",
-      ~eventName=GOOGLE_PAY_FLOW,
-      ~paymentMethod="GOOGLE_PAY",
-    )
-    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="google_pay")
-    makeOneClickHandlerPromise(isSDKHandleClick)->then(result => {
-      let result = result->JSON.Decode.bool->Option.getOr(false)
-      if result {
-        if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
-          if isDelayedSessionToken {
-            messageParentWindow([
-              ("fullscreen", true->JSON.Encode.bool),
-              ("param", "paymentloader"->JSON.Encode.string),
-              ("iframeId", iframeId->JSON.Encode.string),
-            ])
-            let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
+    if testMode {
+      Console.warn("Google Pay button clicked in test mode - interaction disabled")
+    } else {
+      loggerState.setLogInfo(
+        ~value="GooglePay Button Clicked",
+        ~eventName=GOOGLE_PAY_FLOW,
+        ~paymentMethod="GOOGLE_PAY",
+      )
+      PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="google_pay")
+      makeOneClickHandlerPromise(isSDKHandleClick)
+      ->then(result => {
+        let result = result->JSON.Decode.bool->Option.getOr(false)
+        if result {
+          if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
+            if isDelayedSessionToken {
+              messageParentWindow([
+                ("fullscreen", true->JSON.Encode.bool),
+                ("param", "paymentloader"->JSON.Encode.string),
+                ("iframeId", iframeId->JSON.Encode.string),
+              ])
+              let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
+              GooglePayHelpers.processPayment(
+                ~body=bodyDict,
+                ~isThirdPartyFlow=true,
+                ~intent,
+                ~options,
+                ~publishableKey,
+                ~isManualRetryEnabled,
+              )
+            } else {
+              GooglePayHelpers.handleGooglePayClicked(
+                ~sessionObj,
+                ~componentName,
+                ~iframeId,
+                ~readOnly=options.readOnly,
+              )
+            }
+          } else {
+            let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
             GooglePayHelpers.processPayment(
               ~body=bodyDict,
-              ~isThirdPartyFlow=true,
               ~intent,
               ~options,
               ~publishableKey,
               ~isManualRetryEnabled,
             )
-          } else {
-            GooglePayHelpers.handleGooglePayClicked(
-              ~sessionObj,
-              ~componentName,
-              ~iframeId,
-              ~readOnly=options.readOnly,
-            )
           }
-        } else {
-          let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
-          GooglePayHelpers.processPayment(
-            ~body=bodyDict,
-            ~intent,
-            ~options,
-            ~publishableKey,
-            ~isManualRetryEnabled,
-          )
         }
-      }
-      resolve()
-    })
+        resolve()
+      })
+      ->ignore
+    }
   }
 
   let buttonStyle = {

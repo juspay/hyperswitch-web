@@ -16,34 +16,40 @@ let make = (~token: SessionsType.token) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let onClick = _ => {
-    loggerState.setLogInfo(
-      ~value="Paze SDK Button Clicked",
-      ~eventName=PAZE_SDK_FLOW,
-      ~paymentMethod="PAZE",
-    )
-    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paze")
-    setShowLoader(_ => true)
-    let metadata =
-      [
-        ("componentName", componentName->JSON.Encode.string),
-        ("wallet", (token.walletName :> string)->JSON.Encode.string),
-        ("clientId", token.clientId->JSON.Encode.string),
-        ("clientName", token.clientName->JSON.Encode.string),
-        ("clientProfileId", token.clientProfileId->JSON.Encode.string),
-        ("sessionId", paymentIntentID->JSON.Encode.string),
-        ("publishableKey", publishableKey->JSON.Encode.string),
-        ("emailAddress", token.email_address->JSON.Encode.string),
-        ("transactionAmount", token.transaction_amount->JSON.Encode.string),
-        ("transactionCurrencyCode", token.transaction_currency_code->JSON.Encode.string),
-      ]->getJsonFromArrayOfJson
+  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
 
-    messageParentWindow([
-      ("fullscreen", true->JSON.Encode.bool),
-      ("param", "pazeWallet"->JSON.Encode.string),
-      ("iframeId", iframeId->JSON.Encode.string),
-      ("metadata", metadata),
-    ])
+  let onClick = _ => {
+    if testMode {
+      Console.warn("Paze button clicked in test mode - interaction disabled")
+    } else {
+      loggerState.setLogInfo(
+        ~value="Paze SDK Button Clicked",
+        ~eventName=PAZE_SDK_FLOW,
+        ~paymentMethod="PAZE",
+      )
+      PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paze")
+      setShowLoader(_ => true)
+      let metadata =
+        [
+          ("componentName", componentName->JSON.Encode.string),
+          ("wallet", (token.walletName :> string)->JSON.Encode.string),
+          ("clientId", token.clientId->JSON.Encode.string),
+          ("clientName", token.clientName->JSON.Encode.string),
+          ("clientProfileId", token.clientProfileId->JSON.Encode.string),
+          ("sessionId", paymentIntentID->JSON.Encode.string),
+          ("publishableKey", publishableKey->JSON.Encode.string),
+          ("emailAddress", token.email_address->JSON.Encode.string),
+          ("transactionAmount", token.transaction_amount->JSON.Encode.string),
+          ("transactionCurrencyCode", token.transaction_currency_code->JSON.Encode.string),
+        ]->getJsonFromArrayOfJson
+
+      messageParentWindow([
+        ("fullscreen", true->JSON.Encode.bool),
+        ("param", "pazeWallet"->JSON.Encode.string),
+        ("iframeId", iframeId->JSON.Encode.string),
+        ("metadata", metadata),
+      ])
+    }
   }
 
   React.useEffect(() => {
