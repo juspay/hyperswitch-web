@@ -240,7 +240,7 @@ let make = (
               ~readOnly,
             )
           | _ =>
-            // Fallback: Process payment with saved method data
+            // TODO - To be replaced with proper error message
             intent(
               ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
               ~confirmParam=confirm.confirmParams,
@@ -257,7 +257,7 @@ let make = (
               ~paymentMethodListValue,
             )
           | _ =>
-            // Fallback: Process payment with saved method data
+            // TODO - To be replaced with proper error message
             intent(
               ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
               ~confirmParam=confirm.confirmParams,
@@ -275,7 +275,7 @@ let make = (
               ~readOnly,
             )
           | _ =>
-            // Fallback: Process payment with saved method data
+            // TODO - To be replaced with proper error message
             intent(
               ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
               ~confirmParam=confirm.confirmParams,

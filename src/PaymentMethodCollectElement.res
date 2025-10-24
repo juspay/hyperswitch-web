@@ -100,10 +100,12 @@ let make = (~integrateError, ~logger) => {
         ~endpoint=ApiEndpoint.getApiEndPoint(),
         ~body=pmdBody,
       )
-      ->then(_res => {
+      ->then(res => {
+        Console.warn2("DEBUGG RES", res)
         resolve()
       })
-      ->catch(_err => {
+      ->catch(err => {
+        Console.error2("DEBUGG ERR", err)
         resolve()
       })
       ->finally(() => {
