@@ -341,7 +341,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             forceSync: None,
             pollId: None,
             payoutId: None,
-            pmSessionId : None,
+            pmSessionId: None,
           },
         )
 

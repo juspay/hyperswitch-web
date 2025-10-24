@@ -299,22 +299,20 @@ let fetchPaymentManagementList = (
   })
 }
 
-let deletePaymentMethodV2 = (
+let deletePaymentMethodV2 = async(
   ~pmClientSecret,
   ~publishableKey,
   ~profileId,
   ~paymentMethodId,
   ~pmSessionId,
-  ~logger as _,
+  ~logger,
   ~customPodUri,
 ) => {
-  open Promise
-  
   let headers = [
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  
+
   let uri = APIUtils.generateApiUrl(
     V2(DeletePaymentMethodV2),
     ~params={
@@ -325,34 +323,30 @@ let deletePaymentMethodV2 = (
       forceSync: None,
       pollId: None,
       payoutId: None,
-      pmSessionId: Some(pmSessionId),  
+      pmSessionId: Some(pmSessionId),
     },
   )
 
-  fetchApi(
-    uri,
-    ~method=#DELETE,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-    ~bodyStr=[("payment_method_id", paymentMethodId->JSON.Encode.string)]
+  let bodyStr = [("payment_method_id", paymentMethodId->JSON.Encode.string)]
     ->getJsonFromArrayOfJson
-    ->JSON.stringify,
+    ->JSON.stringify
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=DELETE_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~method=#DELETE,
+    ~bodyStr,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
   )
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
 }
 
 let updatePaymentMethod = (

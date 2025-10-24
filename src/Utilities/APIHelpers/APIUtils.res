@@ -13,10 +13,9 @@ type apiCallV1 =
   | RetrieveStatus
   | ConfirmPayout
 
-type apiCallV2 = 
+type apiCallV2 =
   | FetchSessionsV2
   | DeletePaymentMethodV2
-
 
 type apiCall =
   | V1(apiCallV1)
@@ -30,7 +29,7 @@ type apiParams = {
   forceSync: option<string>,
   pollId: option<string>,
   payoutId: option<string>,
-  pmSessionId : option<string>,
+  pmSessionId: option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
@@ -52,7 +51,6 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let pollIdVal = pollId->Option.getOr("")
   let payoutIdVal = payoutId->Option.getOr("")
   let pmSessionIdVal = pmSessionId->Option.getOr("")
-
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
