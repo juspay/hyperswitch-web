@@ -336,6 +336,8 @@ let make = (
         | (VenmoMobNumber, _) => PayoutMethodData(VenmoMobNumber)->renderInputTemplate
         // Pix
         | (PixKey, _) => PayoutMethodData(PixKey)->renderInputTemplate
+        // Interac
+        | (InteracEmail, _) => PayoutMethodData(InteracEmail)->renderInputTemplate
 
         // TODO: Add these later
         | (CardBrand, _)

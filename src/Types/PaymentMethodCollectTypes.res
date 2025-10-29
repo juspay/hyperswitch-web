@@ -1,10 +1,12 @@
 type paymentMethod =
   | Card
   | BankTransfer
+  | BankRedirect
   | Wallet
 
 type card = Credit | Debit
 type bankTransfer = ACH | Bacs | Pix | Sepa
+type bankRedirect = Interac
 type wallet = Paypal | Venmo
 type cardExpDate =
   | CardExpMonth
@@ -38,6 +40,8 @@ type paymentMethodDataField =
   | PixBankAccountNumber
   | PixBankName
   | VenmoMobNumber
+  // Bank Redirects
+  | InteracEmail
 
 type userFullNameForAddress =
   | FirstName
@@ -86,12 +90,14 @@ type payoutDynamicFields = {
 type paymentMethodTypeWithDynamicFields =
   | Card((card, payoutDynamicFields))
   | BankTransfer((bankTransfer, payoutDynamicFields))
+  | BankRedirect((bankRedirect, payoutDynamicFields))
   | Wallet((wallet, payoutDynamicFields))
 
 type paymentMethodType =
   | Card(card)
   | BankTransfer(bankTransfer)
   | Wallet(wallet)
+  | BankRedirect(bankRedirect)
 
 type paymentMethodData = (paymentMethodType, array<(dynamicFieldInfo, string)>)
 
@@ -236,6 +242,12 @@ let decodeWallet = (methodType: string): option<wallet> =>
   switch methodType {
   | "paypal" => Some(Paypal)
   | "venmo" => Some(Venmo)
+  | _ => None
+  }
+
+let decodeBankRedirect = (methodType: string): option<bankRedirect> =>
+  switch methodType {
+  | "interac" => Some(Interac)
   | _ => None
   }
 
@@ -435,6 +447,10 @@ let decodePaymentMethodTypeWithRequiredFields = (
                 walletType
                 ->decodeWallet
                 ->Option.map(wallet => Wallet(wallet))
+              | (Some("bank_redirect"), Some(bankRedirectType)) =>
+                bankRedirectType
+                ->decodeBankRedirect
+                ->Option.map(bankRedirect => BankRedirect(bankRedirect))
               | _ => None
               }->Option.map(
                 pmt => {
@@ -467,6 +483,11 @@ let decodePaymentMethodTypeWithRequiredFields = (
           | BankTransfer(transfer) => {
               pmta->Array.push(BankTransfer(transfer))
               pmtr->Array.push(BankTransfer(transfer, payoutDynamicFields))
+              (pmta, pmtr)
+            }
+          | BankRedirect(bankRedirect) => {
+              pmta->Array.push(BankRedirect(bankRedirect))
+              pmtr->Array.push(BankRedirect(bankRedirect, payoutDynamicFields))
               (pmta, pmtr)
             }
           | Wallet(wallet) => {

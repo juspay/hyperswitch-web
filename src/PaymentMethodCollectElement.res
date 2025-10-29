@@ -40,6 +40,13 @@ let make = (~integrateError, ~logger) => {
         if !(availablePMT->Array.includes(pm)) {
           availablePMT->Array.push(pm)
         }
+      | BankRedirect(_) =>
+        if !(availablePM->Array.includes(BankRedirect)) {
+          availablePM->Array.push(BankRedirect)
+        }
+        if !(availablePMT->Array.includes(pm)) {
+          availablePMT->Array.push(pm)
+        }
       | Wallet(_) =>
         if !(availablePM->Array.includes(Wallet)) {
           availablePM->Array.push(Wallet)
