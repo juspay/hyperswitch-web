@@ -274,6 +274,17 @@ let getPaymentMethodDataFieldPlaceholder = (
     locale.formFieldEmailPlaceholder
   | PayoutMethodData(PaypalMobNumber) | PayoutMethodData(VenmoMobNumber) =>
     locale.formFieldPhoneNumberPlaceholder
+  | BillingAddress(AddressCity) => locale.cityLabel
+  | BillingAddress(AddressPincode) => locale.postalCodeLabel
+  | BillingAddress(AddressLine1) => locale.line1Placeholder
+  | BillingAddress(AddressLine2) => locale.line2Placeholder
+  | BillingAddress(AddressState) => locale.stateLabel
+  | BillingAddress(CountryCode) => locale.formFieldCountryCodeLabel
+  | BillingAddress(FullName(_)) => locale.fullNamePlaceholder
+  | BillingAddress(AddressCountry(_)) => locale.countryLabel
+  | BillingAddress(PhoneNumber) => locale.formFieldPhoneNumberPlaceholder
+  | BillingAddress(PhoneCountryCode) => locale.formFieldCountryCodeLabel
+  | BillingAddress(Email) => locale.formFieldEmailPlaceholder
   | PayoutMethodData(CardBrand) => "Misc."
   // TODO: handle billing address locales this
   | _ => ""
@@ -446,7 +457,30 @@ let getPaymentMethodDataErrorString = (
     } else {
       localeString.ibanInvalidText
     }
-  | (BillingAddress(AddressState), _) => "Invalid state"
+  | (BillingAddress(AddressState), _) => localeString.stateEmptyText
+  | (BillingAddress(AddressCity), _) => localeString.cityEmptyText
+  | (BillingAddress(AddressPincode), _) =>
+    if value->String.trim->String.length === 0 {
+      localeString.postalCodeEmptyText
+    } else {
+      localeString.postalCodeInvalidText
+    }
+  | (BillingAddress(PhoneNumber), _) =>
+    localeString.formFieldPhoneNumberLabel->localeString.nameEmptyText
+  | (BillingAddress(PhoneCountryCode), _) =>
+    localeString.formFieldCountryCodeLabel->localeString.nameEmptyText
+  | (BillingAddress(CountryCode), _) => localeString.countryLabel->localeString.nameEmptyText
+  | (BillingAddress(FullName(_)), _) => localeString.fullNameLabel->localeString.nameEmptyText
+  | (BillingAddress(AddressCountry(_)), _) => localeString.countryLabel->localeString.nameEmptyText
+  | (BillingAddress(Email), _) =>
+    if value->String.trim->String.length === 0 {
+      localeString.emailEmptyText
+    } else {
+      localeString.emailInvalidText
+    }
+  | (BillingAddress(AddressLine1), _) => localeString.line1EmptyText
+  | (BillingAddress(AddressLine2), _) => localeString.line2EmptyText
+
   | (PayoutMethodData(PaypalMobNumber), _) | (PayoutMethodData(VenmoMobNumber), _) =>
     localeString.formFieldPhoneNumberLabel->localeString.nameEmptyText
   | _ => ""
@@ -775,7 +809,8 @@ let calculateValidity = (key, value, cardBrand, ~default=None) => {
   | PayoutMethodData(SepaBic) => Some(true)
 
   | PayoutMethodData(InteracEmail)
-  | PayoutMethodData(PaypalMail) =>
+  | PayoutMethodData(PaypalMail)
+  | BillingAddress(Email) =>
     if RegExp.test(%re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/"), value) {
       Some(true)
     } else if value->String.length == 0 {
