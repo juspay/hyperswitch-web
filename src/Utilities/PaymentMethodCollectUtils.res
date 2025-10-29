@@ -86,7 +86,7 @@ let getPaymentMethod = (paymentMethod: paymentMethod): string => {
 let getPaymentMethodForPayoutsConfirm = (paymentMethod: paymentMethod): string => {
   switch paymentMethod {
   | Card => "card"
-  | BankRedirect
+  | BankRedirect => "bank_redirect"
   | BankTransfer => "bank"
   | Wallet => "wallet"
   }
@@ -1004,6 +1004,13 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
   ->ignore
 
   let paymentMethod = paymentMethodType->getPaymentMethodForPmt
+
+  // Add browser info for Interac bank redirect payments
+  switch paymentMethodType {
+  | BankRedirect(Interac) =>
+    body->Array.push(("browser_info", BrowserSpec.getBrowserInfoForInterac()))
+  | _ => ()
+  }
 
   // Flow specific fields
   switch flow {
