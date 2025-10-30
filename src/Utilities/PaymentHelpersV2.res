@@ -278,7 +278,20 @@ let fetchPaymentManagementList = (
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/list-payment-methods`
+  let uri = APIUtils.generateApiUrl(
+    V2(FetchPaymentManagementListV2),
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: Some(pmSessionId),
+      paymentId: None,
+    },
+  )
 
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
@@ -314,7 +327,20 @@ let deletePaymentMethodV2 = (
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}`
+  let uri = APIUtils.generateApiUrl(
+    V2(DeletePaymentMethodV2),
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: Some(pmSessionId),
+      paymentId: None,
+    },
+  )
   fetchApi(
     uri,
     ~method=#DELETE,
@@ -357,7 +383,20 @@ let updatePaymentMethod = (
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
     ("Content-Type", "application/json"),
   ]
-  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
+  let uri = APIUtils.generateApiUrl(
+    V2(UpdatePaymentMethodV2),
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: Some(pmSessionId),
+      paymentId: None,
+    },
+  )
 
   fetchApi(
     uri,
@@ -398,7 +437,20 @@ let savePaymentMethod = (
     ("Content-Type", "application/json"),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/confirm`
+  let uri = APIUtils.generateApiUrl(
+    V2(SavePaymentMethodV2),
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: Some(pmSessionId),
+      paymentId: None,
+    },
+  )
   fetchApi(
     uri,
     ~method=#POST,
@@ -448,7 +500,20 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
         ("x-profile-id", keys.profileId),
       ]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
-      let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/confirm`
+      let uri = APIUtils.generateApiUrl(
+        V2(SavePaymentMethodV2),
+        ~params={
+          customBackendBaseUrl: Some(endpoint),
+          clientSecret: None,
+          publishableKey: None,
+          paymentMethodId: None,
+          forceSync: None,
+          pollId: None,
+          payoutId: None,
+          pmSessionId: Some(pmSessionId),
+          paymentId: None,
+        },
+      )
 
       let browserInfo = BrowserSpec.broswerInfo
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
@@ -492,7 +557,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
 
 let fetchPaymentMethodList = (
   ~clientSecret,
-  ~paymentId,
+  ~paymentId as _paymentId,
   ~publishableKey,
   ~logger as _,
   ~customPodUri,
@@ -510,7 +575,20 @@ let fetchPaymentMethodList = (
   | value if value != "" => [...baseHeaders, ("x-feature", value)]
   | _ => baseHeaders
   }
-  let uri = `${endpoint}/v2/payments/${paymentId}/payment-methods`
+  let uri = APIUtils.generateApiUrl(
+    V2(FetchPaymentMethodListV2),
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: None,
+      paymentId: Some(_paymentId),
+    },
+  )
 
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(resp => {
@@ -534,7 +612,7 @@ let fetchPaymentMethodList = (
 let fetchSessions = (
   ~clientSecret,
   ~publishableKey,
-  ~paymentId,
+  ~paymentId as _paymentId,
   ~wallets=[],
   ~isDelayedSessionToken=false,
   ~logger as _,
@@ -561,7 +639,20 @@ let fetchSessions = (
       ("wallets", wallets->JSON.Encode.array),
       ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
     ]->getJsonFromArrayOfJson
-  let uri = `${endpoint}/v2/payments/${paymentId}/create-external-sdk-tokens`
+  let uri = APIUtils.generateApiUrl(
+    V2(FetchSessionsV2),
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: Some(clientSecret),
+      publishableKey: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: None,
+      paymentId: None,
+    },
+  )
   fetchApi(
     uri,
     ~method=#POST,
