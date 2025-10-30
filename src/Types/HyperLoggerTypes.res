@@ -96,8 +96,9 @@ type eventName =
   | S3_API
   | CARD_SCHEME_SELECTION
   | BLOCKED_BIN_CALL
-  | APPLE_PAY_BRAINTREE_SCRIPT
-  | BRAINTREE_CLIENT_SCRIPT
+  | ENABLED_AUTHN_METHODS_TOKEN_CALL
+  | ELIGIBILITY_CHECK_CALL
+  | AUTHENTICATION_SYNC_CALL
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
