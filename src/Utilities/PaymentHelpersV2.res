@@ -299,46 +299,54 @@ let fetchPaymentManagementList = (
   })
 }
 
-let deletePaymentMethodV2 = (
+let deletePaymentMethodV2 = async(
   ~pmClientSecret,
   ~publishableKey,
   ~profileId,
   ~paymentMethodId,
   ~pmSessionId,
-  ~logger as _,
+  ~logger,
   ~customPodUri,
 ) => {
-  open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}`
-  fetchApi(
-    uri,
-    ~method=#DELETE,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-    ~bodyStr=[("payment_method_id", paymentMethodId->JSON.Encode.string)]
-    ->getJsonFromArrayOfJson
-    ->JSON.stringify,
+
+  let uri = APIUtils.generateApiUrl(
+    V2(DeletePaymentMethodV2),
+    ~params={
+      customBackendBaseUrl: None,
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: Some(pmSessionId),
+    },
   )
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
+
+  let bodyStr = [("payment_method_id", paymentMethodId->JSON.Encode.string)]
+    ->getJsonFromArrayOfJson
+    ->JSON.stringify
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=DELETE_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~method=#DELETE,
+    ~bodyStr,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let updatePaymentMethod = (
