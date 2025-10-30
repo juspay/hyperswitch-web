@@ -755,7 +755,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
-          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=PAYMENT_SESSION_INITIATED)
+          logger.setLogInfo(
+            ~value=Window.hrefWithoutSearch,
+            ~eventName=AUTHENTICATED_SESSION_INITIATED,
+          )
           resolve()
         })
         ->catch(_ => resolve())
