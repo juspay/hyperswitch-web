@@ -235,6 +235,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | Boleto
       | PayPal
       | EFT
+      | SavedMethods
       | Unknown => React.null
       }}
     </ErrorBoundary>

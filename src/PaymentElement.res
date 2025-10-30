@@ -60,6 +60,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (clickToPayConfig, isClickToPayAuthenticateError))
 
   let layoutClass = CardUtils.getLayoutClass(layout)
+  let displayMergedSavedMethods = layoutClass.savedMethodsLayout.displayMergedSavedMethods
 
   let (getVisaCards, closeComponentIfSavedMethodsAreEmpty) = ClickToPayHook.useClickToPay(
     ~areClickToPayUIScriptsLoaded,
@@ -278,6 +279,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, [selectedOption])
   useSubmitPaymentData(submitCallback)
   React.useEffect(() => {
+    if displayMergedSavedMethods {
+      setShowPaymentMethodsScreen(_ => selectedOption != "saved_methods")
+    }
     setSelectedOption(prev =>
       selectedOption !== ""
         ? prev
@@ -402,6 +406,19 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             </RenderIf>
           }}
         </SessionPaymentWrapper>
+      | SavedMethods =>
+        <SavedMethods
+          paymentToken
+          setPaymentToken
+          savedMethods
+          loadSavedCards
+          cvcProps
+          sessions
+          isClickToPayAuthenticateError
+          setIsClickToPayAuthenticateError
+          getVisaCards
+          closeComponentIfSavedMethodsAreEmpty
+        />
       | _ =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
@@ -440,6 +457,32 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (paymentMethodList, customerPaymentMethods))
 
+  let enablePaymentElementShimmer = React.useMemo(() => {
+    (!displaySavedPaymentMethods ||
+    (displayMergedSavedMethods && savedMethods->Array.length == 0)) &&
+    paymentOptions->Array.length == 0 &&
+    walletOptions->Array.length == 0
+  }, (
+    displaySavedPaymentMethods,
+    displayMergedSavedMethods,
+    savedMethods,
+    paymentOptions,
+    walletOptions,
+  ))
+
+  let isShowUseExistingPaymentMethods = React.useMemo(() => {
+    ((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
+      isShowPaymentMethodsDependingOnClickToPay) &&
+    showPaymentMethodsScreen &&
+    !displayMergedSavedMethods
+  }, (
+    displaySavedPaymentMethods,
+    isShowPaymentMethodsDependingOnClickToPay,
+    displayMergedSavedMethods,
+    savedMethods,
+    showPaymentMethodsScreen,
+  ))
+
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div
@@ -450,7 +493,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     {if clickToPayConfig.isReady->Option.isNone {
-      if areClickToPayUIScriptsLoaded {
+      if displayMergedSavedMethods {
+        <PaymentElementShimmer />
+      } else if areClickToPayUIScriptsLoaded {
         <ClickToPayHelpers.SrcLoader />
       } else {
         <PaymentElementShimmer.SavedPaymentCardShimmer />
@@ -458,7 +503,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     } else {
       <RenderIf
         condition={!showPaymentMethodsScreen &&
-        (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay)}>
+        (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay) &&
+        !displayMergedSavedMethods}>
         <SavedMethods
           paymentToken
           setPaymentToken
@@ -475,7 +521,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }}
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
-      showPaymentMethodsScreen &&
+      (showPaymentMethodsScreen || displayMergedSavedMethods) &&
       clickToPayConfig.isReady->Option.isSome}>
       <div
         className="flex flex-col place-items-center"
@@ -508,9 +554,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         }}
       </div>
     </RenderIf>
-    <RenderIf
-      condition={((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
-        isShowPaymentMethodsDependingOnClickToPay) && showPaymentMethodsScreen}>
+    <RenderIf condition=isShowUseExistingPaymentMethods>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
@@ -541,10 +585,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
       </RenderIf>
     | _ =>
-      <RenderIf
-        condition={!displaySavedPaymentMethods &&
-        paymentOptions->Array.length == 0 &&
-        walletOptions->Array.length == 0}>
+      <RenderIf condition=enablePaymentElementShimmer>
         <PaymentElementShimmer />
       </RenderIf>
     }}
