@@ -33,16 +33,16 @@ let make = (~integrateError, ~logger) => {
           availablePM->Array.push(Card)
           availablePMT->Array.push(Card(Debit))
         }
-      | BankTransfer(_) =>
-        if !(availablePM->Array.includes(BankTransfer)) {
-          availablePM->Array.push(BankTransfer)
+      | BankRedirect(_) =>
+        if !(availablePM->Array.includes(BankRedirect)) {
+          availablePM->Array.push(BankRedirect)
         }
         if !(availablePMT->Array.includes(pm)) {
           availablePMT->Array.push(pm)
         }
-      | BankRedirect(_) =>
-        if !(availablePM->Array.includes(BankRedirect)) {
-          availablePM->Array.push(BankRedirect)
+      | BankTransfer(_) =>
+        if !(availablePM->Array.includes(BankTransfer)) {
+          availablePM->Array.push(BankTransfer)
         }
         if !(availablePMT->Array.includes(pm)) {
           availablePMT->Array.push(pm)

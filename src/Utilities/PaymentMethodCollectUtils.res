@@ -68,9 +68,9 @@ let setNestedValue = (dict: t, key: string, value: JSON.t): unit => {
 let getPaymentMethodForPmt = (paymentMethodType: paymentMethodType): paymentMethod => {
   switch paymentMethodType {
   | Card(_) => Card
+  | BankRedirect(_) => BankRedirect
   | BankTransfer(_) => BankTransfer
   | Wallet(_) => Wallet
-  | BankRedirect(_) => BankRedirect
   }
 }
 
@@ -180,7 +180,7 @@ let getPaymentMethodDataFieldKey = (key): string =>
     | PixBankAccountNumber => "pix.account"
     | PixBankName => "pix.bankName"
     | VenmoMobNumber => "venmo.phoneNumber"
-    | InteracEmail => "bank_redirect.interac.email"
+    | InteracEmail => "interac.email"
     }
   | BillingAddress(b) =>
     switch b {
@@ -274,6 +274,7 @@ let getPaymentMethodDataFieldPlaceholder = (
     locale.formFieldEmailPlaceholder
   | PayoutMethodData(PaypalMobNumber) | PayoutMethodData(VenmoMobNumber) =>
     locale.formFieldPhoneNumberPlaceholder
+  | PayoutMethodData(CardBrand) => "Misc."
   | BillingAddress(AddressCity) => locale.cityLabel
   | BillingAddress(AddressPincode) => locale.postalCodeLabel
   | BillingAddress(AddressLine1) => locale.line1Placeholder
@@ -285,9 +286,6 @@ let getPaymentMethodDataFieldPlaceholder = (
   | BillingAddress(PhoneNumber) => locale.formFieldPhoneNumberPlaceholder
   | BillingAddress(PhoneCountryCode) => locale.formFieldCountryCodeLabel
   | BillingAddress(Email) => locale.formFieldEmailPlaceholder
-  | PayoutMethodData(CardBrand) => "Misc."
-  // TODO: handle billing address locales this
-  | _ => ""
   }
 }
 
@@ -317,7 +315,7 @@ let getPaymentMethodDataFieldCharacterPattern = (key): option<Js.Re.t> =>
   | PayoutMethodData(SepaIban) => Some(%re("/^([A-Z0-9]| ){1,34}$/"))
   | BillingAddress(AddressPincode) => Some(%re("/^([0-9A-Z]| ){1,10}$/"))
   | BillingAddress(PhoneNumber) => Some(%re("/^[0-9]{1,12}$/"))
-  | BillingAddress(PhoneCountryCode) => Some(%re("/^[0-9]{1,2}$/"))
+  | BillingAddress(PhoneCountryCode) => Some(%re("/^[0-9]{1,3}$/"))
   | _ => None
   }
 
@@ -518,9 +516,9 @@ let getBankRedirectIcon = (bankRedirect: bankRedirect) =>
 let getPaymentMethodTypeIcon = (paymentMethodType: paymentMethodType) =>
   switch paymentMethodType {
   | Card(_) => Card->getPaymentMethodIcon
+  | BankRedirect(br) => br->getBankRedirectIcon
   | BankTransfer(b) => b->getBankTransferIcon
   | Wallet(w) => w->getWalletIcon
-  | BankRedirect(br) => br->getBankRedirectIcon
   }
 
 // Defaults
@@ -533,9 +531,9 @@ let defaultPm: paymentMethod = Card
 let defaultPmt = (~pm=defaultPm): paymentMethodType => {
   switch pm {
   | Card => Card(Debit)
+  | BankRedirect => BankRedirect(Interac)
   | BankTransfer => BankTransfer(ACH)
   | Wallet => Wallet(Paypal)
-  | BankRedirect => BankRedirect(Interac)
   }
 }
 let defaultCardFields: array<dynamicFieldForPaymentMethodData> = [
@@ -629,13 +627,13 @@ let defaultDynamicPmdFields = (~pmt: paymentMethodType=defaultPmt()): array<
 > => {
   switch pmt {
   | Card(_) => defaultCardFields
+  | BankRedirect(Interac) => defaultInteracFields
   | BankTransfer(ACH) => defaultAchFields
   | BankTransfer(Bacs) => defaultBacsFields
   | BankTransfer(Pix) => defaultPixTransferFields
   | BankTransfer(Sepa) => defaultSepaFields
   | Wallet(Paypal) => defaultPaypalFields
   | Wallet(Venmo) => []
-  | BankRedirect(Interac) => defaultInteracFields
   }
 }
 let defaultPayoutDynamicFields = (~pmt: paymentMethodType=defaultPmt()): payoutDynamicFields => {
@@ -1041,10 +1039,9 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
   let paymentMethod = paymentMethodType->getPaymentMethodForPmt
 
   // Add browser info for Interac bank redirect payments
-  switch paymentMethodType {
-  | BankRedirect(Interac) =>
-    body->Array.push(("browser_info", BrowserSpec.getBrowserInfoForInterac()))
-  | _ => ()
+  let body = switch paymentMethodType {
+  | BankRedirect(Interac) => body->Array.concat(BrowserSpec.broswerInfo())
+  | _ => body
   }
 
   // Flow specific fields
@@ -1074,22 +1071,22 @@ let getPayoutDynamicFields = (
   ->Array.find(pmtr => {
     switch (pmtr, reqPmt) {
     | (Card(_), Card(_))
+    | (BankRedirect(Interac, _), BankRedirect(Interac))
     | (BankTransfer(ACH, _), BankTransfer(ACH))
     | (BankTransfer(Bacs, _), BankTransfer(Bacs))
     | (BankTransfer(Pix, _), BankTransfer(Pix))
     | (BankTransfer(Sepa, _), BankTransfer(Sepa))
     | (Wallet(Paypal, _), Wallet(Paypal))
-    | (Wallet(Venmo, _), Wallet(Venmo))
-    | (BankRedirect(Interac, _), BankRedirect(Interac)) => true
+    | (Wallet(Venmo, _), Wallet(Venmo)) => true
     | _ => false
     }
   })
   ->Option.map(pmt => {
     switch pmt {
     | Card(_, payoutDynamicFields)
+    | BankRedirect(_, payoutDynamicFields)
     | BankTransfer(_, payoutDynamicFields)
-    | Wallet(_, payoutDynamicFields)
-    | BankRedirect(_, payoutDynamicFields) => payoutDynamicFields
+    | Wallet(_, payoutDynamicFields) => payoutDynamicFields
     }
   })
 
