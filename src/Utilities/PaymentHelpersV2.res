@@ -264,39 +264,49 @@ let intentCall = (
   })
 }
 
-let fetchPaymentManagementList = (
+let fetchPaymentManagementList = async (
   ~pmSessionId,
   ~pmClientSecret,
   ~publishableKey,
   ~profileId,
   ~endpoint,
-  ~optLogger as _,
+  ~optLogger,
   ~customPodUri,
 ) => {
-  open Promise
   let headers = [
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/list-payment-methods`
 
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(res => {
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
+  let uri = APIUtils.generateApiUrl(
+    V2(FetchPaymentManagementListV2),
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: Some(pmSessionId),
+    },
+  )
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHODS_CALL,
+    ~logger=optLogger,
+    ~method=#GET,
+    ~headers=headers->Dict.fromArray,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let deletePaymentMethodV2 = (

@@ -172,7 +172,7 @@ let getMessageHandlerV2PMM = (
     ~pmClientSecret,
     ~publishableKey,
     ~profileId,
-    ~optLogger=Some(logger),
+    ~optLogger=logger,
     ~customPodUri,
     ~endpoint,
   )
