@@ -1,3 +1,5 @@
+let emailValidationRegex = %re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/")
+
 type paymentMethod =
   | Card
   | BankRedirect

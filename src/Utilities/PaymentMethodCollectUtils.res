@@ -809,7 +809,7 @@ let calculateValidity = (key, value, cardBrand, ~default=None) => {
   | PayoutMethodData(InteracEmail)
   | PayoutMethodData(PaypalMail)
   | BillingAddress(Email) =>
-    if RegExp.test(%re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/"), value) {
+    if RegExp.test(emailValidationRegex, value) {
       Some(true)
     } else if value->String.length == 0 {
       default
