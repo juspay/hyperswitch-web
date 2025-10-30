@@ -13,6 +13,9 @@ type apiCallV1 =
   | RetrieveStatus
   | ConfirmPayout
   | FetchBlockedBins
+  | FetchEnabledAuthnMethodsToken
+  | FetchEligibilityCheck
+  | FetchAuthenticationSync
 
 type apiCallV2 = FetchSessionsV2
 
@@ -28,6 +31,8 @@ type apiParams = {
   forceSync: option<string>,
   pollId: option<string>,
   payoutId: option<string>,
+  authenticationId?: string,
+  merchantId?: string,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
@@ -47,6 +52,9 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
   let pollIdVal = pollId->Option.getOr("")
   let payoutIdVal = payoutId->Option.getOr("")
+
+  let authenticationIdVal = params.authenticationId->Option.getOr("")
+  let merchantId = params.merchantId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -94,7 +102,10 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | CallAuthLink
     | CallAuthExchange
     | RetrieveStatus
-    | ConfirmPayout =>
+    | ConfirmPayout
+    | FetchEnabledAuthnMethodsToken
+    | FetchEligibilityCheck
+    | FetchAuthenticationSync =>
       list{}
     }
   | V2(_) => list{}
@@ -117,6 +128,10 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | RetrieveStatus => `poll/status/${pollIdVal}`
     | ConfirmPayout => `payouts/${payoutIdVal}/confirm`
     | FetchBlockedBins => "blocklist"
+    | FetchEnabledAuthnMethodsToken =>
+      `authentication/${authenticationIdVal}/enabled_authn_methods_token`
+    | FetchEligibilityCheck => `authentication/${authenticationIdVal}/eligibility-check`
+    | FetchAuthenticationSync => `authentication/${merchantId}/${authenticationIdVal}/sync`
     }
   | V2(inner) =>
     switch inner {

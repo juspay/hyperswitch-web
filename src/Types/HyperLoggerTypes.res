@@ -96,6 +96,9 @@ type eventName =
   | S3_API
   | CARD_SCHEME_SELECTION
   | BLOCKED_BIN_CALL
+  | ENABLED_AUTHN_METHODS_TOKEN_CALL
+  | ELIGIBILITY_CHECK_CALL
+  | AUTHENTICATION_SYNC_CALL
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

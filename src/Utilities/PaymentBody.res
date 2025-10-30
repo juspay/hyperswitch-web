@@ -166,6 +166,22 @@ let visaClickToPayBody = (~encryptedPayload, ~email) => {
   ]
 }
 
+let visaClickToPayAuthenticationBody = (~encryptedPayload) => {
+  let paymentMethodData =
+    [
+      ("encrypted_payload", encryptedPayload->JSON.Encode.string),
+      ("provider", "visa"->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  let paymentMethodDetails =
+    [
+      ("payment_method_type", "ctp"->JSON.Encode.string),
+      ("payment_method_data", paymentMethodData),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [("payment_method_details", paymentMethodDetails)]
+}
+
 let savedPaymentMethodBody = (
   ~paymentToken,
   ~customerId,
