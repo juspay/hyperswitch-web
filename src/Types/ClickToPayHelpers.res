@@ -1062,7 +1062,7 @@ type checkoutConfig = {
 }
 type visaInitConfig = {dpaTransactionOptions: dpaTransactionOptionsVisa}
 type getCardsConfig = {consumerIdentity: consumerIdentity, validationData?: string}
-type errorObj = {reason?: string}
+type errorObj = {reason?: string, message?: string}
 type profile = {maskedCards: array<clickToPayCard>}
 type getCardsResultType = {
   actionCode: actionCode,
