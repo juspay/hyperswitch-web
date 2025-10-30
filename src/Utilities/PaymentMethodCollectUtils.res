@@ -231,9 +231,9 @@ let getPaymentMethodDataFieldLabel = (key, localeString: LocaleStringTypes.local
   // Address details
   | BillingAddress(Email) => localeString.emailLabel
   | BillingAddress(FullName(_)) => localeString.fullNameLabel
-  | BillingAddress(CountryCode) => localeString.countryLabel
+  | BillingAddress(CountryCode) => localeString.formFieldCountryCodeRequiredLabel
   | BillingAddress(PhoneNumber) => localeString.formFieldPhoneNumberLabel
-  | BillingAddress(PhoneCountryCode) => localeString.formFieldCountryCodeLabel
+  | BillingAddress(PhoneCountryCode) => localeString.formFieldCountryCodeRequiredLabel
   | BillingAddress(AddressLine1) => localeString.line1Label
   | BillingAddress(AddressLine2) => localeString.line2Label
   | BillingAddress(AddressCity) => localeString.cityLabel
@@ -280,11 +280,11 @@ let getPaymentMethodDataFieldPlaceholder = (
   | BillingAddress(AddressLine1) => locale.line1Placeholder
   | BillingAddress(AddressLine2) => locale.line2Placeholder
   | BillingAddress(AddressState) => locale.stateLabel
-  | BillingAddress(CountryCode) => locale.formFieldCountryCodeLabel
+  | BillingAddress(CountryCode) => locale.formFieldCountryCodeRequiredLabel
   | BillingAddress(FullName(_)) => locale.fullNamePlaceholder
   | BillingAddress(AddressCountry(_)) => locale.countryLabel
   | BillingAddress(PhoneNumber) => locale.formFieldPhoneNumberPlaceholder
-  | BillingAddress(PhoneCountryCode) => locale.formFieldCountryCodeLabel
+  | BillingAddress(PhoneCountryCode) => locale.formFieldCountryCodeRequiredLabel
   | BillingAddress(Email) => locale.formFieldEmailPlaceholder
   }
 }
@@ -466,8 +466,9 @@ let getPaymentMethodDataErrorString = (
   | (BillingAddress(PhoneNumber), _) =>
     localeString.formFieldPhoneNumberLabel->localeString.nameEmptyText
   | (BillingAddress(PhoneCountryCode), _) =>
-    localeString.formFieldCountryCodeLabel->localeString.nameEmptyText
-  | (BillingAddress(CountryCode), _) => localeString.countryLabel->localeString.nameEmptyText
+    localeString.formFieldCountryCodeRequiredLabel->localeString.nameEmptyText
+  | (BillingAddress(CountryCode), _) =>
+    localeString.formFieldCountryCodeRequiredLabel->localeString.nameEmptyText
   | (BillingAddress(FullName(_)), _) => localeString.fullNameLabel->localeString.nameEmptyText
   | (BillingAddress(AddressCountry(_)), _) => localeString.countryLabel->localeString.nameEmptyText
   | (BillingAddress(Email), _) =>
