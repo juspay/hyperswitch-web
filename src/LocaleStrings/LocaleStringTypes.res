@@ -115,6 +115,7 @@ type localeStrings = {
   formFieldBankAccountNumberLabel: string,
   formFieldPhoneNumberLabel: string,
   formFieldCountryCodeLabel: string,
+  formFieldCountryCodeRequiredLabel: string,
   formFieldBankNameLabel: string,
   formFieldBankCityLabel: string,
   formFieldCardHoldernamePlaceholder: string,
