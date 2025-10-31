@@ -1865,41 +1865,6 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
   )
 }
 
-let retrievePaymentMethod = async (
-  ~ephemeralKey,
-  ~paymentMethodId,
-  ~logger,
-  ~customPodUri,
-) => {
-  let uri = APIUtils.generateApiUrl(
-    V1(RetrievePaymentMethod),
-    ~params={
-      customBackendBaseUrl: None,
-      clientSecret: None,
-      publishableKey: Some(ephemeralKey),
-      paymentMethodId: Some(paymentMethodId),
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-    },
-  )
-
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=RETRIEVE_PAYMENT_METHOD_CALL,
-    ~logger,
-    ~method=#GET,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(ephemeralKey),
-    ~onSuccess,
-    ~onFailure,
-  )
-}
-
 let calculateTax = async (
   ~apiKey,
   ~clientSecret,
