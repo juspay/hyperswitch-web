@@ -250,7 +250,9 @@ let make = (
           {payoutDynamicFields.address
           ->Option.map(addressFields => {
             let fieldsToCollect =
-              addressFields->Array.filter(addressField => addressField.value == None)
+              addressFields->Array.filter(addressField =>
+                addressField.value == None && addressField.fieldType != FullName(LastName)
+              )
             if fieldsToCollect->Array.length > 0 {
               let formFields = addressFields->renderAddressForm
               <>

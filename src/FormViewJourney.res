@@ -248,6 +248,12 @@ let make = (
 
     /// SCREEN #3 - ADDRESS COLLECION (OPTIONAL)
     | AddressForm(addressFields) => {
+        let incompleteAddressFieldsCount =
+          addressFields
+          ->Array.filter(addressField =>
+            addressField.value == None && addressField.fieldType != FullName(LastName)
+          )
+          ->Array.length
         let onSaveHandler = () => {
           let (fieldValidity, isAddressValid) = addressFields->Array.reduce((Dict.make(), true), (
             (fieldValidity, isAddressValid),
@@ -269,10 +275,14 @@ let make = (
         <>
           {renderHeader(localeString.billingDetailsText, true)}
           <div className=contentSubHeaderClasses>
-            {React.string(localeString.formSubheaderBillingDetailsText)}
+            {incompleteAddressFieldsCount == 0
+              ? React.string(localeString.formNoFieldsToEnterText)
+              : React.string(localeString.formSubheaderBillingDetailsText)}
           </div>
           <div className="mt-2.5">
-            {addressFields->renderAddressForm->React.array}
+            {incompleteAddressFieldsCount == 0
+              ? React.null
+              : addressFields->renderAddressForm->React.array}
             {renderSaveButton(_ => onSaveHandler())}
           </div>
         </>

@@ -425,6 +425,12 @@ let getPaymentMethodDataErrorString = (
   | (PayoutMethodData(CardExpDate(_)), false) => localeString.inCompleteExpiryErrorText
   | (PayoutMethodData(CardExpDate(_)), true) => localeString.pastExpiryErrorText
   | (PayoutMethodData(ACHRoutingNumber), false) => localeString.formFieldInvalidRoutingNumber
+  | (PayoutMethodData(ACHAccountNumber), _) =>
+    if value->String.trim->String.length === 0 {
+      localeString.accountNumberText->localeString.nameEmptyText
+    } else {
+      localeString.accountNumberInvalidText
+    }
   | (PayoutMethodData(BacsSortCode), _) =>
     if value->String.trim->String.length === 0 {
       localeString.sortCodeText->localeString.nameEmptyText
@@ -922,7 +928,7 @@ let processAddressFields = (
         (dataArr, keys)
       }
     | FullName(LastName) => {
-        let key = BillingAddress(FullName(FirstName))
+        let key = BillingAddress(FullName(LastName))
         let info: dynamicFieldInfo = BillingAddress(dynamicFieldInfo)
         let fieldKey = key->getPaymentMethodDataFieldKey
         paymentMethodDataDict

@@ -110,6 +110,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formSubmitText: `Soumettre`,
   formSubmittingText: `En cours de soumission`,
   formSubheaderBillingDetailsText: `Entrez votre adresse de facturation`,
+  formNoFieldsToEnterText: `Aucun champ à saisir. Passez à l'étape suivante.`,
   formSubheaderCardText: `Les détails de votre carte`,
   formSubheaderAccountText: pmLabel => `Votre ${pmLabel}`,
   formHeaderReviewText: `Réviser`,
