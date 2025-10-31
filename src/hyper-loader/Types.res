@@ -77,6 +77,7 @@ type hyperInstance = {
   paymentMethodsManagementElements: JSON.t => element,
   completeUpdateIntent: string => promise<JSON.t>,
   initiateUpdateIntent: unit => promise<JSON.t>,
+  preloadSDKWithParams: JSON.t => unit,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -178,6 +179,10 @@ let defaultInitPaymentSession: initPaymentSession = {
   getPaymentManagementMethods: defaultGetPaymentManagementMethods,
 }
 
+let defaultPreloadSDKWithParams = _params => {
+  ()
+}
+
 let defaultHyperInstance = {
   confirmOneClickPayment: oneClickConfirmPaymentFn,
   confirmPayment: confirmPaymentFn,
@@ -190,6 +195,7 @@ let defaultHyperInstance = {
   paymentMethodsManagementElements: _ev => defaultElement,
   completeUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   initiateUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
+  preloadSDKWithParams: defaultPreloadSDKWithParams,
 }
 
 type eventType =

@@ -22,6 +22,7 @@ let make = (
   ~analyticsMetadata,
   ~customBackendUrl,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~testMode=false,
 ) => {
   try {
     let iframeRef = []
@@ -73,7 +74,9 @@ let make = (
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&testMode=${testMode
+            ? "true"
+            : "false"}"
               allow="*"
               name="orca-payment"
               style="outline: none;"
@@ -414,6 +417,7 @@ let make = (
           ("analyticsMetadata", analyticsMetadata),
           ("launchTime", launchTime->JSON.Encode.float),
           ("customBackendUrl", customBackendUrl->JSON.Encode.string),
+          ("testMode", testMode->JSON.Encode.bool),
           (
             "isPaymentButtonHandlerProvided",
             LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
@@ -1299,7 +1303,9 @@ let make = (
                       ->catch(
                         err => {
                           logger.setLogError(
-                            ~value=`SAMSUNG PAY not ready ${err->formatException->JSON.stringify}`,
+                            ~value=`SAMSUNG PAY not ready ${err
+                              ->formatException
+                              ->JSON.stringify}`,
                             ~eventName=SAMSUNG_PAY,
                             ~paymentMethod="SAMSUNG_PAY",
                             ~logType=ERROR,

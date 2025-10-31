@@ -25,6 +25,7 @@ let loadPaypalSDK = (
   ~sdkHandleIsThere: bool,
   ~sessions: PaymentType.loadType,
   ~clientSecret,
+  ~isTestMode=false,
 ) => {
   open Promise
 
@@ -52,63 +53,68 @@ let loadPaypalSDK = (
     style: buttonStyle,
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: () => {
-      PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
-      makeOneClickHandlerPromise(sdkHandleIsThere)->then(result => {
-        let result = result->JSON.Decode.bool->Option.getOr(false)
-        if result {
-          messageParentWindow([
-            ("fullscreen", true->JSON.Encode.bool),
-            ("param", "paymentloader"->JSON.Encode.string),
-            ("iframeId", iframeId->JSON.Encode.string),
-          ])
-          let (connectors, _) =
-            paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
-          let body = PaymentBody.paypalSdkBody(~token="", ~connectors)
-          let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
-            ~isGuestCustomer,
-            ~paymentType=paymentMethodListValue.payment_type,
-            ~body,
-          )
-          make((resolve, _) => {
-            if paypalNextAction == "post_session_tokens" {
-              postSessionTokens(
-                ~bodyArr=modifiedPaymentBody,
-                ~confirmParam={
-                  return_url: options.wallets.walletReturnUrl,
-                  publishableKey,
-                },
-                ~handleUserError=true,
-                ~intentCallback=val => {
-                  val
-                  ->getDictFromJson
-                  ->getDictFromDict("nextActionData")
-                  ->getString("order_id", "")
-                  ->resolve
-                },
-                ~manualRetry=isManualRetryEnabled,
-              )
-            } else {
-              confirm(
-                ~bodyArr=modifiedPaymentBody,
-                ~confirmParam={
-                  return_url: options.wallets.walletReturnUrl,
-                  publishableKey,
-                },
-                ~handleUserError=true,
-                ~intentCallback=val => val->getDictFromJson->getString("orderId", "")->resolve,
-                ~manualRetry=isManualRetryEnabled,
-              )
-            }
-          })
-        } else {
-          loggerState.setLogInfo(
-            ~value="Paypal SDK oneClickDoSubmit - false",
-            ~eventName=PAYPAL_SDK_FLOW,
-            ~paymentMethod="PAYPAL",
-          )
-          resolve("")
-        }
-      })
+      if isTestMode {
+        Console.warn("Paypal SDK button clicked in test mode - interaction disabled")
+        resolve("")
+      } else {
+        PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
+        makeOneClickHandlerPromise(sdkHandleIsThere)->then(result => {
+          let result = result->JSON.Decode.bool->Option.getOr(false)
+          if result {
+            messageParentWindow([
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", "paymentloader"->JSON.Encode.string),
+              ("iframeId", iframeId->JSON.Encode.string),
+            ])
+            let (connectors, _) =
+              paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
+            let body = PaymentBody.paypalSdkBody(~token="", ~connectors)
+            let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
+              ~isGuestCustomer,
+              ~paymentType=paymentMethodListValue.payment_type,
+              ~body,
+            )
+            make((resolve, _) => {
+              if paypalNextAction == "post_session_tokens" {
+                postSessionTokens(
+                  ~bodyArr=modifiedPaymentBody,
+                  ~confirmParam={
+                    return_url: options.wallets.walletReturnUrl,
+                    publishableKey,
+                  },
+                  ~handleUserError=true,
+                  ~intentCallback=val => {
+                    val
+                    ->getDictFromJson
+                    ->getDictFromDict("nextActionData")
+                    ->getString("order_id", "")
+                    ->resolve
+                  },
+                  ~manualRetry=isManualRetryEnabled,
+                )
+              } else {
+                confirm(
+                  ~bodyArr=modifiedPaymentBody,
+                  ~confirmParam={
+                    return_url: options.wallets.walletReturnUrl,
+                    publishableKey,
+                  },
+                  ~handleUserError=true,
+                  ~intentCallback=val => val->getDictFromJson->getString("orderId", "")->resolve,
+                  ~manualRetry=isManualRetryEnabled,
+                )
+              }
+            })
+          } else {
+            loggerState.setLogInfo(
+              ~value="Paypal SDK oneClickDoSubmit - false",
+              ~eventName=PAYPAL_SDK_FLOW,
+              ~paymentMethod="PAYPAL",
+            )
+            resolve("")
+          }
+        })
+      }
     },
     onShippingAddressChange: data => {
       let isTaxCalculationEnabled = paymentMethodListValue.is_tax_calculation_enabled

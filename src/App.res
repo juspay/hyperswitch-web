@@ -5,6 +5,7 @@ let make = () => {
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
   let setLoggerState = Recoil.useSetRecoilState(RecoilAtoms.loggerAtom)
+  let setTestMode = Recoil.useSetRecoilState(RecoilAtoms.testModeAtom)
 
   let paymentMode = getQueryParamsDictforKey(url.search, "componentName")
   let paymentType = paymentMode->CardThemeType.getPaymentMode
@@ -39,6 +40,12 @@ let make = () => {
     let handleMetaDataPostMessage = (ev: Window.event) => {
       let json = ev.data->Utils.safeParse
       let dict = json->Utils.getDictFromJson
+
+      // Handle testMode from iframe postMessage
+      if dict->Dict.get("testMode")->Option.isSome {
+        let testMode = dict->Utils.getBool("testMode", false)
+        setTestMode(_ => testMode)
+      }
 
       if dict->Dict.get("metadata")->Option.isSome {
         let metadata = dict->Utils.getJsonObjectFromDict("metadata")
