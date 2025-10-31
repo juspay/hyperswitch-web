@@ -185,7 +185,8 @@ let getPaymentMethodDataFieldKey = (key): string =>
   | BillingAddress(b) =>
     switch b {
     | Email => "billing.address.email"
-    | FullName(_) => "billing.address.fullName"
+    | FullName(FirstName) => "billing.address.firstName"
+    | FullName(LastName) => "billing.address.lastName"
     | CountryCode => "billing.address.countryCode"
     | PhoneNumber => "billing.address.phoneNumber"
     | PhoneCountryCode => "billing.address.phoneCountryCode"
@@ -928,33 +929,43 @@ let processAddressFields = (
         (dataArr, keys)
       }
     | FullName(LastName) => {
-        let key = BillingAddress(FullName(LastName))
+        let lastNameKey = BillingAddress(FullName(LastName))
         let info: dynamicFieldInfo = BillingAddress(dynamicFieldInfo)
-        let fieldKey = key->getPaymentMethodDataFieldKey
-        paymentMethodDataDict
-        ->Dict.get(fieldKey)
-        ->Option.map(value => {
-          let nameSplits = value->String.split(" ")
-          let lastName =
-            nameSplits
-            ->Array.slice(~start=1, ~end=nameSplits->Array.length)
-            ->Array.join(" ")
-          if lastName->String.length > 0 {
-            dataArr->Array.push((info, lastName))
-            // Use first name as last name ?
-          } else {
-            nameSplits
-            ->Array.get(0)
-            ->Option.map(
-              firstName => {
-                dataArr->Array.push((info, firstName))
-              },
-            )
-            ->ignore
+        let lastNameFieldKey = lastNameKey->getPaymentMethodDataFieldKey
+
+        // First try to get lastName from direct lastName field
+        let lastNameValue = paymentMethodDataDict->Dict.get(lastNameFieldKey)
+
+        switch lastNameValue {
+        | Some(lastName) if lastName->String.trim->String.length > 0 => {
+            dataArr->Array.push((info, lastName->String.trim))
+            keys->Array.push(lastNameFieldKey)
           }
-        })
-        ->ignore
-        keys->Array.push(fieldKey)
+        | _ => {
+            // Fallback: split firstName field if lastName is empty
+            let firstNameKey = BillingAddress(FullName(FirstName))
+            let firstNameFieldKey = firstNameKey->getPaymentMethodDataFieldKey
+            paymentMethodDataDict
+            ->Dict.get(firstNameFieldKey)
+            ->Option.map(value => {
+              let nameSplits = value->String.split(" ")
+              let lastName =
+                nameSplits
+                ->Array.slice(~start=1, ~end=nameSplits->Array.length)
+                ->Array.join(" ")
+              if lastName->String.length > 0 {
+                dataArr->Array.push((info, lastName))
+              } else {
+                nameSplits
+                ->Array.get(0)
+                ->Option.map(firstName => dataArr->Array.push((info, firstName)))
+                ->ignore
+              }
+            })
+            ->ignore
+            keys->Array.push(firstNameFieldKey)
+          }
+        }
         (dataArr, keys)
       }
     | _ => {
