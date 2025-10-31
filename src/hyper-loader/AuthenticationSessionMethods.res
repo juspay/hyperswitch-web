@@ -312,7 +312,9 @@ let initClickToPaySession = async (
               srcInitiatorId: GlobalVars.isProd
                 ? "78fbc211-73e1-4c3a-bc5c-60a7921afb97"
                 : "544ef81a-dae0-4f26-9511-bfbdba3d62b5",
-              srciDpaId: token.dpaId,
+              srciDpaId: GlobalVars.isProd
+                ? "d693c074-8945-4ec7-aa7d-a0a85e636a62"
+                : "b6e06cc6-3018-4c4c-bbf5-9fb232615090",
               dpaTransactionOptions: {
                 dpaLocale: token.locale,
               },
@@ -334,7 +336,7 @@ let initClickToPaySession = async (
             let visaDirectInitData = {
               srciTransactionId: clientSecret,
               srcInitiatorId: token.dpaId,
-              srciDpaId: "",
+              srciDpaId: token.dpaName,
             }
 
             try {
