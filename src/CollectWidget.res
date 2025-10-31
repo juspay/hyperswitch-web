@@ -42,7 +42,21 @@ let make = (
       getDefaultsAndValidity(payoutDynamicFields, supportedCardBrands)
     })
     ->Option.map(((values, validity)) => {
-      setFormData(_ => values)
+      let last_name =
+        values
+        ->Dict.get(BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey)
+        ->Option.getOr("")
+      let first_name =
+        values
+        ->Dict.get(BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey)
+        ->Option.getOr("")
+      let copy = values->Dict.copy
+      if last_name->String.length == 0 {
+        copy->Dict.set(BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey, first_name)
+      } else if first_name->String.length == 0 {
+        copy->Dict.set(BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey, last_name)
+      }
+      setFormData(_ => copy)
       setValidityDict(_ => validity)
     })
     ->ignore
@@ -160,6 +174,22 @@ let make = (
           | None => updatedValue->CardUtils.getCardBrand
           }
           setFormData(PayoutMethodData(CardBrand)->getPaymentMethodDataFieldKey, newCardBrand)
+        }
+      | BillingAddress(FullName(FirstName)) => {
+          let firstNameKey = BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey
+          let lastNameKey = BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey
+          let nameSplits = value->String.trim->String.split(" ")
+          let firstName = nameSplits->Array.get(0)->Option.getOr("")
+          let lastName =
+            nameSplits
+            ->Array.slice(~start=1, ~end=nameSplits->Array.length)
+            ->Array.join(" ")
+          setFormData(firstNameKey, firstName)
+          if lastName->String.length > 0 {
+            setFormData(lastNameKey, lastName)
+          } else {
+            setFormData(lastNameKey, firstName)
+          }
         }
       | _ => ()
       }
