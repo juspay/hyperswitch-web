@@ -116,7 +116,7 @@ let make = (
   React.useEffect(() => {
     CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
     None
-  }, isCVCValid)
+  }, (isCVCValid))
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
