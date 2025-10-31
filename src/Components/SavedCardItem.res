@@ -113,6 +113,11 @@ let make = (
     None
   }, (isActive, cardBrand, paymentItem.paymentMethod, paymentMethodType))
 
+  React.useEffect(() => {
+    CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
+    None
+  }, [isCVCValid])
+
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
   let currentDate = Date.make()
