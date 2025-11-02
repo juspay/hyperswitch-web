@@ -106,6 +106,8 @@ let make = () => {
           )->Types.getHyperComponentNameFromStr
         let merchantHostname = getQueryParamsDictforKey(url.search, "merchantHostname")
         let customPodUri = getQueryParamsDictforKey(url.search, "customPodUri")
+        let isPreLoadedDataAvailable =
+          getQueryParamsDictforKey(url.search, "isPreLoadedDataAvailable") === "true"
 
         <PreMountLoader
           publishableKey
@@ -120,6 +122,7 @@ let make = () => {
           hyperComponentName
           merchantHostname
           customPodUri
+          isPreLoadedDataAvailable
         />
       }
     | "achBankTransfer"

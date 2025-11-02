@@ -28,6 +28,7 @@ let make = (
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
+    let preLoadedParams = localOptions->Dict.get("preLoadedParams")
 
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
     let redirect = ref("if_required")
@@ -73,7 +74,9 @@ let make = (
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isPreLoadedDataAvailable=${preLoadedParams->Option.isSome
+            ? "true"
+            : "false"}"
               allow="*"
               name="orca-payment"
               style="outline: none;"
@@ -110,6 +113,9 @@ let make = (
         let json = ev.data->anyTypeToJson
         let dict = json->getDictFromJson
         if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
+          let msg =
+            [("preLoadedParams", preLoadedParams->Option.getOr(JSON.Encode.null))]->Dict.fromArray
+          preMountLoaderIframeDiv->Window.iframePostMessage(msg)
           resolve(true->JSON.Encode.bool)
         } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
           unMountPreMountLoaderIframe()

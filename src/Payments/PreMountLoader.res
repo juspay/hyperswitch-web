@@ -52,51 +52,86 @@ let getMessageHandlerV1Elements = (
   ~customPodUri,
   ~endpoint,
   ~merchantHostname,
+  ~isPreLoadedDataAvailable,
 ) => {
-  let paymentMethodsPromise = PaymentHelpers.fetchPaymentMethodList(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+  let makeResolvedPromise = data => Promise.resolve(data)
+  let fakePromise = makeResolvedPromise(JSON.Encode.null)
 
-  let customerPaymentMethodsPromise = PaymentHelpers.fetchCustomerPaymentMethodList(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+  let paymentMethodsPromise = isPreLoadedDataAvailable
+    ? fakePromise
+    : PaymentHelpers.fetchPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      )
 
-  let sessionTokensPromise = PaymentHelpers.fetchSessions(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-    ~merchantHostname,
-  )
+  let customerPaymentMethodsPromise = isPreLoadedDataAvailable
+    ? fakePromise
+    : PaymentHelpers.fetchCustomerPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      )
 
-  let blockedBinsPromise = PaymentHelpers.fetchBlockedBins(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+  let sessionTokensPromise = isPreLoadedDataAvailable
+    ? fakePromise
+    : PaymentHelpers.fetchSessions(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~merchantHostname,
+      )
+
+  let blockedBinsPromise = isPreLoadedDataAvailable
+    ? fakePromise
+    : PaymentHelpers.fetchBlockedBins(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      )
+
+  let preLoadedParams = ref(JSON.Encode.null)
+
+  let getPreLoadedParamsPromise = val =>
+    preLoadedParams.contents
+    ->Utils.getDictFromJson
+    ->Dict.get(val)
+    ->Option.getOr(JSON.Encode.null)
+    ->makeResolvedPromise
 
   ev => {
     open Utils
     let dict = ev.data->safeParse->getDictFromJson
-    if dict->isKeyPresentInDict("sendPaymentMethodsResponse") {
-      paymentMethodsPromise->sendPromiseData("payment_methods")
+    if !isPreLoadedDataAvailable {
+      if dict->isKeyPresentInDict("sendPaymentMethodsResponse") {
+        paymentMethodsPromise->sendPromiseData("payment_methods")
+      } else if dict->isKeyPresentInDict("sendCustomerPaymentMethodsResponse") {
+        customerPaymentMethodsPromise->sendPromiseData("customer_payment_methods")
+      } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
+        sessionTokensPromise->sendPromiseData("session_tokens")
+      } else if dict->isKeyPresentInDict("sendBlockedBinsResponse") {
+        blockedBinsPromise->sendPromiseData("blocked_bins")
+      }
+    } else if dict->isKeyPresentInDict("preLoadedParams") {
+      preLoadedParams := dict->Dict.get("preLoadedParams")->Option.getOr(JSON.Encode.null)
+    } else if dict->isKeyPresentInDict("sendPaymentMethodsResponse") {
+      getPreLoadedParamsPromise("payment_method_list")->sendPromiseData("payment_methods")
     } else if dict->isKeyPresentInDict("sendCustomerPaymentMethodsResponse") {
-      customerPaymentMethodsPromise->sendPromiseData("customer_payment_methods")
+      getPreLoadedParamsPromise("customer_methods_list")->sendPromiseData(
+        "customer_payment_methods",
+      )
     } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
-      sessionTokensPromise->sendPromiseData("session_tokens")
+      getPreLoadedParamsPromise("session_tokens")->sendPromiseData("session_tokens")
     } else if dict->isKeyPresentInDict("sendBlockedBinsResponse") {
-      blockedBinsPromise->sendPromiseData("blocked_bins")
+      getPreLoadedParamsPromise("blocked_bins")->sendPromiseData("blocked_bins")
     }
   }
 }
@@ -109,6 +144,7 @@ let getMessageHandlerV2Elements = (
   ~customPodUri,
   ~endpoint,
   ~profileId,
+  ~isPreLoadedDataAvailable as _,
 ) => {
   let paymentMethodsListPromise = PaymentHelpersV2.fetchPaymentMethodList(
     ~clientSecret,
@@ -197,6 +233,7 @@ module PreMountLoaderForElements = {
     ~merchantHostname,
     ~customPodUri,
     ~profileId,
+    ~isPreLoadedDataAvailable,
   ) => {
     useMessageHandler(() =>
       switch GlobalVars.sdkVersion {
@@ -208,6 +245,7 @@ module PreMountLoaderForElements = {
           ~customPodUri,
           ~endpoint,
           ~merchantHostname,
+          ~isPreLoadedDataAvailable,
         )
       | V2 =>
         getMessageHandlerV2Elements(
@@ -218,6 +256,7 @@ module PreMountLoaderForElements = {
           ~customPodUri,
           ~endpoint,
           ~profileId,
+          ~isPreLoadedDataAvailable,
         )
       }
     )
@@ -237,6 +276,7 @@ module PreMountLoaderForPMMElements = {
     ~pmClientSecret,
     ~publishableKey,
     ~profileId,
+    ~isPreLoadedDataAvailable as _,
   ) => {
     useMessageHandler(() =>
       switch GlobalVars.sdkVersion {
@@ -272,6 +312,7 @@ let make = (
   ~hyperComponentName: Types.hyperComponentName,
   ~merchantHostname,
   ~customPodUri,
+  ~isPreLoadedDataAvailable=false,
 ) => {
   let logger = HyperLogger.make(
     ~sessionId,
@@ -283,11 +324,27 @@ let make = (
   switch hyperComponentName {
   | Elements =>
     <PreMountLoaderForElements
-      logger publishableKey clientSecret endpoint merchantHostname customPodUri profileId paymentId
+      logger
+      publishableKey
+      clientSecret
+      endpoint
+      merchantHostname
+      customPodUri
+      profileId
+      paymentId
+      isPreLoadedDataAvailable
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements
-      logger endpoint ephemeralKey customPodUri pmSessionId pmClientSecret publishableKey profileId
+      logger
+      endpoint
+      ephemeralKey
+      customPodUri
+      pmSessionId
+      pmClientSecret
+      publishableKey
+      profileId
+      isPreLoadedDataAvailable
     />
   }
 }
