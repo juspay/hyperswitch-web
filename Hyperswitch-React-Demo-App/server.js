@@ -1,6 +1,5 @@
 const fetch = require("node-fetch");
 const express = require("express");
-const { resolve } = require("path");
 const dotenv = require("dotenv");
 const rateLimit = require("express-rate-limit");
 
@@ -59,7 +58,7 @@ const paymentData = {
   capture_method: "automatic",
   authentication_type: "three_ds",
   customer_id: "hyperswitch_sdk_demo_id",
-  email: "hyperswitch_sdk_demo_id@gmail.com",
+  email: "abhishek.c@juspay.in",
   request_external_three_ds_authentication: false,
   description: "Hello this is description",
   shipping: {
@@ -145,6 +144,74 @@ app.get("/create-intent", limiter, async (req, res) => {
   }
 });
 
+app.get("/create-subscription-intent", limiter, async (req, res) => {
+  try {
+    const subscriptionRequest = {
+      item_price_id: "cbdemo_enterprise-suite-monthly",
+      plan_id: "cbdemo_enterprise-suite",
+      customer_id: "hyperswitch_sdk_demo_id",
+      amount: 14100,
+      currency: "USD",
+      payment_details: {
+        authentication_type: "no_three_ds",
+        // setup_future_usage: "off_session",
+        capture_method: "automatic",
+        return_url: "https://google.com",
+      },
+      shipping: {
+        address: {
+          line1: "1467",
+          line2: "Harrison Street",
+          line3: "Harrison Street",
+          city: "San Fransico",
+          state: "California",
+          zip: "94122",
+          country: "US",
+          first_name: "joseph",
+          last_name: "Doe",
+        },
+        phone: {
+          number: "8056594427",
+          country_code: "+91",
+        },
+      },
+      billing: {
+        address: {
+          line1: "1467",
+          line2: "Harrison Street",
+          line3: "Harrison Street",
+          city: "San Fransico",
+          state: "California",
+          zip: "94122",
+          country: "US",
+          first_name: "joseph",
+          last_name: "Doe",
+        },
+        phone: {
+          number: "8056594427",
+          country_code: "+91",
+        },
+      },
+    };
+
+    const subscriptionIntentData = await createSubscriptionIntent(
+      subscriptionRequest
+    );
+
+    const response = {
+      clientSecret: subscriptionIntentData.payment.client_secret,
+      subscriptionSecret: subscriptionIntentData.client_secret,
+      paymentId: subscriptionIntentData.payment.payment_id,
+    };
+
+    res.send(response);
+  } catch (err) {
+    res.status(400).send({
+      error: { message: err.message },
+    });
+  }
+});
+
 async function createPaymentIntent(request) {
   const baseUrl =
     process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
@@ -185,6 +252,34 @@ async function createPaymentIntent(request) {
   }
 
   return paymentIntent;
+}
+
+async function createSubscriptionIntent(request) {
+  const baseUrl =
+    process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
+    process.env.HYPERSWITCH_SERVER_URL;
+
+  const apiEndpoint = `${baseUrl}/subscriptions/create`;
+  const headers = {
+    "Content-Type": "application/json",
+    "api-key": process.env.HYPERSWITCH_SECRET_KEY,
+    "X-Profile-Id": process.env.PROFILE_ID,
+  };
+
+  const apiResponse = await fetch(apiEndpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(request),
+  });
+
+  const intent = await apiResponse.json();
+
+  if (intent.error) {
+    console.error("Payment Intent Error:", intent.error);
+    throw new Error(intent?.error?.message ?? "Something went wrong.");
+  }
+
+  return intent;
 }
 
 app.listen(PORT, () => {

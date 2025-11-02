@@ -323,14 +323,18 @@ let rec intentCall = (
 
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
   let isPostSessionTokens = uri->String.includes("/post_session_tokens")
+  let isConfirmSubscription =
+    uri->String.includes("/subscriptions") && uri->String.includes("/confirm")
   let (eventName: HyperLoggerTypes.eventName, initEventName: HyperLoggerTypes.eventName) = switch (
     isConfirm,
     isCompleteAuthorize,
     isPostSessionTokens,
+    isConfirmSubscription,
   ) {
-  | (true, _, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
-  | (_, true, _) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
-  | (_, _, true) => (POST_SESSION_TOKENS_CALL, POST_SESSION_TOKENS_CALL_INIT)
+  | (true, _, _, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
+  | (_, true, _, _) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
+  | (_, _, true, _) => (POST_SESSION_TOKENS_CALL, POST_SESSION_TOKENS_CALL_INIT)
+  | (_, _, _, true) => (CONFIRM_SUBSCRIPTION_CALL, CONFIRM_SUBSCRIPTION_INIT_CALL)
   | _ => (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
   }
   logApi(
@@ -499,7 +503,11 @@ let rec intentCall = (
               ~eventName,
               ~isPaymentSession,
             )
-            let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
+            let paymentIntent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
+            let subscriptionIntent = PaymentConfirmTypes.itemToObjMapperForSubscriptions(
+              data->getDictFromJson,
+            )
+            let intent = isConfirmSubscription ? subscriptionIntent.payment : paymentIntent
             let paymentMethod = switch paymentType {
             | Card => "CARD"
             | _ => intent.payment_method_type
@@ -1167,6 +1175,9 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let isSubscriptionsFlow = GlobalVars.isSubscriptionsFlow.contents
+  let subscriptionSecret = keys.subscriptionSecret->Option.getOr("")
+
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -1177,47 +1188,67 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~manualRetry=false,
     ~isExternalVaultFlow=false,
   ) => {
+    let originalBodyArr = bodyArr
+    let bodyArr = isSubscriptionsFlow
+      ? [("payment_details", bodyArr->Utils.getJsonFromArrayOfJson)]
+      : bodyArr
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
-      let headers = switch GlobalVars.sdkVersion {
-      | V1 => [
-          ("api-key", confirmParam.publishableKey),
-          ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
-        ]
-      | V2 => {
-          let authorizationHeader = (
-            "authorization",
-            `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
-          )
-          [
-            authorizationHeader,
-            ("X-profile-id", keys.profileId),
-            ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
+      let headers = if !isSubscriptionsFlow {
+        switch GlobalVars.sdkVersion {
+        | V1 => [
+            ("api-key", confirmParam.publishableKey),
+            ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
           ]
+        | V2 => {
+            let authorizationHeader = (
+              "authorization",
+              `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
+            )
+            [
+              authorizationHeader,
+              ("X-profile-id", keys.profileId),
+              ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
+            ]
+          }
         }
+      } else {
+        [("api-key", confirmParam.publishableKey), ("X-Profile-Id", keys.profileId)]
       }
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
-      let body = switch GlobalVars.sdkVersion {
-      | V1 =>
-        [("client_secret", clientSecret->JSON.Encode.string)]->Array.concatMany([
+      let body = if isSubscriptionsFlow {
+        [("client_secret", subscriptionSecret->JSON.Encode.string)]->Array.concatMany([
           returnUrlArr,
           manual_retry,
         ])
-      | V2 => []
+      } else {
+        switch GlobalVars.sdkVersion {
+        | V1 =>
+          [("client_secret", clientSecret->JSON.Encode.string)]->Array.concatMany([
+            returnUrlArr,
+            manual_retry,
+          ])
+        | V2 => []
+        }
       }
 
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let path = switch GlobalVars.sdkVersion {
-      | V1 => `payments/${paymentIntentID}/confirm`
-      | V2 =>
-        let baseUrl = `v2/payments/${keys.paymentId}/confirm-intent`
-        isExternalVaultFlow ? `${baseUrl}/external-vault-proxy` : baseUrl
+      let path = if isSubscriptionsFlow {
+        `subscriptions/${subscriptionSecret->getPaymentId}/confirm`
+      } else {
+        switch GlobalVars.sdkVersion {
+        | V1 => `payments/${paymentIntentID}/confirm`
+        | V2 =>
+          let baseUrl = `v2/payments/${keys.paymentId}/confirm-intent`
+          isExternalVaultFlow ? `${baseUrl}/external-vault-proxy` : baseUrl
+        }
       }
+
       let uri = `${endpoint}/${path}`
 
       let callIntent = body => {
@@ -1249,7 +1280,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~paymentMethod="CARD",
           )
         | _ =>
-          bodyArr->Array.forEach(((str, json)) => {
+          originalBodyArr->Array.forEach(((str, json)) => {
             if str === "payment_method_type" {
               handleLogging(
                 ~optLogger,

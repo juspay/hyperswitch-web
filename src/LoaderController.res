@@ -140,6 +140,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
+          subscriptionSecret: config.subscriptionSecret,
           ephemeralKey: config.ephemeralKey,
           pmClientSecret: config.pmClientSecret,
           pmSessionId: config.pmSessionId,
@@ -275,7 +276,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               }
               if dict->getDictIsSome("paymentOptions") {
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
-
+                let subscriptionSecret = getWarningString(
+                  paymentOptions,
+                  "subscriptionSecret",
+                  "",
+                  ~logger,
+                )
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
                 let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
                 let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
@@ -283,6 +289,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
+                  subscriptionSecret: Some(subscriptionSecret),
                   ephemeralKey,
                   pmClientSecret,
                   pmSessionId,
@@ -340,12 +347,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             let paymentOptions = dict->getDictFromObj("paymentOptions")
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
+            let subscriptionSecret = getWarningString(
+              paymentOptions,
+              "subscriptionSecret",
+              "",
+              ~logger,
+            )
             let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
             let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
             let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
             setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
+              subscriptionSecret: Some(subscriptionSecret),
               ephemeralKey,
               pmClientSecret,
               pmSessionId,
@@ -380,6 +394,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         } else if dict->getDictIsSome("ElementsUpdate") {
           let optionsDict = dict->getDictFromObj("options")
           let clientSecret = dict->Dict.get("clientSecret")
+          let subscriptionSecret = dict->Dict.get("subscriptionSecret")
           switch clientSecret {
           | Some(val) =>
             setKeys(prev => {
@@ -391,6 +406,21 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               config: {
                 ...prev.config,
                 clientSecret: val->getStringFromJson(""),
+              },
+            })
+          | None => ()
+          }
+          switch subscriptionSecret {
+          | Some(val) =>
+            setKeys(prev => {
+              ...prev,
+              subscriptionSecret: Some(val->getStringFromJson("")),
+            })
+            setConfig(prev => {
+              ...prev,
+              config: {
+                ...prev.config,
+                subscriptionSecret: val->getStringFromJson(""),
               },
             })
           | None => ()

@@ -40,6 +40,9 @@ let make = () => {
       let json = ev.data->Utils.safeParse
       let dict = json->Utils.getDictFromJson
 
+      if dict->Dict.get("isSubscriptionsFlow")->Option.isSome {
+        GlobalVars.isSubscriptionsFlow := dict->Utils.getBool("isSubscriptionsFlow", false)
+      }
       if dict->Dict.get("metadata")->Option.isSome {
         let metadata = dict->Utils.getJsonObjectFromDict("metadata")
         let config = metadata->Utils.getDictFromJson->Dict.get("config")

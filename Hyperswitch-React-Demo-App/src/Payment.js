@@ -6,22 +6,20 @@ import {
   fetchConfigAndUrls,
   getPaymentIntentData,
   loadHyperScript,
-  hyperOptionsV1,
-  hyperOptionsV2,
+  buildHyperOptions,
+  getSubscriptionIntentData,
 } from "./utils";
 
 function Payment() {
   const [hyperPromise, setHyperPromise] = useState(null);
-  const [clientSecret, setClientSecret] = useState("");
-  const [paymentId, setPaymentId] = useState("");
   const [error, setError] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-
+  const [selectedOptions, setSelectedOptions] = useState(null);
   const isCypressTestMode = getQueryParam("isCypressTestMode") === "true";
   const publishableKeyQueryParam = getQueryParam("publishableKey");
   const clientSecretQueryParam = getQueryParam("clientSecret");
-
   const baseUrl = SELF_SERVER_URL || ENDPOINT;
+  const isSubscriptionsFlow = true;
 
   useEffect(() => {
     let isMounted = true;
@@ -34,12 +32,19 @@ function Payment() {
           ? publishableKeyQueryParam
           : configData.publishableKey;
 
-        const paymentIntentData = await getPaymentIntentData({
-          baseUrl,
-          isCypressTestMode,
-          clientSecretQueryParam,
-          setError,
-        });
+        const paymentIntentData = isSubscriptionsFlow
+          ? await getSubscriptionIntentData({
+              baseUrl,
+              isCypressTestMode,
+              clientSecretQueryParam,
+              setError,
+            })
+          : await getPaymentIntentData({
+              baseUrl,
+              isCypressTestMode,
+              clientSecretQueryParam,
+              setError,
+            });
 
         if (!paymentIntentData) return;
 
@@ -50,13 +55,11 @@ function Payment() {
           customBackendUrl: urlsData.serverUrl,
           isScriptLoaded,
           setIsScriptLoaded,
+          isSubscriptionsFlow,
         });
 
         if (isMounted) {
-          setClientSecret(paymentIntentData.clientSecret);
-          if (SDK_VERSION === "v2") {
-            setPaymentId(paymentIntentData.paymentId);
-          }
+          setSelectedOptions(buildHyperOptions(paymentIntentData));
           setHyperPromise(Promise.resolve(hyper));
         }
       } catch (err) {
@@ -72,13 +75,6 @@ function Payment() {
     };
   }, []);
 
-  let selectedOptions;
-  if (SDK_VERSION === "v1") {
-    selectedOptions = hyperOptionsV1(clientSecret);
-  } else {
-    selectedOptions = hyperOptionsV2(clientSecret, paymentId);
-  }
-
   return (
     <div className="mainContainer">
       <div className="heading">
@@ -87,7 +83,7 @@ function Payment() {
 
       {error && <p className="text-red-600">{error}</p>}
 
-      {clientSecret && hyperPromise && (
+      {hyperPromise && (
         <HyperElements hyper={hyperPromise} options={selectedOptions}>
           <CheckoutForm />
         </HyperElements>

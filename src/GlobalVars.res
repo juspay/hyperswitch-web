@@ -27,3 +27,6 @@ let targetOrigin: string = "*"
 @val external isSandbox: bool = "isSandboxEnv"
 @val external isProd: bool = "isProductionEnv"
 @val external isLocal: bool = "isLocal"
+
+// runtime global variable to identify subscriptions flow
+let isSubscriptionsFlow = ref(false)

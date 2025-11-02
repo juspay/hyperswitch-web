@@ -486,6 +486,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let clientSecretId = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
         let paymentIdVal = elementsOptionsDict->Utils.getStringFromDict("paymentId", "")
+        let isSubscriptionsFlow =
+          options
+          ->getOptionsDict
+          ->getBool("isSubscriptionsFlow", false)
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         clientSecret := clientSecretId
         paymentId := paymentIdVal
@@ -515,6 +519,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
           ~redirectionFlags,
+          ~isSubscriptionsFlow,
         )
       }
 
