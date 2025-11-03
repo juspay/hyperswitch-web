@@ -252,7 +252,7 @@ let initClickToPaySession = async (
         ~phoneNumber="",
         ~countryCode="",
         ~clickToPayToken=Some(token),
-        ~isClickToPayRememberMe=rememberMe->Option.getOr(true),
+        ~isClickToPayRememberMe=rememberMe->Option.getOr(false),
         ~orderId=clientSecret,
         ~request3DSAuthentication=initClickToPaySessionInput.request3DSAuthentication->Option.getOr(
           true,
