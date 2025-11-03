@@ -81,6 +81,7 @@ let make = (
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
     RecoilAtoms.showPaymentMethodsScreen,
   )
+  let isSubscriptionsFlow = Recoil.useRecoilValueFromAtom(RecoilAtoms.isSubscriptionsFlowAtom)
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
@@ -151,7 +152,7 @@ let make = (
 
   let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
-    ~isSaveCardsChecked,
+    ~isSaveCardsChecked=isSaveCardsChecked || isSubscriptionsFlow,
     ~isGuestCustomer,
   )
 
@@ -567,7 +568,7 @@ let make = (
             isBancontact
             isSaveDetailsWithClickToPay
           />
-          <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
+          <RenderIf condition={conditionsForShowingSaveCardCheckbox && !isSubscriptionsFlow}>
             <div className="flex items-center justify-start">
               <SaveDetailsCheckbox
                 isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked
@@ -575,8 +576,8 @@ let make = (
             </div>
           </RenderIf>
           <RenderIf
-            condition={(!options.hideCardNicknameField && isCustomerAcceptanceRequired) ||
-              paymentType == PaymentMethodsManagement}>
+            condition={((!options.hideCardNicknameField && isCustomerAcceptanceRequired) ||
+              paymentType == PaymentMethodsManagement) && !isSubscriptionsFlow}>
             <NicknamePaymentInput />
           </RenderIf>
         </div>

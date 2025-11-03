@@ -139,3 +139,4 @@ let defaultRedirectionFlags: redirectionFlags = {
   shouldRemoveBeforeUnloadEvents: false,
 }
 let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)
+let isSubscriptionsFlowAtom = Recoil.atom("isSubscriptionsFlow", false)

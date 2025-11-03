@@ -5,6 +5,7 @@ let make = () => {
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
   let setLoggerState = Recoil.useSetRecoilState(RecoilAtoms.loggerAtom)
+  let setIsSubscriptionsFlow = Recoil.useSetRecoilState(RecoilAtoms.isSubscriptionsFlowAtom)
 
   let paymentMode = getQueryParamsDictforKey(url.search, "componentName")
   let paymentType = paymentMode->CardThemeType.getPaymentMode
@@ -41,7 +42,9 @@ let make = () => {
       let dict = json->Utils.getDictFromJson
 
       if dict->Dict.get("isSubscriptionsFlow")->Option.isSome {
-        GlobalVars.isSubscriptionsFlow := dict->Utils.getBool("isSubscriptionsFlow", false)
+        let isSubscriptionsFlow = dict->Utils.getBool("isSubscriptionsFlow", false)
+        GlobalVars.isSubscriptionsFlow := isSubscriptionsFlow
+        setIsSubscriptionsFlow(_ => isSubscriptionsFlow)
       }
       if dict->Dict.get("metadata")->Option.isSome {
         let metadata = dict->Utils.getJsonObjectFromDict("metadata")
