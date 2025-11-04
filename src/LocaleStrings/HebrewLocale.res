@@ -126,6 +126,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formFieldBankAccountNumberLabel: `מספר חשבון בנק`,
   formFieldPhoneNumberLabel: `מספר טלפון`,
   formFieldCountryCodeLabel: `קוד מדינה (אופציונלי)`,
+  formFieldCountryCodeRequiredLabel: `קוד מדינה`,
   formFieldBankNameLabel: `שם הבנק (אופציונלי)`,
   formFieldBankCityLabel: `עיר הבנק (אופציונלי)`,
   formFieldCardHoldernamePlaceholder: `השם שלך`,

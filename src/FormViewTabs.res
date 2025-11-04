@@ -240,7 +240,9 @@ let make = (
           <div className={contentHeaderClasses}>
             {switch activePmt {
             | Card(_) => localeString.formHeaderEnterCardText
-            | BankTransfer(_) => key->localeString.formHeaderBankText
+            | BankRedirect(_)
+            | BankTransfer(_) =>
+              key->localeString.formHeaderBankText
             | Wallet(_) => key->localeString.formHeaderWalletText
             }->React.string}
           </div>
