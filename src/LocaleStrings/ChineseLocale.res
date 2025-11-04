@@ -126,6 +126,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formFieldBankAccountNumberLabel: `银行账户号码`,
   formFieldPhoneNumberLabel: `电话号码`,
   formFieldCountryCodeLabel: `国家代码 (可选)`,
+  formFieldCountryCodeRequiredLabel: `国家代码`,
   formFieldBankNameLabel: `银行名称 (可选)`,
   formFieldBankCityLabel: `银行城市 (可选)`,
   formFieldCardHoldernamePlaceholder: `您的姓名`,
