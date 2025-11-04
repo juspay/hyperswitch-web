@@ -953,17 +953,10 @@ let processAddressFields = (
                 nameSplits
                 ->Array.slice(~start=1, ~end=nameSplits->Array.length)
                 ->Array.join(" ")
-              if lastName->String.length > 0 {
-                dataArr->Array.push((info, lastName))
-              } else {
-                nameSplits
-                ->Array.get(0)
-                ->Option.map(firstName => dataArr->Array.push((info, firstName)))
-                ->ignore
-              }
+              dataArr->Array.push((info, lastName))
             })
             ->ignore
-            keys->Array.push(firstNameFieldKey)
+            keys->Array.push(lastNameFieldKey)
           }
         }
         (dataArr, keys)
