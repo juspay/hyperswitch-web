@@ -971,7 +971,7 @@ let appendPaymentMethodExperience = (~paymentMethod, ~paymentMethodType, ~isQrPa
   | None => paymentMethodType
   }
 
-let paymentExperiencePaymentMethods = ["affirm", "paypal"]
+let paymentExperiencePaymentMethods = ["affirm", "paypal", "klarna"]
 
 let appendPaymentExperience = (paymentBodyArr, paymentMethodType) =>
   if paymentExperiencePaymentMethods->Array.includes(paymentMethodType) {
