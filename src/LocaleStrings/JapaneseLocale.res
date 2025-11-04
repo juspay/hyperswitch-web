@@ -109,7 +109,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formSubmitText: `提出`,
   formSubmittingText: `提出中`,
   formSubheaderBillingDetailsText: `請輸入您的帳單地址`,
-  formNoFieldsToEnterText: `入力するフィールドはありません。次のステップに進んでください。`,
   formSubheaderCardText: `カードの詳細`,
   formSubheaderAccountText: pmLabel => `あなたの${pmLabel}`,
   formHeaderReviewText: `レビュー`,

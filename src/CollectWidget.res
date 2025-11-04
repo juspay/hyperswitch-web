@@ -51,9 +51,15 @@ let make = (
         ->Dict.get(BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey)
         ->Option.getOr("")
       let copy = values->Dict.copy
+
+      // Synchronize first_name and last_name to avoid different values during confirm call
+      // Case 1: If last_name exists but first_name is empty, use last_name as first_name
+      // (full name field uses first_name for tracking, so this ensures proper population)
       if last_name->String.length == 0 {
         copy->Dict.set(BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey, first_name)
-      } else if first_name->String.length == 0 {
+      } // Case 2: If first_name exists but last_name is empty, use first_name as last_name
+      // (since full name field is not rendered, we need this sync to maintain consistency)
+      else if first_name->String.length == 0 {
         copy->Dict.set(BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey, last_name)
       }
       setFormData(_ => copy)

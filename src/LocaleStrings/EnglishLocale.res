@@ -109,7 +109,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formSubmitText: `Submit`,
   formSubmittingText: `Submitting`,
   formSubheaderBillingDetailsText: `Enter your billing address`,
-  formNoFieldsToEnterText: `No fields to enter, please proceed to next step.`,
   formSubheaderCardText: `Your card details`,
   formSubheaderAccountText: pmLabel => `Your ${pmLabel}`,
   formHeaderReviewText: `Review`,

@@ -109,7 +109,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formSubmitText: "提交",
   formSubmittingText: "提交中",
   formSubheaderBillingDetailsText: "輸入您的帳單地址",
-  formNoFieldsToEnterText: "沒有欄位需要輸入，請繼續下一步。",
   formSubheaderCardText: "您的卡片詳細信息",
   formSubheaderAccountText: pmLabel => `您的 ${pmLabel}`,
   formHeaderReviewText: "審核",
