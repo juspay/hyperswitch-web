@@ -229,6 +229,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     miniIcon: None,
   },
   {
+    paymentMethodName: "saved_methods",
+    icon: Some(icon("default-card", ~size=19)),
+    fields: [],
+    displayName: "Saved",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "klarna",
     icon: Some(icon("klarna", ~size=19)),
     fields: [InfoElement],
