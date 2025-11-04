@@ -52,8 +52,8 @@ let make = (
         ->Option.getOr("")
       let copy = values->Dict.copy
 
-      // If first_name exists but last_name is empty, use first_name as last_name
-      // (since full name field is not rendered, we need this sync to maintain consistency)
+      // If first_name is null and required but last_name is not, use first_name as last_name
+      // to populate full name properly
       if first_name->String.length == 0 {
         copy->Dict.set(BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey, last_name)
         copy->Dict.set(BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey, "")
