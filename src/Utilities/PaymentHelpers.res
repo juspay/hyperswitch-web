@@ -2227,7 +2227,7 @@ let fetchAuthenticationSync = async (
 
   let onSuccess = data => data
 
-  let onFailure = _ => JSON.Encode.null
+  let onFailure = err => err
 
   await fetchApiWithLogging(
     uri,
