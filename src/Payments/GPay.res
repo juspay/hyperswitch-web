@@ -102,6 +102,7 @@ let make = (
   let onGooglePaymentButtonClicked = () => {
     if testMode {
       Console.warn("Google Pay button clicked in test mode - interaction disabled")
+      resolve()
     } else {
       loggerState.setLogInfo(
         ~value="GooglePay Button Clicked",
@@ -109,8 +110,7 @@ let make = (
         ~paymentMethod="GOOGLE_PAY",
       )
       PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="google_pay")
-      makeOneClickHandlerPromise(isSDKHandleClick)
-      ->then(result => {
+      makeOneClickHandlerPromise(isSDKHandleClick)->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
           if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
@@ -150,7 +150,6 @@ let make = (
         }
         resolve()
       })
-      ->ignore
     }
   }
 
