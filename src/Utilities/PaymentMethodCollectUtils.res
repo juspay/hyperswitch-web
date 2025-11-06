@@ -1101,6 +1101,66 @@ let getPayoutDynamicFields = (
     }
   })
 
+let getErrorStringAndClasses = (
+  field: dynamicFieldType,
+  formData: Dict.t<string>,
+  validityDict: Dict.t<option<bool>>,
+  localeString: LocaleStringTypes.localeStrings,
+) => {
+  let key = field->getPaymentMethodDataFieldKey
+  let value = formData->Dict.get(key)->Option.getOr("")
+  let isValid = validityDict->Dict.get(key)->Option.flatMap(key => key)
+
+  switch field {
+  | BillingAddress(FullName(FirstName)) => {
+      // Check both FirstName and LastName validity and merge error messages
+      let firstNameKey = BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey
+      let lastNameKey = BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey
+      let firstNameValue = formData->Dict.get(firstNameKey)->Option.getOr("")
+      let lastNameValue = formData->Dict.get(lastNameKey)->Option.getOr("")
+      let firstNameValid = validityDict->Dict.get(firstNameKey)->Option.flatMap(key => key)
+      let lastNameValid = validityDict->Dict.get(lastNameKey)->Option.flatMap(key => key)
+
+      let firstNameError = switch firstNameValid {
+      | Some(false) =>
+        BillingAddress(FullName(FirstName))->getPaymentMethodDataErrorString(
+          firstNameValue,
+          localeString,
+        )
+      | _ => ""
+      }
+
+      let lastNameError = switch lastNameValid {
+      | Some(false) =>
+        BillingAddress(FullName(LastName))->getPaymentMethodDataErrorString(
+          lastNameValue,
+          localeString,
+        )
+      | _ => ""
+      }
+
+      let mergedError = switch (firstNameError, lastNameError) {
+      | ("", "") => ""
+      | (firstError, "") => firstError
+      | ("", lastError) => lastError
+      | (firstError, lastError) => firstError ++ " " ++ lastError
+      }
+
+      let hasError = mergedError !== ""
+      (mergedError, hasError ? "text-xs text-red-950" : "")
+    }
+  | _ =>
+    // Default behavior for other fields
+    switch isValid {
+    | Some(false) => (
+        field->getPaymentMethodDataErrorString(value, localeString),
+        "text-xs text-red-950",
+      )
+    | _ => ("", "")
+    }
+  }
+}
+
 let getDefaultsAndValidity = (payoutDynamicFields, supportedCardBrands) => {
   payoutDynamicFields.address
   ->Option.map(address => {

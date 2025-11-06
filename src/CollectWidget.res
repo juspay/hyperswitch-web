@@ -240,61 +240,6 @@ let make = (
     }
   }
 
-  let getErrorStringAndClasses = (field: dynamicFieldType) => {
-    let key = field->getPaymentMethodDataFieldKey
-    let value = formData->Dict.get(key)->Option.getOr("")
-    let isValid = validityDict->Dict.get(key)->Option.flatMap(key => key)
-
-    switch field {
-    | BillingAddress(FullName(FirstName)) => {
-        // Check both FirstName and LastName validity and merge error messages
-        let firstNameKey = BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey
-        let lastNameKey = BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey
-        let firstNameValue = formData->Dict.get(firstNameKey)->Option.getOr("")
-        let lastNameValue = formData->Dict.get(lastNameKey)->Option.getOr("")
-        let firstNameValid = validityDict->Dict.get(firstNameKey)->Option.flatMap(key => key)
-        let lastNameValid = validityDict->Dict.get(lastNameKey)->Option.flatMap(key => key)
-
-        let firstNameError = switch firstNameValid {
-        | Some(false) =>
-          BillingAddress(FullName(FirstName))->getPaymentMethodDataErrorString(
-            firstNameValue,
-            localeString,
-          )
-        | _ => ""
-        }
-
-        let lastNameError = switch lastNameValid {
-        | Some(false) =>
-          BillingAddress(FullName(LastName))->getPaymentMethodDataErrorString(
-            lastNameValue,
-            localeString,
-          )
-        | _ => ""
-        }
-
-        let mergedError = switch (firstNameError, lastNameError) {
-        | ("", "") => ""
-        | (firstError, "") => firstError
-        | ("", lastError) => lastError
-        | (firstError, lastError) => firstError ++ " " ++ lastError
-        }
-
-        let hasError = mergedError !== ""
-        (mergedError, hasError ? "text-xs text-red-950" : "")
-      }
-    | _ =>
-      // Default behavior for other fields
-      switch isValid {
-      | Some(false) => (
-          field->getPaymentMethodDataErrorString(value, localeString),
-          "text-xs text-red-950",
-        )
-      | _ => ("", "")
-      }
-    }
-  }
-
   let renderInputTemplate = (field: dynamicFieldType) => {
     let labelClasses = "text-sm mt-2.5 text-jp-gray-800"
     let inputClasses = "min-w-full border mt-1.5 px-2.5 py-2 rounded-md border-jp-gray-200"
@@ -325,7 +270,12 @@ let make = (
       ->Js.Re.source
     let key = field->getPaymentMethodDataFieldKey
     let value = formData->Dict.get(key)->Option.getOr("")
-    let (errorString, errorStringClasses) = getErrorStringAndClasses(field)
+    let (errorString, errorStringClasses) = getErrorStringAndClasses(
+      field,
+      formData,
+      validityDict,
+      localeString,
+    )
     <InputField
       id=key
       className=inputClasses
@@ -360,7 +310,7 @@ let make = (
       pattern
     />
   }
-  let checkIfLastNameRequiredAndNone = (addressFields: array<dynamicFieldForAddress>) => {
+  let checkIfNameRequired = (addressFields: array<dynamicFieldForAddress>) => {
     addressFields->Array.reduce(false, (acc, field) => {
       let condition = switch (field.fieldType, field.value) {
       | (FullName(LastName), None) => true
@@ -378,7 +328,7 @@ let make = (
         | (FullName(FirstName), None) => BillingAddress(FullName(FirstName))->renderInputTemplate
         | (FullName(FirstName), Some(_)) =>
           // If first_name exists, last_name is required and has null value, render first_name field to capture last_name
-          if checkIfLastNameRequiredAndNone(addressFields) {
+          if checkIfNameRequired(addressFields) {
             BillingAddress(FullName(FirstName))->renderInputTemplate
           } else {
             React.null
