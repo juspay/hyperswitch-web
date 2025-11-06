@@ -54,7 +54,12 @@ let initClickToPaySession = async (
     switch getCardsResponse.error {
     | Some(errorObj) => {
         let errorType = errorObj.reason->Option.getOr(defaultErrorType)
-        let errorMessage = errorObj.message->Option.getOr(defaultErrorMessage)
+        let getCardsErrorMessage = errorObj.message->Option.getOr("")
+
+        let errorMessage =
+          getCardsErrorMessage->String.trim->String.length > 0
+            ? getCardsErrorMessage
+            : defaultErrorMessage
 
         getFailedSubmitResponse(~errorType, ~message=errorMessage)
       }
@@ -79,42 +84,52 @@ let initClickToPaySession = async (
 
     let clickToPayData = []
 
-    try {
-      let mastercardDirectIdentityLookup = await ClickToPayHelpers.mastercardDirectSdk.identityLookup({
-        consumerIdentity: consumerIdentity,
-      })
+    let mastercardDirectIdentityLookupPromise = mastercardDirectSdk.identityLookup({
+      consumerIdentity: consumerIdentity,
+    })
+    let visaDirectIdentityLookupPromise = visaDirectSdk.identityLookup(consumerIdentity)
 
-      isCustomerPresentForMastercard :=
-        mastercardDirectIdentityLookup
-        ->Utils.getDictFromJson
-        ->Utils.getBool("consumerPresent", false)
+    let identityLookupPromiseResults = await Promise.allSettled([
+      mastercardDirectIdentityLookupPromise,
+      visaDirectIdentityLookupPromise,
+    ])
 
-      clickToPayData->Array.push(("mastercard", mastercardDirectIdentityLookup))
-    } catch {
-    | err =>
-      logger.setLogError(
-        ~value=`Direct Mastercard Click to Pay identityLookup failed ${err
-          ->Utils.formatException
-          ->JSON.stringify}`,
-        ~eventName=CLICK_TO_PAY_FLOW,
-      )
-    }
+    switch identityLookupPromiseResults {
+    | [mastercardDirectIdentityLookup, visaDirectIdentityLookup] =>
+      switch mastercardDirectIdentityLookup {
+      | Fulfilled({value}) => {
+          isCustomerPresentForMastercard :=
+            value
+            ->Utils.getDictFromJson
+            ->Utils.getBool("consumerPresent", false)
 
-    try {
-      let visaDirectIdentityLookup = await visaDirectSdk.identityLookup(consumerIdentity)
+          clickToPayData->Array.push(("mastercard", value))
+        }
+      | Rejected({reason}) =>
+        logger.setLogError(
+          ~value=`Direct Mastercard Click to Pay identityLookup failed ${reason
+            ->Utils.formatException
+            ->JSON.stringify}`,
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+      }
 
-      isCustomerPresentForVisa :=
-        visaDirectIdentityLookup->Utils.getDictFromJson->Utils.getBool("consumerPresent", false)
+      switch visaDirectIdentityLookup {
+      | Fulfilled({value}) => {
+          isCustomerPresentForVisa :=
+            value->Utils.getDictFromJson->Utils.getBool("consumerPresent", false)
 
-      clickToPayData->Array.push(("visa", visaDirectIdentityLookup))
-    } catch {
-    | err =>
-      logger.setLogError(
-        ~value=`Direct Visa Click to Pay identityLookup failed ${err
-          ->Utils.formatException
-          ->JSON.stringify}`,
-        ~eventName=CLICK_TO_PAY_FLOW,
-      )
+          clickToPayData->Array.push(("visa", value))
+        }
+      | Rejected({reason}) =>
+        logger.setLogError(
+          ~value=`Direct Visa Click to Pay identityLookup failed ${reason
+            ->Utils.formatException
+            ->JSON.stringify}`,
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+      }
+    | _ => ()
     }
 
     let eligibilityCheckData = [("click_to_pay", clickToPayData->Utils.getJsonFromArrayOfJson)]
@@ -236,13 +251,13 @@ let initClickToPaySession = async (
   }
 
   let checkoutWithCard = async (~token, ~srcDigitalCardId, ~rememberMe) => {
-    if clickToPayWindowRef.contents->Nullable.toOption->Option.isNone {
-      handleOpenClickToPayWindow()
-    }
-
     let checkoutWithCardErrorMessage = "An unknown error occurred during checkout with card."
 
     try {
+      if clickToPayWindowRef.contents->Nullable.toOption->Option.isNone {
+        handleOpenClickToPayWindow()
+      }
+
       let checkoutWithCardResponse = await handleCheckoutWithCard(
         ~clickToPayProvider=VISA,
         ~srcDigitalCardId,
@@ -320,18 +335,6 @@ let initClickToPaySession = async (
               },
             }
 
-            try {
-              let _ = await ClickToPayHelpers.mastercardDirectSdk.init(mastercardDirectInitData)
-            } catch {
-            | err =>
-              logger.setLogError(
-                ~value=`Direct Mastercard Click to Pay SDK initialization failed ${err
-                  ->Utils.formatException
-                  ->JSON.stringify}`,
-                ~eventName=CLICK_TO_PAY_FLOW,
-              )
-            }
-
             let visaDirectSdk = ClickToPayHelpers.createVisaDirectSRCIAdapter()
             let visaDirectInitData = {
               srciTransactionId: clientSecret,
@@ -339,16 +342,38 @@ let initClickToPaySession = async (
               srciDpaId: token.dpaName,
             }
 
-            try {
-              let _ = await visaDirectSdk.init(visaDirectInitData)
-            } catch {
-            | err =>
-              logger.setLogError(
-                ~value=`Direct Visa Click to Pay SDK initialization failed ${err
-                  ->Utils.formatException
-                  ->JSON.stringify}`,
-                ~eventName=CLICK_TO_PAY_FLOW,
-              )
+            let mastercardInitPromise = ClickToPayHelpers.mastercardDirectSdk.init(
+              mastercardDirectInitData,
+            )
+            let visaInitPromise = visaDirectSdk.init(visaDirectInitData)
+
+            let promiseResults = await Promise.allSettled([mastercardInitPromise, visaInitPromise])
+
+            switch promiseResults {
+            | [mastercardPromiseResponse, visaPromiseResponse] => {
+                switch mastercardPromiseResponse {
+                | Rejected({reason}) =>
+                  logger.setLogError(
+                    ~value=`Direct Mastercard Click to Pay SDK initialization failed ${reason
+                      ->Utils.formatException
+                      ->JSON.stringify}`,
+                    ~eventName=CLICK_TO_PAY_FLOW,
+                  )
+                | Fulfilled(_) => ()
+                }
+
+                switch visaPromiseResponse {
+                | Rejected({reason}) =>
+                  logger.setLogError(
+                    ~value=`Direct Visa Click to Pay SDK initialization failed ${reason
+                      ->Utils.formatException
+                      ->JSON.stringify}`,
+                    ~eventName=CLICK_TO_PAY_FLOW,
+                  )
+                | Fulfilled(_) => ()
+                }
+              }
+            | _ => ()
             }
 
             let defaultInitClickToPaySession = {
