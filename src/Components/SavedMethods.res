@@ -10,6 +10,7 @@ let make = (
   ~setIsClickToPayAuthenticateError,
   ~getVisaCards,
   ~closeComponentIfSavedMethodsAreEmpty,
+  ~cardProps,
 ) => {
   open CardUtils
   open Utils
@@ -27,6 +28,9 @@ let make = (
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
     RecoilAtoms.showPaymentMethodsScreen,
+  )
+  let showTabsUiforSavedMethods = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.showTabsUiforSavedMethodsAtom,
   )
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
@@ -345,7 +349,25 @@ let make = (
     {if enableSavedPaymentShimmer {
       <PaymentElementShimmer.SavedPaymentCardShimmer />
     } else {
-      <RenderIf condition={!showPaymentMethodsScreen}> {bottomElement} </RenderIf>
+      <RenderIf condition={!showPaymentMethodsScreen}>
+        {if showTabsUiforSavedMethods {
+          <SavedMethodsTabsUI
+            savedMethods
+            paymentToken
+            setPaymentToken
+            cvcProps
+            cardProps
+            setRequiredFieldsBody
+            isClickToPayAuthenticateError
+            setIsClickToPayAuthenticateError
+            getVisaCards
+            closeComponentIfSavedMethodsAreEmpty
+            loggerState
+          />
+        } else {
+          bottomElement
+        }}
+      </RenderIf>
     }}
     <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
       <div className="pt-4 pb-2 flex items-center justify-start">

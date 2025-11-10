@@ -52,13 +52,14 @@ let make = (
   ~checkoutEle: React.element,
   ~cardShimmerCount: int,
   ~cardProps: CardUtils.cardProps,
+  ~selectedOption,
+  ~setSelectedOption,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
   let payOptionsRef = React.useRef(Nullable.null)
   let selectRef = React.useRef(Nullable.null)
   let (winW, winH) = Utils.useWindowSize()
-  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -137,7 +138,7 @@ let make = (
       {cardOptionDetails
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
-        <TabCard key={i->Int.toString} paymentOption=payOption isActive />
+        <TabCard key={i->Int.toString} paymentOption=payOption isActive setSelectedOption />
       })
       ->React.array}
       <TabLoader cardShimmerCount />

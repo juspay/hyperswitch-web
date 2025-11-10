@@ -2,12 +2,6 @@ open PaymentType
 open Utils
 open PaymentUtils
 
-let cardsToRender = (width: int) => {
-  let minWidth = 130
-  let noOfCards = (width - 40) / minWidth
-  noOfCards
-}
-
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
@@ -470,6 +464,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           setIsClickToPayAuthenticateError
           getVisaCards
           closeComponentIfSavedMethodsAreEmpty
+          cardProps
         />
       </RenderIf>
     }}
@@ -503,6 +498,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             checkoutEle
             cardShimmerCount
             cardProps
+            selectedOption
+            setSelectedOption
           />
         | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps />
         }}

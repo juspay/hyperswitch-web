@@ -1699,3 +1699,9 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
 }
+
+let cardsToRender = (width: int) => {
+  let minWidth = 130
+  let noOfCards = (width - 40) / minWidth
+  noOfCards
+}

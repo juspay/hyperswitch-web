@@ -14,6 +14,7 @@ let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
 let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
+let selectedSavedOptionAtom = Recoil.atom("selectedSavedOption", "")
 let paymentTokenAtom = Recoil.atom(
   "paymentToken",
   {
@@ -139,3 +140,4 @@ let defaultRedirectionFlags: redirectionFlags = {
   shouldRemoveBeforeUnloadEvents: false,
 }
 let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)
+let showTabsUiforSavedMethodsAtom = Recoil.atom("showTabsUiforSavedMethods", false)

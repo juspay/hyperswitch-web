@@ -1195,3 +1195,17 @@ let getPaymentExperienceTypeFromPML = (
   )
   ->Option.getOr([])
 }
+
+let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
+  switch paymentMethod {
+  | "bank_debit" => paymentMethodType ++ "_debit"
+  | "bank_transfer" =>
+    if !(Constants.bankTransferList->Array.includes(paymentMethodType)) {
+      paymentMethodType ++ "_transfer"
+    } else {
+      paymentMethodType
+    }
+  | "card" => "card"
+  | "wallet" | "reward" | "pay_later" | _ => paymentMethodType
+  }
+}
