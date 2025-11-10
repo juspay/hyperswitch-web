@@ -22,7 +22,7 @@ let make = (
       `${initialLabel}--empty`
     } else {
       switch value.isValid {
-      | Some(valid) => valid ? "" : `${initialLabel}--invalid`
+      | Some(valid) => valid ? `${initialLabel}--valid` : `${initialLabel}--invalid`
       | None => ""
       }
     }

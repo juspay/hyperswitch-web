@@ -41,7 +41,7 @@ let cardPaymentBody = (
   ~nickname="",
 ) => {
   let cardBody = [
-    ("card_number", cardNumber->CardUtils.clearSpaces->JSON.Encode.string),
+    ("card_number", cardNumber->CardValidations.clearSpaces->JSON.Encode.string),
     ("card_exp_month", month->JSON.Encode.string),
     ("card_exp_year", year->JSON.Encode.string),
     ("card_cvc", cvcNumber->JSON.Encode.string),
@@ -349,31 +349,6 @@ let becsBankDebitBody = (
     ),
   ])
 
-let klarnaRedirectionBody = (~fullName, ~email, ~country, ~connectors) => [
-  ("payment_method", "pay_later"->JSON.Encode.string),
-  ("payment_method_type", "klarna"->JSON.Encode.string),
-  ("payment_experience", "redirect_to_url"->JSON.Encode.string),
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  ("name", fullName->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "pay_later",
-        [
-          (
-            "klarna_redirect",
-            [
-              ("billing_email", email->JSON.Encode.string),
-              ("billing_country", country->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
-
 let klarnaSDKbody = (~token, ~connectors) => [
   ("payment_method", "pay_later"->JSON.Encode.string),
   ("payment_method_type", "klarna"->JSON.Encode.string),
@@ -405,22 +380,6 @@ let klarnaCheckoutBody = (~connectors) => {
     ("payment_method_data", paymentMethodData),
   ]
 }
-
-let paypalRedirectionBody = (~connectors) => [
-  ("payment_method", "wallet"->JSON.Encode.string),
-  ("payment_method_type", "paypal"->JSON.Encode.string),
-  ("payment_experience", "redirect_to_url"->JSON.Encode.string),
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  (
-    "payment_method_data",
-    [
-      (
-        "wallet",
-        [("paypal_redirect", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
 
 let paypalSdkBody = (~token, ~connectors) => [
   ("payment_method", "wallet"->JSON.Encode.string),
@@ -978,6 +937,11 @@ let appendRedirectPaymentMethods = [
   "ali_pay",
   "ali_pay_hk",
   "revolut_pay",
+  "klarna",
+  "paypal",
+  "breadpay",
+  "flexiti",
+  "bluecode",
 ]
 
 let appendBankeDebitMethods = ["sepa", "becs"]
@@ -1007,7 +971,7 @@ let appendPaymentMethodExperience = (~paymentMethod, ~paymentMethodType, ~isQrPa
   | None => paymentMethodType
   }
 
-let paymentExperiencePaymentMethods = ["affirm"]
+let paymentExperiencePaymentMethods = ["affirm", "paypal", "klarna"]
 
 let appendPaymentExperience = (paymentBodyArr, paymentMethodType) =>
   if paymentExperiencePaymentMethods->Array.includes(paymentMethodType) {

@@ -24,15 +24,11 @@ on:
         description: "Custom version number (e.g., 1.2.3) (only used in custom mode)"
         required: false
         type: string
-      release_notes:
-        description: "Release notes (optional)"
-        required: false
-        type: string
 
 jobs:
-  create-release:
+  create-version-bump-pr:
     runs-on: ubuntu-latest
-    name: Create Release
+    name: Create Version Bump PR
     permissions:
       contents: write
       pull-requests: write
@@ -198,7 +194,7 @@ jobs:
               echo "   Provided: $NEW_VERSION"
               echo "   Please provide a version >= $CURRENT_VERSION"
               echo ""
-              echo "🚫 Workflow stopped due to validation failure. No PR, tag, or release will be created."
+              echo "🚫 Workflow stopped due to validation failure. No PR will be created."
               exit 1
             fi
           else
@@ -211,7 +207,7 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "✅ Version will be bumped from $CURRENT_VERSION to $NEW_VERSION"
 
-      - name: Update package.json version
+      - name: Update package.json version and regenerate lock file
         run: |
           NEW_VERSION="${{ steps.version.outputs.new_version }}"
 
@@ -224,6 +220,10 @@ jobs:
           "
 
           echo "✅ Updated package.json to version $NEW_VERSION"
+
+          # Regenerate package-lock.json
+          npm install --package-lock-only
+          echo "🔄 Regenerated package-lock.json"
 
       - name: Create version bump branch and commit
         id: version_bump
@@ -249,14 +249,27 @@ jobs:
           # Create and switch to new branch
           git checkout -b "$BRANCH_NAME"
 
-          git add package.json
+          # Add both package.json and package-lock.json
+          git add package.json package-lock.json
           git commit -m "chore: bump version to $NEW_VERSION"
           git push origin "$BRANCH_NAME"
 
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "✅ Created branch $BRANCH_NAME and committed version bump"
+          echo "✅ Created branch $BRANCH_NAME and committed version bump (package.json + package-lock.json)"
 
-      - name: Create Pull Request (with fallback)
+      - name: Create and push tag
+        id: tag
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          TAG_NAME="v$NEW_VERSION"
+
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
+
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Created and pushed tag: $TAG_NAME"
+
+      - name: Create Pull Request
         id: cpr
         continue-on-error: true
         uses: actions/github-script@v7
@@ -273,10 +286,15 @@ jobs:
 
             **Changes:**
             - Updated \`package.json\` version field
+            - Updated \`package-lock.json\` with new version
 
             This PR was automatically created by the stable release workflow.
 
-            Please review and merge this PR to proceed with the release process.`;
+            **Next Steps:**
+            1. Review and merge this PR
+            2. Manually create the GitHub release from the tag after merging
+
+            **Tag Created:** \`${{ steps.tag.outputs.tag_name }}\` has been created and pushed.`;
 
             try {
               // Try to create PR automatically
@@ -308,7 +326,7 @@ jobs:
               core.setOutput('pull-request-branch', branchName);
             }
 
-      - name: Display PR Creation Results
+      - name: Display Results and Next Steps
         uses: actions/github-script@v7
         with:
           script: |
@@ -325,11 +343,16 @@ jobs:
             This PR bumps the version from ${{ steps.version.outputs.current_version }} to ${newVersion}.
 
             **Changes:**
-            - Updated \`package.json\` version field
+            - Updated \`package.json\` version field  
+            - Updated \`package-lock.json\` with new version
 
             This PR was created following the stable release workflow.
 
-            Please review and merge this PR to proceed with the release process.`;
+            **Next Steps:**
+            1. Review and merge this PR
+            2. Manually create the GitHub release from the tag after merging
+
+            **Tag Created:** \`v${newVersion}\` has been created and pushed.`;
 
             if (prNumber) {
               console.log(`✅ Successfully ${prOperation} PR #${prNumber}: ${prUrl}`);
@@ -338,25 +361,30 @@ jobs:
               core.summary
                 .addHeading('🎉 Version Bump PR Created Successfully')
                 .addTable([
-                  [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'PR Number', header: true}, {data: 'Operation', header: true}],
-                  ['${{ steps.version.outputs.current_version }}', newVersion, `#${prNumber}`, prOperation]
+                  [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'PR Number', header: true}, {data: 'Tag Created', header: true}],
+                  ['${{ steps.version.outputs.current_version }}', newVersion, `#${prNumber}`, 'v' + newVersion]
                 ])
                 .addLink('View Pull Request', prUrl)
-                .addRaw('<br><br>**Next Steps:** Review and merge the PR above, then the release will be ready!')
+                .addHeading('📋 Next Steps')
+                .addList([
+                  'Review and merge the PR above',
+                  'After merging, manually create the GitHub release from the existing tag'
+                ])
+                .addRaw('<br><br>**Note:** The tag has been created and pushed. Only GitHub release creation is manual.')
                 .write();
             } else {
-              console.log(`⚠️ Automatic PR creation failed or no changes detected`);
+              console.log(`⚠️ Automatic PR creation failed`);
               console.log(`🔗 Create PR manually at: ${manualPrUrl}`);
               
               // Fallback summary with manual instructions
               core.summary
                 .addHeading('📋 Version Bump Changes Ready')
                 .addTable([
-                  [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'Branch', header: true}],
-                  ['${{ steps.version.outputs.current_version }}', newVersion, branchName]
+                  [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'Branch', header: true}, {data: 'Tag Created', header: true}],
+                  ['${{ steps.version.outputs.current_version }}', newVersion, branchName, 'v' + newVersion]
                 ])
                 .addHeading('⚠️ Automatic PR Creation Failed')
-                .addRaw(`<p><strong>Reason:</strong> The peter-evans/create-pull-request action failed or detected no changes.</p>`)
+                .addRaw(`<p><strong>Reason:</strong> The automatic PR creation failed.</p>`)
                 .addHeading('🔧 How to Enable Automatic PR Creation')
                 .addRaw(`<p>To enable automatic PR creation, you have several options:</p>`)
                 .addList([
@@ -371,106 +399,11 @@ jobs:
                 .addRaw(`<p><strong>Title:</strong> <code>release: v${newVersion}</code></p>`)
                 .addRaw(`<p><strong>Description:</strong></p>`)
                 .addCodeBlock(prBody, 'markdown')
-                .addRaw('<br><br>**Next Steps:** Create and merge the PR above, then the release will be ready!')
+                .addHeading('📋 Next Steps After PR Creation')
+                .addList([
+                  'Review and merge the PR',
+                  'After merging, manually create the GitHub release from the existing tag'
+                ])
+                .addRaw('<br><br>**Note:** The tag has been created and pushed. Only GitHub release creation is manual.')
                 .write();
             }
-
-      - name: Generate release notes for manual use
-        id: release_notes
-        run: |
-          NEW_VERSION="${{ steps.version.outputs.new_version }}"
-          CURRENT_VERSION="${{ steps.version.outputs.current_version }}"
-
-          # Get commits since last version
-          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-
-          if [ -n "$LAST_TAG" ]; then
-            COMMITS=$(git log --pretty=format:"- %s (%h)" $LAST_TAG..HEAD)
-          else
-            COMMITS=$(git log --pretty=format:"- %s (%h)" --max-count=10)
-          fi
-
-          # Prepare release notes
-          RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
-
-          if [ -z "$RELEASE_NOTES" ]; then
-            RELEASE_NOTES="## What's Changed
-
-          $COMMITS
-
-          **Full Changelog**: https://github.com/${{ github.repository }}/compare/$LAST_TAG...v$NEW_VERSION"
-          fi
-
-          # Save release notes to file for display
-          echo "$RELEASE_NOTES" > release_notes.md
-          echo "✅ Generated release notes for manual use"
-
-      - name: Create and push tag
-        id: tag
-        run: |
-          NEW_VERSION="${{ steps.version.outputs.new_version }}"
-          TAG_NAME="v$NEW_VERSION"
-
-          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
-          git push origin "$TAG_NAME"
-
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "✅ Created and pushed tag: $TAG_NAME"
-
-      - name: Create GitHub Release (Draft)
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const newVersion = '${{ steps.version.outputs.new_version }}';
-            const tagName = '${{ steps.tag.outputs.tag_name }}';
-            const releaseNotes = fs.readFileSync('release_notes.md', 'utf8');
-
-            const release = await github.rest.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: tagName,
-              name: `Release ${tagName}`,
-              body: releaseNotes,
-              draft: true,
-              prerelease: false
-            });
-
-            console.log(`✅ Created draft release: ${release.data.html_url}`);
-
-            // Add a summary
-            core.summary
-              .addHeading('🚀 Release Created Successfully')
-              .addTable([
-                [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'Tag', header: true}],
-                ['${{ steps.version.outputs.current_version }}', newVersion, tagName]
-              ])
-              .addLink('View Draft Release', release.data.html_url)
-              .write();
-
-      - name: Display next steps
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const newVersion = '${{ steps.version.outputs.new_version }}';
-            const branchName = '${{ steps.cpr.outputs.pull-request-branch }}';
-
-            // Add detailed next steps to summary
-            core.summary
-              .addHeading('📋 Next Steps - Review and Publish')
-              .addTable([
-                [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'Branch', header: true}],
-                ['${{ steps.version.outputs.current_version }}', newVersion, branchName || 'release/bump-version-to-' + newVersion]
-              ])
-              .addHeading('🔄 Manual Steps Required')
-              .addList([
-                '1. Review and merge the version bump PR above',
-                '2. Review and publish the draft release above',
-                '3. The tag has already been created and pushed'
-              ])
-              .addRaw('<br><br>**Note:** The draft release and tag have been created automatically. Just review and merge the PR, then publish the release!')
-              .write();
-
-      - name: Cleanup
-        run: |
-          rm -f release_notes.md

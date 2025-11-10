@@ -33,20 +33,21 @@ jobs:
           script: |
             const title = process.env.PR_TITLE;
 
-            const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?!?: .+/;
+            const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert|release)(\(.+\))?!?: .+/;
 
             if (!conventionalCommitRegex.test(title)) {
               core.setFailed(`PR title "${title}" does not follow conventional commit format.
 
             Expected format: type(scope): description
 
-            Valid types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert
+            Valid types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert, release
 
             Examples:
             - feat: add new user authentication
             - fix(auth): resolve login redirect issue
             - docs: update API documentation
-            - feat!: breaking change to user API`);
+            - feat!: breaking change to user API
+            - release: vX.XXX.XX`);
               return false;
             }
 
@@ -64,10 +65,17 @@ jobs:
           script: |
             const message = process.env.COMMIT_MESSAGE;
 
-            const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?!?: .+/;
+            const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert|release)(\(.+\))?!?: .+/;
 
             if (!conventionalCommitRegex.test(message)) {
-              core.setFailed(`Commit message "${message}" does not follow conventional commit format.`);
+              core.setFailed(`Commit message "${message}" does not follow conventional commit format.
+
+            Expected format: type(scope): description
+
+            Valid types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert, release
+
+            Examples:
+            - release: v0.125.0`);
               return false;
             }
 

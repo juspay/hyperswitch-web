@@ -22,7 +22,7 @@ let saveCardBody = (
   ~nickname="",
 ) => {
   let cardBody = [
-    ("card_number", cardNumber->CardUtils.clearSpaces->JSON.Encode.string),
+    ("card_number", cardNumber->CardValidations.clearSpaces->JSON.Encode.string),
     ("card_exp_month", month->JSON.Encode.string),
     ("card_exp_year", year->JSON.Encode.string),
     ("card_cvc", cvcNumber->JSON.Encode.string),
@@ -57,7 +57,7 @@ let vgsCardBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {
     ("card_cvc", cvcNumber->JSON.Encode.string),
   ]
 
-  let paymentMethodData = [("external_proxy_card_data", cardBody->Utils.getJsonFromArrayOfJson)]
+  let paymentMethodData = [("vault_data_card", cardBody->Utils.getJsonFromArrayOfJson)]
 
   [
     ("payment_method_type", "card"->JSON.Encode.string),

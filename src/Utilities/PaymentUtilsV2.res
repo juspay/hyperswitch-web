@@ -1,6 +1,6 @@
 open UnifiedPaymentsTypesV2
 
-let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) => {
+let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement, ~isShowPaypal) => {
   let walletsList = []
   let walletToBeDisplayedInTabs = [
     "mb_way",
@@ -19,20 +19,52 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
     "mifinity",
   ]
   let otherPaymentList = []
-
+  // TODO - Paypal Redirect Tabs Flow
+  // TODO - Handle Each Payment Method Similar to V1
   paymentMethodListValue.paymentMethodsEnabled->Array.forEach(item => {
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodType) {
       otherPaymentList->Array.push(item.paymentMethodType)->ignore
     } else if item.paymentMethodType == "wallet" {
-      if item.paymentMethodSubtype !== "paypal" {
+      if item.paymentMethodSubtype !== "paypal" || isShowPaypal {
         walletsList->Array.push(item.paymentMethodSubtype)->ignore
       }
-    } else if item.paymentMethodType == "bank_redirect" {
-      otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
     } else if item.paymentMethodType == "bank_debit" {
       otherPaymentList->Array.push(item.paymentMethodSubtype ++ "_debit")->ignore
-    } else if item.paymentMethodType == "card" {
+    } // else if (
+    //   item.methodType === "bank_transfer" &&
+    //     !(Constants.bankTransferList->Array.includes(item.paymentMethodName))
+    // ) {
+    //   otherPaymentList->Array.push(item.paymentMethodName ++ "_transfer")->ignore
+    // }
+    else if item.paymentMethodType == "card" {
       otherPaymentList->Array.push("card")->ignore
+    } // else if item.methodType == "reward" {
+    //   otherPaymentList->Array.push(item.paymentMethodName)->ignore
+    // }
+    else if item.paymentMethodType == "pay_later" {
+      if item.paymentMethodSubtype === "klarna" {
+        let klarnaPaymentMethodExperience = PaymentMethodsRecordV2.getPaymentExperienceTypeFromPML(
+          ~paymentMethodList=paymentMethodListValue,
+          ~paymentMethodName=item.paymentMethodType,
+          ~paymentMethodType=item.paymentMethodSubtype,
+        )
+
+        // let isInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
+        let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
+
+        // To be fixed for Klarna Checkout - PR - https://github.com/juspay/hyperswitch-web/pull/851
+        // if isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience {
+        //   walletsList->Array.push(item.paymentMethodName)->ignore
+        // } else
+        if isRedirectExperience {
+          otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
+        }
+      }
+      // else {
+      //   otherPaymentList->Array.push(item.paymentMethodName)->ignore
+      // }
+    } else {
+      otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
     }
   })
 
@@ -46,12 +78,15 @@ let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mo
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let paymentsList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
+  let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let isShowPaypal = optionAtomValue.wallets.payPal === Auto
 
   let resolvePaymentList = list => {
     switch list {
     | LoadedV2(paymentlist) =>
       let {walletsList, otherPaymentList} = paymentListLookupNew(
         ~paymentMethodListValue=paymentlist,
+        ~isShowPaypal,
       )
       let wallets = walletsList->removeDuplicate->Utils.getWalletPaymentMethod(paymentType)
       let payments = [...paymentOptions, ...otherPaymentList]->removeDuplicate
@@ -114,25 +149,4 @@ let usePaymentMethodTypeFromListV2 = (~paymentsListValueV2, ~paymentMethod, ~pay
       ),
     )
   }, (paymentsListValueV2, paymentMethod, paymentMethodType))
-}
-
-let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManagement) => {
-  open PaymentMethodsRecord
-  let paymentMethodArr = plist.paymentMethodsEnabled
-
-  paymentMethodArr->Array.map(paymentMethodObject => {
-    let methodType = paymentMethodObject.paymentMethodType
-    let handleUserError = methodType === "wallet"
-    let paymentMethodName = paymentMethodObject.paymentMethodSubtype
-    let bankNamesList = paymentMethodObject.bankNames->Option.getOr([])
-    // TODO - Handle Payment Experience
-    {
-      paymentMethodName,
-      fields: getPaymentMethodFields(paymentMethodName, paymentMethodObject.requiredFields),
-      paymentFlow: [],
-      handleUserError,
-      methodType,
-      bankNames: bankNamesList,
-    }
-  })
 }

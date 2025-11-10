@@ -15,8 +15,9 @@ let paymentListLookupNew = (
   ~isGooglePayReady,
   ~shouldDisplayApplePayInTabs,
   ~shouldDisplayPayPalInTabs,
+  ~localeString,
 ) => {
-  let pmList = list->PaymentMethodsRecord.buildFromPaymentList
+  let pmList = list->PaymentMethodsRecord.buildFromPaymentList(~localeString)
   let walletsList = []
   let walletToBeDisplayedInTabs = [
     "mb_way",
@@ -33,7 +34,9 @@ let paymentListLookupNew = (
     "momo",
     "touch_n_go",
     "mifinity",
+    "bluecode",
     "revolut_pay",
+    "skrill",
   ]
   let otherPaymentList = []
 
@@ -331,11 +334,10 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
     ->getDictFromJson
     ->SessionsType.itemToObjMapper(Others)
 
-  let {
-    paypalToken,
-    isPaypalSDKFlow,
-    isPaypalRedirectFlow,
-  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
+  let {paypalToken, isPaypalSDKFlow, isPaypalRedirectFlow} = PayPalHelpers.usePaymentMethodData(
+    ~paymentMethodListValue,
+    ~sessionObj,
+  )
 
   let isPaypalTokenExist = switch paypalToken {
   | OtherTokenOptional(optToken) =>
@@ -352,6 +354,7 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
 let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   let {paymentMethodOrder} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -420,6 +423,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
           ~isGooglePayReady,
           ~shouldDisplayApplePayInTabs,
           ~shouldDisplayPayPalInTabs,
+          ~localeString,
         )
 
       let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
@@ -557,7 +561,7 @@ let getSupportedCardBrands = (paymentMethodListValue: PaymentMethodsRecord.payme
 }
 
 let checkIsCardSupported = (cardNumber, cardBrand, supportedCardBrands) => {
-  let clearValue = cardNumber->CardUtils.clearSpaces
+  let clearValue = cardNumber->CardValidations.clearSpaces
   if cardBrand == "" {
     Some(CardUtils.cardValid(clearValue, cardBrand))
   } else if CardUtils.cardValid(clearValue, cardBrand) {

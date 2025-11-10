@@ -20,7 +20,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   )
   let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let (vaultMode, setVaultMode) = Recoil.useRecoilState(RecoilAtomsV2.vaultMode)
-  let setPaymentsListValue = Recoil.useSetRecoilState(RecoilAtomsV2.paymentsListValue)
+  let setPaymentMethodListValueV2 = Recoil.useSetRecoilState(RecoilAtomsV2.paymentMethodListValueV2)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
@@ -79,7 +79,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     | (_, LoadedV2(paymentlist)) =>
       setWalletOptions(_ => walletsList)
       updatePaymentOptions()
-      setPaymentsListValue(_ => paymentlist)
+      setPaymentMethodListValueV2(_ => paymentlist)
     | (LoadErrorV2(_), _)
     | (_, LoadErrorV2(_))
     | (SemiLoadedV2, _)
@@ -209,12 +209,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           <SepaBankDebitLazy />
         </ReusableReactSuspense>
       | Klarna
+      | Ideal
+      | EPS =>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
+          <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
+        </ReusableReactSuspense>
       | Sofort
       | AfterPay
       | Affirm
       | GiroPay
-      | Ideal
-      | EPS
       | CryptoCurrency
       | ACHTransfer
       | SepaTransfer
@@ -232,10 +235,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | Boleto
       | PayPal
       | EFT
-      | Unknown =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
-          <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
-        </ReusableReactSuspense>
+      | Unknown => React.null
       }}
     </ErrorBoundary>
   }

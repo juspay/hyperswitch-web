@@ -4,9 +4,9 @@ open Utils
 
 let formatSortCode = sortcode => {
   let formatted = sortcode->String.replaceRegExp(%re("/\D+/g"), "")
-  let firstPart = formatted->CardUtils.slice(0, 2)
-  let secondPart = formatted->CardUtils.slice(2, 4)
-  let thirdpart = formatted->CardUtils.slice(4, 6)
+  let firstPart = formatted->String.slice(~start=0, ~end=2)
+  let secondPart = formatted->String.slice(~start=2, ~end=4)
+  let thirdpart = formatted->String.slice(~start=4, ~end=6)
 
   if formatted->String.length <= 2 {
     firstPart

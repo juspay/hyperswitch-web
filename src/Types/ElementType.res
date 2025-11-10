@@ -5,6 +5,7 @@ type classes = {
   empty: string,
   focus: string,
   invalid: string,
+  valid: string,
   webkitAutofill: string,
 }
 type rec styleClass = {
@@ -73,6 +74,7 @@ let defaultClasses = {
   empty: "OrcaElement--empty",
   focus: "OrcaElement--focus",
   invalid: "OrcaElement--invalid",
+  valid: "OrcaElement--valid",
   webkitAutofill: "OrcaElement--webkit-autofill",
 }
 let defaultStyleClass = {
@@ -133,6 +135,7 @@ let getClasses = (str, dict, logger) => {
       empty: getWarningString(json, "empty", "OrcaElement--empty", ~logger),
       focus: getWarningString(json, "focus", "OrcaElement--focus", ~logger),
       invalid: getWarningString(json, "invalid", "OrcaElement--invalid", ~logger),
+      valid: getWarningString(json, "valid", "OrcaElement--valid", ~logger),
       webkitAutofill: getWarningString(
         json,
         "webkitAutofill",

@@ -2,6 +2,7 @@ import * as testIds from "../../../src/Utilities/TestUtils.bs";
 import {
   getClientURL,
   netceteraChallengeTestCard,
+  netceteraFrictionlessTestCard,
   createPaymentBody,
   changeObjectKeyValue,
   connectorProfileIdMapping,
@@ -14,12 +15,12 @@ describe("External 3DS using Netcetera Checks", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.NETCETERA)
+    connectorProfileIdMapping.get(connectorEnum.NETCETERA),
   );
   changeObjectKeyValue(
     createPaymentBody,
     "request_external_three_ds_authentication",
-    true
+    true,
   );
   changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
   let iframeSelector =
@@ -40,7 +41,7 @@ describe("External 3DS using Netcetera Checks", () => {
 
   it("orca-payment-element iframe loaded", () => {
     cy.get(
-      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element"
+      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element",
     )
       .should("be.visible")
       .its("0.contentDocument")
@@ -92,8 +93,26 @@ describe("External 3DS using Netcetera Checks", () => {
       cy.wait(2000);
       cy.wrap($body).find("#cancel").click();
       cy.contains("Payment failed. Please check your payment method.").should(
-        "be.visible"
+        "be.visible",
       );
     });
+  });
+
+  it("If the user enters a frictionless card, the payment should be successful without a challenge.", () => {
+    cy.wait(2000);
+    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
+    getIframeBody()
+      .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+      .type(netceteraFrictionlessTestCard);
+    getIframeBody()
+      .find(`[data-testid=${testIds.expiryInputTestId}]`)
+      .type("0444");
+    cy.wait(1000);
+    getIframeBody()
+      .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+      .type("1234");
+    getIframeBody().get("#submit").click();
+    cy.wait(4000);
+    cy.contains("Thanks for your order!").should("be.visible");
   });
 });

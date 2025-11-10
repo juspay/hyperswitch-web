@@ -4,6 +4,7 @@
   "description": "Test cases in cypress",
   "main": "cypress.config.js",
   "scripts": {
+    "format:cypress": "prettier --write \"cypress/**/*.{js,ts,jsx,tsx}\"",
     "lint": "./node_modules/.bin/tslint -c tslint.json -p cypress/**/*.ts -t stylish",
     "start": "cypress open",
     "test": "cypress run"
@@ -17,6 +18,7 @@
   "devDependencies": {
     "cypress": "^13.13.2",
     "cypress-iframe": "^1.0.1",
+    "prettier": "^3.6.2",
     "typescript": "^5.5.4"
   }
 }

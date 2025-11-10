@@ -37,11 +37,14 @@ let make = (
   let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentManagementListValue,
   )
-  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
+    RecoilAtomsV2.paymentMethodListValueV2,
+  )
+  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let contextPaymentType = usePaymentType()
   let listValue = switch contextPaymentType {
   | PaymentMethodsManagement => paymentManagementListValue
-  | _ => paymentsListValueV2
+  | _ => paymentMethodListValueV2
   }
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
@@ -138,13 +141,13 @@ let make = (
       requiredFields,
       ~isSavedCardFlow,
       ~isAllStoredCardsHaveName,
+      ~localeString,
     )
     ->updateDynamicFields(billingAddress, isSaveDetailsWithClickToPay, clickToPayConfig)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow, isSaveDetailsWithClickToPay))
 
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
@@ -166,9 +169,6 @@ let make = (
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
-  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useRecoilState(
-    destinationBankAccountId,
-  )
   let (bsbNumber, setBsbNumber) = Recoil.useRecoilState(bsbNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
   let countryList = CountryStateDataRefs.countryDataRef.contents
@@ -337,14 +337,9 @@ let make = (
     fieldsArr->Array.filter(field => !(field->isFieldTypeToRenderOutsideBilling))
   }, [fieldsArr])
 
-  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Array.includes(InfoElement)
+  let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
 
-  let isOnlyInfoElementPresent =
-    dynamicFieldsToRenderInsideBilling->Array.length === 1 && isInfoElementPresent
-
-  let isRenderDynamicFieldsInsideBilling =
-    dynamicFieldsToRenderInsideBilling->Array.length > 0 &&
-      (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
+  let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
 
@@ -508,32 +503,6 @@ let make = (
               inputRef=bankAccountNumberRef
               placeholder="DE00 0000 0000 0000 0000 00"
             />
-          | DestinationBankAccountId =>
-            <PaymentField
-              fieldName="Destination Bank Account ID"
-              setValue={setDestinationBankAccountId}
-              value=destinationBankAccountId
-              onChange={ev => {
-                let value = ReactEvent.Form.target(ev)["value"]
-                setDestinationBankAccountId(_ => {
-                  isValid: Some(value !== ""),
-                  value,
-                  errorString: value !== "" ? "" : localeString.destinationBankAccountIdEmptyText,
-                })
-              }}
-              onBlur={ev => {
-                let value = ReactEvent.Focus.target(ev)["value"]
-                setDestinationBankAccountId(prev => {
-                  ...prev,
-                  isValid: Some(value !== ""),
-                })
-              }}
-              type_="text"
-              name="destinationBankAccountId"
-              maxLength=42
-              inputRef=destinationBankAccountIdRef
-              placeholder="DE00 0000 0000 0000 0000 00"
-            />
           | SourceBankAccountId =>
             <PaymentField
               fieldName="Source Bank Account ID"
@@ -618,7 +587,8 @@ let make = (
           | ShippingAddressState
           | PhoneCountryCode
           | LanguagePreference(_)
-          | ShippingAddressCountry(_) => React.null
+          | ShippingAddressCountry(_)
+          | BankList(_) => React.null
           }}
         </DynamicFieldsToRenderWrapper>
       })
@@ -843,6 +813,19 @@ let make = (
                     disabled=false
                     options=updatedCountryArr
                   />
+                | BankList(bankArr) =>
+                  let updatedBankNames =
+                    Bank.getBanks(paymentMethodType)
+                    ->getBankNames(bankArr)
+                    ->DropdownField.updateArrayOfStringToOptionsTypeArray
+                  <DropdownField
+                    appearance=config.appearance
+                    fieldName=localeString.bankLabel
+                    value=selectedBank
+                    setValue=setSelectedBank
+                    disabled=false
+                    options=updatedBankNames
+                  />
                 | Bank =>
                   let updatedBankNames =
                     bankNames->DropdownField.updateArrayOfStringToOptionsTypeArray
@@ -855,15 +838,7 @@ let make = (
                     options=updatedBankNames
                   />
                 | SpecialField(element) => element
-                | InfoElement =>
-                  <>
-                    <Surcharge paymentMethod paymentMethodType />
-                    {if fieldsArr->Array.length > 1 {
-                      bottomElement
-                    } else {
-                      <Block bottomElement />
-                    }}
-                  </>
+                | InfoElement
                 | PixKey
                 | PixCPF
                 | PixCNPJ
@@ -889,7 +864,6 @@ let make = (
                 | LanguagePreference(_)
                 | BankAccountNumber
                 | IBAN
-                | DestinationBankAccountId
                 | SourceBankAccountId
                 | BSBNumber
                 | None => React.null
@@ -900,18 +874,15 @@ let make = (
           </div>
         </div>
       </RenderIf>
-      <RenderIf condition={isOnlyInfoElementPresent}>
+      <Surcharge paymentMethod paymentMethodType />
+      <RenderIf condition={isInfoElementPresent}>
         {<>
-          <Surcharge paymentMethod paymentMethodType />
           {if fieldsArr->Array.length > 1 {
             bottomElement
           } else {
             <Block bottomElement />
           }}
         </>}
-      </RenderIf>
-      <RenderIf condition={!isInfoElementPresent}>
-        <Surcharge paymentMethod paymentMethodType />
       </RenderIf>
     </>}
   </RenderIf>

@@ -1,5 +1,14 @@
 open Utils
 
+let paymentExperiencePaymentMethodsV2 = []
+
+let appendPaymentExperienceV2 = (paymentBodyArr, paymentMethodType) =>
+  if paymentExperiencePaymentMethodsV2->Array.includes(paymentMethodType) {
+    paymentBodyArr->Array.concat([("payment_experience", "redirect_to_url"->JSON.Encode.string)])
+  } else {
+    paymentBodyArr
+  }
+
 let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentMethod=false) => {
   open PaymentBody
 
@@ -22,7 +31,7 @@ let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentM
     ("payment_method_data", paymentMethodData),
   ]
 
-  baseBody->appendPaymentExperience(resolvedPaymentMethodType)
+  baseBody->appendPaymentExperienceV2(resolvedPaymentMethodType)
 }
 
 let epsBody = (~name, ~bankName) => {
@@ -46,12 +55,12 @@ let getPaymentBody = (
   ~paymentMethod,
   ~paymentMethodType,
   ~fullName,
-  ~email,
-  ~country,
+  ~email as _,
+  ~country as _,
   ~bank,
-  ~blikCode,
-  ~paymentExperience: PaymentMethodsRecord.paymentFlow=RedirectToURL,
-  ~phoneNumber,
+  ~blikCode as _,
+  ~paymentExperience as _: PaymentMethodsRecord.paymentFlow=RedirectToURL,
+  ~phoneNumber as _,
 ) =>
   switch paymentMethodType {
   | "eps" => epsBody(~name=fullName, ~bankName=bank)

@@ -82,6 +82,7 @@ let make = (
     RecoilAtoms.showPaymentMethodsScreen,
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
+  let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
 
   let setUserError = message => {
@@ -207,8 +208,17 @@ let make = (
 
       let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
 
+      // Check if card is blocked
+      let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(
+        cardNumber->CardValidations.clearSpaces,
+        blockedBinsList,
+      )
+
       let validFormat =
-        (isBancontact || isCardDetailsValid) && isNicknameValid && areRequiredFieldsValid
+        (isBancontact || isCardDetailsValid) &&
+        isNicknameValid &&
+        areRequiredFieldsValid &&
+        !isCardBlocked
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
         if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
@@ -220,7 +230,7 @@ let make = (
               (
                 async () => {
                   let res = await ClickToPayHelpers.encryptCardForClickToPay(
-                    ~cardNumber=cardNumber->CardUtils.clearSpaces,
+                    ~cardNumber=cardNumber->CardValidations.clearSpaces,
                     ~expiryMonth=month,
                     ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
                     ~cvcNumber,
@@ -391,6 +401,9 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
+        } else if isCardBlocked {
+          setCardError(_ => localeString.blockedCardText)
+          setUserError(localeString.blockedCardText)
         } else if isCardSupported->Option.getOr(true)->not {
           if cardBrand == "" {
             setCardError(_ => localeString.enterValidCardNumberErrorText)
@@ -426,6 +439,7 @@ let make = (
     clickToPayConfig,
     clickToPayCardBrand,
     isClickToPayRememberMe,
+    blockedBinsList,
   ))
   useSubmitPaymentData(submitCallback)
 

@@ -101,7 +101,7 @@ let make = (
 
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
-      ->formatCardExpiryNumber
+      ->CardValidations.formatCardExpiryNumber
       ->emitExpiryDate
 
       PaymentUtils.emitPaymentMethodInfo(
@@ -112,6 +112,11 @@ let make = (
     }
     None
   }, (isActive, cardBrand, paymentItem.paymentMethod, paymentMethodType))
+
+  React.useEffect(() => {
+    CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
+    None
+  }, [isCVCValid])
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)

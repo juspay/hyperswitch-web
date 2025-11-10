@@ -323,21 +323,18 @@ let make = (
     !isGuestCustomer &&
     paymentMethodListValue.payment_type === NEW_MANDATE &&
     displaySavedPaymentMethodsCheckbox &&
-    savedMethods->Array.some(ele => {
-      ele.paymentMethod === "card" && ele.requiresCvv
-    })
+    customerMethod.requiresCvv
   }, (
     isGuestCustomer,
     paymentMethodListValue.payment_type,
     displaySavedPaymentMethodsCheckbox,
-    savedMethods,
+    customerMethod,
   ))
 
   let enableSavedPaymentShimmer = React.useMemo(() => {
     savedCardlength === 0 &&
-      (loadSavedCards === PaymentType.LoadingSavedCards ||
-      !showPaymentMethodsScreen ||
-      clickToPayConfig.isReady->Option.isNone)
+    !showPaymentMethodsScreen &&
+    (loadSavedCards === PaymentType.LoadingSavedCards || clickToPayConfig.isReady->Option.isNone)
   }, (savedCardlength, loadSavedCards, showPaymentMethodsScreen, clickToPayConfig.isReady))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
