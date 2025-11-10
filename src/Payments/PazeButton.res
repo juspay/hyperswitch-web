@@ -21,6 +21,11 @@ let make = (~token: SessionsType.token) => {
   let onClick = _ => {
     if testMode {
       Console.warn("Paze button clicked in test mode - interaction disabled")
+      loggerState.setLogInfo(
+        ~value="Paze button clicked in test mode - interaction disabled",
+        ~eventName=PAZE_SDK_FLOW,
+        ~paymentMethod="PAZE",
+      )
     } else {
       loggerState.setLogInfo(
         ~value="Paze SDK Button Clicked",

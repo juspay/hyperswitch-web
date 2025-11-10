@@ -104,7 +104,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~sdkHandleIsThere,
         ~sessions,
         ~clientSecret,
-        ~isTestMode=testMode,
+        ~testMode,
       )
     })
     Window.body->Window.appendChild(paypalScript)

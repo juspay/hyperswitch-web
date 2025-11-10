@@ -217,7 +217,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let onApplePayButtonClicked = () => {
     if testMode {
       Console.warn("Apple Pay button clicked in test mode - interaction disabled")
-      ()
+      loggerState.setLogInfo(
+        ~value="Apple Pay button clicked in test mode - interaction disabled",
+        ~eventName=APPLE_PAY_FLOW,
+        ~paymentMethod="APPLE_PAY",
+      )
     } else {
       loggerState.setLogInfo(
         ~value="Apple Pay Button Clicked",

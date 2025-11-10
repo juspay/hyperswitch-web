@@ -63,6 +63,11 @@ let make = (~sessionObj: SessionsType.token) => {
           on_click: authorize => {
             if testMode {
               Console.warn("Klarna checkout button clicked in test mode - interaction disabled")
+              loggerState.setLogInfo(
+                ~value="Klarna checkout button clicked in test mode - interaction disabled",
+                ~eventName=PAYPAL_FLOW,
+                ~paymentMethod="PAYPAL",
+              )
               resolve()
             } else {
               PaymentUtils.emitPaymentMethodInfo(

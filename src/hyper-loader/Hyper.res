@@ -388,23 +388,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         }
 
         if testMode {
-          let errorMsgJson =
-            [
-              (
-                "error",
-                [
-                  (
-                    "message",
-                    "Confirm Payment called in test mode - API call bypassed"->JSON.Encode.string,
-                  ),
-                ]
-                ->Dict.fromArray
-                ->JSON.Encode.object,
-              ),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object
-          Promise.resolve(errorMsgJson)
+          let errrorResponse = getFailedSubmitResponse(
+            ~errorType="test_mode_bypass",
+            ~message="Confirm Payment called in test mode - API call bypassed",
+          )
+          Promise.resolve(errrorResponse)
         } else {
           Promise.make((resolve1, _) => {
             let isReadyPromise = isReadyPromise
@@ -779,24 +767,24 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let paramsDict = params->getDictFromJson
 
         iframeRef.contents->Array.forEach(ifR => {
-          // Send payment_methods_list if provided
-          switch paramsDict->Dict.get("payment_methods_list") {
+          // Send paymentMethodsList if provided
+          switch paramsDict->Dict.get("paymentMethodsList") {
           | Some(paymentMethodsList) =>
             let message = [("paymentMethodList", paymentMethodsList)]->Dict.fromArray
             ifR->Window.iframePostMessage(message)
           | None => ()
           }
 
-          // Send customer_methods_list if provided
-          switch paramsDict->Dict.get("customer_methods_list") {
+          // Send customerMethodsList if provided
+          switch paramsDict->Dict.get("customerMethodsList") {
           | Some(customerMethodsList) =>
             let message = [("customerPaymentMethods", customerMethodsList)]->Dict.fromArray
             ifR->Window.iframePostMessage(message)
           | None => ()
           }
 
-          // Send session_tokens if provided
-          switch paramsDict->Dict.get("session_tokens") {
+          // Send sessionTokens if provided
+          switch paramsDict->Dict.get("sessionTokens") {
           | Some(sessionTokens) =>
             let message = [("sessions", sessionTokens)]->Dict.fromArray
             ifR->Window.iframePostMessage(message)
@@ -818,8 +806,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         // Log the preload operation
         logger.setLogInfo(
-          ~value="SDK preloaded with external parameters via LoaderController",
-          ~eventName=ORCA_ELEMENTS_CALLED,
+          ~value="SDK preloaded with external parameters",
+          ~eventName=PRELOAD_SDK_WITH_PARAMS,
         )
       }
 

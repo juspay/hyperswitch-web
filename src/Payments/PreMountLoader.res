@@ -60,44 +60,33 @@ let getMessageHandlerV1Elements = (
     sessionTokensPromise,
     blockedBinsPromise,
   ) = if testMode {
-    let mockPaymentMethods =
-      [
-        (
-          "payment_methods",
+    let mockPaymentMethods = [
+      (
+        "payment_methods",
+        [
           [
-            [
-              ("payment_method", "card"->JSON.Encode.string),
-              (
-                "payment_method_types",
-                [
-                  [("payment_method_type", "credit"->JSON.Encode.string)],
-                  [("payment_method_type", "debit"->JSON.Encode.string)],
-                ]
-                ->Array.map(Dict.fromArray)
-                ->Array.map(JSON.Encode.object)
-                ->JSON.Encode.array,
-              ),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
-          ]->JSON.Encode.array,
-        ),
-        ("is_tax_calculation_enabled", false->JSON.Encode.bool),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object
+            ("payment_method", "card"->JSON.Encode.string),
+            (
+              "payment_method_types",
+              [
+                [("payment_method_type", "credit"->JSON.Encode.string)],
+                [("payment_method_type", "debit"->JSON.Encode.string)],
+              ]
+              ->Array.map(Utils.getJsonFromArrayOfJson)
+              ->JSON.Encode.array,
+            ),
+          ]->Utils.getJsonFromArrayOfJson,
+        ]->JSON.Encode.array,
+      ),
+    ]->Utils.getJsonFromArrayOfJson
 
-    let mockCustomerMethods = Dict.make()->JSON.Encode.object
-
-    let mockSessionTokens = Dict.make()->JSON.Encode.object
-
-    let mockBlockedBins = Dict.make()->JSON.Encode.object
+    let mockResponse = Dict.make()->JSON.Encode.object
 
     (
       Promise.resolve(mockPaymentMethods),
-      Promise.resolve(mockCustomerMethods),
-      Promise.resolve(mockSessionTokens),
-      Promise.resolve(mockBlockedBins),
+      Promise.resolve(mockResponse),
+      Promise.resolve(mockResponse),
+      Promise.resolve(mockResponse),
     )
   } else {
     (
@@ -321,6 +310,7 @@ let make = (
   ~hyperComponentName: Types.hyperComponentName,
   ~merchantHostname,
   ~customPodUri,
+  ~testMode=false,
 ) => {
   let logger = HyperLogger.make(
     ~sessionId,
@@ -328,10 +318,6 @@ let make = (
     ~merchantId=publishableKey,
     ~clientSecret,
   )
-
-  // Detect test mode from URL parameters
-  let url = RescriptReactRouter.useUrl()
-  let testMode = url.search->CardUtils.getQueryParamsDictforKey("testMode") === "true"
 
   switch hyperComponentName {
   | Elements =>

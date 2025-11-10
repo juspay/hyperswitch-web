@@ -26,6 +26,11 @@ let make = () => {
     try {
       if testMode {
         Console.warn("Klarna checkout button clicked in test mode - interaction disabled")
+        loggerState.setLogInfo(
+          ~value="Klarna checkout button clicked in test mode - interaction disabled",
+          ~eventName=KLARNA_CHECKOUT_FLOW,
+          ~paymentMethod="KLARNA",
+        )
         resolve()
       } else {
         loggerState.setLogInfo(

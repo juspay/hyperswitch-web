@@ -48,6 +48,11 @@ let make = (~walletOptions) => {
   let onPaypalClick = _ev => {
     if testMode {
       Console.warn("PayPal button clicked in test mode - interaction disabled")
+      loggerState.setLogInfo(
+        ~value="PayPal button clicked in test mode - interaction disabled",
+        ~eventName=PAYPAL_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
     } else {
       loggerState.setLogInfo(
         ~value="Paypal Button Clicked",

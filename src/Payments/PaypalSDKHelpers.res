@@ -25,7 +25,7 @@ let loadPaypalSDK = (
   ~sdkHandleIsThere: bool,
   ~sessions: PaymentType.loadType,
   ~clientSecret,
-  ~isTestMode=false,
+  ~testMode=false,
 ) => {
   open Promise
 
@@ -53,8 +53,12 @@ let loadPaypalSDK = (
     style: buttonStyle,
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: () => {
-      if isTestMode {
-        Console.warn("Paypal SDK button clicked in test mode - interaction disabled")
+      if testMode {
+        loggerState.setLogInfo(
+          ~value="Paypal SDK createOrder called in test mode - interaction disabled",
+          ~eventName=PAYPAL_FLOW,
+          ~paymentMethod="PAYPAL",
+        )
         resolve("")
       } else {
         PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
@@ -221,11 +225,19 @@ let loadPaypalSDK = (
       handleCloseLoader()
     },
     onClick: () => {
-      loggerState.setLogInfo(
-        ~value="Paypal SDK Button Clicked",
-        ~eventName=PAYPAL_SDK_FLOW,
-        ~paymentMethod="PAYPAL",
-      )
+      if testMode {
+        loggerState.setLogInfo(
+          ~value="Paypal SDK Button Clicked in test mode - interaction disabled",
+          ~eventName=PAYPAL_FLOW,
+          ~paymentMethod="PAYPAL",
+        )
+      } else {
+        loggerState.setLogInfo(
+          ~value="Paypal SDK Button Clicked",
+          ~eventName=PAYPAL_SDK_FLOW,
+          ~paymentMethod="PAYPAL",
+        )
+      }
     },
   }).render("#paypal-button")
   areOneClickWalletsRendered(prev => {
