@@ -383,44 +383,53 @@ let updatePaymentMethod = (
   })
 }
 
-let savePaymentMethod = (
+let savePaymentMethod = async (
   ~bodyArr,
   ~pmSessionId,
   ~pmClientSecret,
   ~publishableKey,
   ~profileId,
+  ~logger,
   ~customPodUri="",
 ) => {
-  open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [
     ("x-profile-id", `${profileId}`),
     ("Content-Type", "application/json"),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/confirm`
-  fetchApi(
-    uri,
-    ~method=#POST,
-    ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+
+  let uri = APIUtils.generateApiUrl(
+    V2(SavePaymentMethodV2),
+    ~params={
+      customBackendBaseUrl: None,
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: Some(pmSessionId),
+    },
   )
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
+
+  let bodyStr = bodyArr->getJsonFromArrayOfJson->JSON.stringify
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=SAVED_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~method=#POST,
+    ~bodyStr,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
