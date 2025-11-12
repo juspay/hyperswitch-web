@@ -21,6 +21,7 @@ let make = (
   let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
     RecoilAtomsV2.paymentMethodListValueV2,
   )
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let contextPaymentType = usePaymentType()
   let listValue = switch contextPaymentType {
   | PaymentMethodsManagement => paymentManagementListValue
@@ -102,8 +103,10 @@ let make = (
   ))
 
   let requiredFields = React.useMemo(() => {
-    requiredFieldsWithBillingDetails->removeBillingDetailsIfUseBillingAddress(billingAddress)
-  }, requiredFieldsWithBillingDetails)
+    requiredFieldsWithBillingDetails
+    ->removeBillingDetailsIfUseBillingAddress(billingAddress)
+    ->removeClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay)
+  }, (requiredFieldsWithBillingDetails, isSaveDetailsWithClickToPay))
 
   let isAllStoredCardsHaveName = React.useMemo(() => {
     PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
@@ -134,6 +137,20 @@ let make = (
 
   let {isCVCValid, cvcNumber} = cvcProps
 
+  // useRequiredFieldsEmptyAndValid(
+  //   ~requiredFields,
+  //   ~fieldsArr,
+  //   ~countryNames,
+  //   ~bankNames,
+  //   ~isCardValid,
+  //   ~isExpiryValid,
+  //   ~isCVCValid,
+  //   ~cardNumber,
+  //   ~cardExpiry,
+  //   ~cvcNumber,
+  //   ~isSavedCardFlow,
+  // )
+
   useRequiredFieldsBody(
     ~requiredFields,
     ~paymentMethodType,
@@ -144,6 +161,9 @@ let make = (
     ~isAllStoredCardsHaveName,
     ~setRequiredFieldsBody,
   )
+
+  // let submitCallback = useSubmitCallback()
+  // useSubmitPaymentData(submitCallback)
 
   React.null
 }

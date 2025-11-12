@@ -49,6 +49,21 @@ let saveCardBody = (
   ]
 }
 
+let saveCardBodySuperposition = (~nickname="", ~formValuesWithInitialValues) => {
+  let extraRequiredFields = Dict.make()
+  extraRequiredFields->Dict.set("payment_method", "card")
+  extraRequiredFields->Dict.set("payment_method_data.card.card_issuer", "")
+  if nickname != "" {
+    extraRequiredFields->Dict.set("payment_method_data.card.nickname", nickname)
+  }
+  let extraRequiredFieldsDict =
+    extraRequiredFields->SuperpositionHelper.convertFlatDictToNestedObject
+  CommonUtils.mergeDict(
+    formValuesWithInitialValues,
+    extraRequiredFieldsDict,
+  )->Utils.getArrayOfTupleFromDict
+}
+
 let vgsCardBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {
   let cardBody = [
     ("card_number", cardNumber->JSON.Encode.string),

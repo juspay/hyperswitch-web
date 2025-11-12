@@ -520,6 +520,7 @@ let thailandBanks = [
   },
 ]
 
+// list is not there for open_banking_uk
 let getBanks = paymentMethodName => {
   switch paymentMethodName {
   | "ideal" => idealBanks

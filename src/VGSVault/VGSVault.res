@@ -101,7 +101,7 @@ let make = (~isBancontact=false) => {
     None
   }, (id, vgsEnv, vgsScriptLoaded))
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event, mergedValues, values) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
@@ -148,7 +148,7 @@ let make = (~isBancontact=false) => {
     }
   }, (form, requiredFieldsBody, areRequiredFieldsValid, areRequiredFieldsEmpty))
 
-  useSubmitPaymentData(submitCallback)
+  // useSubmitPaymentData(submitCallback)
 
   <div className="animate-slowShow">
     <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>
@@ -192,7 +192,9 @@ let make = (~isBancontact=false) => {
           </div>
         </div>
         <ErrorComponent cardError=vgsCardError expiryError=vgsExpiryError cvcError=vgsCVCError />
-        <DynamicFields paymentMethod="card" paymentMethodType="credit" setRequiredFieldsBody />
+        <DynamicFieldsSuperposition
+          paymentMethod="card" paymentMethodType="credit" submitCallback
+        />
       </div>
     </div>
   </div>

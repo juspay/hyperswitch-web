@@ -144,13 +144,8 @@ let make = () => {
     let cardNetwork = [
       ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
     ]
-    let defaultCardBody = PaymentManagementBody.saveCardBody(
-      ~cardNumber,
-      ~month,
-      ~year,
-      ~cardHolderName=None,
-      ~cvcNumber,
-      ~cardBrand=cardNetwork,
+    let defaultCardBody = PaymentManagementBody.saveCardBodySuperposition(
+      ~formValuesWithInitialValues=Dict.make(),
     )
     try {
       let res = await PaymentHelpersV2.savePaymentMethod(

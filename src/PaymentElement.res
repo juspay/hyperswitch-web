@@ -11,7 +11,7 @@ let cardsToRender = (width: int) => {
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
-
+  ConfigurationService.useConfigurationService()->ignore
   let {
     paymentMethodOrder,
     layout,
@@ -37,7 +37,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     paymentMethodListValue,
   )
-
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])

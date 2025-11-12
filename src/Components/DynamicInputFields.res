@@ -1,4 +1,5 @@
 open ReactFinalForm
+open DynamicFieldsSuperpositonUtils
 
 @react.component
 let make = (~field: SuperpositionTypes.fieldConfig) => {
@@ -7,10 +8,17 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
   let inputRef = React.useRef(Nullable.null)
   let label = field.displayName
   let placeholder = field.displayName
+  let createFieldValidator = rule =>
+    Validation.createFieldValidator(
+      rule,
+      ~enabledCardSchemes=[],
+      ~localeObject=LocaleDataType.defaultLocale,
+    )
 
   let options = DropdownField.updateArrayOfStringToOptionsTypeArray(
     field.options->Array.length > 0 ? field.options : [""],
   )
+  let (countryCodeDisplayValue, setCountryCodeDisplayValue) = React.useState(_ => "")
 
   let countryList = CountryStateDataRefs.countryDataRef.contents
 
@@ -26,8 +34,8 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
     })
   }
 
-  let initialCountryOptions = getCountryNames()->DropdownField.updateArrayOfStringToOptionsTypeArray
-  let initialCountry = switch initialCountryOptions->Array.get(0) {
+  let countryOptions = getCountryNames()->DropdownField.updateArrayOfStringToOptionsTypeArray
+  let initialCountry = switch countryOptions->Array.get(0) {
   | Some(firstOption) => firstOption.value
   | None => ""
   }
@@ -39,16 +47,24 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
   | None => ""
   }
 
-  let {input: countryInput} = ReactFinalForm.useField(
-    "billing.address.country",
-    ~config={initialValue: Some(initialCountry)},
-  )
-  let currentCountry = countryInput.value->Option.getOr(initialCountry)
+  let (countryInput, currentCountry) = switch field.fieldType {
+  | CountrySelect | StateSelect =>
+    let {input: countryInput} = ReactFinalForm.useField(
+      "billing.address.country",
+      ~config={initialValue: Some(initialCountry)},
+    )
+    let currentCountry = countryInput.value->Option.getOr(initialCountry)
+    (Some(countryInput), currentCountry)
+  | _ => (None, initialCountry)
+  }
 
   let dynamicOptions = switch field.fieldType {
   | StateSelect =>
     getStateNames(currentCountry)->DropdownField.updateArrayOfStringToOptionsTypeArray
-  | CountrySelect => initialCountryOptions
+  | CountrySelect => countryOptions
+  | CountryCodeSelect => phoneNumberCodeOptions
+  | MonthSelect => monthSelectOptions
+  | DropdownSelect => getDynamicOptions(field)
   | _ => options
   }
 
@@ -57,7 +73,7 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
     | StateSelect => initialState
     | CountrySelect => initialCountry
     | MonthSelect | CurrencySelect | CountryCodeSelect | YearSelect | DropdownSelect =>
-      switch options->Array.get(0) {
+      switch dynamicOptions->Array.get(0) {
       | Some(firstOption) => firstOption.value
       | None => ""
       }
@@ -66,22 +82,17 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
   }
 
   let {input, meta} = ReactFinalForm.useField(
-    field.name,
+    field.outputPath,
     ~config={
       initialValue: Some(getInitialValue()),
+      validate: createFieldValidator(Required),
+      format: switch field.fieldType {
+      | CardNumberTextInput => Validation.formatValue(CardNumber)
+      | TextInput if field.name->String.endsWith("card_cvc") => Validation.formatValue(CardCVC(""))
+      | _ => (val, _name) => val
+      },
     },
   )
-
-  React.useEffect(() => {
-    let currentValue = input.value->Option.getOr("")
-    if currentValue === "" {
-      let initialVal = getInitialValue()
-      if initialVal !== "" {
-        input.onChange(initialVal)
-      }
-    }
-    None
-  }, [])
 
   React.useEffect(() => {
     if field.fieldType === StateSelect {
@@ -110,7 +121,23 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
 
   let handleChange = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    input.onChange(val)
+    switch field.fieldType {
+    | CardNumberTextInput => {
+        let cleanValue = val->String.trim->String.replaceAll(" ", "")
+        input.onChange(cleanValue)
+      }
+    | _ => input.onChange(val)
+    }
+  }
+
+  let handlePhoneChange = ev => {
+    let val: string = ReactEvent.Form.target(ev)["value"]
+    let numericOnly =
+      val
+      ->String.split("")
+      ->Array.filter(char => char >= "0" && char <= "9")
+      ->Array.join("")
+    input.onChange(numericOnly)
   }
 
   let handleStateChange = (fn: unit => string) => {
@@ -123,7 +150,24 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
     input.onChange(newValue)
 
     if field.fieldType === CountrySelect {
-      countryInput.onChange(newValue)
+      switch countryInput {
+      | Some(countryInput) => countryInput.onChange(newValue)
+      | None => ()
+      }
+    }
+  }
+
+  let handleCountryCodeChange = fn => {
+    let newValue = fn()
+    setCountryCodeDisplayValue(_ => newValue)
+    input.onChange(newValue->getCountryCodeSplitValue)
+  }
+
+  let fieldMaxLength = {
+    switch field.fieldType {
+    | EmailInput => 50
+    | CardNumberTextInput => 28
+    | _ => 60
     }
   }
 
@@ -142,6 +186,7 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
       type_="email"
       inputRef
       placeholder
+      maxLength=fieldMaxLength
     />
   | PasswordInput =>
     <PaymentField
@@ -157,26 +202,35 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
       type_="password"
       inputRef
       placeholder
+      maxLength=fieldMaxLength
     />
-  | TextInput =>
-    <PaymentField
+
+  | PhoneInput =>
+    <PaymentInputField
       fieldName=label
-      value={{
-        value: input.value->Option.getOr(""),
-        isValid,
-        errorString,
-      }}
-      onChange=handleChange
-      onBlur=input.onBlur
+      value={input.value->Option.getOr("")}
+      onChange=handlePhoneChange
+      errorString
+      type_="tel"
+      maxLength=16
+      onBlur={input.onBlur}
       onFocus=input.onFocus
-      type_="text"
       inputRef
-      placeholder
+      isValid
+      placeholder="234 567 8900"
     />
-  // | PhoneInput => <PhoneInput input meta errorString inputRef isValid />
+  | CountryCodeSelect =>
+    <DropdownField
+      appearance=config.appearance
+      fieldName={label}
+      value={countryCodeDisplayValue}
+      setValue={handleCountryCodeChange}
+      disabled=false
+      options=dynamicOptions
+      className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
+    />
   | MonthSelect
   | CurrencySelect
-  | CountryCodeSelect
   | YearSelect
   | DropdownSelect =>
     <DropdownField
@@ -185,10 +239,11 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
       value={input.value->Option.getOr("")}
       setValue={fn => input.onChange(fn())}
       disabled=false
-      options
+      options=dynamicOptions
       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
     />
-  | DatePicker if field.name->String.includes("date_of_birth") => <DateOfBirthElement field />
+  | DatePicker if field.outputPath->String.includes("date_of_birth") =>
+    <DateOfBirthElement field input meta />
   | DatePicker =>
     <PaymentField
       fieldName=label
@@ -225,6 +280,38 @@ let make = (~field: SuperpositionTypes.fieldConfig) => {
       options=dynamicOptions
       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
     />
-  | _ => <div> {label->React.string} </div>
+  | CardNumberTextInput =>
+    <PaymentField
+      fieldName=label
+      value={{
+        value: input.value->Option.getOr(""),
+        isValid,
+        errorString,
+      }}
+      onChange=handleChange
+      onBlur=input.onBlur
+      onFocus=input.onFocus
+      type_="text"
+      inputRef
+      placeholder
+      maxLength=fieldMaxLength
+    />
+  | _ =>
+    <PaymentField
+      fieldName=label
+      value={{
+        value: input.value->Option.getOr(""),
+        isValid,
+        errorString,
+      }}
+      onChange=handleChange
+      onBlur=input.onBlur
+      onFocus=input.onFocus
+      type_="text"
+      inputRef
+      placeholder
+      maxLength=fieldMaxLength
+    />
+  // | _ => <div className="font-extrabold text-red-700 text-lg"> {label->React.string} </div>
   }
 }

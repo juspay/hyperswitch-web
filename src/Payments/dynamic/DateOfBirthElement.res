@@ -3,8 +3,12 @@ open SuperpositionTypes
 %%raw(`import ("react-datepicker/dist/react-datepicker.css")`)
 
 @react.component
-let make = (~field: fieldConfig) => {
-  let {config, localeString, themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+let make = (
+  ~field: fieldConfig,
+  ~input: ReactFinalForm.inputProps<JsxEventU.Focus.t>,
+  ~meta: ReactFinalForm.fieldState,
+) => {
+  let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   let months = [
     "January",
@@ -25,20 +29,12 @@ let make = (~field: fieldConfig) => {
   let currentYear = Date.getFullYear(Date.make())
   let years = Array.fromInitializer(~length=currentYear - startYear, i => currentYear - i)
 
-  let {input, meta} = ReactFinalForm.useField(
-    field.name,
-    ~config={
-      initialValue: Some(""),
-    },
-  )
-
   let label = field.displayName
   let placeholder = field.displayName
 
   let dateValue = switch input.value->Option.getOr("") {
   | "" => Nullable.null
   | dateStr => {
-      // Try to parse the date string
       let date = Date.fromString(dateStr)
       if Date.getTime(date)->Float.isNaN {
         Nullable.null

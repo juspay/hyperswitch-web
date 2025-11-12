@@ -39,63 +39,15 @@ let make = (
   | _ => false
   }
 
-  let x = ConfigurationService.useConfigurationService()
-
-  let a = ["Stripe"->JSON.Encode.string, "Airwallex"->JSON.Encode.string]
-
-  let b: SuperpositionTypes.superpositionBaseContext = {
-    payment_method: "Card",
-    payment_method_type: "Credit",
-    country: "US",
-    mandate_type: "",
-    collect_shipping_details_from_wallet_connector: "",
-    collect_billing_details_from_wallet_connector: "",
-  }
-
-  let (requiredFieldsFromSuperPosition, _, _) = React.useMemo0(() => x(a, b, Dict.make()))
-  let groupedFields = SuperpositionHelper.categorizedFields(requiredFieldsFromSuperPosition)
-
-  Console.log2("Grouped fields", groupedFields)
-
-  Console.log2("Config fields", requiredFieldsFromSuperPosition)
+  let paymentMethod = isBancontact ? "bank_redirect" : "card"
+  let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
 
   let paymentType = usePaymentType()
-  let {
-    isCardValid,
-    setIsCardValid,
-    isCardSupported,
-    cardNumber,
-    changeCardNumber,
-    handleCardBlur,
-    cardRef,
-    icon,
-    cardError,
-    setCardError,
-    maxCardLength,
-    cardBrand,
-  } = cardProps
+  let {isCardValid, isCardSupported, cardNumber, cardBrand} = cardProps
 
-  let {
-    isExpiryValid,
-    setIsExpiryValid,
-    cardExpiry,
-    changeCardExpiry,
-    handleExpiryBlur,
-    expiryRef,
-    expiryError,
-    setExpiryError,
-  } = expiryProps
+  let {isExpiryValid, cardExpiry} = expiryProps
 
-  let {
-    isCVCValid,
-    setIsCVCValid,
-    cvcNumber,
-    changeCVCNumber,
-    handleCVCBlur,
-    cvcRef,
-    cvcError,
-    setCvcError,
-  } = cvcProps
+  let {isCVCValid, cvcNumber} = cvcProps
   let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
@@ -105,9 +57,6 @@ let make = (
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
 
-  let setUserError = message => {
-    postFailedSubmitResponse(~errortype="validation_error", ~message)
-  }
   let {clickToPayProvider} = clickToPayConfig
   React.useEffect(() => {
     if (
@@ -140,7 +89,7 @@ let make = (
   }, [paymentMethodListValue])
   let isCardBrandValid = combinedCardNetworks->Array.includes(cardBrand->String.toLowerCase)
 
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let (requiredFieldsBody, _) = React.useState(_ => Dict.make())
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
@@ -162,12 +111,6 @@ let make = (
   useHandlePostMessages(~complete=complete && areRequiredFieldsValid, ~empty, ~paymentType="card")
 
   let isGuestCustomer = useIsGuestCustomer()
-  let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
-  let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
-    ~cvcNumber,
-    ~isCVCValid,
-    ~isCvcValidValue,
-  )
 
   let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
@@ -175,83 +118,166 @@ let make = (
     ~isGuestCustomer,
   )
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    let (month, year) = CardUtils.getExpiryDates(cardExpiry)
+  let isRecognizedClickToPayPayment = ctpCards->Array.length > 0
+  let isUnrecognizedClickToPayPayment = isSaveDetailsWithClickToPay
 
-    let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
-    let cardNetwork = [
-      ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
-    ]
+  let isClickToPayFlow = isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment
 
-    let defaultCardBody = switch GlobalVars.sdkVersion {
-    | V1 =>
-      PaymentBody.cardPaymentBody(
-        ~cardNumber,
-        ~month,
-        ~year,
-        ~cardHolderName=None,
-        ~cvcNumber,
-        ~cardBrand=cardNetwork,
-        ~nickname=nickname.value,
-      )
-    | V2 =>
-      PaymentManagementBody.saveCardBody(
-        ~cardNumber,
-        ~month,
-        ~year,
-        ~cardHolderName=None,
-        ~cvcNumber,
-        ~cardBrand=cardNetwork,
-        ~nickname=nickname.value,
-      )
-    }
+  let clickToPayCustomFields = ClickToPayHelpers.clickToPayCustomFields(
+    ~clickToPayProvider,
+    ~localeString,
+  )
 
-    let banContactBody = PaymentBody.bancontactBody()
-    let cardBody = if isCustomerAcceptanceRequired {
-      defaultCardBody->Array.concat(onSessionBody)
-    } else {
-      defaultCardBody
-    }
+  let submitCallback = React.useCallback(
+    (ev: Window.event, formValuesWithInitialValues, values) => {
+      let json = ev.data->safeParse
+      let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+      let (month, year) = CardUtils.getExpiryDates(cardExpiry)
 
-    let isRecognizedClickToPayPayment = ctpCards->Array.length > 0
+      let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
 
-    let isUnrecognizedClickToPayPayment = isSaveDetailsWithClickToPay
+      if confirm.doSubmit {
+        let defaultCardBody = switch GlobalVars.sdkVersion {
+        | V1 =>
+          PaymentBody.cardPaymentBodySuperposition(
+            ~nickname=nickname.value,
+            ~formValuesWithInitialValues,
+          )
+        | V2 =>
+          PaymentManagementBody.saveCardBodySuperposition(
+            ~nickname=nickname.value,
+            ~formValuesWithInitialValues,
+          )
+        }
 
-    if confirm.doSubmit {
-      let isCardDetailsValid =
-        isCVCValid->Option.getOr(false) &&
-        isCardValid->Option.getOr(false) &&
-        isCardSupported->Option.getOr(false) &&
-        isExpiryValid->Option.getOr(false)
+        let banContactBody = PaymentBody.bancontactBody()
+        let cardBody = if isCustomerAcceptanceRequired {
+          defaultCardBody->Array.concat(onSessionBody)
+        } else {
+          defaultCardBody
+        }
 
-      let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
+        let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
 
-      let validFormat =
-        (isBancontact || isCardDetailsValid) && isNicknameValid && areRequiredFieldsValid
+        let validFormat = isNicknameValid
 
-      if validFormat && (showPaymentMethodsScreen || isBancontact) {
-        if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
-          ClickToPayHelpers.handleOpenClickToPayWindow()
+        if validFormat && (showPaymentMethodsScreen || isBancontact) {
+          if isClickToPayFlow {
+            ClickToPayHelpers.handleOpenClickToPayWindow()
 
-          switch clickToPayProvider {
-          | MASTERCARD =>
-            try {
-              (
-                async () => {
-                  let res = await ClickToPayHelpers.encryptCardForClickToPay(
-                    ~cardNumber=cardNumber->CardValidations.clearSpaces,
-                    ~expiryMonth=month,
-                    ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
-                    ~cvcNumber,
-                    ~logger=loggerState,
-                  )
+            switch clickToPayProvider {
+            | MASTERCARD =>
+              try {
+                (
+                  async () => {
+                    Console.log2("Card,", values)
+                    let res = await ClickToPayHelpers.encryptCardForClickToPay(
+                      ~cardNumber=cardNumber->CardValidations.clearSpaces,
+                      ~expiryMonth=month,
+                      ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
+                      ~cvcNumber,
+                      ~logger=loggerState,
+                    )
 
-                  switch res {
-                  | Ok(res) => {
-                      let resp = await ClickToPayHelpers.handleProceedToPay(
-                        ~encryptedCard=res,
+                    Console.log2("Encrypted card for Click to Pay", res)
+
+                    // switch res {
+                    // | Ok(res) => {
+                    //     let resp = await ClickToPayHelpers.handleProceedToPay(
+                    //       ~encryptedCard=res,
+                    //       ~isCheckoutWithNewCard=true,
+                    //       ~isUnrecognizedUser=ctpCards->Array.length == 0,
+                    //       ~email=email.value,
+                    //       ~phoneNumber=phoneNumber.value,
+                    //       ~countryCode=phoneNumber.countryCode
+                    //       ->Option.getOr("")
+                    //       ->String.replace("+", ""),
+                    //       ~rememberMe=isClickToPayRememberMe,
+                    //       ~logger=loggerState,
+                    //       ~clickToPayProvider,
+                    //       ~clickToPayToken=clickToPayConfig.clickToPayToken,
+                    //     )
+                    //     let dict = resp.payload->Utils.getDictFromJson
+                    //     let headers = dict->Utils.getDictFromDict("headers")
+                    //     let merchantTransactionId =
+                    //       headers->Utils.getString("merchant-transaction-id", "")
+                    //     let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
+                    //     let correlationId =
+                    //       dict
+                    //       ->Utils.getDictFromDict("checkoutResponseData")
+                    //       ->Utils.getString("srcCorrelationId", "")
+
+                    //     let clickToPayBody = PaymentBody.mastercardClickToPayBody(
+                    //       ~merchantTransactionId,
+                    //       ~correlationId,
+                    //       ~xSrcFlowId,
+                    //     )
+                    //     // intent(
+                    //     //   ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                    //     //   ~confirmParam=confirm.confirmParams,
+                    //     //   ~handleUserError=false,
+                    //     //   ~manualRetry=isManualRetryEnabled,
+                    //     // )
+                    //   }
+                    // | Error(err) =>
+                    //   loggerState.setLogError(
+                    //     ~value={
+                    //       "message": `Error during checkout - ${err
+                    //         ->Utils.formatException
+                    //         ->JSON.stringify}`,
+                    //       "scheme": clickToPayProvider,
+                    //     }
+                    //     ->JSON.stringifyAny
+                    //     ->Option.getOr(""),
+                    //     ~eventName=CLICK_TO_PAY_FLOW,
+                    //   )
+                    // }
+                  }
+                )()->ignore
+              } catch {
+              | err =>
+                loggerState.setLogError(
+                  ~value={
+                    "message": `Error during checkout - ${err
+                      ->Utils.formatException
+                      ->JSON.stringify}`,
+                    "scheme": clickToPayProvider,
+                  }
+                  ->JSON.stringifyAny
+                  ->Option.getOr(""),
+                  ~eventName=CLICK_TO_PAY_FLOW,
+                )
+              }
+
+            | VISA => {
+                let expiry = cardExpiry->String.split("/")->Array.map(String.trim)
+                let month = expiry->Array.at(0)->Option.getOr("")
+                let year = "20" ++ expiry->Array.at(1)->Option.getOr("")
+                let payload = [
+                  convertKeyValueToJsonStringPair(
+                    "primaryAccountNumber",
+                    cardNumber->String.replaceAll(" ", ""),
+                  ),
+                  convertKeyValueToJsonStringPair("panExpirationMonth", month),
+                  convertKeyValueToJsonStringPair("panExpirationYear", year),
+                  convertKeyValueToJsonStringPair("cardSecurityCode", cvcNumber->String.trim),
+                  convertKeyValueToJsonStringPair("cardHolderName", fullName.value->String.trim),
+                ]
+
+                let dict = Dict.make()
+                payload->Array.forEach(((key, value)) => Dict.set(dict, key, value))
+                let cardPayloadJson = JSON.Encode.object(dict)
+                Console.log2("Card payload json", cardPayloadJson)
+
+                (
+                  async () => {
+                    let encryptedCard =
+                      await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard
+                    Console.log2("Encrypted card", encryptedCard)
+
+                    try {
+                      let res = await ClickToPayHelpers.handleProceedToPay(
+                        ~visaEncryptedCard=encryptedCard,
                         ~isCheckoutWithNewCard=true,
                         ~isUnrecognizedUser=ctpCards->Array.length == 0,
                         ~email=email.value,
@@ -263,197 +289,77 @@ let make = (
                         ~logger=loggerState,
                         ~clickToPayProvider,
                         ~clickToPayToken=clickToPayConfig.clickToPayToken,
+                        ~orderId=clientSecret->Option.getOr(""),
+                        ~fullName=fullName.value,
                       )
-                      let dict = resp.payload->Utils.getDictFromJson
-                      let headers = dict->Utils.getDictFromDict("headers")
-                      let merchantTransactionId =
-                        headers->Utils.getString("merchant-transaction-id", "")
-                      let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
-                      let correlationId =
-                        dict
-                        ->Utils.getDictFromDict("checkoutResponseData")
-                        ->Utils.getString("srcCorrelationId", "")
-
-                      let clickToPayBody = PaymentBody.mastercardClickToPayBody(
-                        ~merchantTransactionId,
-                        ~correlationId,
-                        ~xSrcFlowId,
+                      let dict = res.payload->Utils.getDictFromJson
+                      let clickToPayBody = PaymentBody.visaClickToPayBody(
+                        ~email=clickToPayConfig.email,
+                        ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
                       )
                       intent(
-                        ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                        ~bodyArr=clickToPayBody,
                         ~confirmParam=confirm.confirmParams,
                         ~handleUserError=false,
                         ~manualRetry=isManualRetryEnabled,
                       )
+                    } catch {
+                    | err =>
+                      loggerState.setLogError(
+                        ~value={
+                          "message": `Error during checkout - ${err
+                            ->Utils.formatException
+                            ->JSON.stringify}`,
+                          "scheme": clickToPayProvider,
+                        }
+                        ->JSON.stringifyAny
+                        ->Option.getOr(""),
+                        ~eventName=CLICK_TO_PAY_FLOW,
+                      )
                     }
-                  | Error(err) =>
-                    loggerState.setLogError(
-                      ~value={
-                        "message": `Error during checkout - ${err
-                          ->Utils.formatException
-                          ->JSON.stringify}`,
-                        "scheme": clickToPayProvider,
-                      }
-                      ->JSON.stringifyAny
-                      ->Option.getOr(""),
-                      ~eventName=CLICK_TO_PAY_FLOW,
-                    )
                   }
-                }
-              )()->ignore
-            } catch {
-            | err =>
-              loggerState.setLogError(
-                ~value={
-                  "message": `Error during checkout - ${err
-                    ->Utils.formatException
-                    ->JSON.stringify}`,
-                  "scheme": clickToPayProvider,
-                }
-                ->JSON.stringifyAny
-                ->Option.getOr(""),
-                ~eventName=CLICK_TO_PAY_FLOW,
-              )
+                )()->ignore
+              }
+            | NONE => ()
             }
-
-          | VISA => {
-              let expiry = cardExpiry->String.split("/")->Array.map(String.trim)
-              let month = expiry->Array.at(0)->Option.getOr("")
-              let year = "20" ++ expiry->Array.at(1)->Option.getOr("")
-              let payload = [
-                convertKeyValueToJsonStringPair(
-                  "primaryAccountNumber",
-                  cardNumber->String.replaceAll(" ", ""),
-                ),
-                convertKeyValueToJsonStringPair("panExpirationMonth", month),
-                convertKeyValueToJsonStringPair("panExpirationYear", year),
-                convertKeyValueToJsonStringPair("cardSecurityCode", cvcNumber->String.trim),
-                convertKeyValueToJsonStringPair("cardHolderName", fullName.value->String.trim),
-              ]
-
-              let dict = Dict.make()
-              payload->Array.forEach(((key, value)) => Dict.set(dict, key, value))
-              let cardPayloadJson = JSON.Encode.object(dict)
-              Console.log2("Card payload json", cardPayloadJson)
-
-              (
-                async () => {
-                  let encryptedCard =
-                    await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard
-                  Console.log2("Encrypted card", encryptedCard)
-
-                  try {
-                    let res = await ClickToPayHelpers.handleProceedToPay(
-                      ~visaEncryptedCard=encryptedCard,
-                      ~isCheckoutWithNewCard=true,
-                      ~isUnrecognizedUser=ctpCards->Array.length == 0,
-                      ~email=email.value,
-                      ~phoneNumber=phoneNumber.value,
-                      ~countryCode=phoneNumber.countryCode
-                      ->Option.getOr("")
-                      ->String.replace("+", ""),
-                      ~rememberMe=isClickToPayRememberMe,
-                      ~logger=loggerState,
-                      ~clickToPayProvider,
-                      ~clickToPayToken=clickToPayConfig.clickToPayToken,
-                      ~orderId=clientSecret->Option.getOr(""),
-                      ~fullName=fullName.value,
-                    )
-                    let dict = res.payload->Utils.getDictFromJson
-                    let clickToPayBody = PaymentBody.visaClickToPayBody(
-                      ~email=clickToPayConfig.email,
-                      ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
-                    )
-                    intent(
-                      ~bodyArr=clickToPayBody,
-                      ~confirmParam=confirm.confirmParams,
-                      ~handleUserError=false,
-                      ~manualRetry=isManualRetryEnabled,
-                    )
-                  } catch {
-                  | err =>
-                    loggerState.setLogError(
-                      ~value={
-                        "message": `Error during checkout - ${err
-                          ->Utils.formatException
-                          ->JSON.stringify}`,
-                        "scheme": clickToPayProvider,
-                      }
-                      ->JSON.stringifyAny
-                      ->Option.getOr(""),
-                      ~eventName=CLICK_TO_PAY_FLOW,
-                    )
-                  }
-                }
-              )()->ignore
-            }
-          | NONE => ()
-          }
-        } else if isPMMFlow {
-          saveCard(
-            ~bodyArr=cardBody->mergeAndFlattenToTuples(requiredFieldsBody),
-            ~confirmParam={
-              return_url: options.sdkHandleSavePayment.confirmParams.return_url,
-              publishableKey,
-            },
-            ~handleUserError=true,
-          )
-        } else {
-          intent(
-            ~bodyArr={
-              (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(
-                requiredFieldsBody,
-              )
-            },
-            ~confirmParam=confirm.confirmParams,
-            ~handleUserError=false,
-            ~manualRetry=isManualRetryEnabled,
-          )
-        }
-      } else {
-        if cardNumber === "" {
-          setCardError(_ => localeString.cardNumberEmptyText)
-          setUserError(localeString.enterFieldsText)
-        } else if isCardSupported->Option.getOr(true)->not {
-          if cardBrand == "" {
-            setCardError(_ => localeString.enterValidCardNumberErrorText)
-            setUserError(localeString.enterValidDetailsText)
+          } else if isPMMFlow {
+            saveCard(
+              ~bodyArr=cardBody,
+              ~confirmParam={
+                return_url: options.sdkHandleSavePayment.confirmParams.return_url,
+                publishableKey,
+              },
+              ~handleUserError=true,
+            )
           } else {
-            setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
-            setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+            intent(
+              ~bodyArr={
+                isBancontact ? banContactBody : cardBody
+              },
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+            )
           }
-        }
-        if cardExpiry === "" {
-          setExpiryError(_ => localeString.cardExpiryDateEmptyText)
-          setUserError(localeString.enterFieldsText)
-        }
-        if !isBancontact && cvcNumber === "" {
-          setCvcError(_ => localeString.cvcNumberEmptyText)
-          setUserError(localeString.enterFieldsText)
-        }
-        if !validFormat {
-          setUserError(localeString.enterValidDetailsText)
         }
       }
-    }
-  }, (
-    areRequiredFieldsValid,
-    requiredFieldsBody,
-    empty,
-    complete,
-    isCustomerAcceptanceRequired,
-    nickname,
-    isCardBrandValid,
-    isManualRetryEnabled,
-    cardProps,
-    clickToPayConfig,
-    clickToPayCardBrand,
-    isClickToPayRememberMe,
-  ))
-  useSubmitPaymentData(submitCallback)
+    },
+    (
+      areRequiredFieldsValid,
+      requiredFieldsBody,
+      empty,
+      complete,
+      isCustomerAcceptanceRequired,
+      nickname,
+      isCardBrandValid,
+      isManualRetryEnabled,
+      cardProps,
+      clickToPayConfig,
+      clickToPayCardBrand,
+      isClickToPayRememberMe,
+    ),
+  )
 
-  let paymentMethod = isBancontact ? "bank_redirect" : "card"
-  let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
   let conditionsForShowingSaveCardCheckbox =
     paymentMethodListValue.mandate_payment->Option.isNone &&
     !isGuestCustomer &&
@@ -461,8 +367,6 @@ let make = (
     options.displaySavedPaymentMethodsCheckbox &&
     !isBancontact
 
-  let compressedLayoutStyleForCvcError =
-    innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
   let vaultClass = switch isVault {
   | Some(_) => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
   | None => ""
@@ -482,110 +386,12 @@ let make = (
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
-          // <RenderIf condition={!isBancontact}>
-          //   <PaymentInputField
-          //     fieldName=localeString.cardNumberLabel
-          //     isValid=isCardValid
-          //     setIsValid=setIsCardValid
-          //     value=cardNumber
-          //     onChange=changeCardNumber
-          //     onBlur=handleCardBlur
-          //     rightIcon={icon}
-          //     errorString=cardError
-          //     type_="tel"
-          //     maxLength=maxCardLength
-          //     inputRef=cardRef
-          //     placeholder="1234 1234 1234 1234"
-          //     className={innerLayout === Compressed && cardError->String.length > 0
-          //       ? "border-b-0"
-          //       : ""}
-          //     name=TestUtils.cardNoInputTestId
-          //     autocomplete="cc-number"
-          //   />
-          //   <div
-          //     className="flex flex-row w-full place-content-between"
-          //     style={
-          //       gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-          //     }>
-          //     <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
-          //       <PaymentInputField
-          //         fieldName=localeString.validThruText
-          //         isValid=isExpiryValid
-          //         setIsValid=setIsExpiryValid
-          //         value=cardExpiry
-          //         onChange=changeCardExpiry
-          //         onBlur=handleExpiryBlur
-          //         errorString=expiryError
-          //         type_="tel"
-          //         maxLength=7
-          //         inputRef=expiryRef
-          //         placeholder=localeString.expiryPlaceholder
-          //         name=TestUtils.expiryInputTestId
-          //         autocomplete="cc-exp"
-          //       />
-          //     </div>
-          //     <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
-          //       <PaymentInputField
-          //         fieldName=localeString.cvcTextLabel
-          //         isValid=isCVCValid
-          //         setIsValid=setIsCVCValid
-          //         value=cvcNumber
-          //         onChange=changeCVCNumber
-          //         onBlur=handleCVCBlur
-          //         errorString=cvcError
-          //         rightIcon={CardUtils.setRightIconForCvc(
-          //           ~cardComplete,
-          //           ~cardEmpty,
-          //           ~cardInvalid,
-          //           ~color=themeObj.colorIconCardCvcError,
-          //         )}
-          //         type_="tel"
-          //         className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
-          //         maxLength=4
-          //         inputRef=cvcRef
-          //         placeholder="123"
-          //         name=TestUtils.cardCVVInputTestId
-          //         autocomplete="cc-csc"
-          //       />
-          //     </div>
-          //   </div>
-          //   <RenderIf
-          //     condition={innerLayout === Compressed &&
-          //       (cardError->String.length > 0 ||
-          //       cvcError->String.length > 0 ||
-          //       expiryError->String.length > 0)}>
-          //     <div
-          //       className="Error pt-1"
-          //       style={
-          //         color: themeObj.colorDangerText,
-          //         fontSize: themeObj.fontSizeSm,
-          //         alignSelf: "start",
-          //         textAlign: "left",
-          //       }>
-          //       {React.string("Invalid input")}
-          //     </div>
-          //   </RenderIf>
-          // </RenderIf>
-          // <DynamicFields
-          //   paymentMethod
-          //   paymentMethodType
-          //   setRequiredFieldsBody
-          //   cardProps={Some(cardProps)}
-          //   expiryProps={Some(expiryProps)}
-          //   cvcProps={Some(cvcProps)}
-          //   isBancontact
-          //   isSaveDetailsWithClickToPay
-          // />
           <DynamicFieldsSuperposition
-            groupedFields
             paymentMethod
             paymentMethodType
-            setRequiredFieldsBody
-            cardProps={Some(cardProps)}
-            expiryProps={Some(expiryProps)}
-            cvcProps={Some(cvcProps)}
-            isBancontact
-            isSaveDetailsWithClickToPay
+            submitCallback
+            customFields=clickToPayCustomFields
+            showOnlyCustomFields={clickToPayProvider !== NONE}
           />
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="flex items-center justify-start">

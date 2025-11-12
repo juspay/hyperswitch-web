@@ -714,6 +714,7 @@ let useRequiredFieldsBody = (
       })
       ->addBillingDetailsIfUseBillingAddress
 
+    Console.log2("Required Fields Body: ", requiredFieldsBody)
     setRequiredFieldsBody(_ => requiredFieldsBody)
     None
   }, (

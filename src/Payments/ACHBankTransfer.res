@@ -11,6 +11,9 @@ let make = () => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
 
+  let paymentMethod = "bank_transfer"
+  let paymentMethodType = "ach"
+
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let complete = email.value != "" && email.isValid->Option.getOr(false)
@@ -23,32 +26,45 @@ let make = () => {
     None
   }, [complete])
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event, mergedValues, _values) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if complete {
-        let bodyArr =
-          PaymentBody.dynamicPaymentBody("bank_transfer", "ach")->mergeAndFlattenToTuples(
-            requiredFieldsBody,
-          )
-        intent(
-          ~bodyArr,
-          ~confirmParam=confirm.confirmParams,
-          ~handleUserError=false,
-          ~iframeId,
-          ~manualRetry=isManualRetryEnabled,
-        )
-      } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
-      }
+      let paymentBody = PaymentBody.buildSuperpositionBody(
+        ~paymentMethod,
+        ~paymentMethodType,
+        ~paymentMethodData=mergedValues,
+        ~appendEmptyDict=true,
+      )
+      intent(
+        ~bodyArr=paymentBody,
+        ~confirmParam=confirm.confirmParams,
+        ~handleUserError=false,
+        ~iframeId,
+        ~manualRetry=isManualRetryEnabled,
+      )
+      // if complete {
+      //   let bodyArr =
+      //     PaymentBody.dynamicPaymentBody("bank_transfer", "ach")->mergeAndFlattenToTuples(
+      //       requiredFieldsBody,
+      //     )
+      //   intent(
+      //     ~bodyArr,
+      //     ~confirmParam=confirm.confirmParams,
+      //     ~handleUserError=false,
+      //     ~iframeId,
+      //     ~manualRetry=isManualRetryEnabled,
+      //   )
+      // } else {
+      //   postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+      // }
     }
   }, (email, isManualRetryEnabled))
-  useSubmitPaymentData(submitCallback)
+  // useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields paymentMethod="bank_transfer" paymentMethodType="ach" setRequiredFieldsBody />
-    <Surcharge paymentMethod="bank_transfer" paymentMethodType="ach" />
+    <DynamicFieldsSuperposition paymentMethod paymentMethodType submitCallback />
+    <Surcharge paymentMethod paymentMethodType />
     <InfoElement />
   </div>
 }

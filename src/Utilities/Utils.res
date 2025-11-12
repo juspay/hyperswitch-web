@@ -1649,6 +1649,9 @@ let isValidHexColor = (color: string): bool => {
 }
 
 let convertKeyValueToJsonStringPair = (key, value) => (key, JSON.Encode.string(value))
+let convertFormValuesToTuples = formValues => {
+  formValues->Dict.toArray->Array.map(((key, value)) => (key, value))
+}
 
 let validateName = (
   val: string,
@@ -1698,4 +1701,49 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.flatMap(x => x->Dict.get(key))
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
+}
+
+module JsonBox = {
+  @react.component
+  let make = (~json) => {
+    <div
+      className="flex-1 border border-purple-500 m-2  overflow-scroll whitespace-pre font-fira-code">
+      {json->JSON.stringifyWithIndent(2)->React.string}
+    </div>
+  }
+}
+
+module FormValuesSpy = {
+  @react.component
+  let make = (~wrapperClass="", ~jsonModifier=?, ~restrictToLocal=true, ~displayProps=true) => {
+    let subs = ReactFinalForm.useFormSubscription(["values"])
+
+    let canRender = if restrictToLocal {
+      Window.Location.hostname === "localhost"
+    } else {
+      true
+    }
+
+    if canRender {
+      <div className={`${wrapperClass} flex flex-col overflow-hidden`}>
+        <ReactFinalForm.FormSpy subscription=subs>
+          {props => {
+            <>
+              {if displayProps {
+                <JsonBox json={props.values->JSON.Encode.object} />
+              } else {
+                React.null
+              }}
+              {switch jsonModifier {
+              | Some(modifierFn) => <JsonBox json={modifierFn(props.values)} />
+              | None => React.null
+              }}
+            </>
+          }}
+        </ReactFinalForm.FormSpy>
+      </div>
+    } else {
+      React.null
+    }
+  }
 }

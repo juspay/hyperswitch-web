@@ -14,42 +14,56 @@ let make = () => {
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
+  let paymentMethod = "bank_transfer"
+  let paymentMethodType = "instant_bank_transfer"
+
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
     ~empty=areRequiredFieldsEmpty,
-    ~paymentType="bank_transfer",
+    ~paymentType=paymentMethod,
   )
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event, mergedValues, _values) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if areRequiredFieldsValid && !areRequiredFieldsEmpty {
-        let bodyArr =
-          PaymentBody.dynamicPaymentBody(
-            "bank_transfer",
-            "instant_bank_transfer",
-          )->mergeAndFlattenToTuples(requiredFieldsBody)
+      let paymentBody = PaymentBody.buildSuperpositionBody(
+        ~paymentMethod,
+        ~paymentMethodType,
+        ~paymentMethodData=mergedValues,
+      )
 
-        intent(
-          ~bodyArr,
-          ~confirmParam=confirm.confirmParams,
-          ~handleUserError=false,
-          ~iframeId,
-          ~manualRetry=isManualRetryEnabled,
-        )
-      } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
-      }
+      intent(
+        ~bodyArr=paymentBody,
+        ~confirmParam=confirm.confirmParams,
+        ~handleUserError=false,
+        ~iframeId,
+        ~manualRetry=isManualRetryEnabled,
+      )
+
+      // if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+      // let bodyArr =
+      //   PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)->mergeAndFlattenToTuples(
+      //     requiredFieldsBody,
+      //   )
+
+      // intent(
+      //   ~bodyArr,
+      //   ~confirmParam=confirm.confirmParams,
+      //   ~handleUserError=false,
+      //   ~iframeId,
+      //   ~manualRetry=isManualRetryEnabled,
+      // )
+      // } else {
+      //   postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+      // }
     }
-  }, (requiredFieldsBody, areRequiredFieldsValid, areRequiredFieldsEmpty, isManualRetryEnabled))
-  useSubmitPaymentData(submitCallback)
+  }, [isManualRetryEnabled])
+  // useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields
-      paymentMethod="bank_transfer" paymentMethodType="instant_bank_transfer" setRequiredFieldsBody
-    />
-    <Surcharge paymentMethod="bank_transfer" paymentMethodType="instant" />
+    <DynamicFieldsSuperposition paymentMethod paymentMethodType submitCallback />
+    <Surcharge paymentMethod paymentMethodType />
     <InfoElement />
   </div>
 }

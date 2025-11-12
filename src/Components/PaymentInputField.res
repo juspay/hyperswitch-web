@@ -24,6 +24,7 @@ let make = (
   ~paymentType=?,
   ~isDisabled=false,
   ~autocomplete="on",
+  ~onFocus=?,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
@@ -34,8 +35,12 @@ let make = (
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
-  let handleFocus = _ => {
+  let handleFocus = ev => {
     setInputFocused(_ => true)
+    switch onFocus {
+    | Some(fn) => fn(ev)
+    | None => ()
+    }
     switch setIsValid {
     | Some(fn) => fn(_ => None)
     | None => ()

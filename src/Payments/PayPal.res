@@ -151,7 +151,9 @@ let make = (~walletOptions) => {
       </div>
     </button>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="paypal" setRequiredFieldsBody />
+    <DynamicFieldsSuperposition
+      paymentMethod="wallet" paymentMethodType="paypal" submitCallback={(_, _, _) => ()}
+    />
   }
 }
 

@@ -19,36 +19,32 @@ let make = () => {
     ~paymentType="bank_transfer",
   )
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let paymentMethod = "bank_transfer"
+  let paymentMethodType = "sepa_bank_transfer"
+
+  let submitCallback = (ev: Window.event, mergedValues, values) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if areRequiredFieldsValid && !areRequiredFieldsEmpty {
-        let bodyArr =
-          PaymentBody.dynamicPaymentBody(
-            "bank_transfer",
-            "sepa_bank_transfer",
-          )->mergeAndFlattenToTuples(requiredFieldsBody)
-
-        intent(
-          ~bodyArr,
-          ~confirmParam=confirm.confirmParams,
-          ~handleUserError=false,
-          ~iframeId,
-          ~manualRetry=isManualRetryEnabled,
-        )
-      } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
-      }
-    }
-  }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isManualRetryEnabled, requiredFieldsBody))
-  useSubmitPaymentData(submitCallback)
+    let paymentBody = PaymentBody.buildSuperpositionBody(
+      ~paymentMethod,
+      ~paymentMethodType,
+      ~paymentMethodData=mergedValues,
+    )
+    intent(
+      ~bodyArr=paymentBody,
+      ~confirmParam=confirm.confirmParams,
+      ~handleUserError=false,
+      ~iframeId,
+      ~manualRetry=isManualRetryEnabled,
+    )
+    Console.log2("SEPA Bank Transfer Submit Callback Invoked", (mergedValues, values))
+    ()
+  }
+  // useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields
-      paymentMethod="bank_transfer" paymentMethodType="sepa_bank_transfer" setRequiredFieldsBody
-    />
-    <Surcharge paymentMethod="bank_transfer" paymentMethodType="sepa" />
+    <DynamicFieldsSuperposition paymentMethod paymentMethodType submitCallback />
+    <Surcharge paymentMethod paymentMethodType />
     <InfoElement />
   </div>
 }

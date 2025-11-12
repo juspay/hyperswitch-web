@@ -33,6 +33,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   | ApplePay(val) => val
   | _ => 48
   }
+  let paymentMethod = "wallet"
+  let paymentMethodType = "apple_pay"
 
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
@@ -332,7 +334,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       </div>
     </RenderIf>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="apple_pay" setRequiredFieldsBody />
+    <DynamicFieldsSuperposition paymentMethod paymentMethodType submitCallback={(_, _, _) => ()} />
   }
 }
 

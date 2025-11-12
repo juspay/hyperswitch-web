@@ -1,16 +1,22 @@
 open SuperpositionTypes
-
 module EmailField = {
   @react.component
   let make = (~emailConfigs: array<fieldConfig>) => {
     let inputRef = React.useRef(Nullable.null)
     let (emailValue, setEmailValue) = React.useState(_ => "")
+    let createFieldValidator = rule =>
+      Validation.createFieldValidator(
+        rule,
+        ~enabledCardSchemes=[],
+        ~localeObject=LocaleDataType.defaultLocale,
+      )
 
     let emailInputs = emailConfigs->Array.map(config => {
       let {input, meta} = ReactFinalForm.useField(
-        config.name,
+        config.outputPath,
         ~config={
           initialValue: Some(""),
+          validate: createFieldValidator(Email),
         },
       )
       (config, input, meta)

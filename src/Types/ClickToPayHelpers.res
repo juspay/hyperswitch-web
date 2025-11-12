@@ -1598,3 +1598,32 @@ let handleProceedToPay = async (
     }
   }
 }
+
+let clickToPayCustomFields = (
+  ~clickToPayProvider,
+  ~localeString: LocaleStringTypes.localeStrings,
+) => {
+  open SuperpositionHelper
+  open SuperpositionTypes
+  let cardFields = CARD(
+    [
+      "primaryAccountNumber",
+      "panExpirationMonth",
+      "panExpirationYear",
+      "cardSecurityCode",
+      "cardNetwork",
+    ]->Array.map(v => createCustomField(v)),
+  )
+  let emailFiled = EMAIL([createCustomField("email")])
+  let phoneNumberField = PHONE([createCustomField("countryCode"), createCustomField("phoneNumber")])
+  let cardHolderNameField = GENERIC([
+    createCustomField("cardHolderName", ~displayName=localeString.cardHolderName),
+  ])
+  let defaultCtpFields = [cardFields, emailFiled, phoneNumberField]
+
+  switch clickToPayProvider {
+  | MASTERCARD => defaultCtpFields
+  | VISA => [...defaultCtpFields, cardHolderNameField]
+  | _ => []
+  }
+}

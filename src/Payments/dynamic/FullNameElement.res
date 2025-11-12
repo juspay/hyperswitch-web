@@ -1,4 +1,5 @@
 open SuperpositionTypes
+open Validation
 
 module FullNameField = {
   @react.component
@@ -6,17 +7,21 @@ module FullNameField = {
     let inputRef = React.useRef(Nullable.null)
     let (fullname, setFullname) = React.useState(_ => "")
     let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let createFieldValidator = rule =>
+      createFieldValidator(rule, ~enabledCardSchemes=[], ~localeObject=LocaleDataType.defaultLocale)
 
     let {input: firstNameInput, meta: firstNameMeta} = ReactFinalForm.useField(
-      firstNameConfig.name,
+      firstNameConfig.outputPath,
       ~config={
         initialValue: Some(""),
+        validate: createFieldValidator(FirstName),
       },
     )
     let {input: lastNameInput, meta: lastNameMeta} = ReactFinalForm.useField(
-      lastNameConfig.name,
+      lastNameConfig.outputPath,
       ~config={
         initialValue: Some(""),
+        validate: createFieldValidator(LastName),
       },
     )
 
@@ -38,8 +43,8 @@ module FullNameField = {
           }
         }
       }
-      firstNameInput.onChange(firstNameVal->Option.getOr(" "))
-      lastNameInput.onChange(lastNameVal->Option.getOr(" "))
+      firstNameInput.onChange(firstNameVal->Option.getOr(""))
+      lastNameInput.onChange(lastNameVal->Option.getOr(""))
     }
 
     <PaymentField
@@ -63,7 +68,7 @@ module FullNameField = {
 
 @react.component
 let make = (~fields: array<fieldConfig>) => {
-  if fields->Array.length == 2 {
+  if fields->Array.length == 3 {
     switch fields {
     | [firstNameConfig, lastNameConfig] => <FullNameField firstNameConfig lastNameConfig />
     | _ => React.null

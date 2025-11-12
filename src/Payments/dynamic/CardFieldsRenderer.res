@@ -1,5 +1,4 @@
 open SuperpositionTypes
-open Validation
 module CardFields = {
   @react.component
   let make = (
@@ -9,61 +8,88 @@ module CardFields = {
     ~cvcConfig,
     ~cardNetworkConfig,
   ) => {
+    //TODO: checkIsCardSupported
+
     let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let (cardExp, setCardExp) = React.useState(_ => "")
-    let (cardNumber, setCardNumber) = React.useState(_ => "")
+    let isCoBadgedCardDetectedOnce = React.useRef(false)
+    let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+    let enabledCardSchemes =
+      paymentMethodListValue->PaymentUtils.getSupportedCardBrands->Option.getOr([])
+    let createFieldValidator = rule =>
+      Validation.createFieldValidator(
+        rule,
+        ~enabledCardSchemes,
+        ~localeObject=LocaleDataType.defaultLocale,
+      )
 
     let cardNumberRef = React.useRef(Nullable.null)
     let expiryRef = React.useRef(Nullable.null)
     let cvcRef = React.useRef(Nullable.null)
 
-    let {input: cardNumberInput} = ReactFinalForm.useField(
-      cardNumberConfig.name,
+    let {input: cardNumberInput, meta: cardNumberMeta} = ReactFinalForm.useField(
+      cardNumberConfig.outputPath,
       ~config={
-        initialValue: Some(""),
+        validate: createFieldValidator(CardNumber),
+        format: (value, _name) => {
+          value->Option.map(v => {
+            let cleanValue = v->String.trim->String.replaceAll(" ", "")
+            let detectedBrand = cleanValue->CardUtils.getCardBrand
+            let cardType = detectedBrand->CardUtils.getCardType
+            cleanValue->CardUtils.formatCardNumber(cardType)
+          })
+        },
       },
     )
-    let {input: expMonthInput} = ReactFinalForm.useField(
-      expMonthConfig.name,
+    let {input: expMonthInput, meta: expMonthMeta} = ReactFinalForm.useField(
+      expMonthConfig.outputPath,
       ~config={
-        initialValue: Some(""),
+        validate: val =>
+          createFieldValidator(CardExpiry(Some(val)->Option.getOr("99") ++ "/90"))(Some(val)),
       },
     )
-    let {input: expYearInput} = ReactFinalForm.useField(
-      expYearConfig.name,
+    let {input: expYearInput, meta: expYearMeta} = ReactFinalForm.useField(
+      expYearConfig.outputPath,
       ~config={
-        initialValue: Some(""),
-      },
-    )
-    let {input: cvcInput} = ReactFinalForm.useField(
-      cvcConfig.name,
-      ~config={
-        initialValue: Some(""),
-      },
-    )
-    let {input: cardNetworkInput} = ReactFinalForm.useField(
-      cardNetworkConfig.name,
-      ~config={
-        initialValue: Some(""),
+        validate: val =>
+          createFieldValidator(
+            CardExpiry("01/" ++ Some(val)->Option.getOr("2011")->String.slice(~start=2, ~end=4)),
+          )(Some(val)),
       },
     )
 
-    let getCardNetworkValue = () => cardNetworkInput.value->Option.getOr("")
+    let {input: cardNetworkInput, meta: cardNetworkMeta} = ReactFinalForm.useField(
+      cardNetworkConfig.outputPath,
+      ~config={},
+    )
+    let getCardNetworkValue = React.useMemo(
+      () => cardNetworkInput.value->Option.getOr(""),
+      [cardNetworkInput.value],
+    )
+
+    let {input: cvcInput, meta: cvcMeta} = ReactFinalForm.useField(
+      cvcConfig.outputPath,
+      ~config={
+        validate: createFieldValidator(CardCVC(getCardNetworkValue)),
+      },
+    )
+
     let getCvcValue = () => cvcInput.value->Option.getOr("")
 
     let handleCardNumberChange = ev => {
       let val: string = ReactEvent.Form.target(ev)["value"]
-      let detectedBrand = val->String.trim->CardUtils.getCardBrand
-      let cardType = detectedBrand->CardUtils.getCardType
-      let formattedCard = val->CardUtils.formatCardNumber(cardType)
-      setCardNumber(_ => formattedCard)
-      let clearCardNumber = formattedCard->String.replaceAll(" ", "")->String.trim
+      let clearCardNumber = val->String.trim->String.replaceAll(" ", "")
+      let detectedBrand = clearCardNumber->CardUtils.getCardBrand
+
       if clearCardNumber == "" {
         setCardExp(_ => "")
         expMonthInput.onChange("")
         expYearInput.onChange("")
         cvcInput.onChange("")
+        cardNetworkInput.onChange("")
       }
+
       cardNumberInput.onChange(clearCardNumber)
       cardNetworkInput.onChange(detectedBrand)
 
@@ -99,13 +125,13 @@ module CardFields = {
 
     let handleCvcChange = ev => {
       let val = ReactEvent.Form.target(ev)["value"]
-      let formattedCVC = val->CardValidations.formatCVCNumber(getCardNetworkValue())
+      let formattedCVC = val->CardValidations.formatCVCNumber(getCardNetworkValue)
       cvcInput.onChange(formattedCVC)
     }
 
     let getCvcDynamicIcon = () => {
       let cvcValue = getCvcValue()
-      let cardNetworkValue = getCardNetworkValue()
+      let cardNetworkValue = getCardNetworkValue
 
       let isValid =
         cvcValue->String.length > 0 &&
@@ -126,24 +152,41 @@ module CardFields = {
       )
     }
 
-    let getCardNumberIcon = cardBrand => {
-      let cardType = cardBrand->CardUtils.getCardType
-      CardUtils.getCardBrandIcon(cardType, CardThemeType.Payment)
+    let getCardNumberIcon = () => {
+      let cardNumber = cardNumberInput.value->Option.getOr("")
+      let cardBrand = getCardNetworkValue
+      <CardSchemeComponent
+        cardNumber
+        paymentType=CardThemeType.Payment
+        cardBrand
+        setCardBrand={fn => cardNetworkInput.onChange(fn())}
+        isCoBadgedCardDetectedOnce
+      />
     }
 
     let getCardMaxLength = cardBrand => CardUtils.getMaxLength(cardBrand)
-    let cardNetworkValue = getCardNetworkValue()
+    let cardNetworkValue = getCardNetworkValue
+
+    let isFieldValid = (fieldMeta: ReactFinalForm.fieldState) =>
+      fieldMeta.error->Option.isNone || !fieldMeta.touched || fieldMeta.active
+
+    let isCardNumberValid = isFieldValid(cardNumberMeta)
+    let isExpMonthValid = isFieldValid(expMonthMeta)
+    let isExpYearValid = isFieldValid(expYearMeta)
+    let isCvcValid = isFieldValid(cvcMeta)
+    let isExipryValid = isExpMonthValid && isExpYearValid
 
     <>
       <PaymentInputField
         fieldName=localeString.cardNumberLabel
-        isValid={Some(true)}
+        isValid={Some(isCardNumberValid)}
         setIsValid={_ => ()}
-        value={cardNumber}
+        value={cardNumberInput.value->Option.getOr("")}
         onChange={handleCardNumberChange}
         onBlur={cardNumberInput.onBlur}
-        rightIcon={getCardNumberIcon(cardNetworkValue)}
-        errorString=""
+        onFocus={cardNumberInput.onFocus}
+        rightIcon={getCardNumberIcon()}
+        errorString={!isCardNumberValid ? cardNumberMeta.error->Option.getOr("") : ""}
         type_="tel"
         maxLength={getCardMaxLength(cardNetworkValue)}
         inputRef=cardNumberRef
@@ -153,12 +196,21 @@ module CardFields = {
       <div className="flex gap-10">
         <PaymentInputField
           fieldName=localeString.validThruText
-          isValid=Some(true)
+          isValid=Some(isExipryValid)
           setIsValid={_ => ()}
           value=cardExp
           onChange={handleExpiryChange}
-          onBlur={_ => ()}
-          errorString=""
+          onBlur={_ => {
+            expMonthInput.onBlur()
+            expYearInput.onBlur()
+          }}
+          onFocus={_ => {
+            expMonthInput.onFocus()
+            expYearInput.onFocus()
+          }}
+          errorString={!isExipryValid
+            ? expMonthMeta.error->Option.getOr(expYearMeta.error->Option.getOr(""))
+            : ""}
           type_="tel"
           maxLength=7
           inputRef=expiryRef
@@ -167,12 +219,13 @@ module CardFields = {
         />
         <PaymentInputField
           fieldName=localeString.cvcTextLabel
-          isValid={Some(true)}
+          isValid={Some(isCvcValid)}
           setIsValid={_ => ()}
           value={getCvcValue()}
           onChange={handleCvcChange}
           onBlur={cvcInput.onBlur}
-          errorString=""
+          onFocus={cvcInput.onFocus}
+          errorString={!isCvcValid ? cvcMeta.error->Option.getOr("") : ""}
           rightIcon={getCvcDynamicIcon()}
           type_="tel"
           className="tracking-widest w-full"
@@ -188,7 +241,7 @@ module CardFields = {
 
 @react.component
 let make = (~fields: array<fieldConfig>) => {
-  if fields->Array.length == 5 {
+  if fields->Array.length == 6 {
     switch fields {
     | [cardNumberConfig, expMonthConfig, expYearConfig, cvcConfig, cardNetworkConfig] =>
       <CardFields cardNumberConfig expMonthConfig expYearConfig cvcConfig cardNetworkConfig />

@@ -125,6 +125,9 @@ let make = (~setModalData) => {
 
   let (_, setInputFocus) = React.useState(_ => NONE)
 
+  let paymentMethod = "bank_debit"
+  let paymentMethodType = "sepa"
+
   let routeref = React.useRef(Nullable.null)
   let accountRef = React.useRef(Nullable.null)
   let nameRef = React.useRef(Nullable.null)
@@ -185,6 +188,10 @@ let make = (~setModalData) => {
     iban !== "" ||
     (accountNum->String.length > 0 && sortCode->String.length > 0)
 
+  let dynamicFieldsFormRef = React.useRef({
+    DynamicFieldsSuperposition.getFormState: () => {values: Dict.make(), valid: false},
+  })
+
   let onClickHandler = () => {
     setModalData(_ => Some({
       routingNumber,
@@ -200,7 +207,9 @@ let make = (~setModalData) => {
 
   let dynamicFieldsModalBody =
     <div className="flex flex-col item-center gap-5">
-      <DynamicFields paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody />
+      <DynamicFieldsSuperposition
+        paymentMethod paymentMethodType submitCallback={(_, _, _) => ()}
+      />
       <PayNowButton onClickHandler label="Done" />
     </div>
 

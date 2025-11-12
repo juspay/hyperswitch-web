@@ -67,6 +67,184 @@ let cardPaymentBody = (
   ]
 }
 
+let cardPaymentBodySuperposition = (~nickname="", ~formValuesWithInitialValues) => {
+  let extraRequiredFields = Dict.make()
+  extraRequiredFields->Dict.set("payment_method", "card")
+  extraRequiredFields->Dict.set("payment_method_data.card.card_issuer", "")
+  if nickname != "" {
+    extraRequiredFields->Dict.set("payment_method_data.card.nickname", nickname)
+  }
+  let extraRequiredFieldsDict =
+    extraRequiredFields->SuperpositionHelper.convertFlatDictToNestedObject
+  CommonUtils.mergeDict(
+    formValuesWithInitialValues,
+    extraRequiredFieldsDict,
+  )->Utils.getArrayOfTupleFromDict
+}
+
+let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
+  switch paymentMethod {
+  | "bank_debit" => paymentMethodType->String.replace("_debit", "")
+  | "bank_transfer" =>
+    if !(Constants.bankTransferList->Array.includes(paymentMethodType)) {
+      paymentMethodType->String.replace("_transfer", "")
+    } else {
+      paymentMethodType
+    }
+  | _ => paymentMethodType
+  }
+
+let buildSuperpositionBody = (
+  ~paymentMethod,
+  ~paymentMethodType,
+  ~paymentMethodData,
+  ~paymentExperience: PaymentMethodsRecord.paymentFlow=RedirectToURL,
+  ~appendEmptyDict=false,
+) => {
+  let resolvedPaymentMethodType = getPaymentMethodType(paymentMethod, paymentMethodType)
+  let appendRedirectPaymentMethods = [
+    "touch_n_go",
+    "momo",
+    "gcash",
+    "kakao_pay",
+    "go_pay",
+    "dana",
+    "vipps",
+    "twint",
+    "atome",
+    "pay_bright",
+    "walley",
+    "affirm",
+    "we_chat_pay",
+    "ali_pay",
+    "ali_pay_hk",
+    "revolut_pay",
+    "klarna",
+    "paypal",
+    "breadpay",
+    "flexiti",
+    "bluecode",
+    "afterpay_clearpay",
+  ]
+
+  let appendBankeDebitMethods = ["sepa"]
+  let appendBankTransferMethods = ["ach", "bacs", "multibanco"]
+
+  let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
+    if isQrPaymentMethod {
+      Some("qr")
+    } else if appendRedirectPaymentMethods->Array.includes(paymentMethodType) {
+      Some("redirect")
+    } else if (
+      appendBankeDebitMethods->Array.includes(paymentMethodType) && paymentMethod == "bank_debit"
+    ) {
+      Some("bank_debit")
+    } else if (
+      appendBankTransferMethods->Array.includes(paymentMethodType) &&
+        paymentMethod == "bank_transfer"
+    ) {
+      Some("bank_transfer")
+    } else {
+      None
+    }
+  }
+
+  let appendPaymentMethodExperience = (~paymentMethod, ~paymentMethodType, ~isQrPaymentMethod) =>
+    switch getPaymentMethodSuffix(~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) {
+    | Some(suffix) => `${paymentMethodType}_${suffix}`
+    | None => paymentMethodType
+    }
+
+  let basicFields = Dict.make()
+
+  switch GlobalVars.sdkVersion {
+  | V1 => {
+      basicFields->Dict.set("payment_method", paymentMethod)
+      basicFields->Dict.set("payment_method_type", resolvedPaymentMethodType)
+    }
+  | V2 => {
+      basicFields->Dict.set("payment_method_type", paymentMethod)
+      basicFields->Dict.set("payment_method_subtype", resolvedPaymentMethodType)
+    }
+  }
+
+  let basicFieldsDict = basicFields->SuperpositionHelper.convertFlatDictToNestedObject
+  let mergedData = CommonUtils.mergeDict(paymentMethodData, basicFieldsDict)
+
+  let addEmptyObjectAtPath = (mergedData, path) => {
+    let extraRequiredFields = Dict.make()
+    extraRequiredFields->Dict.set(path, Dict.make()->JSON.Encode.object)
+    let extraFieldsDict =
+      extraRequiredFields->SuperpositionHelper.convertFlatDictToNestedObjectWithJson
+    CommonUtils.mergeDict(mergedData, extraFieldsDict)->Utils.getArrayOfTupleFromDict
+  }
+
+  let addRewardPaymentMethodData = mergedData => {
+    let extraRequiredFields = Dict.make()
+    extraRequiredFields->Dict.set("payment_method_data", "reward"->JSON.Encode.string)
+    CommonUtils.mergeDict(mergedData, extraRequiredFields)->Utils.getArrayOfTupleFromDict
+  }
+
+  let getEmptyObjectPath = (paymentMethod, paymentMethodType, paymentExperience) => {
+    let isQrPaymentMethod = switch paymentExperience {
+    | PaymentMethodsRecord.QrFlow => true
+    | _ => false
+    }
+
+    let finalKey = appendPaymentMethodExperience(
+      ~paymentMethod,
+      ~paymentMethodType,
+      ~isQrPaymentMethod,
+    )
+
+    let needEmptyDict =
+      [
+        "przelewy24",
+        "revolut_pay",
+        "klarna",
+        "afterpay_clearpay",
+        "paypal",
+        "touch_n_go",
+        "gcash",
+        "dana",
+        "go_pay",
+        "kakao_pay",
+        "momo",
+        "we_chat_pay",
+        "ali_pay",
+        "ali_pay_hk",
+        "vipps",
+        "twint",
+        "atome",
+        "pay_bright",
+        "walley",
+        "affirm",
+        "breadpay",
+        "flexiti",
+        "bluecode",
+        "sepa_bank_transfer",
+        "instant_bank_transfer",
+        "instant_bank_transfer_finland",
+        "instant_bank_transfer_poland",
+      ]->Array.includes(paymentMethodType)
+
+    if needEmptyDict || appendEmptyDict {
+      Some(`payment_method_data.${paymentMethod}.${finalKey}`)
+    } else {
+      None
+    }
+  }
+
+  switch paymentMethodType {
+  | "classic" | "evoucher" => addRewardPaymentMethodData(mergedData)
+  | _ =>
+    switch getEmptyObjectPath(paymentMethod, resolvedPaymentMethodType, paymentExperience) {
+    | Some(path) => addEmptyObjectAtPath(mergedData, path)
+    | None => mergedData->Utils.getArrayOfTupleFromDict
+    }
+  }
+}
+
 let bancontactBody = () => {
   let bancontactField =
     [("bancontact_card", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
@@ -907,18 +1085,6 @@ let eftBody = () => {
     ("payment_method_data", paymentMethodData),
   ]
 }
-
-let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
-  switch paymentMethod {
-  | "bank_debit" => paymentMethodType->String.replace("_debit", "")
-  | "bank_transfer" =>
-    if !(Constants.bankTransferList->Array.includes(paymentMethodType)) {
-      paymentMethodType->String.replace("_transfer", "")
-    } else {
-      paymentMethodType
-    }
-  | _ => paymentMethodType
-  }
 
 let appendRedirectPaymentMethods = [
   "touch_n_go",

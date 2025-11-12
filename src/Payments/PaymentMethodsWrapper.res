@@ -74,57 +74,64 @@ let make = (~paymentMethodName: string) => {
     ~paymentType=paymentMethodDetails.paymentMethodName,
   )
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event, mergedValues, _) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if areRequiredFieldsValid {
-        let countryCode =
-          Country.getCountry(paymentMethodName, countryList)
-          ->Array.filter(item => item.countryName == country)
-          ->Array.get(0)
-          ->Option.getOr(Country.defaultTimeZone)
+        // let countryCode =
+        //   Country.getCountry(paymentMethodName, countryList)
+        //   ->Array.filter(item => item.countryName == country)
+        //   ->Array.get(0)
+        //   ->Option.getOr(Country.defaultTimeZone)
 
-        let bank =
-          Bank.getBanks(paymentMethodName)
-          ->Array.filter(item => item.displayName == selectedBank)
-          ->Array.get(0)
-          ->Option.getOr(Bank.defaultBank)
+        // let bank =
+        //   Bank.getBanks(paymentMethodName)
+        //   ->Array.filter(item => item.displayName == selectedBank)
+        //   ->Array.get(0)
+        //   ->Option.getOr(Bank.defaultBank)
 
-        let paymentBody = switch GlobalVars.sdkVersion {
-        | V2 =>
-          PaymentBodyV2.getPaymentBody(
-            ~paymentMethod=paymentMethodDetails.methodType,
-            ~paymentMethodType=paymentMethodName,
-            ~country=countryCode.isoAlpha2,
-            ~fullName=fullName.value,
-            ~email=email.value,
-            ~bank=bank.value,
-            ~blikCode=blikCode.value->removeHyphen,
-            ~phoneNumber=cleanPhoneNumber(
-              phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
-            ),
-            ~paymentExperience=paymentFlow,
-          )
-        | V1 =>
-          PaymentBody.getPaymentBody(
-            ~paymentMethod=paymentMethodDetails.methodType,
-            ~paymentMethodType=paymentMethodName,
-            ~country=countryCode.isoAlpha2,
-            ~fullName=fullName.value,
-            ~email=email.value,
-            ~bank=bank.value,
-            ~blikCode=blikCode.value->removeHyphen,
-            ~phoneNumber=cleanPhoneNumber(
-              phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
-            ),
-            ~paymentExperience=paymentFlow,
-          )
-        }
-        let body = paymentBody->mergeAndFlattenToTuples(requiredFieldsBody)
+        let paymentBody = PaymentBody.buildSuperpositionBody(
+          ~paymentMethod=paymentMethodDetails.methodType,
+          ~paymentMethodType=paymentMethodName,
+          ~paymentMethodData=mergedValues,
+          ~paymentExperience=paymentFlow,
+        )
+
+        // let paymentBody = switch GlobalVars.sdkVersion {
+        // | V2 =>
+        //   PaymentBodyV2.getPaymentBody(
+        //     ~paymentMethod=paymentMethodDetails.methodType,
+        //     ~paymentMethodType=paymentMethodName,
+        //     ~country=countryCode.isoAlpha2,
+        //     ~fullName=fullName.value,
+        //     ~email=email.value,
+        //     ~bank=bank.value,
+        //     ~blikCode=blikCode.value->removeHyphen,
+        //     ~phoneNumber=cleanPhoneNumber(
+        //       phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
+        //     ),
+        //     ~paymentExperience=paymentFlow,
+        //   )
+        // | V1 =>
+        //   PaymentBody.getPaymentBody(
+        //     ~paymentMethod=paymentMethodDetails.methodType,
+        //     ~paymentMethodType=paymentMethodName,
+        //     ~country=countryCode.isoAlpha2,
+        //     ~fullName=fullName.value,
+        //     ~email=email.value,
+        //     ~bank=bank.value,
+        //     ~blikCode=blikCode.value->removeHyphen,
+        //     ~phoneNumber=cleanPhoneNumber(
+        //       phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
+        //     ),
+        //     ~paymentExperience=paymentFlow,
+        //   )
+        // }
+        // let body = paymentBody->mergeAndFlattenToTuples(requiredFieldsBody)
 
         intent(
-          ~bodyArr=body,
+          ~bodyArr=paymentBody,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~iframeId,
@@ -147,14 +154,15 @@ let make = (~paymentMethodName: string) => {
     requiredFieldsBody,
     areRequiredFieldsValid,
   ))
-  useSubmitPaymentData(submitCallback)
+  // useSubmitPaymentData(submitCallback)
+  Console.log2(paymentMethodName, paymentMethodDetails.methodType)
   <div
     className="DynamicFields flex flex-col animate-slowShow"
     style={gridGap: themeObj.spacingGridColumn}>
-    <DynamicFields
+    <DynamicFieldsSuperposition
       paymentMethod=paymentMethodDetails.methodType
       paymentMethodType=paymentMethodName
-      setRequiredFieldsBody
+      submitCallback
     />
   </div>
 }

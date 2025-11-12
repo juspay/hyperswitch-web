@@ -1,4 +1,6 @@
 open SuperpositionTypes
+open Validation
+open DynamicFieldsSuperpositonUtils
 
 module PhoneField = {
   @react.component
@@ -9,68 +11,54 @@ module PhoneField = {
     let currentCountryCode = Utils.getCountryCode(clientCountry.countryName)
     let (displayValue, setDisplayValue) = React.useState(_ => "")
 
-    let countryAndCodeCodeList =
-      Utils.phoneNumberJson
-      ->JSON.Decode.object
-      ->Option.getOr(Dict.make())
-      ->Utils.getArray("countries")
+    let defaultCountryCodeFilteredValue = {
+      let defaultCountryData =
+        countryAndCodeCodeList
+        ->Array.filter(countryObj => {
+          countryObj->Utils.getDictFromJson->Utils.getString("country_code", "") ===
+            currentCountryCode.isoAlpha2
+        })
+        ->Array.get(0)
+        ->Option.getOr(
+          {
+            "phone_number_code": "",
+            "country_flag": "",
+          }->Identity.anyTypeToJson,
+        )
+        ->Utils.getDictFromJson
 
-    let phoneNumberCodeOptions: array<
-      DropdownField.optionType,
-    > = countryAndCodeCodeList->Array.reduce([], (acc, countryObj) => {
-      let countryObjDict = countryObj->Utils.getDictFromJson
-      let countryFlag = countryObjDict->Utils.getString("country_flag", "")
-      let phoneNumberCode = countryObjDict->Utils.getString("phone_number_code", "")
-      let countryName = countryObjDict->Utils.getString("country_name", "")
-
-      let phoneNumberOptionsValue: DropdownField.optionType = {
-        label: `${countryFlag} ${countryName} ${phoneNumberCode}`,
-        displayValue: `${countryFlag} ${phoneNumberCode}`,
-        value: `${countryFlag}#${phoneNumberCode}`,
-      }
-      acc->Array.push(phoneNumberOptionsValue)
-      acc
-    })
-
-    let defaultCountryCodeFilteredValue =
-      countryAndCodeCodeList
-      ->Array.filter(countryObj => {
-        countryObj->Utils.getDictFromJson->Utils.getString("country_code", "") ===
-          currentCountryCode.isoAlpha2
-      })
-      ->Array.get(0)
-      ->Option.getOr(
-        {
-          "phone_number_code": "",
-        }->Identity.anyTypeToJson,
-      )
-      ->Utils.getDictFromJson
-      ->Utils.getString("phone_number_code", "")
+      let phoneCode = defaultCountryData->Utils.getString("phone_number_code", "")
+      let countryFlag = defaultCountryData->Utils.getString("country_flag", "")
+      `${countryFlag}#${phoneCode}`
+    }
 
     let (valueDropDown, setValueDropDown) = React.useState(_ => defaultCountryCodeFilteredValue)
-    let getCountryCodeSplitValue = val => val->String.split("#")->Array.get(1)->Option.getOr("")
+
+    let createFieldValidator = rule =>
+      createFieldValidator(rule, ~enabledCardSchemes=[], ~localeObject=LocaleDataType.defaultLocale)
 
     let {input: countryCodeInput, meta: countryCodeMeta} = ReactFinalForm.useField(
-      countryCodeConfig.name,
+      countryCodeConfig.outputPath,
       ~config={
         initialValue: Some(valueDropDown->getCountryCodeSplitValue),
+        validate: createFieldValidator(Required),
       },
     )
 
     let {input: phoneNumberInput, meta: phoneNumberMeta} = ReactFinalForm.useField(
-      phoneNumberConfig.name,
+      phoneNumberConfig.outputPath,
       ~config={
         initialValue: Some(""),
+        validate: createFieldValidator(Phone),
       },
     )
 
     let changePhone = ev => {
-      let val: string =
-        ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\D|\s/g"), "")
+      let val = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\D|\s/g"), "")
       phoneNumberInput.onChange(val)
     }
 
-    let handleCountryCodeChange = (fn: unit => string) => {
+    let handleCountryCodeChange = fn => {
       let newValue = fn()
       setValueDropDown(_ => newValue)
       countryCodeInput.onChange(newValue->getCountryCodeSplitValue)
@@ -92,7 +80,7 @@ module PhoneField = {
         )
       )
       None
-    }, [phoneNumberCodeOptions])
+    }, [valueDropDown])
 
     let phoneErrorString = switch (phoneNumberMeta.touched, phoneNumberMeta.error) {
     | (true, Some(err)) => err
@@ -127,7 +115,7 @@ module PhoneField = {
 
 @react.component
 let make = (~fields: array<fieldConfig>) => {
-  if fields->Array.length == 2 {
+  if fields->Array.length == 5 {
     switch fields {
     | [countryCodeConfig, phoneNumberConfig] => <PhoneField countryCodeConfig phoneNumberConfig />
     | _ => React.null

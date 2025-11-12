@@ -34,21 +34,24 @@ let make = (
 
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
+  let paymentMethod = "wallet"
+  let paymentMethodType = "google_pay"
+
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let isWallet = walletOptions->Array.includes("google_pay")
+  let isWallet = walletOptions->Array.includes(paymentMethodType)
 
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
-    ~paymentType="google_pay",
+    ~paymentType=paymentMethodType,
   )
 
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
     ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="google_pay",
+    ~paymentMethod,
+    ~paymentMethodType,
   ) {
   | Some(paymentMethodType) => paymentMethodType
   | None => PaymentMethodsRecord.defaultPaymentMethodType
@@ -237,7 +240,7 @@ let make = (
       />
     </RenderIf>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody />
+    <DynamicFieldsSuperposition paymentMethod paymentMethodType submitCallback={(_, _, _) => ()} />
   }
 }
 

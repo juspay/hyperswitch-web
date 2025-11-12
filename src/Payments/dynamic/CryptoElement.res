@@ -1,5 +1,5 @@
 open SuperpositionTypes
-
+open Validation
 module CryptoField = {
   @react.component
   let make = (~currencyConfig, ~networkConfig) => {
@@ -43,21 +43,25 @@ module CryptoField = {
     | None => ""
     }
 
+    let createFieldValidator = rule =>
+      createFieldValidator(rule, ~enabledCardSchemes=[], ~localeObject=LocaleDataType.defaultLocale)
+
     let {input: currencyInput, meta: currencyMeta} = ReactFinalForm.useField(
-      currencyConfig.name,
+      currencyConfig.outputPath,
       ~config={
         initialValue: Some(initialCurrency),
+        validate: createFieldValidator(Required),
       },
     )
 
     let {input: networkInput, meta: networkMeta} = ReactFinalForm.useField(
-      networkConfig.name,
+      networkConfig.outputPath,
       ~config={
         initialValue: Some(initialNetwork),
+        validate: createFieldValidator(Required),
       },
     )
 
-    // Set initial selectedCurrency state
     React.useEffect(() => {
       if selectedCurrency->Option.isNone {
         setSelectedCurrency(_ => Some(initialCurrency))

@@ -30,34 +30,52 @@ let make = () => {
     ~paymentType="sepa_bank_debit",
   )
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let paymentMethod = "bank_debit"
+  let paymentMethodType = "sepa"
+
+  let submitCallback = React.useCallback((ev: Window.event, mergedValues, _values) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    let body = switch GlobalVars.sdkVersion {
-    | V1 => PaymentBody.dynamicPaymentBody("bank_debit", "sepa")
-    | V2 => PaymentBodyV2.dynamicPaymentBodyV2("bank_debit", "sepa")
-    }
+
+    // let body = switch GlobalVars.sdkVersion {
+    // | V1 => PaymentBody.dynamicPaymentBody("bank_debit", "sepa")
+    // | V2 => PaymentBodyV2.dynamicPaymentBodyV2("bank_debit", "sepa")
+    // }
     if confirm.doSubmit {
-      if areRequiredFieldsValid && !areRequiredFieldsEmpty {
-        let sepaBody =
-          body
-          ->getJsonFromArrayOfJson
-          ->flattenObject(true)
-          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->getArrayOfTupleFromDict
-        intent(
-          ~bodyArr=sepaBody,
-          ~confirmParam=confirm.confirmParams,
-          ~handleUserError=false,
-          ~manualRetry=isManualRetryEnabled,
-        )
-      } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
-      }
+      let paymentBody = PaymentBody.buildSuperpositionBody(
+        ~paymentMethod,
+        ~paymentMethodType,
+        ~paymentMethodData=mergedValues,
+        ~appendEmptyDict=true,
+      )
+
+      intent(
+        ~bodyArr=paymentBody,
+        ~confirmParam=confirm.confirmParams,
+        ~handleUserError=false,
+        ~manualRetry=isManualRetryEnabled,
+      )
+
+      // if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+      //   let sepaBody =
+      //     body
+      //     ->getJsonFromArrayOfJson
+      //     ->flattenObject(true)
+      //     ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+      //     ->getArrayOfTupleFromDict
+      //   intent(
+      //     ~bodyArr=sepaBody,
+      //     ~confirmParam=confirm.confirmParams,
+      //     ~handleUserError=false,
+      //     ~manualRetry=isManualRetryEnabled,
+      //   )
+      // } else {
+      //   postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+      // }
     }
   }, (isManualRetryEnabled, areRequiredFieldsValid, areRequiredFieldsEmpty, requiredFieldsBody))
 
-  useSubmitPaymentData(submitCallback)
+  // useSubmitPaymentData(submitCallback)
 
   isVerifyPMAuthConnectorConfigured
     ? <AddBankDetails paymentMethodType="sepa" />
@@ -66,7 +84,9 @@ let make = () => {
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
         }>
-        <DynamicFields paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody />
+        <DynamicFieldsSuperposition
+          paymentMethod="bank_debit" paymentMethodType="sepa" submitCallback
+        />
         <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
         <Terms mode=SepaBankDebit />
       </div>
