@@ -125,6 +125,9 @@ const authorizedConnectSources = [
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
   // Add other trusted sources here
+  "https://sdk.hyperswitch.les-3-quarts.rolletquentin.com",
+  "wss://sdk.hyperswitch.les-3-quarts.rolletquentin.com",
+  "wss://admin.hyperswitch.int.les-3-quarts.rolletquentin.com",
 ];
 
 // Helper function to get environment variables with fallback
