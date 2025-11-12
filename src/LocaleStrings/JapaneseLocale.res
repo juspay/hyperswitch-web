@@ -85,7 +85,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingDetailsText: `支払明細`,
   socialSecurityNumberLabel: `社会保障番号`,
   saveWalletDetails: `選択時にウォレットの詳細が保存されます`,
-  morePaymentMethods: `その他の支払い方法`,
+  newPaymentMethods: `新しい支払い方法`,
   useExistingPaymentMethods: `保存した支払い方法を使用する`,
   cardNickname: `カードのニックネーム`,
   nicknamePlaceholder: `カードニックネーム（任意）`,

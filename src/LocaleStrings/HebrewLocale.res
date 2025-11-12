@@ -85,7 +85,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingDetailsText: `פרטי תשלום`,
   socialSecurityNumberLabel: `מספר ביטוח לאומי`,
   saveWalletDetails: `פרטי הארנק יישמרו בעת בחירה`,
-  morePaymentMethods: `אמצעי תשלום נוספים`,
+  newPaymentMethods: `אמצעי תשלום חדשים`,
   useExistingPaymentMethods: `השתמש באמצעי תשלום שמורים`,
   cardNickname: `כינוי לכרטיס`,
   nicknamePlaceholder: `כינוי לכרטיס (אופציונלי)`,

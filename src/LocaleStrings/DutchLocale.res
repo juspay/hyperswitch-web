@@ -85,7 +85,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingDetailsText: `Factureringsgegevens`,
   socialSecurityNumberLabel: `Burgerservicenummer`,
   saveWalletDetails: `Portefeuillegegevens worden bij selectie opgeslagen`,
-  morePaymentMethods: `Meer betaalmethoden`,
+  newPaymentMethods: `Nieuwe betaalmethoden`,
   useExistingPaymentMethods: `Gebruik opgeslagen betaalmethoden`,
   nicknamePlaceholder: `Bijnaam kaart (optioneel)`,
   selectPaymentMethodText: `Selecteer een betaalmethode en probeer het opnieuw`,

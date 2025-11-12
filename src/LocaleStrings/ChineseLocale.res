@@ -85,7 +85,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingDetailsText: `账单详情`,
   socialSecurityNumberLabel: `社会安全号码`,
   saveWalletDetails: `选择后将保存钱包信息`,
-  morePaymentMethods: `更多支付方式`,
+  newPaymentMethods: `新的支付方式`,
   useExistingPaymentMethods: `使用保存的支付方式`,
   cardNickname: `卡片昵称`,
   nicknamePlaceholder: `卡片昵称（可选）`,
