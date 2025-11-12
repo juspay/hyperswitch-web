@@ -122,10 +122,15 @@ let make = (~sessions, ~walletOptions) => {
               <SessionPaymentWrapper type_={Wallet}>
                 {switch paypalToken {
                 | OtherTokenOptional(optToken) =>
-                  switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
-                  | (Some(token), true, _) => <PaypalSDKLazy sessionObj=token />
-                  | (_, _, true) => <PayPalLazy walletOptions />
-                  | _ => React.null
+                  let connector = optToken->Option.map(token => token.connector)->Option.getOr("")
+                  switch connector {
+                  | "braintree" => <PayPalBraintreeLazy sessionObj=optToken />
+                  | _ =>
+                    switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
+                    | (Some(token), true, _) => <PaypalSDKLazy sessionObj=token />
+                    | (_, _, true) => <PayPalLazy walletOptions />
+                    | _ => React.null
+                    }
                   }
                 | _ =>
                   <RenderIf condition={isPaypalRedirectFlow}>

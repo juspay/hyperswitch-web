@@ -62,6 +62,34 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @new external date: date = "Date"
 @get external value: Dom.element => 'a = "value"
 
+/* DOM Element Event Listeners */
+@send
+external addElementEventListener: (Dom.element, string, Dom.event => unit) => unit =
+  "addEventListener"
+
+@send
+external removeElementEventListener: (Dom.element, string, Dom.event => unit) => unit =
+  "removeEventListener"
+
+/* DOM Element Properties and Methods */
+@get external elementReadyState: Dom.element => Nullable.t<string> = "readyState"
+@get external dataset: Dom.element => {..} = "dataset"
+@get external getDatasetStatus: {..} => Nullable.t<string> = "status"
+
+/* DOM Element Script Attributes */
+@set external setSrc: (Dom.element, string) => unit = "src"
+@set external setAsync: (Dom.element, bool) => unit = "async"
+@set external setDefer: (Dom.element, bool) => unit = "defer"
+@set external setCrossorigin: (Dom.element, string) => unit = "crossorigin"
+@set external setIntegrity: (Dom.element, string) => unit = "integrity"
+@set external setNomodule: (Dom.element, bool) => unit = "nomodule"
+@set external setReferrerpolicy: (Dom.element, string) => unit = "referrerpolicy"
+@set external setType: (Dom.element, string) => unit = "type"
+
+/* Document Head Operations */
+@val @scope(("document", "head"))
+external appendChildToHead: Dom.element => unit = "appendChild"
+
 /* External Methods */
 @scope("window") @get external cardNumberElement: window => option<window> = "cardNumber"
 @get external cardCVCElement: window => option<window> = "cardCvc"
