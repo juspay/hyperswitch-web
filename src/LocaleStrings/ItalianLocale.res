@@ -85,7 +85,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingDetailsText: `Dettagli di fatturazione`,
   socialSecurityNumberLabel: `Numero di Social Security`,
   saveWalletDetails: `I dettagli dei portafogli verranno salvati al momento della selezione`,
-  morePaymentMethods: `Più metodi di pagamento`,
+  newPaymentMethods: `Nuovi metodi di pagamento`,
   useExistingPaymentMethods: `Utilizza i metodi di pagamento salvati`,
   nicknamePlaceholder: `Soprannome della carta (facoltativo)`,
   selectPaymentMethodText: `Seleziona un metodo di pagamento e riprova`,
