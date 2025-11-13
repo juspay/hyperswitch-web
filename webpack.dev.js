@@ -16,12 +16,19 @@ const backendEndPoint = endpointMap[sdkEnv] || endpointMap.local;
 
 const WS_URL = process.env.WS_URL || null;
 
+const parseAllowedHosts = (envVar) => {
+  if (!envVar) return [];
+  return envVar.split(',').map(host => host.trim());
+};
+
+const allowedHosts = parseAllowedHosts(process.env.ALLOWED_HOSTS);
+
 const devServer = {
   static: {
     directory: path.join(__dirname, "dist"),
   },
   hot: true,
-  allowedHosts: ['sdk.hyperswitch.les-3-quarts.rolletquentin.com'],
+  allowedHosts: allowedHosts,
   host: "0.0.0.0",
   port: process.env.PORT || 9050,
   historyApiFallback: true,
@@ -57,7 +64,7 @@ const devServer = {
     webSocketURL: WS_URL || {
       protocol: "wss",
       hostname: process.env.WS_HOSTNAME || "localhost",
-      port: process.env.WS_PORT || 4050,
+      port: process.env.WS_PORT || 9050,
       pathname: process.env.WS_PATHNAME || "/ws",
     },
     logging: "info",

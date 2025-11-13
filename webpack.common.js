@@ -125,10 +125,27 @@ const authorizedConnectSources = [
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
   // Add other trusted sources here
-  "https://sdk.hyperswitch.les-3-quarts.rolletquentin.com",
-  "wss://sdk.hyperswitch.les-3-quarts.rolletquentin.com",
-  "wss://admin.hyperswitch.int.les-3-quarts.rolletquentin.com",
 ];
+
+function extractDomain(url) {
+  if (!url) return "";
+  // Delete `http://`, `https//` and `www.` if exists
+  let domain = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+  // Keep only the domain (before the `/`)
+  domain = domain.split('/')[0];
+  // Delete the port if exists
+  domain = domain.split(':')[0];
+  return domain;
+}
+
+// Add the SDK URL to authorized connect sources to avoid 403 Forbidden
+if (process.env.ENV_SDK_URL) {
+  const domain = extractDomain(process.env.ENV_SDK_URL);
+  if (domain) {
+    authorizedConnectSources.push(`https://${domain}`);
+    authorizedConnectSources.push(`wss://${domain}`);
+  };
+};
 
 // Helper function to get environment variables with fallback
 const getEnvVariable = (variable, defaultValue) => {
