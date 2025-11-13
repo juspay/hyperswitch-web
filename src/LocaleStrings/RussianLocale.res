@@ -88,7 +88,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingDetailsText: `Платежные реквизиты`,
   socialSecurityNumberLabel: `Номер социального страхования`,
   saveWalletDetails: `Данные кошельков будут сохранены после выбора.`,
-  morePaymentMethods: `Больше способов оплаты`,
+  newPaymentMethods: `Новые способы оплаты`,
   useExistingPaymentMethods: `Используйте сохраненные способы оплаты`,
   nicknamePlaceholder: `Псевдоним карты (необязательно)`,
   selectPaymentMethodText: `Пожалуйста, выберите способ оплаты и повторите попытку.`,

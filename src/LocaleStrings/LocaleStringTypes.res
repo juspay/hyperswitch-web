@@ -74,7 +74,7 @@ type localeStrings = {
   billingDetailsText: string,
   socialSecurityNumberLabel: string,
   saveWalletDetails: string,
-  morePaymentMethods: string,
+  newPaymentMethods: string,
   useExistingPaymentMethods: string,
   cardNickname: string,
   nicknamePlaceholder: string,

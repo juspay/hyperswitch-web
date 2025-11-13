@@ -75,7 +75,10 @@ let make = (
     cvcError,
     setCvcError,
   } = cvcProps
-  let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {
+    displaySavedPaymentMethodsCheckbox,
+    savedPaymentMethodsCheckboxCheckedByDefault,
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
@@ -83,7 +86,9 @@ let make = (
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
-  let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
+  let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
+    savedPaymentMethodsCheckboxCheckedByDefault
+  )
 
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
