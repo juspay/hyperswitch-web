@@ -759,7 +759,17 @@ let make = (
                           ("token", token->JSON.Encode.string),
                         ]->Dict.fromArray,
                       )
+                      messageParentWindow([
+                        ("fullscreen", false->JSON.Encode.bool),
+                        ("param", "paymentloader"->JSON.Encode.string),
+                        ("iframeId", selectorString->JSON.Encode.string),
+                      ])
                     }
+
+                    event.source->Window.sendPostMessage(
+                      [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray,
+                    )
+
                     ApplePayHelpers.handleApplePayBraintreeClick(
                       authToken,
                       applePayPaymentRequest,

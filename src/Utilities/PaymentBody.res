@@ -531,42 +531,24 @@ let applePayRedirectBody = (~connectors) => [
   ),
 ]
 
-let applePayThirdPartySdkBody = (~connectors) => [
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  ("payment_method", "wallet"->JSON.Encode.string),
-  ("payment_method_type", "apple_pay"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "wallet",
-        [
-          ("apple_pay_third_party_sdk", Dict.make()->JSON.Encode.object),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
+let applePayThirdPartySdkBody = (~connectors, ~token="") => {
+  let tokenJson =
+    token != ""
+      ? [("token", token->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
+      : Dict.make()->JSON.Encode.object
 
-let applePayBraintreeSdkBody = (~token) => [
-  ("connector", ["braintree"]->Utils.getArrofJsonString->JSON.Encode.array),
-  ("payment_method", "wallet"->JSON.Encode.string),
-  ("payment_method_type", "apple_pay"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "wallet",
-        [
-          (
-            "apple_pay_third_party_sdk",
-            [("token", token->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
+  [
+    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "apple_pay"->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [
+        ("wallet", [("apple_pay_third_party_sdk", tokenJson)]->Utils.getJsonFromArrayOfJson),
+      ]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]
+}
 
 let cryptoBody = () => [
   ("payment_method", "crypto"->JSON.Encode.string),

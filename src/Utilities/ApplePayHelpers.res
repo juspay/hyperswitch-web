@@ -267,7 +267,7 @@ let useHandleApplePayResponse = (
           let token = dict->Utils.getString("token", "")
           if token !== "" {
             intent(
-              ~bodyArr=PaymentBody.applePayBraintreeSdkBody(~token),
+              ~bodyArr=PaymentBody.applePayThirdPartySdkBody(~connectors, ~token),
               ~confirmParam={
                 return_url: options.wallets.walletReturnUrl,
                 publishableKey,
@@ -431,6 +431,11 @@ let handleApplePayBraintreeClick = (
 
                 let sessions = newApplePaySession(3, paymentRequest)
                 sessions.onvalidatemerchant = event => {
+                  messageParentWindow([
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", "paymentloader"->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                  ])
                   applePayInstance.performValidation(
                     {
                       validationURL: event.validationURL,
@@ -467,11 +472,6 @@ let handleApplePayBraintreeClick = (
                         )
                         let nonce = payload.nonce
                         onSuccess(nonce)
-                        messageParentWindow([
-                          ("fullscreen", false->JSON.Encode.bool),
-                          ("param", "paymentloader"->JSON.Encode.string),
-                          ("iframeId", iframeId->JSON.Encode.string),
-                        ])
                       } else {
                         logger.setLogError(
                           ~value="completePayment failed for ApplePay braintree.",
@@ -481,6 +481,11 @@ let handleApplePayBraintreeClick = (
                         sessions.completePayment(
                           applePaySession.\"STATUS_FAILURE"->JSON.Encode.string,
                         )
+                        messageParentWindow([
+                          ("fullscreen", false->JSON.Encode.bool),
+                          ("param", "paymentloader"->JSON.Encode.string),
+                          ("iframeId", iframeId->JSON.Encode.string),
+                        ])
                       }
                     },
                   )
@@ -498,11 +503,6 @@ let handleApplePayBraintreeClick = (
                   ])
                 }
                 sessions.begin()
-                messageParentWindow([
-                  ("fullscreen", true->JSON.Encode.bool),
-                  ("param", "paymentloader"->JSON.Encode.string),
-                  ("iframeId", iframeId->JSON.Encode.string),
-                ])
               } else {
                 logger.setLogError(
                   ~value="Failed to create ApplePay braintree instance.",
@@ -523,6 +523,11 @@ let handleApplePayBraintreeClick = (
     )
   } catch {
   | _ =>
+    messageParentWindow([
+      ("fullscreen", false->JSON.Encode.bool),
+      ("param", "paymentloader"->JSON.Encode.string),
+      ("iframeId", iframeId->JSON.Encode.string),
+    ])
     logger.setLogError(
       ~value="Exception in ApplePay Braintree flow.",
       ~eventName=APPLE_PAY_FLOW,
