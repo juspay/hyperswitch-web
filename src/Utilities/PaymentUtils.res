@@ -39,6 +39,7 @@ let paymentListLookupNew = (
     "skrill",
   ]
   let otherPaymentList = []
+  let upiMethods = []
 
   if shouldDisplayApplePayInTabs {
     walletToBeDisplayedInTabs->Array.push("apple_pay")
@@ -94,6 +95,9 @@ let paymentListLookupNew = (
       } else {
         otherPaymentList->Array.push(item.paymentMethodName)->ignore
       }
+    } else if item.methodType == "upi" {
+      upiMethods->Array.push(item.paymentMethodName)->ignore
+      otherPaymentList->Array.push(item.methodType)->ignore
     } else {
       otherPaymentList->Array.push(item.paymentMethodName)->ignore
     }
@@ -101,6 +105,7 @@ let paymentListLookupNew = (
   (
     walletsList->Utils.removeDuplicate->Utils.sortBasedOnPriority(order),
     otherPaymentList->Utils.removeDuplicate->Utils.sortBasedOnPriority(order),
+    upiMethods->Utils.removeDuplicate->Utils.sortBasedOnPriority(order),
   )
 }
 type exp = Redirect | SDK
@@ -412,7 +417,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
         isPaypalRedirectFlow &&
         (!isPaypalSDKFlow || !isPaypalTokenExist)
 
-      let (wallets, otherOptions) =
+      let (wallets, otherOptions, upiMethods) =
         plist->paymentListLookupNew(
           ~order=paymentOrder,
           ~isShowPaypal,
@@ -451,9 +456,11 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
         ->removeDuplicate
         ->filterPaymentMethods,
         otherOptions,
+        upiMethods,
       )
-    | SemiLoaded => checkPriorityList(paymentMethodOrder) ? ([], ["card"], []) : ([], [], [])
-    | _ => ([], [], [])
+    | SemiLoaded =>
+      checkPriorityList(paymentMethodOrder) ? ([], ["card"], [], []) : ([], [], [], [])
+    | _ => ([], [], [], [])
     }
   }, (
     methodslist,

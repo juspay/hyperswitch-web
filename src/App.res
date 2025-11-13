@@ -82,6 +82,7 @@ let make = () => {
       <div id="fullscreen">
         <FullScreenDivDriver />
       </div>
+    | "upiData" => <UPIDisplay />
     | "qrData" => <QRCodeDisplay />
     | "3dsAuth" => <ThreeDSAuth />
     | "redsys3ds" => <Redsys3ds />

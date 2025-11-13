@@ -156,8 +156,22 @@ let rec pollRetrievePaymentIntent = (
   ~logger,
   ~customPodUri,
   ~isForceSync=false,
+  ~delayTime=?,
+  ~frequency=?,
+  ~count=0,
 ) => {
   open Promise
+
+  let delayTimeValue = switch delayTime {
+  | Some(time) => time === 0 ? 2000 : time
+  | None => 2000
+  }
+
+  let maxAttempts = switch frequency {
+  | Some(freq) => freq
+  | None => -1
+  }
+
   retrievePaymentIntent(
     clientSecret,
     ~headers,
@@ -172,8 +186,10 @@ let rec pollRetrievePaymentIntent = (
 
     if status === "succeeded" || status === "failed" {
       resolve(json)
+    } else if maxAttempts > 0 && count >= maxAttempts {
+      Promise.resolve(JSON.Encode.null)
     } else {
-      delay(2000)
+      delay(delayTimeValue)
       ->then(_val => {
         pollRetrievePaymentIntent(
           clientSecret,
@@ -182,6 +198,9 @@ let rec pollRetrievePaymentIntent = (
           ~logger,
           ~customPodUri,
           ~isForceSync,
+          ~delayTime=delayTimeValue,
+          ~frequency=maxAttempts,
+          ~count=count + 1,
         )
       })
       ->catch(_ => Promise.resolve(JSON.Encode.null))
@@ -189,14 +208,21 @@ let rec pollRetrievePaymentIntent = (
   })
   ->catch(e => {
     Console.error2("Unable to retrieve payment due to following error", e)
-    pollRetrievePaymentIntent(
-      clientSecret,
-      ~headers,
-      ~publishableKey,
-      ~logger,
-      ~customPodUri,
-      ~isForceSync,
-    )
+    if maxAttempts > 0 && count >= maxAttempts {
+      Promise.resolve(JSON.Encode.null)
+    } else {
+      pollRetrievePaymentIntent(
+        clientSecret,
+        ~headers,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~isForceSync,
+        ~delayTime=delayTimeValue,
+        ~frequency=maxAttempts,
+        ~count=count + 1,
+      )
+    }
   })
 }
 
@@ -499,7 +525,26 @@ let rec intentCall = (
               ~eventName,
               ~isPaymentSession,
             )
+            Console.log("Here 77887788")
+            let dataVal = `{
+  "id": "12345_pay_0199cd62e77870d291b52e22ad3664ee",
+  "status": "requires_customer_action",
+  "payment_method": "upi",
+  "payment_method_type": "upi_collect",
+  "client_secret": "pay_9jaTEZmXNbU5DXJ7d08U_secret_0vCLX9esAE5L4zp5zobk",
+  "next_action": {
+        "type": "wait_screen_information",
+        "display_from_timestamp": 1762163470775955000,
+        "display_to_timestamp": 1762163770775955000,
+        "poll_config": {
+            "delay_in_secs": 2,
+            "frequency": 5
+        }
+    },
+  "return_url": "https://google.com/"
+}`->JSON.parseExn
             let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
+            Console.log2("Here is the intent", intent)
             let paymentMethod = switch paymentType {
             | Card => "CARD"
             | _ => intent.payment_method_type
@@ -785,6 +830,44 @@ let rec intentCall = (
                     ("nextActionData", nextActionData),
                   ]->getJsonFromArrayOfJson
                 resolve(response)
+              } else if (
+                intent.nextAction.type_ === "sdk_upi_intent_information" ||
+                  intent.nextAction.type_ === "wait_screen_information"
+              ) {
+                let uri = intent.nextAction.sdk_uri
+                let paymentMethodType = intent.payment_method_type
+                let headerObj = Dict.make()
+                mergeHeadersIntoDict(~dict=headerObj, ~headers)
+                let pollConfigData = intent.nextAction.poll_config->Option.getOr({
+                  delay_in_secs: 0,
+                  frequency: 0,
+                })
+                let metaData = [
+                  ("paymentIntentId", clientSecret->JSON.Encode.string),
+                  ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
+                  ("headers", headerObj->JSON.Encode.object),
+                  ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+                  ("url", uri->JSON.Encode.string),
+                  ("return_url", url.href->JSON.Encode.string),
+                  (
+                    "displayToTimestamp",
+                    intent.nextAction.display_to_timestamp->Option.getOr(0.0)->JSON.Encode.float,
+                  ),
+                  (
+                    "displayFromTimestamp",
+                    intent.nextAction.display_from_timestamp
+                    ->Option.getOr(0.0)
+                    ->JSON.Encode.float,
+                  ),
+                  ("frequency", pollConfigData.frequency->JSON.Encode.int),
+                  ("delayInSecs", pollConfigData.delay_in_secs->JSON.Encode.int),
+                ]->getJsonFromArrayOfJson
+                messageParentWindow([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", `upiData`->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                  ("metadata", metaData),
+                ])
               } else {
                 if !isPaymentSession {
                   postFailedSubmitResponse(
@@ -1574,7 +1657,113 @@ let fetchCustomerPaymentMethodList = async (
     },
   )
 
-  let onSuccess = data => data
+  let onSuccess = data => {
+    let val = `{
+    "customer_payment_methods": [
+        {
+            "payment_token": "token_HB3X4Yc4fJCiz0NJqXup",
+            "payment_method_id": "pm_4i0296A7rBeSP8oYo7LL",
+            "customer_id": "hyperswitch_sdk_demo_id",
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "payment_method_issuer": "",
+            "payment_method_issuer_code": null,
+            "recurring_enabled": false,
+            "installment_payment_enabled": false,
+            "payment_experience": [
+                "redirect_to_url"
+            ],
+            "card": {
+                "scheme": "Visa",
+                "issuer_country": "UNITEDKINGDOM",
+                "last4_digits": "4242",
+                "expiry_month": "04",
+                "expiry_year": "2044",
+                "card_token": null,
+                "card_holder_name": "joseph Doe",
+                "card_fingerprint": null,
+                "nick_name": "alex ak",
+                "card_network": "Visa",
+                "card_isin": "424242",
+                "card_issuer": "",
+                "card_type": "CREDIT",
+                "saved_to_locker": true
+            },
+            "metadata": null,
+            "created": "2025-10-13T12:09:01.303Z",
+            "bank": null,
+            "surcharge_details": null,
+            "requires_cvv": true,
+            "last_used_at": "2025-10-31T11:43:11.983Z",
+            "default_payment_method_set": false,
+            "billing": {
+                "address": {
+                    "city": "San Fransico",
+                    "country": "US",
+                    "line1": "1467",
+                    "line2": "Harrison Street",
+                    "line3": "Harrison Street",
+                    "zip": "94122",
+                    "state": "CA",
+                    "first_name": "joseph",
+                    "last_name": "Doe",
+                    "origin_zip": null
+                },
+                "phone": {
+                    "number": "8056594427",
+                    "country_code": "+91"
+                },
+                "email": "user@gmail.com"
+            }
+        },
+        {
+            "payment_token": "token_4KbOfjhstEa7V6463STD",
+            "payment_method_id": "pm_rAmgVekr7M5iWvzRoNnS",
+            "customer_id": "hyperswitch_sdk_demo_id",
+            "payment_method": "wallet",
+            "payment_method_type": "paypal",
+            "payment_method_issuer": null,
+            "payment_method_issuer_code": null,
+            "recurring_enabled": true,
+            "installment_payment_enabled": false,
+            "payment_experience": [
+                "redirect_to_url"
+            ],
+            "card": null,
+            "metadata": null,
+            "created": "2025-09-26T07:39:48.123Z",
+            "bank": null,
+            "surcharge_details": null,
+            "requires_cvv": true,
+            "last_used_at": "2025-09-26T08:39:35.369Z",
+            "default_payment_method_set": false,
+            "billing": {
+                "address": {
+                    "city": "San Fransico",
+                    "country": "US",
+                    "line1": "1467",
+                    "line2": "Harrison Street",
+                    "line3": "Harrison Street",
+                    "zip": "94122",
+                    "state": "California",
+                    "first_name": "joseph",
+                    "last_name": "Doe",
+                    "origin_zip": null
+                },
+                "phone": {
+                    "number": "8056594427",
+                    "country_code": "+91"
+                },
+                "email": null
+            }
+        }
+    ],
+    "is_guest_customer": false
+}`->JSON.parseExn
+
+    // data
+    val
+  }
 
   let onFailure = _ => JSON.Encode.null
 

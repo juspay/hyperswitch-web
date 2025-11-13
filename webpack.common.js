@@ -49,6 +49,18 @@ const authorizedScriptSources = [
   "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
   "https://vgs-collect-keeper.apps.verygood.systems/vgs",
   "blob:",
+  // UPI App URLs for PaymentRequest API
+  "https://tez.google.com/pay",
+  "https://mercury.phonepe.com/transact/pay",
+  "https://securegw.paytm.in/order/sendpaymentrequest",
+  "https://payments.juspay.in/bhim/pay",
+  "https://cred-web-stg.dreamplug.in/checkout/pay",
+  "https://cred.club/checkout/pay",
+  "https://gokiwi.in/pay",
+  "https://pl.navifinserv.com/payments-gateway",
+  "https://super.money/pay",
+  "https://promotions.mobikwik.com/epay/payments-gateway/",
+  "https://moneyview.in/payment/",
   // Add other trusted sources here
 ];
 
@@ -123,6 +135,18 @@ const authorizedConnectSources = [
   "https://vgs-collect-keeper.apps.verygood.systems/vgs",
   "https://eu.playground.klarnaevt.com",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
+  // UPI App URLs for PaymentRequest API connections
+  "https://tez.google.com/pay",
+  "https://mercury.phonepe.com/transact/pay",
+  "https://securegw.paytm.in/order/sendpaymentrequest",
+  "https://payments.juspay.in/bhim/pay",
+  "https://cred-web-stg.dreamplug.in/checkout/pay",
+  "https://cred.club/checkout/pay",
+  "https://gokiwi.in/pay",
+  "https://pl.navifinserv.com/payments-gateway",
+  "https://super.money/pay",
+  "https://promotions.mobikwik.com/epay/payments-gateway/",
+  "https://moneyview.in/payment/",
   ...localhostSources,
   // Add other trusted sources here
 ];
