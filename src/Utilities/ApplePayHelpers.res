@@ -382,7 +382,6 @@ let createApplePayTransactionInfo = paymentRequestDataDict => {
       label: transactionDict->Utils.getString("label", ""),
       amount: transactionDict->Utils.getString("amount", ""),
     },
-    requiredBillingContactFields: ["postalAddress"],
   }
 }
 
@@ -424,7 +423,7 @@ let handleApplePayBraintreeClick = (
                 applePayInstance.performValidation(
                   {
                     validationURL: event.validationURL,
-                    displayName: "Apple Pay",
+                    displayName: transactionInfo.total.label,
                   },
                   (err, merchantSession) => {
                     if !err {

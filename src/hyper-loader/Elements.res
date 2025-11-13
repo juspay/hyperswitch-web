@@ -738,7 +738,7 @@ let make = (
                 }
               } else {
                 logger.setLogInfo(
-                  ~value="ApplePay normal session token flow",
+                  ~value="Thirdparty ApplePay session token flow",
                   ~eventName=APPLE_PAY_FLOW,
                   ~paymentMethod="APPLE_PAY",
                 )
