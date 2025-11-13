@@ -376,12 +376,18 @@ let braintreeClientUrl = "https://js.braintreegateway.com/web/3.92.1/js/client.m
 
 let createApplePayTransactionInfo = paymentRequestDataDict => {
   let transactionDict = paymentRequestDataDict->Utils.getDictFromDict("total")
+  let countryCode = paymentRequestDataDict->Utils.getString("countryCode", "")
+  let currencyCode = paymentRequestDataDict->Utils.getString("currencyCode", "")
+  let supportedNetworks = paymentRequestDataDict->getStrArray("supportedNetworks")
 
   {
     total: {
       label: transactionDict->Utils.getString("label", ""),
       amount: transactionDict->Utils.getString("amount", ""),
     },
+    countryCode,
+    currencyCode,
+    supportedNetworks,
   }
 }
 

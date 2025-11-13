@@ -30,7 +30,12 @@ type lineItem = {
   amount: string,
   \"type"?: string,
 }
-type applePayBraintreeTransactionData = {total: lineItem}
+type applePayBraintreeTransactionData = {
+  total: lineItem,
+  currencyCode: string,
+  countryCode: string,
+  supportedNetworks: array<string>,
+}
 
 type applePayValidationRequest = {
   validationURL: string,
