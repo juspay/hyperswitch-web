@@ -91,7 +91,9 @@ let make = (
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
-    let clientSecret = testMode ? "" : localOptions->getRequiredString("clientSecret", "", ~logger)
+    let clientSecret = testMode
+      ? localOptions->getString("clientSecret", "")
+      : localOptions->getRequiredString("clientSecret", "", ~logger)
     let clientSecretReMatch = switch GlobalVars.sdkVersion {
     | V1 => Some(RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret))
     | V2 => None
