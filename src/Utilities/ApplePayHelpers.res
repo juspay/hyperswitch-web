@@ -381,6 +381,7 @@ let createApplePayTransactionInfo = paymentRequestDataDict => {
   let countryCode = paymentRequestDataDict->Utils.getString("countryCode", "")
   let currencyCode = paymentRequestDataDict->Utils.getString("currencyCode", "")
   let supportedNetworks = paymentRequestDataDict->getStrArray("supportedNetworks")
+  let merchantCapabilities = paymentRequestDataDict->getStrArray("merchantCapabilities")
 
   {
     total: {
@@ -390,6 +391,7 @@ let createApplePayTransactionInfo = paymentRequestDataDict => {
     countryCode,
     currencyCode,
     supportedNetworks,
+    merchantCapabilities,
   }
 }
 

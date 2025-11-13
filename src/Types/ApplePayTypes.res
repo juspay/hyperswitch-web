@@ -35,6 +35,7 @@ type applePayBraintreeTransactionData = {
   currencyCode: string,
   countryCode: string,
   supportedNetworks: array<string>,
+  merchantCapabilities: array<string>,
 }
 
 type applePayValidationRequest = {
