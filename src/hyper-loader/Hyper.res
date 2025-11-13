@@ -94,7 +94,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
       ~clientSecret,
     )
 
-    let callBackFunc = payment => {
+    let callBackFunc = (payment: ApplePayTypes.paymentResult) => {
       let msg =
         [
           ("applePayPaymentToken", payment.token),

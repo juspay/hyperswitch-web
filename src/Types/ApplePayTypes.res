@@ -28,8 +28,35 @@ type event = {validationURL: string, payment: paymentResult}
 type lineItem = {
   label: string,
   amount: string,
-  \"type": string,
+  \"type"?: string,
 }
+type applePayBraintreeTransactionData = {
+  total: lineItem,
+  requiredBillingContactFields: array<string>,
+}
+
+type applePayValidationRequest = {
+  validationURL: string,
+  displayName: string,
+}
+type applePayTokenizeRequest = {token: string}
+
+type applePayTokenizeResponse = {nonce: string}
+
+type applePayInstance = {
+  createPaymentRequest: applePayBraintreeTransactionData => applePayBraintreeTransactionData,
+  performValidation: (applePayValidationRequest, (bool, JSON.t) => unit) => unit,
+  tokenize: (applePayTokenizeRequest, (bool, applePayTokenizeResponse) => unit) => unit,
+}
+
+type applePayBraintreeCreateCallback = (bool, applePayInstance) => unit
+type clientInstance = {}
+
+type clientCreateCallback = (bool, clientInstance) => unit
+type applePayCreateCallback = (bool, applePayInstance) => unit
+type applePayConfig = {client: clientInstance}
+type authorization = {authorization: string}
+
 type shippingAddressChangeEvent = {shippingContact: JSON.t}
 type orderDetails = {newTotal: lineItem, newLineItems: array<lineItem>}
 type innerSession

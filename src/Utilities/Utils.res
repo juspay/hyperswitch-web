@@ -1699,3 +1699,20 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
 }
+
+let loadScriptIfNotExist = (url, scriptName, logger: HyperLoggerTypes.loggerMake) => {
+  if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
+    let script = Window.createElement("script")
+    script->Window.elementSrc(url)
+    script->Window.elementOnerror(_ => {
+      logger.setLogError(
+        ~value=`Error loading script: ${scriptName}`,
+        ~eventName=SCRIPT_LOAD_STATUS,
+      )
+    })
+    script->Window.elementOnload(() => {
+      logger.setLogInfo(~value=`${scriptName} LOADED SUCCESSFULLY`, ~eventName=SCRIPT_LOAD_STATUS)
+    })
+    Window.body->Window.appendChild(script)
+  }
+}
