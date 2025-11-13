@@ -392,124 +392,133 @@ let handleApplePayBraintreeClick = (
   logger: HyperLoggerTypes.loggerMake,
   onSuccess,
 ) => {
-  braintreeClientCreate(
-    {
-      authorization: authorization,
-    },
-    (err, clientInstance) => {
-      if !err {
-        logger.setLogInfo(
-          ~value="Braintree client instance created successfully.",
-          ~eventName=APPLE_PAY_FLOW,
-          ~paymentMethod="APPLE_PAY",
-        )
-        braintreeApplePayPaymentCreate(
-          {
-            client: clientInstance,
-          },
-          (err, applePayInstance) => {
-            if !err {
-              logger.setLogInfo(
-                ~value="ApplePay braintree instance created",
-                ~eventName=APPLE_PAY_FLOW,
-                ~paymentMethod="APPLE_PAY",
-              )
-
-              let transactionInfo = applePayPaymentRequest->createApplePayTransactionInfo
-              let paymentRequest = transactionInfo->applePayInstance.createPaymentRequest
-
-              let sessions = newApplePaySession(3, paymentRequest)
-              sessions.onvalidatemerchant = event => {
-                applePayInstance.performValidation(
-                  {
-                    validationURL: event.validationURL,
-                    displayName: transactionInfo.total.label,
-                  },
-                  (err, merchantSession) => {
-                    if !err {
-                      sessions.completeMerchantValidation(merchantSession)
-                    } else {
-                      logger.setLogError(
-                        ~value="Failed to validate merchant session.",
-                        ~eventName=APPLE_PAY_FLOW,
-                        ~paymentMethod="APPLE_PAY",
-                      )
-                      messageParentWindow([
-                        ("fullscreen", false->JSON.Encode.bool),
-                        ("param", "paymentloader"->JSON.Encode.string),
-                        ("iframeId", iframeId->JSON.Encode.string),
-                      ])
-                      sessions.abort()
-                    }
-                  },
-                )
-              }
-              sessions.onpaymentauthorized = event => {
-                applePayInstance.tokenize(
-                  {
-                    token: event.payment.token->JSON.stringify,
-                  },
-                  (err, payload) => {
-                    if !err {
-                      sessions.completePayment(
-                        applePaySession.\"STATUS_SUCCESS"->JSON.Encode.string,
-                      )
-                      let nonce = payload.nonce
-                      onSuccess(nonce)
-                      messageParentWindow([
-                        ("fullscreen", false->JSON.Encode.bool),
-                        ("param", "paymentloader"->JSON.Encode.string),
-                        ("iframeId", iframeId->JSON.Encode.string),
-                      ])
-                    } else {
-                      logger.setLogError(
-                        ~value="completePayment failed for ApplePay braintree.",
-                        ~eventName=APPLE_PAY_FLOW,
-                        ~paymentMethod="APPLE_PAY",
-                      )
-                      sessions.completePayment(
-                        applePaySession.\"STATUS_FAILURE"->JSON.Encode.string,
-                      )
-                    }
-                  },
-                )
-              }
-              sessions.oncancel = _ => {
-                logger.setLogError(
-                  ~value="Apple Pay Payment Cancelled.",
+  try {
+    braintreeClientCreate(
+      {
+        authorization: authorization,
+      },
+      (err, clientInstance) => {
+        if !err {
+          logger.setLogInfo(
+            ~value="Braintree client instance created successfully.",
+            ~eventName=APPLE_PAY_FLOW,
+            ~paymentMethod="APPLE_PAY",
+          )
+          braintreeApplePayPaymentCreate(
+            {
+              client: clientInstance,
+            },
+            (err, applePayInstance) => {
+              if !err {
+                logger.setLogInfo(
+                  ~value="ApplePay braintree instance created",
                   ~eventName=APPLE_PAY_FLOW,
                   ~paymentMethod="APPLE_PAY",
                 )
+
+                let transactionInfo = applePayPaymentRequest->createApplePayTransactionInfo
+                let paymentRequest = transactionInfo->applePayInstance.createPaymentRequest
+
+                let sessions = newApplePaySession(3, paymentRequest)
+                sessions.onvalidatemerchant = event => {
+                  applePayInstance.performValidation(
+                    {
+                      validationURL: event.validationURL,
+                      displayName: transactionInfo.total.label,
+                    },
+                    (err, merchantSession) => {
+                      if !err {
+                        sessions.completeMerchantValidation(merchantSession)
+                      } else {
+                        logger.setLogError(
+                          ~value="Failed to validate merchant session.",
+                          ~eventName=APPLE_PAY_FLOW,
+                          ~paymentMethod="APPLE_PAY",
+                        )
+                        messageParentWindow([
+                          ("fullscreen", false->JSON.Encode.bool),
+                          ("param", "paymentloader"->JSON.Encode.string),
+                          ("iframeId", iframeId->JSON.Encode.string),
+                        ])
+                        sessions.abort()
+                      }
+                    },
+                  )
+                }
+                sessions.onpaymentauthorized = event => {
+                  applePayInstance.tokenize(
+                    {
+                      token: event.payment.token->JSON.stringify,
+                    },
+                    (err, payload) => {
+                      if !err {
+                        sessions.completePayment(
+                          applePaySession.\"STATUS_SUCCESS"->JSON.Encode.string,
+                        )
+                        let nonce = payload.nonce
+                        onSuccess(nonce)
+                        messageParentWindow([
+                          ("fullscreen", false->JSON.Encode.bool),
+                          ("param", "paymentloader"->JSON.Encode.string),
+                          ("iframeId", iframeId->JSON.Encode.string),
+                        ])
+                      } else {
+                        logger.setLogError(
+                          ~value="completePayment failed for ApplePay braintree.",
+                          ~eventName=APPLE_PAY_FLOW,
+                          ~paymentMethod="APPLE_PAY",
+                        )
+                        sessions.completePayment(
+                          applePaySession.\"STATUS_FAILURE"->JSON.Encode.string,
+                        )
+                      }
+                    },
+                  )
+                }
+                sessions.oncancel = _ => {
+                  logger.setLogError(
+                    ~value="Apple Pay Payment Cancelled.",
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                  )
+                  messageParentWindow([
+                    ("fullscreen", false->JSON.Encode.bool),
+                    ("param", "paymentloader"->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                  ])
+                }
+                sessions.begin()
                 messageParentWindow([
-                  ("fullscreen", false->JSON.Encode.bool),
+                  ("fullscreen", true->JSON.Encode.bool),
                   ("param", "paymentloader"->JSON.Encode.string),
                   ("iframeId", iframeId->JSON.Encode.string),
                 ])
+              } else {
+                logger.setLogError(
+                  ~value="Failed to create ApplePay braintree instance.",
+                  ~eventName=APPLE_PAY_FLOW,
+                  ~paymentMethod="APPLE_PAY",
+                )
               }
-              sessions.begin()
-              messageParentWindow([
-                ("fullscreen", true->JSON.Encode.bool),
-                ("param", "paymentloader"->JSON.Encode.string),
-                ("iframeId", iframeId->JSON.Encode.string),
-              ])
-            } else {
-              logger.setLogError(
-                ~value="Failed to create ApplePay braintree instance.",
-                ~eventName=APPLE_PAY_FLOW,
-                ~paymentMethod="APPLE_PAY",
-              )
-            }
-          },
-        )
-      } else {
-        logger.setLogError(
-          ~value="Failed to create Braintree client instance.",
-          ~eventName=APPLE_PAY_FLOW,
-          ~paymentMethod="APPLE_PAY",
-        )
-      }
-    },
-  )
+            },
+          )
+        } else {
+          logger.setLogError(
+            ~value="Failed to create Braintree client instance.",
+            ~eventName=APPLE_PAY_FLOW,
+            ~paymentMethod="APPLE_PAY",
+          )
+        }
+      },
+    )
+  } catch {
+  | _ =>
+    logger.setLogError(
+      ~value="Exception in ApplePay Braintree flow.",
+      ~eventName=APPLE_PAY_FLOW,
+      ~paymentMethod="APPLE_PAY",
+    )
+  }
 }
 
 let loadBraintreeApplePayScripts = logger => {
