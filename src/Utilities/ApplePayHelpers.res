@@ -276,6 +276,8 @@ let useHandleApplePayResponse = (
               ~isThirdPartyFlow=true,
               ~manualRetry=isManualRetryEnabled,
             )
+          } else {
+            postFailedSubmitResponse(~errortype="validation_error", ~message="Invalid token")
           }
         }
       } catch {
