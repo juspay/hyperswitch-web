@@ -85,7 +85,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingDetailsText: `Faktureringsuppgifter`,
   socialSecurityNumberLabel: `Personnummer`,
   saveWalletDetails: `Information om plånböcker kommer att sparas vid val`,
-  morePaymentMethods: `Fler betalningsmetoder`,
+  newPaymentMethods: `Nya betalningsmetoder`,
   useExistingPaymentMethods: `Använd sparade betalningsmetoder`,
   nicknamePlaceholder: `Kortets smeknamn (valfritt)`,
   selectPaymentMethodText: `Välj en betalningsmetod och försök igen`,

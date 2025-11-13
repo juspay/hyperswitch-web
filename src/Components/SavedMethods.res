@@ -36,9 +36,13 @@ let make = (
     postFailedSubmitResponse(~errortype="validation_error", ~message)
     loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT)
   }
-  let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
-  let {displaySavedPaymentMethodsCheckbox, readOnly} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.optionAtom,
+  let {
+    displaySavedPaymentMethodsCheckbox,
+    readOnly,
+    savedPaymentMethodsCheckboxCheckedByDefault,
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
+    savedPaymentMethodsCheckboxCheckedByDefault
   )
   let isGuestCustomer = useIsGuestCustomer()
 
@@ -369,7 +373,7 @@ let make = (
           color: themeObj.colorPrimary,
         }
         role="button"
-        ariaLabel="Click to use more payment methods"
+        ariaLabel="Click to use new payment methods"
         tabIndex=0
         onKeyDown={event => {
           let key = JsxEvent.Keyboard.key(event)
@@ -381,7 +385,7 @@ let make = (
         dataTestId={TestUtils.addNewCardIcon}
         onClick={_ => setShowPaymentMethodsScreen(_ => true)}>
         <Icon name="circle-plus" size=22 />
-        {React.string(localeString.morePaymentMethods)}
+        {React.string(localeString.newPaymentMethods)}
       </div>
     </RenderIf>
   </div>
