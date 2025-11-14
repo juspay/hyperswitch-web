@@ -22,7 +22,7 @@ let make = (~walletOptions) => {
   let isWallet = walletOptions->Array.includes("paypal")
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
 
   let (_, _, labelType, _) = options.wallets.style.type_
   let _label = switch labelType {
@@ -46,7 +46,7 @@ let make = (~walletOptions) => {
     ~paymentType="paypal",
   )
   let onPaypalClick = _ev => {
-    if testMode {
+    if isTestMode {
       Console.warn("PayPal button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
         ~value="PayPal button clicked in test mode - interaction disabled",

@@ -31,7 +31,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let clientScript =
     Window.document(Window.window)->Window.getElementById("braintree-client")->Nullable.toOption
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (_, _, buttonType, _) = options.wallets.style.type_
@@ -104,7 +104,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~sdkHandleIsThere,
         ~sessions,
         ~clientSecret,
-        ~testMode,
+        ~isTestMode,
       )
     })
     Window.body->Window.appendChild(paypalScript)

@@ -38,7 +38,7 @@ let make = (
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("google_pay")
-  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
 
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
@@ -100,7 +100,7 @@ let make = (
   }
 
   let onGooglePaymentButtonClicked = () => {
-    if testMode {
+    if isTestMode {
       Console.warn("Google Pay button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
         ~value="Google Pay button clicked in test mode - interaction disabled",

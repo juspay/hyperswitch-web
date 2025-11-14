@@ -22,7 +22,7 @@ let make = (
   ~analyticsMetadata,
   ~customBackendUrl,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
-  ~testMode=false,
+  ~isTestMode=false,
 ) => {
   try {
     let iframeRef = []
@@ -74,7 +74,7 @@ let make = (
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&testMode=${testMode->getStringFromBool}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestMode->getStringFromBool}"
               allow="*"
               name="orca-payment"
               style="outline: none;"
@@ -91,7 +91,7 @@ let make = (
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
-    let clientSecret = testMode
+    let clientSecret = isTestMode
       ? localOptions->getString("clientSecret", "")
       : localOptions->getRequiredString("clientSecret", "", ~logger)
     let clientSecretReMatch = switch GlobalVars.sdkVersion {
@@ -301,7 +301,7 @@ let make = (
         preMountLoaderIframeDiv->Window.iframePostMessage(msg)
       })
     }
-    if !testMode {
+    if !isTestMode {
       switch clientSecretReMatch {
       | Some(false) =>
         manageErrorWarning(
@@ -418,7 +418,7 @@ let make = (
           ("analyticsMetadata", analyticsMetadata),
           ("launchTime", launchTime->JSON.Encode.float),
           ("customBackendUrl", customBackendUrl->JSON.Encode.string),
-          ("testMode", testMode->JSON.Encode.bool),
+          ("isTestMode", isTestMode->JSON.Encode.bool),
           (
             "isPaymentButtonHandlerProvided",
             LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,

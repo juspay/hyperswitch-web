@@ -27,7 +27,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("apple_pay")
-  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
 
   let (heightType, _, _, _, _) = options.wallets.style.height
   let height = switch heightType {
@@ -215,7 +215,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   }`
 
   let onApplePayButtonClicked = () => {
-    if testMode {
+    if isTestMode {
       Console.warn("Apple Pay button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
         ~value="Apple Pay button clicked in test mode - interaction disabled",

@@ -16,10 +16,10 @@ let make = (~token: SessionsType.token) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
 
   let onClick = _ => {
-    if testMode {
+    if isTestMode {
       Console.warn("Paze button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
         ~value="Paze button clicked in test mode - interaction disabled",

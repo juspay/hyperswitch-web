@@ -25,7 +25,7 @@ let loadPaypalSDK = (
   ~sdkHandleIsThere: bool,
   ~sessions: PaymentType.loadType,
   ~clientSecret,
-  ~testMode=false,
+  ~isTestMode=false,
 ) => {
   open Promise
 
@@ -53,7 +53,7 @@ let loadPaypalSDK = (
     style: buttonStyle,
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: () => {
-      if testMode {
+      if isTestMode {
         loggerState.setLogInfo(
           ~value="Paypal SDK createOrder called in test mode - interaction disabled",
           ~eventName=PAYPAL_FLOW,
@@ -225,7 +225,7 @@ let loadPaypalSDK = (
       handleCloseLoader()
     },
     onClick: () => {
-      if testMode {
+      if isTestMode {
         loggerState.setLogInfo(
           ~value="Paypal SDK Button Clicked in test mode - interaction disabled",
           ~eventName=PAYPAL_FLOW,

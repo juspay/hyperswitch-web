@@ -13,7 +13,7 @@ let make = () => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (klarnaClicked, setKlarnaClicked) = React.useState(_ => false)
-  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
   let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
   | Klarna(val) => val
@@ -24,7 +24,7 @@ let make = () => {
 
   let onKlarnaClick = async _ev => {
     try {
-      if testMode {
+      if isTestMode {
         Console.warn("Klarna checkout button clicked in test mode - interaction disabled")
         loggerState.setLogInfo(
           ~value="Klarna checkout button clicked in test mode - interaction disabled",

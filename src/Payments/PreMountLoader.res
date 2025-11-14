@@ -52,14 +52,14 @@ let getMessageHandlerV1Elements = (
   ~customPodUri,
   ~endpoint,
   ~merchantHostname,
-  ~testMode=false,
+  ~isTestMode=false,
 ) => {
   let (
     paymentMethodsPromise,
     customerPaymentMethodsPromise,
     sessionTokensPromise,
     blockedBinsPromise,
-  ) = if testMode {
+  ) = if isTestMode {
     let mockPaymentMethods = [
       (
         "payment_methods",
@@ -233,7 +233,7 @@ module PreMountLoaderForElements = {
     ~merchantHostname,
     ~customPodUri,
     ~profileId,
-    ~testMode=false,
+    ~isTestMode=false,
   ) => {
     useMessageHandler(() =>
       switch GlobalVars.sdkVersion {
@@ -245,7 +245,7 @@ module PreMountLoaderForElements = {
           ~customPodUri,
           ~endpoint,
           ~merchantHostname,
-          ~testMode,
+          ~isTestMode,
         )
       | V2 =>
         getMessageHandlerV2Elements(
@@ -310,7 +310,7 @@ let make = (
   ~hyperComponentName: Types.hyperComponentName,
   ~merchantHostname,
   ~customPodUri,
-  ~testMode=false,
+  ~isTestMode=false,
 ) => {
   let logger = HyperLogger.make(
     ~sessionId,
@@ -330,7 +330,7 @@ let make = (
       customPodUri
       profileId
       paymentId
-      testMode
+      isTestMode
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements

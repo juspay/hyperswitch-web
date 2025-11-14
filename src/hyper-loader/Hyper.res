@@ -150,10 +150,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       options
       ->getOptionsDict
       ->getBool("isPreloadEnabled", true)
-    let testMode =
+    let isTestMode =
       options
       ->getOptionsDict
-      ->getBool("testMode", false)
+      ->getBool("isTestMode", false)
     // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
     let shouldUseTopRedirection =
       options
@@ -387,7 +387,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           })
         }
 
-        if testMode {
+        if isTestMode {
           let errrorResponse = getFailedSubmitResponse(
             ~errorType="test_mode_bypass",
             ~message="Confirm Payment called in test mode - API call bypassed",
@@ -490,7 +490,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       addSmartEventListener("message", handleSdkConfirm, "handleSdkConfirm")
 
       // Add console warning for test mode
-      if testMode {
+      if isTestMode {
         Console.warn(
           "The SDK is running in test mode. API calls are bypassed and wallet interactions are disabled.",
         )
@@ -537,7 +537,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
           ~redirectionFlags,
-          ~testMode,
+          ~isTestMode,
         )
       }
 

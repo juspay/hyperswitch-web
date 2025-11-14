@@ -15,7 +15,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isWallet = walletOptions->Array.includes("samsung_pay")
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Samsungpay)
-  let testMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.testModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
 
   let (_, _, _, _, heightType) = options.wallets.style.height
   let height = switch heightType {
@@ -31,7 +31,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     })
 
   let onSamsungPaymentButtonClick = _ => {
-    if testMode {
+    if isTestMode {
       Console.warn("Samsung Pay button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
         ~value="Samsung Pay button clicked in test mode - interaction disabled",
