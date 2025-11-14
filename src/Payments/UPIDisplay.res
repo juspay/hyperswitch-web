@@ -1,6 +1,7 @@
 open Utils
 open RecoilAtoms
 open UPITypes
+open UPIHelpers
 
 let defaultTimer = 300.0
 
@@ -49,15 +50,8 @@ let make = () => {
     }
   }
 
-  let isMobile = React.useMemo0(() => {
-    switch UPIHelpers.getMobileOperatingSystem() {
-    | "ANDROID" | "IOS" => true
-    | _ => false
-    }
-  })
-
   let isAndroid = React.useMemo0(() => {
-    UPIHelpers.getMobileOperatingSystem() === "ANDROID"
+    getMobileOperatingSystem() === "ANDROID"
   })
 
   React.useEffect0(() => {
@@ -68,23 +62,12 @@ let make = () => {
       switch dict->Dict.get("paymentRequestResult") {
       | Some(val) =>
         let appAvailable = val->JSON.Decode.bool->Option.getOr(false)
-        let appName =
-          dict
-          ->Dict.get("app")
-          ->Option.getOr(JSON.Encode.null)
-          ->JSON.Decode.string
-          ->Option.getOr("")
-
-        let packageName =
-          dict
-          ->Dict.get("packageName")
-          ->Option.getOr(JSON.Encode.null)
-          ->JSON.Decode.string
-          ->Option.getOr("")
+        let appName = dict->getStringFromDict("app", "")
+        let packageName = dict->getStringFromDict("packageName", "")
 
         if appAvailable {
-          let newAVAPP = [{name: appName, packageName}]
-          setAvailableApps(prev => prev->Array.concat(newAVAPP))
+          let newAvailableApp = [{name: appName, packageName}]
+          setAvailableApps(prev => prev->Array.concat(newAvailableApp))
         }
 
       | None => ()
@@ -99,7 +82,7 @@ let make = () => {
   })
 
   React.useEffect(() => {
-    if isMobile && isAndroid {
+    if isAndroid {
       setAvailableApps(prev => prev->Array.concat([anyUpiApp]))
     }
     allUpiApps
@@ -110,18 +93,18 @@ let make = () => {
         ("url", app.packageName->JSON.Encode.string),
       ]
 
-      Utils.messageParentWindow(message)
+      messageParentWindow(message)
     })
     ->ignore
     None
-  }, [isMobile, isAndroid])
+  }, [isMobileDevice, isAndroid])
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let handleAsync = async () => {
         let json = ev.data->safeParse
-        let dict = json->Utils.getDictFromJson
+        let dict = json->getDictFromJson
         if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
           let metadata = dict->getJsonObjectFromDict("metadata")
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
@@ -146,11 +129,7 @@ let make = () => {
             setTimeRemaining(_ => timerValue)
           }
 
-          let headersDict =
-            metaDataDict
-            ->getJsonObjectFromDict("headers")
-            ->JSON.Decode.object
-            ->Option.getOr(Dict.make())
+          let headersDict = metaDataDict->getDictFromDict("headers")
           let headers = Dict.make()
           headersDict
           ->Dict.toArray
@@ -238,7 +217,7 @@ let make = () => {
       <RenderIf condition={currentScreen === AppSelection}>
         <div className="w-full">
           <RenderIf condition={paymentMethodType === "upi_qr"}>
-            <UPIQRCode upiUrl timeRemaining />
+            <UPIQRCode upiUrl timer timeRemaining defaultTimer />
           </RenderIf>
           <RenderIf condition={paymentMethodType !== "upi_qr"}>
             <UPIAvailableAppsModal availableApps selectedApp setSelectedApp />

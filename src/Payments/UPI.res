@@ -1,5 +1,6 @@
 open RecoilAtoms
 open Utils
+open UPIHelpers
 
 type upiMethod = UPICollect | UPIIntent | UPIQR | NONE
 
@@ -32,13 +33,6 @@ let make = (~upiMethods) => {
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
 
-  let isMobile = React.useMemo0(() => {
-    switch UPIHelpers.getMobileOperatingSystem() {
-    | "ANDROID" | "IOS" => true
-    | _ => false
-    }
-  })
-
   let availablePaymentMethods = React.useMemo(() => {
     let methods = []
 
@@ -46,7 +40,7 @@ let make = (~upiMethods) => {
       methods->Array.push(UPICollect)->ignore
     }
 
-    if upiMethods->Array.includes("upi_intent") && isMobile {
+    if upiMethods->Array.includes("upi_intent") && isMobileDevice {
       methods->Array.push(UPIIntent)->ignore
     }
 
@@ -55,7 +49,7 @@ let make = (~upiMethods) => {
     }
 
     methods
-  }, (upiMethods, isMobile))
+  }, (upiMethods, isMobileDevice))
 
   React.useEffect(() => {
     switch availablePaymentMethods->Array.get(0) {

@@ -887,11 +887,7 @@ let make = (
               | None => {
                   let isWebView = UPIHelpers.isItWebViewFromUserAgent()
                   let isInAppBrowser = UPIHelpers.isItInappBrowser()
-                  if isWebView && isInAppBrowser {
-                    false
-                  } else {
-                    true
-                  }
+                  !(isWebView && isInAppBrowser)
                 }
               | Some(_) => {
                   let url = switch packageName {
@@ -954,18 +950,8 @@ let make = (
           switch dict->Dict.get("paymentRequest") {
           | Some(val) =>
             if val->JSON.Decode.bool->Option.getOr(false) {
-              let packagename =
-                dict
-                ->Dict.get("url")
-                ->Option.getOr(JSON.Encode.null)
-                ->JSON.Decode.string
-                ->Option.getOr("")
-              let appName =
-                dict
-                ->Dict.get("app")
-                ->Option.getOr(JSON.Encode.null)
-                ->JSON.Decode.string
-                ->Option.getOr("")
+              let packagename = dict->getStringFromDict("url", "")
+              let appName = dict->getStringFromDict("app", "")
 
               getBrowserPaymentRequestResponse(packagename)
               ->Promise.then(val => {
@@ -978,6 +964,7 @@ let make = (
                 )
                 Promise.resolve()
               })
+              ->catch(_ => resolve())
               ->ignore
             }
           | None => ()

@@ -12,11 +12,10 @@ module UPIQRCodeInfoElement = {
           {React.string("Scan QR from your UPI app")}
         </span>
         <div
-          className="w-full text-start"
+          className="w-full text-start opacity-60"
           style={
             color: themeObj.colorText,
             fontSize: themeObj.fontSizeLg,
-            opacity: "60%",
             fontWeight: themeObj.fontWeightLight,
           }>
           {React.string(
@@ -26,11 +25,10 @@ module UPIQRCodeInfoElement = {
         <div className="flex flex-row items-center">
           <Icon name="multiple_apps" width=110 size=29 className="shrink-0" />
           <div
-            className="w-full text-start ml-1"
+            className="w-full text-start ml-1 opacity-60"
             style={
               color: themeObj.colorText,
               fontSize: themeObj.fontSizeLg,
-              opacity: "60%",
               fontWeight: themeObj.fontWeightLight,
             }>
             {React.string("& more")}
@@ -42,10 +40,15 @@ module UPIQRCodeInfoElement = {
 }
 
 @react.component
-let make = (~upiUrl, ~timeRemaining) => {
+let make = (~upiUrl, ~timer, ~timeRemaining, ~defaultTimer) => {
   open RecoilAtoms
 
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+
+  let timerValueUsed = timer > 0.0 ? timer : defaultTimer
+
+  let progressBarWidth = (timerValueUsed -. timeRemaining) /. timerValueUsed *. 100.0
+  let timeRemainingValue = UPIHelpers.formatTime(timeRemaining)
 
   let addInnerHtml = htmlUi => {
     let element = Window.querySelector("#qr-code")
@@ -62,8 +65,8 @@ let make = (~upiUrl, ~timeRemaining) => {
     switch UPIHelpers.generateQRCode(upiUrl) {
     | Some(qrSvg) => addInnerHtml(qrSvg)
     | None => {
-        let fallbackUi = `<div className="bg-gray-100 p-8 rounded-lg">
-          <p className="text-sm" style={color: ${themeObj.colorTextSecondary}}>
+        let fallbackUi = `<div>
+          <p>
             Unable to generate QR code
           </p>
         </div>`
@@ -88,20 +91,7 @@ let make = (~upiUrl, ~timeRemaining) => {
       />
     </div>
     <div className="flex flex-col items-center mb-6">
-      <div className="w-40 h-1.5 bg-[#E5E7EB] rounded-full mb-2">
-        <div
-          className="h-full bg-[#2563EB] rounded-full transition-all duration-1000 ease-linear"
-          style={
-            width: `${((300.0 -. timeRemaining) /. 300.0 *. 100.0)->Float.toString}%`,
-          }
-        />
-      </div>
-      <p className="text-sm">
-        {React.string("Complete the payment within ")}
-        <span className="font-semibold" style={color: themeObj.colorText}>
-          {React.string(UPIHelpers.formatTime(timeRemaining))}
-        </span>
-      </p>
+      <ProgressBar width=progressBarWidth timeRemainingValue />
     </div>
     <div className="border-t border-[#E5E7EB] pt-3 mt-4 flex text-xs text-gray-500">
       <Icon name="info_circle" className="shrink-0" />

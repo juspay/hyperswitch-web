@@ -2,15 +2,11 @@ open BrowserSpec
 open UPITypes
 
 let getMobileOperatingSystem = () => {
-  let ua = navigator.userAgent
-  if (
-    ua->String.includes("Android") ||
-    ua->String.includes("android") ||
-    ua->String.includes("ANDROID")
-  ) {
+  let ua = navigator.userAgent->String.toLowerCase
+  if ua->String.includes("android") {
     "ANDROID"
   } else if (
-    ua->String.includes("iPad") || ua->String.includes("iPhone") || ua->String.includes("iPod")
+    ua->String.includes("ipad") || ua->String.includes("iphone") || ua->String.includes("ipod")
   ) {
     "IOS"
   } else {
@@ -143,4 +139,12 @@ let formatTime = (seconds: float) => {
   let formattedSeconds =
     remainingSeconds < 10 ? `0${remainingSeconds->Int.toString}` : remainingSeconds->Int.toString
   `${formattedMinutes}:${formattedSeconds} min`
+}
+
+let isMobileDevice = {
+  try {
+    ["ANDROID", "IOS"]->Array.includes(getMobileOperatingSystem())
+  } catch {
+  | _error => false
+  }
 }

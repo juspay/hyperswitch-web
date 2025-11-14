@@ -1693,9 +1693,17 @@ let setNickNameState = (
   }
 }
 
-let getStringFromDict = (dict, key, defaultValue: string) => {
+let getStringFromOptionalDict = (dict, key, defaultValue: string) => {
   dict
   ->Option.flatMap(x => x->Dict.get(key))
   ->Option.flatMap(JSON.Decode.string)
+  ->Option.getOr(defaultValue)
+}
+
+let getStringFromDict = (dict, key, defaultValue: string) => {
+  dict
+  ->Dict.get(key)
+  ->Option.getOr(JSON.Encode.null)
+  ->JSON.Decode.string
   ->Option.getOr(defaultValue)
 }

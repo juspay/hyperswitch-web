@@ -9,7 +9,7 @@ module DoneButton = {
       className="w-full p-3 rounded-lg font-medium"
       style={
         background: themeObj.colorPrimary,
-        color: "#ffffff",
+        color: themeObj.buttonTextColor,
       }
       onClick={_ => {
         closeModal()->ignore
@@ -33,11 +33,10 @@ module TryAnotherAppButton = {
     }
 
     <button
-      className="w-full p-3 rounded-lg font-medium border"
+      className="w-full p-3 rounded-lg font-medium border bg-transparent"
       style={
         borderColor: themeObj.colorPrimary,
         color: themeObj.colorPrimary,
-        backgroundColor: "transparent",
       }
       onClick={_ => handleBackToAppSelection()}>
       {React.string("Try Another App")}
@@ -95,7 +94,7 @@ module AppSelectionButton = {
       className="w-full p-3 rounded-lg font-medium"
       style={
         background: themeObj.colorPrimary,
-        color: "#ffffff",
+        color: themeObj.buttonTextColor,
       }
       onClick={_ => handleOpenApp()}>
       {React.string("Proceed to pay")}
