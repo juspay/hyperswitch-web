@@ -33,6 +33,11 @@ type voucherDetails = {
   reference: string,
 }
 
+type pollConfig = {
+  delay_in_secs: int,
+  frequency: int,
+}
+
 type nextAction = {
   redirectToUrl: string,
   popupUrl: string,
@@ -44,10 +49,13 @@ type nextAction = {
   three_ds_data: option<JSON.t>,
   voucher_details: option<voucherDetails>,
   display_to_timestamp: option<float>,
+  display_from_timestamp: option<float>,
   next_action_data: option<JSON.t>,
   display_text: option<string>,
   border_color: option<string>,
   iframe_data: option<JSON.t>,
+  sdk_uri: string,
+  poll_config: option<pollConfig>,
 }
 type intent = {
   nextAction: nextAction,
@@ -76,10 +84,13 @@ let defaultNextAction = {
   three_ds_data: None,
   voucher_details: None,
   display_to_timestamp: None,
+  display_from_timestamp: None,
   next_action_data: None,
   display_text: None,
   border_color: None,
   iframe_data: None,
+  sdk_uri: "",
+  poll_config: None,
 }
 let defaultIntent = {
   nextAction: defaultNextAction,
@@ -137,6 +148,13 @@ let getVoucherDetails = json => {
   }
 }
 
+let getPollConfig = json => {
+  {
+    delay_in_secs: getInt(json, "delay_in_secs", 0),
+    frequency: getInt(json, "frequency", 0),
+  }
+}
+
 let getNextAction = (dict, str) => {
   dict
   ->Dict.get(str)
@@ -169,6 +187,12 @@ let getNextAction = (dict, str) => {
         ->Option.flatMap(JSON.Decode.float)
         ->Option.getOr(0.0),
       ),
+      display_from_timestamp: Some(
+        json
+        ->Dict.get("display_from_timestamp")
+        ->Option.flatMap(JSON.Decode.float)
+        ->Option.getOr(0.0),
+      ),
       voucher_details: {
         json
         ->Dict.get("voucher_details")
@@ -179,6 +203,13 @@ let getNextAction = (dict, str) => {
       display_text: json->getOptionString("display_text"),
       border_color: json->getOptionString("border_color"),
       iframe_data: Some(json->Utils.getJsonObjectFromDict("iframe_data")),
+      sdk_uri: getString(json, "sdk_uri", ""),
+      poll_config: {
+        json
+        ->Dict.get("poll_config")
+        ->Option.flatMap(JSON.Decode.object)
+        ->Option.map(json => json->getPollConfig)
+      },
     }
   })
   ->Option.getOr(defaultNextAction)

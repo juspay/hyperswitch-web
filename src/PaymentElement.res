@@ -168,7 +168,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [savedMethods])
 
-  let (walletList, paymentOptionsList, actualList) = useGetPaymentMethodList(
+  let (walletList, paymentOptionsList, actualList, upiMethods) = useGetPaymentMethodList(
     ~paymentOptions,
     ~paymentType,
     ~sessions,
@@ -343,6 +343,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | SepaBankDebit =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
           <SepaBankDebitLazy />
+        </ReusableReactSuspense>
+      | Upi =>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
+          <UPI upiMethods />
         </ReusableReactSuspense>
       | BacsBankDebit =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="BacsBankDebitLazy">

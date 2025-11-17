@@ -876,10 +876,106 @@ let make = (
           }
         }
 
+        let getBrowserPaymentRequestResponse = async packageName => {
+          let mobileOS = UPIHelpers.getMobileOperatingSystem()
+          let isMobileDevice = mobileOS != "UNKNOWN"
+          let isAndroidDevice = mobileOS == "ANDROID"
+
+          if isMobileDevice {
+            if isAndroidDevice {
+              switch UPITypes.paymentRequestAvailable {
+              | None => {
+                  let isWebView = UPIHelpers.isItWebViewFromUserAgent()
+                  let isInAppBrowser = UPIHelpers.isItInappBrowser()
+                  !(isWebView && isInAppBrowser)
+                }
+              | Some(_) => {
+                  let url = switch packageName {
+                  | "tez://upi/pay" => "https://tez.google.com/pay"
+                  | "phonepe://pay" => "https://mercury.phonepe.com/transact/pay"
+                  | "paytmmp://pay"
+                  | "paytmmp://upi/pay" => "https://securegw.paytm.in/order/sendpaymentrequest"
+                  | "bhim://pay"
+                  | "bhim://upi://pay" => "https://payments.juspay.in/bhim/pay"
+                  | "https://cred-web-stg.dreamplug.in/checkout/pay"
+                  | "credpay://upi/pay" => "https://cred-web-stg.dreamplug.in/checkout/pay"
+                  | "https://cred.club/checkout/pay" => "https://cred.club/checkout/pay"
+                  | "kiwi://upi/pay" => "https://gokiwi.in/pay"
+                  | "navipay://pay" => "https://pl.navifinserv.com/payments-gateway"
+                  | "super://pay" => "https://super.money/pay"
+                  | "mobikwik://upi/pay" => "https://promotions.mobikwik.com/epay/payments-gateway/"
+                  | "mv://upi/upi://pay" => "https://moneyview.in/payment/"
+                  | _ => ""
+                  }
+
+                  if url == "" {
+                    true
+                  } else {
+                    try {
+                      let instruments: array<UPITypes.paymentMethodData> = [
+                        {
+                          supportedMethods: url,
+                        },
+                      ]
+
+                      let details: UPITypes.paymentDetailsInit = {
+                        total: {
+                          label: "Total",
+                          amount: {currency: "INR", value: "1"},
+                        },
+                      }
+
+                      let request = UPITypes.createPaymentRequest(instruments, details)
+                      let result = await request->UPITypes.canMakePayment
+
+                      result
+                    } catch {
+                    | _err => true
+                    }
+                  }
+                }
+              }
+            } else {
+              true
+            }
+          } else {
+            false
+          }
+        }
+
+        let handleSpecificAppAvailability = (ev: Types.event) => {
+          let json = ev.data->anyTypeToJson
+          let dict = json->getDictFromJson
+
+          switch dict->Dict.get("paymentRequest") {
+          | Some(val) =>
+            if val->JSON.Decode.bool->Option.getOr(false) {
+              let packagename = dict->getStringFromDict("url", "")
+              let appName = dict->getStringFromDict("app", "")
+
+              getBrowserPaymentRequestResponse(packagename)
+              ->Promise.then(val => {
+                ev.source->Window.sendPostMessage(
+                  [
+                    ("paymentRequestResult", val->JSON.Encode.bool),
+                    ("app", appName->JSON.Encode.string),
+                    ("packageName", packagename->JSON.Encode.string),
+                  ]->Dict.fromArray,
+                )
+                Promise.resolve()
+              })
+              ->catch(_ => resolve())
+              ->ignore
+            }
+          | None => ()
+          }
+        }
+
         addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
         addSmartEventListener("message", handlePollStatusMessage, "onPollStatusMsg")
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
         addSmartEventListener("message", handleApplePayThirdPartyFlow, "onApplePayThirdParty")
+        addSmartEventListener("message", handleSpecificAppAvailability, "onSpecificAppAvailability")
 
         let fetchSessionTokens = mountedIframeRef => {
           Promise.make((promiseResolve, _) => {

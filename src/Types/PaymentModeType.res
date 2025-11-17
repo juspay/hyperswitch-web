@@ -16,6 +16,7 @@ type payment =
   | BacsTransfer
   | ACHBankDebit
   | SepaBankDebit
+  | Upi
   | BacsBankDebit
   | BecsBankDebit
   | BanContactCard
@@ -41,6 +42,7 @@ let paymentMode = str => {
   | "crypto_currency" => CryptoCurrency
   | "ach_debit" => ACHBankDebit
   | "sepa_debit" => SepaBankDebit
+  | "upi" => Upi
   | "bacs_debit" => BacsBankDebit
   | "becs_debit" => BecsBankDebit
   | "ach_transfer" => ACHTransfer
@@ -78,6 +80,7 @@ let defaultOrder = [
   "bacs_transfer",
   "ach_debit",
   "sepa_debit",
+  "upi",
   "bacs_debit",
   "becs_debit",
   "sofort",

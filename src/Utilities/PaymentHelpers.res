@@ -156,8 +156,22 @@ let rec pollRetrievePaymentIntent = (
   ~logger,
   ~customPodUri,
   ~isForceSync=false,
+  ~delayTime=?,
+  ~frequency=?,
+  ~count=0,
 ) => {
   open Promise
+
+  let delayTimeValue = switch delayTime {
+  | Some(time) => time === 0 ? 2000 : time
+  | None => 2000
+  }
+
+  let maxAttempts = switch frequency {
+  | Some(freq) => freq
+  | None => -1
+  }
+
   retrievePaymentIntent(
     clientSecret,
     ~headers,
@@ -172,8 +186,10 @@ let rec pollRetrievePaymentIntent = (
 
     if status === "succeeded" || status === "failed" {
       resolve(json)
+    } else if maxAttempts > 0 && count >= maxAttempts {
+      Promise.resolve(JSON.Encode.null)
     } else {
-      delay(2000)
+      delay(delayTimeValue)
       ->then(_val => {
         pollRetrievePaymentIntent(
           clientSecret,
@@ -182,6 +198,9 @@ let rec pollRetrievePaymentIntent = (
           ~logger,
           ~customPodUri,
           ~isForceSync,
+          ~delayTime=delayTimeValue,
+          ~frequency=maxAttempts,
+          ~count=count + 1,
         )
       })
       ->catch(_ => Promise.resolve(JSON.Encode.null))
@@ -189,14 +208,21 @@ let rec pollRetrievePaymentIntent = (
   })
   ->catch(e => {
     Console.error2("Unable to retrieve payment due to following error", e)
-    pollRetrievePaymentIntent(
-      clientSecret,
-      ~headers,
-      ~publishableKey,
-      ~logger,
-      ~customPodUri,
-      ~isForceSync,
-    )
+    if maxAttempts > 0 && count >= maxAttempts {
+      Promise.resolve(JSON.Encode.null)
+    } else {
+      pollRetrievePaymentIntent(
+        clientSecret,
+        ~headers,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~isForceSync,
+        ~delayTime=delayTimeValue,
+        ~frequency=maxAttempts,
+        ~count=count + 1,
+      )
+    }
   })
 }
 
@@ -785,6 +811,44 @@ let rec intentCall = (
                     ("nextActionData", nextActionData),
                   ]->getJsonFromArrayOfJson
                 resolve(response)
+              } else if (
+                intent.nextAction.type_ === "sdk_upi_intent_information" ||
+                  intent.nextAction.type_ === "wait_screen_information"
+              ) {
+                let uri = intent.nextAction.sdk_uri
+                let paymentMethodType = intent.payment_method_type
+                let headerObj = Dict.make()
+                mergeHeadersIntoDict(~dict=headerObj, ~headers)
+                let pollConfigData = intent.nextAction.poll_config->Option.getOr({
+                  delay_in_secs: 0,
+                  frequency: 0,
+                })
+                let metaData = [
+                  ("paymentIntentId", clientSecret->JSON.Encode.string),
+                  ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
+                  ("headers", headerObj->JSON.Encode.object),
+                  ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+                  ("url", uri->JSON.Encode.string),
+                  ("return_url", url.href->JSON.Encode.string),
+                  (
+                    "displayToTimestamp",
+                    intent.nextAction.display_to_timestamp->Option.getOr(0.0)->JSON.Encode.float,
+                  ),
+                  (
+                    "displayFromTimestamp",
+                    intent.nextAction.display_from_timestamp
+                    ->Option.getOr(0.0)
+                    ->JSON.Encode.float,
+                  ),
+                  ("frequency", pollConfigData.frequency->JSON.Encode.int),
+                  ("delayInSecs", pollConfigData.delay_in_secs->JSON.Encode.int),
+                ]->getJsonFromArrayOfJson
+                messageParentWindow([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", `upiData`->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                  ("metadata", metaData),
+                ])
               } else {
                 if !isPaymentSession {
                   postFailedSubmitResponse(

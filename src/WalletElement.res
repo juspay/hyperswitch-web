@@ -8,7 +8,7 @@ let make = (~paymentType) => {
 
   let setPaymentMethodListValue = Recoil.useSetRecoilState(PaymentUtils.paymentMethodListValue)
 
-  let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(
+  let (walletList, _, _, _) = PaymentUtils.useGetPaymentMethodList(
     ~paymentOptions=[],
     ~paymentType,
     ~sessions,

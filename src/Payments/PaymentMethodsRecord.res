@@ -621,17 +621,10 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     miniIcon: None,
   },
   {
-    paymentMethodName: "upi_collect",
+    paymentMethodName: "upi",
+    icon: Some(icon("BHIM", ~size=19)),
+    displayName: "UPI",
     fields: [InfoElement],
-    icon: Some(icon("bhim_upi", ~size=19)),
-    displayName: localeString.payment_methods_upi_collect,
-    miniIcon: None,
-  },
-  {
-    paymentMethodName: "upi_intent",
-    fields: [InfoElement],
-    icon: Some(icon("bhim_upi", ~size=19)),
-    displayName: "UPI Intent",
     miniIcon: None,
   },
   {

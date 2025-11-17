@@ -484,8 +484,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
 
-        let clientSecretId = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
-        let paymentIdVal = elementsOptionsDict->Utils.getStringFromDict("paymentId", "")
+        let clientSecretId =
+          elementsOptionsDict->Utils.getStringFromOptionalDict("clientSecret", "")
+        let paymentIdVal = elementsOptionsDict->Utils.getStringFromOptionalDict("paymentId", "")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         clientSecret := clientSecretId
         paymentId := paymentIdVal
@@ -525,9 +526,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
 
-        let ephemeralKeyId = pmManagementOptionsDict->getStringFromDict("ephemeralKey", "")
-        let pmClientSecretId = pmManagementOptionsDict->getStringFromDict("pmClientSecret", "")
-        let pmSessionIdVal = pmManagementOptionsDict->getStringFromDict("pmSessionId", "")
+        let ephemeralKeyId = pmManagementOptionsDict->getStringFromOptionalDict("ephemeralKey", "")
+        let pmClientSecretId =
+          pmManagementOptionsDict->getStringFromOptionalDict("pmClientSecret", "")
+        let pmSessionIdVal = pmManagementOptionsDict->getStringFromOptionalDict("pmSessionId", "")
 
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
