@@ -585,3 +585,107 @@ let fetchSessions = (
     JSON.Encode.null->resolve
   })
 }
+
+let fetchIntent = (
+  ~clientSecret,
+  ~publishableKey,
+  ~customPodUri,
+  ~endpoint,
+  ~profileId,
+  ~paymentId,
+  ~logger as _,
+) => {
+  open Promise
+  let baseHeaders = [
+    ("api-key", publishableKey),
+    ("Content-Type", "application/json"),
+    ("x-profile-id", profileId),
+    ("Authorization", `publishable-key=${publishableKey}, client-secret=${clientSecret}`),
+  ]
+
+  let headers = switch customPodUri {
+  | value if value != "" => [...baseHeaders, ("x-feature", value)]
+  | _ => baseHeaders
+  }
+
+  let uri = `${endpoint}/v2/payments/${paymentId}/get-intent`
+
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
+  ->then(resp => {
+    if !(resp->Fetch.Response.ok) {
+      resp
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      resp
+      ->Fetch.Response.json
+      ->then(successData => {
+        successData->resolve
+      })
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.error2("Error ", exceptionMessage)
+    JSON.Encode.null->resolve
+  })
+}
+
+let checkBalanceAndApplyPaymentMethod = (
+  ~paymentMethods: array<Dict.t<JSON.t>>,
+  ~clientSecret,
+  ~publishableKey,
+  ~customPodUri,
+  ~endpoint,
+  ~profileId,
+  ~paymentId,
+) => {
+  open Promise
+  let baseHeaders = [
+    ("api-key", publishableKey),
+    ("Content-Type", "application/json"),
+    ("x-profile-id", profileId),
+    ("Authorization", `publishable-key=${publishableKey}, client-secret=${clientSecret}`),
+  ]
+
+  let headers = switch customPodUri {
+  | value if value != "" => [...baseHeaders, ("x-feature", value)]
+  | _ => baseHeaders
+  }
+
+  let uri = `${endpoint}/v2/payments/${paymentId}/eligibility/check-balance-and-apply-pm-data`
+
+  // Convert Dict.t<JSON.t> array to JSON.t array
+  let paymentMethodsJson =
+    paymentMethods->Array.map(dict => dict->Dict.toArray->getJsonFromArrayOfJson)
+  let body = [("payment_methods", paymentMethodsJson->JSON.Encode.array)]->getJsonFromArrayOfJson
+
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+  )
+  ->then(resp => {
+    if !(resp->Fetch.Response.ok) {
+      resp
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      resp
+      ->Fetch.Response.json
+      ->then(successData => {
+        successData->resolve
+      })
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.error2("Error ", exceptionMessage)
+    JSON.Encode.null->resolve
+  })
+}

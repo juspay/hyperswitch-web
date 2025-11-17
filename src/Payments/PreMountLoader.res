@@ -120,6 +120,16 @@ let getMessageHandlerV2Elements = (
     ~endpoint,
   )
 
+  let getIntentPromise = PaymentHelpersV2.fetchIntent(
+    ~clientSecret,
+    ~publishableKey,
+    ~customPodUri,
+    ~endpoint,
+    ~profileId,
+    ~paymentId,
+    ~logger,
+  )
+
   ev => {
     open Utils
     let dict = ev.data->safeParse->getDictFromJson
@@ -127,6 +137,8 @@ let getMessageHandlerV2Elements = (
       paymentMethodsListPromise->sendPromiseData("payment_methods_list_v2")
     } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
       sessionTokensPromise->sendPromiseData("session_tokens")
+    } else if dict->isKeyPresentInDict("sendGetIntentResponse") {
+      getIntentPromise->sendPromiseData("get_intent_v2")
     }
   }
 }

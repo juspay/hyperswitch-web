@@ -7,6 +7,7 @@ let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let showDetails = PaymentType.getShowDetails(~billingDetails=fields.billingDetails)
 
@@ -43,14 +44,18 @@ let make = () => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if email.value == "" {
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else if email.value == "" {
         setEmail(prev => {
           ...prev,
           errorString: localeString.emailEmptyText,
         })
       }
     }
-  }, [email])
+  }, (email, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.email == Auto}>

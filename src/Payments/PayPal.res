@@ -37,6 +37,7 @@ let make = (~walletOptions) => {
     options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   UtilityHooks.useHandlePostMessages(
@@ -105,24 +106,30 @@ let make = (~walletOptions) => {
     let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
     React.useCallback((ev: Window.event) => {
-      if !isWallet {
-        let json = ev.data->Utils.safeParse
-        let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
-        if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-          onPaypalClick(ev)
-        } else if areRequiredFieldsEmpty {
-          Utils.postFailedSubmitResponse(
-            ~errortype="validation_error",
-            ~message=localeString.enterFieldsText,
-          )
-        } else if !areRequiredFieldsValid {
-          Utils.postFailedSubmitResponse(
-            ~errortype="validation_error",
-            ~message=localeString.enterValidDetailsText,
-          )
+      let json = ev.data->Utils.safeParse
+      let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+      if confirm.doSubmit {
+        // Skip all validations for gift-card-only payments
+        if isGiftCardOnlyPayment {
+          // Gift card only payment - no validation needed
+          ()
+        } else if !isWallet {
+          if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+            onPaypalClick(ev)
+          } else if areRequiredFieldsEmpty {
+            Utils.postFailedSubmitResponse(
+              ~errortype="validation_error",
+              ~message=localeString.enterFieldsText,
+            )
+          } else if !areRequiredFieldsValid {
+            Utils.postFailedSubmitResponse(
+              ~errortype="validation_error",
+              ~message=localeString.enterValidDetailsText,
+            )
+          }
         }
       }
-    }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, iframeId))
+    }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, iframeId, isGiftCardOnlyPayment))
   }
 
   let submitCallback = useSubmitCallback(~isWallet)

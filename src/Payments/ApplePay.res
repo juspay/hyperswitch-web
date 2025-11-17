@@ -25,6 +25,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("apple_pay")
 
@@ -305,7 +306,23 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     None
   }, (isApplePayReady, isInvokeSDKFlow, paymentExperience, isWallet))
 
-  let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
+  let baseSubmitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
+
+  let submitCallback = React.useCallback((ev: Window.event) => {
+    let json = ev.data->safeParse
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+    if confirm.doSubmit {
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else {
+        // Call the original ApplePay submit callback
+        baseSubmitCallback(ev)
+      }
+    }
+  }, (baseSubmitCallback, isGiftCardOnlyPayment))
+
   useSubmitPaymentData(submitCallback)
 
   if isWallet {

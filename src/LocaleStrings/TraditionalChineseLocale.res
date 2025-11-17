@@ -229,4 +229,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  haveGiftCardText: `有禮品卡嗎？`,
+  addText: `添加`,
 }

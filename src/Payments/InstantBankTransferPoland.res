@@ -11,6 +11,7 @@ let make = () => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
@@ -24,7 +25,11 @@ let make = () => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else if areRequiredFieldsValid && !areRequiredFieldsEmpty {
         let bodyArr =
           PaymentBody.dynamicPaymentBody(
             "bank_transfer",
@@ -48,6 +53,7 @@ let make = () => {
     areRequiredFieldsEmpty,
     isManualRetryEnabled,
     iframeId,
+    isGiftCardOnlyPayment,
   ))
   useSubmitPaymentData(submitCallback)
 

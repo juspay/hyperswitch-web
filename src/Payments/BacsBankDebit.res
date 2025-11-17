@@ -40,6 +40,7 @@ let make = () => {
   let (sortcode, setSortcode) = React.useState(_ => "")
   let (accountNumber, setAccountNumber) = React.useState(_ => "")
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
@@ -89,7 +90,11 @@ let make = () => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      if complete {
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else if complete {
         let body = PaymentBody.bacsBankDebitBody(
           ~email=email.value,
           ~accNum=accountNumber,

@@ -8,6 +8,7 @@ let make = (~label="") => {
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let pixKeyRef = React.useRef(Nullable.null)
   let pixCPFRef = React.useRef(Nullable.null)
@@ -140,32 +141,38 @@ let make = (~label="") => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if pixKey.value == "" {
-        setPixKey(prev => {
-          ...prev,
-          errorString: localeString.pixKeyEmptyText,
-        })
-      }
-      if pixCNPJ.value == "" {
-        setPixCNPJ(prev => {
-          ...prev,
-          errorString: localeString.pixCNPJEmptyText,
-        })
-      }
-      if pixCPF.value == "" {
-        setPixCPF(prev => {
-          ...prev,
-          errorString: localeString.pixCPFEmptyText,
-        })
-      }
-      if sourceBankAccountId.value == "" {
-        setSourceBankAccountId(prev => {
-          ...prev,
-          errorString: localeString.sourceBankAccountIdEmptyText,
-        })
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else {
+        if pixKey.value == "" {
+          setPixKey(prev => {
+            ...prev,
+            errorString: localeString.pixKeyEmptyText,
+          })
+        }
+        if pixCNPJ.value == "" {
+          setPixCNPJ(prev => {
+            ...prev,
+            errorString: localeString.pixCNPJEmptyText,
+          })
+        }
+        if pixCPF.value == "" {
+          setPixCPF(prev => {
+            ...prev,
+            errorString: localeString.pixCPFEmptyText,
+          })
+        }
+        if sourceBankAccountId.value == "" {
+          setSourceBankAccountId(prev => {
+            ...prev,
+            errorString: localeString.sourceBankAccountIdEmptyText,
+          })
+        }
       }
     }
-  }, [pixCNPJ.value, pixKey.value, pixCPF.value])
+  }, (pixCNPJ.value, pixKey.value, pixCPF.value, isGiftCardOnlyPayment))
 
   useSubmitPaymentData(submitCallback)
 

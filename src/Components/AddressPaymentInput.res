@@ -35,6 +35,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
   let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
@@ -113,38 +114,44 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if line1.value == "" {
-        setLine1(prev => {
-          ...prev,
-          errorString: localeString.line1EmptyText,
-        })
-      }
-      if line2.value == "" {
-        setLine2(prev => {
-          ...prev,
-          errorString: localeString.line2EmptyText,
-        })
-      }
-      if state.value == "" {
-        setState(prev => {
-          ...prev,
-          errorString: localeString.stateEmptyText,
-        })
-      }
-      if postalCode.value == "" {
-        setPostalCode(prev => {
-          ...prev,
-          errorString: localeString.postalCodeEmptyText,
-        })
-      }
-      if city.value == "" {
-        setCity(prev => {
-          ...prev,
-          errorString: localeString.cityEmptyText,
-        })
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else {
+        if line1.value == "" {
+          setLine1(prev => {
+            ...prev,
+            errorString: localeString.line1EmptyText,
+          })
+        }
+        if line2.value == "" {
+          setLine2(prev => {
+            ...prev,
+            errorString: localeString.line2EmptyText,
+          })
+        }
+        if state.value == "" {
+          setState(prev => {
+            ...prev,
+            errorString: localeString.stateEmptyText,
+          })
+        }
+        if postalCode.value == "" {
+          setPostalCode(prev => {
+            ...prev,
+            errorString: localeString.postalCodeEmptyText,
+          })
+        }
+        if city.value == "" {
+          setCity(prev => {
+            ...prev,
+            errorString: localeString.cityEmptyText,
+          })
+        }
       }
     }
-  }, (line1, line2, country, state, city, postalCode))
+  }, (line1, line2, country, state, city, postalCode, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   let hasDefaulltValues =

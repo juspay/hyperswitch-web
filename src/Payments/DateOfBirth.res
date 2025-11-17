@@ -26,18 +26,25 @@ let make = () => {
   let (error, setError) = React.useState(_ => false)
   let (isNotEligible, setIsNotEligible) = React.useState(_ => false)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
   let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      switch dateOfBirth->Nullable.toOption {
-      | Some(_) => setError(_ => false)
-      | None => ()
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else {
+        switch dateOfBirth->Nullable.toOption {
+        | Some(_) => setError(_ => false)
+        | None => ()
+        }
       }
     }
-  }, (dateOfBirth, isNotEligible))
+  }, (dateOfBirth, isNotEligible, isGiftCardOnlyPayment))
 
   useSubmitPaymentData(submitCallback)
 

@@ -11,6 +11,7 @@ let make = (~isBancontact=false) => {
   let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {innerLayout} = config.appearance
@@ -106,47 +107,61 @@ let make = (~isBancontact=false) => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      switch form {
-      | Some(vault) =>
-        let emptyPayload = JSON.Encode.object(Dict.make())
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else {
+        switch form {
+        | Some(vault) =>
+          let emptyPayload = JSON.Encode.object(Dict.make())
 
-        let onSuccess = (_, data) => {
-          let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
+          let onSuccess = (_, data) => {
+            let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
 
-          let cardBody = PaymentManagementBody.vgsCardBody(~cardNumber, ~month, ~year, ~cvcNumber)
-          if areRequiredFieldsValid && !areRequiredFieldsEmpty {
-            intent(
-              ~bodyArr={cardBody->mergeAndFlattenToTuples(requiredFieldsBody)},
-              ~confirmParam=confirm.confirmParams,
-              ~handleUserError=false,
-              ~manualRetry=isManualRetryEnabled,
-              ~isExternalVaultFlow=true,
+            let cardBody = PaymentManagementBody.vgsCardBody(~cardNumber, ~month, ~year, ~cvcNumber)
+            if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+              intent(
+                ~bodyArr={cardBody->mergeAndFlattenToTuples(requiredFieldsBody)},
+                ~confirmParam=confirm.confirmParams,
+                ~handleUserError=false,
+                ~manualRetry=isManualRetryEnabled,
+                ~isExternalVaultFlow=true,
+              )
+            } else {
+              postFailedSubmitResponse(
+                ~errortype="validation_error",
+                ~message=localeString.enterValidDetailsText,
+              )
+            }
+          }
+
+          let onError = err => {
+            let errorDict = err->getDictFromJson
+            setVgsCardError(_ =>
+              vgsErrorHandler(errorDict, "card_number", ~isSubmit=true, localeString)
             )
-          } else {
-            postFailedSubmitResponse(
-              ~errortype="validation_error",
-              ~message=localeString.enterValidDetailsText,
+            setVgsExpiryError(_ =>
+              vgsErrorHandler(errorDict, "card_exp", ~isSubmit=true, localeString)
+            )
+            setVgsCVCError(_ =>
+              vgsErrorHandler(errorDict, "card_cvc", ~isSubmit=true, localeString)
             )
           }
+
+          vault.submit("/post", emptyPayload, onSuccess, onError)
+
+        | None => Console.error("VGS Vault not initialized for submission")
         }
-
-        let onError = err => {
-          let errorDict = err->getDictFromJson
-          setVgsCardError(_ =>
-            vgsErrorHandler(errorDict, "card_number", ~isSubmit=true, localeString)
-          )
-          setVgsExpiryError(_ =>
-            vgsErrorHandler(errorDict, "card_exp", ~isSubmit=true, localeString)
-          )
-          setVgsCVCError(_ => vgsErrorHandler(errorDict, "card_cvc", ~isSubmit=true, localeString))
-        }
-
-        vault.submit("/post", emptyPayload, onSuccess, onError)
-
-      | None => Console.error("VGS Vault not initialized for submission")
       }
     }
-  }, (form, requiredFieldsBody, areRequiredFieldsValid, areRequiredFieldsEmpty))
+  }, (
+    form,
+    requiredFieldsBody,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    isGiftCardOnlyPayment,
+  ))
 
   useSubmitPaymentData(submitCallback)
 

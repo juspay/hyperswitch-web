@@ -13,7 +13,7 @@ type apiCallV1 =
   | RetrieveStatus
   | ConfirmPayout
 
-type apiCallV2 = FetchSessionsV2
+type apiCallV2 = FetchSessionsV2 | FetchIntent | CheckGiftCardBalance
 
 type apiCall =
   | V1(apiCallV1)
@@ -118,6 +118,8 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | V2(inner) =>
     switch inner {
     | FetchSessionsV2 => `v2/payments/${paymentIntentID}/create-external-sdk-tokens`
+    | FetchIntent => `v2/payments/${paymentIntentID}/get-intent`
+    | CheckGiftCardBalance => `v2/payments/${paymentIntentID}/check-balance`
     }
   }
 

@@ -55,6 +55,8 @@ let make = (
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let appliedGiftCards = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.appliedGiftCardsAtom)
+  let remainingAmount = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.remainingAmountAtom)
   let payOptionsRef = React.useRef(Nullable.null)
   let selectRef = React.useRef(Nullable.null)
   let (winW, winH) = Utils.useWindowSize()
@@ -62,6 +64,9 @@ let make = (
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  // Compute if non-card payment methods should be disabled
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
   React.useEffect(() => {
     let width = switch payOptionsRef.current->Nullable.toOption {
     | Some(ref) => ref->Window.Element.clientWidth
@@ -137,7 +142,9 @@ let make = (
       {cardOptionDetails
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
-        <TabCard key={i->Int.toString} paymentOption=payOption isActive />
+        // Disable non-card payment methods when gift cards fully cover payment
+        let isDisabled = isGiftCardOnlyPayment && payOption.paymentMethodName !== "card"
+        <TabCard key={i->Int.toString} paymentOption=payOption isActive disabled=isDisabled />
       })
       ->React.array}
       <TabLoader cardShimmerCount />
@@ -163,7 +170,7 @@ let make = (
             ref={selectRef->ReactDOM.Ref.domRef}
             className={`TabMore place-items-start outline-none`}
             onChange=handleChange
-            disabled=readOnly
+            disabled={readOnly || isGiftCardOnlyPayment}
             dataTestId=TestUtils.paymentMethodDropDownTestId
             style={
               width: "40px",

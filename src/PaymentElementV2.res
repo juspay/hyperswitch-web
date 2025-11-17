@@ -51,6 +51,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     googlePayThirdPartySessionObj.sessionsToken,
     Gpay,
   )
+  let intentList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.intentList)
 
   React.useEffect0(() => {
     setShowPaymentMethodsScreen(_ => true)
@@ -67,9 +68,30 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [sessionToken])
 
+  let giftCardOptions = React.useMemo(() => {
+    switch paymentMethodsListV2 {
+    | LoadedV2(data) =>
+      data.paymentMethodsEnabled
+      ->Array.filter(method => method.paymentMethodType === "gift_card")
+      ->Array.map(method => method.paymentMethodSubtype)
+    | _ => []
+    }
+  }, [paymentMethodsListV2])
+
   React.useEffect(() => {
     let updatePaymentOptions = () => {
-      setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
+      // Always filter out gift card methods from main payment options
+      // Gift cards should only be accessible through the dedicated GiftCards component
+      let check = switch intentList {
+      | LoadedIntent(intent) => intent.splitTxnsEnabled === "enable"
+      | _ => false // Don't show by default when intent is not loaded yet
+      }
+      let filteredOptions = check
+        ? paymentOptionsList->Array.filter(option =>
+            Array.includes(giftCardOptions, option) == false
+          )
+        : paymentOptionsList
+      setPaymentOptions(_ => [...filteredOptions]->removeDuplicate)
     }
 
     switch (paymentManagementList, paymentMethodsListV2) {
@@ -91,7 +113,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
 
     None
-  }, (paymentManagementList, paymentOptionsList, actualList, paymentMethodsListV2))
+  }, (
+    paymentManagementList,
+    paymentOptionsList,
+    actualList,
+    paymentMethodsListV2,
+    intentList,
+    giftCardOptions,
+  ))
 
   React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
@@ -134,11 +163,19 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let cardShimmerCount = React.useMemo(() => {
     cardsToRender(cardsContainerWidth)
   }, [cardsContainerWidth])
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit && selectedOption == "" {
-      postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
+    if confirm.doSubmit {
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else if selectedOption == "" {
+        postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
+      }
     }
   }, [selectedOption])
 
@@ -279,6 +316,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           walletOptions->Array.length > 0 &&
           checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
           <Or />
+        </RenderIf>
+        <RenderIf
+          condition={switch intentList {
+          | LoadedIntent(intent) => intent.splitTxnsEnabled === "enable"
+          | _ => false // Don't show by default when intent is not loaded yet
+          }}>
+          <GiftCards />
         </RenderIf>
         {switch layoutClass.\"type" {
         | Tabs =>

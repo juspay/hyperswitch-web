@@ -306,7 +306,24 @@ let make = (
     ~setRequiredFieldsBody,
   )
 
-  let submitCallback = useSubmitCallback()
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let baseSubmitCallback = useSubmitCallback()
+
+  let submitCallback = React.useCallback((ev: Window.event) => {
+    let json = ev.data->Utils.safeParse
+    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    if confirm.doSubmit {
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else {
+        // Call the original submit callback
+        baseSubmitCallback(ev)
+      }
+    }
+  }, (baseSubmitCallback, isGiftCardOnlyPayment))
+
   useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />

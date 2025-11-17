@@ -1,6 +1,10 @@
 open RecoilAtoms
 @react.component
-let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: bool) => {
+let make = (
+  ~paymentOption: PaymentMethodsRecord.paymentFieldsInfo,
+  ~isActive: bool,
+  ~disabled: bool=false,
+) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
   let setSelectedOption = Recoil.useSetRecoilState(selectedOptionAtom)
@@ -15,18 +19,24 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
     paymentOption.icon,
   )
   let onClick = _ => {
-    setSelectedOption(_ => paymentOption.paymentMethodName)
+    if !disabled {
+      setSelectedOption(_ => paymentOption.paymentMethodName)
+    }
   }
+  let isDisabled = readOnly || disabled
   <button
-    className={`Tab ${tabClass} flex flex-col animate-slowShow`}
+    className={`Tab ${tabClass} flex flex-col animate-slowShow ${disabled
+        ? "cursor-not-allowed"
+        : ""}`}
     type_="button"
-    disabled=readOnly
+    disabled=isDisabled
     style={
       minWidth: "5rem",
       overflowWrap: "anywhere",
       width: "100%",
       padding: themeObj.spacingUnit,
-      cursor: "pointer",
+      cursor: disabled ? "not-allowed" : "pointer",
+      opacity: disabled ? "0.5" : "1.0",
     }
     onClick>
     <div className={`TabIcon ${tabIconClass}`}>

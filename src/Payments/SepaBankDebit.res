@@ -14,6 +14,7 @@ let make = () => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let pmAuthMapper = React.useMemo1(
     () =>
@@ -38,7 +39,13 @@ let make = () => {
     | V2 => PaymentBodyV2.dynamicPaymentBodyV2("bank_debit", "sepa")
     }
     if confirm.doSubmit {
-      if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+      // Skip all validations for gift-card-only payments
+      // Gift card submission is handled separately by GiftCards.res
+      if isGiftCardOnlyPayment {
+        // Do nothing - let GiftCards.res handle the submission
+        ()
+      } // Normal flow - call the original callback with validation
+      else if areRequiredFieldsValid && !areRequiredFieldsEmpty {
         let sepaBody =
           body
           ->getJsonFromArrayOfJson
@@ -55,7 +62,13 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (isManualRetryEnabled, areRequiredFieldsValid, areRequiredFieldsEmpty, requiredFieldsBody))
+  }, (
+    isManualRetryEnabled,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    requiredFieldsBody,
+    isGiftCardOnlyPayment,
+  ))
 
   useSubmitPaymentData(submitCallback)
 

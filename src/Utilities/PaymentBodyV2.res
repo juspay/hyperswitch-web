@@ -34,6 +34,32 @@ let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentM
   baseBody->appendPaymentExperienceV2(resolvedPaymentMethodType)
 }
 
+// Create split payment body for multiple gift cards with hardcoded structure
+let createSplitPaymentBodyForGiftCards = (
+  appliedGiftCards: array<RecoilAtomsV2.appliedGiftCard>,
+) => {
+  let splitPaymentMethodData = appliedGiftCards->Array.map(giftCard => {
+    // Create gift card specific data structure
+    let giftCardTypeData =
+      [
+        ("number", giftCard.giftCardNumber->JSON.Encode.string),
+        ("cvc", giftCard.cvc->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson
+
+    let giftCardData = [(giftCard.giftCardType, giftCardTypeData)]->getJsonFromArrayOfJson
+
+    let paymentMethodData = [("gift_card", giftCardData)]->getJsonFromArrayOfJson
+
+    [
+      ("payment_method_type", "gift_card"->JSON.Encode.string),
+      ("payment_method_subtype", giftCard.giftCardType->JSON.Encode.string),
+      ("payment_method_data", paymentMethodData),
+    ]->getJsonFromArrayOfJson
+  })
+
+  [("split_payment_method_data", splitPaymentMethodData->JSON.Encode.array)]
+}
+
 let epsBody = (~name, ~bankName) => {
   let billingDetails = [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
   let bankDetail = (bankName === "" ? "american_express" : bankName)->JSON.Encode.string
