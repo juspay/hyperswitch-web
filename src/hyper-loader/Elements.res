@@ -746,38 +746,14 @@ let make = (
                 let authToken = dict->Utils.getString("authToken", "")
                 let applePayPaymentRequest = dict->Utils.getDictFromDict("applePayPaymentRequest")
                 switch connector {
-                | "braintree" => {
-                    let onSuccess = token => {
-                      logger.setLogInfo(
-                        ~value="ApplePay Braintree payment Successfull",
-                        ~eventName=APPLE_PAY_FLOW,
-                        ~paymentMethod="APPLE_PAY",
-                      )
-                      event.source->Window.sendPostMessage(
-                        [
-                          ("applePayBraintreeSuccess", true->JSON.Encode.bool),
-                          ("token", token->JSON.Encode.string),
-                        ]->Dict.fromArray,
-                      )
-                      messageParentWindow([
-                        ("fullscreen", false->JSON.Encode.bool),
-                        ("param", "paymentloader"->JSON.Encode.string),
-                        ("iframeId", selectorString->JSON.Encode.string),
-                      ])
-                    }
-
-                    event.source->Window.sendPostMessage(
-                      [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray,
-                    )
-
-                    ApplePayHelpers.handleApplePayBraintreeClick(
-                      authToken,
-                      applePayPaymentRequest,
-                      selectorString,
-                      logger,
-                      onSuccess,
-                    )
-                  }
+                | "braintree" =>
+                  ApplePayHelpers.handleApplePayBraintreeClick(
+                    authToken,
+                    applePayPaymentRequest,
+                    selectorString,
+                    logger,
+                    event,
+                  )
                 | _ =>
                   logger.setLogInfo(
                     ~value="Connector Not Found",
@@ -968,7 +944,7 @@ let make = (
                     let isApplePayBraintreePresent =
                       applePayPresent->getOptionsDict->getString("connector", "") === "braintree"
                     if isApplePayBraintreePresent {
-                      ApplePayHelpers.loadBraintreeApplePayScripts(logger)
+                      BraintreeHelpers.loadBraintreeApplePayScripts(logger)
                     }
                   }
                   let googlePayPresent = sessionsArr->Array.find(item => {
@@ -1002,6 +978,10 @@ let make = (
                       let dict = json->getDictFromJson
                       let componentName = dict->getString("componentName", "payment")
                       let connector = dict->Utils.getString("connector", "")
+                      let disableDelayedSessionTokenFlow =
+                        ApplePayHelpers.delayedSessionTokenExcludedConnectors
+                        ->Array.includes(connector)
+                        ->not
                       switch (
                         dict->Dict.get("applePayButtonClicked"),
                         dict->Dict.get("applePayPaymentRequest"),
@@ -1011,7 +991,10 @@ let make = (
                         ->Option.getOr(false),
                       ) {
                       | (Some(val), Some(paymentRequest), isTaxCalculationEnabled) =>
-                        if val->JSON.Decode.bool->Option.getOr(false) && connector !== "braintree" {
+                        if (
+                          val->JSON.Decode.bool->Option.getOr(false) &&
+                            disableDelayedSessionTokenFlow
+                        ) {
                           let isDelayedSessionToken =
                             applePayPresent
                             ->Belt.Option.flatMap(JSON.Decode.object)

@@ -1700,19 +1700,27 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.getOr(defaultValue)
 }
 
-let loadScriptIfNotExist = (url, scriptName, logger: HyperLoggerTypes.loggerMake) => {
+let loadScriptIfNotExist = (
+  ~url,
+  ~scriptName,
+  ~logger: HyperLoggerTypes.loggerMake,
+  ~eventName,
+) => {
   if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
     let script = Window.createElement("script")
     script->Window.elementSrc(url)
     script->Window.elementOnerror(_ => {
-      logger.setLogError(
-        ~value=`Error loading script: ${scriptName}`,
-        ~eventName=SCRIPT_LOAD_STATUS,
-      )
+      logger.setLogError(~value=`Error loading script: ${scriptName}`, ~eventName)
     })
     script->Window.elementOnload(() => {
-      logger.setLogInfo(~value=`${scriptName} LOADED SUCCESSFULLY`, ~eventName=SCRIPT_LOAD_STATUS)
+      logger.setLogInfo(~value=`${scriptName} LOADED SUCCESSFULLY`, ~eventName)
     })
     Window.body->Window.appendChild(script)
   }
+}
+
+let defaultCountryCode = {
+  let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
+  let clientCountry = getClientCountry(clientTimeZone)
+  clientCountry.isoAlpha2
 }

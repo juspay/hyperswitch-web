@@ -331,7 +331,6 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | NETWORK_STATE
   | CARD_SCHEME_SELECTION
   | S3_API
-  | SCRIPT_LOAD_STATUS
   | BLOCKED_BIN_CALL =>
     None
   }
