@@ -33,6 +33,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
     RecoilAtoms.showPaymentMethodsScreen,
   )
+  // let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = (true, _ => ())
   let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     paymentMethodListValue,
@@ -188,6 +189,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~paymentMethodListValue,
     ~sessionObj,
   )
+  let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   React.useEffect(() => {
     switch paymentMethodList {
@@ -306,6 +309,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     )
     <PaymentShimmer />
   }
+
   let checkoutEle = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
       {switch selectedOption->PaymentModeType.paymentMode {
@@ -410,6 +414,42 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     </ErrorBoundary>
   }
 
+  let groupedMethods = React.useMemo(() => {
+    let groupedMethods = Dict.make()
+    let addToGroup = (dict, key, value) => {
+      switch dict->Dict.get(key) {
+      | Some(arr) => dict->Dict.set(key, Array.concat(arr, [value]))
+      | None => dict->Dict.set(key, [value])
+      }
+    }
+    savedMethods->Array.forEach(savedMethod => {
+      let key = PaymentHelpers.getConstructedPaymentMethodName(
+        ~paymentMethod=savedMethod.paymentMethod,
+        ~paymentMethodType={savedMethod.paymentMethodType->Option.getOr("other")},
+      )
+      groupedMethods->addToGroup(key, savedMethod)
+    })
+    groupedMethods
+  }, [savedMethods])
+
+  let selectedSavedMethods = groupedMethods->Dict.get(selectedOption)->Option.getOr([])
+
+  let wrappedCheckoutEle = {
+    <SavedItemsRenderer
+      savedMethods=selectedSavedMethods
+      setPaymentToken
+      paymentTokenVal=paymentToken.paymentToken
+      cvcProps
+      setRequiredFieldsBody={_ => ()}
+      showAddMethodsScreen=false
+      paymentToken
+      isClickToPayRememberMe
+      sessions
+      requiredFieldsBody>
+      {checkoutEle}
+    </SavedItemsRenderer>
+  }
+
   let paymentLabel = if displaySavedPaymentMethods {
     showPaymentMethodsScreen
       ? optionAtomValue.paymentMethodsHeaderText
@@ -470,6 +510,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           setIsClickToPayAuthenticateError
           getVisaCards
           closeComponentIfSavedMethodsAreEmpty
+          isClickToPayRememberMe
+          setIsClickToPayRememberMe
+          requiredFieldsBody
+          setRequiredFieldsBody
         />
       </RenderIf>
     }}
@@ -500,11 +544,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             setCardsContainerWidth
             cardOptions
             dropDownOptions
-            checkoutEle
+            checkoutEle=wrappedCheckoutEle
             cardShimmerCount
             cardProps
           />
-        | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps />
+        | Accordion =>
+          <AccordionContainer paymentOptions checkoutEle=wrappedCheckoutEle cardProps />
         }}
       </div>
     </RenderIf>

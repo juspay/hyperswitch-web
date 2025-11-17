@@ -478,6 +478,7 @@ let make = (
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
+          <h1> {"Abhishek chorotiya"->React.string} </h1>
           <RenderIf condition={!isBancontact}>
             <PaymentInputField
               fieldName=localeString.cardNumberLabel

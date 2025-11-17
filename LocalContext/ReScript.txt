@@ -1,0 +1,1354 @@
+TITLE: ReScript: Discouraged React.forwardRef Usage
+DESCRIPTION: This snippet illustrates the use of `React.forwardRef` in ReScript, an alternative method for ref forwarding that is currently discouraged due to potential deprecation. The `FancyInput` component is wrapped with `React.forwardRef` to receive a ref directly, which is then applied to the internal `input` element. This approach achieves similar functionality to prop-based ref forwarding but is less preferred.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/forwarding-refs
+
+LANGUAGE: ReScript
+CODE:
+
+```
+// App.res
+
+module FancyInput = {
+  @react.component
+  let make = React.forwardRef((~className=?, ~children, ref) =>
+    <div>
+      <input
+        type_="text"
+        ?className
+        ref=?{Nullable.toOption(ref)->Option.map(ReactDOM.Ref.domRef)}
+      />
+      children
+    </div>
+  )
+}
+
+@send external focus: Dom.element => unit = "focus"
+
+@react.component
+let make = () => {
+  let input = React.useRef(Nullable.null)
+
+  let focusInput = () =>
+    input.current->Nullable.forEach(input => input->focus)
+
+  let onClick = _ => focusInput()
+
+  <div>
+    <FancyInput className="fancy" ref=input>
+      <button onClick> {React.string("Click to focus")} </button>
+    </FancyInput>
+  </div>
+}
+```
+
+---
+
+TITLE: ReScript: Forwarding React Refs as Props
+DESCRIPTION: This example demonstrates the recommended way to pass a React ref to a child component in ReScript. The `FancyInput` component accepts an `inputRef` prop of type `ReactDOM.domRef` and directly assigns it to its internal `input` element. The parent component then uses `React.useRef` and `ReactDOM.Ref.domRef` to create and pass the ref, enabling direct focus control on the child's input.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/forwarding-refs
+
+LANGUAGE: ReScript
+CODE:
+
+```
+// App.res
+
+module FancyInput = {
+  @react.component
+  let make = (~children, ~inputRef: ReactDOM.domRef) =>
+    <div> <input type_="text" ref=inputRef /> children </div>
+}
+
+@send external focus: Dom.element => unit = "focus"
+
+@react.component
+let make = () => {
+  let input = React.useRef(Nullable.null)
+
+  let focusInput = () =>
+    input.current->Nullable.forEach(input => input->focus)
+
+  let onClick = _ => focusInput()
+
+  <div>
+    <FancyInput inputRef={ReactDOM.Ref.domRef(input)}>
+      <button onClick> {React.string("Click to focus")} </button>
+    </FancyInput>
+  </div>
+}
+```
+
+---
+
+TITLE: Use React.forwardRef with @react.component in ReScript
+DESCRIPTION: Illustrates how the `@react.component` decorator can be used with `React.forwardRef` to create components that can forward refs. The decorator automatically generates the `props` type with an optional `ref` field for JSX usage.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/beyond-jsx
+
+LANGUAGE: ReScript
+CODE:
+
+```
+module FancyInput = {
+  @react.component
+  let make = React.forwardRef((~className=?, ~children, ref) =>
+    <div>
+      // use ref here
+    </div>
+  )
+}
+```
+
+---
+
+TITLE: React.forwardRef Argument Handling in JSX v4
+DESCRIPTION: Illustrates the change in `ref` handling from JSX v3 to v4, where `ref` is exclusively allowed as an argument to `React.forwardRef`. The example shows refactoring a `FancyInput` component to align with the new `ref` argument convention, making `ref_` obsolete.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/migrate-react
+
+LANGUAGE: RES
+CODE:
+
+```
+module FancyInput = {
+  @react.component
+  let make = React.forwardRef((
+    ~className=?,
+    ~children,
+    ref_, // argument
+  ) =>
+    <div>
+      <input
+        type_="text"
+        ?className
+        ref=?{ref_->Nullable.toOption->Option.map(ReactDOM.Ref.domRef)}
+      />
+      children
+    </div>
+  )
+}
+
+@react.component
+let make = (~onClick) => {
+  let input = React.useRef(Nullable.null)
+
+  <div>
+    <FancyInput ref=input> // prop
+      <button onClick> {React.string("Click to focus")} </button>
+    </FancyInput>
+  </div>
+}
+```
+
+LANGUAGE: RES
+CODE:
+
+```
+module FancyInput = {
+  @react.component
+  let make = React.forwardRef((
+    ~className=?,
+    ~children,
+    ref, // only `ref` is allowed
+  ) =>
+    <div>
+      <input
+        type_="text"
+        ?className
+        ref=?{ref->Nullable.toOption->Option.map(ReactDOM.Ref.domRef)}
+      />
+      children
+    </div>
+  )
+}
+
+@react.component
+let make = (~onClick) => {
+  let input = React.useRef(Nullable.null)
+
+  <div>
+    <FancyInput ref=input>
+      <button onClick> {React.string("Click to focus")} </button>
+    </FancyInput>
+  </div>
+}
+```
+
+---
+
+TITLE: Incorrect Ref Usage with Component Functions in ReScript
+DESCRIPTION: Demonstrates an incorrect attempt to pass a `ref` attribute directly to a ReScript React component function. This snippet highlights a common pitfall, explaining that such usage will result in a compilation error and suggests using `forwardRef` instead.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/refs-and-the-dom
+
+LANGUAGE: ReScript
+CODE:
+
+```
+module MyComp = {
+  @react.component
+  let make = (~ref) => <input />
+}
+
+@react.component
+let make = () => {
+  let textInput = React.useRef(Nullable.null)
+
+  // This will **not** work
+  <MyComp ref={ReactDOM.Ref.domRef(textInput)} />
+}
+```
+
+---
+
+TITLE: Define a FancyButton ReScript React Component
+DESCRIPTION: This ReScript code defines a FancyButton React component that renders a native HTML button. It illustrates how components typically hide their internal DOM structure, making direct ref access to the inner element generally unnecessary for most application-level components, but highlights the need for ref forwarding in specific reusable component scenarios.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/forwarding-refs
+
+LANGUAGE: ReScript
+CODE:
+
+```
+// FancyButton.res
+
+@react.component
+let make = (~children) => {
+  <button className="FancyButton">
+    children
+  </button>
+}
+```
+
+---
+
+TITLE: Adding a Ref to a DOM Element for Focus in ReScript
+DESCRIPTION: Illustrates how to use `React.useRef` and `ReactDOM.Ref.domRef` in ReScript to get a reference to an HTML input element. The example shows how to programmatically set focus on the input field when a button is clicked, handling potential null or undefined ref values.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/refs-and-the-dom
+
+LANGUAGE: ReScript
+CODE:
+
+```
+// CustomTextInput.res
+
+@send external focus: Dom.element => unit = "focus"
+
+@react.component
+let make = () => {
+  let textInput = React.useRef(Nullable.null)
+
+  let focusInput = ()
+    switch textInput.current {
+    | Value(dom) => dom->focus
+    | Null | Undefined => ()
+    }
+
+  let onClick = _ => focusInput()
+
+  <div>
+    <input type_="text" ref={ReactDOM.Ref.domRef(textInput)} />
+    <input type_="button" value="Focus the text input" onClick />
+  </div>
+}
+```
+
+---
+
+TITLE: Accessing the value of a ref
+DESCRIPTION: The actual value stored within a `ref` box can be accessed by dereferencing its `contents` field.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/latest/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let five = myValue.contents // 5
+```
+
+---
+
+TITLE: ReScript React: Implement Callback Ref for Input Focus
+DESCRIPTION: This ReScript code snippet demonstrates how to use a callback ref in a React component to gain direct access to a DOM element. It shows how to define a ref, assign the DOM element to it via a callback function, and then programmatically focus the input field using an external 'focus' binding.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/hooks-ref
+
+LANGUAGE: ReScript
+CODE:
+
+```
+// CustomTextInput.res
+
+@send external focus: Dom.element => unit = "focus"
+
+@react.component
+let make = () => {
+  let textInput = React.useRef(Nullable.null)
+  let setTextInputRef = element => {
+    textInput.current = element;
+  }
+
+  let focusTextInput = _ => {
+    textInput.current->Nullable.forEach(input => input->focus)
+  }
+
+  <div>
+    <input type_="text" ref={ReactDOM.Ref.callbackDomRef(setTextInputRef)} />
+    <input
+      type_="button" value="Focus the text input" onClick={focusTextInput}
+    />
+  </div>
+}
+```
+
+---
+
+TITLE: Pass Callback Ref Between ReScript React Components
+DESCRIPTION: This example illustrates how to pass a callback ref from a parent component (`Parent`) to a child component (`CustomTextInput`) in ReScript React. The parent's `setInputRef` callback is passed as a prop to the child, which then uses it as the `ref` attribute on its internal `<input>` element. This allows the parent component to directly access the DOM node of the child's input.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/refs-and-the-dom
+
+LANGUAGE: ReScript
+CODE:
+
+```
+// Parent.res
+
+@send external focus: Dom.element => unit = "focus"
+
+module CustomTextInput = {
+  @react.component
+  let make = (~setInputRef) => {
+    <div>
+      <input type_="text" ref={ReactDOM.Ref.callbackDomRef(setInputRef)} />
+    </div>
+  }
+}
+
+@react.component
+let make = () => {
+  let textInput = React.useRef(Nullable.null)
+  let setInputRef = element => { textInput.current = element}
+
+  <CustomTextInput setInputRef/>
+}
+```
+
+---
+
+TITLE: Assigning a new value to a ref
+DESCRIPTION: To update the value held by a `ref`, assign a new value directly to its `contents` field. ReScript also provides a convenient syntax sugar (`:=`) for this operation. Note that existing bindings that captured the `ref`'s value before the assignment will retain their original value, as they hold a copy of the underlying item, not the `ref` itself.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/latest/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+myValue.contents = 6
+```
+
+LANGUAGE: ReScript
+CODE:
+
+```
+myValue := 6
+```
+
+---
+
+TITLE: Assign a new value to a ref box
+DESCRIPTION: To update the value stored in a `ref` box, directly assign a new value to its `contents` field. This modifies the underlying mutable reference.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+myValue.contents = 6
+```
+
+---
+
+TITLE: Access the value of a ref box
+DESCRIPTION: To retrieve the actual value stored within a `ref` box, access its `contents` field. This operation returns the current value held by the mutable reference.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let five = myValue.contents // 5
+```
+
+---
+
+TITLE: Access the value of a ref in ReScript
+DESCRIPTION: To retrieve the actual value stored inside a `ref` box, you need to access its `contents` field. This operation extracts the current value held by the mutable reference.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let five = myValue.contents // 5
+```
+
+---
+
+TITLE: Assign a new value to a ref's contents in ReScript
+DESCRIPTION: You can assign a new value to a `ref` by directly modifying its `contents` field. This updates the mutable value held by the reference.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+myValue.contents = 6
+```
+
+---
+
+TITLE: Implement Callback Ref for DOM Node in ReScript React Component
+DESCRIPTION: This snippet demonstrates how to use `React.Ref.callbackDomRef` to store a reference to a DOM node (an input element) within a ReScript React component. The callback function `setTextInputRef` updates `textInput.current` with the DOM element, enabling programmatic interaction like focusing the input.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/refs-and-the-dom
+
+LANGUAGE: ReScript
+CODE:
+
+```
+// CustomTextInput.res
+
+@send external focus: Dom.element => unit = "focus"
+
+@react.component
+let make = () => {
+  let textInput = React.useRef(Nullable.null)
+  let setTextInputRef = element => {
+    textInput.current = element
+  }
+
+  let focusTextInput = _ => {
+    textInput.current->Nullable.forEach(input => input->focus)
+  }
+
+  <div>
+    <input type_="text" ref={ReactDOM.Ref.callbackDomRef(setTextInputRef)} />
+    <input
+      type_="button" value="Focus the text input" onClick={focusTextInput}
+    />
+  </div>
+}
+```
+
+---
+
+TITLE: Use syntax sugar for ref assignment
+DESCRIPTION: ReScript provides a convenient syntax sugar, `:=`, for assigning new values to `ref` boxes. This operator is equivalent to directly assigning to the `contents` field, offering a more concise way to update mutable references.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+myValue := 6
+```
+
+---
+
+TITLE: Declare a mutable let-binding with ref in ReScript
+DESCRIPTION: Let-bindings are immutable by default, but you can wrap them with a `ref` type. A `ref` is exposed as a record with a single mutable field in the standard library, allowing its contents to be changed.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let myValue = ref(5)
+```
+
+---
+
+TITLE: Use syntax sugar for ref assignment in ReScript
+DESCRIPTION: ReScript provides a convenient syntax sugar, `:=`, for assigning a new value to a `ref`. This operator simplifies the common operation of updating the `contents` field.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+myValue := 6
+```
+
+---
+
+TITLE: Accessing Ref Current Value in ReScript
+DESCRIPTION: Demonstrates the basic syntax for accessing the `current` property of a ref in ReScript, which holds a reference to the associated DOM node or component instance.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/refs-and-the-dom
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let value = myRef.current
+```
+
+---
+
+TITLE: Example of React.useRef Hook in ReScript
+DESCRIPTION: This ReScript React component demonstrates how to use the `React.useRef` hook to manage a mutable integer value (`clicks`) that does not trigger re-renders when updated. The `onClick` handler increments the `clicks.current` value, and the current count is converted to a string and displayed within a `div` element.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/refs-and-the-dom
+
+LANGUAGE: RES
+CODE:
+
+```
+@react.component
+let make = () => {
+  let clicks = React.useRef(0)
+
+  let onClick = (_) => {
+    clicks.current = clicks.current + 1
+  };
+
+  <div onClick>
+    {Belt.Int.toString(clicks.current)->React.string}
+  </div>
+}
+```
+
+---
+
+TITLE: Define ReScript React Ref Type
+DESCRIPTION: This ReScript snippet defines the `React.ref` type, a record with a mutable `current` field. This type is distinct from ReScript's built-in `ref` type and is used by React to provide an escape hatch for imperative interactions with DOM nodes or React elements.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/refs-and-the-dom
+
+LANGUAGE: RES
+CODE:
+
+```
+type t<'value> = { mutable current: 'value }
+```
+
+---
+
+TITLE: Managing Text Input Focus with useRef in ReScript React
+DESCRIPTION: This example illustrates how to programmatically manage focus for a text input field using the `useRef` hook in a ReScript React component. It defines an external `focus` function for DOM elements and uses a ref to access the input element, applying focus via a button click.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/hooks-ref
+
+LANGUAGE: ReScript
+CODE:
+
+```
+// TextInputWithFocusButton.res
+
+@send external focus: Dom.element => unit = "focus"
+
+@react.component
+let make = () => {
+  let inputEl = React.useRef(Nullable.null)
+
+  let onClick = _ => {
+    inputEl.current->Nullable.forEach(input => input->focus)
+  }
+
+  <>
+    <input ref={ReactDOM.Ref.domRef(inputEl)} type_="text" />
+    <button onClick> {React.string("Focus the input")} </button>
+  </>
+}
+```
+
+---
+
+TITLE: Basic Usage of React.useRef in ReScript
+DESCRIPTION: This snippet demonstrates the fundamental way to initialize a mutable ref container using `React.useRef` in ReScript. The `initialValue` is assigned to the `.current` field of the returned ref object, which persists throughout the component's lifecycle.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/react/latest/hooks-ref
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let refContainer = React.useRef(initialValue)
+```
+
+---
+
+TITLE: ReScript While Loop with Manual Break (Mutable Binding)
+DESCRIPTION: Illustrates how to simulate a `break` mechanism in a ReScript `while` loop, as ReScript does not have a built-in `break` keyword. This is achieved by using a mutable binding (`ref`) to control the loop's continuation condition.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/control-flow
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let break = ref(false)
+
+while !break.contents {
+  if Math.random() > 0.3 {
+    break := true
+  } else {
+    Console.log("Still running")
+  }
+}
+```
+
+---
+
+TITLE: ReScript Int.Ref.decrement Function Signature
+DESCRIPTION: API signature for the `decrement` function in `Int.Ref`, which takes a mutable integer reference and decrements its stored value by one, returning `unit`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/int/ref
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+let decrement: ref<int> => unit
+```
+
+---
+
+TITLE: ReScript Int.Ref.decrement Usage Example
+DESCRIPTION: Demonstrates the usage of `Int.Ref.decrement`. It shows how to create an integer reference, apply the decrement function, and confirm the modified value with `assertEqual`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/int/ref
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+let myRef = ref(4)
+Int.Ref.decrement(myRef)
+assertEqual(myRef.contents, 3)
+```
+
+---
+
+TITLE: ReScript Int.Ref.increment Function Signature
+DESCRIPTION: API signature for the `increment` function in `Int.Ref`, which takes a mutable integer reference and increments its stored value by one, returning `unit`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/int/ref
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+let increment: ref<int> => unit
+```
+
+---
+
+TITLE: Initialize a mutable let-binding with ref
+DESCRIPTION: Let-bindings in ReScript are immutable by default. To introduce mutability, they can be wrapped with a `ref`, which is exposed as a record with a single mutable `contents` field in the standard library.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let myValue = ref(5)
+```
+
+---
+
+TITLE: Initialize a mutable let-binding with ref
+DESCRIPTION: Let-bindings in ReScript are immutable by default. To introduce mutability, they can be wrapped with a `ref`, which is a record with a single mutable `contents` field provided by the standard library.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/latest/mutation
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let myValue = ref(5)
+```
+
+---
+
+TITLE: ReScript Int.Ref.increment Usage Example
+DESCRIPTION: Illustrates the practical application of `Int.Ref.increment`. It shows how to initialize an integer reference, apply the increment function, and verify the updated value using `assertEqual`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/int/ref
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+let myRef = ref(4)
+Int.Ref.increment(myRef)
+assertEqual(myRef.contents, 5)
+```
+
+---
+
+TITLE: Iterate over Set values in ReScript
+DESCRIPTION: Executes a provided function once for each value in the Set, in insertion order.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/api/core/set
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+let forEach: (t<'a>, 'a => unit) => unit
+```
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+let set = Set.make()
+set->Set.add("someValue")
+set->Set.add("someValue2")
+
+set->Set.forEach(value => {
+  Console.log(value)
+})
+```
+
+---
+
+TITLE: Nullable.forEach API Reference
+DESCRIPTION: Calls the provided function `f` on the value if it is not `null` or `undefined`, otherwise returns `unit`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/nullable
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+`let forEach: (t<'a>, 'a => unit) => unit`
+```
+
+---
+
+TITLE: ReScript Uint16Array.indexOfFrom Function
+DESCRIPTION: Returns the first index at which a given element can be found in the `Uint16Array`, searching forwards from a specified `from` index.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/api/js/typedarray2/uint16array
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let indexOfFrom: (t, elt, ~from: int) => int
+```
+
+---
+
+TITLE: ReScript Math: fround Function API
+DESCRIPTION: Documents the `fround` function, which rounds a float to the nearest single-precision float. It mirrors JavaScript's `Math.fround`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/js/math
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+let fround: float => float
+```
+
+---
+
+TITLE: Int32Array.indexOfFrom Method
+DESCRIPTION: Returns the first index at which a given element can be found in the Int32Array, searching forwards from a specified index, or -1 if not found.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/api/js/typedarray2/int32array
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+let indexOfFrom: (t, elt, ~from: int) => int
+```
+
+---
+
+TITLE: ReScript Float64Array Method: indexOfFrom
+DESCRIPTION: Returns the first index at which a given element can be found in the `Float64Array`, searching forwards from a specified index.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/api/js/typed_array/float64array
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let indexOfFrom: (elt, ~from: int, t) => int
+```
+
+---
+
+TITLE: Nullable.mapOr API Reference
+DESCRIPTION: Applies a function `f` to the value if it is not `null` or `undefined`, returning the result. Otherwise, returns the provided default value.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/nullable
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+`let mapOr: (t<'a>, 'b, 'a => 'b) => 'b`
+```
+
+---
+
+TITLE: ReScript Option `getExn` Function (Deprecated)
+DESCRIPTION: DEPRECATED: Use `getOrThrow` instead. This function returns the `value` if the `option` is `Some(value)`. If the `option` is `None`, it raises an exception with an optional custom message. It raises an error if `opt` is `None`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/option
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+let getExn: (option<'a>, ~message: string=?) => 'a
+```
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+Option.getExn(Some(3))->assertEqual(3)
+
+switch Option.getExn(None) {
+| exception _ => assert(true)
+| _ => assert(false)
+}
+
+switch Option.getExn(None, ~message="was None!") {
+| exception _ => assert(true) // Raises an Error with the message "was None!"
+| _ => assert(false)
+}
+```
+
+---
+
+TITLE: Int8Array.indexOfFrom Method
+DESCRIPTION: Returns the first index at which a given element can be found in the Int8Array, searching forwards from a specified starting index, or -1 if not present.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/api/js/typedarray2/int8array
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+let indexOfFrom: (t, elt, ~from: int) => int
+```
+
+---
+
+TITLE: Transform Result Value or Use Default (mapOr)
+DESCRIPTION: Applies a transformation function `f` to the successful value if the `Result` is `Ok`. If the `Result` is `Error`, it returns the provided `default` value instead. This function is useful for safely extracting and transforming values.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/result
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+let mapOr: (result<'a, 'c>, 'b, 'a => 'b) => 'b
+```
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+let ok = Ok(42)
+Result.mapOr(ok, 0, (x) => x / 2) == 21
+
+let error = Error("Invalid data")
+Result.mapOr(error, 0, (x) => x / 2) == 0
+```
+
+---
+
+TITLE: ReScript Stdlib: Int Module API
+DESCRIPTION: API documentation for the Int module in the ReScript Standard Library, including its Ref and Constants submodules.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/float32array
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+Int:
+  Ref: submodule
+  Constants: submodule
+```
+
+---
+
+TITLE: Int16Array Method: indexOfFrom
+DESCRIPTION: Returns the first index at which a given element can be found in the `Int16Array`, searching forwards from a specified `from` index. Returns -1 if not found.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/js/typedarray2/int16array
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let indexOfFrom: (t, elt, ~from: int) => int
+```
+
+---
+
+TITLE: forEachi
+DESCRIPTION: Executes a provided function once for each element in the collection, providing the element's index. It takes the collection `t` and a function `(elt, int) => unit` as input, performing a side effect for each element and returning `unit`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/api/js/typedarray2/int16array
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+let forEachi: (t, (elt, int) => unit) => unit
+```
+
+---
+
+TITLE: Handling Optional Arguments in ReScript
+DESCRIPTION: Demonstrates two ways to pass optional arguments to a function in ReScript: the explicit `switch` statement for `option` types and the concise `?` syntax for forwarding an `option` value directly.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/function
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let result =
+  switch payloadRadius {
+  | None => drawCircle(~color)
+  | Some(r) => drawCircle(~color, ~radius=r)
+  }
+
+```
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let result = drawCircle(~color, ~radius=?payloadRadius)
+
+```
+
+---
+
+TITLE: ReScript Advanced Type Definitions and External Bindings
+DESCRIPTION: This ReScript code snippet demonstrates how to define opaque types for `school` and `student`, create a `payload` record with a `student` field, and use `@module external` and `@send external` to bind to external JavaScript functions like `getStudentById`. It also shows a conditional logic for querying a student.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/latest/converting-from-js
+
+LANGUAGE: ReScript
+CODE:
+
+```
+type school
+type student
+type payload = {
+  student: student
+}
+
+@module external school: school = "school"
+@send external getStudentById: (school, int) => student = "getStudentById"
+
+let defaultId = 10
+
+let queryResult = (usePayload, payload) => {
+  if usePayload {
+    payload.student
+  } else {
+    school->getStudentById(defaultId)
+  }
+}
+```
+
+---
+
+TITLE: ReScript While Loop Break with Mutable Binding
+DESCRIPTION: Provides a common pattern for breaking out of a `while` loop in ReScript using a mutable binding (`ref`), as there is no `break` keyword. Demonstrates conditional termination based on a random value.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/control-flow
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let break = ref(false)
+
+while !break.contents {
+  if Math.random() > 0.3 {
+    break := true
+  } else {
+    Console.log("Still running")
+  }
+}
+```
+
+---
+
+TITLE: Nullable.getExn API Reference (Deprecated)
+DESCRIPTION: Deprecated: Use `getOrThrow` instead. Raises an `Invalid_argument` exception if the value is `null` or `undefined`, otherwise returns the value.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/nullable
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+`let getExn: t<'a> => 'a`
+```
+
+---
+
+TITLE: API: forEachi function in ReScript
+DESCRIPTION: Executes a provided function `(elt, int) => unit` once for each element in the collection `t`, providing the element and its index. Returns `unit`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/api/js/typed_array/int16array
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let forEachi: ((elt, int) => unit, t) => unit
+```
+
+---
+
+TITLE: ReScript `indexOfFrom` Function
+DESCRIPTION: Returns the first index at which a given element can be found in a ReScript collection `t<'a>`, searching forwards from a specified index. It takes the collection, the element, and a starting index.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/typedarray
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+let indexOfFrom: (t<'a>, 'a, int) => int
+```
+
+---
+
+TITLE: Variable Declaration and Assignment
+DESCRIPTION: Compares variable declaration using `const`, `var`, and `let` in JavaScript with their ReScript equivalents, highlighting ReScript's immutability by default and the use of `ref` for mutable values.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/overview
+
+LANGUAGE: JavaScript
+CODE:
+
+```
+const x = 5;
+```
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let x = 5
+```
+
+LANGUAGE: JavaScript
+CODE:
+
+```
+var x = y;
+```
+
+LANGUAGE: ReScript
+CODE:
+
+```
+No equivalent (thankfully)
+```
+
+LANGUAGE: JavaScript
+CODE:
+
+```
+let x = 5; x = x + 1;
+```
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let x = ref(5); x := x.contents + 1
+```
+
+---
+
+TITLE: ReScript Int.Ref.t Type Definition
+DESCRIPTION: Defines the `t` type within the `Int.Ref` module, representing a mutable reference to an integer value in ReScript.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/int/ref
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+type t = ref<int>
+```
+
+---
+
+TITLE: ReScript Stdlib Int Module API Reference
+DESCRIPTION: API reference for the Int module in ReScript's Standard Library, including its Ref and Constants submodules for integer operations and properties.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/float
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+Module: Int
+  Submodules:
+    - Ref
+    - Constants
+```
+
+---
+
+TITLE: ReScript Null Module: getOrThrow Function
+DESCRIPTION: The `getOrThrow` function in ReScript's Null module retrieves the value from a `t<'a>` type. If the value is `null`, it raises an `Invalid_argument` exception. This function is the recommended alternative to `getExn`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/null
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+Null.getOrThrow(Null.make(3))->assertEqual(3)
+```
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+switch Null.getOrThrow(%raw("'ReScript'")) {
+| exception Invalid_argument(_) => assert(false)
+| value => assertEqual(value, "ReScript")
+}
+```
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+switch Null.getOrThrow(%raw("null")) {
+| exception Invalid_argument(_) => assert(true)
+| _ => assert(false)
+}
+```
+
+---
+
+TITLE: ReScript Intl.supportedValuesOfExn API Reference
+DESCRIPTION: Documents the `supportedValuesOfExn` function in ReScript's `Intl` module. This function takes a string key (e.g., 'calendar', 'currency') and returns an array of supported values for that key. It throws a `RangeError` if the input key is invalid.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/intl
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let supportedValuesOfExn: string => array<string>
+```
+
+---
+
+TITLE: indexOfFrom: Find First Index of Element from Position in ReScript Array
+DESCRIPTION: Returns the first index at which a given element can be found in the ReScript array, searching forwards from a specified `from` index, or -1 if not present.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/api/js/array
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+let indexOfFrom: ('a, ~from: int, t<'a>) => int
+```
+
+---
+
+TITLE: Compare Variable Declaration and Assignment in JavaScript and ReScript
+DESCRIPTION: Shows how variables are declared and reassigned in JavaScript using `const`, `var`, and `let`, and their corresponding patterns in ReScript, noting the absence of `var` and the use of `ref` for mutable variables.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/overview
+
+LANGUAGE: JavaScript
+CODE:
+
+```
+const x = 5;
+var x = y;
+let x = 5; x = x + 1;
+```
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let x = 5
+let x = ref(5); x := x.contents + 1
+```
+
+---
+
+TITLE: Nullable.map API Reference
+DESCRIPTION: Applies a function `f` to the value if it is not `null` or `undefined`, returning a new `Nullable.t` with the transformed value. Otherwise, returns the original `Nullable.t` unchanged.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/nullable
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+`let map: (t<'a>, 'a => 'b) => t<'b>`
+```
+
+---
+
+TITLE: Use Generated Accessor for ReScript Variant Constructor
+DESCRIPTION: This ReScript snippet demonstrates the usage of an accessor function generated by `@deriving(accessors)` for a variant type. The `submit` function, automatically created for the `Submit(string)` constructor, allows piping a payload directly, resulting in a `Submit("hello")` variant value. This is particularly useful for passing variant constructors as higher-order functions or for opaque JavaScript interop.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v11.0.0/generate-converters-accessors
+
+LANGUAGE: ReScript
+CODE:
+
+```
+let s = submit("hello"); /* gives Submit("hello") */
+```
+
+---
+
+TITLE: Rescript Int.toFixed Function for Fixed-Point String Conversion
+DESCRIPTION: The `Int.toFixed` function converts an integer to a string using fixed-point notation. It allows specifying the number of digits after the decimal point. It mirrors JavaScript's `Number.toFixed` and throws a `RangeError` if `digits` is outside the 0-100 range.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/int
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+toFixed:
+  Signature: (int, ~digits: int=?) => string
+  Description: return a string representing the given value using fixed-point notation. digits specifies how many digits should appear after the decimal point.
+  Exceptions:
+    RangeError: If digits is less than 0 or larger than 100.
+```
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+Int.toFixed(123456) // "123456.00"
+Int.toFixed(10) // "10.00"
+Int.toFixed(300, ~digits=4) // "300.0000"
+Int.toFixed(300, ~digits=1) // "300.0"
+```
+
+---
+
+TITLE: Get ReScript RegExp Source String
+DESCRIPTION: `source(regexp)` returns the source text for this `RegExp`, without the two forward slashes (if present), and without any set flags. This provides the raw pattern string.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/core/regexp
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+let source: t => string
+```
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+let regexp = RegExp.fromStringWithFlags("\\w+", ~flags="g")
+Console.log(regexp->RegExp.source) // Logs `\\w+`, the source text of the `RegExp`
+```
+
+---
+
+TITLE: Unwrap Rescript Option with getOrThrow
+DESCRIPTION: The `getOrThrow` function safely unwraps an `option<'a>` value. If the option is `Some(value)`, it returns `value`. If it's `None`, it throws an exception, optionally with a custom message. This function is useful for scenarios where a value is expected to be present, and its absence indicates an error condition.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/option
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+getOrThrow: (option<'a>, ~message: string=?) => 'a
+  Description: Returns 'value' if 'opt' is 'Some(value)', otherwise raises an exception with the message provided, or a generic message if no message was provided.
+  Parameters:
+    opt: option<'a> - The optional value to unwrap.
+    message: string=? - Optional message to use for the exception if 'opt' is 'None'.
+  Returns: 'a - The unwrapped value.
+  Throws: Error - If 'opt' is 'None'.
+```
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+Option.getOrThrow(Some(3))->assertEqual(3)
+
+switch Option.getOrThrow(None) {
+| exception _ => assert(true)
+| _ => assert(false)
+}
+
+switch Option.getOrThrow(None, ~message="was None!") {
+| exception _ => assert(true) // Raises an Error with the message "was None!"
+| _ => assert(false)
+}
+```
+
+---
+
+TITLE: Round to Nearest Single Precision Float (fround) in ReScript
+DESCRIPTION: `fround(v)` returns the nearest single precision float. See `Math.fround` on MDN.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/math
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+fround:
+  signature: float => float
+  description: Returns the nearest single precision float.
+```
+
+---
+
+TITLE: Coercing ReScript Mandatory `option` Field to Optional Field
+DESCRIPTION: Shows how to coerce a mandatory field explicitly typed as `option<int>` in record `a` to an optional field (`age?: int`) in record `b`. This demonstrates ReScript's flexibility in handling optional record fields during type coercion.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/next/record
+
+LANGUAGE: ReScript
+CODE:
+
+```
+type a = {
+  name: string,
+
+  // mandatory, but explicitly typed as option<int>
+  age: option<int>,
+}
+
+type b = {
+  name: string,
+  // optional field
+  age?: int,
+}
+
+let nameFromB = (b: b) => b.name
+
+let a: a = {
+  name: "Name",
+  age: Some(35),
+}
+
+let name = nameFromB(a :> b)
+```
+
+---
+
+TITLE: Handle Special Global Values like **DEV** with %external in ReScript
+DESCRIPTION: Demonstrates how to safely handle special global JavaScript values, such as `__DEV__`, that may not exist in all environments. ReScript's `%external(a_single_identifier)` allows checking for their presence without triggering a `ReferenceError`.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/bind-to-global-js-values
+
+LANGUAGE: ReScript
+CODE:
+
+```
+switch %external(__DEV__) {
+| Some(_) => Console.log("dev mode")
+| None => Console.log("production mode")
+}
+```
+
+---
+
+TITLE: Transform Result Value (map)
+DESCRIPTION: Applies a function `f` to the successful value of a `Result` if it's `Ok`, returning a new `Ok` result with the transformed value. If the `Result` is `Error`, it returns the original `Error` unchanged, preserving the error context.
+SOURCE: https://rescript-lang.org/docs/manual/v12.0.0/introduction/manual/v12.0.0/api/stdlib/result
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+let map: (result<'a, 'c>, 'a => 'b) => result<'b, 'c>
+```
+
+LANGUAGE: RESCRIPT
+CODE:
+
+```
+let f = (x) => sqrt(Int.toFloat(x))
+
+Result.map(Ok(64), f) == Ok(8.0)
+
+Result.map(Error("Invalid data"), f) == Error("Invalid data")
+```

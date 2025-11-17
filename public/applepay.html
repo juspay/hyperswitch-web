@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Braintree Apple Pay - Debug Demo</title>
+  </head>
+  <body>
+    <h1>Apple Pay with Braintree (Debug Mode)</h1>
+    <button id="apple-pay-button">Pay with Apple Pay</button>
+
+    <script src="https://js.braintreegateway.com/web/3.92.1/js/client.min.js"></script>
+    <script src="https://js.braintreegateway.com/web/3.92.1/js/apple-pay.min.js"></script>
+
+    <script>
+      console.log("[INFO] Initializing Apple Pay Test");
+
+      // Step 1: Fetch client token from your server (make sure this route works)
+      fetch("/client_token")
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to fetch client token");
+          }
+          return response.text();
+        })
+        .then((x) => {
+          let clientToken =
+            "eyJ2ZXJzaW9uIjoyLCJhdXRob3JpemF0aW9uRmluZ2VycHJpbnQiOiJleUpyYVdRaU9pSXlNREU0TURReU5qRTJMWE5oYm1SaWIzZ2lMQ0pwYzNNaU9pSm9kSFJ3Y3pvdkwyRndhUzV6WVc1a1ltOTRMbUp5WVdsdWRISmxaV2RoZEdWM1lYa3VZMjl0SWl3aVlXeG5Jam9pUlZNeU5UWWlmUS5leUpsZUhBaU9qRTNOak13TXpJMU5USXNJbXAwYVNJNkltUmlOemxoTVdGakxUUTVORFl0TkRjeE9TMDVORGRoTFRnd1lqUmpPVFE1TkRFd01TSXNJbk4xWWlJNkltZHpabkEyYm5sbmVUTmtlbUk0YzJzaUxDSnBjM01pT2lKb2RIUndjem92TDJGd2FTNXpZVzVrWW05NExtSnlZV2x1ZEhKbFpXZGhkR1YzWVhrdVkyOXRJaXdpYldWeVkyaGhiblFpT25zaWNIVmliR2xqWDJsa0lqb2laM05tY0RadWVXZDVNMlI2WWpoemF5SXNJblpsY21sbWVWOWpZWEprWDJKNVgyUmxabUYxYkhRaU9tWmhiSE5sTENKMlpYSnBabmxmZDJGc2JHVjBYMko1WDJSbFptRjFiSFFpT21aaGJITmxmU3dpY21sbmFIUnpJanBiSW0xaGJtRm5aVjkyWVhWc2RDSmRMQ0p6WTI5d1pTSTZXeUpDY21GcGJuUnlaV1U2Vm1GMWJIUWlMQ0pDY21GcGJuUnlaV1U2UTJ4cFpXNTBVMFJMSWl3aVFuSmhhVzUwY21WbE9rRllUeUpkTENKdmNIUnBiMjV6SWpwN0ltMWxjbU5vWVc1MFgyRmpZMjkxYm5SZmFXUWlPaUpCYm1GdVpDSXNJbkJoZVhCaGJGOWpiR2xsYm5SZmFXUWlPaUpCVTB0QlIyZ3lWMWhuY1daUk5WUjZhbkJhZWt4elptaFdSMnhHWW1weE5WWnlWalZKVDFnNFMxaEVSREpPWDFoeGEwZGxXVTVFYTFkNWNsOVZXRzVtYUZod1JXdEJRbVJ0VURJNE5HSmZNaUo5ZlEuaTI4MHZyQUhPRGQ2WktnNmlTRXpzbWI0dXI2eHNtQ3JuWmNwUy13ODRXd1lZbExKQ25zb1NOeW5HWW95RVQ2YjlsWUdIUENBTDl1OTYxdV9RMTNqWXciLCJjb25maWdVcmwiOiJodHRwczovL2FwaS5zYW5kYm94LmJyYWludHJlZWdhdGV3YXkuY29tOjQ0My9tZXJjaGFudHMvZ3NmcDZueWd5M2R6Yjhzay9jbGllbnRfYXBpL3YxL2NvbmZpZ3VyYXRpb24iLCJtZXJjaGFudEFjY291bnRJZCI6IkFuYW5kIiwiZ3JhcGhRTCI6eyJ1cmwiOiJodHRwczovL3BheW1lbnRzLnNhbmRib3guYnJhaW50cmVlLWFwaS5jb20vZ3JhcGhxbCIsImRhdGUiOiIyMDE4LTA1LTA4IiwiZmVhdHVyZXMiOlsidG9rZW5pemVfY3JlZGl0X2NhcmRzIl19LCJjbGllbnRBcGlVcmwiOiJodHRwczovL2FwaS5zYW5kYm94LmJyYWludHJlZWdhdGV3YXkuY29tOjQ0My9tZXJjaGFudHMvZ3NmcDZueWd5M2R6Yjhzay9jbGllbnRfYXBpIiwiZW52aXJvbm1lbnQiOiJzYW5kYm94IiwibWVyY2hhbnRJZCI6ImdzZnA2bnlneTNkemI4c2siLCJhc3NldHNVcmwiOiJodHRwczovL2Fzc2V0cy5icmFpbnRyZWVnYXRld2F5LmNvbSIsImF1dGhVcmwiOiJodHRwczovL2F1dGgudmVubW8uc2FuZGJveC5icmFpbnRyZWVnYXRld2F5LmNvbSIsInZlbm1vIjoib2ZmIiwiY2hhbGxlbmdlcyI6W10sInRocmVlRFNlY3VyZUVuYWJsZWQiOnRydWUsImFuYWx5dGljcyI6eyJ1cmwiOiJodHRwczovL29yaWdpbi1hbmFseXRpY3Mtc2FuZC5zYW5kYm94LmJyYWludHJlZS1hcGkuY29tL2dzZnA2bnlneTNkemI4c2sifSwiYXBwbGVQYXkiOnsiY291bnRyeUNvZGUiOiJVUyIsImN1cnJlbmN5Q29kZSI6IlVTRCIsIm1lcmNoYW50SWRlbnRpZmllciI6Im1lcmNoYW50LmNvbS5hZHllbi5zYW4iLCJzdGF0dXMiOiJtb2NrIiwic3VwcG9ydGVkTmV0d29ya3MiOlsidmlzYSIsIm1hc3RlcmNhcmQiLCJhbWV4IiwiZGlzY292ZXIiXX0sInBheXBhbEVuYWJsZWQiOnRydWUsInBheXBhbCI6eyJiaWxsaW5nQWdyZWVtZW50c0VuYWJsZWQiOnRydWUsImVudmlyb25tZW50Tm9OZXR3b3JrIjpmYWxzZSwidW52ZXR0ZWRNZXJjaGFudCI6ZmFsc2UsImFsbG93SHR0cCI6dHJ1ZSwiZGlzcGxheU5hbWUiOiJKdXNwYXkiLCJjbGllbnRJZCI6IkFTS0FHaDJXWGdxZlE1VHpqcFp6THNmaFZHbEZianE1VnJWNUlPWDhLWEREMk5fWHFrR2VZTkRrV3lyX1VYbmZoWHBFa0FCZG1QMjg0Yl8yIiwiYmFzZVVybCI6Imh0dHBzOi8vYXNzZXRzLmJyYWludHJlZWdhdGV3YXkuY29tIiwiYXNzZXRzVXJsIjoiaHR0cHM6Ly9jaGVja291dC5wYXlwYWwuY29tIiwiZGlyZWN0QmFzZVVybCI6bnVsbCwiZW52aXJvbm1lbnQiOiJvZmZsaW5lIiwiYnJhaW50cmVlQ2xpZW50SWQiOiJtYXN0ZXJjbGllbnQzIiwibWVyY2hhbnRBY2NvdW50SWQiOiJBbmFuZCIsImN1cnJlbmN5SXNvQ29kZSI6IlVTRCJ9fQ==";
+          console.log("[INFO] Received client token");
+          console.log(clientToken);
+
+          // Step 2: Initialize Braintree client
+          braintree.client.create(
+            { authorization: clientToken },
+            function (clientErr, clientInstance) {
+              if (clientErr) {
+                console.error(
+                  "[ERROR] Failed to create Braintree client:",
+                  clientErr
+                );
+                alert("Client error: " + clientErr.message);
+                return;
+              }
+              console.log("[INFO] Braintree client created successfully");
+
+              // Step 3: Initialize Apple Pay component
+              braintree.applePay.create(
+                { client: clientInstance },
+                function (applePayErr, applePayInstance) {
+                  if (applePayErr) {
+                    console.error(
+                      "[ERROR] Failed to create Apple Pay instance:",
+                      applePayErr
+                    );
+                    alert("Apple Pay error: " + applePayErr.message);
+                    return;
+                  }
+                  console.log("[INFO] Apple Pay instance created");
+
+                  // Step 4: Add click listener to Apple Pay button
+                  document
+                    .getElementById("apple-pay-button")
+                    .addEventListener("click", function () {
+                      console.log("[INFO] Apple Pay button clicked");
+
+                      // Step 5: Create Apple Pay payment request
+                      const paymentRequest =
+                        applePayInstance.createPaymentRequest({
+                          total: {
+                            label: "My Store",
+                            amount: "19.99",
+                          },
+                          requiredBillingContactFields: ["postalAddress"],
+                          // countryCode: 'US',
+                          // currencyCode: 'USD',
+                          // merchantCapabilities: ['supports3DS'],
+                          // supportedNetworks: ['visa', 'masterCard', 'amex', 'discover']
+                          supportedNetworks: ["discover"],
+                        });
+
+                      console.log(
+                        "[INFO] Payment request created:",
+                        paymentRequest
+                      );
+
+                      // Step 6: Create Apple Pay session
+                      const session = new ApplePaySession(3, paymentRequest);
+
+                      // Step 7: Merchant verification
+                      session.onvalidatemerchant = function (event) {
+                        console.log(
+                          "[EVENT] onvalidatemerchant triggered:",
+                          event.validationURL
+                        );
+                        applePayInstance.performValidation(
+                          {
+                            validationURL: event.validationURL,
+                            displayName: "My Store",
+                          },
+                          function (validationErr, merchantSession) {
+                            if (validationErr) {
+                              console.error(
+                                "[ERROR] Merchant validation failed:",
+                                validationErr
+                              );
+                              alert("Merchant validation error");
+                              session.abort();
+                              return;
+                            }
+                            console.log("[INFO] Merchant validation succeeded");
+                            session.completeMerchantValidation(merchantSession);
+                          }
+                        );
+                      };
+
+                      // Step 8: Handle payment authorization & get nonce
+                      session.onpaymentauthorized = function (event) {
+                        console.log(
+                          "[EVENT] onpaymentauthorized triggered — attempting tokenization"
+                        );
+
+                        applePayInstance.tokenize(
+                          {
+                            token: event.payment.token,
+                          },
+                          function (tokenizeErr, payload) {
+                            if (tokenizeErr) {
+                              console.error(
+                                "[ERROR] Tokenization failed:",
+                                tokenizeErr
+                              );
+                              alert(
+                                "Tokenization failed: " + tokenizeErr.message
+                              );
+                              session.completePayment(
+                                ApplePaySession.STATUS_FAILURE
+                              );
+                              return;
+                            }
+
+                            // ✅ Tokenization succeeded, nonce received
+                            console.log("[SUCCESS] Nonce:", payload.nonce);
+                            alert("✅ Apple Pay Nonce: " + payload.nonce);
+
+                            session.completePayment(
+                              ApplePaySession.STATUS_SUCCESS
+                            );
+
+                            // 🔁 Optional: Send nonce to server for processing
+                            fetch("/checkout", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ nonce: payload.nonce }),
+                            })
+                              .then((res) => res.json())
+                              .then((data) => {
+                                console.log("[INFO] Server response:", data);
+                                alert(
+                                  "✅ Payment result: " + JSON.stringify(data)
+                                );
+                              })
+                              .catch((err) => {
+                                console.error(
+                                  "[ERROR] Error during payment call to server:",
+                                  err
+                                );
+                                alert("❌ Checkout error: " + err.message);
+                              });
+                          }
+                        );
+                      };
+
+                      // Step 9: Handle cancellation by user
+                      session.oncancel = function () {
+                        console.warn(
+                          "[CANCELLED] Apple Pay sheet was cancelled by user"
+                        );
+                      };
+
+                      // Step 10: Start the Apple Pay session
+                      session.begin();
+                      console.log("[INFO] Apple Pay session started");
+                    });
+                }
+              );
+            }
+          );
+        })
+        .catch((err) => {
+          console.error("[ERROR] Failed to set up Apple Pay flow:", err);
+          alert("Fatal error: " + err.message);
+        });
+    </script>
+  </body>
+</html>
