@@ -277,7 +277,7 @@ let make = () => {
                     ->Array.length
                     ->Int.toString} gift card${appliedGiftCards->Array.length > 1
                       ? "s"
-                      : ""} already applied. You can manage them below when the form is closed.`->React.string}
+                      : ""} already applied.`->React.string}
                 </span>
               </div>
             </div>
@@ -321,7 +321,7 @@ let make = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-green-600">
+              <span className="text-sm font-medium text-[#008236]">
                 {`${card.currency} ${card.balance->Float.toString} applied`->React.string}
               </span>
               <button
