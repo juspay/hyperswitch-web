@@ -210,7 +210,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
   {
     paymentMethodName: "pay_safe_card",
     fields: [InfoElement],
-    icon: Some(icon("pay_safe_card", ~size=19, ~width=60)),
+    icon: Some(icon("pay_safe_card", ~size=19)),
     displayName: localeString.payment_methods_pay_safe_card,
     miniIcon: None,
   },

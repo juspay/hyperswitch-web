@@ -80,14 +80,20 @@ let make = (
     cvcError,
     setCvcError,
   } = cvcProps
-  let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {
+    displaySavedPaymentMethodsCheckbox,
+    savedPaymentMethodsCheckboxCheckedByDefault,
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
     RecoilAtoms.showPaymentMethodsScreen,
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
-  let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
+  let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
+  let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
+    savedPaymentMethodsCheckboxCheckedByDefault
+  )
 
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
@@ -217,10 +223,17 @@ let make = (
 
         let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
 
+        // Check if card is blocked
+        let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(
+          cardNumber->CardValidations.clearSpaces,
+          blockedBinsList,
+        )
+
         let validFormat =
-          (isBancontact || isGiftCard || isCardDetailsValid) &&
+          (isBancontact || isCardDetailsValid) &&
           isNicknameValid &&
-          areRequiredFieldsValid
+          areRequiredFieldsValid &&
+          !isCardBlocked
 
         if validFormat && (showPaymentMethodsScreen || isBancontact || isGiftCard) {
           if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
@@ -454,6 +467,7 @@ let make = (
     appliedGiftCards,
     remainingAmount,
     isGiftCardOnlyPayment,
+    blockedBinsList,
   ))
   useSubmitPaymentData(submitCallback)
 

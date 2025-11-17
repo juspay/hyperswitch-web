@@ -70,6 +70,7 @@ type style = {
   shape: string,
   label: string,
   height: int,
+  disableMaxWidth: bool,
 }
 type buttons = {
   style: style,
