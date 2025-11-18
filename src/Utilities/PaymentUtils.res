@@ -647,3 +647,99 @@ let useEmitPaymentMethodInfo = (
 let checkRenderOrComp = (~walletOptions, isShowOrPayUsing) => {
   walletOptions->Array.includes("paypal") || isShowOrPayUsing
 }
+
+let useEmitNonSensitiveCustomerInfo = (
+  ~paymentMethodName="",
+  ~paymentMethodType,
+  ~cardBrand="",
+  ~isCardValid=false,
+  ~isExpiryValid=false,
+  ~expiryMonth="",
+  ~expiryYear="",
+  ~cardBin="",
+  ~cardLast4="",
+) => {
+  let userCountry = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let userState = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState)
+  let userPincode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode)
+  let {payment_methods: paymentMethodsFromList} = Recoil.useRecoilValueFromAtom(
+    paymentMethodListValue,
+  )
+
+  let matchingPaymentMethod = React.useMemo(() => {
+    paymentMethodsFromList->Array.find(method =>
+      method.payment_method_types->Array.some(
+        pmType => pmType.payment_method_type === paymentMethodType,
+      )
+    )
+  }, (paymentMethodsFromList, paymentMethodType))
+
+  let (finalPaymentMethod, finalPaymentMethodType) = if paymentMethodName !== "" {
+    (paymentMethodName, paymentMethodType)
+  } else if paymentMethodType === "card" {
+    ("card", "debit")
+  } else {
+    switch matchingPaymentMethod {
+    | Some(method) => (method.payment_method, paymentMethodType)
+    | None => ("", "")
+    }
+  }
+
+  let basePaymentInfo = [
+    ("paymentMethodType", finalPaymentMethodType->JSON.Encode.string),
+    ("paymentMethod", finalPaymentMethod->JSON.Encode.string),
+  ]
+
+  let addressData = [
+    ("country", userCountry->JSON.Encode.string),
+    ("state", userState.value->JSON.Encode.string),
+    ("pincode", userPincode.value->JSON.Encode.string),
+  ]
+
+  let cardData = switch paymentMethodType {
+  | "card" | "debit" | "credit" => [
+      ("cardBrand", cardBrand->JSON.Encode.string),
+      ("last4", cardLast4->JSON.Encode.string),
+      ("cardBin", cardBin->JSON.Encode.string),
+      ("cardExpiryMonth", expiryMonth->JSON.Encode.string),
+      ("cardExpiryYear", expiryYear->JSON.Encode.string),
+    ]
+  | _ => []
+  }
+
+  let messageData =
+    [...basePaymentInfo, ...cardData, ...addressData]
+    ->Array.filter(((_, value)) => value->JSON.Decode.string != Some(""))
+    ->Utils.getJsonFromArrayOfJson
+
+  let messagePayload = [
+    ("type", "NON_SENSITIVE_PAYMENT_INFO"->JSON.Encode.string),
+    ("data", messageData),
+  ]
+
+  React.useEffect(() => {
+    switch paymentMethodType {
+    | "card" | "credit" | "debit" =>
+      if isCardValid && cardBrand != "" && isExpiryValid {
+        Utils.messageParentWindow(messagePayload)
+      }
+    | "interac" | "apple_pay" | "google_pay" => Utils.messageParentWindow(messagePayload)
+    | _ => ()
+    }
+
+    None
+  }, (
+    paymentMethodType,
+    finalPaymentMethodType,
+    isCardValid,
+    isExpiryValid,
+    userCountry,
+    userState,
+    userPincode,
+    expiryMonth,
+    expiryYear,
+    cardBrand,
+    cardBin,
+    cardLast4,
+  ))
+}

@@ -39,6 +39,11 @@ let make = (
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("google_pay")
 
+  PaymentUtils.useEmitNonSensitiveCustomerInfo(
+    ~paymentMethodName="wallet",
+    ~paymentMethodType="google_pay",
+  )
+
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,

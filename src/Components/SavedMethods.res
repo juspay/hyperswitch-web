@@ -70,6 +70,24 @@ let make = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
+  let selectedSavedMethod =
+    savedMethods
+    ->Array.filter(savedMethod => savedMethod.paymentToken === paymentTokenVal)
+    ->Array.get(0)
+    ->Option.getOr(PaymentType.defaultCustomerMethods)
+
+  PaymentUtils.useEmitNonSensitiveCustomerInfo(
+    ~paymentMethodName=selectedSavedMethod.paymentMethod,
+    ~paymentMethodType=selectedSavedMethod.paymentMethodType->Option.getOr(""),
+    ~cardBrand=selectedSavedMethod.card.scheme->Option.getOr(""),
+    ~isCardValid=true,
+    ~expiryMonth=selectedSavedMethod.card.expiryMonth,
+    ~expiryYear=selectedSavedMethod.card.expiryYear,
+    ~isExpiryValid=true,
+    ~cardBin="",
+    ~cardLast4=selectedSavedMethod.card.last4Digits,
+  )
+
   let bottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">

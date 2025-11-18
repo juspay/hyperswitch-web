@@ -40,6 +40,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~paymentType="apple_pay",
   )
 
+  PaymentUtils.useEmitNonSensitiveCustomerInfo(
+    ~paymentMethodName="wallet",
+    ~paymentMethodType="apple_pay",
+  )
+
   let applePayPaymentMethodType = React.useMemo(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~paymentMethodListValue,

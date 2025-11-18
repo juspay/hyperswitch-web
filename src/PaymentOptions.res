@@ -52,6 +52,7 @@ let make = (
   ~checkoutEle: React.element,
   ~cardShimmerCount: int,
   ~cardProps: CardUtils.cardProps,
+  ~expiryProps: CardUtils.expiryProps,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -116,6 +117,23 @@ let make = (
     ~paymentMethodName=selectedPaymentOption.paymentMethodName,
     ~paymentMethods=paymentMethodListValue.payment_methods,
     ~cardBrand,
+  )
+
+  let {cardBrand, cardNumber, isCardValid} = cardProps
+  let cardLast4 = cardNumber->CardUtils.getCardLast4
+  let cardBin = cardNumber->CardUtils.getCardBin
+  let {cardExpiry, isExpiryValid} = expiryProps
+  let (expiryMonth, expiryYear) = cardExpiry->CardUtils.getExpiryDates
+
+  PaymentUtils.useEmitNonSensitiveCustomerInfo(
+    ~paymentMethodType=selectedPaymentOption.paymentMethodName,
+    ~cardBrand,
+    ~isCardValid=isCardValid->Option.getOr(false),
+    ~expiryMonth,
+    ~expiryYear,
+    ~isExpiryValid=isExpiryValid->Option.getOr(false),
+    ~cardBin,
+    ~cardLast4,
   )
 
   let displayIcon = ele => {
