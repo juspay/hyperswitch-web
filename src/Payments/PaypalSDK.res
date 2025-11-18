@@ -52,6 +52,7 @@ let make = (~sessionObj: SessionsType.token) => {
     | Paypal(val) => val
     | _ => 48
     },
+    disableMaxWidth: true,
   }
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
