@@ -17,6 +17,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let paymentType = usePaymentType()
+  let nonPiiAdderessData = PaymentUtils.useNonPiiAddressData()
 
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
@@ -104,6 +105,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~sdkHandleIsThere,
         ~sessions,
         ~clientSecret,
+        ~nonPiiAdderessData,
       )
     })
     Window.body->Window.appendChild(paypalScript)

@@ -750,6 +750,19 @@ let emitIsFormReadyForSubmission = isFormReadyForSubmission =>
     ("isFormReadyForSubmission", isFormReadyForSubmission->JSON.Encode.bool),
   ])
 
+let getCardBin = cardNumber =>
+  cardNumber->CardValidations.clearSpaces->String.substring(~start=0, ~end=6)
+
+let getCardLast4 = cardNumber => {
+  let clearValue = cardNumber->CardValidations.clearSpaces
+  let len = clearValue->String.length
+  if len >= 4 {
+    clearValue->String.sliceToEnd(~start=len - 4)
+  } else {
+    clearValue
+  }
+}
+
 let checkIfCardBinIsBlocked = (cardNumber, blockedBinsList) => {
   open PaymentType
   switch blockedBinsList {
@@ -757,7 +770,7 @@ let checkIfCardBinIsBlocked = (cardNumber, blockedBinsList) => {
   | LoadError(_) // If error loading, allow payment to proceed
   | SemiLoaded => false // If semi-loaded, allow payment to proceed
   | Loaded(data) => {
-      let cardBin = cardNumber->CardValidations.clearSpaces->String.substring(~start=0, ~end=6)
+      let cardBin = cardNumber->getCardBin
       if cardBin->String.length >= 6 {
         // The response is directly an array of blocked bins
         let blockedBins = data->JSON.Decode.array->Option.getOr([])
