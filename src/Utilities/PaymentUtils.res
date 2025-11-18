@@ -634,7 +634,7 @@ type nonPiiAdderessData = {
 }
 
 let useNonPiiAddressData = () => {
-  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressCountry).value
+  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
   let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState).value
   let pinCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode).value
 
