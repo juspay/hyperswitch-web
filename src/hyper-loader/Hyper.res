@@ -150,6 +150,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       options
       ->getOptionsDict
       ->getBool("isPreloadEnabled", true)
+    let isTestMode =
+      options
+      ->getOptionsDict
+      ->getBool("isTestMode", false)
     // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
     let shouldUseTopRedirection =
       options
@@ -383,75 +387,83 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           })
         }
 
-        Promise.make((resolve1, _) => {
-          let isReadyPromise = isReadyPromise
-          isReadyPromise
-          ->Promise.then(readyTimestamp => {
-            let handleMessage = (event: Types.event) => {
-              let json = event.data->anyTypeToJson
-              let dict = json->getDictFromJson
-              switch dict->Dict.get("submitSuccessful") {
-              | Some(val) =>
-                logApi(
-                  ~apiLogType=Method,
-                  ~optLogger=Some(logger),
-                  ~result=val,
-                  ~paymentMethod="confirmPayment",
-                  ~eventName=CONFIRM_PAYMENT,
-                )
-                let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
-                let returnUrl =
-                  dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
-
-                if isOneClick {
-                  iframeRef.contents->Array.forEach(
-                    ifR => {
-                      // to unset one click button loader
-                      ifR->Window.iframePostMessage(
-                        [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
-                      )
-                    },
+        if isTestMode {
+          let errrorResponse = getFailedSubmitResponse(
+            ~errorType="test_mode_bypass",
+            ~message="Confirm Payment called in test mode - API call bypassed",
+          )
+          Promise.resolve(errrorResponse)
+        } else {
+          Promise.make((resolve1, _) => {
+            let isReadyPromise = isReadyPromise
+            isReadyPromise
+            ->Promise.then(readyTimestamp => {
+              let handleMessage = (event: Types.event) => {
+                let json = event.data->anyTypeToJson
+                let dict = json->getDictFromJson
+                switch dict->Dict.get("submitSuccessful") {
+                | Some(val) =>
+                  logApi(
+                    ~apiLogType=Method,
+                    ~optLogger=Some(logger),
+                    ~result=val,
+                    ~paymentMethod="confirmPayment",
+                    ~eventName=CONFIRM_PAYMENT,
                   )
-                }
-                postSubmitMessage(dict)
+                  let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
+                  let returnUrl =
+                    dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
 
-                let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
+                  if isOneClick {
+                    iframeRef.contents->Array.forEach(
+                      ifR => {
+                        // to unset one click button loader
+                        ifR->Window.iframePostMessage(
+                          [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
+                        )
+                      },
+                    )
+                  }
+                  postSubmitMessage(dict)
 
-                if isSdkButton && submitSuccessfulValue {
-                  Utils.replaceRootHref(returnUrl, redirectionFlags)
-                } else if submitSuccessfulValue && redirect === "always" {
-                  Utils.replaceRootHref(returnUrl, redirectionFlags)
-                } else if !submitSuccessfulValue {
-                  resolve1(json)
-                } else {
-                  resolve1(data)
+                  let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
+
+                  if isSdkButton && submitSuccessfulValue {
+                    Utils.replaceRootHref(returnUrl, redirectionFlags)
+                  } else if submitSuccessfulValue && redirect === "always" {
+                    Utils.replaceRootHref(returnUrl, redirectionFlags)
+                  } else if !submitSuccessfulValue {
+                    resolve1(json)
+                  } else {
+                    resolve1(data)
+                  }
+                | None => ()
                 }
-              | None => ()
               }
-            }
-            let message = isOneClick
-              ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
-              : [
-                  ("doSubmit", true->JSON.Encode.bool),
-                  ("clientSecret", clientSecret.contents->JSON.Encode.string),
-                  ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
-                  ("readyTimestamp", readyTimestamp->JSON.Encode.float),
-                  (
-                    "confirmParams",
-                    [
-                      ("return_url", url->JSON.Encode.string),
-                      ("publishableKey", publishableKey->JSON.Encode.string),
-                      ("redirect", redirect->JSON.Encode.string),
-                    ]->getJsonFromArrayOfJson,
-                  ),
-                ]->Dict.fromArray
-            addSmartEventListener("message", handleMessage, "onSubmit")
-            postSubmitMessage(message)
-            Promise.resolve(JSON.Encode.null)
+              let message = isOneClick
+                ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
+                : [
+                    ("doSubmit", true->JSON.Encode.bool),
+                    ("clientSecret", clientSecret.contents->JSON.Encode.string),
+                    ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
+                    ("readyTimestamp", readyTimestamp->JSON.Encode.float),
+                    (
+                      "confirmParams",
+                      [
+                        ("return_url", url->JSON.Encode.string),
+                        ("publishableKey", publishableKey->JSON.Encode.string),
+                        ("redirect", redirect->JSON.Encode.string),
+                      ]->getJsonFromArrayOfJson,
+                    ),
+                  ]->Dict.fromArray
+              addSmartEventListener("message", handleMessage, "onSubmit")
+              postSubmitMessage(message)
+              Promise.resolve(JSON.Encode.null)
+            })
+            ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
+            ->ignore
           })
-          ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
-          ->ignore
-        })
+        }
       }
 
       let confirmPayment = payload => {
@@ -476,6 +488,16 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       addSmartEventListener("message", handleSdkConfirm, "handleSdkConfirm")
+
+      // Add console warning for test mode
+      if isTestMode {
+        Console.warn(
+          "The SDK is running in test mode. API calls are bypassed and wallet interactions are disabled.",
+        )
+        Console.warn(
+          "This is a non-transactional simulation environment for UI configuration and testing purposes only.",
+        )
+      }
 
       let elements = elementsOptions => {
         open Promise
@@ -515,6 +537,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
           ~redirectionFlags,
+          ~isTestMode,
         )
       }
 
@@ -740,6 +763,54 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         Promise.resolve(msg)
       }
 
+      let preloadSDKWithParams = params => {
+        let paramsDict = params->getDictFromJson
+
+        iframeRef.contents->Array.forEach(ifR => {
+          // Send paymentMethodsList if provided
+          switch paramsDict->Dict.get("paymentMethodsList") {
+          | Some(paymentMethodsList) =>
+            let message = [("paymentMethodList", paymentMethodsList)]->Dict.fromArray
+            ifR->Window.iframePostMessage(message)
+          | None => ()
+          }
+
+          // Send customerMethodsList if provided
+          switch paramsDict->Dict.get("customerMethodsList") {
+          | Some(customerMethodsList) =>
+            let message = [("customerPaymentMethods", customerMethodsList)]->Dict.fromArray
+            ifR->Window.iframePostMessage(message)
+          | None => ()
+          }
+
+          // Send sessionTokens if provided
+          switch paramsDict->Dict.get("sessionTokens") {
+          | Some(sessionTokens) =>
+            let message = [("sessions", sessionTokens)]->Dict.fromArray
+            ifR->Window.iframePostMessage(message)
+          | None => ()
+          }
+
+          // Send appearance if provided (via paymentOptions format)
+          switch paramsDict->Dict.get("appearanceObj") {
+          | Some(appearance) =>
+            let paymentOptionsMessage =
+              [
+                ("paymentOptions", appearance),
+                ("paymentElementCreate", true->JSON.Encode.bool),
+              ]->Dict.fromArray
+            ifR->Window.iframePostMessage(paymentOptionsMessage)
+          | None => ()
+          }
+        })
+
+        // Log the preload operation
+        logger.setLogInfo(
+          ~value="SDK preloaded with external parameters",
+          ~eventName=PRELOAD_SDK_WITH_PARAMS,
+        )
+      }
+
       let returnObject: hyperInstance = {
         confirmOneClickPayment,
         confirmPayment,
@@ -752,6 +823,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
+        preloadSDKWithParams,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

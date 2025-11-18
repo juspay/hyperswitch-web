@@ -22,6 +22,7 @@ let make = (
   ~analyticsMetadata,
   ~customBackendUrl,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~isTestMode=false,
 ) => {
   try {
     let iframeRef = []
@@ -73,7 +74,7 @@ let make = (
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestMode->getStringFromBool}"
               allow="*"
               name="orca-payment"
               style="outline: none;"
@@ -90,7 +91,9 @@ let make = (
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
-    let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
+    let clientSecret = isTestMode
+      ? localOptions->getString("clientSecret", "")
+      : localOptions->getRequiredString("clientSecret", "", ~logger)
     let clientSecretReMatch = switch GlobalVars.sdkVersion {
     | V1 => Some(RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret))
     | V2 => None
@@ -298,15 +301,16 @@ let make = (
         preMountLoaderIframeDiv->Window.iframePostMessage(msg)
       })
     }
-
-    switch clientSecretReMatch {
-    | Some(false) =>
-      manageErrorWarning(
-        INVALID_FORMAT,
-        ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
-        ~logger,
-      )
-    | _ => ()
+    if !isTestMode {
+      switch clientSecretReMatch {
+      | Some(false) =>
+        manageErrorWarning(
+          INVALID_FORMAT,
+          ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
+          ~logger,
+        )
+      | _ => ()
+      }
     }
 
     let setElementIframeRef = ref => {
@@ -414,6 +418,7 @@ let make = (
           ("analyticsMetadata", analyticsMetadata),
           ("launchTime", launchTime->JSON.Encode.float),
           ("customBackendUrl", customBackendUrl->JSON.Encode.string),
+          ("isTestMode", isTestMode->JSON.Encode.bool),
           (
             "isPaymentButtonHandlerProvided",
             LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
@@ -1299,7 +1304,9 @@ let make = (
                       ->catch(
                         err => {
                           logger.setLogError(
-                            ~value=`SAMSUNG PAY not ready ${err->formatException->JSON.stringify}`,
+                            ~value=`SAMSUNG PAY not ready ${err
+                              ->formatException
+                              ->JSON.stringify}`,
                             ~eventName=SAMSUNG_PAY,
                             ~paymentMethod="SAMSUNG_PAY",
                             ~logType=ERROR,

@@ -96,6 +96,7 @@ type eventName =
   | S3_API
   | CARD_SCHEME_SELECTION
   | BLOCKED_BIN_CALL
+  | PRELOAD_SDK_WITH_PARAMS
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
