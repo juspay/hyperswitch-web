@@ -89,7 +89,7 @@ let make = (
   }
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
-
+  let inputLogoClass = getClassName("InputLogo")
   let inputClassStyles = isSpacedInnerLayout ? "Input" : "Input-Compressed"
 
   let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
@@ -180,7 +180,7 @@ let make = (
           />
           <RenderIf condition={config.appearance.labels == Floating}>
             <div
-              className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
+              className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} pointer-events-none`}
               style={
                 marginBottom: {
                   inputFocused || value.value->String.length > 0 ? "" : themeObj.spacingUnit
@@ -195,7 +195,9 @@ let make = (
             </div>
           </RenderIf>
         </div>
-        <div className={`relative flex -ml-10  items-center`}> {rightIcon} </div>
+        <div className={`InputLogo ${inputLogoClass} relative flex -ml-10  items-center`}>
+          {rightIcon}
+        </div>
       </div>
       <RenderIf condition={value.errorString->String.length > 0}>
         <div
