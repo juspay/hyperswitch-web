@@ -161,12 +161,15 @@ let make = (
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
   let bankAccountNumberRef = React.useRef(Nullable.null)
+  let destinationBankAccountIdRef = React.useRef(Nullable.null)
+  let bsbNumberRef = React.useRef(Nullable.null)
   let sourceBankAccountIdRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
+  let (bsbNumber, setBsbNumber) = Recoil.useRecoilState(bsbNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
   let countryList = CountryStateDataRefs.countryDataRef.contents
   let stateNames = getStateNames({
@@ -526,6 +529,39 @@ let make = (
               inputRef=sourceBankAccountIdRef
               placeholder="DE00 0000 0000 0000 0000 00"
             />
+          | BSBNumber =>
+            <PaymentField
+              fieldName="BSB Number"
+              setValue={setBsbNumber}
+              value=bsbNumber
+              onChange={ev => {
+                let value = ReactEvent.Form.target(ev)["value"]
+                setBsbNumber(_ => {
+                  isValid: Some(value !== ""),
+                  value: value->Utils.formatBSB,
+                  errorString: value !== "" ? "" : localeString.bsbNumberEmptyText,
+                })
+              }}
+              onBlur={ev => {
+                let value = ReactEvent.Focus.target(ev)["value"]
+                let isBsbEmpty = value == ""
+                let isBsbValid = value->cleanBSB->String.length == 6
+                setBsbNumber(prev => {
+                  ...prev,
+                  isValid: Some(isBsbValid),
+                  errorString: isBsbEmpty
+                    ? localeString.bsbNumberEmptyText
+                    : isBsbValid
+                    ? ""
+                    : localeString.bsbNumberInvalidText,
+                })
+              }}
+              type_="text"
+              name="bsbNumber"
+              maxLength=7
+              inputRef=bsbNumberRef
+              placeholder="000-000"
+            />
           | Email
           | InfoElement
           | Country
@@ -829,6 +865,7 @@ let make = (
                 | BankAccountNumber
                 | IBAN
                 | SourceBankAccountId
+                | BSBNumber
                 | None => React.null
                 }}
               </DynamicFieldsToRenderWrapper>

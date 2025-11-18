@@ -922,7 +922,7 @@ let appendRedirectPaymentMethods = [
   "bluecode",
 ]
 
-let appendBankeDebitMethods = ["sepa"]
+let appendBankeDebitMethods = ["sepa", "becs"]
 let appendBankTransferMethods = ["ach", "bacs", "multibanco"]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {

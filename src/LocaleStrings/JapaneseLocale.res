@@ -161,6 +161,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyPlaceholder: `Pixキーを入力`,
   pixKeyLabel: `Pixキー`,
   sourceBankAccountIdEmptyText: `送金元銀行口座IDを入力してください`,
+  bsbNumberEmptyText: `BSB番号を入力してください`,
+  bsbNumberInvalidText: `無効なBSB番号です`,
   invalidCardHolderNameError: `カード所有者の名前に数字を含めることはできません`,
   invalidNickNameError: `ニックネームには2つ以上の数字を含めることはできません`,
   expiry: `有効期限`,

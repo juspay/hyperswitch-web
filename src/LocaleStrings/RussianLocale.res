@@ -169,6 +169,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyPlaceholder: `Введите ключ Pix`,
   pixKeyLabel: `Ключ Pix`,
   sourceBankAccountIdEmptyText: `Идентификатор исходного банковского счета не может быть пустым`,
+  bsbNumberEmptyText: `Номер BSB не может быть пустым`,
+  bsbNumberInvalidText: `Недействительный номер BSB`,
   invalidCardHolderNameError: `Имя владельца карты не может содержать цифры`,
   invalidNickNameError: `Псевдоним не может содержать более 2 цифр`,
   expiry: `истечение срока действия`,

@@ -1699,3 +1699,5 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
 }
+
+let cleanBSB = str => str->String.replaceRegExp(%re("/-/g"), "")

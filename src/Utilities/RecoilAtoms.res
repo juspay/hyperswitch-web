@@ -81,6 +81,7 @@ let isCompleteCallbackUsed = Recoil.atom("isCompleteCallbackUsed", false)
 let isPaymentButtonHandlerProvidedAtom = Recoil.atom("isPaymentButtonHandlerProvidedAtom", false)
 let userBankAccountNumber = Recoil.atom("userBankAccountNumber", defaultFieldValues)
 let sourceBankAccountId = Recoil.atom("sourceBankAccountId", defaultFieldValues)
+let bsbNumber = Recoil.atom("bsbNumber", defaultFieldValues)
 
 type areOneClickWalletsRendered = {
   isGooglePay: bool,
