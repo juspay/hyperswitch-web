@@ -86,11 +86,13 @@ let make = (
   let isRenderCvv = isCard && paymentItem.requiresCvv
   let expiryMonth = paymentItem.card.expiryMonth
   let expiryYear = paymentItem.card.expiryYear
+  let cardLast4 = paymentItem.card.last4Digits
 
   let paymentMethodType = switch paymentItem.paymentMethodType {
   | Some(paymentMethodType) => paymentMethodType
   | None => "debit"
   }
+  let (country, state, pinCode) = PaymentUtils.useNonPiiAddressData()
 
   React.useEffect(() => {
     open CardUtils
@@ -108,6 +110,12 @@ let make = (
         ~paymentMethod=paymentItem.paymentMethod,
         ~paymentMethodType,
         ~cardBrand=cardBrand->CardUtils.getCardType,
+        ~country,
+        ~state,
+        ~pinCode,
+        ~cardExpiryMonth=expiryMonth,
+        ~cardExpiryYear=expiryYear,
+        ~cardLast4,
       )
     }
     None
