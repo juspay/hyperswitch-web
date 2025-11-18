@@ -749,3 +749,39 @@ let emitIsFormReadyForSubmission = isFormReadyForSubmission =>
   Utils.messageParentWindow([
     ("isFormReadyForSubmission", isFormReadyForSubmission->JSON.Encode.bool),
   ])
+
+let getCardBin = cardNumber =>
+  cardNumber->CardValidations.clearSpaces->String.substring(~start=0, ~end=6)
+
+let getCardLast4 = cardNumber => {
+  let clearValue = cardNumber->CardValidations.clearSpaces
+  let len = clearValue->String.length
+  if len >= 4 {
+    clearValue->String.sliceToEnd(~start=len - 4)
+  } else {
+    clearValue
+  }
+}
+
+let checkIfCardBinIsBlocked = (cardNumber, blockedBinsList) => {
+  open PaymentType
+  switch blockedBinsList {
+  | Loading // If still loading, allow payment to proceed
+  | LoadError(_) // If error loading, allow payment to proceed
+  | SemiLoaded => false // If semi-loaded, allow payment to proceed
+  | Loaded(data) => {
+      let cardBin = cardNumber->getCardBin
+      if cardBin->String.length >= 6 {
+        // The response is directly an array of blocked bins
+        let blockedBins = data->JSON.Decode.array->Option.getOr([])
+        blockedBins->Array.some(item => {
+          let binData = item->Utils.getDictFromJson
+          let fingerprintId = binData->Utils.getString("fingerprint_id", "")
+          fingerprintId === cardBin
+        })
+      } else {
+        false // If card number is too short, don't block
+      }
+    }
+  }
+}
