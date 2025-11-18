@@ -435,7 +435,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     paymentMethodName: "interac",
     icon: Some(icon("interac", ~size=19)),
     displayName: localeString.payment_methods_interac,
-    fields: [InfoElement],
+    fields: [Email, Country, InfoElement],
     miniIcon: None,
   },
   {

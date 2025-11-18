@@ -710,6 +710,28 @@ let p24Body = (~email) => [
   ),
 ]
 
+let interacBody = (~email, ~country) => [
+  ("payment_method", "bank_redirect"->JSON.Encode.string),
+  ("payment_method_type", "interac"->JSON.Encode.string),
+  (
+    "payment_method_data",
+    [
+      (
+        "bank_redirect",
+        [
+          (
+            "interac",
+            [
+              ("email", email->JSON.Encode.string),
+              ("country", country->JSON.Encode.string),
+            ]->Utils.getJsonFromArrayOfJson,
+          ),
+        ]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]->Utils.getJsonFromArrayOfJson,
+  ),
+]
+
 let trustlyBody = (~country) => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "trustly"->JSON.Encode.string),
@@ -1026,6 +1048,7 @@ let getPaymentBody = (
   | "online_banking_czech_republic" => czechOB(~bank)
   | "online_banking_slovakia" => slovakiaOB(~bank)
   | "mb_way" => mbWayBody(~phoneNumber)
+  | "interac" => interacBody(~email, ~country)
   | "przelewy24" => p24Body(~email)
   | "online_banking_fpx" => fpxOBBody(~bank)
   | "online_banking_thailand" => thailandOBBody(~bank)
