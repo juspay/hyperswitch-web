@@ -97,7 +97,7 @@ let make = (
       ~handleUserError=true,
     )
   }
-  let (country, state, pinCode) = PaymentUtils.useNonPiiAddressData()
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onGooglePaymentButtonClicked = () => {
     loggerState.setLogInfo(

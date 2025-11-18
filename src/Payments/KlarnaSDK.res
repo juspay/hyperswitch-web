@@ -45,7 +45,7 @@ let make = (~sessionObj: SessionsType.token) => {
     ~empty=!isCompleted,
     ~paymentType="klarna",
   )
-  let (country, state, pinCode) = PaymentUtils.useNonPiiAddressData()
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   React.useEffect(() => {
     if status === "ready" && paymentMethodTypes !== PaymentMethodsRecord.defaultPaymentMethodType {

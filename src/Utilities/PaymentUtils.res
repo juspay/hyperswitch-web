@@ -588,6 +588,7 @@ let emitPaymentMethodInfo = (
   ~country="",
   ~state="",
   ~pinCode="",
+  ~isSavedPaymentMethod=false,
 ) => {
   let baseCardsFields = [
     ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
@@ -602,6 +603,8 @@ let emitPaymentMethodInfo = (
     ("state", state->JSON.Encode.string),
     ("pincode", pinCode->JSON.Encode.string),
   ]
+
+  let baseSavedPaymentField = [("isSavedPaymentMethod", isSavedPaymentMethod->JSON.Encode.bool)]
 
   let msg = if cardBrand === CardUtils.NOTFOUND {
     [
@@ -621,7 +624,13 @@ let emitPaymentMethodInfo = (
   let finalMsg =
     msg->Array.filter(((_, value)) => value->JSON.Decode.string->Option.getOr("") != "")
 
-  emitMessage(finalMsg->Dict.fromArray)
+  emitMessage(finalMsg->Array.concat(baseSavedPaymentField)->Dict.fromArray)
+}
+
+type nonPiiAdderessData = {
+  country: string,
+  state: string,
+  pinCode: string,
 }
 
 let useNonPiiAddressData = () => {
@@ -629,7 +638,11 @@ let useNonPiiAddressData = () => {
   let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState).value
   let pinCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode).value
 
-  (country, state, pinCode)
+  {
+    country,
+    state,
+    pinCode,
+  }
 }
 
 let useEmitPaymentMethodInfo = (
@@ -639,7 +652,7 @@ let useEmitPaymentMethodInfo = (
   ~expiryProps: CardUtils.expiryProps,
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let (country, state, pinCode) = useNonPiiAddressData()
+  let {country, state, pinCode} = useNonPiiAddressData()
 
   let {cardNumber, cardBrand} = cardProps
   let cardBin = cardNumber->CardUtils.getCardBin

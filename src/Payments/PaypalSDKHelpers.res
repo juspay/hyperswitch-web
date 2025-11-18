@@ -25,7 +25,7 @@ let loadPaypalSDK = (
   ~sdkHandleIsThere: bool,
   ~sessions: PaymentType.loadType,
   ~clientSecret,
-  ~nonPiiAdderessData: (string, string, string),
+  ~nonPiiAdderessData: PaymentUtils.nonPiiAdderessData,
 ) => {
   open Promise
 
@@ -53,7 +53,7 @@ let loadPaypalSDK = (
     style: buttonStyle,
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: () => {
-      let (country, state, pinCode) = nonPiiAdderessData
+      let {country, state, pinCode} = nonPiiAdderessData
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod="wallet",
         ~paymentMethodType="paypal",

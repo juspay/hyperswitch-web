@@ -16,7 +16,7 @@ let make = (~token: SessionsType.token) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let (country, state, pinCode) = PaymentUtils.useNonPiiAddressData()
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onClick = _ => {
     loggerState.setLogInfo(

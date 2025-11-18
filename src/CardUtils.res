@@ -757,7 +757,7 @@ let getCardLast4 = cardNumber => {
   let clearValue = cardNumber->CardValidations.clearSpaces
   let len = clearValue->String.length
   if len >= 4 {
-    clearValue->String.slice(~start=len - 4, ~end=len)
+    clearValue->String.sliceToEnd(~start=len - 4)
   } else {
     clearValue
   }

@@ -15,7 +15,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isWallet = walletOptions->Array.includes("samsung_pay")
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Samsungpay)
-  let (country, state, pinCode) = PaymentUtils.useNonPiiAddressData()
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let (_, _, _, _, heightType) = options.wallets.style.height
   let height = switch heightType {

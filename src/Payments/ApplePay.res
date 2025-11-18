@@ -212,7 +212,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           border: none;
       }
   }`
-  let (country, state, pinCode) = PaymentUtils.useNonPiiAddressData()
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onApplePayButtonClicked = () => {
     loggerState.setLogInfo(

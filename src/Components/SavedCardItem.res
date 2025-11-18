@@ -92,7 +92,7 @@ let make = (
   | Some(paymentMethodType) => paymentMethodType
   | None => "debit"
   }
-  let (country, state, pinCode) = PaymentUtils.useNonPiiAddressData()
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   React.useEffect(() => {
     open CardUtils
@@ -116,6 +116,7 @@ let make = (
         ~cardExpiryMonth=expiryMonth,
         ~cardExpiryYear=expiryYear,
         ~cardLast4,
+        ~isSavedPaymentMethod=true,
       )
     }
     None
