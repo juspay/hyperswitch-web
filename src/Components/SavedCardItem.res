@@ -87,6 +87,7 @@ let make = (
   let expiryMonth = paymentItem.card.expiryMonth
   let expiryYear = paymentItem.card.expiryYear
   let cardLast4 = paymentItem.card.last4Digits
+  let cardBin = paymentItem.card.cardBin
 
   let paymentMethodType = switch paymentItem.paymentMethodType {
   | Some(paymentMethodType) => paymentMethodType
@@ -116,6 +117,7 @@ let make = (
         ~cardExpiryMonth=expiryMonth,
         ~cardExpiryYear=expiryYear,
         ~cardLast4,
+        ~cardBin,
         ~isSavedPaymentMethod=true,
       )
     }

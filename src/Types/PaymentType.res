@@ -124,6 +124,7 @@ type customerCard = {
   cardHolderName: option<string>,
   nickname: string,
   isClickToPayCard: bool,
+  cardBin: string,
 }
 type bank = {mask: string}
 
@@ -218,6 +219,7 @@ let defaultCardDetails = {
   cardHolderName: None,
   nickname: "",
   isClickToPayCard: false,
+  cardBin: "",
 }
 
 let defaultAddressDetails = {
@@ -872,6 +874,7 @@ let getCardDetails = (dict, str) => {
       cardHolderName: getOptionString(json, "card_holder_name"),
       nickname: getString(json, "nick_name", ""),
       isClickToPayCard: false,
+      cardBin: getString(json, "card_isin", ""),
     }
   })
   ->Option.getOr(defaultCardDetails)
@@ -1173,6 +1176,7 @@ let convertClickToPayCardToCustomerMethod = (
       cardHolderName: None,
       nickname: Some(clickToPayCard.digitalCardData.descriptorName)->Option.getOr(""),
       isClickToPayCard: true,
+      cardBin: "",
     },
     paymentMethodType: Some("click_to_pay"),
     defaultPaymentMethodSet: false, // Default to false as Click to Pay doesn't provide this
