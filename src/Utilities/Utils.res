@@ -1700,20 +1700,15 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.getOr(defaultValue)
 }
 
-let loadScriptIfNotExist = (
-  ~url,
-  ~scriptName,
-  ~logger: HyperLoggerTypes.loggerMake,
-  ~eventName,
-) => {
+let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventName) => {
   if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
     let script = Window.createElement("script")
     script->Window.elementSrc(url)
     script->Window.elementOnerror(_ => {
-      logger.setLogError(~value=`Error loading script: ${scriptName}`, ~eventName)
+      logger.setLogError(~value="Script failed to load", ~eventName)
     })
     script->Window.elementOnload(() => {
-      logger.setLogInfo(~value=`${scriptName} LOADED SUCCESSFULLY`, ~eventName)
+      logger.setLogInfo(~value="Script loaded successfully", ~eventName)
     })
     Window.body->Window.appendChild(script)
   }

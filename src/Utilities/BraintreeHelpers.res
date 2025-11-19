@@ -25,16 +25,10 @@ let braintreeApplePayUrl = "https://js.braintreegateway.com/web/3.92.1/js/apple-
 let braintreeClientUrl = "https://js.braintreegateway.com/web/3.92.1/js/client.min.js"
 
 let loadBraintreeApplePayScripts = logger => {
-  Utils.loadScriptIfNotExist(
-    ~url=braintreeClientUrl,
-    ~scriptName="BraintreeClient",
-    ~logger,
-    ~eventName=APPLE_PAY_FLOW,
-  )
+  Utils.loadScriptIfNotExist(~url=braintreeClientUrl, ~logger, ~eventName=BRAINTREE_CLIENT_SCRIPT)
   Utils.loadScriptIfNotExist(
     ~url=braintreeApplePayUrl,
-    ~scriptName="BraintreeApplePay",
     ~logger,
-    ~eventName=APPLE_PAY_FLOW,
+    ~eventName=APPLE_PAY_BRAINTREE_SCRIPT,
   )
 }

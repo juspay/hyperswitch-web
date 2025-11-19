@@ -738,7 +738,7 @@ let make = (
                 }
               } else {
                 logger.setLogInfo(
-                  ~value="Thirdparty ApplePay session token flow",
+                  ~value="Third party ApplePay session token flow",
                   ~eventName=APPLE_PAY_FLOW,
                   ~paymentMethod="APPLE_PAY",
                 )
@@ -747,6 +747,11 @@ let make = (
                 let applePayPaymentRequest = dict->Utils.getDictFromDict("applePayPaymentRequest")
                 switch connector {
                 | "braintree" =>
+                  logger.setLogInfo(
+                    ~value="Braintree Applepay Flow",
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                  )
                   ApplePayHelpers.handleApplePayBraintreeClick(
                     authToken,
                     applePayPaymentRequest,
@@ -978,7 +983,7 @@ let make = (
                       let dict = json->getDictFromJson
                       let componentName = dict->getString("componentName", "payment")
                       let connector = dict->Utils.getString("connector", "")
-                      let disableDelayedSessionTokenFlow =
+                      let enableDelayedSessionTokenFlow =
                         ApplePayHelpers.delayedSessionTokenExcludedConnectors
                         ->Array.includes(connector)
                         ->not
@@ -993,7 +998,7 @@ let make = (
                       | (Some(val), Some(paymentRequest), isTaxCalculationEnabled) =>
                         if (
                           val->JSON.Decode.bool->Option.getOr(false) &&
-                            disableDelayedSessionTokenFlow
+                            enableDelayedSessionTokenFlow
                         ) {
                           let isDelayedSessionToken =
                             applePayPresent
