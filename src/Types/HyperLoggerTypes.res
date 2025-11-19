@@ -95,6 +95,9 @@ type eventName =
   | THREE_DS_POPUP_REDIRECTION
   | S3_API
   | CARD_SCHEME_SELECTION
+  | BLOCKED_BIN_CALL
+  | APPLE_PAY_BRAINTREE_SCRIPT
+  | BRAINTREE_CLIENT_SCRIPT
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

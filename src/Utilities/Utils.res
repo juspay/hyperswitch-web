@@ -1699,3 +1699,23 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
 }
+
+let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventName) => {
+  if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
+    let script = Window.createElement("script")
+    script->Window.elementSrc(url)
+    script->Window.elementOnerror(_ => {
+      logger.setLogError(~value="Script failed to load", ~eventName)
+    })
+    script->Window.elementOnload(() => {
+      logger.setLogInfo(~value="Script loaded successfully", ~eventName)
+    })
+    Window.body->Window.appendChild(script)
+  }
+}
+
+let defaultCountryCode = {
+  let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
+  let clientCountry = getClientCountry(clientTimeZone)
+  clientCountry.isoAlpha2
+}

@@ -330,6 +330,9 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | THREE_DS_POPUP_REDIRECTION
   | NETWORK_STATE
   | CARD_SCHEME_SELECTION
-  | S3_API =>
+  | S3_API
+  | BLOCKED_BIN_CALL
+  | APPLE_PAY_BRAINTREE_SCRIPT
+  | BRAINTREE_CLIENT_SCRIPT =>
     None
   }
