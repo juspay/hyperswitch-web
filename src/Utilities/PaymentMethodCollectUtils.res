@@ -1051,7 +1051,7 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
 
   // Add browser info for Interac bank redirect payments
   let body = switch paymentMethodType {
-  | BankRedirect(Interac) => body->Array.concat(BrowserSpec.broswerInfo(~isIpRequired=true))
+  | BankRedirect(Interac) => body->Array.concat(BrowserSpec.broswerInfo())
   | _ => body
   }
 
@@ -1143,7 +1143,7 @@ let getErrorStringAndClasses = (
       | ("", "") => ""
       | (firstError, "") => firstError
       | ("", lastError) => lastError
-      | (firstError, lastError) => firstError ++ " " ++ lastError
+      | (firstError, _) => firstError
       }
 
       let hasError = mergedError !== ""

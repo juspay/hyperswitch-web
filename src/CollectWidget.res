@@ -50,15 +50,21 @@ let make = (
         values
         ->Dict.get(BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey)
         ->Option.getOr("")
-      let copy = values->Dict.copy
+      let updatedValues = values->Dict.copy
 
       // If first_name is null and required but last_name is not, use first_name as last_name
       // to populate full name properly
       if first_name->String.length == 0 {
-        copy->Dict.set(BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey, last_name)
-        copy->Dict.set(BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey, "")
+        updatedValues->Dict.set(
+          BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey,
+          last_name,
+        )
+        updatedValues->Dict.set(
+          BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
+          "",
+        )
       }
-      setFormData(_ => copy)
+      setFormData(_ => updatedValues)
       setValidityDict(_ => validity)
     })
     ->ignore
