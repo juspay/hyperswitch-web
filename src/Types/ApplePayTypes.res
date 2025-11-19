@@ -28,14 +28,13 @@ type event = {validationURL: string, payment: paymentResult}
 type lineItem = {
   label: string,
   amount: string,
-  \"type"?: string,
+  \"type": string,
 }
 
 type applePayValidationRequest = {
   validationURL: string,
   displayName: string,
 }
-type applePayTokenizeRequest = {token: string}
 
 type applePayTokenizeResponse = {nonce: string}
 

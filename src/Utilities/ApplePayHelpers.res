@@ -266,20 +266,16 @@ let useHandleApplePayResponse = (
           syncPayment()
         } else if dict->Dict.get("applePayBraintreeSuccess")->Option.isSome {
           let token = dict->Utils.getString("token", "")
-          if token !== "" {
-            processPayment(
-              ~bodyArr=PaymentBody.applePayThirdPartySdkBody(~connectors, ~token),
-              ~isThirdPartyFlow=true,
-              ~isGuestCustomer,
-              ~paymentMethodListValue,
-              ~intent,
-              ~options,
-              ~publishableKey,
-              ~isManualRetryEnabled,
-            )
-          } else {
-            postFailedSubmitResponse(~errortype="validation_error", ~message="Invalid token")
-          }
+          processPayment(
+            ~bodyArr=PaymentBody.applePayThirdPartySdkBody(~connectors, ~token),
+            ~isThirdPartyFlow=true,
+            ~isGuestCustomer,
+            ~paymentMethodListValue,
+            ~intent,
+            ~options,
+            ~publishableKey,
+            ~isManualRetryEnabled,
+          )
         }
       } catch {
       | _ =>
@@ -369,7 +365,7 @@ let createApplePayTransactionInfo = jsonDict =>
     (),
   )
 
-let delayedSessionTokenExcludedConnectors = ["braintree"]
+let thirdPartyApplePayConnectors = ["braintree"]
 
 let handleApplePayBraintreePaymentSession = (
   applePayPaymentRequest,
@@ -403,7 +399,9 @@ let handleApplePayBraintreePaymentSession = (
     sessions.onpaymentauthorized = event => {
       applePayInstance.tokenize(
         {
-          token: event.payment.token->JSON.stringify,
+          token: event.payment.token,
+          billingContact: JSON.Encode.null,
+          shippingContact: JSON.Encode.null,
         },
         (err, payload) => {
           switch sessionForApplePay->Nullable.toOption {
@@ -446,17 +444,34 @@ let handleApplePayBraintreeClick = (
   ])
 
   let onSuccess = token => {
-    logger.setLogInfo(
-      ~value="ApplePay Braintree payment Successfull",
-      ~eventName=APPLE_PAY_FLOW,
-      ~paymentMethod="APPLE_PAY",
-    )
-    event.source->Window.sendPostMessage(
-      [
-        ("applePayBraintreeSuccess", true->JSON.Encode.bool),
-        ("token", token->JSON.Encode.string),
-      ]->Dict.fromArray,
-    )
+    if token == "" {
+      messageParentWindow([
+        ("fullscreen", false->JSON.Encode.bool),
+        ("param", "paymentloader"->JSON.Encode.string),
+        ("iframeId", selectorString->JSON.Encode.string),
+      ])
+      postFailedSubmitResponse(
+        ~errortype="validation_error",
+        ~message="ApplePay Braintree nonce is empty",
+      )
+      logger.setLogError(
+        ~value="ApplePay Braintree nonce is empty",
+        ~eventName=APPLE_PAY_FLOW,
+        ~paymentMethod="APPLE_PAY",
+      )
+    } else {
+      logger.setLogInfo(
+        ~value="ApplePay Braintree payment Successfull",
+        ~eventName=APPLE_PAY_FLOW,
+        ~paymentMethod="APPLE_PAY",
+      )
+      event.source->Window.sendPostMessage(
+        [
+          ("applePayBraintreeSuccess", true->JSON.Encode.bool),
+          ("token", token->JSON.Encode.string),
+        ]->Dict.fromArray,
+      )
+    }
   }
 
   let onError = err => {

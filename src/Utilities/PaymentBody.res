@@ -531,11 +531,11 @@ let applePayRedirectBody = (~connectors) => [
   ),
 ]
 
-let applePayThirdPartySdkBody = (~connectors, ~token="") => {
-  let tokenJson =
-    token != ""
-      ? [("token", token->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
-      : Dict.make()->JSON.Encode.object
+let applePayThirdPartySdkBody = (~connectors, ~token=?) => {
+  let tokenJson = switch token {
+  | Some(val) => [("token", val->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
+  | None => Dict.make()->JSON.Encode.object
+  }
 
   [
     ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),

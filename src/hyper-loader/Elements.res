@@ -983,10 +983,9 @@ let make = (
                       let dict = json->getDictFromJson
                       let componentName = dict->getString("componentName", "payment")
                       let connector = dict->Utils.getString("connector", "")
-                      let enableDelayedSessionTokenFlow =
-                        ApplePayHelpers.delayedSessionTokenExcludedConnectors
-                        ->Array.includes(connector)
-                        ->not
+                      let isThirdPartyFlow =
+                        ApplePayHelpers.thirdPartyApplePayConnectors->Array.includes(connector)
+
                       switch (
                         dict->Dict.get("applePayButtonClicked"),
                         dict->Dict.get("applePayPaymentRequest"),
@@ -996,10 +995,7 @@ let make = (
                         ->Option.getOr(false),
                       ) {
                       | (Some(val), Some(paymentRequest), isTaxCalculationEnabled) =>
-                        if (
-                          val->JSON.Decode.bool->Option.getOr(false) &&
-                            enableDelayedSessionTokenFlow
-                        ) {
+                        if val->JSON.Decode.bool->Option.getOr(false) {
                           let isDelayedSessionToken =
                             applePayPresent
                             ->Belt.Option.flatMap(JSON.Decode.object)
@@ -1008,7 +1004,7 @@ let make = (
                             ->Option.getOr(JSON.Encode.null)
                             ->JSON.Decode.bool
                             ->Option.getOr(false)
-                          if !isDelayedSessionToken {
+                          if !isDelayedSessionToken && !isThirdPartyFlow {
                             logger.setLogInfo(
                               ~value="Normal Session Token Flow",
                               ~eventName=APPLE_PAY_FLOW,

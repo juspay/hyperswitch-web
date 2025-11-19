@@ -3,7 +3,7 @@ open ApplePayTypes
 type applePayInstance = {
   createPaymentRequest: paymentRequestData => JSON.t,
   performValidation: (applePayValidationRequest, (nullable<JSON.t>, JSON.t) => unit) => unit,
-  tokenize: (applePayTokenizeRequest, (nullable<JSON.t>, applePayTokenizeResponse) => unit) => unit,
+  tokenize: (paymentResult, (nullable<JSON.t>, applePayTokenizeResponse) => unit) => unit,
 }
 
 type applePayCallback = (nullable<JSON.t>, applePayInstance) => unit
