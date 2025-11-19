@@ -30,6 +30,14 @@ type lineItem = {
   amount: string,
   \"type": string,
 }
+
+type applePayValidationRequest = {
+  validationURL: string,
+  displayName: string,
+}
+
+type applePayTokenizeResponse = {nonce: string}
+
 type shippingAddressChangeEvent = {shippingContact: JSON.t}
 type orderDetails = {newTotal: lineItem, newLineItems: array<lineItem>}
 type innerSession
@@ -84,26 +92,22 @@ let defaultHeadlessApplePayToken: headlessApplePayToken = {
   sessionTokenData: None,
 }
 
-let jsonToPaymentRequestDataType: Dict.t<JSON.t> => paymentRequestData = jsonDict => {
-  let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
-  let clientCountry = getClientCountry(clientTimeZone)
-  let defaultCountryCode = clientCountry.isoAlpha2
+let getTotal = totalDict => {
+  getString(totalDict, "type", "") == ""
+    ? total(
+        ~label=getString(totalDict, "label", ""),
+        ~amount=getString(totalDict, "amount", ""),
+        (),
+      )
+    : total(
+        ~label=getString(totalDict, "label", ""),
+        ~amount=getString(totalDict, "amount", ""),
+        ~\"type"=getString(totalDict, "type", ""),
+        (),
+      )
+}
 
-  let getTotal = totalDict => {
-    getString(totalDict, "type", "") == ""
-      ? total(
-          ~label=getString(totalDict, "label", ""),
-          ~amount=getString(totalDict, "amount", ""),
-          (),
-        )
-      : total(
-          ~label=getString(totalDict, "label", ""),
-          ~amount=getString(totalDict, "amount", ""),
-          ~\"type"=getString(totalDict, "type", ""),
-          (),
-        )
-  }
-
+let jsonToPaymentRequestDataType = jsonDict => {
   if getString(jsonDict, "merchant_identifier", "") == "" {
     paymentRequestData(
       ~countryCode=getString(jsonDict, "country_code", defaultCountryCode),
