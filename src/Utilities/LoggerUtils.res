@@ -331,6 +331,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | NETWORK_STATE
   | CARD_SCHEME_SELECTION
   | S3_API
+  | REDSYS_3DS
   | BLOCKED_BIN_CALL =>
     None
   }
