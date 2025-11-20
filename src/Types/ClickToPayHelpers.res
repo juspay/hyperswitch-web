@@ -30,7 +30,7 @@ type element = {
 external getElementById: (Window.elementRef, string) => Nullable.t<element> = "getElementById"
 
 open Window
-let clickToPayWindowRef: ref<Nullable.t<window>> = ref(Nullable.null)
+let clickToPayWindowRef: ref<Nullable.t<Types.window>> = ref(Nullable.null)
 
 let handleCloseClickToPayWindow = () => {
   switch clickToPayWindowRef.contents->Nullable.toOption {
@@ -44,6 +44,7 @@ let handleCloseClickToPayWindow = () => {
 
 let handleOpenClickToPayWindow = () => {
   clickToPayWindowRef.contents = windowOpen("", "ClickToPayWindow", "width=480,height=600")
+  LoaderHTML.injectLoader(clickToPayWindowRef.contents)
 }
 
 // Global window extensions
@@ -155,7 +156,7 @@ type consumerIdentity = {
 type accountReference = {consumerIdentity: consumerIdentity}
 
 type authenticatePayload = {
-  windowRef: window,
+  windowRef: Types.window,
   requestRecognitionToken: bool,
   accountReference: accountReference,
 }
@@ -168,7 +169,7 @@ type encryptCardPayload = {
 }
 
 type checkoutWithCardPayload = {
-  windowRef: window,
+  windowRef: Types.window,
   srcDigitalCardId: string,
   rememberMe: bool,
 }
@@ -280,7 +281,7 @@ type complianceSettings = {
 
 // Add the CheckoutWithNewCardPayload type
 type checkoutWithNewCardPayload = {
-  windowRef: window,
+  windowRef: Types.window,
   cardBrand: string,
   encryptedCard: JSON.t,
   rememberMe: bool,
@@ -516,7 +517,7 @@ let getCards = async (logger: HyperLoggerTypes.loggerMake) => {
 
 // First, let's define the AuthenticatePayload type
 type authenticateInputPayload = {
-  windowRef: window,
+  windowRef: Types.window,
   consumerIdentity: consumerIdentity,
 }
 
@@ -587,7 +588,7 @@ let authenticate = async (
 }
 
 let checkoutWithCard = async (
-  ~windowRef: window,
+  ~windowRef: Types.window,
   ~srcDigitalCardId: string,
   ~logger: HyperLoggerTypes.loggerMake,
 ) => {
@@ -1057,7 +1058,7 @@ type checkoutConfig = {
   consumer?: visaConsumer,
   complianceSettings?: visaComplianceSettings,
   payloadTypeIndicatorCheckout?: string,
-  windowRef?: Window.window,
+  windowRef?: Types.window,
   dpaTransactionOptions: dpaTransactionOptionsVisa,
 }
 type visaInitConfig = {dpaTransactionOptions: dpaTransactionOptionsVisa}
@@ -1071,11 +1072,23 @@ type getCardsResultType = {
   maskedValidationChannel?: string,
 }
 
+let getStrFromActionCode = actionCode => {
+  switch actionCode {
+  | SUCCESS => "SUCCESS"
+  | PENDING_CONSUMER_IDV => "PENDING_CONSUMER_IDV"
+  | FAILED => "FAILED"
+  | ERROR => "ERROR"
+  | ADD_CARD => "ADD_CARD"
+  }
+}
+
+type unbindAppInstanceResultType = {error?: errorObj}
+
 type vsdk = {
   initialize: visaInitConfig => promise<{.}>,
   getCards: getCardsConfig => promise<getCardsResultType>,
   checkout: checkoutConfig => promise<JSON.t>,
-  unbindAppInstance: unit => promise<unit>,
+  unbindAppInstance: unit => promise<unbindAppInstanceResultType>,
 }
 
 type mastercardDirectDpaTransactionOptions = {dpaLocale: string}

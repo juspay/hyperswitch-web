@@ -1,3 +1,4 @@
+type window
 type eventData = {
   iframeMounted: bool,
   focus: bool,
@@ -65,6 +66,7 @@ type validateCustomerAuthenticationInput = {value: string}
 type checkoutWithCardInput = {
   srcDigitalCardId: string,
   rememberMe: option<bool>,
+  windowRef: Nullable.t<window>,
 }
 
 type clickToPaySession = {
@@ -73,6 +75,7 @@ type clickToPaySession = {
   getRecognizedCards: unit => promise<JSON.t>,
   validateCustomerAuthentication: validateCustomerAuthenticationInput => promise<JSON.t>,
   checkoutWithCard: checkoutWithCardInput => promise<JSON.t>,
+  signOut: unit => promise<JSON.t>,
 }
 
 type initClickToPaySessionInput = {request3DSAuthentication: option<bool>}
