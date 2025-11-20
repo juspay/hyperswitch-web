@@ -44,14 +44,18 @@ let initClickToPaySession = async (
     authenticationResponse.profiles
     ->Option.flatMap(profiles => Some(profiles->Array.flatMap(profile => profile.maskedCards)))
     ->Option.getOr([])
+    ->Array.map(card => {
+      ...card,
+      paymentCardDescriptor: card.paymentCardDescriptor->String.toUpperCase,
+    })
   }
 
-  let getFailedErrorResponse = (
-    ~getCardsResponse,
+  let getClickToPayErrorResponse = (
+    ~error: option<errorObj>,
     ~defaultErrorType="ERROR",
     ~defaultErrorMessage,
   ) => {
-    switch getCardsResponse.error {
+    switch error {
     | Some(errorObj) => {
         let errorType = errorObj.reason->Option.getOr(defaultErrorType)
         let getCardsErrorMessage = errorObj.message->Option.getOr("")
@@ -70,7 +74,11 @@ let initClickToPaySession = async (
   let isCustomerPresent = async (~visaDirectSdk, ~email) => {
     switch email {
     | Some(emailVal) => customerEmail := emailVal
-    | None => ()
+    | None =>
+      logger.setLogInfo(
+        ~value="No email is passed directly to isCustomerPresent method.",
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
     }
 
     let consumerIdentity = {
@@ -174,20 +182,55 @@ let initClickToPaySession = async (
       let getCardsResponse = await vsdk.getCards(getCardsConfig)
 
       let statusCode = switch getCardsResponse.actionCode {
-      | PENDING_CONSUMER_IDV => "TRIGGERED_CUSTOMER_AUTHENTICATION"
+      | PENDING_CONSUMER_IDV => {
+          logger.setLogInfo(
+            ~value="Triggering customer authentication as part of getUserType flow.",
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          "TRIGGERED_CUSTOMER_AUTHENTICATION"
+        }
       | SUCCESS => {
           maskedCards := getMaskedCardsListFromResponse(getCardsResponse)
 
-          maskedCards.contents->Array.length > 0 ? "RECOGNIZED_CARDS_PRESENT" : "NO_CARDS_PRESENT"
+          let areMaskedCardsPresent = maskedCards.contents->Array.length > 0
+
+          if areMaskedCardsPresent {
+            logger.setLogInfo(
+              ~value="Recognized cards are present for the customer.",
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
+            "RECOGNIZED_CARDS_PRESENT"
+          } else {
+            logger.setLogInfo(
+              ~value="Successfully Called getCards but no recognized cards are present for the customer.",
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
+            "NO_CARDS_PRESENT"
+          }
         }
-      | ADD_CARD => "NO_CARDS_PRESENT"
-      | _ => "ERROR"
+      | ADD_CARD => {
+          logger.setLogInfo(
+            ~value="No recognized cards are present for the customer.",
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          "NO_CARDS_PRESENT"
+        }
+      | _ => {
+          logger.setLogError(
+            ~value=`Get Cards returned error action code ${getCardsResponse.actionCode->getStrFromActionCode}`,
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          "ERROR"
+        }
       }
 
       if statusCode !== "ERROR" {
         [("statusCode", statusCode->JSON.Encode.string)]->getJsonFromArrayOfJson
       } else {
-        getFailedErrorResponse(~getCardsResponse, ~defaultErrorMessage=getUserTypeErrorMessage)
+        getClickToPayErrorResponse(
+          ~error=getCardsResponse.error,
+          ~defaultErrorMessage=getUserTypeErrorMessage,
+        )
       }
     } catch {
     | err => {
@@ -201,6 +244,10 @@ let initClickToPaySession = async (
   }
 
   let getRecognizedCards = async () => {
+    logger.setLogInfo(
+      ~value="Fetching recognized cards for the customer.",
+      ~eventName=CLICK_TO_PAY_FLOW,
+    )
     maskedCards.contents->Identity.anyTypeToJson
   }
 
@@ -227,10 +274,19 @@ let initClickToPaySession = async (
       | SUCCESS =>
         maskedCards := getMaskedCardsListFromResponse(validateCustomerAuthenticationResponse)
 
+        logger.setLogInfo(
+          ~value="Customer authentication validated successfully.",
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+
         maskedCards.contents->Identity.anyTypeToJson
       | _ =>
-        getFailedErrorResponse(
-          ~getCardsResponse=validateCustomerAuthenticationResponse,
+        logger.setLogError(
+          ~value=`Validate Customer Authentication returned error action code ${validateCustomerAuthenticationResponse.actionCode->getStrFromActionCode}`,
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+        getClickToPayErrorResponse(
+          ~error=validateCustomerAuthenticationResponse.error,
           ~defaultErrorMessage=validateCustomerAuthenticationErrorMessage,
         )
       }
@@ -250,54 +306,121 @@ let initClickToPaySession = async (
     }
   }
 
-  let checkoutWithCard = async (~token, ~srcDigitalCardId, ~rememberMe) => {
+  let checkoutWithCard = async (~token, ~srcDigitalCardId, ~rememberMe, ~windowRef) => {
     let checkoutWithCardErrorMessage = "An unknown error occurred during checkout with card."
 
     try {
-      if clickToPayWindowRef.contents->Nullable.toOption->Option.isNone {
-        handleOpenClickToPayWindow()
+      let clickToPayWindow = switch windowRef->Nullable.toOption {
+      | Some(window) => {
+          logger.setLogInfo(
+            ~value="Using provided window reference for Click to Pay checkout flow.",
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          Some(window)
+        }
+      | None => {
+          logger.setLogInfo(
+            ~value="No window reference provided. Opening new window for Click to Pay checkout flow.",
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          if clickToPayWindowRef.contents->Nullable.toOption->Option.isNone {
+            handleOpenClickToPayWindow()
+          }
+
+          clickToPayWindowRef.contents->Nullable.toOption
+        }
       }
 
-      let checkoutWithCardResponse = await handleCheckoutWithCard(
-        ~clickToPayProvider=VISA,
-        ~srcDigitalCardId,
-        ~logger,
-        ~fullName="",
-        ~email=customerEmail.contents,
-        ~phoneNumber="",
-        ~countryCode="",
-        ~clickToPayToken=Some(token),
-        ~isClickToPayRememberMe=rememberMe->Option.getOr(false),
-        ~orderId=clientSecret,
-        ~request3DSAuthentication=initClickToPaySessionInput.request3DSAuthentication->Option.getOr(
-          true,
-        ),
-      )
+      switch clickToPayWindow {
+      | Some(window) => {
+          let clickToPayProvider = VISA
 
-      switch checkoutWithCardResponse.status {
-      | COMPLETE => {
-          let dict = checkoutWithCardResponse.payload->Utils.getDictFromJson
+          let consumer: consumer = {
+            fullName: "",
+            emailAddress: customerEmail.contents,
+            mobileNumber: {
+              phoneNumber: "",
+              countryCode: "",
+            },
+          }
 
-          let visaClickToPayBodyArr = PaymentBody.visaClickToPayAuthenticationBody(
-            ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
+          let checkoutWithCardResponse = await checkoutVisaUnified(
+            ~srcDigitalCardId,
+            ~clickToPayToken=token,
+            ~windowRef=window,
+            ~rememberMe=rememberMe->Option.getOr(false),
+            ~orderId=clientSecret,
+            ~consumer,
+            ~request3DSAuthentication=initClickToPaySessionInput.request3DSAuthentication->Option.getOr(
+              true,
+            ),
           )
 
-          let authenticationSyncResponse = await PaymentHelpers.fetchAuthenticationSync(
-            ~clientSecret,
-            ~publishableKey,
-            ~logger,
-            ~customPodUri,
-            ~endpoint,
-            ~isPaymentSession=false,
-            ~profileId,
-            ~authenticationId,
-            ~merchantId,
-            ~bodyArr=visaClickToPayBodyArr,
-          )
+          handleCloseClickToPayWindow()
 
-          authenticationSyncResponse
+          let actionCode =
+            checkoutWithCardResponse->Utils.getDictFromJson->Utils.getString("actionCode", "")
+          switch actionCode {
+          | "SUCCESS" => {
+              logger.setLogInfo(
+                ~value={
+                  "message": "Checkout successful",
+                  "scheme": clickToPayProvider,
+                }
+                ->JSON.stringifyAny
+                ->Option.getOr("Failed to stringify successful checkout message"),
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
+
+              let dict = checkoutWithCardResponse->Utils.getDictFromJson
+
+              let visaClickToPayBodyArr = PaymentBody.visaClickToPayAuthenticationBody(
+                ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
+              )
+
+              let authenticationSyncResponse = await PaymentHelpers.fetchAuthenticationSync(
+                ~clientSecret,
+                ~publishableKey,
+                ~logger,
+                ~customPodUri,
+                ~endpoint,
+                ~isPaymentSession=false,
+                ~profileId,
+                ~authenticationId,
+                ~merchantId,
+                ~bodyArr=visaClickToPayBodyArr,
+              )
+
+              authenticationSyncResponse
+            }
+          | _ => {
+              logger.setLogError(
+                ~value={
+                  "message": `Visa checkout failed with card, Action Code -> ${actionCode}`,
+                  "scheme": clickToPayProvider,
+                }
+                ->JSON.stringifyAny
+                ->Option.getOr("Failed to stringify failed checkout message"),
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
+
+              let errorMsg = switch actionCode {
+              | "CHANGE_CARD" => "Consumer wishes to select an alternative card."
+              | "SWITCH_CONSUMER" => "Consumer wishes to change Click to Pay profile."
+              | _ => checkoutWithCardErrorMessage
+              }
+
+              getFailedSubmitResponse(~errorType=actionCode, ~message=errorMsg)
+            }
+          }
         }
-      | _ => getFailedSubmitResponse(~errorType="ERROR", ~message=checkoutWithCardErrorMessage)
+      | None => {
+          logger.setLogError(
+            ~value="Error trying to open window for Click to Pay checkout flow.",
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          getFailedSubmitResponse(~errorType="ERROR", ~message=checkoutWithCardErrorMessage)
+        }
       }
     } catch {
     | err => {
@@ -308,6 +431,43 @@ let initClickToPaySession = async (
         handleCloseClickToPayWindow()
         getFailedSubmitResponse(~errorType="ERROR", ~message=checkoutWithCardErrorMessage)
       }
+    }
+  }
+
+  let signOut = async () => {
+    let unbindAppInstanceErrorMessage = "Failed to sign out customer."
+    try {
+      let unbindAppInstanceResponse = await vsdk.unbindAppInstance()
+      switch unbindAppInstanceResponse.error {
+      | Some(err) => {
+          logger.setLogError(
+            ~value=`Failed to sign out Customer ${err.reason->Option.getOr("Unknown Error")}`,
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          getClickToPayErrorResponse(
+            ~error=unbindAppInstanceResponse.error,
+            ~defaultErrorMessage=unbindAppInstanceErrorMessage,
+          )
+        }
+      | None => {
+          logger.setLogInfo(
+            ~value="Customer signed out successfully from Click to Pay.",
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          let customerSignedOut = [("recognized", false->JSON.Encode.bool)]->getJsonFromArrayOfJson
+
+          maskedCards := []
+
+          customerSignedOut
+        }
+      }
+    } catch {
+    | err =>
+      logger.setLogError(
+        ~value=`Failed to sign out Customer ${err->Utils.formatException->JSON.stringify}`,
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
+      getFailedSubmitResponse(~errorType="ERROR", ~message=unbindAppInstanceErrorMessage)
     }
   }
 
@@ -384,14 +544,16 @@ let initClickToPaySession = async (
                 isCustomerPresent(~visaDirectSdk, ~email)
               },
               getUserType: () => getUserType(),
-              getRecognizedCards,
+              getRecognizedCards: () => getRecognizedCards(),
               validateCustomerAuthentication: otpValue => validateCustomerAuthentication(~otpValue),
               checkoutWithCard: checkoutWithCardInput =>
                 checkoutWithCard(
                   ~token,
                   ~srcDigitalCardId=checkoutWithCardInput.srcDigitalCardId,
                   ~rememberMe=checkoutWithCardInput.rememberMe,
+                  ~windowRef=checkoutWithCardInput.windowRef,
                 ),
+              signOut: () => signOut(),
             }->Identity.anyTypeToJson
 
             resolve(defaultInitClickToPaySession)
