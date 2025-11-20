@@ -1,4 +1,4 @@
-type window
+open Types
 type parent
 type document
 type style
