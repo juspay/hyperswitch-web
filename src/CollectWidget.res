@@ -337,7 +337,6 @@ let make = (
           <RenderIf condition={checkIfNameRequired(addressFields)}>
             {BillingAddress(FullName(FirstName))->renderInputTemplate}
           </RenderIf>
-
         // first_name and last_name are stored in fullName
         | (FullName(LastName), _) => React.null
         | (CountryCode, None) => BillingAddress(CountryCode)->renderInputTemplate
