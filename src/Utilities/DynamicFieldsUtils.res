@@ -36,6 +36,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "skrill",
   "flexiti",
   "breadpay",
+  "givex",
   "pay_safe_card",
   "interac",
 ]

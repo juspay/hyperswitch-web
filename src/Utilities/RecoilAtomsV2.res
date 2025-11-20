@@ -4,9 +4,27 @@ let vaultMode = Recoil.atom("vaultMode", VaultHelpers.None)
 let managePaymentMethod = Recoil.atom("managePaymentMethod", "")
 let savedMethodsV2 = Recoil.atom("savedMethodsV2", [UnifiedHelpersV2.defaultCustomerMethods])
 let paymentMethodsListV2 = Recoil.atom("paymentMethodsListV2", UnifiedPaymentsTypesV2.LoadingV2)
+let intentList = Recoil.atom("intentList", UnifiedPaymentsTypesV2.LoadingIntent)
 let paymentMethodListValueV2 = Recoil.atom(
   "paymentMethodListValueV2",
   UnifiedHelpersV2.defaultPaymentsList,
 )
 let vaultPublishableKey = Recoil.atom("vaultPublishableKey", "")
 let vaultProfileId = Recoil.atom("vaultProfileId", "")
+
+type appliedGiftCard = {
+  giftCardType: string,
+  giftCardNumber: string,
+  maskedNumber: string,
+  balance: float,
+  currency: string,
+  id: string,
+  cvc: string,
+}
+
+let appliedGiftCardsAtom: Recoil.recoilAtom<array<appliedGiftCard>> = Recoil.atom(
+  "appliedGiftCards",
+  [],
+)
+
+let remainingAmountAtom: Recoil.recoilAtom<option<float>> = Recoil.atom("remainingAmount", None)

@@ -5,6 +5,7 @@ open Utils
 let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (vpaId, setVpaId) = Recoil.useRecoilState(userVpaId)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let vpaIdRef = React.useRef(Nullable.null)
 
@@ -35,14 +36,18 @@ let make = () => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if vpaId.value == "" {
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else if vpaId.value == "" {
         setVpaId(prev => {
           ...prev,
           errorString: localeString.vpaIdEmptyText,
         })
       }
     }
-  }, [vpaId])
+  }, (vpaId, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <PaymentField

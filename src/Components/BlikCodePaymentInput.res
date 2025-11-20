@@ -4,6 +4,7 @@ open Utils
 @react.component
 let make = () => {
   let (blikCode, setblikCode) = Recoil.useRecoilState(userBlikCode)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let blikCodeRef = React.useRef(Nullable.null)
   let formatBSB = bsb => {
@@ -43,14 +44,18 @@ let make = () => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if blikCode.value == "" {
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else if blikCode.value == "" {
         setblikCode(prev => {
           ...prev,
           errorString: "blikCode cannot be empty",
         })
       }
     }
-  }, [blikCode])
+  }, (blikCode, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={true}>

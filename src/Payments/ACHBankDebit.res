@@ -14,6 +14,7 @@ let make = () => {
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let (bankError, setBankError) = React.useState(_ => "")
 
@@ -70,37 +71,46 @@ let make = () => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      if modalData->Option.isNone {
-        setBankError(_ => "Enter bank details and then confirm payment")
-      }
-      if complete {
-        switch modalData {
-        | Some(data) =>
-          let body = PaymentBody.achBankDebitBody(
-            ~email=email.value,
-            ~bank=data,
-            ~cardHolderName=fullName.value,
-            ~line1=line1.value,
-            ~line2=line2.value,
-            ~country=countryCode,
-            ~city=city.value,
-            ~postalCode=postalCode.value,
-            ~stateCode,
-          )
-          intent(
-            ~bodyArr=body,
-            ~confirmParam=confirm.confirmParams,
-            ~handleUserError=false,
-            ~manualRetry=isManualRetryEnabled,
-          )
-        | None => ()
-        }
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
         ()
       } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+        if modalData->Option.isNone {
+          setBankError(_ => "Enter bank details and then confirm payment")
+        }
+        if complete {
+          switch modalData {
+          | Some(data) =>
+            let body = PaymentBody.achBankDebitBody(
+              ~email=email.value,
+              ~bank=data,
+              ~cardHolderName=fullName.value,
+              ~line1=line1.value,
+              ~line2=line2.value,
+              ~country=countryCode,
+              ~city=city.value,
+              ~postalCode=postalCode.value,
+              ~stateCode,
+            )
+            intent(
+              ~bodyArr=body,
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+            )
+          | None => ()
+          }
+          ()
+        } else {
+          postFailedSubmitResponse(
+            ~errortype="validation_error",
+            ~message="Please enter all fields",
+          )
+        }
       }
     }
-  }, (email, modalData, fullName, isManualRetryEnabled))
+  }, (email, modalData, fullName, isManualRetryEnabled, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <>

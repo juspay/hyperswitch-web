@@ -70,6 +70,8 @@ let make = (
   let (showMore, setShowMore) = React.useState(_ => false)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let appliedGiftCards = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.appliedGiftCardsAtom)
+  let remainingAmount = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.remainingAmountAtom)
   let {cardBrand} = cardProps
 
   PaymentUtils.useEmitPaymentMethodInfo(
@@ -78,6 +80,9 @@ let make = (
     ~cardProps,
     ~expiryProps,
   )
+
+  // Compute if non-card payment methods should be disabled
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
 
   let cardOptionDetails =
     paymentOptions
@@ -143,6 +148,8 @@ let make = (
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
         let borderRadiusStyle = getBorderRadiusStyleForCardOptionDetails(i)
+        // Disable non-card payment methods when gift cards fully cover payment
+        let isDisabled = isGiftCardOnlyPayment && payOption.paymentMethodName !== "card"
         <Accordion
           key={i->Int.toString}
           paymentOption=payOption
@@ -152,6 +159,7 @@ let make = (
           borderBottom={(!showMore &&
           i == cardOptionDetails->Array.length - 1 &&
           !layoutClass.spacedAccordionItems) || layoutClass.spacedAccordionItems}
+          disabled=isDisabled
         />
       })
       ->React.array}
@@ -161,6 +169,8 @@ let make = (
         ->Array.mapWithIndex((payOption, i) => {
           let isActive = payOption.paymentMethodName == selectedOption
           let borderRadiusStyle = getBorderRadiusStyleForDropDownOptionDetails(i)
+          // Disable non-card payment methods when gift cards fully cover payment
+          let isDisabled = isGiftCardOnlyPayment && payOption.paymentMethodName !== "card"
           <Accordion
             key={i->Int.toString}
             paymentOption=payOption
@@ -169,6 +179,7 @@ let make = (
             borderRadiusStyle={borderRadiusStyle}
             borderBottom={(i == dropDownOptionsDetails->Array.length - 1 &&
               !layoutClass.spacedAccordionItems) || layoutClass.spacedAccordionItems}
+            disabled=isDisabled
           />
         })
         ->React.array}

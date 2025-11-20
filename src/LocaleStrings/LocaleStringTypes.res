@@ -221,6 +221,9 @@ type localeStrings = {
   payment_methods_mifinity: string,
   payment_methods_upi_collect: string,
   payment_methods_eft: string,
+  payment_methods_givex: string,
+  haveGiftCardText: string,
+  addText: string,
 }
 
 type constantStrings = {

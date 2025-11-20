@@ -12,6 +12,7 @@ let make = (~paymentMethodName: string) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentManagementListValue)
   let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
@@ -78,7 +79,11 @@ let make = (~paymentMethodName: string) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if areRequiredFieldsValid {
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else if areRequiredFieldsValid {
         let countryCode =
           Country.getCountry(paymentMethodName, countryList)
           ->Array.filter(item => item.countryName == country)
@@ -146,6 +151,7 @@ let make = (~paymentMethodName: string) => {
     currency,
     requiredFieldsBody,
     areRequiredFieldsValid,
+    isGiftCardOnlyPayment,
   ))
   useSubmitPaymentData(submitCallback)
   <div

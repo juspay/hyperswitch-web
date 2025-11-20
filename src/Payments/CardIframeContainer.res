@@ -12,6 +12,7 @@ let make = () => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
   let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(paymentMethodListValueV2)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
   let setVaultPublishableKey = Recoil.useSetRecoilState(vaultPublishableKey)
   let setVaultProfileId = Recoil.useSetRecoilState(vaultProfileId)
 
@@ -88,32 +89,38 @@ let make = () => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      let innerIframe = Window.querySelector(`#orca-inneriframe`)
-      innerIframe->Window.iframePostMessage(
-        [("generateToken", true->JSON.Encode.bool)]->Dict.fromArray,
-      )
-      let handle = (ev: Types.event) => {
-        open Identity
-        let json = ev.data->anyTypeToJson->getStringFromJson("")->safeParse
-        let dict = json->getDictFromJson
-        if dict->Dict.get("paymentToken")->Option.isSome {
-          let token = dict->getString("paymentToken", "")
-          let cardBody = PaymentManagementBody.hyperswitchVaultBody(token)
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else {
+        let innerIframe = Window.querySelector(`#orca-inneriframe`)
+        innerIframe->Window.iframePostMessage(
+          [("generateToken", true->JSON.Encode.bool)]->Dict.fromArray,
+        )
+        let handle = (ev: Types.event) => {
+          open Identity
+          let json = ev.data->anyTypeToJson->getStringFromJson("")->safeParse
+          let dict = json->getDictFromJson
+          if dict->Dict.get("paymentToken")->Option.isSome {
+            let token = dict->getString("paymentToken", "")
+            let cardBody = PaymentManagementBody.hyperswitchVaultBody(token)
 
-          intent(
-            ~bodyArr=cardBody,
-            ~confirmParam=confirm.confirmParams,
-            ~handleUserError=false,
-            ~manualRetry=isManualRetryEnabled,
-          )
-        } else if dict->Dict.get("errorMsg")->Option.isSome {
-          let errorMsg = dict->getString("errorMsg", "")
-          setUserError(errorMsg)
+            intent(
+              ~bodyArr=cardBody,
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+            )
+          } else if dict->Dict.get("errorMsg")->Option.isSome {
+            let errorMsg = dict->getString("errorMsg", "")
+            setUserError(errorMsg)
+          }
         }
+        EventListenerManager.addSmartEventListener("message", handle, "handleCardVaultToken")
       }
-      EventListenerManager.addSmartEventListener("message", handle, "handleCardVaultToken")
     }
-  }, ())
+  }, isGiftCardOnlyPayment)
   useSubmitPaymentData(submitCallback)
 
   <div

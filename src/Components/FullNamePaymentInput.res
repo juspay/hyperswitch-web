@@ -7,6 +7,7 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
+  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
   let changeName = ev => {
@@ -34,7 +35,11 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if fullName.value == "" {
+      // Skip all validations for gift-card-only payments
+      if isGiftCardOnlyPayment {
+        // Gift card only payment - no validation needed
+        ()
+      } else if fullName.value == "" {
         setFullName(prev => {
           ...prev,
           errorString: fieldName->localeString.nameEmptyText,
@@ -57,7 +62,7 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
         }
       }
     }
-  }, [fullName])
+  }, (fullName, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.name == Auto}>
