@@ -1117,7 +1117,7 @@ let getErrorStringAndClasses = (
       let lastNameValid = validityDict->Dict.get(lastNameKey)->Option.flatMap(key => key)
 
       // since error message for both first name and last name is the same, we can just use one of them
-      let mergedError = switch (
+      let fullNameError = switch (
         firstNameValid->Option.getOr(true),
         lastNameValid->Option.getOr(true),
       ) {
@@ -1125,8 +1125,8 @@ let getErrorStringAndClasses = (
       | _ => BillingAddress(FullName(FirstName))->getPaymentMethodDataErrorString("", localeString)
       }
 
-      let hasError = mergedError !== ""
-      (mergedError, hasError ? "text-xs text-red-950" : "")
+      let fullNameErrorClass = fullNameError !== "" ? "text-xs text-red-950" : ""
+      (fullNameError, fullNameErrorClass)
     }
   | _ =>
     // Default behavior for other fields

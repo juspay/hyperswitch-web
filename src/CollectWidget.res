@@ -334,11 +334,10 @@ let make = (
         | (FullName(FirstName), None) => BillingAddress(FullName(FirstName))->renderInputTemplate
         | (FullName(FirstName), Some(_)) =>
           // If first_name exists, last_name is required and has null value, render first_name field to capture last_name
-          if checkIfNameRequired(addressFields) {
-            BillingAddress(FullName(FirstName))->renderInputTemplate
-          } else {
-            React.null
-          }
+          <RenderIf condition={checkIfNameRequired(addressFields)}>
+            {BillingAddress(FullName(FirstName))->renderInputTemplate}
+          </RenderIf>
+
         // first_name and last_name are stored in fullName
         | (FullName(LastName), _) => React.null
         | (CountryCode, None) => BillingAddress(CountryCode)->renderInputTemplate
