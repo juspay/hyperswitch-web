@@ -934,30 +934,27 @@ let processAddressFields = (
         let lastNameFieldKey = lastNameKey->getPaymentMethodDataFieldKey
 
         // First try to get lastName from direct lastName field
-        let lastNameValue = paymentMethodDataDict->Dict.get(lastNameFieldKey)
+        let lastNameValue =
+          paymentMethodDataDict->Dict.get(lastNameFieldKey)->Option.getOr("")->String.trim
 
-        switch lastNameValue {
-        | Some(lastName) if lastName->String.trim->String.length > 0 => {
-            dataArr->Array.push((info, lastName->String.trim))
-            keys->Array.push(lastNameFieldKey)
-          }
-        | _ => {
-            // Fallback: split firstName field if lastName is empty
-            let firstNameKey = BillingAddress(FullName(FirstName))
-            let firstNameFieldKey = firstNameKey->getPaymentMethodDataFieldKey
-            paymentMethodDataDict
-            ->Dict.get(firstNameFieldKey)
-            ->Option.map(value => {
+        if lastNameValue->String.length > 0 {
+          dataArr->Array.push((info, lastNameValue))
+          keys->Array.push(lastNameFieldKey)
+        } else {
+          let firstNameKey = BillingAddress(FullName(FirstName))
+          let firstNameFieldKey = firstNameKey->getPaymentMethodDataFieldKey
+          switch paymentMethodDataDict->Dict.get(firstNameFieldKey) {
+          | Some(value) => {
               let nameSplits = value->String.split(" ")
               let lastName =
                 nameSplits
                 ->Array.slice(~start=1, ~end=nameSplits->Array.length)
                 ->Array.join(" ")
               dataArr->Array.push((info, lastName))
-            })
-            ->ignore
-            keys->Array.push(lastNameFieldKey)
+            }
+          | _ => ()
           }
+          keys->Array.push(lastNameFieldKey)
         }
         (dataArr, keys)
       }
@@ -1116,34 +1113,16 @@ let getErrorStringAndClasses = (
       // Check both FirstName and LastName validity and merge error messages
       let firstNameKey = BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey
       let lastNameKey = BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey
-      let firstNameValue = formData->Dict.get(firstNameKey)->Option.getOr("")
-      let lastNameValue = formData->Dict.get(lastNameKey)->Option.getOr("")
       let firstNameValid = validityDict->Dict.get(firstNameKey)->Option.flatMap(key => key)
       let lastNameValid = validityDict->Dict.get(lastNameKey)->Option.flatMap(key => key)
 
-      let firstNameError = switch firstNameValid {
-      | Some(false) =>
-        BillingAddress(FullName(FirstName))->getPaymentMethodDataErrorString(
-          firstNameValue,
-          localeString,
-        )
-      | _ => ""
-      }
-
-      let lastNameError = switch lastNameValid {
-      | Some(false) =>
-        BillingAddress(FullName(LastName))->getPaymentMethodDataErrorString(
-          lastNameValue,
-          localeString,
-        )
-      | _ => ""
-      }
-
-      let mergedError = switch (firstNameError, lastNameError) {
-      | ("", "") => ""
-      | (firstError, "") => firstError
-      | ("", lastError) => lastError
-      | (firstError, _) => firstError
+      // since error message for both first name and last name is the same, we can just use one of them
+      let mergedError = switch (
+        firstNameValid->Option.getOr(true),
+        lastNameValid->Option.getOr(true),
+      ) {
+      | (true, true) => ""
+      | _ => BillingAddress(FullName(FirstName))->getPaymentMethodDataErrorString("", localeString)
       }
 
       let hasError = mergedError !== ""
