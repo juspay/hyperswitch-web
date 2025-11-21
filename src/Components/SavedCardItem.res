@@ -109,7 +109,7 @@ let make = (
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod=paymentItem.paymentMethod,
         ~paymentMethodType,
-        ~cardBrand=cardBrand->CardUtils.getCardType,
+        ~cardBrand=paymentItem.card.scheme->Option.getOr("")->CardUtils.getCardType,
         ~country,
         ~state,
         ~pinCode,
@@ -120,12 +120,7 @@ let make = (
       )
     }
     None
-  }, (isActive, cardBrand, paymentItem.paymentMethod, paymentMethodType))
-
-  React.useEffect(() => {
-    CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
-    None
-  }, [isCVCValid])
+  }, (isActive, paymentItem, country, state, pinCode))
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
