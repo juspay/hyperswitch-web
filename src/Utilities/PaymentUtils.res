@@ -606,19 +606,18 @@ let emitPaymentMethodInfo = (
 
   let baseSavedPaymentField = [("isSavedPaymentMethod", isSavedPaymentMethod->JSON.Encode.bool)]
 
-  let msg = if cardBrand === CardUtils.NOTFOUND {
-    [
+  let basePaymentInfoFields = switch paymentMethod {
+  | "card" => [("paymentMethod", paymentMethod->JSON.Encode.string)]
+  | _ => [
       ("paymentMethod", paymentMethod->JSON.Encode.string),
       ("paymentMethodType", paymentMethodType->JSON.Encode.string),
-      ...baseAddressFields,
     ]
+  }
+
+  let msg = if cardBrand === CardUtils.NOTFOUND || paymentMethod !== "card" {
+    [...basePaymentInfoFields, ...baseAddressFields]
   } else {
-    [
-      ("paymentMethod", paymentMethod->JSON.Encode.string),
-      ("paymentMethodType", paymentMethodType->JSON.Encode.string),
-      ...baseAddressFields,
-      ...baseCardsFields,
-    ]
+    [...basePaymentInfoFields, ...baseAddressFields, ...baseCardsFields]
   }
 
   let finalMsg =
@@ -667,7 +666,7 @@ let useEmitPaymentMethodInfo = (
     if shouldEmitCardInfo {
       emitPaymentMethodInfo(
         ~paymentMethod=paymentMethodName,
-        ~paymentMethodType=paymentMethodName,
+        ~paymentMethodType,
         ~cardBrand=cardBrand->CardUtils.getCardType,
         ~cardLast4,
         ~cardBin,
