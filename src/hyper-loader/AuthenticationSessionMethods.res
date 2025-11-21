@@ -391,7 +391,7 @@ let initClickToPaySession = async (
                 ~bodyArr=visaClickToPayBodyArr,
               )
 
-              authenticationSyncResponse->transformKeys(CamelCase)
+              authenticationSyncResponse->transformKeysWithoutModifyingValue(CamelCase)
             }
           | _ => {
               logger.setLogError(
