@@ -72,10 +72,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
-    | (false, _) => {
-        setShowPaymentMethodsScreen(_ => isShowPaymentMethodsDependingOnClickToPay->not)
-        setLoadSavedCards(_ => LoadedSavedCards([], true))
-      }
+    | (false, _) =>
+      // setShowPaymentMethodsScreen(_ => isShowPaymentMethodsDependingOnClickToPay->not)
+      setLoadSavedCards(_ => LoadedSavedCards([], true))
     | (_, LoadingSavedCards) => ()
     | (_, LoadedSavedCards(savedPaymentMethods, isGuestCustomer)) => {
         let displayDefaultSavedPaymentIcon = optionAtomValue.displayDefaultSavedPaymentIcon
@@ -123,15 +122,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             ? NoResult(isGuestCustomer)
             : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
         )
-        setShowPaymentMethodsScreen(_ =>
-          finalSavedPaymentMethods->Array.length == 0 &&
-            isShowPaymentMethodsDependingOnClickToPay->not
-        )
+        // setShowPaymentMethodsScreen(_ =>
+        //   finalSavedPaymentMethods->Array.length == 0 &&
+        //     isShowPaymentMethodsDependingOnClickToPay->not
+        // )
       }
-    | (_, NoResult(isGuestCustomer)) => {
-        setLoadSavedCards(_ => NoResult(isGuestCustomer))
-        setShowPaymentMethodsScreen(_ => true && isShowPaymentMethodsDependingOnClickToPay->not)
-      }
+    | (_, NoResult(isGuestCustomer)) => setLoadSavedCards(_ => NoResult(isGuestCustomer))
+    // setShowPaymentMethodsScreen(_ => true && isShowPaymentMethodsDependingOnClickToPay->not)
     }
 
     None
@@ -434,6 +431,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let selectedSavedMethods = groupedMethods->Dict.get(selectedOption)->Option.getOr([])
 
+  let x = false
+
   let wrappedCheckoutEle = {
     <SavedItemsRenderer
       savedMethods=selectedSavedMethods
@@ -441,7 +440,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       paymentTokenVal=paymentToken.paymentToken
       cvcProps
       setRequiredFieldsBody={_ => ()}
-      showAddMethodsScreen=false
       paymentToken
       isClickToPayRememberMe
       sessions
@@ -479,6 +477,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
     None
   }, (paymentMethodList, customerPaymentMethods))
+
+  React.useEffect(() => {
+    setShowPaymentMethodsScreen(_ => true)
+    None
+  }, [])
 
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
@@ -554,8 +557,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     <RenderIf
-      condition={((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
-        isShowPaymentMethodsDependingOnClickToPay) && showPaymentMethodsScreen}>
+      condition={x &&
+      (((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
+        isShowPaymentMethodsDependingOnClickToPay) &&
+      showPaymentMethodsScreen)}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={

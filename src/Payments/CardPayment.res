@@ -478,7 +478,6 @@ let make = (
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
-          <h1> {"Abhishek chorotiya"->React.string} </h1>
           <RenderIf condition={!isBancontact}>
             <PaymentInputField
               fieldName=localeString.cardNumberLabel
@@ -573,13 +572,11 @@ let make = (
             isBancontact
             isSaveDetailsWithClickToPay
           />
-          <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
-            <div className="flex items-center justify-start">
-              <SaveDetailsCheckbox
-                isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked
-              />
-            </div>
-          </RenderIf>
+          // <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
+          <div className="flex items-center justify-start">
+            <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
+          </div>
+          // </RenderIf>
           <RenderIf
             condition={(!options.hideCardNicknameField && isCustomerAcceptanceRequired) ||
               paymentType == PaymentMethodsManagement}>
