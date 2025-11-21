@@ -175,8 +175,7 @@ const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
 
 // Repository info
 const repoName = require("./package.json").name;
-const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersionValue}`;
+const repoPublicPath = "";
 
 // Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
@@ -364,12 +363,10 @@ module.exports = (publicPath = "auto") => {
     mode: isLocal ? "development" : "production",
     devtool: isLocal ? "cheap-module-source-map" : "source-map",
     output: {
-      path: isLocal
-        ? path.resolve(__dirname, "dist")
-        : path.resolve(__dirname, "dist", sdkEnv, sdkVersionValue),
+      path: path.resolve(__dirname, "dist"),
       crossOriginLoading: "anonymous",
       clean: true,
-      publicPath: `${repoPublicPath}/`,
+      publicPath: "/",
       hashFunction: "sha384",
     },
     optimization: isLocal
