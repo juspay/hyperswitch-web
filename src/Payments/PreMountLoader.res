@@ -69,13 +69,96 @@ let getMessageHandlerV1Elements = (
     ~endpoint,
   )
 
-  let sessionTokensPromise = PaymentHelpers.fetchSessions(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-    ~merchantHostname,
+  let sessionTokensPromise = Promise.make((res, _) =>
+    res(
+      {
+        "payment_id": "pay_muGLM56ntrMM7qcNFyII",
+        "client_secret": "pay_muGLM56ntrMM7qcNFyII_secret_rjp2f13MqQ0DmgFgaeh5",
+        "session_token": [
+          {
+            "wallet_name": "paypal",
+            "connector": "paypal",
+            "session_token": "ASKAGh2WXgqfQ5TzjpZzLsfhVGlFbjq5VrV5IOX8KXDD2N_XqkGeYNDkWyr_UXnfhXpEkABdmP284b_2",
+            "sdk_next_action": {
+              "next_action": "post_session_tokens",
+            },
+            "client_token": null,
+            "transaction_info": null,
+          }->Identity.anyTypeToJson,
+          {
+            "wallet_name": "google_pay",
+            "merchant_info": {
+              "merchant_id": "mpptiscity1",
+              "merchant_name": "mpptiscity1",
+            },
+            "shipping_address_required": false,
+            "email_required": false,
+            "shipping_address_parameters": {
+              "phone_number_required": false,
+            },
+            "allowed_payment_methods": [
+              {
+                "type": "CARD",
+                "parameters": {
+                  "allowed_auth_methods": ["PAN_ONLY", "CRYPTOGRAM_3DS"],
+                  "allowed_card_networks": [
+                    "AMEX",
+                    "DISCOVER",
+                    "INTERAC",
+                    "JCB",
+                    "MASTERCARD",
+                    "VISA",
+                  ],
+                  "billing_address_required": false,
+                },
+                "tokenization_specification": {
+                  "type": "PAYMENT_GATEWAY",
+                  "parameters": {
+                    "gateway": "cybersource",
+                    "gateway_merchant_id": "mpptiscity1",
+                  },
+                },
+              },
+            ],
+            "transaction_info": {
+              "country_code": "US",
+              "currency_code": "USD",
+              "total_price_status": "Final",
+              "total_price": "29.99",
+            },
+            "delayed_session_token": false,
+            "connector": "cybersource",
+            "sdk_next_action": {
+              "next_action": "confirm",
+            },
+            "secrets": null,
+          }->Identity.anyTypeToJson,
+          {
+            "wallet_name": "apple_pay",
+            "payment_request_data": {
+              "country_code": "US",
+              "currency_code": "USD",
+              "total": {
+                "label": "apple",
+                "type": "final",
+                "amount": "29.99",
+              },
+              "merchant_capabilities": ["supports3DS"],
+              "supported_networks": ["visa", "masterCard", "amex", "discover"],
+              "merchant_identifier": "merchant.com.noon.juspay",
+            },
+            "connector": "cybersource",
+            "delayed_session_token": false,
+            "sdk_next_action": {
+              "next_action": "confirm",
+            },
+            "connector_reference_id": null,
+            "connector_sdk_public_key": null,
+            "connector_merchant_id": null,
+          }->Identity.anyTypeToJson,
+        ],
+      }->Identity.anyTypeToJson,
+    )
   )
 
   let blockedBinsPromise = PaymentHelpers.fetchBlockedBins(
