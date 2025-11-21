@@ -42,7 +42,29 @@ let make = (
       getDefaultsAndValidity(payoutDynamicFields, supportedCardBrands)
     })
     ->Option.map(((values, validity)) => {
-      setFormData(_ => values)
+      let last_name =
+        values
+        ->Dict.get(BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey)
+        ->Option.getOr("")
+      let first_name =
+        values
+        ->Dict.get(BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey)
+        ->Option.getOr("")
+      let updatedValues = values->Dict.copy
+
+      // If first_name is null and required but last_name is not, use first_name as last_name
+      // to populate full name properly
+      if first_name->String.length == 0 {
+        updatedValues->Dict.set(
+          BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey,
+          last_name,
+        )
+        updatedValues->Dict.set(
+          BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
+          "",
+        )
+      }
+      setFormData(_ => updatedValues)
       setValidityDict(_ => validity)
     })
     ->ignore
@@ -161,6 +183,18 @@ let make = (
           }
           setFormData(PayoutMethodData(CardBrand)->getPaymentMethodDataFieldKey, newCardBrand)
         }
+      | BillingAddress(FullName(FirstName)) => {
+          let firstNameKey = BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey
+          let lastNameKey = BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey
+          let nameSplits = value->String.trim->String.split(" ")
+          let firstName = nameSplits->Array.get(0)->Option.getOr("")
+          let lastName =
+            nameSplits
+            ->Array.slice(~start=1, ~end=nameSplits->Array.length)
+            ->Array.join(" ")
+          setFormData(firstNameKey, firstName)
+          setFormData(lastNameKey, lastName)
+        }
       | _ => ()
       }
       setFormData(key->getPaymentMethodDataFieldKey, updatedValue)
@@ -211,6 +245,7 @@ let make = (
     | _ => React.null
     }
   }
+
   let renderInputTemplate = (field: dynamicFieldType) => {
     let labelClasses = "text-sm mt-2.5 text-jp-gray-800"
     let inputClasses = "min-w-full border mt-1.5 px-2.5 py-2 rounded-md border-jp-gray-200"
@@ -241,14 +276,12 @@ let make = (
       ->Js.Re.source
     let key = field->getPaymentMethodDataFieldKey
     let value = formData->Dict.get(key)->Option.getOr("")
-    let isValid = validityDict->Dict.get(key)->Option.flatMap(key => key)
-    let (errorString, errorStringClasses) = switch isValid {
-    | Some(false) => (
-        field->getPaymentMethodDataErrorString(value, localeString),
-        "text-xs text-red-950",
-      )
-    | _ => ("", "")
-    }
+    let (errorString, errorStringClasses) = getErrorStringAndClasses(
+      field,
+      formData,
+      validityDict,
+      localeString,
+    )
     <InputField
       id=key
       className=inputClasses
@@ -283,6 +316,15 @@ let make = (
       pattern
     />
   }
+  let checkIfNameRequired = (addressFields: array<dynamicFieldForAddress>) => {
+    addressFields->Array.reduce(false, (acc, field) => {
+      let condition = switch (field.fieldType, field.value) {
+      | (FullName(LastName), None) => true
+      | _ => false
+      }
+      acc || condition
+    })
+  }
   let renderAddressForm = (addressFields: array<dynamicFieldForAddress>) =>
     addressFields
     ->Array.mapWithIndex((field, index) =>
@@ -290,6 +332,11 @@ let make = (
         {switch (field.fieldType, field.value) {
         | (Email, None) => BillingAddress(Email)->renderInputTemplate
         | (FullName(FirstName), None) => BillingAddress(FullName(FirstName))->renderInputTemplate
+        | (FullName(FirstName), Some(_)) =>
+          // If first_name exists, last_name is required and has null value, render first_name field to capture last_name
+          <RenderIf condition={checkIfNameRequired(addressFields)}>
+            {BillingAddress(FullName(FirstName))->renderInputTemplate}
+          </RenderIf>
         // first_name and last_name are stored in fullName
         | (FullName(LastName), _) => React.null
         | (CountryCode, None) => BillingAddress(CountryCode)->renderInputTemplate
