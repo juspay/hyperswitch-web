@@ -70,7 +70,6 @@ let make = (
   let (showMore, setShowMore) = React.useState(_ => false)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {cardBrand} = cardProps
 
   PaymentUtils.useEmitPaymentMethodInfo(
     ~paymentMethodName=selectedOption,
