@@ -29,7 +29,7 @@ let make = () => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let (socialSecurityNumber, setSocialSecurityNumber) = React.useState(_ => "")
 

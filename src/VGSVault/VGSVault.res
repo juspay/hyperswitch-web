@@ -11,7 +11,7 @@ let make = (~isBancontact=false) => {
   let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {innerLayout} = config.appearance

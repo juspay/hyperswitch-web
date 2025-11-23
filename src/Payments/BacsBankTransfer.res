@@ -8,7 +8,7 @@ let default = () => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)

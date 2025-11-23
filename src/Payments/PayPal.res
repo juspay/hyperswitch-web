@@ -37,7 +37,7 @@ let make = (~walletOptions) => {
     options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   UtilityHooks.useHandlePostMessages(
@@ -144,8 +144,8 @@ let make = (~walletOptions) => {
         borderRadius: `${options.wallets.style.buttonRadius->Int.toString}px`,
         width: "100%",
         backgroundColor: buttonColor,
-        pointerEvents: updateSession ? "none" : "auto",
-        opacity: updateSession ? "0.5" : "1.0",
+        pointerEvents: updateSession || isGiftCardOnlyPayment ? "none" : "auto",
+        opacity: updateSession || isGiftCardOnlyPayment ? "0.5" : "1.0",
       }
       onClick={_ => options.readOnly ? () : onPaypalClick()}>
       <div

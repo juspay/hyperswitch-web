@@ -5,7 +5,7 @@ open Utils
 let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (vpaId, setVpaId) = Recoil.useRecoilState(userVpaId)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let vpaIdRef = React.useRef(Nullable.null)
 

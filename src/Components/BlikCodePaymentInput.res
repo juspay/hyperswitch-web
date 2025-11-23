@@ -4,7 +4,7 @@ open Utils
 @react.component
 let make = () => {
   let (blikCode, setblikCode) = Recoil.useRecoilState(userBlikCode)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let blikCodeRef = React.useRef(Nullable.null)
   let formatBSB = bsb => {

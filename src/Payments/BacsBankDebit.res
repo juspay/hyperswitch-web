@@ -40,7 +40,7 @@ let make = () => {
   let (sortcode, setSortcode) = React.useState(_ => "")
   let (accountNumber, setAccountNumber) = React.useState(_ => "")
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 

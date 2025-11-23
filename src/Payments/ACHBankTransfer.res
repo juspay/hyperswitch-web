@@ -8,7 +8,7 @@ let make = () => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
 

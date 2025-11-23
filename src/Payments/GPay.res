@@ -36,7 +36,7 @@ let make = (
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("google_pay")
 
@@ -250,8 +250,8 @@ let make = (
       <div
         style={
           height: `${height->Int.toString}px`,
-          pointerEvents: updateSession ? "none" : "auto",
-          opacity: updateSession ? "0.5" : "1.0",
+          pointerEvents: updateSession || isGiftCardOnlyPayment ? "none" : "auto",
+          opacity: updateSession || isGiftCardOnlyPayment ? "0.5" : "1.0",
         }
         id="google-pay-button"
         className={`w-full flex flex-row justify-center rounded-md`}

@@ -11,7 +11,7 @@ let make = () => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 

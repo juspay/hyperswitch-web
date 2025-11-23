@@ -26,7 +26,7 @@ let make = () => {
   let (error, setError) = React.useState(_ => false)
   let (isNotEligible, setIsNotEligible) = React.useState(_ => false)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
 
   let submitCallback = React.useCallback((ev: Window.event) => {

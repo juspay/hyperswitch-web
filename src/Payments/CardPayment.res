@@ -43,7 +43,7 @@ let make = (
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
   let appliedGiftCards = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.appliedGiftCardsAtom)
   let remainingAmount = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.remainingAmountAtom)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let {
     isCardValid,
     setIsCardValid,

@@ -55,8 +55,6 @@ let make = (
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let appliedGiftCards = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.appliedGiftCardsAtom)
-  let remainingAmount = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.remainingAmountAtom)
   let payOptionsRef = React.useRef(Nullable.null)
   let selectRef = React.useRef(Nullable.null)
   let (winW, winH) = Utils.useWindowSize()
@@ -66,7 +64,7 @@ let make = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   // Compute if non-card payment methods should be disabled
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   React.useEffect(() => {
     let width = switch payOptionsRef.current->Nullable.toOption {
     | Some(ref) => ref->Window.Element.clientWidth

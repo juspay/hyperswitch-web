@@ -18,7 +18,7 @@ let make = (~paymentMethodType) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let setOptionValue = Recoil.useSetRecoilState(RecoilAtoms.optionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
   let (showLoader, setShowLoader) = React.useState(() => false)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)

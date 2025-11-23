@@ -16,6 +16,8 @@ let make = (~token: SessionsType.token) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
   let (showLoader, setShowLoader) = React.useState(() => false)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
+
   let onClick = _ => {
     loggerState.setLogInfo(
       ~value="Paze SDK Button Clicked",
@@ -87,8 +89,8 @@ let make = (~token: SessionsType.token) => {
       cursor: {showLoader ? "not-allowed" : "pointer"},
       width: themeObj.buttonWidth,
       border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
-      pointerEvents: updateSession ? "none" : "auto",
-      opacity: showLoader || updateSession ? "0.5" : "1.0",
+      pointerEvents: updateSession || isGiftCardOnlyPayment ? "none" : "auto",
+      opacity: showLoader || updateSession || isGiftCardOnlyPayment ? "0.5" : "1.0",
     }>
     {showLoader ? <Spinner /> : <Icon name="paze" size=55 />}
   </button>

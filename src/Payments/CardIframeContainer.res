@@ -12,7 +12,7 @@ let make = () => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
   let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(paymentMethodListValueV2)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let setVaultPublishableKey = Recoil.useSetRecoilState(vaultPublishableKey)
   let setVaultProfileId = Recoil.useSetRecoilState(vaultProfileId)
 

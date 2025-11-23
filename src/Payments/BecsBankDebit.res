@@ -20,7 +20,7 @@ let make = () => {
   let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
   let state = Recoil.useRecoilValueFromAtom(userAddressState)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)

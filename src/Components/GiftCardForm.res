@@ -61,10 +61,10 @@ let make = (
       switch giftCardMethod {
       | Some(method) => {
           let hasCardNumber =
-            method.requiredFields->Array.some(field => field.required_field === "user_card_number")
+            method.requiredFields->Array.some(field => field.display_name === "gift_card_number")
 
           let hasCVC =
-            method.requiredFields->Array.some(field => field.required_field === "user_card_cvc")
+            method.requiredFields->Array.some(field => field.display_name === "gift_card_cvc")
 
           {hasCardNumber, hasCVC}
         }
@@ -72,6 +72,8 @@ let make = (
       }
     }
   }, [selectedGiftCard])
+
+  Js.log2("giftCardRequirements:", giftCardRequirements)
 
   // Validation functions
   let validateGiftCardNumber = () => {
@@ -326,12 +328,12 @@ let make = (
   }
 
   // Handle blur events
-  let handleCardNumberBlur = ev => {
+  let handleCardNumberBlur = _ => {
     setGiftCardNumberFocus(_ => false)
     validateGiftCardNumber()->ignore
   }
 
-  let handlePinBlur = ev => {
+  let handlePinBlur = _ => {
     setGiftCardPinFocus(_ => false)
     validateGiftCardPin()->ignore
   }

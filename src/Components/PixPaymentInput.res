@@ -8,7 +8,7 @@ let make = (~label="") => {
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let pixKeyRef = React.useRef(Nullable.null)
   let pixCPFRef = React.useRef(Nullable.null)

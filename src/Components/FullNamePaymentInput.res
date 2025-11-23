@@ -7,7 +7,7 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
   let changeName = ev => {

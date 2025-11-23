@@ -150,11 +150,37 @@ let make = () => {
     (count, total, curr)
   }, [appliedGiftCards])
 
+  React.useEffect(() => {
+    switch remainingAmount {
+    | Some(amount) =>
+      Utils.messageParentWindow([
+        (
+          "remainingAmount",
+          [
+            ("currency", currency->JSON.Encode.string),
+            ("amount", amount->Float.toString->JSON.Encode.string),
+          ]->Utils.getJsonFromArrayOfJson,
+        ),
+      ])
+    | None =>
+      Utils.messageParentWindow([
+        (
+          "remainingAmount",
+          [
+            ("currency", "NA"->JSON.Encode.string),
+            ("amount", "NA"->JSON.Encode.string),
+          ]->Utils.getJsonFromArrayOfJson,
+        ),
+      ])
+    }
+    None
+  }, [appliedGiftCards])
+
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
 
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -163,35 +189,27 @@ let make = () => {
     if confirm.doSubmit {
       if isGiftCardOnlyPayment {
         // Payment fully covered by gift cards - skip card validation and use gift card payment body
-        let splitPaymentBodyArr = PaymentBodyV2.createSplitPaymentBodyForGiftCards(appliedGiftCards)
-        let splitPaymentBodyJson = splitPaymentBodyArr->getJsonFromArrayOfJson
-        let splitPaymentBodyDict = splitPaymentBodyJson->getDictFromJson
-        let splitPaymentMethodData = splitPaymentBodyDict->Dict.get("split_payment_method_data")
+        let splitPaymentBodyArr = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
+          appliedGiftCards->Array.sliceToEnd(~start=1),
+        )
+        let primaryBody = PaymentBodyV2.createGiftCardBody(
+          ~giftCardType=appliedGiftCards
+          ->Array.get(0)
+          ->Option.map(card => card.giftCardType)
+          ->Option.getOr(""),
+          ~giftCardNumber=appliedGiftCards
+          ->Array.get(0)
+          ->Option.map(card => card.giftCardNumber)
+          ->Option.getOr(""),
+          ~cvc=appliedGiftCards->Array.get(0)->Option.map(card => card.cvc)->Option.getOr(""),
+        )
 
-        switch splitPaymentMethodData {
-        | Some(methodDataJson) =>
-          switch methodDataJson->JSON.Decode.array {
-          | Some(methodDataArray) =>
-            switch methodDataArray->Array.get(0) {
-            | Some(firstElement) =>
-              switch firstElement->JSON.Decode.object {
-              | Some(firstElementDict) =>
-                let bodyArr =
-                  firstElementDict->Dict.toArray->Array.map(((key, value)) => (key, value))
-                intent(
-                  ~bodyArr,
-                  ~confirmParam=confirm.confirmParams,
-                  ~handleUserError=false,
-                  ~manualRetry=isManualRetryEnabled,
-                )
-              | None => () // Skip if decode fails
-              }
-            | None => () // Skip if no first element
-            }
-          | None => () // Skip if array decode fails
-          }
-        | None => () // Skip if no split payment method data
-        }
+        intent(
+          ~bodyArr=primaryBody->Array.concat(splitPaymentBodyArr),
+          ~confirmParam=confirm.confirmParams,
+          ~handleUserError=false,
+          ~manualRetry=isManualRetryEnabled,
+        )
       }
     }
   }, (appliedGiftCards, remainingAmount, isManualRetryEnabled))

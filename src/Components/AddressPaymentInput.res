@@ -35,7 +35,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
   let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)

@@ -21,6 +21,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let setAreOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
 
@@ -133,8 +134,8 @@ let make = (~sessionObj: SessionsType.token) => {
   <div
     style={
       height: `${height->Int.toString}px`,
-      pointerEvents: updateSession ? "none" : "auto",
-      opacity: updateSession ? "0.5" : "1.0",
+      pointerEvents: updateSession || isGiftCardOnlyPayment ? "none" : "auto",
+      opacity: updateSession || isGiftCardOnlyPayment ? "0.5" : "1.0",
     }
     id="klarna-payments"
     className="w-full"

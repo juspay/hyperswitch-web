@@ -8,7 +8,7 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 

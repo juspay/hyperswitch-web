@@ -80,7 +80,7 @@ let make = (
   )
 
   // Compute if non-card payment methods should be disabled
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let cardOptionDetails =
     paymentOptions

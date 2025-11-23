@@ -7,7 +7,7 @@ let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let showDetails = PaymentType.getShowDetails(~billingDetails=fields.billingDetails)
 

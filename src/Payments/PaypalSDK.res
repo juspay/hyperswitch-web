@@ -31,6 +31,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let clientScript =
     Window.document(Window.window)->Window.getElementById("braintree-client")->Nullable.toOption
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (_, _, buttonType, _) = options.wallets.style.type_
@@ -150,7 +151,10 @@ let make = (~sessionObj: SessionsType.token) => {
 
   <div
     id="paypal-button"
-    style={pointerEvents: updateSession ? "none" : "auto", opacity: updateSession ? "0.5" : "1.0"}
+    style={
+      pointerEvents: updateSession || isGiftCardOnlyPayment ? "none" : "auto",
+      opacity: updateSession || isGiftCardOnlyPayment ? "0.5" : "1.0",
+    }
     className="w-full flex flex-row justify-center rounded-md h-auto"
   />
 }

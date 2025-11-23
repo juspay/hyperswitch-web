@@ -306,7 +306,7 @@ let make = (
     ~setRequiredFieldsBody,
   )
 
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let baseSubmitCallback = useSubmitCallback()
 
   let submitCallback = React.useCallback((ev: Window.event) => {

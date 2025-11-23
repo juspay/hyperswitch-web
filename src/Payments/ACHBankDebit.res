@@ -14,7 +14,7 @@ let make = () => {
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let (bankError, setBankError) = React.useState(_ => "")
 

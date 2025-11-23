@@ -12,7 +12,7 @@ let make = (~paymentMethodName: string) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentManagementListValue)
   let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(

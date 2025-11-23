@@ -163,7 +163,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let cardShimmerCount = React.useMemo(() => {
     cardsToRender(cardsContainerWidth)
   }, [cardsContainerWidth])
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse

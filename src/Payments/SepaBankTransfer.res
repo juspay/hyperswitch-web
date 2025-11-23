@@ -10,7 +10,7 @@ let make = () => {
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 

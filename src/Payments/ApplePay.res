@@ -25,7 +25,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
-  let isGiftCardOnlyPayment = UseIsGiftCardOnlyPayment.useIsGiftCardOnlyPayment()
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("apple_pay")
 
@@ -337,8 +337,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           <button
             disabled=applePayClicked
             style={
-              opacity: updateSession ? "0.5" : "1.0",
-              pointerEvents: updateSession ? "none" : "auto",
+              opacity: updateSession || isGiftCardOnlyPayment ? "0.5" : "1.0",
+              pointerEvents: updateSession || isGiftCardOnlyPayment ? "none" : "auto",
             }
             className="apple-pay-button-with-text apple-pay-button-black-with-text"
             onClick={_ => onApplePayButtonClicked()}>
