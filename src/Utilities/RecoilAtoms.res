@@ -53,6 +53,7 @@ let userPhoneNumber = Recoil.atom(
 )
 let userCardNickName = Recoil.atom("userCardNickName", defaultFieldValues)
 let isGooglePayReady = Recoil.atom("isGooglePayReady", false)
+let isTrustpayGooglePayReady = Recoil.atom("isTrustpayGooglePayReady", false)
 let isApplePayReady = Recoil.atom("isApplePayReady", false)
 let isSamsungPayReady = Recoil.atom("isSamsungPayReady", false)
 let userCountry = Recoil.atom("userCountry", "")
