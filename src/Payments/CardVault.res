@@ -159,6 +159,7 @@ let make = () => {
         ~pmClientSecret=keys.pmClientSecret->Option.getOr(""),
         ~publishableKey=vaultPublishableKey,
         ~profileId=vaultProfileId,
+        ~logger,
         ~customPodUri,
       )
 
