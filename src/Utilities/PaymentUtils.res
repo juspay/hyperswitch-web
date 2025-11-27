@@ -577,43 +577,123 @@ let checkIsCardSupported = (cardNumber, cardBrand, supportedCardBrands) => {
 let emitMessage = paymentMethodInfo =>
   Utils.messageParentWindow([("paymentMethodInfo", paymentMethodInfo->JSON.Encode.object)])
 
-let emitPaymentMethodInfo = (~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTFOUND) => {
-  if cardBrand === CardUtils.NOTFOUND {
-    emitMessage(
-      [
-        ("paymentMethod", paymentMethod->JSON.Encode.string),
-        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
-      ]->Dict.fromArray,
-    )
+let emitPaymentMethodInfo = (
+  ~paymentMethod,
+  ~paymentMethodType,
+  ~cardBrand=CardUtils.NOTFOUND,
+  ~cardLast4="",
+  ~cardBin="",
+  ~cardExpiryMonth="",
+  ~cardExpiryYear="",
+  ~country="",
+  ~state="",
+  ~pinCode="",
+  ~isSavedPaymentMethod=false,
+) => {
+  let baseCardsFields = [
+    ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
+    ("cardLast4", cardLast4->JSON.Encode.string),
+    ("cardBin", cardBin->JSON.Encode.string),
+    ("cardExpiryMonth", cardExpiryMonth->JSON.Encode.string),
+    ("cardExpiryYear", cardExpiryYear->JSON.Encode.string),
+  ]
+
+  let baseAddressFields = [
+    ("country", country->JSON.Encode.string),
+    ("state", state->JSON.Encode.string),
+    ("pincode", pinCode->JSON.Encode.string),
+  ]
+
+  let baseSavedPaymentField = [("isSavedPaymentMethod", isSavedPaymentMethod->JSON.Encode.bool)]
+
+  let basePaymentInfoFields = switch paymentMethod {
+  | "card" => [("paymentMethod", paymentMethod->JSON.Encode.string)]
+  | _ => [
+      ("paymentMethod", paymentMethod->JSON.Encode.string),
+      ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+    ]
+  }
+
+  let msg = if cardBrand === CardUtils.NOTFOUND || paymentMethod !== "card" {
+    [...basePaymentInfoFields, ...baseAddressFields]
   } else {
-    emitMessage(
-      [
-        ("paymentMethod", paymentMethod->JSON.Encode.string),
-        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
-        ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
-      ]->Dict.fromArray,
-    )
+    [...basePaymentInfoFields, ...baseAddressFields, ...baseCardsFields]
+  }
+
+  let finalMsg =
+    msg->Array.filter(((_, value)) => value->JSON.Decode.string->Option.getOr("") != "")
+
+  emitMessage(finalMsg->Array.concat(baseSavedPaymentField)->Dict.fromArray)
+}
+
+type nonPiiAdderessData = {
+  country: string,
+  state: string,
+  pinCode: string,
+}
+
+let useNonPiiAddressData = () => {
+  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState).value
+  let pinCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode).value
+
+  {
+    country,
+    state,
+    pinCode,
   }
 }
 
 let useEmitPaymentMethodInfo = (
   ~paymentMethodName,
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
-  ~cardBrand,
+  ~cardProps: CardUtils.cardProps,
+  ~expiryProps: CardUtils.expiryProps,
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let {country, state, pinCode} = useNonPiiAddressData()
+
+  let {cardNumber, cardBrand} = cardProps
+  let cardBin = cardNumber->CardUtils.getCardBin
+  let cardLast4 = cardNumber->CardUtils.getCardLast4
+  let {cardExpiry} = expiryProps
+  let isCardValid = cardProps.isCardValid->Option.getOr(false)
+  let isExpiryValid = expiryProps.isExpiryValid->Option.getOr(false)
+  let (cardExpiryMonth, cardExpiryYear) = cardExpiry->CardUtils.getExpiryDates
+  let shouldEmitCardInfo = isCardValid && isExpiryValid && paymentMethodName == "card"
+
+  let emitPaymentMethodInfoWrapper = (~paymentMethod, ~paymentMethodType) => {
+    if shouldEmitCardInfo {
+      emitPaymentMethodInfo(
+        ~paymentMethod=paymentMethodName,
+        ~paymentMethodType,
+        ~cardBrand=cardBrand->CardUtils.getCardType,
+        ~cardLast4,
+        ~cardBin,
+        ~cardExpiryMonth,
+        ~cardExpiryYear,
+        ~country,
+        ~state,
+        ~pinCode,
+      )
+    } else {
+      emitPaymentMethodInfo(~paymentMethod, ~paymentMethodType, ~country, ~state, ~pinCode)
+    }
+  }
 
   React.useEffect(() => {
     if paymentMethodName->String.includes("_debit") {
-      emitPaymentMethodInfo(~paymentMethod="bank_debit", ~paymentMethodType=paymentMethodName)
-    } else if paymentMethodName->String.includes("_transfer") {
-      emitPaymentMethodInfo(~paymentMethod="bank_transfer", ~paymentMethodType=paymentMethodName)
-    } else if paymentMethodName === "card" {
-      emitPaymentMethodInfo(
-        ~paymentMethod="card",
-        ~paymentMethodType="debit",
-        ~cardBrand=cardBrand->CardUtils.getCardType,
+      emitPaymentMethodInfoWrapper(
+        ~paymentMethod="bank_debit",
+        ~paymentMethodType=paymentMethodName,
       )
+    } else if paymentMethodName->String.includes("_transfer") {
+      emitPaymentMethodInfoWrapper(
+        ~paymentMethod="bank_transfer",
+        ~paymentMethodType=paymentMethodName,
+      )
+    } else if paymentMethodName === "card" {
+      emitPaymentMethodInfoWrapper(~paymentMethod="card", ~paymentMethodType="debit")
     } else {
       let finalOptionalPaymentMethodTypeValue =
         paymentMethods
@@ -628,7 +708,7 @@ let useEmitPaymentMethodInfo = (
 
       switch finalOptionalPaymentMethodTypeValue {
       | Some(finalPaymentMethodType) =>
-        emitPaymentMethodInfo(
+        emitPaymentMethodInfoWrapper(
           ~paymentMethod=finalPaymentMethodType.payment_method,
           ~paymentMethodType=paymentMethodName,
         )
@@ -641,7 +721,16 @@ let useEmitPaymentMethodInfo = (
     }
 
     None
-  }, (paymentMethodName, cardBrand, paymentMethods))
+  }, (
+    paymentMethodName,
+    cardBrand,
+    paymentMethods,
+    isCardValid,
+    isExpiryValid,
+    country,
+    state,
+    pinCode,
+  ))
 }
 
 let checkRenderOrComp = (~walletOptions, isShowOrPayUsing) => {

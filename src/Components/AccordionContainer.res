@@ -61,6 +61,7 @@ let make = (
   ~paymentOptions: array<string>,
   ~checkoutEle: React.element,
   ~cardProps: CardUtils.cardProps,
+  ~expiryProps: CardUtils.expiryProps,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
@@ -69,12 +70,12 @@ let make = (
   let (showMore, setShowMore) = React.useState(_ => false)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {cardBrand} = cardProps
 
   PaymentUtils.useEmitPaymentMethodInfo(
     ~paymentMethodName=selectedOption,
     ~paymentMethods=paymentMethodListValue.payment_methods,
-    ~cardBrand,
+    ~cardProps,
+    ~expiryProps,
   )
 
   let cardOptionDetails =
