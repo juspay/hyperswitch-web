@@ -758,7 +758,6 @@ external appendChild: Dom.element => unit = "appendChild"
 external topLocationHref: string = "href"
 
 // Add these externals for script events
-@set external setOnLoad: (Dom.element, unit => unit) => unit = "onload"
 @set external setOnError: (Dom.element, unit => unit) => unit = "onerror"
 
 // Add the function at the end of the file
@@ -774,7 +773,7 @@ let loadClickToPayScripts = (logger: HyperLoggerTypes.loggerMake) => {
           let script = createElement("script")
           script->setType("module")
           script->setSrc(srcUiKitScriptSrc)
-          script->setOnLoad(
+          script->setOnload(
             () => {
               logger.setLogInfo(
                 ~value="ClickToPay UI Kit Script Loaded",
@@ -796,7 +795,7 @@ let loadClickToPayScripts = (logger: HyperLoggerTypes.loggerMake) => {
           let link = createElement("link")
           link->setRel("stylesheet")
           link->setHref(srcUiKitCssHref)
-          link->setOnLoad(
+          link->setOnload(
             () => {
               logger.setLogInfo(
                 ~value="ClickToPay UI Kit CSS Loaded",
@@ -851,7 +850,7 @@ let loadMastercardScript = (clickToPayToken, logger: HyperLoggerTypes.loggerMake
         script->setSrc(scriptSrc)
 
         // Set onload handler
-        script->setOnLoad(() => {
+        script->setOnload(() => {
           logger.setLogInfo(
             ~value="Script loaded, initializing Mastercard Checkout",
             ~eventName=CLICK_TO_PAY_SCRIPT,
@@ -1139,7 +1138,7 @@ let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorC
   let script = createElement("script")
   script->setType("text/javascript")
   script->setSrc(scriptSrc)
-  script->setOnLoad(onLoadCallback)
+  script->setOnload(onLoadCallback)
   script->setOnError(onErrorCallback)
   body->Window.appendChild(script)
 }
@@ -1159,7 +1158,7 @@ let loadClickToPayUIScripts = (
       script->setType("module")
       script->setSrc(srcUiKitScriptSrc)
       appendChild(script)
-      script->setOnLoad(() => {
+      script->setOnload(() => {
         scriptLoadedCallback()
       })
       script->setOnError(() => {

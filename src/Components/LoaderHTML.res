@@ -1,5 +1,3 @@
-// PaymentLoader.res
-
 // Type definitions
 type document
 

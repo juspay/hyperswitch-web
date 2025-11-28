@@ -1,4 +1,7 @@
 type window
+
+@val external window: {..} = "window"
+
 type eventData = {
   iframeMounted: bool,
   focus: bool,
@@ -205,21 +208,8 @@ let defaultInitPaymentSession: initPaymentSession = {
   getPaymentManagementMethods: defaultGetPaymentManagementMethods,
 }
 
-let defaultInitClickToPaySession = _ => {
-  Promise.resolve(
-    //   {
-    //   isCustomerPresent: () => Promise.resolve(JSON.Encode.null),
-    //   initiateCustomerAuthentcation: () => Promise.resolve(JSON.Encode.null),
-    //   getRecognizedCards: () => Promise.resolve(JSON.Encode.null),
-    //   validateCustomerAuthentication: () => Promise.resolve(JSON.Encode.null),
-    //   checkoutWithCard: () => Promise.resolve(JSON.Encode.null),
-    // }
-    JSON.Encode.null,
-  )
-}
-
 let defaultInitAuthenticationSession: initAuthenticationSession = {
-  initClickToPaySession: defaultInitClickToPaySession,
+  initClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
 }
 
 let defaultHyperInstance = {

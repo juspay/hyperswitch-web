@@ -597,6 +597,4 @@ let initClickToPaySession = async (
   defaultInitClickToPaySession
 }
 
-@val external window: {..} = "window"
-
-window["ClickToPayAuthenticationSession"] = initClickToPaySession
+Types.window["ClickToPayAuthenticationSession"] = initClickToPaySession
