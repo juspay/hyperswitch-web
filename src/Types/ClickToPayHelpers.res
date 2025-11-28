@@ -30,7 +30,7 @@ type element = {
 external getElementById: (Window.elementRef, string) => Nullable.t<element> = "getElementById"
 
 open Window
-let clickToPayWindowRef: ref<Nullable.t<window>> = ref(Nullable.null)
+let clickToPayWindowRef: ref<Nullable.t<Types.window>> = ref(Nullable.null)
 
 let handleCloseClickToPayWindow = () => {
   switch clickToPayWindowRef.contents->Nullable.toOption {
@@ -44,6 +44,7 @@ let handleCloseClickToPayWindow = () => {
 
 let handleOpenClickToPayWindow = () => {
   clickToPayWindowRef.contents = windowOpen("", "ClickToPayWindow", "width=480,height=600")
+  LoaderHTML.injectLoader(clickToPayWindowRef.contents)
 }
 
 // Global window extensions
@@ -155,7 +156,7 @@ type consumerIdentity = {
 type accountReference = {consumerIdentity: consumerIdentity}
 
 type authenticatePayload = {
-  windowRef: window,
+  windowRef: Types.window,
   requestRecognitionToken: bool,
   accountReference: accountReference,
 }
@@ -168,7 +169,7 @@ type encryptCardPayload = {
 }
 
 type checkoutWithCardPayload = {
-  windowRef: window,
+  windowRef: Types.window,
   srcDigitalCardId: string,
   rememberMe: bool,
 }
@@ -280,7 +281,7 @@ type complianceSettings = {
 
 // Add the CheckoutWithNewCardPayload type
 type checkoutWithNewCardPayload = {
-  windowRef: window,
+  windowRef: Types.window,
   cardBrand: string,
   encryptedCard: JSON.t,
   rememberMe: bool,
@@ -516,7 +517,7 @@ let getCards = async (logger: HyperLoggerTypes.loggerMake) => {
 
 // First, let's define the AuthenticatePayload type
 type authenticateInputPayload = {
-  windowRef: window,
+  windowRef: Types.window,
   consumerIdentity: consumerIdentity,
 }
 
@@ -587,7 +588,7 @@ let authenticate = async (
 }
 
 let checkoutWithCard = async (
-  ~windowRef: window,
+  ~windowRef: Types.window,
   ~srcDigitalCardId: string,
   ~logger: HyperLoggerTypes.loggerMake,
 ) => {
@@ -757,7 +758,6 @@ external appendChild: Dom.element => unit = "appendChild"
 external topLocationHref: string = "href"
 
 // Add these externals for script events
-@set external setOnLoad: (Dom.element, unit => unit) => unit = "onload"
 @set external setOnError: (Dom.element, unit => unit) => unit = "onerror"
 
 // Add the function at the end of the file
@@ -773,7 +773,7 @@ let loadClickToPayScripts = (logger: HyperLoggerTypes.loggerMake) => {
           let script = createElement("script")
           script->setType("module")
           script->setSrc(srcUiKitScriptSrc)
-          script->setOnLoad(
+          script->setOnload(
             () => {
               logger.setLogInfo(
                 ~value="ClickToPay UI Kit Script Loaded",
@@ -795,7 +795,7 @@ let loadClickToPayScripts = (logger: HyperLoggerTypes.loggerMake) => {
           let link = createElement("link")
           link->setRel("stylesheet")
           link->setHref(srcUiKitCssHref)
-          link->setOnLoad(
+          link->setOnload(
             () => {
               logger.setLogInfo(
                 ~value="ClickToPay UI Kit CSS Loaded",
@@ -850,7 +850,7 @@ let loadMastercardScript = (clickToPayToken, logger: HyperLoggerTypes.loggerMake
         script->setSrc(scriptSrc)
 
         // Set onload handler
-        script->setOnLoad(() => {
+        script->setOnload(() => {
           logger.setLogInfo(
             ~value="Script loaded, initializing Mastercard Checkout",
             ~eventName=CLICK_TO_PAY_SCRIPT,
@@ -1057,12 +1057,12 @@ type checkoutConfig = {
   consumer?: visaConsumer,
   complianceSettings?: visaComplianceSettings,
   payloadTypeIndicatorCheckout?: string,
-  windowRef?: Window.window,
+  windowRef?: Types.window,
   dpaTransactionOptions: dpaTransactionOptionsVisa,
 }
 type visaInitConfig = {dpaTransactionOptions: dpaTransactionOptionsVisa}
 type getCardsConfig = {consumerIdentity: consumerIdentity, validationData?: string}
-type errorObj = {reason?: string}
+type errorObj = {reason?: string, message?: string}
 type profile = {maskedCards: array<clickToPayCard>}
 type getCardsResultType = {
   actionCode: actionCode,
@@ -1071,11 +1071,42 @@ type getCardsResultType = {
   maskedValidationChannel?: string,
 }
 
+let getStrFromActionCode = actionCode => {
+  switch actionCode {
+  | SUCCESS => "SUCCESS"
+  | PENDING_CONSUMER_IDV => "PENDING_CONSUMER_IDV"
+  | FAILED => "FAILED"
+  | ERROR => "ERROR"
+  | ADD_CARD => "ADD_CARD"
+  }
+}
+
+type unbindAppInstanceResultType = {error?: errorObj}
+
 type vsdk = {
   initialize: visaInitConfig => promise<{.}>,
   getCards: getCardsConfig => promise<getCardsResultType>,
   checkout: checkoutConfig => promise<JSON.t>,
-  unbindAppInstance: unit => promise<unit>,
+  unbindAppInstance: unit => promise<unbindAppInstanceResultType>,
+}
+
+type mastercardDirectDpaTransactionOptions = {dpaLocale: string}
+
+type c2pDirectInitData = {
+  srciTransactionId: string,
+  srcInitiatorId: string,
+  srciDpaId: string,
+  dpaTransactionOptions?: mastercardDirectDpaTransactionOptions,
+}
+
+type mastercardDirect = {
+  init: c2pDirectInitData => promise<{.}>,
+  identityLookup: accountReference => promise<JSON.t>,
+}
+
+type visaDirect = {
+  init: c2pDirectInitData => promise<{.}>,
+  identityLookup: consumerIdentity => promise<JSON.t>,
 }
 
 let defaultProfile = {
@@ -1093,6 +1124,8 @@ type visaEncryptCardPayload = {
 }
 
 @val external vsdk: vsdk = "window.VSDK"
+@val external mastercardDirectSdk: mastercardDirect = "window.SRCSDK_MASTERCARD"
+@new external createVisaDirectSRCIAdapter: unit => visaDirect = "window.vAdapters.VisaSRCI"
 
 let getCardsVisaUnified = (~getCardsConfig) => vsdk.getCards(getCardsConfig)
 let signOutVisaUnified = () => vsdk.unbindAppInstance()
@@ -1100,12 +1133,12 @@ let signOutVisaUnified = () => vsdk.unbindAppInstance()
 let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorCallback) => {
   let cardBrands = clickToPayToken.cardBrands->Array.join(",")
   let scriptSrc = GlobalVars.isProd
-    ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=TestMerchant`
-    : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=TestMerchant`
+    ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
+    : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
   let script = createElement("script")
   script->setType("text/javascript")
   script->setSrc(scriptSrc)
-  script->setOnLoad(onLoadCallback)
+  script->setOnload(onLoadCallback)
   script->setOnError(onErrorCallback)
   body->Window.appendChild(script)
 }
@@ -1125,7 +1158,7 @@ let loadClickToPayUIScripts = (
       script->setType("module")
       script->setSrc(srcUiKitScriptSrc)
       appendChild(script)
-      script->setOnLoad(() => {
+      script->setOnload(() => {
         scriptLoadedCallback()
       })
       script->setOnError(() => {
@@ -1197,28 +1230,37 @@ let checkoutVisaUnified = async (
   ~clickToPayToken: clickToPayToken,
   ~orderId,
   ~consumer: consumer,
+  ~request3DSAuthentication=true,
 ) => {
+  let baseDpaTransactionOptions = {
+    acquirerBIN: clickToPayToken.acquirerBIN,
+    acquirerMerchantId: clickToPayToken.acquirerMerchantId,
+    merchantName: clickToPayToken.dpaName,
+    merchantOrderId: orderId->formatOrderId,
+  }
+
+  let dpaTransactionOptions = request3DSAuthentication
+    ? {
+        ...baseDpaTransactionOptions,
+        authenticationPreferences: {
+          authenticationMethods: [
+            {
+              authenticationMethodType: "3DS",
+              authenticationSubject: "CARDHOLDER",
+              methodAttributes: {
+                challengeIndicator: "01",
+              },
+            },
+          ],
+          payloadRequested: "AUTHENTICATED",
+        },
+      }
+    : baseDpaTransactionOptions
+
   let defaultConfig = {
     payloadTypeIndicatorCheckout: "FULL",
     windowRef,
-    dpaTransactionOptions: {
-      authenticationPreferences: {
-        authenticationMethods: [
-          {
-            authenticationMethodType: "3DS",
-            authenticationSubject: "CARDHOLDER",
-            methodAttributes: {
-              challengeIndicator: "01",
-            },
-          },
-        ],
-        payloadRequested: "AUTHENTICATED",
-      },
-      acquirerBIN: clickToPayToken.acquirerBIN,
-      acquirerMerchantId: clickToPayToken.acquirerMerchantId,
-      merchantName: clickToPayToken.dpaName,
-      merchantOrderId: orderId->formatOrderId,
-    },
+    dpaTransactionOptions,
   }
 
   let complianceSettings = {
@@ -1279,6 +1321,135 @@ let checkoutVisaUnified = async (
   await vsdk.checkout(checkoutConfig)
 }
 
+let closeWindow = (status, payload: JSON.t) => {
+  handleCloseClickToPayWindow()
+
+  {
+    status,
+    payload,
+  }
+}
+
+let handleSuccessResponse = response => {
+  let checkoutActionCode =
+    response->Utils.getDictFromJson->Utils.getString("checkoutActionCode", "")
+
+  switch checkoutActionCode {
+  | "COMPLETE" => closeWindow(COMPLETE, response)
+  | "ERROR" => closeWindow(ERROR, response)
+  | "CANCEL" => closeWindow(CANCEL, response)
+  | "PAY_V3_CARD" => closeWindow(PAY_V3_CARD, response)
+  | _ => closeWindow(ERROR, response)
+  }
+}
+
+let handleCheckoutWithCard = async (
+  ~clickToPayProvider,
+  ~srcDigitalCardId,
+  ~logger,
+  ~fullName,
+  ~email,
+  ~phoneNumber,
+  ~countryCode,
+  ~clickToPayToken,
+  ~isClickToPayRememberMe,
+  ~orderId,
+  ~request3DSAuthentication=true,
+) => {
+  switch clickToPayWindowRef.contents->Nullable.toOption {
+  | Some(window) =>
+    switch clickToPayProvider {
+    | MASTERCARD => {
+        let checkoutResp = await checkoutWithCard(~windowRef=window, ~srcDigitalCardId, ~logger)
+        switch checkoutResp {
+        | Ok(response) => response->handleSuccessResponse
+        | Error(_) => closeWindow(ERROR, JSON.Encode.null)
+        }
+      }
+    | VISA =>
+      try {
+        let consumer: consumer = {
+          fullName,
+          emailAddress: email,
+          mobileNumber: {
+            phoneNumber,
+            countryCode,
+          },
+        }
+        switch clickToPayToken {
+        | Some(token) => {
+            let checkoutResp = await checkoutVisaUnified(
+              ~srcDigitalCardId,
+              ~clickToPayToken=token,
+              ~windowRef=window,
+              ~rememberMe=isClickToPayRememberMe,
+              ~orderId,
+              ~consumer,
+              ~request3DSAuthentication,
+            )
+            let actionCode = checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
+            switch actionCode {
+            | "SUCCESS" => {
+                logger.setLogInfo(
+                  ~value={
+                    "message": "Checkout successfull",
+                    "scheme": clickToPayProvider,
+                  }
+                  ->JSON.stringifyAny
+                  ->Option.getOr(""),
+                  ~eventName=CLICK_TO_PAY_FLOW,
+                )
+                closeWindow(COMPLETE, checkoutResp)
+              }
+            | _ => {
+                logger.setLogError(
+                  ~value={
+                    "message": `Visa checkout failed with card, Action Code -> ${actionCode}`,
+                    "scheme": clickToPayProvider,
+                  }
+                  ->JSON.stringifyAny
+                  ->Option.getOr(""),
+                  ~eventName=CLICK_TO_PAY_FLOW,
+                )
+                closeWindow(ERROR, JSON.Encode.null)
+              }
+            }
+          }
+        | None => closeWindow(ERROR, JSON.Encode.null)
+        }
+      } catch {
+      | err => {
+          logger.setLogError(
+            ~value={
+              "message": `Visa checkout failed with card - ${err
+                ->Utils.formatException
+                ->JSON.stringify}`,
+              "scheme": clickToPayProvider,
+            }
+            ->JSON.stringifyAny
+            ->Option.getOr(""),
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          closeWindow(ERROR, JSON.Encode.null)
+        }
+      }
+    | NONE => closeWindow(ERROR, JSON.Encode.null)
+    }
+  | None => {
+      logger.setLogError(
+        ~value={
+          "message": "Click to Pay window reference is null",
+          "scheme": clickToPayProvider,
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
+      closeWindow(ERROR, JSON.Encode.null)
+    }
+  }
+}
+
 let handleProceedToPay = async (
   ~srcDigitalCardId: string="",
   ~encryptedCard: JSON.t=JSON.Encode.null,
@@ -1296,123 +1467,6 @@ let handleProceedToPay = async (
   ~orderId="",
   ~fullName="",
 ) => {
-  let closeWindow = (status, payload: JSON.t) => {
-    handleCloseClickToPayWindow()
-
-    {
-      status,
-      payload,
-    }
-  }
-
-  let handleSuccessResponse = response => {
-    let checkoutActionCode =
-      response->Utils.getDictFromJson->Utils.getString("checkoutActionCode", "")
-
-    switch checkoutActionCode {
-    | "COMPLETE" => closeWindow(COMPLETE, response)
-    | "ERROR" => closeWindow(ERROR, response)
-    | "CANCEL" => closeWindow(CANCEL, response)
-    | "PAY_V3_CARD" => closeWindow(PAY_V3_CARD, response)
-    | _ => closeWindow(ERROR, response)
-    }
-  }
-
-  let handleCheckoutWithCard = async () => {
-    switch clickToPayWindowRef.contents->Nullable.toOption {
-    | Some(window) =>
-      switch clickToPayProvider {
-      | MASTERCARD => {
-          let checkoutResp = await checkoutWithCard(~windowRef=window, ~srcDigitalCardId, ~logger)
-          switch checkoutResp {
-          | Ok(response) => response->handleSuccessResponse
-          | Error(_) => closeWindow(ERROR, JSON.Encode.null)
-          }
-        }
-      | VISA =>
-        try {
-          let consumer: consumer = {
-            fullName,
-            emailAddress: email,
-            mobileNumber: {
-              phoneNumber,
-              countryCode,
-            },
-          }
-          switch clickToPayToken {
-          | Some(token) => {
-              let checkoutResp = await checkoutVisaUnified(
-                ~srcDigitalCardId,
-                ~clickToPayToken=token,
-                ~windowRef=window,
-                ~rememberMe=isClickToPayRememberMe,
-                ~orderId,
-                ~consumer,
-              )
-              let actionCode =
-                checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
-              switch actionCode {
-              | "SUCCESS" => {
-                  logger.setLogInfo(
-                    ~value={
-                      "message": "Checkout successfull",
-                      "scheme": clickToPayProvider,
-                    }
-                    ->JSON.stringifyAny
-                    ->Option.getOr(""),
-                    ~eventName=CLICK_TO_PAY_FLOW,
-                  )
-                  closeWindow(COMPLETE, checkoutResp)
-                }
-              | _ => {
-                  logger.setLogError(
-                    ~value={
-                      "message": `Visa checkout failed with card, Action Code -> ${actionCode}`,
-                      "scheme": clickToPayProvider,
-                    }
-                    ->JSON.stringifyAny
-                    ->Option.getOr(""),
-                    ~eventName=CLICK_TO_PAY_FLOW,
-                  )
-                  closeWindow(ERROR, JSON.Encode.null)
-                }
-              }
-            }
-          | None => closeWindow(ERROR, JSON.Encode.null)
-          }
-        } catch {
-        | err => {
-            logger.setLogError(
-              ~value={
-                "message": `Visa checkout failed with card - ${err
-                  ->Utils.formatException
-                  ->JSON.stringify}`,
-                "scheme": clickToPayProvider,
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
-            )
-            closeWindow(ERROR, JSON.Encode.null)
-          }
-        }
-      | NONE => closeWindow(ERROR, JSON.Encode.null)
-      }
-    | None => {
-        logger.setLogError(
-          ~value={
-            "message": "Click to Pay window reference is null",
-            "scheme": clickToPayProvider,
-          }
-          ->JSON.stringifyAny
-          ->Option.getOr(""),
-          ~eventName=CLICK_TO_PAY_FLOW,
-        )
-        closeWindow(ERROR, JSON.Encode.null)
-      }
-    }
-  }
-
   let handleCheckoutWithNewCard = async () => {
     switch clickToPayWindowRef.contents->Nullable.toOption {
     | Some(window) =>
@@ -1563,7 +1617,18 @@ let handleProceedToPay = async (
     if isCheckoutWithNewCard {
       await handleCheckoutWithNewCard()
     } else {
-      await handleCheckoutWithCard()
+      await handleCheckoutWithCard(
+        ~clickToPayProvider,
+        ~srcDigitalCardId,
+        ~logger,
+        ~fullName,
+        ~email,
+        ~phoneNumber,
+        ~countryCode,
+        ~clickToPayToken,
+        ~isClickToPayRememberMe,
+        ~orderId,
+      )
     }
   } catch {
   | err => {

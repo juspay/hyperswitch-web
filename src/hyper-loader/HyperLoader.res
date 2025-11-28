@@ -32,12 +32,11 @@ let removeBeforeUnloadEventListeners: array<'ev => unit> => unit = handlers => {
   Window.addEventListener("message", iframeMessageHandler)
 }
 
-@val external window: {..} = "window"
-window["Hyper"] = Hyper.make
-window["Hyper"]["init"] = Hyper.make
-window["removeBeforeUnloadEventListeners"] = removeBeforeUnloadEventListeners
+Types.window["Hyper"] = Hyper.make
+Types.window["Hyper"]["init"] = Hyper.make
+Types.window["removeBeforeUnloadEventListeners"] = removeBeforeUnloadEventListeners
 
-let isWordpress = window["wp"] !== JSON.Encode.null
+let isWordpress = Types.window["wp"] !== JSON.Encode.null
 if !isWordpress {
-  window["Stripe"] = Hyper.make
+  Types.window["Stripe"] = Hyper.make
 }
