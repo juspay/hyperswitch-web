@@ -17,6 +17,8 @@ let initClickToPaySession = async (
   let customerEmail = ref("")
   let maskedCards = ref([])
 
+  ClickToPayConsoleSuppress.initialize()
+
   let data = await PaymentHelpers.fetchEnabledAuthnMethodsToken(
     ~clientSecret,
     ~publishableKey,

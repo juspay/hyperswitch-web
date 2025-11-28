@@ -20,7 +20,7 @@ let make = (
         ~clientSecret,
         ~publishableKey,
         ~logger,
-        ~customPodUri="router-custom-be",
+        ~customPodUri,
         ~endpoint,
         ~profileId,
         ~authenticationId,
