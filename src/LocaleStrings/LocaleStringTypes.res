@@ -221,6 +221,7 @@ type localeStrings = {
   payment_methods_mifinity: string,
   payment_methods_upi_collect: string,
   payment_methods_eft: string,
+  payment_methods_open_banking_eu: string,
 }
 
 type constantStrings = {
