@@ -162,6 +162,7 @@ let make = (
     | SelectPMType(selectedPm) => {
         let availablePmts = availablePaymentMethodTypes->Array.filterMap(pmt =>
           switch (selectedPm, pmt) {
+          | (BankRedirect, BankRedirect(bankRedirect)) => Some(BankRedirect(bankRedirect))
           | (BankTransfer, BankTransfer(transfer)) => Some(BankTransfer(transfer))
           | (Wallet, Wallet(wallet)) => Some(Wallet(wallet))
           | _ => None
@@ -197,7 +198,7 @@ let make = (
             View.setView(SelectPM)
             React.null
           }
-        | BankTransfer | Wallet =>
+        | BankRedirect | BankTransfer | Wallet =>
           <>
             {renderHeader(localeString.formHeaderSelectBankText, true)}
             <div className="mt-2.5">
@@ -206,6 +207,16 @@ let make = (
                 ->Array.mapWithIndex((option, i) => {
                   switch option {
                   | Card(_) => React.null
+                  | BankRedirect(bankRedirect) =>
+                    <button
+                      key={Int.toString(i)}
+                      onClick={_ => optionSelectionHandler(option)}
+                      className="flex flex-row items-center border border-solid border-jp-gray-200 px-5 py-2.5 rounded mt-2.5 hover:bg-jp-gray-50">
+                      {bankRedirect->getBankRedirectIcon}
+                      <label className="text-start ml-2.5 cursor-pointer">
+                        {React.string(bankRedirect->String.make)}
+                      </label>
+                    </button>
                   | BankTransfer(transfer) =>
                     <button
                       key={Int.toString(i)}
@@ -308,7 +319,9 @@ let make = (
           {renderHeader(
             switch pm {
             | Card => localeString.formHeaderEnterCardText
-            | BankTransfer => key->localeString.formHeaderBankText
+            | BankRedirect
+            | BankTransfer =>
+              key->localeString.formHeaderBankText
             | Wallet => key->localeString.formHeaderWalletText
             },
             true,

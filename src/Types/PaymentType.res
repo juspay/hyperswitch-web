@@ -124,6 +124,7 @@ type customerCard = {
   cardHolderName: option<string>,
   nickname: string,
   isClickToPayCard: bool,
+  cardBin: string,
 }
 type bank = {mask: string}
 
@@ -184,6 +185,7 @@ type options = {
   paymentMethodOrder: option<array<string>>,
   displaySavedPaymentMethodsCheckbox: bool,
   displaySavedPaymentMethods: bool,
+  savedPaymentMethodsCheckboxCheckedByDefault: bool,
   fields: fields,
   readOnly: bool,
   terms: terms,
@@ -218,6 +220,7 @@ let defaultCardDetails = {
   cardHolderName: None,
   nickname: "",
   isClickToPayCard: false,
+  cardBin: "",
 }
 
 let defaultAddressDetails = {
@@ -358,6 +361,7 @@ let defaultOptions = {
   fields: defaultFields,
   displaySavedPaymentMethodsCheckbox: true,
   displaySavedPaymentMethods: true,
+  savedPaymentMethodsCheckboxCheckedByDefault: false,
   readOnly: false,
   terms: defaultTerms,
   branding: Auto,
@@ -872,6 +876,7 @@ let getCardDetails = (dict, str) => {
       cardHolderName: getOptionString(json, "card_holder_name"),
       nickname: getString(json, "nick_name", ""),
       isClickToPayCard: false,
+      cardBin: getString(json, "card_isin", ""),
     }
   })
   ->Option.getOr(defaultCardDetails)
@@ -1052,6 +1057,7 @@ let itemToObjMapper = (dict, logger) => {
       "wallets",
       "displaySavedPaymentMethodsCheckbox",
       "displaySavedPaymentMethods",
+      "savedPaymentMethodsCheckboxCheckedByDefault",
       "sdkHandleOneClickConfirmPayment",
       "sdkHandleConfirmPayment",
       "sdkHandleSavePayment",
@@ -1087,6 +1093,12 @@ let itemToObjMapper = (dict, logger) => {
       dict,
       "displaySavedPaymentMethods",
       true,
+      ~logger,
+    ),
+    savedPaymentMethodsCheckboxCheckedByDefault: getBoolWithWarning(
+      dict,
+      "savedPaymentMethodsCheckboxCheckedByDefault",
+      defaultOptions.savedPaymentMethodsCheckboxCheckedByDefault,
       ~logger,
     ),
     readOnly: getBoolWithWarning(dict, "readOnly", false, ~logger),
@@ -1173,6 +1185,7 @@ let convertClickToPayCardToCustomerMethod = (
       cardHolderName: None,
       nickname: Some(clickToPayCard.digitalCardData.descriptorName)->Option.getOr(""),
       isClickToPayCard: true,
+      cardBin: "",
     },
     paymentMethodType: Some("click_to_pay"),
     defaultPaymentMethodSet: false, // Default to false as Click to Pay doesn't provide this

@@ -23,6 +23,7 @@ let make = (~walletOptions) => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let (_, _, labelType, _) = options.wallets.style.type_
   let _label = switch labelType {
@@ -59,7 +60,13 @@ let make = (~walletOptions) => {
         ~eventName=PAYPAL_FLOW,
         ~paymentMethod="PAYPAL",
       )
-      PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="paypal",
+        ~country,
+        ~state,
+        ~pinCode,
+      )
       setPaypalClicked(_ => true)
       open Promise
       Utils.makeOneClickHandlerPromise(sdkHandleIsThere)

@@ -17,6 +17,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let paymentType = usePaymentType()
+  let nonPiiAdderessData = PaymentUtils.useNonPiiAddressData()
 
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
@@ -52,6 +53,7 @@ let make = (~sessionObj: SessionsType.token) => {
     | Paypal(val) => val
     | _ => 48
     },
+    disableMaxWidth: true,
   }
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
@@ -105,6 +107,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~sessions,
         ~clientSecret,
         ~isTestMode,
+        ~nonPiiAdderessData,
       )
     })
     Window.body->Window.appendChild(paypalScript)

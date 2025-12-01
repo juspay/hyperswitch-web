@@ -46,6 +46,7 @@ let make = (~sessionObj: SessionsType.token) => {
     ~empty=!isCompleted,
     ~paymentType="klarna",
   )
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   React.useEffect(() => {
     if status === "ready" && paymentMethodTypes !== PaymentMethodsRecord.defaultPaymentMethodType {
@@ -73,6 +74,9 @@ let make = (~sessionObj: SessionsType.token) => {
               PaymentUtils.emitPaymentMethodInfo(
                 ~paymentMethod="wallet",
                 ~paymentMethodType="klarna",
+                ~country,
+                ~state,
+                ~pinCode,
               )
               makeOneClickHandlerPromise(sdkHandleIsThere)->then(
                 result => {

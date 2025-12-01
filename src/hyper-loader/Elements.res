@@ -741,6 +741,36 @@ let make = (
                     ~paymentMethod="APPLE_PAY",
                   )
                 }
+              } else {
+                logger.setLogInfo(
+                  ~value="Third party ApplePay session token flow",
+                  ~eventName=APPLE_PAY_FLOW,
+                  ~paymentMethod="APPLE_PAY",
+                )
+                let connector = dict->Utils.getString("connector", "")
+                let authToken = dict->Utils.getString("authToken", "")
+                let applePayPaymentRequest = dict->Utils.getDictFromDict("applePayPaymentRequest")
+                switch connector {
+                | "braintree" =>
+                  logger.setLogInfo(
+                    ~value="Braintree Applepay Flow",
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                  )
+                  ApplePayHelpers.handleApplePayBraintreeClick(
+                    authToken,
+                    applePayPaymentRequest,
+                    selectorString,
+                    logger,
+                    event,
+                  )
+                | _ =>
+                  logger.setLogInfo(
+                    ~value="Connector Not Found",
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                  )
+                }
               }
             } else {
               ()
@@ -920,6 +950,12 @@ let make = (
                     let msg =
                       [("applePaySessionObjNotPresent", true->JSON.Encode.bool)]->Dict.fromArray
                     mountedIframeRef->Window.iframePostMessage(msg)
+                  } else {
+                    let isApplePayBraintreePresent =
+                      applePayPresent->getOptionsDict->getString("connector", "") === "braintree"
+                    if isApplePayBraintreePresent {
+                      BraintreeHelpers.loadBraintreeApplePayScripts(logger)
+                    }
                   }
                   let googlePayPresent = sessionsArr->Array.find(item => {
                     let x =
@@ -951,6 +987,9 @@ let make = (
                       let json = applePayEvent.data->anyTypeToJson
                       let dict = json->getDictFromJson
                       let componentName = dict->getString("componentName", "payment")
+                      let connector = dict->Utils.getString("connector", "")
+                      let isThirdPartyFlow =
+                        ApplePayHelpers.thirdPartyApplePayConnectors->Array.includes(connector)
 
                       switch (
                         dict->Dict.get("applePayButtonClicked"),
@@ -970,7 +1009,7 @@ let make = (
                             ->Option.getOr(JSON.Encode.null)
                             ->JSON.Decode.bool
                             ->Option.getOr(false)
-                          if !isDelayedSessionToken {
+                          if !isDelayedSessionToken && !isThirdPartyFlow {
                             logger.setLogInfo(
                               ~value="Normal Session Token Flow",
                               ~eventName=APPLE_PAY_FLOW,

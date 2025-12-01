@@ -1,3 +1,7 @@
+type window
+
+@val external window: {..} = "window"
+
 type eventData = {
   iframeMounted: bool,
   focus: bool,
@@ -58,6 +62,31 @@ type initPaymentSession = {
   getPaymentManagementMethods: unit => promise<JSON.t>,
 }
 
+type isCustomerPresentInput = {email: string}
+
+type validateCustomerAuthenticationInput = {value: string}
+
+type checkoutWithCardInput = {
+  srcDigitalCardId: string,
+  rememberMe: option<bool>,
+  windowRef: Nullable.t<window>,
+}
+
+type clickToPaySession = {
+  isCustomerPresent: option<isCustomerPresentInput> => promise<JSON.t>,
+  getUserType: unit => promise<JSON.t>, // getUserType
+  getRecognizedCards: unit => promise<JSON.t>,
+  validateCustomerAuthentication: validateCustomerAuthenticationInput => promise<JSON.t>,
+  checkoutWithCard: checkoutWithCardInput => promise<JSON.t>,
+  signOut: unit => promise<JSON.t>,
+}
+
+type initClickToPaySessionInput = {request3DSAuthentication: option<bool>}
+
+type initAuthenticationSession = {
+  initClickToPaySession: initClickToPaySessionInput => promise<JSON.t>,
+}
+
 type confirmParams = {return_url: string}
 
 type confirmPaymentParams = {
@@ -74,6 +103,7 @@ type hyperInstance = {
   widgets: JSON.t => element,
   paymentRequest: JSON.t => JSON.t,
   initPaymentSession: JSON.t => initPaymentSession,
+  initAuthenticationSession: JSON.t => initAuthenticationSession,
   paymentMethodsManagementElements: JSON.t => element,
   completeUpdateIntent: string => promise<JSON.t>,
   initiateUpdateIntent: unit => promise<JSON.t>,
@@ -179,6 +209,10 @@ let defaultInitPaymentSession: initPaymentSession = {
   getPaymentManagementMethods: defaultGetPaymentManagementMethods,
 }
 
+let defaultInitAuthenticationSession: initAuthenticationSession = {
+  initClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
+}
+
 let defaultHyperInstance = {
   confirmOneClickPayment: oneClickConfirmPaymentFn,
   confirmPayment: confirmPaymentFn,
@@ -188,6 +222,7 @@ let defaultHyperInstance = {
   widgets: _ev => defaultElement,
   paymentRequest: _ev => JSON.Encode.null,
   initPaymentSession: _ev => defaultInitPaymentSession,
+  initAuthenticationSession: _ev => defaultInitAuthenticationSession,
   paymentMethodsManagementElements: _ev => defaultElement,
   completeUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   initiateUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),

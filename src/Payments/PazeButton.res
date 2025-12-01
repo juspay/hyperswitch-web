@@ -17,6 +17,7 @@ let make = (~token: SessionsType.token) => {
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
   let (showLoader, setShowLoader) = React.useState(() => false)
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onClick = _ => {
     if isTestMode {
@@ -32,7 +33,13 @@ let make = (~token: SessionsType.token) => {
         ~eventName=PAZE_SDK_FLOW,
         ~paymentMethod="PAZE",
       )
-      PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paze")
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="paze",
+        ~country,
+        ~state,
+        ~pinCode,
+      )
       setShowLoader(_ => true)
       let metadata =
         [

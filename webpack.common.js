@@ -223,6 +223,8 @@ module.exports = (publicPath = "auto") => {
   const entries = {
     app: "./index.js",
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
+    ClickToPayAuthenticationSession:
+      "./src/hyper-loader/AuthenticationSessionMethods.bs.js",
   };
 
   const definePluginValues = {
