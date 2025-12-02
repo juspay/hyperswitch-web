@@ -740,6 +740,38 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         Promise.resolve(msg)
       }
 
+      let initAuthenticationSession = authenticationSessionOptions => {
+        open Promise
+
+        let clientSecretId =
+          authenticationSessionOptions
+          ->JSON.Decode.object
+          ->Option.flatMap(x => x->Dict.get("clientSecret"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+        clientSecret := clientSecretId
+        Promise.make((resolve, _) => {
+          logger.setClientSecret(clientSecretId)
+          resolve(JSON.Encode.null)
+        })
+        ->then(_ => {
+          logger.setLogInfo(
+            ~value=Window.hrefWithoutSearch,
+            ~eventName=AUTHENTICATED_SESSION_INITIATED,
+          )
+          resolve()
+        })
+        ->catch(_ => resolve())
+        ->ignore
+
+        AuthenticationSession.make(
+          authenticationSessionOptions,
+          ~clientSecret={clientSecretId},
+          ~publishableKey,
+          ~logger=Some(logger),
+        )
+      }
+
       let returnObject: hyperInstance = {
         confirmOneClickPayment,
         confirmPayment,
@@ -749,6 +781,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         retrievePaymentIntent: retrievePaymentIntentFn,
         paymentRequest,
         initPaymentSession,
+        initAuthenticationSession,
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
