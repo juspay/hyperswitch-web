@@ -139,4 +139,4 @@ let defaultRedirectionFlags: redirectionFlags = {
   shouldRemoveBeforeUnloadEvents: false,
 }
 let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)
-let isTestModeAtom = Recoil.atom("isTestMode", false)
+let isTestMode = Recoil.atom("isTestMode", false)

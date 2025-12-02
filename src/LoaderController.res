@@ -47,7 +47,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsPaymentButtonHandlerProvided = Recoil.useSetRecoilState(
     isPaymentButtonHandlerProvidedAtom,
   )
-  let setIsTestMode = Recoil.useSetRecoilState(RecoilAtoms.isTestModeAtom)
+  let setIsTestMode = Recoil.useSetRecoilState(RecoilAtoms.isTestMode)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [

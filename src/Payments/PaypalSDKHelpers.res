@@ -57,7 +57,7 @@ let loadPaypalSDK = (
       if isTestMode {
         loggerState.setLogInfo(
           ~value="Paypal SDK createOrder called in test mode - interaction disabled",
-          ~eventName=PAYPAL_FLOW,
+          ~eventName=PAYPAL_SDK_FLOW,
           ~paymentMethod="PAYPAL",
         )
         resolve("")
@@ -236,7 +236,7 @@ let loadPaypalSDK = (
       if isTestMode {
         loggerState.setLogInfo(
           ~value="Paypal SDK Button Clicked in test mode - interaction disabled",
-          ~eventName=PAYPAL_FLOW,
+          ~eventName=PAYPAL_SDK_FLOW,
           ~paymentMethod="PAYPAL",
         )
       } else {

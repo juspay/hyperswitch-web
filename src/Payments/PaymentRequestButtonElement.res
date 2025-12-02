@@ -87,7 +87,7 @@ let make = (~sessions, ~walletOptions) => {
 
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   <div role="region" ariaLabel="Wallet Section" className="flex flex-col gap-2 h-auto w-full">
     {walletOptions

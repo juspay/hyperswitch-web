@@ -16,7 +16,7 @@ let make = (~token: SessionsType.token) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onClick = _ => {

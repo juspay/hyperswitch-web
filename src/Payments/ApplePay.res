@@ -27,7 +27,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("apple_pay")
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   let (heightType, _, _, _, _) = options.wallets.style.height
   let height = switch heightType {

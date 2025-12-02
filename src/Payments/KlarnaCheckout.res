@@ -13,7 +13,7 @@ let make = () => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (klarnaClicked, setKlarnaClicked) = React.useState(_ => false)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
   let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
   | Klarna(val) => val

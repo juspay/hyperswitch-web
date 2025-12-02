@@ -22,7 +22,7 @@ let make = (~walletOptions) => {
   let isWallet = walletOptions->Array.includes("paypal")
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let (_, _, labelType, _) = options.wallets.style.type_

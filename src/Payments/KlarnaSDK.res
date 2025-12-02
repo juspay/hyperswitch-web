@@ -21,7 +21,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestModeAtom)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   let setAreOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
 
@@ -63,14 +63,19 @@ let make = (~sessionObj: SessionsType.token) => {
           shape: "default",
           on_click: authorize => {
             if isTestMode {
-              Console.warn("Klarna checkout button clicked in test mode - interaction disabled")
+              Console.warn("Klarna SDK button clicked in test mode - interaction disabled")
               loggerState.setLogInfo(
-                ~value="Klarna checkout button clicked in test mode - interaction disabled",
-                ~eventName=PAYPAL_FLOW,
-                ~paymentMethod="PAYPAL",
+                ~value="Klarna SDK button clicked in test mode - interaction disabled",
+                ~eventName=KLARNA_SDK_FLOW,
+                ~paymentMethod="KLARNA",
               )
               resolve()
             } else {
+              loggerState.setLogInfo(
+                ~value="Klarna SDK Button Clicked",
+                ~eventName=KLARNA_SDK_FLOW,
+                ~paymentMethod="KLARNA",
+              )
               PaymentUtils.emitPaymentMethodInfo(
                 ~paymentMethod="wallet",
                 ~paymentMethodType="klarna",
