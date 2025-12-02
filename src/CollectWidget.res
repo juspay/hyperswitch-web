@@ -50,7 +50,10 @@ let make = (
         values
         ->Dict.get(BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey)
         ->Option.getOr("")
+      let lastNameSplits = last_name->String.split(" ")
+      let firstNameSplits = first_name->String.split(" ")
       let updatedValues = values->Dict.copy
+      let updatedValidity = validity->Dict.copy
 
       // If first_name is null and required but last_name is not, use first_name as last_name
       // to populate full name properly
@@ -59,13 +62,54 @@ let make = (
           BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey,
           last_name,
         )
+        if lastNameSplits->Array.get(0)->Option.getOr("")->String.length > 0 {
+          updatedValidity->Dict.set(
+            BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey,
+            Some(true),
+          )
+        }
         updatedValues->Dict.set(
           BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
-          "",
+          lastNameSplits
+          ->Array.slice(~start=1, ~end=lastNameSplits->Array.length)
+          ->Array.join(" "),
+        )
+        if lastNameSplits->Array.length > 1 {
+          updatedValidity->Dict.set(
+            BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
+            Some(true),
+          )
+        }
+      } else if last_name->String.length == 0 {
+        updatedValues->Dict.set(
+          BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
+          firstNameSplits
+          ->Array.slice(~start=1, ~end=firstNameSplits->Array.length)
+          ->Array.join(" "),
+        )
+        if firstNameSplits->Array.length > 1 {
+          updatedValidity->Dict.set(
+            BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
+            Some(true),
+          )
+        }
+      } else if firstNameSplits->Array.length > 1 {
+        // both first_name and last_name exist, but first_name has multiple parts
+        updatedValues->Dict.set(
+          BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey,
+          firstNameSplits->Array.get(0)->Option.getOr(""),
+        )
+        updatedValues->Dict.set(
+          BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
+          firstNameSplits
+          ->Array.slice(~start=1, ~end=firstNameSplits->Array.length)
+          ->Array.join(" ") ++
+          " " ++
+          last_name,
         )
       }
       setFormData(_ => updatedValues)
-      setValidityDict(_ => validity)
+      setValidityDict(_ => updatedValidity)
     })
     ->ignore
     None

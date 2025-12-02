@@ -936,26 +936,10 @@ let processAddressFields = (
         // First try to get lastName from direct lastName field
         let lastNameValue =
           paymentMethodDataDict->Dict.get(lastNameFieldKey)->Option.getOr("")->String.trim
-
         if lastNameValue->String.length > 0 {
           dataArr->Array.push((info, lastNameValue))
-          keys->Array.push(lastNameFieldKey)
-        } else {
-          let firstNameKey = BillingAddress(FullName(FirstName))
-          let firstNameFieldKey = firstNameKey->getPaymentMethodDataFieldKey
-          switch paymentMethodDataDict->Dict.get(firstNameFieldKey) {
-          | Some(value) => {
-              let nameSplits = value->String.split(" ")
-              let lastName =
-                nameSplits
-                ->Array.slice(~start=1, ~end=nameSplits->Array.length)
-                ->Array.join(" ")
-              dataArr->Array.push((info, lastName))
-            }
-          | _ => ()
-          }
-          keys->Array.push(lastNameFieldKey)
         }
+        keys->Array.push(lastNameFieldKey)
         (dataArr, keys)
       }
     | _ => {
