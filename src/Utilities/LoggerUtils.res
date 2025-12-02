@@ -281,6 +281,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | PAYPAL_FLOW
   | PAYPAL_SDK_FLOW
   | KLARNA_CHECKOUT_FLOW
+  | KLARNA_SDK_FLOW
   | APP_INITIATED
   | APP_REINITIATED
   | LOG_INITIATED
