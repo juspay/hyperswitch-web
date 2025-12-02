@@ -236,4 +236,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_givex: `Givex`,
   haveGiftCardText: `יש לך כרטיס מתנה?`,
   addText: `הוסף`,
+  giftCardNumberLabel: `מספר כרטיס מתנה`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `מספר כרטיס המתנה לא יכול להיות ריק`,
+  giftCardNumberInvalidText: `מספר כרטיס מתנה לא חוקי`,
+  giftCardCvcLabel: `CVC של כרטיס מתנה`,
+  giftCardCvcPlaceholder: `123456`,
+  giftCardCvcEmptyText: `CVC של כרטיס מתנה לא יכול להיות ריק`,
+  giftCardCvcInvalidText: `CVC לא חוקי של כרטיס מתנה`,
 }

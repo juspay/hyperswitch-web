@@ -244,4 +244,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_givex: `Givex`,
   haveGiftCardText: `У вас есть подарочная карта?`,
   addText: `Добавить`,
+  giftCardNumberLabel: `Номер подарочной карты`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `Номер подарочной карты не может быть пустым`,
+  giftCardNumberInvalidText: `Недействительный номер подарочной карты`,
+  giftCardCvcLabel: `PIN/CVC подарочной карты`,
+  giftCardCvcPlaceholder: `123456`,
+  giftCardCvcEmptyText: `PIN/CVC подарочной карты не может быть пустым`,
+  giftCardCvcInvalidText: `Недействительный PIN/CVC подарочной карты`,
 }

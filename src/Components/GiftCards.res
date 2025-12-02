@@ -41,7 +41,6 @@ let make = () => {
 
   let handleSelectGiftCard = giftCardType => {
     setSelectedGiftCard(_ => giftCardType)
-    // setSelectedOption(_ => giftCardType)
   }
 
   let removeGiftCard = (giftCardId: string) => {
@@ -126,12 +125,6 @@ let make = () => {
 
   let handleGiftCardAdded = (newGiftCard: RecoilAtomsV2.appliedGiftCard) => {
     setAppliedGiftCards(prevCards => Array.concat(prevCards, [newGiftCard]))
-    // setShowGiftCardForm(_ => false)
-    setSelectedGiftCard(_ => "")
-  }
-
-  let handleApply = () => {
-    setShowGiftCardForm(_ => false)
     setSelectedGiftCard(_ => "")
   }
 
@@ -303,7 +296,6 @@ let make = () => {
           <GiftCardForm
             selectedGiftCard
             isDisabled={appliedGiftCards->Array.length > 0}
-            onApply={_ => handleApply()}
             onGiftCardAdded={handleGiftCardAdded}
             onRemainingAmountUpdate={handleRemainingAmountUpdate}
           />

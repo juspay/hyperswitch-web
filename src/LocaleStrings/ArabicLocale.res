@@ -238,4 +238,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_givex: `Givex`,
   haveGiftCardText: `هل لديك بطاقة هدايا؟`,
   addText: `إضافة`,
+  giftCardNumberLabel: `رقم بطاقة الهدايا`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `لا يمكن أن يكون رقم بطاقة الهدايا فارغًا`,
+  giftCardNumberInvalidText: `رقم بطاقة هدايا غير صالح`,
+  giftCardCvcLabel: `رقم التعريف الشخصي/CVC لبطاقة الهدايا`,
+  giftCardCvcPlaceholder: `123456`,
+  giftCardCvcEmptyText: `لا يمكن أن يكون رقم التعريف الشخصي/CVC لبطاقة الهدايا فارغًا`,
+  giftCardCvcInvalidText: `رقم تعريف شخصي/CVC غير صالح لبطاقة الهدايا`,
 }

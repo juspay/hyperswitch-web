@@ -237,4 +237,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_givex: `Givex`,
   haveGiftCardText: `Tens una targeta regal?`,
   addText: `Afegir`,
+  giftCardNumberLabel: `Número de targeta regal`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `El número de targeta regal no pot estar buit`,
+  giftCardNumberInvalidText: `Número de targeta regal no vàlid`,
+  giftCardCvcLabel: `CVC de targeta regal`,
+  giftCardCvcPlaceholder: `123456`,
+  giftCardCvcEmptyText: `El CVC de targeta regal no pot estar buit`,
+  giftCardCvcInvalidText: `CVC de targeta regal no vàlid`,
 }

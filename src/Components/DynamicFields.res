@@ -155,6 +155,8 @@ let make = (
   let (city, setCity) = Recoil.useRecoilState(userAddressCity)
   let (state, setState) = Recoil.useRecoilState(userAddressState)
   let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
+  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
+  let (giftCardCvc, setGiftCardCvc) = Recoil.useRecoilState(userGiftCardCvc)
 
   let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
   let line1Ref = React.useRef(Nullable.null)
@@ -163,6 +165,8 @@ let make = (
   let bankAccountNumberRef = React.useRef(Nullable.null)
   let sourceBankAccountIdRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
+  let giftCardNumberRef = React.useRef(Nullable.null)
+  let giftCardCvcRef = React.useRef(Nullable.null)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
@@ -381,6 +385,31 @@ let make = (
                 : "1234 1234 1234 1234"}
               autocomplete={paymentMethod == "gift_card" ? "off" : "cc-number"}
             />
+          | GiftCardNumber =>
+            <PaymentField
+              fieldName=localeString.giftCardNumberLabel
+              value=giftCardNumber
+              onChange={ev => {
+                let value = ReactEvent.Form.target(ev)["value"]
+                setGiftCardNumber(_ => {
+                  isValid: Some(value !== ""),
+                  value: value->String.trim,
+                  errorString: value !== "" ? "" : localeString.giftCardNumberEmptyText,
+                })
+              }}
+              onBlur={ev => {
+                let value = ReactEvent.Focus.target(ev)["value"]
+                setGiftCardNumber(prev => {
+                  ...prev,
+                  errorString: value !== "" ? "" : localeString.giftCardNumberEmptyText,
+                  isValid: Some(value !== ""),
+                })
+              }}
+              type_="text"
+              maxLength=32
+              inputRef=giftCardNumberRef
+              placeholder=localeString.giftCardNumberPlaceholder
+            />
           | CardExpiryMonth
           | CardExpiryYear
           | CardExpiryMonthAndYear =>
@@ -422,6 +451,32 @@ let make = (
               placeholder="123"
               autocomplete="cc-csc"
             />
+          | GiftCardCvc =>
+            <PaymentField
+              fieldName=localeString.giftCardCvcLabel
+              value=giftCardCvc
+              onChange={ev => {
+                let value = ReactEvent.Form.target(ev)["value"]
+                setGiftCardCvc(_ => {
+                  isValid: Some(value !== ""),
+                  value: value->String.trim,
+                  errorString: value !== "" ? "" : localeString.giftCardCvcEmptyText,
+                })
+              }}
+              onBlur={ev => {
+                let value = ReactEvent.Focus.target(ev)["value"]
+                setGiftCardCvc(prev => {
+                  ...prev,
+                  errorString: value !== "" ? "" : localeString.giftCardCvcEmptyText,
+                  isValid: Some(value !== ""),
+                })
+              }}
+              type_="text"
+              maxLength=12
+              inputRef=giftCardCvcRef
+              placeholder=localeString.giftCardCvcPlaceholder
+            />
+
           | CardExpiryAndCvc =>
             <div className="flex gap-10">
               <PaymentInputField
@@ -837,6 +892,8 @@ let make = (
                 | CardExpiryAndCvc
                 | Currency(_)
                 | FullName
+                | GiftCardNumber
+                | GiftCardCvc
                 | ShippingName // Shipping Details are currently supported by only one click widgets
                 | ShippingAddressLine1
                 | ShippingAddressLine2

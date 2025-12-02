@@ -235,4 +235,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_givex: `Givex`,
   haveGiftCardText: `Har du ett presentkort?`,
   addText: `Lägg till`,
+  giftCardNumberLabel: `Presentkortsnummer`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `Presentkortsnummer får inte vara tomt`,
+  giftCardNumberInvalidText: `Ogiltigt presentkortsnummer`,
+  giftCardCvcLabel: `Presentkorts-PIN/CVC`,
+  giftCardCvcPlaceholder: `123456`,
+  giftCardCvcEmptyText: `Presentkorts-PIN/CVC får inte vara tom`,
+  giftCardCvcInvalidText: `Ogiltig presentkorts-PIN/CVC`,
 }

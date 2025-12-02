@@ -210,6 +210,8 @@ let useRequiredFieldsEmptyAndValid = (
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
+  let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
+  let giftCardCvc = Recoil.useRecoilValueFromAtom(userGiftCardCvc)
   let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
     areRequiredFieldsValid,
   )
@@ -353,6 +355,8 @@ let useRequiredFieldsEmptyAndValid = (
     bankAccountNumber,
     sourceBankAccountId.value,
     cryptoCurrencyNetworks,
+    giftCardCvc.value,
+    giftCardNumber.value,
   ))
 
   React.useEffect(() => {
@@ -394,6 +398,8 @@ let useSetInitialRequiredFields = (
   let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
+  let (giftCardCvc, setGiftCardCvc) = Recoil.useRecoilState(userGiftCardCvc)
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -478,6 +484,8 @@ let useSetInitialRequiredFields = (
           }
         }
       | AddressState => setFields(setState, state, requiredField, false)
+      | GiftCardNumber => setFields(setGiftCardNumber, giftCardNumber, requiredField, false)
+      | GiftCardCvc => setFields(setGiftCardCvc, giftCardCvc, requiredField, false)
       | AddressCity => setFields(setCity, city, requiredField, false)
       | PhoneCountryCode =>
         setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
@@ -583,6 +591,8 @@ let useRequiredFieldsBody = (
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
   let countryCode = Utils.getCountryCode(country).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
+  let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
+  let giftCardCvc = Recoil.useRecoilValueFromAtom(userGiftCardCvc)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -619,6 +629,8 @@ let useRequiredFieldsBody = (
       }
     | BillingName => billingName.value
     | CardNumber => cardNumber->CardValidations.clearSpaces
+    | GiftCardNumber => giftCardNumber.value
+    | GiftCardCvc => giftCardCvc.value
     | CardExpiryMonth =>
       let (month, _) = CardUtils.getExpiryDates(cardExpiry)
       month
@@ -714,7 +726,6 @@ let useRequiredFieldsBody = (
         acc
       })
       ->addBillingDetailsIfUseBillingAddress
-
     setRequiredFieldsBody(_ => requiredFieldsBody)
     None
   }, (
@@ -743,6 +754,8 @@ let useRequiredFieldsBody = (
     dateOfBirth,
     bankAccountNumber,
     sourceBankAccountId,
+    giftCardCvc.value,
+    giftCardNumber.value,
   ))
 }
 
@@ -750,10 +763,12 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   switch fieldType {
   | FullName
   | CardNumber
+  | GiftCardNumber
   | CardExpiryMonth
   | CardExpiryYear
   | CardExpiryMonthAndYear
   | CardCvc
+  | GiftCardCvc
   | CardExpiryAndCvc
   | CryptoCurrencyNetworks
   | PixKey

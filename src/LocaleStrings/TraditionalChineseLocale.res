@@ -235,4 +235,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_givex: `Givex`,
   haveGiftCardText: `有禮品卡嗎？`,
   addText: `添加`,
+  giftCardNumberLabel: `禮品卡號碼`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `禮品卡號碼不能為空`,
+  giftCardNumberInvalidText: `無效的禮品卡號碼`,
+  giftCardCvcLabel: `禮品卡CVC`,
+  giftCardCvcPlaceholder: `123456`,
+  giftCardCvcEmptyText: `禮品卡CVC不能為空`,
+  giftCardCvcInvalidText: `無效的禮品卡CVC`,
 }

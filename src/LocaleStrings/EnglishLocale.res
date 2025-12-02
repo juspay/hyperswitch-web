@@ -235,4 +235,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_givex: `Givex`,
   haveGiftCardText: `Have a gift card?`,
   addText: `Add`,
+  giftCardNumberLabel: `Gift Card Number`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `Gift card number cannot be empty`,
+  giftCardNumberInvalidText: `Invalid gift card number`,
+  giftCardCvcLabel: `Gift Card CVC`,
+  giftCardCvcPlaceholder: `123456`,
+  giftCardCvcEmptyText: `Gift card CVC cannot be empty`,
+  giftCardCvcInvalidText: `Invalid gift card CVC`,
 }

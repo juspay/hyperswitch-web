@@ -224,6 +224,14 @@ type localeStrings = {
   payment_methods_givex: string,
   haveGiftCardText: string,
   addText: string,
+  giftCardNumberLabel: string,
+  giftCardNumberPlaceholder: string,
+  giftCardNumberEmptyText: string,
+  giftCardNumberInvalidText: string,
+  giftCardCvcLabel: string,
+  giftCardCvcPlaceholder: string,
+  giftCardCvcEmptyText: string,
+  giftCardCvcInvalidText: string,
 }
 
 type constantStrings = {

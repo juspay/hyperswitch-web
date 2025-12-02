@@ -44,14 +44,14 @@ let itemToCustomerMapper = customerArray => {
   customerMethods
 }
 
-let getDynamicFieldsFromJsonDictV2 = (dict, isBancontact, isGiftCard) => {
+let getDynamicFieldsFromJsonDictV2 = (dict, isBancontact) => {
   let requiredFields = getArray(dict, "required_fields")
   requiredFields->Array.map(requiredField => {
     let requiredFieldsDict = requiredField->getDictFromJson
     {
       required_field: requiredFieldsDict->getString("required_field", ""),
       display_name: requiredFieldsDict->getString("display_name", ""),
-      field_type: requiredFieldsDict->getFieldType(isBancontact, isGiftCard),
+      field_type: requiredFieldsDict->getFieldType(isBancontact),
       value: requiredFieldsDict->getString("value", ""),
     }
   })
@@ -84,7 +84,6 @@ let itemToPaymentsEnabledMapper = methodsArray => {
         bankNames: dict->getStrArray("bank_names"),
         requiredFields: dict->getDynamicFieldsFromJsonDictV2(
           paymentMethodSubtype == "bancontact_card",
-          paymentMethodType == "gift_card",
         ),
         paymentExperience: dict
         ->getArray("payment_experience")

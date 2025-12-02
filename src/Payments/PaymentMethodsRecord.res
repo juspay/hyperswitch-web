@@ -48,6 +48,8 @@ type paymentMethodsFields =
   | BankAccountNumber
   | IBAN
   | SourceBankAccountId
+  | GiftCardNumber
+  | GiftCardCvc
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -657,42 +659,42 @@ type required_fields = {
   value: string,
 }
 
-let getPaymentMethodsFieldTypeFromString = (str, isBancontact, isGiftCard) => {
-  switch (str, isBancontact, isGiftCard) {
-  | ("user_email_address", _, _) => Email
-  | ("user_full_name", _, _) => FullName
-  | ("user_country", _, _) => Country
-  | ("user_bank", _, _) => Bank
-  | ("user_phone_number", _, _) => PhoneNumber
-  | ("user_address_line1", _, _) => AddressLine1
-  | ("user_address_line2", _, _) => AddressLine2
-  | ("user_address_city", _, _) => AddressCity
-  | ("user_address_pincode", _, _) => AddressPincode
-  | ("user_address_state", _, _) => AddressState
-  | ("user_blik_code", _, _) => BlikCode
-  | ("user_billing_name", _, _) => BillingName
-  | ("user_card_number", true, _) => CardNumber
-  | ("user_card_number", _, true) => CardNumber
-  | ("user_card_expiry_month", true, _) => CardExpiryMonth
-  | ("user_card_expiry_year", true, _) => CardExpiryYear
-  | ("user_card_cvc", true, _) => CardCvc
-  | ("user_card_cvc", _, true) => CardCvc
-  | ("user_shipping_name", _, _) => ShippingName
-  | ("user_shipping_address_line1", _, _) => ShippingAddressLine1
-  | ("user_shipping_address_line2", _, _) => ShippingAddressLine2
-  | ("user_shipping_address_city", _, _) => ShippingAddressCity
-  | ("user_shipping_address_pincode", _, _) => ShippingAddressPincode
-  | ("user_shipping_address_state", _, _) => ShippingAddressState
-  | ("user_crypto_currency_network", _, _) => CryptoCurrencyNetworks
-  | ("user_date_of_birth", _, _) => DateOfBirth
-  | ("user_phone_number_country_code", _, _) => PhoneCountryCode
-  | ("user_vpa_id", _, _) => VpaId
-  | ("user_cpf", _, _) => PixCPF
-  | ("user_cnpj", _, _) => PixCNPJ
-  | ("user_pix_key", _, _) => PixKey
-  | ("user_bank_account_number", _, _) => BankAccountNumber
-  | ("user_iban", _, _) => BankAccountNumber
-  | ("user_source_bank_account_id", _, _) => SourceBankAccountId
+let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
+  switch (str, isBancontact) {
+  | ("user_email_address", _) => Email
+  | ("user_full_name", _) => FullName
+  | ("user_country", _) => Country
+  | ("user_bank", _) => Bank
+  | ("user_phone_number", _) => PhoneNumber
+  | ("user_address_line1", _) => AddressLine1
+  | ("user_address_line2", _) => AddressLine2
+  | ("user_address_city", _) => AddressCity
+  | ("user_address_pincode", _) => AddressPincode
+  | ("user_address_state", _) => AddressState
+  | ("user_blik_code", _) => BlikCode
+  | ("user_billing_name", _) => BillingName
+  | ("user_card_number", true) => CardNumber
+  | ("user_gift_card_number", _) => GiftCardNumber
+  | ("user_card_expiry_month", true) => CardExpiryMonth
+  | ("user_card_expiry_year", true) => CardExpiryYear
+  | ("user_card_cvc", true) => CardCvc
+  | ("user_gift_card_cvc", _) => GiftCardCvc
+  | ("user_shipping_name", _) => ShippingName
+  | ("user_shipping_address_line1", _) => ShippingAddressLine1
+  | ("user_shipping_address_line2", _) => ShippingAddressLine2
+  | ("user_shipping_address_city", _) => ShippingAddressCity
+  | ("user_shipping_address_pincode", _) => ShippingAddressPincode
+  | ("user_shipping_address_state", _) => ShippingAddressState
+  | ("user_crypto_currency_network", _) => CryptoCurrencyNetworks
+  | ("user_date_of_birth", _) => DateOfBirth
+  | ("user_phone_number_country_code", _) => PhoneCountryCode
+  | ("user_vpa_id", _) => VpaId
+  | ("user_cpf", _) => PixCPF
+  | ("user_cnpj", _) => PixCNPJ
+  | ("user_pix_key", _) => PixKey
+  | ("user_bank_account_number", _) => BankAccountNumber
+  | ("user_iban", _) => BankAccountNumber
+  | ("user_source_bank_account_id", _) => SourceBankAccountId
   | _ => None
   }
 }
@@ -746,7 +748,7 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
   }
 }
 
-let getFieldType = (dict, isBancontact, isGiftCard) => {
+let getFieldType = (dict, isBancontact) => {
   let fieldClass =
     dict
     ->Dict.get("field_type")
@@ -758,7 +760,7 @@ let getFieldType = (dict, isBancontact, isGiftCard) => {
     None
   | Number(_val) => None
   | Array(_arr) => None
-  | String(val) => val->getPaymentMethodsFieldTypeFromString(isBancontact, isGiftCard)
+  | String(val) => val->getPaymentMethodsFieldTypeFromString(isBancontact)
   | Object(dict) => dict->getPaymentMethodsFieldTypeFromDict
   }
 }
@@ -1023,7 +1025,7 @@ let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
     {
       required_field: requiredFieldsDict->getString("required_field", ""),
       display_name: requiredFieldsDict->getString("display_name", ""),
-      field_type: requiredFieldsDict->getFieldType(isBancontact, false), // isGiftCard is false here
+      field_type: requiredFieldsDict->getFieldType(isBancontact),
       value: requiredFieldsDict->getString("value", ""),
     }
   })

@@ -236,4 +236,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_givex: `Givex`,
   haveGiftCardText: `Masz kartę podarunkową?`,
   addText: `Dodaj`,
+  giftCardNumberLabel: `Numer karty podarunkowej`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `Numer karty podarunkowej nie może być pusty`,
+  giftCardNumberInvalidText: `Nieprawidłowy numer karty podarunkowej`,
+  giftCardCvcLabel: `CVC karty podarunkowej`,
+  giftCardCvcPlaceholder: `123456`,
+  giftCardCvcEmptyText: `CVC karty podarunkowej nie może być pusty`,
+  giftCardCvcInvalidText: `Nieprawidłowy CVC karty podarunkowej`,
 }

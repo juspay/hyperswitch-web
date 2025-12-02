@@ -225,7 +225,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         | Hyperswitch => <CardIframeContainer />
         | None => <CardPayment cardProps expiryProps cvcProps />
         }
-      | Givex => <CardPayment cardProps expiryProps cvcProps isGiftCard=true />
       | GooglePay =>
         <SessionPaymentWrapper type_={Wallet}>
           {switch gPayToken {
@@ -246,6 +245,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
           <SepaBankDebitLazy />
         </ReusableReactSuspense>
+      | Givex
       | Klarna
       | Ideal
       | EPS =>
