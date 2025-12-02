@@ -52,39 +52,75 @@ let getMessageHandlerV1Elements = (
   ~customPodUri,
   ~endpoint,
   ~merchantHostname,
+  ~isTestMode=false,
 ) => {
-  let paymentMethodsPromise = PaymentHelpers.fetchPaymentMethodList(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+  let (
+    paymentMethodsPromise,
+    customerPaymentMethodsPromise,
+    sessionTokensPromise,
+    blockedBinsPromise,
+  ) = if isTestMode {
+    let mockPaymentMethods = [
+      (
+        "payment_methods",
+        [
+          [
+            ("payment_method", "card"->JSON.Encode.string),
+            (
+              "payment_method_types",
+              [
+                [("payment_method_type", "credit"->JSON.Encode.string)],
+                [("payment_method_type", "debit"->JSON.Encode.string)],
+              ]
+              ->Array.map(Utils.getJsonFromArrayOfJson)
+              ->JSON.Encode.array,
+            ),
+          ]->Utils.getJsonFromArrayOfJson,
+        ]->JSON.Encode.array,
+      ),
+    ]->Utils.getJsonFromArrayOfJson
 
-  let customerPaymentMethodsPromise = PaymentHelpers.fetchCustomerPaymentMethodList(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+    let mockResponse = Dict.make()->JSON.Encode.object
 
-  let sessionTokensPromise = PaymentHelpers.fetchSessions(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-    ~merchantHostname,
-  )
-
-  let blockedBinsPromise = PaymentHelpers.fetchBlockedBins(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+    (
+      Promise.resolve(mockPaymentMethods),
+      Promise.resolve(mockResponse),
+      Promise.resolve(mockResponse),
+      Promise.resolve(mockResponse),
+    )
+  } else {
+    (
+      PaymentHelpers.fetchPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      ),
+      PaymentHelpers.fetchCustomerPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      ),
+      PaymentHelpers.fetchSessions(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~merchantHostname,
+      ),
+      PaymentHelpers.fetchBlockedBins(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      ),
+    )
+  }
 
   ev => {
     open Utils
@@ -197,6 +233,7 @@ module PreMountLoaderForElements = {
     ~merchantHostname,
     ~customPodUri,
     ~profileId,
+    ~isTestMode=false,
   ) => {
     useMessageHandler(() =>
       switch GlobalVars.sdkVersion {
@@ -208,6 +245,7 @@ module PreMountLoaderForElements = {
           ~customPodUri,
           ~endpoint,
           ~merchantHostname,
+          ~isTestMode,
         )
       | V2 =>
         getMessageHandlerV2Elements(
@@ -272,6 +310,7 @@ let make = (
   ~hyperComponentName: Types.hyperComponentName,
   ~merchantHostname,
   ~customPodUri,
+  ~isTestMode=false,
 ) => {
   let logger = HyperLogger.make(
     ~sessionId,
@@ -283,7 +322,15 @@ let make = (
   switch hyperComponentName {
   | Elements =>
     <PreMountLoaderForElements
-      logger publishableKey clientSecret endpoint merchantHostname customPodUri profileId paymentId
+      logger
+      publishableKey
+      clientSecret
+      endpoint
+      merchantHostname
+      customPodUri
+      profileId
+      paymentId
+      isTestMode
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements
