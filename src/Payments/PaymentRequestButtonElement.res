@@ -100,10 +100,8 @@ let make = (~sessions, ~walletOptions) => {
           loaderComponent={<WalletShimmer />}
           componentName="PaymentRequestButtonElement"
           key={i->Int.toString}>
-          {switch (clientSecret, isTestMode) {
-          | (Some(_), _)
-          | (_, true) =>
-            switch item->paymentMode {
+          <RenderIf condition={clientSecret->Option.isSome || isTestMode}>
+            {switch item->paymentMode {
             | GPayWallet =>
               <SessionPaymentWrapper type_={Wallet}>
                 {switch gPayToken {
@@ -174,9 +172,8 @@ let make = (~sessions, ~walletOptions) => {
                 </SessionPaymentWrapper>
               </RenderIf>
             | NONE => React.null
-            }
-          | (None, _) => React.null
-          }}
+            }}
+          </RenderIf>
         </ReusableReactSuspense>
       </ErrorBoundary>
     })
