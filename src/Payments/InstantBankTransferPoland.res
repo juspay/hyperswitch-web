@@ -6,8 +6,8 @@ let make = () => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
@@ -62,6 +62,8 @@ let make = () => {
       paymentMethod="bank_transfer"
       paymentMethodType="instant_bank_transfer_poland"
       setRequiredFieldsBody
+      setAreRequiredFieldsValid
+      setAreRequiredFieldsEmpty
     />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="instant" />
     <InfoElement />

@@ -14,6 +14,8 @@ let default = () => {
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
 
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
@@ -53,7 +55,13 @@ let default = () => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields paymentMethod="bank_transfer" paymentMethodType="bacs" setRequiredFieldsBody />
+    <DynamicFields
+      paymentMethod="bank_transfer"
+      paymentMethodType="bacs"
+      setRequiredFieldsBody
+      setAreRequiredFieldsValid
+      setAreRequiredFieldsEmpty
+    />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="bacs" />
     <InfoElement />
   </div>

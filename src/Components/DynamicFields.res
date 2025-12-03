@@ -21,6 +21,8 @@ let make = (
   ~paymentMethod,
   ~paymentMethodType,
   ~setRequiredFieldsBody,
+  ~setAreRequiredFieldsValid,
+  ~setAreRequiredFieldsEmpty,
   ~isSavedCardFlow=false,
   ~savedMethod=PaymentType.defaultCustomerMethods,
   ~cardProps=None,
@@ -290,6 +292,8 @@ let make = (
     ~cardExpiry,
     ~cvcNumber,
     ~isSavedCardFlow,
+    ~setAreRequiredFieldsValid,
+    ~setAreRequiredFieldsEmpty,
   )
 
   useSetInitialRequiredFields(

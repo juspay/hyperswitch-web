@@ -132,7 +132,8 @@ let make = (
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
 
   let complete = isAllValid(
     isCardValid,
@@ -601,6 +602,8 @@ let make = (
             paymentMethod
             paymentMethodType
             setRequiredFieldsBody
+            setAreRequiredFieldsValid
+            setAreRequiredFieldsEmpty
             cardProps={Some(cardProps)}
             expiryProps={Some(expiryProps)}
             cvcProps={Some(cvcProps)}

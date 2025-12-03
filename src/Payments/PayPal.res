@@ -21,6 +21,8 @@ let make = (~walletOptions) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let isWallet = walletOptions->Array.includes("paypal")
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
 
   let (_, _, labelType, _) = options.wallets.style.type_
@@ -100,8 +102,6 @@ let make = (~walletOptions) => {
   })
 
   let useSubmitCallback = (~isWallet) => {
-    let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-    let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
     let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
@@ -158,7 +158,13 @@ let make = (~walletOptions) => {
       </div>
     </button>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="paypal" setRequiredFieldsBody />
+    <DynamicFields
+      paymentMethod="wallet"
+      paymentMethodType="paypal"
+      setRequiredFieldsBody
+      setAreRequiredFieldsValid
+      setAreRequiredFieldsEmpty
+    />
   }
 }
 

@@ -34,8 +34,8 @@ let make = (
 
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
   let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("google_pay")
@@ -258,7 +258,13 @@ let make = (
       />
     </RenderIf>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody />
+    <DynamicFields
+      paymentMethod="wallet"
+      paymentMethodType="google_pay"
+      setRequiredFieldsBody
+      setAreRequiredFieldsValid
+      setAreRequiredFieldsEmpty
+    />
   }
 }
 

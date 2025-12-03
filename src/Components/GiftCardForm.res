@@ -20,7 +20,9 @@ let make = (
   let (giftCardCvc, setGiftCardCvc) = Recoil.useRecoilState(userGiftCardCvc)
 
   let (isSubmitting, setIsSubmitting) = React.useState(_ => false)
-  let (_, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
 
   // General error state for API and form-level errors
   let (generalError, setGeneralError) = React.useState(_ => "")
@@ -37,10 +39,11 @@ let make = (
         ~errortype="validation_error",
         ~message=localeString.selectPaymentMethodText,
       )
-    } else if giftCardNumber.value !== "" && giftCardCvc.value !== "" {
+    } else if areRequiredFieldsValid && !areRequiredFieldsEmpty {
       setIsSubmitting(_ => true)
 
       let checkBalanceAndApply = () => {
+        Js.log2("requiredFieldsBody:", requiredFieldsBody)
         switch keys.clientSecret {
         | Some(clientSecret) => {
             let publishableKey = keys.publishableKey
@@ -238,7 +241,11 @@ let make = (
     </RenderIf>
     <RenderIf condition={selectedGiftCard !== ""}>
       <DynamicFields
-        paymentMethod="gift_card" paymentMethodType={selectedGiftCard} setRequiredFieldsBody
+        paymentMethod="gift_card"
+        paymentMethodType={selectedGiftCard}
+        setRequiredFieldsBody
+        setAreRequiredFieldsValid
+        setAreRequiredFieldsEmpty
       />
     </RenderIf>
     // Apply button

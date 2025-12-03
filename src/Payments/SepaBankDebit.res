@@ -12,8 +12,8 @@ let make = () => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
   let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let pmAuthMapper = React.useMemo1(
@@ -79,7 +79,13 @@ let make = () => {
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
         }>
-        <DynamicFields paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody />
+        <DynamicFields
+          paymentMethod="bank_debit"
+          paymentMethodType="sepa"
+          setRequiredFieldsBody
+          setAreRequiredFieldsValid
+          setAreRequiredFieldsEmpty
+        />
         <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
         <Terms mode=SepaBankDebit />
       </div>

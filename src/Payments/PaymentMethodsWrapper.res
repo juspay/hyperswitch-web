@@ -58,8 +58,8 @@ let make = (~paymentMethodName: string) => {
   let cleanPhoneNumber = str => str->String.replaceRegExp(%re("/\s/g"), "")
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
   let countryList = CountryStateDataRefs.countryDataRef.contents
 
   React.useEffect(() => {
@@ -161,6 +161,8 @@ let make = (~paymentMethodName: string) => {
       paymentMethod=paymentMethodDetails.methodType
       paymentMethodType=paymentMethodName
       setRequiredFieldsBody
+      setAreRequiredFieldsValid
+      setAreRequiredFieldsEmpty
     />
   </div>
 }

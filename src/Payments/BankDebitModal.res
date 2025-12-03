@@ -117,6 +117,8 @@ let make = (~setModalData) => {
   let (accountType, setAccountType) = React.useState(() => "Savings")
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
 
   let (openModal, setOpenModal) = React.useState(_ => false)
 
@@ -200,7 +202,13 @@ let make = (~setModalData) => {
 
   let dynamicFieldsModalBody =
     <div className="flex flex-col item-center gap-5">
-      <DynamicFields paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody />
+      <DynamicFields
+        paymentMethod="bank_debit"
+        paymentMethodType="sepa"
+        setRequiredFieldsBody
+        setAreRequiredFieldsValid
+        setAreRequiredFieldsEmpty
+      />
       <PayNowButton onClickHandler label="Done" />
     </div>
 

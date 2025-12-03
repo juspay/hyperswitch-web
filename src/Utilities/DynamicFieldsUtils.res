@@ -192,6 +192,8 @@ let useRequiredFieldsEmptyAndValid = (
   ~cardExpiry,
   ~cvcNumber,
   ~isSavedCardFlow,
+  ~setAreRequiredFieldsValid,
+  ~setAreRequiredFieldsEmpty,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
@@ -212,10 +214,7 @@ let useRequiredFieldsEmptyAndValid = (
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
   let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
   let giftCardCvc = Recoil.useRecoilValueFromAtom(userGiftCardCvc)
-  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
-    areRequiredFieldsValid,
-  )
-  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
+  let (areRequiredFieldsValidLocal, setAreRequiredFieldsValidLocal) = React.useState(_ => true)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
@@ -223,7 +222,6 @@ let useRequiredFieldsEmptyAndValid = (
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
-
   React.useEffect(() => {
     let areRequiredFieldsValid = fieldsArr->Array.reduce(true, (acc, paymentMethodFields) => {
       acc &&
@@ -268,11 +266,15 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value !== ""
+      | GiftCardNumber => giftCardNumber.value !== ""
+      | GiftCardCvc => giftCardCvc.value !== ""
       | SourceBankAccountId => sourceBankAccountId.value !== ""
       | _ => true
       }
     })
-    setAreRequiredFieldsValid(_ => isSavedCardFlow || areRequiredFieldsValid)
+    let finalAreRequiredFieldsValid = isSavedCardFlow || areRequiredFieldsValid
+    setAreRequiredFieldsValidLocal(_ => finalAreRequiredFieldsValid)
+    setAreRequiredFieldsValid(_ => finalAreRequiredFieldsValid)
 
     let areRequiredFieldsEmpty = fieldsArrWithBillingAddress->Array.reduce(false, (
       acc,
@@ -320,6 +322,8 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value === ""
+      | GiftCardNumber => giftCardNumber.value === ""
+      | GiftCardCvc => giftCardCvc.value === ""
       | SourceBankAccountId => sourceBankAccountId.value === ""
       | _ => false
       }
@@ -363,12 +367,12 @@ let useRequiredFieldsEmptyAndValid = (
     switch (isCardValid, isExpiryValid, isCVCValid) {
     | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
       CardUtils.emitIsFormReadyForSubmission(
-        cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+        cardValid && expiryValid && cvcValid && areRequiredFieldsValidLocal,
       )
     | _ => ()
     }
     None
-  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid))
+  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValidLocal))
 }
 
 let useSetInitialRequiredFields = (
