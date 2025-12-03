@@ -37,9 +37,13 @@ let make = (
 
     let asyncWrapper = async fn => {
       try {
-        await fn()
+        let response = await fn()
+        Promise.resolve(response)
       } catch {
-      | err => Console.error2("Async function call failure", err)
+      | err => {
+          Console.error2("Async function call failure", err)
+          Promise.reject(err)
+        }
       }
     }
 
@@ -57,12 +61,16 @@ let make = (
         switch currEventHandler.contents {
         | Some(eH) =>
           asyncWrapper(eH)
-          ->then(() => {
+          ->then(_ => {
             let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
             event.source->Window.sendPostMessage(msg)
             resolve()
           })
-          ->catch(_ => resolve())
+          ->catch(_ => {
+            let msg = [("walletClickEvent", false->JSON.Encode.bool)]->Dict.fromArray
+            event.source->Window.sendPostMessage(msg)
+            resolve()
+          })
           ->ignore
 
         | None => ()
