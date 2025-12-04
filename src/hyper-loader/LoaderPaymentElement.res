@@ -16,8 +16,10 @@ let make = (
   mountPostMessage,
   ~isPaymentManagementElement=false,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
 ) => {
   try {
+    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let mountId = ref("")
     let setPaymentIframeRef = ref => {
       setIframeRef(ref)
@@ -50,11 +52,21 @@ let make = (
         | Some(eH) =>
           eH()
           ->then(_ => {
+            logger.setLogInfo(
+              ~value=`One click handler callback executed successfully`,
+              ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+              ~logType=INFO,
+            )
             let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
             event.source->Window.sendPostMessage(msg)
             resolve()
           })
           ->catch(_ => {
+            logger.setLogError(
+              ~value=`Error in one click handler callback`,
+              ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+              ~logType=ERROR,
+            )
             let msg = [("walletClickEvent", false->JSON.Encode.bool)]->Dict.fromArray
             event.source->Window.sendPostMessage(msg)
             resolve()

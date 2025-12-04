@@ -1474,6 +1474,7 @@ let make = (
         iframeRef,
         mountPostMessage,
         ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+        ~logger=Some(logger),
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
