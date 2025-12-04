@@ -35,18 +35,6 @@ let make = (
         true,
       )
 
-    let asyncWrapper = async fn => {
-      try {
-        let response = await fn()
-        Promise.resolve(response)
-      } catch {
-      | err => {
-          Console.error2("Async function call failure", err)
-          Promise.reject(err)
-        }
-      }
-    }
-
     let currEventHandler = ref(Some(() => Promise.make((_, _) => {()})))
     let walletOneClickEventHandler = (event: Types.event) => {
       open Promise
@@ -60,7 +48,7 @@ let make = (
       if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
         switch currEventHandler.contents {
         | Some(eH) =>
-          asyncWrapper(eH)
+          eH()
           ->then(_ => {
             let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
             event.source->Window.sendPostMessage(msg)
