@@ -75,6 +75,10 @@ let make = (
     layoutClass.savedMethodCustomization.groupBy == PaymentMethods
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
 
+  let shouldShowClickToPaySection =
+    (clickToPayConfig.isReady == Some(true) && !groupSavedMethodsWithPaymentMethods) ||
+      selectedOption == "card"
+
   let bottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
@@ -93,9 +97,7 @@ let make = (
         />
       )
       ->React.array}
-      <RenderIf
-        condition={clickToPayConfig.isReady == Some(true) &&
-          (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")}>
+      <RenderIf condition={shouldShowClickToPaySection}>
         <ClickToPayAuthenticate
           loggerState
           savedMethods

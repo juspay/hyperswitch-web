@@ -464,6 +464,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (paymentMethodList, customerPaymentMethods))
 
+  let hasSavedMethods = displaySavedPaymentMethods && savedMethods->Array.length > 0
+  let shouldShowSavedMethods = hasSavedMethods || isShowPaymentMethodsDependingOnClickToPay
+  let shouldShowSavedMethodsComponent =
+    !groupSavedMethodsWithPaymentMethods && !showPaymentMethodsScreen && shouldShowSavedMethods
+  let shouldShowUseExistingMethodsButton =
+    !groupSavedMethodsWithPaymentMethods && shouldShowSavedMethods && showPaymentMethodsScreen
+
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div
@@ -480,10 +487,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <PaymentElementShimmer.SavedPaymentCardShimmer />
       }
     } else {
-      <RenderIf
-        condition={!groupSavedMethodsWithPaymentMethods &&
-        (!showPaymentMethodsScreen &&
-        (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay))}>
+      <RenderIf condition={shouldShowSavedMethodsComponent}>
         <SavedMethods
           paymentToken
           setPaymentToken
@@ -534,11 +538,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         }}
       </div>
     </RenderIf>
-    <RenderIf
-      condition={!groupSavedMethodsWithPaymentMethods &&
-      ((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
-        isShowPaymentMethodsDependingOnClickToPay) &&
-      showPaymentMethodsScreen}>
+    <RenderIf condition={shouldShowUseExistingMethodsButton}>
       <SwitchViewButton
         icon={<Icon name="circle_dots" size=20 width=19 />}
         title={localeString.useExistingPaymentMethods}
