@@ -94,18 +94,19 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       setPaymentOptions(_ => [...filteredOptions]->removeDuplicate)
     }
 
-    switch (paymentManagementList, paymentMethodsListV2) {
-    | (LoadedV2(paymentlist), _) =>
+    switch (paymentManagementList, paymentMethodsListV2, intentList) {
+    | (LoadedV2(paymentlist), _, LoadedIntent(_)) =>
       updatePaymentOptions()
       setPaymentManagementListValue(_ => paymentlist)
-    | (_, LoadedV2(paymentlist)) =>
+    | (_, LoadedV2(paymentlist), LoadedIntent(_)) =>
       setWalletOptions(_ => walletsList)
       updatePaymentOptions()
       setPaymentMethodListValueV2(_ => paymentlist)
-    | (LoadErrorV2(_), _)
-    | (_, LoadErrorV2(_))
-    | (SemiLoadedV2, _)
-    | (_, SemiLoadedV2) =>
+    | (LoadErrorV2(_), _, _)
+    | (_, LoadErrorV2(_), _)
+    | (SemiLoadedV2, _, _)
+    | (_, SemiLoadedV2, _)
+    | (_, _, Error(_)) =>
       // TODO - For Payments CheckPriorityList
       // TODO - For PaymentMethodsManagement Cards
       setPaymentOptions(_ => [])
@@ -336,12 +337,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         }}
       </div>
     </RenderIf>
-    {switch (paymentManagementList, paymentMethodsListV2) {
-    | (LoadErrorV2(_), _) =>
+    {switch (paymentManagementList, paymentMethodsListV2, intentList) {
+    | (_, _, Error(_)) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+    | (LoadErrorV2(_), _, _) =>
       <RenderIf condition={paymentManagementListValue.paymentMethodsEnabled->Array.length === 0}>
         <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
       </RenderIf>
-    | (_, LoadErrorV2(_)) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+    | (_, LoadErrorV2(_), _) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
     | _ =>
       <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
         <PaymentElementShimmer />

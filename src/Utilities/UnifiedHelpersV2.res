@@ -159,8 +159,12 @@ let itemToIntentObjMapper = dict => {
 
 let createIntentDetails = (dict, key) => {
   let intentDict = dict->Utils.getDictFromDict(key)
-  let response = intentDict->itemToIntentObjMapper
-  LoadedIntent(response)
+  if intentDict->Dict.toArray->Array.length == 0 {
+    Error(JSON.Encode.null)
+  } else {
+    let response = intentDict->itemToIntentObjMapper
+    LoadedIntent(response)
+  }
 }
 
 let defaultAddress = {
