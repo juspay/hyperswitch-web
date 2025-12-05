@@ -44,7 +44,6 @@ let make = (
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
   )
-  let isGuestCustomer = useIsGuestCustomer()
 
   let {iframeId, clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let url = RescriptReactRouter.useUrl()
@@ -324,16 +323,10 @@ let make = (
   useSubmitPaymentData(submitCallback)
 
   let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
-    !isGuestCustomer &&
     paymentMethodListValue.payment_type === NEW_MANDATE &&
     displaySavedPaymentMethodsCheckbox &&
     customerMethod.requiresCvv
-  }, (
-    isGuestCustomer,
-    paymentMethodListValue.payment_type,
-    displaySavedPaymentMethodsCheckbox,
-    customerMethod,
-  ))
+  }, (paymentMethodListValue.payment_type, displaySavedPaymentMethodsCheckbox, customerMethod))
 
   let enableSavedPaymentShimmer = React.useMemo(() => {
     savedCardlength === 0 &&

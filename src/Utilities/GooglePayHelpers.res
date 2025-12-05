@@ -2,7 +2,6 @@ open Utils
 
 let getGooglePayBodyFromResponse = (
   ~gPayResponse,
-  ~isGuestCustomer,
   ~paymentMethodListValue=PaymentMethodsRecord.defaultList,
   ~connectors,
   ~requiredFields=[],
@@ -11,7 +10,6 @@ let getGooglePayBodyFromResponse = (
 ) => {
   let obj = gPayResponse->getDictFromJson->GooglePayType.itemToObjMapper
   let gPayBody = PaymentUtils.appendedCustomerAcceptance(
-    ~isGuestCustomer,
     ~paymentType=paymentMethodListValue.payment_type,
     ~body=PaymentBody.gpayBody(~payObj=obj, ~connectors),
   )
@@ -81,7 +79,6 @@ let useHandleGooglePayResponse = (
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
     ~paymentMethodListValue,
@@ -97,7 +94,6 @@ let useHandleGooglePayResponse = (
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
         let body = getGooglePayBodyFromResponse(
           ~gPayResponse=metadata,
-          ~isGuestCustomer,
           ~paymentMethodListValue,
           ~connectors,
           ~requiredFields=paymentMethodTypes.required_fields,

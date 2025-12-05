@@ -26,12 +26,10 @@ module WalletsSaveDetailsText = {
       areOneClickWalletsRendered,
     )
     let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-    let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
     let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
     <RenderIf
       condition={PaymentUtils.isAppendingCustomerAcceptance(
-        ~isGuestCustomer,
         ~paymentType=paymentMethodListValue.payment_type,
       ) &&
       (isGooglePay || isApplePay || isPaypal || isSamsungPay)}>

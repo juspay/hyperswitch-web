@@ -69,7 +69,6 @@ let useHandleSamsungPayResponse = (
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   React.useEffect0(() => {
     let handleSamsung = (ev: Window.event) => {
@@ -83,7 +82,6 @@ let useHandleSamsungPayResponse = (
         )
 
         let finalBody = PaymentUtils.appendedCustomerAcceptance(
-          ~isGuestCustomer,
           ~paymentType=paymentMethodListValue.payment_type,
           ~body,
         )

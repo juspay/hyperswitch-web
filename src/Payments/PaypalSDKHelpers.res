@@ -9,7 +9,6 @@ let loadPaypalSDK = (
   ~iframeId,
   ~isManualRetryEnabled,
   ~paymentMethodListValue,
-  ~isGuestCustomer,
   ~postSessionTokens: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
   ~publishableKey,
@@ -73,7 +72,6 @@ let loadPaypalSDK = (
             paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
           let body = PaymentBody.paypalSdkBody(~token="", ~connectors)
           let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
-            ~isGuestCustomer,
             ~paymentType=paymentMethodListValue.payment_type,
             ~body,
           )
@@ -177,7 +175,6 @@ let loadPaypalSDK = (
           let orderId = val->getDictFromJson->getString("id", "")
           let body = PaymentBody.paypalSdkBody(~token=orderId, ~connectors)
           let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
-            ~isGuestCustomer,
             ~paymentType=paymentMethodListValue.payment_type,
             ~body,
           )
@@ -243,7 +240,6 @@ let loadBraintreePaypalSdk = (
   ~buttonStyle,
   ~iframeId,
   ~paymentMethodListValue,
-  ~isGuestCustomer,
   ~intent: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
   ~orderDetails,
@@ -308,7 +304,6 @@ let loadBraintreePaypalSdk = (
                             let paypalBody = body->mergeAndFlattenToTuples(requiredFieldsBody)
 
                             let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
-                              ~isGuestCustomer,
                               ~paymentType=paymentMethodListValue.payment_type,
                               ~body=paypalBody,
                             )
