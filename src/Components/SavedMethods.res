@@ -375,6 +375,14 @@ let make = (
         icon={<Icon name="circle-plus" size=22 />}
         title={localeString.newPaymentMethods}
         ariaLabel="Click to use new payment methods"
+        dataTestId={TestUtils.addNewCardIcon}
+        onKeyDown={event => {
+          let key = JsxEvent.Keyboard.key(event)
+          let keyCode = JsxEvent.Keyboard.keyCode(event)
+          if key == "Enter" || keyCode == 13 {
+            setShowPaymentMethodsScreen(_ => true)
+          }
+        }}
       />
     </RenderIf>
   </div>

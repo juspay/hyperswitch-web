@@ -415,7 +415,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let checkoutEle = if groupSavedMethodsWithPaymentMethods {
     <SavedMethodsWithPaymentForm
       savedMethods
-      selectedOption
       setPaymentToken
       cvcProps
       paymentToken
@@ -545,6 +544,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         title={localeString.useExistingPaymentMethods}
         onClick={_ => setShowPaymentMethodsScreen(_ => false)}
         ariaLabel="Click to use existing payment methods"
+        onKeyDown={event => {
+          let key = JsxEvent.Keyboard.key(event)
+          let keyCode = JsxEvent.Keyboard.keyCode(event)
+          if key == "Enter" || keyCode == 13 {
+            setShowPaymentMethodsScreen(_ => false)
+          }
+        }}
       />
     </RenderIf>
     {switch paymentMethodList {

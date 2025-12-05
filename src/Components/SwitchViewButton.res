@@ -1,5 +1,5 @@
 @react.component
-let make = (~onClick, ~icon, ~title, ~ariaLabel) => {
+let make = (~onClick, ~icon, ~title, ~ariaLabel, ~onKeyDown, ~dataTestId=?) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   <div
@@ -14,14 +14,9 @@ let make = (~onClick, ~icon, ~title, ~ariaLabel) => {
     tabIndex=0
     role="button"
     ariaLabel
-    onKeyDown={event => {
-      let key = JsxEvent.Keyboard.key(event)
-      let keyCode = JsxEvent.Keyboard.keyCode(event)
-      if key == "Enter" || keyCode == 13 {
-        onClick(Obj.magic(event))
-      }
-    }}
-    onClick={onClick}>
+    onKeyDown
+    dataTestId={dataTestId->Option.getOr("")}
+    onClick>
     {icon}
     {React.string(title)}
   </div>

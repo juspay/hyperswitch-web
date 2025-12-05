@@ -1,7 +1,6 @@
 @react.component
 let make = (
   ~savedMethods: array<PaymentType.customerMethods>,
-  ~selectedOption,
   ~setPaymentToken,
   ~cvcProps,
   ~children,
@@ -14,6 +13,7 @@ let make = (
   ~closeComponentIfSavedMethodsAreEmpty,
   ~isShowPaymentMethodsDependingOnClickToPay,
 ) => {
+  let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
   let savedMethodsGroupedByType = savedMethods->Array.reduce(Dict.make(), (acc, savedMethod) => {
     let paymentTypeKey = PaymentHelpers.getConstructedPaymentMethodName(
       ~paymentMethod=savedMethod.paymentMethod,
@@ -27,18 +27,17 @@ let make = (
     acc
   })
 
-  let savedMethodsForSelectedTab =
+  let savedMethodsForSelectedOption =
     savedMethodsGroupedByType->Dict.get(selectedOption)->Option.getOr([])
 
-  let savedMethodsCount = savedMethodsForSelectedTab->Array.length
-  let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
+  let savedMethodsCount = savedMethodsForSelectedOption->Array.length
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
     RecoilAtoms.showPaymentMethodsScreen,
   )
   React.useEffect(() => {
     setPaymentToken(_ => {
-      let selectedToken: RecoilAtomTypes.paymentToken = switch savedMethodsForSelectedTab[0] {
+      let selectedToken: RecoilAtomTypes.paymentToken = switch savedMethodsForSelectedOption[0] {
       | Some(firstSavedMethod) => {
           paymentToken: firstSavedMethod.paymentToken,
           customerId: firstSavedMethod.customerId,
@@ -72,13 +71,20 @@ let make = (
               icon={<Icon name="circle_dots" size=20 width=19 />}
               title={localeString.useExistingPaymentMethods}
               ariaLabel="Click to use existing payment methods"
+              onKeyDown={event => {
+                let key = JsxEvent.Keyboard.key(event)
+                let keyCode = JsxEvent.Keyboard.keyCode(event)
+                if key == "Enter" || keyCode == 13 {
+                  setShowPaymentMethodsScreen(_ => false)
+                }
+              }}
             />
           </RenderIf>
         </>
       : <SavedMethods
           paymentToken
           setPaymentToken
-          savedMethods=savedMethodsForSelectedTab
+          savedMethods=savedMethodsForSelectedOption
           loadSavedCards
           cvcProps
           sessions
