@@ -90,9 +90,7 @@ let make = () => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      // Skip all validations for gift-card-only payments
       if isGiftCardOnlyPayment {
-        // Gift card only payment - no validation needed
         ()
       } else if complete {
         let body = PaymentBody.bacsBankDebitBody(

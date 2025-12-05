@@ -79,9 +79,7 @@ let make = (~paymentMethodName: string) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      // Skip all validations for gift-card-only payments
       if isGiftCardOnlyPayment {
-        // Gift card only payment - no validation needed
         ()
       } else if areRequiredFieldsValid {
         let countryCode =

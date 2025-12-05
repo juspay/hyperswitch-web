@@ -39,13 +39,9 @@ let make = () => {
     | V2 => PaymentBodyV2.dynamicPaymentBodyV2("bank_debit", "sepa")
     }
     if confirm.doSubmit {
-      // Skip all validations for gift-card-only payments
-      // Gift card submission is handled separately by GiftCards.res
       if isGiftCardOnlyPayment {
-        // Do nothing - let GiftCards.res handle the submission
         ()
-      } // Normal flow - call the original callback with validation
-      else if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+      } else if areRequiredFieldsValid && !areRequiredFieldsEmpty {
         let sepaBody =
           body
           ->getJsonFromArrayOfJson

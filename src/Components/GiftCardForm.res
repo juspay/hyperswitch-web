@@ -9,30 +9,23 @@ let make = (
   ~onRemainingAmountUpdate=?,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  // Get auth data from Recoil atoms
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
-  // Get applied gift cards from recoil
   let appliedGiftCards = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.appliedGiftCardsAtom)
 
-  // Use Recoil atoms for gift card fields
   let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
-  let (giftCardCvc, setGiftCardCvc) = Recoil.useRecoilState(userGiftCardCvc)
+  let (_, setGiftCardCvc) = Recoil.useRecoilState(userGiftCardCvc)
 
   let (isSubmitting, setIsSubmitting) = React.useState(_ => false)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
   let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
 
-  // General error state for API and form-level errors
   let (generalError, setGeneralError) = React.useState(_ => "")
 
-  // Combined check balance and apply payment method function using the new API
   let handleSubmit = _ => {
-    // Clear any previous general errors
     setGeneralError(_ => "")
 
-    // First validate gift card selection
     if selectedGiftCard === "" {
       setGeneralError(_ => localeString.selectPaymentMethodText)
       Utils.postFailedSubmitResponse(
@@ -41,181 +34,115 @@ let make = (
       )
     } else if areRequiredFieldsValid && !areRequiredFieldsEmpty {
       setIsSubmitting(_ => true)
+      let clientSecret = keys.clientSecret->Option.getOr("")
+      let publishableKey = keys.publishableKey
+      let profileId = keys.profileId
+      let paymentId = keys.paymentId
 
-      let checkBalanceAndApply = () => {
-        Js.log2("requiredFieldsBody:", requiredFieldsBody)
-        switch keys.clientSecret {
-        | Some(clientSecret) => {
-            let publishableKey = keys.publishableKey
-            let profileId = keys.profileId
-            let paymentId = keys.paymentId
+      let appliedGiftCardPaymentMethods = appliedGiftCards->Array.map(card => {
+        let giftCardTuples = []->mergeAndFlattenToTuples(card.requiredFieldsBody)
+        let data =
+          giftCardTuples
+          ->getJsonFromArrayOfJson
+          ->getDictFromJson
+          ->getDictFromDict("payment_method_data")
+        data
+      })
 
-            if clientSecret !== "" && publishableKey !== "" && paymentId !== "" {
-              let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
+      let newGiftCardTuples = []->mergeAndFlattenToTuples(requiredFieldsBody)
+      let newGiftCardData =
+        newGiftCardTuples
+        ->getJsonFromArrayOfJson
+        ->getDictFromJson
+        ->getDictFromDict("payment_method_data")
 
-              // Build payment methods array for all applied gift cards
-              let appliedGiftCardPaymentMethods = appliedGiftCards->Array.map(card => {
-                Dict.fromArray([
-                  (
-                    "gift_card",
-                    Dict.fromArray([
-                      (
-                        card.giftCardType,
-                        Dict.fromArray([
-                          ("number", card.giftCardNumber->JSON.Encode.string),
-                          ("cvc", card.cvc->JSON.Encode.string),
-                        ])
-                        ->Dict.toArray
-                        ->getJsonFromArrayOfJson,
-                      ),
-                    ])
-                    ->Dict.toArray
-                    ->getJsonFromArrayOfJson,
-                  ),
-                ])
-              })
+      let paymentMethods = Array.concat(appliedGiftCardPaymentMethods, [newGiftCardData])
 
-              // Build payment method for the new gift card being added
-              let newGiftCardData = Dict.fromArray([
-                (
-                  "gift_card",
-                  Dict.fromArray([
-                    (
-                      selectedGiftCard,
-                      Dict.fromArray([
-                        ("number", giftCardNumber.value->JSON.Encode.string),
-                        ("cvc", giftCardCvc.value->JSON.Encode.string),
-                      ])
-                      ->Dict.toArray
-                      ->getJsonFromArrayOfJson,
-                    ),
-                  ])
-                  ->Dict.toArray
-                  ->getJsonFromArrayOfJson,
-                ),
-              ])
+      PaymentHelpersV2.checkBalanceAndApplyPaymentMethod(
+        ~paymentMethods,
+        ~clientSecret,
+        ~publishableKey,
+        ~customPodUri,
+        ~profileId,
+        ~paymentId,
+      )
+      ->Promise.then(response => {
+        setIsSubmitting(_ => false)
 
-              // Concatenate applied gift cards with the new one
-              let paymentMethods = Array.concat(appliedGiftCardPaymentMethods, [newGiftCardData])
+        let responseDict = response->Utils.getDictFromJson
 
-              PaymentHelpersV2.checkBalanceAndApplyPaymentMethod(
-                ~paymentMethods,
-                ~clientSecret,
-                ~publishableKey,
-                ~customPodUri,
-                ~endpoint,
-                ~profileId,
-                ~paymentId,
-              )
-              ->Promise.then(response => {
-                setIsSubmitting(_ => false)
+        switch responseDict->Dict.get("balances") {
+        | Some(balancesJson) =>
+          switch balancesJson->JSON.Decode.array {
+          | Some(balancesArray) if balancesArray->Array.length > 0 =>
+            balancesArray->Array.forEach(balanceItem => {
+              let balanceDict = balanceItem->Utils.getDictFromJson
+              switch balanceDict->Dict.get("eligibility") {
+              | Some(eligibilityJson) =>
+                let eligibilityDict = eligibilityJson->Utils.getDictFromJson
+                switch eligibilityDict->Dict.get("success") {
+                | Some(successJson) =>
+                  let successDict = successJson->Utils.getDictFromJson
+                  let applicableAmount = successDict->Utils.getFloat("applicable_amount", 0.0)
+                  let currency = successDict->Utils.getString("currency", "USD")
 
-                if response !== JSON.Encode.null {
-                  try {
-                    let responseDict = response->Utils.getDictFromJson
-
-                    // Parse balances array to get gift card info
-                    switch responseDict->Dict.get("balances") {
-                    | Some(balancesJson) =>
-                      switch balancesJson->JSON.Decode.array {
-                      | Some(balancesArray) if balancesArray->Array.length > 0 =>
-                        // Iterate through all balance items
-                        balancesArray->Array.forEach(balanceItem => {
-                          let balanceDict = balanceItem->Utils.getDictFromJson
-                          switch balanceDict->Dict.get("eligibility") {
-                          | Some(eligibilityJson) =>
-                            let eligibilityDict = eligibilityJson->Utils.getDictFromJson
-                            switch eligibilityDict->Dict.get("success") {
-                            | Some(successJson) =>
-                              let successDict = successJson->Utils.getDictFromJson
-                              let balance = successDict->Utils.getFloat("balance", 0.0)
-                              let applicableAmount =
-                                successDict->Utils.getFloat("applicable_amount", 0.0)
-                              let currency = successDict->Utils.getString("currency", "USD")
-
-                              // Create a new applied gift card object
-                              let newGiftCard: RecoilAtomsV2.appliedGiftCard = {
-                                giftCardType: selectedGiftCard,
-                                giftCardNumber: giftCardNumber.value,
-                                maskedNumber: `**** ${giftCardNumber.value->String.slice(
-                                    ~start=-4,
-                                    ~end=giftCardNumber.value->String.length,
-                                  )}`,
-                                balance: applicableAmount, // Use applicable amount rather than full balance
-                                currency,
-                                id: `${selectedGiftCard}_${Date.now()->Float.toString}`,
-                                cvc: giftCardCvc.value,
-                              }
-
-                              // Add gift card to appliedGiftCards
-                              switch onGiftCardAdded {
-                              | Some(callback) => callback(newGiftCard)
-                              | None => ()
-                              }
-                            | None =>
-                              // Check for failure/error in eligibility
-                              switch eligibilityDict->Dict.get("failure") {
-                              | Some(_) =>
-                                setGeneralError(_ => localeString.giftCardNumberInvalidText)
-                              | None => setGeneralError(_ => localeString.enterValidDetailsText)
-                              }
-                            }
-                          | None => setGeneralError(_ => localeString.enterValidDetailsText)
-                          }
-                        })
-
-                        // Parse and update remaining amount (done after processing all balances)
-                        let remainingAmount = responseDict->Utils.getFloat("remaining_amount", 0.0)
-                        let responseCurrency = responseDict->Utils.getString("currency", "USD")
-
-                        // Call parent callback to update remaining amount
-                        switch onRemainingAmountUpdate {
-                        | Some(callback) => callback(Some(remainingAmount), responseCurrency)
-                        | None => ()
-                        }
-
-                        // Reset form
-                        setGiftCardNumber(_ => {
-                          value: "",
-                          isValid: None,
-                          errorString: "",
-                        })
-                        setGiftCardCvc(_ => {
-                          value: "",
-                          isValid: None,
-                          errorString: "",
-                        })
-                      | _ => setGeneralError(_ => localeString.enterValidDetailsText)
-                      }
-                    | None => setGeneralError(_ => localeString.enterValidDetailsText)
-                    }
-                  } catch {
-                  | _ => setGeneralError(_ => localeString.enterValidDetailsText)
+                  let newGiftCard: RecoilAtomsV2.appliedGiftCard = {
+                    giftCardType: selectedGiftCard,
+                    maskedNumber: `**** ${giftCardNumber.value->String.slice(
+                        ~start=-4,
+                        ~end=giftCardNumber.value->String.length,
+                      )}`,
+                    balance: applicableAmount, // Use applicable amount rather than full balance
+                    currency,
+                    id: `${selectedGiftCard}_${Date.now()->Float.toString}`,
+                    requiredFieldsBody,
                   }
-                } else {
-                  setGeneralError(_ => localeString.enterValidDetailsText)
-                }
-                Promise.resolve()
-              })
-              ->Promise.catch(_ => {
-                setIsSubmitting(_ => false)
-                setGeneralError(_ => localeString.enterValidDetailsText)
-                Promise.resolve()
-              })
-              ->ignore
-            } else {
-              setIsSubmitting(_ => false)
-              setGeneralError(_ => localeString.enterValidDetailsText)
-            }
-          }
-        | None => {
-            setIsSubmitting(_ => false)
-            setGeneralError(_ => localeString.enterValidDetailsText)
-          }
-        }
-      }
 
-      checkBalanceAndApply()
+                  switch onGiftCardAdded {
+                  | Some(callback) => callback(newGiftCard)
+                  | None => ()
+                  }
+                | None =>
+                  switch eligibilityDict->Dict.get("failure") {
+                  | Some(_) => setGeneralError(_ => localeString.giftCardNumberInvalidText)
+                  | None => setGeneralError(_ => localeString.enterValidDetailsText)
+                  }
+                }
+              | None => setGeneralError(_ => localeString.enterValidDetailsText)
+              }
+            })
+
+            let remainingAmount = responseDict->Utils.getFloat("remaining_amount", 0.0)
+            let responseCurrency = responseDict->Utils.getString("currency", "USD")
+
+            switch onRemainingAmountUpdate {
+            | Some(callback) => callback(Some(remainingAmount), responseCurrency)
+            | None => ()
+            }
+
+            setGiftCardNumber(_ => {
+              value: "",
+              isValid: None,
+              errorString: "",
+            })
+            setGiftCardCvc(_ => {
+              value: "",
+              isValid: None,
+              errorString: "",
+            })
+          | _ => setGeneralError(_ => localeString.enterValidDetailsText)
+          }
+        | None => setGeneralError(_ => localeString.enterValidDetailsText)
+        }
+
+        Promise.resolve()
+      })
+      ->Promise.catch(_ => {
+        setIsSubmitting(_ => false)
+        setGeneralError(_ => localeString.enterValidDetailsText)
+        Promise.resolve()
+      })
+      ->ignore
     } else {
       setGeneralError(_ => localeString.enterFieldsText)
       Utils.postFailedSubmitResponse(
@@ -226,7 +153,6 @@ let make = (
   }
 
   <div className="flex flex-col gap-4 w-full">
-    // General error message display
     <RenderIf condition={generalError !== "" && !isDisabled}>
       <div
         className="w-full p-3 rounded-lg border"
@@ -246,9 +172,9 @@ let make = (
         setRequiredFieldsBody
         setAreRequiredFieldsValid
         setAreRequiredFieldsEmpty
+        disableInfoElement=true
       />
     </RenderIf>
-    // Apply button
     <div className="flex justify-end w-full">
       <button
         className="px-6 py-3 text-sm font-medium text-white rounded-lg transition-opacity disabled:opacity-50 disabled:cursor-not-allowed w-full"

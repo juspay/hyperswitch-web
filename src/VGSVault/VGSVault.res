@@ -83,9 +83,7 @@ let make = (~isBancontact=false) => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      // Skip all validations for gift-card-only payments
       if isGiftCardOnlyPayment {
-        // Gift card only payment - no validation needed
         ()
       } else {
         switch form {

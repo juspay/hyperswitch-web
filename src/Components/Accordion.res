@@ -6,7 +6,7 @@ let make = (
   ~checkoutEle: React.element,
   ~borderBottom: bool,
   ~borderRadiusStyle,
-  ~disabled: bool=false,
+  ~isDisabled=false,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {layout, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -37,18 +37,18 @@ let make = (
   )
 
   let onClick = _ => {
-    if !disabled {
+    if !isDisabled {
       setSelectedOption(_ => paymentOption.paymentMethodName)
     }
   }
 
   <div
-    className={`AccordionItem flex flex-col ${disabled ? "cursor-not-allowed" : ""}`}
+    className={`AccordionItem flex flex-col ${isDisabled ? "cursor-not-allowed" : ""}`}
     style={
       minHeight: "60px",
       width: "-webkit-fill-available",
-      cursor: disabled ? "not-allowed" : "pointer",
-      opacity: disabled ? "0.5" : "1.0",
+      cursor: isDisabled ? "not-allowed" : "pointer",
+      opacity: isDisabled ? "0.5" : "1.0",
       marginBottom: layoutClass.spacedAccordionItems ? themeObj.spacingAccordionItem : "",
       border: `1px solid ${themeObj.borderColor}`,
       borderRadius: {borderRadiusStyle},

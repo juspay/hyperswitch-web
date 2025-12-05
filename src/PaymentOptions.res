@@ -140,8 +140,8 @@ let make = (
       {cardOptionDetails
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
-        // Disable non-card payment methods when gift cards fully cover payment
-        let isDisabled = isGiftCardOnlyPayment && payOption.paymentMethodName !== "card"
+
+        let isDisabled = isGiftCardOnlyPayment
         <TabCard key={i->Int.toString} paymentOption=payOption isActive disabled=isDisabled />
       })
       ->React.array}

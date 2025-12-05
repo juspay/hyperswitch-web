@@ -133,7 +133,7 @@ let make = (
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
-  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
+  let (_, setAreRequiredFieldsEmpty) = React.useState(_ => false)
 
   let complete = isAllValid(
     isCardValid,
@@ -211,9 +211,7 @@ let make = (
     let isUnrecognizedClickToPayPayment = isSaveDetailsWithClickToPay
 
     if confirm.doSubmit {
-      // Skip all validations for gift-card-only payments
       if isGiftCardOnlyPayment {
-        // Gift card only payment - no card validation needed
         ()
       } else {
         let isCardDetailsValid =

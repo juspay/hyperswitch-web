@@ -638,7 +638,6 @@ let checkBalanceAndApplyPaymentMethod = (
   ~clientSecret,
   ~publishableKey,
   ~customPodUri,
-  ~endpoint,
   ~profileId,
   ~paymentId,
 ) => {
@@ -649,6 +648,7 @@ let checkBalanceAndApplyPaymentMethod = (
     ("x-profile-id", profileId),
     ("Authorization", `publishable-key=${publishableKey}, client-secret=${clientSecret}`),
   ]
+  let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
 
   let headers = switch customPodUri {
   | value if value != "" => [...baseHeaders, ("x-feature", value)]

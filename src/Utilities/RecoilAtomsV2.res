@@ -14,12 +14,11 @@ let vaultProfileId = Recoil.atom("vaultProfileId", "")
 
 type appliedGiftCard = {
   giftCardType: string,
-  giftCardNumber: string,
   maskedNumber: string,
   balance: float,
   currency: string,
   id: string,
-  cvc: string,
+  requiredFieldsBody: Dict.t<Core__JSON.t>,
 }
 
 let appliedGiftCardsAtom: Recoil.recoilAtom<array<appliedGiftCard>> = Recoil.atom(

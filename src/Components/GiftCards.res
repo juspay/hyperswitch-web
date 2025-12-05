@@ -3,23 +3,23 @@ open Utils
 
 @react.component
 let make = () => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
-
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
   let (appliedGiftCards, setAppliedGiftCards) = Recoil.useRecoilState(
     RecoilAtomsV2.appliedGiftCardsAtom,
   )
-
-  // State for inline modal
   let (showGiftCardForm, setShowGiftCardForm) = React.useState(_ => false)
   let (selectedGiftCard, setSelectedGiftCard) = React.useState(_ => "")
-  // State for remaining amount after applying gift cards - use Recoil atom for sharing with CardPayment
   let (remainingAmount, setRemainingAmount) = Recoil.useRecoilState(
     RecoilAtomsV2.remainingAmountAtom,
   )
   let (remainingCurrency, setRemainingCurrency) = React.useState(_ => "")
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   // Get gift card options from PML V2
   let giftCardOptions = React.useMemo(() => {
@@ -32,6 +32,31 @@ let make = () => {
     }
   }, [paymentMethodsListV2])
 
+  let giftCardDropdownOptions = React.useMemo(() => {
+    let baseOptions = giftCardOptions->Array.map(giftCardType => {
+      let displayName = switch giftCardType {
+      | "givex" => "Givex"
+      | _ => giftCardType->String.toUpperCase
+      }
+      {
+        DropdownField.value: giftCardType,
+        label: displayName,
+      }
+    })
+
+    // Add placeholder option at the beginning
+    let placeholderLabel =
+      appliedGiftCards->Array.length > 0 ? "Gift card limit reached (1 max)" : "Select gift card"
+
+    Array.concat([{DropdownField.value: "", label: placeholderLabel}], baseOptions)
+  }, (giftCardOptions, appliedGiftCards))
+
+  // Callback to handle remaining amount updates from GiftCardForm
+  let handleRemainingAmountUpdate = (amount: option<float>, currency: string) => {
+    setRemainingAmount(_ => amount)
+    setRemainingCurrency(_ => currency)
+  }
+
   let handleToggleGiftCardForm = () => {
     setShowGiftCardForm(prev => !prev)
     if showGiftCardForm {
@@ -39,99 +64,53 @@ let make = () => {
     }
   }
 
-  let handleSelectGiftCard = giftCardType => {
-    setSelectedGiftCard(_ => giftCardType)
-  }
-
   let removeGiftCard = (giftCardId: string) => {
-    // First remove the gift card from the list
     let updatedCards = appliedGiftCards->Array.filter(card => card.id !== giftCardId)
-
-    // Update local state immediately
     setAppliedGiftCards(_ => updatedCards)
 
     if updatedCards->Array.length === 0 {
-      // No remaining cards - reset everything
       setRemainingAmount(_ => None)
       setRemainingCurrency(_ => "")
     } else {
-      // Make API call to recalculate with remaining cards using the new combined API
-      switch keys.clientSecret {
-      | Some(clientSecret) => {
-          let publishableKey = keys.publishableKey
-          let profileId = keys.profileId
-          let paymentId = keys.paymentId
+      let clientSecret = keys.clientSecret->Option.getOr("")
+      let publishableKey = keys.publishableKey
+      let profileId = keys.profileId
+      let paymentId = keys.paymentId
 
-          if clientSecret !== "" && publishableKey !== "" && paymentId !== "" {
-            let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
+      let paymentMethods = updatedCards->Array.map(card => {
+        let giftCardTuples = []->mergeAndFlattenToTuples(card.requiredFieldsBody)
+        let data =
+          giftCardTuples
+          ->getJsonFromArrayOfJson
+          ->getDictFromJson
+          ->getDictFromDict("payment_method_data")
+        data
+      })
 
-            // Build payment methods array from remaining gift cards for the new combined API
-            let paymentMethods = updatedCards->Array.map(card => {
-              Dict.fromArray([
-                (
-                  "gift_card",
-                  Dict.fromArray([
-                    (
-                      card.giftCardType,
-                      Dict.fromArray([
-                        ("number", card.giftCardNumber->JSON.Encode.string),
-                        ("cvc", card.cvc->JSON.Encode.string),
-                      ])
-                      ->Dict.toArray
-                      ->getJsonFromArrayOfJson,
-                    ),
-                  ])
-                  ->Dict.toArray
-                  ->getJsonFromArrayOfJson,
-                ),
-              ])
-            })
-
-            PaymentHelpersV2.checkBalanceAndApplyPaymentMethod(
-              ~paymentMethods,
-              ~clientSecret,
-              ~publishableKey,
-              ~customPodUri,
-              ~endpoint,
-              ~profileId,
-              ~paymentId,
-            )
-            ->Promise.then(applyResponse => {
-              if applyResponse !== JSON.Encode.null {
-                // Successfully recalculated - parse remaining amount from response
-                try {
-                  let applyResponseDict = applyResponse->Utils.getDictFromJson
-                  let remainingAmount = applyResponseDict->Utils.getFloat("remaining_amount", 0.0)
-                  let currency = applyResponseDict->Utils.getString("currency", "USD")
-
-                  setRemainingAmount(_ => Some(remainingAmount))
-                  setRemainingCurrency(_ => currency)
-                } catch {
-                | _ => () // Silently handle parsing errors
-                }
-              }
-              // Silently handle API failures - not critical for user experience
-              Promise.resolve()
-            })
-            ->Promise.catch(_ => Promise.resolve())
-            ->ignore
-          }
-          // Silently handle authentication or client secret issues
-        }
-      | None => ()
-      }
+      PaymentHelpersV2.checkBalanceAndApplyPaymentMethod(
+        ~paymentMethods,
+        ~clientSecret,
+        ~publishableKey,
+        ~customPodUri,
+        ~profileId,
+        ~paymentId,
+      )
+      ->Promise.then(applyResponse => {
+        let applyResponseDict = applyResponse->Utils.getDictFromJson
+        let remainingAmount = applyResponseDict->Utils.getFloat("remaining_amount", 0.0)
+        let currency = applyResponseDict->Utils.getString("currency", "USD")
+        handleRemainingAmountUpdate(Some(remainingAmount), currency)
+        Promise.resolve()
+      })
+      ->Promise.catch(_ => Promise.resolve())
+      ->ignore
     }
   }
 
   let handleGiftCardAdded = (newGiftCard: RecoilAtomsV2.appliedGiftCard) => {
     setAppliedGiftCards(prevCards => Array.concat(prevCards, [newGiftCard]))
     setSelectedGiftCard(_ => "")
-  }
-
-  // Callback to handle remaining amount updates from GiftCardForm
-  let handleRemainingAmountUpdate = (amount: option<float>, currency: string) => {
-    setRemainingAmount(_ => amount)
-    setRemainingCurrency(_ => currency)
+    setShowGiftCardForm(_ => false)
   }
 
   // Calculate gift cards summary
@@ -169,19 +148,12 @@ let make = () => {
     None
   }, [appliedGiftCards])
 
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
-
-  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
-
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
       if isGiftCardOnlyPayment {
-        // Payment fully covered by gift cards - skip card validation and use gift card payment body
         let splitPaymentBodyArr = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
           appliedGiftCards->Array.sliceToEnd(~start=1),
         )
@@ -190,11 +162,10 @@ let make = () => {
           ->Array.get(0)
           ->Option.map(card => card.giftCardType)
           ->Option.getOr(""),
-          ~giftCardNumber=appliedGiftCards
+          ~requiredFieldsBody=appliedGiftCards
           ->Array.get(0)
-          ->Option.map(card => card.giftCardNumber)
-          ->Option.getOr(""),
-          ~cvc=appliedGiftCards->Array.get(0)->Option.map(card => card.cvc)->Option.getOr(""),
+          ->Option.map(card => card.requiredFieldsBody)
+          ->Option.getOr(Dict.make()),
         )
 
         intent(
@@ -224,8 +195,10 @@ let make = () => {
             {localeString.haveGiftCardText->React.string}
           </span>
         </div>
-        <span className="text-base font-medium" style={color: themeObj.colorPrimary}>
-          {localeString.addText->React.string}
+        <span className="text-base font-small" style={color: themeObj.colorText}>
+          {showGiftCardForm
+            ? <Icon name="arrow-up" size={16} />
+            : <Icon name="arrow-down" size={16} />}
         </span>
       </div>
       <RenderIf condition={showGiftCardForm}>
@@ -233,43 +206,16 @@ let make = () => {
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium" style={color: themeObj.colorText}>
               {"Select gift card"->React.string}
-              <span className="text-red-500"> {"*"->React.string} </span>
             </label>
             <RenderIf condition={giftCardOptions->Array.length > 0}>
-              <select
-                className="w-full p-3 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                style={
-                  borderColor: themeObj.borderColor,
-                  backgroundColor: appliedGiftCards->Array.length > 0
-                    ? "#f5f5f5"
-                    : themeObj.colorBackground,
-                  color: appliedGiftCards->Array.length > 0 ? "#9ca3af" : themeObj.colorText,
-                }
-                value={selectedGiftCard}
+              <DropdownField
+                appearance=config.appearance
+                fieldName=""
+                value=selectedGiftCard
+                setValue=setSelectedGiftCard
                 disabled={appliedGiftCards->Array.length > 0}
-                onChange={ev => {
-                  let target = ev->ReactEvent.Form.target
-                  handleSelectGiftCard(target["value"])
-                }}>
-                <option value="">
-                  {(
-                    appliedGiftCards->Array.length > 0
-                      ? "Gift card limit reached (1 max)"
-                      : "Select a gift card"
-                  )->React.string}
-                </option>
-                {giftCardOptions
-                ->Array.map(giftCardType => {
-                  let displayName = switch giftCardType {
-                  | "givex" => "Givex"
-                  | _ => giftCardType->String.toUpperCase
-                  }
-                  <option key={giftCardType} value={giftCardType}>
-                    {displayName->React.string}
-                  </option>
-                })
-                ->React.array}
-              </select>
+                options=giftCardDropdownOptions
+              />
             </RenderIf>
             <RenderIf condition={giftCardOptions->Array.length === 0}>
               <div className="p-3 text-center text-gray-500">

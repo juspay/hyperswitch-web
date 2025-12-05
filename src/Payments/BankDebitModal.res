@@ -117,8 +117,8 @@ let make = (~setModalData) => {
   let (accountType, setAccountType) = React.useState(() => "Savings")
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
-  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
+  let (_, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (_, setAreRequiredFieldsEmpty) = React.useState(_ => false)
 
   let (openModal, setOpenModal) = React.useState(_ => false)
 

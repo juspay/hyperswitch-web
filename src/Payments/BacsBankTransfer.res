@@ -14,8 +14,8 @@ let default = () => {
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
-  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
+  let (_, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (_, setAreRequiredFieldsEmpty) = React.useState(_ => false)
 
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
@@ -31,9 +31,7 @@ let default = () => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      // Skip all validations for gift-card-only payments
       if isGiftCardOnlyPayment {
-        // Gift card only payment - no validation needed
         ()
       } else if complete {
         let bodyArr =

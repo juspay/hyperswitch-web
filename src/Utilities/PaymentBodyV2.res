@@ -36,22 +36,11 @@ let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentM
 
 // Create split payment body for multiple gift cards with hardcoded structure
 
-let createGiftCardBody = (~giftCardType, ~giftCardNumber, ~cvc) => {
-  let giftCardTypeData =
-    [
-      ("number", giftCardNumber->JSON.Encode.string),
-      ("cvc", cvc->JSON.Encode.string),
-    ]->getJsonFromArrayOfJson
-
-  let giftCardData = [(giftCardType, giftCardTypeData)]->getJsonFromArrayOfJson
-
-  let paymentMethodData = [("gift_card", giftCardData)]->getJsonFromArrayOfJson
-
+let createGiftCardBody = (~giftCardType, ~requiredFieldsBody) => {
   [
     ("payment_method_type", "gift_card"->JSON.Encode.string),
     ("payment_method_subtype", giftCardType->JSON.Encode.string),
-    ("payment_method_data", paymentMethodData),
-  ]
+  ]->mergeAndFlattenToTuples(requiredFieldsBody)
 }
 
 let createSplitPaymentBodyForGiftCards = (
@@ -60,8 +49,7 @@ let createSplitPaymentBodyForGiftCards = (
   let splitPaymentMethodData = appliedGiftCards->Array.map(giftCard => {
     createGiftCardBody(
       ~giftCardType=giftCard.giftCardType,
-      ~giftCardNumber=giftCard.giftCardNumber,
-      ~cvc=giftCard.cvc,
+      ~requiredFieldsBody=giftCard.requiredFieldsBody,
     )->getJsonFromArrayOfJson
   })
 

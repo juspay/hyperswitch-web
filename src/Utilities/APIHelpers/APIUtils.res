@@ -14,7 +14,7 @@ type apiCallV1 =
   | ConfirmPayout
   | FetchBlockedBins
 
-type apiCallV2 = FetchSessionsV2 
+type apiCallV2 = FetchSessionsV2
 
 type apiCall =
   | V1(apiCallV1)

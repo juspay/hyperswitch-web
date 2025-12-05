@@ -30,6 +30,7 @@ let make = (
   ~cvcProps=None,
   ~isBancontact=false,
   ~isSaveDetailsWithClickToPay=false,
+  ~disableInfoElement=false,
 ) => {
   open DynamicFieldsUtils
   open PaymentTypeContext
@@ -321,9 +322,7 @@ let make = (
     let json = ev.data->Utils.safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      // Skip all validations for gift-card-only payments
       if isGiftCardOnlyPayment {
-        // Gift card only payment - no validation needed
         ()
       } else {
         // Call the original submit callback
@@ -379,25 +378,27 @@ let make = (
               value=cardNumber
               onChange=changeCardNumber
               onBlur=handleCardBlur
-              rightIcon={paymentMethod == "gift_card" ? React.null : icon}
+              rightIcon={icon}
               errorString=cardError
-              type_={paymentMethod == "gift_card" ? "text" : "tel"}
-              maxLength={paymentMethod == "gift_card" ? 32 : maxCardLength}
+              type_={"tel"}
+              maxLength={maxCardLength}
               inputRef=cardRef
-              placeholder={paymentMethod == "gift_card"
-                ? "ABCD1234EFGH5678"
-                : "1234 1234 1234 1234"}
-              autocomplete={paymentMethod == "gift_card" ? "off" : "cc-number"}
+              placeholder={"1234 1234 1234 1234"}
+              autocomplete="cc-number"
             />
           | GiftCardNumber =>
             <PaymentField
               fieldName=localeString.giftCardNumberLabel
               value=giftCardNumber
               onChange={ev => {
-                let value = ReactEvent.Form.target(ev)["value"]
+                let value =
+                  ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(
+                    %re(`/[^a-zA-Z0-9]/g`),
+                    "",
+                  )
                 setGiftCardNumber(_ => {
                   isValid: Some(value !== ""),
-                  value: value->String.trim,
+                  value,
                   errorString: value !== "" ? "" : localeString.giftCardNumberEmptyText,
                 })
               }}
@@ -440,14 +441,12 @@ let make = (
               onChange=changeCVCNumber
               onBlur=handleCVCBlur
               errorString=cvcError
-              rightIcon={paymentMethod == "gift_card"
-                ? React.null
-                : CardUtils.setRightIconForCvc(
-                    ~cardEmpty,
-                    ~cardInvalid,
-                    ~color=themeObj.colorIconCardCvcError,
-                    ~cardComplete,
-                  )}
+              rightIcon={CardUtils.setRightIconForCvc(
+                ~cardEmpty,
+                ~cardInvalid,
+                ~color=themeObj.colorIconCardCvcError,
+                ~cardComplete,
+              )}
               type_="tel"
               className="tracking-widest w-full"
               maxLength=4
@@ -460,10 +459,14 @@ let make = (
               fieldName=localeString.giftCardCvcLabel
               value=giftCardCvc
               onChange={ev => {
-                let value = ReactEvent.Form.target(ev)["value"]
+                let value =
+                  ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(
+                    %re(`/[^a-zA-Z0-9]/g`),
+                    "",
+                  )
                 setGiftCardCvc(_ => {
                   isValid: Some(value !== ""),
-                  value: value->String.trim,
+                  value,
                   errorString: value !== "" ? "" : localeString.giftCardCvcEmptyText,
                 })
               }}
@@ -922,7 +925,7 @@ let make = (
         </div>
       </RenderIf>
       <Surcharge paymentMethod paymentMethodType />
-      <RenderIf condition={isInfoElementPresent}>
+      <RenderIf condition={isInfoElementPresent && !disableInfoElement}>
         {<>
           {if fieldsArr->Array.length > 1 {
             bottomElement
