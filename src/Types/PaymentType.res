@@ -1,6 +1,8 @@
 type showTerms = Auto | Always | Never
 type showType = Auto | Never
 type layout = Accordion | Tabs
+type groupBy = PaymentMethods | Default
+type savedMethodCustomization = {groupBy: groupBy}
 open Utils
 open ErrorUtils
 
@@ -109,6 +111,7 @@ type layoutConfig = {
   spacedAccordionItems: bool,
   maxAccordionItems: int,
   \"type": layout,
+  savedMethodCustomization: savedMethodCustomization,
 }
 
 type layoutType =
@@ -258,6 +261,7 @@ let defaultLayout = {
   spacedAccordionItems: false,
   maxAccordionItems: 4,
   \"type": Tabs,
+  savedMethodCustomization: {groupBy: Default},
 }
 let defaultAddress: address = {
   line1: "",
@@ -663,6 +667,33 @@ let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
   })
   ->Option.getOr(defaultFields)
 }
+let getSavedMethodLayout = str => {
+  switch str {
+  | "paymentMethods" => PaymentMethods
+  | "default" => Default
+  | str => {
+      str->unknownPropValueWarning(
+        ["paymentMethods", "default"],
+        "options.layout.savedMethodCustomization.groupBy",
+      )
+      Default
+    }
+  }
+}
+
+let getSavedMethodCustomization = (dict, str, logger) => {
+  dict
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
+    unknownKeysWarning(["groupBy"], json, "options.layout.savedMethodCustomization")
+    {
+      groupBy: getWarningString(json, "groupBy", "default", ~logger)->getSavedMethodLayout,
+    }
+  })
+  ->Option.getOr({groupBy: Default})
+}
+
 let getLayoutValues = (val, logger) => {
   switch val->JSON.Classify.classify {
   | String(str) => StringLayout(str->getLayout)
@@ -670,7 +701,14 @@ let getLayoutValues = (val, logger) => {
     ObjectLayout({
       let layoutType = getWarningString(json, "type", "tabs", ~logger)
       unknownKeysWarning(
-        ["defaultCollapsed", "radios", "spacedAccordionItems", "type", "maxAccordionItems"],
+        [
+          "defaultCollapsed",
+          "radios",
+          "spacedAccordionItems",
+          "type",
+          "maxAccordionItems",
+          "savedMethodCustomization",
+        ],
         json,
         "options.layout",
       )
@@ -680,6 +718,11 @@ let getLayoutValues = (val, logger) => {
         spacedAccordionItems: getBoolWithWarning(json, "spacedAccordionItems", false, ~logger),
         maxAccordionItems: getNumberWithWarning(json, "maxAccordionItems", 4, ~logger),
         \"type": layoutType->getLayout,
+        savedMethodCustomization: getSavedMethodCustomization(
+          json,
+          "savedMethodCustomization",
+          logger,
+        ),
       }
     })
   | _ => StringLayout(Tabs)

@@ -40,6 +40,7 @@ let make = (
     displaySavedPaymentMethodsCheckbox,
     readOnly,
     savedPaymentMethodsCheckboxCheckedByDefault,
+    layout,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
@@ -69,6 +70,10 @@ let make = (
   let savedCardlength = savedMethods->Array.length
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
+  let layoutClass = CardUtils.getLayoutClass(layout)
+  let groupSavedMethodsWithPaymentMethods =
+    layoutClass.savedMethodCustomization.groupBy == PaymentMethods
+  let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
 
   let bottomElement = {
     <div
@@ -88,7 +93,9 @@ let make = (
         />
       )
       ->React.array}
-      <RenderIf condition={clickToPayConfig.isReady == Some(true)}>
+      <RenderIf
+        condition={clickToPayConfig.isReady == Some(true) &&
+          (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")}>
         <ClickToPayAuthenticate
           loggerState
           savedMethods
@@ -363,30 +370,12 @@ let make = (
       />
     </RenderIf>
     <RenderIf condition={!enableSavedPaymentShimmer}>
-      <div
-        className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
-        style={
-          fontSize: "14px",
-          float: "left",
-          fontWeight: "500",
-          width: "fit-content",
-          color: themeObj.colorPrimary,
-        }
-        role="button"
+      <SwitchViewButton
+        onClick={_ => setShowPaymentMethodsScreen(_ => true)}
+        icon={<Icon name="circle-plus" size=22 />}
+        title={localeString.newPaymentMethods}
         ariaLabel="Click to use new payment methods"
-        tabIndex=0
-        onKeyDown={event => {
-          let key = JsxEvent.Keyboard.key(event)
-          let keyCode = JsxEvent.Keyboard.keyCode(event)
-          if key == "Enter" || keyCode == 13 {
-            setShowPaymentMethodsScreen(_ => true)
-          }
-        }}
-        dataTestId={TestUtils.addNewCardIcon}
-        onClick={_ => setShowPaymentMethodsScreen(_ => true)}>
-        <Icon name="circle-plus" size=22 />
-        {React.string(localeString.newPaymentMethods)}
-      </div>
+      />
     </RenderIf>
   </div>
 }
