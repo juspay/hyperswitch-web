@@ -146,7 +146,6 @@ let make = (
 
   useHandlePostMessages(~complete=complete && areRequiredFieldsValid, ~empty, ~paymentType="card")
 
-  let isGuestCustomer = useIsGuestCustomer()
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
     ~cvcNumber,
@@ -157,7 +156,6 @@ let make = (
   let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
     ~isSaveCardsChecked,
-    ~isGuestCustomer,
   )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
@@ -452,7 +450,6 @@ let make = (
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
   let conditionsForShowingSaveCardCheckbox =
     paymentMethodListValue.mandate_payment->Option.isNone &&
-    !isGuestCustomer &&
     paymentMethodListValue.payment_type !== SETUP_MANDATE &&
     options.displaySavedPaymentMethodsCheckbox &&
     !isBancontact

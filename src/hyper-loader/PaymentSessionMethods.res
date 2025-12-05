@@ -30,8 +30,7 @@ let getCustomerSavedPaymentMethods = (
     )
 
     let customerDetailsDict = customerDetails->JSON.Decode.object->Option.getOr(Dict.make())
-    let (customerPaymentMethods, isGuestCustomer) =
-      customerDetailsDict->PaymentType.itemToCustomerObjMapper
+    let (customerPaymentMethods, _) = customerDetailsDict->PaymentType.itemToCustomerObjMapper
 
     customerPaymentMethods->Array.sort((a, b) => compareLogic(a.lastUsedAt, b.lastUsedAt))
 
@@ -148,7 +147,6 @@ let getCustomerSavedPaymentMethods = (
           )
 
           let requestBody = PaymentUtils.appendedCustomerAcceptance(
-            ~isGuestCustomer,
             ~paymentType=NONE,
             ~body=applePayBody,
           )
@@ -202,7 +200,6 @@ let getCustomerSavedPaymentMethods = (
         let completeGooglePayPayment = () => {
           let body = GooglePayHelpers.getGooglePayBodyFromResponse(
             ~gPayResponse=metadata,
-            ~isGuestCustomer,
             ~connectors=[],
             ~isPaymentSession=true,
           )

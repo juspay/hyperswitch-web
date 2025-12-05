@@ -55,7 +55,6 @@ let make = (~sessionObj: SessionsType.token) => {
     disableMaxWidth: true,
   }
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
     ~paymentMethodListValue,
@@ -90,7 +89,6 @@ let make = (~sessionObj: SessionsType.token) => {
         ~buttonStyle,
         ~iframeId,
         ~paymentMethodListValue,
-        ~isGuestCustomer,
         ~postSessionTokens=intent,
         ~isManualRetryEnabled,
         ~options,
@@ -125,7 +123,6 @@ let make = (~sessionObj: SessionsType.token) => {
             ~buttonStyle,
             ~iframeId,
             ~paymentMethodListValue,
-            ~isGuestCustomer,
             ~intent,
             ~options,
             ~orderDetails,

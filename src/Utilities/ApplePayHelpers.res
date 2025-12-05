@@ -6,7 +6,6 @@ open BraintreeHelpers
 let processPayment = (
   ~bodyArr,
   ~isThirdPartyFlow=false,
-  ~isGuestCustomer,
   ~paymentMethodListValue=PaymentMethodsRecord.defaultList,
   ~intent: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
@@ -14,7 +13,6 @@ let processPayment = (
   ~isManualRetryEnabled,
 ) => {
   let requestBody = PaymentUtils.appendedCustomerAcceptance(
-    ~isGuestCustomer,
     ~paymentType=paymentMethodListValue.payment_type,
     ~body=bodyArr,
   )
@@ -210,8 +208,6 @@ let useHandleApplePayResponse = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
-  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
-
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
     ~paymentMethodListValue,
     ~paymentMethod="wallet",
@@ -250,7 +246,6 @@ let useHandleApplePayResponse = (
           processPayment(
             ~bodyArr,
             ~isThirdPartyFlow=false,
-            ~isGuestCustomer,
             ~paymentMethodListValue,
             ~intent,
             ~options,
@@ -269,7 +264,6 @@ let useHandleApplePayResponse = (
           processPayment(
             ~bodyArr=PaymentBody.applePayThirdPartySdkBody(~connectors, ~token),
             ~isThirdPartyFlow=true,
-            ~isGuestCustomer,
             ~paymentMethodListValue,
             ~intent,
             ~options,

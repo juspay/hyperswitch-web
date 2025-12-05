@@ -270,15 +270,12 @@ let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
   }
 }
 
-let isAppendingCustomerAcceptance = (
-  ~isGuestCustomer,
-  ~paymentType: PaymentMethodsRecord.payment_type,
-) => {
-  !isGuestCustomer && (paymentType === NEW_MANDATE || paymentType === SETUP_MANDATE)
+let isAppendingCustomerAcceptance = (~paymentType: PaymentMethodsRecord.payment_type) => {
+  paymentType === NEW_MANDATE || paymentType === SETUP_MANDATE
 }
 
-let appendedCustomerAcceptance = (~isGuestCustomer, ~paymentType, ~body) => {
-  isAppendingCustomerAcceptance(~isGuestCustomer, ~paymentType)
+let appendedCustomerAcceptance = (~paymentType, ~body) => {
+  isAppendingCustomerAcceptance(~paymentType)
     ? body->Array.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
     : body
 }
