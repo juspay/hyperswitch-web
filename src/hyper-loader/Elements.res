@@ -198,6 +198,9 @@ let make = (
                 })
                 trustPayScript->Window.elementOnload(_ => {
                   logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT)
+                  mountedIframeRef->Window.iframePostMessage(
+                    [("trustPayScriptLoaded", true->JSON.Encode.bool)]->Dict.fromArray,
+                  )
                 })
                 Window.body->Window.appendChild(trustPayScript)
               }

@@ -22,6 +22,7 @@ let make = (
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Gpay)
   let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
+  let isTrustpayGooglePayReady = Recoil.useRecoilValueFromAtom(isTrustpayGooglePayReady)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
   let isGooglePaySDKFlow = React.useMemo(() => {
@@ -179,7 +180,7 @@ let make = (
     if (
       status == "ready" &&
       (isGPayReady ||
-      isDelayedSessionToken ||
+      isDelayedSessionToken && isTrustpayGooglePayReady ||
       paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
       isWallet
     ) {
@@ -187,7 +188,14 @@ let make = (
       addGooglePayButton()
     }
     None
-  }, (status, paymentMethodListValue, sessionObj, thirdPartySessionObj, isGPayReady))
+  }, (
+    status,
+    paymentMethodListValue,
+    sessionObj,
+    thirdPartySessionObj,
+    isGPayReady,
+    isTrustpayGooglePayReady,
+  ))
 
   React.useEffect0(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
@@ -218,7 +226,7 @@ let make = (
   let isRenderGooglePayButton =
     (isGPayReady ||
     paymentExperience == PaymentMethodsRecord.RedirectToURL ||
-    isDelayedSessionToken) && isWallet
+    (isDelayedSessionToken && isTrustpayGooglePayReady)) && isWallet
 
   React.useEffect(() => {
     areOneClickWalletsRendered(prev => {
