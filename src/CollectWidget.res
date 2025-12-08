@@ -168,7 +168,7 @@ let make = (
           let lastNameKey = BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey
           let nameSplits = value->String.trim->String.split(" ")
 
-          // Only update name if there's actual input (nameSplits length > 0 and not empty)
+          // Only update name if there's actual input (nameSplits length > 0)
           if nameSplits->Array.length > 0 {
             let firstName = nameSplits->Array.get(0)->Option.getOr("")
             let lastName =
