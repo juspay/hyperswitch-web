@@ -16,8 +16,10 @@ let make = (
   mountPostMessage,
   ~isPaymentManagementElement=false,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
 ) => {
   try {
+    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let mountId = ref("")
     let setPaymentIframeRef = ref => {
       setIframeRef(ref)
@@ -35,14 +37,6 @@ let make = (
         true,
       )
 
-    let asyncWrapper = async fn => {
-      try {
-        await fn()
-      } catch {
-      | err => Console.error2("Async function call failure", err)
-      }
-    }
-
     let currEventHandler = ref(Some(() => Promise.make((_, _) => {()})))
     let walletOneClickEventHandler = (event: Types.event) => {
       open Promise
@@ -55,15 +49,35 @@ let make = (
       let dict = json->getDictFromJson
       if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
         switch currEventHandler.contents {
-        | Some(eH) =>
-          asyncWrapper(eH)
-          ->then(() => {
-            let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
-            event.source->Window.sendPostMessage(msg)
-            resolve()
-          })
-          ->catch(_ => resolve())
-          ->ignore
+        | Some(eH) => {
+            logger.setLogInfo(
+              ~value=`One click handler callback execution initiated`,
+              ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+              ~logType=INFO,
+            )
+            eH()
+            ->then(_ => {
+              logger.setLogInfo(
+                ~value=`One click handler callback executed successfully`,
+                ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+                ~logType=INFO,
+              )
+              let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
+              event.source->Window.sendPostMessage(msg)
+              resolve()
+            })
+            ->catch(_ => {
+              logger.setLogError(
+                ~value=`Error in one click handler callback`,
+                ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+                ~logType=ERROR,
+              )
+              let msg = [("walletClickEvent", false->JSON.Encode.bool)]->Dict.fromArray
+              event.source->Window.sendPostMessage(msg)
+              resolve()
+            })
+            ->ignore
+          }
 
         | None => ()
         }

@@ -42,7 +42,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
             visaComponentState: CARDS_LOADING,
           })
           try {
-            await signOutVisaUnified()
+            let _ = await signOutVisaUnified()
             await getVisaCards(
               ~identityValue=consumerIdentity.identityValue,
               ~otp="",
