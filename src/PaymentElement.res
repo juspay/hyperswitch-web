@@ -70,12 +70,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~savedMethods,
     ~loadSavedCards,
   )
+  let (isSavedCardsLoading, setIsSavedCardsLoading) = React.useState(_ => true)
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
         setShowPaymentMethodsScreen(_ => isShowPaymentMethodsDependingOnClickToPay->not)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
+        setIsSavedCardsLoading(_ => false)
       }
     | (_, LoadingSavedCards) => ()
     | (_, LoadedSavedCards(savedPaymentMethods, isGuestCustomer)) => {
@@ -128,10 +130,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           finalSavedPaymentMethods->Array.length == 0 &&
             isShowPaymentMethodsDependingOnClickToPay->not
         )
+        setIsSavedCardsLoading(_ => false)
       }
     | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
         setShowPaymentMethodsScreen(_ => isShowPaymentMethodsDependingOnClickToPay->not)
+        setIsSavedCardsLoading(_ => false)
       }
     }
 
@@ -464,12 +468,26 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (paymentMethodList, customerPaymentMethods))
 
-  let hasSavedMethods = displaySavedPaymentMethods && savedMethods->Array.length > 0
-  let shouldShowSavedMethods = hasSavedMethods || isShowPaymentMethodsDependingOnClickToPay
-  let shouldShowSavedMethodsComponent =
+  let shouldShowSavedMethods =
+    displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay
+  let shouldShowSavedMethodsScreen =
     !groupSavedMethodsWithPaymentMethods && !showPaymentMethodsScreen && shouldShowSavedMethods
   let shouldShowUseExistingMethodsButton =
     !groupSavedMethodsWithPaymentMethods && shouldShowSavedMethods && showPaymentMethodsScreen
+
+  let shouldShowShimmerForGroupedPaymentMethods = !(
+    isSavedCardsLoading && groupSavedMethodsWithPaymentMethods
+  )
+  let hasPaymentOrWalletOptions =
+    paymentOptions->Array.length > 0 || walletOptions->Array.length > 0
+  let shouldDisplayPaymentMethodsScreen =
+    groupSavedMethodsWithPaymentMethods || showPaymentMethodsScreen
+
+  let shouldRenderPaymentSection =
+    shouldShowShimmerForGroupedPaymentMethods &&
+    hasPaymentOrWalletOptions &&
+    shouldDisplayPaymentMethodsScreen &&
+    clickToPayConfig.isReady->Option.isSome
 
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
@@ -480,14 +498,19 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
-    {if clickToPayConfig.isReady->Option.isNone {
+    {if (
+      clickToPayConfig.isReady->Option.isNone ||
+        (isSavedCardsLoading && groupSavedMethodsWithPaymentMethods)
+    ) {
       if areClickToPayUIScriptsLoaded {
         <ClickToPayHelpers.SrcLoader />
+      } else if groupSavedMethodsWithPaymentMethods {
+        <PaymentElementShimmer />
       } else {
         <PaymentElementShimmer.SavedPaymentCardShimmer />
       }
     } else {
-      <RenderIf condition={shouldShowSavedMethodsComponent}>
+      <RenderIf condition=shouldShowSavedMethodsScreen>
         <SavedMethods
           paymentToken
           setPaymentToken
@@ -502,10 +525,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         />
       </RenderIf>
     }}
-    <RenderIf
-      condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
-      (groupSavedMethodsWithPaymentMethods || showPaymentMethodsScreen) &&
-      clickToPayConfig.isReady->Option.isSome}>
+    <RenderIf condition=shouldRenderPaymentSection>
       <div
         className="flex flex-col place-items-center"
         role="region"
