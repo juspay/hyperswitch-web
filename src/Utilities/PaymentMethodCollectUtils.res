@@ -1124,6 +1124,74 @@ let getErrorStringAndClasses = (
   }
 }
 
+let handleNameFieldNormalization = (values: Dict.t<string>, validity: Dict.t<option<bool>>) => {
+  let firstNameKey = BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey
+  let lastNameKey = BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey
+
+  let first_name = values->Dict.get(firstNameKey)->Option.getOr("")
+  let last_name = values->Dict.get(lastNameKey)->Option.getOr("")
+
+  let firstNameSplits = first_name->String.split(" ")
+  let lastNameSplits = last_name->String.split(" ")
+
+  // Handle name field logic using pattern matching
+  switch (
+    first_name->String.length,
+    last_name->String.length,
+    firstNameSplits->Array.length,
+    lastNameSplits->Array.length,
+  ) {
+  // Case 1: first_name is empty, use last_name as first_name and split remainder
+  | (0, _, _, lastNamePartsCount) => {
+      values->Dict.set(firstNameKey, last_name)
+
+      if lastNameSplits->Array.get(0)->Option.getOr("")->String.length > 0 {
+        validity->Dict.set(firstNameKey, Some(true))
+      }
+
+      let remainingLastName =
+        lastNameSplits
+        ->Array.slice(~start=1, ~end=lastNamePartsCount)
+        ->Array.join(" ")
+      values->Dict.set(lastNameKey, remainingLastName)
+
+      if lastNamePartsCount > 1 {
+        validity->Dict.set(lastNameKey, Some(true))
+      }
+    }
+
+  // Case 2: last_name is empty, split first_name into parts
+  | (_, 0, firstNamePartsCount, _) => {
+      let remainingFirstName =
+        firstNameSplits
+        ->Array.slice(~start=1, ~end=firstNamePartsCount)
+        ->Array.join(" ")
+      values->Dict.set(lastNameKey, remainingFirstName)
+
+      if firstNamePartsCount > 1 {
+        validity->Dict.set(lastNameKey, Some(true))
+      }
+    }
+
+  // Case 3: Both exist, but first_name has multiple parts - normalize it
+  | (_, _, firstNamePartsCount, _) if firstNamePartsCount > 1 => {
+      let normalizedFirstName = firstNameSplits->Array.get(0)->Option.getOr("")
+      values->Dict.set(firstNameKey, normalizedFirstName)
+
+      let combinedLastName =
+        firstNameSplits
+        ->Array.slice(~start=1, ~end=firstNamePartsCount)
+        ->Array.join(" ") ++
+        " " ++
+        last_name
+      values->Dict.set(lastNameKey, combinedLastName)
+    }
+
+  // Case 4: Default - both names exist and are properly formatted, no changes needed
+  | _ => ()
+  }
+}
+
 let getDefaultsAndValidity = (payoutDynamicFields, supportedCardBrands) => {
   payoutDynamicFields.address
   ->Option.map(address => {
