@@ -42,72 +42,75 @@ let make = (
       getDefaultsAndValidity(payoutDynamicFields, supportedCardBrands)
     })
     ->Option.map(((values, validity)) => {
-      let last_name =
-        values
-        ->Dict.get(BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey)
-        ->Option.getOr("")
-      let first_name =
-        values
-        ->Dict.get(BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey)
-        ->Option.getOr("")
-      let lastNameSplits = last_name->String.split(" ")
+      let firstNameKey = BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey
+      let lastNameKey = BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey
+
+      let first_name = values->Dict.get(firstNameKey)->Option.getOr("")
+      let last_name = values->Dict.get(lastNameKey)->Option.getOr("")
+
       let firstNameSplits = first_name->String.split(" ")
+      let lastNameSplits = last_name->String.split(" ")
+
       let updatedValues = values->Dict.copy
       let updatedValidity = validity->Dict.copy
 
-      // If first_name is null and required but last_name is not, use first_name as last_name
-      // to populate full name properly
-      if first_name->String.length == 0 {
-        updatedValues->Dict.set(
-          BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey,
-          last_name,
-        )
-        if lastNameSplits->Array.get(0)->Option.getOr("")->String.length > 0 {
-          updatedValidity->Dict.set(
-            BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey,
-            Some(true),
-          )
+      // Handle name field logic using pattern matching
+      switch (
+        first_name->String.length,
+        last_name->String.length,
+        firstNameSplits->Array.length,
+        lastNameSplits->Array.length,
+      ) {
+      // Case 1: first_name is empty, use last_name as first_name and split remainder
+      | (0, _, _, lastNamePartsCount) => {
+          updatedValues->Dict.set(firstNameKey, last_name)
+
+          if lastNameSplits->Array.get(0)->Option.getOr("")->String.length > 0 {
+            updatedValidity->Dict.set(firstNameKey, Some(true))
+          }
+
+          let remainingLastName =
+            lastNameSplits
+            ->Array.slice(~start=1, ~end=lastNamePartsCount)
+            ->Array.join(" ")
+          updatedValues->Dict.set(lastNameKey, remainingLastName)
+
+          if lastNamePartsCount > 1 {
+            updatedValidity->Dict.set(lastNameKey, Some(true))
+          }
         }
-        updatedValues->Dict.set(
-          BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
-          lastNameSplits
-          ->Array.slice(~start=1, ~end=lastNameSplits->Array.length)
-          ->Array.join(" "),
-        )
-        if lastNameSplits->Array.length > 1 {
-          updatedValidity->Dict.set(
-            BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
-            Some(true),
-          )
+
+      // Case 2: last_name is empty, split first_name into parts
+      | (_, 0, firstNamePartsCount, _) => {
+          let remainingFirstName =
+            firstNameSplits
+            ->Array.slice(~start=1, ~end=firstNamePartsCount)
+            ->Array.join(" ")
+          updatedValues->Dict.set(lastNameKey, remainingFirstName)
+
+          if firstNamePartsCount > 1 {
+            updatedValidity->Dict.set(lastNameKey, Some(true))
+          }
         }
-      } else if last_name->String.length == 0 {
-        updatedValues->Dict.set(
-          BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
-          firstNameSplits
-          ->Array.slice(~start=1, ~end=firstNameSplits->Array.length)
-          ->Array.join(" "),
-        )
-        if firstNameSplits->Array.length > 1 {
-          updatedValidity->Dict.set(
-            BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
-            Some(true),
-          )
+
+      // Case 3: Both exist, but first_name has multiple parts - normalize it
+      | (_, _, firstNamePartsCount, _) if firstNamePartsCount > 1 => {
+          let normalizedFirstName = firstNameSplits->Array.get(0)->Option.getOr("")
+          updatedValues->Dict.set(firstNameKey, normalizedFirstName)
+
+          let combinedLastName =
+            firstNameSplits
+            ->Array.slice(~start=1, ~end=firstNamePartsCount)
+            ->Array.join(" ") ++
+            " " ++
+            last_name
+          updatedValues->Dict.set(lastNameKey, combinedLastName)
         }
-      } else if firstNameSplits->Array.length > 1 {
-        // both first_name and last_name exist, but first_name has multiple parts
-        updatedValues->Dict.set(
-          BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey,
-          firstNameSplits->Array.get(0)->Option.getOr(""),
-        )
-        updatedValues->Dict.set(
-          BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey,
-          firstNameSplits
-          ->Array.slice(~start=1, ~end=firstNameSplits->Array.length)
-          ->Array.join(" ") ++
-          " " ++
-          last_name,
-        )
+
+      // Case 4: Default - both names exist and are properly formatted, no changes needed
+      | _ => ()
       }
+
       setFormData(_ => updatedValues)
       setValidityDict(_ => updatedValidity)
     })
