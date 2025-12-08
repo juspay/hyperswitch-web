@@ -30,7 +30,7 @@ let getCustomerSavedPaymentMethods = (
     )
 
     let customerDetailsDict = customerDetails->JSON.Decode.object->Option.getOr(Dict.make())
-    let (customerPaymentMethods, _) = customerDetailsDict->PaymentType.itemToCustomerObjMapper
+    let customerPaymentMethods = customerDetailsDict->PaymentType.itemToCustomerObjMapper
 
     customerPaymentMethods->Array.sort((a, b) => compareLogic(a.lastUsedAt, b.lastUsedAt))
 
