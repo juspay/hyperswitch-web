@@ -76,8 +76,8 @@ let make = (
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
 
   let shouldShowClickToPaySection =
-    (clickToPayConfig.isReady == Some(true) && !groupSavedMethodsWithPaymentMethods) ||
-      selectedOption == "card"
+    clickToPayConfig.isReady == Some(true) &&
+      (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")
 
   let bottomElement = {
     <div
