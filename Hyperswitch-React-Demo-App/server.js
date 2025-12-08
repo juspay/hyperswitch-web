@@ -163,7 +163,7 @@ async function createPaymentIntent(request) {
       "api-key": process.env.HYPERSWITCH_SECRET_KEY,
     };
   } else {
-    apiEndpoint = `${baseUrl}/v2/payments/create-intent`;
+    apiEndpoint = `${baseUrl}/v2/payment-methods/create-intent`;
     headers = {
       ...headers,
       Authorization: `api-key=${process.env.HYPERSWITCH_SECRET_KEY}`,
