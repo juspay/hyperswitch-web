@@ -3,6 +3,21 @@ let make = (~mode: PaymentModeType.payment, ~styles: JsxDOMStyle.t={}) => {
   open RecoilAtoms
   let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {customMessageForCardTerms, business, terms} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let customConfigForSepaBankDebit = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
+    "bank_debit",
+    "sepa",
+  )
+
+  let customMessageConfigForSepaBankDebit =
+    customConfigForSepaBankDebit
+    ->Option.map(config => config.message)
+    ->Option.getOr(PaymentType.defaultPaymentMethodMessage)
+
+  let customMessageForSepaBankDebit = switch customMessageConfigForSepaBankDebit.displayMode {
+  | DefaultSdkMessage => localeString.sepaDebitTerms(business.name)
+  | Custom => customMessageConfigForSepaBankDebit.value->String.trim
+  | Hide => ""
+  }
   let cardTermsValue =
     customMessageForCardTerms->String.length > 0
       ? customMessageForCardTerms
@@ -10,7 +25,7 @@ let make = (~mode: PaymentModeType.payment, ~styles: JsxDOMStyle.t={}) => {
 
   let terms = switch mode {
   | ACHBankDebit => (localeString.achBankDebitTerms(business.name), terms.usBankAccount)
-  | SepaBankDebit => (localeString.sepaDebitTerms(business.name), terms.sepaDebit)
+  | SepaBankDebit => (customMessageForSepaBankDebit, Always)
   | BecsBankDebit => (localeString.becsDebitTerms, terms.auBecsDebit)
   | Card => (cardTermsValue, terms.card)
   | _ => ("", Auto)
