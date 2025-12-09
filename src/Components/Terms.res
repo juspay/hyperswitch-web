@@ -23,9 +23,19 @@ let make = (~mode: PaymentModeType.payment, ~styles: JsxDOMStyle.t={}) => {
       ? customMessageForCardTerms
       : localeString.cardTerms(business.name)
 
+  let conditionToShowSepaBankDebitMessage: PaymentType.showTerms = switch customMessageConfigForSepaBankDebit.displayMode {
+  | DefaultSdkMessage =>
+    switch terms.sepaDebit {
+    | Never => Never
+    | _ => Always
+    }
+  | Custom => customMessageForSepaBankDebit->String.length > 0 ? Always : Never
+  | Hide => Never
+  }
+
   let terms = switch mode {
   | ACHBankDebit => (localeString.achBankDebitTerms(business.name), terms.usBankAccount)
-  | SepaBankDebit => (customMessageForSepaBankDebit, Always)
+  | SepaBankDebit => (customMessageForSepaBankDebit, conditionToShowSepaBankDebitMessage)
   | BecsBankDebit => (localeString.becsDebitTerms, terms.auBecsDebit)
   | Card => (cardTermsValue, terms.card)
   | _ => ("", Auto)
