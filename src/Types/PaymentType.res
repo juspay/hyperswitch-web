@@ -456,18 +456,14 @@ let getPaymentMethodConfig = (json, logger) => {
   {
     paymentMethod,
     paymentMethodTypes: json
-    ->getOptionalArrayFromDict("paymentMethodTypes")
-    ->Option.getOr([])
-    ->Array.filterMap(JSON.Decode.object)
+    ->getArrayOfObjectsFromDict("paymentMethodTypes")
     ->Array.map(pmTypeJson => getPaymentMethodTypeConfig(pmTypeJson, logger, paymentMethod)),
   }
 }
 
 let getPaymentMethodsConfig = (dict, str, logger) => {
   dict
-  ->getOptionalArrayFromDict(str)
-  ->Option.getOr([])
-  ->Array.filterMap(JSON.Decode.object)
+  ->getArrayOfObjectsFromDict(str)
   ->Array.map(json => getPaymentMethodConfig(json, logger))
 }
 
