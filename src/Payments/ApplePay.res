@@ -66,8 +66,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ? paymentMethodListValue->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
     : paymentMethodListValue->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
 
-  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
-
   let syncPayment = () => {
     sync(
       ~confirmParam={
@@ -249,7 +247,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
             ApplePayHelpers.processPayment(
               ~bodyArr=bodyDict,
               ~isThirdPartyFlow=true,
-              ~isGuestCustomer,
               ~paymentMethodListValue,
               ~intent,
               ~options,
@@ -267,7 +264,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
           ApplePayHelpers.processPayment(
             ~bodyArr=bodyDict,
-            ~isGuestCustomer,
             ~paymentMethodListValue,
             ~intent,
             ~options,

@@ -36,7 +36,6 @@ let make = (~walletOptions) => {
   }
   let (buttonColor, textColor) =
     options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
-  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
@@ -69,7 +68,6 @@ let make = (~walletOptions) => {
         | V2 => PaymentBodyV2.dynamicPaymentBodyV2("wallet", "paypal")
         }
         let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
-          ~isGuestCustomer,
           ~paymentType=paymentMethodListValue.payment_type,
           ~body,
         )
