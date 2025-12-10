@@ -1,4 +1,4 @@
-@send external postMessage: (Window.window, JSON.t, string) => unit = "postMessage"
+@send external postMessage: (Types.window, JSON.t, string) => unit = "postMessage"
 
 module Loader = {
   @react.component
