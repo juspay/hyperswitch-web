@@ -370,7 +370,6 @@ let defaultSdkHandleSavePayment = {
   handleSave: false,
   confirmParams: ConfirmType.defaultConfirm,
 }
-let defaultPaymentMethodsConfig = []
 
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
@@ -398,7 +397,7 @@ let defaultOptions = {
   displayBillingDetails: false,
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
-  paymentMethodsConfig: defaultPaymentMethodsConfig,
+  paymentMethodsConfig: [],
 }
 
 let getMessageDisplayMode = (str, key) => {
