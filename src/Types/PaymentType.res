@@ -179,7 +179,7 @@ type sdkHandleSavePayment = {
 type messageDisplayMode = DefaultSdkMessage | CustomMessage | Hidden
 
 type paymentMethodMessage = {
-  value: string,
+  value: option<string>,
   displayMode: messageDisplayMode,
 }
 
@@ -414,7 +414,7 @@ let getMessageDisplayMode = (str, key) => {
 }
 
 let defaultPaymentMethodMessage = {
-  value: "",
+  value: None,
   displayMode: DefaultSdkMessage,
 }
 
@@ -422,15 +422,16 @@ let getPaymentMethodMessage = (dict, logger, context) => {
   let messageDict = dict->getDictFromDict("message")
   if messageDict->Dict.toArray->Array.length > 0 {
     unknownKeysWarning(["value", "displayMode"], messageDict, context ++ ".message")
-    let value = messageDict->getString("value", "")
+    let value = messageDict->getOptionString("value")
     let displayMode = if messageDict->Dict.get("displayMode")->Option.isSome {
       messageDict
       ->getWarningString("displayMode", "default_sdk_message", ~logger)
       ->getMessageDisplayMode(context ++ ".message.displayMode")
-    } else if value->String.length > 0 {
-      CustomMessage
     } else {
-      DefaultSdkMessage
+      switch value {
+      | Some(_) => CustomMessage
+      | None => DefaultSdkMessage
+      }
     }
     {
       value,
