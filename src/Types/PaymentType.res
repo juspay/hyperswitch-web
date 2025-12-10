@@ -176,7 +176,7 @@ type sdkHandleSavePayment = {
   confirmParams: ConfirmType.confirmParams,
 }
 
-type messageDisplayMode = DefaultSdkMessage | Custom | Hide
+type messageDisplayMode = DefaultSdkMessage | CustomMessage | Hidden
 
 type paymentMethodMessage = {
   value: string,
@@ -404,10 +404,10 @@ let defaultOptions = {
 let getMessageDisplayMode = (str, key) => {
   switch str {
   | "default_sdk_message" => DefaultSdkMessage
-  | "custom" => Custom
-  | "none" => Hide
+  | "custom_message" => CustomMessage
+  | "hidden" => Hidden
   | str => {
-      str->unknownPropValueWarning(["default_sdk_message", "custom", "none"], key)
+      str->unknownPropValueWarning(["default_sdk_message", "custom_message", "hidden"], key)
       DefaultSdkMessage
     }
   }
@@ -428,7 +428,7 @@ let getPaymentMethodMessage = (dict, logger, context) => {
       ->getWarningString("displayMode", "default_sdk_message", ~logger)
       ->getMessageDisplayMode(context ++ ".message.displayMode")
     } else if value->String.length > 0 {
-      Custom
+      CustomMessage
     } else {
       DefaultSdkMessage
     }

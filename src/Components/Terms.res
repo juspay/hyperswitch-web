@@ -15,8 +15,8 @@ let make = (~mode: PaymentModeType.payment, ~styles: JsxDOMStyle.t={}) => {
 
   let customMessageForSepaBankDebit = switch customMessageConfigForSepaBankDebit.displayMode {
   | DefaultSdkMessage => localeString.sepaDebitTerms(business.name)
-  | Custom => customMessageConfigForSepaBankDebit.value->String.trim
-  | Hide => ""
+  | CustomMessage => customMessageConfigForSepaBankDebit.value->String.trim
+  | Hidden => ""
   }
   let cardTermsValue =
     customMessageForCardTerms->String.length > 0
@@ -29,8 +29,8 @@ let make = (~mode: PaymentModeType.payment, ~styles: JsxDOMStyle.t={}) => {
     | Never => Never
     | _ => Always
     }
-  | Custom => customMessageForSepaBankDebit->String.length > 0 ? Always : Never
-  | Hide => Never
+  | CustomMessage => customMessageForSepaBankDebit->String.length > 0 ? Always : Never
+  | Hidden => Never
   }
 
   let terms = switch mode {
