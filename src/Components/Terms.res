@@ -4,8 +4,8 @@ let make = (~mode: PaymentModeType.payment, ~styles: JsxDOMStyle.t={}) => {
   let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {customMessageForCardTerms, business, terms} = Recoil.useRecoilValueFromAtom(optionAtom)
   let customConfigForSepaBankDebit = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
-    "bank_debit",
-    "sepa",
+    ~paymentMethod="bank_debit",
+    ~paymentMethodType="sepa",
   )
 
   let customMessageConfigForSepaBankDebit =
@@ -23,8 +23,8 @@ let make = (~mode: PaymentModeType.payment, ~styles: JsxDOMStyle.t={}) => {
       ? customMessageForCardTerms
       : localeString.cardTerms(business.name)
 
-  let conditionToShowSepaBankDebitMessage: PaymentType.showTerms = switch customMessageConfigForSepaBankDebit.displayMode {
-  | DefaultSdkMessage => terms.sepaDebit == Never ? Never : Always
+  let conditionToShowSepaBankDebitMessage = switch customMessageConfigForSepaBankDebit.displayMode {
+  | DefaultSdkMessage => terms.sepaDebit
   | CustomMessage => customMessageForSepaBankDebit->String.length > 0 ? Always : Never
   | Hidden => Never
   }

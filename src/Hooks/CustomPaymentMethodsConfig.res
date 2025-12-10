@@ -1,4 +1,4 @@
-let useCustomPaymentMethodConfigs = (paymentMethod, paymentMethodType) => {
+let useCustomPaymentMethodConfigs = (~paymentMethod, ~paymentMethodType) => {
   let {paymentMethodsConfig} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
   React.useMemo3(() => {

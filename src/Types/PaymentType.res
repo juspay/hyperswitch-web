@@ -370,7 +370,7 @@ let defaultSdkHandleSavePayment = {
   handleSave: false,
   confirmParams: ConfirmType.defaultConfirm,
 }
-let defaultPaymentMethodsConfig: paymentMethodsConfig = []
+let defaultPaymentMethodsConfig = []
 
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
