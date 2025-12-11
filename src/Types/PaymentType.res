@@ -156,8 +156,7 @@ type customerMethods = {
   billing: billingAddressPaymentMethod,
 }
 
-type savedCardsLoadState =
-  LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
+type savedCardsLoadState = LoadingSavedCards | LoadedSavedCards(array<customerMethods>) | NoResult
 
 type billingAddress = {
   isUseBillingAddress: bool,
@@ -1040,8 +1039,8 @@ let createCustomerObjArr = (dict, key) => {
     ->Dict.get(key)
     ->Option.flatMap(JSON.Decode.object)
     ->Option.getOr(Dict.make())
-  let (customerPaymentMethods, isGuestCustomer) = customerDict->itemToCustomerObjMapper
-  LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
+  let (customerPaymentMethods, _) = customerDict->itemToCustomerObjMapper
+  LoadedSavedCards(customerPaymentMethods)
 }
 
 let getCustomerMethods = (dict, str) => {
@@ -1068,7 +1067,7 @@ let getCustomerMethods = (dict, str) => {
           billing: getBillingAddressPaymentMethod(json, "billing"),
         }
       })
-    LoadedSavedCards(customerPaymentMethods, false)
+    LoadedSavedCards(customerPaymentMethods)
   } else {
     LoadingSavedCards
   }
