@@ -1120,7 +1120,7 @@ let itemToObjMapper = dict => {
   }
 }
 
-let buildFromPaymentList = (pList: paymentMethodList, ~localeString) => {
+let buildFromPaymentList = (pList, ~localeString) => {
   let paymentMethodArr = pList.payment_methods
 
   paymentMethodArr
