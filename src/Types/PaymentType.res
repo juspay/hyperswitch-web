@@ -1131,38 +1131,119 @@ let getSdkHandleSavePaymentProps = dict => {
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
-let itemToObjMapper = (dict, logger) => {
-  unknownKeysWarning(
-    [
-      "defaultValues",
-      "business",
-      "layout",
-      "paymentMethodOrder",
-      "customerPaymentMethods",
-      "fields",
-      "readOnly",
-      "terms",
-      "wallets",
-      "displaySavedPaymentMethodsCheckbox",
-      "displaySavedPaymentMethods",
-      "savedPaymentMethodsCheckboxCheckedByDefault",
-      "sdkHandleOneClickConfirmPayment",
-      "sdkHandleConfirmPayment",
-      "sdkHandleSavePayment",
-      "paymentMethodsHeaderText",
-      "savedPaymentMethodsHeaderText",
-      "hideExpiredPaymentMethods",
-      "branding",
-      "displayDefaultSavedPaymentIcon",
-      "hideCardNicknameField",
-      "displayBillingDetails",
-      "customMessageForCardTerms",
-      "showShortSurchargeMessage",
-      "paymentMethodsConfig",
-    ],
-    dict,
-    "options",
-  )
+let allowedPaymentElementOptions = [
+  "defaultValues",
+  "business",
+  "layout",
+  "paymentMethodOrder",
+  "customerPaymentMethods",
+  "fields",
+  "readOnly",
+  "terms",
+  "wallets",
+  "displaySavedPaymentMethodsCheckbox",
+  "displaySavedPaymentMethods",
+  "savedPaymentMethodsCheckboxCheckedByDefault",
+  "sdkHandleOneClickConfirmPayment",
+  "sdkHandleConfirmPayment",
+  "sdkHandleSavePayment",
+  "paymentMethodsHeaderText",
+  "savedPaymentMethodsHeaderText",
+  "hideExpiredPaymentMethods",
+  "branding",
+  "displayDefaultSavedPaymentIcon",
+  "hideCardNicknameField",
+  "displayBillingDetails",
+  "customMessageForCardTerms",
+  "showShortSurchargeMessage",
+  "paymentMethodsConfig",
+]
+
+let redactValue = condition => condition ? "***REDACTED***" : "***EMPTY***"
+
+let sanitizePaymentElementOptions = dict => {
+  let sanitizePaymentMethodsConfig = dict => {
+    dict
+    ->getArrayOfObjectsFromDict("paymentMethodsConfig")
+    ->Array.map(pmConfig => {
+      [
+        ("paymentMethod", pmConfig->getString("paymentMethod", "")->JSON.Encode.string),
+        (
+          "paymentMethodTypes",
+          pmConfig
+          ->getArrayOfObjectsFromDict("paymentMethodTypes")
+          ->Array.map(pmType => {
+            let messageDict = pmType->getDictFromDict("message")
+            [
+              ("paymentMethodType", pmType->getString("paymentMethodType", "")->JSON.Encode.string),
+              (
+                "message",
+                []
+                ->Array.concat(
+                  messageDict->Dict.get("displayMode")->Option.isSome
+                    ? [
+                        (
+                          "displayMode",
+                          messageDict->getString("displayMode", "")->JSON.Encode.string,
+                        ),
+                      ]
+                    : [],
+                )
+                ->Array.concat(
+                  messageDict->Dict.get("value")->Option.isSome
+                    ? [
+                        (
+                          "value",
+                          (messageDict->getString("value", "")->String.length > 0)
+                          ->redactValue
+                          ->JSON.Encode.string,
+                        ),
+                      ]
+                    : [],
+                )
+                ->getJsonFromArrayOfJson,
+              ),
+            ]->getJsonFromArrayOfJson
+          })
+          ->JSON.Encode.array,
+        ),
+      ]->getJsonFromArrayOfJson
+    })
+    ->JSON.Encode.array
+  }
+
+  dict
+  ->Dict.toArray
+  ->Array.reduce(Dict.make(), (acc, (key, value)) => {
+    switch key {
+    | "customerPaymentMethods"
+    | "business"
+    | "fields"
+    | "defaultValues"
+    | "paymentMethodsHeaderText"
+    | "savedPaymentMethodsHeaderText"
+    | "customMessageForCardTerms" =>
+      acc->Dict.set(key, dict->Dict.get(key)->Option.isSome->redactValue->JSON.Encode.string)
+
+    | "paymentMethodsConfig" => acc->Dict.set(key, dict->sanitizePaymentMethodsConfig)
+    | _ => acc->Dict.set(key, value)
+    }
+    acc
+  })
+}
+
+let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
+  unknownKeysWarning(allowedPaymentElementOptions, dict, "options")
+
+  Console.log(dict->sanitizePaymentElementOptions)
+
+  // logger.setLogInfo(
+  //   ~value=dict->sanitizePaymentElementOptions->JSON.Encode.object->JSON.stringify,
+  //   ~eventName=PAYMENT_ELEMENT_OPTIONS,
+  //   ~paymentMethod="",
+  //   ~logType=INFO,
+  // )
+
   {
     defaultValues: getDefaultValues(dict, "defaultValues", logger),
     business: getBusiness(dict, "business", logger),
