@@ -237,6 +237,12 @@ let getArray = (dict, key) => {
   dict->getOptionalArrayFromDict(key)->Option.getOr([])
 }
 
+let getArrayOfObjectsFromDict = (dict, key) => {
+  dict
+  ->getArray(key)
+  ->Array.filterMap(JSON.Decode.object)
+}
+
 let getStrArray = (dict, key) => {
   dict
   ->getOptionalArrayFromDict(key)

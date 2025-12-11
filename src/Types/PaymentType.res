@@ -179,6 +179,25 @@ type sdkHandleSavePayment = {
   confirmParams: ConfirmType.confirmParams,
 }
 
+type messageDisplayMode = DefaultSdkMessage | CustomMessage | Hidden
+
+type paymentMethodMessage = {
+  value: option<string>,
+  displayMode: messageDisplayMode,
+}
+
+type paymentMethodTypeConfig = {
+  paymentMethodType: string,
+  message: paymentMethodMessage,
+}
+
+type paymentMethodConfig = {
+  paymentMethod: string,
+  paymentMethodTypes: array<paymentMethodTypeConfig>,
+}
+
+type paymentMethodsConfig = array<paymentMethodConfig>
+
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
@@ -207,6 +226,7 @@ type options = {
   displayBillingDetails: bool,
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
+  paymentMethodsConfig: paymentMethodsConfig,
 }
 
 type payerDetails = {
@@ -381,6 +401,74 @@ let defaultOptions = {
   displayBillingDetails: false,
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
+  paymentMethodsConfig: [],
+}
+
+let getMessageDisplayMode = (str, key) => {
+  switch str {
+  | "default_sdk_message" => DefaultSdkMessage
+  | "custom_message" => CustomMessage
+  | "hidden" => Hidden
+  | str => {
+      str->unknownPropValueWarning(["default_sdk_message", "custom_message", "hidden"], key)
+      DefaultSdkMessage
+    }
+  }
+}
+
+let defaultPaymentMethodMessage = {
+  value: None,
+  displayMode: DefaultSdkMessage,
+}
+
+let getPaymentMethodMessage = (dict, logger, context) => {
+  let messageDict = dict->getDictFromDict("message")
+  if messageDict->Dict.toArray->Array.length > 0 {
+    unknownKeysWarning(["value", "displayMode"], messageDict, context ++ ".message")
+    let value = messageDict->getOptionString("value")
+    let displayMode = if messageDict->Dict.get("displayMode")->Option.isSome {
+      messageDict
+      ->getWarningString("displayMode", "default_sdk_message", ~logger)
+      ->getMessageDisplayMode(context ++ ".message.displayMode")
+    } else {
+      switch value {
+      | Some(_) => CustomMessage
+      | None => DefaultSdkMessage
+      }
+    }
+    {
+      value,
+      displayMode,
+    }
+  } else {
+    defaultPaymentMethodMessage
+  }
+}
+
+let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
+  let context = "options.paymentMethodsConfig." ++ paymentMethod
+  unknownKeysWarning(["paymentMethodType", "message"], json, context)
+  {
+    paymentMethodType: json->getWarningString("paymentMethodType", "", ~logger),
+    message: getPaymentMethodMessage(json, logger, context),
+  }
+}
+
+let getPaymentMethodConfig = (json, logger) => {
+  unknownKeysWarning(["paymentMethod", "paymentMethodTypes"], json, "options.paymentMethodsConfig")
+  let paymentMethod = json->getWarningString("paymentMethod", "", ~logger)
+  {
+    paymentMethod,
+    paymentMethodTypes: json
+    ->getArrayOfObjectsFromDict("paymentMethodTypes")
+    ->Array.map(pmTypeJson => getPaymentMethodTypeConfig(pmTypeJson, logger, paymentMethod)),
+  }
+}
+
+let getPaymentMethodsConfig = (dict, str, logger) => {
+  dict
+  ->getArrayOfObjectsFromDict(str)
+  ->Array.map(json => getPaymentMethodConfig(json, logger))
 }
 
 let getLayout = str => {
@@ -1113,6 +1201,7 @@ let itemToObjMapper = (dict, logger) => {
       "displayBillingDetails",
       "customMessageForCardTerms",
       "showShortSurchargeMessage",
+      "paymentMethodsConfig",
     ],
     dict,
     "options",
@@ -1164,6 +1253,7 @@ let itemToObjMapper = (dict, logger) => {
     displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
+    paymentMethodsConfig: getPaymentMethodsConfig(dict, "paymentMethodsConfig", logger),
   }
 }
 
