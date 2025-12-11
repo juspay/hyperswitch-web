@@ -1131,38 +1131,118 @@ let getSdkHandleSavePaymentProps = dict => {
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
-let itemToObjMapper = (dict, logger) => {
-  unknownKeysWarning(
-    [
-      "defaultValues",
-      "business",
-      "layout",
-      "paymentMethodOrder",
-      "customerPaymentMethods",
-      "fields",
-      "readOnly",
-      "terms",
-      "wallets",
-      "displaySavedPaymentMethodsCheckbox",
-      "displaySavedPaymentMethods",
-      "savedPaymentMethodsCheckboxCheckedByDefault",
-      "sdkHandleOneClickConfirmPayment",
-      "sdkHandleConfirmPayment",
-      "sdkHandleSavePayment",
-      "paymentMethodsHeaderText",
-      "savedPaymentMethodsHeaderText",
-      "hideExpiredPaymentMethods",
-      "branding",
-      "displayDefaultSavedPaymentIcon",
-      "hideCardNicknameField",
-      "displayBillingDetails",
-      "customMessageForCardTerms",
-      "showShortSurchargeMessage",
-      "paymentMethodsConfig",
-    ],
-    dict,
-    "options",
-  )
+let allowedPaymentElementOptions = [
+  "defaultValues",
+  "business",
+  "layout",
+  "paymentMethodOrder",
+  "customerPaymentMethods",
+  "fields",
+  "readOnly",
+  "terms",
+  "wallets",
+  "displaySavedPaymentMethodsCheckbox",
+  "displaySavedPaymentMethods",
+  "savedPaymentMethodsCheckboxCheckedByDefault",
+  "sdkHandleOneClickConfirmPayment",
+  "sdkHandleConfirmPayment",
+  "sdkHandleSavePayment",
+  "paymentMethodsHeaderText",
+  "savedPaymentMethodsHeaderText",
+  "hideExpiredPaymentMethods",
+  "branding",
+  "displayDefaultSavedPaymentIcon",
+  "hideCardNicknameField",
+  "displayBillingDetails",
+  "customMessageForCardTerms",
+  "showShortSurchargeMessage",
+  "paymentMethodsConfig",
+]
+
+let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig"]
+
+let overrideFieldsToExcludeFromMasking = [
+  "wallets.walletReturnUrl",
+  "paymentMethodsConfig[*].paymentMethodTypes[*].message.value",
+]
+
+let pathMatchesPattern = (path, pattern) => {
+  let normalizePath = p => p->String.replaceRegExp(%re("/\[(\d+)\]/g"), "[*]")
+  normalizePath(path) == normalizePath(pattern)
+}
+
+let pathStartsWithPattern = (path, pattern) => {
+  let normalizedPath = path->String.replaceRegExp(%re("/\[(\d+)\]/g"), "[*]")
+  let normalizedPattern = pattern->String.replaceRegExp(%re("/\[(\d+)\]/g"), "[*]")
+
+  normalizedPath == normalizedPattern || normalizedPath->String.startsWith(normalizedPattern ++ ".")
+}
+
+let shouldMaskField = path => {
+  // First check if this path is in the override list - if so, it MUST be masked
+  // Use ONLY exact matching for overrides to support wildcards like [*]
+  let isOverridden = overrideFieldsToExcludeFromMasking->Array.some(pattern => {
+    pathMatchesPattern(path, pattern)
+  })
+
+  if isOverridden {
+    true // Force masking for overridden fields
+  } else {
+    // Check if this path should be excluded from masking
+    // Use prefix matching for exclusions to support excluding entire subtrees
+    let isExcluded = fieldsToExcludeFromMasking->Array.some(pattern => {
+      pathStartsWithPattern(path, pattern)
+    })
+    !isExcluded // Mask if NOT excluded
+  }
+}
+
+let rec sanitizeJsonValue = (value, currentPath) => {
+  switch value->JSON.Classify.classify {
+  | String(str) =>
+    if shouldMaskField(currentPath) {
+      (str->String.length > 0 ? "***REDACTED***" : "***EMPTY***")->JSON.Encode.string
+    } else {
+      value
+    }
+  | Object(dict) =>
+    dict
+    ->Dict.toArray
+    ->Array.map(((key, val)) => {
+      let newPath = currentPath == "" ? key : `${currentPath}.${key}`
+      (key, sanitizeJsonValue(val, newPath))
+    })
+    ->getJsonFromArrayOfJson
+  | Array(arr) =>
+    arr
+    ->Array.mapWithIndex((item, index) => {
+      let newPath = `${currentPath}[${index->Int.toString}]`
+      sanitizeJsonValue(item, newPath)
+    })
+    ->JSON.Encode.array
+  | _ => value
+  }
+}
+
+let sanitizePaymentElementOptions = dict => {
+  dict
+  ->JSON.Encode.object
+  ->sanitizeJsonValue("")
+  ->getDictFromJson
+}
+
+let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
+  unknownKeysWarning(allowedPaymentElementOptions, dict, "options")
+
+  Console.log(dict->sanitizePaymentElementOptions)
+
+  // logger.setLogInfo(
+  //   ~value=dict->sanitizePaymentElementOptions->JSON.Encode.object->JSON.stringify,
+  //   ~eventName=PAYMENT_ELEMENT_OPTIONS,
+  //   ~paymentMethod="",
+  //   ~logType=INFO,
+  // )
+
   {
     defaultValues: getDefaultValues(dict, "defaultValues", logger),
     business: getBusiness(dict, "business", logger),
