@@ -915,7 +915,7 @@ let defaultList = {
   merchant_name: "",
   collect_billing_details_from_wallets: true,
   is_tax_calculation_enabled: false,
-  isGuestCustomer: true,
+  isGuestCustomer: false,
 }
 
 let getPaymentExperienceType = str => {
@@ -1120,8 +1120,8 @@ let itemToObjMapper = dict => {
   }
 }
 
-let buildFromPaymentList = (plist: paymentMethodList, ~localeString) => {
-  let paymentMethodArr = plist.payment_methods
+let buildFromPaymentList = (pList: paymentMethodList, ~localeString) => {
+  let paymentMethodArr = pList.payment_methods
 
   paymentMethodArr
   ->Array.map(paymentMethodObject => {

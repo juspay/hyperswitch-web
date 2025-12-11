@@ -192,7 +192,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   React.useEffect(() => {
     switch paymentMethodList {
     | Loaded(paymentlist) =>
-      let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let pList = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
 
       setPaymentOptions(_ =>
         [
@@ -201,7 +201,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         ]->removeDuplicate
       )
       setWalletOptions(_ => walletList)
-      setPaymentMethodListValue(_ => plist)
+      setPaymentMethodListValue(_ => pList)
 
       if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
         ErrorUtils.manageErrorWarning(
