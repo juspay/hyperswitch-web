@@ -1,8 +1,8 @@
 type showTerms = Auto | Always | Never
 type showType = Auto | Never
 type layout = Accordion | Tabs
-type groupBy = PaymentMethods | Default
-type savedMethodCustomization = {groupBy: groupBy}
+type groupingBehavior = GroupByPaymentMethods | Default
+type savedMethodCustomization = {groupingBehavior: groupingBehavior}
 open Utils
 open ErrorUtils
 
@@ -281,7 +281,7 @@ let defaultLayout = {
   spacedAccordionItems: false,
   maxAccordionItems: 4,
   \"type": Tabs,
-  savedMethodCustomization: {groupBy: Default},
+  savedMethodCustomization: {groupingBehavior: Default},
 }
 let defaultAddress: address = {
   line1: "",
@@ -757,12 +757,12 @@ let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
 }
 let getSavedMethodLayout = str => {
   switch str {
-  | "paymentMethods" => PaymentMethods
+  | "groupByPaymentMethods" => GroupByPaymentMethods
   | "default" => Default
   | str => {
       str->unknownPropValueWarning(
-        ["paymentMethods", "default"],
-        "options.layout.savedMethodCustomization.groupBy",
+        ["groupByPaymentMethods", "default"],
+        "options.layout.savedMethodCustomization.groupingBehavior",
       )
       Default
     }
@@ -774,12 +774,17 @@ let getSavedMethodCustomization = (dict, str, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    unknownKeysWarning(["groupBy"], json, "options.layout.savedMethodCustomization")
+    unknownKeysWarning(["groupingBehavior"], json, "options.layout.savedMethodCustomization")
     {
-      groupBy: getWarningString(json, "groupBy", "default", ~logger)->getSavedMethodLayout,
+      groupingBehavior: getWarningString(
+        json,
+        "groupingBehavior",
+        "default",
+        ~logger,
+      )->getSavedMethodLayout,
     }
   })
-  ->Option.getOr({groupBy: Default})
+  ->Option.getOr({groupingBehavior: Default})
 }
 
 let getLayoutValues = (val, logger) => {

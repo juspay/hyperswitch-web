@@ -61,7 +61,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let layoutClass = CardUtils.getLayoutClass(layout)
   let groupSavedMethodsWithPaymentMethods =
-    layoutClass.savedMethodCustomization.groupBy == PaymentMethods
+    layoutClass.savedMethodCustomization.groupingBehavior == GroupByPaymentMethods
 
   let (getVisaCards, closeComponentIfSavedMethodsAreEmpty) = ClickToPayHook.useClickToPay(
     ~areClickToPayUIScriptsLoaded,
@@ -470,21 +470,25 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let shouldShowSavedMethods =
     displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay
+
   let shouldShowSavedMethodsScreen =
     !groupSavedMethodsWithPaymentMethods && !showPaymentMethodsScreen && shouldShowSavedMethods
+
   let shouldShowUseExistingMethodsButton =
     !groupSavedMethodsWithPaymentMethods && shouldShowSavedMethods && showPaymentMethodsScreen
 
-  let shouldShowShimmerForGroupedPaymentMethods = !(
-    isSavedCardsLoading && groupSavedMethodsWithPaymentMethods
-  )
+  let isLoadingGroupedSavedMethods = isSavedCardsLoading && groupSavedMethodsWithPaymentMethods
+
   let hasPaymentOrWalletOptions =
     paymentOptions->Array.length > 0 || walletOptions->Array.length > 0
+
   let shouldDisplayPaymentMethodsScreen =
     groupSavedMethodsWithPaymentMethods || showPaymentMethodsScreen
 
+  let shouldShowShimmer = clickToPayConfig.isReady->Option.isNone || isLoadingGroupedSavedMethods
+
   let shouldRenderPaymentSection =
-    shouldShowShimmerForGroupedPaymentMethods &&
+    !isLoadingGroupedSavedMethods &&
     hasPaymentOrWalletOptions &&
     shouldDisplayPaymentMethodsScreen &&
     clickToPayConfig.isReady->Option.isSome
@@ -498,10 +502,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
-    {if (
-      clickToPayConfig.isReady->Option.isNone ||
-        (isSavedCardsLoading && groupSavedMethodsWithPaymentMethods)
-    ) {
+    {if shouldShowShimmer {
       if areClickToPayUIScriptsLoaded {
         <ClickToPayHelpers.SrcLoader />
       } else if groupSavedMethodsWithPaymentMethods {

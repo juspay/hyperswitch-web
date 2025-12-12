@@ -72,7 +72,7 @@ let make = (
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
   let layoutClass = CardUtils.getLayoutClass(layout)
   let groupSavedMethodsWithPaymentMethods =
-    layoutClass.savedMethodCustomization.groupBy == PaymentMethods
+    layoutClass.savedMethodCustomization.groupingBehavior == GroupByPaymentMethods
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
 
   let shouldShowClickToPaySection =

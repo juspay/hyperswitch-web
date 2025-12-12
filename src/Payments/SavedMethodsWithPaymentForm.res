@@ -35,20 +35,19 @@ let make = (
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
     RecoilAtoms.showPaymentMethodsScreen,
   )
+
+  let selectedToken: RecoilAtomTypes.paymentToken = switch savedMethodsForSelectedOption->Array.get(
+    0,
+  ) {
+  | Some(firstSavedMethod) => {
+      paymentToken: firstSavedMethod.paymentToken,
+      customerId: firstSavedMethod.customerId,
+    }
+  | None => RecoilAtomTypes.defaultPaymentToken
+  }
+
   React.useEffect(() => {
-    setPaymentToken(_ => {
-      let selectedToken: RecoilAtomTypes.paymentToken = switch savedMethodsForSelectedOption[0] {
-      | Some(firstSavedMethod) => {
-          paymentToken: firstSavedMethod.paymentToken,
-          customerId: firstSavedMethod.customerId,
-        }
-      | None => {
-          paymentToken: "",
-          customerId: "",
-        }
-      }
-      selectedToken
-    })
+    setPaymentToken(_ => selectedToken)
     None
   }, (showPaymentMethodsScreen, selectedOption))
 
@@ -59,10 +58,10 @@ let make = (
     setShowPaymentMethodsScreen(_ => !shouldShowClickToPayCards && shouldShowForm)
 
     None
-  }, (selectedOption, savedMethodsCount))
+  }, (selectedOption, savedMethodsCount, isShowPaymentMethodsDependingOnClickToPay))
 
-  <>
-    {showPaymentMethodsScreen
+  {
+    showPaymentMethodsScreen
       ? <>
           children
           <RenderIf condition={savedMethodsCount > 0 || isShowPaymentMethodsDependingOnClickToPay}>
@@ -92,6 +91,6 @@ let make = (
           setIsClickToPayAuthenticateError
           getVisaCards
           closeComponentIfSavedMethodsAreEmpty
-        />}
-  </>
+        />
+  }
 }
