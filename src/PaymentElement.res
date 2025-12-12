@@ -465,7 +465,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (paymentMethodList, customerPaymentMethods))
 
   let shouldShowSavedMethods =
-    displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay
+    (displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
+      isShowPaymentMethodsDependingOnClickToPay
 
   let shouldShowSavedMethodsScreen =
     !groupSavedMethodsWithPaymentMethods && !showPaymentMethodsScreen && shouldShowSavedMethods
