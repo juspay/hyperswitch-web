@@ -2243,3 +2243,17 @@ let fetchAuthenticationSync = async (
     ~isPaymentSession,
   )
 }
+
+let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
+  switch paymentMethod {
+  | "bank_debit" => paymentMethodType ++ "_debit"
+  | "bank_transfer" =>
+    if !(Constants.bankTransferList->Array.includes(paymentMethodType)) {
+      paymentMethodType ++ "_transfer"
+    } else {
+      paymentMethodType
+    }
+  | "card" => "card"
+  | _ => paymentMethodType
+  }
+}
