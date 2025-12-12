@@ -205,6 +205,11 @@ let getBool = (dict, key, default) => {
 
 let getOptionsDict = options => options->Option.getOr(JSON.Encode.null)->getDictFromJson
 
+let decodeJsonToDict = json =>
+  json
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.getOr(Dict.make())
+
 let getBoolWithWarning = (dict, key, default, ~logger) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
