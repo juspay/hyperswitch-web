@@ -527,7 +527,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           } else {
             switch optionsPayment.customerPaymentMethods {
             | LoadingSavedCards => ()
-            | LoadedSavedCards(list) =>
+            | LoadedSavedCards(list, _) =>
               list->Array.length > 0
                 ? logger.setLogInfo(
                     ~value="Loaded",
@@ -535,7 +535,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                     ~latency=finalLoadLatency,
                   )
                 : evalMethodsList()
-            | NoResult => evalMethodsList()
+            | NoResult(_) => evalMethodsList()
             }
           }
 
@@ -573,7 +573,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
           switch optionsPayment.customerPaymentMethods {
           | LoadingSavedCards => ()
-          | LoadedSavedCards(list) =>
+          | LoadedSavedCards(list, _) =>
             if list->Array.length > 0 {
               logger.setLogInfo(
                 ~value="Loaded",
@@ -583,7 +583,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             } else {
               evalMethodsList()
             }
-          | NoResult => evalMethodsList()
+          | NoResult(_) => evalMethodsList()
           }
         }
         if dict->getDictIsSome("savedPaymentMethods") {
@@ -618,7 +618,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
           switch optionsPayment.customerPaymentMethods {
           | LoadingSavedCards => ()
-          | LoadedSavedCards(list) =>
+          | LoadedSavedCards(list, _) =>
             if list->Array.length > 0 {
               logger.setLogInfo(
                 ~value="Loaded",
@@ -628,7 +628,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             } else {
               evalMethodsList()
             }
-          | NoResult => evalMethodsList()
+          | NoResult(_) => evalMethodsList()
           }
         }
         if dict->getDictIsSome("paymentManagementMethods") {

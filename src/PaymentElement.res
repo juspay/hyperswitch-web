@@ -73,10 +73,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
         setShowPaymentMethodsScreen(_ => isShowPaymentMethodsDependingOnClickToPay->not)
-        setLoadSavedCards(_ => LoadedSavedCards([]))
+        setLoadSavedCards(_ => LoadedSavedCards([], true))
       }
     | (_, LoadingSavedCards) => ()
-    | (_, LoadedSavedCards(savedPaymentMethods)) => {
+    | (_, LoadedSavedCards(savedPaymentMethods, isGuestCustomer)) => {
         let displayDefaultSavedPaymentIcon = optionAtomValue.displayDefaultSavedPaymentIcon
         let sortSavedPaymentMethods = (a, b) => {
           let defaultCompareVal = compareLogic(
@@ -119,16 +119,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         setSavedMethods(_ => sortSavedMethodsBasedOnPriority)
         setLoadSavedCards(_ =>
           finalSavedPaymentMethods->Array.length == 0
-            ? NoResult
-            : LoadedSavedCards(finalSavedPaymentMethods)
+            ? NoResult(isGuestCustomer)
+            : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
         )
         setShowPaymentMethodsScreen(_ =>
           finalSavedPaymentMethods->Array.length == 0 &&
             isShowPaymentMethodsDependingOnClickToPay->not
         )
       }
-    | (_, NoResult) => {
-        setLoadSavedCards(_ => NoResult)
+    | (_, NoResult(isGuestCustomer)) => {
+        setLoadSavedCards(_ => NoResult(isGuestCustomer))
         setShowPaymentMethodsScreen(_ => true && isShowPaymentMethodsDependingOnClickToPay->not)
       }
     }
@@ -430,11 +430,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     } else {
       switch customerPaymentMethods {
       | LoadingSavedCards => ()
-      | LoadedSavedCards(list) =>
+      | LoadedSavedCards(list, _) =>
         list->Array.length > 0
           ? messageParentWindow([("ready", true->JSON.Encode.bool)])
           : evalMethodsList()
-      | NoResult => evalMethodsList()
+      | NoResult(_) => evalMethodsList()
       }
     }
     None

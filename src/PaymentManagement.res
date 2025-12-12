@@ -57,7 +57,7 @@ let make = (
 
   React.useEffect(() => {
     switch savedPaymentMethods {
-    | LoadedSavedCards(savedPaymentMethods) => {
+    | LoadedSavedCards(savedPaymentMethods, _) => {
         let defaultPaymentMethod =
           savedPaymentMethods->Array.find(savedCard => savedCard.defaultPaymentMethodSet)
 
@@ -75,7 +75,7 @@ let make = (
         setIsLoading(_ => false)
       }
     | LoadingSavedCards => setIsLoading(_ => true)
-    | NoResult => setIsLoading(_ => false)
+    | NoResult(_) => setIsLoading(_ => false)
     }
 
     None

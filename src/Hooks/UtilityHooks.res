@@ -1,14 +1,24 @@
 let useIsGuestCustomer = () => {
   let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
+  let {customerPaymentMethods} = RecoilAtoms.optionAtom->Recoil.useRecoilValueFromAtom
 
   React.useMemo(() => {
     switch paymentMethodList {
     | Loaded(val) =>
       let pList = val->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
-      pList.isGuestCustomer
+      let guestCustomerValue = pList.isGuestCustomer
+      if guestCustomerValue->Option.isNone {
+        switch customerPaymentMethods {
+        | LoadedSavedCards(_, false)
+        | NoResult(false) => false
+        | _ => true
+        }
+      } else {
+        guestCustomerValue->Option.getOr(true)
+      }
     | _ => true
     }
-  }, [paymentMethodList])
+  }, (paymentMethodList, customerPaymentMethods))
 }
 
 let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false) => {
