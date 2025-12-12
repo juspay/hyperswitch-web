@@ -22,7 +22,8 @@ let make = (
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Gpay)
   let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
-  let isTrustpayGooglePayReady = Recoil.useRecoilValueFromAtom(isTrustpayGooglePayReady)
+  let isTrustpayScriptReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTrustpayScriptReady)
+  let isTrustpayScriptFailed = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTrustpayScriptFailed)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
   let isGooglePaySDKFlow = React.useMemo(() => {
@@ -180,7 +181,7 @@ let make = (
     if (
       status == "ready" &&
       (isGPayReady ||
-      isDelayedSessionToken && isTrustpayGooglePayReady ||
+      isDelayedSessionToken && isTrustpayScriptReady ||
       paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
       isWallet
     ) {
@@ -194,7 +195,7 @@ let make = (
     sessionObj,
     thirdPartySessionObj,
     isGPayReady,
-    isTrustpayGooglePayReady,
+    isTrustpayScriptReady,
   ))
 
   React.useEffect0(() => {
@@ -226,7 +227,7 @@ let make = (
   let isRenderGooglePayButton =
     (isGPayReady ||
     paymentExperience == PaymentMethodsRecord.RedirectToURL ||
-    (isDelayedSessionToken && isTrustpayGooglePayReady)) && isWallet
+    (isDelayedSessionToken && isTrustpayScriptReady)) && isWallet
 
   React.useEffect(() => {
     areOneClickWalletsRendered(prev => {
@@ -240,17 +241,23 @@ let make = (
   useSubmitPaymentData(submitCallback)
 
   if isWallet {
-    <RenderIf condition={isRenderGooglePayButton}>
-      <div
-        style={
-          height: `${height->Int.toString}px`,
-          pointerEvents: updateSession ? "none" : "auto",
-          opacity: updateSession ? "0.5" : "1.0",
-        }
-        id="google-pay-button"
-        className={`w-full flex flex-row justify-center rounded-md`}
-      />
-    </RenderIf>
+    <>
+      <RenderIf
+        condition={sessionObj->Option.isSome && !isTrustpayScriptFailed && !isTrustpayScriptReady}>
+        <WalletShimmer />
+      </RenderIf>
+      <RenderIf condition={isRenderGooglePayButton}>
+        <div
+          style={
+            height: `${height->Int.toString}px`,
+            pointerEvents: updateSession ? "none" : "auto",
+            opacity: updateSession ? "0.5" : "1.0",
+          }
+          id="google-pay-button"
+          className={`w-full flex flex-row justify-center rounded-md`}
+        />
+      </RenderIf>
+    </>
   } else {
     <DynamicFields paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody />
   }
