@@ -70,14 +70,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~savedMethods,
     ~loadSavedCards,
   )
-  let (isSavedCardsLoading, setIsSavedCardsLoading) = React.useState(_ => true)
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
         setShowPaymentMethodsScreen(_ => isShowPaymentMethodsDependingOnClickToPay->not)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
-        setIsSavedCardsLoading(_ => false)
       }
     | (_, LoadingSavedCards) => ()
     | (_, LoadedSavedCards(savedPaymentMethods, isGuestCustomer)) => {
@@ -130,12 +128,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           finalSavedPaymentMethods->Array.length == 0 &&
             isShowPaymentMethodsDependingOnClickToPay->not
         )
-        setIsSavedCardsLoading(_ => false)
       }
     | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
         setShowPaymentMethodsScreen(_ => isShowPaymentMethodsDependingOnClickToPay->not)
-        setIsSavedCardsLoading(_ => false)
       }
     }
 
@@ -477,7 +473,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let shouldShowUseExistingMethodsButton =
     !groupSavedMethodsWithPaymentMethods && shouldShowSavedMethods && showPaymentMethodsScreen
 
-  let isLoadingGroupedSavedMethods = isSavedCardsLoading && groupSavedMethodsWithPaymentMethods
+  let isLoadingGroupedSavedMethods =
+    customerPaymentMethods == LoadingSavedCards && groupSavedMethodsWithPaymentMethods
 
   let hasPaymentOrWalletOptions =
     paymentOptions->Array.length > 0 || walletOptions->Array.length > 0
