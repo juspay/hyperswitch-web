@@ -550,6 +550,7 @@ let make = (
           | ShippingAddressPincode
           | ShippingAddressState
           | PhoneCountryCode
+          | PhoneCountryCodeAndNumber
           | LanguagePreference(_)
           | ShippingAddressCountry(_)
           | BankList(_) => React.null
@@ -584,6 +585,7 @@ let make = (
                 {switch item {
                 | BillingName => <BillingNamePaymentInput requiredFields />
                 | Email => <EmailPaymentInput />
+                | PhoneCountryCodeAndNumber
                 | PhoneCountryCode
                 | PhoneNumber =>
                   <PhoneNumberPaymentInput />

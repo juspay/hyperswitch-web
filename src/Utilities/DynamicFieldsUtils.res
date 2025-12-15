@@ -483,6 +483,10 @@ let useSetInitialRequiredFields = (
         setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
       | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
       | PhoneNumber => setFields(setPhone, phone, requiredField, false)
+      | PhoneCountryCodeAndNumber => {
+          setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
+          setFields(setPhone, phone, requiredField, false)
+        }
       | BlikCode => setFields(setBlikCode, blikCode, requiredField, false)
       | PixKey => setFields(setPixKey, pixKey, requiredField, false)
       | PixCNPJ => setFields(setPixCNPJ, pixCNPJ, requiredField, false)
@@ -641,6 +645,7 @@ let useRequiredFieldsBody = (
       bankAccountNumber.value
     | SourceBankAccountId => sourceBankAccountId.value
     | StateAndCity
+    | PhoneCountryCodeAndNumber
     | CountryAndPincode(_)
     | SpecialField(_)
     | InfoElement
@@ -859,6 +864,24 @@ let combineCardExpiryAndCvc = arr => {
   }
 }
 
+let combinePhoneNumberAndCountryCode = arr => {
+  open PaymentMethodsRecord
+  let hasPhoneNumberAndCountryCodeField =
+    arr->Array.includes(PhoneCountryCode) && arr->Array.includes(PhoneNumber)
+  if hasPhoneNumberAndCountryCodeField {
+    arr->Array.push(PhoneCountryCodeAndNumber)->ignore
+    arr->Array.filter(item =>
+      switch item {
+      | PhoneCountryCode
+      | PhoneNumber => false
+      | _ => true
+      }
+    )
+  } else {
+    arr
+  }
+}
+
 let updateDynamicFields = (
   arr: array<PaymentMethodsRecord.paymentMethodsFields>,
   billingAddress,
@@ -874,6 +897,7 @@ let updateDynamicFields = (
   ->combineCountryAndPostal
   ->combineCardExpiryMonthAndYear
   ->combineCardExpiryAndCvc
+  ->combinePhoneNumberAndCountryCode
 }
 
 let useSubmitCallback = () => {
