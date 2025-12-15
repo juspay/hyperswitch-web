@@ -1179,38 +1179,106 @@ let getSdkHandleSavePaymentProps = dict => {
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
-let itemToObjMapper = (dict, logger) => {
-  unknownKeysWarning(
-    [
-      "defaultValues",
-      "business",
-      "layout",
-      "paymentMethodOrder",
-      "customerPaymentMethods",
-      "fields",
-      "readOnly",
-      "terms",
-      "wallets",
-      "displaySavedPaymentMethodsCheckbox",
-      "displaySavedPaymentMethods",
-      "savedPaymentMethodsCheckboxCheckedByDefault",
-      "sdkHandleOneClickConfirmPayment",
-      "sdkHandleConfirmPayment",
-      "sdkHandleSavePayment",
-      "paymentMethodsHeaderText",
-      "savedPaymentMethodsHeaderText",
-      "hideExpiredPaymentMethods",
-      "branding",
-      "displayDefaultSavedPaymentIcon",
-      "hideCardNicknameField",
-      "displayBillingDetails",
-      "customMessageForCardTerms",
-      "showShortSurchargeMessage",
-      "paymentMethodsConfig",
-    ],
-    dict,
-    "options",
+let allowedPaymentElementOptions = [
+  "defaultValues",
+  "business",
+  "layout",
+  "paymentMethodOrder",
+  "customerPaymentMethods",
+  "fields",
+  "readOnly",
+  "terms",
+  "wallets",
+  "displaySavedPaymentMethodsCheckbox",
+  "displaySavedPaymentMethods",
+  "savedPaymentMethodsCheckboxCheckedByDefault",
+  "sdkHandleOneClickConfirmPayment",
+  "sdkHandleConfirmPayment",
+  "sdkHandleSavePayment",
+  "paymentMethodsHeaderText",
+  "savedPaymentMethodsHeaderText",
+  "hideExpiredPaymentMethods",
+  "branding",
+  "displayDefaultSavedPaymentIcon",
+  "hideCardNicknameField",
+  "displayBillingDetails",
+  "customMessageForCardTerms",
+  "showShortSurchargeMessage",
+  "paymentMethodsConfig",
+]
+
+let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
+
+let overrideFieldsToExcludeFromMasking = [
+  "wallets.walletReturnUrl",
+  "paymentMethodsConfig.paymentMethodTypes.message.value",
+]
+
+let normalizePath = path => path->String.replaceRegExp(%re("/\[(\d+)\]/g"), "")
+
+let pathMatchesPattern = (path, pattern) => normalizePath(path) == normalizePath(pattern)
+
+let pathStartsWithPattern = (path, pattern) => {
+  let normalizedPath = normalizePath(path)
+  let normalizedPattern = normalizePath(pattern)
+
+  normalizedPath == normalizedPattern || normalizedPath->String.startsWith(normalizedPattern ++ ".")
+}
+
+let shouldMaskField = path => {
+  let isOverridden =
+    overrideFieldsToExcludeFromMasking->Array.some(pattern => pathMatchesPattern(path, pattern))
+  isOverridden
+    ? true
+    : !(fieldsToExcludeFromMasking->Array.some(pattern => pathStartsWithPattern(path, pattern)))
+}
+
+let rec sanitizeJsonValue = (~value, ~currentPath, ~depth) => {
+  if depth > 10 {
+    "***MAX_DEPTH_REACHED***"->JSON.Encode.string
+  } else {
+    switch value->JSON.Classify.classify {
+    | String(str) =>
+      currentPath->shouldMaskField
+        ? (str->String.length > 0 ? "***REDACTED***" : "***EMPTY***")->JSON.Encode.string
+        : value
+
+    | Object(dict) =>
+      dict
+      ->Dict.toArray
+      ->Array.map(((key, val)) => {
+        let newPath = currentPath == "" ? key : `${currentPath}.${key}`
+        (key, sanitizeJsonValue(~value=val, ~currentPath=newPath, ~depth=depth + 1))
+      })
+      ->getJsonFromArrayOfJson
+    | Array(arr) =>
+      arr
+      ->Array.mapWithIndex((item, index) => {
+        let newPath = `${currentPath}[${index->Int.toString}]`
+        sanitizeJsonValue(~value=item, ~currentPath=newPath, ~depth=depth + 1)
+      })
+      ->JSON.Encode.array
+    | _ => value
+    }
+  }
+}
+
+let sanitizePaymentElementOptions = dict => {
+  dict
+  ->JSON.Encode.object
+  ->(val => sanitizeJsonValue(~value=val, ~currentPath="", ~depth=0))
+  ->getDictFromJson
+}
+
+let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
+  unknownKeysWarning(allowedPaymentElementOptions, dict, "options")
+
+  logger.setLogInfo(
+    ~value=dict->sanitizePaymentElementOptions->JSON.Encode.object->JSON.stringify,
+    ~eventName=PAYMENT_ELEMENT_OPTIONS,
+    ~logType=INFO,
   )
+
   {
     defaultValues: getDefaultValues(dict, "defaultValues", logger),
     business: getBusiness(dict, "business", logger),
