@@ -1701,3 +1701,13 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
 }
+
+let getGiftCardDataFromRequiredFieldsBody = requiredFieldsBody => {
+  let giftCardTuples = []->mergeAndFlattenToTuples(requiredFieldsBody)
+  let data =
+    giftCardTuples
+    ->getJsonFromArrayOfJson
+    ->getDictFromJson
+    ->getDictFromDict("payment_method_data")
+  data
+}

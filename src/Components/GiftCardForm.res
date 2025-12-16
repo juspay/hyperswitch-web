@@ -1,4 +1,3 @@
-open Utils
 open RecoilAtoms
 
 @react.component
@@ -35,21 +34,10 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
       let paymentId = keys.paymentId
 
       let appliedGiftCardPaymentMethods = appliedGiftCards->Array.map(card => {
-        let giftCardTuples = []->mergeAndFlattenToTuples(card.requiredFieldsBody)
-        let data =
-          giftCardTuples
-          ->getJsonFromArrayOfJson
-          ->getDictFromJson
-          ->getDictFromDict("payment_method_data")
-        data
+        Utils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
       })
 
-      let newGiftCardTuples = []->mergeAndFlattenToTuples(requiredFieldsBody)
-      let newGiftCardData =
-        newGiftCardTuples
-        ->getJsonFromArrayOfJson
-        ->getDictFromJson
-        ->getDictFromDict("payment_method_data")
+      let newGiftCardData = Utils.getGiftCardDataFromRequiredFieldsBody(requiredFieldsBody)
 
       let paymentMethods = Array.concat(appliedGiftCardPaymentMethods, [newGiftCardData])
 

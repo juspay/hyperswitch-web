@@ -71,13 +71,7 @@ let make = () => {
       let paymentId = keys.paymentId
 
       let paymentMethods = updatedCards->Array.map(card => {
-        let giftCardTuples = []->mergeAndFlattenToTuples(card.requiredFieldsBody)
-        let data =
-          giftCardTuples
-          ->getJsonFromArrayOfJson
-          ->getDictFromJson
-          ->getDictFromDict("payment_method_data")
-        data
+        Utils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
       })
 
       PaymentHelpersV2.checkBalanceAndApplyPaymentMethod(
@@ -100,7 +94,7 @@ let make = () => {
     }
   }
 
-  let handleGiftCardAdded = (newGiftCard: RecoilAtomsV2.appliedGiftCard) => {
+  let handleGiftCardAdded = newGiftCard => {
     setAppliedGiftCards(prevCards => Array.concat(prevCards, [newGiftCard]))
     setSelectedGiftCard(_ => "")
     setShowGiftCardForm(_ => false)
@@ -112,6 +106,12 @@ let make = () => {
     })
     total
   }, [appliedGiftCards])
+
+  let appliedCardsMessage = React.useMemo(() =>
+    `${appliedGiftCards
+      ->Array.length
+      ->Int.toString} gift card${appliedGiftCards->Array.length > 1 ? "s" : ""} already applied.`
+  , [appliedGiftCards])
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -187,15 +187,9 @@ let make = () => {
             <div className="p-3 rounded-lg bg-blue-50">
               <div className="flex items-center gap-2 text-sm text-blue-700">
                 <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-                  <span className="text-white text-xs"> {"ℹ"->React.string} </span>
+                  <span className="text-white text-xs"> {"!"->React.string} </span>
                 </div>
-                <span>
-                  {`${appliedGiftCards
-                    ->Array.length
-                    ->Int.toString} gift card${appliedGiftCards->Array.length > 1
-                      ? "s"
-                      : ""} already applied.`->React.string}
-                </span>
+                {<span> {appliedCardsMessage->React.string} </span>}
               </div>
             </div>
           </RenderIf>
