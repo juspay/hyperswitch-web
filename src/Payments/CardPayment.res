@@ -42,7 +42,6 @@ let make = (
   let paymentType = usePaymentType()
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
   let appliedGiftCards = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.appliedGiftCardsAtom)
-  let remainingAmount = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.remainingAmountAtom)
   let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let {
     isCardValid,
@@ -210,142 +209,48 @@ let make = (
 
     let isUnrecognizedClickToPayPayment = isSaveDetailsWithClickToPay
 
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else {
-        let isCardDetailsValid =
-          isCVCValid->Option.getOr(false) &&
-          isCardValid->Option.getOr(false) &&
-          isCardSupported->Option.getOr(false) &&
-          isExpiryValid->Option.getOr(false)
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      let isCardDetailsValid =
+        isCVCValid->Option.getOr(false) &&
+        isCardValid->Option.getOr(false) &&
+        isCardSupported->Option.getOr(false) &&
+        isExpiryValid->Option.getOr(false)
 
-        let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
+      let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
 
-        // Check if card is blocked
-        let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(
-          cardNumber->CardValidations.clearSpaces,
-          blockedBinsList,
-        )
+      // Check if card is blocked
+      let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(
+        cardNumber->CardValidations.clearSpaces,
+        blockedBinsList,
+      )
 
-        let validFormat =
-          (isBancontact || isCardDetailsValid) &&
-          isNicknameValid &&
-          areRequiredFieldsValid &&
-          !isCardBlocked
+      let validFormat =
+        (isBancontact || isCardDetailsValid) &&
+        isNicknameValid &&
+        areRequiredFieldsValid &&
+        !isCardBlocked
 
-        if validFormat && (showPaymentMethodsScreen || isBancontact || isGiftCard) {
-          if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
-            ClickToPayHelpers.handleOpenClickToPayWindow()
+      if validFormat && (showPaymentMethodsScreen || isBancontact || isGiftCard) {
+        if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
+          ClickToPayHelpers.handleOpenClickToPayWindow()
 
-            switch clickToPayProvider {
-            | MASTERCARD =>
-              try {
-                (
-                  async () => {
-                    let res = await ClickToPayHelpers.encryptCardForClickToPay(
-                      ~cardNumber=cardNumber->CardValidations.clearSpaces,
-                      ~expiryMonth=month,
-                      ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
-                      ~cvcNumber,
-                      ~logger=loggerState,
-                    )
+          switch clickToPayProvider {
+          | MASTERCARD =>
+            try {
+              (
+                async () => {
+                  let res = await ClickToPayHelpers.encryptCardForClickToPay(
+                    ~cardNumber=cardNumber->CardValidations.clearSpaces,
+                    ~expiryMonth=month,
+                    ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
+                    ~cvcNumber,
+                    ~logger=loggerState,
+                  )
 
-                    switch res {
-                    | Ok(res) => {
-                        let resp = await ClickToPayHelpers.handleProceedToPay(
-                          ~encryptedCard=res,
-                          ~isCheckoutWithNewCard=true,
-                          ~isUnrecognizedUser=ctpCards->Array.length == 0,
-                          ~email=email.value,
-                          ~phoneNumber=phoneNumber.value,
-                          ~countryCode=phoneNumber.countryCode
-                          ->Option.getOr("")
-                          ->String.replace("+", ""),
-                          ~rememberMe=isClickToPayRememberMe,
-                          ~logger=loggerState,
-                          ~clickToPayProvider,
-                          ~clickToPayToken=clickToPayConfig.clickToPayToken,
-                        )
-                        let dict = resp.payload->Utils.getDictFromJson
-                        let headers = dict->Utils.getDictFromDict("headers")
-                        let merchantTransactionId =
-                          headers->Utils.getString("merchant-transaction-id", "")
-                        let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
-                        let correlationId =
-                          dict
-                          ->Utils.getDictFromDict("checkoutResponseData")
-                          ->Utils.getString("srcCorrelationId", "")
-
-                        let clickToPayBody = PaymentBody.mastercardClickToPayBody(
-                          ~merchantTransactionId,
-                          ~correlationId,
-                          ~xSrcFlowId,
-                        )
-                        intent(
-                          ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
-                          ~confirmParam=confirm.confirmParams,
-                          ~handleUserError=false,
-                          ~manualRetry=isManualRetryEnabled,
-                        )
-                      }
-                    | Error(err) =>
-                      loggerState.setLogError(
-                        ~value={
-                          "message": `Error during checkout - ${err
-                            ->Utils.formatException
-                            ->JSON.stringify}`,
-                          "scheme": clickToPayProvider,
-                        }
-                        ->JSON.stringifyAny
-                        ->Option.getOr(""),
-                        ~eventName=CLICK_TO_PAY_FLOW,
-                      )
-                    }
-                  }
-                )()->ignore
-              } catch {
-              | err =>
-                loggerState.setLogError(
-                  ~value={
-                    "message": `Error during checkout - ${err
-                      ->Utils.formatException
-                      ->JSON.stringify}`,
-                    "scheme": clickToPayProvider,
-                  }
-                  ->JSON.stringifyAny
-                  ->Option.getOr(""),
-                  ~eventName=CLICK_TO_PAY_FLOW,
-                )
-              }
-
-            | VISA => {
-                let expiry = cardExpiry->String.split("/")->Array.map(String.trim)
-                let month = expiry->Array.at(0)->Option.getOr("")
-                let year = "20" ++ expiry->Array.at(1)->Option.getOr("")
-                let payload = [
-                  convertKeyValueToJsonStringPair(
-                    "primaryAccountNumber",
-                    cardNumber->String.replaceAll(" ", ""),
-                  ),
-                  convertKeyValueToJsonStringPair("panExpirationMonth", month),
-                  convertKeyValueToJsonStringPair("panExpirationYear", year),
-                  convertKeyValueToJsonStringPair("cardSecurityCode", cvcNumber->String.trim),
-                  convertKeyValueToJsonStringPair("cardHolderName", fullName.value->String.trim),
-                ]
-
-                let dict = Dict.make()
-                payload->Array.forEach(((key, value)) => Dict.set(dict, key, value))
-                let cardPayloadJson = JSON.Encode.object(dict)
-
-                (
-                  async () => {
-                    let encryptedCard =
-                      await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard
-
-                    try {
-                      let res = await ClickToPayHelpers.handleProceedToPay(
-                        ~visaEncryptedCard=encryptedCard,
+                  switch res {
+                  | Ok(res) => {
+                      let resp = await ClickToPayHelpers.handleProceedToPay(
+                        ~encryptedCard=res,
                         ~isCheckoutWithNewCard=true,
                         ~isUnrecognizedUser=ctpCards->Array.length == 0,
                         ~email=email.value,
@@ -357,95 +262,185 @@ let make = (
                         ~logger=loggerState,
                         ~clickToPayProvider,
                         ~clickToPayToken=clickToPayConfig.clickToPayToken,
-                        ~orderId=clientSecret->Option.getOr(""),
-                        ~fullName=fullName.value,
                       )
-                      let dict = res.payload->Utils.getDictFromJson
-                      let clickToPayBody = PaymentBody.visaClickToPayBody(
-                        ~email=clickToPayConfig.email,
-                        ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
+                      let dict = resp.payload->Utils.getDictFromJson
+                      let headers = dict->Utils.getDictFromDict("headers")
+                      let merchantTransactionId =
+                        headers->Utils.getString("merchant-transaction-id", "")
+                      let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
+                      let correlationId =
+                        dict
+                        ->Utils.getDictFromDict("checkoutResponseData")
+                        ->Utils.getString("srcCorrelationId", "")
+
+                      let clickToPayBody = PaymentBody.mastercardClickToPayBody(
+                        ~merchantTransactionId,
+                        ~correlationId,
+                        ~xSrcFlowId,
                       )
                       intent(
-                        ~bodyArr=clickToPayBody,
+                        ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
                         ~confirmParam=confirm.confirmParams,
                         ~handleUserError=false,
                         ~manualRetry=isManualRetryEnabled,
                       )
-                    } catch {
-                    | err =>
-                      loggerState.setLogError(
-                        ~value={
-                          "message": `Error during checkout - ${err
-                            ->Utils.formatException
-                            ->JSON.stringify}`,
-                          "scheme": clickToPayProvider,
-                        }
-                        ->JSON.stringifyAny
-                        ->Option.getOr(""),
-                        ~eventName=CLICK_TO_PAY_FLOW,
-                      )
                     }
+                  | Error(err) =>
+                    loggerState.setLogError(
+                      ~value={
+                        "message": `Error during checkout - ${err
+                          ->Utils.formatException
+                          ->JSON.stringify}`,
+                        "scheme": clickToPayProvider,
+                      }
+                      ->JSON.stringifyAny
+                      ->Option.getOr(""),
+                      ~eventName=CLICK_TO_PAY_FLOW,
+                    )
                   }
-                )()->ignore
-              }
-            | NONE => ()
+                }
+              )()->ignore
+            } catch {
+            | err =>
+              loggerState.setLogError(
+                ~value={
+                  "message": `Error during checkout - ${err
+                    ->Utils.formatException
+                    ->JSON.stringify}`,
+                  "scheme": clickToPayProvider,
+                }
+                ->JSON.stringifyAny
+                ->Option.getOr(""),
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
             }
-          } else if isPMMFlow {
-            saveCard(
-              ~bodyArr=cardBody->mergeAndFlattenToTuples(requiredFieldsBody),
-              ~confirmParam={
-                return_url: options.sdkHandleSavePayment.confirmParams.return_url,
-                publishableKey,
-              },
-              ~handleUserError=true,
-            )
-          } else {
-            let paymentBody = switch (isBancontact, isGiftCard) {
-            | (true, _) => banContactBody
-            | (_, true) => PaymentBodyV2.dynamicPaymentBodyV2("gift_card", selectedOption)
-            | _ =>
-              // Check if there are applied gift cards to include in split payment
-              if appliedGiftCards->Array.length > 0 {
-                let giftCardSplitBody = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
-                  appliedGiftCards,
-                )
-                let giftCardDict = giftCardSplitBody->getJsonFromArrayOfJson->getDictFromJson
-                cardBody->mergeAndFlattenToTuples(giftCardDict)
-              } else {
-                cardBody
-              }
+
+          | VISA => {
+              let expiry = cardExpiry->String.split("/")->Array.map(String.trim)
+              let month = expiry->Array.at(0)->Option.getOr("")
+              let year = "20" ++ expiry->Array.at(1)->Option.getOr("")
+              let payload = [
+                convertKeyValueToJsonStringPair(
+                  "primaryAccountNumber",
+                  cardNumber->String.replaceAll(" ", ""),
+                ),
+                convertKeyValueToJsonStringPair("panExpirationMonth", month),
+                convertKeyValueToJsonStringPair("panExpirationYear", year),
+                convertKeyValueToJsonStringPair("cardSecurityCode", cvcNumber->String.trim),
+                convertKeyValueToJsonStringPair("cardHolderName", fullName.value->String.trim),
+              ]
+
+              let dict = Dict.make()
+              payload->Array.forEach(((key, value)) => Dict.set(dict, key, value))
+              let cardPayloadJson = JSON.Encode.object(dict)
+
+              (
+                async () => {
+                  let encryptedCard =
+                    await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard
+
+                  try {
+                    let res = await ClickToPayHelpers.handleProceedToPay(
+                      ~visaEncryptedCard=encryptedCard,
+                      ~isCheckoutWithNewCard=true,
+                      ~isUnrecognizedUser=ctpCards->Array.length == 0,
+                      ~email=email.value,
+                      ~phoneNumber=phoneNumber.value,
+                      ~countryCode=phoneNumber.countryCode
+                      ->Option.getOr("")
+                      ->String.replace("+", ""),
+                      ~rememberMe=isClickToPayRememberMe,
+                      ~logger=loggerState,
+                      ~clickToPayProvider,
+                      ~clickToPayToken=clickToPayConfig.clickToPayToken,
+                      ~orderId=clientSecret->Option.getOr(""),
+                      ~fullName=fullName.value,
+                    )
+                    let dict = res.payload->Utils.getDictFromJson
+                    let clickToPayBody = PaymentBody.visaClickToPayBody(
+                      ~email=clickToPayConfig.email,
+                      ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
+                    )
+                    intent(
+                      ~bodyArr=clickToPayBody,
+                      ~confirmParam=confirm.confirmParams,
+                      ~handleUserError=false,
+                      ~manualRetry=isManualRetryEnabled,
+                    )
+                  } catch {
+                  | err =>
+                    loggerState.setLogError(
+                      ~value={
+                        "message": `Error during checkout - ${err
+                          ->Utils.formatException
+                          ->JSON.stringify}`,
+                        "scheme": clickToPayProvider,
+                      }
+                      ->JSON.stringifyAny
+                      ->Option.getOr(""),
+                      ~eventName=CLICK_TO_PAY_FLOW,
+                    )
+                  }
+                }
+              )()->ignore
             }
-            intent(
-              ~bodyArr=paymentBody->mergeAndFlattenToTuples(requiredFieldsBody),
-              ~confirmParam=confirm.confirmParams,
-              ~handleUserError=false,
-              ~manualRetry=isManualRetryEnabled,
-            )
+          | NONE => ()
           }
+        } else if isPMMFlow {
+          saveCard(
+            ~bodyArr=cardBody->mergeAndFlattenToTuples(requiredFieldsBody),
+            ~confirmParam={
+              return_url: options.sdkHandleSavePayment.confirmParams.return_url,
+              publishableKey,
+            },
+            ~handleUserError=true,
+          )
         } else {
-          if cardNumber === "" {
-            setCardError(_ => localeString.cardNumberEmptyText)
-            setUserError(localeString.enterFieldsText)
-          } else if isCardSupported->Option.getOr(true)->not && !isGiftCard {
-            if cardBrand == "" {
-              setCardError(_ => localeString.enterValidCardNumberErrorText)
-              setUserError(localeString.enterValidDetailsText)
+          let paymentBody = switch (isBancontact, isGiftCard) {
+          | (true, _) => banContactBody
+          | (_, true) => PaymentBodyV2.dynamicPaymentBodyV2("gift_card", selectedOption)
+          | _ =>
+            // Check if there are applied gift cards to include in split payment
+            if appliedGiftCards->Array.length > 0 {
+              let giftCardSplitBody = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
+                appliedGiftCards,
+              )
+              let giftCardDict = giftCardSplitBody->getJsonFromArrayOfJson->getDictFromJson
+              cardBody->mergeAndFlattenToTuples(giftCardDict)
             } else {
-              setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
-              setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+              cardBody
             }
           }
-          if cardExpiry === "" {
-            setExpiryError(_ => localeString.cardExpiryDateEmptyText)
-            setUserError(localeString.enterFieldsText)
-          }
-          if !isBancontact && cvcNumber === "" {
-            setCvcError(_ => localeString.cvcNumberEmptyText)
-            setUserError(localeString.enterFieldsText)
-          }
-          if !validFormat {
+          intent(
+            ~bodyArr=paymentBody->mergeAndFlattenToTuples(requiredFieldsBody),
+            ~confirmParam=confirm.confirmParams,
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
+        }
+      } else {
+        if cardNumber === "" {
+          setCardError(_ => localeString.cardNumberEmptyText)
+          setUserError(localeString.enterFieldsText)
+        } else if isCardSupported->Option.getOr(true)->not && !isGiftCard {
+          if cardBrand == "" {
+            setCardError(_ => localeString.enterValidCardNumberErrorText)
             setUserError(localeString.enterValidDetailsText)
+          } else {
+            setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
+            setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
           }
+        }
+        if cardExpiry === "" {
+          setExpiryError(_ => localeString.cardExpiryDateEmptyText)
+          setUserError(localeString.enterFieldsText)
+        }
+        if !isBancontact && cvcNumber === "" {
+          setCvcError(_ => localeString.cvcNumberEmptyText)
+          setUserError(localeString.enterFieldsText)
+        }
+        if !validFormat {
+          setUserError(localeString.enterValidDetailsText)
         }
       }
     }
@@ -464,7 +459,6 @@ let make = (
     isClickToPayRememberMe,
     selectedOption,
     appliedGiftCards,
-    remainingAmount,
     isGiftCardOnlyPayment,
     blockedBinsList,
   ))

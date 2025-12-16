@@ -222,23 +222,7 @@ let make = (
     None
   }, [isRenderGooglePayButton])
 
-  let baseSubmitCallback = GooglePayHelpers.useSubmitCallback(
-    ~isWallet,
-    ~sessionObj,
-    ~componentName,
-  )
-
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else {
-        baseSubmitCallback(ev)
-      }
-    }
-  }, (baseSubmitCallback, isGiftCardOnlyPayment, isGiftCardOnlyPayment))
+  let submitCallback = GooglePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
 
   useSubmitPaymentData(submitCallback)
 

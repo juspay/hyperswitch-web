@@ -77,7 +77,6 @@ let make = (
     ~cardBrand,
   )
 
-  // Compute if non-card payment methods should be disabled
   let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let cardOptionDetails =

@@ -4,7 +4,7 @@ let useIsGiftCardOnlyPayment = () => {
 
   React.useMemo2(() => {
     switch (appliedGiftCards->Array.length > 0, remainingAmount) {
-    | (true, Some(amount)) if amount == 0.0 => true
+    | (true, amount) => amount == 0.0
     | _ => false
     }
   }, (appliedGiftCards->Array.length, remainingAmount))

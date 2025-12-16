@@ -30,10 +30,8 @@ let default = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else if complete {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if complete {
         let bodyArr =
           PaymentBody.dynamicPaymentBody("bank_transfer", "bacs")->mergeAndFlattenToTuples(
             requiredFieldsBody,

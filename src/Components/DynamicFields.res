@@ -315,21 +315,7 @@ let make = (
     ~setRequiredFieldsBody,
   )
 
-  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
-  let baseSubmitCallback = useSubmitCallback()
-
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->Utils.safeParse
-    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else {
-        // Call the original submit callback
-        baseSubmitCallback(ev)
-      }
-    }
-  }, (baseSubmitCallback, isGiftCardOnlyPayment))
+  let submitCallback = useSubmitCallback()
 
   useSubmitPaymentData(submitCallback)
 
@@ -380,10 +366,10 @@ let make = (
               onBlur=handleCardBlur
               rightIcon={icon}
               errorString=cardError
-              type_={"tel"}
-              maxLength={maxCardLength}
+              type_="tel"
+              maxLength=maxCardLength
               inputRef=cardRef
-              placeholder={"1234 1234 1234 1234"}
+              placeholder="1234 1234 1234 1234"
               autocomplete="cc-number"
             />
           | GiftCardNumber =>
@@ -391,11 +377,7 @@ let make = (
               fieldName=localeString.giftCardNumberLabel
               value=giftCardNumber
               onChange={ev => {
-                let value =
-                  ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(
-                    %re(`/[^a-zA-Z0-9]/g`),
-                    "",
-                  )
+                let value = ReactEvent.Form.target(ev)["value"]->Utils.removeNonAlphanumeric
                 setGiftCardNumber(_ => {
                   isValid: Some(value !== ""),
                   value,
@@ -459,11 +441,7 @@ let make = (
               fieldName=localeString.giftCardCvcLabel
               value=giftCardCvc
               onChange={ev => {
-                let value =
-                  ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(
-                    %re(`/[^a-zA-Z0-9]/g`),
-                    "",
-                  )
+                let value = ReactEvent.Form.target(ev)["value"]->Utils.removeNonAlphanumeric
                 setGiftCardCvc(_ => {
                   isValid: Some(value !== ""),
                   value,
@@ -508,14 +486,12 @@ let make = (
                 onChange=changeCVCNumber
                 onBlur=handleCVCBlur
                 errorString=cvcError
-                rightIcon={paymentMethod == "gift_card"
-                  ? React.null
-                  : CardUtils.setRightIconForCvc(
-                      ~cardEmpty,
-                      ~cardInvalid,
-                      ~color=themeObj.colorIconCardCvcError,
-                      ~cardComplete,
-                    )}
+                rightIcon={CardUtils.setRightIconForCvc(
+                  ~cardEmpty,
+                  ~cardInvalid,
+                  ~color=themeObj.colorIconCardCvcError,
+                  ~cardComplete,
+                )}
                 type_="tel"
                 className="tracking-widest w-full"
                 maxLength=4

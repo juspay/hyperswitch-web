@@ -89,10 +89,8 @@ let make = () => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else if complete {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if complete {
         let body = PaymentBody.bacsBankDebitBody(
           ~email=email.value,
           ~accNum=accountNumber,

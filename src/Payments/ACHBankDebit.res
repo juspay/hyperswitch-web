@@ -70,42 +70,35 @@ let make = () => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if modalData->Option.isNone {
+        setBankError(_ => "Enter bank details and then confirm payment")
+      }
+      if complete {
+        switch modalData {
+        | Some(data) =>
+          let body = PaymentBody.achBankDebitBody(
+            ~email=email.value,
+            ~bank=data,
+            ~cardHolderName=fullName.value,
+            ~line1=line1.value,
+            ~line2=line2.value,
+            ~country=countryCode,
+            ~city=city.value,
+            ~postalCode=postalCode.value,
+            ~stateCode,
+          )
+          intent(
+            ~bodyArr=body,
+            ~confirmParam=confirm.confirmParams,
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
+        | None => ()
+        }
         ()
       } else {
-        if modalData->Option.isNone {
-          setBankError(_ => "Enter bank details and then confirm payment")
-        }
-        if complete {
-          switch modalData {
-          | Some(data) =>
-            let body = PaymentBody.achBankDebitBody(
-              ~email=email.value,
-              ~bank=data,
-              ~cardHolderName=fullName.value,
-              ~line1=line1.value,
-              ~line2=line2.value,
-              ~country=countryCode,
-              ~city=city.value,
-              ~postalCode=postalCode.value,
-              ~stateCode,
-            )
-            intent(
-              ~bodyArr=body,
-              ~confirmParam=confirm.confirmParams,
-              ~handleUserError=false,
-              ~manualRetry=isManualRetryEnabled,
-            )
-          | None => ()
-          }
-          ()
-        } else {
-          postFailedSubmitResponse(
-            ~errortype="validation_error",
-            ~message="Please enter all fields",
-          )
-        }
+        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
   }, (email, modalData, fullName, isManualRetryEnabled, isGiftCardOnlyPayment))

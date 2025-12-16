@@ -32,14 +32,10 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else {
-        switch dateOfBirth->Nullable.toOption {
-        | Some(_) => setError(_ => false)
-        | None => ()
-        }
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      switch dateOfBirth->Nullable.toOption {
+      | Some(_) => setError(_ => false)
+      | None => ()
       }
     }
   }, (dateOfBirth, isNotEligible, isGiftCardOnlyPayment))

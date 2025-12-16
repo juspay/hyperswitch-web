@@ -2,12 +2,7 @@ open Utils
 open RecoilAtoms
 
 @react.component
-let make = (
-  ~selectedGiftCard,
-  ~isDisabled=false,
-  ~onGiftCardAdded=?,
-  ~onRemainingAmountUpdate=?,
-) => {
+let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemainingAmountUpdate) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
@@ -98,10 +93,7 @@ let make = (
                     requiredFieldsBody,
                   }
 
-                  switch onGiftCardAdded {
-                  | Some(callback) => callback(newGiftCard)
-                  | None => ()
-                  }
+                  onGiftCardAdded(newGiftCard)
                 | None =>
                   switch eligibilityDict->Dict.get("failure") {
                   | Some(_) => setGeneralError(_ => localeString.giftCardNumberInvalidText)
@@ -115,21 +107,10 @@ let make = (
             let remainingAmount = responseDict->Utils.getFloat("remaining_amount", 0.0)
             let responseCurrency = responseDict->Utils.getString("currency", "USD")
 
-            switch onRemainingAmountUpdate {
-            | Some(callback) => callback(Some(remainingAmount), responseCurrency)
-            | None => ()
-            }
+            onRemainingAmountUpdate(remainingAmount, responseCurrency)
 
-            setGiftCardNumber(_ => {
-              value: "",
-              isValid: None,
-              errorString: "",
-            })
-            setGiftCardCvc(_ => {
-              value: "",
-              isValid: None,
-              errorString: "",
-            })
+            setGiftCardNumber(_ => RecoilAtoms.defaultFieldValues)
+            setGiftCardCvc(_ => RecoilAtoms.defaultFieldValues)
           | _ => setGeneralError(_ => localeString.enterValidDetailsText)
           }
         | None => setGeneralError(_ => localeString.enterValidDetailsText)
@@ -151,12 +132,9 @@ let make = (
       )
     }
   }
-
   <div className="flex flex-col gap-4 w-full">
     <RenderIf condition={generalError !== "" && !isDisabled}>
-      <div
-        className="w-full p-3 rounded-lg border"
-        style={borderColor: "#ef4444", backgroundColor: "#fef2f2"}>
+      <div className="w-full p-3 rounded-lg border border-red-500 bg-red-50">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
             <span className="text-white text-xs"> {"!"->React.string} </span>
@@ -165,7 +143,7 @@ let make = (
         </div>
       </div>
     </RenderIf>
-    <RenderIf condition={selectedGiftCard !== ""}>
+    <RenderIf condition={appliedGiftCards->Array.length < 1}>
       <DynamicFields
         paymentMethod="gift_card"
         paymentMethodType={selectedGiftCard}

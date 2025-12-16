@@ -88,35 +88,31 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else {
-        let innerIframe = Window.querySelector(`#orca-inneriframe`)
-        innerIframe->Window.iframePostMessage(
-          [("generateToken", true->JSON.Encode.bool)]->Dict.fromArray,
-        )
-        let handle = (ev: Types.event) => {
-          open Identity
-          let json = ev.data->anyTypeToJson->getStringFromJson("")->safeParse
-          let dict = json->getDictFromJson
-          if dict->Dict.get("paymentToken")->Option.isSome {
-            let token = dict->getString("paymentToken", "")
-            let cardBody = PaymentManagementBody.hyperswitchVaultBody(token)
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      let innerIframe = Window.querySelector(`#orca-inneriframe`)
+      innerIframe->Window.iframePostMessage(
+        [("generateToken", true->JSON.Encode.bool)]->Dict.fromArray,
+      )
+      let handle = (ev: Types.event) => {
+        open Identity
+        let json = ev.data->anyTypeToJson->getStringFromJson("")->safeParse
+        let dict = json->getDictFromJson
+        if dict->Dict.get("paymentToken")->Option.isSome {
+          let token = dict->getString("paymentToken", "")
+          let cardBody = PaymentManagementBody.hyperswitchVaultBody(token)
 
-            intent(
-              ~bodyArr=cardBody,
-              ~confirmParam=confirm.confirmParams,
-              ~handleUserError=false,
-              ~manualRetry=isManualRetryEnabled,
-            )
-          } else if dict->Dict.get("errorMsg")->Option.isSome {
-            let errorMsg = dict->getString("errorMsg", "")
-            setUserError(errorMsg)
-          }
+          intent(
+            ~bodyArr=cardBody,
+            ~confirmParam=confirm.confirmParams,
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
+        } else if dict->Dict.get("errorMsg")->Option.isSome {
+          let errorMsg = dict->getString("errorMsg", "")
+          setUserError(errorMsg)
         }
-        EventListenerManager.addSmartEventListener("message", handle, "handleCardVaultToken")
       }
+      EventListenerManager.addSmartEventListener("message", handle, "handleCardVaultToken")
     }
   }, isGiftCardOnlyPayment)
   useSubmitPaymentData(submitCallback)

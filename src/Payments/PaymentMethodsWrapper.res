@@ -78,10 +78,8 @@ let make = (~paymentMethodName: string) => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else if areRequiredFieldsValid {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if areRequiredFieldsValid {
         let countryCode =
           Country.getCountry(paymentMethodName, countryList)
           ->Array.filter(item => item.countryName == country)

@@ -234,7 +234,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
   haveGiftCardText: `Heb je een cadeaukaart?`,
-  addText: `Toevoegen`,
   giftCardNumberLabel: `Cadeaukaart nummer`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `Cadeaukaart nummer mag niet leeg zijn`,

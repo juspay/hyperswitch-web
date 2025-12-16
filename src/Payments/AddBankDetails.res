@@ -67,15 +67,11 @@ let make = (~paymentMethodType) => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else {
-        postFailedSubmitResponse(
-          ~errortype="validation_error",
-          ~message="Please add Bank Details and then confirm payment with the added payment methods.",
-        )
-      }
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      postFailedSubmitResponse(
+        ~errortype="validation_error",
+        ~message="Please add Bank Details and then confirm payment with the added payment methods.",
+      )
     }
   }, [isGiftCardOnlyPayment])
   useSubmitPaymentData(submitCallback)

@@ -169,12 +169,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else if selectedOption == "" {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
-      }
+    if confirm.doSubmit && !isGiftCardOnlyPayment && selectedOption == "" {
+      postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
     }
   }, [selectedOption])
 

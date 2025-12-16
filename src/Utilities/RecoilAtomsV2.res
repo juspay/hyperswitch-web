@@ -26,4 +26,4 @@ let appliedGiftCardsAtom: Recoil.recoilAtom<array<appliedGiftCard>> = Recoil.ato
   [],
 )
 
-let remainingAmountAtom: Recoil.recoilAtom<option<float>> = Recoil.atom("remainingAmount", None)
+let remainingAmountAtom: Recoil.recoilAtom<float> = Recoil.atom("remainingAmount", 0.0)

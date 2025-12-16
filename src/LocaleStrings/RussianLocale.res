@@ -243,7 +243,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
   haveGiftCardText: `У вас есть подарочная карта?`,
-  addText: `Добавить`,
   giftCardNumberLabel: `Номер подарочной карты`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `Номер подарочной карты не может быть пустым`,

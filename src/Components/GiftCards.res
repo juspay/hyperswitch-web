@@ -21,7 +21,6 @@ let make = () => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
-  // Get gift card options from PML V2
   let giftCardOptions = React.useMemo(() => {
     switch paymentMethodsListV2 {
     | LoadedV2(data) =>
@@ -36,23 +35,17 @@ let make = () => {
     let baseOptions = giftCardOptions->Array.map(giftCardType => {
       let displayName = switch giftCardType {
       | "givex" => "Givex"
-      | _ => giftCardType->String.toUpperCase
+      | _ => giftCardType->Utils.snakeToTitleCase
       }
       {
         DropdownField.value: giftCardType,
         label: displayName,
       }
     })
-
-    // Add placeholder option at the beginning
-    let placeholderLabel =
-      appliedGiftCards->Array.length > 0 ? "Gift card limit reached (1 max)" : "Select gift card"
-
-    Array.concat([{DropdownField.value: "", label: placeholderLabel}], baseOptions)
+    baseOptions
   }, (giftCardOptions, appliedGiftCards))
 
-  // Callback to handle remaining amount updates from GiftCardForm
-  let handleRemainingAmountUpdate = (amount: option<float>, currency: string) => {
+  let handleRemainingAmountUpdate = (amount: float, currency: string) => {
     setRemainingAmount(_ => amount)
     setRemainingCurrency(_ => currency)
   }
@@ -69,7 +62,7 @@ let make = () => {
     setAppliedGiftCards(_ => updatedCards)
 
     if updatedCards->Array.length === 0 {
-      setRemainingAmount(_ => None)
+      setRemainingAmount(_ => 0.0)
       setRemainingCurrency(_ => "")
     } else {
       let clientSecret = keys.clientSecret->Option.getOr("")
@@ -99,7 +92,7 @@ let make = () => {
         let applyResponseDict = applyResponse->Utils.getDictFromJson
         let remainingAmount = applyResponseDict->Utils.getFloat("remaining_amount", 0.0)
         let currency = applyResponseDict->Utils.getString("currency", "USD")
-        handleRemainingAmountUpdate(Some(remainingAmount), currency)
+        handleRemainingAmountUpdate(remainingAmount, currency)
         Promise.resolve()
       })
       ->Promise.catch(_ => Promise.resolve())
@@ -113,68 +106,38 @@ let make = () => {
     setShowGiftCardForm(_ => false)
   }
 
-  // Calculate gift cards summary
-  let (_giftCardsCount, totalDiscount, currency) = React.useMemo(() => {
-    let count = appliedGiftCards->Array.length
-    let (total, curr) = appliedGiftCards->Array.reduce((0.0, "USD"), ((acc, _), card) => {
-      (acc +. card.balance, card.currency)
+  let totalDiscount = React.useMemo(() => {
+    let total = appliedGiftCards->Array.reduce(0.0, (acc, card) => {
+      acc +. card.balance
     })
-    (count, total, curr)
-  }, [appliedGiftCards])
-
-  React.useEffect(() => {
-    switch remainingAmount {
-    | Some(amount) =>
-      Utils.messageParentWindow([
-        (
-          "remainingAmount",
-          [
-            ("currency", currency->JSON.Encode.string),
-            ("amount", amount->Float.toString->JSON.Encode.string),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-      ])
-    | None =>
-      Utils.messageParentWindow([
-        (
-          "remainingAmount",
-          [
-            ("currency", "NA"->JSON.Encode.string),
-            ("amount", "NA"->JSON.Encode.string),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-      ])
-    }
-    None
+    total
   }, [appliedGiftCards])
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        let splitPaymentBodyArr = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
-          appliedGiftCards->Array.sliceToEnd(~start=1),
-        )
-        let primaryBody = PaymentBodyV2.createGiftCardBody(
-          ~giftCardType=appliedGiftCards
-          ->Array.get(0)
-          ->Option.map(card => card.giftCardType)
-          ->Option.getOr(""),
-          ~requiredFieldsBody=appliedGiftCards
-          ->Array.get(0)
-          ->Option.map(card => card.requiredFieldsBody)
-          ->Option.getOr(Dict.make()),
-        )
+    if confirm.doSubmit && isGiftCardOnlyPayment {
+      let splitPaymentBodyArr = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
+        appliedGiftCards->Array.sliceToEnd(~start=1),
+      )
+      let primaryBody = PaymentBodyV2.createGiftCardBody(
+        ~giftCardType=appliedGiftCards
+        ->Array.get(0)
+        ->Option.map(card => card.giftCardType)
+        ->Option.getOr(""),
+        ~requiredFieldsBody=appliedGiftCards
+        ->Array.get(0)
+        ->Option.map(card => card.requiredFieldsBody)
+        ->Option.getOr(Dict.make()),
+      )
 
-        intent(
-          ~bodyArr=primaryBody->Array.concat(splitPaymentBodyArr),
-          ~confirmParam=confirm.confirmParams,
-          ~handleUserError=false,
-          ~manualRetry=isManualRetryEnabled,
-        )
-      }
+      intent(
+        ~bodyArr=primaryBody->Array.concat(splitPaymentBodyArr),
+        ~confirmParam=confirm.confirmParams,
+        ~handleUserError=false,
+        ~manualRetry=isManualRetryEnabled,
+      )
     }
   }, (appliedGiftCards, remainingAmount, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
@@ -204,13 +167,10 @@ let make = () => {
       <RenderIf condition={showGiftCardForm}>
         <div className="flex flex-col gap-4 w-full p-4 pt-0">
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" style={color: themeObj.colorText}>
-              {"Select gift card"->React.string}
-            </label>
             <RenderIf condition={giftCardOptions->Array.length > 0}>
               <DropdownField
                 appearance=config.appearance
-                fieldName=""
+                fieldName="Select gift card"
                 value=selectedGiftCard
                 setValue=setSelectedGiftCard
                 disabled={appliedGiftCards->Array.length > 0}
@@ -224,7 +184,7 @@ let make = () => {
             </RenderIf>
           </div>
           <RenderIf condition={appliedGiftCards->Array.length > 0}>
-            <div className="p-3 rounded-lg" style={backgroundColor: "#f0f9ff"}>
+            <div className="p-3 rounded-lg bg-blue-50">
               <div className="flex items-center gap-2 text-sm text-blue-700">
                 <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
                   <span className="text-white text-xs"> {"ℹ"->React.string} </span>
@@ -248,14 +208,12 @@ let make = () => {
         </div>
       </RenderIf>
     </div>
-    // Applied gift cards section - displayed outside the main container
     <RenderIf condition={appliedGiftCards->Array.length > 0}>
       <div className="w-full mb-4">
         {appliedGiftCards
         ->Array.mapWithIndex((card, index) => {
           let displayName = card.giftCardType->String.toUpperCase ++ " Card"
           let maskedNumber = card.maskedNumber
-
           <div
             key={index->Int.toString}
             className="flex items-center justify-between p-4 mb-3 rounded-lg border"
@@ -277,13 +235,13 @@ let make = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-[#008236]">
+              <span className="text-sm font-medium text-green-850">
                 {`${card.currency} ${card.balance->Float.toString} applied`->React.string}
               </span>
               <button
-                className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+                className="w-5 h-5 flex items-center justify-center"
                 onClick={_ => removeGiftCard(card.id)}>
-                <span className="text-sm font-bold"> {"×"->React.string} </span>
+                <Icon name="cross" size=16 />
               </button>
             </div>
           </div>
@@ -291,40 +249,24 @@ let make = () => {
         ->React.array}
       </div>
     </RenderIf>
-    // Summary display for gift card applications
     <RenderIf condition={appliedGiftCards->Array.length > 0}>
       <div
-        className="w-full p-4 mb-4 rounded-lg"
+        className="w-full p-4 mb-4 rounded-lg bg-blue-50"
         style={
-          backgroundColor: "#EFF6FF",
           borderColor: themeObj.borderColor,
         }>
-        {switch remainingAmount {
-        | Some(amount) if amount == 0.0 =>
-          <div className="text-sm" style={color: themeObj.colorText}>
-            <span className="font-medium">
-              {`Total ${remainingCurrency} ${totalDiscount->Float.toString} applied.`->React.string}
-            </span>
-            <span>
-              {" No remaining amount to pay. Please proceed with payment."->React.string}
-            </span>
-          </div>
-        | Some(amount) =>
-          <div className="text-sm" style={color: themeObj.colorText}>
-            <span className="font-medium">
-              {`Total ${remainingCurrency} ${totalDiscount->Float.toString} applied.`->React.string}
-            </span>
-            <span>
-              {` Pay remaining ${remainingCurrency} ${amount->Float.toString} with other payment method below.`->React.string}
-            </span>
-          </div>
-        | None =>
-          <div className="text-sm" style={color: themeObj.colorText}>
-            <span className="font-medium">
-              {`Total ${currency} ${totalDiscount->Float.toString} applied.`->React.string}
-            </span>
-          </div>
-        }}
+        <div className="text-sm" style={color: themeObj.colorText}>
+          <span className="font-medium">
+            {`Total ${remainingCurrency} ${totalDiscount->Float.toString} applied.`->React.string}
+          </span>
+          <span>
+            {(
+              remainingAmount === 0.0
+                ? " No remaining amount to pay. Please proceed with payment."
+                : ` Pay remaining ${remainingCurrency} ${remainingAmount->Float.toString} with other payment method below.`
+            )->React.string}
+          </span>
+        </div>
       </div>
     </RenderIf>
   </>

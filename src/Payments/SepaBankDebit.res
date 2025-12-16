@@ -38,10 +38,8 @@ let make = () => {
     | V1 => PaymentBody.dynamicPaymentBody("bank_debit", "sepa")
     | V2 => PaymentBodyV2.dynamicPaymentBodyV2("bank_debit", "sepa")
     }
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if areRequiredFieldsValid && !areRequiredFieldsEmpty {
         let sepaBody =
           body
           ->getJsonFromArrayOfJson

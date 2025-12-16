@@ -113,40 +113,36 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else {
-        if line1.value == "" {
-          setLine1(prev => {
-            ...prev,
-            errorString: localeString.line1EmptyText,
-          })
-        }
-        if line2.value == "" {
-          setLine2(prev => {
-            ...prev,
-            errorString: localeString.line2EmptyText,
-          })
-        }
-        if state.value == "" {
-          setState(prev => {
-            ...prev,
-            errorString: localeString.stateEmptyText,
-          })
-        }
-        if postalCode.value == "" {
-          setPostalCode(prev => {
-            ...prev,
-            errorString: localeString.postalCodeEmptyText,
-          })
-        }
-        if city.value == "" {
-          setCity(prev => {
-            ...prev,
-            errorString: localeString.cityEmptyText,
-          })
-        }
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if line1.value == "" {
+        setLine1(prev => {
+          ...prev,
+          errorString: localeString.line1EmptyText,
+        })
+      }
+      if line2.value == "" {
+        setLine2(prev => {
+          ...prev,
+          errorString: localeString.line2EmptyText,
+        })
+      }
+      if state.value == "" {
+        setState(prev => {
+          ...prev,
+          errorString: localeString.stateEmptyText,
+        })
+      }
+      if postalCode.value == "" {
+        setPostalCode(prev => {
+          ...prev,
+          errorString: localeString.postalCodeEmptyText,
+        })
+      }
+      if city.value == "" {
+        setCity(prev => {
+          ...prev,
+          errorString: localeString.cityEmptyText,
+        })
       }
     }
   }, (line1, line2, country, state, city, postalCode, isGiftCardOnlyPayment))

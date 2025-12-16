@@ -53,10 +53,8 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else if complete {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if complete {
         switch modalData {
         | Some(data: ACHTypes.data) => {
             let body = PaymentBody.becsBankDebitBody(

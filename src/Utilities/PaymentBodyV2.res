@@ -34,8 +34,6 @@ let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentM
   baseBody->appendPaymentExperienceV2(resolvedPaymentMethodType)
 }
 
-// Create split payment body for multiple gift cards with hardcoded structure
-
 let createGiftCardBody = (~giftCardType, ~requiredFieldsBody) => {
   [
     ("payment_method_type", "gift_card"->JSON.Encode.string),

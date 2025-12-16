@@ -63,7 +63,6 @@ let make = (
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
-  // Compute if non-card payment methods should be disabled
   let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   React.useEffect(() => {
     let width = switch payOptionsRef.current->Nullable.toOption {

@@ -306,20 +306,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     None
   }, (isApplePayReady, isInvokeSDKFlow, paymentExperience, isWallet))
 
-  let baseSubmitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
-
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else {
-        // Call the original ApplePay submit callback
-        baseSubmitCallback(ev)
-      }
-    }
-  }, (baseSubmitCallback, isGiftCardOnlyPayment))
+  let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
 
   useSubmitPaymentData(submitCallback)
 

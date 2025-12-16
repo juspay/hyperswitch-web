@@ -43,10 +43,8 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else if email.value == "" {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if email.value == "" {
         setEmail(prev => {
           ...prev,
           errorString: localeString.emailEmptyText,

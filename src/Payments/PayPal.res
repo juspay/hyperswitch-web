@@ -108,10 +108,8 @@ let make = (~walletOptions) => {
     React.useCallback((ev: Window.event) => {
       let json = ev.data->Utils.safeParse
       let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
-      if confirm.doSubmit {
-        if isGiftCardOnlyPayment {
-          ()
-        } else if !isWallet {
+      if confirm.doSubmit && !isGiftCardOnlyPayment {
+        if !isWallet {
           if areRequiredFieldsValid && !areRequiredFieldsEmpty {
             onPaypalClick(ev)
           } else if areRequiredFieldsEmpty {

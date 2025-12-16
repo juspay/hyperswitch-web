@@ -234,7 +234,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
   haveGiftCardText: `有礼品卡吗？`,
-  addText: `添加`,
   giftCardNumberLabel: `礼品卡号码`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `礼品卡号码不能为空`,

@@ -34,10 +34,8 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else if fullName.value == "" {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if fullName.value == "" {
         setFullName(prev => {
           ...prev,
           errorString: fieldName->localeString.nameEmptyText,

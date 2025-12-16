@@ -140,34 +140,30 @@ let make = (~label="") => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else {
-        if pixKey.value == "" {
-          setPixKey(prev => {
-            ...prev,
-            errorString: localeString.pixKeyEmptyText,
-          })
-        }
-        if pixCNPJ.value == "" {
-          setPixCNPJ(prev => {
-            ...prev,
-            errorString: localeString.pixCNPJEmptyText,
-          })
-        }
-        if pixCPF.value == "" {
-          setPixCPF(prev => {
-            ...prev,
-            errorString: localeString.pixCPFEmptyText,
-          })
-        }
-        if sourceBankAccountId.value == "" {
-          setSourceBankAccountId(prev => {
-            ...prev,
-            errorString: localeString.sourceBankAccountIdEmptyText,
-          })
-        }
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if pixKey.value == "" {
+        setPixKey(prev => {
+          ...prev,
+          errorString: localeString.pixKeyEmptyText,
+        })
+      }
+      if pixCNPJ.value == "" {
+        setPixCNPJ(prev => {
+          ...prev,
+          errorString: localeString.pixCNPJEmptyText,
+        })
+      }
+      if pixCPF.value == "" {
+        setPixCPF(prev => {
+          ...prev,
+          errorString: localeString.pixCPFEmptyText,
+        })
+      }
+      if sourceBankAccountId.value == "" {
+        setSourceBankAccountId(prev => {
+          ...prev,
+          errorString: localeString.sourceBankAccountIdEmptyText,
+        })
       }
     }
   }, (pixCNPJ.value, pixKey.value, pixCPF.value, isGiftCardOnlyPayment))

@@ -82,51 +82,45 @@ let make = (~isBancontact=false) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else {
-        switch form {
-        | Some(vault) =>
-          let emptyPayload = JSON.Encode.object(Dict.make())
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      switch form {
+      | Some(vault) =>
+        let emptyPayload = JSON.Encode.object(Dict.make())
 
-          let onSuccess = (_, data) => {
-            let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
+        let onSuccess = (_, data) => {
+          let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
 
-            let cardBody = PaymentManagementBody.vgsCardBody(~cardNumber, ~month, ~year, ~cvcNumber)
-            if areRequiredFieldsValid && !areRequiredFieldsEmpty {
-              intent(
-                ~bodyArr={cardBody->mergeAndFlattenToTuples(requiredFieldsBody)},
-                ~confirmParam=confirm.confirmParams,
-                ~handleUserError=false,
-                ~manualRetry=isManualRetryEnabled,
-                ~isExternalVaultFlow=true,
-              )
-            } else {
-              postFailedSubmitResponse(
-                ~errortype="validation_error",
-                ~message=localeString.enterValidDetailsText,
-              )
-            }
-          }
-
-          let onError = err => {
-            let errorDict = err->getDictFromJson
-            setVgsCardError(_ =>
-              vgsErrorHandler(errorDict, "card_number", ~isSubmit=true, localeString)
+          let cardBody = PaymentManagementBody.vgsCardBody(~cardNumber, ~month, ~year, ~cvcNumber)
+          if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+            intent(
+              ~bodyArr={cardBody->mergeAndFlattenToTuples(requiredFieldsBody)},
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+              ~isExternalVaultFlow=true,
             )
-            setVgsExpiryError(_ =>
-              vgsErrorHandler(errorDict, "card_exp", ~isSubmit=true, localeString)
-            )
-            setVgsCVCError(_ =>
-              vgsErrorHandler(errorDict, "card_cvc", ~isSubmit=true, localeString)
+          } else {
+            postFailedSubmitResponse(
+              ~errortype="validation_error",
+              ~message=localeString.enterValidDetailsText,
             )
           }
-
-          vault.submit("/post", emptyPayload, onSuccess, onError)
-
-        | None => Console.error("VGS Vault not initialized for submission")
         }
+
+        let onError = err => {
+          let errorDict = err->getDictFromJson
+          setVgsCardError(_ =>
+            vgsErrorHandler(errorDict, "card_number", ~isSubmit=true, localeString)
+          )
+          setVgsExpiryError(_ =>
+            vgsErrorHandler(errorDict, "card_exp", ~isSubmit=true, localeString)
+          )
+          setVgsCVCError(_ => vgsErrorHandler(errorDict, "card_cvc", ~isSubmit=true, localeString))
+        }
+
+        vault.submit("/post", emptyPayload, onSuccess, onError)
+
+      | None => Console.error("VGS Vault not initialized for submission")
       }
     }
   }, (

@@ -35,10 +35,8 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if isGiftCardOnlyPayment {
-        ()
-      } else if vpaId.value == "" {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if vpaId.value == "" {
         setVpaId(prev => {
           ...prev,
           errorString: localeString.vpaIdEmptyText,
