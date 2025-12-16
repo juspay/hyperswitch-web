@@ -7,14 +7,11 @@ let make = () => {
   let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
-  let (appliedGiftCards, setAppliedGiftCards) = Recoil.useRecoilState(
-    RecoilAtomsV2.appliedGiftCardsAtom,
-  )
+  let (giftCardInfo, setGiftCardInfo) = Recoil.useRecoilState(RecoilAtomsV2.giftCardInfoAtom)
+  let appliedGiftCards = giftCardInfo.appliedGiftCards
+  let remainingAmount = giftCardInfo.remainingAmount
   let (showGiftCardForm, setShowGiftCardForm) = React.useState(_ => false)
   let (selectedGiftCard, setSelectedGiftCard) = React.useState(_ => "")
-  let (remainingAmount, setRemainingAmount) = Recoil.useRecoilState(
-    RecoilAtomsV2.remainingAmountAtom,
-  )
   let (remainingCurrency, setRemainingCurrency) = React.useState(_ => "")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
@@ -46,7 +43,7 @@ let make = () => {
   }, (giftCardOptions, appliedGiftCards))
 
   let handleRemainingAmountUpdate = (amount: float, currency: string) => {
-    setRemainingAmount(_ => amount)
+    setGiftCardInfo(prev => {...prev, remainingAmount: amount})
     setRemainingCurrency(_ => currency)
   }
 
@@ -59,10 +56,10 @@ let make = () => {
 
   let removeGiftCard = (giftCardId: string) => {
     let updatedCards = appliedGiftCards->Array.filter(card => card.id !== giftCardId)
-    setAppliedGiftCards(_ => updatedCards)
+    setGiftCardInfo(prev => {...prev, appliedGiftCards: updatedCards})
 
     if updatedCards->Array.length === 0 {
-      setRemainingAmount(_ => 0.0)
+      setGiftCardInfo(prev => {...prev, remainingAmount: 0.0})
       setRemainingCurrency(_ => "")
     } else {
       let clientSecret = keys.clientSecret->Option.getOr("")
@@ -95,7 +92,10 @@ let make = () => {
   }
 
   let handleGiftCardAdded = newGiftCard => {
-    setAppliedGiftCards(prevCards => Array.concat(prevCards, [newGiftCard]))
+    setGiftCardInfo(prev => {
+      ...prev,
+      appliedGiftCards: Array.concat(prev.appliedGiftCards, [newGiftCard]),
+    })
     setSelectedGiftCard(_ => "")
     setShowGiftCardForm(_ => false)
   }
@@ -133,7 +133,11 @@ let make = () => {
       )
 
       intent(
-        ~bodyArr=primaryBody->Array.concat(splitPaymentBodyArr),
+        ~bodyArr={
+          splitPaymentBodyArr->Array.length === 0
+            ? primaryBody
+            : primaryBody->Array.concat(splitPaymentBodyArr)
+        },
         ~confirmParam=confirm.confirmParams,
         ~handleUserError=false,
         ~manualRetry=isManualRetryEnabled,

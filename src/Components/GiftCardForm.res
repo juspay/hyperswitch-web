@@ -5,7 +5,8 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
-  let appliedGiftCards = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.appliedGiftCardsAtom)
+  let giftCardInfo = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.giftCardInfoAtom)
+  let appliedGiftCards = giftCardInfo.appliedGiftCards
 
   let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
   let (_, setGiftCardCvc) = Recoil.useRecoilState(userGiftCardCvc)
@@ -122,12 +123,18 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
   }
   <div className="flex flex-col gap-4 w-full">
     <RenderIf condition={generalError !== "" && !isDisabled}>
-      <div className="w-full p-3 rounded-lg border border-red-500 bg-red-50">
+      <div
+        style={{borderColor: themeObj.colorDanger}}
+        className="w-full p-3 rounded-lg border bg-red-50">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+          <div
+            style={{backgroundColor: themeObj.colorDanger}}
+            className="w-4 h-4 rounded-full flex items-center justify-center">
             <span className="text-white text-xs"> {"!"->React.string} </span>
           </div>
-          <span className="text-sm font-medium text-red-600"> {generalError->React.string} </span>
+          <span style={{color: themeObj.colorDanger}} className="text-sm font-medium ">
+            {generalError->React.string}
+          </span>
         </div>
       </div>
     </RenderIf>

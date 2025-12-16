@@ -678,7 +678,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_card_expiry_month", true) => CardExpiryMonth
   | ("user_card_expiry_year", true) => CardExpiryYear
   | ("user_card_cvc", true) => CardCvc
-  | ("user_gift_card_cvc", _) => GiftCardCvc
+  | ("user_gift_card_pin", _) => GiftCardCvc
   | ("user_shipping_name", _) => ShippingName
   | ("user_shipping_address_line1", _) => ShippingAddressLine1
   | ("user_shipping_address_line2", _) => ShippingAddressLine2

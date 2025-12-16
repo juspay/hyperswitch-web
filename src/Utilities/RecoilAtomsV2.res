@@ -21,9 +21,17 @@ type appliedGiftCard = {
   requiredFieldsBody: Dict.t<Core__JSON.t>,
 }
 
-let appliedGiftCardsAtom: Recoil.recoilAtom<array<appliedGiftCard>> = Recoil.atom(
-  "appliedGiftCards",
-  [],
-)
+type giftCardInfo = {
+  appliedGiftCards: array<appliedGiftCard>,
+  remainingAmount: float,
+}
 
-let remainingAmountAtom: Recoil.recoilAtom<float> = Recoil.atom("remainingAmount", 0.0)
+let defaultGiftCardInfo: giftCardInfo = {
+  appliedGiftCards: [],
+  remainingAmount: 0.0,
+}
+
+let giftCardInfoAtom: Recoil.recoilAtom<giftCardInfo> = Recoil.atom(
+  "giftCardInfo",
+  defaultGiftCardInfo,
+)
