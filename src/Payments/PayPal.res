@@ -106,23 +106,21 @@ let make = (~walletOptions) => {
     let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
     React.useCallback((ev: Window.event) => {
-      let json = ev.data->Utils.safeParse
-      let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
-      if confirm.doSubmit && !isGiftCardOnlyPayment {
-        if !isWallet {
-          if areRequiredFieldsValid && !areRequiredFieldsEmpty {
-            onPaypalClick(ev)
-          } else if areRequiredFieldsEmpty {
-            Utils.postFailedSubmitResponse(
-              ~errortype="validation_error",
-              ~message=localeString.enterFieldsText,
-            )
-          } else if !areRequiredFieldsValid {
-            Utils.postFailedSubmitResponse(
-              ~errortype="validation_error",
-              ~message=localeString.enterValidDetailsText,
-            )
-          }
+      if !isWallet && !isGiftCardOnlyPayment {
+        let json = ev.data->Utils.safeParse
+        let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+        if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
+          onPaypalClick(ev)
+        } else if areRequiredFieldsEmpty {
+          Utils.postFailedSubmitResponse(
+            ~errortype="validation_error",
+            ~message=localeString.enterFieldsText,
+          )
+        } else if !areRequiredFieldsValid {
+          Utils.postFailedSubmitResponse(
+            ~errortype="validation_error",
+            ~message=localeString.enterValidDetailsText,
+          )
         }
       }
     }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, iframeId, isGiftCardOnlyPayment))
