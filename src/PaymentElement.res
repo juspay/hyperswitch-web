@@ -19,7 +19,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     displaySavedPaymentMethods,
     sdkHandleConfirmPayment,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
@@ -60,6 +60,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (clickToPayConfig, isClickToPayAuthenticateError))
 
   let layoutClass = CardUtils.getLayoutClass(layout)
+  let groupSavedMethodsWithPaymentMethods =
+    layoutClass.savedMethodCustomization.groupingBehavior == GroupByPaymentMethods
 
   let (getVisaCards, closeComponentIfSavedMethodsAreEmpty) = ClickToPayHook.useClickToPay(
     ~areClickToPayUIScriptsLoaded,
@@ -129,7 +131,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       }
     | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
-        setShowPaymentMethodsScreen(_ => true && isShowPaymentMethodsDependingOnClickToPay->not)
+        setShowPaymentMethodsScreen(_ => isShowPaymentMethodsDependingOnClickToPay->not)
       }
     }
 
@@ -192,7 +194,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   React.useEffect(() => {
     switch paymentMethodList {
     | Loaded(paymentlist) =>
-      let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let pList = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
 
       setPaymentOptions(_ =>
         [
@@ -201,7 +203,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         ]->removeDuplicate
       )
       setWalletOptions(_ => walletList)
-      setPaymentMethodListValue(_ => plist)
+      setPaymentMethodListValue(_ => pList)
 
       if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
         ErrorUtils.manageErrorWarning(
@@ -306,7 +308,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     )
     <PaymentShimmer />
   }
-  let checkoutEle = {
+  let paymentFormElement = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
       {switch selectedOption->PaymentModeType.paymentMode {
       | Card => <CardPayment cardProps expiryProps cvcProps />
@@ -410,6 +412,25 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     </ErrorBoundary>
   }
 
+  let checkoutEle = if groupSavedMethodsWithPaymentMethods {
+    <SavedMethodsWithPaymentForm
+      savedMethods
+      setPaymentToken
+      cvcProps
+      paymentToken
+      sessions
+      loadSavedCards
+      isClickToPayAuthenticateError
+      setIsClickToPayAuthenticateError
+      getVisaCards
+      isShowPaymentMethodsDependingOnClickToPay
+      closeComponentIfSavedMethodsAreEmpty>
+      {paymentFormElement}
+    </SavedMethodsWithPaymentForm>
+  } else {
+    paymentFormElement
+  }
+
   let paymentLabel = if displaySavedPaymentMethods {
     showPaymentMethodsScreen
       ? optionAtomValue.paymentMethodsHeaderText
@@ -419,6 +440,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }
 
   React.useEffect(() => {
+    if groupSavedMethodsWithPaymentMethods {
+      setShowPaymentMethodsScreen(_ => true)
+    }
     let evalMethodsList = () =>
       switch paymentMethodList {
       | SemiLoaded | LoadError(_) | Loaded(_) =>
@@ -440,6 +464,33 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (paymentMethodList, customerPaymentMethods))
 
+  let shouldShowSavedMethods =
+    (displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
+      isShowPaymentMethodsDependingOnClickToPay
+
+  let shouldShowSavedMethodsScreen =
+    !groupSavedMethodsWithPaymentMethods && !showPaymentMethodsScreen && shouldShowSavedMethods
+
+  let shouldShowUseExistingMethodsButton =
+    !groupSavedMethodsWithPaymentMethods && shouldShowSavedMethods && showPaymentMethodsScreen
+
+  let isLoadingGroupedSavedMethods =
+    customerPaymentMethods == LoadingSavedCards && groupSavedMethodsWithPaymentMethods
+
+  let hasPaymentOrWalletOptions =
+    paymentOptions->Array.length > 0 || walletOptions->Array.length > 0
+
+  let shouldDisplayPaymentMethodsScreen =
+    groupSavedMethodsWithPaymentMethods || showPaymentMethodsScreen
+
+  let shouldShowShimmer = clickToPayConfig.isReady->Option.isNone || isLoadingGroupedSavedMethods
+
+  let shouldRenderPaymentSection =
+    !isLoadingGroupedSavedMethods &&
+    hasPaymentOrWalletOptions &&
+    shouldDisplayPaymentMethodsScreen &&
+    clickToPayConfig.isReady->Option.isSome
+
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div
@@ -449,16 +500,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
-    {if clickToPayConfig.isReady->Option.isNone {
+    {if shouldShowShimmer {
       if areClickToPayUIScriptsLoaded {
         <ClickToPayHelpers.SrcLoader />
+      } else if groupSavedMethodsWithPaymentMethods {
+        <PaymentElementShimmer />
       } else {
         <PaymentElementShimmer.SavedPaymentCardShimmer />
       }
     } else {
-      <RenderIf
-        condition={!showPaymentMethodsScreen &&
-        (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay)}>
+      <RenderIf condition=shouldShowSavedMethodsScreen>
         <SavedMethods
           paymentToken
           setPaymentToken
@@ -473,10 +524,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         />
       </RenderIf>
     }}
-    <RenderIf
-      condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
-      showPaymentMethodsScreen &&
-      clickToPayConfig.isReady->Option.isSome}>
+    <RenderIf condition=shouldRenderPaymentSection>
       <div
         className="flex flex-col place-items-center"
         role="region"
@@ -503,25 +551,17 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             checkoutEle
             cardShimmerCount
             cardProps
+            expiryProps
           />
-        | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps />
+        | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps expiryProps />
         }}
       </div>
     </RenderIf>
-    <RenderIf
-      condition={((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
-        isShowPaymentMethodsDependingOnClickToPay) && showPaymentMethodsScreen}>
-      <div
-        className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
-        style={
-          fontSize: "14px",
-          float: "left",
-          fontWeight: themeObj.fontWeightNormal,
-          width: "fit-content",
-          color: themeObj.colorPrimary,
-        }
-        tabIndex=0
-        role="button"
+    <RenderIf condition={shouldShowUseExistingMethodsButton}>
+      <SwitchViewButton
+        icon={<Icon name="circle_dots" size=20 width=19 />}
+        title={localeString.useExistingPaymentMethods}
+        onClick={_ => setShowPaymentMethodsScreen(_ => false)}
         ariaLabel="Click to use existing payment methods"
         onKeyDown={event => {
           let key = JsxEvent.Keyboard.key(event)
@@ -530,10 +570,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             setShowPaymentMethodsScreen(_ => false)
           }
         }}
-        onClick={_ => setShowPaymentMethodsScreen(_ => false)}>
-        <Icon name="circle_dots" size=20 width=19 />
-        {React.string(localeString.useExistingPaymentMethods)}
-      </div>
+      />
     </RenderIf>
     {switch paymentMethodList {
     | LoadError(_) =>

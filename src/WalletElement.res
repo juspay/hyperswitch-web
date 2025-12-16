@@ -17,9 +17,9 @@ let make = (~paymentType) => {
   React.useEffect(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
-      let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let pList = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
       setWalletOptions(_ => walletList)
-      setPaymentMethodListValue(_ => plist)
+      setPaymentMethodListValue(_ => pList)
     | _ => ()
     }
     None

@@ -15,7 +15,7 @@ module.exports = [
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "promise/catch-or-return": "error",
-      "no-console": ["error", { allow: ["warn", "error", "info"] }],
+      "no-console": ["error", { allow: ["warn", "error", "info", "log", "debug"] }],
       "no-useless-escape": "off",
     },
   },

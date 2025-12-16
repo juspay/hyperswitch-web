@@ -14,13 +14,7 @@ let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
 let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
-let paymentTokenAtom = Recoil.atom(
-  "paymentToken",
-  {
-    paymentToken: "",
-    customerId: "",
-  },
-)
+let paymentTokenAtom = Recoil.atom("paymentToken", RecoilAtomTypes.defaultPaymentToken)
 let showPaymentMethodsScreen = Recoil.atom("showPaymentMethodsScreen", false)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")

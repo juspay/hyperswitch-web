@@ -129,7 +129,7 @@ let make = (
         />
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
-            className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} text-opacity-20 pointer-events-none`}
+            className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} pointer-events-none`}
             style={
               marginBottom: {
                 inputFocused || value->String.length > 0 ? "" : themeObj.spacingUnit

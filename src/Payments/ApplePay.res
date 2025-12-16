@@ -213,6 +213,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           border: none;
       }
   }`
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onApplePayButtonClicked = () => {
     loggerState.setLogInfo(
@@ -220,7 +221,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
     )
-    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="apple_pay")
+    PaymentUtils.emitPaymentMethodInfo(
+      ~paymentMethod="wallet",
+      ~paymentMethodType="apple_pay",
+      ~country,
+      ~state,
+      ~pinCode,
+    )
     setApplePayClicked(_ => true)
     makeOneClickHandlerPromise(sdkHandleIsThere)
     ->then(result => {

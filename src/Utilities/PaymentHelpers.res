@@ -2092,3 +2092,168 @@ let usePostSessionTokens = (
     }
   }
 }
+
+let fetchEnabledAuthnMethodsToken = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~endpoint,
+  ~isPaymentSession=false,
+  ~profileId,
+  ~authenticationId,
+) => {
+  let uri = APIUtils.generateApiUrl(
+    V1(FetchEnabledAuthnMethodsToken),
+    ~params={
+      clientSecret: None,
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      authenticationId,
+    },
+  )
+
+  let body = [("client_secret", clientSecret->JSON.Encode.string)]->getJsonFromArrayOfJson
+
+  let headers = [("x-profile-id", profileId)]->Dict.fromArray
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=ENABLED_AUTHN_METHODS_TOKEN_CALL,
+    ~logger,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~headers,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+    ~isPaymentSession,
+  )
+}
+
+let fetchEligibilityCheck = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~endpoint,
+  ~isPaymentSession=false,
+  ~profileId,
+  ~authenticationId,
+  ~bodyArr: array<(string, Core__JSON.t)>,
+) => {
+  let uri = APIUtils.generateApiUrl(
+    V1(FetchEligibilityCheck),
+    ~params={
+      clientSecret: None,
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      authenticationId,
+    },
+  )
+
+  let body =
+    bodyArr
+    ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
+    ->getJsonFromArrayOfJson
+
+  let headers = [("x-profile-id", profileId)]->Dict.fromArray
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=ELIGIBILITY_CHECK_CALL,
+    ~logger,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~headers,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+    ~isPaymentSession,
+  )
+}
+
+let fetchAuthenticationSync = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~endpoint,
+  ~isPaymentSession=false,
+  ~profileId,
+  ~authenticationId,
+  ~merchantId,
+  ~bodyArr: array<(string, Core__JSON.t)>,
+) => {
+  let uri = APIUtils.generateApiUrl(
+    V1(FetchAuthenticationSync),
+    ~params={
+      clientSecret: None,
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      authenticationId,
+      merchantId,
+    },
+  )
+
+  let body =
+    bodyArr
+    ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
+    ->getJsonFromArrayOfJson
+
+  let headers = [("x-profile-id", profileId)]->Dict.fromArray
+
+  let onSuccess = data => data
+
+  let onFailure = err => err
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=AUTHENTICATION_SYNC_CALL,
+    ~logger,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~headers,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+    ~isPaymentSession,
+  )
+}
+
+let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
+  switch paymentMethod {
+  | "bank_debit" => paymentMethodType ++ "_debit"
+  | "bank_transfer" =>
+    if !(Constants.bankTransferList->Array.includes(paymentMethodType)) {
+      paymentMethodType ++ "_transfer"
+    } else {
+      paymentMethodType
+    }
+  | "card" => "card"
+  | _ => paymentMethodType
+  }
+}

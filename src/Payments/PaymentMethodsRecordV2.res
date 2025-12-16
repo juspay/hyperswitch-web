@@ -1,8 +1,8 @@
 let buildFromPaymentListV2 = (
-  plist: UnifiedPaymentsTypesV2.paymentMethodsManagement,
+  pList: UnifiedPaymentsTypesV2.paymentMethodsManagement,
   ~localeString,
 ) => {
-  let paymentMethodArr = plist.paymentMethodsEnabled
+  let paymentMethodArr = pList.paymentMethodsEnabled
   paymentMethodArr->Array.map(paymentMethodObject => {
     let methodType = paymentMethodObject.paymentMethodType
     let handleUserError = methodType === "wallet"
