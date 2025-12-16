@@ -723,6 +723,8 @@ let handlePostMessageEvents = (
 
 let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
 
+let removeNonAlphanumeric = str => str->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+
 let getCountryCode = country => {
   CountryStateDataRefs.countryDataRef.contents
   ->Array.find(item => item.countryName == country)
