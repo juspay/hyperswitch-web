@@ -482,10 +482,8 @@ let useSetInitialRequiredFields = (
         setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
       | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
       | PhoneNumber => setFields(setPhone, phone, requiredField, false)
-      | PhoneNumberAndCountryCode => {
-          setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
-          setFields(setPhone, phone, requiredField, false)
-        }
+      | PhoneNumberAndCountryCode =>
+        setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
       | BlikCode => setFields(setBlikCode, blikCode, requiredField, false)
       | PixKey => setFields(setPixKey, pixKey, requiredField, false)
       | PixCNPJ => setFields(setPixCNPJ, pixCNPJ, requiredField, false)
