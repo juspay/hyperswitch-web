@@ -553,7 +553,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
   {
     paymentMethodName: "open_banking_uk",
     icon: Some(icon("bank", ~size=19)),
-    displayName: localeString.payment_methods_open_banking_uk,
+    displayName: localeString.payment_methods_pay_by_bank,
     fields: [InfoElement],
     miniIcon: Some(icon("bank", ~size=19)),
   },
@@ -640,6 +640,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     fields: [InfoElement],
     displayName: localeString.payment_methods_eft,
     miniIcon: None,
+  },
+  {
+    paymentMethodName: "open_banking",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: localeString.payment_methods_pay_by_bank,
+    fields: [InfoElement],
+    miniIcon: Some(icon("bank", ~size=19)),
   },
 ]
 

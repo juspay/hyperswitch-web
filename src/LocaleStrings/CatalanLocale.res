@@ -224,7 +224,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_atome: `Atome`,
   payment_methods_multibanco_transfer: `Multibanco`,
   payment_methods_card_redirect: `Carte`,
-  payment_methods_open_banking_uk: `Payer par banque`,
+  payment_methods_pay_by_bank: `Payer par banque`,
   payment_methods_open_banking_pis: `Bancaire ouvert`,
   payment_methods_evoucher: `E-Voucher`,
   payment_methods_pix_transfer: `Pix`,

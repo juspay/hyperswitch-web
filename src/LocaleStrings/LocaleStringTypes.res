@@ -211,7 +211,7 @@ type localeStrings = {
   payment_methods_atome: string,
   payment_methods_multibanco_transfer: string,
   payment_methods_card_redirect: string,
-  payment_methods_open_banking_uk: string,
+  payment_methods_pay_by_bank: string,
   payment_methods_open_banking_pis: string,
   payment_methods_evoucher: string,
   payment_methods_pix_transfer: string,
