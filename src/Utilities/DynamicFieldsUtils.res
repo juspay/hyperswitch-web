@@ -418,15 +418,14 @@ let useSetInitialRequiredFields = (
       ~isCountryCodeAvailable=?,
     ) => {
       if isNameField && field.value === "" {
+        setMethod(prev => {
+          ...prev,
+          value: getNameValue(item),
+        })
         if isCountryCodeAvailable->Option.isSome {
           setMethod(prev => {
             ...prev,
             countryCode: getNameValue(item),
-          })
-        } else {
-          setMethod(prev => {
-            ...prev,
-            value: getNameValue(item),
           })
         }
       } else if field.value === "" {
@@ -483,7 +482,7 @@ let useSetInitialRequiredFields = (
         setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
       | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
       | PhoneNumber => setFields(setPhone, phone, requiredField, false)
-      | PhoneCountryCodeAndNumber => {
+      | PhoneNumberAndCountryCode => {
           setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
           setFields(setPhone, phone, requiredField, false)
         }
@@ -645,7 +644,7 @@ let useRequiredFieldsBody = (
       bankAccountNumber.value
     | SourceBankAccountId => sourceBankAccountId.value
     | StateAndCity
-    | PhoneCountryCodeAndNumber
+    | PhoneNumberAndCountryCode
     | CountryAndPincode(_)
     | SpecialField(_)
     | InfoElement
@@ -866,10 +865,10 @@ let combineCardExpiryAndCvc = arr => {
 
 let combinePhoneNumberAndCountryCode = arr => {
   open PaymentMethodsRecord
-  let hasPhoneNumberAndCountryCodeField =
-    arr->Array.includes(PhoneCountryCode) && arr->Array.includes(PhoneNumber)
-  if hasPhoneNumberAndCountryCodeField {
-    arr->Array.push(PhoneCountryCodeAndNumber)->ignore
+  let hasPhoneNumberOrCountryCodeField =
+    arr->Array.includes(PhoneCountryCode) || arr->Array.includes(PhoneNumber)
+  if hasPhoneNumberOrCountryCodeField {
+    arr->Array.push(PhoneNumberAndCountryCode)->ignore
     arr->Array.filter(item =>
       switch item {
       | PhoneCountryCode
