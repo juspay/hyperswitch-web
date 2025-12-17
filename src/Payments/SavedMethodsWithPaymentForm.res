@@ -36,6 +36,11 @@ let make = (
     RecoilAtoms.showPaymentMethodsScreen,
   )
 
+  let shouldShowClickToPayCards =
+    isShowPaymentMethodsDependingOnClickToPay && selectedOption == "card"
+
+  let shouldRenderAddMethodsButton = savedMethodsCount > 0 || shouldShowClickToPayCards
+
   let selectedToken: RecoilAtomTypes.paymentToken = switch savedMethodsForSelectedOption->Array.get(
     0,
   ) {
@@ -53,18 +58,16 @@ let make = (
 
   React.useEffect(() => {
     let shouldShowForm = savedMethodsCount == 0
-    let shouldShowClickToPayCards =
-      isShowPaymentMethodsDependingOnClickToPay && selectedOption == "card"
     setShowPaymentMethodsScreen(_ => !shouldShowClickToPayCards && shouldShowForm)
 
     None
-  }, (selectedOption, savedMethodsCount, isShowPaymentMethodsDependingOnClickToPay))
+  }, (selectedOption, savedMethodsCount))
 
   {
     showPaymentMethodsScreen
       ? <>
           children
-          <RenderIf condition={savedMethodsCount > 0 || isShowPaymentMethodsDependingOnClickToPay}>
+          <RenderIf condition={shouldRenderAddMethodsButton}>
             <SwitchViewButton
               onClick={_ => setShowPaymentMethodsScreen(_ => false)}
               icon={<Icon name="circle_dots" size=20 width=19 />}
