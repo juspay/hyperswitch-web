@@ -15,6 +15,7 @@ type paymentMethodsFields =
   | BillingName
   | PhoneNumber
   | PhoneCountryCode
+  | PhoneNumberAndCountryCode
   | AddressLine1
   | AddressLine2
   | AddressCity
