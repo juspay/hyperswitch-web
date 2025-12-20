@@ -550,6 +550,7 @@ let make = (
           | ShippingAddressPincode
           | ShippingAddressState
           | PhoneCountryCode
+          | PhoneNumberAndCountryCode
           | LanguagePreference(_)
           | ShippingAddressCountry(_)
           | BankList(_) => React.null
@@ -584,7 +585,7 @@ let make = (
                 {switch item {
                 | BillingName => <BillingNamePaymentInput requiredFields />
                 | Email => <EmailPaymentInput />
-                | PhoneNumber => <PhoneNumberPaymentInput />
+                | PhoneNumberAndCountryCode => <PhoneNumberPaymentInput />
                 | StateAndCity =>
                   <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""} overflow-hidden`}>
                     <PaymentField
@@ -823,6 +824,7 @@ let make = (
                 | ShippingAddressCountry(_)
                 | CryptoCurrencyNetworks
                 | DateOfBirth
+                | PhoneNumber
                 | PhoneCountryCode
                 | VpaId
                 | LanguagePreference(_)
