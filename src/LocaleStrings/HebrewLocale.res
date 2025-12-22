@@ -223,7 +223,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_atome: `אטום`,
   payment_methods_multibanco_transfer: `מולטיבנקו`,
   payment_methods_card_redirect: `כרטיס`,
-  payment_methods_open_banking_uk: `תשלום דרך הבנק`,
+  payment_methods_pay_by_bank: `תשלום דרך הבנק`,
   payment_methods_open_banking_pis: `בנקאות פתוחה`,
   payment_methods_evoucher: `שובר אלקטרוני`,
   payment_methods_pix_transfer: `פיקס`,
