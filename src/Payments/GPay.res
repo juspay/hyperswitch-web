@@ -229,7 +229,13 @@ let make = (
     None
   }, [isRenderGooglePayButton])
 
-  let submitCallback = GooglePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
+  let submitCallback = GooglePayHelpers.useSubmitCallback(
+    ~isWallet,
+    ~sessionObj,
+    ~componentName,
+    ~areRequiredFieldsValid,
+    ~areRequiredFieldsEmpty,
+  )
 
   useSubmitPaymentData(submitCallback)
 

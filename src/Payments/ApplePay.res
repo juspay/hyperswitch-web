@@ -313,7 +313,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     None
   }, (isApplePayReady, isInvokeSDKFlow, paymentExperience, isWallet))
 
-  let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
+  let submitCallback = ApplePayHelpers.useSubmitCallback(
+    ~isWallet,
+    ~sessionObj,
+    ~componentName,
+    ~areRequiredFieldsValid,
+    ~areRequiredFieldsEmpty,
+  )
 
   useSubmitPaymentData(submitCallback)
 

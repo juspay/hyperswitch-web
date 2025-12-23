@@ -325,9 +325,13 @@ let handleApplePayButtonClicked = (
   messageParentWindow(message)
 }
 
-let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+let useSubmitCallback = (
+  ~isWallet,
+  ~sessionObj,
+  ~componentName,
+  ~areRequiredFieldsValid,
+  ~areRequiredFieldsEmpty,
+) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)

@@ -56,6 +56,8 @@ let make = (
   ~savedCardlength,
   ~cvcProps: CardUtils.cvcProps,
   ~setRequiredFieldsBody,
+  ~setAreRequiredFieldsValid,
+  ~setAreRequiredFieldsEmpty,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {
@@ -64,8 +66,7 @@ let make = (
     displayBillingDetails,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
-  let (_, setAreRequiredFieldsValid) = React.useState(_ => true)
-  let (_, setAreRequiredFieldsEmpty) = React.useState(_ => false)
+
   let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcError} = cvcProps
   let cvcRef = React.useRef(Nullable.null)
   let pickerItemClass = isActive ? "PickerItem--selected" : ""
