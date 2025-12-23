@@ -6,7 +6,9 @@ let useCustomPaymentMethodConfigs = (~paymentMethod, ~paymentMethodType) => {
     ->Array.filter(paymentMethodConfig => paymentMethodConfig.paymentMethod == paymentMethod)
     ->Array.flatMap(paymentMethodConfig => paymentMethodConfig.paymentMethodTypes)
     ->Array.filter(paymentMethodTypeConfig =>
-      paymentMethodTypeConfig.paymentMethodType == paymentMethodType
+      paymentMethod == "card"
+        ? ["card", "credit", "debit"]->Array.includes(paymentMethodTypeConfig.paymentMethodType)
+        : paymentMethodTypeConfig.paymentMethodType == paymentMethodType
     )
     ->Array.get(0)
   }, (paymentMethod, paymentMethodType, paymentMethodsConfig))

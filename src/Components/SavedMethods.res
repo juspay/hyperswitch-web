@@ -365,10 +365,11 @@ let make = (
       condition={displaySavedPaymentMethodsCheckbox &&
       paymentMethodListValue.payment_type === SETUP_MANDATE}>
       <Terms
-        mode={Card}
         styles={
           marginTop: themeObj.spacingGridColumn,
         }
+        paymentMethod="card"
+        paymentMethodType="card"
       />
     </RenderIf>
     <RenderIf condition={!enableSavedPaymentShimmer}>

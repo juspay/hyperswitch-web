@@ -39,6 +39,15 @@ let make = (~isChecked, ~setIsChecked) => {
   let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(RecoilAtoms.showPaymentMethodsScreen)
   let {business, customMessageForCardTerms} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let customCardPaymentConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
+    ~paymentMethod="card",
+    ~paymentMethodType="card",
+  )
+
+  let customMessageConfig =
+    customCardPaymentConfig
+    ->Option.map(config => config.message)
+    ->Option.getOr(PaymentType.defaultPaymentMethodMessage)
 
   let css = saveDetailsCssStyle(themeObj)
   let onChange = ev => {
@@ -54,6 +63,8 @@ let make = (~isChecked, ~setIsChecked) => {
 
   let saveCardCheckboxLabel = if showPaymentMethodsScreen {
     localeString.saveCardDetails
+  } else if customMessageConfig.value->Option.isSome {
+    customMessageConfig.value->Option.getOr("")
   } else if customMessageForCardTerms->String.length > 0 {
     customMessageForCardTerms
   } else {

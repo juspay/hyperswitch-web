@@ -14,10 +14,13 @@ let make = () => {
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
+  let paymentMethodType = "instant_bank_transfer_poland"
+  let paymentMethod = "bank_transfer"
+
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
     ~empty=areRequiredFieldsEmpty,
-    ~paymentType="bank_transfer",
+    ~paymentType=paymentMethod,
   )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
@@ -26,10 +29,9 @@ let make = () => {
     if confirm.doSubmit {
       if areRequiredFieldsValid && !areRequiredFieldsEmpty {
         let bodyArr =
-          PaymentBody.dynamicPaymentBody(
-            "bank_transfer",
-            "instant_bank_transfer_poland",
-          )->mergeAndFlattenToTuples(requiredFieldsBody)
+          PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)->mergeAndFlattenToTuples(
+            requiredFieldsBody,
+          )
 
         intent(
           ~bodyArr,
@@ -52,13 +54,10 @@ let make = () => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields
-      paymentMethod="bank_transfer"
-      paymentMethodType="instant_bank_transfer_poland"
-      setRequiredFieldsBody
-    />
-    <Surcharge paymentMethod="bank_transfer" paymentMethodType="instant" />
+    <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
+    <Surcharge paymentMethod paymentMethodType="instant" />
     <InfoElement />
+    <Terms paymentMethodType paymentMethod />
   </div>
 }
 
