@@ -465,14 +465,17 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (paymentMethodList, customerPaymentMethods))
 
   let shouldShowSavedMethods =
-    (displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
-      isShowPaymentMethodsDependingOnClickToPay
+    displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay
 
   let shouldShowSavedMethodsScreen =
     !groupSavedMethodsWithPaymentMethods && !showPaymentMethodsScreen && shouldShowSavedMethods
 
+  let hasSavedPaymentMethods = displaySavedPaymentMethods && savedMethods->Array.length > 0
+
   let shouldShowUseExistingMethodsButton =
-    !groupSavedMethodsWithPaymentMethods && shouldShowSavedMethods && showPaymentMethodsScreen
+    !groupSavedMethodsWithPaymentMethods &&
+    (hasSavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay) &&
+    showPaymentMethodsScreen
 
   let isLoadingGroupedSavedMethods =
     customerPaymentMethods == LoadingSavedCards && groupSavedMethodsWithPaymentMethods

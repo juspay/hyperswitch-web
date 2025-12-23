@@ -346,6 +346,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <PaymentElementShimmer />
       </RenderIf>
     }}
-    <PoweredBy />
+    <RenderIf condition={paymentType !== PaymentMethodsManagement}>
+      <PoweredBy />
+    </RenderIf>
   </>
 }
