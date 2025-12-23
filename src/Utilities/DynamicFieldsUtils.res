@@ -237,7 +237,7 @@ let useRequiredFieldsEmptyAndValid = (
       | AddressLine1 => line1.value !== ""
       | AddressLine2 => billingAddress.isUseBillingAddress || line2.value !== ""
       | Bank => selectedBank !== "" || bankNames->Array.length === 0
-      | PhoneNumber => phone.value !== ""
+      | PhoneNumberAndCountryCode => phone.value !== ""
       | StateAndCity => state.value !== "" && city.value !== ""
       | CountryAndPincode(countryArr) =>
         (country !== "" || countryArr->Array.length === 0) && postalCode.value !== ""
@@ -291,7 +291,7 @@ let useRequiredFieldsEmptyAndValid = (
       | StateAndCity => city.value === "" || state.value === ""
       | CountryAndPincode(countryArr) =>
         (country === "" && countryArr->Array.length > 0) || postalCode.value === ""
-      | PhoneNumber => phone.value === ""
+      | PhoneNumberAndCountryCode => phone.value === ""
       | AddressCity => city.value === ""
       | AddressPincode => postalCode.value === ""
       | AddressState => state.value === ""
