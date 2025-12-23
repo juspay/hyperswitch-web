@@ -42,7 +42,7 @@ let createGiftCardBody = (~giftCardType, ~requiredFieldsBody) => {
 }
 
 let createSplitPaymentBodyForGiftCards = (
-  appliedGiftCards: array<RecoilAtomsV2.appliedGiftCard>,
+  appliedGiftCards: array<GiftCardTypes.appliedGiftCard>,
 ) => {
   let splitPaymentMethodData = appliedGiftCards->Array.map(giftCard => {
     createGiftCardBody(

@@ -12,26 +12,7 @@ let paymentMethodListValueV2 = Recoil.atom(
 let vaultPublishableKey = Recoil.atom("vaultPublishableKey", "")
 let vaultProfileId = Recoil.atom("vaultProfileId", "")
 
-type appliedGiftCard = {
-  giftCardType: string,
-  maskedNumber: string,
-  balance: float,
-  currency: string,
-  id: string,
-  requiredFieldsBody: Dict.t<Core__JSON.t>,
-}
-
-type giftCardInfo = {
-  appliedGiftCards: array<appliedGiftCard>,
-  remainingAmount: float,
-}
-
-let defaultGiftCardInfo: giftCardInfo = {
-  appliedGiftCards: [],
-  remainingAmount: 0.0,
-}
-
-let giftCardInfoAtom: Recoil.recoilAtom<giftCardInfo> = Recoil.atom(
+let giftCardInfoAtom: Recoil.recoilAtom<GiftCardTypes.giftCardInfo> = Recoil.atom(
   "giftCardInfo",
-  defaultGiftCardInfo,
+  GiftCardTypes.defaultGiftCardInfo,
 )

@@ -70,7 +70,7 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
                   let applicableAmount = successDict->Utils.getFloat("applicable_amount", 0.0)
                   let currency = successDict->Utils.getString("currency", "USD")
 
-                  let newGiftCard: RecoilAtomsV2.appliedGiftCard = {
+                  let newGiftCard: GiftCardTypes.appliedGiftCard = {
                     giftCardType: selectedGiftCard,
                     maskedNumber: `**** ${giftCardNumber.value->String.slice(
                         ~start=-4,
