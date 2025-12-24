@@ -9,53 +9,40 @@ let make = (~label="") => {
 
   let giftCardNumberRef = React.useRef(Nullable.null)
   let giftCardCvcRef = React.useRef(Nullable.null)
+  let updateCardNumber = val => {
+    setGiftCardNumber(_ => {
+      value: val,
+      isValid: Some(val !== ""),
+      errorString: val !== "" ? "" : localeString.giftCardNumberEmptyText,
+    })
+  }
+
+  let updateCardCvc = val => {
+    setGiftCardCvc(_ => {
+      value: val,
+      isValid: Some(val !== ""),
+      errorString: val !== "" ? "" : localeString.giftCardCvcEmptyText,
+    })
+  }
 
   let changeGiftCardNumber = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]->Utils.filterAlphanumeric
-    setGiftCardNumber(prev => {
-      ...prev,
-      value: val,
-    })
+    let val = ReactEvent.Form.target(ev)["value"]->Utils.filterAlphanumeric
+    updateCardNumber(val)
   }
 
   let changeGiftCardCvc = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]->Utils.filterAlphanumeric
-    setGiftCardCvc(prev => {
-      ...prev,
-      value: val,
-    })
+    let val = ReactEvent.Form.target(ev)["value"]->Utils.filterAlphanumeric
+    updateCardCvc(val)
   }
 
-  let onBlurGiftCardNumber = _ => {
-    if giftCardNumber.value->String.length > 0 {
-      setGiftCardNumber(prev => {
-        ...prev,
-        isValid: Some(true),
-        errorString: "",
-      })
-    } else {
-      setGiftCardNumber(prev => {
-        ...prev,
-        isValid: None,
-        errorString: localeString.giftCardNumberEmptyText,
-      })
-    }
+  let onBlurGiftCardNumber = ev => {
+    let val = ReactEvent.Focus.target(ev)["value"]->Utils.filterAlphanumeric
+    updateCardNumber(val)
   }
 
-  let onBlurGiftCardCvc = _ => {
-    if giftCardCvc.value->String.length > 0 {
-      setGiftCardCvc(prev => {
-        ...prev,
-        isValid: Some(true),
-        errorString: "",
-      })
-    } else {
-      setGiftCardCvc(prev => {
-        ...prev,
-        isValid: None,
-        errorString: localeString.giftCardCvcEmptyText,
-      })
-    }
+  let onBlurGiftCardCvc = ev => {
+    let val = ReactEvent.Focus.target(ev)["value"]->Utils.filterAlphanumeric
+    updateCardCvc(val)
   }
 
   let submitCallback = React.useCallback((ev: Window.event) => {
