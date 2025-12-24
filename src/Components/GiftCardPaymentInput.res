@@ -1,5 +1,5 @@
 @react.component
-let make = (~label="") => {
+let make = (~fieldType="") => {
   open RecoilAtoms
   open Utils
 
@@ -67,7 +67,7 @@ let make = (~label="") => {
   useSubmitPaymentData(submitCallback)
 
   <>
-    <RenderIf condition={label === "giftCardNumber"}>
+    <RenderIf condition={fieldType === "giftCardNumber"}>
       <PaymentField
         fieldName={localeString.giftCardNumberLabel}
         setValue=setGiftCardNumber
@@ -82,7 +82,7 @@ let make = (~label="") => {
         paymentType=Payment
       />
     </RenderIf>
-    <RenderIf condition={label === "giftCardCvc"}>
+    <RenderIf condition={fieldType === "giftCardCvc"}>
       <PaymentField
         fieldName={localeString.giftCardCvcLabel}
         setValue=setGiftCardCvc
