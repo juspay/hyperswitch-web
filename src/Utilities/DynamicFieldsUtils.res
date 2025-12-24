@@ -222,7 +222,7 @@ let useRequiredFieldsEmptyAndValid = (
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
   let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
-  let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardCvc)
+  let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardPin)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
@@ -405,7 +405,7 @@ let useSetInitialRequiredFields = (
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
   let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
-  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardCvc)
+  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -599,7 +599,7 @@ let useRequiredFieldsBody = (
   let countryCode = Utils.getCountryCode(country).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
   let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
-  let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardCvc)
+  let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardPin)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {

@@ -5,7 +5,7 @@ let make = (~fieldType="") => {
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
-  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardCvc)
+  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
 
   let giftCardNumberRef = React.useRef(Nullable.null)
   let giftCardPinRef = React.useRef(Nullable.null)
