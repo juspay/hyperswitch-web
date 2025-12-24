@@ -602,8 +602,7 @@ let fetchIntent = async (
     ("Authorization", `publishable-key=${publishableKey}, client-secret=${clientSecret}`),
   ]
 
-  let xFeatureHeader = customPodUri != "" ? [("x-feature", customPodUri)] : []
-  let headers = [...baseHeaders, ...xFeatureHeader]
+  let headers = customPodUri != "" ? [...baseHeaders, ("x-feature", customPodUri)] : baseHeaders
 
   let uri = `${endpoint}/v2/payments/${paymentId}/get-intent`
 
@@ -615,7 +614,6 @@ let fetchIntent = async (
     )
 
     if !(resp->Fetch.Response.ok) {
-      let _errorData = await resp->Fetch.Response.json
       JSON.Encode.null
     } else {
       let successData = await resp->Fetch.Response.json
