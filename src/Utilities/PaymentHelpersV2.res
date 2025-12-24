@@ -585,3 +585,45 @@ let fetchSessions = (
     JSON.Encode.null->resolve
   })
 }
+
+let fetchIntent = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~customPodUri,
+  ~endpoint,
+  ~profileId,
+  ~paymentId,
+  ~logger as _,
+) => {
+  let baseHeaders = [
+    ("api-key", publishableKey),
+    ("Content-Type", "application/json"),
+    ("x-profile-id", profileId),
+    ("Authorization", `publishable-key=${publishableKey}, client-secret=${clientSecret}`),
+  ]
+
+  let headers = customPodUri != "" ? [...baseHeaders, ("x-feature", customPodUri)] : baseHeaders
+
+  let uri = `${endpoint}/v2/payments/${paymentId}/get-intent`
+
+  try {
+    let resp = await fetchApi(
+      uri,
+      ~method=#GET,
+      ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    )
+
+    if !(resp->Fetch.Response.ok) {
+      JSON.Encode.null
+    } else {
+      let successData = await resp->Fetch.Response.json
+      successData
+    }
+  } catch {
+  | err => {
+      let exceptionMessage = err->formatException
+      Console.error2("Error ", exceptionMessage)
+      JSON.Encode.null
+    }
+  }
+}

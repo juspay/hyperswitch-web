@@ -10,3 +10,4 @@ let paymentMethodListValueV2 = Recoil.atom(
 )
 let vaultPublishableKey = Recoil.atom("vaultPublishableKey", "")
 let vaultProfileId = Recoil.atom("vaultProfileId", "")
+let intentList = Recoil.atom("intentList", UnifiedPaymentsTypesV2.LoadingIntent)
