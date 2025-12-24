@@ -37,7 +37,7 @@ let make = (~label="") => {
       setGiftCardNumber(prev => {
         ...prev,
         isValid: None,
-        errorString: "",
+        errorString: localeString.giftCardNumberEmptyText,
       })
     }
   }
@@ -53,7 +53,7 @@ let make = (~label="") => {
       setGiftCardCvc(prev => {
         ...prev,
         isValid: None,
-        errorString: "",
+        errorString: localeString.giftCardCvcEmptyText,
       })
     }
   }
