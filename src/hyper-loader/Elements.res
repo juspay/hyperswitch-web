@@ -195,11 +195,21 @@ let make = (
                     ~eventName=TRUSTPAY_SCRIPT,
                     // ~internalMetadata=err->formatException->JSON.stringify,
                   )
+                  mountedIframeRef->Window.iframePostMessage(
+                    [("trustPayScriptError", true->JSON.Encode.bool)]->Dict.fromArray,
+                  )
                 })
                 trustPayScript->Window.elementOnload(_ => {
                   logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT)
+                  mountedIframeRef->Window.iframePostMessage(
+                    [("trustPayScriptLoaded", true->JSON.Encode.bool)]->Dict.fromArray,
+                  )
                 })
                 Window.body->Window.appendChild(trustPayScript)
+              } else {
+                mountedIframeRef->Window.iframePostMessage(
+                  [("trustPayScriptLoaded", true->JSON.Encode.bool)]->Dict.fromArray,
+                )
               }
             }
             let msg = [("paymentMethodList", json)]->Dict.fromArray

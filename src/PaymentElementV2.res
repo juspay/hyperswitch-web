@@ -276,7 +276,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <RenderIf
           condition={paymentOptions->Array.length > 0 &&
           walletOptions->Array.length > 0 &&
-          checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
+          checkRenderOrComp(~walletOptions, ~isShowOrPayUsing)}>
           <Or />
         </RenderIf>
         {switch layoutClass.\"type" {
