@@ -238,8 +238,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `Presentkortsnummer får inte vara tomt`,
   giftCardNumberInvalidText: `Ogiltigt presentkortsnummer`,
-  giftCardCvcLabel: `Presentkorts-PIN/CVC`,
-  giftCardCvcPlaceholder: `123456`,
-  giftCardCvcEmptyText: `Presentkorts-PIN/CVC får inte vara tom`,
-  giftCardCvcInvalidText: `Ogiltig presentkorts-PIN/CVC`,
+  giftCardPinLabel: `Presentkorts-PIN`,
+  giftCardPinPlaceholder: `123456`,
+  giftCardPinEmptyText: `Presentkorts-PIN får inte vara tom`,
+  giftCardPinInvalidText: `Ogiltig presentkorts-PIN`,
 }

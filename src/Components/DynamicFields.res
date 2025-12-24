@@ -155,8 +155,6 @@ let make = (
   let (city, setCity) = Recoil.useRecoilState(userAddressCity)
   let (state, setState) = Recoil.useRecoilState(userAddressState)
   let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
-  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
-  let (giftCardCvc, setGiftCardCvc) = Recoil.useRecoilState(userGiftCardCvc)
 
   let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
   let line1Ref = React.useRef(Nullable.null)
@@ -165,8 +163,6 @@ let make = (
   let bankAccountNumberRef = React.useRef(Nullable.null)
   let sourceBankAccountIdRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
-  let giftCardNumberRef = React.useRef(Nullable.null)
-  let giftCardCvcRef = React.useRef(Nullable.null)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
@@ -406,7 +402,7 @@ let make = (
               placeholder="123"
               autocomplete="cc-csc"
             />
-          | GiftCardCvc => <GiftCardPaymentInput fieldType="giftCardCvc" />
+          | GiftCardPin => <GiftCardPaymentInput fieldType="giftCardPin" />
 
           | CardExpiryAndCvc =>
             <div className="flex gap-10">
@@ -823,7 +819,7 @@ let make = (
                 | Currency(_)
                 | FullName
                 | GiftCardNumber
-                | GiftCardCvc
+                | GiftCardPin
                 | ShippingName // Shipping Details are currently supported by only one click widgets
                 | ShippingAddressLine1
                 | ShippingAddressLine2

@@ -227,10 +227,10 @@ type localeStrings = {
   giftCardNumberPlaceholder: string,
   giftCardNumberEmptyText: string,
   giftCardNumberInvalidText: string,
-  giftCardCvcLabel: string,
-  giftCardCvcPlaceholder: string,
-  giftCardCvcEmptyText: string,
-  giftCardCvcInvalidText: string,
+  giftCardPinLabel: string,
+  giftCardPinPlaceholder: string,
+  giftCardPinEmptyText: string,
+  giftCardPinInvalidText: string,
 }
 
 type constantStrings = {

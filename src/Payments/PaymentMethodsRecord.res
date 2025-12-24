@@ -50,7 +50,7 @@ type paymentMethodsFields =
   | IBAN
   | SourceBankAccountId
   | GiftCardNumber
-  | GiftCardCvc
+  | GiftCardPin
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -694,7 +694,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_shipping_address_state", _) => ShippingAddressState
   | ("user_crypto_currency_network", _) => CryptoCurrencyNetworks
   | ("user_date_of_birth", _) => DateOfBirth
-  | ("user_gift_card_pin", _) => GiftCardCvc
+  | ("user_gift_card_pin", _) => GiftCardPin
   | ("user_phone_number_country_code", _) => PhoneCountryCode
   | ("user_vpa_id", _) => VpaId
   | ("user_cpf", _) => PixCPF

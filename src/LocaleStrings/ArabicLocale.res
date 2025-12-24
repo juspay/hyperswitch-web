@@ -241,8 +241,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `لا يمكن أن يكون رقم بطاقة الهدايا فارغًا`,
   giftCardNumberInvalidText: `رقم بطاقة هدايا غير صالح`,
-  giftCardCvcLabel: `رقم التعريف الشخصي/CVC لبطاقة الهدايا`,
-  giftCardCvcPlaceholder: `123456`,
-  giftCardCvcEmptyText: `لا يمكن أن يكون رقم التعريف الشخصي/CVC لبطاقة الهدايا فارغًا`,
-  giftCardCvcInvalidText: `رقم تعريف شخصي/CVC غير صالح لبطاقة الهدايا`,
+  giftCardPinLabel: `رقم التعريف الشخصي/PIN لبطاقة الهدايا`,
+  giftCardPinPlaceholder: `123456`,
+  giftCardPinEmptyText: `لا يمكن أن يكون رقم التعريف الشخصي/PIN لبطاقة الهدايا فارغًا`,
+  giftCardPinInvalidText: `رقم تعريف شخصي/PIN غير صالح لبطاقة الهدايا`,
 }

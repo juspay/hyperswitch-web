@@ -239,8 +239,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `Numer karty podarunkowej nie może być pusty`,
   giftCardNumberInvalidText: `Nieprawidłowy numer karty podarunkowej`,
-  giftCardCvcLabel: `CVC karty podarunkowej`,
-  giftCardCvcPlaceholder: `123456`,
-  giftCardCvcEmptyText: `CVC karty podarunkowej nie może być pusty`,
-  giftCardCvcInvalidText: `Nieprawidłowy CVC karty podarunkowej`,
+  giftCardPinLabel: `PIN karty podarunkowej`,
+  giftCardPinPlaceholder: `123456`,
+  giftCardPinEmptyText: `PIN karty podarunkowej nie może być pusty`,
+  giftCardPinInvalidText: `Nieprawidłowy PIN karty podarunkowej`,
 }

@@ -5,10 +5,10 @@ let make = (~fieldType="") => {
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
-  let (giftCardCvc, setGiftCardCvc) = Recoil.useRecoilState(userGiftCardCvc)
+  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardCvc)
 
   let giftCardNumberRef = React.useRef(Nullable.null)
-  let giftCardCvcRef = React.useRef(Nullable.null)
+  let giftCardPinRef = React.useRef(Nullable.null)
   let updateCardNumber = val => {
     setGiftCardNumber(_ => {
       value: val,
@@ -18,10 +18,10 @@ let make = (~fieldType="") => {
   }
 
   let updateCardCvc = val => {
-    setGiftCardCvc(_ => {
+    setGiftCardPin(_ => {
       value: val,
       isValid: Some(val !== ""),
-      errorString: val !== "" ? "" : localeString.giftCardCvcEmptyText,
+      errorString: val !== "" ? "" : localeString.giftCardPinEmptyText,
     })
   }
 
@@ -55,14 +55,14 @@ let make = (~fieldType="") => {
           errorString: localeString.giftCardNumberEmptyText,
         })
       }
-      if giftCardCvc.value == "" {
-        setGiftCardCvc(prev => {
+      if giftCardPin.value == "" {
+        setGiftCardPin(prev => {
           ...prev,
-          errorString: localeString.giftCardCvcEmptyText,
+          errorString: localeString.giftCardPinEmptyText,
         })
       }
     }
-  }, [giftCardNumber.value, giftCardCvc.value])
+  }, [giftCardNumber.value, giftCardPin.value])
 
   useSubmitPaymentData(submitCallback)
 
@@ -75,24 +75,24 @@ let make = (~fieldType="") => {
         onChange=changeGiftCardNumber
         onBlur=onBlurGiftCardNumber
         type_="text"
-        name="giftCardNumber"
+        name=fieldType
         inputRef=giftCardNumberRef
         placeholder={localeString.giftCardNumberPlaceholder}
         maxLength=32
         paymentType=Payment
       />
     </RenderIf>
-    <RenderIf condition={fieldType === "giftCardCvc"}>
+    <RenderIf condition={fieldType === "giftCardPin"}>
       <PaymentField
-        fieldName={localeString.giftCardCvcLabel}
-        setValue=setGiftCardCvc
-        value=giftCardCvc
+        fieldName={localeString.giftCardPinLabel}
+        setValue=setGiftCardPin
+        value=giftCardPin
         onChange=changeGiftCardCvc
         onBlur=onBlurGiftCardCvc
         type_="text"
-        name="giftCardCvc"
-        inputRef=giftCardCvcRef
-        placeholder={localeString.giftCardCvcPlaceholder}
+        name=fieldType
+        inputRef=giftCardPinRef
+        placeholder={localeString.giftCardPinPlaceholder}
         maxLength=12
         paymentType=Payment
       />

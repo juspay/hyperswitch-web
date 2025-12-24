@@ -238,8 +238,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `禮品卡號碼不能為空`,
   giftCardNumberInvalidText: `無效的禮品卡號碼`,
-  giftCardCvcLabel: `禮品卡CVC`,
-  giftCardCvcPlaceholder: `123456`,
-  giftCardCvcEmptyText: `禮品卡CVC不能為空`,
-  giftCardCvcInvalidText: `無效的禮品卡CVC`,
+  giftCardPinLabel: `禮品卡PIN`,
+  giftCardPinPlaceholder: `123456`,
+  giftCardPinEmptyText: `禮品卡PIN不能為空`,
+  giftCardPinInvalidText: `無效的禮品卡PIN`,
 }
