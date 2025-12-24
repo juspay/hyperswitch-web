@@ -1784,4 +1784,4 @@ let defaultCountryCode = {
   clientCountry.isoAlpha2
 }
 
-let removeNonAlphanumeric = str => str->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+let filterAlphanumeric = str => str->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")

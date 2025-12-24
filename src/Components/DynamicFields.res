@@ -366,31 +366,7 @@ let make = (
               placeholder="1234 1234 1234 1234"
               autocomplete="cc-number"
             />
-          | GiftCardNumber =>
-            <PaymentField
-              fieldName=localeString.giftCardNumberLabel
-              value=giftCardNumber
-              onChange={ev => {
-                let value = ReactEvent.Form.target(ev)["value"]->Utils.removeNonAlphanumeric
-                setGiftCardNumber(_ => {
-                  isValid: Some(value !== ""),
-                  value,
-                  errorString: value !== "" ? "" : localeString.giftCardNumberEmptyText,
-                })
-              }}
-              onBlur={ev => {
-                let value = ReactEvent.Focus.target(ev)["value"]
-                setGiftCardNumber(prev => {
-                  ...prev,
-                  errorString: value !== "" ? "" : localeString.giftCardNumberEmptyText,
-                  isValid: Some(value !== ""),
-                })
-              }}
-              type_="text"
-              maxLength=32
-              inputRef=giftCardNumberRef
-              placeholder=localeString.giftCardNumberPlaceholder
-            />
+          | GiftCardNumber => <GiftCardPaymentInput label="giftCardNumber" />
           | CardExpiryMonth
           | CardExpiryYear
           | CardExpiryMonthAndYear =>
@@ -430,31 +406,7 @@ let make = (
               placeholder="123"
               autocomplete="cc-csc"
             />
-          | GiftCardCvc =>
-            <PaymentField
-              fieldName=localeString.giftCardCvcLabel
-              value=giftCardCvc
-              onChange={ev => {
-                let value = ReactEvent.Form.target(ev)["value"]->Utils.removeNonAlphanumeric
-                setGiftCardCvc(_ => {
-                  isValid: Some(value !== ""),
-                  value,
-                  errorString: value !== "" ? "" : localeString.giftCardCvcEmptyText,
-                })
-              }}
-              onBlur={ev => {
-                let value = ReactEvent.Focus.target(ev)["value"]
-                setGiftCardCvc(prev => {
-                  ...prev,
-                  errorString: value !== "" ? "" : localeString.giftCardCvcEmptyText,
-                  isValid: Some(value !== ""),
-                })
-              }}
-              type_="text"
-              maxLength=12
-              inputRef=giftCardCvcRef
-              placeholder=localeString.giftCardCvcPlaceholder
-            />
+          | GiftCardCvc => <GiftCardPaymentInput label="giftCardCvc" />
 
           | CardExpiryAndCvc =>
             <div className="flex gap-10">

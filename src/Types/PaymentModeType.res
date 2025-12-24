@@ -91,4 +91,5 @@ let defaultOrder = [
   "boleto",
   "eft",
   "revolut_pay",
+  "givex",
 ]
