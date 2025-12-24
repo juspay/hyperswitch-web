@@ -9,7 +9,7 @@ let make = (~fieldType="") => {
 
   let giftCardNumberRef = React.useRef(Nullable.null)
   let giftCardPinRef = React.useRef(Nullable.null)
-  let updateCardNumber = val => {
+  let updateGiftCardNumber = val => {
     setGiftCardNumber(_ => {
       value: val,
       isValid: Some(val !== ""),
@@ -17,7 +17,7 @@ let make = (~fieldType="") => {
     })
   }
 
-  let updateCardCvc = val => {
+  let updateGiftCardPin = val => {
     setGiftCardPin(_ => {
       value: val,
       isValid: Some(val !== ""),
@@ -27,22 +27,22 @@ let make = (~fieldType="") => {
 
   let changeGiftCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]->Utils.filterAlphanumeric
-    updateCardNumber(val)
+    updateGiftCardNumber(val)
   }
 
   let changeGiftCardPin = ev => {
     let val = ReactEvent.Form.target(ev)["value"]->Utils.filterAlphanumeric
-    updateCardCvc(val)
+    updateGiftCardPin(val)
   }
 
   let onBlurGiftCardNumber = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]->Utils.filterAlphanumeric
-    updateCardNumber(val)
+    updateGiftCardNumber(val)
   }
 
   let onBlurGiftCardPin = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]->Utils.filterAlphanumeric
-    updateCardCvc(val)
+    updateGiftCardPin(val)
   }
 
   let submitCallback = React.useCallback((ev: Window.event) => {
