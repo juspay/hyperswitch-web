@@ -30,7 +30,7 @@ let make = (~fieldType="") => {
     updateCardNumber(val)
   }
 
-  let changeGiftCardCvc = ev => {
+  let changeGiftCardPin = ev => {
     let val = ReactEvent.Form.target(ev)["value"]->Utils.filterAlphanumeric
     updateCardCvc(val)
   }
@@ -40,7 +40,7 @@ let make = (~fieldType="") => {
     updateCardNumber(val)
   }
 
-  let onBlurGiftCardCvc = ev => {
+  let onBlurGiftCardPin = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]->Utils.filterAlphanumeric
     updateCardCvc(val)
   }
@@ -87,8 +87,8 @@ let make = (~fieldType="") => {
         fieldName={localeString.giftCardPinLabel}
         setValue=setGiftCardPin
         value=giftCardPin
-        onChange=changeGiftCardCvc
-        onBlur=onBlurGiftCardCvc
+        onChange=changeGiftCardPin
+        onBlur=onBlurGiftCardPin
         type_="text"
         name=fieldType
         inputRef=giftCardPinRef
