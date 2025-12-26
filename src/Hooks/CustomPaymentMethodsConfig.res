@@ -1,6 +1,6 @@
 let useCustomPaymentMethodConfigs = (~paymentMethod, ~paymentMethodType) => {
   let {paymentMethodsConfig} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let allowedPmTypeForCardPayment = ["card", "debit", "credit"]
+  let allowedPmTypeForCardPayment = ["debit", "credit"]
   React.useMemo3(() => {
     paymentMethodsConfig
     ->Array.filter(paymentMethodConfig => paymentMethodConfig.paymentMethod == paymentMethod)
