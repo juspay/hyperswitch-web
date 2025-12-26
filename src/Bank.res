@@ -210,6 +210,10 @@ let idealBanks = [
     value: "asn_bank",
   },
   {
+    displayName: "ASN Bank",
+    value: "asn",
+  },
+  {
     displayName: "Bunq",
     value: "bunq",
   },
@@ -254,12 +258,24 @@ let idealBanks = [
     value: "sns_bank",
   },
   {
+    displayName: "SNS Bank",
+    value: "sns",
+  },
+  {
     displayName: "Triodos Bank",
     value: "triodos_bank",
   },
   {
+    displayName: "Triodos Bank",
+    value: "triodos",
+  },
+  {
     displayName: "Van Lanschot",
     value: "van_lanschot",
+  },
+  {
+    displayName: "Van Lanschot Kempen",
+    value: "van_lanschot_kempen",
   },
   {
     displayName: "Yoursafe",
