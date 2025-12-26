@@ -29,6 +29,7 @@ let make = (
         : ("", "", "", false),
     [isActive],
   )
+  let accordionItemClass = `AccordionItem flex flex-col ${isDisabled ? "cursor-not-allowed" : ""}`
   let (displayName, icon) = PaymentUtils.getDisplayNameAndIcon(
     customMethodNames,
     paymentOption.paymentMethodName,
@@ -43,7 +44,7 @@ let make = (
   }
 
   <div
-    className={`AccordionItem flex flex-col ${isDisabled ? "cursor-not-allowed" : ""}`}
+    className={accordionItemClass}
     style={
       minHeight: "60px",
       width: "-webkit-fill-available",

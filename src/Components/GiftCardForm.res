@@ -122,22 +122,6 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
     }
   }
   <div className="flex flex-col gap-4 w-full">
-    <RenderIf condition={generalError !== "" && !isDisabled}>
-      <div
-        style={{borderColor: themeObj.colorDanger}}
-        className="w-full p-3 rounded-lg border bg-red-50">
-        <div className="flex items-center gap-2">
-          <div
-            style={{backgroundColor: themeObj.colorDanger}}
-            className="w-4 h-4 rounded-full flex items-center justify-center">
-            <span className="text-white text-xs"> {"!"->React.string} </span>
-          </div>
-          <span style={{color: themeObj.colorDanger}} className="text-sm font-medium ">
-            {generalError->React.string}
-          </span>
-        </div>
-      </div>
-    </RenderIf>
     <RenderIf condition={appliedGiftCards->Array.length < 1}>
       <DynamicFields
         paymentMethod="gift_card"
@@ -148,14 +132,34 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
         disableInfoElement=true
       />
     </RenderIf>
-    <div className="flex justify-end w-full">
+    <div className="flex flex-col justify-end w-full">
       <button
-        className="px-6 py-3 text-sm font-medium text-white rounded-lg transition-opacity disabled:opacity-50 disabled:cursor-not-allowed w-full"
-        style={backgroundColor: themeObj.colorPrimary}
+        className={`w-full flex flex-row justify-center items-center`}
+        style={
+          borderRadius: themeObj.buttonBorderRadius,
+          backgroundColor: themeObj.buttonBackgroundColor,
+          height: themeObj.buttonHeight,
+          cursor: {isSubmitting || isDisabled ? "not-allowed" : "pointer"},
+          opacity: {isSubmitting || isDisabled ? "0.6" : "1"},
+          width: themeObj.buttonWidth,
+          border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
+        }
         disabled={isSubmitting || isDisabled}
         onClick={handleSubmit}>
-        {(isSubmitting ? "Applying..." : "Apply")->React.string}
+        <span
+          style={
+            color: themeObj.buttonTextColor,
+            fontSize: themeObj.buttonTextFontSize,
+            fontWeight: themeObj.buttonTextFontWeight,
+          }>
+          {(isSubmitting ? "Applying..." : "Apply")->React.string}
+        </span>
       </button>
+      <RenderIf condition={generalError !== "" && !isDisabled}>
+        <div style={{color: themeObj.colorDanger}} className="text-sm font-medium mt-1">
+          {generalError->React.string}
+        </div>
+      </RenderIf>
     </div>
   </div>
 }

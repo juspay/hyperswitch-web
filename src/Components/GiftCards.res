@@ -157,15 +157,17 @@ let make = () => {
         className="flex flex-row items-center justify-between w-full p-3 px-4 cursor-pointer"
         onClick={_ => handleToggleGiftCardForm()}>
         <div className="flex flex-row items-center gap-2">
-          <Icon size={16} name="gift-cards" />
+          <span className="text-base font-small" style={color: themeObj.colorText}>
+            <Icon size={16} name="gift-cards" />
+          </span>
           <span className="text-base font-medium" style={color: themeObj.colorText}>
             {localeString.haveGiftCardText->React.string}
           </span>
         </div>
         <span className="text-base font-small" style={color: themeObj.colorText}>
           {showGiftCardForm
-            ? <Icon name="arrow-up" size={16} />
-            : <Icon name="arrow-down" size={16} />}
+            ? <Icon name="arrow-up" size={14} />
+            : <Icon name="arrow-down" size={14} />}
         </span>
       </div>
       <RenderIf condition={showGiftCardForm}>
