@@ -40,19 +40,17 @@ let make = () => {
 
   useSubmitPaymentData(submitCallback)
 
-  <>
-    <PaymentField
-      fieldName={localeString.giftCardPinLabel}
-      setValue=setGiftCardPin
-      value=giftCardPin
-      onChange=changeGiftCardPin
-      onBlur=onBlurGiftCardPin
-      type_="text"
-      name="giftCardPin"
-      inputRef=giftCardPinRef
-      placeholder={localeString.giftCardPinPlaceholder}
-      maxLength=12
-      paymentType=Payment
-    />
-  </>
+  <PaymentField
+    fieldName={localeString.giftCardPinLabel}
+    setValue=setGiftCardPin
+    value=giftCardPin
+    onChange=changeGiftCardPin
+    onBlur=onBlurGiftCardPin
+    type_="text"
+    name="giftCardPin"
+    inputRef=giftCardPinRef
+    placeholder={localeString.giftCardPinPlaceholder}
+    maxLength=12
+    paymentType=Payment
+  />
 }
