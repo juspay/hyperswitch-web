@@ -586,6 +586,43 @@ let fetchSessions = (
   })
 }
 
+let fetchIntent = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~paymentId,
+  ~logger,
+  ~customPodUri,
+  ~endpoint,
+  ~profileId,
+) => {
+  let uri = APIUtils.generateApiUrlV2(
+    ~apiCallType=FetchIntent,
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: Some(publishableKey),
+      paymentIdV2: Some(paymentId),
+    },
+  )
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  // Todo: Add logger
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~clientSecret=Some(clientSecret),
+    ~profileId=Some(profileId),
+    ~onSuccess,
+    ~onFailure,
+  )
+}
+
 let checkBalanceAndApplyPaymentMethod = async (
   ~paymentMethods: array<Dict.t<JSON.t>>,
   ~clientSecret,

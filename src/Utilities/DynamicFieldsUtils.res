@@ -39,6 +39,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "pay_safe_card",
   "interac",
   "open_banking",
+  "givex",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
@@ -220,6 +221,8 @@ let useRequiredFieldsEmptyAndValid = (
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
+  let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
+  let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardPin)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
@@ -267,6 +270,8 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value !== ""
+      | GiftCardNumber => giftCardNumber.value !== ""
+      | GiftCardPin => giftCardPin.value !== ""
       | SourceBankAccountId => sourceBankAccountId.value !== ""
       | _ => true
       }
@@ -319,6 +324,8 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value === ""
+      | GiftCardNumber => giftCardNumber.value === ""
+      | GiftCardPin => giftCardPin.value === ""
       | SourceBankAccountId => sourceBankAccountId.value === ""
       | _ => false
       }
@@ -345,6 +352,8 @@ let useRequiredFieldsEmptyAndValid = (
     pixCNPJ.value,
     pixKey.value,
     pixCPF.value,
+    giftCardPin.value,
+    giftCardNumber.value,
     isCardValid,
     isExpiryValid,
     isCVCValid,
@@ -395,6 +404,8 @@ let useSetInitialRequiredFields = (
   let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
+  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -478,6 +489,8 @@ let useSetInitialRequiredFields = (
           }
         }
       | AddressState => setFields(setState, state, requiredField, false)
+      | GiftCardNumber => setFields(setGiftCardNumber, giftCardNumber, requiredField, false)
+      | GiftCardPin => setFields(setGiftCardPin, giftCardPin, requiredField, false)
       | AddressCity => setFields(setCity, city, requiredField, false)
       | PhoneCountryCode =>
         setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
@@ -585,6 +598,8 @@ let useRequiredFieldsBody = (
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
   let countryCode = Utils.getCountryCode(country).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
+  let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
+  let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardPin)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -621,6 +636,8 @@ let useRequiredFieldsBody = (
       }
     | BillingName => billingName.value
     | CardNumber => cardNumber->CardValidations.clearSpaces
+    | GiftCardNumber => giftCardNumber.value
+    | GiftCardPin => giftCardPin.value
     | CardExpiryMonth =>
       let (month, _) = CardUtils.getExpiryDates(cardExpiry)
       month
@@ -737,6 +754,8 @@ let useRequiredFieldsBody = (
     phone.countryCode,
     currency,
     billingName.value,
+    giftCardPin.value,
+    giftCardNumber.value,
     country,
     cardNumber,
     cardExpiry,
@@ -753,10 +772,12 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   switch fieldType {
   | FullName
   | CardNumber
+  | GiftCardNumber
   | CardExpiryMonth
   | CardExpiryYear
   | CardExpiryMonthAndYear
   | CardCvc
+  | GiftCardPin
   | CardExpiryAndCvc
   | CryptoCurrencyNetworks
   | PixKey

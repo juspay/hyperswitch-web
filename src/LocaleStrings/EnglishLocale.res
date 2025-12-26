@@ -232,4 +232,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_mifinity: `Mifinity`,
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
+  payment_methods_givex: `Givex`,
+  giftCardNumberLabel: `Gift Card Number`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `Gift card number cannot be empty`,
+  giftCardNumberInvalidText: `Invalid gift card number`,
+  giftCardPinLabel: `Gift Card PIN`,
+  giftCardPinPlaceholder: `123456`,
+  giftCardPinEmptyText: `Gift card PIN cannot be empty`,
+  giftCardPinInvalidText: `Invalid gift card PIN`,
 }

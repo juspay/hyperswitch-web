@@ -912,16 +912,29 @@ let getHeaders = (
   ~customPodUri=None,
   ~headers=Dict.make(),
   ~publishableKey=None,
+  ~clientSecret=None,
+  ~profileId=None,
 ): Fetch.Headers.t => {
+  let publishableKeyVal = publishableKey->Option.map(key => key)->Option.getOr("invalid_key")
+  let profileIdVal = profileId->Option.getOr("invalid_key")
+  let clientSecretVal = clientSecret->Option.getOr("invalid_key")
+
   let defaultHeaders = [
     ("Content-Type", "application/json"),
-    ("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key")),
     ("X-Client-Version", Window.version),
     ("X-Payment-Confirm-Source", "sdk"),
     ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
     ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
     ("X-Client-Platform", "web"),
   ]
+
+  let authorizationHeaders = switch GlobalVars.sdkVersion {
+  | V2 => [
+      ("x-profile-id", profileIdVal),
+      ("Authorization", `publishable-key=${publishableKeyVal},client-secret=${clientSecretVal}`),
+    ]
+  | V1 => [("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key"))]
+  }
 
   let authHeader = switch (token, uri) {
   | (Some(tok), Some(_)) => [("Authorization", tok)]
@@ -935,6 +948,7 @@ let getHeaders = (
 
   let finalHeaders = [
     ...defaultHeaders,
+    ...authorizationHeaders,
     ...authHeader,
     ...customPodHeader,
     ...Dict.toArray(headers),
@@ -1013,16 +1027,20 @@ let fetchApiWithLogging = async (
   ~publishableKey=None,
   ~isPaymentSession=false,
   ~onCatchCallback=None,
+  ~clientSecret=None,
+  ~profileId=None,
 ) => {
   open LoggerUtils
 
   // * Log request initiation
-  LogAPIResponse.logApiResponse(
-    ~logger,
-    ~uri,
-    ~eventName=apiEventInitMapper(eventName),
-    ~status=Request,
-  )
+  if GlobalVars.sdkVersion != V2 {
+    LogAPIResponse.logApiResponse(
+      ~logger,
+      ~uri,
+      ~eventName=apiEventInitMapper(eventName),
+      ~status=Request,
+    )
+  }
 
   try {
     let body = switch method {
@@ -1040,6 +1058,8 @@ let fetchApiWithLogging = async (
           ~uri,
           ~customPodUri,
           ~publishableKey,
+          ~clientSecret,
+          ~profileId,
         ),
       },
     )
@@ -1048,26 +1068,30 @@ let fetchApiWithLogging = async (
 
     if resp->Fetch.Response.ok {
       let data = await Fetch.Response.json(resp)
-      LogAPIResponse.logApiResponse(
-        ~logger,
-        ~uri,
-        ~eventName=Some(eventName),
-        ~status=Success,
-        ~statusCode,
-        ~isPaymentSession,
-      )
+      if GlobalVars.sdkVersion != V2 {
+        LogAPIResponse.logApiResponse(
+          ~logger,
+          ~uri,
+          ~eventName=Some(eventName),
+          ~status=Success,
+          ~statusCode,
+          ~isPaymentSession,
+        )
+      }
       onSuccess(data)
     } else {
       let data = await resp->Fetch.Response.json
-      LogAPIResponse.logApiResponse(
-        ~logger,
-        ~uri,
-        ~eventName=Some(eventName),
-        ~status=Error,
-        ~statusCode,
-        ~data,
-        ~isPaymentSession,
-      )
+      if GlobalVars.sdkVersion != V2 {
+        LogAPIResponse.logApiResponse(
+          ~logger,
+          ~uri,
+          ~eventName=Some(eventName),
+          ~status=Error,
+          ~statusCode,
+          ~data,
+          ~isPaymentSession,
+        )
+      }
       onFailure(data)
     }
   } catch {
@@ -1081,14 +1105,16 @@ let fetchApiWithLogging = async (
           "error": exceptionMessage,
         },
       )
-      LogAPIResponse.logApiResponse(
-        ~logger,
-        ~uri,
-        ~eventName=Some(eventName),
-        ~status=Exception,
-        ~data=exceptionMessage,
-        ~isPaymentSession,
-      )
+      if GlobalVars.sdkVersion != V2 {
+        LogAPIResponse.logApiResponse(
+          ~logger,
+          ~uri,
+          ~eventName=Some(eventName),
+          ~status=Exception,
+          ~data=exceptionMessage,
+          ~isPaymentSession,
+        )
+      }
       switch onCatchCallback {
       | Some(fun) => fun(exceptionMessage)
       | None => onFailure(exceptionMessage)
