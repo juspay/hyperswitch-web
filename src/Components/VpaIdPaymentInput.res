@@ -5,6 +5,7 @@ open Utils
 let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (vpaId, setVpaId) = Recoil.useRecoilState(userVpaId)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let vpaIdRef = React.useRef(Nullable.null)
 
@@ -34,7 +35,7 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if vpaId.value == "" {
         setVpaId(prev => {
           ...prev,
@@ -42,7 +43,7 @@ let make = () => {
         })
       }
     }
-  }, [vpaId])
+  }, (vpaId, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <PaymentField

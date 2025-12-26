@@ -35,6 +35,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
   let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
@@ -112,7 +113,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if line1.value == "" {
         setLine1(prev => {
           ...prev,
@@ -144,7 +145,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
         })
       }
     }
-  }, (line1, line2, country, state, city, postalCode))
+  }, (line1, line2, country, state, city, postalCode, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   let hasDefaulltValues =

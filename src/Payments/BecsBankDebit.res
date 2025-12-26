@@ -20,6 +20,7 @@ let make = () => {
   let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
   let state = Recoil.useRecoilValueFromAtom(userAddressState)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
@@ -52,7 +53,7 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if complete {
         switch modalData {
         | Some(data: ACHTypes.data) => {
@@ -80,7 +81,7 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, modalData, isManualRetryEnabled))
+  }, (email, fullName, modalData, isManualRetryEnabled, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>

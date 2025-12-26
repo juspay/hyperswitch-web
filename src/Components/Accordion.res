@@ -6,6 +6,7 @@ let make = (
   ~checkoutEle: React.element,
   ~borderBottom: bool,
   ~borderRadiusStyle,
+  ~isDisabled=false,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {layout, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -28,24 +29,33 @@ let make = (
         : ("", "", "", false),
     [isActive],
   )
+  let accordionItemClass = `AccordionItem flex flex-col ${isDisabled ? "cursor-not-allowed" : ""}`
   let (displayName, icon) = PaymentUtils.getDisplayNameAndIcon(
     customMethodNames,
     paymentOption.paymentMethodName,
     paymentOption.displayName,
     paymentOption.icon,
   )
+
+  let onClick = _ => {
+    if !isDisabled {
+      setSelectedOption(_ => paymentOption.paymentMethodName)
+    }
+  }
+
   <div
-    className={`AccordionItem flex flex-col`}
+    className={accordionItemClass}
     style={
       minHeight: "60px",
       width: "-webkit-fill-available",
-      cursor: "pointer",
+      cursor: isDisabled ? "not-allowed" : "pointer",
+      opacity: isDisabled ? "0.5" : "1.0",
       marginBottom: layoutClass.spacedAccordionItems ? themeObj.spacingAccordionItem : "",
       border: `1px solid ${themeObj.borderColor}`,
       borderRadius: {borderRadiusStyle},
       borderBottomStyle: borderBottom ? "solid" : "hidden",
     }
-    onClick={_ => setSelectedOption(_ => paymentOption.paymentMethodName)}>
+    onClick>
     <div
       className={`flex flex-row items-center ${accordionClass}`}
       style={columnGap: themeObj.spacingUnit}>

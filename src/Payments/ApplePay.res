@@ -23,8 +23,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("apple_pay")
 
@@ -312,7 +313,14 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     None
   }, (isApplePayReady, isInvokeSDKFlow, paymentExperience, isWallet))
 
-  let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
+  let submitCallback = ApplePayHelpers.useSubmitCallback(
+    ~isWallet,
+    ~sessionObj,
+    ~componentName,
+    ~areRequiredFieldsValid,
+    ~areRequiredFieldsEmpty,
+  )
+
   useSubmitPaymentData(submitCallback)
 
   if isWallet {
@@ -327,8 +335,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           <button
             disabled=applePayClicked
             style={
-              opacity: updateSession ? "0.5" : "1.0",
-              pointerEvents: updateSession ? "none" : "auto",
+              opacity: updateSession || isGiftCardOnlyPayment ? "0.5" : "1.0",
+              pointerEvents: updateSession || isGiftCardOnlyPayment ? "none" : "auto",
             }
             className="apple-pay-button-with-text apple-pay-button-black-with-text"
             onClick={_ => onApplePayButtonClicked()}>
@@ -339,7 +347,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       </div>
     </RenderIf>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="apple_pay" setRequiredFieldsBody />
+    <DynamicFields
+      paymentMethod="wallet"
+      paymentMethodType="apple_pay"
+      setRequiredFieldsBody
+      setAreRequiredFieldsValid
+      setAreRequiredFieldsEmpty
+    />
   }
 }
 

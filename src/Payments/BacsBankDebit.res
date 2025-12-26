@@ -40,6 +40,7 @@ let make = () => {
   let (sortcode, setSortcode) = React.useState(_ => "")
   let (accountNumber, setAccountNumber) = React.useState(_ => "")
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
@@ -88,7 +89,7 @@ let make = () => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if complete {
         let body = PaymentBody.bacsBankDebitBody(
           ~email=email.value,

@@ -75,10 +75,11 @@ let itemToPaymentsEnabledMapper = methodsArray => {
     ->Belt.Array.keepMap(JSON.Decode.object)
     ->Array.map(dict => {
       let paymentMethodSubtype = getString(dict, "payment_method_subtype", "")
+      let paymentMethodType = getString(dict, "payment_method_type", "")
       {
         cardNetworks: dict->getArray("card_networks")->getCardNetworks,
         surchargeDetails: dict->getSurchargeDetails,
-        paymentMethodType: getString(dict, "payment_method_type", ""),
+        paymentMethodType,
         paymentMethodSubtype,
         bankNames: dict->getStrArray("bank_names"),
         requiredFields: dict->getDynamicFieldsFromJsonDictV2(
@@ -146,6 +147,23 @@ let itemToPaymentDetails = cust => {
     created: getString(cust, "created", ""),
     lastUsedAt: getString(cust, "last_used_at", ""),
     bank: {mask: ""},
+  }
+}
+
+let itemToIntentObjMapper = dict => {
+  {
+    paymentType: getString(dict, "payment_type", "")->paymentTypeMapper,
+    splitTxnsEnabled: getString(dict, "split_txns_enabled", "skip"),
+  }
+}
+
+let createIntentDetails = (dict, key) => {
+  let intentDict = dict->Utils.getDictFromDict(key)
+  if intentDict->Dict.toArray->Array.length == 0 {
+    Error(JSON.Encode.null)
+  } else {
+    let response = intentDict->itemToIntentObjMapper
+    LoadedIntent(response)
   }
 }
 

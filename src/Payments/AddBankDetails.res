@@ -18,6 +18,7 @@ let make = (~paymentMethodType) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let setOptionValue = Recoil.useSetRecoilState(RecoilAtoms.optionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
   let (showLoader, setShowLoader) = React.useState(() => false)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
@@ -66,13 +67,13 @@ let make = (~paymentMethodType) => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       postFailedSubmitResponse(
         ~errortype="validation_error",
         ~message="Please add Bank Details and then confirm payment with the added payment methods.",
       )
     }
-  }, [])
+  }, [isGiftCardOnlyPayment])
   useSubmitPaymentData(submitCallback)
 
   let onClickHandler = () => {

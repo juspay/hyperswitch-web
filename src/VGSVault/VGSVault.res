@@ -9,8 +9,9 @@ let make = (~isBancontact=false) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {innerLayout} = config.appearance
@@ -81,7 +82,7 @@ let make = (~isBancontact=false) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       switch form {
       | Some(vault) =>
         let emptyPayload = JSON.Encode.object(Dict.make())
@@ -122,7 +123,13 @@ let make = (~isBancontact=false) => {
       | None => Console.error("VGS Vault not initialized for submission")
       }
     }
-  }, (form, requiredFieldsBody, areRequiredFieldsValid, areRequiredFieldsEmpty))
+  }, (
+    form,
+    requiredFieldsBody,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    isGiftCardOnlyPayment,
+  ))
 
   useSubmitPaymentData(submitCallback)
 
@@ -168,7 +175,13 @@ let make = (~isBancontact=false) => {
           </div>
         </div>
         <ErrorComponent cardError=vgsCardError expiryError=vgsExpiryError cvcError=vgsCVCError />
-        <DynamicFields paymentMethod="card" paymentMethodType="credit" setRequiredFieldsBody />
+        <DynamicFields
+          paymentMethod="card"
+          paymentMethodType="credit"
+          setRequiredFieldsBody
+          setAreRequiredFieldsValid
+          setAreRequiredFieldsEmpty
+        />
       </div>
     </div>
   </div>

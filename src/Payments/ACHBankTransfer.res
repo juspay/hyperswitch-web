@@ -8,10 +8,13 @@ let make = () => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let (_, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (_, setAreRequiredFieldsEmpty) = React.useState(_ => false)
 
   let complete = email.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == ""
@@ -26,7 +29,7 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if complete {
         let bodyArr =
           PaymentBody.dynamicPaymentBody("bank_transfer", "ach")->mergeAndFlattenToTuples(
@@ -43,11 +46,17 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, isManualRetryEnabled))
+  }, (email, isManualRetryEnabled, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields paymentMethod="bank_transfer" paymentMethodType="ach" setRequiredFieldsBody />
+    <DynamicFields
+      paymentMethod="bank_transfer"
+      paymentMethodType="ach"
+      setRequiredFieldsBody
+      setAreRequiredFieldsValid
+      setAreRequiredFieldsEmpty
+    />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="ach" />
     <InfoElement />
   </div>

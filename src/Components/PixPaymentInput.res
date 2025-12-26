@@ -8,6 +8,7 @@ let make = (~label="") => {
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let pixKeyRef = React.useRef(Nullable.null)
   let pixCPFRef = React.useRef(Nullable.null)
@@ -139,7 +140,7 @@ let make = (~label="") => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if pixKey.value == "" {
         setPixKey(prev => {
           ...prev,
@@ -165,7 +166,7 @@ let make = (~label="") => {
         })
       }
     }
-  }, [pixCNPJ.value, pixKey.value, pixCPF.value])
+  }, (pixCNPJ.value, pixKey.value, pixCPF.value, isGiftCardOnlyPayment))
 
   useSubmitPaymentData(submitCallback)
 

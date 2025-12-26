@@ -34,6 +34,26 @@ let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentM
   baseBody->appendPaymentExperienceV2(resolvedPaymentMethodType)
 }
 
+let createGiftCardBody = (~giftCardType, ~requiredFieldsBody) => {
+  [
+    ("payment_method_type", "gift_card"->JSON.Encode.string),
+    ("payment_method_subtype", giftCardType->JSON.Encode.string),
+  ]->mergeAndFlattenToTuples(requiredFieldsBody)
+}
+
+let createSplitPaymentBodyForGiftCards = (
+  appliedGiftCards: array<GiftCardTypes.appliedGiftCard>,
+) => {
+  let splitPaymentMethodData = appliedGiftCards->Array.map(giftCard => {
+    createGiftCardBody(
+      ~giftCardType=giftCard.giftCardType,
+      ~requiredFieldsBody=giftCard.requiredFieldsBody,
+    )->getJsonFromArrayOfJson
+  })
+
+  [("split_payment_method_data", splitPaymentMethodData->JSON.Encode.array)]
+}
+
 let epsBody = (~name, ~bankName) => {
   let billingDetails = [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
   let bankDetail = (bankName === "" ? "american_express" : bankName)->JSON.Encode.string

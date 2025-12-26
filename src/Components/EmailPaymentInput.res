@@ -7,6 +7,7 @@ let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let showDetails = PaymentType.getShowDetails(~billingDetails=fields.billingDetails)
 
@@ -42,7 +43,7 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if email.value == "" {
         setEmail(prev => {
           ...prev,
@@ -50,7 +51,7 @@ let make = () => {
         })
       }
     }
-  }, [email])
+  }, (email, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.email == Auto}>

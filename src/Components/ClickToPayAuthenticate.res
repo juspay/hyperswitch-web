@@ -18,6 +18,8 @@ let make = (
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
   let (_, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let (_, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (_, setAreRequiredFieldsEmpty) = React.useState(_ => false)
   let (isShowClickToPayNotYou, setIsShowClickToPayNotYou) = React.useState(_ => false)
   let (isCTPAuthenticateNotYouClicked, setIsCTPAuthenticateNotYouClicked) = React.useState(_ =>
     false
@@ -210,6 +212,8 @@ let make = (
           savedCardlength={ctpCards->Array.length}
           cvcProps
           setRequiredFieldsBody
+          setAreRequiredFieldsValid
+          setAreRequiredFieldsEmpty
         />
       })
       ->React.array}

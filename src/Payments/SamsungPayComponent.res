@@ -15,6 +15,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isWallet = walletOptions->Array.includes("samsung_pay")
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Samsungpay)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let (_, _, _, _, heightType) = options.wallets.style.height
@@ -86,8 +87,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     <div
       style={
         height: `${height->Int.toString}px`,
-        pointerEvents: updateSession ? "none" : "auto",
-        opacity: updateSession ? "0.5" : "1.0",
+        pointerEvents: updateSession || isGiftCardOnlyPayment ? "none" : "auto",
+        opacity: updateSession || isGiftCardOnlyPayment ? "0.5" : "1.0",
       }
       id="samsungpay-container"
       className={`w-full flex flex-row justify-center rounded-md  [&>*]:w-full [&>button]:!bg-contain`}

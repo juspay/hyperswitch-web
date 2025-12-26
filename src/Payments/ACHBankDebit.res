@@ -14,6 +14,7 @@ let make = () => {
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let (bankError, setBankError) = React.useState(_ => "")
 
@@ -69,7 +70,7 @@ let make = () => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if modalData->Option.isNone {
         setBankError(_ => "Enter bank details and then confirm payment")
       }
@@ -100,7 +101,7 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, modalData, fullName, isManualRetryEnabled))
+  }, (email, modalData, fullName, isManualRetryEnabled, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <>

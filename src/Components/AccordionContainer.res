@@ -78,6 +78,8 @@ let make = (
     ~expiryProps,
   )
 
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
+
   let cardOptionDetails =
     paymentOptions
     ->PaymentMethodsRecord.getPaymentDetails(~localeString)
@@ -142,6 +144,7 @@ let make = (
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
         let borderRadiusStyle = getBorderRadiusStyleForCardOptionDetails(i)
+
         <Accordion
           key={i->Int.toString}
           paymentOption=payOption
@@ -151,6 +154,7 @@ let make = (
           borderBottom={(!showMore &&
           i == cardOptionDetails->Array.length - 1 &&
           !layoutClass.spacedAccordionItems) || layoutClass.spacedAccordionItems}
+          isDisabled=isGiftCardOnlyPayment
         />
       })
       ->React.array}
@@ -160,6 +164,7 @@ let make = (
         ->Array.mapWithIndex((payOption, i) => {
           let isActive = payOption.paymentMethodName == selectedOption
           let borderRadiusStyle = getBorderRadiusStyleForDropDownOptionDetails(i)
+
           <Accordion
             key={i->Int.toString}
             paymentOption=payOption
@@ -168,6 +173,7 @@ let make = (
             borderRadiusStyle={borderRadiusStyle}
             borderBottom={(i == dropDownOptionsDetails->Array.length - 1 &&
               !layoutClass.spacedAccordionItems) || layoutClass.spacedAccordionItems}
+            isDisabled=isGiftCardOnlyPayment
           />
         })
         ->React.array}

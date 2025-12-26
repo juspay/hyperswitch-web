@@ -36,6 +36,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "skrill",
   "flexiti",
   "breadpay",
+  "givex",
   "pay_safe_card",
   "interac",
   "open_banking",
@@ -193,6 +194,8 @@ let useRequiredFieldsEmptyAndValid = (
   ~cardExpiry,
   ~cvcNumber,
   ~isSavedCardFlow,
+  ~setAreRequiredFieldsValid,
+  ~setAreRequiredFieldsEmpty,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
@@ -211,10 +214,9 @@ let useRequiredFieldsEmptyAndValid = (
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
-  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
-    areRequiredFieldsValid,
-  )
-  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
+  let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
+  let giftCardCvc = Recoil.useRecoilValueFromAtom(userGiftCardCvc)
+  let (areRequiredFieldsValidLocal, setAreRequiredFieldsValidLocal) = React.useState(_ => true)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
@@ -222,7 +224,6 @@ let useRequiredFieldsEmptyAndValid = (
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
-
   React.useEffect(() => {
     let areRequiredFieldsValid = fieldsArr->Array.reduce(true, (acc, paymentMethodFields) => {
       acc &&
@@ -267,11 +268,15 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value !== ""
+      | GiftCardNumber => giftCardNumber.value !== ""
+      | GiftCardCvc => giftCardCvc.value !== ""
       | SourceBankAccountId => sourceBankAccountId.value !== ""
       | _ => true
       }
     })
-    setAreRequiredFieldsValid(_ => isSavedCardFlow || areRequiredFieldsValid)
+    let finalAreRequiredFieldsValid = isSavedCardFlow || areRequiredFieldsValid
+    setAreRequiredFieldsValidLocal(_ => finalAreRequiredFieldsValid)
+    setAreRequiredFieldsValid(_ => finalAreRequiredFieldsValid)
 
     let areRequiredFieldsEmpty = fieldsArrWithBillingAddress->Array.reduce(false, (
       acc,
@@ -319,6 +324,8 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value === ""
+      | GiftCardNumber => giftCardNumber.value === ""
+      | GiftCardCvc => giftCardCvc.value === ""
       | SourceBankAccountId => sourceBankAccountId.value === ""
       | _ => false
       }
@@ -354,18 +361,20 @@ let useRequiredFieldsEmptyAndValid = (
     bankAccountNumber,
     sourceBankAccountId.value,
     cryptoCurrencyNetworks,
+    giftCardCvc.value,
+    giftCardNumber.value,
   ))
 
   React.useEffect(() => {
     switch (isCardValid, isExpiryValid, isCVCValid) {
     | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
       CardUtils.emitIsFormReadyForSubmission(
-        cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+        cardValid && expiryValid && cvcValid && areRequiredFieldsValidLocal,
       )
     | _ => ()
     }
     None
-  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid))
+  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValidLocal))
 }
 
 let useSetInitialRequiredFields = (
@@ -395,6 +404,8 @@ let useSetInitialRequiredFields = (
   let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
+  let (giftCardCvc, setGiftCardCvc) = Recoil.useRecoilState(userGiftCardCvc)
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -478,6 +489,8 @@ let useSetInitialRequiredFields = (
           }
         }
       | AddressState => setFields(setState, state, requiredField, false)
+      | GiftCardNumber => setFields(setGiftCardNumber, giftCardNumber, requiredField, false)
+      | GiftCardCvc => setFields(setGiftCardCvc, giftCardCvc, requiredField, false)
       | AddressCity => setFields(setCity, city, requiredField, false)
       | PhoneCountryCode =>
         setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
@@ -585,6 +598,8 @@ let useRequiredFieldsBody = (
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
   let countryCode = Utils.getCountryCode(country).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
+  let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
+  let giftCardCvc = Recoil.useRecoilValueFromAtom(userGiftCardCvc)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -621,6 +636,8 @@ let useRequiredFieldsBody = (
       }
     | BillingName => billingName.value
     | CardNumber => cardNumber->CardValidations.clearSpaces
+    | GiftCardNumber => giftCardNumber.value
+    | GiftCardCvc => giftCardCvc.value
     | CardExpiryMonth =>
       let (month, _) = CardUtils.getExpiryDates(cardExpiry)
       month
@@ -717,7 +734,6 @@ let useRequiredFieldsBody = (
         acc
       })
       ->addBillingDetailsIfUseBillingAddress
-
     setRequiredFieldsBody(_ => requiredFieldsBody)
     None
   }, (
@@ -746,6 +762,8 @@ let useRequiredFieldsBody = (
     dateOfBirth,
     bankAccountNumber,
     sourceBankAccountId,
+    giftCardCvc.value,
+    giftCardNumber.value,
   ))
 }
 
@@ -753,10 +771,12 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   switch fieldType {
   | FullName
   | CardNumber
+  | GiftCardNumber
   | CardExpiryMonth
   | CardExpiryYear
   | CardExpiryMonthAndYear
   | CardCvc
+  | GiftCardCvc
   | CardExpiryAndCvc
   | CryptoCurrencyNetworks
   | PixKey
@@ -905,13 +925,14 @@ let useSubmitCallback = () => {
   let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
   let (city, setCity) = Recoil.useRecoilState(userAddressCity)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   React.useCallback((ev: Window.event) => {
     let json = ev.data->Utils.safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if line1.value == "" {
         setLine1(prev => {
           ...prev,

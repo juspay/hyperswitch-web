@@ -221,6 +221,16 @@ type localeStrings = {
   payment_methods_mifinity: string,
   payment_methods_upi_collect: string,
   payment_methods_eft: string,
+  payment_methods_givex: string,
+  haveGiftCardText: string,
+  giftCardNumberLabel: string,
+  giftCardNumberPlaceholder: string,
+  giftCardNumberEmptyText: string,
+  giftCardNumberInvalidText: string,
+  giftCardCvcLabel: string,
+  giftCardCvcPlaceholder: string,
+  giftCardCvcEmptyText: string,
+  giftCardCvcInvalidText: string,
 }
 
 type constantStrings = {

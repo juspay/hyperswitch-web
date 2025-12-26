@@ -34,8 +34,9 @@ let make = (
 
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("google_pay")
 
@@ -228,7 +229,14 @@ let make = (
     None
   }, [isRenderGooglePayButton])
 
-  let submitCallback = GooglePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
+  let submitCallback = GooglePayHelpers.useSubmitCallback(
+    ~isWallet,
+    ~sessionObj,
+    ~componentName,
+    ~areRequiredFieldsValid,
+    ~areRequiredFieldsEmpty,
+  )
+
   useSubmitPaymentData(submitCallback)
 
   if isWallet {
@@ -236,15 +244,21 @@ let make = (
       <div
         style={
           height: `${height->Int.toString}px`,
-          pointerEvents: updateSession ? "none" : "auto",
-          opacity: updateSession ? "0.5" : "1.0",
+          pointerEvents: updateSession || isGiftCardOnlyPayment ? "none" : "auto",
+          opacity: updateSession || isGiftCardOnlyPayment ? "0.5" : "1.0",
         }
         id="google-pay-button"
         className={`w-full flex flex-row justify-center rounded-md`}
       />
     </RenderIf>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody />
+    <DynamicFields
+      paymentMethod="wallet"
+      paymentMethodType="google_pay"
+      setRequiredFieldsBody
+      setAreRequiredFieldsValid
+      setAreRequiredFieldsEmpty
+    />
   }
 }
 

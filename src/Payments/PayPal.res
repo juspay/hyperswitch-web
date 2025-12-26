@@ -21,6 +21,8 @@ let make = (~walletOptions) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let isWallet = walletOptions->Array.includes("paypal")
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
@@ -38,6 +40,7 @@ let make = (~walletOptions) => {
     options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   UtilityHooks.useHandlePostMessages(
@@ -106,13 +109,11 @@ let make = (~walletOptions) => {
   })
 
   let useSubmitCallback = (~isWallet) => {
-    let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-    let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
     let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
     React.useCallback((ev: Window.event) => {
-      if !isWallet {
+      if !isWallet && !isGiftCardOnlyPayment {
         let json = ev.data->Utils.safeParse
         let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
         if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
@@ -129,7 +130,7 @@ let make = (~walletOptions) => {
           )
         }
       }
-    }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, iframeId))
+    }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, iframeId, isGiftCardOnlyPayment))
   }
 
   let submitCallback = useSubmitCallback(~isWallet)
@@ -144,8 +145,8 @@ let make = (~walletOptions) => {
         borderRadius: `${options.wallets.style.buttonRadius->Int.toString}px`,
         width: "100%",
         backgroundColor: buttonColor,
-        pointerEvents: updateSession ? "none" : "auto",
-        opacity: updateSession ? "0.5" : "1.0",
+        pointerEvents: updateSession || isGiftCardOnlyPayment ? "none" : "auto",
+        opacity: updateSession || isGiftCardOnlyPayment ? "0.5" : "1.0",
       }
       onClick={_ => options.readOnly ? () : onPaypalClick()}>
       <div
@@ -158,7 +159,13 @@ let make = (~walletOptions) => {
       </div>
     </button>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="paypal" setRequiredFieldsBody />
+    <DynamicFields
+      paymentMethod="wallet"
+      paymentMethodType="paypal"
+      setRequiredFieldsBody
+      setAreRequiredFieldsValid
+      setAreRequiredFieldsEmpty
+    />
   }
 }
 

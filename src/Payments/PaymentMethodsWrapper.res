@@ -12,6 +12,7 @@ let make = (~paymentMethodName: string) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentManagementListValue)
   let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
@@ -57,8 +58,8 @@ let make = (~paymentMethodName: string) => {
   let cleanPhoneNumber = str => str->String.replaceRegExp(%re("/\s/g"), "")
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
   let countryList = CountryStateDataRefs.countryDataRef.contents
 
   React.useEffect(() => {
@@ -77,7 +78,7 @@ let make = (~paymentMethodName: string) => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if areRequiredFieldsValid {
         let countryCode =
           Country.getCountry(paymentMethodName, countryList)
@@ -146,6 +147,7 @@ let make = (~paymentMethodName: string) => {
     currency,
     requiredFieldsBody,
     areRequiredFieldsValid,
+    isGiftCardOnlyPayment,
   ))
   useSubmitPaymentData(submitCallback)
   <div
@@ -155,6 +157,8 @@ let make = (~paymentMethodName: string) => {
       paymentMethod=paymentMethodDetails.methodType
       paymentMethodType=paymentMethodName
       setRequiredFieldsBody
+      setAreRequiredFieldsValid
+      setAreRequiredFieldsEmpty
     />
   </div>
 }

@@ -63,6 +63,8 @@ let make = (
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   React.useEffect(() => {
     let width = switch payOptionsRef.current->Nullable.toOption {
     | Some(ref) => ref->Window.Element.clientWidth
@@ -138,7 +140,9 @@ let make = (
       {cardOptionDetails
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
-        <TabCard key={i->Int.toString} paymentOption=payOption isActive />
+
+        let isDisabled = isGiftCardOnlyPayment
+        <TabCard key={i->Int.toString} paymentOption=payOption isActive disabled=isDisabled />
       })
       ->React.array}
       <TabLoader cardShimmerCount />
@@ -164,7 +168,7 @@ let make = (
             ref={selectRef->ReactDOM.Ref.domRef}
             className={`TabMore place-items-start outline-none`}
             onChange=handleChange
-            disabled=readOnly
+            disabled={readOnly || isGiftCardOnlyPayment}
             dataTestId=TestUtils.paymentMethodDropDownTestId
             style={
               width: "40px",

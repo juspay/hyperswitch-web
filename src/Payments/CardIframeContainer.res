@@ -12,6 +12,7 @@ let make = () => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
   let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(paymentMethodListValueV2)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let setVaultPublishableKey = Recoil.useSetRecoilState(vaultPublishableKey)
   let setVaultProfileId = Recoil.useSetRecoilState(vaultProfileId)
 
@@ -87,7 +88,7 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       let innerIframe = Window.querySelector(`#orca-inneriframe`)
       innerIframe->Window.iframePostMessage(
         [("generateToken", true->JSON.Encode.bool)]->Dict.fromArray,
@@ -113,7 +114,7 @@ let make = () => {
       }
       EventListenerManager.addSmartEventListener("message", handle, "handleCardVaultToken")
     }
-  }, ())
+  }, isGiftCardOnlyPayment)
   useSubmitPaymentData(submitCallback)
 
   <div

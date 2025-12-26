@@ -8,6 +8,7 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
@@ -35,7 +36,7 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if billingName.value == "" {
         setBillingName(prev => {
           ...prev,
@@ -54,7 +55,7 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
         }
       }
     }
-  }, [billingName])
+  }, (billingName, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.name == Auto}>

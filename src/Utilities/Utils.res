@@ -787,6 +787,8 @@ let handlePostMessageEvents = (
 
 let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
 
+let removeNonAlphanumeric = str => str->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+
 let getCountryCode = country => {
   CountryStateDataRefs.countryDataRef.contents
   ->Array.find(item => item.countryName == country)
@@ -1764,6 +1766,15 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.getOr(defaultValue)
 }
 
+let getGiftCardDataFromRequiredFieldsBody = requiredFieldsBody => {
+  let giftCardTuples = []->mergeAndFlattenToTuples(requiredFieldsBody)
+  let data =
+    giftCardTuples
+    ->getJsonFromArrayOfJson
+    ->getDictFromJson
+    ->getDictFromDict("payment_method_data")
+  data
+}
 let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventName) => {
   if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
     let script = Window.createElement("script")

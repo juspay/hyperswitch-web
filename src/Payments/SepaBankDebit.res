@@ -12,8 +12,9 @@ let make = () => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (areRequiredFieldsEmpty, setAreRequiredFieldsEmpty) = React.useState(_ => false)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let pmAuthMapper = React.useMemo1(
     () =>
@@ -37,7 +38,7 @@ let make = () => {
     | V1 => PaymentBody.dynamicPaymentBody("bank_debit", "sepa")
     | V2 => PaymentBodyV2.dynamicPaymentBodyV2("bank_debit", "sepa")
     }
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if areRequiredFieldsValid && !areRequiredFieldsEmpty {
         let sepaBody =
           body
@@ -55,7 +56,13 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (isManualRetryEnabled, areRequiredFieldsValid, areRequiredFieldsEmpty, requiredFieldsBody))
+  }, (
+    isManualRetryEnabled,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    requiredFieldsBody,
+    isGiftCardOnlyPayment,
+  ))
 
   useSubmitPaymentData(submitCallback)
 
@@ -66,7 +73,13 @@ let make = () => {
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
         }>
-        <DynamicFields paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody />
+        <DynamicFields
+          paymentMethod="bank_debit"
+          paymentMethodType="sepa"
+          setRequiredFieldsBody
+          setAreRequiredFieldsValid
+          setAreRequiredFieldsEmpty
+        />
         <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
         <Terms mode=SepaBankDebit />
       </div>

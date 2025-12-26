@@ -4,6 +4,7 @@ open Utils
 @react.component
 let make = () => {
   let (blikCode, setblikCode) = Recoil.useRecoilState(userBlikCode)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   let blikCodeRef = React.useRef(Nullable.null)
   let formatBSB = bsb => {
@@ -42,7 +43,7 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       if blikCode.value == "" {
         setblikCode(prev => {
           ...prev,
@@ -50,7 +51,7 @@ let make = () => {
         })
       }
     }
-  }, [blikCode])
+  }, (blikCode, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={true}>

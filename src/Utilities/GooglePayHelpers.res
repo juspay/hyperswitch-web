@@ -146,15 +146,20 @@ let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly)
   }
 }
 
-let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+let useSubmitCallback = (
+  ~isWallet,
+  ~sessionObj,
+  ~componentName,
+  ~areRequiredFieldsValid,
+  ~areRequiredFieldsEmpty,
+) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
 
   React.useCallback((ev: Window.event) => {
-    if !isWallet {
+    if !isWallet && !isGiftCardOnlyPayment {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {

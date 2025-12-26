@@ -7,6 +7,7 @@ let make = (
   ~expiryProps: CardUtils.expiryProps,
   ~cvcProps: CardUtils.cvcProps,
   ~isBancontact=false,
+  ~isGiftCard=false,
   ~isVault=None,
 ) => {
   open PaymentType
@@ -39,6 +40,10 @@ let make = (
   | _ => false
   }
   let paymentType = usePaymentType()
+  let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
+  let giftCardInfo = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.giftCardInfoAtom)
+  let appliedGiftCards = giftCardInfo.appliedGiftCards
+  let isGiftCardOnlyPayment = GiftCardHook.useIsGiftCardOnlyPayment()
   let {
     isCardValid,
     setIsCardValid,
@@ -127,7 +132,8 @@ let make = (
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = React.useState(_ => true)
+  let (_, setAreRequiredFieldsEmpty) = React.useState(_ => false)
 
   let complete = isAllValid(
     isCardValid,
@@ -204,7 +210,7 @@ let make = (
 
     let isUnrecognizedClickToPayPayment = isSaveDetailsWithClickToPay
 
-    if confirm.doSubmit {
+    if confirm.doSubmit && !isGiftCardOnlyPayment {
       let isCardDetailsValid =
         isCVCValid->Option.getOr(false) &&
         isCardValid->Option.getOr(false) &&
@@ -225,7 +231,7 @@ let make = (
         areRequiredFieldsValid &&
         !isCardBlocked
 
-      if validFormat && (showPaymentMethodsScreen || isBancontact) {
+      if validFormat && (showPaymentMethodsScreen || isBancontact || isGiftCard) {
         if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
           ClickToPayHelpers.handleOpenClickToPayWindow()
 
@@ -391,12 +397,23 @@ let make = (
             ~handleUserError=true,
           )
         } else {
-          intent(
-            ~bodyArr={
-              (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(
-                requiredFieldsBody,
+          let paymentBody = switch (isBancontact, isGiftCard) {
+          | (true, _) => banContactBody
+          | (_, true) => PaymentBodyV2.dynamicPaymentBodyV2("gift_card", selectedOption)
+          | _ =>
+            // Check if there are applied gift cards to include in split payment
+            if appliedGiftCards->Array.length > 0 {
+              let giftCardSplitBody = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
+                appliedGiftCards,
               )
-            },
+              let giftCardDict = giftCardSplitBody->getJsonFromArrayOfJson->getDictFromJson
+              cardBody->mergeAndFlattenToTuples(giftCardDict)
+            } else {
+              cardBody
+            }
+          }
+          intent(
+            ~bodyArr=paymentBody->mergeAndFlattenToTuples(requiredFieldsBody),
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
             ~manualRetry=isManualRetryEnabled,
@@ -406,10 +423,7 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
-        } else if isCardBlocked {
-          setCardError(_ => localeString.blockedCardText)
-          setUserError(localeString.blockedCardText)
-        } else if isCardSupported->Option.getOr(true)->not {
+        } else if isCardSupported->Option.getOr(true)->not && !isGiftCard {
           if cardBrand == "" {
             setCardError(_ => localeString.enterValidCardNumberErrorText)
             setUserError(localeString.enterValidDetailsText)
@@ -444,18 +458,30 @@ let make = (
     clickToPayConfig,
     clickToPayCardBrand,
     isClickToPayRememberMe,
+    selectedOption,
+    appliedGiftCards,
+    isGiftCardOnlyPayment,
     blockedBinsList,
   ))
   useSubmitPaymentData(submitCallback)
 
-  let paymentMethod = isBancontact ? "bank_redirect" : "card"
-  let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
+  let paymentMethod = switch (isBancontact, isGiftCard) {
+  | (true, _) => "bank_redirect"
+  | (_, true) => "gift_card"
+  | _ => "card"
+  }
+  let paymentMethodType = switch (isBancontact, isGiftCard) {
+  | (true, _) => "bancontact_card"
+  | (_, true) => selectedOption
+  | _ => "debit"
+  }
   let conditionsForShowingSaveCardCheckbox =
     paymentMethodListValue.mandate_payment->Option.isNone &&
     !isGuestCustomer &&
     paymentMethodListValue.payment_type !== SETUP_MANDATE &&
     options.displaySavedPaymentMethodsCheckbox &&
-    !isBancontact
+    !isBancontact &&
+    !isGiftCard
 
   let compressedLayoutStyleForCvcError =
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
@@ -465,7 +491,7 @@ let make = (
   }
 
   <div className="animate-slowShow">
-    <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
+    <RenderIf condition={showPaymentMethodsScreen || isBancontact || isGiftCard}>
       <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
         <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
           <RenderIf condition={innerLayout === Compressed}>
@@ -478,7 +504,7 @@ let make = (
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
-          <RenderIf condition={!isBancontact}>
+          <RenderIf condition={!isBancontact && !isGiftCard}>
             <PaymentInputField
               fieldName=localeString.cardNumberLabel
               isValid=isCardValid
@@ -497,6 +523,7 @@ let make = (
                 : ""}
               name=TestUtils.cardNoInputTestId
               autocomplete="cc-number"
+              isDisabled=isGiftCardOnlyPayment
             />
             <div
               className="flex flex-row w-full place-content-between"
@@ -518,6 +545,7 @@ let make = (
                   placeholder=localeString.expiryPlaceholder
                   name=TestUtils.expiryInputTestId
                   autocomplete="cc-exp"
+                  isDisabled=isGiftCardOnlyPayment
                 />
               </div>
               <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
@@ -542,6 +570,7 @@ let make = (
                   placeholder="123"
                   name=TestUtils.cardCVVInputTestId
                   autocomplete="cc-csc"
+                  isDisabled=isGiftCardOnlyPayment
                 />
               </div>
             </div>
@@ -566,6 +595,8 @@ let make = (
             paymentMethod
             paymentMethodType
             setRequiredFieldsBody
+            setAreRequiredFieldsValid
+            setAreRequiredFieldsEmpty
             cardProps={Some(cardProps)}
             expiryProps={Some(expiryProps)}
             cvcProps={Some(cvcProps)}
@@ -587,10 +618,10 @@ let make = (
         </div>
       </div>
     </RenderIf>
-    <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
+    <RenderIf condition={showPaymentMethodsScreen || isBancontact || isGiftCard}>
       <Surcharge paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType} />
     </RenderIf>
-    <RenderIf condition={!isBancontact}>
+    <RenderIf condition={!isBancontact && !isGiftCard}>
       {switch (
         paymentMethodListValue.mandate_payment,
         options.terms.card,
