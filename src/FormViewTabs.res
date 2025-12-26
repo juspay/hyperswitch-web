@@ -17,7 +17,7 @@ let make = (
   let payoutDynamicFields = Recoil.useRecoilValueFromAtom(payoutDynamicFieldsAtom)
   let formData = Recoil.useRecoilValueFromAtom(formDataAtom)
   let (activePmt, setActivePmt) = Recoil.useRecoilState(paymentMethodTypeAtom)
-  let validityDict = Recoil.useRecoilValueFromAtom(validityDictAtom)
+  let (validityDict, setValidityDict) = Recoil.useRecoilState(validityDictAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
@@ -227,6 +227,7 @@ let make = (
             },
           )
 
+          setValidityDict(_ => fieldValidity)
           if isPmdValid {
             formPaymentMethodData(formData, fieldValidity, payoutDynamicFields)
             ->Option.map(pmd => View.setView(FinalizeView(activePmt, pmd)))
@@ -239,7 +240,9 @@ let make = (
           <div className={contentHeaderClasses}>
             {switch activePmt {
             | Card(_) => localeString.formHeaderEnterCardText
-            | BankTransfer(_) => key->localeString.formHeaderBankText
+            | BankRedirect(_)
+            | BankTransfer(_) =>
+              key->localeString.formHeaderBankText
             | Wallet(_) => key->localeString.formHeaderWalletText
             }->React.string}
           </div>

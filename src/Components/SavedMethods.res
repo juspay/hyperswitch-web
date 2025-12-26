@@ -36,9 +36,14 @@ let make = (
     postFailedSubmitResponse(~errortype="validation_error", ~message)
     loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT)
   }
-  let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
-  let {displaySavedPaymentMethodsCheckbox, readOnly} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.optionAtom,
+  let {
+    displaySavedPaymentMethodsCheckbox,
+    readOnly,
+    savedPaymentMethodsCheckboxCheckedByDefault,
+    layout,
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
+    savedPaymentMethodsCheckboxCheckedByDefault
   )
   let isGuestCustomer = useIsGuestCustomer()
 
@@ -65,6 +70,14 @@ let make = (
   let savedCardlength = savedMethods->Array.length
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
+  let layoutClass = CardUtils.getLayoutClass(layout)
+  let groupSavedMethodsWithPaymentMethods =
+    layoutClass.savedMethodCustomization.groupingBehavior == GroupByPaymentMethods
+  let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
+
+  let shouldShowClickToPaySection =
+    clickToPayConfig.isReady == Some(true) &&
+      (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")
 
   let bottomElement = {
     <div
@@ -84,7 +97,7 @@ let make = (
         />
       )
       ->React.array}
-      <RenderIf condition={clickToPayConfig.isReady == Some(true)}>
+      <RenderIf condition={shouldShowClickToPaySection}>
         <ClickToPayAuthenticate
           loggerState
           savedMethods
@@ -323,14 +336,12 @@ let make = (
     !isGuestCustomer &&
     paymentMethodListValue.payment_type === NEW_MANDATE &&
     displaySavedPaymentMethodsCheckbox &&
-    savedMethods->Array.some(ele => {
-      ele.paymentMethod === "card" && ele.requiresCvv
-    })
+    customerMethod.requiresCvv
   }, (
     isGuestCustomer,
     paymentMethodListValue.payment_type,
     displaySavedPaymentMethodsCheckbox,
-    savedMethods,
+    customerMethod,
   ))
 
   let enableSavedPaymentShimmer = React.useMemo(() => {
@@ -361,18 +372,12 @@ let make = (
       />
     </RenderIf>
     <RenderIf condition={!enableSavedPaymentShimmer}>
-      <div
-        className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
-        style={
-          fontSize: "14px",
-          float: "left",
-          fontWeight: "500",
-          width: "fit-content",
-          color: themeObj.colorPrimary,
-        }
-        role="button"
-        ariaLabel="Click to use more payment methods"
-        tabIndex=0
+      <SwitchViewButton
+        onClick={_ => setShowPaymentMethodsScreen(_ => true)}
+        icon={<Icon name="circle-plus" size=22 />}
+        title={localeString.newPaymentMethods}
+        ariaLabel="Click to use new payment methods"
+        dataTestId={TestUtils.addNewCardIcon}
         onKeyDown={event => {
           let key = JsxEvent.Keyboard.key(event)
           let keyCode = JsxEvent.Keyboard.keyCode(event)
@@ -380,11 +385,7 @@ let make = (
             setShowPaymentMethodsScreen(_ => true)
           }
         }}
-        dataTestId={TestUtils.addNewCardIcon}
-        onClick={_ => setShowPaymentMethodsScreen(_ => true)}>
-        <Icon name="circle-plus" size=22 />
-        {React.string(localeString.morePaymentMethods)}
-      </div>
+      />
     </RenderIf>
   </div>
 }

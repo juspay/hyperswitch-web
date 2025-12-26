@@ -37,6 +37,8 @@ let dynamicFieldsEnabledPaymentMethods = [
   "flexiti",
   "breadpay",
   "pay_safe_card",
+  "interac",
+  "open_banking",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
@@ -235,7 +237,7 @@ let useRequiredFieldsEmptyAndValid = (
       | AddressLine1 => line1.value !== ""
       | AddressLine2 => billingAddress.isUseBillingAddress || line2.value !== ""
       | Bank => selectedBank !== "" || bankNames->Array.length === 0
-      | PhoneNumber => phone.value !== ""
+      | PhoneNumberAndCountryCode => phone.value !== ""
       | StateAndCity => state.value !== "" && city.value !== ""
       | CountryAndPincode(countryArr) =>
         (country !== "" || countryArr->Array.length === 0) && postalCode.value !== ""
@@ -289,7 +291,7 @@ let useRequiredFieldsEmptyAndValid = (
       | StateAndCity => city.value === "" || state.value === ""
       | CountryAndPincode(countryArr) =>
         (country === "" && countryArr->Array.length > 0) || postalCode.value === ""
-      | PhoneNumber => phone.value === ""
+      | PhoneNumberAndCountryCode => phone.value === ""
       | AddressCity => city.value === ""
       | AddressPincode => postalCode.value === ""
       | AddressState => state.value === ""
@@ -417,15 +419,14 @@ let useSetInitialRequiredFields = (
       ~isCountryCodeAvailable=?,
     ) => {
       if isNameField && field.value === "" {
+        setMethod(prev => {
+          ...prev,
+          value: getNameValue(item),
+        })
         if isCountryCodeAvailable->Option.isSome {
           setMethod(prev => {
             ...prev,
             countryCode: getNameValue(item),
-          })
-        } else {
-          setMethod(prev => {
-            ...prev,
-            value: getNameValue(item),
           })
         }
       } else if field.value === "" {
@@ -482,6 +483,8 @@ let useSetInitialRequiredFields = (
         setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
       | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
       | PhoneNumber => setFields(setPhone, phone, requiredField, false)
+      | PhoneNumberAndCountryCode =>
+        setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
       | BlikCode => setFields(setBlikCode, blikCode, requiredField, false)
       | PixKey => setFields(setPixKey, pixKey, requiredField, false)
       | PixCNPJ => setFields(setPixCNPJ, pixCNPJ, requiredField, false)
@@ -640,6 +643,7 @@ let useRequiredFieldsBody = (
       bankAccountNumber.value
     | SourceBankAccountId => sourceBankAccountId.value
     | StateAndCity
+    | PhoneNumberAndCountryCode
     | CountryAndPincode(_)
     | SpecialField(_)
     | InfoElement
@@ -858,6 +862,24 @@ let combineCardExpiryAndCvc = arr => {
   }
 }
 
+let combinePhoneNumberAndCountryCode = arr => {
+  open PaymentMethodsRecord
+  let hasPhoneNumberOrCountryCodeField =
+    arr->Array.includes(PhoneCountryCode) || arr->Array.includes(PhoneNumber)
+  if hasPhoneNumberOrCountryCodeField {
+    arr->Array.push(PhoneNumberAndCountryCode)->ignore
+    arr->Array.filter(item =>
+      switch item {
+      | PhoneCountryCode
+      | PhoneNumber => false
+      | _ => true
+      }
+    )
+  } else {
+    arr
+  }
+}
+
 let updateDynamicFields = (
   arr: array<PaymentMethodsRecord.paymentMethodsFields>,
   billingAddress,
@@ -873,6 +895,7 @@ let updateDynamicFields = (
   ->combineCountryAndPostal
   ->combineCardExpiryMonthAndYear
   ->combineCardExpiryAndCvc
+  ->combinePhoneNumberAndCountryCode
 }
 
 let useSubmitCallback = () => {

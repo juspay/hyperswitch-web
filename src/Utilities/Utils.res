@@ -237,6 +237,12 @@ let getArray = (dict, key) => {
   dict->getOptionalArrayFromDict(key)->Option.getOr([])
 }
 
+let getArrayOfObjectsFromDict = (dict, key) => {
+  dict
+  ->getArray(key)
+  ->Array.filterMap(JSON.Decode.object)
+}
+
 let getStrArray = (dict, key) => {
   dict
   ->getOptionalArrayFromDict(key)
@@ -380,6 +386,20 @@ let toCamelCase = str => {
     ->String.replaceRegExp(%re(`/[^a-zA-Z]/g`), "")
   }
 }
+
+let toCamelCaseWithNumberSupport = str => {
+  if str->String.includes(":") {
+    str
+  } else {
+    str
+    ->String.toLowerCase
+    ->Js.String2.unsafeReplaceBy0(%re(`/([-_][a-z])/g`), (letter, _, _) => {
+      letter->String.toUpperCase
+    })
+    ->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+  }
+}
+
 let toSnakeCase = str => {
   str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
     `_${letter->String.toLowerCase}`
@@ -423,6 +443,50 @@ let rec transformKeys = (json: JSON.t, to: case) => {
         (key->toCase, val->JSON.Encode.string)
       }
     | Number(val) => (key->toCase, val->Float.toString->JSON.Encode.string)
+    | _ => (key->toCase, value)
+    }
+    x
+  })
+  ->getJsonFromArrayOfJson
+}
+
+let rec transformKeysWithoutModifyingValue = (json: JSON.t, to: case) => {
+  let toCase = switch to {
+  | CamelCase => toCamelCaseWithNumberSupport
+  | SnakeCase => toSnakeCase
+  | KebabCase => toKebabCase
+  }
+  let dict = json->getDictFromJson
+  dict
+  ->Dict.toArray
+  ->Array.map(((key, value)) => {
+    let x = switch JSON.Classify.classify(value) {
+    | Object(obj) => (key->toCase, obj->JSON.Encode.object->transformKeys(to))
+    | Array(arr) => (
+        key->toCase,
+        {
+          arr
+          ->Array.map(item =>
+            if item->JSON.Decode.object->Option.isSome {
+              item->transformKeys(to)
+            } else {
+              item
+            }
+          )
+          ->JSON.Encode.array
+        },
+      )
+    | String(str) => {
+        let val = if str == "Final" {
+          "FINAL"
+        } else if str == "example" || str == "Adyen" {
+          "adyen"
+        } else {
+          str
+        }
+        (key->toCase, val->JSON.Encode.string)
+      }
+    | Number(val) => (key->toCase, val->JSON.Encode.float)
     | _ => (key->toCase, value)
     }
     x
@@ -1724,4 +1788,24 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.flatMap(x => x->Dict.get(key))
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
+}
+
+let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventName) => {
+  if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
+    let script = Window.createElement("script")
+    script->Window.elementSrc(url)
+    script->Window.elementOnerror(_ => {
+      logger.setLogError(~value="Script failed to load", ~eventName)
+    })
+    script->Window.elementOnload(() => {
+      logger.setLogInfo(~value="Script loaded successfully", ~eventName)
+    })
+    Window.body->Window.appendChild(script)
+  }
+}
+
+let defaultCountryCode = {
+  let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
+  let clientCountry = getClientCountry(clientTimeZone)
+  clientCountry.isoAlpha2
 }

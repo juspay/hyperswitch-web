@@ -97,6 +97,7 @@ let make = (
       ~handleUserError=true,
     )
   }
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onGooglePaymentButtonClicked = () => {
     loggerState.setLogInfo(
@@ -104,7 +105,13 @@ let make = (
       ~eventName=GOOGLE_PAY_FLOW,
       ~paymentMethod="GOOGLE_PAY",
     )
-    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="google_pay")
+    PaymentUtils.emitPaymentMethodInfo(
+      ~paymentMethod="wallet",
+      ~paymentMethodType="google_pay",
+      ~country,
+      ~state,
+      ~pinCode,
+    )
     makeOneClickHandlerPromise(isSDKHandleClick)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {

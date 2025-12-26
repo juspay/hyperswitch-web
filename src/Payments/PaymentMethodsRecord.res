@@ -15,6 +15,7 @@ type paymentMethodsFields =
   | BillingName
   | PhoneNumber
   | PhoneCountryCode
+  | PhoneNumberAndCountryCode
   | AddressLine1
   | AddressLine2
   | AddressCity
@@ -210,7 +211,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
   {
     paymentMethodName: "pay_safe_card",
     fields: [InfoElement],
-    icon: Some(icon("pay_safe_card", ~size=19, ~width=60)),
+    icon: Some(icon("pay_safe_card", ~size=19)),
     displayName: localeString.payment_methods_pay_safe_card,
     miniIcon: None,
   },
@@ -435,7 +436,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     paymentMethodName: "interac",
     icon: Some(icon("interac", ~size=19)),
     displayName: localeString.payment_methods_interac,
-    fields: [Email, Country, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -553,7 +554,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
   {
     paymentMethodName: "open_banking_uk",
     icon: Some(icon("bank", ~size=19)),
-    displayName: localeString.payment_methods_open_banking_uk,
+    displayName: localeString.payment_methods_pay_by_bank,
     fields: [InfoElement],
     miniIcon: Some(icon("bank", ~size=19)),
   },
@@ -640,6 +641,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     fields: [InfoElement],
     displayName: localeString.payment_methods_eft,
     miniIcon: None,
+  },
+  {
+    paymentMethodName: "open_banking",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: localeString.payment_methods_pay_by_bank,
+    fields: [InfoElement],
+    miniIcon: Some(icon("bank", ~size=19)),
   },
 ]
 
@@ -891,6 +899,7 @@ type paymentMethodList = {
   merchant_name: string,
   collect_billing_details_from_wallets: bool,
   is_tax_calculation_enabled: bool,
+  isGuestCustomer: option<bool>,
 }
 
 let defaultPaymentMethodType = {
@@ -914,6 +923,7 @@ let defaultList = {
   merchant_name: "",
   collect_billing_details_from_wallets: true,
   is_tax_calculation_enabled: false,
+  isGuestCustomer: None,
 }
 
 let getPaymentExperienceType = str => {
@@ -1114,11 +1124,12 @@ let itemToObjMapper = dict => {
       true,
     ),
     is_tax_calculation_enabled: getBool(dict, "is_tax_calculation_enabled", false),
+    isGuestCustomer: getOptionBool(dict, "is_guest_customer"),
   }
 }
 
-let buildFromPaymentList = (plist: paymentMethodList, ~localeString) => {
-  let paymentMethodArr = plist.payment_methods
+let buildFromPaymentList = (pList, ~localeString) => {
+  let paymentMethodArr = pList.payment_methods
 
   paymentMethodArr
   ->Array.map(paymentMethodObject => {

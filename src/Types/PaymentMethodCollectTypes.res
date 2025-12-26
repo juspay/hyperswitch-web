@@ -1,9 +1,13 @@
+let emailValidationRegex = %re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/")
+
 type paymentMethod =
   | Card
+  | BankRedirect
   | BankTransfer
   | Wallet
 
 type card = Credit | Debit
+type bankRedirect = Interac
 type bankTransfer = ACH | Bacs | Pix | Sepa
 type wallet = Paypal | Venmo
 type cardExpDate =
@@ -38,6 +42,8 @@ type paymentMethodDataField =
   | PixBankAccountNumber
   | PixBankName
   | VenmoMobNumber
+  // Bank Redirects
+  | InteracEmail
 
 type userFullNameForAddress =
   | FirstName
@@ -85,11 +91,13 @@ type payoutDynamicFields = {
 
 type paymentMethodTypeWithDynamicFields =
   | Card((card, payoutDynamicFields))
+  | BankRedirect((bankRedirect, payoutDynamicFields))
   | BankTransfer((bankTransfer, payoutDynamicFields))
   | Wallet((wallet, payoutDynamicFields))
 
 type paymentMethodType =
   | Card(card)
+  | BankRedirect(bankRedirect)
   | BankTransfer(bankTransfer)
   | Wallet(wallet)
 
@@ -226,7 +234,7 @@ let decodeCard = (cardType: string): option<card> =>
 let decodeTransfer = (value: string): option<bankTransfer> =>
   switch value {
   | "ach" => Some(ACH)
-  | "sepa" => Some(Sepa)
+  | "sepa_bank_transfer" => Some(Sepa)
   | "bacs" => Some(Bacs)
   | "pix" => Some(Pix)
   | _ => None
@@ -236,6 +244,12 @@ let decodeWallet = (methodType: string): option<wallet> =>
   switch methodType {
   | "paypal" => Some(Paypal)
   | "venmo" => Some(Venmo)
+  | _ => None
+  }
+
+let decodeBankRedirect = (methodType: string): option<bankRedirect> =>
+  switch methodType {
+  | "interac" => Some(Interac)
   | _ => None
   }
 
@@ -344,57 +358,62 @@ let sortByCustomOrder = (arr: array<'a>, getKey: 'a => string, customOrder: arra
   })
 }
 
-let decodePayoutDynamicFields = (json: JSON.t, defaultDynamicPmdFields): option<
-  payoutDynamicFields,
-> =>
+let decodePayoutDynamicFields = (json: JSON.t, defaultDynamicPmdFields): payoutDynamicFields =>
   json
   ->JSON.Decode.object
-  ->Option.map(obj => {
-    let (address, pmd) =
-      obj
-      ->Js.Dict.entries
-      ->Array.reduce(([], []), ((addressFields, payoutMethodDataFields), (key, value)) => {
-        switch JSON.Decode.object(value) {
-        | Some(fieldObj) => {
-            let getString = key => fieldObj->Dict.get(key)->Option.flatMap(JSON.Decode.string)
-            let fieldType = getFieldOptions(fieldObj)
-            switch (getString("required_field"), getString("display_name"), getString("value")) {
-            | (Some(pmdMap), Some(displayName), value) =>
-              switch decodeFieldType(key, fieldType) {
-              | Some(BillingAddress(fieldType)) =>
-                let addressField: dynamicFieldForAddress = {
-                  pmdMap,
-                  displayName,
-                  fieldType,
-                  value,
-                }
-                ([addressField, ...addressFields], payoutMethodDataFields)
-              | Some(PayoutMethodData(fieldType)) =>
-                let payoutMethodDataField = {
-                  pmdMap,
-                  displayName,
-                  fieldType,
-                  value,
-                }
-                (addressFields, [payoutMethodDataField, ...payoutMethodDataFields])
-              | None => (addressFields, payoutMethodDataFields)
-              }
-            | _ => (addressFields, payoutMethodDataFields)
-            }
-          }
-        | None => (addressFields, payoutMethodDataFields)
-        }
-      })
-
+  ->Option.mapOr(
+    // Fallback for null/invalid JSON - always return valid defaults
     {
-      address: address->Array.length > 0
-        ? Some(sortByCustomOrder(address, item => item.pmdMap, customAddressOrder))
-        : None,
-      payoutMethodData: pmd->Array.length > 0
-        ? sortByCustomOrder(pmd, item => item.pmdMap, customPmdOrder)
-        : defaultDynamicPmdFields,
-    }
-  })
+      address: None,
+      payoutMethodData: defaultDynamicPmdFields,
+    },
+    obj => {
+      let (address, pmd) =
+        obj
+        ->Js.Dict.entries
+        ->Array.reduce(([], []), ((addressFields, payoutMethodDataFields), (key, value)) => {
+          switch JSON.Decode.object(value) {
+          | Some(fieldObj) => {
+              let getString = key => fieldObj->Dict.get(key)->Option.flatMap(JSON.Decode.string)
+              let fieldType = getFieldOptions(fieldObj)
+              switch (getString("required_field"), getString("display_name"), getString("value")) {
+              | (Some(pmdMap), Some(displayName), value) =>
+                switch decodeFieldType(key, fieldType) {
+                | Some(BillingAddress(fieldType)) =>
+                  let addressField: dynamicFieldForAddress = {
+                    pmdMap,
+                    displayName,
+                    fieldType,
+                    value,
+                  }
+                  ([addressField, ...addressFields], payoutMethodDataFields)
+                | Some(PayoutMethodData(fieldType)) =>
+                  let payoutMethodDataField = {
+                    pmdMap,
+                    displayName,
+                    fieldType,
+                    value,
+                  }
+                  (addressFields, [payoutMethodDataField, ...payoutMethodDataFields])
+                | None => (addressFields, payoutMethodDataFields)
+                }
+              | _ => (addressFields, payoutMethodDataFields)
+              }
+            }
+          | None => (addressFields, payoutMethodDataFields)
+          }
+        })
+
+      {
+        address: address->Array.length > 0
+          ? Some(sortByCustomOrder(address, item => item.pmdMap, customAddressOrder))
+          : None,
+        payoutMethodData: pmd->Array.length > 0
+          ? sortByCustomOrder(pmd, item => item.pmdMap, customPmdOrder)
+          : defaultDynamicPmdFields,
+      }
+    },
+  )
 
 let decodePaymentMethodTypeWithRequiredFields = (
   json: JSON.t,
@@ -408,12 +427,12 @@ let decodePaymentMethodTypeWithRequiredFields = (
     ->Dict.get("payment_method_types_info")
     ->Option.flatMap(JSON.Decode.array)
     ->Option.map(pmtInfoArr =>
-      pmtInfoArr->Array.reduce(
-        ([], []),
-        ((pmta, pmtr), pmtInfo) =>
+      pmtInfoArr
+      ->Belt.Array.keepMap(
+        pmtInfo =>
           pmtInfo
           ->JSON.Decode.object
-          ->Option.map(
+          ->Option.flatMap(
             obj => {
               let paymentMethodType =
                 obj->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
@@ -422,6 +441,10 @@ let decodePaymentMethodTypeWithRequiredFields = (
                 cardType
                 ->decodeCard
                 ->Option.map(card => Card(card))
+              | (Some("bank_redirect"), Some(bankRedirectType)) =>
+                bankRedirectType
+                ->decodeBankRedirect
+                ->Option.map(bankRedirect => BankRedirect(bankRedirect))
               | (Some("bank_transfer"), Some(transferType)) =>
                 transferType
                 ->decodeTransfer
@@ -431,47 +454,52 @@ let decodePaymentMethodTypeWithRequiredFields = (
                 ->decodeWallet
                 ->Option.map(wallet => Wallet(wallet))
               | _ => None
-              }
-              ->Option.map(
+              }->Option.map(
                 pmt => {
                   let payoutDynamicFields =
                     obj
                     ->Dict.get("required_fields")
-                    ->Option.flatMap(
+                    ->Option.map(
                       json => json->decodePayoutDynamicFields(defaultDynamicPmdFields(~pmt)),
                     )
                     ->Option.getOr({
                       address: None,
                       payoutMethodData: defaultDynamicPmdFields(~pmt),
                     })
-                  switch pmt {
-                  | Card(card) => {
-                      pmta->Array.push(Card(card))
-                      let pmtwr: paymentMethodTypeWithDynamicFields = Card(
-                        card,
-                        payoutDynamicFields,
-                      )
-                      pmtr->Array.push(pmtwr)
-                      (pmta, pmtr)
-                    }
-                  | BankTransfer(transfer) => {
-                      pmta->Array.push(BankTransfer(transfer))
-                      pmtr->Array.push(BankTransfer(transfer, payoutDynamicFields))
-                      (pmta, pmtr)
-                    }
-                  | Wallet(wallet) => {
-                      let pmt: paymentMethodType = Wallet(wallet)
-                      pmta->Array.push(pmt)
-                      pmtr->Array.push(Wallet(wallet, payoutDynamicFields))
-                      (pmta, pmtr)
-                    }
-                  }
+                  (pmt, payoutDynamicFields)
                 },
               )
-              ->Option.getOr(([], []))
             },
-          )
-          ->Option.getOr(([], [])),
+          ),
+      )
+      ->Array.reduce(
+        ([], []),
+        ((pmta, pmtr), (pmt, payoutDynamicFields)) => {
+          switch pmt {
+          | Card(card) => {
+              pmta->Array.push(Card(card))
+              let pmtwr: paymentMethodTypeWithDynamicFields = Card(card, payoutDynamicFields)
+              pmtr->Array.push(pmtwr)
+              (pmta, pmtr)
+            }
+          | BankRedirect(bankRedirect) => {
+              pmta->Array.push(BankRedirect(bankRedirect))
+              pmtr->Array.push(BankRedirect(bankRedirect, payoutDynamicFields))
+              (pmta, pmtr)
+            }
+          | BankTransfer(transfer) => {
+              pmta->Array.push(BankTransfer(transfer))
+              pmtr->Array.push(BankTransfer(transfer, payoutDynamicFields))
+              (pmta, pmtr)
+            }
+          | Wallet(wallet) => {
+              let pmt: paymentMethodType = Wallet(wallet)
+              pmta->Array.push(pmt)
+              pmtr->Array.push(Wallet(wallet, payoutDynamicFields))
+              (pmta, pmtr)
+            }
+          }
+        },
       )
     )
   })

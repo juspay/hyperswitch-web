@@ -91,8 +91,14 @@ let make = (
     | (_, _, "") => (true, "")
     | (PayoutMethodData(CardExpDate(_)), "number" | "tel", _) => {
         let formattedExpiry = CardValidations.formatCardExpiryNumber(value)
-        if isExipryValid(formattedExpiry) {
+        let isCardExpiryValid = isExipryValid(formattedExpiry)
+        if isCardExpiryValid {
           handleInputFocus(~currentRef=cardExpRef, ~destinationRef=cardHolderRef)
+        }
+        if formattedExpiry->String.length == getPaymentMethodDataFieldMaxLength(key) {
+          setValidityDictVal("card.cardExp", Some(isCardExpiryValid))
+        } else {
+          setValidityDictVal("card.cardExp", Some(true))
         }
         (true, formattedExpiry)
       }
@@ -103,13 +109,19 @@ let make = (
           ->Option.getOr(""),
         )
         let formattedCardNumber = formatCardNumber(value, cardType)
-        if (
-          cardValid(
-            CardValidations.clearSpaces(formattedCardNumber),
-            getCardStringFromType(cardType),
-          )
-        ) {
+        let clearCardNumber = CardValidations.clearSpaces(formattedCardNumber)
+        let cardTypeStr = getCardStringFromType(cardType)
+        if focusCardValid(clearCardNumber, cardTypeStr) {
           handleInputFocus(~currentRef=cardNumberRef, ~destinationRef=cardExpRef)
+        }
+
+        if maxCardLength(cardTypeStr) == clearCardNumber->String.length {
+          setValidityDictVal(
+            "card.cardNumber",
+            calculateValidity(key, value, cardTypeStr, ~default=None),
+          )
+        } else {
+          setValidityDictVal("card.cardNumber", Some(true))
         }
         (true, formattedCardNumber)
       }
@@ -324,6 +336,8 @@ let make = (
         | (VenmoMobNumber, _) => PayoutMethodData(VenmoMobNumber)->renderInputTemplate
         // Pix
         | (PixKey, _) => PayoutMethodData(PixKey)->renderInputTemplate
+        // Interac
+        | (InteracEmail, _) => PayoutMethodData(InteracEmail)->renderInputTemplate
 
         // TODO: Add these later
         | (CardBrand, _)

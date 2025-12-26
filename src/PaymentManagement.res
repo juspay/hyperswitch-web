@@ -164,7 +164,7 @@ let make = (
             color: themeObj.colorPrimary,
           }
           role="button"
-          ariaLabel="Click to use more payment methods"
+          ariaLabel="Click to use new payment methods"
           tabIndex=0
           onClick={_ => setShowAddScreen(_ => true)}
           dataTestId={TestUtils.addNewCardIcon}>

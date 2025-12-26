@@ -70,6 +70,7 @@ let make = () => {
             JSON.Encode.null->resolve
           } else {
             let creq = dict->getString("challenge_request", "")
+            let challengeRequestKey = dict->getString("challenge_request_key", "creq")
             let transStatus = dict->getString("trans_status", "Y")
             let acsUrl = dict->getString("acs_url", "")
 
@@ -88,7 +89,7 @@ let make = () => {
                 setloader(_ => false)
                 let form = elem->makeForm(acsUrl, "3dsChallenge")
                 let input = Types.createElement("input")
-                input.name = "creq"
+                input.name = challengeRequestKey
                 input.value = creq
                 form.target = "threeDsAuthFrame"
                 form.appendChild(input)

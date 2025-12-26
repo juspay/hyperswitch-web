@@ -166,6 +166,22 @@ let visaClickToPayBody = (~encryptedPayload, ~email) => {
   ]
 }
 
+let visaClickToPayAuthenticationBody = (~encryptedPayload) => {
+  let paymentMethodData =
+    [
+      ("encrypted_payload", encryptedPayload->JSON.Encode.string),
+      ("provider", "visa"->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  let paymentMethodDetails =
+    [
+      ("payment_method_type", "ctp"->JSON.Encode.string),
+      ("payment_method_data", paymentMethodData),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [("payment_method_details", paymentMethodDetails)]
+}
+
 let savedPaymentMethodBody = (
   ~paymentToken,
   ~customerId,
@@ -531,22 +547,24 @@ let applePayRedirectBody = (~connectors) => [
   ),
 ]
 
-let applePayThirdPartySdkBody = (~connectors) => [
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  ("payment_method", "wallet"->JSON.Encode.string),
-  ("payment_method_type", "apple_pay"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "wallet",
-        [
-          ("apple_pay_third_party_sdk", Dict.make()->JSON.Encode.object),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
+let applePayThirdPartySdkBody = (~connectors, ~token=?) => {
+  let tokenJson = switch token {
+  | Some(val) => [("token", val->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
+  | None => Dict.make()->JSON.Encode.object
+  }
+
+  [
+    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "apple_pay"->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [
+        ("wallet", [("apple_pay_third_party_sdk", tokenJson)]->Utils.getJsonFromArrayOfJson),
+      ]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]
+}
 
 let cryptoBody = () => [
   ("payment_method", "crypto"->JSON.Encode.string),
@@ -705,28 +723,6 @@ let p24Body = (~email) => [
       (
         "bank_redirect",
         [("przelewy24", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
-
-let interacBody = (~email, ~country) => [
-  ("payment_method", "bank_redirect"->JSON.Encode.string),
-  ("payment_method_type", "interac"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "bank_redirect",
-        [
-          (
-            "interac",
-            [
-              ("email", email->JSON.Encode.string),
-              ("country", country->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
       ),
     ]->Utils.getJsonFromArrayOfJson,
   ),
@@ -971,7 +967,7 @@ let appendPaymentMethodExperience = (~paymentMethod, ~paymentMethodType, ~isQrPa
   | None => paymentMethodType
   }
 
-let paymentExperiencePaymentMethods = ["affirm", "paypal"]
+let paymentExperiencePaymentMethods = ["affirm", "paypal", "klarna"]
 
 let appendPaymentExperience = (paymentBodyArr, paymentMethodType) =>
   if paymentExperiencePaymentMethods->Array.includes(paymentMethodType) {
@@ -1048,7 +1044,6 @@ let getPaymentBody = (
   | "online_banking_czech_republic" => czechOB(~bank)
   | "online_banking_slovakia" => slovakiaOB(~bank)
   | "mb_way" => mbWayBody(~phoneNumber)
-  | "interac" => interacBody(~email, ~country)
   | "przelewy24" => p24Body(~email)
   | "online_banking_fpx" => fpxOBBody(~bank)
   | "online_banking_thailand" => thailandOBBody(~bank)

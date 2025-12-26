@@ -56,6 +56,10 @@ let useScript = (src: string, ~\"type"="") => {
         () => {
           script->removeEventListener("load", setAttributeFromEvent)
           script->removeEventListener("error", setAttributeFromEvent)
+
+          if script.getAttribute("data-status") !== "ready" {
+            script.remove()
+          }
         },
       )
     }
