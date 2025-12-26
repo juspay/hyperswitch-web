@@ -17,7 +17,7 @@ type apiCallV1 =
   | FetchEligibilityCheck
   | FetchAuthenticationSync
 
-type apiCallV2 = FetchSessionsV2 | FetchIntent
+type apiCallV2 = FetchSessionsV2 | FetchIntent | CheckBalanceAndApplyPaymentMethod
 
 type commonApiParams = {
   publishableKey: option<string>,
@@ -153,6 +153,8 @@ let generateApiUrlV2 = (~params: apiParamsV2, ~apiCallType: apiCallV2) => {
   let path = switch apiCallType {
   | FetchSessionsV2 => `v2/payments/${paymentIdVal}/create-external-sdk-tokens`
   | FetchIntent => `v2/payments/${paymentIdVal}/get-intent`
+  | CheckBalanceAndApplyPaymentMethod =>
+    `v2/payments/${paymentIdVal}/eligibility/check-balance-and-apply-pm-data`
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`
