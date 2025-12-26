@@ -369,7 +369,7 @@ let make = (
           marginTop: themeObj.spacingGridColumn,
         }
         paymentMethod="card"
-        paymentMethodType="card"
+        paymentMethodType="debit"
       />
     </RenderIf>
     <RenderIf condition={!enableSavedPaymentShimmer}>

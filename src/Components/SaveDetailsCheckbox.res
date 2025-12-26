@@ -41,7 +41,7 @@ let make = (~isChecked, ~setIsChecked) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let customCardPaymentConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
     ~paymentMethod="card",
-    ~paymentMethodType="card",
+    ~paymentMethodType="debit",
   )
 
   let customMessageConfig =

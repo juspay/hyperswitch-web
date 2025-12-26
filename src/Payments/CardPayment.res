@@ -595,7 +595,7 @@ let make = (
           marginTop: themeObj.spacingGridColumn,
         }
         paymentMethod
-        paymentMethodType="card"
+        paymentMethodType="debit"
       />
     </RenderIf>
     <RenderIf condition={clickToPayCardBrand !== ""}>
