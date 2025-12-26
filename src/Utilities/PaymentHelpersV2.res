@@ -630,42 +630,36 @@ let checkBalanceAndApplyPaymentMethod = async (
   ~customPodUri,
   ~profileId,
   ~paymentId,
+  ~logger,
 ) => {
-  let baseHeaders = [
-    ("api-key", publishableKey),
-    ("Content-Type", "application/json"),
-    ("x-profile-id", profileId),
-    ("Authorization", `publishable-key=${publishableKey}, client-secret=${clientSecret}`),
-  ]
-  let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
+  let uri = APIUtils.generateApiUrlV2(
+    ~apiCallType=CheckBalanceAndApplyPaymentMethod,
+    ~params={
+      customBackendBaseUrl: Some(ApiEndpoint.getApiEndPoint(~publishableKey)),
+      publishableKey: Some(publishableKey),
+      paymentIdV2: Some(paymentId),
+    },
+  )
 
-  let xFeatureHeader = customPodUri != "" ? [("x-feature", customPodUri)] : []
-  let headers = [...baseHeaders, ...xFeatureHeader]
-  let uri = `${endpoint}/v2/payments/${paymentId}/eligibility/check-balance-and-apply-pm-data`
   let paymentMethodsJson =
     paymentMethods->Array.map(dict => dict->Dict.toArray->getJsonFromArrayOfJson)
   let body = [("payment_methods", paymentMethodsJson->JSON.Encode.array)]->getJsonFromArrayOfJson
 
-  try {
-    let resp = await fetchApi(
-      uri,
-      ~method=#POST,
-      ~bodyStr=body->JSON.stringify,
-      ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-    )
+  let onSuccess = data => data
 
-    if !(resp->Fetch.Response.ok) {
-      let _ = await resp->Fetch.Response.json
-      JSON.Encode.null
-    } else {
-      let successData = await resp->Fetch.Response.json
-      successData
-    }
-  } catch {
-  | err => {
-      let exceptionMessage = err->formatException
-      Console.error2("Error ", exceptionMessage)
-      JSON.Encode.null
-    }
-  }
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~clientSecret=Some(clientSecret),
+    ~profileId=Some(profileId),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
