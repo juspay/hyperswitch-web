@@ -235,4 +235,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_mifinity: `Mifinity`,
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
+  payment_methods_givex: `Givex`,
+  giftCardNumberLabel: `رقم بطاقة الهدايا`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `لا يمكن أن يكون رقم بطاقة الهدايا فارغًا`,
+  giftCardNumberInvalidText: `رقم بطاقة هدايا غير صالح`,
+  giftCardPinLabel: `رقم التعريف الشخصي/PIN لبطاقة الهدايا`,
+  giftCardPinPlaceholder: `123456`,
+  giftCardPinEmptyText: `لا يمكن أن يكون رقم التعريف الشخصي/PIN لبطاقة الهدايا فارغًا`,
+  giftCardPinInvalidText: `رقم تعريف شخصي/PIN غير صالح لبطاقة الهدايا`,
 }

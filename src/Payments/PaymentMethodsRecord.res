@@ -49,6 +49,8 @@ type paymentMethodsFields =
   | BankAccountNumber
   | IBAN
   | SourceBankAccountId
+  | GiftCardNumber
+  | GiftCardPin
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -643,6 +645,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     miniIcon: None,
   },
   {
+    paymentMethodName: "givex",
+    icon: Some(icon("givex", ~size=19, ~width=25)),
+    displayName: localeString.payment_methods_givex,
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "open_banking",
     icon: Some(icon("bank", ~size=19)),
     displayName: localeString.payment_methods_pay_by_bank,
@@ -673,6 +682,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_blik_code", _) => BlikCode
   | ("user_billing_name", _) => BillingName
   | ("user_card_number", true) => CardNumber
+  | ("user_gift_card_number", _) => GiftCardNumber
   | ("user_card_expiry_month", true) => CardExpiryMonth
   | ("user_card_expiry_year", true) => CardExpiryYear
   | ("user_card_cvc", true) => CardCvc
@@ -684,6 +694,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_shipping_address_state", _) => ShippingAddressState
   | ("user_crypto_currency_network", _) => CryptoCurrencyNetworks
   | ("user_date_of_birth", _) => DateOfBirth
+  | ("user_gift_card_pin", _) => GiftCardPin
   | ("user_phone_number_country_code", _) => PhoneCountryCode
   | ("user_vpa_id", _) => VpaId
   | ("user_cpf", _) => PixCPF

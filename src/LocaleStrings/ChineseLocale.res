@@ -232,4 +232,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_mifinity: `Mifinity`,
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
+  payment_methods_givex: `Givex`,
+  giftCardNumberLabel: `礼品卡号码`,
+  giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
+  giftCardNumberEmptyText: `礼品卡号码不能为空`,
+  giftCardNumberInvalidText: `无效的礼品卡号码`,
+  giftCardPinLabel: `礼品卡PIN`,
+  giftCardPinPlaceholder: `123456`,
+  giftCardPinEmptyText: `礼品卡PIN不能为空`,
+  giftCardPinInvalidText: `无效的礼品卡PIN`,
 }
