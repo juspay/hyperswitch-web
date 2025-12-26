@@ -55,7 +55,7 @@ let make = () => {
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
-    <Surcharge paymentMethod paymentMethodType="instant" />
+    <Surcharge paymentMethod paymentMethodType />
     <InfoElement />
     <Terms paymentMethodType paymentMethod />
   </div>

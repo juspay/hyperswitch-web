@@ -61,10 +61,12 @@ let make = (~isChecked, ~setIsChecked) => {
     ? ("Checkbox--checked", "CheckboxInput--checked", "CheckboxLabel--checked")
     : ("", "", "")
 
+  let customMessageConfigValue = customMessageConfig.value->Option.getOr("")
+
   let saveCardCheckboxLabel = if showPaymentMethodsScreen {
     localeString.saveCardDetails
-  } else if customMessageConfig.value->Option.isSome {
-    customMessageConfig.value->Option.getOr("")
+  } else if customMessageConfigValue->String.length > 0 {
+    customMessageConfigValue
   } else if customMessageForCardTerms->String.length > 0 {
     customMessageForCardTerms
   } else {
