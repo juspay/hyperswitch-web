@@ -362,7 +362,7 @@ let make = (
               placeholder="1234 1234 1234 1234"
               autocomplete="cc-number"
             />
-          | GiftCardNumber => <GiftCardPaymentInput fieldType="giftCardNumber" />
+          | GiftCardNumber => <GiftCardNumberInput />
           | CardExpiryMonth
           | CardExpiryYear
           | CardExpiryMonthAndYear =>
@@ -402,7 +402,7 @@ let make = (
               placeholder="123"
               autocomplete="cc-csc"
             />
-          | GiftCardPin => <GiftCardPaymentInput fieldType="giftCardPin" />
+          | GiftCardPin => <GiftCardPinInput />
 
           | CardExpiryAndCvc =>
             <div className="flex gap-10">

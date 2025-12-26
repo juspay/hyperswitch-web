@@ -1783,5 +1783,3 @@ let defaultCountryCode = {
   let clientCountry = getClientCountry(clientTimeZone)
   clientCountry.isoAlpha2
 }
-
-let filterAlphanumeric = str => str->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")

@@ -234,7 +234,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
-  haveGiftCardText: `Masz kartę podarunkową?`,
   giftCardNumberLabel: `Numer karty podarunkowej`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `Numer karty podarunkowej nie może być pusty`,
