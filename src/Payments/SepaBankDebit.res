@@ -1,6 +1,5 @@
 open RecoilAtoms
 open Utils
-open PaymentModeType
 
 @react.component
 let make = () => {
@@ -21,8 +20,11 @@ let make = () => {
     [paymentMethodListValue.payment_methods],
   )
 
+  let paymentMethodType = "sepa"
+  let paymentMethod = "bank_debit"
+
   let isVerifyPMAuthConnectorConfigured =
-    displaySavedPaymentMethods && pmAuthMapper->Dict.get("sepa")->Option.isSome
+    displaySavedPaymentMethods && pmAuthMapper->Dict.get(paymentMethodType)->Option.isSome
 
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
@@ -34,8 +36,8 @@ let make = () => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let body = switch GlobalVars.sdkVersion {
-    | V1 => PaymentBody.dynamicPaymentBody("bank_debit", "sepa")
-    | V2 => PaymentBodyV2.dynamicPaymentBodyV2("bank_debit", "sepa")
+    | V1 => PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)
+    | V2 => PaymentBodyV2.dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
     }
     if confirm.doSubmit {
       if areRequiredFieldsValid && !areRequiredFieldsEmpty {
@@ -60,15 +62,15 @@ let make = () => {
   useSubmitPaymentData(submitCallback)
 
   isVerifyPMAuthConnectorConfigured
-    ? <AddBankDetails paymentMethodType="sepa" />
+    ? <AddBankDetails paymentMethodType />
     : <div
         className="flex flex-col animate-slowShow"
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
         }>
-        <DynamicFields paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody />
-        <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
-        <Terms mode=SepaBankDebit />
+        <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
+        <Surcharge paymentMethod paymentMethodType />
+        <Terms paymentMethod paymentMethodType />
       </div>
 }
 

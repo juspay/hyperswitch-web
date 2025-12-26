@@ -10,7 +10,6 @@ let make = (
   ~isVault=None,
 ) => {
   open PaymentType
-  open PaymentModeType
   open Utils
   open UtilityHooks
   open PaymentTypeContext
@@ -591,25 +590,13 @@ let make = (
       <Surcharge paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType} />
     </RenderIf>
     <RenderIf condition={!isBancontact}>
-      {switch (
-        paymentMethodListValue.mandate_payment,
-        options.terms.card,
-        paymentMethodListValue.payment_type,
-      ) {
-      | (Some(_), Auto, NEW_MANDATE)
-      | (Some(_), Auto, SETUP_MANDATE)
-      | (_, Always, NEW_MANDATE)
-      | (_, Always, SETUP_MANDATE)
-      | (_, _, SETUP_MANDATE)
-      | (_, _, NEW_MANDATE) =>
-        <Terms
-          mode={Card}
-          styles={
-            marginTop: themeObj.spacingGridColumn,
-          }
-        />
-      | (_, _, _) => React.null
-      }}
+      <Terms
+        styles={
+          marginTop: themeObj.spacingGridColumn,
+        }
+        paymentMethod
+        paymentMethodType
+      />
     </RenderIf>
     <RenderIf condition={clickToPayCardBrand !== ""}>
       <div className="space-y-3 mt-2">

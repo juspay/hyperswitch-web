@@ -46,10 +46,14 @@ let make = () => {
   }, (email, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
+  let paymentMethodType = "ach"
+  let paymentMethod = "bank_transfer"
+
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields paymentMethod="bank_transfer" paymentMethodType="ach" setRequiredFieldsBody />
-    <Surcharge paymentMethod="bank_transfer" paymentMethodType="ach" />
+    <DynamicFields paymentMethodType paymentMethod setRequiredFieldsBody />
+    <Surcharge paymentMethodType paymentMethod />
     <InfoElement />
+    <Terms paymentMethodType paymentMethod />
   </div>
 }
 
