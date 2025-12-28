@@ -11,3 +11,10 @@ let paymentMethodListValueV2 = Recoil.atom(
 )
 let vaultPublishableKey = Recoil.atom("vaultPublishableKey", "")
 let vaultProfileId = Recoil.atom("vaultProfileId", "")
+let giftCardInfoAtom: Recoil.recoilAtom<GiftCardTypes.giftCardInfo> = Recoil.atom(
+  "giftCardInfo",
+  GiftCardTypes.defaultGiftCardInfo,
+)
+
+let areRequiredFieldsValidSplit = Recoil.atom("areRequiredFieldsValidSplit", true)
+let areRequiredFieldsEmptySplit = Recoil.atom("areRequiredFieldsEmptySplit", false)

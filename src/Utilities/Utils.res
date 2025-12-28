@@ -1809,3 +1809,13 @@ let defaultCountryCode = {
   let clientCountry = getClientCountry(clientTimeZone)
   clientCountry.isoAlpha2
 }
+
+let getGiftCardDataFromRequiredFieldsBody = requiredFieldsBody => {
+  let giftCardTuples = []->mergeAndFlattenToTuples(requiredFieldsBody)
+  let data =
+    giftCardTuples
+    ->getJsonFromArrayOfJson
+    ->getDictFromJson
+    ->getDictFromDict("payment_method_data")
+  data
+}

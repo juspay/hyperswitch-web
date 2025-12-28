@@ -1,0 +1,239 @@
+open RecoilAtoms
+
+@react.component
+let make = () => {
+  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
+  let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
+  let (giftCardInfo, setGiftCardInfo) = Recoil.useRecoilState(RecoilAtomsV2.giftCardInfoAtom)
+  let appliedGiftCards = giftCardInfo.appliedGiftCards
+  let remainingAmount = giftCardInfo.remainingAmount
+  let (showGiftCardForm, setShowGiftCardForm) = React.useState(_ => false)
+  let (selectedGiftCard, setSelectedGiftCard) = React.useState(_ => "")
+  let (remainingCurrency, setRemainingCurrency) = React.useState(_ => "")
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+
+  let giftCardOptions = React.useMemo(() => {
+    switch paymentMethodsListV2 {
+    | LoadedV2(data) =>
+      data.paymentMethodsEnabled
+      ->Array.filter(method => method.paymentMethodType === "gift_card")
+      ->Array.map(method => method.paymentMethodSubtype)
+    | _ => []
+    }
+  }, [paymentMethodsListV2])
+  let giftCardOptionsAvailable = giftCardOptions->Array.length > 0
+  let noGiftCardOptionAvailable = giftCardOptions->Array.length === 0
+  let hasAppliedGiftCards = appliedGiftCards->Array.length > 0
+
+  let giftCardDropdownOptions = React.useMemo(() => {
+    let baseOptions = giftCardOptions->Array.map(giftCardType => {
+      let displayName = switch giftCardType {
+      | "givex" => "Givex"
+      | _ => giftCardType->Utils.snakeToTitleCase
+      }
+      {
+        DropdownField.value: giftCardType,
+        label: displayName,
+      }
+    })
+    baseOptions
+  }, giftCardOptions)
+
+  let handleRemainingAmountUpdate = (amount, currency) => {
+    setGiftCardInfo(prev => {...prev, remainingAmount: amount})
+    setRemainingCurrency(_ => currency)
+  }
+
+  let handleToggleGiftCardForm = () => {
+    setShowGiftCardForm(prev => !prev)
+    if showGiftCardForm {
+      setSelectedGiftCard(_ => "")
+    }
+  }
+
+  let removeGiftCard = async giftCardId => {
+    let updatedCards = appliedGiftCards->Array.filter(card => card.id !== giftCardId)
+    setGiftCardInfo(prev => {...prev, appliedGiftCards: updatedCards})
+
+    if updatedCards->Array.length === 0 {
+      setGiftCardInfo(prev => {...prev, remainingAmount: 0.0})
+      setRemainingCurrency(_ => "")
+    } else {
+      let clientSecret = keys.clientSecret->Option.getOr("")
+      let publishableKey = keys.publishableKey
+      let profileId = keys.profileId
+      let paymentId = keys.paymentId
+
+      let paymentMethods = updatedCards->Array.map(card => {
+        Utils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
+      })
+
+      try {
+        let applyResponse = await PaymentHelpersV2.checkBalanceAndApplyPaymentMethod(
+          ~paymentMethods,
+          ~clientSecret,
+          ~publishableKey,
+          ~customPodUri,
+          ~profileId,
+          ~paymentId,
+          ~logger=loggerState,
+        )
+        let applyResponseDict = applyResponse->Utils.getDictFromJson
+        let remainingAmount = applyResponseDict->Utils.getFloat("remaining_amount", 0.0)
+        let currency = applyResponseDict->Utils.getString("currency", "USD")
+        handleRemainingAmountUpdate(remainingAmount, currency)
+      } catch {
+      | _ => ()
+      }
+    }
+  }
+
+  let handleGiftCardAdded = newGiftCard => {
+    setGiftCardInfo(prev => {
+      ...prev,
+      appliedGiftCards: Array.concat(prev.appliedGiftCards, [newGiftCard]),
+    })
+    setSelectedGiftCard(_ => "")
+    setShowGiftCardForm(_ => false)
+  }
+
+  let totalDiscount = React.useMemo(() => {
+    let total = appliedGiftCards->Array.reduce(0.0, (acc, card) => {
+      acc +. card.balance
+    })
+    total
+  }, [appliedGiftCards])
+
+  let appliedCardsMessage = React.useMemo(() =>
+    `${appliedGiftCards
+      ->Array.length
+      ->Int.toString} gift card already applied.`
+  , [appliedGiftCards])
+
+  <>
+    <div
+      className="w-full mb-4 border rounded-lg transition-colors"
+      style={
+        borderColor: themeObj.borderColor,
+        backgroundColor: themeObj.colorBackground,
+      }>
+      <div
+        className="flex flex-row items-center justify-between w-full p-3 px-4 cursor-pointer"
+        onClick={_ => handleToggleGiftCardForm()}>
+        <div className="flex flex-row items-center gap-2">
+          <span className="text-base font-small" style={color: themeObj.colorText}>
+            <Icon size={16} name="gift-cards" />
+          </span>
+          <span className="text-base font-medium" style={color: themeObj.colorText}>
+            {localeString.giftCardSectionTitle->React.string}
+          </span>
+        </div>
+        <span className="text-base font-small" style={color: themeObj.colorText}>
+          {showGiftCardForm
+            ? <Icon name="arrow-up" size={14} />
+            : <Icon name="arrow-down" size={14} />}
+        </span>
+      </div>
+      <RenderIf condition={showGiftCardForm}>
+        <div className="flex flex-col gap-4 w-full p-4 pt-0">
+          <div className="flex flex-col gap-2">
+            <RenderIf condition={giftCardOptionsAvailable}>
+              <DropdownField
+                appearance=config.appearance
+                fieldName="Select gift card"
+                value=selectedGiftCard
+                setValue=setSelectedGiftCard
+                disabled={hasAppliedGiftCards}
+                options=giftCardDropdownOptions
+              />
+            </RenderIf>
+            <RenderIf condition={noGiftCardOptionAvailable}>
+              <div className="p-3 text-center text-gray-500">
+                {"No gift cards available"->React.string}
+              </div>
+            </RenderIf>
+          </div>
+          <RenderIf condition={hasAppliedGiftCards}>
+            <div className="p-3 rounded-lg bg-blue-50">
+              <div className="flex items-center gap-2 text-sm text-blue-700">
+                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                  <span className="text-white text-xs"> {"!"->React.string} </span>
+                </div>
+                {<span> {appliedCardsMessage->React.string} </span>}
+              </div>
+            </div>
+          </RenderIf>
+          <GiftCardForm
+            selectedGiftCard
+            isDisabled={hasAppliedGiftCards}
+            onGiftCardAdded={handleGiftCardAdded}
+            onRemainingAmountUpdate={handleRemainingAmountUpdate}
+          />
+        </div>
+      </RenderIf>
+    </div>
+    <RenderIf condition={hasAppliedGiftCards}>
+      <div className="w-full mb-4">
+        {appliedGiftCards
+        ->Array.mapWithIndex((card, index) => {
+          let displayName = card.giftCardType->String.toUpperCase ++ " Card"
+          let maskedNumber = card.maskedNumber
+          <div
+            key={index->Int.toString}
+            className="flex items-center justify-between p-4 mb-3 rounded-lg border"
+            style={
+              borderColor: themeObj.borderColor,
+              backgroundColor: themeObj.colorBackground,
+            }>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 flex items-center justify-center">
+                {switch card.giftCardType->String.toLowerCase {
+                | "givex" => <Icon name="givex" size=19 width=25 />
+                | _ => <Icon name="gift-cards" size=16 />
+                }}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium" style={color: themeObj.colorText}>
+                  {`${displayName} ${maskedNumber}`->React.string}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-green-850">
+                {`${card.currency} ${card.balance->Float.toString} applied`->React.string}
+              </span>
+              <button
+                className="w-5 h-5 flex items-center justify-center"
+                onClick={_ => {removeGiftCard(card.id)->ignore}}>
+                <Icon name="cross" size=16 />
+              </button>
+            </div>
+          </div>
+        })
+        ->React.array}
+      </div>
+    </RenderIf>
+    <RenderIf condition={hasAppliedGiftCards}>
+      <div
+        className="w-full p-4 mb-3 rounded-lg bg-blue-100"
+        style={
+          borderColor: themeObj.borderColor,
+        }>
+        <div className="text-sm text-black">
+          <span className="font-medium">
+            {`Total ${remainingCurrency} ${totalDiscount->Float.toString} applied.`->React.string}
+          </span>
+          <span>
+            {(
+              remainingAmount === 0.0
+                ? " No remaining amount to pay. Please proceed with payment."
+                : ` Pay remaining ${remainingCurrency} ${remainingAmount->Float.toString} with other payment method below.`
+            )->React.string}
+          </span>
+        </div>
+      </div>
+    </RenderIf>
+  </>
+}

@@ -28,6 +28,8 @@ let make = (
   ~cvcProps=None,
   ~isBancontact=false,
   ~isSaveDetailsWithClickToPay=false,
+  ~disableInfoElement=false,
+  ~useSplitAtoms: bool=false,
 ) => {
   open DynamicFieldsUtils
   open PaymentTypeContext
@@ -286,6 +288,7 @@ let make = (
     ~cardExpiry,
     ~cvcNumber,
     ~isSavedCardFlow,
+    ~useSplitAtoms,
   )
 
   useSetInitialRequiredFields(
@@ -845,7 +848,7 @@ let make = (
         </div>
       </RenderIf>
       <Surcharge paymentMethod paymentMethodType />
-      <RenderIf condition={isInfoElementPresent}>
+      <RenderIf condition={isInfoElementPresent && !disableInfoElement}>
         {<>
           {if fieldsArr->Array.length > 1 {
             bottomElement
