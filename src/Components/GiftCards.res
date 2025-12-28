@@ -137,9 +137,7 @@ let make = () => {
 
       intent(
         ~bodyArr={
-          splitPaymentBodyArr->Array.length === 0
-            ? primaryBody
-            : primaryBody->Array.concat(splitPaymentBodyArr)
+          primaryBody->Array.concat(splitPaymentBodyArr)
         },
         ~confirmParam=confirm.confirmParams,
         ~handleUserError=false,
