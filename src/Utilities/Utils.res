@@ -1819,3 +1819,5 @@ let getGiftCardDataFromRequiredFieldsBody = requiredFieldsBody => {
     ->getDictFromDict("payment_method_data")
   data
 }
+
+let selectAtom = (useSplit, splitAtom, normalAtom) => useSplit ? splitAtom : normalAtom
