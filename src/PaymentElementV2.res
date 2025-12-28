@@ -31,7 +31,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (dropDownOptions: array<string>, setDropDownOptions) = React.useState(_ => [])
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-
+  let intentList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.intentList)
+  let isGiftCardOnlyPayment = GiftCardHooks.useIsGiftCardOnlyPayment()
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
 
   let (walletsList, paymentOptionsList, actualList) = PaymentUtilsV2.useGetPaymentMethodListV2(
@@ -67,23 +68,43 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [sessionToken])
 
+  let giftCardOptions = React.useMemo(() => {
+    switch paymentMethodsListV2 {
+    | LoadedV2(data) =>
+      data.paymentMethodsEnabled
+      ->Array.filter(method => method.paymentMethodType === "gift_card")
+      ->Array.map(method => method.paymentMethodSubtype)
+    | _ => []
+    }
+  }, [paymentMethodsListV2])
+
   React.useEffect(() => {
     let updatePaymentOptions = () => {
-      setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
+      let check = switch intentList {
+      | LoadedIntent(intent) => intent.splitTxnsEnabled === "enable"
+      | _ => false // Don't show by default when intent is not loaded yet
+      }
+      let filteredOptions = check
+        ? paymentOptionsList->Array.filter(option =>
+            Array.includes(giftCardOptions, option) == false
+          )
+        : paymentOptionsList
+      setPaymentOptions(_ => [...filteredOptions]->removeDuplicate)
     }
 
-    switch (paymentManagementList, paymentMethodsListV2) {
-    | (LoadedV2(paymentlist), _) =>
+    switch (paymentManagementList, paymentMethodsListV2, intentList) {
+    | (LoadedV2(paymentlist), _, LoadedIntent(_)) =>
       updatePaymentOptions()
       setPaymentManagementListValue(_ => paymentlist)
-    | (_, LoadedV2(paymentlist)) =>
+    | (_, LoadedV2(paymentlist), LoadedIntent(_)) =>
       setWalletOptions(_ => walletsList)
       updatePaymentOptions()
       setPaymentMethodListValueV2(_ => paymentlist)
-    | (LoadErrorV2(_), _)
-    | (_, LoadErrorV2(_))
-    | (SemiLoadedV2, _)
-    | (_, SemiLoadedV2) =>
+    | (LoadErrorV2(_), _, _)
+    | (_, LoadErrorV2(_), _)
+    | (SemiLoadedV2, _, _)
+    | (_, SemiLoadedV2, _)
+    | (_, _, Error(_)) =>
       // TODO - For Payments CheckPriorityList
       // TODO - For PaymentMethodsManagement Cards
       setPaymentOptions(_ => [])
@@ -91,7 +112,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
 
     None
-  }, (paymentManagementList, paymentOptionsList, actualList, paymentMethodsListV2))
+  }, (
+    paymentManagementList,
+    paymentOptionsList,
+    actualList,
+    paymentMethodsListV2,
+    giftCardOptions,
+    intentList,
+  ))
 
   React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
@@ -137,7 +165,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit && selectedOption == "" {
+    if confirm.doSubmit && selectedOption == "" && !isGiftCardOnlyPayment {
       postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
     }
   }, [selectedOption])
@@ -266,41 +294,56 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
-    <RenderIf condition={paymentOptions->Array.length > 0 || walletOptions->Array.length > 0}>
+    <RenderIf
+      condition={paymentOptions->Array.length > 0 ||
+      walletOptions->Array.length > 0 ||
+      giftCardOptions->Array.length > 0}>
       <div className="flex flex-col place-items-center">
-        <ErrorBoundary
-          key="payment_request_buttons_all"
-          level={ErrorBoundary.RequestButton}
-          componentName="PaymentRequestButtonElement">
-          <PaymentRequestButtonElement sessions walletOptions />
-        </ErrorBoundary>
-        <RenderIf
-          condition={paymentOptions->Array.length > 0 &&
-          walletOptions->Array.length > 0 &&
-          checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
-          <Or />
+        <RenderIf condition={!isGiftCardOnlyPayment}>
+          <ErrorBoundary
+            key="payment_request_buttons_all"
+            level={ErrorBoundary.RequestButton}
+            componentName="PaymentRequestButtonElement">
+            <PaymentRequestButtonElement sessions walletOptions />
+          </ErrorBoundary>
+          <RenderIf
+            condition={paymentOptions->Array.length > 0 &&
+            walletOptions->Array.length > 0 &&
+            checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
+            <Or />
+          </RenderIf>
         </RenderIf>
-        {switch layoutClass.\"type" {
-        | Tabs =>
-          <PaymentOptions
-            setCardsContainerWidth
-            cardOptions
-            dropDownOptions
-            checkoutEle
-            cardShimmerCount
-            cardProps
-            expiryProps
-          />
-        | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps expiryProps />
-        }}
+        <RenderIf
+          condition={switch intentList {
+          | LoadedIntent(intent) => intent.splitTxnsEnabled === "enable"
+          | _ => false // Don't show by default when intent is not loaded yet
+          }}>
+          <GiftCards />
+        </RenderIf>
+        <RenderIf condition={!isGiftCardOnlyPayment}>
+          {switch layoutClass.\"type" {
+          | Tabs =>
+            <PaymentOptions
+              setCardsContainerWidth
+              cardOptions
+              dropDownOptions
+              checkoutEle
+              cardShimmerCount
+              cardProps
+              expiryProps
+            />
+          | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps expiryProps />
+          }}
+        </RenderIf>
       </div>
     </RenderIf>
-    {switch (paymentManagementList, paymentMethodsListV2) {
-    | (LoadErrorV2(_), _) =>
+    {switch (paymentManagementList, paymentMethodsListV2, intentList) {
+    | (_, _, Error(_)) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+    | (LoadErrorV2(_), _, _) =>
       <RenderIf condition={paymentManagementListValue.paymentMethodsEnabled->Array.length === 0}>
         <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
       </RenderIf>
-    | (_, LoadErrorV2(_)) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+    | (_, LoadErrorV2(_), _) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
     | _ =>
       <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
         <PaymentElementShimmer />

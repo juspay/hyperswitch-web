@@ -1187,12 +1187,12 @@ let usePaymentIntent = (optLogger, paymentType) => {
         ]
       | V2 => {
           let authorizationHeader = (
-            "authorization",
+            "Authorization",
             `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
           )
           [
             authorizationHeader,
-            ("X-profile-id", keys.profileId),
+            ("x-profile-id", keys.profileId),
             ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
           ]
         }

@@ -66,3 +66,23 @@ let getPaymentBody = (
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
   | _ => dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
   }
+
+let createGiftCardBody = (~giftCardType, ~requiredFieldsBody) => {
+  [
+    ("payment_method_type", "gift_card"->JSON.Encode.string),
+    ("payment_method_subtype", giftCardType->JSON.Encode.string),
+  ]->mergeAndFlattenToTuples(requiredFieldsBody)
+}
+
+let createSplitPaymentBodyForGiftCards = (
+  appliedGiftCards: array<GiftCardTypes.appliedGiftCard>,
+) => {
+  let splitPaymentMethodData = appliedGiftCards->Array.map(giftCard => {
+    createGiftCardBody(
+      ~giftCardType=giftCard.giftCardType,
+      ~requiredFieldsBody=giftCard.requiredFieldsBody,
+    )->getJsonFromArrayOfJson
+  })
+
+  [("split_payment_method_data", splitPaymentMethodData->JSON.Encode.array)]
+}

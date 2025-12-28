@@ -236,6 +236,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  giftCardSectionTitle: `هل لديك بطاقة هدايا؟`,
   giftCardNumberLabel: `رقم بطاقة الهدايا`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `لا يمكن أن يكون رقم بطاقة الهدايا فارغًا`,

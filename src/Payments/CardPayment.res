@@ -33,6 +33,7 @@ let make = (
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
+  let giftCardInfo = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.giftCardInfoAtom)
   let isPMMFlow = switch paymentTypeFromUrl {
   | PaymentMethodsManagement => true
   | _ => false
@@ -390,9 +391,19 @@ let make = (
             ~handleUserError=true,
           )
         } else {
+          let modifiedCardBody = if giftCardInfo.appliedGiftCards->Array.length > 0 {
+            let giftCardSplitBody = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
+              giftCardInfo.appliedGiftCards,
+            )
+            let giftCardDict = giftCardSplitBody->getJsonFromArrayOfJson->getDictFromJson
+            cardBody->mergeAndFlattenToTuples(giftCardDict)
+          } else {
+            cardBody
+          }
+
           intent(
             ~bodyArr={
-              (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(
+              (isBancontact ? banContactBody : modifiedCardBody)->mergeAndFlattenToTuples(
                 requiredFieldsBody,
               )
             },
@@ -444,6 +455,7 @@ let make = (
     clickToPayCardBrand,
     isClickToPayRememberMe,
     blockedBinsList,
+    giftCardInfo,
   ))
   useSubmitPaymentData(submitCallback)
 

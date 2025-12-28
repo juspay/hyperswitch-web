@@ -18,6 +18,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let (isFocus, setIsFocus) = React.useState(_ => false)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(logger), Card)
+  let isGiftCardOnlyPayment = GiftCardHooks.useIsGiftCardOnlyPayment()
 
   let paymentType = React.useMemo1(() => {
     paymentMode->getPaymentMode
@@ -133,7 +134,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       let json = ev.data->safeParse
       let jsonDict = json->getDictFromJson
       let confirm = jsonDict->ConfirmType.itemToObjMapper
-      if confirm.doSubmit {
+      if confirm.doSubmit && !isGiftCardOnlyPayment {
         submitValue(ev, confirm.confirmParams)
       }
     }
