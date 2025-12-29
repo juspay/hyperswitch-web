@@ -1216,57 +1216,23 @@ let overrideFieldsToExcludeFromMasking = [
 
 let normalizePath = path => path->String.replaceRegExp(%re("/\[(\d+)\]/g"), "")
 
-let pathMatchesPattern = (path, pattern) => normalizePath(path) == normalizePath(pattern)
-
-let pathStartsWithPattern = (path, pattern) => {
-  let normalizedPath = normalizePath(path)
-  let normalizedPattern = normalizePath(pattern)
-
+let isPathStartsWithPattern = (normalizedPath, normalizedPattern) =>
   normalizedPath == normalizedPattern || normalizedPath->String.startsWith(normalizedPattern ++ ".")
-}
 
 let shouldMaskField = path => {
-  let isOverridden =
-    overrideFieldsToExcludeFromMasking->Array.some(pattern => pathMatchesPattern(path, pattern))
-  isOverridden
-    ? true
-    : !(fieldsToExcludeFromMasking->Array.some(pattern => pathStartsWithPattern(path, pattern)))
-}
-
-let rec sanitizeJsonValue = (~value, ~currentPath, ~depth) => {
-  if depth > 10 {
-    "***MAX_DEPTH_REACHED***"->JSON.Encode.string
-  } else {
-    switch value->JSON.Classify.classify {
-    | String(str) =>
-      currentPath->shouldMaskField
-        ? (str->String.length > 0 ? "***REDACTED***" : "***EMPTY***")->JSON.Encode.string
-        : value
-
-    | Object(dict) =>
-      dict
-      ->Dict.toArray
-      ->Array.map(((key, val)) => {
-        let newPath = currentPath == "" ? key : `${currentPath}.${key}`
-        (key, sanitizeJsonValue(~value=val, ~currentPath=newPath, ~depth=depth + 1))
-      })
-      ->getJsonFromArrayOfJson
-    | Array(arr) =>
-      arr
-      ->Array.mapWithIndex((item, index) => {
-        let newPath = `${currentPath}[${index->Int.toString}]`
-        sanitizeJsonValue(~value=item, ~currentPath=newPath, ~depth=depth + 1)
-      })
-      ->JSON.Encode.array
-    | _ => value
-    }
-  }
+  let normalizedPath = normalizePath(path)
+  let isOverridden = overrideFieldsToExcludeFromMasking->Array.includes(normalizedPath)
+  let isExcluded =
+    fieldsToExcludeFromMasking->Array.some(pattern =>
+      isPathStartsWithPattern(normalizedPath, normalizePath(pattern))
+    )
+  isOverridden || !isExcluded
 }
 
 let sanitizePaymentElementOptions = dict => {
   dict
   ->JSON.Encode.object
-  ->(val => sanitizeJsonValue(~value=val, ~currentPath="", ~depth=0))
+  ->(Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField))
   ->getDictFromJson
 }
 
