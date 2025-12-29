@@ -736,3 +736,16 @@ let useEmitPaymentMethodInfo = (
 let checkRenderOrComp = (~walletOptions, isShowOrPayUsing) => {
   walletOptions->Array.includes("paypal") || isShowOrPayUsing
 }
+
+let getGiftCardDataFromRequiredFieldsBody = requiredFieldsBody => {
+  open Utils
+  let giftCardTuples = []->mergeAndFlattenToTuples(requiredFieldsBody)
+  let data =
+    giftCardTuples
+    ->getJsonFromArrayOfJson
+    ->getDictFromJson
+    ->getDictFromDict("payment_method_data")
+  data
+}
+
+let selectAtom = (useSplit, splitAtom, normalAtom) => useSplit ? splitAtom : normalAtom

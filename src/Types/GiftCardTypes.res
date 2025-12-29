@@ -4,7 +4,7 @@ type appliedGiftCard = {
   balance: float,
   currency: string,
   id: string,
-  requiredFieldsBody: Dict.t<Core__JSON.t>,
+  requiredFieldsBody: Dict.t<JSON.t>,
 }
 
 type giftCardInfo = {

@@ -33,23 +33,21 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
       )
     } else if areRequiredFieldsValid && !areRequiredFieldsEmpty {
       setIsSubmitting(_ => true)
-      let clientSecret = keys.clientSecret->Option.getOr("")
-      let publishableKey = keys.publishableKey
-      let profileId = keys.profileId
-      let paymentId = keys.paymentId
+      let {clientSecret, publishableKey, profileId, paymentId} = keys
+      let clientSecretVal = clientSecret->Option.getOr("")
 
       let appliedGiftCardPaymentMethods = appliedGiftCards->Array.map(card => {
-        Utils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
+        PaymentUtils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
       })
 
-      let newGiftCardData = Utils.getGiftCardDataFromRequiredFieldsBody(requiredFieldsBody)
+      let newGiftCardData = PaymentUtils.getGiftCardDataFromRequiredFieldsBody(requiredFieldsBody)
 
       let paymentMethods = Array.concat(appliedGiftCardPaymentMethods, [newGiftCardData])
 
       try {
         let response = await PaymentHelpersV2.checkBalanceAndApplyPaymentMethod(
           ~paymentMethods,
-          ~clientSecret,
+          ~clientSecret=clientSecretVal,
           ~publishableKey,
           ~customPodUri,
           ~profileId,
@@ -87,7 +85,7 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
                 | Some(successJson) =>
                   let successDict = successJson->Utils.getDictFromJson
                   let applicableAmount = successDict->Utils.getFloat("applicable_amount", 0.0)
-                  let currency = successDict->Utils.getString("currency", "USD")
+                  let currency = successDict->Utils.getString("currency", "")
 
                   let newGiftCard: GiftCardTypes.appliedGiftCard = {
                     giftCardType: selectedGiftCard,
@@ -112,7 +110,7 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
             })
 
             let remainingAmount = responseDict->Utils.getFloat("remaining_amount", 0.0)
-            let responseCurrency = responseDict->Utils.getString("currency", "USD")
+            let responseCurrency = responseDict->Utils.getString("currency", "")
 
             onRemainingAmountUpdate(remainingAmount, responseCurrency)
 
@@ -140,7 +138,7 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
         paymentMethodType={selectedGiftCard}
         setRequiredFieldsBody
         disableInfoElement=true
-        useSplitAtoms=true
+        splitAtomsEnabled=true
       />
     </RenderIf>
     <div className="flex flex-col justify-end w-full">
