@@ -1,5 +1,5 @@
 @react.component
-let make = (~label="") => {
+let make = (~fieldType="") => {
   open RecoilAtoms
   open Utils
 
@@ -48,9 +48,8 @@ let make = (~label="") => {
     }
   }
 
-  let onChange = ev => {
-    let val = ReactEvent.Form.target(ev)["value"]
-    switch label {
+  let validateAndSetPixValue = val => {
+    switch fieldType {
     | "pixKey" => setPixKey(_ => val->validatePixKey)
     | "pixCNPJ" => setPixCNPJ(_ => val->validatePixCNPJ)
     | "pixCPF" => setPixCPF(_ => val->validatePixCPF)
@@ -58,14 +57,14 @@ let make = (~label="") => {
     }
   }
 
+  let onChange = ev => {
+    let val = ReactEvent.Form.target(ev)["value"]
+    val->validateAndSetPixValue
+  }
+
   let onBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]
-    switch label {
-    | "pixKey" => setPixKey(_ => val->validatePixKey)
-    | "pixCNPJ" => setPixCNPJ(_ => val->validatePixCNPJ)
-    | "pixCPF" => setPixCPF(_ => val->validatePixCPF)
-    | _ => ()
-    }
+    val->validateAndSetPixValue
   }
 
   let submitCallback = React.useCallback((ev: Window.event) => {
@@ -102,7 +101,7 @@ let make = (~label="") => {
   useSubmitPaymentData(submitCallback)
 
   <>
-    <RenderIf condition={label === "pixKey"}>
+    <RenderIf condition={fieldType === "pixKey"}>
       <PaymentField
         fieldName={localeString.pixKeyLabel}
         setValue=setPixKey
@@ -116,7 +115,7 @@ let make = (~label="") => {
         paymentType=Payment
       />
     </RenderIf>
-    <RenderIf condition={label === "pixCPF"}>
+    <RenderIf condition={fieldType === "pixCPF"}>
       <PaymentField
         fieldName={localeString.pixCPFLabel}
         setValue=setPixCPF
@@ -131,7 +130,7 @@ let make = (~label="") => {
         paymentType=Payment
       />
     </RenderIf>
-    <RenderIf condition={label === "pixCNPJ"}>
+    <RenderIf condition={fieldType === "pixCNPJ"}>
       <PaymentField
         fieldName={localeString.pixCNPJLabel}
         setValue=setPixCNPJ
