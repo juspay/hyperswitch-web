@@ -194,7 +194,7 @@ let useRequiredFieldsEmptyAndValid = (
   ~cardExpiry,
   ~cvcNumber,
   ~isSavedCardFlow,
-  ~useSplitAtoms: bool=false,
+  ~splitAtomsEnabled: bool=false,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
@@ -214,16 +214,16 @@ let useRequiredFieldsEmptyAndValid = (
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
   let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
-    Utils.selectAtom(
-      useSplitAtoms,
+    PaymentUtils.selectAtom(
+      splitAtomsEnabled,
       RecoilAtomsV2.areRequiredFieldsValidSplit,
       areRequiredFieldsValid,
     ),
   )
 
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(
-    Utils.selectAtom(
-      useSplitAtoms,
+    PaymentUtils.selectAtom(
+      splitAtomsEnabled,
       RecoilAtomsV2.areRequiredFieldsEmptySplit,
       areRequiredFieldsEmpty,
     ),

@@ -24,7 +24,6 @@ let make = () => {
     }
   }, [paymentMethodsListV2])
   let giftCardOptionsAvailable = giftCardOptions->Array.length > 0
-  let noGiftCardOptionAvailable = giftCardOptions->Array.length === 0
   let hasAppliedGiftCards = appliedGiftCards->Array.length > 0
 
   let giftCardDropdownOptions = React.useMemo(() => {
@@ -67,7 +66,7 @@ let make = () => {
       let paymentId = keys.paymentId
 
       let paymentMethods = updatedCards->Array.map(card => {
-        Utils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
+        PaymentUtils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
       })
 
       try {
@@ -82,7 +81,7 @@ let make = () => {
         )
         let applyResponseDict = applyResponse->Utils.getDictFromJson
         let remainingAmount = applyResponseDict->Utils.getFloat("remaining_amount", 0.0)
-        let currency = applyResponseDict->Utils.getString("currency", "USD")
+        let currency = applyResponseDict->Utils.getString("currency", "")
         handleRemainingAmountUpdate(remainingAmount, currency)
       } catch {
       | _ => ()
@@ -106,11 +105,14 @@ let make = () => {
     total
   }, [appliedGiftCards])
 
-  let appliedCardsMessage = React.useMemo(() =>
-    `${appliedGiftCards
-      ->Array.length
-      ->Int.toString} gift card already applied.`
-  , [appliedGiftCards])
+  let appliedCardsMessage = `${appliedGiftCards
+    ->Array.length
+    ->Int.toString} gift card already applied.`
+
+  let giftCardPaymentInfoMessage =
+    remainingAmount === 0.0
+      ? " No remaining amount to pay. Please proceed with payment."
+      : ` Pay remaining ${remainingCurrency} ${remainingAmount->Float.toString} with other payment method below.`
 
   <>
     <div
@@ -149,7 +151,7 @@ let make = () => {
                 options=giftCardDropdownOptions
               />
             </RenderIf>
-            <RenderIf condition={noGiftCardOptionAvailable}>
+            <RenderIf condition={!giftCardOptionsAvailable}>
               <div className="p-3 text-center text-gray-500">
                 {"No gift cards available"->React.string}
               </div>
@@ -225,13 +227,7 @@ let make = () => {
           <span className="font-medium">
             {`Total ${remainingCurrency} ${totalDiscount->Float.toString} applied.`->React.string}
           </span>
-          <span>
-            {(
-              remainingAmount === 0.0
-                ? " No remaining amount to pay. Please proceed with payment."
-                : ` Pay remaining ${remainingCurrency} ${remainingAmount->Float.toString} with other payment method below.`
-            )->React.string}
-          </span>
+          <span> {giftCardPaymentInfoMessage->React.string} </span>
         </div>
       </div>
     </RenderIf>
