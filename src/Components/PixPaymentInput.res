@@ -10,13 +10,12 @@ let make = (~fieldType="") => {
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
   let inputRef = React.useRef(Nullable.null)
 
-  let validatePixKey = (val): RecoilAtomTypes.field => {
+  let validatePixKey = (val): RecoilAtomTypes.field =>
     if val->String.length > 0 {
       {value: val, isValid: Some(true), errorString: ""}
     } else {
       {value: val, isValid: None, errorString: ""}
     }
-  }
 
   let validatePixCNPJ = (val): RecoilAtomTypes.field => {
     let isCNPJValid = %re("/^\d*$/")->RegExp.test(val) && val->String.length === 14
@@ -28,7 +27,7 @@ let make = (~fieldType="") => {
       {
         value: val,
         isValid: Some(false),
-        errorString: val !== "" ? localeString.pixCNPJInvalidText : "",
+        errorString: localeString.pixCNPJInvalidText,
       }
     }
   }
@@ -43,7 +42,7 @@ let make = (~fieldType="") => {
       {
         value: val,
         isValid: Some(false),
-        errorString: val !== "" ? localeString.pixCPFInvalidText : "",
+        errorString: localeString.pixCPFInvalidText,
       }
     }
   }
