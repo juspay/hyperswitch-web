@@ -137,7 +137,7 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
         paymentMethodType={selectedGiftCard}
         setRequiredFieldsBody
         disableInfoElement=true
-        splitAtomsEnabled=true
+        isSplitPaymentsEnabled=true
       />
     </RenderIf>
     <div className="flex flex-col justify-end w-full">

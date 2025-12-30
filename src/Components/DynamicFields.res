@@ -29,7 +29,7 @@ let make = (
   ~isBancontact=false,
   ~isSaveDetailsWithClickToPay=false,
   ~disableInfoElement=false,
-  ~splitAtomsEnabled=false,
+  ~isSplitPaymentsEnabled=false,
 ) => {
   open DynamicFieldsUtils
   open PaymentTypeContext
@@ -288,7 +288,7 @@ let make = (
     ~cardExpiry,
     ~cvcNumber,
     ~isSavedCardFlow,
-    ~splitAtomsEnabled,
+    ~isSplitPaymentsEnabled,
   )
 
   useSetInitialRequiredFields(
