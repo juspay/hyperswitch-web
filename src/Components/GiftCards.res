@@ -4,6 +4,7 @@ open RecoilAtoms
 let make = (~giftCardOptions) => {
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {clientSecret, publishableKey, profileId, paymentId} = keys
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
   let (giftCardInfo, setGiftCardInfo) = Recoil.useRecoilState(RecoilAtomsV2.giftCardInfoAtom)
   let appliedGiftCards = giftCardInfo.appliedGiftCards
@@ -47,8 +48,6 @@ let make = (~giftCardOptions) => {
       setGiftCardInfo(prev => {...prev, remainingAmount: 0.0})
       setRemainingCurrency(_ => "")
     } else {
-      let {clientSecret, publishableKey, profileId, paymentId} = keys
-
       let paymentMethods = updatedCards->Array.map(card => {
         DynamicFieldsUtils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
       })
@@ -154,7 +153,7 @@ let make = (~giftCardOptions) => {
           </RenderIf>
           <GiftCardForm
             selectedGiftCard
-            isDisabled={hasAppliedGiftCards}
+            isDisableGiftCardForm={hasAppliedGiftCards}
             onGiftCardAdded={handleGiftCardAdded}
             onRemainingAmountUpdate={handleRemainingAmountUpdate}
           />
@@ -165,8 +164,8 @@ let make = (~giftCardOptions) => {
       <div className="w-full mb-4">
         {appliedGiftCards
         ->Array.mapWithIndex((card, index) => {
-          let displayName = `${card.giftCardType->String.toUpperCase} Card ${card.maskedNumber}`
-          let balanceText = `${card.currency} ${card.balance->Float.toString} applied`
+          let displayName = `${card.giftCardType->String.toUpperCase} ${localeString.cardText} ${card.maskedNumber}`
+          let balanceText = `${card.currency} ${card.balance->Float.toString} ${localeString.giftCardAppliedText}`
           let id = card.id
           <GiftCardsListItem
             key={index->Int.toString}

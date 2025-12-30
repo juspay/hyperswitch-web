@@ -1,9 +1,15 @@
 open RecoilAtoms
 
 @react.component
-let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemainingAmountUpdate) => {
+let make = (
+  ~selectedGiftCard,
+  ~isDisableGiftCardForm=false,
+  ~onGiftCardAdded,
+  ~onRemainingAmountUpdate,
+) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {clientSecret, publishableKey, profileId, paymentId} = keys
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
   let giftCardInfo = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.giftCardInfoAtom)
   let appliedGiftCards = giftCardInfo.appliedGiftCards
@@ -33,7 +39,6 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
       )
     } else if areRequiredFieldsValid && !areRequiredFieldsEmpty {
       setIsSubmitting(_ => true)
-      let {clientSecret, publishableKey, profileId, paymentId} = keys
 
       let appliedGiftCardPaymentMethods = appliedGiftCards->Array.map(card => {
         DynamicFieldsUtils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
@@ -61,18 +66,11 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
         let responseDict = response->Utils.getDictFromJson
 
         let balancesJson = responseDict->Dict.get("balances")
-
-        if balancesJson->Option.isNone {
-          setGeneralError(_ => localeString.enterValidDetailsText)
-        } else {
-          let balancesArray = balancesJson->Option.flatMap(JSON.Decode.array)
-
-          if balancesArray->Option.isNone {
-            setGeneralError(_ => localeString.enterValidDetailsText)
-          } else {
-            balancesArray
-            ->Option.getOr([])
-            ->Array.forEach(balanceItem => {
+        switch balancesJson {
+        | Some(balancesValue) =>
+          switch balancesValue->JSON.Decode.array {
+          | Some(balancesArray) =>
+            balancesArray->Array.forEach(balanceItem => {
               let balanceDict = balanceItem->Utils.getDictFromJson
               let eligibilityJson = balanceDict->Dict.get("eligibility")
 
@@ -97,6 +95,7 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
                       ~start=-4,
                       ~end=giftCardNumber.value->String.length,
                     )
+
                   let maskedNumber = `**** ${lastFourDigits}`
                   let newGiftCardId = `${selectedGiftCard}_${Date.now()->Float.toString}`
 
@@ -110,6 +109,7 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
                   }
 
                   onGiftCardAdded(newGiftCard)
+
                 | None =>
                   switch eligibilityDict->Dict.get("failure") {
                   | Some(_) => setGeneralError(_ => localeString.giftCardNumberInvalidText)
@@ -126,7 +126,11 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
 
             setGiftCardNumber(_ => RecoilAtoms.defaultFieldValues)
             setGiftCardPin(_ => RecoilAtoms.defaultFieldValues)
+
+          | None => setGeneralError(_ => localeString.enterValidDetailsText)
           }
+
+        | None => setGeneralError(_ => localeString.enterValidDetailsText)
         }
       } catch {
       | _ =>
@@ -158,12 +162,12 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
           borderRadius: themeObj.buttonBorderRadius,
           backgroundColor: themeObj.buttonBackgroundColor,
           height: themeObj.buttonHeight,
-          cursor: {isSubmitting || isDisabled ? "not-allowed" : "pointer"},
-          opacity: {isSubmitting || isDisabled ? "0.6" : "1"},
+          cursor: {isSubmitting || isDisableGiftCardForm ? "not-allowed" : "pointer"},
+          opacity: {isSubmitting || isDisableGiftCardForm ? "0.6" : "1"},
           width: themeObj.buttonWidth,
           border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
         }
-        disabled={isSubmitting || isDisabled}
+        disabled={isSubmitting || isDisableGiftCardForm}
         onClick={_ => {
           handleSubmit()->ignore
         }}>
@@ -176,7 +180,7 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
           {(isSubmitting ? "Applying..." : "Apply")->React.string}
         </span>
       </button>
-      <RenderIf condition={generalError !== "" && !isDisabled}>
+      <RenderIf condition={generalError !== "" && !isDisableGiftCardForm}>
         <div style={{color: themeObj.colorDanger}} className="text-sm font-medium mt-1">
           {generalError->React.string}
         </div>

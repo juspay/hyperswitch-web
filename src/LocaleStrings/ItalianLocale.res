@@ -244,4 +244,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinPlaceholder: `123456`,
   giftCardPinEmptyText: `Il PIN della carta regalo non può essere vuoto`,
   giftCardPinInvalidText: `PIN carta regalo non valido`,
+  cardText: `Carta`,
+  giftCardAppliedText: `applicato`,
 }
