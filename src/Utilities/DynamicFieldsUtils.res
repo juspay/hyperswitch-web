@@ -42,6 +42,9 @@ let dynamicFieldsEnabledPaymentMethods = [
   "givex",
 ]
 
+let getAtomBasedOnSplitPayments = (isSplitPaymentsEnabled, splitAtom, normalAtom) =>
+  isSplitPaymentsEnabled ? splitAtom : normalAtom
+
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
   let fieldNameArr = field.value->String.split(" ")
   let requiredFieldsArr = item.required_field->String.split(".")
@@ -213,21 +216,22 @@ let useRequiredFieldsEmptyAndValid = (
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
+
+  let areRequiredFieldsValidAtom = getAtomBasedOnSplitPayments(
+    isSplitPaymentsEnabled,
+    RecoilAtomsV2.areSplitPaymentRequiredFieldsValid,
+    areRequiredFieldsValid,
+  )
   let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
-    PaymentUtils.selectAtom(
-      isSplitPaymentsEnabled,
-      RecoilAtomsV2.areRequiredFieldsValidSplit,
-      areRequiredFieldsValid,
-    ),
+    areRequiredFieldsValidAtom,
   )
 
-  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(
-    PaymentUtils.selectAtom(
-      isSplitPaymentsEnabled,
-      RecoilAtomsV2.areRequiredFieldsEmptySplit,
-      areRequiredFieldsEmpty,
-    ),
+  let areRequiredFieldsEmptyAtom = getAtomBasedOnSplitPayments(
+    isSplitPaymentsEnabled,
+    RecoilAtomsV2.areSplitPaymentRequiredFieldsEmpty,
+    areRequiredFieldsEmpty,
   )
+  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmptyAtom)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
@@ -1264,4 +1268,15 @@ let getKlarnaRequiredFields = (
 
     acc
   })
+}
+
+let getGiftCardDataFromRequiredFieldsBody = requiredFieldsBody => {
+  open Utils
+  let giftCardTuples = []->mergeAndFlattenToTuples(requiredFieldsBody)
+  let data =
+    giftCardTuples
+    ->getJsonFromArrayOfJson
+    ->getDictFromJson
+    ->getDictFromDict("payment_method_data")
+  data
 }
