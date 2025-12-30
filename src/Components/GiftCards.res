@@ -17,9 +17,9 @@ let make = () => {
   let giftCardOptions = React.useMemo(() => {
     switch paymentMethodsListV2 {
     | LoadedV2(data) =>
-      data.paymentMethodsEnabled
-      ->Array.filter(method => method.paymentMethodType === "gift_card")
-      ->Array.map(method => method.paymentMethodSubtype)
+      data.paymentMethodsEnabled->Array.filterMap(method =>
+        method.paymentMethodType === "gift_card" ? Some(method.paymentMethodSubtype) : None
+      )
     | _ => []
     }
   }, [paymentMethodsListV2])
@@ -60,10 +60,7 @@ let make = () => {
       setGiftCardInfo(prev => {...prev, remainingAmount: 0.0})
       setRemainingCurrency(_ => "")
     } else {
-      let clientSecret = keys.clientSecret->Option.getOr("")
-      let publishableKey = keys.publishableKey
-      let profileId = keys.profileId
-      let paymentId = keys.paymentId
+      let {clientSecret, publishableKey, profileId, paymentId} = keys
 
       let paymentMethods = updatedCards->Array.map(card => {
         PaymentUtils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)

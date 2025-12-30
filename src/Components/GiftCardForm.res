@@ -9,7 +9,7 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
   let appliedGiftCards = giftCardInfo.appliedGiftCards
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
-  let (_, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
+  let setGiftCardPin = Recoil.useSetRecoilState(userGiftCardPin)
 
   let (isSubmitting, setIsSubmitting) = React.useState(_ => false)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
@@ -34,7 +34,6 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
     } else if areRequiredFieldsValid && !areRequiredFieldsEmpty {
       setIsSubmitting(_ => true)
       let {clientSecret, publishableKey, profileId, paymentId} = keys
-      let clientSecretVal = clientSecret->Option.getOr("")
 
       let appliedGiftCardPaymentMethods = appliedGiftCards->Array.map(card => {
         PaymentUtils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
@@ -47,7 +46,7 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
       try {
         let response = await PaymentHelpersV2.checkBalanceAndApplyPaymentMethod(
           ~paymentMethods,
-          ~clientSecret=clientSecretVal,
+          ~clientSecret,
           ~publishableKey,
           ~customPodUri,
           ~profileId,
@@ -154,8 +153,8 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
           border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
         }
         disabled={isSubmitting || isDisabled}
-        onClick={e => {
-          handleSubmit(e)->ignore
+        onClick={_ => {
+          handleSubmit()->ignore
         }}>
         <span
           style={

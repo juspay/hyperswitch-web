@@ -748,4 +748,5 @@ let getGiftCardDataFromRequiredFieldsBody = requiredFieldsBody => {
   data
 }
 
-let selectAtom = (useSplit, splitAtom, normalAtom) => useSplit ? splitAtom : normalAtom
+let selectAtom = (splitAtomsEnabled, splitAtom, normalAtom) =>
+  splitAtomsEnabled ? splitAtom : normalAtom
