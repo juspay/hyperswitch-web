@@ -246,4 +246,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinInvalidText: `PIN de targeta regal no vàlid`,
   cardText: `Targeta`,
   giftCardAppliedText: `aplicat`,
+  giftCardPaymentCompleteMessage: `No queda cap import pendent de pagament. Si us plau, continueu amb el pagament.`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `Pagueu l'import restant de ${currency} ${amount} amb un altre mètode de pagament a continuació.`,
 }

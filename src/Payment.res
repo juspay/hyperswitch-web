@@ -18,7 +18,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let (isFocus, setIsFocus) = React.useState(_ => false)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(logger), Card)
-  let isGiftCardOnlyPayment = GiftCardHooks.useIsGiftCardOnlyPayment()
 
   let paymentType = React.useMemo1(() => {
     paymentMode->getPaymentMode

@@ -245,4 +245,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinInvalidText: `無効なギフトカードPIN`,
   cardText: `カード`,
   giftCardAppliedText: `適用済み`,
+  giftCardPaymentCompleteMessage: `残りの支払金額はありません。支払いを続行してください。`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `残りの ${amount}${currency} は、以下の別の支払い方法でお支払いください。`,
 }

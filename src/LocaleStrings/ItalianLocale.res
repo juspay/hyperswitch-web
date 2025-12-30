@@ -246,4 +246,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinInvalidText: `PIN carta regalo non valido`,
   cardText: `Carta`,
   giftCardAppliedText: `applicato`,
+  giftCardPaymentCompleteMessage: `Non rimane alcun importo da pagare. Procedi con il pagamento.`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `Paga l’importo rimanente di ${amount} ${currency} con un altro metodo di pagamento qui sotto.`,
 }

@@ -244,4 +244,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinInvalidText: `无效的礼品卡PIN`,
   cardText: `卡`,
   giftCardAppliedText: `已应用`,
+  giftCardPaymentCompleteMessage: `无需支付剩余金额。请继续完成付款。`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `请使用下方的其他支付方式支付剩余金额 ${currency}${amount}。`,
 }

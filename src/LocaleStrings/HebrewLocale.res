@@ -245,4 +245,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinInvalidText: `PIN לא חוקי של כרטיס מתנה`,
   cardText: `כרטיס`,
   giftCardAppliedText: `הוחל`,
+  giftCardPaymentCompleteMessage: `לא נותר סכום לתשלום. אנא המשיכו לביצוע התשלום.`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `אנא שלמו את הסכום שנותר ${amount} ${currency} באמצעות אמצעי תשלום אחר למטה.`,
 }

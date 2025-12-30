@@ -99,8 +99,11 @@ let make = (~giftCardOptions) => {
 
   let giftCardPaymentInfoMessage =
     remainingAmount === 0.0
-      ? " No remaining amount to pay. Please proceed with payment."
-      : ` Pay remaining ${remainingCurrency} ${remainingAmount->Float.toString} with other payment method below.`
+      ? ` ${localeString.giftCardPaymentCompleteMessage}`
+      : ` ${localeString.giftCardPaymentRemainingMessage(
+            remainingCurrency,
+            remainingAmount->Float.toString,
+          )}`
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
