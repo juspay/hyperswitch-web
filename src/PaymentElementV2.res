@@ -24,6 +24,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
+  let (giftCardOptions, setGiftCardOptions) = React.useState(_ => [])
 
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
   let layoutClass = CardUtils.getLayoutClass(layout)
@@ -72,24 +73,24 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [sessionToken])
 
-  let giftCardOptions = React.useMemo(() => {
+  let getGiftCardOptions = () => {
     switch paymentMethodsListV2 {
     | LoadedV2(data) =>
-      data.paymentMethodsEnabled
-      ->Array.filter(method => method.paymentMethodType === "gift_card")
-      ->Array.map(method => method.paymentMethodSubtype)
+      data.paymentMethodsEnabled->Array.filterMap(method =>
+        method.paymentMethodType === "gift_card" ? Some(method.paymentMethodSubtype) : None
+      )
     | _ => []
     }
-  }, [paymentMethodsListV2])
+  }
 
   React.useEffect(() => {
     let updatePaymentOptions = () => {
+      let giftCardOptions = getGiftCardOptions()
       let filteredOptions = isSplitPaymentEnabled
-        ? paymentOptionsList->Array.filter(option =>
-            Array.includes(giftCardOptions, option) == false
-          )
+        ? paymentOptionsList->Array.filter(option => !Array.includes(giftCardOptions, option))
         : paymentOptionsList
-      setPaymentOptions(_ => [...filteredOptions]->removeDuplicate)
+      setPaymentOptions(_ => filteredOptions->removeDuplicate)
+      setGiftCardOptions(_ => giftCardOptions)
     }
 
     switch (paymentManagementList, paymentMethodsListV2, intentList) {
@@ -112,14 +113,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
 
     None
-  }, (
-    paymentManagementList,
-    paymentOptionsList,
-    actualList,
-    paymentMethodsListV2,
-    giftCardOptions,
-    intentList,
-  ))
+  }, (paymentManagementList, paymentOptionsList, actualList, paymentMethodsListV2, intentList))
 
   React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
