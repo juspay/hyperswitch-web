@@ -15,10 +15,10 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(
-    RecoilAtomsV2.areRequiredFieldsValidSplit,
+    RecoilAtomsV2.areSplitPaymentRequiredFieldsValid,
   )
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(
-    RecoilAtomsV2.areRequiredFieldsEmptySplit,
+    RecoilAtomsV2.areSplitPaymentRequiredFieldsEmpty,
   )
 
   let (generalError, setGeneralError) = React.useState(_ => "")
@@ -36,10 +36,12 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
       let {clientSecret, publishableKey, profileId, paymentId} = keys
 
       let appliedGiftCardPaymentMethods = appliedGiftCards->Array.map(card => {
-        PaymentUtils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
+        DynamicFieldsUtils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
       })
 
-      let newGiftCardData = PaymentUtils.getGiftCardDataFromRequiredFieldsBody(requiredFieldsBody)
+      let newGiftCardData = DynamicFieldsUtils.getGiftCardDataFromRequiredFieldsBody(
+        requiredFieldsBody,
+      )
 
       let paymentMethods = Array.concat(appliedGiftCardPaymentMethods, [newGiftCardData])
 

@@ -50,7 +50,7 @@ let make = (~giftCardOptions) => {
       let {clientSecret, publishableKey, profileId, paymentId} = keys
 
       let paymentMethods = updatedCards->Array.map(card => {
-        PaymentUtils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
+        DynamicFieldsUtils.getGiftCardDataFromRequiredFieldsBody(card.requiredFieldsBody)
       })
 
       try {

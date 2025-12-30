@@ -2,7 +2,24 @@ open RecoilAtoms
 
 @react.component
 let make = (~displayName, ~balanceText, ~giftCardType, ~removeGiftCard, ~id) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let paymentMethodsFields = PaymentMethodsRecord.getPaymentMethodsFields(~localeString)
+
+  let giftCardIcon = {
+    let paymentMethodInfo =
+      paymentMethodsFields->Array.find(pm =>
+        pm.paymentMethodName == giftCardType->String.toLowerCase
+      )
+    switch paymentMethodInfo {
+    | Some(info) =>
+      switch info.icon {
+      | Some(icon) => icon
+      | None => <Icon name="gift-cards" size=16 />
+      }
+    | None => <Icon name="gift-cards" size=16 />
+    }
+  }
+
   <div
     className="flex items-center justify-between p-4 mb-3 rounded-lg border"
     style={
@@ -10,12 +27,7 @@ let make = (~displayName, ~balanceText, ~giftCardType, ~removeGiftCard, ~id) => 
       backgroundColor: themeObj.colorBackground,
     }>
     <div className="flex items-center gap-3">
-      <div className="w-8 h-8 flex items-center justify-center">
-        {switch giftCardType->String.toLowerCase {
-        | "givex" => <Icon name="givex" size=19 width=25 />
-        | _ => <Icon name="gift-cards" size=16 />
-        }}
-      </div>
+      <div className="w-8 h-8 flex items-center justify-center"> {giftCardIcon} </div>
       <div className="flex flex-col">
         <span className="text-sm font-medium" style={color: themeObj.colorText}>
           {displayName->React.string}
