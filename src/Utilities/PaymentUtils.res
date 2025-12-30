@@ -748,5 +748,5 @@ let getGiftCardDataFromRequiredFieldsBody = requiredFieldsBody => {
   data
 }
 
-let selectAtom = (splitAtomsEnabled, splitAtom, normalAtom) =>
-  splitAtomsEnabled ? splitAtom : normalAtom
+let selectAtom = (isSplitPaymentsEnabled, splitAtom, normalAtom) =>
+  isSplitPaymentsEnabled ? splitAtom : normalAtom

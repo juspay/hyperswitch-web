@@ -110,6 +110,8 @@ let make = () => {
     ->Array.length
     ->Int.toString} gift card already applied.`
 
+  let giftCardDiscountMessage = `Total ${remainingCurrency} ${totalDiscount->Float.toString} applied.`
+
   let giftCardPaymentInfoMessage =
     remainingAmount === 0.0
       ? " No remaining amount to pay. Please proceed with payment."
@@ -211,56 +213,23 @@ let make = () => {
       <div className="w-full mb-4">
         {appliedGiftCards
         ->Array.mapWithIndex((card, index) => {
-          let displayName = card.giftCardType->String.toUpperCase ++ " Card"
-          let maskedNumber = card.maskedNumber
-          <div
+          let displayName = `${card.giftCardType->String.toUpperCase}${" Card"} ${card.maskedNumber}`
+          let balanceText = `${card.currency} ${card.balance->Float.toString} applied`
+          let id = card.id
+          <GiftCardsListItem
             key={index->Int.toString}
-            className="flex items-center justify-between p-4 mb-3 rounded-lg border"
-            style={
-              borderColor: themeObj.borderColor,
-              backgroundColor: themeObj.colorBackground,
-            }>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 flex items-center justify-center">
-                {switch card.giftCardType->String.toLowerCase {
-                | "givex" => <Icon name="givex" size=19 width=25 />
-                | _ => <Icon name="gift-cards" size=16 />
-                }}
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium" style={color: themeObj.colorText}>
-                  {`${displayName} ${maskedNumber}`->React.string}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-green-850">
-                {`${card.currency} ${card.balance->Float.toString} applied`->React.string}
-              </span>
-              <button
-                className="w-5 h-5 flex items-center justify-center"
-                onClick={_ => {removeGiftCard(card.id)->ignore}}>
-                <Icon name="cross" size=16 />
-              </button>
-            </div>
-          </div>
+            displayName
+            balanceText
+            giftCardType=card.giftCardType
+            removeGiftCard
+            id
+          />
         })
         ->React.array}
       </div>
     </RenderIf>
     <RenderIf condition={hasAppliedGiftCards}>
-      <div
-        className="w-full p-4 mb-3 rounded-lg bg-blue-100"
-        style={
-          borderColor: themeObj.borderColor,
-        }>
-        <div className="text-sm text-black">
-          <span className="font-medium">
-            {`Total ${remainingCurrency} ${totalDiscount->Float.toString} applied.`->React.string}
-          </span>
-          <span> {giftCardPaymentInfoMessage->React.string} </span>
-        </div>
-      </div>
+      <GiftCardSummary giftCardPaymentInfoMessage giftCardDiscountMessage />
     </RenderIf>
   </>
 }
