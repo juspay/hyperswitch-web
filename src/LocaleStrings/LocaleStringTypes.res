@@ -233,6 +233,8 @@ type localeStrings = {
   giftCardPinInvalidText: string,
   cardText: string,
   giftCardAppliedText: string,
+  giftCardPaymentCompleteMessage: string,
+  giftCardPaymentRemainingMessage: (string, string) => string,
 }
 
 type constantStrings = {

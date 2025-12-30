@@ -247,4 +247,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinInvalidText: `رقم تعريف شخصي/PIN غير صالح لبطاقة الهدايا`,
   cardText: `بطاقة`,
   giftCardAppliedText: `مطبق`,
+  giftCardPaymentCompleteMessage: `لا يوجد مبلغ متبقٍ للدفع. يرجى المتابعة لإتمام عملية الدفع.`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `يرجى دفع المبلغ المتبقي ${amount} ${currency} باستخدام وسيلة دفع أخرى أدناه.`,
 }

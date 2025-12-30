@@ -244,4 +244,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinInvalidText: `Ogiltig presentkorts-PIN`,
   cardText: `Kort`,
   giftCardAppliedText: `tillämpad`,
+  giftCardPaymentCompleteMessage: `Ingen kvarvarande summa att betala. Vänligen fortsätt med betalningen.`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `Vänligen betala den kvarvarande summan ${amount} ${currency} med en annan betalningsmetod nedan.`,
 }
