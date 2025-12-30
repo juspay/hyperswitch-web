@@ -28,7 +28,7 @@ let make = (
   ~cvcProps=None,
   ~isBancontact=false,
   ~isSaveDetailsWithClickToPay=false,
-  ~disableInfoElement=false,
+  ~isDisableInfoElement=false,
   ~isSplitPaymentsEnabled=false,
 ) => {
   open DynamicFieldsUtils
@@ -338,6 +338,7 @@ let make = (
   }, [fieldsArr])
 
   let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
+  let isRenderInfoElement = isInfoElementPresent && !isDisableInfoElement
 
   let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 
@@ -848,7 +849,7 @@ let make = (
         </div>
       </RenderIf>
       <Surcharge paymentMethod paymentMethodType />
-      <RenderIf condition={isInfoElementPresent && !disableInfoElement}>
+      <RenderIf condition={isRenderInfoElement}>
         {<>
           {if fieldsArr->Array.length > 1 {
             bottomElement
