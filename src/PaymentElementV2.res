@@ -76,9 +76,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let getGiftCardOptions = () => {
     switch paymentMethodsListV2 {
     | LoadedV2(data) =>
-      data.paymentMethodsEnabled->Array.filterMap(method =>
-        method.paymentMethodType === "gift_card" ? Some(method.paymentMethodSubtype) : None
-      )
+      data.paymentMethodsEnabled->Array.filterMap(method => {
+        if method.paymentMethodType === "gift_card" {
+          Some(method.paymentMethodSubtype)
+        } else {
+          None
+        }
+      })
     | _ => []
     }
   }
@@ -314,7 +318,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           <Or />
         </RenderIf>
         <RenderIf condition={isSplitPaymentEnabled}>
-          <GiftCards />
+          <GiftCards giftCardOptions />
         </RenderIf>
         {switch layoutClass.\"type" {
         | Tabs =>

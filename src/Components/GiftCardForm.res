@@ -74,27 +74,36 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
               let balanceDict = balanceItem->Utils.getDictFromJson
               let eligibilityJson = balanceDict->Dict.get("eligibility")
 
-              if eligibilityJson->Option.isNone {
+              let eligibilityDict =
+                eligibilityJson
+                ->Option.map(Utils.getDictFromJson)
+                ->Option.getOr(Dict.make())
+
+              if eligibilityDict->Dict.keysToArray->Array.length === 0 {
                 setGeneralError(_ => localeString.enterValidDetailsText)
               } else {
-                let eligibilityDict = eligibilityJson->Option.getUnsafe->Utils.getDictFromJson
-                let successJson = eligibilityDict->Dict.get("success")
+                let eligibilitySuccessJson = eligibilityDict->Dict.get("success")
 
-                switch successJson {
-                | Some(successJson) =>
-                  let successDict = successJson->Utils.getDictFromJson
+                switch eligibilitySuccessJson {
+                | Some(successData) =>
+                  let successDict = successData->Utils.getDictFromJson
                   let applicableAmount = successDict->Utils.getFloat("applicable_amount", 0.0)
                   let currency = successDict->Utils.getString("currency", "")
 
+                  let lastFourDigits =
+                    giftCardNumber.value->String.slice(
+                      ~start=-4,
+                      ~end=giftCardNumber.value->String.length,
+                    )
+                  let maskedNumber = `**** ${lastFourDigits}`
+                  let newGiftCardId = `${selectedGiftCard}_${Date.now()->Float.toString}`
+
                   let newGiftCard: GiftCardTypes.appliedGiftCard = {
                     giftCardType: selectedGiftCard,
-                    maskedNumber: `**** ${giftCardNumber.value->String.slice(
-                        ~start=-4,
-                        ~end=giftCardNumber.value->String.length,
-                      )}`,
+                    maskedNumber,
                     balance: applicableAmount,
                     currency,
-                    id: `${selectedGiftCard}_${Date.now()->Float.toString}`,
+                    id: newGiftCardId,
                     requiredFieldsBody,
                   }
 
@@ -131,12 +140,12 @@ let make = (~selectedGiftCard, ~isDisabled=false, ~onGiftCardAdded, ~onRemaining
     }
   }
   <div className="flex flex-col gap-4 w-full">
-    <RenderIf condition={appliedGiftCards->Array.length < 1}>
+    <RenderIf condition={appliedGiftCards->Array.length === 0}>
       <DynamicFields
         paymentMethod="gift_card"
         paymentMethodType={selectedGiftCard}
         setRequiredFieldsBody
-        disableInfoElement=true
+        isDisableInfoElement=true
         isSplitPaymentsEnabled=true
       />
     </RenderIf>

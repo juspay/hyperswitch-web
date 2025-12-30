@@ -1,9 +1,8 @@
 open RecoilAtoms
 
 @react.component
-let make = () => {
+let make = (~giftCardOptions) => {
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
-  let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
   let (giftCardInfo, setGiftCardInfo) = Recoil.useRecoilState(RecoilAtomsV2.giftCardInfoAtom)
@@ -14,31 +13,19 @@ let make = () => {
   let (remainingCurrency, setRemainingCurrency) = React.useState(_ => "")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
-  let giftCardOptions = React.useMemo(() => {
-    switch paymentMethodsListV2 {
-    | LoadedV2(data) =>
-      data.paymentMethodsEnabled->Array.filterMap(method =>
-        method.paymentMethodType === "gift_card" ? Some(method.paymentMethodSubtype) : None
-      )
-    | _ => []
-    }
-  }, [paymentMethodsListV2])
   let giftCardOptionsAvailable = giftCardOptions->Array.length > 0
   let hasAppliedGiftCards = appliedGiftCards->Array.length > 0
 
   let giftCardDropdownOptions = React.useMemo(() => {
     let baseOptions = giftCardOptions->Array.map(giftCardType => {
-      let displayName = switch giftCardType {
-      | "givex" => "Givex"
-      | _ => giftCardType->Utils.snakeToTitleCase
-      }
+      let displayName = giftCardType->Utils.snakeToTitleCase
       {
         DropdownField.value: giftCardType,
         label: displayName,
       }
     })
     baseOptions
-  }, giftCardOptions)
+  }, [giftCardOptions])
 
   let handleRemainingAmountUpdate = (amount, currency) => {
     setGiftCardInfo(prev => {...prev, remainingAmount: amount})
@@ -102,9 +89,8 @@ let make = () => {
     total
   }, [appliedGiftCards])
 
-  let appliedCardsMessage = `${appliedGiftCards
-    ->Array.length
-    ->Int.toString} gift card already applied.`
+  let appliedCardsCount = appliedGiftCards->Array.length->Int.toString
+  let appliedCardsMessage = `${appliedCardsCount} gift card already applied.`
 
   let giftCardDiscountMessage = `Total ${remainingCurrency} ${totalDiscount->Float.toString} applied.`
 
@@ -162,7 +148,7 @@ let make = () => {
                 <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
                   <span className="text-white text-xs"> {"!"->React.string} </span>
                 </div>
-                {<span> {appliedCardsMessage->React.string} </span>}
+                <span> {appliedCardsMessage->React.string} </span>
               </div>
             </div>
           </RenderIf>
@@ -179,7 +165,7 @@ let make = () => {
       <div className="w-full mb-4">
         {appliedGiftCards
         ->Array.mapWithIndex((card, index) => {
-          let displayName = `${card.giftCardType->String.toUpperCase}${" Card"} ${card.maskedNumber}`
+          let displayName = `${card.giftCardType->String.toUpperCase} Card ${card.maskedNumber}`
           let balanceText = `${card.currency} ${card.balance->Float.toString} applied`
           let id = card.id
           <GiftCardsListItem
