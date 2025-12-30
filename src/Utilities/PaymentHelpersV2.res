@@ -657,7 +657,7 @@ let checkBalanceAndApplyPaymentMethod = async (
     ~bodyStr=body->JSON.stringify,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
-    ~clientSecret=Some(clientSecret),
+    ~clientSecret,
     ~profileId=Some(profileId),
     ~onSuccess,
     ~onFailure,
