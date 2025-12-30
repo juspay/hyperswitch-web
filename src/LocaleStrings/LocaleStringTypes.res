@@ -231,6 +231,8 @@ type localeStrings = {
   giftCardPinPlaceholder: string,
   giftCardPinEmptyText: string,
   giftCardPinInvalidText: string,
+  cardText: string,
+  giftCardAppliedText: string,
 }
 
 type constantStrings = {

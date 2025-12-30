@@ -242,4 +242,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinPlaceholder: `123456`,
   giftCardPinEmptyText: `禮品卡PIN不能為空`,
   giftCardPinInvalidText: `無效的禮品卡PIN`,
+  cardText: `卡`,
+  giftCardAppliedText: `已套用`,
 }

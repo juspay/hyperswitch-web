@@ -245,4 +245,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinPlaceholder: `123456`,
   giftCardPinEmptyText: `لا يمكن أن يكون رقم التعريف الشخصي/PIN لبطاقة الهدايا فارغًا`,
   giftCardPinInvalidText: `رقم تعريف شخصي/PIN غير صالح لبطاقة الهدايا`,
+  cardText: `بطاقة`,
+  giftCardAppliedText: `مطبق`,
 }

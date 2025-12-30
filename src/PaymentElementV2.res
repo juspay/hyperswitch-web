@@ -287,27 +287,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [paymentManagementList, paymentMethodsListV2])
 
-  // Extracted conditions for RenderIf statements
-  let showPaymentLabel = paymentLabel->Option.isSome
-  let hasPaymentOptions = paymentOptions->Array.length > 0
-  let hasWalletOptions = walletOptions->Array.length > 0
-  let hasGiftCardOptions = giftCardOptions->Array.length > 0
-  let showPaymentElementsContainer = hasPaymentOptions || hasWalletOptions || hasGiftCardOptions
-  let showOrComponent =
-    hasPaymentOptions && hasWalletOptions && checkRenderOrComp(~walletOptions, isShowOrPayUsing)
-  let isPaymentMethodsListEmpty =
-    paymentManagementListValue.paymentMethodsEnabled->Array.length === 0
-  let showPaymentElementShimmer =
-    paymentOptions->Array.length == 0 && walletOptions->Array.length == 0
-  let showPoweredBy = paymentType !== PaymentMethodsManagement
-
   <>
-    <RenderIf condition={showPaymentLabel}>
+    <RenderIf condition={paymentLabel->Option.isSome}>
       <div className="text-2xl font-semibold text-[#151619] mb-6">
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
-    <RenderIf condition={showPaymentElementsContainer}>
+    <RenderIf
+      condition={paymentOptions->Array.length > 0 ||
+      walletOptions->Array.length > 0 ||
+      giftCardOptions->Array.length > 0}>
       <div className="flex flex-col place-items-center">
         <RenderIf condition={!isGiftCardOnlyPayment}>
           <ErrorBoundary
@@ -316,7 +305,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             componentName="PaymentRequestButtonElement">
             <PaymentRequestButtonElement sessions walletOptions />
           </ErrorBoundary>
-          <RenderIf condition={showOrComponent}>
+          <RenderIf
+            condition={paymentOptions->Array.length > 0 &&
+            walletOptions->Array.length > 0 &&
+            checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
             <Or />
           </RenderIf>
         </RenderIf>
@@ -343,16 +335,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     {switch (paymentManagementList, paymentMethodsListV2, intentList) {
     | (_, _, Error(_)) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
     | (LoadErrorV2(_), _, _) =>
-      <RenderIf condition={isPaymentMethodsListEmpty}>
+      <RenderIf condition={paymentManagementListValue.paymentMethodsEnabled->Array.length === 0}>
         <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
       </RenderIf>
     | (_, LoadErrorV2(_), _) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
     | _ =>
-      <RenderIf condition={showPaymentElementShimmer}>
+      <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
         <PaymentElementShimmer />
       </RenderIf>
     }}
-    <RenderIf condition={showPoweredBy}>
+    <RenderIf condition={paymentType !== PaymentMethodsManagement}>
       <PoweredBy />
     </RenderIf>
   </>
