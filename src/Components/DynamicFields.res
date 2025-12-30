@@ -29,7 +29,7 @@ let make = (
   ~isBancontact=false,
   ~isSaveDetailsWithClickToPay=false,
   ~disableInfoElement=false,
-  ~splitAtomsEnabled: bool=false,
+  ~splitAtomsEnabled=false,
 ) => {
   open DynamicFieldsUtils
   open PaymentTypeContext

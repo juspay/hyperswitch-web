@@ -194,7 +194,7 @@ let useRequiredFieldsEmptyAndValid = (
   ~cardExpiry,
   ~cvcNumber,
   ~isSavedCardFlow,
-  ~splitAtomsEnabled: bool=false,
+  ~splitAtomsEnabled=false,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)

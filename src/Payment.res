@@ -134,7 +134,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       let json = ev.data->safeParse
       let jsonDict = json->getDictFromJson
       let confirm = jsonDict->ConfirmType.itemToObjMapper
-      if confirm.doSubmit && !isGiftCardOnlyPayment {
+      if confirm.doSubmit {
         submitValue(ev, confirm.confirmParams)
       }
     }
