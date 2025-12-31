@@ -391,12 +391,14 @@ let make = (
             ~handleUserError=true,
           )
         } else {
-          let modifiedCardBody = if giftCardInfo.appliedGiftCards->Array.length > 0 {
-            let giftCardSplitBody = PaymentBodyV2.splitPaymentBody(
-              ~appliedGiftCards=giftCardInfo.appliedGiftCards,
-            )
-            let giftCardDict = giftCardSplitBody->getJsonFromArrayOfJson->getDictFromJson
-            cardBody->mergeAndFlattenToTuples(giftCardDict)
+          let hasGiftCards = giftCardInfo.appliedGiftCards->Array.length > 0
+          let modifiedCardBody = if hasGiftCards {
+            let giftCardBody =
+              PaymentBodyV2.splitPaymentBody(~appliedGiftCards=giftCardInfo.appliedGiftCards)
+              ->getJsonFromArrayOfJson
+              ->getDictFromJson
+
+            cardBody->mergeAndFlattenToTuples(giftCardBody)
           } else {
             cardBody
           }

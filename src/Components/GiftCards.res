@@ -115,7 +115,7 @@ let make = (~giftCardOptions) => {
       let (giftCardType, requiredFieldsBody) =
         appliedGiftCards
         ->Array.get(0)
-        ->Option.map(card => (card.giftCardType, card.requiredFieldsBody))
+        ->Option.map(giftCard => (giftCard.giftCardType, giftCard.requiredFieldsBody))
         ->Option.getOr(("", Dict.make()))
       let primaryBody = PaymentBodyV2.giftCardBody(~giftCardType, ~requiredFieldsBody)
 
