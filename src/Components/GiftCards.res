@@ -14,7 +14,6 @@ let make = (~giftCardOptions) => {
   let (selectedGiftCard, setSelectedGiftCard) = React.useState(_ => "")
   let (remainingCurrency, setRemainingCurrency) = React.useState(_ => "")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let isGiftCardOnlyPayment = GiftCardHooks.useIsGiftCardOnlyPayment()
 
@@ -113,16 +112,12 @@ let make = (~giftCardOptions) => {
       let splitPaymentBodyArr = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
         appliedGiftCards->Array.sliceToEnd(~start=1),
       )
-      let primaryBody = PaymentBodyV2.createGiftCardBody(
-        ~giftCardType=appliedGiftCards
+      let (giftCardType, requiredFieldsBody) =
+        appliedGiftCards
         ->Array.get(0)
-        ->Option.map(card => card.giftCardType)
-        ->Option.getOr(""),
-        ~requiredFieldsBody=appliedGiftCards
-        ->Array.get(0)
-        ->Option.map(card => card.requiredFieldsBody)
-        ->Option.getOr(Dict.make()),
-      )
+        ->Option.map(card => (card.giftCardType, card.requiredFieldsBody))
+        ->Option.getOr(("", Dict.make()))
+      let primaryBody = PaymentBodyV2.createGiftCardBody(~giftCardType, ~requiredFieldsBody)
 
       intent(
         ~bodyArr={
@@ -130,10 +125,9 @@ let make = (~giftCardOptions) => {
         },
         ~confirmParam=confirm.confirmParams,
         ~handleUserError=false,
-        ~manualRetry=isManualRetryEnabled,
       )
     }
-  }, (appliedGiftCards, remainingAmount, isManualRetryEnabled))
+  }, (appliedGiftCards, remainingAmount))
   useSubmitPaymentData(submitCallback)
   <>
     <div
