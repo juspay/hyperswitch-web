@@ -115,18 +115,15 @@ let make = (~giftCardOptions) => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit && isGiftCardOnlyPayment {
-      let splitPaymentBodyArr = PaymentBodyV2.splitPaymentBody(
-        ~appliedGiftCards=appliedGiftCards->Array.sliceToEnd(~start=1),
-      )
+      let secondaryGiftCards = appliedGiftCards->Array.sliceToEnd(~start=1)
+      let splitPaymentBody = PaymentBodyV2.splitPaymentBody(~appliedGiftCards=secondaryGiftCards)
       let (giftCardType, requiredFieldsBody) = getPrimaryGiftCardData(
         ~primaryGiftCard=appliedGiftCards,
       )
-      let primaryBody = PaymentBodyV2.giftCardBody(~giftCardType, ~requiredFieldsBody)
+      let primaryGiftCardBody = PaymentBodyV2.giftCardBody(~giftCardType, ~requiredFieldsBody)
 
       intent(
-        ~bodyArr={
-          primaryBody->Array.concat(splitPaymentBodyArr)
-        },
+        ~bodyArr=primaryGiftCardBody->Array.concat(splitPaymentBody),
         ~confirmParam=confirm.confirmParams,
         ~handleUserError=false,
       )
