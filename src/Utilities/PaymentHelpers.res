@@ -111,14 +111,14 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
       payoutId: None,
     },
   )
-  let broswerInfo = BrowserSpec.broswerInfo
+  let browserInfo = BrowserSpec.browserInfo
   let body =
     [
       ("client_secret", clientSecret->JSON.Encode.string),
       ("device_channel", "BRW"->JSON.Encode.string),
       ("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string),
     ]
-    ->Array.concat(broswerInfo())
+    ->Array.concat(browserInfo())
     ->getJsonFromArrayOfJson
 
   let onSuccess = data => data
@@ -1070,7 +1070,7 @@ let useCompleteAuthorizeHandler = () => {
       }
       let bodyStr =
         [("client_secret", cs->JSON.Encode.string)]
-        ->Array.concatMany([bodyArr, BrowserSpec.broswerInfo()])
+        ->Array.concatMany([bodyArr, BrowserSpec.browserInfo()])
         ->getJsonFromArrayOfJson
         ->JSON.stringify
 
@@ -1298,12 +1298,12 @@ let usePaymentIntent = (optLogger, paymentType) => {
         }
       }
 
-      let broswerInfo = BrowserSpec.broswerInfo
+      let browserInfo = BrowserSpec.browserInfo
       let intentWithoutMandate = mandatePaymentType => {
         let bodyStr =
           body
           ->Array.concatMany([
-            bodyArr->Array.concat(broswerInfo()),
+            bodyArr->Array.concat(browserInfo()),
             mandatePaymentType->PaymentBody.paymentTypeBody,
           ])
           ->getJsonFromArrayOfJson
@@ -1315,7 +1315,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         let bodyStr =
           body
           ->Array.concat(
-            bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
+            bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), browserInfo()]),
           )
           ->getJsonFromArrayOfJson
           ->JSON.stringify
@@ -1348,7 +1348,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~errortype="payment_methods_empty",
             ~message="Payment Failed. Try again!",
           )
-          Console.warn("Please enable atleast one Payment method.")
+          Console.warn("Please enable at least one Payment method.")
         }
       | (V2, _, LoadedV2(data)) =>
         if data.paymentMethodsEnabled->Array.length > 0 {
@@ -1358,7 +1358,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~errortype="payment_methods_empty",
             ~message="Payment Failed. Try again!",
           )
-          Console.warn("Please enable atleast one Payment method.")
+          Console.warn("Please enable at least one Payment method.")
         }
       | (V1, SemiLoaded, _)
       | (V2, _, SemiLoadedV2) =>
@@ -1625,14 +1625,14 @@ let paymentIntentForPaymentSession = (
   let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
   let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
 
-  let broswerInfo = BrowserSpec.broswerInfo()
+  let browserInfo = BrowserSpec.browserInfo()
 
   let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
 
   let bodyStr =
     body
     ->Array.concatMany([
-      broswerInfo,
+      browserInfo,
       [("client_secret", clientSecret->JSON.Encode.string)],
       returnUrlArr,
     ])
@@ -2025,12 +2025,12 @@ let usePostSessionTokens = (
         ->ignore
       }
 
-      let broswerInfo = BrowserSpec.broswerInfo
+      let browserInfo = BrowserSpec.browserInfo
       let intentWithoutMandate = mandatePaymentType => {
         let bodyStr =
           body
           ->Array.concatMany([
-            bodyArr->Array.concat(broswerInfo()),
+            bodyArr->Array.concat(browserInfo()),
             mandatePaymentType->PaymentBody.paymentTypeBody,
           ])
           ->getJsonFromArrayOfJson
@@ -2042,7 +2042,7 @@ let usePostSessionTokens = (
         let bodyStr =
           body
           ->Array.concat(
-            bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
+            bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), browserInfo()]),
           )
           ->getJsonFromArrayOfJson
           ->JSON.stringify
@@ -2075,7 +2075,7 @@ let usePostSessionTokens = (
             ~errortype="payment_methods_empty",
             ~message="Payment Failed. Try again!",
           )
-          Console.warn("Please enable atleast one Payment method.")
+          Console.warn("Please enable at least one Payment method.")
         }
       | SemiLoaded => intentWithoutMandate("")
       | _ =>
