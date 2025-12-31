@@ -104,6 +104,12 @@ let make = (~giftCardOptions) => {
             remainingAmount->Float.toString,
           )}`
 
+  let getPrimaryGiftCardData = (~primaryGiftCard: array<GiftCardTypes.appliedGiftCard>) =>
+    primaryGiftCard
+    ->Array.get(0)
+    ->Option.map(card => (card.giftCardType, card.requiredFieldsBody))
+    ->Option.getOr(("", Dict.make()))
+
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
@@ -112,11 +118,9 @@ let make = (~giftCardOptions) => {
       let splitPaymentBodyArr = PaymentBodyV2.splitPaymentBody(
         ~appliedGiftCards=appliedGiftCards->Array.sliceToEnd(~start=1),
       )
-      let (giftCardType, requiredFieldsBody) =
-        appliedGiftCards
-        ->Array.get(0)
-        ->Option.map(giftCard => (giftCard.giftCardType, giftCard.requiredFieldsBody))
-        ->Option.getOr(("", Dict.make()))
+      let (giftCardType, requiredFieldsBody) = getPrimaryGiftCardData(
+        ~primaryGiftCard=appliedGiftCards,
+      )
       let primaryBody = PaymentBodyV2.giftCardBody(~giftCardType, ~requiredFieldsBody)
 
       intent(
