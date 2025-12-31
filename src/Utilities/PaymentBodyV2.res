@@ -67,18 +67,16 @@ let getPaymentBody = (
   | _ => dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
   }
 
-let createGiftCardBody = (~giftCardType, ~requiredFieldsBody) => {
+let giftCardBody = (~giftCardType, ~requiredFieldsBody) => {
   [
     ("payment_method_type", "gift_card"->JSON.Encode.string),
     ("payment_method_subtype", giftCardType->JSON.Encode.string),
   ]->mergeAndFlattenToTuples(requiredFieldsBody)
 }
 
-let createSplitPaymentBodyForGiftCards = (
-  appliedGiftCards: array<GiftCardTypes.appliedGiftCard>,
-) => {
+let splitPaymentBody = (~appliedGiftCards: array<GiftCardTypes.appliedGiftCard>) => {
   let splitPaymentMethodData = appliedGiftCards->Array.map(giftCard => {
-    createGiftCardBody(
+    giftCardBody(
       ~giftCardType=giftCard.giftCardType,
       ~requiredFieldsBody=giftCard.requiredFieldsBody,
     )->getJsonFromArrayOfJson

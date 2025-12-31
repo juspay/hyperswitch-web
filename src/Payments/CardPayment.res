@@ -392,8 +392,8 @@ let make = (
           )
         } else {
           let modifiedCardBody = if giftCardInfo.appliedGiftCards->Array.length > 0 {
-            let giftCardSplitBody = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
-              giftCardInfo.appliedGiftCards,
+            let giftCardSplitBody = PaymentBodyV2.splitPaymentBody(
+              ~appliedGiftCards=giftCardInfo.appliedGiftCards,
             )
             let giftCardDict = giftCardSplitBody->getJsonFromArrayOfJson->getDictFromJson
             cardBody->mergeAndFlattenToTuples(giftCardDict)

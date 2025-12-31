@@ -109,15 +109,15 @@ let make = (~giftCardOptions) => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit && isGiftCardOnlyPayment {
-      let splitPaymentBodyArr = PaymentBodyV2.createSplitPaymentBodyForGiftCards(
-        appliedGiftCards->Array.sliceToEnd(~start=1),
+      let splitPaymentBodyArr = PaymentBodyV2.splitPaymentBody(
+        ~appliedGiftCards=appliedGiftCards->Array.sliceToEnd(~start=1),
       )
       let (giftCardType, requiredFieldsBody) =
         appliedGiftCards
         ->Array.get(0)
         ->Option.map(card => (card.giftCardType, card.requiredFieldsBody))
         ->Option.getOr(("", Dict.make()))
-      let primaryBody = PaymentBodyV2.createGiftCardBody(~giftCardType, ~requiredFieldsBody)
+      let primaryBody = PaymentBodyV2.giftCardBody(~giftCardType, ~requiredFieldsBody)
 
       intent(
         ~bodyArr={
@@ -209,8 +209,6 @@ let make = (~giftCardOptions) => {
         })
         ->React.array}
       </div>
-    </RenderIf>
-    <RenderIf condition={hasAppliedGiftCards}>
       <GiftCardSummary giftCardPaymentInfoMessage giftCardDiscountMessage />
     </RenderIf>
   </>
