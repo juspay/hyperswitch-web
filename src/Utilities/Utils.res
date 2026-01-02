@@ -1809,3 +1809,46 @@ let defaultCountryCode = {
   let clientCountry = getClientCountry(clientTimeZone)
   clientCountry.isoAlpha2
 }
+
+let rec maskStringValuesInJson = (~value, ~currentPath, ~depth, ~shouldMaskField) => {
+  if depth > 10 {
+    "***MAX_DEPTH_REACHED***"->JSON.Encode.string
+  } else {
+    switch value->JSON.Classify.classify {
+    | String(str) =>
+      currentPath->shouldMaskField
+        ? (str->String.length > 0 ? "***REDACTED***" : "***EMPTY***")->JSON.Encode.string
+        : value
+
+    | Object(dict) =>
+      dict
+      ->Dict.toArray
+      ->Array.map(((key, val)) => {
+        let newPath = currentPath == "" ? key : `${currentPath}.${key}`
+        (
+          key,
+          maskStringValuesInJson(
+            ~value=val,
+            ~currentPath=newPath,
+            ~depth=depth + 1,
+            ~shouldMaskField,
+          ),
+        )
+      })
+      ->getJsonFromArrayOfJson
+    | Array(arr) =>
+      arr
+      ->Array.mapWithIndex((item, index) => {
+        let newPath = `${currentPath}[${index->Int.toString}]`
+        maskStringValuesInJson(
+          ~value=item,
+          ~currentPath=newPath,
+          ~depth=depth + 1,
+          ~shouldMaskField,
+        )
+      })
+      ->JSON.Encode.array
+    | _ => value
+    }
+  }
+}

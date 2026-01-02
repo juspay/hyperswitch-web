@@ -1179,38 +1179,72 @@ let getSdkHandleSavePaymentProps = dict => {
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
-let itemToObjMapper = (dict, logger) => {
-  unknownKeysWarning(
-    [
-      "defaultValues",
-      "business",
-      "layout",
-      "paymentMethodOrder",
-      "customerPaymentMethods",
-      "fields",
-      "readOnly",
-      "terms",
-      "wallets",
-      "displaySavedPaymentMethodsCheckbox",
-      "displaySavedPaymentMethods",
-      "savedPaymentMethodsCheckboxCheckedByDefault",
-      "sdkHandleOneClickConfirmPayment",
-      "sdkHandleConfirmPayment",
-      "sdkHandleSavePayment",
-      "paymentMethodsHeaderText",
-      "savedPaymentMethodsHeaderText",
-      "hideExpiredPaymentMethods",
-      "branding",
-      "displayDefaultSavedPaymentIcon",
-      "hideCardNicknameField",
-      "displayBillingDetails",
-      "customMessageForCardTerms",
-      "showShortSurchargeMessage",
-      "paymentMethodsConfig",
-    ],
-    dict,
-    "options",
+let allowedPaymentElementOptions = [
+  "defaultValues",
+  "business",
+  "layout",
+  "paymentMethodOrder",
+  "customerPaymentMethods",
+  "fields",
+  "readOnly",
+  "terms",
+  "wallets",
+  "displaySavedPaymentMethodsCheckbox",
+  "displaySavedPaymentMethods",
+  "savedPaymentMethodsCheckboxCheckedByDefault",
+  "sdkHandleOneClickConfirmPayment",
+  "sdkHandleConfirmPayment",
+  "sdkHandleSavePayment",
+  "paymentMethodsHeaderText",
+  "savedPaymentMethodsHeaderText",
+  "hideExpiredPaymentMethods",
+  "branding",
+  "displayDefaultSavedPaymentIcon",
+  "hideCardNicknameField",
+  "displayBillingDetails",
+  "customMessageForCardTerms",
+  "showShortSurchargeMessage",
+  "paymentMethodsConfig",
+]
+
+let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
+
+let overrideFieldsToExcludeFromMasking = [
+  "wallets.walletReturnUrl",
+  "paymentMethodsConfig.paymentMethodTypes.message.value",
+]
+
+let normalizePath = path => path->String.replaceRegExp(%re("/\[(\d+)\]/g"), "")
+
+let isPathStartsWithPattern = (normalizedPath, normalizedPattern) =>
+  normalizedPath == normalizedPattern || normalizedPath->String.startsWith(normalizedPattern ++ ".")
+
+let shouldMaskField = path => {
+  let normalizedPath = normalizePath(path)
+  let isOverridden = overrideFieldsToExcludeFromMasking->Array.includes(normalizedPath)
+  let isExcluded =
+    fieldsToExcludeFromMasking->Array.some(pattern =>
+      isPathStartsWithPattern(normalizedPath, normalizePath(pattern))
+    )
+  isOverridden || !isExcluded
+}
+
+let sanitizePaymentElementOptions = dict => {
+  dict
+  ->JSON.Encode.object
+  ->(Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField))
+  ->getDictFromJson
+}
+
+let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
+  unknownKeysWarning(allowedPaymentElementOptions, dict, "options")
+
+  logger.setLogInfo(
+    ~value=dict->sanitizePaymentElementOptions->JSON.Encode.object->JSON.stringify,
+    ~eventName=PAYMENT_ELEMENT_OPTIONS,
+    ~logType=INFO,
   )
+
   {
     defaultValues: getDefaultValues(dict, "defaultValues", logger),
     business: getBusiness(dict, "business", logger),
