@@ -114,15 +114,11 @@ let make = (~giftCardOptions) => {
     if confirm.doSubmit && isGiftCardOnlyPayment {
       let secondaryGiftCards = appliedGiftCards->Array.sliceToEnd(~start=1)
       let splitPaymentBody = PaymentBodyV2.splitPaymentBody(~appliedGiftCards=secondaryGiftCards)
-      let primaryGiftCard = getPrimaryGiftCardData(~appliedGiftCards)
-      let primaryGiftCardBody = PaymentBodyV2.giftCardBody(
-        ~giftCardType=primaryGiftCard.giftCardType,
-        ~requiredFieldsBody=primaryGiftCard.requiredFieldsBody,
-      )
+      let {giftCardType, requiredFieldsBody} = getPrimaryGiftCardData(~appliedGiftCards)
+      let primaryGiftCardBody = PaymentBodyV2.giftCardBody(~giftCardType, ~requiredFieldsBody)
       intent(
         ~bodyArr=primaryGiftCardBody->Array.concat(splitPaymentBody),
         ~confirmParam=confirm.confirmParams,
-        ~handleUserError=false,
       )
     }
   }, (appliedGiftCards, remainingAmount))
