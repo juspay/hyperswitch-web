@@ -121,7 +121,7 @@ let make = (~giftCardOptions) => {
         ~confirmParam=confirm.confirmParams,
       )
     }
-  }, [appliedGiftCards])
+  }, (appliedGiftCards, isGiftCardOnlyPayment))
   useSubmitPaymentData(submitCallback)
   <>
     <div
