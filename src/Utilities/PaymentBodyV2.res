@@ -76,10 +76,8 @@ let giftCardBody = (~giftCardType, ~requiredFieldsBody) => {
 
 let splitPaymentBody = (~appliedGiftCards: array<GiftCardTypes.appliedGiftCard>) => {
   let splitPaymentMethodData = appliedGiftCards->Array.map(giftCard => {
-    giftCardBody(
-      ~giftCardType=giftCard.giftCardType,
-      ~requiredFieldsBody=giftCard.requiredFieldsBody,
-    )->getJsonFromArrayOfJson
+    let {giftCardType, requiredFieldsBody} = giftCard
+    giftCardBody(~giftCardType, ~requiredFieldsBody)->getJsonFromArrayOfJson
   })
 
   [("split_payment_method_data", splitPaymentMethodData->JSON.Encode.array)]

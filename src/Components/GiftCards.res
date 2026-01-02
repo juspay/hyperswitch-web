@@ -104,11 +104,8 @@ let make = (~giftCardOptions) => {
             remainingAmount->Float.toString,
           )}`
 
-  let getPrimaryGiftCardData = (~primaryGiftCard: array<GiftCardTypes.appliedGiftCard>) =>
-    primaryGiftCard
-    ->Array.get(0)
-    ->Option.map(card => (card.giftCardType, card.requiredFieldsBody))
-    ->Option.getOr(("", Dict.make()))
+  let getPrimaryGiftCardData = (~appliedGiftCards: array<GiftCardTypes.appliedGiftCard>) =>
+    appliedGiftCards->Array.get(0)->Option.getOr(GiftCardTypes.defaultAppliedGiftCard)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -117,11 +114,11 @@ let make = (~giftCardOptions) => {
     if confirm.doSubmit && isGiftCardOnlyPayment {
       let secondaryGiftCards = appliedGiftCards->Array.sliceToEnd(~start=1)
       let splitPaymentBody = PaymentBodyV2.splitPaymentBody(~appliedGiftCards=secondaryGiftCards)
-      let (giftCardType, requiredFieldsBody) = getPrimaryGiftCardData(
-        ~primaryGiftCard=appliedGiftCards,
+      let primaryGiftCard = getPrimaryGiftCardData(~appliedGiftCards)
+      let primaryGiftCardBody = PaymentBodyV2.giftCardBody(
+        ~giftCardType=primaryGiftCard.giftCardType,
+        ~requiredFieldsBody=primaryGiftCard.requiredFieldsBody,
       )
-      let primaryGiftCardBody = PaymentBodyV2.giftCardBody(~giftCardType, ~requiredFieldsBody)
-
       intent(
         ~bodyArr=primaryGiftCardBody->Array.concat(splitPaymentBody),
         ~confirmParam=confirm.confirmParams,
