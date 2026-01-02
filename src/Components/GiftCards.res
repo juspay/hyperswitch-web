@@ -1,4 +1,5 @@
 open RecoilAtoms
+open Utils
 
 @react.component
 let make = (~giftCardOptions) => {
@@ -13,6 +14,8 @@ let make = (~giftCardOptions) => {
   let (selectedGiftCard, setSelectedGiftCard) = React.useState(_ => "")
   let (remainingCurrency, setRemainingCurrency) = React.useState(_ => "")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let isGiftCardOnlyPayment = GiftCardHooks.useIsGiftCardOnlyPayment()
 
   let giftCardOptionsAvailable = giftCardOptions->Array.length > 0
   let hasAppliedGiftCards = appliedGiftCards->Array.length > 0
@@ -101,6 +104,25 @@ let make = (~giftCardOptions) => {
             remainingAmount->Float.toString,
           )}`
 
+  let getPrimaryGiftCardData = (~appliedGiftCards: array<GiftCardTypes.appliedGiftCard>) =>
+    appliedGiftCards->Array.get(0)->Option.getOr(GiftCardTypes.defaultAppliedGiftCard)
+
+  let submitCallback = React.useCallback((ev: Window.event) => {
+    let json = ev.data->safeParse
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+
+    if confirm.doSubmit && isGiftCardOnlyPayment {
+      let secondaryGiftCards = appliedGiftCards->Array.sliceToEnd(~start=1)
+      let splitPaymentBody = PaymentBodyV2.splitPaymentBody(~appliedGiftCards=secondaryGiftCards)
+      let {giftCardType, requiredFieldsBody} = getPrimaryGiftCardData(~appliedGiftCards)
+      let primaryGiftCardBody = PaymentBodyV2.giftCardBody(~giftCardType, ~requiredFieldsBody)
+      intent(
+        ~bodyArr=primaryGiftCardBody->Array.concat(splitPaymentBody),
+        ~confirmParam=confirm.confirmParams,
+      )
+    }
+  }, (appliedGiftCards, isGiftCardOnlyPayment))
+  useSubmitPaymentData(submitCallback)
   <>
     <div
       className="w-full mb-4 border rounded-lg transition-colors"

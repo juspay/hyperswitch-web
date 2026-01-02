@@ -12,6 +12,15 @@ type giftCardInfo = {
   remainingAmount: float,
 }
 
+let defaultAppliedGiftCard: appliedGiftCard = {
+  giftCardType: "",
+  maskedNumber: "",
+  balance: 0.0,
+  currency: "",
+  id: "",
+  requiredFieldsBody: Dict.make(),
+}
+
 let defaultGiftCardInfo: giftCardInfo = {
   appliedGiftCards: [],
   remainingAmount: 0.0,

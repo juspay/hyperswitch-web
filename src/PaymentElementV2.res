@@ -33,6 +33,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let intentList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.intentList)
+  let isGiftCardOnlyPayment = GiftCardHooks.useIsGiftCardOnlyPayment()
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
 
   let isSplitPaymentEnabled = switch intentList {
@@ -163,7 +164,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit && selectedOption == "" {
+    if confirm.doSubmit && selectedOption == "" && !isGiftCardOnlyPayment {
       postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
     }
   }, [selectedOption])
@@ -297,34 +298,38 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       walletOptions->Array.length > 0 ||
       giftCardOptions->Array.length > 0}>
       <div className="flex flex-col place-items-center">
-        <ErrorBoundary
-          key="payment_request_buttons_all"
-          level={ErrorBoundary.RequestButton}
-          componentName="PaymentRequestButtonElement">
-          <PaymentRequestButtonElement sessions walletOptions />
-        </ErrorBoundary>
-        <RenderIf
-          condition={paymentOptions->Array.length > 0 &&
-          walletOptions->Array.length > 0 &&
-          checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
-          <Or />
+        <RenderIf condition={!isGiftCardOnlyPayment}>
+          <ErrorBoundary
+            key="payment_request_buttons_all"
+            level={ErrorBoundary.RequestButton}
+            componentName="PaymentRequestButtonElement">
+            <PaymentRequestButtonElement sessions walletOptions />
+          </ErrorBoundary>
+          <RenderIf
+            condition={paymentOptions->Array.length > 0 &&
+            walletOptions->Array.length > 0 &&
+            checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
+            <Or />
+          </RenderIf>
         </RenderIf>
         <RenderIf condition={isSplitPaymentEnabled}>
           <GiftCards giftCardOptions />
         </RenderIf>
-        {switch layoutClass.\"type" {
-        | Tabs =>
-          <PaymentOptions
-            setCardsContainerWidth
-            cardOptions
-            dropDownOptions
-            checkoutEle
-            cardShimmerCount
-            cardProps
-            expiryProps
-          />
-        | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps expiryProps />
-        }}
+        <RenderIf condition={!isGiftCardOnlyPayment}>
+          {switch layoutClass.\"type" {
+          | Tabs =>
+            <PaymentOptions
+              setCardsContainerWidth
+              cardOptions
+              dropDownOptions
+              checkoutEle
+              cardShimmerCount
+              cardProps
+              expiryProps
+            />
+          | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps expiryProps />
+          }}
+        </RenderIf>
       </div>
     </RenderIf>
     {switch (paymentManagementList, paymentMethodsListV2, intentList) {
