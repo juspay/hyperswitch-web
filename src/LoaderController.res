@@ -18,6 +18,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
+  let setIsTrustpayScriptReady = Recoil.useSetRecoilState(isTrustpayScriptReady)
+  let setIsTrustpayScriptFailed = Recoil.useSetRecoilState(isTrustpayScriptFailed)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
   let setUpdateSession = Recoil.useSetRecoilState(updateSession)
@@ -427,6 +429,22 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         if dict->getDictIsSome("isReadyToPay") {
           setIsGooglePayReady(_ =>
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
+          )
+        }
+        if dict->getDictIsSome("trustPayScriptLoaded") {
+          setIsTrustpayScriptReady(_ =>
+            dict
+            ->getJsonObjectFromDict("trustPayScriptLoaded")
+            ->JSON.Decode.bool
+            ->Option.getOr(false)
+          )
+        }
+        if dict->getDictIsSome("trustPayScriptError") {
+          setIsTrustpayScriptFailed(_ =>
+            dict
+            ->getJsonObjectFromDict("trustPayScriptError")
+            ->JSON.Decode.bool
+            ->Option.getOr(false)
           )
         }
         if dict->getDictIsSome("isSamsungPayReady") {

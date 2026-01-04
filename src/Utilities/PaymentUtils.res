@@ -733,6 +733,10 @@ let useEmitPaymentMethodInfo = (
   ))
 }
 
-let checkRenderOrComp = (~walletOptions, isShowOrPayUsing) => {
-  walletOptions->Array.includes("paypal") || isShowOrPayUsing
+let checkRenderOrComp = (
+  ~walletOptions,
+  ~isShowOrPayUsing,
+  ~isShowOrPayUsingWhileLoading=false,
+) => {
+  walletOptions->Array.includes("paypal") || isShowOrPayUsing || isShowOrPayUsingWhileLoading
 }
