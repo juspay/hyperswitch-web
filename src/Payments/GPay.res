@@ -229,6 +229,9 @@ let make = (
     paymentExperience == PaymentMethodsRecord.RedirectToURL ||
     (isDelayedSessionToken && isTrustpayScriptReady)) && isWallet
 
+  let shouldShowWalletShimmer =
+    sessionObj->Option.isSome && !isTrustpayScriptFailed && !isTrustpayScriptReady
+
   React.useEffect(() => {
     areOneClickWalletsRendered(prev => {
       ...prev,
@@ -245,8 +248,7 @@ let make = (
 
   if isWallet {
     <>
-      <RenderIf
-        condition={sessionObj->Option.isSome && !isTrustpayScriptFailed && !isTrustpayScriptReady}>
+      <RenderIf condition={shouldShowWalletShimmer}>
         <WalletShimmer />
       </RenderIf>
       <RenderIf condition={isRenderGooglePayButton}>

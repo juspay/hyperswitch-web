@@ -318,14 +318,12 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
 
   let paymentMethod = "wallet"
   let paymentMethodType = "apple_pay"
+  let shouldShowWalletShimmer =
+    isApplePayThirdPartyFlow && isApplePayReady && !isTrustpayScriptReady && !isTrustpayScriptFailed
 
   if isWallet {
     <>
-      <RenderIf
-        condition={isApplePayThirdPartyFlow &&
-        isApplePayReady &&
-        !isTrustpayScriptReady &&
-        !isTrustpayScriptFailed}>
+      <RenderIf condition={shouldShowWalletShimmer}>
         <WalletShimmer />
       </RenderIf>
       <RenderIf condition={showApplePay}>

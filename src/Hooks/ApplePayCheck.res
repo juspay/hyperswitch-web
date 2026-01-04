@@ -30,5 +30,5 @@ let useIsApplePayThirdPartyFlow = () => {
       ->Option.getOr(false)
 
     isApplePayThirdPartyFlow
-  }, sessions)
+  }, [sessions])
 }
