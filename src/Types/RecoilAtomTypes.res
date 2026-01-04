@@ -12,6 +12,11 @@ type paymentToken = {
   customerId: string,
 }
 
+let defaultPaymentToken: paymentToken = {
+  paymentToken: "",
+  customerId: "",
+}
+
 type redirectionFlags = {
   shouldUseTopRedirection: bool,
   shouldRemoveBeforeUnloadEvents: bool,

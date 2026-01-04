@@ -14,13 +14,7 @@ let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
 let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
-let paymentTokenAtom = Recoil.atom(
-  "paymentToken",
-  {
-    paymentToken: "",
-    customerId: "",
-  },
-)
+let paymentTokenAtom = Recoil.atom("paymentToken", RecoilAtomTypes.defaultPaymentToken)
 let showPaymentMethodsScreen = Recoil.atom("showPaymentMethodsScreen", false)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")
@@ -66,6 +60,8 @@ let userAddressPincode = Recoil.atom("userAddressPincode", defaultFieldValues)
 let userAddressState = Recoil.atom("userAddressState", defaultFieldValues)
 let userAddressCountry = Recoil.atom("userAddressCountry", defaultFieldValues)
 let userBlikCode = Recoil.atom("userBlikCode", defaultFieldValues)
+let userGiftCardNumber = Recoil.atom("userGiftCardNumber", defaultFieldValues)
+let userGiftCardPin = Recoil.atom("userGiftCardPin", defaultFieldValues)
 let fieldsComplete = Recoil.atom("fieldsComplete", false)
 let isManualRetryEnabled = Recoil.atom("isManualRetryEnabled", false)
 let userCurrency = Recoil.atom("userCurrency", "")

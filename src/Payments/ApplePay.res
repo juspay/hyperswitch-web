@@ -316,6 +316,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
   useSubmitPaymentData(submitCallback)
 
+  let paymentMethod = "wallet"
+  let paymentMethodType = "apple_pay"
+
   if isWallet {
     <>
       <RenderIf
@@ -349,7 +352,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       </RenderIf>
     </>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="apple_pay" setRequiredFieldsBody />
+    <>
+      <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
+      <Terms paymentMethod paymentMethodType />
+    </>
   }
 }
 

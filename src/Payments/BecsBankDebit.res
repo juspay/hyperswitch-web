@@ -83,6 +83,9 @@ let make = () => {
   }, (email, fullName, modalData, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
+  let paymentMethod = "bank_debit"
+  let paymentMethodType = "becs"
+
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <EmailPaymentInput />
     <FullNamePaymentInput />
@@ -90,8 +93,8 @@ let make = () => {
     <FullScreenPortal>
       <BankDebitModal setModalData />
     </FullScreenPortal>
-    <Surcharge paymentMethod="bank_debit" paymentMethodType="becs" />
-    <Terms mode=PaymentModeType.BecsBankDebit />
+    <Surcharge paymentMethod paymentMethodType />
+    <Terms paymentMethod paymentMethodType />
   </div>
 }
 

@@ -13,6 +13,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
   let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
   let setPaymentMethodsListV2 = Recoil.useSetRecoilState(paymentMethodsListV2)
+  let setIntentList = Recoil.useSetRecoilState(intentList)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
@@ -461,6 +462,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
             }
           }
+        }
+        if dict->getDictIsSome("getIntent") {
+          let getIntentDict = dict->getJsonObjectFromDict("getIntent")->getDictFromJson
+          let intentDetails = getIntentDict->UnifiedHelpersV2.createIntentDetails("response")
+          setIntentList(_ => intentDetails)
         }
         if dict->getDictIsSome("paymentsListV2") {
           let paymentsListV2 = dict->getJsonObjectFromDict("paymentsListV2")

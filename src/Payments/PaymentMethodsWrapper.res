@@ -148,13 +148,18 @@ let make = (~paymentMethodName: string) => {
     areRequiredFieldsValid,
   ))
   useSubmitPaymentData(submitCallback)
+  let paymentMethod = paymentMethodDetails.methodType
+
   <div
     className="DynamicFields flex flex-col animate-slowShow"
     style={gridGap: themeObj.spacingGridColumn}>
-    <DynamicFields
-      paymentMethod=paymentMethodDetails.methodType
-      paymentMethodType=paymentMethodName
-      setRequiredFieldsBody
+    <DynamicFields paymentMethod paymentMethodType=paymentMethodName setRequiredFieldsBody />
+    <Terms
+      paymentMethodType={PaymentUtils.getPaymentMethodName(
+        ~paymentMethodType=paymentMethod,
+        ~paymentMethodName,
+      )}
+      paymentMethod
     />
   </div>
 }
