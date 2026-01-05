@@ -481,6 +481,9 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode
     areAllApplePayRequiredFieldsPrefilled,
     areAllGooglePayRequiredFieldsPrefilled,
     areAllPaypalRequiredFieldsPreFilled,
+    isPaypalSDKFlow,
+    isPaypalRedirectFlow,
+    isPaypalTokenExist,
     isApplePayReady,
     isGooglePayReady,
   ))
