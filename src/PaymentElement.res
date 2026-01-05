@@ -190,6 +190,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~paymentMethodListValue,
     ~sessionObj,
   )
+  let showAllPaymentMethods = switch layoutClass.paymentMethodsArrangement {
+  | Grid => true
+  | _ => false
+  }
 
   React.useEffect(() => {
     switch paymentMethodList {
@@ -231,24 +235,26 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (paymentMethodList, walletList, paymentOptionsList, actualList))
 
   React.useEffect(() => {
-    if layoutClass.\"type" == Tabs {
-      let isCard = cardOptions->Array.includes(selectedOption)
-      if !isCard {
-        let (cardArr, dropdownArr) = CardUtils.swapCardOption(
-          cardOptions,
-          dropDownOptions,
-          selectedOption,
-        )
-        setCardOptions(_ => cardArr)
-        setDropDownOptions(_ => dropdownArr)
+    if !showAllPaymentMethods {
+      if layoutClass.\"type" == Tabs {
+        let isCard = cardOptions->Array.includes(selectedOption)
+        if !isCard {
+          let (cardArr, dropdownArr) = CardUtils.swapCardOption(
+            cardOptions,
+            dropDownOptions,
+            selectedOption,
+          )
+          setCardOptions(_ => cardArr)
+          setDropDownOptions(_ => dropdownArr)
+        }
       }
-    }
-    if selectedOption !== "" {
-      loggerState.setLogInfo(
-        ~value="",
-        ~eventName=PAYMENT_METHOD_CHANGED,
-        ~paymentMethod=selectedOption->String.toUpperCase,
-      )
+      if selectedOption !== "" {
+        loggerState.setLogInfo(
+          ~value="",
+          ~eventName=PAYMENT_METHOD_CHANGED,
+          ~paymentMethod=selectedOption->String.toUpperCase,
+        )
+      }
     }
     None
   }, (selectedOption, cardOptions, dropDownOptions))
@@ -258,13 +264,21 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let cardOpts = Array.slice(~start=0, ~end=cardsCount, paymentOptions)
     let dropOpts = paymentOptions->Array.sliceToEnd(~start=cardsCount)
     let isCard: bool = cardOpts->Array.includes(selectedOption)
-    if !isCard && selectedOption !== "" && paymentOptions->Array.includes(selectedOption) {
+    if (
+      !isCard &&
+      selectedOption !== "" &&
+      paymentOptions->Array.includes(selectedOption) &&
+      !showAllPaymentMethods
+    ) {
       let (cardArr, dropdownArr) = CardUtils.swapCardOption(cardOpts, dropOpts, selectedOption)
       setCardOptions(_ => cardArr)
       setDropDownOptions(_ => dropdownArr)
-    } else {
+    } else if !showAllPaymentMethods {
       setCardOptions(_ => cardOpts)
       setDropDownOptions(_ => dropOpts)
+    } else {
+      setCardOptions(_ => paymentOptions)
+      setDropDownOptions(_ => [])
     }
     None
   }, (cardsContainerWidth, paymentOptions))
