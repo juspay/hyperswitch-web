@@ -44,12 +44,14 @@ let make = () => {
   }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isManualRetryEnabled, requiredFieldsBody))
   useSubmitPaymentData(submitCallback)
 
+  let paymentMethodType = "sepa_bank_transfer"
+  let paymentMethod = "bank_transfer"
+
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields
-      paymentMethod="bank_transfer" paymentMethodType="sepa_bank_transfer" setRequiredFieldsBody
-    />
-    <Surcharge paymentMethod="bank_transfer" paymentMethodType="sepa" />
+    <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
+    <Surcharge paymentMethod paymentMethodType />
     <InfoElement />
+    <Terms paymentMethodType paymentMethod />
   </div>
 }
 

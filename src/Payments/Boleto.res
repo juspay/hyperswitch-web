@@ -85,6 +85,9 @@ let make = () => {
     }
   }
 
+  let paymentMethod = "voucher"
+  let paymentMethodType = "boleto"
+
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <PaymentInputField
       fieldName=localeString.socialSecurityNumberLabel
@@ -98,8 +101,9 @@ let make = () => {
       inputRef=socialSecurityNumberRef
       placeholder="000.000.000-00"
     />
-    <Surcharge paymentMethod="voucher" paymentMethodType="boleto" />
+    <Surcharge paymentMethod paymentMethodType />
     <InfoElement />
+    <Terms paymentMethod paymentMethodType />
   </div>
 }
 

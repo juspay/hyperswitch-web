@@ -1,0 +1,46 @@
+open RecoilAtoms
+
+@react.component
+let make = (~displayName, ~balanceText, ~giftCardType, ~removeGiftCard, ~id) => {
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let paymentMethodsFields = PaymentMethodsRecord.getPaymentMethodsFields(~localeString)
+
+  let giftCardIcon = {
+    let paymentMethodInfo =
+      paymentMethodsFields->Array.find(pm =>
+        pm.paymentMethodName == giftCardType->String.toLowerCase
+      )
+    switch paymentMethodInfo {
+    | Some(info) =>
+      switch info.icon {
+      | Some(icon) => icon
+      | None => <Icon name="gift-cards" size=16 />
+      }
+    | None => <Icon name="gift-cards" size=16 />
+    }
+  }
+
+  <div
+    className="flex items-center justify-between p-4 mb-3 rounded-lg border"
+    style={
+      borderColor: themeObj.borderColor,
+      backgroundColor: themeObj.colorBackground,
+    }>
+    <div className="flex items-center gap-3">
+      <div className="w-8 h-8 flex items-center justify-center"> {giftCardIcon} </div>
+      <div className="flex flex-col">
+        <span className="text-sm font-medium" style={color: themeObj.colorText}>
+          {displayName->React.string}
+        </span>
+      </div>
+    </div>
+    <div className="flex items-center gap-3">
+      <span className="text-sm font-medium text-green-850"> {balanceText->React.string} </span>
+      <button
+        className="w-5 h-5 flex items-center justify-center"
+        onClick={_ => removeGiftCard(id)->ignore}>
+        <Icon name="cross" size=16 />
+      </button>
+    </div>
+  </div>
+}

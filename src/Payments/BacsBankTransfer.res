@@ -17,7 +17,10 @@ let default = () => {
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
+  let paymentMethodType = "bacs"
+  let paymentMethod = "bank_transfer"
+
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethod)
 
   React.useEffect(() => {
     setComplete(_ => complete)
@@ -30,7 +33,7 @@ let default = () => {
     if confirm.doSubmit {
       if complete {
         let bodyArr =
-          PaymentBody.dynamicPaymentBody("bank_transfer", "bacs")->mergeAndFlattenToTuples(
+          PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)->mergeAndFlattenToTuples(
             requiredFieldsBody,
           )
         intent(
@@ -48,8 +51,9 @@ let default = () => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields paymentMethod="bank_transfer" paymentMethodType="bacs" setRequiredFieldsBody />
-    <Surcharge paymentMethod="bank_transfer" paymentMethodType="bacs" />
+    <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
+    <Surcharge paymentMethod paymentMethodType />
     <InfoElement />
+    <Terms paymentMethodType paymentMethod />
   </div>
 }

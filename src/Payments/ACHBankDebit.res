@@ -103,9 +103,12 @@ let make = () => {
   }, (email, modalData, fullName, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
+  let paymentMethodType = "ach"
+  let paymentMethod = "bank_debit"
+
   <>
     <RenderIf condition={isVerifyPMAuthConnectorConfigured}>
-      <AddBankDetails paymentMethodType="ach" />
+      <AddBankDetails paymentMethodType />
     </RenderIf>
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
@@ -126,8 +129,8 @@ let make = () => {
             </div>
           </RenderIf>
         </div>
-        <Surcharge paymentMethod="bank_debit" paymentMethodType="ach" />
-        <Terms mode=ACHBankDebit />
+        <Surcharge paymentMethod paymentMethodType />
+        <Terms paymentMethod paymentMethodType />
         <FullScreenPortal>
           <BankDebitModal setModalData />
         </FullScreenPortal>

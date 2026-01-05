@@ -1,42 +1,50 @@
 @react.component
-let make = (~mode: PaymentModeType.payment, ~styles: JsxDOMStyle.t={}) => {
+let make = (~styles: JsxDOMStyle.t={}, ~paymentMethod, ~paymentMethodType) => {
   open RecoilAtoms
   let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {customMessageForCardTerms, business, terms} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let customConfigForSepaBankDebit = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
-    ~paymentMethod="bank_debit",
-    ~paymentMethodType="sepa",
+  let {payment_type: paymentType} = Recoil.useRecoilValueFromAtom(
+    PaymentUtils.paymentMethodListValue,
   )
-
-  let customMessageConfigForSepaBankDebit =
-    customConfigForSepaBankDebit
-    ->Option.map(config => config.message)
-    ->Option.getOr(PaymentType.defaultPaymentMethodMessage)
-
-  let customMessageForSepaBankDebit = switch customMessageConfigForSepaBankDebit.displayMode {
-  | DefaultSdkMessage => localeString.sepaDebitTerms(business.name)
-  | CustomMessage => customMessageConfigForSepaBankDebit.value->Option.getOr("")->String.trim
-  | Hidden => ""
-  }
   let cardTermsValue =
-    customMessageForCardTerms->String.length > 0
+    customMessageForCardTerms != ""
       ? customMessageForCardTerms
       : localeString.cardTerms(business.name)
 
-  let conditionToShowSepaBankDebitMessage = switch customMessageConfigForSepaBankDebit.displayMode {
-  | DefaultSdkMessage => terms.sepaDebit
-  | CustomMessage => customMessageForSepaBankDebit->String.length > 0 ? Always : Never
-  | Hidden => Never
+  let paymentMethodTermsDefaults = switch paymentMethod {
+  | "bank_debit" =>
+    switch paymentMethodType {
+    | "sepa" => (localeString.sepaDebitTerms(business.name), terms.sepaDebit)
+    | "becs" => (localeString.becsDebitTerms, terms.auBecsDebit)
+    | "ach" => (localeString.achBankDebitTerms(business.name), terms.usBankAccount)
+    | _ => ("", Never)
+    }
+  | "card" =>
+    switch paymentType {
+    | NEW_MANDATE | SETUP_MANDATE => (cardTermsValue, terms.card)
+    | _ => ("", Never)
+    }
+  | _ => ("", Never)
   }
 
-  let terms = switch mode {
-  | ACHBankDebit => (localeString.achBankDebitTerms(business.name), terms.usBankAccount)
-  | SepaBankDebit => (customMessageForSepaBankDebit, conditionToShowSepaBankDebitMessage)
-  | BecsBankDebit => (localeString.becsDebitTerms, terms.auBecsDebit)
-  | Card => (cardTermsValue, terms.card)
-  | _ => ("", Auto)
+  let customConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
+  let customMessageConfig =
+    customConfig
+    ->Option.map(config => config.message)
+    ->Option.getOr(PaymentType.defaultPaymentMethodMessage)
+
+  let (termsText, showTerm) = switch customMessageConfig.displayMode {
+  | DefaultSdkMessage => paymentMethodTermsDefaults
+  | CustomMessage => {
+      let customMessage = customMessageConfig.value->Option.getOr("")->String.trim
+      (customMessage, customMessage->String.length > 0 ? Always : Never)
+    }
+  | Hidden => ("", Never)
   }
-  let (termsText, showTerm) = terms
 
   <RenderIf condition={showTerm == Auto || showTerm == Always}>
     <div

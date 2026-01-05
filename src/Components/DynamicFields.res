@@ -28,6 +28,8 @@ let make = (
   ~cvcProps=None,
   ~isBancontact=false,
   ~isSaveDetailsWithClickToPay=false,
+  ~isDisableInfoElement=false,
+  ~isSplitPaymentsEnabled=false,
 ) => {
   open DynamicFieldsUtils
   open PaymentTypeContext
@@ -286,6 +288,7 @@ let make = (
     ~cardExpiry,
     ~cvcNumber,
     ~isSavedCardFlow,
+    ~isSplitPaymentsEnabled,
   )
 
   useSetInitialRequiredFields(
@@ -335,6 +338,7 @@ let make = (
   }, [fieldsArr])
 
   let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
+  let isRenderInfoElement = isInfoElementPresent && !isDisableInfoElement
 
   let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 
@@ -362,6 +366,7 @@ let make = (
               placeholder="1234 1234 1234 1234"
               autocomplete="cc-number"
             />
+          | GiftCardNumber => <GiftCardNumberInput />
           | CardExpiryMonth
           | CardExpiryYear
           | CardExpiryMonthAndYear =>
@@ -401,6 +406,8 @@ let make = (
               placeholder="123"
               autocomplete="cc-csc"
             />
+          | GiftCardPin => <GiftCardPinInput />
+
           | CardExpiryAndCvc =>
             <div className="flex gap-10">
               <PaymentInputField
@@ -815,6 +822,8 @@ let make = (
                 | CardExpiryAndCvc
                 | Currency(_)
                 | FullName
+                | GiftCardNumber
+                | GiftCardPin
                 | ShippingName // Shipping Details are currently supported by only one click widgets
                 | ShippingAddressLine1
                 | ShippingAddressLine2
@@ -840,7 +849,7 @@ let make = (
         </div>
       </RenderIf>
       <Surcharge paymentMethod paymentMethodType />
-      <RenderIf condition={isInfoElementPresent}>
+      <RenderIf condition={isRenderInfoElement}>
         {<>
           {if fieldsArr->Array.length > 1 {
             bottomElement

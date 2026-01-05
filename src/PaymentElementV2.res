@@ -24,6 +24,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
+  let (giftCardOptions, setGiftCardOptions) = React.useState(_ => [])
 
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
   let layoutClass = CardUtils.getLayoutClass(layout)
@@ -31,8 +32,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (dropDownOptions: array<string>, setDropDownOptions) = React.useState(_ => [])
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-
+  let intentList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.intentList)
+  let isGiftCardOnlyPayment = GiftCardHooks.useIsGiftCardOnlyPayment()
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
+
+  let isSplitPaymentEnabled = switch intentList {
+  | LoadedIntent(intent) => intent.splitTxnsEnabled === "enable"
+  | _ => false
+  }
 
   let (walletsList, paymentOptionsList, actualList) = PaymentUtilsV2.useGetPaymentMethodListV2(
     ~paymentOptions,
@@ -67,23 +74,43 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [sessionToken])
 
+  let getGiftCardOptions = () => {
+    switch paymentMethodsListV2 {
+    | LoadedV2(data) =>
+      data.paymentMethodsEnabled->Array.filterMap(method => {
+        if method.paymentMethodType === "gift_card" {
+          Some(method.paymentMethodSubtype)
+        } else {
+          None
+        }
+      })
+    | _ => []
+    }
+  }
+
   React.useEffect(() => {
     let updatePaymentOptions = () => {
-      setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
+      let giftCardOptions = getGiftCardOptions()
+      let filteredOptions = isSplitPaymentEnabled
+        ? paymentOptionsList->Array.filter(option => !Array.includes(giftCardOptions, option))
+        : paymentOptionsList
+      setPaymentOptions(_ => filteredOptions->removeDuplicate)
+      setGiftCardOptions(_ => giftCardOptions)
     }
 
-    switch (paymentManagementList, paymentMethodsListV2) {
-    | (LoadedV2(paymentlist), _) =>
+    switch (paymentManagementList, paymentMethodsListV2, intentList) {
+    | (LoadedV2(paymentlist), _, LoadedIntent(_)) =>
       updatePaymentOptions()
       setPaymentManagementListValue(_ => paymentlist)
-    | (_, LoadedV2(paymentlist)) =>
+    | (_, LoadedV2(paymentlist), LoadedIntent(_)) =>
       setWalletOptions(_ => walletsList)
       updatePaymentOptions()
       setPaymentMethodListValueV2(_ => paymentlist)
-    | (LoadErrorV2(_), _)
-    | (_, LoadErrorV2(_))
-    | (SemiLoadedV2, _)
-    | (_, SemiLoadedV2) =>
+    | (LoadErrorV2(_), _, _)
+    | (_, LoadErrorV2(_), _)
+    | (SemiLoadedV2, _, _)
+    | (_, SemiLoadedV2, _)
+    | (_, _, Error(_)) =>
       // TODO - For Payments CheckPriorityList
       // TODO - For PaymentMethodsManagement Cards
       setPaymentOptions(_ => [])
@@ -91,7 +118,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
 
     None
-  }, (paymentManagementList, paymentOptionsList, actualList, paymentMethodsListV2))
+  }, (paymentManagementList, paymentOptionsList, actualList, paymentMethodsListV2, intentList))
 
   React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
@@ -137,7 +164,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit && selectedOption == "" {
+    if confirm.doSubmit && selectedOption == "" && !isGiftCardOnlyPayment {
       postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
     }
   }, [selectedOption])
@@ -208,6 +235,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
           <SepaBankDebitLazy />
         </ReusableReactSuspense>
+      | Givex
       | Klarna
       | Ideal
       | EPS =>
@@ -265,41 +293,52 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
-    <RenderIf condition={paymentOptions->Array.length > 0 || walletOptions->Array.length > 0}>
+    <RenderIf
+      condition={paymentOptions->Array.length > 0 ||
+      walletOptions->Array.length > 0 ||
+      giftCardOptions->Array.length > 0}>
       <div className="flex flex-col place-items-center">
-        <ErrorBoundary
-          key="payment_request_buttons_all"
-          level={ErrorBoundary.RequestButton}
-          componentName="PaymentRequestButtonElement">
-          <PaymentRequestButtonElement sessions walletOptions />
-        </ErrorBoundary>
-        <RenderIf
-          condition={paymentOptions->Array.length > 0 &&
-          walletOptions->Array.length > 0 &&
-          checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
-          <Or />
+        <RenderIf condition={!isGiftCardOnlyPayment}>
+          <ErrorBoundary
+            key="payment_request_buttons_all"
+            level={ErrorBoundary.RequestButton}
+            componentName="PaymentRequestButtonElement">
+            <PaymentRequestButtonElement sessions walletOptions />
+          </ErrorBoundary>
+          <RenderIf
+            condition={paymentOptions->Array.length > 0 &&
+            walletOptions->Array.length > 0 &&
+            checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
+            <Or />
+          </RenderIf>
         </RenderIf>
-        {switch layoutClass.\"type" {
-        | Tabs =>
-          <PaymentOptions
-            setCardsContainerWidth
-            cardOptions
-            dropDownOptions
-            checkoutEle
-            cardShimmerCount
-            cardProps
-            expiryProps
-          />
-        | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps expiryProps />
-        }}
+        <RenderIf condition={isSplitPaymentEnabled}>
+          <GiftCards giftCardOptions />
+        </RenderIf>
+        <RenderIf condition={!isGiftCardOnlyPayment}>
+          {switch layoutClass.\"type" {
+          | Tabs =>
+            <PaymentOptions
+              setCardsContainerWidth
+              cardOptions
+              dropDownOptions
+              checkoutEle
+              cardShimmerCount
+              cardProps
+              expiryProps
+            />
+          | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps expiryProps />
+          }}
+        </RenderIf>
       </div>
     </RenderIf>
-    {switch (paymentManagementList, paymentMethodsListV2) {
-    | (LoadErrorV2(_), _) =>
+    {switch (paymentManagementList, paymentMethodsListV2, intentList) {
+    | (_, _, Error(_)) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+    | (LoadErrorV2(_), _, _) =>
       <RenderIf condition={paymentManagementListValue.paymentMethodsEnabled->Array.length === 0}>
         <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
       </RenderIf>
-    | (_, LoadErrorV2(_)) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+    | (_, LoadErrorV2(_), _) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
     | _ =>
       <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
         <PaymentElementShimmer />
