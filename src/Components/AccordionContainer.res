@@ -133,6 +133,12 @@ let make = (
     layoutClass.defaultCollapsed ? setSelectedOption(_ => "") : ()
     None
   })
+
+  let shouldShowMoreButton =
+    !showMore &&
+    dropDownOptionsDetails->Array.length > 0 &&
+    !(layoutClass.paymentMethodsArrangement === List)
+
   <div className="w-full">
     <div
       className="AccordionContainer flex flex-col overflow-auto no-scrollbar"
@@ -176,10 +182,7 @@ let make = (
         ->React.array}
       </RenderIf>
     </div>
-    <RenderIf
-      condition={!showMore &&
-      dropDownOptionsDetails->Array.length > 0 &&
-      !(layoutClass.paymentMethodsArrangement === List)}>
+    <RenderIf condition=shouldShowMoreButton>
       <button
         className="AccordionMore flex overflow-auto no-scrollbar"
         onClick={_ => setShowMore(_ => !showMore)}

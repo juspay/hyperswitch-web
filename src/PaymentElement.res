@@ -257,7 +257,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       }
     }
     None
-  }, (selectedOption, cardOptions, dropDownOptions))
+  }, (selectedOption, cardOptions, dropDownOptions, showAllPaymentMethods))
 
   React.useEffect(() => {
     let cardsCount: int = cardsToRender(cardsContainerWidth)

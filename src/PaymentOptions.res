@@ -140,7 +140,7 @@ let make = (
   let style: JsxDOM.style = switch layoutClass.paymentMethodsArrangement {
   | Grid => {
       ...baseStyles,
-      gridTemplateColumns: "repeat(" ++ Int.toString(cardShimmerCount) ++ ", minmax(0, 1fr))",
+      gridTemplateColumns: `repeat(${Int.toString(cardShimmerCount)}, minmax(0, 1fr))`,
     }
   | _ => baseStyles
   }
