@@ -13,7 +13,6 @@ const { SubresourceIntegrityPlugin } = require("webpack-subresource-integrity");
 
 const localhostSources = [
   "http://localhost:8080",
-  "http://localhost:9000",
   "http://localhost:8207",
   "http://localhost:3103",
   "http://localhost:5252",
