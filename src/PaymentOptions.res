@@ -141,6 +141,7 @@ let make = (
   | Grid => {
       ...baseStyles,
       gridTemplateColumns: `repeat(${Int.toString(cardShimmerCount)}, minmax(0, 1fr))`,
+      gridAutoRows: "1fr",
     }
   | _ => baseStyles
   }
