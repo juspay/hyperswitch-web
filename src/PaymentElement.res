@@ -190,10 +190,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~paymentMethodListValue,
     ~sessionObj,
   )
-  let showAllPaymentMethods = switch layoutClass.paymentMethodsArrangement {
-  | Grid => true
-  | _ => false
-  }
+  let showAllPaymentMethods = layoutClass.paymentMethodsArrangement === Grid
 
   React.useEffect(() => {
     switch paymentMethodList {
