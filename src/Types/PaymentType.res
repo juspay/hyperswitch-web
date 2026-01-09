@@ -1,4 +1,5 @@
 type showTerms = Auto | Always | Never
+type paymentMethodsArrangement = Auto | List | Grid
 type showType = Auto | Never
 type layout = Accordion | Tabs
 type groupingBehavior = GroupByPaymentMethods | Default
@@ -112,6 +113,8 @@ type layoutConfig = {
   maxAccordionItems: int,
   \"type": layout,
   savedMethodCustomization: savedMethodCustomization,
+  paymentMethodsArrangement: paymentMethodsArrangement,
+  disableSplitView: bool,
 }
 
 type layoutType =
@@ -282,6 +285,8 @@ let defaultLayout = {
   maxAccordionItems: 4,
   \"type": Tabs,
   savedMethodCustomization: {groupingBehavior: Default},
+  paymentMethodsArrangement: Auto,
+  disableSplitView: false,
 }
 let defaultAddress: address = {
   line1: "",
@@ -481,6 +486,19 @@ let getLayout = str => {
     }
   }
 }
+
+let getPaymentMethodsArrangement = str => {
+  switch str {
+  | "list" => List
+  | "grid" => Grid
+  | "auto" => Auto
+  | str => {
+      str->unknownPropValueWarning(["list", "grid", "auto"], "options.paymentMethodsArrangement")
+      Auto
+    }
+  }
+}
+
 let getAddress = (dict, str, logger) => {
   dict
   ->Dict.get(str)
@@ -793,6 +811,12 @@ let getLayoutValues = (val, logger) => {
   | Object(json) =>
     ObjectLayout({
       let layoutType = getWarningString(json, "type", "tabs", ~logger)
+      let paymentMethodsArrangementType = getWarningString(
+        json,
+        "paymentMethodsArrangement",
+        "auto",
+        ~logger,
+      )
       unknownKeysWarning(
         [
           "defaultCollapsed",
@@ -816,6 +840,8 @@ let getLayoutValues = (val, logger) => {
           "savedMethodCustomization",
           logger,
         ),
+        paymentMethodsArrangement: paymentMethodsArrangementType->getPaymentMethodsArrangement,
+        disableSplitView: getBoolWithWarning(json, "disableSplitView", false, ~logger),
       }
     })
   | _ => StringLayout(Tabs)

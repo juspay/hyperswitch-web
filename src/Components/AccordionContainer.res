@@ -78,14 +78,17 @@ let make = (
     ~expiryProps,
   )
 
-  let cardOptionDetails =
-    paymentOptions
-    ->PaymentMethodsRecord.getPaymentDetails(~localeString)
-    ->Array.slice(~start=0, ~end=layoutClass.maxAccordionItems)
-  let dropDownOptionsDetails =
-    paymentOptions
-    ->PaymentMethodsRecord.getPaymentDetails(~localeString)
-    ->Array.sliceToEnd(~start=layoutClass.maxAccordionItems)
+  let paymentDetails = paymentOptions->PaymentMethodsRecord.getPaymentDetails(~localeString)
+
+  let (cardOptionDetails, dropDownOptionsDetails) = switch layoutClass.paymentMethodsArrangement {
+  | List => (paymentDetails, [])
+  | _ =>
+    let maxItems = layoutClass.maxAccordionItems
+    (
+      paymentDetails->Array.slice(~start=0, ~end=maxItems),
+      paymentDetails->Array.sliceToEnd(~start=maxItems),
+    )
+  }
 
   let getBorderRadiusStyleForCardOptionDetails = index => {
     if (
@@ -130,6 +133,12 @@ let make = (
     layoutClass.defaultCollapsed ? setSelectedOption(_ => "") : ()
     None
   })
+
+  let shouldShowMoreButton =
+    !showMore &&
+    dropDownOptionsDetails->Array.length > 0 &&
+    !(layoutClass.paymentMethodsArrangement === List)
+
   <div className="w-full">
     <div
       className="AccordionContainer flex flex-col overflow-auto no-scrollbar"
@@ -173,7 +182,7 @@ let make = (
         ->React.array}
       </RenderIf>
     </div>
-    <RenderIf condition={!showMore && dropDownOptionsDetails->Array.length > 0}>
+    <RenderIf condition=shouldShowMoreButton>
       <button
         className="AccordionMore flex overflow-auto no-scrollbar"
         onClick={_ => setShowMore(_ => !showMore)}
