@@ -73,7 +73,7 @@ type networkTokenizationData = {
 type networkTokenization = {paymentMethodData: networkTokenizationData}
 
 type customerMethods = {
-  id: string,
+  paymentToken: string,
   customerId: string,
   paymentMethodType: string,
   paymentMethodSubType: string,

@@ -13,7 +13,6 @@ let make = (
   open Utils
   open UtilityHooks
   open PaymentTypeContext
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let {innerLayout} = config.appearance
@@ -384,10 +383,7 @@ let make = (
         } else if isPMMFlow {
           saveCard(
             ~bodyArr=cardBody->mergeAndFlattenToTuples(requiredFieldsBody),
-            ~confirmParam={
-              return_url: options.sdkHandleSavePayment.confirmParams.return_url,
-              publishableKey,
-            },
+            ~confirmParam=confirm.confirmParams,
             ~handleUserError=true,
           )
         } else {

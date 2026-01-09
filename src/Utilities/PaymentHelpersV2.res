@@ -214,6 +214,7 @@ let intentCall = (
               }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else {
+              handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
               handleLogging(
                 ~optLogger,
                 ~value="succeeded",
@@ -303,7 +304,7 @@ let deletePaymentMethodV2 = (
   ~pmClientSecret,
   ~publishableKey,
   ~profileId,
-  ~paymentMethodId,
+  ~paymentMethodToken,
   ~pmSessionId,
   ~logger as _,
   ~customPodUri,
@@ -319,7 +320,7 @@ let deletePaymentMethodV2 = (
     uri,
     ~method=#DELETE,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-    ~bodyStr=[("payment_method_id", paymentMethodId->JSON.Encode.string)]
+    ~bodyStr=[("payment_method_token", paymentMethodToken->JSON.Encode.string)]
     ->getJsonFromArrayOfJson
     ->JSON.stringify,
   )
@@ -470,6 +471,73 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
           ~handleUserError,
           ~paymentType,
           ~fetchMethod=#POST,
+          ~customPodUri,
+          ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
+          ~isCallbackUsedVal,
+          ~redirectionFlags,
+        )->ignore
+      }
+
+      switch paymentManagementList {
+      | LoadedV2(_) => saveCard()
+      | _ => ()
+      }
+    | None =>
+      postFailedSubmitResponse(
+        ~errortype="confirms_payment_failed",
+        ~message="Payment failed. Try again!",
+      )
+    }
+  }
+}
+
+let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
+  open RecoilAtoms
+  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+  let {config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  (
+    ~handleUserError=false,
+    ~bodyArr: array<(string, JSON.t)>,
+    ~confirmParam: ConfirmType.confirmParams,
+  ) => {
+    switch keys.pmClientSecret {
+    | Some(pmClientSecret) =>
+      let pmSessionId = keys.pmSessionId->Option.getOr("")
+      let headers = [
+        ("Content-Type", "application/json"),
+        (
+          "Authorization",
+          `publishable-key=${keys.publishableKey},client-secret=${config.pmClientSecret}`,
+        ),
+        ("x-profile-id", keys.profileId),
+      ]
+      let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
+      let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
+
+      let browserInfo = BrowserSpec.broswerInfo
+      let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
+      let bodyStr =
+        [("client_secret", pmClientSecret->JSON.Encode.string)]
+        ->Array.concatMany([bodyArr, browserInfo(), returnUrlArr])
+        ->getJsonFromArrayOfJson
+        ->JSON.stringify
+
+      let saveCard = () => {
+        intentCall(
+          ~fetchApi,
+          ~uri,
+          ~headers,
+          ~bodyStr,
+          ~confirmParam: ConfirmType.confirmParams,
+          ~clientSecret=pmClientSecret,
+          ~optLogger,
+          ~handleUserError,
+          ~paymentType,
+          ~fetchMethod=#PUT,
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~isCallbackUsedVal,

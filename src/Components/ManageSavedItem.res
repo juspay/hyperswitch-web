@@ -38,7 +38,7 @@ let make = (
       minWidth: "150px",
       width: "100%",
       padding: "0 0 1rem 0",
-      borderBottom: managePaymentMethod === paymentItem.id
+      borderBottom: managePaymentMethod === paymentItem.paymentToken
         ? `1px solid ${themeObj.borderColor}`
         : "none",
       borderTop: "none",
