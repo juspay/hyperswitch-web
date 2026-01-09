@@ -38,6 +38,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="apple_pay",
+    ~isWallet,
   )
 
   let applePayPaymentMethodType = React.useMemo(() => {

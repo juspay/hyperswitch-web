@@ -45,6 +45,7 @@ let make = (~walletOptions) => {
     ~complete=paypalClicked,
     ~empty=!paypalClicked,
     ~paymentType=paymentMethodType,
+    ~isWallet,
   )
   let onPaypalClick = _ev => {
     loggerState.setLogInfo(
