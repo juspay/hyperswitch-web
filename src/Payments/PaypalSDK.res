@@ -67,6 +67,7 @@ let make = (~sessionObj: SessionsType.token) => {
     ~complete=isCompleted,
     ~empty=!isCompleted,
     ~paymentType="paypal",
+    ~isWallet=true,
   )
 
   let mountPaypalSDK = () => {

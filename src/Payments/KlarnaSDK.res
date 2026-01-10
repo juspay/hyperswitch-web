@@ -44,6 +44,7 @@ let make = (~sessionObj: SessionsType.token) => {
     ~complete=isCompleted,
     ~empty=!isCompleted,
     ~paymentType="klarna",
+    ~isWallet=true,
   )
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
