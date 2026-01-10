@@ -1,5 +1,5 @@
 @react.component
-let make = (~label="") => {
+let make = (~fieldType="") => {
   open RecoilAtoms
   open Utils
 
@@ -8,133 +8,63 @@ let make = (~label="") => {
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let inputRef = React.useRef(Nullable.null)
 
-  let pixKeyRef = React.useRef(Nullable.null)
-  let pixCPFRef = React.useRef(Nullable.null)
-  let pixCNPJRef = React.useRef(Nullable.null)
-
-  let changePixKey = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]
-    setPixKey(prev => {
-      ...prev,
-      value: val,
-    })
-  }
-
-  let changePixCNPJ = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]
-    setPixCNPJ(prev => {
-      ...prev,
-      value: val,
-    })
-  }
-
-  let changePixCPF = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]
-    setPixCPF(prev => {
-      ...prev,
-      value: val,
-    })
-  }
-
-  let onBlurPixKey = _ => {
-    if pixKey.value->String.length > 0 {
-      setPixKey(prev => {
-        ...prev,
-        isValid: Some(true),
-        errorString: "",
-      })
+  let validatePixKey = (val): RecoilAtomTypes.field =>
+    if val->String.length > 0 {
+      {value: val, isValid: Some(true), errorString: ""}
     } else {
-      setPixKey(prev => {
-        ...prev,
-        isValid: None,
-        errorString: "",
-      })
+      {value: val, isValid: None, errorString: ""}
     }
-  }
 
-  let onBlurPixCNPJ = ev => {
-    let pixCNPJNumber = ReactEvent.Focus.target(ev)["value"]
-
-    if %re("/^\d*$/")->RegExp.test(pixCNPJNumber) && pixCNPJNumber->String.length === 14 {
-      setPixCNPJ(prev => {
-        ...prev,
-        isValid: Some(true),
-        errorString: "",
-      })
-    } else if pixCNPJNumber->String.length == 0 {
-      setPixCNPJ(prev => {
-        ...prev,
-        isValid: None,
-        errorString: "",
-      })
+  let validatePixCNPJ = (val): RecoilAtomTypes.field => {
+    let isCNPJValid = %re("/^\d*$/")->RegExp.test(val) && val->String.length === 14
+    if isCNPJValid {
+      {value: val, isValid: Some(true), errorString: ""}
+    } else if val->String.length === 0 {
+      {value: val, isValid: None, errorString: ""}
     } else {
-      setPixCNPJ(prev => {
-        ...prev,
+      {
+        value: val,
         isValid: Some(false),
         errorString: localeString.pixCNPJInvalidText,
-      })
+      }
     }
   }
 
-  let onBlurPixCPF = ev => {
-    let pixCPFNumber = ReactEvent.Focus.target(ev)["value"]
-
-    if %re("/^\d*$/")->RegExp.test(pixCPFNumber) && pixCPFNumber->String.length === 11 {
-      setPixCPF(prev => {
-        ...prev,
-        isValid: Some(true),
-        errorString: "",
-      })
-    } else if pixCPFNumber->String.length == 0 {
-      setPixCPF(prev => {
-        ...prev,
-        isValid: None,
-        errorString: "",
-      })
+  let validatePixCPF = (val): RecoilAtomTypes.field => {
+    let isCPFValid = %re("/^\d*$/")->RegExp.test(val) && val->String.length === 11
+    if isCPFValid {
+      {value: val, isValid: Some(true), errorString: ""}
+    } else if val->String.length === 0 {
+      {value: val, isValid: None, errorString: ""}
     } else {
-      setPixCPF(prev => {
-        ...prev,
+      {
+        value: val,
         isValid: Some(false),
         errorString: localeString.pixCPFInvalidText,
-      })
+      }
     }
   }
 
-  React.useEffect(() => {
-    if %re("/^\d*$/")->RegExp.test(pixCNPJ.value) {
-      setPixCNPJ(prev => {
-        ...prev,
-        isValid: Some(true),
-        errorString: "",
-      })
-    } else {
-      setPixCNPJ(prev => {
-        ...prev,
-        isValid: Some(false),
-        errorString: localeString.pixCNPJInvalidText,
-      })
+  let validateAndSetPixValue = val => {
+    switch fieldType {
+    | "pixKey" => setPixKey(_ => val->validatePixKey)
+    | "pixCNPJ" => setPixCNPJ(_ => val->validatePixCNPJ)
+    | "pixCPF" => setPixCPF(_ => val->validatePixCPF)
+    | _ => ()
     }
-    None
-  }, [pixCNPJ.value])
+  }
 
-  React.useEffect(() => {
-    if %re("/^\d*$/")->RegExp.test(pixCPF.value) {
-      setPixCPF(prev => {
-        ...prev,
-        isValid: Some(true),
-        errorString: "",
-      })
-    } else {
-      setPixCPF(prev => {
-        ...prev,
-        isValid: Some(false),
-        errorString: localeString.pixCPFInvalidText,
-      })
-    }
+  let onChange = ev => {
+    let val = ReactEvent.Form.target(ev)["value"]
+    val->validateAndSetPixValue
+  }
 
-    None
-  }, [pixCPF.value])
+  let onBlur = ev => {
+    let val = ReactEvent.Focus.target(ev)["value"]
+    val->validateAndSetPixValue
+  }
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -170,45 +100,45 @@ let make = (~label="") => {
   useSubmitPaymentData(submitCallback)
 
   <>
-    <RenderIf condition={label === "pixKey"}>
+    <RenderIf condition={fieldType === "pixKey"}>
       <PaymentField
         fieldName={localeString.pixKeyLabel}
         setValue=setPixKey
         value=pixKey
-        onChange=changePixKey
-        onBlur=onBlurPixKey
+        onChange
+        onBlur
         type_="pixKey"
         name="pixKey"
-        inputRef=pixKeyRef
+        inputRef
         placeholder={localeString.pixKeyPlaceholder}
         paymentType=Payment
       />
     </RenderIf>
-    <RenderIf condition={label === "pixCPF"}>
+    <RenderIf condition={fieldType === "pixCPF"}>
       <PaymentField
         fieldName={localeString.pixCPFLabel}
         setValue=setPixCPF
         value=pixCPF
-        onChange=changePixCPF
-        onBlur=onBlurPixCPF
+        onChange
+        onBlur
         type_="pixCPF"
         name="pixCPF"
-        inputRef=pixCPFRef
+        inputRef
         placeholder={localeString.pixCPFPlaceholder}
         maxLength=11
         paymentType=Payment
       />
     </RenderIf>
-    <RenderIf condition={label === "pixCNPJ"}>
+    <RenderIf condition={fieldType === "pixCNPJ"}>
       <PaymentField
         fieldName={localeString.pixCNPJLabel}
         setValue=setPixCNPJ
         value=pixCNPJ
-        onChange=changePixCNPJ
-        onBlur=onBlurPixCNPJ
+        onChange
+        onBlur
         type_="pixCNPJ"
         name="pixCNPJ"
-        inputRef=pixCNPJRef
+        inputRef
         placeholder={localeString.pixCNPJPlaceholder}
         maxLength=14
         paymentType=Payment

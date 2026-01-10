@@ -477,9 +477,9 @@ let make = (
           | CryptoCurrencyNetworks => <CryptoCurrencyNetworks />
           | DateOfBirth => <DateOfBirth />
           | VpaId => <VpaIdPaymentInput />
-          | PixKey => <PixPaymentInput label="pixKey" />
-          | PixCPF => <PixPaymentInput label="pixCPF" />
-          | PixCNPJ => <PixPaymentInput label="pixCNPJ" />
+          | PixKey => <PixPaymentInput fieldType="pixKey" />
+          | PixCPF => <PixPaymentInput fieldType="pixCPF" />
+          | PixCNPJ => <PixPaymentInput fieldType="pixCNPJ" />
           | BankAccountNumber | IBAN =>
             <PaymentField
               fieldName="IBAN"
