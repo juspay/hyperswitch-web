@@ -300,12 +300,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (layoutClass.defaultCollapsed, paymentOptions, paymentMethodList, selectedOption))
 
   let loader = () => {
-    handlePostMessageEvents(
-      ~complete=false,
-      ~empty=false,
-      ~paymentType=selectedOption,
-      ~loggerState,
-    )
     <PaymentShimmer />
   }
   let paymentFormElement = {
