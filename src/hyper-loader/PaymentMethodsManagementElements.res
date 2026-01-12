@@ -273,6 +273,7 @@ let make = (
         mountPostMessage,
         ~isPaymentManagementElement=true,
         ~redirectionFlags=RecoilAtoms.defaultRedirectionFlags,
+        ~logger=Some(logger),
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

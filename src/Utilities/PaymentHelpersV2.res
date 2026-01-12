@@ -585,3 +585,81 @@ let fetchSessions = (
     JSON.Encode.null->resolve
   })
 }
+
+let fetchIntent = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~paymentId,
+  ~logger,
+  ~customPodUri,
+  ~endpoint,
+  ~profileId,
+) => {
+  let uri = APIUtils.generateApiUrlV2(
+    ~apiCallType=FetchIntent,
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: Some(publishableKey),
+      paymentIdV2: Some(paymentId),
+    },
+  )
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  // Todo: Add logger
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~clientSecret=Some(clientSecret),
+    ~profileId=Some(profileId),
+    ~onSuccess,
+    ~onFailure,
+  )
+}
+
+let checkBalanceAndApplyPaymentMethod = async (
+  ~paymentMethods: array<Dict.t<JSON.t>>,
+  ~clientSecret,
+  ~publishableKey,
+  ~customPodUri,
+  ~profileId,
+  ~paymentId,
+  ~logger,
+) => {
+  let uri = APIUtils.generateApiUrlV2(
+    ~apiCallType=CheckBalanceAndApplyPaymentMethod,
+    ~params={
+      customBackendBaseUrl: Some(ApiEndpoint.getApiEndPoint(~publishableKey)),
+      publishableKey: Some(publishableKey),
+      paymentIdV2: Some(paymentId),
+    },
+  )
+
+  let paymentMethodsJson =
+    paymentMethods->Array.map(dict => dict->Dict.toArray->getJsonFromArrayOfJson)
+  let body = [("payment_methods", paymentMethodsJson->JSON.Encode.array)]->getJsonFromArrayOfJson
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~clientSecret,
+    ~profileId=Some(profileId),
+    ~onSuccess,
+    ~onFailure,
+  )
+}

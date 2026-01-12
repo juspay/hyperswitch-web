@@ -19,12 +19,13 @@ let make = (~walletOptions) => {
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let isWallet = walletOptions->Array.includes("paypal")
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
-
+  let paymentMethod = "wallet"
+  let paymentMethodType = "paypal"
+  let isWallet = walletOptions->Array.includes(paymentMethodType)
   let (_, _, labelType, _) = options.wallets.style.type_
   let _label = switch labelType {
   | Paypal(val) => val->PaypalSDKTypes.getLabel
@@ -44,7 +45,7 @@ let make = (~walletOptions) => {
   UtilityHooks.useHandlePostMessages(
     ~complete=paypalClicked,
     ~empty=!paypalClicked,
-    ~paymentType="paypal",
+    ~paymentType=paymentMethodType,
   )
   let onPaypalClick = _ev => {
     if isTestMode {
@@ -61,8 +62,8 @@ let make = (~walletOptions) => {
         ~paymentMethod="PAYPAL",
       )
       PaymentUtils.emitPaymentMethodInfo(
-        ~paymentMethod="wallet",
-        ~paymentMethodType="paypal",
+        ~paymentMethod,
+        ~paymentMethodType,
         ~country,
         ~state,
         ~pinCode,
@@ -74,8 +75,8 @@ let make = (~walletOptions) => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
           let body = switch GlobalVars.sdkVersion {
-          | V1 => PaymentBody.dynamicPaymentBody("wallet", "paypal")
-          | V2 => PaymentBodyV2.dynamicPaymentBodyV2("wallet", "paypal")
+          | V1 => PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)
+          | V2 => PaymentBodyV2.dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
           }
           let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
             ~isGuestCustomer,
@@ -168,7 +169,10 @@ let make = (~walletOptions) => {
       </div>
     </button>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="paypal" setRequiredFieldsBody />
+    <>
+      <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
+      <Terms paymentMethod paymentMethodType />
+    </>
   }
 }
 

@@ -132,6 +132,9 @@ let make = () => {
     }
   }
 
+  let paymentMethodType = "bacs"
+  let paymentMethod = "bank_debit"
+
   <>
     <RenderIf condition={isVerifyPMAuthConnectorConfigured}>
       <AddBankDetails paymentMethodType="bacs" />
@@ -163,7 +166,8 @@ let make = () => {
         <EmailPaymentInput />
         <FullNamePaymentInput customFieldName=Some("Bank Holder Name") />
         <AddressPaymentInput />
-        <Surcharge paymentMethod="bank_debit" paymentMethodType="bacs" />
+        <Surcharge paymentMethod paymentMethodType />
+        <Terms paymentMethod paymentMethodType />
       </div>
     </RenderIf>
   </>

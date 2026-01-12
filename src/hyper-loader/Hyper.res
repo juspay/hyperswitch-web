@@ -232,12 +232,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
     }->Sentry.sentryLogger
-    let isSecure = Window.Location.protocol === "https:"
-    let isLocal =
-      ["localhost", "127.0.0.1"]
-      ->Array.find(url => Window.Location.hostname->String.includes(url))
-      ->Option.isSome
-    if !isSecure && !isLocal {
+    let isSecure = Window.isSecureContext
+    if !isSecure {
       manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.hrefWithoutSearch, ~logger)
       Exn.raiseError("Insecure domain: " ++ Window.hrefWithoutSearch)
     }
@@ -335,8 +331,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       let retrievePaymentIntentFn = async clientSecret => {
-        let uri = APIUtils.generateApiUrl(
-          V1(RetrievePaymentIntent),
+        let uri = APIUtils.generateApiUrlV1(
+          ~apiCallType=RetrievePaymentIntent,
           ~params={
             clientSecret: Some(clientSecret),
             publishableKey: Some(publishableKey),

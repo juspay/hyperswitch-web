@@ -243,6 +243,9 @@ let make = (
   let submitCallback = GooglePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
   useSubmitPaymentData(submitCallback)
 
+  let paymentMethod = "wallet"
+  let paymentMethodType = "google_pay"
+
   if isWallet {
     <RenderIf condition={isRenderGooglePayButton}>
       <div
@@ -256,7 +259,10 @@ let make = (
       />
     </RenderIf>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody />
+    <>
+      <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
+      <Terms paymentMethod paymentMethodType />
+    </>
   }
 }
 

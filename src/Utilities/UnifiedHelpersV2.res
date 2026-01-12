@@ -149,6 +149,22 @@ let itemToPaymentDetails = cust => {
   }
 }
 
+let itemToIntentObjMapper = dict => {
+  paymentType: getString(dict, "payment_type", "")->paymentTypeMapper,
+  splitTxnsEnabled: getString(dict, "split_txns_enabled", "skip"),
+}
+
+let createIntentDetails = (dict, key) => {
+  let intentDict = dict->Utils.getDictFromDict(key)
+
+  if intentDict == Dict.make() {
+    Error(JSON.Encode.null)
+  } else {
+    let response = intentDict->itemToIntentObjMapper
+    LoadedIntent(response)
+  }
+}
+
 let defaultAddress = {
   city: "",
   country: "",

@@ -396,7 +396,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     | Loaded(paymentlist) =>
       let paymentOrder =
         paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
-      let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let pList = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
 
       let shouldDisplayApplePayInTabs =
         !paymentMethodListValue.collect_billing_details_from_wallets &&
@@ -413,12 +413,12 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
         (!isPaypalSDKFlow || !isPaypalTokenExist)
 
       let (wallets, otherOptions) =
-        plist->paymentListLookupNew(
+        pList->paymentListLookupNew(
           ~order=paymentOrder,
           ~isShowPaypal,
           ~isShowKlarnaOneClick=optionAtomValue.wallets.klarna === Auto,
           ~isKlarnaSDKFlow,
-          ~paymentMethodListValue=plist,
+          ~paymentMethodListValue=pList,
           ~areAllGooglePayRequiredFieldsPrefilled,
           ~isGooglePayReady,
           ~shouldDisplayApplePayInTabs,
@@ -427,7 +427,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
         )
 
       let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
-        ~paymentMethodList=plist,
+        ~paymentMethodList=pList,
         ~paymentMethodName="pay_later",
         ~paymentMethodType="klarna",
       )

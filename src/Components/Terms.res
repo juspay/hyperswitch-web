@@ -1,21 +1,50 @@
 @react.component
-let make = (~mode: PaymentModeType.payment, ~styles: JsxDOMStyle.t={}) => {
+let make = (~styles: JsxDOMStyle.t={}, ~paymentMethod, ~paymentMethodType) => {
   open RecoilAtoms
   let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {customMessageForCardTerms, business, terms} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {payment_type: paymentType} = Recoil.useRecoilValueFromAtom(
+    PaymentUtils.paymentMethodListValue,
+  )
   let cardTermsValue =
-    customMessageForCardTerms->String.length > 0
+    customMessageForCardTerms != ""
       ? customMessageForCardTerms
       : localeString.cardTerms(business.name)
 
-  let terms = switch mode {
-  | ACHBankDebit => (localeString.achBankDebitTerms(business.name), terms.usBankAccount)
-  | SepaBankDebit => (localeString.sepaDebitTerms(business.name), terms.sepaDebit)
-  | BecsBankDebit => (localeString.becsDebitTerms, terms.auBecsDebit)
-  | Card => (cardTermsValue, terms.card)
-  | _ => ("", Auto)
+  let paymentMethodTermsDefaults = switch paymentMethod {
+  | "bank_debit" =>
+    switch paymentMethodType {
+    | "sepa" => (localeString.sepaDebitTerms(business.name), terms.sepaDebit)
+    | "becs" => (localeString.becsDebitTerms, terms.auBecsDebit)
+    | "ach" => (localeString.achBankDebitTerms(business.name), terms.usBankAccount)
+    | _ => ("", Never)
+    }
+  | "card" =>
+    switch paymentType {
+    | NEW_MANDATE | SETUP_MANDATE => (cardTermsValue, terms.card)
+    | _ => ("", Never)
+    }
+  | _ => ("", Never)
   }
-  let (termsText, showTerm) = terms
+
+  let customConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
+  let customMessageConfig =
+    customConfig
+    ->Option.map(config => config.message)
+    ->Option.getOr(PaymentType.defaultPaymentMethodMessage)
+
+  let (termsText, showTerm) = switch customMessageConfig.displayMode {
+  | DefaultSdkMessage => paymentMethodTermsDefaults
+  | CustomMessage => {
+      let customMessage = customMessageConfig.value->Option.getOr("")->String.trim
+      (customMessage, customMessage->String.length > 0 ? Always : Never)
+    }
+  | Hidden => ("", Never)
+  }
 
   <RenderIf condition={showTerm == Auto || showTerm == Always}>
     <div

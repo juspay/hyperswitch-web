@@ -220,6 +220,24 @@ let make = (
       })
     }
 
+    let fetchIntent = (mountedIframeRef, componentType) => {
+      Promise.make((resolve, _) => {
+        let handleIntentLoaded = (event: Types.event) => {
+          let json = event.data->anyTypeToJson
+          let dict = json->getDictFromJson
+          let isGetIntentData = dict->getString("data", "") === "get_intent_v2"
+          if isGetIntentData {
+            resolve()
+            let msg = [("getIntent", json)]->Dict.fromArray
+            mountedIframeRef->Window.iframePostMessage(msg)
+          }
+        }
+        let msg = [("sendGetIntentResponse", true->JSON.Encode.bool)]->Dict.fromArray
+        addSmartEventListener("message", handleIntentLoaded, `onGetIntentLoaded-${componentType}`)
+        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+      })
+    }
+
     let fetchPaymentsListV2 = (mountedIframeRef, componentType) => {
       Promise.make((resolve, _) => {
         let handlePaymentMethodsLoaded = (event: Types.event) => {
@@ -1460,7 +1478,11 @@ let make = (
               fetchBlockedBins(mountedIframeRef, componentType),
               sessionTokensPromise,
             ]
-          | V2 => [fetchPaymentsListV2(mountedIframeRef, componentType), sessionTokensPromise]
+          | V2 => [
+              fetchPaymentsListV2(mountedIframeRef, componentType),
+              sessionTokensPromise,
+              fetchIntent(mountedIframeRef, componentType),
+            ]
           }
 
           Promise.all(promises)->then(_ => {
@@ -1482,6 +1504,7 @@ let make = (
         iframeRef,
         mountPostMessage,
         ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+        ~logger=Some(logger),
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
