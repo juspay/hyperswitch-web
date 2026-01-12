@@ -3,7 +3,7 @@ open Utils
 
 @react.component
 let make = (~cvcProps: CardUtils.cvcProps) => {
-  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
+  let (paymentTokenAtom, setPaymentTokenAtom) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
   let {iframeId, publishableKey, profileId} = Recoil.useRecoilValueFromAtom(keys)
   let nickName = Recoil.useRecoilValueFromAtom(userCardNickName)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
@@ -13,17 +13,12 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
   let (_, setManagePaymentMethod) = Recoil.useRecoilState(RecoilAtomsV2.managePaymentMethod)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let updateCard = PaymentHelpersV2.useUpdateCard(Some(loggerState), Card)
+  let updateCard = PaymentHelpersV2.useSaveOrUpdateCard(Some(loggerState), Card, ~isUpdate=true)
   let {isCVCValid, cvcNumber, setCvcError} = cvcProps
-  let complete = switch isCVCValid {
-  | Some(val) => paymentToken.paymentToken !== "" && val
-  | _ => false
-  }
-  let empty = cvcNumber == ""
+  let complete = isCVCValid->Option.getOr(false) && paymentTokenAtom.paymentToken !== ""
+  let isEmpty = cvcNumber == ""
 
-  let setUserError = message => {
-    postFailedSubmitResponse(~errortype="validation_error", ~message)
-  }
+  let setUserError = message => postFailedSubmitResponse(~errortype="validation_error", ~message)
 
   let updateSavedMethodV2 = (
     savedMethods: array<UnifiedPaymentsTypesV2.customerMethods>,
@@ -135,7 +130,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
 
     switch tokenObj {
     | Some(obj) =>
-      setPaymentToken(_ => {
+      setPaymentTokenAtom(_ => {
         paymentToken: obj.paymentToken,
         customerId: obj.customerId,
       })
@@ -146,19 +141,19 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
 
   let customerMethod = React.useMemo(_ =>
     savedMethodsV2
-    ->Array.filter(savedMethod => savedMethod.paymentToken === paymentToken.paymentToken)
+    ->Array.filter(savedMethod => savedMethod.paymentToken === paymentTokenAtom.paymentToken)
     ->Array.get(0)
     ->Option.getOr(UnifiedHelpersV2.defaultCustomerMethods)
-  , [paymentToken])
+  , (paymentTokenAtom, savedMethodsV2))
 
-  let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
+  let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !isEmpty)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     let savedPaymentMethodBody = PaymentManagementBody.updateCVVBody(
-      ~paymentMethodToken=paymentToken.paymentToken,
+      ~paymentMethodToken=paymentTokenAtom.paymentToken,
       ~cvcNumber,
     )
 
@@ -182,7 +177,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
         }
       }
     }
-  }, (areRequiredFieldsValid, empty, complete, customerMethod, isManualRetryEnabled))
+  }, (areRequiredFieldsValid, isEmpty, complete, customerMethod, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
   savedMethodsV2
@@ -194,8 +189,8 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
       brandIcon
       handleDeleteV2
       handleUpdate
-      setPaymentToken
-      isActive={paymentToken.paymentToken == obj.paymentToken}
+      setPaymentTokenAtom
+      isActive={paymentTokenAtom.paymentToken == obj.paymentToken}
       cvcProps
     />
   })

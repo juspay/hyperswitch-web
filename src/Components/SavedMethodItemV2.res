@@ -4,10 +4,12 @@ let make = (
   ~paymentItem: UnifiedPaymentsTypesV2.customerMethods,
   ~handleDeleteV2,
   ~handleUpdate,
-  ~setPaymentToken,
+  ~setPaymentTokenAtom,
   ~isActive,
   ~cvcProps: CardUtils.cvcProps,
 ) => {
+  open RecoilAtomTypes
+
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {hideExpiredPaymentMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let isCard = paymentItem.paymentMethodType === "card"
@@ -30,20 +32,16 @@ let make = (
 
   let {innerLayout} = config.appearance
   let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcError} = cvcProps
-  let isRenderCvv = paymentItem.requiresCvv
-  let isCVCEmpty = cvcNumber->String.length == 0
+  let shouldRenderCVV = paymentItem.requiresCvv
+  let isCVCEmpty = cvcNumber->String.length === 0
 
   let handlemanage = () => {
     setManagePaymentMethod(_ => paymentItem.paymentToken)
   }
 
   let focusCVC = () => {
-    setCardBrand(_ =>
-      switch paymentItem.paymentMethodData.card.network {
-      | Some(val) => val
-      | None => ""
-      }
-    )
+    setCardBrand(_ => paymentItem.paymentMethodData.card.network->Option.getOr(""))
+
     let optionalRef = cvcRef.current->Nullable.toOption
     switch optionalRef {
     | Some(_) => optionalRef->Option.forEach(input => input->CardUtils.focus)->ignore
@@ -53,11 +51,12 @@ let make = (
 
   React.useEffect(() => {
     if isActive {
-      // * Focus CVC
       focusCVC()
     }
     None
   }, (isActive, paymentItem))
+
+  let isManageModeInactive = managePaymentMethod != paymentItem.paymentToken
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div className={`flex flex-col`}>
@@ -68,9 +67,7 @@ let make = (
           minWidth: "150px",
           width: "100%",
           padding: "1rem 0 1rem 0",
-          borderBottom: managePaymentMethod != paymentItem.paymentToken
-            ? `1px solid ${themeObj.borderColor}`
-            : "none",
+          borderBottom: isManageModeInactive ? `1px solid ${themeObj.borderColor}` : "none",
           borderTop: "none",
           borderLeft: "none",
           borderRight: "none",
@@ -81,8 +78,7 @@ let make = (
           opacity: {isCardExpired ? "0.7" : "1"},
         }
         onClick={_ => {
-          open RecoilAtomTypes
-          setPaymentToken(_ => {
+          setPaymentTokenAtom(_ => {
             paymentToken: paymentItem.paymentToken,
             customerId: paymentItem.customerId,
           })
@@ -112,7 +108,7 @@ let make = (
                         <div className="flex flex-col items-start gap-1">
                           <div className="flex flex-row items-start gap-3">
                             <div> {React.string(nickname)} </div>
-                            <RenderIf condition={managePaymentMethod != paymentItem.paymentToken}>
+                            <RenderIf condition=isManageModeInactive>
                               <div className={`PickerItemLabel flex flex-row gap-1 items-center`}>
                                 <div className="tracking-widest"> {React.string(`****`)} </div>
                                 <div>
@@ -121,7 +117,7 @@ let make = (
                               </div>
                             </RenderIf>
                           </div>
-                          <RenderIf condition={managePaymentMethod != paymentItem.paymentToken}>
+                          <RenderIf condition=isManageModeInactive>
                             <div
                               className={`flex flex-row items-center justify-end gap-3 -mt-1`}
                               style={fontSize: "14px", opacity: "0.5"}>
@@ -141,7 +137,7 @@ let make = (
                   </div>
                 </div>
               </div>
-              <RenderIf condition={managePaymentMethod == paymentItem.paymentToken}>
+              <RenderIf condition={!isManageModeInactive}>
                 <div
                   className="cursor-pointer ml-4 mb-[6px]"
                   style={color: themeObj.colorPrimary}
@@ -160,7 +156,7 @@ let make = (
                   }}
                 />
               </RenderIf>
-              <RenderIf condition={!(managePaymentMethod === paymentItem.paymentToken)}>
+              <RenderIf condition={isManageModeInactive}>
                 <Icon
                   size=18
                   name="manage"
@@ -174,7 +170,7 @@ let make = (
             </div>
             <div className="w-full">
               <div className="flex flex-col items-start mx-8">
-                <RenderIf condition={isActive && isRenderCvv}>
+                <RenderIf condition={isActive && shouldRenderCVV}>
                   <div
                     className={`flex flex-row items-start justify-start gap-2`}
                     style={fontSize: "14px", opacity: "0.5"}>
@@ -226,7 +222,7 @@ let make = (
           </div>
         </div>
       </button>
-      <RenderIf condition={managePaymentMethod == paymentItem.paymentToken}>
+      <RenderIf condition={!isManageModeInactive}>
         <ManageSavedItem paymentItem managePaymentMethod isCardExpired expiryMonth expiryYear />
       </RenderIf>
     </div>

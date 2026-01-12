@@ -93,23 +93,19 @@ let getAuthenticationDetails = (dict, str) => {
 
 let getAssociatedPaymentMethods = (dict, str) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.array)
-  ->Option.map(arr => {
-    arr->Array.map(item => {
-      let obj = item->JSON.Decode.object->Option.getOr(Dict.make())
-      let tokenObj = obj->getDictFromDict("payment_method_token")
-      {
-        token: {
-          type_: getString(tokenObj, "type", ""),
-          data: getString(tokenObj, "data", ""),
-        },
-        paymentMethodType: getString(obj, "payment_method_type", ""),
-        paymentMethodSubType: getString(obj, "payment_method_subtype", ""),
-      }
-    })
+  ->Utils.getArray(str)
+  ->Array.map(item => {
+    let obj = item->JSON.Decode.object->Option.getOr(Dict.make())
+    let tokenObj = obj->getDictFromDict("payment_method_token")
+    {
+      token: {
+        type_: getString(tokenObj, "type", ""),
+        data: getString(tokenObj, "data", ""),
+      },
+      paymentMethodType: getString(obj, "payment_method_type", ""),
+      paymentMethodSubType: getString(obj, "payment_method_subtype", ""),
+    }
   })
-  ->Option.getOr([])
 }
 
 let itemToPMMConfirmMapper = dict => {
