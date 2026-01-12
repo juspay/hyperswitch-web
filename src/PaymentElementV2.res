@@ -197,12 +197,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   ))
 
   let loader = () => {
-    handlePostMessageEvents(
-      ~complete=false,
-      ~empty=false,
-      ~paymentType=selectedOption,
-      ~loggerState,
-    )
     <PaymentShimmer />
   }
 
