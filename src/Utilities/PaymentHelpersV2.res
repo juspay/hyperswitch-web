@@ -453,9 +453,8 @@ let useSaveOrUpdateCard = (
         ("x-profile-id", keys.profileId),
       ]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
-      let uri = isUpdate
-        ? `${endpoint}/v2/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
-        : `${endpoint}/v2/payment-method-sessions/${pmSessionId}/confirm`
+      let pathParam = isUpdate ? "update-saved-payment-method" : "confirm"
+      let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/${pathParam}`
 
       let browserInfo = BrowserSpec.broswerInfo
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
