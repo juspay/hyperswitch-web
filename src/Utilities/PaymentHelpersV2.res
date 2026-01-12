@@ -453,10 +453,9 @@ let useSaveOrUpdateCard = (
         ("x-profile-id", keys.profileId),
       ]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
-      let uri = switch isUpdate {
-      | true => `${endpoint}/v2/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
-      | _ => `${endpoint}/v2/payment-method-sessions/${pmSessionId}/confirm`
-      }
+      let uri = isUpdate
+        ? `${endpoint}/v2/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
+        : `${endpoint}/v2/payment-method-sessions/${pmSessionId}/confirm`
 
       let browserInfo = BrowserSpec.broswerInfo
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
@@ -466,10 +465,7 @@ let useSaveOrUpdateCard = (
         ->getJsonFromArrayOfJson
         ->JSON.stringify
 
-      let fetchMethod = switch isUpdate {
-      | true => #PUT
-      | _ => #POST
-      }
+      let fetchMethod = isUpdate ? #PUT : #POST
 
       let saveCard = () => {
         intentCall(
