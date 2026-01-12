@@ -96,6 +96,7 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 
 @send external closeWindow: window => unit = "close"
 @val external windowOpen: (string, string, string) => Nullable.t<window> = "open"
+@val external isSecureContext: bool = "isSecureContext"
 
 /* Module Definitions */
 module Navigator = {
