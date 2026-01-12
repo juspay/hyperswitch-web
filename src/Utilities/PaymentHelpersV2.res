@@ -119,7 +119,6 @@ let intentCall = (
         Promise.make(
           (resolve, _) => {
             let intent = PaymentConfirmTypesV2.itemToPMMConfirmMapper(data->getDictFromJson)
-            Console.log2("Intent=>", intent->Identity.anyTypeToJson->JSON.stringify)
             let paymentMethod = switch paymentType {
             | Card => "CARD"
             | _ => "CARD"
