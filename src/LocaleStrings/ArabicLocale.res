@@ -236,6 +236,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  giftCardSectionTitle: `هل لديك بطاقة هدايا؟`,
   giftCardNumberLabel: `رقم بطاقة الهدايا`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `لا يمكن أن يكون رقم بطاقة الهدايا فارغًا`,
@@ -244,4 +245,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinPlaceholder: `123456`,
   giftCardPinEmptyText: `لا يمكن أن يكون رقم التعريف الشخصي/PIN لبطاقة الهدايا فارغًا`,
   giftCardPinInvalidText: `رقم تعريف شخصي/PIN غير صالح لبطاقة الهدايا`,
+  cardText: `بطاقة`,
+  giftCardAppliedText: `مطبق`,
+  giftCardPaymentCompleteMessage: `لا يوجد مبلغ متبقٍ للدفع. يرجى المتابعة لإتمام عملية الدفع.`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `يرجى دفع المبلغ المتبقي ${amount} ${currency} باستخدام وسيلة دفع أخرى أدناه.`,
 }

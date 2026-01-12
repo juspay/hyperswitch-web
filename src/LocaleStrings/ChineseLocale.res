@@ -233,6 +233,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  giftCardSectionTitle: `有礼品卡吗？`,
   giftCardNumberLabel: `礼品卡号码`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `礼品卡号码不能为空`,
@@ -241,4 +242,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinPlaceholder: `123456`,
   giftCardPinEmptyText: `礼品卡PIN不能为空`,
   giftCardPinInvalidText: `无效的礼品卡PIN`,
+  cardText: `卡`,
+  giftCardAppliedText: `已应用`,
+  giftCardPaymentCompleteMessage: `无需支付剩余金额。请继续完成付款。`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `请使用下方的其他支付方式支付剩余金额 ${currency}${amount}。`,
 }

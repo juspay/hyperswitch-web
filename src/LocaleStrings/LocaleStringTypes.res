@@ -222,6 +222,7 @@ type localeStrings = {
   payment_methods_upi_collect: string,
   payment_methods_eft: string,
   payment_methods_givex: string,
+  giftCardSectionTitle: string,
   giftCardNumberLabel: string,
   giftCardNumberPlaceholder: string,
   giftCardNumberEmptyText: string,
@@ -230,6 +231,10 @@ type localeStrings = {
   giftCardPinPlaceholder: string,
   giftCardPinEmptyText: string,
   giftCardPinInvalidText: string,
+  cardText: string,
+  giftCardAppliedText: string,
+  giftCardPaymentCompleteMessage: string,
+  giftCardPaymentRemainingMessage: (string, string) => string,
 }
 
 type constantStrings = {

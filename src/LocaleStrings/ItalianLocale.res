@@ -235,6 +235,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  giftCardSectionTitle: `Hai una carta regalo?`,
   giftCardNumberLabel: `Numero carta regalo`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `Il numero della carta regalo non può essere vuoto`,
@@ -243,4 +244,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinPlaceholder: `123456`,
   giftCardPinEmptyText: `Il PIN della carta regalo non può essere vuoto`,
   giftCardPinInvalidText: `PIN carta regalo non valido`,
+  cardText: `Carta`,
+  giftCardAppliedText: `applicato`,
+  giftCardPaymentCompleteMessage: `Non rimane alcun importo da pagare. Procedi con il pagamento.`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `Paga l’importo rimanente di ${amount} ${currency} con un altro metodo di pagamento qui sotto.`,
 }

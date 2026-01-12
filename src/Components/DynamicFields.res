@@ -28,6 +28,8 @@ let make = (
   ~cvcProps=None,
   ~isBancontact=false,
   ~isSaveDetailsWithClickToPay=false,
+  ~isDisableInfoElement=false,
+  ~isSplitPaymentsEnabled=false,
 ) => {
   open DynamicFieldsUtils
   open PaymentTypeContext
@@ -286,6 +288,7 @@ let make = (
     ~cardExpiry,
     ~cvcNumber,
     ~isSavedCardFlow,
+    ~isSplitPaymentsEnabled,
   )
 
   useSetInitialRequiredFields(
@@ -335,6 +338,7 @@ let make = (
   }, [fieldsArr])
 
   let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
+  let isRenderInfoElement = isInfoElementPresent && !isDisableInfoElement
 
   let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 
@@ -845,7 +849,7 @@ let make = (
         </div>
       </RenderIf>
       <Surcharge paymentMethod paymentMethodType />
-      <RenderIf condition={isInfoElementPresent}>
+      <RenderIf condition={isRenderInfoElement}>
         {<>
           {if fieldsArr->Array.length > 1 {
             bottomElement
