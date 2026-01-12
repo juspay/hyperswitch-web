@@ -79,7 +79,7 @@ let make = (
     savedPaymentMethodsCheckboxCheckedByDefault,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
-  let saveCard = PaymentHelpersV2.useSaveOrUpdateCard(Some(loggerState), Card)
+  let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
     RecoilAtoms.showPaymentMethodsScreen,
   )

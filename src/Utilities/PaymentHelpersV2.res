@@ -424,11 +424,7 @@ let savePaymentMethod = (
   })
 }
 
-let useSaveOrUpdateCard = (
-  optLogger: option<HyperLoggerTypes.loggerMake>,
-  paymentType: payment,
-  ~isUpdate=false,
-) => {
+let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -453,8 +449,7 @@ let useSaveOrUpdateCard = (
         ("x-profile-id", keys.profileId),
       ]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
-      let pathParam = isUpdate ? "update-saved-payment-method" : "confirm"
-      let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/${pathParam}`
+      let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/confirm`
 
       let browserInfo = BrowserSpec.broswerInfo
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
@@ -463,8 +458,6 @@ let useSaveOrUpdateCard = (
         ->Array.concatMany([bodyArr, browserInfo(), returnUrlArr])
         ->getJsonFromArrayOfJson
         ->JSON.stringify
-
-      let fetchMethod = isUpdate ? #PUT : #POST
 
       let saveCard = () => {
         intentCall(
@@ -477,7 +470,7 @@ let useSaveOrUpdateCard = (
           ~optLogger,
           ~handleUserError,
           ~paymentType,
-          ~fetchMethod,
+          ~fetchMethod=#POST,
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~isCallbackUsedVal,
@@ -487,6 +480,73 @@ let useSaveOrUpdateCard = (
 
       switch paymentManagementList {
       | LoadedV2(_) => saveCard()
+      | _ => ()
+      }
+    | None =>
+      postFailedSubmitResponse(
+        ~errortype="confirms_payment_failed",
+        ~message="Payment failed. Try again!",
+      )
+    }
+  }
+}
+
+let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
+  open RecoilAtoms
+  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+  let {config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  (
+    ~handleUserError=false,
+    ~bodyArr: array<(string, JSON.t)>,
+    ~confirmParam: ConfirmType.confirmParams,
+  ) => {
+    switch keys.pmClientSecret {
+    | Some(pmClientSecret) =>
+      let pmSessionId = keys.pmSessionId->Option.getOr("")
+      let headers = [
+        ("Content-Type", "application/json"),
+        (
+          "Authorization",
+          `publishable-key=${keys.publishableKey},client-secret=${config.pmClientSecret}`,
+        ),
+        ("x-profile-id", keys.profileId),
+      ]
+      let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
+      let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
+
+      let browserInfo = BrowserSpec.broswerInfo
+      let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
+      let bodyStr =
+        [("client_secret", pmClientSecret->JSON.Encode.string)]
+        ->Array.concatMany([bodyArr, browserInfo(), returnUrlArr])
+        ->getJsonFromArrayOfJson
+        ->JSON.stringify
+
+      let updateCard = () => {
+        intentCall(
+          ~fetchApi,
+          ~uri,
+          ~headers,
+          ~bodyStr,
+          ~confirmParam: ConfirmType.confirmParams,
+          ~clientSecret=pmClientSecret,
+          ~optLogger,
+          ~handleUserError,
+          ~paymentType,
+          ~fetchMethod=#PUT,
+          ~customPodUri,
+          ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
+          ~isCallbackUsedVal,
+          ~redirectionFlags,
+        )->ignore
+      }
+
+      switch paymentManagementList {
+      | LoadedV2(_) => updateCard()
       | _ => ()
       }
     | None =>

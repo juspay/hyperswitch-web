@@ -13,7 +13,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
   let (_, setManagePaymentMethod) = Recoil.useRecoilState(RecoilAtomsV2.managePaymentMethod)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let updateCard = PaymentHelpersV2.useSaveOrUpdateCard(Some(loggerState), Card, ~isUpdate=true)
+  let updateCard = PaymentHelpersV2.useUpdateCard(Some(loggerState), Card)
   let {isCVCValid, cvcNumber, setCvcError} = cvcProps
   let complete = isCVCValid->Option.getOr(false) && paymentTokenAtom.paymentToken !== ""
   let isEmpty = cvcNumber == ""
@@ -141,8 +141,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
 
   let customerMethod = React.useMemo(_ =>
     savedMethodsV2
-    ->Array.filter(savedMethod => savedMethod.paymentToken === paymentTokenAtom.paymentToken)
-    ->Array.get(0)
+    ->Array.find(savedMethod => savedMethod.paymentToken === paymentTokenAtom.paymentToken)
     ->Option.getOr(UnifiedHelpersV2.defaultCustomerMethods)
   , (paymentTokenAtom, savedMethodsV2))
 
