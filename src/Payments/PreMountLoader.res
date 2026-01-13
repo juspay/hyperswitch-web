@@ -53,13 +53,14 @@ let getMessageHandlerV1Elements = (
   ~endpoint,
   ~merchantHostname,
   ~isTestMode=false,
+  ~isSdkParamsEnabled=false,
 ) => {
   let (
     paymentMethodsPromise,
     customerPaymentMethodsPromise,
     sessionTokensPromise,
     blockedBinsPromise,
-  ) = if isTestMode {
+  ) = if isTestMode || isSdkParamsEnabled {
     let mockResponse = Dict.make()->JSON.Encode.object
 
     (
@@ -226,6 +227,7 @@ module PreMountLoaderForElements = {
     ~customPodUri,
     ~profileId,
     ~isTestMode=false,
+    ~isSdkParamsEnabled=false,
   ) => {
     useMessageHandler(() =>
       switch GlobalVars.sdkVersion {
@@ -238,6 +240,7 @@ module PreMountLoaderForElements = {
           ~endpoint,
           ~merchantHostname,
           ~isTestMode,
+          ~isSdkParamsEnabled,
         )
       | V2 =>
         getMessageHandlerV2Elements(
@@ -303,6 +306,7 @@ let make = (
   ~merchantHostname,
   ~customPodUri,
   ~isTestMode=false,
+  ~isSdkParamsEnabled=false,
 ) => {
   let logger = HyperLogger.make(
     ~sessionId,
@@ -323,6 +327,7 @@ let make = (
       profileId
       paymentId
       isTestMode
+      isSdkParamsEnabled
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements

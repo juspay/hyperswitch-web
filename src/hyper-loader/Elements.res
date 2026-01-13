@@ -70,13 +70,15 @@ let make = (
       ) {
         let componentType = "preMountLoader"
         let isTestModeValue = isTestMode->getStringFromBool
+        let isSdkParamsEnabled =
+          (preloadSDKWithParams->Dict.toArray->Array.length > 0)->getStringFromBool
         let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
             <iframe
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabled}"
               allow="*"
               name="orca-payment"
               style="outline: none;"
