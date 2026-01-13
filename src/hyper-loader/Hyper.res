@@ -454,8 +454,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         confirmPaymentWrapper(payload, false, true)
       }
 
-      let confirmTokenization = payload => confirmPayment(payload)
-
       let confirmOneClickPayment = (payload, result: bool) => {
         confirmPaymentWrapper(payload, true, result)
       }
@@ -783,7 +781,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
-        confirmTokenization,
+        confirmTokenization: confirmPayment,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject
