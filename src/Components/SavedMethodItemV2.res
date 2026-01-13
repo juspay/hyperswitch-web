@@ -135,7 +135,7 @@ let make = (
                   </div>
                 </div>
               </div>
-              <RenderIf condition={!isManageModeInactive}>
+              <RenderIf condition={!isManageModeInactive && isActive}>
                 <div
                   className="cursor-pointer ml-4 mb-[6px]"
                   style={color: themeObj.colorPrimary}
@@ -220,7 +220,7 @@ let make = (
           </div>
         </div>
       </button>
-      <RenderIf condition={!isManageModeInactive}>
+      <RenderIf condition={!isManageModeInactive && isActive}>
         <ManageSavedItem paymentItem managePaymentMethod isCardExpired expiryMonth expiryYear />
       </RenderIf>
     </div>

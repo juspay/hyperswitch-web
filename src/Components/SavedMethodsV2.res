@@ -145,12 +145,11 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
     ->Option.getOr(UnifiedHelpersV2.defaultCustomerMethods)
   , (paymentTokenAtom, savedMethodsV2))
 
-  let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !isEmpty)
-
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
+    let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !isEmpty)
     let savedPaymentMethodBody = PaymentManagementBody.updateCVVBody(
       ~paymentMethodToken=paymentTokenAtom.paymentToken,
       ~cvcNumber,
@@ -180,10 +179,10 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   useSubmitPaymentData(submitCallback)
 
   savedMethodsV2
-  ->Array.mapWithIndex((obj, i) => {
+  ->Array.mapWithIndex((obj, _) => {
     let brandIcon = obj->CardUtilsV2.getPaymentMethodBrand
     <SavedMethodItemV2
-      key={i->Int.toString}
+      key={obj.paymentToken}
       paymentItem=obj
       brandIcon
       handleDeleteV2
