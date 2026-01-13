@@ -484,7 +484,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
       }
     | None =>
       postFailedSubmitResponse(
-        ~errortype="confirms_payment_failed",
+        ~errortype="confirm_payment_failed",
         ~message="Payment failed. Try again!",
       )
     }
@@ -551,7 +551,7 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
       }
     | None =>
       postFailedSubmitResponse(
-        ~errortype="confirms_payment_failed",
+        ~errortype="confirm_payment_failed",
         ~message="Payment failed. Try again!",
       )
     }
