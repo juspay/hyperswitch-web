@@ -35,7 +35,7 @@ let make = (
   let shouldRenderCVV = paymentItem.requiresCvv
   let isCVCEmpty = cvcNumber->String.length === 0
 
-  let handlemanage = () => setManagePaymentMethod(_ => paymentItem.paymentToken)
+  let handleManage = () => setManagePaymentMethod(_ => paymentItem.paymentToken)
 
   let focusCVC = () => {
     setCardBrand(_ => paymentItem.paymentMethodData.card.network->Option.getOr(""))
@@ -161,7 +161,7 @@ let make = (
                   style={color: themeObj.colorPrimary}
                   className="cursor-pointer ml-4 mb-[6px]"
                   onClick={_ => {
-                    handlemanage()
+                    handleManage()
                   }}
                 />
               </RenderIf>
@@ -173,7 +173,7 @@ let make = (
                     className={`flex flex-row items-start justify-start gap-2`}
                     style={fontSize: "14px", opacity: "0.5"}>
                     <div className="tracking-widest w-12 mt-6">
-                      {React.string(`${localeString.cvcTextLabel}: `)}
+                      {React.string(`${localeString.cvcTextLabel}:`)}
                     </div>
                     <div
                       className={`flex h mx-4 justify-start w-16 ${isActive

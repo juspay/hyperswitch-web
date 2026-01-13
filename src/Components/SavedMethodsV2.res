@@ -179,7 +179,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   useSubmitPaymentData(submitCallback)
 
   savedMethodsV2
-  ->Array.mapWithIndex((obj, _) => {
+  ->Array.map(obj => {
     let brandIcon = obj->CardUtilsV2.getPaymentMethodBrand
     <SavedMethodItemV2
       key={obj.paymentToken}
