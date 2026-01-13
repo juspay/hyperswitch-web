@@ -23,6 +23,7 @@ let make = (
   ~customBackendUrl,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
   ~isTestMode=false,
+  ~preloadSDKWithParams=Dict.make(),
 ) => {
   try {
     let iframeRef = []
@@ -206,7 +207,12 @@ let make = (
                 Window.body->Window.appendChild(trustPayScript)
               }
             }
-            let msg = [("paymentMethodList", json)]->Dict.fromArray
+
+            let msg = switch preloadSDKWithParams->Dict.get("paymentMethodsList") {
+            | Some(paymentMethodsList) =>
+              [("paymentMethodList", paymentMethodsList)]->Dict.fromArray
+            | None => [("paymentMethodList", json)]->Dict.fromArray
+            }
             mountedIframeRef->Window.iframePostMessage(msg)
           }
         }
@@ -277,7 +283,11 @@ let make = (
               dict->getString("data", "") === "customer_payment_methods"
             if isCustomerPaymentMethodsData {
               let json = dict->getJsonFromDict("response", JSON.Encode.null)
-              let msg = [("customerPaymentMethods", json)]->Dict.fromArray
+              let msg = switch preloadSDKWithParams->Dict.get("customerMethodsList") {
+              | Some(customerMethodsList) =>
+                [("customerPaymentMethods", customerMethodsList)]->Dict.fromArray
+              | None => [("customerPaymentMethods", json)]->Dict.fromArray
+              }
               mountedIframeRef->Window.iframePostMessage(msg)
               resolve()
             }
@@ -1442,7 +1452,10 @@ let make = (
                   json->resolve
                 })
                 ->then(json => {
-                  let msg = [("sessions", json)]->Dict.fromArray
+                  let msg = switch preloadSDKWithParams->Dict.get("sessionTokens") {
+                  | Some(sessionTokens) => [("sessions", sessionTokens)]->Dict.fromArray
+                  | None => [("sessions", json)]->Dict.fromArray
+                  }
                   mountedIframeRef->Window.iframePostMessage(msg)
                   json->resolve
                 })

@@ -154,6 +154,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       options
       ->getOptionsDict
       ->getBool("isTestMode", false)
+
+    let preloadSDKWithParams =
+      options
+      ->getOptionsDict
+      ->getDictFromDict("preloadSDKWithParams")
     // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
     let shouldUseTopRedirection =
       options
@@ -534,6 +539,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->getString("customBackendUrl", ""),
           ~redirectionFlags,
           ~isTestMode,
+          ~preloadSDKWithParams,
         )
       }
 
@@ -759,53 +765,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         Promise.resolve(msg)
       }
 
-      let preloadSDKWithParams = params => {
-        let paramsDict = params->getDictFromJson
-
-        iframeRef.contents->Array.forEach(ifR => {
-          // Send paymentMethodsList if provided
-          switch paramsDict->Dict.get("paymentMethodsList") {
-          | Some(paymentMethodsList) =>
-            let message = [("paymentMethodList", paymentMethodsList)]->Dict.fromArray
-            ifR->Window.iframePostMessage(message)
-          | None => ()
-          }
-
-          // Send customerMethodsList if provided
-          switch paramsDict->Dict.get("customerMethodsList") {
-          | Some(customerMethodsList) =>
-            let message = [("customerPaymentMethods", customerMethodsList)]->Dict.fromArray
-            ifR->Window.iframePostMessage(message)
-          | None => ()
-          }
-
-          // Send sessionTokens if provided
-          switch paramsDict->Dict.get("sessionTokens") {
-          | Some(sessionTokens) =>
-            let message = [("sessions", sessionTokens)]->Dict.fromArray
-            ifR->Window.iframePostMessage(message)
-          | None => ()
-          }
-
-          // Send appearance if provided (via paymentOptions format)
-          switch paramsDict->Dict.get("appearanceObj") {
-          | Some(appearance) =>
-            let paymentOptionsMessage =
-              [
-                ("paymentOptions", appearance),
-                ("paymentElementCreate", true->JSON.Encode.bool),
-              ]->Dict.fromArray
-            ifR->Window.iframePostMessage(paymentOptionsMessage)
-          | None => ()
-          }
-        })
-
-        // Log the preload operation
-        logger.setLogInfo(
-          ~value="SDK preloaded with external parameters",
-          ~eventName=PRELOAD_SDK_WITH_PARAMS,
-        )
-      }
       let initAuthenticationSession = authenticationSessionOptions => {
         open Promise
 
@@ -851,7 +810,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
-        preloadSDKWithParams,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

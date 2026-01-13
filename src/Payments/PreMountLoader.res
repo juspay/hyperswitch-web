@@ -60,30 +60,10 @@ let getMessageHandlerV1Elements = (
     sessionTokensPromise,
     blockedBinsPromise,
   ) = if isTestMode {
-    let mockPaymentMethods = [
-      (
-        "payment_methods",
-        [
-          [
-            ("payment_method", "card"->JSON.Encode.string),
-            (
-              "payment_method_types",
-              [
-                [("payment_method_type", "credit"->JSON.Encode.string)],
-                [("payment_method_type", "debit"->JSON.Encode.string)],
-              ]
-              ->Array.map(Utils.getJsonFromArrayOfJson)
-              ->JSON.Encode.array,
-            ),
-          ]->Utils.getJsonFromArrayOfJson,
-        ]->JSON.Encode.array,
-      ),
-    ]->Utils.getJsonFromArrayOfJson
-
     let mockResponse = Dict.make()->JSON.Encode.object
 
     (
-      Promise.resolve(mockPaymentMethods),
+      Promise.resolve(mockResponse),
       Promise.resolve(mockResponse),
       Promise.resolve(mockResponse),
       Promise.resolve(mockResponse),
