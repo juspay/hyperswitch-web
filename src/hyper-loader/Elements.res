@@ -318,7 +318,10 @@ let make = (
           let isBlockedBinsData = dict->getString("data", "") === "blocked_bins"
           if isBlockedBinsData {
             let json = dict->getJsonFromDict("response", JSON.Encode.null)
-            let msg = [("blockedBins", json)]->Dict.fromArray
+            let msg = switch preloadSDKWithParams->Dict.get("blockedBins") {
+            | Some(blockedBins) => [("blockedBins", blockedBins)]->Dict.fromArray
+            | None => [("blockedBins", json)]->Dict.fromArray
+            }
             mountedIframeRef->Window.iframePostMessage(msg)
             resolve()
           }

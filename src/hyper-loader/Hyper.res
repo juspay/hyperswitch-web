@@ -155,10 +155,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       ->getOptionsDict
       ->getBool("isTestMode", false)
 
-    let preloadSDKWithParams =
-      options
-      ->getOptionsDict
-      ->getDictFromDict("preloadSDKWithParams")
     // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
     let shouldUseTopRedirection =
       options
@@ -510,6 +506,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let clientSecretId = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
         let paymentIdVal = elementsOptionsDict->Utils.getStringFromDict("paymentId", "")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
+        let preloadSDKWithParams =
+          elementsOptions->getDictFromJson->getDictFromDict("preloadSDKWithParams")
         clientSecret := clientSecretId
         paymentId := paymentIdVal
         Promise.make((resolve, _) => {
