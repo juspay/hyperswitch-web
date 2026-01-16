@@ -527,7 +527,7 @@ let initClickToPaySession = async (
 
         switch shouldLoadScripts {
         | false =>
-          switch Some(false) {
+          switch ClickToPayHelpers.initializedVSDK->Nullable.toOption {
           | Some(true) =>
             resolve(getSessionObject(ClickToPayHelpers.windowVisaDirectSdk->Nullable.toOption))
           | _ =>
