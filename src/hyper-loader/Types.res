@@ -81,10 +81,13 @@ type clickToPaySession = {
   signOut: unit => promise<JSON.t>,
 }
 
+type clickToPayObj = {session: Nullable.t<clickToPaySession>}
+
 type initClickToPaySessionInput = {request3DSAuthentication: option<bool>}
 
 type initAuthenticationSession = {
   initClickToPaySession: initClickToPaySessionInput => promise<JSON.t>,
+  getActiveClickToPaySession: unit => promise<JSON.t>,
 }
 
 type confirmParams = {return_url: string}
@@ -210,6 +213,7 @@ let defaultInitPaymentSession: initPaymentSession = {
 
 let defaultInitAuthenticationSession: initAuthenticationSession = {
   initClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
+  getActiveClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
 }
 
 let defaultHyperInstance = {
