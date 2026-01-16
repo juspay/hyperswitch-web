@@ -45,6 +45,7 @@ type paymentMethodsFields =
   | PixKey
   | PixCPF
   | PixCNPJ
+  | DocumentType(array<string>)
   | LanguagePreference(array<string>)
   | BankAccountNumber
   | IBAN
@@ -703,6 +704,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_bank_account_number", _) => BankAccountNumber
   | ("user_iban", _) => BankAccountNumber
   | ("user_source_bank_account_id", _) => SourceBankAccountId
+  | ("user_social_security_number", _) => PixKey
   | _ => None
   }
 }
@@ -751,6 +753,10 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
   | "user_bank_options" => {
       let options = dict->getArrayValFromJsonDict("user_bank_options", "options")
       BankList(options)
+    }
+  | "user_document_type" => {
+      let options = dict->getArrayValFromJsonDict("user_document_type", "options")
+      DocumentType(options)
     }
   | _ => None
   }

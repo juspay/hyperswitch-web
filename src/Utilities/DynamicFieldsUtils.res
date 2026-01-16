@@ -216,6 +216,7 @@ let useRequiredFieldsEmptyAndValid = (
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
+  let documentType = Recoil.useRecoilValueFromAtom(userDocumentType)
 
   let areRequiredFieldsValidAtom = getAtomBasedOnSplitPayments(
     isSplitPaymentsEnabled,
@@ -267,6 +268,7 @@ let useRequiredFieldsEmptyAndValid = (
       | BlikCode => blikCode.value !== ""
       | CryptoCurrencyNetworks => cryptoCurrencyNetworks !== ""
       | Currency(currencyArr) => currency !== "" || currencyArr->Array.length === 0
+      | DocumentType(_) => documentType.isValid->Option.getOr(false)
       | CardNumber => isCardValid->Option.getOr(false)
       | CardExpiryMonth
       | CardExpiryYear
@@ -322,6 +324,7 @@ let useRequiredFieldsEmptyAndValid = (
       | PixKey => pixKey.value === ""
       | CryptoCurrencyNetworks => cryptoCurrencyNetworks === ""
       | Currency(currencyArr) => currency === "" && currencyArr->Array.length > 0
+      | DocumentType(_) => documentType.value === ""
       | CardNumber => cardNumber === ""
       | CardExpiryMonth =>
         let (month, _) = getExpiryDates(cardExpiry)
@@ -379,6 +382,10 @@ let useRequiredFieldsEmptyAndValid = (
     bankAccountNumber,
     sourceBankAccountId.value,
     cryptoCurrencyNetworks,
+    documentType.value,
+    pixKey.value,
+    pixCNPJ.value,
+    pixCPF.value,
   ))
 
   React.useEffect(() => {
@@ -414,6 +421,7 @@ let useSetInitialRequiredFields = (
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
+  let (documentType, setDocumentType) = Recoil.useRecoilState(userDocumentType)
   let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
     cryptoCurrencyNetworks,
   )
@@ -554,6 +562,7 @@ let useSetInitialRequiredFields = (
         setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
       | SourceBankAccountId =>
         setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
+      | DocumentType(_) => setFields(setDocumentType, documentType, requiredField, false)
       | LanguagePreference(_)
       | SpecialField(_)
       | InfoElement
@@ -607,6 +616,7 @@ let useRequiredFieldsBody = (
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
+  let documentType = Recoil.useRecoilValueFromAtom(userDocumentType)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
@@ -629,6 +639,7 @@ let useRequiredFieldsBody = (
     | PhoneNumber => phone.value
     | PhoneCountryCode => phone.countryCode->Option.getOr("")
     | Currency(_) => currency
+    | DocumentType(_) => documentType.value
     | Country => country
     | LanguagePreference(languageOptions) =>
       languageOptions->Array.includes(
@@ -762,6 +773,7 @@ let useRequiredFieldsBody = (
     pixCNPJ.value,
     pixCPF.value,
     pixKey.value,
+    documentType.value,
     city.value,
     postalCode.value,
     state.value,
@@ -801,6 +813,7 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | PixCNPJ
   | DateOfBirth
   | Currency(_)
+  | DocumentType(_)
   | VpaId
   | IBAN
   | SourceBankAccountId
