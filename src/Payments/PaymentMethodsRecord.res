@@ -46,6 +46,7 @@ type paymentMethodsFields =
   | PixCPF
   | PixCNPJ
   | DocumentType(array<string>)
+  | DocumentNumber
   | LanguagePreference(array<string>)
   | BankAccountNumber
   | IBAN
@@ -704,7 +705,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_bank_account_number", _) => BankAccountNumber
   | ("user_iban", _) => BankAccountNumber
   | ("user_source_bank_account_id", _) => SourceBankAccountId
-  | ("user_social_security_number", _) => PixKey
+  | ("user_social_security_number", _) => DocumentNumber
   | _ => None
   }
 }

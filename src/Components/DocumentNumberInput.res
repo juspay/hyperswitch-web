@@ -2,31 +2,31 @@
 let make = (~options) => {
   open RecoilAtoms
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
-  let setSelectedDocumentType = Recoil.useSetRecoilState(RecoilAtoms.userDocumentType)
-  let (documentTypeOptionVal, setDocumentTypeOptionVal) = React.useState(_ => "")
+  let (documentType, setSelectedDocumentType) = Recoil.useRecoilState(RecoilAtoms.userDocumentType)
+  let setDocumentNumber = Recoil.useSetRecoilState(RecoilAtoms.userDocumentNumber)
 
   let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
   let pixCPF = Recoil.useRecoilValueFromAtom(userPixCPF)
 
   React.useEffect(() => {
-    switch documentTypeOptionVal {
-    | "CPF" => setSelectedDocumentType(_ => pixCPF)
-    | "CNPJ" => setSelectedDocumentType(_ => pixCNPJ)
-    | _ => setSelectedDocumentType(_ => RecoilAtoms.defaultFieldValues)
+    switch documentType {
+    | "CPF" => setDocumentNumber(_ => pixCPF)
+    | "CNPJ" => setDocumentNumber(_ => pixCNPJ)
+    | _ => setDocumentNumber(_ => RecoilAtoms.defaultFieldValues)
     }
     None
-  }, (documentTypeOptionVal, pixCNPJ, pixCPF))
+  }, (documentType, pixCNPJ, pixCPF))
 
   <div className="flex flex-row gap-2">
     <DropdownField
       appearance=config.appearance
-      value=documentTypeOptionVal
-      setValue=setDocumentTypeOptionVal
+      value=documentType
+      setValue=setSelectedDocumentType
       fieldName=""
       options
       width="w-1/4"
     />
-    {switch documentTypeOptionVal {
+    {switch documentType {
     | "CPF" => <PixPaymentInput fieldType="pixCPF" />
     | "CNPJ" => <PixPaymentInput fieldType="pixCNPJ" />
     | _ => React.null

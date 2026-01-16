@@ -460,7 +460,7 @@ let make = (
           | DocumentType(opt) => {
               let updatedDocumentTypeArray =
                 opt->DropdownField.updateArrayOfStringToOptionsTypeArray
-              <DocumentTypeInput options={updatedDocumentTypeArray} />
+              <DocumentNumberInput options={updatedDocumentTypeArray} />
             }
           | FullName =>
             <>
@@ -538,6 +538,7 @@ let make = (
               inputRef=sourceBankAccountIdRef
               placeholder="DE00 0000 0000 0000 0000 00"
             />
+          | DocumentNumber
           | Email
           | InfoElement
           | Country
@@ -820,6 +821,7 @@ let make = (
                 | PixCPF
                 | PixCNPJ
                 | DocumentType(_)
+                | DocumentNumber
                 | CardNumber
                 | CardExpiryMonth
                 | CardExpiryYear
