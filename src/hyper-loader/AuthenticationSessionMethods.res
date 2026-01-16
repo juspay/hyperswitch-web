@@ -3,6 +3,8 @@ open Promise
 open Utils
 open ClickToPayHelpers
 
+let clickToPayTokenCache = Dict.make()
+
 let initClickToPaySession = async (
   ~clientSecret,
   ~publishableKey,
@@ -13,21 +15,36 @@ let initClickToPaySession = async (
   ~authenticationId,
   ~merchantId,
   ~initClickToPaySessionInput: Types.initClickToPaySessionInput,
+  ~shouldLoadScripts=true,
 ) => {
   let customerEmail = ref("")
   let maskedCards = ref([])
 
   ClickToPayConsoleSuppress.initialize()
 
-  let data = await PaymentHelpers.fetchEnabledAuthnMethodsToken(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-    ~isPaymentSession=false,
-    ~profileId,
-    ~authenticationId,
+  let key = `${clientSecret}_${authenticationId}`
+
+  let data = await (
+    switch clickToPayTokenCache->Dict.get(key) {
+    | Some(promise) => promise
+    | None =>
+      let promise = PaymentHelpers.fetchEnabledAuthnMethodsToken(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~isPaymentSession=false,
+        ~profileId,
+        ~authenticationId,
+      )
+
+      // only cache the promise for first time if we are not loading scripts
+      if !shouldLoadScripts {
+        clickToPayTokenCache->Dict.set(key, promise)
+      }
+      promise
+    }
   )
 
   let getClickToPayToken = ssn => {
@@ -73,7 +90,10 @@ let initClickToPaySession = async (
     }
   }
 
-  let isCustomerPresent = async (~visaDirectSdk, ~email) => {
+  let isCustomerPresent = async (
+    ~visaDirectSdk: option<OrcaPaymentPage.ClickToPayHelpers.visaDirect>,
+    ~email,
+  ) => {
     switch email {
     | Some(emailVal) => customerEmail := emailVal
     | None =>
@@ -97,7 +117,10 @@ let initClickToPaySession = async (
     let mastercardDirectIdentityLookupPromise = mastercardDirectSdk.identityLookup({
       consumerIdentity: consumerIdentity,
     })
-    let visaDirectIdentityLookupPromise = visaDirectSdk.identityLookup(consumerIdentity)
+    let visaDirectIdentityLookupPromise = switch visaDirectSdk {
+    | Some(sdk) => sdk.identityLookup(consumerIdentity)
+    | None => Promise.resolve(JSON.Encode.null)
+    }
 
     let identityLookupPromiseResults = await Promise.allSettled([
       mastercardDirectIdentityLookupPromise,
@@ -475,114 +498,138 @@ let initClickToPaySession = async (
 
   let defaultInitClickToPaySession = await Promise.make((resolve, _) => {
     switch ctpToken {
-    | Some(token) =>
-      customerEmail := token.email
-      ClickToPayHelpers.loadVisaScript(
-        token,
-        () => {
-          let initConfig = ClickToPayHelpers.getVisaInitConfig(token, Some(clientSecret))
+    | Some(token) => {
+        customerEmail := token.email
 
-          ClickToPayHelpers.vsdk.initialize(initConfig)
-          ->then(async _ => {
-            let mastercardDirectInitData = {
-              srciTransactionId: clientSecret,
-              srcInitiatorId: GlobalVars.isProd
-                ? "78fbc211-73e1-4c3a-bc5c-60a7921afb97"
-                : "544ef81a-dae0-4f26-9511-bfbdba3d62b5",
-              srciDpaId: GlobalVars.isProd
-                ? "d693c074-8945-4ec7-aa7d-a0a85e636a62"
-                : "b6e06cc6-3018-4c4c-bbf5-9fb232615090",
-              dpaTransactionOptions: {
-                dpaLocale: token.locale,
-              },
-            }
+        let getSessionObject = (
+          visaDirectSdk: option<OrcaPaymentPage.ClickToPayHelpers.visaDirect>,
+        ) => {
+          {
+            isCustomerPresent: isCustomerPresentInput => {
+              let email =
+                isCustomerPresentInput->Option.flatMap(customerInput => Some(customerInput.email))
 
-            let visaDirectSdk = ClickToPayHelpers.createVisaDirectSRCIAdapter()
-            let visaDirectInitData = {
-              srciTransactionId: clientSecret,
-              srcInitiatorId: token.dpaId,
-              srciDpaId: token.dpaName,
-            }
+              isCustomerPresent(~visaDirectSdk, ~email)
+            },
+            getUserType: () => getUserType(),
+            getRecognizedCards: () => getRecognizedCards(),
+            validateCustomerAuthentication: otpValue => validateCustomerAuthentication(~otpValue),
+            checkoutWithCard: checkoutWithCardInput =>
+              checkoutWithCard(
+                ~token,
+                ~srcDigitalCardId=checkoutWithCardInput.srcDigitalCardId,
+                ~rememberMe=checkoutWithCardInput.rememberMe,
+                ~windowRef=checkoutWithCardInput.windowRef,
+              ),
+            signOut: () => signOut(),
+          }->Identity.anyTypeToJson
+        }
 
-            let mastercardInitPromise = ClickToPayHelpers.mastercardDirectSdk.init(
-              mastercardDirectInitData,
-            )
-            let visaInitPromise = visaDirectSdk.init(visaDirectInitData)
-
-            let promiseResults = await Promise.allSettled([mastercardInitPromise, visaInitPromise])
-
-            switch promiseResults {
-            | [mastercardPromiseResponse, visaPromiseResponse] => {
-                switch mastercardPromiseResponse {
-                | Rejected({reason}) =>
-                  logger.setLogError(
-                    ~value=`Direct Mastercard Click to Pay SDK initialization failed ${reason
-                      ->Utils.formatException
-                      ->JSON.stringify}`,
-                    ~eventName=CLICK_TO_PAY_FLOW,
-                  )
-                | Fulfilled(_) => ()
-                }
-
-                switch visaPromiseResponse {
-                | Rejected({reason}) =>
-                  logger.setLogError(
-                    ~value=`Direct Visa Click to Pay SDK initialization failed ${reason
-                      ->Utils.formatException
-                      ->JSON.stringify}`,
-                    ~eventName=CLICK_TO_PAY_FLOW,
-                  )
-                | Fulfilled(_) => ()
-                }
-              }
-            | _ => ()
-            }
-
-            let defaultInitClickToPaySession = {
-              isCustomerPresent: isCustomerPresentInput => {
-                let email =
-                  isCustomerPresentInput->Option.flatMap(customerInput => Some(customerInput.email))
-
-                isCustomerPresent(~visaDirectSdk, ~email)
-              },
-              getUserType: () => getUserType(),
-              getRecognizedCards: () => getRecognizedCards(),
-              validateCustomerAuthentication: otpValue => validateCustomerAuthentication(~otpValue),
-              checkoutWithCard: checkoutWithCardInput =>
-                checkoutWithCard(
-                  ~token,
-                  ~srcDigitalCardId=checkoutWithCardInput.srcDigitalCardId,
-                  ~rememberMe=checkoutWithCardInput.rememberMe,
-                  ~windowRef=checkoutWithCardInput.windowRef,
-                ),
-              signOut: () => signOut(),
-            }->Identity.anyTypeToJson
-
-            resolve(defaultInitClickToPaySession)
-
-            JSON.Encode.null
-          })
-          ->catch(_ => {
+        switch shouldLoadScripts {
+        | false =>
+          switch Some(false) {
+          | Some(true) =>
+            resolve(getSessionObject(ClickToPayHelpers.windowVisaDirectSdk->Nullable.toOption))
+          | _ =>
             let failedErrorResponse = getFailedSubmitResponse(
-              ~errorType="ERROR",
-              ~message="An unknown error occurred while initializing Click to Pay session.",
+              ~errorType="SESSION_NOT_FOUND",
+              ~message="No Active Click to Pay session found.",
             )
-
             resolve(failedErrorResponse)
+          }
+        | true =>
+          ClickToPayHelpers.loadVisaScript(
+            token,
+            () => {
+              let initConfig = ClickToPayHelpers.getVisaInitConfig(token, Some(clientSecret))
 
-            Promise.resolve(JSON.Encode.null)
-          })
-          ->ignore
-        },
-        () => {
-          let failedErrorResponse = getFailedSubmitResponse(
-            ~errorType="ERROR",
-            ~message="Failed to load Click to Pay script.",
+              ClickToPayHelpers.vsdk.initialize(initConfig)
+              ->then(async _ => {
+                let mastercardDirectInitData = {
+                  srciTransactionId: clientSecret,
+                  srcInitiatorId: GlobalVars.isProd
+                    ? "78fbc211-73e1-4c3a-bc5c-60a7921afb97"
+                    : "544ef81a-dae0-4f26-9511-bfbdba3d62b5",
+                  srciDpaId: GlobalVars.isProd
+                    ? "d693c074-8945-4ec7-aa7d-a0a85e636a62"
+                    : "b6e06cc6-3018-4c4c-bbf5-9fb232615090",
+                  dpaTransactionOptions: {
+                    dpaLocale: token.locale,
+                  },
+                }
+
+                let visaDirectSdk = ClickToPayHelpers.createVisaDirectSRCIAdapter()
+                let visaDirectInitData = {
+                  srciTransactionId: clientSecret,
+                  srcInitiatorId: token.dpaId,
+                  srciDpaId: token.dpaName,
+                }
+
+                let mastercardInitPromise = ClickToPayHelpers.mastercardDirectSdk.init(
+                  mastercardDirectInitData,
+                )
+                let visaInitPromise = visaDirectSdk.init(visaDirectInitData)
+
+                let promiseResults = await Promise.allSettled([
+                  mastercardInitPromise,
+                  visaInitPromise,
+                ])
+
+                switch promiseResults {
+                | [mastercardPromiseResponse, visaPromiseResponse] => {
+                    switch mastercardPromiseResponse {
+                    | Rejected({reason}) =>
+                      logger.setLogError(
+                        ~value=`Direct Mastercard Click to Pay SDK initialization failed ${reason
+                          ->Utils.formatException
+                          ->JSON.stringify}`,
+                        ~eventName=CLICK_TO_PAY_FLOW,
+                      )
+                    | Fulfilled(_) => ()
+                    }
+
+                    switch visaPromiseResponse {
+                    | Rejected({reason}) =>
+                      logger.setLogError(
+                        ~value=`Direct Visa Click to Pay SDK initialization failed ${reason
+                          ->Utils.formatException
+                          ->JSON.stringify}`,
+                        ~eventName=CLICK_TO_PAY_FLOW,
+                      )
+                    | Fulfilled(_) => ()
+                    }
+                  }
+                | _ => ()
+                }
+
+                Types.window["initializedVSDK"] = true
+                Types.window["visaDirectSdk"] = visaDirectSdk
+                resolve(getSessionObject(Some(visaDirectSdk)))
+                JSON.Encode.null
+              })
+              ->catch(_ => {
+                let failedErrorResponse = getFailedSubmitResponse(
+                  ~errorType="ERROR",
+                  ~message="An unknown error occurred while initializing Click to Pay session.",
+                )
+
+                resolve(failedErrorResponse)
+
+                Promise.resolve(JSON.Encode.null)
+              })
+              ->ignore
+            },
+            () => {
+              let failedErrorResponse = getFailedSubmitResponse(
+                ~errorType="ERROR",
+                ~message="Failed to load Click to Pay script.",
+              )
+
+              resolve(failedErrorResponse)
+            },
           )
-
-          resolve(failedErrorResponse)
-        },
-      )
+        }
+      }
     | None => {
         let failedErrorResponse = getFailedSubmitResponse(
           ~errorType="ERROR",
@@ -595,6 +642,30 @@ let initClickToPaySession = async (
   })
 
   defaultInitClickToPaySession
+}
+
+let getActiveClickToPaySession = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~endpoint,
+  ~profileId,
+  ~authenticationId,
+  ~merchantId,
+) => {
+  await initClickToPaySession(
+    ~clientSecret,
+    ~publishableKey,
+    ~logger,
+    ~customPodUri,
+    ~endpoint,
+    ~profileId,
+    ~authenticationId,
+    ~merchantId,
+    ~initClickToPaySessionInput={request3DSAuthentication: None},
+    ~shouldLoadScripts=false,
+  )
 }
 
 Types.window["ClickToPayAuthenticationSession"] = initClickToPaySession
