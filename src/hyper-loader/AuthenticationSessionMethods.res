@@ -684,7 +684,7 @@ let initClickToPaySession = async (
               })
               ->catch(_ => {
                 logger.setLogError(
-                  ~value="C2P | INIT | An unknown error occurred while initializing Click to Pay session.",
+                  ~value="C2P | INIT | Failed to load Click to Pay script and init VSDK.",
                   ~eventName=CLICK_TO_PAY_FLOW,
                 )
                 let failedErrorResponse = getFailedSubmitResponse(
@@ -699,7 +699,7 @@ let initClickToPaySession = async (
             },
             () => {
               logger.setLogError(
-                ~value="C2P | INIT | An unknown error occurred while initializing Click to Pay session.",
+                ~value="C2P | INIT | Failed to load Click to Pay script.",
                 ~eventName=CLICK_TO_PAY_FLOW,
               )
               let failedErrorResponse = getFailedSubmitResponse(
