@@ -274,7 +274,9 @@ let initClickToPaySession = async (
         }
       | _ => {
           logger.setLogError(
-            ~value=`GET_USER_TYPE | Get Cards returned error action code ${getCardsResponse.actionCode->getStrFromActionCode}`,
+            ~value=`GET_USER_TYPE | actionCode: ${getCardsResponse.actionCode->getStrFromActionCode} | reason : ${getCardsResponse.error
+              ->Option.flatMap(err => err.reason)
+              ->Option.getOr("UNKNOWN_ERROR")}`,
             ~eventName=CLICK_TO_PAY_FLOW,
           )
           "ERROR"
@@ -352,7 +354,9 @@ let initClickToPaySession = async (
         maskedCards.contents->Identity.anyTypeToJson
       | _ =>
         logger.setLogError(
-          ~value=`AUTH_VALIDATION | Validate Customer Authentication returned error action code ${validateCustomerAuthenticationResponse.actionCode->getStrFromActionCode}`,
+          ~value=`AUTH_VALIDATION | Validate Customer Authentication returned error action code ${validateCustomerAuthenticationResponse.actionCode->getStrFromActionCode} | reason : ${validateCustomerAuthenticationResponse.error
+            ->Option.flatMap(err => err.reason)
+            ->Option.getOr("UNKNOWN_ERROR")}`,
           ~eventName=CLICK_TO_PAY_FLOW,
         )
         getClickToPayErrorResponse(
@@ -478,7 +482,9 @@ let initClickToPaySession = async (
               }
               logger.setLogError(
                 ~value={
-                  "message": `CHECKOUT | FAILED | code: ${actionCode} ${errorReason !== "" ? "| reason: " ++ errorReason : ""}`,
+                  "message": `CHECKOUT | FAILED | code: ${actionCode} ${errorReason !== ""
+                      ? "| reason: " ++ errorReason
+                      : ""}`,
                   "scheme": clickToPayProvider,
                 }
                 ->JSON.stringifyAny
