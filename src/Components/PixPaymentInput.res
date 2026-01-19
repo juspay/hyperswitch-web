@@ -47,23 +47,51 @@ let make = (~fieldType="") => {
     }
   }
 
-  let validateAndSetPixValue = val => {
-    switch fieldType {
-    | "pixKey" => setPixKey(_ => val->validatePixKey)
-    | "pixCNPJ" => setPixCNPJ(_ => val->validatePixCNPJ)
-    | "pixCPF" => setPixCPF(_ => val->validatePixCPF)
-    | _ => ()
-    }
+  let (fieldName, setValue, value, placeholder, maxLength, validationFn) = switch fieldType {
+  | "pixKey" => (
+      localeString.pixKeyLabel,
+      setPixKey,
+      pixKey,
+      localeString.pixKeyPlaceholder,
+      None,
+      validatePixKey,
+    )
+  | "pixCPF" => (
+      localeString.pixCPFLabel,
+      setPixCPF,
+      pixCPF,
+      localeString.pixCPFPlaceholder,
+      Some(11),
+      validatePixCPF,
+    )
+  | "pixCNPJ" => (
+      localeString.pixCNPJLabel,
+      setPixCNPJ,
+      pixCNPJ,
+      localeString.pixCNPJPlaceholder,
+      Some(14),
+      validatePixCNPJ,
+    )
+  | _ => (
+      "",
+      _ => (),
+      RecoilAtoms.defaultFieldValues,
+      "",
+      None,
+      _ => RecoilAtoms.defaultFieldValues,
+    )
   }
+
+  let validateAndSetPixInputValue = val => setValue(_ => val->validationFn)
 
   let onChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    val->validateAndSetPixValue
+    validateAndSetPixInputValue(val)
   }
 
   let onBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]
-    val->validateAndSetPixValue
+    validateAndSetPixInputValue(val)
   }
 
   let submitCallback = React.useCallback((ev: Window.event) => {
@@ -99,50 +127,17 @@ let make = (~fieldType="") => {
 
   useSubmitPaymentData(submitCallback)
 
-  <>
-    <RenderIf condition={fieldType === "pixKey"}>
-      <PaymentField
-        fieldName={localeString.pixKeyLabel}
-        setValue=setPixKey
-        value=pixKey
-        onChange
-        onBlur
-        type_="pixKey"
-        name="pixKey"
-        inputRef
-        placeholder={localeString.pixKeyPlaceholder}
-        paymentType=Payment
-      />
-    </RenderIf>
-    <RenderIf condition={fieldType === "pixCPF"}>
-      <PaymentField
-        fieldName={localeString.pixCPFLabel}
-        setValue=setPixCPF
-        value=pixCPF
-        onChange
-        onBlur
-        type_="pixCPF"
-        name="pixCPF"
-        inputRef
-        placeholder={localeString.pixCPFPlaceholder}
-        maxLength=11
-        paymentType=Payment
-      />
-    </RenderIf>
-    <RenderIf condition={fieldType === "pixCNPJ"}>
-      <PaymentField
-        fieldName={localeString.pixCNPJLabel}
-        setValue=setPixCNPJ
-        value=pixCNPJ
-        onChange
-        onBlur
-        type_="pixCNPJ"
-        name="pixCNPJ"
-        inputRef
-        placeholder={localeString.pixCNPJPlaceholder}
-        maxLength=14
-        paymentType=Payment
-      />
-    </RenderIf>
-  </>
+  <PaymentField
+    fieldName
+    setValue
+    value
+    onChange
+    onBlur
+    type_=fieldType
+    name=fieldType
+    inputRef
+    placeholder
+    ?maxLength
+    paymentType=Payment
+  />
 }
