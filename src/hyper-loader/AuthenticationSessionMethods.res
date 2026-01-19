@@ -253,7 +253,7 @@ let initClickToPaySession = async (
               ->Array.length
 
             logger.setLogInfo(
-              ~value=`GET_USER_TYPE | SUCCESS | Visa: ${visaCount->Int.toString} | Mastercard: ${mastercardCount->Int.toString}`,
+              ~value=`GET_USER_TYPE | SUCCESS | visa: ${visaCount->Int.toString} | mastercard: ${mastercardCount->Int.toString}`,
               ~eventName=CLICK_TO_PAY_FLOW,
             )
             "RECOGNIZED_CARDS_PRESENT"
@@ -345,7 +345,7 @@ let initClickToPaySession = async (
           ->Array.length
 
         logger.setLogInfo(
-          ~value=`AUTH_VALIDATION | SUCCESS | Visa : ${visaCount->Int.toString} | Mastercard : ${mastercardCount->Int.toString}`,
+          ~value=`AUTH_VALIDATION | SUCCESS | visa : ${visaCount->Int.toString} | mastercard : ${mastercardCount->Int.toString}`,
           ~eventName=CLICK_TO_PAY_FLOW,
         )
 
@@ -448,7 +448,6 @@ let initClickToPaySession = async (
               )
 
               let dict = checkoutWithCardResponse->Utils.getDictFromJson
-
               let visaClickToPayBodyArr = PaymentBody.visaClickToPayAuthenticationBody(
                 ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
               )
@@ -469,9 +468,17 @@ let initClickToPaySession = async (
               authenticationSyncResponse->transformKeysWithoutModifyingValue(CamelCase)
             }
           | _ => {
+              let errorReason = if actionCode == "ERROR" {
+                checkoutWithCardResponse
+                ->Utils.getDictFromJson
+                ->Utils.getDictFromDict("error")
+                ->Utils.getString("reason", "UNKNOWN_ERROR")
+              } else {
+                ""
+              }
               logger.setLogError(
                 ~value={
-                  "message": `CHECKOUT | Visa checkout failed with card, Action Code -> ${actionCode}`,
+                  "message": `CHECKOUT | FAILED | code: ${actionCode} ${errorReason !== "" ? "| reason: " ++ errorReason : ""}`,
                   "scheme": clickToPayProvider,
                 }
                 ->JSON.stringifyAny
