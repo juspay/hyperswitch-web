@@ -1,7 +1,7 @@
 @react.component
 let make = (~options) => {
   open RecoilAtoms
-  let {config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (documentType, setSelectedDocumentType) = Recoil.useRecoilState(RecoilAtoms.userDocumentType)
   let setDocumentNumber = Recoil.useSetRecoilState(RecoilAtoms.userDocumentNumber)
 
@@ -22,7 +22,7 @@ let make = (~options) => {
       appearance=config.appearance
       value=documentType
       setValue=setSelectedDocumentType
-      fieldName=""
+      fieldName=localeString.documentTypeLabel
       options
       width="w-1/4"
     />

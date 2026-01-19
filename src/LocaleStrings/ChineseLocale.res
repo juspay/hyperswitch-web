@@ -38,6 +38,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   countryLabel: `国家`,
   currencyLabel: `货币`,
   bankLabel: `选择银行`,
+  documentTypeLabel: `文档类型`,
   redirectText: `提交订单后，您将被重定向到安全的页面完成购买。`,
   bankDetailsText: `提交这些信息后，您将获得银行账户信息以进行付款。请确保记录下来。`,
   orPayUsing: `或使用`,

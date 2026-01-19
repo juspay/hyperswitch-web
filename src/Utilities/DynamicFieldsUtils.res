@@ -387,9 +387,6 @@ let useRequiredFieldsEmptyAndValid = (
     cryptoCurrencyNetworks,
     documentType,
     documentNumber.value,
-    pixKey.value,
-    pixCNPJ.value,
-    pixCPF.value,
   ))
 
   React.useEffect(() => {
