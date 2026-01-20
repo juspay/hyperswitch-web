@@ -293,7 +293,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       isApplePayReady &&
       isWallet
 
-    let isApplePaySessionReady = !isApplePayDelayedSessionFlow || trustPayScriptStatus.isLoaded
+    let isApplePaySessionReady = !isApplePayDelayedSessionFlow || trustPayScriptStatus == Loaded
 
     if isApplePayEligible && isApplePaySessionReady {
       setShowApplePay(_ => true)
@@ -310,7 +310,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     paymentExperience,
     isWallet,
     isApplePayDelayedSessionFlow,
-    trustPayScriptStatus.isLoaded,
+    trustPayScriptStatus,
   ))
 
   let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
@@ -319,10 +319,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let paymentMethod = "wallet"
   let paymentMethodType = "apple_pay"
   let shouldShowWalletShimmer =
-    isApplePayDelayedSessionFlow &&
-    isApplePayReady &&
-    !trustPayScriptStatus.isLoaded &&
-    !trustPayScriptStatus.isFailed
+    isApplePayDelayedSessionFlow && isApplePayReady && trustPayScriptStatus == Loading
 
   if isWallet {
     <>

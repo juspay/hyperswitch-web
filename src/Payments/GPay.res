@@ -173,7 +173,7 @@ let make = (
     if (
       status == "ready" &&
       (isGPayReady ||
-      isGooglePayDelayedSessionFlow && trustPayScriptStatus.isLoaded ||
+      isGooglePayDelayedSessionFlow && trustPayScriptStatus == Loaded ||
       paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
       isWallet
     ) {
@@ -187,7 +187,7 @@ let make = (
     sessionObj,
     thirdPartySessionObj,
     isGPayReady,
-    trustPayScriptStatus.isLoaded,
+    trustPayScriptStatus,
     isGooglePayDelayedSessionFlow,
   ))
 
@@ -220,12 +220,9 @@ let make = (
   let isRenderGooglePayButton =
     (isGPayReady ||
     paymentExperience == PaymentMethodsRecord.RedirectToURL ||
-    (isGooglePayDelayedSessionFlow && trustPayScriptStatus.isLoaded)) && isWallet
+    (isGooglePayDelayedSessionFlow && trustPayScriptStatus == Loaded)) && isWallet
 
-  let shouldShowWalletShimmer =
-    isGooglePayDelayedSessionFlow &&
-    !trustPayScriptStatus.isFailed &&
-    !trustPayScriptStatus.isLoaded
+  let shouldShowWalletShimmer = isGooglePayDelayedSessionFlow && trustPayScriptStatus == Loading
 
   React.useEffect(() => {
     areOneClickWalletsRendered(prev => {

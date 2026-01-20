@@ -430,16 +430,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
         }
-        if dict->getDictIsSome("trustPayScriptLoaded") {
-          setTrustPayScriptStatus(prev => {
-            ...prev,
-            isLoaded: dict->getBool("trustPayScriptLoaded", false),
-          })
-        }
-        if dict->getDictIsSome("trustPayScriptError") {
-          setTrustPayScriptStatus(prev => {
-            ...prev,
-            isFailed: dict->getBool("trustPayScriptError", false),
+        if dict->getDictIsSome("trustPayScriptStatus") {
+          setTrustPayScriptStatus(_ => {
+            switch dict->getString("trustPayScriptStatus", "") {
+            | "loading" => Loading
+            | "loaded" => Loaded
+            | "failed" => Failed
+            | _ => NotLoaded
+            }
           })
         }
         if dict->getDictIsSome("isSamsungPayReady") {
