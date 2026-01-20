@@ -233,19 +233,11 @@ let loadPaypalSDK = (
       handleCloseLoader()
     },
     onClick: () => {
-      if isTestMode {
-        loggerState.setLogInfo(
-          ~value="Paypal SDK Button Clicked in test mode - interaction disabled",
-          ~eventName=PAYPAL_SDK_FLOW,
-          ~paymentMethod="PAYPAL",
-        )
-      } else {
-        loggerState.setLogInfo(
-          ~value="Paypal SDK Button Clicked",
-          ~eventName=PAYPAL_SDK_FLOW,
-          ~paymentMethod="PAYPAL",
-        )
-      }
+      loggerState.setLogInfo(
+        ~value="Paypal SDK Button Clicked",
+        ~eventName=PAYPAL_SDK_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
     },
   }).render("#paypal-button")
   areOneClickWalletsRendered(prev => {

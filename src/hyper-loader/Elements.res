@@ -210,11 +210,9 @@ let make = (
               }
             }
 
-            let msg = switch preloadSDKWithParams->Dict.get("paymentMethodsList") {
-            | Some(paymentMethodsList) =>
-              [("paymentMethodList", paymentMethodsList)]->Dict.fromArray
-            | None => [("paymentMethodList", json)]->Dict.fromArray
-            }
+            let paymentMethodList =
+              preloadSDKWithParams->getJsonFromDict("paymentMethodsList", json)
+            let msg = [("paymentMethodList", paymentMethodList)]->Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
           }
         }
@@ -285,11 +283,9 @@ let make = (
               dict->getString("data", "") === "customer_payment_methods"
             if isCustomerPaymentMethodsData {
               let json = dict->getJsonFromDict("response", JSON.Encode.null)
-              let msg = switch preloadSDKWithParams->Dict.get("customerMethodsList") {
-              | Some(customerMethodsList) =>
-                [("customerPaymentMethods", customerMethodsList)]->Dict.fromArray
-              | None => [("customerPaymentMethods", json)]->Dict.fromArray
-              }
+              let customerMethodsList =
+                preloadSDKWithParams->getJsonFromDict("customerMethodsList", json)
+              let msg = [("customerPaymentMethods", customerMethodsList)]->Dict.fromArray
               mountedIframeRef->Window.iframePostMessage(msg)
               resolve()
             }
@@ -318,10 +314,8 @@ let make = (
           let isBlockedBinsData = dict->getString("data", "") === "blocked_bins"
           if isBlockedBinsData {
             let json = dict->getJsonFromDict("response", JSON.Encode.null)
-            let msg = switch preloadSDKWithParams->Dict.get("blockedBins") {
-            | Some(blockedBins) => [("blockedBins", blockedBins)]->Dict.fromArray
-            | None => [("blockedBins", json)]->Dict.fromArray
-            }
+            let blockedBins = preloadSDKWithParams->getJsonFromDict("blockedBins", json)
+            let msg = [("blockedBins", blockedBins)]->Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
             resolve()
           }
@@ -1457,10 +1451,8 @@ let make = (
                   json->resolve
                 })
                 ->then(json => {
-                  let msg = switch preloadSDKWithParams->Dict.get("sessionTokens") {
-                  | Some(sessionTokens) => [("sessions", sessionTokens)]->Dict.fromArray
-                  | None => [("sessions", json)]->Dict.fromArray
-                  }
+                  let sessionTokens = preloadSDKWithParams->getJsonFromDict("sessionTokens", json)
+                  let msg = [("sessions", sessionTokens)]->Dict.fromArray
                   mountedIframeRef->Window.iframePostMessage(msg)
                   json->resolve
                 })

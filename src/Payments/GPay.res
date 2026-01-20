@@ -162,6 +162,7 @@ let make = (
         }
         resolve()
       })
+      ->catch(_ => resolve())
       ->ignore
     }
   }

@@ -338,7 +338,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           </div>
         } else {
           <button
-            disabled={applePayClicked}
+            disabled=applePayClicked
             style={
               opacity: updateSession ? "0.5" : "1.0",
               pointerEvents: updateSession ? "none" : "auto",

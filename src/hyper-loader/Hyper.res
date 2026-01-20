@@ -486,7 +486,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       addSmartEventListener("message", handleSdkConfirm, "handleSdkConfirm")
 
-      // Add console warning for test mode
       if isTestMode {
         Console.warn(
           "The SDK is running in test mode. API calls are bypassed and wallet interactions are disabled.",
