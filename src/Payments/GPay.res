@@ -22,10 +22,10 @@ let make = (
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Gpay)
   let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
-  let isTrustpayScriptReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTrustpayScriptReady)
-  let isTrustpayScriptFailed = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTrustpayScriptFailed)
+  let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
+  let (_, isGooglePayDelayedSessionFlow) = ThirdPartyFlowCheck.useIsThirdPartyFlow()
   let isGooglePaySDKFlow = React.useMemo(() => {
     sessionObj->Option.isSome
   }, [sessionObj])
@@ -69,14 +69,6 @@ let make = (
     ? paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Gpay(SDK)))
     : paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Gpay(Redirect)))
 
-  let isDelayedSessionToken = React.useMemo(() => {
-    thirdPartySessionObj
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.flatMap(x => x->Dict.get("delayed_session_token"))
-    ->Option.flatMap(JSON.Decode.bool)
-    ->Option.getOr(false)
-  }, [thirdPartySessionObj])
-
   GooglePayHelpers.useHandleGooglePayResponse(~connectors, ~intent, ~isWallet, ~requiredFieldsBody)
 
   let (_, buttonType, _, _) = options.wallets.style.type_
@@ -118,7 +110,7 @@ let make = (
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
-          if isDelayedSessionToken {
+          if isGooglePayDelayedSessionFlow {
             messageParentWindow([
               ("fullscreen", true->JSON.Encode.bool),
               ("param", "paymentloader"->JSON.Encode.string),
@@ -181,7 +173,7 @@ let make = (
     if (
       status == "ready" &&
       (isGPayReady ||
-      isDelayedSessionToken && isTrustpayScriptReady ||
+      isGooglePayDelayedSessionFlow && trustPayScriptStatus.isLoaded ||
       paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
       isWallet
     ) {
@@ -195,7 +187,8 @@ let make = (
     sessionObj,
     thirdPartySessionObj,
     isGPayReady,
-    isTrustpayScriptReady,
+    trustPayScriptStatus.isLoaded,
+    isGooglePayDelayedSessionFlow,
   ))
 
   React.useEffect0(() => {
@@ -227,10 +220,12 @@ let make = (
   let isRenderGooglePayButton =
     (isGPayReady ||
     paymentExperience == PaymentMethodsRecord.RedirectToURL ||
-    (isDelayedSessionToken && isTrustpayScriptReady)) && isWallet
+    (isGooglePayDelayedSessionFlow && trustPayScriptStatus.isLoaded)) && isWallet
 
   let shouldShowWalletShimmer =
-    sessionObj->Option.isSome && !isTrustpayScriptFailed && !isTrustpayScriptReady
+    isGooglePayDelayedSessionFlow &&
+    !trustPayScriptStatus.isFailed &&
+    !trustPayScriptStatus.isLoaded
 
   React.useEffect(() => {
     areOneClickWalletsRendered(prev => {

@@ -59,10 +59,12 @@ let make = (~sessions, ~walletOptions) => {
   let paypalPaymentMethodDataV1 = usePaymentMethodData(~paymentMethodListValue, ~sessionObj)
   let paypalPaymentMethodDataV2 = usePaymentMethodDataV2(~paymentMethodListValueV2, ~sessionObj)
 
-  let isTrustpayScriptReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTrustpayScriptReady)
-  let isTrustpayScriptFailed = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTrustpayScriptFailed)
+  let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
-  let isApplePayThirdPartyFlow = ApplePayCheck.useIsApplePayThirdPartyFlow()
+  let (
+    isApplePayDelayedSessionFlow,
+    isGooglePayDelayedSessionFlow,
+  ) = ThirdPartyFlowCheck.useIsThirdPartyFlow()
   let setIsShowOrPayUsingWhileLoading = Recoil.useSetRecoilState(
     RecoilAtoms.isShowOrPayUsingWhileLoading,
   )
@@ -86,20 +88,11 @@ let make = (~sessions, ~walletOptions) => {
   )
 
   React.useEffect(() => {
-    let isGooglePayThirdParty = switch googlePayThirdPartyToken {
-    | GooglePayThirdPartyTokenOptional(Some(_)) => true
-    | _ => false
-    }
-
+    let isTrustPayScriptLoading = !trustPayScriptStatus.isLoaded && !trustPayScriptStatus.isFailed
     let isApplePayThirdPartyLoading =
-      isApplePayThirdPartyFlow &&
-      isApplePayReady &&
-      !isTrustpayScriptReady &&
-      !isTrustpayScriptFailed
+      isApplePayDelayedSessionFlow && isApplePayReady && isTrustPayScriptLoading
 
-    let isGooglePayThirdPartyLoading =
-      isGooglePayThirdParty && !isTrustpayScriptReady && !isTrustpayScriptFailed
-
+    let isGooglePayThirdPartyLoading = isGooglePayDelayedSessionFlow && isTrustPayScriptLoading
     if isGooglePayThirdPartyLoading || isApplePayThirdPartyLoading {
       setIsShowOrPayUsingWhileLoading(_ => true)
     } else {
@@ -107,11 +100,11 @@ let make = (~sessions, ~walletOptions) => {
     }
     None
   }, (
-    googlePayThirdPartyToken,
-    isApplePayThirdPartyFlow,
+    isGooglePayDelayedSessionFlow,
+    isApplePayDelayedSessionFlow,
     isApplePayReady,
-    isTrustpayScriptReady,
-    isTrustpayScriptFailed,
+    trustPayScriptStatus.isLoaded,
+    trustPayScriptStatus.isFailed,
   ))
 
   let {isKlarnaSDKFlow, isKlarnaCheckoutFlow} = KlarnaHelpers.usePaymentMethodExperience(

@@ -43,3 +43,13 @@ let decodeRedirectionFlags = (json: JSON.t, default: redirectionFlags): redirect
   })
   ->Option.getOr(default)
 }
+
+type trustPayScriptStatus = {
+  isLoaded: bool,
+  isFailed: bool,
+}
+
+let defaultTrustpayScriptStatus = {
+  isLoaded: false,
+  isFailed: false,
+}

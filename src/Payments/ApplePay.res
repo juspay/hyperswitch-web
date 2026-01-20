@@ -22,9 +22,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isApplePaySDKFlow = sessionObj->Option.isSome
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let isTrustpayScriptReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTrustpayScriptReady)
-  let isTrustpayScriptFailed = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTrustpayScriptFailed)
-  let isApplePayThirdPartyFlow = ApplePayCheck.useIsApplePayThirdPartyFlow()
+  let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
+  let (isApplePayDelayedSessionFlow, _) = ThirdPartyFlowCheck.useIsThirdPartyFlow()
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
@@ -235,7 +234,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         if isInvokeSDKFlow {
-          if isApplePayThirdPartyFlow {
+          if isApplePayDelayedSessionFlow {
             setShowApplePayLoader(_ => true)
             let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
             ApplePayHelpers.processPayment(
@@ -289,19 +288,20 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   )
 
   React.useEffect(() => {
-    if (
-      (isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
+    let shouldShowApplePay =
+      (isInvokeSDKFlow || paymentExperience === PaymentMethodsRecord.RedirectToURL) &&
       isApplePayReady &&
       isWallet
-    ) {
-      if !isApplePayThirdPartyFlow || (isApplePayThirdPartyFlow && isTrustpayScriptReady) {
-        setShowApplePay(_ => true)
-        areOneClickWalletsRendered(prev => {
-          ...prev,
-          isApplePay: true,
-        })
-        setIsShowOrPayUsing(_ => true)
-      }
+
+    let canProceedWithApplePay = !isApplePayDelayedSessionFlow || trustPayScriptStatus.isLoaded
+
+    if shouldShowApplePay && canProceedWithApplePay {
+      setShowApplePay(_ => true)
+      areOneClickWalletsRendered(prev => {
+        ...prev,
+        isApplePay: true,
+      })
+      setIsShowOrPayUsing(_ => true)
     }
     None
   }, (
@@ -309,8 +309,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     isInvokeSDKFlow,
     paymentExperience,
     isWallet,
-    isApplePayThirdPartyFlow,
-    isTrustpayScriptReady,
+    isApplePayDelayedSessionFlow,
+    trustPayScriptStatus.isLoaded,
   ))
 
   let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
@@ -319,7 +319,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let paymentMethod = "wallet"
   let paymentMethodType = "apple_pay"
   let shouldShowWalletShimmer =
-    isApplePayThirdPartyFlow && isApplePayReady && !isTrustpayScriptReady && !isTrustpayScriptFailed
+    isApplePayDelayedSessionFlow &&
+    isApplePayReady &&
+    !trustPayScriptStatus.isLoaded &&
+    !trustPayScriptStatus.isFailed
 
   if isWallet {
     <>
