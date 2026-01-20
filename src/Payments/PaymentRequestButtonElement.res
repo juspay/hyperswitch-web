@@ -103,8 +103,7 @@ let make = (~sessions, ~walletOptions) => {
     isGooglePayDelayedSessionFlow,
     isApplePayDelayedSessionFlow,
     isApplePayReady,
-    trustPayScriptStatus.isLoaded,
-    trustPayScriptStatus.isFailed,
+    trustPayScriptStatus,
   ))
 
   let {isKlarnaSDKFlow, isKlarnaCheckoutFlow} = KlarnaHelpers.usePaymentMethodExperience(
