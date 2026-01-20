@@ -29,14 +29,20 @@ let useIsThirdPartyFlow = () => {
     let isGooglePayDelayedSessionFlow =
       googlePayThirdPartyToken
       ->Option.map(token =>
-        token->getDecodedBoolFromJson(x => x->Dict.get("delayed_session_token"), false)
+        token->getDecodedBoolFromJson(
+          tokenObj => tokenObj->Dict.get("delayed_session_token"),
+          false,
+        )
       )
       ->Option.getOr(false)
 
     let isApplePayDelayedSessionFlow =
       applePayThirdPartyToken
       ->Option.map(token =>
-        token->getDecodedBoolFromJson(x => x->Dict.get("delayed_session_token"), false)
+        token->getDecodedBoolFromJson(
+          tokenObj => tokenObj->Dict.get("delayed_session_token"),
+          false,
+        )
       )
       ->Option.getOr(false)
 
