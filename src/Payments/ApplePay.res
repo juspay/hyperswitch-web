@@ -23,7 +23,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
-  let (isApplePayDelayedSessionFlow, _) = ThirdPartyFlowCheck.useIsThirdPartyFlow()
+  let (isApplePayDelayedSessionFlow, _) = ThirdPartyFlowHelpers.useIsThirdPartyFlow()
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
@@ -288,14 +288,14 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   )
 
   React.useEffect(() => {
-    let shouldShowApplePay =
+    let isApplePayEligible =
       (isInvokeSDKFlow || paymentExperience === PaymentMethodsRecord.RedirectToURL) &&
       isApplePayReady &&
       isWallet
 
-    let canProceedWithApplePay = !isApplePayDelayedSessionFlow || trustPayScriptStatus.isLoaded
+    let isApplePaySessionReady = !isApplePayDelayedSessionFlow || trustPayScriptStatus.isLoaded
 
-    if shouldShowApplePay && canProceedWithApplePay {
+    if isApplePayEligible && isApplePaySessionReady {
       setShowApplePay(_ => true)
       areOneClickWalletsRendered(prev => {
         ...prev,

@@ -64,7 +64,7 @@ let make = (~sessions, ~walletOptions) => {
   let (
     isApplePayDelayedSessionFlow,
     isGooglePayDelayedSessionFlow,
-  ) = ThirdPartyFlowCheck.useIsThirdPartyFlow()
+  ) = ThirdPartyFlowHelpers.useIsThirdPartyFlow()
   let setIsShowOrPayUsingWhileLoading = Recoil.useSetRecoilState(
     RecoilAtoms.isShowOrPayUsingWhileLoading,
   )

@@ -25,7 +25,7 @@ let make = (
   let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
-  let (_, isGooglePayDelayedSessionFlow) = ThirdPartyFlowCheck.useIsThirdPartyFlow()
+  let (_, isGooglePayDelayedSessionFlow) = ThirdPartyFlowHelpers.useIsThirdPartyFlow()
   let isGooglePaySDKFlow = React.useMemo(() => {
     sessionObj->Option.isSome
   }, [sessionObj])
