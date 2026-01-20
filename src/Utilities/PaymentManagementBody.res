@@ -1,4 +1,4 @@
-let updateCardBody = (~paymentMethodId, ~nickName, ~cardHolderName) => {
+let updateCardBody = (~paymentMethodToken, ~nickName, ~cardHolderName) => {
   let cardDetails =
     [
       ("card_holder_name", cardHolderName->JSON.Encode.string),
@@ -7,7 +7,17 @@ let updateCardBody = (~paymentMethodId, ~nickName, ~cardHolderName) => {
   let paymentMethodData = [("card", cardDetails)]->Utils.getJsonFromArrayOfJson
 
   [
-    ("payment_method_id", paymentMethodId->JSON.Encode.string),
+    ("payment_method_token", paymentMethodToken->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
+let updateCVVBody = (~paymentMethodToken, ~cvcNumber) => {
+  let cardDetails = [("card_cvc", cvcNumber->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
+  let paymentMethodData = [("card", cardDetails)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method_token", paymentMethodToken->JSON.Encode.string),
     ("payment_method_data", paymentMethodData),
   ]
 }

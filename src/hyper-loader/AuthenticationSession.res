@@ -27,6 +27,17 @@ let make = (
         ~merchantId,
         ~initClickToPaySessionInput,
       ),
+    getActiveClickToPaySession: () =>
+      AuthenticationSessionMethods.getActiveClickToPaySession(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~profileId,
+        ~authenticationId,
+        ~merchantId,
+      ),
   }
 
   defaultInitAuthenticationSession

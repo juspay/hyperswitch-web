@@ -11,12 +11,26 @@ type nextAction = {
   next_action_data: option<JSON.t>,
 }
 
+type token = {
+  @as("type") type_: string,
+  data: string,
+}
+
+type associatedPaymentMethodsObj = {
+  token: token,
+  paymentMethodType: string,
+  paymentMethodSubType: string,
+}
+
+type associatedPaymentMethods = array<associatedPaymentMethodsObj>
+
 type intent = {
   nextAction: nextAction,
   id: string,
   customerId: string,
   clientSecret: string,
   authenticationDetails: authenticationDetails,
+  associatedPaymentMethods: associatedPaymentMethods,
 }
 
 let defaultAuthenticationDetails = {
@@ -36,6 +50,18 @@ let defaultIntent = {
   customerId: "",
   clientSecret: "",
   authenticationDetails: defaultAuthenticationDetails,
+  associatedPaymentMethods: [],
+}
+
+let defaultToken = {
+  type_: "",
+  data: "",
+}
+
+let defaultAssociatedPaymentMethodObj = {
+  token: defaultToken,
+  paymentMethodType: "",
+  paymentMethodSubType: "",
 }
 
 let getNextAction = (dict, str) => {
@@ -65,6 +91,23 @@ let getAuthenticationDetails = (dict, str) => {
   ->Option.getOr(defaultAuthenticationDetails)
 }
 
+let getAssociatedPaymentMethods = (dict, str) => {
+  dict
+  ->Utils.getArray(str)
+  ->Array.map(item => {
+    let obj = item->JSON.Decode.object->Option.getOr(Dict.make())
+    let tokenObj = obj->getDictFromDict("payment_method_token")
+    {
+      token: {
+        type_: getString(tokenObj, "type", ""),
+        data: getString(tokenObj, "data", ""),
+      },
+      paymentMethodType: getString(obj, "payment_method_type", ""),
+      paymentMethodSubType: getString(obj, "payment_method_subtype", ""),
+    }
+  })
+}
+
 let itemToPMMConfirmMapper = dict => {
   {
     nextAction: getNextAction(dict, "next_action"),
@@ -72,5 +115,6 @@ let itemToPMMConfirmMapper = dict => {
     customerId: getString(dict, "customer_id", ""),
     id: getString(dict, "id", ""),
     authenticationDetails: getAuthenticationDetails(dict, "authentication_details"),
+    associatedPaymentMethods: getAssociatedPaymentMethods(dict, "associated_payment_methods"),
   }
 }
