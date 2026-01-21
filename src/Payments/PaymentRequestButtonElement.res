@@ -88,7 +88,7 @@ let make = (~sessions, ~walletOptions) => {
   )
 
   React.useEffect(() => {
-    let isTrustPayScriptLoading = trustPayScriptStatus == Loading
+    let isTrustPayScriptLoading = trustPayScriptStatus === Loading
     let isApplePayThirdPartyLoading =
       isApplePayDelayedSessionFlow && isApplePayReady && isTrustPayScriptLoading
 

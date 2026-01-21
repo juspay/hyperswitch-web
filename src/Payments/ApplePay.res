@@ -293,7 +293,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       isApplePayReady &&
       isWallet
 
-    let isApplePaySessionReady = !isApplePayDelayedSessionFlow || trustPayScriptStatus == Loaded
+    let isApplePaySessionReady = !isApplePayDelayedSessionFlow || trustPayScriptStatus === Loaded
 
     if isApplePayEligible && isApplePaySessionReady {
       setShowApplePay(_ => true)
@@ -319,7 +319,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let paymentMethod = "wallet"
   let paymentMethodType = "apple_pay"
   let shouldShowWalletShimmer =
-    isApplePayDelayedSessionFlow && isApplePayReady && trustPayScriptStatus == Loading
+    isApplePayDelayedSessionFlow && isApplePayReady && trustPayScriptStatus === Loading
 
   if isWallet {
     <>
