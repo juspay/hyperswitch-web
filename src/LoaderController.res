@@ -254,7 +254,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 setBlockConfirm(_ => dict->getBool("blockConfirm", false))
               }
               setCustomPodUri(_ => dict->getString("customPodUri", ""))
-              updateOptions(dict)
               setSessionId(_ => {
                 sdkSessionId
               })
@@ -337,6 +336,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~latency=renderLatency,
                 ~value="",
               )
+              updateOptions(dict)
             }
           } else if dict->getDictIsSome("paymentOptions") {
             let paymentOptions = dict->getDictFromObj("paymentOptions")
