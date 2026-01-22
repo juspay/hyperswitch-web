@@ -341,6 +341,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | BRAINTREE_CLIENT_SCRIPT
   | AUTHENTICATED_SESSION_INITIATED
   | ONE_CLICK_HANDLER_CALLBACK
-  | PAYMENT_ELEMENT_OPTIONS =>
+  | PAYMENT_ELEMENT_OPTIONS
+  | TEST_MODE =>
     None
   }

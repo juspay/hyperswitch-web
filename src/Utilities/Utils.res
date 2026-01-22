@@ -1836,7 +1836,7 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.getOr(defaultValue)
 }
 
-let getStringFromBool = (val: bool) => val ? "true" : "false"
+let getStringFromBool = val => val ? "true" : "false"
 let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventName) => {
   if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
     let script = Window.createElement("script")

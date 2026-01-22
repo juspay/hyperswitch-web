@@ -59,6 +59,19 @@ let make = (
       ->Option.flatMap(JSON.Decode.string)
       ->Option.getOr("")
 
+    logger.setLogInfo(
+      ~value=`Initializing Elements SDK - isTestMode: ${isTestMode->getStringFromBool}`,
+      ~eventName=TEST_MODE,
+    )
+
+    logger.setLogInfo(
+      ~value=`Preloading SDK With Params: ${preloadSDKWithParams
+        ->PaymentType.sanitizePreloadSdkParms
+        ->Identity.anyTypeToJson
+        ->JSON.stringify}`,
+      ~eventName=PRELOAD_SDK_WITH_PARAMS,
+    )
+
     let merchantHostname = Window.Location.hostname
 
     let localSelectorString = "hyper-preMountLoader-iframe"
