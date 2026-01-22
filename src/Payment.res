@@ -141,7 +141,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
   if integrateError {
-    <ErrorOccured />
+    <ErrorOccurred />
   } else {
     <PaymentTypeContext.provider value={paymentType: paymentType}>
       <RenderPaymentMethods

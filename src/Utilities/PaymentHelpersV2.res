@@ -451,7 +451,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/confirm`
 
-      let browserInfo = BrowserSpec.broswerInfo
+      let browserInfo = BrowserSpec.browserInfo
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let bodyStr =
         [("client_secret", pmClientSecret->JSON.Encode.string)]
