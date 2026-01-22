@@ -20,8 +20,6 @@ let initClickToPaySession = async (
   let customerEmail = ref("")
   let maskedCards = ref([])
 
-  ClickToPayConsoleSuppress.initialize()
-
   let key = `${clientSecret}_${authenticationId}`
 
   let data = await (

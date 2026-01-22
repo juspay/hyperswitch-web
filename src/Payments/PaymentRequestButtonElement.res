@@ -59,6 +59,15 @@ let make = (~sessions, ~walletOptions) => {
   let paypalPaymentMethodDataV1 = usePaymentMethodData(~paymentMethodListValue, ~sessionObj)
   let paypalPaymentMethodDataV2 = usePaymentMethodDataV2(~paymentMethodListValueV2, ~sessionObj)
 
+  let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
+
+  let isApplePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsApplePayDelayedSessionFlow()
+  let isGooglePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsGooglePayDelayedSessionFlow()
+  let setIsShowOrPayUsingWhileLoading = Recoil.useSetRecoilState(
+    RecoilAtoms.isShowOrPayUsingWhileLoading,
+  )
+
   let {paypalToken, isPaypalSDKFlow, isPaypalRedirectFlow} = switch GlobalVars.sdkVersion {
   | V1 => paypalPaymentMethodDataV1
   | V2 => paypalPaymentMethodDataV2
@@ -76,6 +85,25 @@ let make = (~sessions, ~walletOptions) => {
     googlePayThirdPartySessionObj.sessionsToken,
     Gpay,
   )
+
+  React.useEffect(() => {
+    let isTrustPayScriptLoading = trustPayScriptStatus === Loading
+    let isApplePayThirdPartyLoading =
+      isApplePayDelayedSessionFlow && isApplePayReady && isTrustPayScriptLoading
+
+    let isGooglePayThirdPartyLoading = isGooglePayDelayedSessionFlow && isTrustPayScriptLoading
+    if isGooglePayThirdPartyLoading || isApplePayThirdPartyLoading {
+      setIsShowOrPayUsingWhileLoading(_ => true)
+    } else {
+      setIsShowOrPayUsingWhileLoading(_ => false)
+    }
+    None
+  }, (
+    isGooglePayDelayedSessionFlow,
+    isApplePayDelayedSessionFlow,
+    isApplePayReady,
+    trustPayScriptStatus,
+  ))
 
   let {isKlarnaSDKFlow, isKlarnaCheckoutFlow} = KlarnaHelpers.usePaymentMethodExperience(
     ~paymentMethodListValue,

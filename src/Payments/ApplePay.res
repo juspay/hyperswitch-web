@@ -22,7 +22,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isApplePaySDKFlow = sessionObj->Option.isSome
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-
+  let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
+  let isApplePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsApplePayDelayedSessionFlow()
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
@@ -242,17 +243,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
           if isInvokeSDKFlow {
-            let isDelayedSessionToken =
-              sessionObj
-              ->Option.getOr(JSON.Encode.null)
-              ->JSON.Decode.object
-              ->Option.getOr(Dict.make())
-              ->Dict.get("delayed_session_token")
-              ->Option.getOr(JSON.Encode.null)
-              ->JSON.Decode.bool
-              ->Option.getOr(false)
-
-            if isDelayedSessionToken {
+            if isApplePayDelayedSessionFlow {
               setShowApplePayLoader(_ => true)
               let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
               ApplePayHelpers.processPayment(
@@ -307,11 +298,14 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   )
 
   React.useEffect(() => {
-    if (
-      (isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
+    let isApplePayEligible =
+      (isInvokeSDKFlow || paymentExperience === PaymentMethodsRecord.RedirectToURL) &&
       isApplePayReady &&
       isWallet
-    ) {
+
+    let isApplePaySessionReady = !isApplePayDelayedSessionFlow || trustPayScriptStatus === Loaded
+
+    if isApplePayEligible && isApplePaySessionReady {
       setShowApplePay(_ => true)
       areOneClickWalletsRendered(prev => {
         ...prev,
@@ -320,37 +314,51 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       setIsShowOrPayUsing(_ => true)
     }
     None
-  }, (isApplePayReady, isInvokeSDKFlow, paymentExperience, isWallet))
+  }, (
+    isApplePayReady,
+    isInvokeSDKFlow,
+    paymentExperience,
+    isWallet,
+    isApplePayDelayedSessionFlow,
+    trustPayScriptStatus,
+  ))
 
   let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
   useSubmitPaymentData(submitCallback)
 
   let paymentMethod = "wallet"
   let paymentMethodType = "apple_pay"
+  let shouldShowWalletShimmer =
+    isApplePayDelayedSessionFlow && isApplePayReady && trustPayScriptStatus === Loading
 
   if isWallet {
-    <RenderIf condition={showApplePay}>
-      <div>
-        <style> {React.string(css)} </style>
-        {if showApplePayLoader {
-          <div className="apple-pay-loader-div">
-            <div className="apple-pay-loader" />
-          </div>
-        } else {
-          <button
-            disabled=applePayClicked
-            style={
-              opacity: updateSession ? "0.5" : "1.0",
-              pointerEvents: updateSession ? "none" : "auto",
-            }
-            className="apple-pay-button-with-text apple-pay-button-black-with-text"
-            onClick={_ => onApplePayButtonClicked()}>
-            <span className="text"> {React.string("Pay with")} </span>
-            <span className="logo" />
-          </button>
-        }}
-      </div>
-    </RenderIf>
+    <>
+      <RenderIf condition={shouldShowWalletShimmer}>
+        <WalletShimmer />
+      </RenderIf>
+      <RenderIf condition={showApplePay}>
+        <div>
+          <style> {React.string(css)} </style>
+          {if showApplePayLoader {
+            <div className="apple-pay-loader-div">
+              <div className="apple-pay-loader" />
+            </div>
+          } else {
+            <button
+              disabled=applePayClicked
+              style={
+                opacity: updateSession ? "0.5" : "1.0",
+                pointerEvents: updateSession ? "none" : "auto",
+              }
+              className="apple-pay-button-with-text apple-pay-button-black-with-text"
+              onClick={_ => onApplePayButtonClicked()}>
+              <span className="text"> {React.string("Pay with")} </span>
+              <span className="logo" />
+            </button>
+          }}
+        </div>
+      </RenderIf>
+    </>
   } else {
     <>
       <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
