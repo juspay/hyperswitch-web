@@ -188,6 +188,9 @@ let make = (
                     : "https://test-tpgw.trustpay.eu/js/v1.js"
                 let trustPayScript = Window.createElement("script")
                 logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT)
+                mountedIframeRef->Window.iframePostMessage(
+                  [("trustPayScriptStatus", "loading"->JSON.Encode.string)]->Dict.fromArray,
+                )
                 trustPayScript->Window.elementSrc(trustPayScriptURL)
                 trustPayScript->Window.elementOnerror(_ => {
                   logger.setLogError(
@@ -195,11 +198,21 @@ let make = (
                     ~eventName=TRUSTPAY_SCRIPT,
                     // ~internalMetadata=err->formatException->JSON.stringify,
                   )
+                  mountedIframeRef->Window.iframePostMessage(
+                    [("trustPayScriptStatus", "failed"->JSON.Encode.string)]->Dict.fromArray,
+                  )
                 })
                 trustPayScript->Window.elementOnload(_ => {
                   logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT)
+                  mountedIframeRef->Window.iframePostMessage(
+                    [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
+                  )
                 })
                 Window.body->Window.appendChild(trustPayScript)
+              } else {
+                mountedIframeRef->Window.iframePostMessage(
+                  [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
+                )
               }
             }
             let msg = [("paymentMethodList", json)]->Dict.fromArray
