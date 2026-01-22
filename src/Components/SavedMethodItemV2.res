@@ -35,7 +35,11 @@ let make = (
   let shouldRenderCVV = paymentItem.requiresCvv
   let isCVCEmpty = cvcNumber->String.length === 0
 
-  let handleManage = () => setManagePaymentMethod(_ => paymentItem.paymentToken)
+  let handleManage = () => {
+    if isActive {
+      setManagePaymentMethod(_ => paymentItem.paymentToken)
+    }
+  }
 
   let focusCVC = () => {
     setCardBrand(_ => paymentItem.paymentMethodData.card.network->Option.getOr(""))
@@ -55,6 +59,21 @@ let make = (
   }, (isActive, paymentItem))
 
   let isManageModeInactive = managePaymentMethod != paymentItem.paymentToken
+
+  React.useEffect(() => {
+    setManagePaymentMethod(_ => "")
+    None
+  }, [isActive])
+
+  React.useEffect(() => {
+    if managePaymentMethod !== "" {
+      Utils.messageParentWindow([("manageModeActive", true->JSON.Encode.bool)])
+    } else {
+      Utils.messageParentWindow([("manageModeActive", false->JSON.Encode.bool)])
+    }
+
+    None
+  }, [managePaymentMethod])
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div className={`flex flex-col`}>
@@ -168,7 +187,7 @@ let make = (
             </div>
             <div className="w-full">
               <div className="flex flex-col items-start mx-8">
-                <RenderIf condition={isActive && shouldRenderCVV}>
+                <RenderIf condition={isActive && shouldRenderCVV && isManageModeInactive}>
                   <div
                     className={`flex flex-row items-start justify-start gap-2`}
                     style={fontSize: "14px", opacity: "0.5"}>

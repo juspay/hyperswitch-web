@@ -427,7 +427,6 @@ let savePaymentMethod = (
 let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
@@ -442,10 +441,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
       let pmSessionId = keys.pmSessionId->Option.getOr("")
       let headers = [
         ("Content-Type", "application/json"),
-        (
-          "Authorization",
-          `publishable-key=${keys.publishableKey},client-secret=${config.pmClientSecret}`,
-        ),
+        ("Authorization", `publishable-key=${keys.publishableKey},client-secret=${pmClientSecret}`),
         ("x-profile-id", keys.profileId),
       ]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
@@ -494,7 +490,6 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
 let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
@@ -509,10 +504,7 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
       let pmSessionId = keys.pmSessionId->Option.getOr("")
       let headers = [
         ("Content-Type", "application/json"),
-        (
-          "Authorization",
-          `publishable-key=${keys.publishableKey},client-secret=${config.pmClientSecret}`,
-        ),
+        ("Authorization", `publishable-key=${keys.publishableKey},client-secret=${pmClientSecret}`),
         ("x-profile-id", keys.profileId),
       ]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)

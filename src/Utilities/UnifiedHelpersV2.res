@@ -2,6 +2,23 @@ open UnifiedPaymentsTypesV2
 open Utils
 open PaymentMethodsRecord
 
+let getCardDetails = cardDict => {
+  {
+    network: getOptionString(cardDict, "card_network"),
+    issuerCountry: getOptionString(cardDict, "card_issuer"),
+    last4Digits: getString(cardDict, "last4_digits", ""),
+    expiryMonth: getString(cardDict, "expiry_month", ""),
+    expiryYear: getString(cardDict, "expiry_year", ""),
+    cardHolderName: getOptionString(cardDict, "card_holder_name"),
+    nickname: getOptionString(cardDict, "nick_name"),
+    cardFingerprint: getString(cardDict, "card_fingerprint", ""),
+    cardIsin: getString(cardDict, "card_isin", ""),
+    cardType: getString(cardDict, "card_type", ""),
+    savedToLocker: getBool(cardDict, "saved_to_locker", false),
+    cardIssuer: getString(cardDict, "card_issuer", ""),
+  }
+}
+
 let itemToCustomerMapper = customerArray => {
   let customerMethods =
     customerArray
@@ -19,20 +36,7 @@ let itemToCustomerMapper = customerArray => {
         paymentMethodSubType: getString(dict, "payment_method_subtype", ""),
         recurringEnabled: getBool(dict, "recurring_enabled", false),
         paymentMethodData: {
-          card: {
-            network: getOptionString(cardDict, "card_network"),
-            issuerCountry: getOptionString(cardDict, "card_issuer"),
-            last4Digits: getString(cardDict, "last4_digits", ""),
-            expiryMonth: getString(cardDict, "expiry_month", ""),
-            expiryYear: getString(cardDict, "expiry_year", ""),
-            cardHolderName: getOptionString(cardDict, "card_holder_name"),
-            nickname: getOptionString(cardDict, "nick_name"),
-            cardFingerprint: getString(cardDict, "card_fingerprint", ""),
-            cardIsin: getString(cardDict, "card_isin", ""),
-            cardType: getString(cardDict, "card_type", ""),
-            savedToLocker: getBool(cardDict, "saved_to_locker", false),
-            cardIssuer: getString(cardDict, "card_issuer", ""),
-          },
+          card: getCardDetails(cardDict),
         },
         isDefault: getBool(dict, "is_default", false),
         requiresCvv: getBool(dict, "requires_cvv", false),
@@ -126,26 +130,31 @@ let itemToPaymentDetails = cust => {
     paymentMethodSubType: getString(cust, "payment_method_subtype", ""),
     recurringEnabled: getBool(cust, "recurring_enabled", false),
     paymentMethodData: {
-      card: {
-        network: getOptionString(cardDict, "card_network"),
-        issuerCountry: getOptionString(cardDict, "card_issuer"),
-        last4Digits: getString(cardDict, "last4_digits", ""),
-        expiryMonth: getString(cardDict, "expiry_month", ""),
-        expiryYear: getString(cardDict, "expiry_year", ""),
-        cardHolderName: getOptionString(cardDict, "card_holder_name"),
-        nickname: getOptionString(cardDict, "nick_name"),
-        cardFingerprint: getString(cardDict, "card_fingerprint", ""),
-        cardIsin: getString(cardDict, "card_isin", ""),
-        cardType: getString(cardDict, "card_type", ""),
-        savedToLocker: getBool(cardDict, "saved_to_locker", false),
-        cardIssuer: getString(cardDict, "card_issuer", ""),
-      },
+      card: getCardDetails(cardDict),
     },
     isDefault: getBool(cust, "is_default", false),
     requiresCvv: getBool(cust, "requires_cvv", false),
     created: getString(cust, "created", ""),
     lastUsedAt: getString(cust, "last_used_at", ""),
     bank: {mask: ""},
+  }
+}
+
+let itemToPaymentMethodsUpdateMapper = cust => {
+  let cardDict =
+    getJsonObjectFromDict(cust, "payment_method_data")
+    ->getDictFromJson
+    ->getJsonObjectFromDict("card")
+    ->getDictFromJson
+
+  {
+    associatedPaymentMethods: PaymentConfirmTypesV2.getAssociatedPaymentMethods(
+      cust,
+      "associated_payment_methods",
+    ),
+    paymentMethodData: {
+      card: getCardDetails(cardDict),
+    },
   }
 }
 
