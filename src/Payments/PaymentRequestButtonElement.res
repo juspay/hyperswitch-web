@@ -61,10 +61,9 @@ let make = (~sessions, ~walletOptions) => {
 
   let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
-  let (
-    isApplePayDelayedSessionFlow,
-    isGooglePayDelayedSessionFlow,
-  ) = ThirdPartyFlowHelpers.useIsThirdPartyFlow()
+
+  let isApplePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsApplePayDelayedSessionFlow()
+  let isGooglePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsGooglePayDelayedSessionFlow()
   let setIsShowOrPayUsingWhileLoading = Recoil.useSetRecoilState(
     RecoilAtoms.isShowOrPayUsingWhileLoading,
   )
