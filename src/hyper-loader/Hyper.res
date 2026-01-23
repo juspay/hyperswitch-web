@@ -385,11 +385,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         }
 
         if isTestMode {
-          let errrorResponse = getFailedSubmitResponse(
+          let errorResponse = getFailedSubmitResponse(
             ~errorType="test_mode_bypass",
             ~message="Confirm Payment called in test mode - API call bypassed",
           )
-          Promise.resolve(errrorResponse)
+          Promise.resolve(errorResponse)
         } else {
           Promise.make((resolve1, _) => {
             let isReadyPromise = isReadyPromise
