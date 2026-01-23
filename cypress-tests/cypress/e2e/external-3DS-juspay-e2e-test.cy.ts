@@ -40,9 +40,7 @@ describe("External 3DS using Juspay Checks", () => {
   });
 
   it("orca-payment-element iframe loaded", () => {
-    cy.get(
-      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element",
-    )
+    cy.get(iframeSelector)
       .should("be.visible")
       .its("0.contentDocument")
       .its("body");
@@ -68,7 +66,7 @@ describe("External 3DS using Juspay Checks", () => {
       cy.wait(2000);
       cy.wrap($body).find("#otp").type("1234");
 
-      cy.wrap($body).contains('button', 'Pay').click();
+      cy.wrap($body).contains("button", "Pay").click();
       cy.wait(5000); // Allow time for Juspay to complete the payment flow
       cy.contains("Thanks for your order!").should("be.visible");
     });
@@ -92,7 +90,7 @@ describe("External 3DS using Juspay Checks", () => {
 
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
       cy.wait(2000);
-      cy.wrap($body).contains('button', 'Cancel').click();
+      cy.wrap($body).contains("button", "Cancel").click();
       cy.contains("Payment failed. Please check your payment method.").should(
         "be.visible",
       );
