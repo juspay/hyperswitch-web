@@ -898,6 +898,52 @@ let rgbaTorgb = bgColor => {
   }
 }
 
+let findVersion = (re, content) => {
+  let result = Js.Re.exec_(re, content)
+  let version = switch result {
+  | Some(val) => Js.Re.captures(val)
+  | None => []
+  }
+  version
+}
+
+let browserDetect = content => {
+  let patterns = [
+    ("Instagram", %re("/Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Instagram"),
+    ("FBAV", %re("/FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Facebook"),
+    ("Twitter", %re("/iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Twitter"),
+    ("LinkedIn", %re("/LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig"), "LinkedIn"),
+    ("Edg", %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Microsoft Edge"),
+    ("Chrome", %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Chrome"),
+    ("Safari", %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Safari"),
+    ("Opera", %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Opera"),
+    ("Firefox", %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
+    ("fxios", %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
+  ]
+
+  switch patterns
+  ->Belt.Array.keepMap(((keyword, regex, name)) =>
+    if RegExp.test(keyword->RegExp.fromString, content) {
+      let version = switch findVersion(regex, content)
+      ->Array.get(1)
+      ->Option.getOr(Nullable.null)
+      ->Nullable.toOption {
+      | Some(v) => v
+      | None => ""
+      }
+      Some(`${name}-${version}`)
+    } else {
+      None
+    }
+  )
+  ->Belt.Array.get(0) {
+  | Some(result) => result
+  | None => "Others-0"
+  }
+}
+
+let arrayOfNameAndVersion = String.split(Window.Navigator.userAgent->browserDetect, "-")
+
 let delay = timeOut => {
   Promise.make((resolve, _reject) => {
     setTimeout(() => {
@@ -923,8 +969,8 @@ let getHeaders = (
     ("Content-Type", "application/json"),
     ("X-Client-Version", Window.version),
     ("X-Payment-Confirm-Source", "sdk"),
-    ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
-    ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+    ("X-Browser-Name", arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+    ("X-Browser-Version", arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
     ("X-Client-Platform", "web"),
   ]
 
@@ -1790,6 +1836,7 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.getOr(defaultValue)
 }
 
+let getStringFromBool = val => val ? "true" : "false"
 let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventName) => {
   if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
     let script = Window.createElement("script")

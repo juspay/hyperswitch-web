@@ -1,7 +1,7 @@
 name: Conventional Commit Message Check
 
 on:
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - edited
@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Verify PR title follows conventional commit standards
         id: pr_title_check
-        if: ${{ github.event_name == 'pull_request_target' }}
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/github-script@v7
         continue-on-error: true
         env:
@@ -83,7 +83,7 @@ jobs:
             return true;
 
       - name: Attach 'S-conventions-not-followed' label if PR title check failed
-        if: ${{ github.event_name == 'pull_request_target' && steps.pr_title_check.outcome == 'failure' }}
+        if: ${{ github.event_name == 'pull_request' && steps.pr_title_check.outcome == 'failure' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -93,7 +93,7 @@ jobs:
           exit 1
 
       - name: Remove 'S-conventions-not-followed' label if PR title check succeeded
-        if: ${{ github.event_name == 'pull_request_target' && steps.pr_title_check.outcome == 'success' }}
+        if: ${{ github.event_name == 'pull_request' && steps.pr_title_check.outcome == 'success' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
