@@ -49,6 +49,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsPaymentButtonHandlerProvided = Recoil.useSetRecoilState(
     isPaymentButtonHandlerProvidedAtom,
   )
+  let setIsTestMode = Recoil.useSetRecoilState(RecoilAtoms.isTestMode)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -416,6 +417,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               defaultRules: DefaultTheme.defaultRules,
             })
           }->ignore
+        }
+        if dict->Dict.get("isTestMode")->Option.isSome {
+          let isTestMode = dict->Utils.getBool("isTestMode", false)
+          setIsTestMode(_ => isTestMode)
         }
         if dict->getDictIsSome("sessions") {
           setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))

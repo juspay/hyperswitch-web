@@ -1236,6 +1236,13 @@ let sanitizePaymentElementOptions = dict => {
   ->getDictFromJson
 }
 
+let sanitizePreloadSdkParms = dict => {
+  dict
+  ->JSON.Encode.object
+  ->(Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField=_ => true))
+  ->getDictFromJson
+}
+
 let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
   unknownKeysWarning(allowedPaymentElementOptions, dict, "options")
 
