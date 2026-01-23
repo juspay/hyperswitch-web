@@ -140,16 +140,16 @@ let itemToPaymentDetails = cust => {
   }
 }
 
-let itemToPaymentMethodsUpdateMapper = cust => {
+let itemToPaymentMethodsUpdateMapper = dict => {
   let cardDict =
-    getJsonObjectFromDict(cust, "payment_method_data")
+    getJsonObjectFromDict(dict, "payment_method_data")
     ->getDictFromJson
     ->getJsonObjectFromDict("card")
     ->getDictFromJson
 
   {
     associatedPaymentMethods: PaymentConfirmTypesV2.getAssociatedPaymentMethods(
-      cust,
+      dict,
       "associated_payment_methods",
     ),
     paymentMethodData: {

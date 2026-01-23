@@ -66,11 +66,8 @@ let make = (
   }, [isActive])
 
   React.useEffect(() => {
-    if managePaymentMethod !== "" {
-      Utils.messageParentWindow([("manageModeActive", true->JSON.Encode.bool)])
-    } else {
-      Utils.messageParentWindow([("manageModeActive", false->JSON.Encode.bool)])
-    }
+    let isManageModeActive = managePaymentMethod !== ""
+    Utils.messageParentWindow([("manageModeActive", isManageModeActive->JSON.Encode.bool)])
 
     None
   }, [managePaymentMethod])
