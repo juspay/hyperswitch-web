@@ -21,6 +21,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   let setAreOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
 
@@ -62,66 +63,81 @@ let make = (~sessionObj: SessionsType.token) => {
           theme: options.wallets.style.theme == Dark ? "default" : "outlined",
           shape: "default",
           on_click: authorize => {
-            PaymentUtils.emitPaymentMethodInfo(
-              ~paymentMethod="wallet",
-              ~paymentMethodType="klarna",
-              ~country,
-              ~state,
-              ~pinCode,
-            )
-            makeOneClickHandlerPromise(sdkHandleIsThere)->then(
-              result => {
-                let result = result->JSON.Decode.bool->Option.getOr(false)
-                if result {
-                  Utils.messageParentWindow([
-                    ("fullscreen", true->JSON.Encode.bool),
-                    ("param", "paymentloader"->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                  ])
-                  setIsCompleted(_ => true)
-                  authorize(
-                    {collect_shipping_address: componentName->getIsExpressCheckoutComponent},
-                    Dict.make()->JSON.Encode.object,
-                    (res: res) => {
-                      let (connectors, _) =
-                        paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(SDK)))
+            if isTestMode {
+              Console.warn("Klarna SDK button clicked in test mode - interaction disabled")
+              loggerState.setLogInfo(
+                ~value="Klarna SDK button clicked in test mode - interaction disabled",
+                ~eventName=KLARNA_SDK_FLOW,
+                ~paymentMethod="KLARNA",
+              )
+              resolve()
+            } else {
+              loggerState.setLogInfo(
+                ~value="Klarna SDK Button Clicked",
+                ~eventName=KLARNA_SDK_FLOW,
+                ~paymentMethod="KLARNA",
+              )
+              PaymentUtils.emitPaymentMethodInfo(
+                ~paymentMethod="wallet",
+                ~paymentMethodType="klarna",
+                ~country,
+                ~state,
+                ~pinCode,
+              )
+              makeOneClickHandlerPromise(sdkHandleIsThere)->then(
+                result => {
+                  let result = result->JSON.Decode.bool->Option.getOr(false)
+                  if result {
+                    Utils.messageParentWindow([
+                      ("fullscreen", true->JSON.Encode.bool),
+                      ("param", "paymentloader"->JSON.Encode.string),
+                      ("iframeId", iframeId->JSON.Encode.string),
+                    ])
+                    setIsCompleted(_ => true)
+                    authorize(
+                      {collect_shipping_address: componentName->getIsExpressCheckoutComponent},
+                      Dict.make()->JSON.Encode.object,
+                      (res: res) => {
+                        let (connectors, _) =
+                          paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(SDK)))
 
-                      let shippingContact =
-                        res.collected_shipping_address->Option.getOr(
-                          defaultCollectedShippingAddress,
+                        let shippingContact =
+                          res.collected_shipping_address->Option.getOr(
+                            defaultCollectedShippingAddress,
+                          )
+
+                        let requiredFieldsBody = DynamicFieldsUtils.getKlarnaRequiredFields(
+                          ~shippingContact,
+                          ~paymentMethodTypes,
                         )
 
-                      let requiredFieldsBody = DynamicFieldsUtils.getKlarnaRequiredFields(
-                        ~shippingContact,
-                        ~paymentMethodTypes,
-                      )
+                        let klarnaSDKBody = PaymentBody.klarnaSDKbody(
+                          ~token=res.authorization_token,
+                          ~connectors,
+                        )
 
-                      let klarnaSDKBody = PaymentBody.klarnaSDKbody(
-                        ~token=res.authorization_token,
-                        ~connectors,
-                      )
+                        let body = {
+                          klarnaSDKBody->mergeAndFlattenToTuples(requiredFieldsBody)
+                        }
 
-                      let body = {
-                        klarnaSDKBody->mergeAndFlattenToTuples(requiredFieldsBody)
-                      }
-
-                      res.approved
-                        ? intent(
-                            ~bodyArr=body,
-                            ~confirmParam={
-                              return_url: options.wallets.walletReturnUrl,
-                              publishableKey,
-                            },
-                            ~handleUserError=false,
-                            ~manualRetry=isManualRetryEnabled,
-                          )
-                        : handleCloseLoader()
-                    },
-                  )
-                }
-                resolve()
-              },
-            )
+                        res.approved
+                          ? intent(
+                              ~bodyArr=body,
+                              ~confirmParam={
+                                return_url: options.wallets.walletReturnUrl,
+                                publishableKey,
+                              },
+                              ~handleUserError=false,
+                              ~manualRetry=isManualRetryEnabled,
+                            )
+                          : handleCloseLoader()
+                      },
+                    )
+                  }
+                  resolve()
+                },
+              )
+            }
           },
         },
         _ => {

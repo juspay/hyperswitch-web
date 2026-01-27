@@ -10,7 +10,7 @@ let make = (
 ) => {
   let divRef = React.useRef(Nullable.null)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {savedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {savedPaymentMethods, sdkHandleSavePayment} = Recoil.useRecoilValueFromAtom(optionAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
   let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
   let (isLoading, setIsLoading) = React.useState(_ => false)
@@ -136,9 +136,11 @@ let make = (
           />
         </RenderIf>
         <PaymentElementRendererLazy paymentType cardProps cvcProps expiryProps />
-        <div className="mt-4">
-          <PayNowButton label="Save card" />
-        </div>
+        <RenderIf condition={sdkHandleSavePayment.handleSave}>
+          <div className="mt-4">
+            <PayNowButton label="Save card" />
+          </div>
+        </RenderIf>
       </div>
     </RenderIf>
     <RenderIf
@@ -148,7 +150,7 @@ let make = (
     </RenderIf>
     <RenderIf condition={!showAddScreen}>
       <RenderIf condition={!isLoading}>
-        <SavedPaymentManagement savedMethods setSavedMethods />
+        <SavedPaymentManagement savedMethods setSavedMethods cvcProps />
       </RenderIf>
       <RenderIf condition={isLoading}>
         <PaymentElementShimmer.SavedPaymentShimmer />

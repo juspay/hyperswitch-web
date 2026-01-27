@@ -26,6 +26,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
+  let isShowOrPayUsingWhileLoading = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.isShowOrPayUsingWhileLoading,
+  )
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
@@ -536,7 +539,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <RenderIf
           condition={paymentOptions->Array.length > 0 &&
           walletOptions->Array.length > 0 &&
-          checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
+          checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}>
           <Or />
         </RenderIf>
         {switch layoutClass.\"type" {

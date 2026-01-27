@@ -22,6 +22,8 @@ let make = (
   ~analyticsMetadata,
   ~customBackendUrl,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~isTestMode=false,
+  ~preloadSDKWithParams=Dict.make(),
 ) => {
   try {
     let iframeRef = []
@@ -57,6 +59,19 @@ let make = (
       ->Option.flatMap(JSON.Decode.string)
       ->Option.getOr("")
 
+    logger.setLogInfo(
+      ~value=`Initializing Elements SDK - isTestMode: ${isTestMode->getStringFromBool}`,
+      ~eventName=TEST_MODE,
+    )
+
+    logger.setLogInfo(
+      ~value=`Preloading SDK With Params: ${preloadSDKWithParams
+        ->PaymentType.sanitizePreloadSdkParms
+        ->Identity.anyTypeToJson
+        ->JSON.stringify}`,
+      ~eventName=PRELOAD_SDK_WITH_PARAMS,
+    )
+
     let merchantHostname = Window.Location.hostname
 
     let localSelectorString = "hyper-preMountLoader-iframe"
@@ -67,13 +82,16 @@ let make = (
         )->Js.Nullable.isNullable
       ) {
         let componentType = "preMountLoader"
+        let isTestModeValue = isTestMode->getStringFromBool
+        let isSdkParamsEnabled =
+          (preloadSDKWithParams->Dict.toArray->Array.length > 0)->getStringFromBool
         let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
             <iframe
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabled}"
               allow="*"
               name="orca-payment"
               style="outline: none;"
@@ -90,7 +108,9 @@ let make = (
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
-    let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
+    let clientSecret = isTestMode
+      ? localOptions->getString("clientSecret", "")
+      : localOptions->getRequiredString("clientSecret", "", ~logger)
     let clientSecretReMatch = switch GlobalVars.sdkVersion {
     | V1 => Some(RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret))
     | V2 => None
@@ -188,6 +208,9 @@ let make = (
                     : "https://test-tpgw.trustpay.eu/js/v1.js"
                 let trustPayScript = Window.createElement("script")
                 logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT)
+                mountedIframeRef->Window.iframePostMessage(
+                  [("trustPayScriptStatus", "loading"->JSON.Encode.string)]->Dict.fromArray,
+                )
                 trustPayScript->Window.elementSrc(trustPayScriptURL)
                 trustPayScript->Window.elementOnerror(_ => {
                   logger.setLogError(
@@ -195,14 +218,27 @@ let make = (
                     ~eventName=TRUSTPAY_SCRIPT,
                     // ~internalMetadata=err->formatException->JSON.stringify,
                   )
+                  mountedIframeRef->Window.iframePostMessage(
+                    [("trustPayScriptStatus", "failed"->JSON.Encode.string)]->Dict.fromArray,
+                  )
                 })
                 trustPayScript->Window.elementOnload(_ => {
                   logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT)
+                  mountedIframeRef->Window.iframePostMessage(
+                    [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
+                  )
                 })
                 Window.body->Window.appendChild(trustPayScript)
+              } else {
+                mountedIframeRef->Window.iframePostMessage(
+                  [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
+                )
               }
             }
-            let msg = [("paymentMethodList", json)]->Dict.fromArray
+
+            let paymentMethodList =
+              preloadSDKWithParams->getJsonFromDict("paymentMethodsList", json)
+            let msg = [("paymentMethodList", paymentMethodList)]->Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
           }
         }
@@ -273,7 +309,9 @@ let make = (
               dict->getString("data", "") === "customer_payment_methods"
             if isCustomerPaymentMethodsData {
               let json = dict->getJsonFromDict("response", JSON.Encode.null)
-              let msg = [("customerPaymentMethods", json)]->Dict.fromArray
+              let customerMethodsList =
+                preloadSDKWithParams->getJsonFromDict("customerMethodsList", json)
+              let msg = [("customerPaymentMethods", customerMethodsList)]->Dict.fromArray
               mountedIframeRef->Window.iframePostMessage(msg)
               resolve()
             }
@@ -302,7 +340,8 @@ let make = (
           let isBlockedBinsData = dict->getString("data", "") === "blocked_bins"
           if isBlockedBinsData {
             let json = dict->getJsonFromDict("response", JSON.Encode.null)
-            let msg = [("blockedBins", json)]->Dict.fromArray
+            let blockedBins = preloadSDKWithParams->getJsonFromDict("blockedBins", json)
+            let msg = [("blockedBins", blockedBins)]->Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
             resolve()
           }
@@ -316,15 +355,16 @@ let make = (
         preMountLoaderIframeDiv->Window.iframePostMessage(msg)
       })
     }
-
-    switch clientSecretReMatch {
-    | Some(false) =>
-      manageErrorWarning(
-        INVALID_FORMAT,
-        ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
-        ~logger,
-      )
-    | _ => ()
+    if !isTestMode {
+      switch clientSecretReMatch {
+      | Some(false) =>
+        manageErrorWarning(
+          INVALID_FORMAT,
+          ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
+          ~logger,
+        )
+      | _ => ()
+      }
     }
 
     let setElementIframeRef = ref => {
@@ -432,6 +472,7 @@ let make = (
           ("analyticsMetadata", analyticsMetadata),
           ("launchTime", launchTime->JSON.Encode.float),
           ("customBackendUrl", customBackendUrl->JSON.Encode.string),
+          ("isTestMode", isTestMode->JSON.Encode.bool),
           (
             "isPaymentButtonHandlerProvided",
             LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
@@ -1356,7 +1397,9 @@ let make = (
                       ->catch(
                         err => {
                           logger.setLogError(
-                            ~value=`SAMSUNG PAY not ready ${err->formatException->JSON.stringify}`,
+                            ~value=`SAMSUNG PAY not ready ${err
+                              ->formatException
+                              ->JSON.stringify}`,
                             ~eventName=SAMSUNG_PAY,
                             ~paymentMethod="SAMSUNG_PAY",
                             ~logType=ERROR,
@@ -1434,7 +1477,8 @@ let make = (
                   json->resolve
                 })
                 ->then(json => {
-                  let msg = [("sessions", json)]->Dict.fromArray
+                  let sessionTokens = preloadSDKWithParams->getJsonFromDict("sessionTokens", json)
+                  let msg = [("sessions", sessionTokens)]->Dict.fromArray
                   mountedIframeRef->Window.iframePostMessage(msg)
                   json->resolve
                 })

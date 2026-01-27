@@ -99,7 +99,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
 
     switch (paymentManagementList, paymentMethodsListV2, intentList) {
-    | (LoadedV2(paymentlist), _, LoadedIntent(_)) =>
+    | (LoadedV2(paymentlist), _, _) =>
       updatePaymentOptions()
       setPaymentManagementListValue(_ => paymentlist)
     | (_, LoadedV2(paymentlist), LoadedIntent(_)) =>
@@ -302,7 +302,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           <RenderIf
             condition={paymentOptions->Array.length > 0 &&
             walletOptions->Array.length > 0 &&
-            checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
+            checkRenderOrComp(~walletOptions, ~isShowOrPayUsing)}>
             <Or />
           </RenderIf>
         </RenderIf>
@@ -327,11 +327,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     {switch (paymentManagementList, paymentMethodsListV2, intentList) {
-    | (_, _, Error(_)) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
     | (LoadErrorV2(_), _, _) =>
       <RenderIf condition={paymentManagementListValue.paymentMethodsEnabled->Array.length === 0}>
         <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
       </RenderIf>
+    | (_, _, Error(_)) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
     | (_, LoadErrorV2(_), _) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
     | _ =>
       <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
