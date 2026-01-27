@@ -5,6 +5,15 @@ open ClickToPayHelpers
 
 let clickToPayTokenCache = Dict.make()
 
+let setClickToPayTokenWithDebounce = (key, promise) => {
+  clickToPayTokenCache->Dict.set(key, promise)
+  setTimeout(() => {
+    if clickToPayTokenCache->Dict.get(key)->Option.isSome {
+      clickToPayTokenCache->Dict.delete(key)
+    }
+  }, 30000)->ignore
+}
+
 let initClickToPaySession = async (
   ~clientSecret,
   ~publishableKey,
@@ -22,26 +31,29 @@ let initClickToPaySession = async (
 
   let key = `${clientSecret}_${authenticationId}`
 
-  let data = await (
-    switch clickToPayTokenCache->Dict.get(key) {
-    | Some(promise) => promise
-    | None =>
-      let promise = PaymentHelpers.fetchEnabledAuthnMethodsToken(
-        ~clientSecret,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-        ~endpoint,
-        ~isPaymentSession=false,
-        ~profileId,
-        ~authenticationId,
-      )
+  let handleApi = () =>
+    PaymentHelpers.fetchEnabledAuthnMethodsToken(
+      ~clientSecret,
+      ~publishableKey,
+      ~logger,
+      ~customPodUri,
+      ~endpoint,
+      ~isPaymentSession=false,
+      ~profileId,
+      ~authenticationId,
+    )
 
-      // only cache the promise for first time if we are not loading scripts
-      if !shouldLoadScripts {
-        clickToPayTokenCache->Dict.set(key, promise)
+  let data = await (
+    if shouldLoadScripts {
+      handleApi()
+    } else {
+      switch clickToPayTokenCache->Dict.get(key) {
+      | Some(promise) => promise
+      | None =>
+        let promise = handleApi()
+        setClickToPayTokenWithDebounce(key, promise)
+        promise
       }
-      promise
     }
   )
 
@@ -466,7 +478,8 @@ let initClickToPaySession = async (
                 ~merchantId,
                 ~bodyArr=visaClickToPayBodyArr,
               )
-
+              Types.window["initializedVSDK"] = false
+              Types.window["visaDirectSdk"] = null
               authenticationSyncResponse->transformKeysWithoutModifyingValue(CamelCase)
             }
           | _ => {
@@ -494,6 +507,10 @@ let initClickToPaySession = async (
               | "CHANGE_CARD" => "Consumer wishes to select an alternative card."
               | "SWITCH_CONSUMER" => "Consumer wishes to change Click to Pay profile."
               | _ => checkoutWithCardErrorMessage
+              }
+              if actionCode !== "CHANGE_CARD" && actionCode !== "SWITCH_CONSUMER" {
+                Types.window["initializedVSDK"] = false
+                Types.window["visaDirectSdk"] = null
               }
 
               getFailedSubmitResponse(~errorType=actionCode, ~message=errorMsg)

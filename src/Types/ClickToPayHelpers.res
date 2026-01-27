@@ -1124,8 +1124,8 @@ type visaEncryptCardPayload = {
 }
 
 @val external vsdk: vsdk = "window.VSDK"
-@val @window external initializedVSDK: Nullable.t<bool> = "initializedVSDK"
-@val @window external windowVisaDirectSdk: Nullable.t<visaDirect> = "visaDirectSdk"
+@val @scope("window") external initializedVSDK: Nullable.t<bool> = "initializedVSDK"
+@val @scope("window") external windowVisaDirectSdk: Nullable.t<visaDirect> = "visaDirectSdk"
 
 @val external mastercardDirectSdk: mastercardDirect = "window.SRCSDK_MASTERCARD"
 @new external createVisaDirectSRCIAdapter: unit => visaDirect = "window.vAdapters.VisaSRCI"
