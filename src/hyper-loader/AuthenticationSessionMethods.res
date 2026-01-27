@@ -7,9 +7,11 @@ let clickToPayTokenCache = Dict.make()
 
 let setClickToPayTokenWithDebounce = (key, promise) => {
   clickToPayTokenCache->Dict.set(key, promise)
-  ignore(Js.Global.setTimeout(() => {
+  setTimeout(() => {
+    if clickToPayTokenCache->Dict.get(key)->Option.isSome {
       clickToPayTokenCache->Dict.delete(key)
-    }, 30000))
+    }
+  }, 30000)->ignore
 }
 
 let initClickToPaySession = async (
