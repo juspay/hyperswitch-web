@@ -245,14 +245,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           setDropDownOptions(_ => dropdownArr)
         }
       }
-      if selectedOption !== "" {
-        loggerState.setLogInfo(
-          ~value="",
-          ~eventName=PAYMENT_METHOD_CHANGED,
-          ~paymentMethod=selectedOption->String.toUpperCase,
-        )
-      }
     }
+    if selectedOption !== "" {
+      loggerState.setLogInfo(
+        ~value="",
+        ~eventName=PAYMENT_METHOD_CHANGED,
+        ~paymentMethod=selectedOption->String.toUpperCase,
+      )
+    }
+
     None
   }, (selectedOption, cardOptions, dropDownOptions, showAllPaymentMethods, layoutClass))
 

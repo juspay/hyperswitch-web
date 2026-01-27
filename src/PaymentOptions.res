@@ -137,7 +137,7 @@ let make = (
     height: "auto",
   }
 
-  let style: JsxDOM.style = switch layoutClass.paymentMethodsArrangementForTabs {
+  let style = switch layoutClass.paymentMethodsArrangementForTabs {
   | Grid => {
       ...baseStyles,
       gridTemplateColumns: `repeat(${Int.toString(cardShimmerCount)}, minmax(0, 1fr))`,
