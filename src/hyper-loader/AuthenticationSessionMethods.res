@@ -509,7 +509,6 @@ let initClickToPaySession = async (
               if actionCode !== "CHANGE_CARD" && actionCode !== "SWITCH_CONSUMER" {
                 Types.window["initializedVSDK"] = false
                 Types.window["visaDirectSdk"] = null
-                ()
               }
 
               getFailedSubmitResponse(~errorType=actionCode, ~message=errorMsg)
