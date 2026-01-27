@@ -102,8 +102,9 @@ let paymentListLookupNew = (
       otherPaymentList->Array.push(item.paymentMethodName)->ignore
     }
   })
+  let updatedWalletsList = showWalletsWithOtherPaymentMethods ? [] : walletsList
   (
-    walletsList->Utils.removeDuplicate->Utils.sortBasedOnPriority(order),
+    updatedWalletsList->Utils.removeDuplicate->Utils.sortBasedOnPriority(order),
     otherPaymentList->Utils.removeDuplicate->Utils.sortBasedOnPriority(order),
   )
 }
@@ -396,7 +397,8 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode
   )
   let layoutClass = CardUtils.getLayoutClass(optionAtomValue.layout)
 
-  let showWalletsWithOtherPaymentMethods = layoutClass.disableSplitView && paymentType === Payment
+  let showWalletsWithOtherPaymentMethods =
+    !layoutClass.showOneClickWalletsOnTop && paymentType === Payment
 
   React.useMemo(() => {
     switch methodslist {

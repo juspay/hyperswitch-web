@@ -1,5 +1,5 @@
 type showTerms = Auto | Always | Never
-type paymentMethodsArrangement = Auto | List | Grid
+type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
 type layout = Accordion | Tabs
 type groupingBehavior = GroupByPaymentMethods | Default
@@ -113,8 +113,8 @@ type layoutConfig = {
   maxAccordionItems: int,
   \"type": layout,
   savedMethodCustomization: savedMethodCustomization,
-  paymentMethodsArrangement: paymentMethodsArrangement,
-  disableSplitView: bool,
+  paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabs,
+  showOneClickWalletsOnTop: bool,
 }
 
 type layoutType =
@@ -285,8 +285,8 @@ let defaultLayout = {
   maxAccordionItems: 4,
   \"type": Tabs,
   savedMethodCustomization: {groupingBehavior: Default},
-  paymentMethodsArrangement: Auto,
-  disableSplitView: false,
+  paymentMethodsArrangementForTabs: Default,
+  showOneClickWalletsOnTop: true,
 }
 let defaultAddress: address = {
   line1: "",
@@ -487,14 +487,13 @@ let getLayout = str => {
   }
 }
 
-let getPaymentMethodsArrangement = str => {
+let getPaymentMethodsArrangementForTabs = str => {
   switch str {
-  | "list" => List
   | "grid" => Grid
-  | "auto" => Auto
+  | "default" => Default
   | str => {
-      str->unknownPropValueWarning(["list", "grid", "auto"], "options.paymentMethodsArrangement")
-      Auto
+      str->unknownPropValueWarning(["grid", "default"], "options.paymentMethodsArrangementForTabs")
+      Default
     }
   }
 }
@@ -811,10 +810,10 @@ let getLayoutValues = (val, logger) => {
   | Object(json) =>
     ObjectLayout({
       let layoutType = getWarningString(json, "type", "tabs", ~logger)
-      let paymentMethodsArrangementType = getWarningString(
+      let paymentMethodsArrangementForTabsType = getWarningString(
         json,
-        "paymentMethodsArrangement",
-        "auto",
+        "paymentMethodsArrangementForTabs",
+        "default",
         ~logger,
       )
       unknownKeysWarning(
@@ -840,8 +839,13 @@ let getLayoutValues = (val, logger) => {
           "savedMethodCustomization",
           logger,
         ),
-        paymentMethodsArrangement: paymentMethodsArrangementType->getPaymentMethodsArrangement,
-        disableSplitView: getBoolWithWarning(json, "disableSplitView", false, ~logger),
+        paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabsType->getPaymentMethodsArrangementForTabs,
+        showOneClickWalletsOnTop: getBoolWithWarning(
+          json,
+          "showOneClickWalletsOnTop",
+          true,
+          ~logger,
+        ),
       }
     })
   | _ => StringLayout(Tabs)

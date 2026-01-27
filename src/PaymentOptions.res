@@ -124,7 +124,7 @@ let make = (
     <span className={`scale-90 animate-slowShow ${toggleIconElement ? "hidden" : ""}`}> ele </span>
   }
 
-  let className = switch layoutClass.paymentMethodsArrangement {
+  let className = switch layoutClass.paymentMethodsArrangementForTabs {
   | Grid => "TabHeader grid gap-4 overflow-y-auto"
   | _ => "TabHeader flex flex-row overflow-auto no-scrollbar"
   }
@@ -137,7 +137,7 @@ let make = (
     height: "auto",
   }
 
-  let style: JsxDOM.style = switch layoutClass.paymentMethodsArrangement {
+  let style: JsxDOM.style = switch layoutClass.paymentMethodsArrangementForTabs {
   | Grid => {
       ...baseStyles,
       gridTemplateColumns: `repeat(${Int.toString(cardShimmerCount)}, minmax(0, 1fr))`,
