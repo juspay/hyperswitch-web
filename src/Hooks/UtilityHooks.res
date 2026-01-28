@@ -26,18 +26,18 @@ let useHandlePostMessages = (
   ~empty,
   ~paymentType,
   ~savedMethod=false,
-  ~isWallet=false,
+  ~isOneClickWallet=false,
 ) => {
   open RecoilAtoms
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
   React.useEffect(() => {
-    if !isWallet {
+    if !isOneClickWallet {
       Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod)
     }
     None
-  }, (complete, empty, paymentType, isWallet))
+  }, (complete, empty, paymentType, isOneClickWallet, savedMethod))
 }
 
 let useIsCustomerAcceptanceRequired = (
