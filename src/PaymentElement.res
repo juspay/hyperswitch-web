@@ -409,7 +409,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             </RenderIf>
           }}
         </SessionPaymentWrapper>
-      | _ => <ReusableReactSuspense
+      | _ =>
+        <ReusableReactSuspense
           loaderComponent={<LoaderPaymentShimmer />} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
         </ReusableReactSuspense>
