@@ -150,6 +150,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       options
       ->getOptionsDict
       ->getBool("isPreloadEnabled", true)
+    let isTestMode =
+      options
+      ->getOptionsDict
+      ->getBool("isTestMode", false)
+
     // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
     let shouldUseTopRedirection =
       options
@@ -228,12 +233,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
     }->Sentry.sentryLogger
-    let isSecure = Window.Location.protocol === "https:"
-    let isLocal =
-      ["localhost", "127.0.0.1"]
-      ->Array.find(url => Window.Location.hostname->String.includes(url))
-      ->Option.isSome
-    if !isSecure && !isLocal {
+    let isSecure = Window.isSecureContext
+    if !isSecure {
       manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.hrefWithoutSearch, ~logger)
       Exn.raiseError("Insecure domain: " ++ Window.hrefWithoutSearch)
     }
@@ -383,75 +384,83 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           })
         }
 
-        Promise.make((resolve1, _) => {
-          let isReadyPromise = isReadyPromise
-          isReadyPromise
-          ->Promise.then(readyTimestamp => {
-            let handleMessage = (event: Types.event) => {
-              let json = event.data->anyTypeToJson
-              let dict = json->getDictFromJson
-              switch dict->Dict.get("submitSuccessful") {
-              | Some(val) =>
-                logApi(
-                  ~apiLogType=Method,
-                  ~optLogger=Some(logger),
-                  ~result=val,
-                  ~paymentMethod="confirmPayment",
-                  ~eventName=CONFIRM_PAYMENT,
-                )
-                let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
-                let returnUrl =
-                  dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
-
-                if isOneClick {
-                  iframeRef.contents->Array.forEach(
-                    ifR => {
-                      // to unset one click button loader
-                      ifR->Window.iframePostMessage(
-                        [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
-                      )
-                    },
+        if isTestMode {
+          let errorResponse = getFailedSubmitResponse(
+            ~errorType="test_mode_bypass",
+            ~message="Confirm Payment called in test mode - API call bypassed",
+          )
+          Promise.resolve(errorResponse)
+        } else {
+          Promise.make((resolve1, _) => {
+            let isReadyPromise = isReadyPromise
+            isReadyPromise
+            ->Promise.then(readyTimestamp => {
+              let handleMessage = (event: Types.event) => {
+                let json = event.data->anyTypeToJson
+                let dict = json->getDictFromJson
+                switch dict->Dict.get("submitSuccessful") {
+                | Some(val) =>
+                  logApi(
+                    ~apiLogType=Method,
+                    ~optLogger=Some(logger),
+                    ~result=val,
+                    ~paymentMethod="confirmPayment",
+                    ~eventName=CONFIRM_PAYMENT,
                   )
-                }
-                postSubmitMessage(dict)
+                  let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
+                  let returnUrl =
+                    dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
 
-                let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
+                  if isOneClick {
+                    iframeRef.contents->Array.forEach(
+                      ifR => {
+                        // to unset one click button loader
+                        ifR->Window.iframePostMessage(
+                          [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
+                        )
+                      },
+                    )
+                  }
+                  postSubmitMessage(dict)
 
-                if isSdkButton && submitSuccessfulValue {
-                  Utils.replaceRootHref(returnUrl, redirectionFlags)
-                } else if submitSuccessfulValue && redirect === "always" {
-                  Utils.replaceRootHref(returnUrl, redirectionFlags)
-                } else if !submitSuccessfulValue {
-                  resolve1(json)
-                } else {
-                  resolve1(data)
+                  let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
+
+                  if isSdkButton && submitSuccessfulValue {
+                    Utils.replaceRootHref(returnUrl, redirectionFlags)
+                  } else if submitSuccessfulValue && redirect === "always" {
+                    Utils.replaceRootHref(returnUrl, redirectionFlags)
+                  } else if !submitSuccessfulValue {
+                    resolve1(json)
+                  } else {
+                    resolve1(data)
+                  }
+                | None => ()
                 }
-              | None => ()
               }
-            }
-            let message = isOneClick
-              ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
-              : [
-                  ("doSubmit", true->JSON.Encode.bool),
-                  ("clientSecret", clientSecret.contents->JSON.Encode.string),
-                  ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
-                  ("readyTimestamp", readyTimestamp->JSON.Encode.float),
-                  (
-                    "confirmParams",
-                    [
-                      ("return_url", url->JSON.Encode.string),
-                      ("publishableKey", publishableKey->JSON.Encode.string),
-                      ("redirect", redirect->JSON.Encode.string),
-                    ]->getJsonFromArrayOfJson,
-                  ),
-                ]->Dict.fromArray
-            addSmartEventListener("message", handleMessage, "onSubmit")
-            postSubmitMessage(message)
-            Promise.resolve(JSON.Encode.null)
+              let message = isOneClick
+                ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
+                : [
+                    ("doSubmit", true->JSON.Encode.bool),
+                    ("clientSecret", clientSecret.contents->JSON.Encode.string),
+                    ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
+                    ("readyTimestamp", readyTimestamp->JSON.Encode.float),
+                    (
+                      "confirmParams",
+                      [
+                        ("return_url", url->JSON.Encode.string),
+                        ("publishableKey", publishableKey->JSON.Encode.string),
+                        ("redirect", redirect->JSON.Encode.string),
+                      ]->getJsonFromArrayOfJson,
+                    ),
+                  ]->Dict.fromArray
+              addSmartEventListener("message", handleMessage, "onSubmit")
+              postSubmitMessage(message)
+              Promise.resolve(JSON.Encode.null)
+            })
+            ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
+            ->ignore
           })
-          ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
-          ->ignore
-        })
+        }
       }
 
       let confirmPayment = payload => {
@@ -477,6 +486,15 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       addSmartEventListener("message", handleSdkConfirm, "handleSdkConfirm")
 
+      if isTestMode {
+        Console.warn(
+          "The SDK is running in test mode. API calls are bypassed and wallet interactions are disabled.",
+        )
+        Console.warn(
+          "This is a non-transactional simulation environment for UI configuration and testing purposes only.",
+        )
+      }
+
       let elements = elementsOptions => {
         open Promise
         let elementsOptionsDict = elementsOptions->JSON.Decode.object
@@ -487,6 +505,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let clientSecretId = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
         let paymentIdVal = elementsOptionsDict->Utils.getStringFromDict("paymentId", "")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
+        let preloadSDKWithParams =
+          elementsOptions->getDictFromJson->getDictFromDict("preloadSDKWithParams")
         clientSecret := clientSecretId
         paymentId := paymentIdVal
         Promise.make((resolve, _) => {
@@ -515,6 +535,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
           ~redirectionFlags,
+          ~isTestMode,
+          ~preloadSDKWithParams,
         )
       }
 
@@ -785,6 +807,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
+        confirmTokenization: confirmPayment,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject
