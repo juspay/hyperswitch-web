@@ -35,11 +35,10 @@ let make = (
   let shouldRenderCVV = paymentItem.requiresCvv
   let isCVCEmpty = cvcNumber->String.length === 0
 
-  let handleManage = () => {
+  let handleManage = () =>
     if isActive {
       setManagePaymentMethod(_ => paymentItem.paymentToken)
     }
-  }
 
   let focusCVC = () => {
     setCardBrand(_ => paymentItem.paymentMethodData.card.network->Option.getOr(""))
