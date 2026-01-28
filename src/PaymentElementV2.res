@@ -196,16 +196,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     paymentMethodsListV2,
   ))
 
-  let loader = () => {
-    handlePostMessageEvents(
-      ~complete=false,
-      ~empty=false,
-      ~paymentType=selectedOption,
-      ~loggerState,
-    )
-    <PaymentShimmer />
-  }
-
   let checkoutEle = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement">
       {switch selectedOption->PaymentModeType.paymentMode {
@@ -219,7 +209,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <SessionPaymentWrapper type_={Wallet}>
           {switch gPayToken {
           | OtherTokenOptional(optToken) =>
-            <ReusableReactSuspense loaderComponent={loader()} componentName="GPayLazy">
+            <ReusableReactSuspense
+              loaderComponent={<LoaderPaymentShimmer />} componentName="GPayLazy">
               {switch googlePayThirdPartyToken {
               | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
                 <GPayLazy
@@ -232,14 +223,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           }}
         </SessionPaymentWrapper>
       | SepaBankDebit =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="SepaBankDebitLazy">
           <SepaBankDebitLazy />
         </ReusableReactSuspense>
       | Givex
       | Klarna
       | Ideal
       | EPS =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
         </ReusableReactSuspense>
       | Sofort
