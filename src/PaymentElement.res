@@ -302,70 +302,71 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (layoutClass.defaultCollapsed, paymentOptions, paymentMethodList, selectedOption))
 
-  let loader = () => {
-    handlePostMessageEvents(
-      ~complete=false,
-      ~empty=false,
-      ~paymentType=selectedOption,
-      ~loggerState,
-    )
-    <PaymentShimmer />
-  }
   let paymentFormElement = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
       {switch selectedOption->PaymentModeType.paymentMode {
       | Card => <CardPayment cardProps expiryProps cvcProps />
       | ACHTransfer =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="ACHBankTransferLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="ACHBankTransferLazy">
           <ACHBankTransferLazy />
         </ReusableReactSuspense>
       | SepaTransfer =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankTransferLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="SepaBankTransferLazy">
           <SepaBankTransferLazy />
         </ReusableReactSuspense>
       | InstantTransfer =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="InstantBankTransferLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="InstantBankTransferLazy">
           <InstantBankTransferLazy />
         </ReusableReactSuspense>
       | InstantTransferFinland =>
         <ReusableReactSuspense
-          loaderComponent={loader()} componentName="InstantBankTransferFinlandLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="InstantBankTransferFinlandLazy">
           <InstantBankTransferFinlandLazy />
         </ReusableReactSuspense>
       | InstantTransferPoland =>
         <ReusableReactSuspense
-          loaderComponent={loader()} componentName="InstantBankTransferPolandLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="InstantBankTransferPolandLazy">
           <InstantBankTransferPolandLazy />
         </ReusableReactSuspense>
       | BacsTransfer =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="BacsBankTransferLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="BacsBankTransferLazy">
           <BacsBankTransferLazy />
         </ReusableReactSuspense>
       | ACHBankDebit =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="ACHBankDebitLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="ACHBankDebitLazy">
           <ACHBankDebitLazy />
         </ReusableReactSuspense>
       | SepaBankDebit =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="SepaBankDebitLazy">
           <SepaBankDebitLazy />
         </ReusableReactSuspense>
       | BacsBankDebit =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="BacsBankDebitLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="BacsBankDebitLazy">
           <BacsBankDebitLazy />
         </ReusableReactSuspense>
       | BanContactCard => <CardPayment cardProps expiryProps cvcProps isBancontact=true />
       | BecsBankDebit =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="BecsBankDebitLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="BecsBankDebitLazy">
           <BecsBankDebitLazy />
         </ReusableReactSuspense>
       | Boleto =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="BoletoLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="BoletoLazy">
           <BoletoLazy />
         </ReusableReactSuspense>
       | ApplePay =>
         switch applePayToken {
         | ApplePayTokenOptional(optToken) =>
-          <ReusableReactSuspense loaderComponent={loader()} componentName="ApplePayLazy">
+          <ReusableReactSuspense
+            loaderComponent={<LoaderPaymentShimmer />} componentName="ApplePayLazy">
             <ApplePayLazy sessionObj=optToken walletOptions />
           </ReusableReactSuspense>
         | _ => React.null
@@ -374,7 +375,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <SessionPaymentWrapper type_={Wallet}>
           {switch gPayToken {
           | OtherTokenOptional(optToken) =>
-            <ReusableReactSuspense loaderComponent={loader()} componentName="GPayLazy">
+            <ReusableReactSuspense
+              loaderComponent={<LoaderPaymentShimmer />} componentName="GPayLazy">
               {switch googlePayThirdPartyToken {
               | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
                 <GPayLazy
@@ -408,7 +410,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           }}
         </SessionPaymentWrapper>
       | _ =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
+        <ReusableReactSuspense
+          loaderComponent={<LoaderPaymentShimmer />} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
         </ReusableReactSuspense>
       }}
