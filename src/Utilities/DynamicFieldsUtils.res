@@ -216,6 +216,8 @@ let useRequiredFieldsEmptyAndValid = (
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
+  let documentType = Recoil.useRecoilValueFromAtom(userDocumentType)
+  let documentNumber = Recoil.useRecoilValueFromAtom(userDocumentNumber)
 
   let areRequiredFieldsValidAtom = getAtomBasedOnSplitPayments(
     isSplitPaymentsEnabled,
@@ -267,6 +269,8 @@ let useRequiredFieldsEmptyAndValid = (
       | BlikCode => blikCode.value !== ""
       | CryptoCurrencyNetworks => cryptoCurrencyNetworks !== ""
       | Currency(currencyArr) => currency !== "" || currencyArr->Array.length === 0
+      | DocumentType(optArr) => documentType !== "" || optArr->Array.length === 0
+      | DocumentNumber => documentNumber.isValid->Option.getOr(false)
       | CardNumber => isCardValid->Option.getOr(false)
       | CardExpiryMonth
       | CardExpiryYear
@@ -322,6 +326,8 @@ let useRequiredFieldsEmptyAndValid = (
       | PixKey => pixKey.value === ""
       | CryptoCurrencyNetworks => cryptoCurrencyNetworks === ""
       | Currency(currencyArr) => currency === "" && currencyArr->Array.length > 0
+      | DocumentType(optArr) => documentType === "" && optArr->Array.length > 0
+      | DocumentNumber => documentNumber.value === ""
       | CardNumber => cardNumber === ""
       | CardExpiryMonth =>
         let (month, _) = getExpiryDates(cardExpiry)
@@ -379,6 +385,8 @@ let useRequiredFieldsEmptyAndValid = (
     bankAccountNumber,
     sourceBankAccountId.value,
     cryptoCurrencyNetworks,
+    documentType,
+    documentNumber.value,
   ))
 
   React.useEffect(() => {
@@ -414,6 +422,8 @@ let useSetInitialRequiredFields = (
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
+  let (documentType, setDocumentType) = Recoil.useRecoilState(userDocumentType)
+  let (documentNumber, setDocumentNumber) = Recoil.useRecoilState(userDocumentNumber)
   let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
     cryptoCurrencyNetworks,
   )
@@ -554,6 +564,11 @@ let useSetInitialRequiredFields = (
         setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
       | SourceBankAccountId =>
         setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
+      | DocumentType(_) =>
+        if value !== "" && documentType === "" {
+          setDocumentType(_ => value)
+        }
+      | DocumentNumber => setFields(setDocumentNumber, documentNumber, requiredField, false)
       | LanguagePreference(_)
       | SpecialField(_)
       | InfoElement
@@ -607,6 +622,8 @@ let useRequiredFieldsBody = (
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
+  let documentType = Recoil.useRecoilValueFromAtom(userDocumentType)
+  let documentNumber = Recoil.useRecoilValueFromAtom(userDocumentNumber)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
@@ -629,6 +646,8 @@ let useRequiredFieldsBody = (
     | PhoneNumber => phone.value
     | PhoneCountryCode => phone.countryCode->Option.getOr("")
     | Currency(_) => currency
+    | DocumentType(_) => documentType
+    | DocumentNumber => documentNumber.value
     | Country => country
     | LanguagePreference(languageOptions) =>
       languageOptions->Array.includes(
@@ -762,6 +781,8 @@ let useRequiredFieldsBody = (
     pixCNPJ.value,
     pixCPF.value,
     pixKey.value,
+    documentType,
+    documentNumber.value,
     city.value,
     postalCode.value,
     state.value,
@@ -801,6 +822,8 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | PixCNPJ
   | DateOfBirth
   | Currency(_)
+  | DocumentType(_)
+  | DocumentNumber
   | VpaId
   | IBAN
   | SourceBankAccountId

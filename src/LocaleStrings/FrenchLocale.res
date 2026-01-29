@@ -38,6 +38,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   countryLabel: `Pays`,
   currencyLabel: `Devise`,
   bankLabel: `Sélectionnez une banque`,
+  documentTypeLabel: `Type de doc`,
   redirectText: `Après avoir soumis votre commande, vous serez redirigé(e) pour compléter votre achat en toute sécurité.`,
   bankDetailsText: `Après avoir soumis ces détails, vous obtiendrez les informations de compte bancaire pour effectuer le paiement. Assurez-vous de les noter.`,
   orPayUsing: `Ou payer avec`,
