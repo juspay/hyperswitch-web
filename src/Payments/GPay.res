@@ -40,6 +40,7 @@ let make = (
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("google_pay")
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
@@ -94,58 +95,70 @@ let make = (
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onGooglePaymentButtonClicked = () => {
-    loggerState.setLogInfo(
-      ~value="GooglePay Button Clicked",
-      ~eventName=GOOGLE_PAY_FLOW,
-      ~paymentMethod="GOOGLE_PAY",
-    )
-    PaymentUtils.emitPaymentMethodInfo(
-      ~paymentMethod="wallet",
-      ~paymentMethodType="google_pay",
-      ~country,
-      ~state,
-      ~pinCode,
-    )
-    makeOneClickHandlerPromise(isSDKHandleClick)->then(result => {
-      let result = result->JSON.Decode.bool->Option.getOr(false)
-      if result {
-        if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
-          if isGooglePayDelayedSessionFlow {
-            messageParentWindow([
-              ("fullscreen", true->JSON.Encode.bool),
-              ("param", "paymentloader"->JSON.Encode.string),
-              ("iframeId", iframeId->JSON.Encode.string),
-            ])
-            let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
+    if isTestMode {
+      Console.warn("Google Pay button clicked in test mode - interaction disabled")
+      loggerState.setLogInfo(
+        ~value="Google Pay button clicked in test mode - interaction disabled",
+        ~eventName=GOOGLE_PAY_FLOW,
+        ~paymentMethod="GOOGLE_PAY",
+      )
+    } else {
+      loggerState.setLogInfo(
+        ~value="GooglePay Button Clicked",
+        ~eventName=GOOGLE_PAY_FLOW,
+        ~paymentMethod="GOOGLE_PAY",
+      )
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="google_pay",
+        ~country,
+        ~state,
+        ~pinCode,
+      )
+      makeOneClickHandlerPromise(isSDKHandleClick)
+      ->then(result => {
+        let result = result->JSON.Decode.bool->Option.getOr(false)
+        if result {
+          if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
+            if isGooglePayDelayedSessionFlow {
+              messageParentWindow([
+                ("fullscreen", true->JSON.Encode.bool),
+                ("param", "paymentloader"->JSON.Encode.string),
+                ("iframeId", iframeId->JSON.Encode.string),
+              ])
+              let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
+              GooglePayHelpers.processPayment(
+                ~body=bodyDict,
+                ~isThirdPartyFlow=true,
+                ~intent,
+                ~options,
+                ~publishableKey,
+                ~isManualRetryEnabled,
+              )
+            } else {
+              GooglePayHelpers.handleGooglePayClicked(
+                ~sessionObj,
+                ~componentName,
+                ~iframeId,
+                ~readOnly=options.readOnly,
+              )
+            }
+          } else {
+            let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
             GooglePayHelpers.processPayment(
               ~body=bodyDict,
-              ~isThirdPartyFlow=true,
               ~intent,
               ~options,
               ~publishableKey,
               ~isManualRetryEnabled,
             )
-          } else {
-            GooglePayHelpers.handleGooglePayClicked(
-              ~sessionObj,
-              ~componentName,
-              ~iframeId,
-              ~readOnly=options.readOnly,
-            )
           }
-        } else {
-          let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
-          GooglePayHelpers.processPayment(
-            ~body=bodyDict,
-            ~intent,
-            ~options,
-            ~publishableKey,
-            ~isManualRetryEnabled,
-          )
         }
-      }
-      resolve()
-    })
+        resolve()
+      })
+      ->catch(_ => resolve())
+      ->ignore
+    }
   }
 
   let buttonStyle = {
