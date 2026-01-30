@@ -35,7 +35,13 @@ let make = (
   let shouldRenderCVV = paymentItem.requiresCvv
   let isCVCEmpty = cvcNumber->String.length === 0
 
-  let handleManage = () => setManagePaymentMethod(_ => paymentItem.paymentToken)
+  let handleManage = () => {
+    setPaymentTokenAtom(_ => {
+      paymentToken: paymentItem.paymentToken,
+      customerId: paymentItem.customerId,
+    })
+    setManagePaymentMethod(_ => paymentItem.paymentToken)
+  }
 
   let focusCVC = () => {
     setCardBrand(_ => paymentItem.paymentMethodData.card.network->Option.getOr(""))
@@ -52,7 +58,7 @@ let make = (
       focusCVC()
     }
     None
-  }, (isActive, paymentItem))
+  }, (isActive, paymentItem, managePaymentMethod))
 
   let isManageModeInactive = managePaymentMethod != paymentItem.paymentToken
 
@@ -61,9 +67,7 @@ let make = (
       paymentToken: paymentItem.paymentToken,
       customerId: paymentItem.customerId,
     })
-    if managePaymentMethod != "" {
-      setManagePaymentMethod(_ => "")
-    }
+    setManagePaymentMethod(_ => "")
   }
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
@@ -144,7 +148,8 @@ let make = (
                 <div
                   className="cursor-pointer ml-4 mb-[6px]"
                   style={color: themeObj.colorPrimary}
-                  onClick={_ => {
+                  onClick={event => {
+                    ReactEvent.Mouse.stopPropagation(event)
                     handleUpdate(paymentItem)->ignore
                   }}>
                   {React.string("Save")}
@@ -154,7 +159,8 @@ let make = (
                   name="delete-hollow"
                   style={color: themeObj.colorDanger}
                   className="cursor-pointer ml-4 mb-[6px]"
-                  onClick={_ => {
+                  onClick={event => {
+                    ReactEvent.Mouse.stopPropagation(event)
                     handleDeleteV2(paymentItem)->ignore
                   }}
                 />
@@ -165,7 +171,8 @@ let make = (
                   name="manage"
                   style={color: themeObj.colorPrimary}
                   className="cursor-pointer ml-4 mb-[6px]"
-                  onClick={_ => {
+                  onClick={event => {
+                    ReactEvent.Mouse.stopPropagation(event)
                     handleManage()
                   }}
                 />
