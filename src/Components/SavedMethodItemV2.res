@@ -35,10 +35,7 @@ let make = (
   let shouldRenderCVV = paymentItem.requiresCvv
   let isCVCEmpty = cvcNumber->String.length === 0
 
-  let handleManage = () =>
-    if isActive {
-      setManagePaymentMethod(_ => paymentItem.paymentToken)
-    }
+  let handleManage = () => setManagePaymentMethod(_ => paymentItem.paymentToken)
 
   let focusCVC = () => {
     setCardBrand(_ => paymentItem.paymentMethodData.card.network->Option.getOr(""))
@@ -59,10 +56,15 @@ let make = (
 
   let isManageModeInactive = managePaymentMethod != paymentItem.paymentToken
 
-  React.useEffect(() => {
-    setManagePaymentMethod(_ => "")
-    None
-  }, [isActive])
+  let handleOnClick = _ => {
+    setPaymentTokenAtom(_ => {
+      paymentToken: paymentItem.paymentToken,
+      customerId: paymentItem.customerId,
+    })
+    if managePaymentMethod != "" {
+      setManagePaymentMethod(_ => "")
+    }
+  }
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div className={`flex flex-col`}>
@@ -83,12 +85,7 @@ let make = (
           boxShadow: "none",
           opacity: {isCardExpired ? "0.7" : "1"},
         }
-        onClick={_ => {
-          setPaymentTokenAtom(_ => {
-            paymentToken: paymentItem.paymentToken,
-            customerId: paymentItem.customerId,
-          })
-        }}>
+        onClick=handleOnClick>
         <div className="w-full">
           <div>
             <div className="flex flex-row justify-between items-center">
