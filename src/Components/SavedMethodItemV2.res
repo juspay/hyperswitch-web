@@ -64,13 +64,6 @@ let make = (
     None
   }, [isActive])
 
-  React.useEffect(() => {
-    let isManageModeActive = managePaymentMethod !== ""
-    Utils.messageParentWindow([("manageModeActive", isManageModeActive->JSON.Encode.bool)])
-
-    None
-  }, [managePaymentMethod])
-
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div className={`flex flex-col`}>
       <button

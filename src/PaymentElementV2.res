@@ -61,7 +61,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   React.useEffect0(() => {
     setShowPaymentMethodsScreen(_ => true)
-    Utils.messageParentWindow([("manageModeActive", false->JSON.Encode.bool)])
     None
   })
 
