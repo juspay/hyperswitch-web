@@ -1030,7 +1030,7 @@ let rec maskPayload = payloadJson => {
   | Array(arr) => arr->Array.map(maskPayload)->JSON.Encode.array
   | String(valueStr) => valueStr->maskStr->JSON.Encode.string
   | Number(float) => Float.toString(float)->maskStr->JSON.Encode.string
-  | Bool(bool) => (bool ? "true" : "false")->JSON.Encode.string
+  | Bool(bool) => bool->getStringFromBool->JSON.Encode.string
   | Null => JSON.Encode.string("null")
   }
 }
@@ -1187,12 +1187,12 @@ let usePaymentIntent = (optLogger, paymentType) => {
         ]
       | V2 => {
           let authorizationHeader = (
-            "authorization",
+            "Authorization",
             `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
           )
           [
             authorizationHeader,
-            ("X-profile-id", keys.profileId),
+            ("x-profile-id", keys.profileId),
             ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
           ]
         }

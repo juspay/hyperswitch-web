@@ -234,6 +234,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  giftCardSectionTitle: `יש לך כרטיס מתנה?`,
   giftCardNumberLabel: `מספר כרטיס מתנה`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
   giftCardNumberEmptyText: `מספר כרטיס המתנה לא יכול להיות ריק`,
@@ -242,4 +243,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPinPlaceholder: `123456`,
   giftCardPinEmptyText: `PIN של כרטיס מתנה לא יכול להיות ריק`,
   giftCardPinInvalidText: `PIN לא חוקי של כרטיס מתנה`,
+  cardText: `כרטיס`,
+  giftCardAppliedText: `הוחל`,
+  giftCardPaymentCompleteMessage: `לא נותר סכום לתשלום. אנא המשיכו לביצוע התשלום.`,
+  giftCardPaymentRemainingMessage: (currency, amount) =>
+    `אנא שלמו את הסכום שנותר ${amount} ${currency} באמצעות אמצעי תשלום אחר למטה.`,
 }

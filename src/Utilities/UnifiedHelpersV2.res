@@ -13,7 +13,7 @@ let itemToCustomerMapper = customerArray => {
         ->getJsonObjectFromDict("card")
         ->getDictFromJson
       {
-        id: getString(dict, "id", ""),
+        paymentToken: getString(dict, "payment_method_token", ""),
         customerId: getString(dict, "customer_id", ""),
         paymentMethodType: getString(dict, "payment_method_type", ""),
         paymentMethodSubType: getString(dict, "payment_method_subtype", ""),
@@ -35,7 +35,7 @@ let itemToCustomerMapper = customerArray => {
           },
         },
         isDefault: getBool(dict, "is_default", false),
-        requiresCvv: getBool(dict, "reuires_cvv", false),
+        requiresCvv: getBool(dict, "requires_cvv", false),
         created: getString(dict, "created", ""),
         lastUsedAt: getString(dict, "last_used_at", ""),
         bank: {mask: ""},
@@ -120,7 +120,7 @@ let itemToPaymentDetails = cust => {
     ->getJsonObjectFromDict("card")
     ->getDictFromJson
   {
-    id: getString(cust, "id", ""),
+    paymentToken: getString(cust, "payment_method_token", ""),
     customerId: getString(cust, "customer_id", ""),
     paymentMethodType: getString(cust, "payment_method_type", ""),
     paymentMethodSubType: getString(cust, "payment_method_subtype", ""),
@@ -142,7 +142,7 @@ let itemToPaymentDetails = cust => {
       },
     },
     isDefault: getBool(cust, "is_default", false),
-    requiresCvv: getBool(cust, "reuires_cvv", false),
+    requiresCvv: getBool(cust, "requires_cvv", false),
     created: getString(cust, "created", ""),
     lastUsedAt: getString(cust, "last_used_at", ""),
     bank: {mask: ""},
@@ -151,6 +151,7 @@ let itemToPaymentDetails = cust => {
 
 let itemToIntentObjMapper = dict => {
   paymentType: getString(dict, "payment_type", "")->paymentTypeMapper,
+  splitTxnsEnabled: getString(dict, "split_txns_enabled", "skip"),
 }
 
 let createIntentDetails = (dict, key) => {
@@ -191,7 +192,7 @@ let defaultPaymentMethods = {
 }
 
 let defaultCustomerMethods = {
-  id: "",
+  paymentToken: "",
   customerId: "",
   paymentMethodType: "",
   paymentMethodSubType: "",

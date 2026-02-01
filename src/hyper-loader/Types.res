@@ -81,10 +81,13 @@ type clickToPaySession = {
   signOut: unit => promise<JSON.t>,
 }
 
+type clickToPayObj = {session: Nullable.t<clickToPaySession>}
+
 type initClickToPaySessionInput = {request3DSAuthentication: option<bool>}
 
 type initAuthenticationSession = {
   initClickToPaySession: initClickToPaySessionInput => promise<JSON.t>,
+  getActiveClickToPaySession: unit => promise<JSON.t>,
 }
 
 type confirmParams = {return_url: string}
@@ -107,6 +110,7 @@ type hyperInstance = {
   paymentMethodsManagementElements: JSON.t => element,
   completeUpdateIntent: string => promise<JSON.t>,
   initiateUpdateIntent: unit => promise<JSON.t>,
+  confirmTokenization: JSON.t => promise<JSON.t>,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -210,6 +214,7 @@ let defaultInitPaymentSession: initPaymentSession = {
 
 let defaultInitAuthenticationSession: initAuthenticationSession = {
   initClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
+  getActiveClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
 }
 
 let defaultHyperInstance = {
@@ -225,6 +230,7 @@ let defaultHyperInstance = {
   paymentMethodsManagementElements: _ev => defaultElement,
   completeUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   initiateUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
+  confirmTokenization: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
 }
 
 type eventType =

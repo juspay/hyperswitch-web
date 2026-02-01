@@ -13,7 +13,6 @@ let make = (
   open Utils
   open UtilityHooks
   open PaymentTypeContext
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let {innerLayout} = config.appearance
@@ -33,6 +32,7 @@ let make = (
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
+  let giftCardInfo = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.giftCardInfoAtom)
   let isPMMFlow = switch paymentTypeFromUrl {
   | PaymentMethodsManagement => true
   | _ => false
@@ -383,16 +383,25 @@ let make = (
         } else if isPMMFlow {
           saveCard(
             ~bodyArr=cardBody->mergeAndFlattenToTuples(requiredFieldsBody),
-            ~confirmParam={
-              return_url: options.sdkHandleSavePayment.confirmParams.return_url,
-              publishableKey,
-            },
+            ~confirmParam=confirm.confirmParams,
             ~handleUserError=true,
           )
         } else {
+          let hasGiftCards = giftCardInfo.appliedGiftCards->Array.length > 0
+          let modifiedCardBody = if hasGiftCards {
+            let splitPaymentBody =
+              PaymentBodyV2.splitPaymentBody(~appliedGiftCards=giftCardInfo.appliedGiftCards)
+              ->getJsonFromArrayOfJson
+              ->getDictFromJson
+
+            cardBody->mergeAndFlattenToTuples(splitPaymentBody)
+          } else {
+            cardBody
+          }
+
           intent(
             ~bodyArr={
-              (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(
+              (isBancontact ? banContactBody : modifiedCardBody)->mergeAndFlattenToTuples(
                 requiredFieldsBody,
               )
             },
@@ -444,6 +453,7 @@ let make = (
     clickToPayCardBrand,
     isClickToPayRememberMe,
     blockedBinsList,
+    giftCardInfo,
   ))
   useSubmitPaymentData(submitCallback)
 
