@@ -38,7 +38,7 @@ let logFileToObj = logFile => {
     ("browser_name", logFile.browserName->convertToScreamingSnakeCase->JSON.Encode.string),
     ("browser_version", logFile.browserVersion->JSON.Encode.string),
     ("latency", logFile.latency->JSON.Encode.string),
-    ("first_event", (logFile.firstEvent ? "true" : "false")->JSON.Encode.string),
+    ("first_event", logFile.firstEvent->Utils.getStringFromBool->JSON.Encode.string),
     ("payment_method", logFile.paymentMethod->convertToScreamingSnakeCase->JSON.Encode.string),
   ]
   ->Dict.fromArray
@@ -62,51 +62,6 @@ let getSourceString = source => {
   | Headless => "headless"
   }
 }
-
-let findVersion = (re, content) => {
-  let result = Js.Re.exec_(re, content)
-  let version = switch result {
-  | Some(val) => Js.Re.captures(val)
-  | None => []
-  }
-  version
-}
-let browserDetect = content => {
-  let patterns = [
-    ("Instagram", %re("/Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Instagram"),
-    ("FBAV", %re("/FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Facebook"),
-    ("Twitter", %re("/iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Twitter"),
-    ("LinkedIn", %re("/LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig"), "LinkedIn"),
-    ("Edg", %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Microsoft Edge"),
-    ("Chrome", %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Chrome"),
-    ("Safari", %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Safari"),
-    ("Opera", %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Opera"),
-    ("Firefox", %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
-    ("fxios", %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
-  ]
-
-  switch patterns
-  ->Belt.Array.keepMap(((keyword, regex, name)) =>
-    if RegExp.test(keyword->RegExp.fromString, content) {
-      let version = switch findVersion(regex, content)
-      ->Array.get(1)
-      ->Option.getOr(Nullable.null)
-      ->Nullable.toOption {
-      | Some(v) => v
-      | None => ""
-      }
-      Some(`${name}-${version}`)
-    } else {
-      None
-    }
-  )
-  ->Belt.Array.get(0) {
-  | Some(result) => result
-  | None => "Others-0"
-  }
-}
-
-let arrayOfNameAndVersion = String.split(Window.Navigator.userAgent->browserDetect, "-")
 
 let make = (
   ~sessionId=?,
@@ -358,8 +313,8 @@ let make = (
             category: USER_EVENT,
             paymentId: clientSecret.contents->getPaymentId,
             merchantId: merchantId.contents,
-            browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-            browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+            browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+            browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
             platform: Window.Navigator.platform,
             userAgent: Window.Navigator.userAgent,
             appId: "",
@@ -386,8 +341,8 @@ let make = (
             category: USER_EVENT,
             paymentId: clientSecret.contents->getPaymentId,
             merchantId: merchantId.contents,
-            browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-            browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+            browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+            browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
             platform: Window.Navigator.platform,
             userAgent: Window.Navigator.userAgent,
             appId: "",
@@ -437,8 +392,8 @@ let make = (
       category: logCategory,
       paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+      browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.Navigator.platform,
       userAgent: Window.Navigator.userAgent,
       appId: "",
@@ -494,8 +449,8 @@ let make = (
       category: logCategory,
       paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+      browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.Navigator.platform,
       userAgent: Window.Navigator.userAgent,
       appId: "",
@@ -541,8 +496,8 @@ let make = (
       category: logCategory,
       paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+      browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.Navigator.platform,
       userAgent: Window.Navigator.userAgent,
       appId: "",
@@ -576,8 +531,8 @@ let make = (
       // internalMetadata: "",
       paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+      browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.Navigator.platform,
       userAgent: Window.Navigator.userAgent,
       appId: "",
