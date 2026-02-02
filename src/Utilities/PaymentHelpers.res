@@ -2,7 +2,9 @@ open Utils
 open Identity
 open PaymentHelpersTypes
 open LoggerUtils
-open URLModule
+
+// Import the refactored modules
+open IntentCallTypes
 
 let getPaymentType = paymentMethodType =>
   switch paymentMethodType {
@@ -290,19 +292,12 @@ let rec pollStatus = (
   })
 }
 
-let rec intentCall = (
-  ~fetchApi: (
-    string,
-    ~bodyStr: string=?,
-    ~headers: Dict.t<string>=?,
-    ~method: Fetch.method,
-    ~customPodUri: option<string>=?,
-    ~publishableKey: option<string>=?,
-  ) => promise<Fetch.Response.t>,
+let intentCall = async (
+  ~fetchApi,
   ~uri,
   ~headers,
   ~bodyStr,
-  ~confirmParam: ConfirmType.confirmParams,
+  ~confirmParam,
   ~clientSecret,
   ~optLogger,
   ~handleUserError,
@@ -318,650 +313,57 @@ let rec intentCall = (
   ~componentName="payment",
   ~redirectionFlags,
 ) => {
-  open Promise
-  let isConfirm = uri->String.includes("/confirm")
-
-  let isCompleteAuthorize = uri->String.includes("/complete_authorize")
-  let isPostSessionTokens = uri->String.includes("/post_session_tokens")
-  let (eventName: HyperLoggerTypes.eventName, initEventName: HyperLoggerTypes.eventName) = switch (
-    isConfirm,
-    isCompleteAuthorize,
-    isPostSessionTokens,
-  ) {
-  | (true, _, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
-  | (_, true, _) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
-  | (_, _, true) => (POST_SESSION_TOKENS_CALL, POST_SESSION_TOKENS_CALL_INIT)
-  | _ => (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
+  let params = {
+    fetchApi,
+    uri,
+    headers,
+    bodyStr,
+    confirmParam,
+    clientSecret,
+    optLogger,
+    handleUserError,
+    paymentType,
+    iframeId,
+    fetchMethod,
+    setIsManualRetryEnabled,
+    customPodUri,
+    sdkHandleOneClickConfirmPayment,
+    counter,
+    isPaymentSession,
+    isCallbackUsedVal,
+    componentName,
+    redirectionFlags,
   }
+  open ApiResponseHandler
+  let context = createApiCallContext(uri)
+
   logApi(
     ~optLogger,
     ~url=uri,
     ~apiLogType=Request,
-    ~eventName=initEventName,
-    ~logType=INFO,
-    ~logCategory=API,
+    ~eventName=context.initEventName,
     ~isPaymentSession,
   )
-  let handleOpenUrl = url => {
-    if isPaymentSession {
-      replaceRootHref(url, redirectionFlags)
-    } else {
-      openUrl(url)
-    }
-  }
-  fetchApi(
-    uri,
-    ~method=fetchMethod,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-    ~bodyStr,
-  )
-  ->then(res => {
+
+  try {
+    let res = await fetchApi(
+      uri,
+      ~method=fetchMethod,
+      ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+      ~bodyStr,
+    )
+
     let statusCode = res->Fetch.Response.status
-    let url = makeUrl(confirmParam.return_url)
-    url.searchParams.set("payment_intent_client_secret", clientSecret)
-    url.searchParams.set("status", "failed")
-    url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
+    let dataJson = await res->Fetch.Response.json
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        Promise.make(
-          (resolve, _) => {
-            if isConfirm {
-              let paymentMethod = switch paymentType {
-              | Card => "CARD"
-              | _ =>
-                bodyStr
-                ->safeParse
-                ->getDictFromJson
-                ->getString("payment_method_type", "")
-              }
-              handleLogging(
-                ~optLogger,
-                ~value=data->JSON.stringify,
-                ~eventName=PAYMENT_FAILED,
-                ~paymentMethod,
-              )
-            }
-            logApi(
-              ~optLogger,
-              ~url=uri,
-              ~data,
-              ~statusCode,
-              ~apiLogType=Err,
-              ~eventName,
-              ~logType=ERROR,
-              ~logCategory=API,
-              ~isPaymentSession,
-            )
-
-            let dict = data->getDictFromJson
-            let errorObj = PaymentError.itemToObjMapper(dict)
-            if !isPaymentSession {
-              closePaymentLoaderIfAny()
-              postFailedSubmitResponse(
-                ~errortype=errorObj.error.type_,
-                ~message=errorObj.error.message,
-              )
-            }
-            if handleUserError {
-              handleOpenUrl(url.href)
-            } else {
-              let failedSubmitResponse = getFailedSubmitResponse(
-                ~errorType=errorObj.error.type_,
-                ~message=errorObj.error.message,
-              )
-              resolve(failedSubmitResponse)
-            }
-          },
-        )->then(resolve)
-      })
-      ->catch(err => {
-        Promise.make(
-          (resolve, _) => {
-            let exceptionMessage = err->formatException
-            logApi(
-              ~optLogger,
-              ~url=uri,
-              ~statusCode,
-              ~apiLogType=NoResponse,
-              ~data=exceptionMessage,
-              ~eventName,
-              ~logType=ERROR,
-              ~logCategory=API,
-              ~isPaymentSession,
-            )
-            if counter >= 5 {
-              if !isPaymentSession {
-                closePaymentLoaderIfAny()
-                postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-              }
-              if handleUserError {
-                handleOpenUrl(url.href)
-              } else {
-                let failedSubmitResponse = getFailedSubmitResponse(
-                  ~errorType="server_error",
-                  ~message="Something went wrong",
-                )
-                resolve(failedSubmitResponse)
-              }
-            } else {
-              let paymentIntentID = clientSecret->Utils.getPaymentId
-              let endpoint = ApiEndpoint.getApiEndPoint(
-                ~publishableKey=confirmParam.publishableKey,
-                ~isConfirmCall=isConfirm,
-              )
-              let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
-              intentCall(
-                ~fetchApi,
-                ~uri=retrieveUri,
-                ~headers,
-                ~bodyStr,
-                ~confirmParam: ConfirmType.confirmParams,
-                ~clientSecret,
-                ~optLogger,
-                ~handleUserError,
-                ~paymentType,
-                ~iframeId,
-                ~fetchMethod=#GET,
-                ~setIsManualRetryEnabled,
-                ~customPodUri,
-                ~sdkHandleOneClickConfirmPayment,
-                ~counter=counter + 1,
-                ~componentName,
-                ~redirectionFlags,
-              )
-              ->then(
-                res => {
-                  resolve(res)
-                  Promise.resolve()
-                },
-              )
-              ->catch(_ => Promise.resolve())
-              ->ignore
-            }
-          },
-        )->then(resolve)
-      })
-    } else {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        Promise.make(
-          (resolve, _) => {
-            logApi(
-              ~optLogger,
-              ~url=uri,
-              ~statusCode,
-              ~apiLogType=Response,
-              ~eventName,
-              ~isPaymentSession,
-            )
-            let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
-            let paymentMethod = switch paymentType {
-            | Card => "CARD"
-            | _ => intent.payment_method_type
-            }
-
-            let url = makeUrl(confirmParam.return_url)
-            url.searchParams.set("payment_intent_client_secret", clientSecret)
-            url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
-            url.searchParams.set("status", intent.status)
-
-            let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
-              switch (paymentType, sdkHandleOneClickConfirmPayment) {
-              | (Card, _)
-              | (Gpay, false)
-              | (Applepay, false)
-              | (Paypal, false) =>
-                if !isPaymentSession {
-                  if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnCompleteDoThisMessage()
-                  } else {
-                    closePaymentLoaderIfAny()
-                  }
-
-                  postSubmitResponse(~jsonData=data, ~url=url.href)
-                } else if confirmParam.redirect === Some("always") {
-                  if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnCompleteDoThisMessage()
-                  } else {
-                    handleOpenUrl(url.href)
-                  }
-                } else {
-                  resolve(data)
-                }
-              | _ =>
-                if isCallbackUsedVal->Option.getOr(false) {
-                  closePaymentLoaderIfAny()
-                  handleOnCompleteDoThisMessage()
-                } else {
-                  handleOpenUrl(url.href)
-                }
-              }
-            }
-
-            if intent.status == "requires_customer_action" {
-              if intent.nextAction.type_ == "redirect_to_url" {
-                handleLogging(
-                  ~optLogger,
-                  ~value="",
-                  // ~internalMetadata=intent.nextAction.redirectToUrl,
-                  ~eventName=REDIRECTING_USER,
-                  ~paymentMethod,
-                )
-                handleOpenUrl(intent.nextAction.redirectToUrl)
-              } else if intent.nextAction.type_ == "redirect_inside_popup" {
-                let popupUrl = intent.nextAction.popupUrl
-                let redirectResponseUrl = intent.nextAction.redirectResponseUrl
-                handleLogging(
-                  ~optLogger,
-                  ~value="",
-                  // ~internalMetadata=popupUrl,
-                  ~eventName=THREE_DS_POPUP_REDIRECTION,
-                  ~paymentMethod,
-                )
-                let metaData = [
-                  ("popupUrl", popupUrl->JSON.Encode.string),
-                  ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
-                ]
-                messageParentWindow([
-                  ("fullscreen", true->JSON.Encode.bool),
-                  ("param", `3dsRedirectionPopup`->JSON.Encode.string),
-                  ("iframeId", iframeId->JSON.Encode.string),
-                  ("metadata", metaData->getJsonFromArrayOfJson),
-                ])
-              } else if intent.nextAction.type_ == "display_bank_transfer_information" {
-                let metadata = switch intent.nextAction.bank_transfer_steps_and_charges_details {
-                | Some(obj) => obj->getDictFromJson
-                | None => Dict.make()
-                }
-                let dict = deepCopyDict(metadata)
-                dict->Dict.set("data", data)
-                dict->Dict.set("url", url.href->JSON.Encode.string)
-                handleLogging(
-                  ~optLogger,
-                  ~value="",
-                  // ~internalMetadata=dict->JSON.Encode.object->JSON.stringify,
-                  ~eventName=DISPLAY_BANK_TRANSFER_INFO_PAGE,
-                  ~paymentMethod,
-                )
-                if !isPaymentSession {
-                  messageParentWindow([
-                    ("fullscreen", true->JSON.Encode.bool),
-                    ("param", `${intent.payment_method_type}BankTransfer`->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                    ("metadata", dict->JSON.Encode.object),
-                  ])
-                }
-                resolve(data)
-              } else if intent.nextAction.type_ === "qr_code_information" {
-                let qrData = intent.nextAction.image_data_url->Option.getOr("")
-                let displayText = intent.nextAction.display_text->Option.getOr("")
-                let borderColor = intent.nextAction.border_color->Option.getOr("")
-                let expiryTime = intent.nextAction.display_to_timestamp->Option.getOr(0.0)
-                let headerObj = Dict.make()
-                mergeHeadersIntoDict(~dict=headerObj, ~headers)
-                let metaData =
-                  [
-                    ("qrData", qrData->JSON.Encode.string),
-                    ("paymentIntentId", clientSecret->JSON.Encode.string),
-                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
-                    ("headers", headerObj->JSON.Encode.object),
-                    ("expiryTime", expiryTime->Float.toString->JSON.Encode.string),
-                    ("url", url.href->JSON.Encode.string),
-                    ("paymentMethod", paymentMethod->JSON.Encode.string),
-                    ("display_text", displayText->JSON.Encode.string),
-                    ("border_color", borderColor->JSON.Encode.string),
-                  ]->getJsonFromArrayOfJson
-                handleLogging(
-                  ~optLogger,
-                  ~value="",
-                  // ~internalMetadata=metaData->JSON.stringify,
-                  ~eventName=DISPLAY_QR_CODE_INFO_PAGE,
-                  ~paymentMethod,
-                )
-                if !isPaymentSession {
-                  messageParentWindow([
-                    ("fullscreen", true->JSON.Encode.bool),
-                    ("param", `qrData`->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                    ("metadata", metaData),
-                  ])
-                }
-                resolve(data)
-              } else if intent.nextAction.type_ === "three_ds_invoke" {
-                let threeDsData =
-                  intent.nextAction.three_ds_data
-                  ->Option.flatMap(JSON.Decode.object)
-                  ->Option.getOr(Dict.make())
-                let do3dsMethodCall =
-                  threeDsData
-                  ->Dict.get("three_ds_method_details")
-                  ->Option.flatMap(JSON.Decode.object)
-                  ->Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
-                  ->Option.getOr(Dict.make()->JSON.Encode.object)
-                  ->JSON.Decode.bool
-                  ->getBoolValue
-
-                let headerObj = Dict.make()
-                mergeHeadersIntoDict(~dict=headerObj, ~headers)
-
-                let metaData =
-                  [
-                    ("threeDSData", threeDsData->JSON.Encode.object),
-                    ("paymentIntentId", clientSecret->JSON.Encode.string),
-                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
-                    ("headers", headerObj->JSON.Encode.object),
-                    ("url", url.href->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                  ]->Dict.fromArray
-
-                handleLogging(
-                  ~optLogger,
-                  ~value=do3dsMethodCall ? "Y" : "N",
-                  ~eventName=THREE_DS_METHOD,
-                  ~paymentMethod,
-                )
-
-                if do3dsMethodCall {
-                  messageParentWindow([
-                    ("fullscreen", true->JSON.Encode.bool),
-                    ("param", `3ds`->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                    ("metadata", metaData->JSON.Encode.object),
-                  ])
-                } else {
-                  metaData->Dict.set("3dsMethodComp", "U"->JSON.Encode.string)
-                  messageParentWindow([
-                    ("fullscreen", true->JSON.Encode.bool),
-                    ("param", `3dsAuth`->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                    ("metadata", metaData->JSON.Encode.object),
-                  ])
-                }
-              } else if intent.nextAction.type_ === "invoke_hidden_iframe" {
-                let iframeData =
-                  intent.nextAction.iframe_data
-                  ->Option.flatMap(JSON.Decode.object)
-                  ->Option.getOr(Dict.make())
-
-                let headerObj = Dict.make()
-                mergeHeadersIntoDict(~dict=headerObj, ~headers)
-                let metaData =
-                  [
-                    ("iframeData", iframeData->JSON.Encode.object),
-                    ("paymentIntentId", clientSecret->JSON.Encode.string),
-                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
-                    ("headers", headerObj->JSON.Encode.object),
-                    ("url", url.href->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                    ("confirmParams", confirmParam->anyTypeToJson),
-                  ]->Dict.fromArray
-
-                messageParentWindow([
-                  ("fullscreen", true->JSON.Encode.bool),
-                  ("param", `redsys3ds`->JSON.Encode.string),
-                  ("iframeId", iframeId->JSON.Encode.string),
-                  ("metadata", metaData->JSON.Encode.object),
-                ])
-              } else if intent.nextAction.type_ === "display_voucher_information" {
-                let voucherData = intent.nextAction.voucher_details->Option.getOr({
-                  download_url: "",
-                  reference: "",
-                })
-                let headerObj = Dict.make()
-                mergeHeadersIntoDict(~dict=headerObj, ~headers)
-                let metaData =
-                  [
-                    ("voucherUrl", voucherData.download_url->JSON.Encode.string),
-                    ("reference", voucherData.reference->JSON.Encode.string),
-                    ("returnUrl", url.href->JSON.Encode.string),
-                    ("paymentMethod", paymentMethod->JSON.Encode.string),
-                    ("payment_intent_data", data),
-                  ]->Dict.fromArray
-                handleLogging(
-                  ~optLogger,
-                  ~value="",
-                  // ~internalMetadata=metaData->JSON.Encode.object->JSON.stringify,
-                  ~eventName=DISPLAY_VOUCHER,
-                  ~paymentMethod,
-                )
-                messageParentWindow([
-                  ("fullscreen", true->JSON.Encode.bool),
-                  ("param", `voucherData`->JSON.Encode.string),
-                  ("iframeId", iframeId->JSON.Encode.string),
-                  ("metadata", metaData->JSON.Encode.object),
-                ])
-              } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
-                let session_token = switch intent.nextAction.session_token {
-                | Some(token) => token->getDictFromJson
-                | None => Dict.make()
-                }
-                let walletName = session_token->getString("wallet_name", "")
-
-                let message = switch walletName {
-                | "apple_pay" => [
-                    ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->anyTypeToJson),
-                    ("componentName", componentName->JSON.Encode.string),
-                  ]
-                | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
-                | "open_banking" => {
-                    let metaData = [
-                      (
-                        "linkToken",
-                        session_token
-                        ->getString("open_banking_session_token", "")
-                        ->JSON.Encode.string,
-                      ),
-                      ("pmAuthConnectorArray", ["plaid"]->anyTypeToJson),
-                      ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
-                      ("clientSecret", clientSecret->JSON.Encode.string),
-                      ("isForceSync", true->JSON.Encode.bool),
-                    ]->getJsonFromArrayOfJson
-                    [
-                      ("fullscreen", true->JSON.Encode.bool),
-                      ("param", "plaidSDK"->JSON.Encode.string),
-                      ("iframeId", iframeId->JSON.Encode.string),
-                      ("metadata", metaData),
-                    ]
-                  }
-                | _ => []
-                }
-
-                if !isPaymentSession {
-                  messageParentWindow(message)
-                }
-                resolve(data)
-              } else if intent.nextAction.type_ === "invoke_sdk_client" {
-                let nextActionData =
-                  intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
-                let response =
-                  [
-                    ("orderId", intent.connectorTransactionId->JSON.Encode.string),
-                    ("nextActionData", nextActionData),
-                  ]->getJsonFromArrayOfJson
-                resolve(response)
-              } else {
-                if !isPaymentSession {
-                  postFailedSubmitResponse(
-                    ~errortype="confirm_payment_failed",
-                    ~message="Payment failed. Try again!",
-                  )
-                }
-                if uri->String.includes("force_sync=true") {
-                  handleLogging(
-                    ~optLogger,
-                    ~value=intent.nextAction.type_,
-                    // ~internalMetadata=intent.nextAction.type_,
-                    ~eventName=REDIRECTING_USER,
-                    ~paymentMethod,
-                    ~logType=ERROR,
-                  )
-                  handleOpenUrl(url.href)
-                } else {
-                  let failedSubmitResponse = getFailedSubmitResponse(
-                    ~errorType="confirm_payment_failed",
-                    ~message="Payment failed. Try again!",
-                  )
-                  resolve(failedSubmitResponse)
-                }
-              }
-            } else if intent.status == "requires_payment_method" {
-              if intent.nextAction.type_ === "invoke_sdk_client" {
-                let nextActionData =
-                  intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
-                let response =
-                  [
-                    ("orderId", intent.connectorTransactionId->JSON.Encode.string),
-                    ("nextActionData", nextActionData),
-                  ]->getJsonFromArrayOfJson
-                resolve(response)
-              }
-            } else if intent.status == "processing" {
-              if intent.nextAction.type_ == "third_party_sdk_session_token" {
-                let session_token = switch intent.nextAction.session_token {
-                | Some(token) => token->getDictFromJson
-                | None => Dict.make()
-                }
-                let walletName = session_token->getString("wallet_name", "")
-                let message = switch walletName {
-                | "apple_pay" => [
-                    ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->anyTypeToJson),
-                  ]
-                | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
-                | _ => []
-                }
-
-                if !isPaymentSession {
-                  messageParentWindow(message)
-                }
-              } else {
-                handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-              }
-              resolve(data)
-            } else if intent.status != "" {
-              if intent.status === "succeeded" {
-                handleLogging(
-                  ~optLogger,
-                  ~value=intent.status,
-                  ~eventName=PAYMENT_SUCCESS,
-                  ~paymentMethod,
-                )
-              } else if intent.status === "failed" {
-                handleLogging(
-                  ~optLogger,
-                  ~value=intent.status,
-                  ~eventName=PAYMENT_FAILED,
-                  ~paymentMethod,
-                )
-              }
-              if intent.status === "failed" {
-                setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
-              }
-              handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-            } else if !isPaymentSession {
-              postFailedSubmitResponse(
-                ~errortype="confirm_payment_failed",
-                ~message="Payment failed. Try again!",
-              )
-            } else {
-              let failedSubmitResponse = getFailedSubmitResponse(
-                ~errorType="confirm_payment_failed",
-                ~message="Payment failed. Try again!",
-              )
-              resolve(failedSubmitResponse)
-            }
-          },
-        )->then(resolve)
-      })
+    switch res->Fetch.Response.ok {
+    | true => await processSuccessResponse(dataJson, context, params, statusCode)
+    | false => await handleApiError(dataJson, context, params, statusCode)
     }
-  })
-  ->catch(err => {
-    Promise.make((resolve, _) => {
-      try {
-        let url = makeUrl(confirmParam.return_url)
-        url.searchParams.set("payment_intent_client_secret", clientSecret)
-        url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
-        url.searchParams.set("status", "failed")
-        let exceptionMessage = err->formatException
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~eventName,
-          ~apiLogType=NoResponse,
-          ~data=exceptionMessage,
-          ~logType=ERROR,
-          ~logCategory=API,
-          ~isPaymentSession,
-        )
-        if counter >= 5 {
-          if !isPaymentSession {
-            closePaymentLoaderIfAny()
-            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-          }
-          if handleUserError {
-            handleOpenUrl(url.href)
-          } else {
-            let failedSubmitResponse = getFailedSubmitResponse(
-              ~errorType="server_error",
-              ~message="Something went wrong",
-            )
-            resolve(failedSubmitResponse)
-          }
-        } else {
-          let paymentIntentID = clientSecret->Utils.getPaymentId
-          let endpoint = ApiEndpoint.getApiEndPoint(
-            ~publishableKey=confirmParam.publishableKey,
-            ~isConfirmCall=isConfirm,
-          )
-          let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
-          intentCall(
-            ~fetchApi,
-            ~uri=retrieveUri,
-            ~headers,
-            ~bodyStr,
-            ~confirmParam: ConfirmType.confirmParams,
-            ~clientSecret,
-            ~optLogger,
-            ~handleUserError,
-            ~paymentType,
-            ~iframeId,
-            ~fetchMethod=#GET,
-            ~setIsManualRetryEnabled,
-            ~customPodUri,
-            ~sdkHandleOneClickConfirmPayment,
-            ~counter=counter + 1,
-            ~isPaymentSession,
-            ~componentName,
-            ~redirectionFlags,
-          )
-          ->then(
-            res => {
-              resolve(res)
-              Promise.resolve()
-            },
-          )
-          ->catch(_ => Promise.resolve())
-          ->ignore
-        }
-      } catch {
-      | _ =>
-        if !isPaymentSession {
-          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
-        }
-        let failedSubmitResponse = getFailedSubmitResponse(
-          ~errorType="server_error",
-          ~message="Something went wrong",
-        )
-        resolve(failedSubmitResponse)
-      }
-    })->then(resolve)
-  })
+  } catch {
+  | err => await handleNetworkError(err, context, params)
+  }
 }
 
 let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
