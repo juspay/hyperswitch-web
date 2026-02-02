@@ -621,8 +621,9 @@ let getBankKeys = (str, banks: Bank.bankList, default) => {
   (banks->Array.find(item => item.displayName == str)->Option.getOr(default)).value
 }
 
+// Constructs CSS class strings from a dictionary of styles, handling pseudo-classes and nested selectors
 let constructClass = (~classname, ~dict) => {
-  let puseduoArr = []
+  let pseudoArr = []
   let modifiedArr = []
 
   dict
@@ -676,15 +677,15 @@ let constructClass = (~classname, ~dict) => {
     if !(key->String.startsWith(":")) && !(key->String.startsWith(".")) {
       modifiedArr->Array.push(class)->ignore
     } else if key->String.startsWith(":") || key->String.startsWith(".") {
-      puseduoArr->Array.push(class)->ignore
+      pseudoArr->Array.push(class)->ignore
     }
   })
   ->ignore
 
   if classname->String.length == 0 {
-    `${modifiedArr->Array.join(";")} ${puseduoArr->Array.join(" ")}`
+    `${modifiedArr->Array.join(";")} ${pseudoArr->Array.join(" ")}`
   } else {
-    `.${classname} {${modifiedArr->Array.join(";")}} ${puseduoArr->Array.join(" ")}`
+    `.${classname} {${modifiedArr->Array.join(";")}} ${pseudoArr->Array.join(" ")}`
   }
 }
 

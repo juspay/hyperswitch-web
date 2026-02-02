@@ -274,7 +274,7 @@ let make = (~integrateError, ~logger) => {
   }
 
   if integrateError {
-    <ErrorOccured />
+    <ErrorOccurred />
   } else {
     <div
       className="flex flex-col h-screen min-w-[320px] overflow-hidden
