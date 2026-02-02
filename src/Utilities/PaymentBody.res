@@ -647,31 +647,6 @@ let sofortBody = (~country, ~name, ~email) => [
   ),
 ]
 
-let iDealBody = (~name, ~bankName) => [
-  ("payment_method", "bank_redirect"->JSON.Encode.string),
-  ("payment_method_type", "ideal"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "bank_redirect",
-        [
-          (
-            "ideal",
-            [
-              (
-                "billing_details",
-                [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-              ),
-              ("bank_name", (bankName == "" ? "american_express" : bankName)->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
-
 let epsBody = (~name, ~bankName) => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "eps"->JSON.Encode.string),
@@ -1013,7 +988,6 @@ let getPaymentBody = (
   | "afterpay_clearpay" => afterpayRedirectionBody()
   | "crypto_currency" => cryptoBody()
   | "sofort" => sofortBody(~country, ~name=fullName, ~email)
-  | "ideal" => iDealBody(~name=fullName, ~bankName=bank)
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
   | "blik" => blikBody(~blikCode)
   | "ali_pay"
