@@ -10,41 +10,43 @@ let make = (
 ) => {
   open RecoilAtomTypes
 
-  let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {hideExpiredPaymentMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let isCard = paymentItem.paymentMethodType === "card"
-  let expiryMonth = paymentItem.paymentMethodData.card.expiryMonth
-  let expiryYear = paymentItem.paymentMethodData.card.expiryYear
+  let {
+    paymentToken,
+    customerId,
+    paymentMethodData,
+    paymentMethodType,
+    requiresCvv: shouldRenderCVV,
+  } = paymentItem
+  let {expiryMonth, expiryYear, last4Digits, network, nickname} = paymentMethodData.card
+
+  let isCard = paymentMethodType === "card"
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   let currentDate = Date.make()
   let pickerItemClass = "PickerItem--selected"
   let isCardExpired = isCard && expiryDate < currentDate
-  let paymentMethodType = paymentItem.paymentMethodType
-  let nickname = switch paymentItem.paymentMethodData.card.nickname {
-  | Some(val) => val
-  | _ => ""
-  }
+  let paymentMethodType = paymentMethodType
+
   let (managePaymentMethod, setManagePaymentMethod) = Recoil.useRecoilState(
     RecoilAtomsV2.managePaymentMethod,
   )
   let setCardBrand = Recoil.useSetRecoilState(RecoilAtoms.cardBrand)
   let cvcRef = React.useRef(Nullable.null)
 
-  let {innerLayout} = config.appearance
   let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcError} = cvcProps
-  let shouldRenderCVV = paymentItem.requiresCvv
   let isCVCEmpty = cvcNumber->String.length === 0
 
   let handleManage = () => {
     setPaymentTokenAtom(_ => {
-      paymentToken: paymentItem.paymentToken,
-      customerId: paymentItem.customerId,
+      paymentToken,
+      customerId,
     })
-    setManagePaymentMethod(_ => paymentItem.paymentToken)
+    setManagePaymentMethod(_ => paymentToken)
   }
 
   let focusCVC = () => {
-    setCardBrand(_ => paymentItem.paymentMethodData.card.network->Option.getOr(""))
+    setCardBrand(_ => network->Option.getOr(""))
 
     let optionalRef = cvcRef.current->Nullable.toOption
     switch optionalRef {
@@ -54,25 +56,24 @@ let make = (
   }
 
   React.useEffect(() => {
-    if isActive {
+    if isActive && managePaymentMethod == "" {
       focusCVC()
     }
     None
-  }, (isActive, paymentItem, managePaymentMethod))
+  }, (isActive, managePaymentMethod))
 
-  let isManageModeInactive = managePaymentMethod != paymentItem.paymentToken
+  let isManageModeActive = managePaymentMethod === paymentToken
 
   let handleOnClick = _ => {
     setPaymentTokenAtom(_ => {
-      paymentToken: paymentItem.paymentToken,
-      customerId: paymentItem.customerId,
+      paymentToken,
+      customerId,
     })
     setManagePaymentMethod(_ => "")
   }
 
-  let showCVCError =
-    isActive && isCVCEmpty && innerLayout === Spaced && cvcError != "" && isManageModeInactive
-  let showCVCField = isActive && shouldRenderCVV && isManageModeInactive
+  let showCVCError = isActive && isCVCEmpty && cvcError != "" && !isManageModeActive
+  let showCVCField = isActive && shouldRenderCVV && !isManageModeActive
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div className={`flex flex-col`}>
@@ -83,7 +84,7 @@ let make = (
           minWidth: "150px",
           width: "100%",
           padding: "1rem 0 1rem 0",
-          borderBottom: isManageModeInactive ? `1px solid ${themeObj.borderColor}` : "none",
+          borderBottom: !isManageModeActive ? `1px solid ${themeObj.borderColor}` : "none",
           borderTop: "none",
           borderLeft: "none",
           borderRight: "none",
@@ -118,17 +119,15 @@ let make = (
                       {if isCard {
                         <div className="flex flex-col items-start gap-1">
                           <div className="flex flex-row items-start gap-3">
-                            <div> {React.string(nickname)} </div>
-                            <RenderIf condition=isManageModeInactive>
+                            <div> {React.string(nickname->Option.getOr(""))} </div>
+                            <RenderIf condition={!isManageModeActive}>
                               <div className={`PickerItemLabel flex flex-row gap-1 items-center`}>
                                 <div className="tracking-widest"> {React.string(`****`)} </div>
-                                <div>
-                                  {React.string(paymentItem.paymentMethodData.card.last4Digits)}
-                                </div>
+                                <div> {React.string(last4Digits)} </div>
                               </div>
                             </RenderIf>
                           </div>
-                          <RenderIf condition=isManageModeInactive>
+                          <RenderIf condition={!isManageModeActive}>
                             <div
                               className={`flex flex-row items-center justify-end gap-3 -mt-1`}
                               style={fontSize: "14px", opacity: "0.5"}>
@@ -148,7 +147,7 @@ let make = (
                   </div>
                 </div>
               </div>
-              <RenderIf condition={!isManageModeInactive && isActive}>
+              <RenderIf condition={isManageModeActive && isActive}>
                 <div
                   className="cursor-pointer ml-4 mb-[6px]"
                   style={color: themeObj.colorPrimary}
@@ -169,7 +168,7 @@ let make = (
                   }}
                 />
               </RenderIf>
-              <RenderIf condition={isManageModeInactive}>
+              <RenderIf condition={!isManageModeActive}>
                 <Icon
                   size=18
                   name="manage"
@@ -235,7 +234,7 @@ let make = (
           </div>
         </div>
       </button>
-      <RenderIf condition={!isManageModeInactive && isActive}>
+      <RenderIf condition={isManageModeActive && isActive}>
         <ManageSavedItem paymentItem managePaymentMethod isCardExpired expiryMonth expiryYear />
       </RenderIf>
     </div>

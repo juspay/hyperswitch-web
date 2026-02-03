@@ -26,18 +26,14 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
     paymentMethodToken,
     updatedPaymentMethod: UnifiedPaymentsTypesV2.paymentMethodsUpdate,
   ) => {
-    savedMethods->Array.map(savedMethod => {
-      if savedMethod.paymentToken === paymentMethodToken {
-        let updatedCustomerMethod = {
-          ...savedMethod,
-          paymentMethodData: updatedPaymentMethod.paymentMethodData,
-        }
-
-        updatedCustomerMethod
-      } else {
-        savedMethod
-      }
-    })
+    savedMethods->Array.map(savedMethod =>
+      savedMethod.paymentToken === paymentMethodToken
+        ? {
+            ...savedMethod,
+            paymentMethodData: updatedPaymentMethod.paymentMethodData,
+          }
+        : savedMethod
+    )
   }
 
   let removeSavedMethodV2 = (

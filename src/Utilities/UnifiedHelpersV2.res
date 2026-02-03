@@ -135,12 +135,9 @@ let itemToPaymentMethodsUpdateMapper = dict => {
   let cardDict = dict->getDictFromDict("payment_method_data")->getDictFromDict("card")
 
   {
-    associatedPaymentMethods: PaymentConfirmTypesV2.getAssociatedPaymentMethods(
-      dict,
-      "associated_payment_methods",
-    ),
+    associatedPaymentMethods: dict->PaymentConfirmTypesV2.getAssociatedPaymentMethods,
     paymentMethodData: {
-      card: getCardDetails(cardDict),
+      card: cardDict->getCardDetails,
     },
   }
 }
