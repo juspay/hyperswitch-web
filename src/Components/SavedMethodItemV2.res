@@ -26,7 +26,6 @@ let make = (
   let currentDate = Date.make()
   let pickerItemClass = "PickerItem--selected"
   let isCardExpired = isCard && expiryDate < currentDate
-  let paymentMethodType = paymentMethodType
 
   let (managePaymentMethod, setManagePaymentMethod) = Recoil.useRecoilState(
     RecoilAtomsV2.managePaymentMethod,
