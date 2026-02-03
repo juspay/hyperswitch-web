@@ -3,20 +3,18 @@ open Utils
 open PaymentMethodsRecord
 
 let getCardDetails = cardDict => {
-  {
-    network: getOptionString(cardDict, "card_network"),
-    issuerCountry: getOptionString(cardDict, "card_issuer"),
-    last4Digits: getString(cardDict, "last4_digits", ""),
-    expiryMonth: getString(cardDict, "expiry_month", ""),
-    expiryYear: getString(cardDict, "expiry_year", ""),
-    cardHolderName: getOptionString(cardDict, "card_holder_name"),
-    nickname: getOptionString(cardDict, "nick_name"),
-    cardFingerprint: getString(cardDict, "card_fingerprint", ""),
-    cardIsin: getString(cardDict, "card_isin", ""),
-    cardType: getString(cardDict, "card_type", ""),
-    savedToLocker: getBool(cardDict, "saved_to_locker", false),
-    cardIssuer: getString(cardDict, "card_issuer", ""),
-  }
+  network: getOptionString(cardDict, "card_network"),
+  issuerCountry: getOptionString(cardDict, "card_issuer"),
+  last4Digits: getString(cardDict, "last4_digits", ""),
+  expiryMonth: getString(cardDict, "expiry_month", ""),
+  expiryYear: getString(cardDict, "expiry_year", ""),
+  cardHolderName: getOptionString(cardDict, "card_holder_name"),
+  nickname: getOptionString(cardDict, "nick_name"),
+  cardFingerprint: getString(cardDict, "card_fingerprint", ""),
+  cardIsin: getString(cardDict, "card_isin", ""),
+  cardType: getString(cardDict, "card_type", ""),
+  savedToLocker: getBool(cardDict, "saved_to_locker", false),
+  cardIssuer: getString(cardDict, "card_issuer", ""),
 }
 
 let itemToCustomerMapper = customerArray => {

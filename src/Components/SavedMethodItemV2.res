@@ -70,6 +70,10 @@ let make = (
     setManagePaymentMethod(_ => "")
   }
 
+  let showCVCError =
+    isActive && isCVCEmpty && innerLayout === Spaced && cvcError != "" && isManageModeInactive
+  let showCVCField = isActive && shouldRenderCVV && isManageModeInactive
+
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div className={`flex flex-col`}>
       <button
@@ -180,7 +184,7 @@ let make = (
             </div>
             <div className="w-full">
               <div className="flex flex-col items-start mx-8">
-                <RenderIf condition={isActive && shouldRenderCVV && isManageModeInactive}>
+                <RenderIf condition=showCVCField>
                   <div
                     className={`flex flex-row items-start justify-start gap-2`}
                     style={fontSize: "14px", opacity: "0.5"}>
@@ -211,8 +215,7 @@ let make = (
                     </div>
                   </div>
                 </RenderIf>
-                <RenderIf
-                  condition={isActive && isCVCEmpty && innerLayout === Spaced && cvcError != ""}>
+                <RenderIf condition=showCVCError>
                   <div
                     className="Error pt-1 mt-1 ml-2"
                     style={
