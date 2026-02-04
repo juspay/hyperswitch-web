@@ -12,6 +12,7 @@ let intentCall = (
     ~method: Fetch.method,
     ~customPodUri: option<string>=?,
     ~publishableKey: option<string>=?,
+    ~sdkAuthorization: option<string>=?,
   ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,

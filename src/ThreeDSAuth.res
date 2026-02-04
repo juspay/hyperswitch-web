@@ -35,6 +35,7 @@ let make = () => {
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
         let publishableKey = metaDataDict->getString("publishableKey", "")
+        let sdkAuthorization = metaDataDict->getOptionString("sdkAuthorization")
         logger.setClientSecret(paymentIntentId)
         logger.setMerchantId(publishableKey)
         let headersDict =
@@ -57,6 +58,7 @@ let make = () => {
           ~clientSecret=paymentIntentId,
           ~threeDsMethodComp,
           ~headers=headers->Dict.fromArray,
+          ~sdkAuthorization,
         )
         ->then(json => {
           let dict = json->getDictFromJson

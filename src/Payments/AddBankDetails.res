@@ -14,7 +14,9 @@ module Loader = {
 let make = (~paymentMethodType) => {
   open Utils
   open Promise
-  let {publishableKey, clientSecret, iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {publishableKey, clientSecret, iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.keys,
+  )
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let setOptionValue = Recoil.useSetRecoilState(RecoilAtoms.optionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -43,6 +45,7 @@ let make = (~paymentMethodType) => {
             ~publishableKey,
             ~setOptionValue,
             ~logger,
+            ~sdkAuthorization,
           )
           ->then(_ => {
             messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
@@ -84,6 +87,7 @@ let make = (~paymentMethodType) => {
       ~paymentMethodType,
       ~pmAuthConnectorsArr,
       ~logger,
+      ~sdkAuthorization,
     )->ignore
   }
 

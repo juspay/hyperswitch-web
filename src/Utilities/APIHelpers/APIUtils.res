@@ -33,6 +33,7 @@ type apiParamsV1 = {
   forceSync: option<string>,
   pollId: option<string>,
   payoutId: option<string>,
+  sdkAuthorization: option<string>,
   authenticationId?: string,
   merchantId?: string,
 }
@@ -57,6 +58,7 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
     forceSync,
     pollId,
     payoutId,
+    sdkAuthorization,
   } = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
@@ -80,9 +82,10 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   }
 
   let defaultParams = list{
-    switch clientSecret {
-    | Some(cs) => Some(("client_secret", cs))
-    | None => None
+    switch (sdkAuthorization->Utils.getNonEmptyOption, clientSecret) {
+    | (Some(_), _) => None
+    | (None, Some(cs)) => Some(("client_secret", cs))
+    | _ => None
     },
     switch forceSync {
     | Some(fs) if isRetrieveIntent => Some(("force_sync", fs))
