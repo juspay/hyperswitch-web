@@ -1918,7 +1918,7 @@ let rec maskStringValuesInJson = (~value, ~currentPath, ~depth, ~shouldMaskField
   }
 }
 
-let getSdkAuthorizationData = (sdkAuthorization: string) => {
+let getSdkAuthorizationData = sdkAuthorization => {
   open Types
 
   let arrOfKeys =

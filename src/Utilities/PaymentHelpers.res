@@ -1803,6 +1803,7 @@ let callAuthLink = async (
         ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
         ("pmAuthConnectorArray", pmAuthConnectorsArr->anyTypeToJson),
         ("publishableKey", publishableKey->JSON.Encode.string),
+        ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
         ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
         ("isForceSync", false->JSON.Encode.bool),
       ]->getJsonFromArrayOfJson
