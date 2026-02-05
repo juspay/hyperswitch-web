@@ -83,7 +83,6 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
 
   let defaultParams = list{
     switch (sdkAuthorization->Utils.getNonEmptyOption, clientSecret) {
-    | (Some(_), _) => None
     | (None, Some(cs)) => Some(("client_secret", cs))
     | _ => None
     },

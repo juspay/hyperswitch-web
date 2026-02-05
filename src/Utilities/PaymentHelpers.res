@@ -1880,6 +1880,7 @@ let callAuthExchange = async (
       ~logger,
       ~customPodUri="",
       ~endpoint,
+      ~sdkAuthorization,
     )
     ->then(customerListResponse => {
       let customerListResponse = [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
