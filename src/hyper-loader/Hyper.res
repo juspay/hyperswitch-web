@@ -81,6 +81,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
     let paymentRequest = dict->Dict.get("paymentRequest")->Option.getOr(JSON.Encode.null)
     let applePayPresent = dict->Dict.get("applePayPresent")
     let clientSecret = dict->getString("clientSecret", "")
+    let sdkAuthorization = dict->getString("sdkAuthorization", "")
     let publishableKey = dict->getString("publishableKey", "")
     let isTaxCalculationEnabled = dict->getBool("isTaxCalculationEnabled", false)
     let sdkSessionId = dict->getString("sdkSessionId", "")
@@ -128,6 +129,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
       ~publishableKey,
       ~isTaxCalculationEnabled,
       ~resolvePromise,
+      ~sdkAuthorization=Some(sdkAuthorization),
     )
   }
 }
@@ -324,6 +326,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let iframeRef = ref([])
       let clientSecret = ref("")
       let paymentId = ref("")
+      let sdkAuthorization = ref("")
       let ephemeralKey = ref("")
       let pmSessionId = ref("")
       let pmClientSecret = ref("")
@@ -342,6 +345,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             forceSync: None,
             pollId: None,
             payoutId: None,
+            sdkAuthorization: Some(sdkAuthorization.contents),
           },
         )
 
@@ -358,6 +362,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~publishableKey=Some(publishableKey),
           ~onSuccess,
           ~onFailure,
+          ~sdkAuthorization=Some(sdkAuthorization.contents),
         )
       }
 
@@ -502,13 +507,24 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
 
-        let clientSecretId = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
+        let sdkAuthorizationId = elementsOptionsDict->getStringFromDict("sdkAuthorization", "")
+
+        let sdkAuthorizationData = sdkAuthorizationId->Utils.getSdkAuthorizationData
+
+        let clientSecretId = switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
+        | Some(cs) => cs
+        | None => elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
+        }
+
         let paymentIdVal = elementsOptionsDict->Utils.getStringFromDict("paymentId", "")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         let preloadSDKWithParams =
           elementsOptions->getDictFromJson->getDictFromDict("preloadSDKWithParams")
+
+        sdkAuthorization := sdkAuthorizationId
         clientSecret := clientSecretId
         paymentId := paymentIdVal
+
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
           resolve(JSON.Encode.null)
@@ -526,6 +542,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sdkSessionId=sessionID,
           ~publishableKey,
           ~profileId,
+          ~sdkAuthorization={sdkAuthorizationId},
           ~clientSecret={clientSecretId},
           ~paymentId={paymentIdVal},
           ~logger=Some(logger),

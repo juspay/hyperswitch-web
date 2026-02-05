@@ -147,6 +147,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           pmClientSecret: config.pmClientSecret,
           pmSessionId: config.pmSessionId,
           loader: config.loader,
+          sdkAuthorization: config.sdkAuthorization,
         },
         themeObj: appearance.variables,
         localeString,
@@ -282,9 +283,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
                 let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
                 let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
+                let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
                 setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
+                  sdkAuthorization: Some(sdkAuthorization),
                   ephemeralKey,
                   pmClientSecret,
                   pmSessionId,
@@ -346,9 +349,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
             let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
             let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
+            let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
             setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
+              sdkAuthorization: Some(sdkAuthorization),
               ephemeralKey,
               pmClientSecret,
               pmSessionId,
@@ -394,6 +399,22 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               config: {
                 ...prev.config,
                 clientSecret: val->getStringFromJson(""),
+              },
+            })
+          | None => ()
+          }
+          let sdkAuthorization = dict->Dict.get("sdkAuthorization")
+          switch sdkAuthorization {
+          | Some(val) =>
+            setKeys(prev => {
+              ...prev,
+              sdkAuthorization: Some(val->getStringFromJson("")),
+            })
+            setConfig(prev => {
+              ...prev,
+              config: {
+                ...prev.config,
+                sdkAuthorization: val->getStringFromJson(""),
               },
             })
           | None => ()

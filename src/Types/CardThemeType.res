@@ -95,6 +95,7 @@ type configClass = {
   clientSecret: string,
   fonts: array<fonts>,
   loader: showLoader,
+  sdkAuthorization: string,
 }
 
 let getPaymentMode = val => {

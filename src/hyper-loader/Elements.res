@@ -13,6 +13,7 @@ type trustPayFunctions = {
 let make = (
   options,
   setIframeRef,
+  ~sdkAuthorization,
   ~clientSecret,
   ~paymentId,
   ~sdkSessionId,
@@ -91,7 +92,7 @@ let make = (
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabled}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabled}&sdkAuthorization=${sdkAuthorization}"
               allow="*"
               name="orca-payment"
               style="outline: none;"
@@ -108,9 +109,14 @@ let make = (
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
-    let clientSecret = isTestMode
-      ? localOptions->getString("clientSecret", "")
-      : localOptions->getRequiredString("clientSecret", "", ~logger)
+
+    let clientSecret =
+      clientSecret->String.trim !== "" ? clientSecret : localOptions->getString("clientSecret", "")
+
+    if !isTestMode && clientSecret === "" {
+      manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="clientSecret", ~logger)
+    }
+
     let clientSecretReMatch = switch GlobalVars.sdkVersion {
     | V1 => Some(RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret))
     | V2 => None
@@ -388,6 +394,10 @@ let make = (
       | Some(val) => localOptions->Dict.set("clientSecret", val)
       | None => ()
       }
+      switch newOptionsDict->Dict.get("sdkAuthorization") {
+      | Some(val) => localOptions->Dict.set("sdkAuthorization", val)
+      | None => ()
+      }
 
       iframeRef->Array.forEach(iframe => {
         let message =
@@ -444,6 +454,7 @@ let make = (
         let widgetOptions =
           [
             ("clientSecret", clientSecret->JSON.Encode.string),
+            ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
             ("appearance", appearance),
             ("locale", locale),
             ("loader", loader),
@@ -609,6 +620,7 @@ let make = (
                           ~logger,
                           ~customPodUri,
                           ~isForceSync=true,
+                          ~sdkAuthorization=Some(sdkAuthorization),
                         )
                       )
                     let executeGooglePayment = trustpay.executeGooglePayment(
@@ -884,6 +896,7 @@ let make = (
               ~count,
               ~returnUrl=url,
               ~logger,
+              ~sdkAuthorization=Some(sdkAuthorization),
             )
             ->then(_ => {
               PaymentHelpers.retrievePaymentIntent(
@@ -892,6 +905,7 @@ let make = (
                 ~logger,
                 ~customPodUri,
                 ~isForceSync=true,
+                ~sdkAuthorization=Some(sdkAuthorization),
               )
               ->then(json => json->handleRetrievePaymentResponse)
               ->catch(err => {
@@ -928,6 +942,7 @@ let make = (
               ~logger,
               ~customPodUri,
               ~isForceSync=true,
+              ~sdkAuthorization=Some(sdkAuthorization),
             )
             ->then(json => json->handleRetrievePaymentResponse)
             ->catch(err => {
@@ -1076,6 +1091,7 @@ let make = (
                               ("applePayPresent", applePayPresent->Option.getOr(JSON.Encode.null)),
                               ("clientSecret", clientSecret->JSON.Encode.string),
                               ("publishableKey", publishableKey->JSON.Encode.string),
+                              ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
                               (
                                 "isTaxCalculationEnabled",
                                 isTaxCalculationEnabled->JSON.Encode.bool,
@@ -1200,6 +1216,7 @@ let make = (
                             ~publishableKey,
                             ~clientSecret,
                             ~paymentMethodType,
+                            ~sdkAuthorization=Some(sdkAuthorization),
                           )->then(
                             resp => {
                               switch resp->TaxCalculation.taxResponseToObjMapper {
