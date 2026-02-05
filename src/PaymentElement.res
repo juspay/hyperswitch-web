@@ -274,12 +274,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       let (cardArr, dropdownArr) = CardUtils.swapCardOption(cardOpts, dropOpts, selectedOption)
       setCardOptions(_ => cardArr)
       setDropDownOptions(_ => dropdownArr)
-    } else if !showAllPaymentMethods {
-      setCardOptions(_ => cardOpts)
-      setDropDownOptions(_ => dropOpts)
-    } else {
+    } else if showAllPaymentMethods {
       setCardOptions(_ => paymentOptions)
       setDropDownOptions(_ => [])
+    } else {
+      setCardOptions(_ => cardOpts)
+      setDropDownOptions(_ => dropOpts)
     }
     None
   }, (cardsContainerWidth, paymentOptions))
