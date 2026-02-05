@@ -120,7 +120,7 @@ let make = (
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
           if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
-            if isGooglePayThirdPartyFlow {
+            if isGooglePayDelayedSessionFlow {
               messageParentWindow([
                 ("fullscreen", true->JSON.Encode.bool),
                 ("param", "paymentloader"->JSON.Encode.string),

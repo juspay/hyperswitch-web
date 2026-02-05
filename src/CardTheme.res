@@ -63,6 +63,7 @@ let defaultConfig = {
   pmClientSecret: "",
   pmSessionId: "",
   loader: Auto,
+  sdkAuthorization: "",
 }
 type recoilConfig = {
   config: configClass,
@@ -408,6 +409,7 @@ let itemToObjMapper = (
       "ephemeralKey",
       "pmClientSecret",
       "pmSessionId",
+      "sdkAuthorization",
     ],
     dict,
     "elements",
@@ -421,5 +423,6 @@ let itemToObjMapper = (
     pmSessionId: getWarningString(dict, "pmSessionId", "", ~logger),
     pmClientSecret: getWarningString(dict, "pmClientSecret", "", ~logger),
     loader: getWarningString(dict, "loader", "auto", ~logger)->getShowLoader,
+    sdkAuthorization: getString(dict, "sdkAuthorization", ""),
   }
 }

@@ -199,6 +199,15 @@ let getDictFromDict = (dict, key) => {
   dict->getJsonObjectFromDict(key)->getDictFromJson
 }
 
+let getNonEmptyOption = val => {
+  switch val {
+  | Some("")
+  | None =>
+    None
+  | Some(str) => Some(str)
+  }
+}
+
 let getBool = (dict, key, default) => {
   getOptionBool(dict, key)->Option.getOr(default)
 }
@@ -960,6 +969,7 @@ let getHeaders = (
   ~publishableKey=None,
   ~clientSecret=None,
   ~profileId=None,
+  ~sdkAuthorization=None,
 ): Fetch.Headers.t => {
   let publishableKeyVal = publishableKey->Option.map(key => key)->Option.getOr("invalid_key")
   let profileIdVal = profileId->Option.getOr("invalid_key")
@@ -974,12 +984,17 @@ let getHeaders = (
     ("X-Client-Platform", "web"),
   ]
 
+  let v1Headers = switch sdkAuthorization->getNonEmptyOption {
+  | Some(sdkAuth) => [("Authorization", sdkAuth)]
+  | None => [("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key"))]
+  }
+
   let authorizationHeaders = switch GlobalVars.sdkVersion {
   | V2 => [
       ("x-profile-id", profileIdVal),
       ("Authorization", `publishable-key=${publishableKeyVal},client-secret=${clientSecretVal}`),
     ]
-  | V1 => [("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key"))]
+  | V1 => v1Headers
   }
 
   let authHeader = switch (token, uri) {
@@ -1036,6 +1051,7 @@ let fetchApi = (
   ~method: Fetch.method,
   ~customPodUri=None,
   ~publishableKey=None,
+  ~sdkAuthorization=None,
 ) => {
   open Promise
   let body = switch method {
@@ -1048,7 +1064,7 @@ let fetchApi = (
       {
         method,
         ?body,
-        headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey),
+        headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey, ~sdkAuthorization),
       },
     )
     ->catch(err => {
@@ -1075,6 +1091,7 @@ let fetchApiWithLogging = async (
   ~onCatchCallback=None,
   ~clientSecret=None,
   ~profileId=None,
+  ~sdkAuthorization=None,
 ) => {
   open LoggerUtils
 
@@ -1106,6 +1123,7 @@ let fetchApiWithLogging = async (
           ~publishableKey,
           ~clientSecret,
           ~profileId,
+          ~sdkAuthorization,
         ),
       },
     )
@@ -1897,5 +1915,28 @@ let rec maskStringValuesInJson = (~value, ~currentPath, ~depth, ~shouldMaskField
       ->JSON.Encode.array
     | _ => value
     }
+  }
+}
+
+let getSdkAuthorizationData = sdkAuthorization => {
+  open Types
+
+  let arrOfKeys =
+    sdkAuthorization
+    ->Window.atob
+    ->String.split(",")
+
+  let getValueFromArrayOfKeys = keyName => {
+    let keyStr = arrOfKeys->Array.find(key => key->String.includes(keyName))
+    let value = keyStr->Option.flatMap(key => key->String.split("=")->Array.get(1))
+
+    value
+  }
+
+  {
+    publishableKey: getValueFromArrayOfKeys("publishable_key"),
+    clientSecret: getValueFromArrayOfKeys("client_secret"),
+    customerId: getValueFromArrayOfKeys("customer_id"),
+    profileId: getValueFromArrayOfKeys("profile_id"),
   }
 }

@@ -26,6 +26,7 @@ let retrievePaymentIntent = async (
   ~logger,
   ~customPodUri,
   ~isForceSync=false,
+  ~sdkAuthorization=None,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
     ~apiCallType=RetrievePaymentIntent,
@@ -37,6 +38,7 @@ let retrievePaymentIntent = async (
       forceSync: isForceSync ? Some("true") : None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization,
     },
   )
 
@@ -59,10 +61,12 @@ let retrievePaymentIntent = async (
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
+    ~sdkAuthorization,
   )
 }
 
 let fetchBlockedBins = async (
+  ~sdkAuthorization,
   ~clientSecret,
   ~publishableKey,
   ~logger,
@@ -79,6 +83,7 @@ let fetchBlockedBins = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization,
     },
   )
 
@@ -95,10 +100,17 @@ let fetchBlockedBins = async (
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
+    ~sdkAuthorization,
   )
 }
 
-let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) => {
+let threeDsAuth = async (
+  ~clientSecret,
+  ~logger,
+  ~threeDsMethodComp,
+  ~headers,
+  ~sdkAuthorization=None,
+) => {
   let url = APIUtils.generateApiUrlV1(
     ~apiCallType=FetchThreeDsAuth,
     ~params={
@@ -109,16 +121,20 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization,
     },
   )
   let broswerInfo = BrowserSpec.broswerInfo
+  let clientSecretArr = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => []
+  | None => [("client_secret", clientSecret->JSON.Encode.string)]
+  }
   let body =
     [
-      ("client_secret", clientSecret->JSON.Encode.string),
       ("device_channel", "BRW"->JSON.Encode.string),
       ("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string),
     ]
-    ->Array.concat(broswerInfo())
+    ->Array.concatMany([broswerInfo(), clientSecretArr])
     ->getJsonFromArrayOfJson
 
   let onSuccess = data => data
@@ -146,6 +162,7 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
     ~headers,
     ~method=#POST,
     ~onCatchCallback=Some(onCatchCallback),
+    ~sdkAuthorization,
   )
 }
 
@@ -156,6 +173,7 @@ let rec pollRetrievePaymentIntent = (
   ~logger,
   ~customPodUri,
   ~isForceSync=false,
+  ~sdkAuthorization=None,
 ) => {
   open Promise
   retrievePaymentIntent(
@@ -165,6 +183,7 @@ let rec pollRetrievePaymentIntent = (
     ~logger,
     ~customPodUri,
     ~isForceSync,
+    ~sdkAuthorization,
   )
   ->then(json => {
     let dict = json->getDictFromJson
@@ -182,6 +201,7 @@ let rec pollRetrievePaymentIntent = (
           ~logger,
           ~customPodUri,
           ~isForceSync,
+          ~sdkAuthorization,
         )
       })
       ->catch(_ => Promise.resolve(JSON.Encode.null))
@@ -196,11 +216,12 @@ let rec pollRetrievePaymentIntent = (
       ~logger,
       ~customPodUri,
       ~isForceSync,
+      ~sdkAuthorization,
     )
   })
 }
 
-let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger) => {
+let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger, ~sdkAuthorization) => {
   let uri = APIUtils.generateApiUrlV1(
     ~apiCallType=RetrieveStatus,
     ~params={
@@ -211,6 +232,7 @@ let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger) => {
       forceSync: None,
       pollId: Some(pollID),
       payoutId: None,
+      sdkAuthorization,
     },
   )
 
@@ -228,6 +250,7 @@ let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger) => {
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
+    ~sdkAuthorization,
   )
 }
 
@@ -239,9 +262,10 @@ let rec pollStatus = (
   ~count,
   ~returnUrl,
   ~logger,
+  ~sdkAuthorization,
 ) => {
   open Promise
-  retrieveStatus(~publishableKey, ~customPodUri, pollId, logger)
+  retrieveStatus(~publishableKey, ~customPodUri, pollId, logger, ~sdkAuthorization)
   ->then(json => {
     let dict = json->getDictFromJson
     let status = dict->getString("status", "")
@@ -263,6 +287,7 @@ let rec pollStatus = (
               ~count=count - 1,
               ~returnUrl,
               ~logger,
+              ~sdkAuthorization,
             )->then(
               res => {
                 resolve(res)
@@ -286,6 +311,7 @@ let rec pollStatus = (
       ~count=count - 1,
       ~returnUrl,
       ~logger,
+      ~sdkAuthorization,
     )->then(res => resolve(res))
   })
 }
@@ -298,6 +324,7 @@ let rec intentCall = (
     ~method: Fetch.method,
     ~customPodUri: option<string>=?,
     ~publishableKey: option<string>=?,
+    ~sdkAuthorization: option<string>=?,
   ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,
@@ -317,6 +344,7 @@ let rec intentCall = (
   ~isCallbackUsedVal=?,
   ~componentName="payment",
   ~redirectionFlags,
+  ~sdkAuthorization=None,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -354,6 +382,7 @@ let rec intentCall = (
     ~method=fetchMethod,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
     ~bodyStr,
+    ~sdkAuthorization,
   )
   ->then(res => {
     let statusCode = res->Fetch.Response.status
@@ -472,6 +501,7 @@ let rec intentCall = (
                 ~counter=counter + 1,
                 ~componentName,
                 ~redirectionFlags,
+                ~sdkAuthorization,
               )
               ->then(
                 res => {
@@ -608,6 +638,7 @@ let rec intentCall = (
                   [
                     ("qrData", qrData->JSON.Encode.string),
                     ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
                     ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
                     ("expiryTime", expiryTime->Float.toString->JSON.Encode.string),
@@ -654,6 +685,7 @@ let rec intentCall = (
                     ("threeDSData", threeDsData->JSON.Encode.object),
                     ("paymentIntentId", clientSecret->JSON.Encode.string),
                     ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
+                    ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
                     ("url", url.href->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
@@ -693,8 +725,9 @@ let rec intentCall = (
                 let metaData =
                   [
                     ("iframeData", iframeData->JSON.Encode.object),
-                    ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("clientSecret", clientSecret->JSON.Encode.string),
                     ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
+                    ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
                     ("url", url.href->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
@@ -760,6 +793,7 @@ let rec intentCall = (
                       ("pmAuthConnectorArray", ["plaid"]->anyTypeToJson),
                       ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                       ("clientSecret", clientSecret->JSON.Encode.string),
+                      ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
                       ("isForceSync", true->JSON.Encode.bool),
                     ]->getJsonFromArrayOfJson
                     [
@@ -939,6 +973,7 @@ let rec intentCall = (
             ~isPaymentSession,
             ~componentName,
             ~redirectionFlags,
+            ~sdkAuthorization,
           )
           ->then(
             res => {
@@ -976,9 +1011,21 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
-      let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
+      let headers = [("Content-Type", "application/json")]
+
+      switch keys.sdkAuthorization->Utils.getNonEmptyOption {
+      | Some(_) => ()
+      | None => headers->Array.push(("api-key", confirmParam.publishableKey))
+      }
+
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
-      let uri = `${endpoint}/payments/${paymentIntentID}?force_sync=true&client_secret=${clientSecret}`
+
+      let clientSecretUriStr = switch keys.sdkAuthorization->Utils.getNonEmptyOption {
+      | Some(_) => ""
+      | None => `&client_secret=${clientSecret}`
+      }
+
+      let uri = `${endpoint}/payments/${paymentIntentID}?force_sync=true${clientSecretUriStr}`
 
       let paymentSync = () => {
         intentCall(
@@ -999,6 +1046,7 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
           ~counter=0,
           ~isCallbackUsedVal,
           ~redirectionFlags,
+          ~sdkAuthorization=keys.sdkAuthorization,
         )->ignore
       }
       switch paymentMethodList {
@@ -1042,6 +1090,7 @@ let useCompleteAuthorizeHandler = () => {
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
 
   (
     ~clientSecret: option<string>,
@@ -1054,6 +1103,7 @@ let useCompleteAuthorizeHandler = () => {
     ~sdkHandleOneClickConfirmPayment,
     ~headers: option<array<(string, string)>>=?,
     ~paymentMode: option<string>=?,
+    ~sdkAuthorization: option<string>=?,
   ) =>
     switch clientSecret {
     | Some(cs) =>
@@ -1064,12 +1114,32 @@ let useCompleteAuthorizeHandler = () => {
       | Some(h) => h
       | None => [
           ("Content-Type", "application/json"),
-          ("api-key", confirmParam.publishableKey),
           ("X-Client-Source", paymentMode->Option.getOr("")),
         ]
       }
+
+      let sdkAuth = switch (
+        keys.sdkAuthorization->Utils.getNonEmptyOption,
+        sdkAuthorization->Utils.getNonEmptyOption,
+      ) {
+      | (Some(sdkAuth), _)
+      | (_, Some(sdkAuth)) =>
+        Some(sdkAuth)
+      | _ => None
+      }
+
+      switch sdkAuth {
+      | Some(auth) => finalHeaders->Array.push(("Authorization", auth))
+      | None => finalHeaders->Array.push(("api-key", confirmParam.publishableKey))
+      }
+
+      let clientSecretArr = switch sdkAuth {
+      | Some(_) => []
+      | None => [("client_secret", cs->JSON.Encode.string)]
+      }
+
       let bodyStr =
-        [("client_secret", cs->JSON.Encode.string)]
+        clientSecretArr
         ->Array.concatMany([bodyArr, BrowserSpec.broswerInfo()])
         ->getJsonFromArrayOfJson
         ->JSON.stringify
@@ -1092,6 +1162,7 @@ let useCompleteAuthorizeHandler = () => {
         ~counter=0,
         ~isCallbackUsedVal,
         ~redirectionFlags,
+        ~sdkAuthorization=sdkAuth,
       )->ignore
     | None =>
       postFailedSubmitResponse(
@@ -1138,6 +1209,7 @@ let useRedsysCompleteAuthorize = optLogger => {
     ~iframeId="redsys3ds",
     ~clientSecret,
     ~headers,
+    ~sdkAuthorization,
   ) =>
     completeAuthorizeHandler(
       ~clientSecret,
@@ -1149,6 +1221,7 @@ let useRedsysCompleteAuthorize = optLogger => {
       ~paymentType=Card,
       ~sdkHandleOneClickConfirmPayment=false,
       ~headers,
+      ~sdkAuthorization,
     )
 }
 
@@ -1181,10 +1254,17 @@ let usePaymentIntent = (optLogger, paymentType) => {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
       let headers = switch GlobalVars.sdkVersion {
-      | V1 => [
-          ("api-key", confirmParam.publishableKey),
-          ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
-        ]
+      | V1 => {
+          let v1Headers = [
+            ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+          ]
+          switch keys.sdkAuthorization->Utils.getNonEmptyOption {
+          | Some(sdkAuth) => v1Headers->Array.push(("Authorization", sdkAuth))
+          | _ => v1Headers->Array.push(("api-key", confirmParam.publishableKey))
+          }
+
+          v1Headers
+        }
       | V2 => {
           let authorizationHeader = (
             "Authorization",
@@ -1199,12 +1279,12 @@ let usePaymentIntent = (optLogger, paymentType) => {
       }
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
+      let clientSecretArr = switch keys.sdkAuthorization->Utils.getNonEmptyOption {
+      | Some(_) => []
+      | None => [("client_secret", clientSecret->JSON.Encode.string)]
+      }
       let body = switch GlobalVars.sdkVersion {
-      | V1 =>
-        [("client_secret", clientSecret->JSON.Encode.string)]->Array.concatMany([
-          returnUrlArr,
-          manual_retry,
-        ])
+      | V1 => clientSecretArr->Array.concatMany([returnUrlArr, manual_retry])
       | V2 => []
       }
 
@@ -1288,6 +1368,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~isCallbackUsedVal,
             ~componentName,
             ~redirectionFlags,
+            ~sdkAuthorization=keys.sdkAuthorization,
           )
           ->then(val => {
             intentCallback(val)
@@ -1388,16 +1469,25 @@ let fetchSessions = async (
   ~endpoint,
   ~isPaymentSession=false,
   ~merchantHostname=Window.getRootHostName(),
+  ~sdkAuthorization=None,
 ) => {
   let headers = [("X-Merchant-Domain", merchantHostname)]->Dict.fromArray
   let paymentIntentID = clientSecret->Utils.getPaymentId
-  let body =
-    [
-      ("payment_id", paymentIntentID->JSON.Encode.string),
-      ("client_secret", clientSecret->JSON.Encode.string),
-      ("wallets", wallets->JSON.Encode.array),
-      ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
-    ]->getJsonFromArrayOfJson
+
+  let bodyArr = [
+    ("payment_id", paymentIntentID->JSON.Encode.string),
+    ("wallets", wallets->JSON.Encode.array),
+    ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
+  ]
+
+  let body = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => bodyArr->getJsonFromArrayOfJson
+  | _ =>
+    bodyArr
+    ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
+    ->getJsonFromArrayOfJson
+  }
+
   let uri = APIUtils.generateApiUrlV1(
     ~apiCallType=FetchSessions,
     ~params={
@@ -1408,6 +1498,7 @@ let fetchSessions = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization,
     },
   )
 
@@ -1427,6 +1518,7 @@ let fetchSessions = async (
     ~onSuccess,
     ~onFailure,
     ~isPaymentSession,
+    ~sdkAuthorization,
   )
 }
 
@@ -1449,6 +1541,7 @@ let confirmPayout = async (
       forceSync: None,
       pollId: None,
       payoutId: Some(payoutId),
+      sdkAuthorization: None,
     },
   )
 
@@ -1492,6 +1585,7 @@ let createPaymentMethod = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization: None,
     },
   )
 
@@ -1518,6 +1612,7 @@ let createPaymentMethod = async (
 }
 
 let fetchPaymentMethodList = async (
+  ~sdkAuthorization=None,
   ~clientSecret,
   ~publishableKey,
   ~logger,
@@ -1534,6 +1629,7 @@ let fetchPaymentMethodList = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization,
     },
   )
 
@@ -1550,6 +1646,7 @@ let fetchPaymentMethodList = async (
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
+    ~sdkAuthorization,
   )
 }
 
@@ -1560,6 +1657,7 @@ let fetchCustomerPaymentMethodList = async (
   ~customPodUri,
   ~endpoint,
   ~isPaymentSession=false,
+  ~sdkAuthorization=None,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
     ~apiCallType=FetchCustomerPaymentMethodList,
@@ -1571,6 +1669,7 @@ let fetchCustomerPaymentMethodList = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization,
     },
   )
 
@@ -1588,6 +1687,7 @@ let fetchCustomerPaymentMethodList = async (
     ~onSuccess,
     ~onFailure,
     ~isPaymentSession,
+    ~sdkAuthorization,
   )
 }
 
@@ -1667,6 +1767,7 @@ let callAuthLink = async (
   ~pmAuthConnectorsArr,
   ~iframeId,
   ~logger,
+  ~sdkAuthorization=None,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
     ~apiCallType=CallAuthLink,
@@ -1678,16 +1779,23 @@ let callAuthLink = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization,
     },
   )
 
-  let body =
-    [
-      ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
-      ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
-      ("payment_method", "bank_debit"->JSON.Encode.string),
-      ("payment_method_type", paymentMethodType->JSON.Encode.string),
-    ]->getJsonFromArrayOfJson
+  let bodyArr = [
+    ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
+    ("payment_method", "bank_debit"->JSON.Encode.string),
+    ("payment_method_type", paymentMethodType->JSON.Encode.string),
+  ]
+
+  let body = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => bodyArr->getJsonFromArrayOfJson
+  | _ =>
+    bodyArr
+    ->Array.concat([("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string)])
+    ->getJsonFromArrayOfJson
+  }
 
   let onSuccess = data => {
     let metaData =
@@ -1695,6 +1803,7 @@ let callAuthLink = async (
         ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
         ("pmAuthConnectorArray", pmAuthConnectorsArr->anyTypeToJson),
         ("publishableKey", publishableKey->JSON.Encode.string),
+        ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
         ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
         ("isForceSync", false->JSON.Encode.bool),
       ]->getJsonFromArrayOfJson
@@ -1719,6 +1828,7 @@ let callAuthLink = async (
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
+    ~sdkAuthorization,
   )
 }
 
@@ -1729,6 +1839,7 @@ let callAuthExchange = async (
   ~publishableKey,
   ~setOptionValue: (PaymentType.options => PaymentType.options) => unit,
   ~logger,
+  ~sdkAuthorization=None,
 ) => {
   open Promise
   open PaymentType
@@ -1742,17 +1853,24 @@ let callAuthExchange = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization,
     },
   )
 
-  let body =
-    [
-      ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
-      ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
-      ("payment_method", "bank_debit"->JSON.Encode.string),
-      ("payment_method_type", paymentMethodType->JSON.Encode.string),
-      ("public_token", publicToken->JSON.Encode.string),
-    ]->getJsonFromArrayOfJson
+  let bodyArr = [
+    ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
+    ("payment_method", "bank_debit"->JSON.Encode.string),
+    ("payment_method_type", paymentMethodType->JSON.Encode.string),
+    ("public_token", publicToken->JSON.Encode.string),
+  ]
+
+  let body = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => bodyArr->getJsonFromArrayOfJson
+  | _ =>
+    bodyArr
+    ->Array.concat([("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string)])
+    ->getJsonFromArrayOfJson
+  }
 
   let onSuccess = _ => {
     let endpoint = ApiEndpoint.getApiEndPoint()
@@ -1762,6 +1880,7 @@ let callAuthExchange = async (
       ~logger,
       ~customPodUri="",
       ~endpoint,
+      ~sdkAuthorization,
     )
     ->then(customerListResponse => {
       let customerListResponse = [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
@@ -1795,6 +1914,7 @@ let callAuthExchange = async (
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
+    ~sdkAuthorization,
   )
 }
 
@@ -1815,6 +1935,7 @@ let fetchSavedPaymentMethodList = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization: None,
     },
   )
 
@@ -1846,6 +1967,7 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization: None,
     },
   )
 
@@ -1873,6 +1995,7 @@ let calculateTax = async (
   ~logger,
   ~customPodUri,
   ~sessionId,
+  ~sdkAuthorization,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
     ~apiCallType=CalculateTax,
@@ -1884,17 +2007,20 @@ let calculateTax = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization,
     },
   )
   let onSuccess = data => data
 
   let onFailure = _ => JSON.Encode.null
 
-  let body = [
-    ("client_secret", clientSecret->JSON.Encode.string),
-    ("shipping", shippingAddress),
-    ("payment_method_type", paymentMethodType),
-  ]
+  let body = [("shipping", shippingAddress), ("payment_method_type", paymentMethodType)]
+
+  switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => ()
+  | None => body->Array.push(("client_secret", clientSecret->JSON.Encode.string))
+  }
+
   sessionId->Option.mapOr((), id => body->Array.push(("session_id", id))->ignore)
   await fetchApiWithLogging(
     uri,
@@ -1906,6 +2032,7 @@ let calculateTax = async (
     ~publishableKey=Some(apiKey),
     ~onSuccess,
     ~onFailure,
+    ~sdkAuthorization,
   )
 }
 
@@ -1938,17 +2065,25 @@ let usePostSessionTokens = (
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
+
       let headers = [
         ("Content-Type", "application/json"),
-        ("api-key", confirmParam.publishableKey),
         ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
       ]
+
       let body = [
-        ("client_secret", clientSecret->JSON.Encode.string),
         ("payment_id", paymentIntentID->JSON.Encode.string),
         ("payment_method_type", (paymentType :> string)->JSON.Encode.string),
         ("payment_method", (paymentMethod :> string)->JSON.Encode.string),
       ]
+
+      switch keys.sdkAuthorization->Utils.getNonEmptyOption {
+      | Some(sdkAuth) => headers->Array.push(("Authorization", sdkAuth))
+      | _ => {
+          headers->Array.push(("api-key", confirmParam.publishableKey))
+          body->Array.push(("client_secret", clientSecret->JSON.Encode.string))
+        }
+      }
 
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
@@ -2016,6 +2151,7 @@ let usePostSessionTokens = (
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
           ~redirectionFlags,
+          ~sdkAuthorization=keys.sdkAuthorization,
         )
         ->then(val => {
           intentCallback(val)
@@ -2113,6 +2249,7 @@ let fetchEnabledAuthnMethodsToken = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization: None,
       authenticationId,
     },
   )
@@ -2161,6 +2298,7 @@ let fetchEligibilityCheck = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization: None,
       authenticationId,
     },
   )
@@ -2213,6 +2351,7 @@ let fetchAuthenticationSync = async (
       forceSync: None,
       pollId: None,
       payoutId: None,
+      sdkAuthorization: None,
       authenticationId,
       merchantId,
     },
