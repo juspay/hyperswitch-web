@@ -292,3 +292,10 @@ let getHyperComponentNameFromStr = hyperComponentName => {
   | _ => Elements
   }
 }
+
+type sdkAuthorizationData = {
+  publishableKey: option<string>,
+  clientSecret: option<string>,
+  customerId: option<string>,
+  profileId: option<string>,
+}

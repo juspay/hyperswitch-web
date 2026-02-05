@@ -27,6 +27,7 @@ let loadPaypalSDK = (
   ~clientSecret,
   ~isTestMode=false,
   ~nonPiiAdderessData: PaymentUtils.nonPiiAdderessData,
+  ~sdkAuthorization,
 ) => {
   open Promise
 
@@ -152,6 +153,7 @@ let loadPaypalSDK = (
           ~clientSecret=clientSecret->Option.getOr(""),
           ~paymentMethodType,
           ~sessionId=data->getDictFromJson->Dict.get("orderID"),
+          ~sdkAuthorization,
         )
       } else {
         JSON.Encode.null->resolve

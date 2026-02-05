@@ -65,6 +65,7 @@ let startApplePaySession = (
   ~clientSecret,
   ~publishableKey,
   ~isTaxCalculationEnabled=false,
+  ~sdkAuthorization=None,
 ) => {
   open Promise
   let ssn = applePaySession(3, paymentRequest)
@@ -126,6 +127,7 @@ let startApplePaySession = (
         ~publishableKey,
         ~clientSecret,
         ~paymentMethodType,
+        ~sdkAuthorization,
       )->thenResolve(response => {
         switch response->taxResponseToObjMapper {
         | Some(taxCalculationResponse) => {
