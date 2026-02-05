@@ -457,6 +457,11 @@ let make = (
               disabled=false
               options=updatedCurrencyArray
             />
+          | DocumentType(opt) => {
+              let updatedDocumentTypeArray =
+                opt->DropdownField.updateArrayOfStringToOptionsTypeArray
+              <DocumentNumberInput options={updatedDocumentTypeArray} />
+            }
           | FullName =>
             <>
               <RenderIf condition={!isSpacedInnerLayout}>
@@ -533,6 +538,7 @@ let make = (
               inputRef=sourceBankAccountIdRef
               placeholder="DE00 0000 0000 0000 0000 00"
             />
+          | DocumentNumber
           | Email
           | InfoElement
           | Country
@@ -814,6 +820,8 @@ let make = (
                 | PixKey
                 | PixCPF
                 | PixCNPJ
+                | DocumentType(_)
+                | DocumentNumber
                 | CardNumber
                 | CardExpiryMonth
                 | CardExpiryYear
