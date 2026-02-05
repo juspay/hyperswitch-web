@@ -71,8 +71,8 @@ let make = (
     setManagePaymentMethod(_ => "")
   }
 
-  let showCVCError = isActive && isCVCEmpty && cvcError != "" && !isManageModeActive
   let showCVCField = isActive && shouldRenderCVV && !isManageModeActive
+  let showCVCError = showCVCField && isCVCEmpty && cvcError != ""
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div className={`flex flex-col`}>
