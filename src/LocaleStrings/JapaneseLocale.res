@@ -38,6 +38,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cityEmptyText: `都市を空にすることはできません`,
   currencyLabel: `通貨`,
   bankLabel: `バンクを選択`,
+  documentTypeLabel: `書類種別`,
   redirectText: `注文を送信すると、安全に購入を完了するためにリダイレクトされます。`,
   bankDetailsText: `これらの詳細を送信すると、支払いを行うための銀行口座情報が表示されます。必ずメモを取ってください。`,
   orPayUsing: `またはを使用して支払う`,
