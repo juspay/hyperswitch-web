@@ -260,17 +260,17 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (selectedOption, cardOptions, dropDownOptions, showAllPaymentMethods, layoutClass))
 
+  let isSelectedOptionValid = React.useMemo(() => {
+    selectedOption !== "" && paymentOptions->Array.includes(selectedOption)
+  }, (paymentOptions, selectedOption))
+
   React.useEffect(() => {
     let cardsCount: int = cardsToRender(cardsContainerWidth)
     let cardOpts = Array.slice(~start=0, ~end=cardsCount, paymentOptions)
     let dropOpts = paymentOptions->Array.sliceToEnd(~start=cardsCount)
     let isCard: bool = cardOpts->Array.includes(selectedOption)
-    if (
-      !isCard &&
-      selectedOption !== "" &&
-      paymentOptions->Array.includes(selectedOption) &&
-      !showAllPaymentMethods
-    ) {
+    let shouldSwapSelectedOption = !isCard && isSelectedOptionValid && !showAllPaymentMethods
+    if shouldSwapSelectedOption {
       let (cardArr, dropdownArr) = CardUtils.swapCardOption(cardOpts, dropOpts, selectedOption)
       setCardOptions(_ => cardArr)
       setDropDownOptions(_ => dropdownArr)
