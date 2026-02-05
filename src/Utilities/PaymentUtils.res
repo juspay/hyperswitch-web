@@ -398,7 +398,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode
   let layoutClass = CardUtils.getLayoutClass(optionAtomValue.layout)
 
   let showWalletsWithOtherPaymentMethods =
-    !layoutClass.showOneClickWalletsOnTop && paymentType === Payment
+    !layoutClass.displayOneClickPaymentMethodsOnTop && paymentType === Payment
 
   React.useMemo(() => {
     switch methodslist {

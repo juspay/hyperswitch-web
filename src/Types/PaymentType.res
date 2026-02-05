@@ -114,7 +114,7 @@ type layoutConfig = {
   \"type": layout,
   savedMethodCustomization: savedMethodCustomization,
   paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabs,
-  showOneClickWalletsOnTop: bool,
+  displayOneClickPaymentMethodsOnTop: bool,
 }
 
 type layoutType =
@@ -286,7 +286,7 @@ let defaultLayout = {
   \"type": Tabs,
   savedMethodCustomization: {groupingBehavior: Default},
   paymentMethodsArrangementForTabs: Default,
-  showOneClickWalletsOnTop: true,
+  displayOneClickPaymentMethodsOnTop: true,
 }
 let defaultAddress: address = {
   line1: "",
@@ -840,9 +840,9 @@ let getLayoutValues = (val, logger) => {
           logger,
         ),
         paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabsType->getPaymentMethodsArrangementForTabs,
-        showOneClickWalletsOnTop: getBoolWithWarning(
+        displayOneClickPaymentMethodsOnTop: getBoolWithWarning(
           json,
-          "showOneClickWalletsOnTop",
+          "displayOneClickPaymentMethodsOnTop",
           true,
           ~logger,
         ),
