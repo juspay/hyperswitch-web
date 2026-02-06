@@ -81,7 +81,7 @@ let make = (
         />
       </div>
     </div>
-    <FullNamePaymentInput />
+    <FullNamePaymentInput customFieldName=Some(localeString.cardHolderName) />
     <NicknamePaymentInput />
   </div>
 }
