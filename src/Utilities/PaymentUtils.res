@@ -16,6 +16,7 @@ let paymentListLookupNew = (
   ~shouldDisplayApplePayInTabs,
   ~shouldDisplayPayPalInTabs,
   ~localeString,
+  ~showWalletsWithOtherPaymentMethods,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList(~localeString)
   let walletsList = []
@@ -48,11 +49,14 @@ let paymentListLookupNew = (
     walletToBeDisplayedInTabs->Array.push("paypal")
   }
 
-  if (
+  let requiresGooglePayBillingDetails =
     !paymentMethodListValue.collect_billing_details_from_wallets &&
-    !areAllGooglePayRequiredFieldsPrefilled &&
-    isGooglePayReady
-  ) {
+    !areAllGooglePayRequiredFieldsPrefilled
+
+  let shouldDisplayGooglePayInTabs =
+    isGooglePayReady && (showWalletsWithOtherPaymentMethods || requiresGooglePayBillingDetails)
+
+  if shouldDisplayGooglePayInTabs {
     walletToBeDisplayedInTabs->Array.push("google_pay")
   }
 
@@ -98,8 +102,9 @@ let paymentListLookupNew = (
       otherPaymentList->Array.push(item.paymentMethodName)->ignore
     }
   })
+  let updatedWalletsList = showWalletsWithOtherPaymentMethods ? [] : walletsList
   (
-    walletsList->Utils.removeDuplicate->Utils.sortBasedOnPriority(order),
+    updatedWalletsList->Utils.removeDuplicate->Utils.sortBasedOnPriority(order),
     otherPaymentList->Utils.removeDuplicate->Utils.sortBasedOnPriority(order),
   )
 }
@@ -351,7 +356,7 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
   (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist)
 }
 
-let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
+let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode, ~sessions) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
@@ -390,6 +395,10 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     ~sessions,
     ~paymentMethodListValue,
   )
+  let layoutClass = CardUtils.getLayoutClass(optionAtomValue.layout)
+
+  let showWalletsWithOtherPaymentMethods =
+    !layoutClass.displayOneClickPaymentMethodsOnTop && paymentType === Payment
 
   React.useMemo(() => {
     switch methodslist {
@@ -398,19 +407,25 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
         paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
       let pList = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
 
-      let shouldDisplayApplePayInTabs =
+      let requiresApplePayBillingDetails =
         !paymentMethodListValue.collect_billing_details_from_wallets &&
-        !areAllApplePayRequiredFieldsPrefilled &&
-        isApplePayReady
+        !areAllApplePayRequiredFieldsPrefilled
+
+      let shouldDisplayApplePayInTabs =
+        isApplePayReady && (showWalletsWithOtherPaymentMethods || requiresApplePayBillingDetails)
 
       let isShowPaypal = optionAtomValue.wallets.payPal === Auto
 
-      let shouldDisplayPayPalInTabs =
-        isShowPaypal &&
+      let requiresPaypalBillingDetails =
         !paymentMethodListValue.collect_billing_details_from_wallets &&
-        !areAllPaypalRequiredFieldsPreFilled &&
-        isPaypalRedirectFlow &&
-        (!isPaypalSDKFlow || !isPaypalTokenExist)
+        !areAllPaypalRequiredFieldsPreFilled
+
+      let isPaypalEligibleInRedirectFlow =
+        isShowPaypal && isPaypalRedirectFlow && (!isPaypalSDKFlow || !isPaypalTokenExist)
+
+      let shouldDisplayPayPalInTabs =
+        isPaypalEligibleInRedirectFlow &&
+        (showWalletsWithOtherPaymentMethods || requiresPaypalBillingDetails)
 
       let (wallets, otherOptions) =
         pList->paymentListLookupNew(
@@ -424,6 +439,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
           ~shouldDisplayApplePayInTabs,
           ~shouldDisplayPayPalInTabs,
           ~localeString,
+          ~showWalletsWithOtherPaymentMethods,
         )
 
       let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
@@ -439,6 +455,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
           switch paymentOptionsName {
           | "klarna" => !(isKlarnaSDKFlow && isKlarnaInvokeSDKExperience)
           | "apple_pay" => shouldDisplayApplePayInTabs
+          | "paypal" => shouldDisplayPayPalInTabs
           | _ => true
           }
         })
@@ -461,9 +478,14 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     optionAtomValue.wallets.payPal,
     optionAtomValue.wallets.klarna,
     paymentType,
+    showWalletsWithOtherPaymentMethods,
     isKlarnaSDKFlow,
     areAllApplePayRequiredFieldsPrefilled,
     areAllGooglePayRequiredFieldsPrefilled,
+    areAllPaypalRequiredFieldsPreFilled,
+    isPaypalSDKFlow,
+    isPaypalRedirectFlow,
+    isPaypalTokenExist,
     isApplePayReady,
     isGooglePayReady,
   ))

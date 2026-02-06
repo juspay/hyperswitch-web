@@ -144,14 +144,14 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
   },
   {
     paymentMethodName: "google_pay",
-    fields: [],
+    fields: [InfoElement],
     icon: Some(icon("google_pay", ~size=19, ~width=25)),
     displayName: localeString.payment_methods_google_pay,
     miniIcon: None,
   },
   {
     paymentMethodName: "apple_pay",
-    fields: [],
+    fields: [InfoElement],
     icon: Some(icon("apple_pay", ~size=19, ~width=25)),
     displayName: localeString.payment_methods_apple_pay,
     miniIcon: None,
@@ -594,7 +594,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     paymentMethodName: "paypal",
     icon: Some(icon("paypal", ~size=21, ~width=25)),
     displayName: localeString.payment_methods_paypal,
-    fields: [],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
