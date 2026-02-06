@@ -10,8 +10,8 @@ let make = (~options) => {
 
   React.useEffect(() => {
     switch documentType {
-    | "CPF" => setDocumentNumber(_ => pixCPF)
-    | "CNPJ" => setDocumentNumber(_ => pixCNPJ)
+    | "cpf" => setDocumentNumber(_ => pixCPF)
+    | "cnpj" => setDocumentNumber(_ => pixCNPJ)
     | _ => setDocumentNumber(_ => RecoilAtoms.defaultFieldValues)
     }
     None
@@ -27,8 +27,8 @@ let make = (~options) => {
       width="w-1/4"
     />
     {switch documentType {
-    | "CPF" => <PixPaymentInput fieldType="pixCPF" />
-    | "CNPJ" => <PixPaymentInput fieldType="pixCNPJ" />
+    | "cpf" => <PixPaymentInput fieldType="pixCPF" />
+    | "cnpj" => <PixPaymentInput fieldType="pixCNPJ" />
     | _ => React.null
     }}
   </div>
