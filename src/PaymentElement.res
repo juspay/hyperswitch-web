@@ -193,6 +193,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~paymentMethodListValue,
     ~sessionObj,
   )
+  let showAllPaymentMethods = layoutClass.paymentMethodsArrangementForTabs === Grid
 
   React.useEffect(() => {
     switch paymentMethodList {
@@ -234,16 +235,18 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (paymentMethodList, walletList, paymentOptionsList, actualList))
 
   React.useEffect(() => {
-    if layoutClass.\"type" == Tabs {
-      let isCard = cardOptions->Array.includes(selectedOption)
-      if !isCard {
-        let (cardArr, dropdownArr) = CardUtils.swapCardOption(
-          cardOptions,
-          dropDownOptions,
-          selectedOption,
-        )
-        setCardOptions(_ => cardArr)
-        setDropDownOptions(_ => dropdownArr)
+    if !showAllPaymentMethods {
+      if layoutClass.\"type" == Tabs {
+        let isCard = cardOptions->Array.includes(selectedOption)
+        if !isCard {
+          let (cardArr, dropdownArr) = CardUtils.swapCardOption(
+            cardOptions,
+            dropDownOptions,
+            selectedOption,
+          )
+          setCardOptions(_ => cardArr)
+          setDropDownOptions(_ => dropdownArr)
+        }
       }
     }
     if selectedOption !== "" {
@@ -253,18 +256,27 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         ~paymentMethod=selectedOption->String.toUpperCase,
       )
     }
+
     None
-  }, (selectedOption, cardOptions, dropDownOptions))
+  }, (selectedOption, cardOptions, dropDownOptions, showAllPaymentMethods, layoutClass))
+
+  let isSelectedOptionValid = React.useMemo(() => {
+    selectedOption !== "" && paymentOptions->Array.includes(selectedOption)
+  }, (paymentOptions, selectedOption))
 
   React.useEffect(() => {
     let cardsCount: int = cardsToRender(cardsContainerWidth)
     let cardOpts = Array.slice(~start=0, ~end=cardsCount, paymentOptions)
     let dropOpts = paymentOptions->Array.sliceToEnd(~start=cardsCount)
     let isCard: bool = cardOpts->Array.includes(selectedOption)
-    if !isCard && selectedOption !== "" && paymentOptions->Array.includes(selectedOption) {
+    let shouldSwapSelectedOption = !isCard && isSelectedOptionValid && !showAllPaymentMethods
+    if shouldSwapSelectedOption {
       let (cardArr, dropdownArr) = CardUtils.swapCardOption(cardOpts, dropOpts, selectedOption)
       setCardOptions(_ => cardArr)
       setDropDownOptions(_ => dropdownArr)
+    } else if showAllPaymentMethods {
+      setCardOptions(_ => paymentOptions)
+      setDropDownOptions(_ => [])
     } else {
       setCardOptions(_ => cardOpts)
       setDropDownOptions(_ => dropOpts)

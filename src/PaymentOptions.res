@@ -55,7 +55,8 @@ let make = (
   ~expiryProps: CardUtils.expiryProps,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {readOnly, customMethodNames, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let payOptionsRef = React.useRef(Nullable.null)
   let selectRef = React.useRef(Nullable.null)
   let (winW, winH) = Utils.useWindowSize()
@@ -123,18 +124,34 @@ let make = (
     <span className={`scale-90 animate-slowShow ${toggleIconElement ? "hidden" : ""}`}> ele </span>
   }
 
+  let className = switch layoutClass.paymentMethodsArrangementForTabs {
+  | Grid => "TabHeader grid gap-4 overflow-y-auto"
+  | _ => "TabHeader flex flex-row overflow-auto no-scrollbar"
+  }
+
+  let baseStyles: JsxDOM.style = {
+    columnGap: themeObj.spacingTab,
+    marginBottom: themeObj.spacingGridColumn,
+    paddingBottom: "7px",
+    padding: "4px",
+    height: "auto",
+  }
+
+  let style = switch layoutClass.paymentMethodsArrangementForTabs {
+  | Grid => {
+      ...baseStyles,
+      gridTemplateColumns: `repeat(${Int.toString(cardShimmerCount)}, minmax(0, 1fr))`,
+      gridAutoRows: "1fr",
+    }
+  | _ => baseStyles
+  }
+
   <div className="w-full">
     <div
       ref={payOptionsRef->ReactDOM.Ref.domRef}
-      className="TabHeader flex flex-row overflow-auto no-scrollbar"
+      className
       dataTestId={TestUtils.paymentMethodListTestId}
-      style={
-        columnGap: themeObj.spacingTab,
-        marginBottom: themeObj.spacingGridColumn,
-        paddingBottom: "7px",
-        padding: "4px",
-        height: "auto",
-      }>
+      style>
       {cardOptionDetails
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption

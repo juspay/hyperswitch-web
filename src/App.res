@@ -90,6 +90,7 @@ let make = () => {
     | "cardVault" => <CardVault />
     | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
     | "preMountLoader" => {
+        let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
         let paymentId = getQueryParamsDictforKey(url.search, "paymentId")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
@@ -114,6 +115,7 @@ let make = () => {
           publishableKey
           profileId
           sessionId
+          sdkAuthorization
           clientSecret
           paymentId
           endpoint

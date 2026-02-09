@@ -46,6 +46,7 @@ let useMessageHandler = getMessageHandler => {
 }
 
 let getMessageHandlerV1Elements = (
+  ~sdkAuthorization,
   ~clientSecret,
   ~publishableKey,
   ~logger,
@@ -77,6 +78,7 @@ let getMessageHandlerV1Elements = (
         ~logger,
         ~customPodUri,
         ~endpoint,
+        ~sdkAuthorization=Some(sdkAuthorization),
       ),
       PaymentHelpers.fetchCustomerPaymentMethodList(
         ~clientSecret,
@@ -84,6 +86,7 @@ let getMessageHandlerV1Elements = (
         ~logger,
         ~customPodUri,
         ~endpoint,
+        ~sdkAuthorization=Some(sdkAuthorization),
       ),
       PaymentHelpers.fetchSessions(
         ~clientSecret,
@@ -92,6 +95,7 @@ let getMessageHandlerV1Elements = (
         ~customPodUri,
         ~endpoint,
         ~merchantHostname,
+        ~sdkAuthorization=Some(sdkAuthorization),
       ),
       PaymentHelpers.fetchBlockedBins(
         ~clientSecret,
@@ -99,6 +103,7 @@ let getMessageHandlerV1Elements = (
         ~logger,
         ~customPodUri,
         ~endpoint,
+        ~sdkAuthorization=Some(sdkAuthorization),
       ),
     )
   }
@@ -220,6 +225,7 @@ module PreMountLoaderForElements = {
   let make = (
     ~logger,
     ~publishableKey,
+    ~sdkAuthorization,
     ~clientSecret,
     ~paymentId,
     ~endpoint,
@@ -233,6 +239,7 @@ module PreMountLoaderForElements = {
       switch GlobalVars.sdkVersion {
       | V1 =>
         getMessageHandlerV1Elements(
+          ~sdkAuthorization,
           ~clientSecret,
           ~publishableKey,
           ~logger,
@@ -296,6 +303,7 @@ let make = (
   ~sessionId,
   ~publishableKey,
   ~profileId,
+  ~sdkAuthorization,
   ~clientSecret,
   ~endpoint,
   ~paymentId,
@@ -320,6 +328,7 @@ let make = (
     <PreMountLoaderForElements
       logger
       publishableKey
+      sdkAuthorization
       clientSecret
       endpoint
       merchantHostname

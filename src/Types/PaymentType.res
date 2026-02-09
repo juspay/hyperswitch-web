@@ -1,4 +1,5 @@
 type showTerms = Auto | Always | Never
+type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
 type layout = Accordion | Tabs
 type groupingBehavior = GroupByPaymentMethods | Default
@@ -112,6 +113,8 @@ type layoutConfig = {
   maxAccordionItems: int,
   \"type": layout,
   savedMethodCustomization: savedMethodCustomization,
+  paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabs,
+  displayOneClickPaymentMethodsOnTop: bool,
 }
 
 type layoutType =
@@ -282,6 +285,8 @@ let defaultLayout = {
   maxAccordionItems: 4,
   \"type": Tabs,
   savedMethodCustomization: {groupingBehavior: Default},
+  paymentMethodsArrangementForTabs: Default,
+  displayOneClickPaymentMethodsOnTop: true,
 }
 let defaultAddress: address = {
   line1: "",
@@ -481,6 +486,18 @@ let getLayout = str => {
     }
   }
 }
+
+let getPaymentMethodsArrangementForTabs = str => {
+  switch str {
+  | "grid" => Grid
+  | "default" => Default
+  | str => {
+      str->unknownPropValueWarning(["grid", "default"], "options.paymentMethodsArrangementForTabs")
+      Default
+    }
+  }
+}
+
 let getAddress = (dict, str, logger) => {
   dict
   ->Dict.get(str)
@@ -793,6 +810,12 @@ let getLayoutValues = (val, logger) => {
   | Object(json) =>
     ObjectLayout({
       let layoutType = getWarningString(json, "type", "tabs", ~logger)
+      let paymentMethodsArrangementForTabsType = getWarningString(
+        json,
+        "paymentMethodsArrangementForTabs",
+        "default",
+        ~logger,
+      )
       unknownKeysWarning(
         [
           "defaultCollapsed",
@@ -815,6 +838,13 @@ let getLayoutValues = (val, logger) => {
           json,
           "savedMethodCustomization",
           logger,
+        ),
+        paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabsType->getPaymentMethodsArrangementForTabs,
+        displayOneClickPaymentMethodsOnTop: getBoolWithWarning(
+          json,
+          "displayOneClickPaymentMethodsOnTop",
+          true,
+          ~logger,
         ),
       }
     })

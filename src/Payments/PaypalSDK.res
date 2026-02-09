@@ -8,6 +8,7 @@ let make = (~sessionObj: SessionsType.token) => {
     publishableKey,
     sdkHandleOneClickConfirmPayment,
     clientSecret,
+    sdkAuthorization,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
@@ -109,6 +110,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~clientSecret,
         ~isTestMode,
         ~nonPiiAdderessData,
+        ~sdkAuthorization,
       )
     })
     Window.body->Window.appendChild(paypalScript)

@@ -4,16 +4,17 @@ open Utils
 @react.component
 let make = (~cvcProps: CardUtils.cvcProps) => {
   let (paymentTokenAtom, setPaymentTokenAtom) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
-  let {iframeId, publishableKey, profileId} = Recoil.useRecoilValueFromAtom(keys)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
   let nickName = Recoil.useRecoilValueFromAtom(userCardNickName)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
   let (_, setManagePaymentMethod) = Recoil.useRecoilState(RecoilAtomsV2.managePaymentMethod)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let updateCard = PaymentHelpersV2.useUpdateCard(Some(loggerState), Card)
+  let {iframeId, publishableKey, profileId} = keys
   let {isCVCValid, cvcNumber, setCvcError} = cvcProps
   let complete = isCVCValid->Option.getOr(false) && paymentTokenAtom.paymentToken !== ""
   let isEmpty = cvcNumber == ""
@@ -23,10 +24,15 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   let updateSavedMethodV2 = (
     savedMethods: array<UnifiedPaymentsTypesV2.customerMethods>,
     paymentMethodToken,
-    updatedCustomerMethod: UnifiedPaymentsTypesV2.customerMethods,
+    updatedPaymentMethod: UnifiedPaymentsTypesV2.paymentMethodsUpdate,
   ) => {
     savedMethods->Array.map(savedMethod =>
-      savedMethod.paymentToken !== paymentMethodToken ? savedMethod : updatedCustomerMethod
+      savedMethod.paymentToken === paymentMethodToken
+        ? {
+            ...savedMethod,
+            paymentMethodData: updatedPaymentMethod.paymentMethodData,
+          }
+        : savedMethod
     )
   }
 
@@ -51,21 +57,27 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
     try {
       let res = await PaymentHelpersV2.updatePaymentMethod(
         ~bodyArr,
-        ~pmClientSecret=config.pmClientSecret,
+        ~pmClientSecret=keys.pmClientSecret->Option.getOr(""),
         ~publishableKey,
         ~profileId,
-        ~pmSessionId=config.pmSessionId,
+        ~pmSessionId=keys.pmSessionId->Option.getOr(""),
         ~logger,
         ~customPodUri,
       )
 
       let dict = res->getDictFromJson
-      let paymentMethodToken = dict->getString("payment_method_token", "")
+      let paymentMethodDetails = dict->UnifiedHelpersV2.itemToPaymentMethodsUpdateMapper
+      let associatedPaymentMethods =
+        paymentMethodDetails.associatedPaymentMethods
+        ->Array.get(0)
+        ->Option.getOr(PaymentConfirmTypesV2.defaultAssociatedPaymentMethodObj)
+      let paymentMethodToken = associatedPaymentMethods.token.data
 
       if paymentMethodToken != "" {
         setManagePaymentMethod(_ => "")
-        let updatedCard = dict->UnifiedHelpersV2.itemToPaymentDetails
-        setSavedMethodsV2(prev => prev->updateSavedMethodV2(paymentMethodToken, updatedCard))
+        setSavedMethodsV2(prev =>
+          prev->updateSavedMethodV2(paymentMethodToken, paymentMethodDetails)
+        )
       } else {
         Console.error2("Payment Id Empty ", res->JSON.stringify)
       }
@@ -88,9 +100,9 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
       let res = await PaymentHelpersV2.deletePaymentMethodV2(
         ~publishableKey,
         ~profileId,
-        ~pmClientSecret=config.pmClientSecret,
+        ~pmClientSecret=keys.pmClientSecret->Option.getOr(""),
         ~paymentMethodToken=paymentItem.paymentToken,
-        ~pmSessionId=config.pmSessionId,
+        ~pmSessionId=keys.pmSessionId->Option.getOr(""),
         ~logger,
         ~customPodUri,
       )
