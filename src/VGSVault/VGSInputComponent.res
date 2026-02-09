@@ -17,17 +17,17 @@ let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?) => {
       condition={fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
       innerLayout === Spaced}>
-      <div
+      <label
+        htmlFor=id
         className={`Label Label--empty`}
         style={
           fontWeight: themeObj.fontWeightNormal,
           fontSize: themeObj.fontSizeLg,
           marginBottom: "5px",
           opacity: "0.6",
-        }
-        ariaHidden=true>
+        }>
         {React.string(fieldName)}
-      </div>
+      </label>
     </RenderIf>
     <div className="flex flex-row " style={direction: "ltr"}>
       <div className={`relative w-full `}>

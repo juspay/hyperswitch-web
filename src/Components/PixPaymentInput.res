@@ -47,7 +47,15 @@ let make = (~fieldType="") => {
     }
   }
 
-  let (fieldName, setValue, value, placeholder, maxLength, validationFn) = switch fieldType {
+  let (
+    fieldName,
+    setValue,
+    value,
+    placeholder,
+    maxLength,
+    validationFn,
+    inputMode,
+  ) = switch fieldType {
   | "pixKey" => (
       localeString.pixKeyLabel,
       setPixKey,
@@ -55,6 +63,7 @@ let make = (~fieldType="") => {
       localeString.pixKeyPlaceholder,
       None,
       validatePixKey,
+      None,
     )
   | "pixCPF" => (
       localeString.pixCPFLabel,
@@ -63,6 +72,7 @@ let make = (~fieldType="") => {
       localeString.pixCPFPlaceholder,
       Some(11),
       validatePixCPF,
+      Some("numeric"),
     )
   | "pixCNPJ" => (
       localeString.pixCNPJLabel,
@@ -71,6 +81,7 @@ let make = (~fieldType="") => {
       localeString.pixCNPJPlaceholder,
       Some(14),
       validatePixCNPJ,
+      Some("numeric"),
     )
   | _ => (
       "",
@@ -79,6 +90,7 @@ let make = (~fieldType="") => {
       "",
       None,
       _ => RecoilAtoms.defaultFieldValues,
+      None,
     )
   }
 
@@ -133,11 +145,14 @@ let make = (~fieldType="") => {
     value
     onChange
     onBlur
-    type_=fieldType
+    type_="text"
     name=fieldType
     inputRef
     placeholder
     ?maxLength
     paymentType=Payment
+    id={`${fieldType}-input`}
+    autocomplete="off"
+    ?inputMode
   />
 }

@@ -95,11 +95,14 @@ let make = () => {
       onChange=changeSocialSecurityNumber
       errorString=socialSecurityNumberError
       isValid={socialSecurityNumberError == "" ? None : Some(false)}
-      type_="tel"
+      type_="text"
       maxLength=14
       onBlur=socialSecurityNumberBlur
       inputRef=socialSecurityNumberRef
       placeholder="000.000.000-00"
+      id="social-security-number-input"
+      autocomplete="off"
+      inputMode="numeric"
     />
     <Surcharge paymentMethod paymentMethodType />
     <InfoElement />

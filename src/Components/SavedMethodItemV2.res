@@ -201,7 +201,8 @@ let make = (
                         onBlur=handleCVCBlur
                         errorString=""
                         inputFieldClassName="flex justify-start"
-                        type_="tel"
+                        type_="text"
+                        inputMode="numeric"
                         className={`tracking-widest justify-start w-full`}
                         maxLength=4
                         inputRef=cvcRef
@@ -209,6 +210,8 @@ let make = (
                         height="1.8rem"
                         name={TestUtils.cardCVVInputTestId}
                         autocomplete="cc-csc"
+                        id="card-csc-input"
+                        ariaPlaceholder=""
                       />
                     </div>
                   </div>

@@ -61,10 +61,12 @@ let make = (
           value={`**** **** **** ${paymentItem.paymentMethodData.card.last4Digits}`}
           onChange={_ => ()}
           paymentType=CardThemeType.Card
-          type_="tel"
+          type_="text"
           inputRef={React.useRef(Nullable.null)}
           name=TestUtils.cardNoInputTestId
           isDisabled=true
+          id=TestUtils.cardNoInputTestId
+          inputMode="numeric"
         />
       </div>
       <div className={innerLayout === Spaced ? "w-[30%]" : "w-[50%]"}>
@@ -73,11 +75,13 @@ let make = (
           value={`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}
           onChange={_ => ()}
           paymentType=CardThemeType.Card
-          type_="tel"
+          type_="text"
+          inputMode="numeric"
           inputRef={React.useRef(Nullable.null)}
           placeholder=localeString.expiryPlaceholder
           name=TestUtils.expiryInputTestId
           isDisabled=true
+          id=TestUtils.expiryInputTestId
         />
       </div>
     </div>

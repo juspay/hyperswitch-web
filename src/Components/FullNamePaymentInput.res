@@ -71,6 +71,8 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
       inputRef=nameRef
       placeholder
       name=TestUtils.fullNameInputTestId
+      id="full-name-input"
+      autocomplete="name"
     />
   </RenderIf>
 }

@@ -7,6 +7,9 @@ let make = (
   ~options,
   ~disabled=false,
   ~className="",
+  ~id,
+  ~isRequired=true,
+  ~autocomplete="",
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -71,26 +74,31 @@ let make = (
     themeObj.colorBackground
   }, [themeObj])
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
+
+  let (id, suffix) = id == "" ? (fieldName, "select") : (id, "")
+  let selectId = AccessibilityUtils.generateElementId(~baseId=id, ~suffix)
+
   <RenderIf condition={options->Array.length > 0}>
     <div className="flex flex-col w-full" style={color: themeObj.colorText}>
       <RenderIf
         condition={fieldName->String.length > 0 &&
         config.appearance.labels == Above &&
         isSpacedInnerLayout}>
-        <div
+        <label
+          htmlFor=selectId
           className={`Label ${labelClass} `}
           style={
             fontWeight: themeObj.fontWeightNormal,
             fontSize: themeObj.fontSizeLg,
             marginBottom: "5px",
             opacity: "0.6",
-          }
-          ariaHidden=true>
+          }>
           {React.string(fieldName)}
-        </div>
+        </label>
       </RenderIf>
       <div className="relative">
         <select
+          id=selectId
           ref={dropdownRef->ReactDOM.Ref.domRef}
           style={
             background: disabled ? disbaledBG : themeObj.colorBackground,
@@ -101,10 +109,12 @@ let make = (
           name=""
           value=value.value
           disabled={readOnly || disabled}
-          onFocus={handleFocus}
+          onFocus=handleFocus
           onChange=handleChange
           className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
-          ariaLabel={`${fieldName} option tab`}>
+          ariaLabel=fieldName
+          ariaRequired=isRequired
+          autoComplete=autocomplete>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>

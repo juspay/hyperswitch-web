@@ -119,12 +119,15 @@ let make = (
             onChange=changeCardNumber
             onBlur=handleCardBlur
             onFocus=handleElementFocus
-            type_="tel"
+            type_="text"
             maxLength=maxCardLength
             inputRef=cardRef
             placeholder="1234 1234 1234 1234"
             isFocus
             autocomplete="cc-number"
+            id="card-number-input"
+            ariaPlaceholder=""
+            inputMode="numeric"
           />
         </div>
       </div>}
@@ -138,13 +141,15 @@ let make = (
             onChange=changeCardExpiry
             onBlur=handleExpiryBlur
             onFocus=handleElementFocus
-            type_="tel"
+            type_="text"
             paymentType
             maxLength=7
             inputRef=expiryRef
             placeholder=localeString.expiryPlaceholder
             isFocus
             autocomplete="cc-exp"
+            id="card-expiry-input"
+            inputMode="numeric"
           />
         </div>
         <div className="w-1/5">
@@ -157,13 +162,16 @@ let make = (
             onBlur=handleCVCBlur
             onFocus=handleElementFocus
             paymentType
-            type_="tel"
+            type_="text"
             className={`tracking-widest w-auto`}
             maxLength=4
             inputRef=cvcRef
             placeholder="123"
             isFocus
             autocomplete="cc-csc"
+            id="card-csc-input"
+            ariaPlaceholder=""
+            inputMode="numeric"
           />
         </div>
         <RenderIf condition={!options.hidePostalCode}>
@@ -177,10 +185,13 @@ let make = (
               onBlur=handleZipBlur
               onFocus=handleElementFocus
               paymentType
-              type_="tel"
+              type_="text"
               inputRef=zipRef
               placeholder="ZIP"
               isFocus
+              id="zip-code-input"
+              autocomplete="postal-code"
+              inputMode="numeric"
             />
           </div>
         </RenderIf>
