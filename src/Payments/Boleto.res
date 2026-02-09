@@ -100,6 +100,8 @@ let make = () => {
       onBlur=socialSecurityNumberBlur
       inputRef=socialSecurityNumberRef
       placeholder="000.000.000-00"
+      id="social-security-number-input"
+      autocomplete="off"
     />
     <Surcharge paymentMethod paymentMethodType />
     <InfoElement />

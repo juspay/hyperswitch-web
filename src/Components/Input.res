@@ -1,4 +1,6 @@
 open RecoilAtoms
+open AccessibilityUtils
+
 @react.component
 let make = (
   ~isValid=None,
@@ -18,6 +20,8 @@ let make = (
   ~placeholder="",
   ~className="",
   ~inputRef,
+  ~isRequired=true,
+  ~autocomplete="",
 ) => {
   let options = Recoil.useRecoilValueFromAtom(elementOptions)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -58,9 +62,12 @@ let make = (
     ""
   }
 
+  let ariaInvalid = isValid->getAriaInvalidState
+  let errorId = id->getErrorId
+
   <div className={` flex flex-col w-full`} style={color: themeObj.colorText}>
     <RenderIf condition={fieldName->String.length > 0}>
-      <div> {React.string(fieldName)} </div>
+      <label htmlFor={id} className="input-label"> {React.string(fieldName)} </label>
     </RenderIf>
     <div className="flex flex-row " style={direction: direction}>
       <input
@@ -82,7 +89,11 @@ let make = (
         onChange
         onBlur=handleBlur
         onFocus=handleFocus
-        ariaLabel={`Type to fill ${fieldName} input`}
+        ariaLabel=fieldName
+        ariaInvalid
+        ariaRequired=isRequired
+        ariaDescribedby={isValid->Option.getOr(false) ? errorId : ""}
+        autoComplete=autocomplete
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>
     </div>
@@ -90,6 +101,9 @@ let make = (
     | Some(val) =>
       <RenderIf condition={val->String.length > 0}>
         <div
+          id=errorId
+          role="alert"
+          ariaLive=#polite
           className="py-1 text-xs text-red-600 transition-colors transition-border ease-out duration-200">
           {React.string(val)}
         </div>

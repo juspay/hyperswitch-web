@@ -241,6 +241,8 @@ let make = (~setModalData) => {
         maxLength=17
         placeholder="eg: John Doe"
         onBlur={_ => setInputFocus(_ => NONE)}
+        id="account-holder-name-input"
+        autocomplete="name"
       />
       <RenderIf condition={isSepaDebit}>
         <div
@@ -260,6 +262,8 @@ let make = (~setModalData) => {
           maxLength=42
           inputRef=ibanRef
           placeholder="eg: DE00 0000 0000 0000 0000 00"
+          id="iban-input"
+          autocomplete="off"
         />
       </RenderIf>
       <div className="flex flex-row items-center w-full justify-between">
@@ -288,6 +292,8 @@ let make = (~setModalData) => {
               errorString=routingError
               onBlur=routingBlur
               onFocus={_ => setInputFocus(_ => Routing)}
+              id="routing-number-input"
+              autocomplete="off"
             />
           </div>
         </RenderIf>
@@ -313,6 +319,8 @@ let make = (~setModalData) => {
               placeholder="000123456789"
               onFocus={_ => setInputFocus(_ => Account)}
               onBlur={_ => setInputFocus(_ => NONE)}
+              id="account-number-input"
+              autocomplete="off"
             />
           </div>
         </RenderIf>
@@ -363,6 +371,8 @@ let make = (~setModalData) => {
           className={`p-2 text-base px-4`}
           maxLength=7
           placeholder="eg: 000-000"
+          id="bsb-input"
+          autocomplete="off"
         />
       </RenderIf>
       <Button
