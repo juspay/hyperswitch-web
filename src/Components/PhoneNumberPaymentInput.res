@@ -99,6 +99,8 @@ let make = () => {
       setValueDropDown
       displayValue
       setDisplayValue
+      id="phone-input"
+      autocomplete="tel"
     />
   </RenderIf>
 }

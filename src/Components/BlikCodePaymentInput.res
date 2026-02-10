@@ -53,10 +53,10 @@ let make = () => {
   }, [blikCode])
   useSubmitPaymentData(submitCallback)
 
-  <RenderIf condition={true}>
+  <RenderIf condition=true>
     <PaymentField
       fieldName="Blik code"
-      setValue={setblikCode}
+      setValue=setblikCode
       value=blikCode
       onChange=changeblikCode
       paymentType=Payment
@@ -65,6 +65,8 @@ let make = () => {
       inputRef=blikCodeRef
       placeholder="000 000"
       maxLength=7
+      id="blik-code-input"
+      autocomplete="off"
     />
   </RenderIf>
 }

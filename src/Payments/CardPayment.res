@@ -506,6 +506,8 @@ let make = (
                 : ""}
               name=TestUtils.cardNoInputTestId
               autocomplete="cc-number"
+              id="card-number-input"
+              ariaPlaceholder=""
             />
             <div
               className="flex flex-row w-full place-content-between"
@@ -527,6 +529,8 @@ let make = (
                   placeholder=localeString.expiryPlaceholder
                   name=TestUtils.expiryInputTestId
                   autocomplete="cc-exp"
+                  id="card-expiry-input"
+                  ariaPlaceholder=""
                 />
               </div>
               <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
@@ -551,6 +555,8 @@ let make = (
                   placeholder="123"
                   name=TestUtils.cardCVVInputTestId
                   autocomplete="cc-csc"
+                  id="card-csc-input"
+                  ariaPlaceholder=""
                 />
               </div>
             </div>

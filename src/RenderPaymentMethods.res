@@ -92,9 +92,10 @@ let make = (
             maxLength=maxCardLength
             inputRef=cardRef
             placeholder="1234 1234 1234 1234"
-            id="card-number"
+            id="card-number-input"
             isFocus
             autocomplete="cc-number"
+            ariaPlaceholder=""
           />
         | CardExpiryElement =>
           <InputField
@@ -108,7 +109,7 @@ let make = (
             maxLength=7
             inputRef=expiryRef
             placeholder=localeString.expiryPlaceholder
-            id="card-expiry"
+            id="card-expiry-input"
             isFocus
             autocomplete="cc-exp"
           />
@@ -125,9 +126,10 @@ let make = (
             maxLength=4
             inputRef=cvcRef
             placeholder="123"
-            id="card-cvc"
+            id="card-cvc-input"
             isFocus
             autocomplete="cc-csc"
+            ariaPlaceholder=""
           />
         | PaymentMethodsManagement =>
           <ReusableReactSuspense

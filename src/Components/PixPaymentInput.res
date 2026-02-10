@@ -139,5 +139,7 @@ let make = (~fieldType="") => {
     placeholder
     ?maxLength
     paymentType=Payment
+    id={`${fieldType}-input`}
+    autocomplete="off"
   />
 }

@@ -209,6 +209,8 @@ let make = (
                         height="1.8rem"
                         name={TestUtils.cardCVVInputTestId}
                         autocomplete="cc-csc"
+                        id="card-csc-input"
+                        ariaPlaceholder=""
                       />
                     </div>
                   </div>

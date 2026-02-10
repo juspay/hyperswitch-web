@@ -52,5 +52,7 @@ let make = () => {
     placeholder={localeString.giftCardNumberPlaceholder}
     maxLength=32
     paymentType=Payment
+    id="gift-card-number-input"
+    autocomplete="cc-number"
   />
 }

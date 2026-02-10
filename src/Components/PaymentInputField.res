@@ -1,5 +1,6 @@
 open RecoilAtoms
 open PaymentTypeContext
+open AccessibilityUtils
 
 @react.component
 let make = (
@@ -24,6 +25,9 @@ let make = (
   ~paymentType=?,
   ~isDisabled=false,
   ~autocomplete="on",
+  ~id="",
+  ~isRequired=true,
+  ~ariaPlaceholder=?,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
@@ -85,26 +89,30 @@ let make = (
   let inputLogoClass = getClassName("InputLogo")
   let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
 
+  let ariaInvalid = isValid->getAriaInvalidState
+  let errorId = id->getErrorId
+
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
     <RenderIf
       condition={fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
       innerLayout === Spaced}>
-      <div
+      <label
+        htmlFor=id
         className={`Label ${labelClass}`}
         style={
           fontWeight: themeObj.fontWeightNormal,
           fontSize: themeObj.fontSizeLg,
           marginBottom: "5px",
           opacity: "0.6",
-        }
-        ariaHidden=true>
+        }>
         {React.string(fieldName)}
-      </div>
+      </label>
     </RenderIf>
     <div className="flex flex-row " style={direction: direction}>
       <div className={`relative w-full ${inputFieldClassName}`}>
         <input
+          id
           style={
             background: isDisabled ? themeObj.disabledFieldColor : backgroundClass,
             padding: themeObj.spacingUnit,
@@ -121,11 +129,15 @@ let make = (
           className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
           placeholder={config.appearance.labels == Above ? placeholder : ""}
           value
-          autoComplete={autocomplete}
+          autoComplete=autocomplete
           onChange
           onBlur=handleBlur
           onFocus=handleFocus
-          ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
+          ariaLabel=fieldName
+          ariaInvalid
+          ariaRequired=isRequired
+          ariaDescribedby={isValid->Option.getOr(false) ? errorId : ""}
+          ariaPlaceholder={ariaPlaceholder->Option.getOr("")}
         />
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
@@ -151,13 +163,16 @@ let make = (
       | Some(val) =>
         <RenderIf condition={val->String.length > 0}>
           <div
+            id=errorId
             className="Error pt-1"
             style={
               color: themeObj.colorDangerText,
               fontSize: themeObj.fontSizeSm,
               alignSelf: "start",
               textAlign: "left",
-            }>
+            }
+            role="alert"
+            ariaLive=#polite>
             {React.string(val)}
           </div>
         </RenderIf>

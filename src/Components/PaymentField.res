@@ -1,6 +1,7 @@
 open RecoilAtoms
 open RecoilAtomTypes
 open PaymentTypeContext
+open AccessibilityUtils
 
 @react.component
 let make = (
@@ -24,6 +25,9 @@ let make = (
   ~inputRef,
   ~displayValue=?,
   ~setDisplayValue=?,
+  ~id="",
+  ~isRequired=true,
+  ~autocomplete="on",
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -35,6 +39,9 @@ let make = (
   let paymentType = paymentType->Option.getOr(contextPaymentType)
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
+
+  let {value, isValid, errorString} = value
+  let hasError = isValid->Option.getOr(false)
 
   let handleFocus = _ => {
     setInputFocused(_ => true)
@@ -71,17 +78,17 @@ let make = (
   } else {
     ""
   }
-  let focusClass = if inputFocused || value.value->String.length > 0 {
+  let focusClass = if inputFocused || value->String.length > 0 {
     `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`
   } else {
     "transition-all ease-in duration-75"
   }
   let floatinglabelClass = inputFocused ? "Label--floating" : "Label--resting"
   let getClassName = initialLabel => {
-    if value.value->String.length == 0 {
+    if value->String.length == 0 {
       `${initialLabel}--empty`
     } else {
-      switch value.isValid {
+      switch isValid {
       | Some(valid) => valid ? `${initialLabel}--valid` : `${initialLabel}--invalid`
       | None => ""
       }
@@ -104,23 +111,26 @@ let make = (
     onChange(ev)
   }
 
+  let ariaInvalid = isValid->getAriaInvalidState
+  let errorId = id->getErrorId
+
   <div className="flex flex-col w-full">
     <RenderIf
       condition={name === "phone" &&
       fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
       isSpacedInnerLayout}>
-      <div
+      <label
+        htmlFor=id
         className={`Label ${labelClass}`}
         style={
           fontWeight: themeObj.fontWeightNormal,
           fontSize: themeObj.fontSizeLg,
           marginBottom: "5px",
           opacity: "0.6",
-        }
-        ariaHidden=true>
+        }>
         {React.string(fieldName)}
-      </div>
+      </label>
     </RenderIf>
     <div className={`flex ${flexDirectionBasedOnType} w-full`} style={color: themeObj.colorText}>
       <RenderIf condition={type_ === "tel"}>
@@ -141,21 +151,22 @@ let make = (
         fieldName->String.length > 0 &&
         config.appearance.labels == Above &&
         isSpacedInnerLayout}>
-        <div
+        <label
+          htmlFor=id
           className={`Label ${labelClass}`}
           style={
             fontWeight: themeObj.fontWeightNormal,
             fontSize: themeObj.fontSizeLg,
             marginBottom: "5px",
             opacity: "0.6",
-          }
-          ariaHidden=true>
+          }>
           {React.string(fieldName)}
-        </div>
+        </label>
       </RenderIf>
       <div className="flex flex-row w-full" style={direction: direction}>
         <div className="relative w-full">
           <input
+            id
             style={
               background: backgroundClass,
               padding: themeObj.spacingUnit,
@@ -171,22 +182,25 @@ let make = (
             placeholder={config.appearance.labels == Above || config.appearance.labels == Never
               ? placeholder
               : ""}
-            value={value.value}
-            autoComplete="on"
+            value
+            autoComplete=autocomplete
             onChange=wrappedOnChange
             onBlur=handleBlur
             onFocus=handleFocus
-            ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
+            ariaLabel=fieldName
+            ariaInvalid
+            ariaRequired=isRequired
+            ariaDescribedby={hasError ? errorId : ""}
           />
           <RenderIf condition={config.appearance.labels == Floating}>
             <div
               className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} pointer-events-none`}
               style={
                 marginBottom: {
-                  inputFocused || value.value->String.length > 0 ? "" : themeObj.spacingUnit
+                  inputFocused || value->String.length > 0 ? "" : themeObj.spacingUnit
                 },
                 fontSize: {
-                  inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
+                  inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""
                 },
                 opacity: "0.6",
               }
@@ -199,8 +213,9 @@ let make = (
           {rightIcon}
         </div>
       </div>
-      <RenderIf condition={value.errorString->String.length > 0}>
+      <RenderIf condition={errorString !== ""}>
         <div
+          id=errorId
           className="Error pt-1"
           style={
             color: themeObj.colorDangerText,
@@ -208,8 +223,9 @@ let make = (
             alignSelf: "start",
             textAlign: "left",
           }
-          ariaHidden=true>
-          {React.string(value.errorString)}
+          role="alert"
+          ariaLive=#polite>
+          {React.string(errorString)}
         </div>
       </RenderIf>
     </div>

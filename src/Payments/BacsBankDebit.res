@@ -153,6 +153,8 @@ let make = () => {
             onBlur=sortcodeBlur
             inputRef=sortCodeRef
             placeholder="10-80-00"
+            id="sort-code-input"
+            autocomplete="off"
           />
           <PaymentInputField
             fieldName=localeString.accountNumberText
@@ -161,6 +163,8 @@ let make = () => {
             type_="text"
             inputRef=accNumRef
             placeholder="00012345"
+            id="account-number-input"
+            autocomplete="off"
           />
         </div>
         <EmailPaymentInput />

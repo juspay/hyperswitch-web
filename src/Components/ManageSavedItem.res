@@ -65,6 +65,7 @@ let make = (
           inputRef={React.useRef(Nullable.null)}
           name=TestUtils.cardNoInputTestId
           isDisabled=true
+          id=TestUtils.cardNoInputTestId
         />
       </div>
       <div className={innerLayout === Spaced ? "w-[30%]" : "w-[50%]"}>
@@ -78,6 +79,7 @@ let make = (
           placeholder=localeString.expiryPlaceholder
           name=TestUtils.expiryInputTestId
           isDisabled=true
+          id=TestUtils.expiryInputTestId
         />
       </div>
     </div>
