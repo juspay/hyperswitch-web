@@ -459,7 +459,7 @@ let make = (
             />
           | DocumentType(opt) => {
               let updatedDocumentTypeArray =
-                opt->DropdownField.updateArrayOfStringToOptionsTypeArray
+                opt->DropdownField.updateArrayOfStringToOptionsTypeArrayWithUpperCaseLabel
               <DocumentNumberInput options={updatedDocumentTypeArray} />
             }
           | FullName =>

@@ -4,6 +4,12 @@ type optionType = {
   displayValue?: string,
 }
 
+let updateArrayOfStringToOptionsTypeArrayWithUpperCaseLabel = arrayOfString =>
+  arrayOfString->Array.map(item => {
+    value: item,
+    label: item->String.toUpperCase,
+  })
+
 let updateArrayOfStringToOptionsTypeArray = arrayOfString =>
   arrayOfString->Array.map(item => {
     value: item,
