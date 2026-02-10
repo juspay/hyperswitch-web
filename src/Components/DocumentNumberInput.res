@@ -17,14 +17,14 @@ let make = (~options) => {
     None
   }, (documentType, pixCNPJ, pixCPF))
 
-  <div className="flex flex-row gap-2">
+  <div className="flex w-full">
     <DropdownField
       appearance=config.appearance
       value=documentType
       setValue=setSelectedDocumentType
       fieldName=localeString.documentTypeLabel
       options
-      width="w-1/4"
+      width="w-40 mr-2"
     />
     {switch documentType {
     | "cpf" => <PixPaymentInput fieldType="pixCPF" />
