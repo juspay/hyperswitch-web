@@ -768,7 +768,16 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       let completeUpdateIntent = clientSecret => {
-        sessionUpdate(clientSecret)
+        if clientSecret != "" {
+          sessionUpdate(clientSecret)
+        } else {
+          let msg =
+            [
+              ("updateCompleted", false->JSON.Encode.bool),
+              ("errorMessage", "Client secret is empty"->JSON.Encode.string),
+            ]->getJsonFromArrayOfJson
+          Promise.resolve(msg)
+        }
       }
 
       let initiateUpdateIntent = () => {
