@@ -10,25 +10,25 @@ let make = (~options) => {
 
   React.useEffect(() => {
     switch documentType {
-    | "CPF" => setDocumentNumber(_ => pixCPF)
-    | "CNPJ" => setDocumentNumber(_ => pixCNPJ)
+    | "cpf" => setDocumentNumber(_ => pixCPF)
+    | "cnpj" => setDocumentNumber(_ => pixCNPJ)
     | _ => setDocumentNumber(_ => RecoilAtoms.defaultFieldValues)
     }
     None
   }, (documentType, pixCNPJ, pixCPF))
 
-  <div className="flex flex-row gap-2">
+  <div className="flex w-full">
     <DropdownField
       appearance=config.appearance
       value=documentType
       setValue=setSelectedDocumentType
       fieldName=localeString.documentTypeLabel
       options
-      width="w-1/4"
+      width="w-40 mr-2"
     />
     {switch documentType {
-    | "CPF" => <PixPaymentInput fieldType="pixCPF" />
-    | "CNPJ" => <PixPaymentInput fieldType="pixCNPJ" />
+    | "cpf" => <PixPaymentInput fieldType="pixCPF" />
+    | "cnpj" => <PixPaymentInput fieldType="pixCNPJ" />
     | _ => React.null
     }}
   </div>
