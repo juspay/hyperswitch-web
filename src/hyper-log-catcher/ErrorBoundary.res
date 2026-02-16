@@ -157,6 +157,7 @@ module ErrorCard = {
           // internalMetadata: "",
           category: USER_ERROR,
           paymentId: "",
+          authenticationId: "",
           merchantId: publishableKey,
           browserName: HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
           browserVersion: HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
