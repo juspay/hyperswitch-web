@@ -2127,7 +2127,7 @@ let fetchEnabledAuthnMethodsToken = async (
 
   await fetchApiWithLogging(
     uri,
-    ~eventName=ENABLED_AUTHN_METHODS_TOKEN_CALL,
+    ~eventName=ENABLED_AUTHN_METHODS_RETURNED,
     ~logger,
     ~method=#POST,
     ~bodyStr=body->JSON.stringify,
@@ -2178,7 +2178,7 @@ let fetchEligibilityCheck = async (
 
   await fetchApiWithLogging(
     uri,
-    ~eventName=ELIGIBILITY_CHECK_CALL,
+    ~eventName=ELIGIBILITY_CHECK_RETURNED,
     ~logger,
     ~method=#POST,
     ~bodyStr=body->JSON.stringify,
@@ -2231,7 +2231,7 @@ let fetchAuthenticationSync = async (
 
   await fetchApiWithLogging(
     uri,
-    ~eventName=AUTHENTICATION_SYNC_CALL,
+    ~eventName=AUTHENTICATION_SYNC_RETURNED,
     ~logger,
     ~method=#POST,
     ~bodyStr=body->JSON.stringify,

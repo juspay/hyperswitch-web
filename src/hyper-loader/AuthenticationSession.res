@@ -1,4 +1,5 @@
 open Types
+open ErrorUtils
 
 let make = (
   options,
@@ -39,6 +40,45 @@ let make = (
         ~merchantId,
       ),
   }
+
+  let clientSecretReMatch = switch GlobalVars.sdkVersion {
+  | V1 => Some(RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret))
+  | V2 => None
+  }
+  switch clientSecretReMatch {
+  | Some(false) =>
+    logger.setLogError(
+      ~value=`Invalid Client Secret Format: ${clientSecret}`,
+      ~eventName=AUTHENTICATION_SESSION_RETURNED,
+    )
+    let errorObject = Utils.getFailedSubmitResponse(
+      ~errorType="INVALID_FORMAT",
+      ~message="clientSecret is expected to be in format ******_secret_*****",
+    )
+    Exn.raiseError(errorObject->JSON.stringify)
+  | _ => ()
+  }
+
+  switch authenticationId {
+  | ""
+  | "null" =>
+    logger.setLogError(
+      ~value=`Invalid AuthenticationId: ${authenticationId}`,
+      ~eventName=AUTHENTICATION_SESSION_RETURNED,
+    )
+    let errorObject = Utils.getFailedSubmitResponse(
+      ~errorType="INVALID_FORMAT",
+      ~message="authenticationId is expected to be a non-empty string",
+    )
+    Exn.raiseError(errorObject->JSON.stringify)
+  | _ => ()
+  }
+
+  logger.setLogInfo(
+    ~value="Successfully initialized AuthenticationSession module",
+    ~logType=DEBUG,
+    ~eventName=AUTHENTICATION_SESSION_RETURNED,
+  )
 
   defaultInitAuthenticationSession
 }

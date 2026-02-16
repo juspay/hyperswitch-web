@@ -455,14 +455,14 @@ let rec transformKeysWithoutModifyingValue = (json: JSON.t, to: case) => {
   ->Dict.toArray
   ->Array.map(((key, value)) => {
     let x = switch JSON.Classify.classify(value) {
-    | Object(obj) => (key->toCase, obj->JSON.Encode.object->transformKeys(to))
+    | Object(obj) => (key->toCase, obj->JSON.Encode.object->transformKeysWithoutModifyingValue(to))
     | Array(arr) => (
         key->toCase,
         {
           arr
           ->Array.map(item =>
             if item->JSON.Decode.object->Option.isSome {
-              item->transformKeys(to)
+              item->transformKeysWithoutModifyingValue(to)
             } else {
               item
             }
@@ -1757,6 +1757,8 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
 }
+
+let getStringFromBool = val => val ? "true" : "false"
 
 let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventName) => {
   if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {

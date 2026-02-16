@@ -31,6 +31,7 @@ let logFileToObj = logFile => {
     ("session_id", logFile.sessionId->JSON.Encode.string),
     ("merchant_id", logFile.merchantId->JSON.Encode.string),
     ("payment_id", logFile.paymentId->JSON.Encode.string),
+    ("authentication_id", logFile.authenticationId->JSON.Encode.string),
     ("app_id", logFile.appId->JSON.Encode.string),
     ("platform", logFile.platform->convertToScreamingSnakeCase->JSON.Encode.string),
     ("user_agent", logFile.userAgent->JSON.Encode.string),
@@ -112,6 +113,7 @@ let make = (
   ~sessionId=?,
   ~source: source,
   ~clientSecret=?,
+  ~authenticationId=?,
   ~merchantId=?,
   ~metadata=?,
   ~ephemeralKey=?,
@@ -203,10 +205,15 @@ let make = (
   }
 
   let clientSecret = getRefFromOption(clientSecret)
+  let authenticationId = getRefFromOption(authenticationId)
   let ephemeralKey = getRefFromOption(ephemeralKey)
 
   let setClientSecret = value => {
     clientSecret := value
+  }
+
+  let setAuthenticationId = value => {
+    authenticationId := value
   }
 
   let setEphemeralKey = value => {
@@ -248,9 +255,9 @@ let make = (
     switch timeOut.contents {
     | Some(val) => {
         clearTimeout(val)
-        timeOut := Some(setTimeout(() => sendLogs(), 20000))
+        timeOut := Some(setTimeout(() => sendLogs(), 2000))
       }
-    | None => timeOut := Some(setTimeout(() => sendLogs(), 20000))
+    | None => timeOut := Some(setTimeout(() => sendLogs(), 2000))
     }
 
     let networkStatus = switch NetworkInformation.getNetworkState() {
@@ -289,6 +296,15 @@ let make = (
       APPLE_PAY_FLOW,
       PLAID_SDK,
       NETWORK_STATE,
+      AUTHENTICATION_SESSION,
+      INIT_CLICK_TO_PAY_SESSION,
+      GET_ACTIVE_CLICK_TO_PAY_SESSION,
+      IS_CUSTOMER_PRESENT,
+      GET_USER_TYPE,
+      GET_RECOGNISED_CARDS,
+      VALIDATE_CUSTOMER_AUTHENTICATION,
+      CHECKOUT,
+      SIGN_OUT,
     ]
     arrayOfLogs
     ->Array.find(log => {
@@ -302,9 +318,9 @@ let make = (
     switch timeOut.contents {
     | Some(val) => {
         clearTimeout(val)
-        timeOut := Some(setTimeout(() => sendLogs(), 20000))
+        timeOut := Some(setTimeout(() => sendLogs(), 2000))
       }
-    | None => timeOut := Some(setTimeout(() => sendLogs(), 20000))
+    | None => timeOut := Some(setTimeout(() => sendLogs(), 2000))
     }
 
     if mainLogFile->checkForPriorityEvents {
@@ -324,7 +340,9 @@ let make = (
       }
     | _ => {
         let logRequestTimestamp =
-          events.contents->Dict.get(eventName->eventNameToStrMapper ++ "_INIT")
+          events.contents->Dict.get(
+            eventName->apiEventInitMapper->Option.getOr(eventName)->eventNameToStrMapper,
+          )
         switch (logRequestTimestamp, apiLogType) {
         | (Some(_), Request) => 0.
         | (Some(float), _) => currentTimestamp -. float
@@ -357,6 +375,7 @@ let make = (
             // internalMetadata: "",
             category: USER_EVENT,
             paymentId: clientSecret.contents->getPaymentId,
+            authenticationId: authenticationId.contents,
             merchantId: merchantId.contents,
             browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
             browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -385,6 +404,7 @@ let make = (
             // internalMetadata: "",
             category: USER_EVENT,
             paymentId: clientSecret.contents->getPaymentId,
+            authenticationId: authenticationId.contents,
             merchantId: merchantId.contents,
             browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
             browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -436,6 +456,56 @@ let make = (
       // internalMetadata,
       category: logCategory,
       paymentId: clientSecret.contents->getPaymentId,
+      authenticationId: authenticationId.contents,
+      merchantId: merchantId.contents,
+      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+      platform: Window.Navigator.platform,
+      userAgent: Window.Navigator.userAgent,
+      appId: "",
+      eventName,
+      latency,
+      paymentMethod,
+      firstEvent,
+      metadata: metadata.contents,
+      ephemeralKey: ephemeralKey.contents,
+    }
+    ->conditionalLogPush
+    ->ignore
+    checkLogSizeAndSendData()
+    events.contents->Dict.set(eventNameStr, localTimestampFloat)
+  }
+
+  let setLogDebug = (
+    ~value,
+    // ~internalMetadata="",
+    ~eventName,
+    ~timestamp=?,
+    ~latency=?,
+    ~logType=DEBUG,
+    ~logCategory=USER_EVENT,
+    ~paymentMethod="",
+  ) => {
+    checkAndPushMissedEvents(eventName, paymentMethod)
+    let eventNameStr = eventName->eventNameToStrMapper
+    let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
+    let latency = switch latency {
+    | Some(lat) => lat->Float.toString
+    | None => calculateLatencyHook(~eventName)
+    }
+    let localTimestamp = timestamp->Option.getOr(Date.now()->Float.toString)
+    let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
+    {
+      logType,
+      timestamp: localTimestamp,
+      sessionId: sessionId.contents,
+      source: sourceString,
+      version: GlobalVars.repoVersion,
+      value,
+      // internalMetadata,
+      category: logCategory,
+      paymentId: clientSecret.contents->getPaymentId,
+      authenticationId: authenticationId.contents,
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -493,6 +563,7 @@ let make = (
       // },
       category: logCategory,
       paymentId: clientSecret.contents->getPaymentId,
+      authenticationId: authenticationId.contents,
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -540,6 +611,7 @@ let make = (
       // internalMetadata,
       category: logCategory,
       paymentId: clientSecret.contents->getPaymentId,
+      authenticationId: authenticationId.contents,
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -575,6 +647,7 @@ let make = (
       value: "log initiated",
       // internalMetadata: "",
       paymentId: clientSecret.contents->getPaymentId,
+      authenticationId: authenticationId.contents,
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -605,11 +678,13 @@ let make = (
 
   {
     setLogInfo,
+    setLogDebug,
     setLogInitiated,
     setConfirmPaymentValue,
     sendLogs,
     setSessionId,
     setClientSecret,
+    setAuthenticationId,
     setMerchantId,
     setMetadata,
     setLogApi,

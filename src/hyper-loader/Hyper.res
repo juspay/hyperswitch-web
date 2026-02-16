@@ -322,6 +322,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let iframeRef = ref([])
       let clientSecret = ref("")
+      let authenticationId = ref("")
       let paymentId = ref("")
       let ephemeralKey = ref("")
       let pmSessionId = ref("")
@@ -749,15 +750,20 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.flatMap(x => x->Dict.get("clientSecret"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
-        clientSecret := clientSecretId
+        let authenticationIdVal =
+          authenticationSessionOptions
+          ->Utils.getDictFromJson
+          ->Utils.getString("authenticationId", "")
+        authenticationId := authenticationIdVal
         Promise.make((resolve, _) => {
-          logger.setClientSecret(clientSecretId)
+          logger.setAuthenticationId(authenticationIdVal)
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
-          logger.setLogInfo(
+          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=AUTHENTICATION_SESSION)
+          logger.setLogDebug(
             ~value=Window.hrefWithoutSearch,
-            ~eventName=AUTHENTICATED_SESSION_INITIATED,
+            ~eventName=AUTHENTICATION_SESSION_INIT,
           )
           resolve()
         })

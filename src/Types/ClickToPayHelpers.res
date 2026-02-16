@@ -1092,6 +1092,13 @@ type vsdk = {
 
 type mastercardDirectDpaTransactionOptions = {dpaLocale: string}
 
+type visaDirectInitData = {
+  srciTransactionId: string,
+  srcInitiatorId: string,
+  srciDpaId: string,
+  dpaTransactionOptions: dpaTransactionOptionsVisa,
+}
+
 type c2pDirectInitData = {
   srciTransactionId: string,
   srcInitiatorId: string,
@@ -1105,7 +1112,7 @@ type mastercardDirect = {
 }
 
 type visaDirect = {
-  init: c2pDirectInitData => promise<{.}>,
+  init: visaDirectInitData => promise<{.}>,
   identityLookup: consumerIdentity => promise<JSON.t>,
 }
 
@@ -1235,12 +1242,10 @@ let checkoutVisaUnified = async (
   ~consumer: consumer,
   ~request3DSAuthentication=true,
 ) => {
-  let baseDpaTransactionOptions = {
-    acquirerBIN: clickToPayToken.acquirerBIN,
-    acquirerMerchantId: clickToPayToken.acquirerMerchantId,
-    merchantName: clickToPayToken.dpaName,
-    merchantOrderId: orderId->formatOrderId,
-  }
+  let baseDpaTransactionOptions = getVisaInitConfig(
+    clickToPayToken,
+    Some(orderId->formatOrderId),
+  ).dpaTransactionOptions
 
   let dpaTransactionOptions = request3DSAuthentication
     ? {
