@@ -46,6 +46,7 @@ let make = (
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="google_pay",
+    ~isOneClickWallet=isWallet,
   )
 
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
