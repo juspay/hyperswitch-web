@@ -153,14 +153,15 @@ let getQueryParamsDictforKey = (searchParams, keyName) => {
   searchParams
   ->String.split("&")
   ->Array.forEach(paramStr => {
-    let keyValArr = String.split(paramStr, "=")
-    let key = keyValArr->Array.get(0)->Option.getOr("")
-    let value = if keyValArr->Array.length > 0 {
-      keyValArr->Array.get(1)->Option.getOr("")
-    } else {
-      ""
+    let eqIndex = paramStr->String.indexOf("=")
+
+    if eqIndex != -1 {
+      let len = paramStr->String.length
+      let key = paramStr->String.slice(~start=0, ~end=eqIndex)
+      let value = paramStr->String.slice(~start=eqIndex + 1, ~end=len)
+
+      Dict.set(dict, key, value)
     }
-    Dict.set(dict, key, value)
   })
 
   dict->Dict.get(keyName)->Option.getOr("")
