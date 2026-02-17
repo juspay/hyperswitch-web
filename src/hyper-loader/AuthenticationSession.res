@@ -1,6 +1,10 @@
 open Types
 open ErrorUtils
 
+let initClickToPaySessionRef: ref<initClickToPaySessionInput> = ref({
+  request3DSAuthentication: None,
+})
+
 let make = (
   options,
   ~clientSecret,
@@ -16,7 +20,8 @@ let make = (
   let merchantId = options->Utils.getDictFromJson->Utils.getString("merchantId", "")
 
   let defaultInitAuthenticationSession = {
-    initClickToPaySession: initClickToPaySessionInput =>
+    initClickToPaySession: initClickToPaySessionInput => {
+      initClickToPaySessionRef := initClickToPaySessionInput
       AuthenticationSessionMethods.initClickToPaySession(
         ~clientSecret,
         ~publishableKey,
@@ -27,7 +32,8 @@ let make = (
         ~authenticationId,
         ~merchantId,
         ~initClickToPaySessionInput,
-      ),
+      )
+    },
     getActiveClickToPaySession: () =>
       AuthenticationSessionMethods.getActiveClickToPaySession(
         ~clientSecret,
@@ -38,6 +44,7 @@ let make = (
         ~profileId,
         ~authenticationId,
         ~merchantId,
+        ~initClickToPaySessionInput=initClickToPaySessionRef.contents,
       ),
   }
 

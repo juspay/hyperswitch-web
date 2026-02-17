@@ -1200,29 +1200,38 @@ let formatOrderId = orderId =>
   ->Option.getOr("")
   ->String.slice(~start=0, ~end=40)
 
-let getVisaInitConfig = (token: clickToPayToken, clientSecret) => {
-  {
-    dpaTransactionOptions: {
-      dpaLocale: token.locale,
-      paymentOptions: [
-        {
-          dpaDynamicDataTtlMinutes: 15,
-          dynamicDataType: CARD_APPLICATION_CRYPTOGRAM_LONG_FORM,
-        },
-      ],
-      transactionAmount: {
-        transactionAmount: token.transactionAmount->Float.toString,
-        transactionCurrencyCode: token.transactionCurrencyCode,
-      },
-      dpaBillingPreference: "NONE",
-      consumerNationalIdentifierRequested: false,
-      payloadTypeIndicator: "FULL",
-      acquirerBIN: token.acquirerBIN,
-      acquirerMerchantId: token.acquirerMerchantId,
-      merchantCategoryCode: token.merchantCategoryCode,
-      merchantCountryCode: token.merchantCountryCode,
-      merchantOrderId: clientSecret->Option.getOr("")->formatOrderId,
+let getVisaInitConfig = (token: clickToPayToken, clientSecret, ~request3DSAuthentication=true) => {
+  let baseConfigDpaTransactionOptions = {
+    dpaLocale: token.locale,
+    transactionAmount: {
+      transactionAmount: token.transactionAmount->Float.toString,
+      transactionCurrencyCode: token.transactionCurrencyCode,
     },
+    dpaBillingPreference: "NONE",
+    consumerNationalIdentifierRequested: false,
+    payloadTypeIndicator: "FULL",
+    acquirerBIN: token.acquirerBIN,
+    acquirerMerchantId: token.acquirerMerchantId,
+    merchantCategoryCode: token.merchantCategoryCode,
+    merchantCountryCode: token.merchantCountryCode,
+    merchantOrderId: clientSecret->Option.getOr("")->formatOrderId,
+  }
+  if request3DSAuthentication {
+    {
+      dpaTransactionOptions: {
+        ...baseConfigDpaTransactionOptions,
+        paymentOptions: [
+          {
+            dpaDynamicDataTtlMinutes: 15,
+            dynamicDataType: CARD_APPLICATION_CRYPTOGRAM_LONG_FORM,
+          },
+        ],
+      },
+    }
+  } else {
+    {
+      dpaTransactionOptions: baseConfigDpaTransactionOptions,
+    }
   }
 }
 
@@ -1245,6 +1254,7 @@ let checkoutVisaUnified = async (
   let baseDpaTransactionOptions = getVisaInitConfig(
     clickToPayToken,
     Some(orderId->formatOrderId),
+    ~request3DSAuthentication,
   ).dpaTransactionOptions
 
   let dpaTransactionOptions = request3DSAuthentication

@@ -794,7 +794,13 @@ let initClickToPaySession = async (
                 ~value="Initializing Visa Unified Click to Pay",
                 ~eventName=VISA_UCTP_INIT,
               )
-              let initConfig = ClickToPayHelpers.getVisaInitConfig(token, Some(clientSecret))
+              let initConfig = ClickToPayHelpers.getVisaInitConfig(
+                token,
+                Some(clientSecret),
+                ~request3DSAuthentication=initClickToPaySessionInput.request3DSAuthentication->Option.getOr(
+                  true,
+                ),
+              )
 
               ClickToPayHelpers.vsdk.initialize(initConfig)
               ->then(async _ => {
@@ -960,6 +966,7 @@ let getActiveClickToPaySession = async (
   ~profileId,
   ~authenticationId,
   ~merchantId,
+  ~initClickToPaySessionInput: Types.initClickToPaySessionInput,
 ) => {
   logger.setLogInfo(
     ~value="Getting Active Click to Pay Session",
@@ -978,7 +985,7 @@ let getActiveClickToPaySession = async (
     ~profileId,
     ~authenticationId,
     ~merchantId,
-    ~initClickToPaySessionInput={request3DSAuthentication: None},
+    ~initClickToPaySessionInput,
     ~shouldLoadScripts=false,
   )
 }
