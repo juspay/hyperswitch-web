@@ -1,5 +1,12 @@
 type wallet =
-  GPayWallet | PaypalWallet | ApplePayWallet | KlarnaWallet | SamsungPayWallet | PazeWallet | NONE
+  | GPayWallet
+  | PaypalWallet
+  | ApplePayWallet
+  | KlarnaWallet
+  | SamsungPayWallet
+  | PazeWallet
+  | AmazonPayWallet
+  | NONE
 let paymentMode = str => {
   switch str {
   | "gpay"
@@ -14,6 +21,7 @@ let paymentMode = str => {
     SamsungPayWallet
   | "klarna" => KlarnaWallet
   | "paze" => PazeWallet
+  | "amazon_pay" => AmazonPayWallet
   | _ => NONE
   }
 }
@@ -79,6 +87,9 @@ let make = (~sessions, ~walletOptions) => {
 
   let samsungPaySessionObj = itemToObjMapper(dict, SamsungPayObject)
   let samsungPayToken = getPaymentSessionObj(samsungPaySessionObj.sessionsToken, SamsungPay)
+
+  let amazonPaySessionObj = itemToObjMapper(dict, AmazonPayObject)
+  let amazonPayToken = getPaymentSessionObj(amazonPaySessionObj.sessionsToken, AmazonPay)
 
   let googlePayThirdPartySessionObj = itemToObjMapper(dict, GooglePayThirdPartyObject)
   let googlePayThirdPartyToken = getPaymentSessionObj(
@@ -171,6 +182,15 @@ let make = (~sessions, ~walletOptions) => {
               switch samsungPayToken {
               | SamsungPayTokenOptional(optToken) =>
                 <SamsungPayComponent sessionObj=optToken walletOptions />
+              | _ => React.null
+              }
+            | AmazonPayWallet =>
+              switch amazonPayToken {
+              | AmazonPayTokenOptional(optToken) =>
+                switch optToken {
+                | Some(token) => <AmazonPayLazy amazonPayToken={token->Utils.getDictFromJson} />
+                | None => React.null
+                }
               | _ => React.null
               }
             | KlarnaWallet =>
