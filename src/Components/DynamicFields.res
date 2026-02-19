@@ -454,7 +454,7 @@ let make = (
                 inputRef=cvcRef
                 placeholder="123"
                 autocomplete="cc-csc"
-                id="card-cvc-input"
+                id="card-csc-input"
                 ariaPlaceholder=""
                 inputMode="numeric"
               />
