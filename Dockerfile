@@ -1,6 +1,9 @@
 # Use Node 20 with Alpine
 FROM node:20-alpine
 
+# --- 🔐 Security Patch: Upgrade OpenSSL to fixed version ---
+RUN apk update && apk upgrade openssl libssl3 libcrypto3
+
 # Install build essentials + git + bash
 RUN apk add --no-cache make gcc g++ python3 bash git
 
