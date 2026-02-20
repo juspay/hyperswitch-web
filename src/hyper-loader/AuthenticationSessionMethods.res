@@ -14,6 +14,9 @@ let setClickToPayTokenWithDebounce = (key, promise) => {
   }, 30000)->ignore
 }
 
+let customerEmail = ref("")
+let maskedCards = ref([])
+
 let initClickToPaySession = async (
   ~clientSecret,
   ~publishableKey,
@@ -36,8 +39,6 @@ let initClickToPaySession = async (
       ~eventName=INIT_CLICK_TO_PAY_SESSION_INIT,
     )
   }
-  let customerEmail = ref("")
-  let maskedCards = ref([])
 
   let key = `${clientSecret}_${authenticationId}`
 
@@ -297,14 +298,14 @@ let initClickToPaySession = async (
       if statusCode !== "ERROR" {
         logger.setLogDebug(
           ~value=`Unified Click to Pay Get Cards Returned statusCode: ${statusCode}`,
-          ~eventName=VISA_UCTP_GET_CARDS_RETUNRED,
+          ~eventName=VISA_UCTP_GET_CARDS_RETURNED,
         )
         logger.setLogDebug(~value=statusCode, ~eventName=GET_USER_TYPE_RETURNED)
         [("statusCode", statusCode->JSON.Encode.string)]->getJsonFromArrayOfJson
       } else {
         logger.setLogError(
           ~value=`Error while calling getCards method from Visa Unified Click to Pay: ${statusCode}`,
-          ~eventName=VISA_UCTP_GET_CARDS_RETUNRED,
+          ~eventName=VISA_UCTP_GET_CARDS_RETURNED,
         )
         logger.setLogError(~value=statusCode, ~eventName=GET_USER_TYPE_RETURNED)
         getClickToPayErrorResponse(
@@ -318,7 +319,7 @@ let initClickToPaySession = async (
           ~value=`Error while calling getCards method from Visa Unified Click to Pay: ${err
             ->Utils.formatException
             ->JSON.stringify}`,
-          ~eventName=VISA_UCTP_GET_CARDS_RETUNRED,
+          ~eventName=VISA_UCTP_GET_CARDS_RETURNED,
         )
         logger.setLogError(
           ~value=`Error while calling getCards method from Visa Unified Click to Pay: ${err
@@ -505,7 +506,7 @@ let initClickToPaySession = async (
             ~eventName=CREATE_WINDOW,
           )
           if clickToPayWindowRef.contents->Nullable.toOption->Option.isNone {
-            handleOpenClickToPayWindow()
+            handleOpenClickToPayWindow(~logger)
           }
 
           logger.setLogDebug(
@@ -540,16 +541,30 @@ let initClickToPaySession = async (
             ~value="Initiating Visa Unified Click to Pay checkout with card",
             ~eventName=VISA_UCTP_CHECKOUT_INIT,
           )
-          let checkoutWithCardResponse = await checkoutVisaUnified(
-            ~srcDigitalCardId,
-            ~clickToPayToken=token,
-            ~windowRef=window,
-            ~rememberMe=rememberMe->Option.getOr(false),
-            ~orderId=clientSecret,
-            ~consumer,
-            ~request3DSAuthentication=initClickToPaySessionInput.request3DSAuthentication->Option.getOr(
-              true,
+
+          // Create the timeout promise that will reject if window doesn't navigate within 30 seconds
+          let timeoutPromise = createWindowTimeoutPromise()
+
+          // Race the checkout against the timeout to ensure we don't hang indefinitely
+          let checkoutWithCardResponse = await Promise.race([
+            checkoutVisaUnified(
+              ~srcDigitalCardId,
+              ~clickToPayToken=token,
+              ~windowRef=window,
+              ~rememberMe=rememberMe->Option.getOr(false),
+              ~orderId=clientSecret,
+              ~consumer,
+              ~request3DSAuthentication=initClickToPaySessionInput.request3DSAuthentication->Option.getOr(
+                true,
+              ),
             ),
+            timeoutPromise,
+          ])
+          let actionCode =
+            checkoutWithCardResponse->Utils.getDictFromJson->Utils.getString("actionCode", "")
+          logger.setLogDebug(
+            ~value=`Visa Unified Click to Pay Checkout Returned with actionCode: ${actionCode}`,
+            ~eventName=VISA_UCTP_CHECKOUT_RETURNED,
           )
 
           logger.setLogDebug(
@@ -558,12 +573,6 @@ let initClickToPaySession = async (
           )
           handleCloseClickToPayWindow()
 
-          let actionCode =
-            checkoutWithCardResponse->Utils.getDictFromJson->Utils.getString("actionCode", "")
-          logger.setLogDebug(
-            ~value=`Visa Unified Click to Pay Checkout Returned with actionCode: ${actionCode}`,
-            ~eventName=VISA_UCTP_CHECKOUT_RETUNRED,
-          )
           switch actionCode {
           | "SUCCESS" => {
               logger.setLogDebug(
@@ -646,20 +655,27 @@ let initClickToPaySession = async (
       }
     } catch {
     | err => {
-        logger.setLogError(
-          ~value=`Closing window if present after error during checkoutWithCard: ${err
-            ->Utils.formatException
-            ->JSON.stringify}`,
-          ~eventName=CLOSE_WINDOW,
-        )
+        let (closeWindowLogValue, checkoutReturnedLogValue, errorMessage) = switch err {
+        | WindowTimeoutError(message) => (
+            "Closing window after timeout during checkoutWithCard",
+            "Click to Pay checkout failed due to window timeout.",
+            message,
+          )
+        | _ => (
+            `Closing window if present after error during checkoutWithCard: ${err
+              ->Utils.formatException
+              ->JSON.stringify}`,
+            `Error during checkout with card in Visa Unified Click to Pay: ${err
+              ->Utils.formatException
+              ->JSON.stringify}`,
+            checkoutWithCardErrorMessage,
+          )
+        }
+
+        logger.setLogError(~value=closeWindowLogValue, ~eventName=CLOSE_WINDOW)
         handleCloseClickToPayWindow()
-        logger.setLogError(
-          ~value=`Error during checkout with card in Visa Unified Click to Pay: ${err
-            ->Utils.formatException
-            ->JSON.stringify}`,
-          ~eventName=CHECKOUT_RETURNED,
-        )
-        getFailedSubmitResponse(~errorType="ERROR", ~message=checkoutWithCardErrorMessage)
+        logger.setLogError(~value=checkoutReturnedLogValue, ~eventName=CHECKOUT_RETURNED)
+        getFailedSubmitResponse(~errorType="ERROR", ~message=errorMessage)
       }
     }
   }
@@ -779,68 +795,48 @@ let initClickToPaySession = async (
             }
           }
         | true =>
-          logger.setLogDebug(
-            ~value="Loading Visa Unified Click to Pay Script",
-            ~eventName=VISA_UCTP_LOAD_SCRIPT_INIT,
-          )
-          ClickToPayHelpers.loadVisaScript(
+          ClickToPayHelpers.loadVisaUnifiedClickToPayScriptAndDirectSdkScripts(
+            logger,
             token,
             () => {
-              logger.setLogDebug(
-                ~value="Successfully loaded Visa Unified Click to Pay Script",
-                ~eventName=VISA_UCTP_LOAD_SCRIPT_RETURNED,
-              )
-              logger.setLogDebug(
-                ~value="Initializing Visa Unified Click to Pay",
-                ~eventName=VISA_UCTP_INIT,
-              )
               let initConfig = ClickToPayHelpers.getVisaInitConfig(token, Some(clientSecret))
 
-              ClickToPayHelpers.vsdk.initialize(initConfig)
-              ->then(async _ => {
-                logger.setLogDebug(
-                  ~value="Successfully initialized Visa Unified Click to Pay",
-                  ~eventName=VISA_UCTP_RETURNED,
-                )
-                let mastercardDirectInitData = {
-                  srciTransactionId: clientSecret,
-                  srcInitiatorId: GlobalVars.isProd
-                    ? "78fbc211-73e1-4c3a-bc5c-60a7921afb97"
-                    : "544ef81a-dae0-4f26-9511-bfbdba3d62b5",
-                  srciDpaId: GlobalVars.isProd
-                    ? "d693c074-8945-4ec7-aa7d-a0a85e636a62"
-                    : "b6e06cc6-3018-4c4c-bbf5-9fb232615090",
-                  dpaTransactionOptions: {
-                    dpaLocale: token.locale,
-                  },
-                }
+              let mastercardDirectInitData = {
+                srciTransactionId: clientSecret,
+                srcInitiatorId: GlobalVars.isProd
+                  ? "78fbc211-73e1-4c3a-bc5c-60a7921afb97"
+                  : "544ef81a-dae0-4f26-9511-bfbdba3d62b5",
+                srciDpaId: GlobalVars.isProd
+                  ? "d693c074-8945-4ec7-aa7d-a0a85e636a62"
+                  : "b6e06cc6-3018-4c4c-bbf5-9fb232615090",
+                dpaTransactionOptions: {
+                  dpaLocale: token.locale,
+                },
+              }
 
-                let visaDirectSdk = ClickToPayHelpers.createVisaDirectSRCIAdapter()
-                let visaDirectInitData: visaDirectInitData = {
-                  srciTransactionId: clientSecret,
-                  srcInitiatorId: token.dpaId,
-                  srciDpaId: token.dpaName,
-                  dpaTransactionOptions: initConfig.dpaTransactionOptions,
-                }
+              let visaDirectSdk = ClickToPayHelpers.createVisaDirectSRCIAdapter()
+              let visaDirectInitData: visaDirectInitData = {
+                srciTransactionId: clientSecret,
+                srcInitiatorId: token.dpaId,
+                srciDpaId: token.dpaName,
+                dpaTransactionOptions: initConfig.dpaTransactionOptions,
+              }
 
-                logger.setLogDebug(
-                  ~value="Initializing Mastercard Direct Click to Pay",
-                  ~eventName=MASTERCARD_DCTP_INIT,
-                )
-                let mastercardInitPromise = ClickToPayHelpers.mastercardDirectSdk.init(
-                  mastercardDirectInitData,
-                )
-                logger.setLogDebug(
-                  ~value="Initializing Visa Direct Click to Pay",
-                  ~eventName=VISA_DCTP_INIT,
-                )
-                let visaInitPromise = visaDirectSdk.init(visaDirectInitData)
+              logger.setLogDebug(
+                ~value="Initializing Mastercard Direct Click to Pay",
+                ~eventName=MASTERCARD_DCTP_INIT,
+              )
+              let mastercardInitPromise = ClickToPayHelpers.mastercardDirectSdk.init(
+                mastercardDirectInitData,
+              )
+              logger.setLogDebug(
+                ~value="Initializing Visa Direct Click to Pay",
+                ~eventName=VISA_DCTP_INIT,
+              )
+              let visaInitPromise = visaDirectSdk.init(visaDirectInitData)
 
-                let promiseResults = await Promise.allSettled([
-                  mastercardInitPromise,
-                  visaInitPromise,
-                ])
-
+              Promise.allSettled([mastercardInitPromise, visaInitPromise])
+              ->then(async promiseResults => {
                 switch promiseResults {
                 | [mastercardPromiseResponse, visaPromiseResponse] => {
                     switch mastercardPromiseResponse {
@@ -882,35 +878,53 @@ let initClickToPaySession = async (
                 | _ => ()
                 }
 
-                Types.window["initializedVSDK"] = true
                 Types.window["visaDirectSdk"] = visaDirectSdk
-                resolve(getSessionObject(Some(visaDirectSdk)))
-                logger.setLogDebug(
-                  ~value="Successfully completed Click to Pay session initialization",
-                  ~eventName=INIT_CLICK_TO_PAY_SESSION_RETURNED,
-                )
-                JSON.Encode.null
-              })
-              ->catch(err => {
-                logger.setLogError(
-                  ~value=`Failed to initialize Visa Unified Click to Pay: ${err
-                    ->Utils.formatException
-                    ->JSON.stringify}`,
-                  ~eventName=VISA_UCTP_RETURNED,
-                )
-                logger.setLogError(
-                  ~value=`Failed to initialize Visa Unified Click to Pay: ${err
-                    ->Utils.formatException
-                    ->JSON.stringify}`,
-                  ~eventName=INIT_CLICK_TO_PAY_SESSION_RETURNED,
-                )
-                let failedErrorResponse = getFailedSubmitResponse(
-                  ~errorType="ERROR",
-                  ~message="An unknown error occurred while initializing Click to Pay session.",
-                )
-                resolve(failedErrorResponse)
 
-                Promise.resolve(JSON.Encode.null)
+                logger.setLogDebug(
+                  ~value="Initializing Visa Unified Click to Pay",
+                  ~eventName=VISA_UCTP_INIT,
+                )
+                ClickToPayHelpers.vsdk.initialize(initConfig)
+                ->then(
+                  async _ => {
+                    logger.setLogDebug(
+                      ~value="Successfully initialized Visa Unified Click to Pay",
+                      ~eventName=VISA_UCTP_RETURNED,
+                    )
+
+                    Types.window["initializedVSDK"] = true
+                    resolve(getSessionObject(Some(visaDirectSdk)))
+                    logger.setLogDebug(
+                      ~value="Successfully completed Click to Pay session initialization",
+                      ~eventName=INIT_CLICK_TO_PAY_SESSION_RETURNED,
+                    )
+                    JSON.Encode.null
+                  },
+                )
+                ->catch(
+                  err => {
+                    logger.setLogError(
+                      ~value=`Failed to initialize Visa Unified Click to Pay: ${err
+                        ->Utils.formatException
+                        ->JSON.stringify}`,
+                      ~eventName=VISA_UCTP_RETURNED,
+                    )
+                    logger.setLogError(
+                      ~value=`Failed to initialize Visa Unified Click to Pay: ${err
+                        ->Utils.formatException
+                        ->JSON.stringify}`,
+                      ~eventName=INIT_CLICK_TO_PAY_SESSION_RETURNED,
+                    )
+                    let failedErrorResponse = getFailedSubmitResponse(
+                      ~errorType="ERROR",
+                      ~message="An unknown error occurred while initializing Click to Pay session.",
+                    )
+                    resolve(failedErrorResponse)
+
+                    Promise.resolve(JSON.Encode.null)
+                  },
+                )
+                ->ignore
               })
               ->ignore
             },
@@ -968,7 +982,7 @@ let getActiveClickToPaySession = async (
   )
   logger.setLogDebug(
     ~value="Getting Active Click to Pay Session",
-    ~eventName=GET_ACTIVE_CLICK_TO_PAY_SESSION,
+    ~eventName=GET_ACTIVE_CLICK_TO_PAY_SESSION_INIT,
   )
   await initClickToPaySession(
     ~clientSecret,

@@ -139,6 +139,9 @@ module Location = {
 
   @get @scope("location")
   external documentHref: document => string = "href"
+
+  @get @scope("location")
+  external windowHref: window => string = "href"
 }
 
 module Top = {

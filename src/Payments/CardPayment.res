@@ -227,7 +227,7 @@ let make = (
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
         if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
-          ClickToPayHelpers.handleOpenClickToPayWindow()
+          ClickToPayHelpers.handleOpenClickToPayWindow(~logger=loggerState)
 
           switch clickToPayProvider {
           | MASTERCARD =>

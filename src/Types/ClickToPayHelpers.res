@@ -31,8 +31,23 @@ external getElementById: (Window.elementRef, string) => Nullable.t<element> = "g
 
 open Window
 let clickToPayWindowRef: ref<Nullable.t<Types.window>> = ref(Nullable.null)
+let windowTimeoutRef: ref<option<timeoutId>> = ref(None)
+let windowTimeoutRejectFnRef: ref<option<exn => unit>> = ref(None)
+
+// Exception type for window timeout
+exception WindowTimeoutError(string)
 
 let handleCloseClickToPayWindow = () => {
+  switch windowTimeoutRef.contents {
+  | Some(timeoutId) => {
+      clearTimeout(timeoutId)
+      windowTimeoutRef.contents = None
+    }
+  | None => ()
+  }
+
+  // Clear the reject function reference
+  windowTimeoutRejectFnRef.contents = None
   switch clickToPayWindowRef.contents->Nullable.toOption {
   | Some(window) => {
       window->closeWindow
@@ -42,9 +57,64 @@ let handleCloseClickToPayWindow = () => {
   }
 }
 
-let handleOpenClickToPayWindow = () => {
-  clickToPayWindowRef.contents = windowOpen("", "ClickToPayWindow", "width=480,height=600")
+// Creates a promise that will reject when the window timeout occurs
+// Use this with Promise.race to ensure checkout operations don't hang
+let createWindowTimeoutPromise = (): promise<'a> => {
+  Promise.make((_, reject) => {
+    windowTimeoutRejectFnRef.contents = Some(reject)
+  })
+}
+
+let handleOpenClickToPayWindow = (~logger: HyperLoggerTypes.loggerMake) => {
+  clickToPayWindowRef.contents = windowOpen(
+    "about:blank",
+    "ClickToPayWindow",
+    "width=480,height=600",
+  )
   LoaderHTML.injectLoader(clickToPayWindowRef.contents)
+
+  // Set up 30-second timeout to check if window URL is still about:blank
+  let timeoutId = setTimeout(() => {
+    switch clickToPayWindowRef.contents->Nullable.toOption {
+    | Some(window) =>
+      try {
+        let currentHref = window->Window.Location.windowHref
+        if currentHref == "about:blank" || currentHref == "" {
+          logger.setLogError(
+            ~value="Click to Pay window URL did not change within 30 seconds. Window is still at about:blank. Closing window.",
+            ~eventName=CREATE_WINDOW_TIMEOUT,
+          )
+
+          // Reject the timeout promise to unblock any waiting checkout operations
+          switch windowTimeoutRejectFnRef.contents {
+          | Some(reject) => {
+              let timeoutError = WindowTimeoutError(
+                "Click to Pay checkout timed out. The window was closed because it did not navigate within 30 seconds.",
+              )
+              reject(timeoutError)
+              windowTimeoutRejectFnRef.contents = None
+            }
+          | None => ()
+          }
+
+          handleCloseClickToPayWindow()
+        }
+      } catch {
+      | _ => {
+          // If we can't access the window location (e.g., cross-origin),
+          // it means the window navigated to a different origin - which is good
+          logger.setLogDebug(
+            ~value="Click to Pay window URL has changed after 30 seconds.",
+            ~eventName=CREATE_WINDOW_TIMEOUT,
+          )
+          ()
+        }
+      }
+    | None => ()
+    }
+    windowTimeoutRef.contents = None
+  }, 30000)
+  windowTimeoutRef.contents = Some(timeoutId)
 }
 
 // Global window extensions
@@ -1153,6 +1223,149 @@ let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorC
   body->Window.appendChild(script)
 }
 
+let loadVisaUnifiedClickToPayScriptAndDirectSdkScripts = (
+  logger: HyperLoggerTypes.loggerMake,
+  clickToPayToken: clickToPayToken,
+  onLoadCallback,
+  onErrorCallback,
+) => {
+  let cardBrands = clickToPayToken.cardBrands->Array.join(",")
+
+  let (visaDirectSrc, mastercardDirectSrc, mainScriptSrc) = GlobalVars.isProd
+    ? (
+        `https://secure.checkout.visa.com/checkout-widget/resources/js/src-i-adapter/visaSdk.js?v2&vsb`,
+        `https://src.mastercard.com/sdk/srcsdk.mastercard.js`,
+        `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`,
+      )
+    : (
+        `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/src-i-adapter/visaSdk.js?v2&vsb`,
+        `https://sandbox.src.mastercard.com/sdk/srcsdk.mastercard.js`,
+        `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`,
+      )
+
+  // Mutable state to track each script's resolution
+  let mainLoaded = ref(false)
+  let mainFailed = ref(false)
+  let visaDirectLoaded = ref(false)
+  let mastercardDirectLoaded = ref(false)
+  let visaDirectFailed = ref(false)
+  let mastercardDirectFailed = ref(false)
+
+  // Called after every script settles to check if we can resolve
+  let callbackFired = ref(false)
+
+  let evaluate = () => {
+    // Guard: only fire the final callback once
+    if !callbackFired.contents {
+      let directScriptLoaded = visaDirectLoaded.contents || mastercardDirectLoaded.contents
+      let directScriptFailed = visaDirectFailed.contents && mastercardDirectFailed.contents
+
+      let allSettled =
+        (mainLoaded.contents || mainFailed.contents) &&
+        (visaDirectLoaded.contents || visaDirectFailed.contents) &&
+        (mastercardDirectLoaded.contents || mastercardDirectFailed.contents)
+
+      if allSettled {
+        callbackFired := true
+        if mainLoaded.contents && directScriptLoaded {
+          onLoadCallback()
+        } else {
+          onErrorCallback()
+        }
+      } else if mainFailed.contents || directScriptFailed {
+        // Early exit: main failed OR both direct scripts already failed — no point waiting
+        // We still wait if the other direct script hasn't settled yet (handled by allSettled above)
+        // But if BOTH direct scripts failed we know no recovery is possible
+        if mainFailed.contents || (visaDirectFailed.contents && mastercardDirectFailed.contents) {
+          callbackFired := true
+          onErrorCallback()
+        }
+      }
+    }
+  }
+
+  let appendScript = (src, onLoad, onError) => {
+    let script = createElement("script")
+    script->setType("text/javascript")
+    script->setSrc(src)
+    script->setOnload(onLoad)
+    script->setOnError(onError)
+    body->Window.appendChild(script)
+  }
+
+  logger.setLogDebug(
+    ~value="Loading Visa Unified Click to Pay script",
+    ~eventName=VISA_UCTP_LOAD_SCRIPT_INIT,
+  )
+  appendScript(
+    mainScriptSrc,
+    () => {
+      logger.setLogDebug(
+        ~value="Successfully loaded Visa Unified Click to Pay script",
+        ~eventName=VISA_UCTP_LOAD_SCRIPT_RETURNED,
+      )
+      mainLoaded := true
+      evaluate()
+    },
+    () => {
+      logger.setLogError(
+        ~value="Failed to load Visa Unified Click to Pay script",
+        ~eventName=VISA_UCTP_LOAD_SCRIPT_RETURNED,
+      )
+      mainFailed := true
+      evaluate()
+    },
+  )
+
+  logger.setLogDebug(
+    ~value="Loading Visa Direct Click to Pay script",
+    ~eventName=VISA_DCTP_LOAD_SCRIPT_INIT,
+  )
+  appendScript(
+    visaDirectSrc,
+    () => {
+      logger.setLogDebug(
+        ~value="Successfully loaded Visa Direct Click to Pay script",
+        ~eventName=VISA_DCTP_LOAD_SCRIPT_RETURNED,
+      )
+      visaDirectLoaded := true
+      evaluate()
+    },
+    () => {
+      logger.setLogError(
+        ~value="Failed to load Visa Direct Click to Pay script",
+        ~eventName=VISA_DCTP_LOAD_SCRIPT_RETURNED,
+      )
+      visaDirectFailed := true
+      evaluate()
+    },
+  )
+
+  logger.setLogDebug(
+    ~value="Loading Mastercard Direct Click to Pay script",
+    ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_INIT,
+  )
+  appendScript(
+    mastercardDirectSrc,
+    () => {
+      logger.setLogDebug(
+        ~value="Successfully loaded Mastercard Direct Click to Pay script",
+        ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_RETURNED,
+      )
+      mastercardDirectLoaded := true
+      evaluate()
+    },
+    () => {
+      logger.setLogError(
+        ~value="Failed to load Mastercard Direct Click to Pay script",
+        ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_RETURNED,
+      )
+      mastercardDirectFailed := true
+      evaluate()
+    },
+  )
+}
+
 let loadClickToPayUIScripts = (
   logger: HyperLoggerTypes.loggerMake,
   scriptLoadedCallback: unit => unit,
@@ -1620,30 +1833,44 @@ let handleProceedToPay = async (
 
   try {
     if clickToPayWindowRef.contents->Nullable.toOption->Option.isNone {
-      handleOpenClickToPayWindow()
+      handleOpenClickToPayWindow(~logger)
     }
+
+    // Create the timeout promise that will reject if window doesn't navigate within 30 seconds
+    let timeoutPromise = createWindowTimeoutPromise()
+
+    // Race the checkout against the timeout to ensure we don't hang indefinitely
     if isCheckoutWithNewCard {
-      await handleCheckoutWithNewCard()
+      await Promise.race([handleCheckoutWithNewCard(), timeoutPromise])
     } else {
-      await handleCheckoutWithCard(
-        ~clickToPayProvider,
-        ~srcDigitalCardId,
-        ~logger,
-        ~fullName,
-        ~email,
-        ~phoneNumber,
-        ~countryCode,
-        ~clickToPayToken,
-        ~isClickToPayRememberMe,
-        ~orderId,
-      )
+      await Promise.race([
+        handleCheckoutWithCard(
+          ~clickToPayProvider,
+          ~srcDigitalCardId,
+          ~logger,
+          ~fullName,
+          ~email,
+          ~phoneNumber,
+          ~countryCode,
+          ~clickToPayToken,
+          ~isClickToPayRememberMe,
+          ~orderId,
+        ),
+        timeoutPromise,
+      ])
     }
   } catch {
   | err => {
+      let (message, isTimeoutError) = switch err {
+      | WindowTimeoutError(msg) => (msg, true)
+      | _ => (`Error during checkout - ${err->Utils.formatException->JSON.stringify}`, false)
+      }
+
       logger.setLogError(
         ~value={
-          "message": `Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
+          "message": message,
           "scheme": clickToPayProvider,
+          "isTimeoutError": isTimeoutError,
         }
         ->JSON.stringifyAny
         ->Option.getOr(""),
