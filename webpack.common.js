@@ -410,7 +410,7 @@ module.exports = (publicPath = "auto") => {
     },
     entry: entries,
     resolve: {
-      extensions: [".js", ".jsx"],
+      extensions: [".js", ".jsx", ".json"],
     },
   };
 };

@@ -2,7 +2,7 @@ type oneClickWallets = {
   paymentMethodType: string,
   displayName: string,
 }
-let oneClickWallets = (~localeString: LocaleStringTypes.localeStrings) => [
+let oneClickWallets = (~localeString: LocaleDataType.localeStrings) => [
   {
     paymentMethodType: "apple_pay",
     displayName: localeString.payment_methods_apple_pay,
@@ -80,12 +80,25 @@ let useMessageGetter = () => {
     let surchargeValue = surchargeDetails.displayTotalSurchargeAmount->Float.toString
 
     if showShortSurchargeMessage {
-      Some(localeString.shortSurchargeMessage(currency, surchargeValue))
+      Some(<>
+        {React.string(`${localeString.shortSurchargeMessagePart1}${Utils.nbsp}`)}
+        <strong>
+          {React.string(`${currency} ${surchargeValue}${localeString.shortSurchargeMessagePart2}`)}
+        </strong>
+      </>)
     } else {
       let message = if paymentMethod === "card" {
-        localeString.surchargeMsgAmountForCard(currency, surchargeValue)
+        <>
+          {React.string(`${localeString.surchargeMsgAmountForCardPart1}${Utils.nbsp}`)}
+          <strong> {React.string(`${currency} ${surchargeValue}`)} </strong>
+          {React.string(`${Utils.nbsp}${localeString.surchargeMsgAmountForCardPart2}`)}
+        </>
       } else {
-        localeString.surchargeMsgAmount(currency, surchargeValue)
+        <>
+          {React.string(`${localeString.surchargeMsgAmountPart1}${Utils.nbsp}`)}
+          <strong> {React.string(`${currency} ${surchargeValue}`)} </strong>
+          {React.string(`${Utils.nbsp}${localeString.surchargeMsgAmountPart2}`)}
+        </>
       }
 
       Some(message)
@@ -112,7 +125,7 @@ let useOneClickWalletsMessageGetter = (~paymentMethodListValue) => {
           myMsg
         } else if index === oneClickWalletsArr->Array.length - 1 {
           <>
-            {React.string(`${Utils.nbsp}${localeString.\"and"}${Utils.nbsp}`)}
+            {React.string(`${Utils.nbsp}${localeString.and_}${Utils.nbsp}`)}
             {myMsg}
           </>
         } else {

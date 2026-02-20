@@ -1807,7 +1807,7 @@ let convertKeyValueToJsonStringPair = (key, value) => (key, JSON.Encode.string(v
 let validateName = (
   val: string,
   prev: RecoilAtomTypes.field,
-  localeString: LocaleStringTypes.localeStrings,
+  localeString: LocaleDataType.localeStrings,
 ) => {
   let isValid = val !== "" && %re("/^\D*$/")->RegExp.test(val)
   let errorString = if val === "" {
@@ -1825,7 +1825,7 @@ let validateName = (
   }
 }
 
-let validateNickname = (val: string, localeString: LocaleStringTypes.localeStrings) => {
+let validateNickname = (val: string, localeString: LocaleDataType.localeStrings) => {
   let isValid = Some(val === "" || !(val->isDigitLimitExceeded(~digit=2)))
   let errorString =
     val !== "" && val->isDigitLimitExceeded(~digit=2) ? localeString.invalidNickNameError : ""
@@ -1836,7 +1836,7 @@ let validateNickname = (val: string, localeString: LocaleStringTypes.localeStrin
 let setNickNameState = (
   val,
   prevState: RecoilAtomTypes.field,
-  localeString: LocaleStringTypes.localeStrings,
+  localeString: LocaleDataType.localeStrings,
 ) => {
   let (isValid, errorString) = val->validateNickname(localeString)
   {

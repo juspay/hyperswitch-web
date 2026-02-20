@@ -242,8 +242,9 @@ let make = (
             | Card(_) => localeString.formHeaderEnterCardText
             | BankRedirect(_)
             | BankTransfer(_) =>
-              key->localeString.formHeaderBankText
-            | Wallet(_) => key->localeString.formHeaderWalletText
+              `${localeString.formHeaderBankTextPart1}${key}${localeString.formHeaderBankTextPart2}`
+            | Wallet(_) =>
+              `${localeString.formHeaderWalletTextPart1}${key}${localeString.formHeaderWalletTextPart2}`
             }->React.string}
           </div>
           {payoutDynamicFields.payoutMethodData->renderPayoutMethodForm->React.array}
@@ -277,9 +278,7 @@ let make = (
               <img src={"merchantLogo"} alt="" className="h-6 w-auto" />
               <div className="ml-1.5">
                 {React.string(
-                  pmt
-                  ->getPaymentMethodTypeLabel
-                  ->localeString.formHeaderReviewTabLayoutText,
+                  `${localeString.formHeaderReviewTabLayoutTextPart1}${pmt->getPaymentMethodTypeLabel}${localeString.formHeaderReviewTabLayoutTextPart2}`,
                 )}
               </div>
             </div>
@@ -328,10 +327,7 @@ let make = (
             className="flex flex-row items-center min-w-full my-5 px-2.5 py-1.5 text-xs border border-solid border-blue-200 rounded bg-blue-50">
             <img src={"merchantLogo"} alt="" className="h-3 w-auto mr-1.5" />
             {React.string(
-              pm
-              ->getPaymentMethodLabel
-              ->String.toLowerCase
-              ->localeString.formFundsCreditInfoText,
+              `${localeString.formFundsCreditInfoTextPart1}${pm->getPaymentMethodLabel->String.toLowerCase}${localeString.formFundsCreditInfoTextPart2}`,
             )}
           </div>
           <div className="flex my-5 text-lg font-semibold w-full">

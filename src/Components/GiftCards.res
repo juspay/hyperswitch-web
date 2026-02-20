@@ -99,10 +99,7 @@ let make = (~giftCardOptions) => {
   let giftCardPaymentInfoMessage =
     remainingAmount === 0.0
       ? ` ${localeString.giftCardPaymentCompleteMessage}`
-      : ` ${localeString.giftCardPaymentRemainingMessage(
-            remainingCurrency,
-            remainingAmount->Float.toString,
-          )}`
+      : ` ${localeString.giftCardPaymentRemainingMessagePart1}${remainingCurrency} ${remainingAmount->Float.toString}${localeString.giftCardPaymentRemainingMessagePart2}`
 
   let getPrimaryGiftCardData = (~appliedGiftCards: array<GiftCardTypes.appliedGiftCard>) =>
     appliedGiftCards->Array.get(0)->Option.getOr(GiftCardTypes.defaultAppliedGiftCard)

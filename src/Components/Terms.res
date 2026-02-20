@@ -9,14 +9,20 @@ let make = (~styles: JsxDOMStyle.t={}, ~paymentMethod, ~paymentMethodType) => {
   let cardTermsValue =
     customMessageForCardTerms != ""
       ? customMessageForCardTerms
-      : localeString.cardTerms(business.name)
+      : `${localeString.cardTermsPart1}${business.name}${localeString.cardTermsPart2}`
 
   let paymentMethodTermsDefaults = switch paymentMethod {
   | "bank_debit" =>
     switch paymentMethodType {
-    | "sepa" => (localeString.sepaDebitTerms(business.name), terms.sepaDebit)
+    | "sepa" => (
+        `${localeString.sepaDebitTermsPart1}${business.name}${localeString.sepaDebitTermsPart2}${business.name}${localeString.sepaDebitTermsPart3}`,
+        terms.sepaDebit,
+      )
     | "becs" => (localeString.becsDebitTerms, terms.auBecsDebit)
-    | "ach" => (localeString.achBankDebitTerms(business.name), terms.usBankAccount)
+    | "ach" => (
+        `${localeString.achBankDebitTermsPart1}${business.name}${localeString.achBankDebitTermsPart2}`,
+        terms.usBankAccount,
+      )
     | _ => ("", Never)
     }
   | "card" =>

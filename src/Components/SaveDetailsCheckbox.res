@@ -70,7 +70,7 @@ let make = (~isChecked, ~setIsChecked) => {
   } else if customMessageForCardTerms->String.length > 0 {
     customMessageForCardTerms
   } else {
-    localeString.cardTerms(business.name)
+    localeString.cardTermsPart1 ++ business.name ++ localeString.cardTermsPart2
   }
 
   <div
