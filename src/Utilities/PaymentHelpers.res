@@ -736,6 +736,47 @@ let rec intentCall = (
                   ("iframeId", iframeId->JSON.Encode.string),
                   ("metadata", metaData->JSON.Encode.object),
                 ])
+              } else if intent.nextAction.type_ === "invoke_ddc" {
+                let ddcData = intent.nextAction.ddc_data
+                let iframeUrl = ddcData->Option.map(d => d.iframe_url)->Option.getOr("")
+                let timeoutMs = ddcData->Option.map(d => d.timeout_ms)->Option.getOr(30000)
+                Console.log(intent.nextAction)
+                if iframeUrl === "" {
+                  if !isPaymentSession {
+                    closePaymentLoaderIfAny()
+                    postFailedSubmitResponse(
+                      ~errortype="confirm_payment_failed",
+                      ~message="Something went wrong",
+                    )
+                  } else {
+                    let failedSubmitResponse = getFailedSubmitResponse(
+                      ~errorType="confirm_payment_failed",
+                      ~message="Something went wrong",
+                    )
+                    resolve(failedSubmitResponse)
+                  }
+                } else {
+                  Console.log("else")
+                  let headerObj = Dict.make()
+                  mergeHeadersIntoDict(~dict=headerObj, ~headers)
+                  let metaData =
+                    [
+                      ("iframeUrl", iframeUrl->JSON.Encode.string),
+                      ("timeoutMs", timeoutMs->Int.toFloat->JSON.Encode.float),
+                      ("paymentIntentId", clientSecret->JSON.Encode.string),
+                      ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
+                      ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+                      ("returnUrl", url.href->JSON.Encode.string),
+                      ("confirmParams", confirmParam->anyTypeToJson),
+                    ]->Dict.fromArray
+
+                  messageParentWindow([
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `ddc`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData->JSON.Encode.object),
+                  ])
+                }
               } else if intent.nextAction.type_ === "display_voucher_information" {
                 let voucherData = intent.nextAction.voucher_details->Option.getOr({
                   download_url: "",

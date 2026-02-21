@@ -89,6 +89,7 @@ let make = () => {
     | "voucherData" => <VoucherDisplay />
     | "cardVault" => <CardVault />
     | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
+    | "ddc" => <DDCIframe />
     | "preMountLoader" => {
         let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
         let paymentId = getQueryParamsDictforKey(url.search, "paymentId")
