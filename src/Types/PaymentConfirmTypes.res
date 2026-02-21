@@ -33,8 +33,15 @@ type voucherDetails = {
   reference: string,
 }
 
+type ddcData = {
+  iframe_url: string,
+  timeout_ms: int,
+}
+
 type nextAction = {
   redirectToUrl: string,
+  redirectMode: string,
+  url: string,
   popupUrl: string,
   redirectResponseUrl: string,
   type_: string,
@@ -49,6 +56,7 @@ type nextAction = {
   display_text: option<string>,
   border_color: option<string>,
   iframe_data: option<JSON.t>,
+  ddc_data: option<ddcData>,
 }
 type intent = {
   nextAction: nextAction,
@@ -68,6 +76,8 @@ let defaultRedirectTourl = {
 }
 let defaultNextAction = {
   redirectToUrl: "",
+  redirectMode: "required",
+  url: "",
   popupUrl: "",
   redirectResponseUrl: "",
   type_: "",
@@ -82,6 +92,7 @@ let defaultNextAction = {
   display_text: None,
   border_color: None,
   iframe_data: None,
+  ddc_data: None,
 }
 let defaultIntent = {
   nextAction: defaultNextAction,
@@ -146,6 +157,8 @@ let getNextAction = (dict, str) => {
   ->Option.map(json => {
     {
       redirectToUrl: getString(json, "redirect_to_url", ""),
+      redirectMode: getString(json, "redirect_mode", "required"),
+      url: getString(json, "url", ""),
       popupUrl: getString(json, "popup_url", ""),
       redirectResponseUrl: getString(json, "redirect_response_url", ""),
       type_: getString(json, "type", ""),
@@ -182,6 +195,17 @@ let getNextAction = (dict, str) => {
       display_text: json->getOptionString("display_text"),
       border_color: json->getOptionString("border_color"),
       iframe_data: Some(json->Utils.getJsonObjectFromDict("iframe_data")),
+      ddc_data: json
+      ->Dict.get("ddc_data")
+      ->Option.flatMap(JSON.Decode.object)
+      ->Option.map(ddcDict => {
+        iframe_url: getString(ddcDict, "iframe_url", ""),
+        timeout_ms: ddcDict
+        ->Dict.get("timeout_ms")
+        ->Option.flatMap(JSON.Decode.float)
+        ->Option.map(Float.toInt)
+        ->Option.getOr(30000),
+      }),
     }
   })
   ->Option.getOr(defaultNextAction)
