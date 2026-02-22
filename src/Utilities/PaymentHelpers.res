@@ -763,7 +763,11 @@ let rec intentCall = (
                 let ddcData = intent.nextAction.ddc_data
                 let iframeUrl = ddcData->Option.map(d => d.iframe_url)->Option.getOr("")
                 let timeoutMs = ddcData->Option.map(d => d.timeout_ms)->Option.getOr(30000)
-                Console.log(intent.nextAction)
+                messageParentWindow([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", "paymentloader"->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                ])
                 if iframeUrl === "" {
                   if !isPaymentSession {
                     closePaymentLoaderIfAny()
@@ -779,26 +783,95 @@ let rec intentCall = (
                     resolve(failedSubmitResponse)
                   }
                 } else {
-                  Console.log("else")
-                  let headerObj = Dict.make()
-                  mergeHeadersIntoDict(~dict=headerObj, ~headers)
-                  let metaData =
-                    [
-                      ("iframeUrl", iframeUrl->JSON.Encode.string),
-                      ("timeoutMs", timeoutMs->Int.toFloat->JSON.Encode.float),
-                      ("paymentIntentId", clientSecret->JSON.Encode.string),
-                      ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
-                      ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
-                      ("returnUrl", url.href->JSON.Encode.string),
-                      ("confirmParams", confirmParam->anyTypeToJson),
-                    ]->Dict.fromArray
+                  let timeoutIdRef = ref(None)
+                  let messageHandlerRef = ref(None)
+                  let iframeRef = ref(None)
 
-                  messageParentWindow([
-                    ("fullscreen", true->JSON.Encode.bool),
-                    ("param", `ddc`->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                    ("metadata", metaData->JSON.Encode.object),
-                  ])
+                  let cleanup = () => {
+                    timeoutIdRef.contents->Option.forEach(clearTimeout)
+                    messageHandlerRef.contents->Option.forEach(
+                      h => Window.removeEventListener("message", h),
+                    )
+                    iframeRef.contents->Option.forEach(Window.remove)
+                    timeoutIdRef := None
+                    messageHandlerRef := None
+                    iframeRef := None
+                  }
+
+                  let handleFailure = () =>
+                    if !isPaymentSession {
+                      closePaymentLoaderIfAny()
+                      postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
+                    }
+
+                  let handleRedirectToUrl = (redirectUrl, redirectMode) => {
+                    closePaymentLoaderIfAny()
+                    switch redirectMode {
+                    | "if_required" =>
+                      messageParentWindow([
+                        ("openurl_if_required", redirectUrl->JSON.Encode.string),
+                      ])
+                    | _ => {
+                        LoggerUtils.handleLogging(
+                          ~optLogger,
+                          ~eventName=REDIRECTING_USER,
+                          ~value=redirectUrl,
+                          ~paymentMethod,
+                          ~logType=INFO,
+                        )
+                        openUrl(redirectUrl)
+                      }
+                    }
+                  }
+
+                  let handleMessage = (ev: Window.event) => {
+                    try {
+                      let json = ev.data->Identity.anyTypeToJson
+                      let dict = json->getDictFromJson
+
+                      if dict->Dict.get("next_action")->Option.isSome {
+                        let nextAction = PaymentConfirmTypes.getNextAction(dict, "next_action")
+                        let nextActionType = nextAction.type_
+                        let redirectUrl = nextAction.url
+                        let redirectMode = nextAction.redirectMode
+                        cleanup()
+                        if nextActionType === "redirect_to_url" && redirectUrl !== "" {
+                          handleRedirectToUrl(redirectUrl, redirectMode)
+                        } else {
+                          handleFailure()
+                        }
+                      }
+                    } catch {
+                    | _ =>
+                      cleanup()
+                      handleFailure()
+                    }
+                  }
+
+                  let iframe = Window.createElement("iframe")
+                  iframe->Window.setAttribute("id", "ddc-iframe")
+                  iframe->Window.setAttribute("src", iframeUrl)
+                  iframe->Window.setAttribute(
+                    "style",
+                    "position: absolute; width: 1px; height: 1px; border: none; overflow: hidden; left: -9999px; top: -9999px;",
+                  )
+
+                  Window.body->Window.appendChild(iframe)
+                  iframeRef := Some(iframe)
+
+                  timeoutIdRef :=
+                    Some(
+                      setTimeout(
+                        () => {
+                          cleanup()
+                          handleFailure()
+                        },
+                        timeoutMs,
+                      ),
+                    )
+
+                  messageHandlerRef := Some(handleMessage)
+                  Window.addEventListener("message", handleMessage)
                 }
               } else if intent.nextAction.type_ === "display_voucher_information" {
                 let voucherData = intent.nextAction.voucher_details->Option.getOr({
