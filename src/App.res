@@ -88,7 +88,6 @@ let make = () => {
     | "3ds" => <ThreeDSMethod />
     | "voucherData" => <VoucherDisplay />
     | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
-    | "ddc" => <DDCIframe />
     | "preMountLoader" => {
         let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
