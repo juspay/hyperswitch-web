@@ -447,7 +447,7 @@ let getPaymentMethodDataErrorString = (
     if value->String.trim->String.length === 0 {
       `${localeString.pleaseProvideText}${localeString.cardHolderName}`
     } else {
-      `${localeString.completeNameEmptyTextPart1}${localeString.cardHolderName}`
+      `${localeString.completeNameEmptyText}${localeString.cardHolderName}`
     }
   | (PayoutMethodData(SepaIban), _) =>
     if value->String.trim->String.length === 0 {

@@ -422,7 +422,7 @@ let make = (
             setCardError(_ => localeString.enterValidCardNumberErrorText)
             setUserError(localeString.enterValidDetailsText)
           } else {
-            let errorText = `${localeString.cardBrandConfiguredErrorTextPart1}${cardBrand}${localeString.cardBrandConfiguredErrorTextPart2}`
+            let errorText = `${cardBrand}${localeString.cardBrandConfiguredErrorText}`
             setCardError(_ => errorText)
             setUserError(errorText)
           }

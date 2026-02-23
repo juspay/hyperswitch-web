@@ -73,7 +73,43 @@ type recoilConfig = {
   showLoader: bool,
 }
 
-@val external importJSON: string => promise<LocaleDataType.localeStrings> = "import"
+let getLocaleFileName = locale => {
+  switch locale->LocaleDataType.localeStringToType {
+  | Some(En) => "en"
+  | Some(He) => "he"
+  | Some(Fr) => "fr"
+  | Some(En_GB) => "en-GB"
+  | Some(Ar) => "ar"
+  | Some(Ja) => "ja"
+  | Some(De) => "de"
+  | Some(Fr_BE) => "fr-BE"
+  | Some(Es) => "es"
+  | Some(Ca) => "ca"
+  // | Some(Zh) => "zh" // Pending support
+  | Some(Pt) => "pt"
+  | Some(It) => "it"
+  | Some(Pl) => "pl"
+  | Some(Nl) => "nl"
+  | Some(NI_BE) => "nl-BE" // to check
+  | Some(Sv) => "sv"
+  | Some(Ru) => "ru"
+  // | Some(Zh_HANT) => "zh-Hant" // Pending support
+  | Some(Lt) => "lt"
+  | Some(Cs) => "cs"
+  | Some(Sk) => "sk"
+  | Some(Ls) => "is" // to check
+  | Some(Cy) => "cy"
+  | Some(El) => "el"
+  | Some(Et) => "et"
+  | Some(Fi) => "fi"
+  | Some(Nb) => "no" // to check
+  | Some(Bs) => "bs"
+  | Some(Da) => "da"
+  | Some(Ms) => "ms"
+  | Some(Tr_CY) => "tr-CY"
+  | None => "en"
+  }
+}
 
 let getLocaleObject = async string => {
   try {
@@ -83,43 +119,8 @@ let getLocaleObject = async string => {
       string
     }
 
-    let promiseLocale = switch locale->LocaleDataType.localeStringToType {
-      | Some(En) => importJSON("../shared-code/assets/v2/jsons/locales/en.json")
-      | Some(He) => importJSON("../shared-code/assets/v2/jsons/locales/he.json")
-      | Some(Fr) => importJSON("../shared-code/assets/v2/jsons/locales/fr.json")
-      | Some(En_GB) => importJSON("../shared-code/assets/v2/jsons/locales/en-GB.json")
-      | Some(Ar) => importJSON("../shared-code/assets/v2/jsons/locales/ar.json")
-      | Some(Ja) => importJSON("../shared-code/assets/v2/jsons/locales/ja.json")
-      | Some(De) => importJSON("../shared-code/assets/v2/jsons/locales/de.json")
-      | Some(Fr_BE) => importJSON("../shared-code/assets/v2/jsons/locales/fr-BE.json")
-      | Some(Es) => importJSON("../shared-code/assets/v2/jsons/locales/es.json")
-      | Some(Ca) => importJSON("../shared-code/assets/v2/jsons/locales/ca.json")
-      // | Some(Zh) => importJSON("../shared-code/assets/v2/jsons/locales/zh.json") // Pending support
-      | Some(Pt) => importJSON("../shared-code/assets/v2/jsons/locales/pt.json")
-      | Some(It) => importJSON("../shared-code/assets/v2/jsons/locales/it.json")
-      | Some(Pl) => importJSON("../shared-code/assets/v2/jsons/locales/pl.json")
-      | Some(Nl) => importJSON("../shared-code/assets/v2/jsons/locales/nl.json")
-      | Some(NI_BE) => importJSON("../shared-code/assets/v2/jsons/locales/nl-BE.json") // to check
-      | Some(Sv) => importJSON("../shared-code/assets/v2/jsons/locales/sv.json")
-      | Some(Ru) => importJSON("../shared-code/assets/v2/jsons/locales/ru.json")
-      // | Some(Zh_HANT) => importJSON("../shared-code/assets/v2/jsons/locales/zh-Hant.json") // Pending support
-      | Some(Lt) => importJSON("../shared-code/assets/v2/jsons/locales/lt.json")
-      | Some(Cs) => importJSON("../shared-code/assets/v2/jsons/locales/cs.json")
-      | Some(Sk) => importJSON("../shared-code/assets/v2/jsons/locales/sk.json")
-      | Some(Ls) => importJSON("../shared-code/assets/v2/jsons/locales/is.json") // to check
-      | Some(Cy) => importJSON("../shared-code/assets/v2/jsons/locales/cy.json")
-      | Some(El) => importJSON("../shared-code/assets/v2/jsons/locales/el.json")
-      | Some(Et) => importJSON("../shared-code/assets/v2/jsons/locales/et.json")
-      | Some(Fi) => importJSON("../shared-code/assets/v2/jsons/locales/fi.json")
-      | Some(Nb) => importJSON("../shared-code/assets/v2/jsons/locales/no.json") // to check
-      | Some(Bs) => importJSON("../shared-code/assets/v2/jsons/locales/bs.json")
-      | Some(Da) => importJSON("../shared-code/assets/v2/jsons/locales/da.json")
-      | Some(Ms) => importJSON("../shared-code/assets/v2/jsons/locales/ms.json")
-      | Some(Tr_CY) => importJSON("../shared-code/assets/v2/jsons/locales/tr-CY.json")
-      | None => importJSON("../shared-code/assets/v2/jsons/locales/en.json")
-     }
-    let awaitedLocaleValue = await promiseLocale
-    awaitedLocaleValue
+    let localeFileName = getLocaleFileName(locale)
+    await S3Utils.getLocaleFromS3(localeFileName)
   } catch {
   | _ => LocaleDataType.defaultLocale
   }

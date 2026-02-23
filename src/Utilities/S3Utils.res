@@ -54,7 +54,7 @@ let fetchCountryStateFromS3 = endpoint => {
   ->catch(_ => reject(Exn.anyToExnInternal("Failed to fetch country state data")))
 }
 
-let getBaseUrl = GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
+let baseUrl = GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
 
 let getCountryStateData = async (
   ~locale="en",
@@ -62,14 +62,14 @@ let getCountryStateData = async (
 ) => {
   let normalizedLocale = getNormalizedLocale(locale)
   let timestamp = Date.now()->Float.toString
-  let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
+  let endpoint = `${baseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
 
   try {
     await fetchCountryStateFromS3(endpoint)
   } catch {
   | _ =>
     try {
-      await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
+      await fetchCountryStateFromS3(`${baseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
     } catch {
     | _ => {
         logger.setLogError(
@@ -109,5 +109,20 @@ let initializeCountryData = async (
     data
   } catch {
   | _ => {countries: country, states: JSON.Encode.null}
+  }
+}
+
+let getLocaleFromS3 = async (locale: string) => {
+  let headers = [("Accept", "application/json")]->Dict.fromArray
+  let endpoint = `${baseUrl}/assets/v2/jsons/locales/${locale}.json`
+
+  let response = await Utils.fetchApi(endpoint, ~method=#GET, ~headers)
+  if response->Fetch.Response.ok {
+    let json = await response->Fetch.Response.json
+    let localeStrings = LocaleUtils.getLocaleStringsFromJson(json)
+    Console.log2("-- Locale strings fetched from S3: ", localeStrings)
+    localeStrings
+  } else {
+    raise(Exn.raiseError("Failed to fetch locale"))
   }
 }
