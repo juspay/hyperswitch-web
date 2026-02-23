@@ -267,7 +267,11 @@ let make = (~integrateError, ~logger) => {
       </div>
       {switch secondsUntilRedirect {
       | Some(seconds) =>
-        <div className="mt-10"> {React.string(`${localeString.linkRedirectionTextPart1}${seconds->Int.toString}${localeString.linkRedirectionTextPart2}`)} </div>
+        <div className="mt-10">
+          {React.string(
+            `${localeString.linkRedirectionTextPart1}${seconds->Int.toString}${localeString.linkRedirectionTextPart2}`,
+          )}
+        </div>
       | None => React.null
       }}
     </div>
@@ -308,10 +312,12 @@ let make = (~integrateError, ~logger) => {
                       <img className="max-h-12 w-auto max-w-21 h-auto" src={merchantLogo} alt="O" />
                     </div>
                   </div>
-                    <div className="lg:mx-5">
-                      <div className="self-center text-xl font-semibold">
-                        {React.string(`${localeString.payoutFromTextPart1}${merchantName}${localeString.payoutFromTextPart2}`)}
-                      </div>
+                  <div className="lg:mx-5">
+                    <div className="self-center text-xl font-semibold">
+                      {React.string(
+                        `${localeString.payoutFromTextPart1}${merchantName}${localeString.payoutFromTextPart2}`,
+                      )}
+                    </div>
                     <div className="flex flex-row lg:mt-1">
                       <div className="font-semibold text-xs">
                         {React.string(localeString.infoCardRefId)}
@@ -322,7 +328,9 @@ let make = (~integrateError, ~logger) => {
                   <div
                     className="mt-4 px-4 py-1.5 bg-gray-200 text-[13px] rounded-full w-max text-black
                     lg:w-full lg:rounded-none lg:rounded-b-lg">
-                    {React.string(`${localeString.linkExpiryInfoPart1}${options.sessionExpiry}${localeString.linkExpiryInfoPart2}`)}
+                    {React.string(
+                      `${localeString.linkExpiryInfoPart1}${options.sessionExpiry}${localeString.linkExpiryInfoPart2}`,
+                    )}
                   </div>
                 </div>
               </div>

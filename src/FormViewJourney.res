@@ -393,7 +393,9 @@ let make = (
             className="flex flex-row items-center min-w-full my-5 px-2.5 py-1.5 text-xs border border-solid border-blue-200 rounded bg-blue-50">
             <img src={"merchantLogo"} alt="" className="h-3 w-auto mr-1.5" />
             {React.string(
-              `${localeString.formFundsCreditInfoTextPart1}${pm->getPaymentMethodLabel->String.toLowerCase}${localeString.formFundsCreditInfoTextPart2}`,
+              `${localeString.formFundsCreditInfoTextPart1}${pm
+                ->getPaymentMethodLabel
+                ->String.toLowerCase}${localeString.formFundsCreditInfoTextPart2}`,
             )}
           </div>
           <div className="flex my-5 text-lg font-semibold w-full">

@@ -427,13 +427,13 @@ let getPaymentMethodDataErrorString = (
   | (PayoutMethodData(ACHRoutingNumber), false) => localeString.formFieldInvalidRoutingNumber
   | (PayoutMethodData(BacsSortCode), _) =>
     if value->String.trim->String.length === 0 {
-      `${localeString.pleaseProvideText}${localeString.sortCodeText}`
+      `${localeString.nameEmptyText}${localeString.sortCodeText}`
     } else {
       localeString.sortCodeInvalidText
     }
   | (PayoutMethodData(BacsAccountNumber), _) =>
     if value->String.trim->String.length === 0 {
-      `${localeString.pleaseProvideText}${localeString.accountNumberText}`
+      `${localeString.nameEmptyText}${localeString.accountNumberText}`
     } else {
       localeString.accountNumberInvalidText
     }
@@ -445,7 +445,7 @@ let getPaymentMethodDataErrorString = (
     }
   | (PayoutMethodData(CardHolderName), _) =>
     if value->String.trim->String.length === 0 {
-      `${localeString.pleaseProvideText}${localeString.cardHolderName}`
+      `${localeString.nameEmptyText}${localeString.cardHolderName}`
     } else {
       `${localeString.completeNameEmptyText}${localeString.cardHolderName}`
     }
@@ -464,13 +464,15 @@ let getPaymentMethodDataErrorString = (
       localeString.postalCodeInvalidText
     }
   | (BillingAddress(PhoneNumber), _) =>
-    `${localeString.pleaseProvideText}${localeString.formFieldPhoneNumberLabel}`
+    `${localeString.nameEmptyText}${localeString.formFieldPhoneNumberLabel}`
   | (BillingAddress(PhoneCountryCode), _) =>
-    `${localeString.pleaseProvideText}${localeString.formFieldCountryCodeRequiredLabel}`
+    `${localeString.nameEmptyText}${localeString.formFieldCountryCodeRequiredLabel}`
   | (BillingAddress(CountryCode), _) =>
-    `${localeString.pleaseProvideText}${localeString.formFieldCountryCodeRequiredLabel}`
-  | (BillingAddress(FullName(_)), _) => `${localeString.pleaseProvideText}${localeString.fullNameLabel}`
-  | (BillingAddress(AddressCountry(_)), _) => `${localeString.pleaseProvideText}${localeString.countryLabel}`
+    `${localeString.nameEmptyText}${localeString.formFieldCountryCodeRequiredLabel}`
+  | (BillingAddress(FullName(_)), _) =>
+    `${localeString.nameEmptyText}${localeString.fullNameLabel}`
+  | (BillingAddress(AddressCountry(_)), _) =>
+    `${localeString.nameEmptyText}${localeString.countryLabel}`
   | (BillingAddress(Email), _) =>
     if value->String.trim->String.length === 0 {
       localeString.emailEmptyText
@@ -481,7 +483,7 @@ let getPaymentMethodDataErrorString = (
   | (BillingAddress(AddressLine2), _) => localeString.line2EmptyText
 
   | (PayoutMethodData(PaypalMobNumber), _) | (PayoutMethodData(VenmoMobNumber), _) =>
-    `${localeString.pleaseProvideText}${localeString.formFieldPhoneNumberLabel}`
+    `${localeString.nameEmptyText}${localeString.formFieldPhoneNumberLabel}`
   | _ => ""
   }
 }

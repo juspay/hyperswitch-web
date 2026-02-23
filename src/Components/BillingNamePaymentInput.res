@@ -39,7 +39,7 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
       if billingName.value == "" {
         setBillingName(prev => {
           ...prev,
-          errorString: `${localeString.pleaseProvideText}${fieldName}`,
+          errorString: `${localeString.nameEmptyText}${fieldName}`,
         })
       } else {
         switch optionalRequiredFields {

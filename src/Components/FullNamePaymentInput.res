@@ -37,7 +37,7 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
       if fullName.value == "" {
         setFullName(prev => {
           ...prev,
-          errorString: `${localeString.pleaseProvideText}${fieldName}`,
+          errorString: `${localeString.nameEmptyText}${fieldName}`,
         })
       } else if !(fullName.isValid->Option.getOr(false)) {
         setFullName(prev => {
