@@ -249,4 +249,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Não há valor restante a pagar. Por favor, prossiga com o pagamento.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Por favor, pague o valor restante de ${amount} ${currency} com outro método de pagamento abaixo.`,
+  payment_methods_qris: `QRIS`,
 }

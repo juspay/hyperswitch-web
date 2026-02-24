@@ -248,4 +248,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Er staat geen resterend bedrag open. Ga verder met de betaling.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Betaal het resterende bedrag van ${amount} ${currency} met een andere betaalmethode hieronder.`,
+  payment_methods_qris: `QRIS`,
 }

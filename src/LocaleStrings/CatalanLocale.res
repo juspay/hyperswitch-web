@@ -250,4 +250,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `No queda cap import pendent de pagament. Si us plau, continueu amb el pagament.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Pagueu l'import restant de ${currency} ${amount} amb un altre mètode de pagament a continuació.`,
+  payment_methods_qris: `QRIS`,
 }
