@@ -169,9 +169,10 @@ let make = (
       ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
     ]
 
-    let defaultCardBody = switch GlobalVars.sdkVersion {
-    | V1 =>
-      PaymentBody.cardPaymentBody(
+    let defaultCardBody = switch (paymentType, GlobalVars.sdkVersion) {
+    | (PaymentMethodsManagement, _)
+    | (_, V2) =>
+      PaymentManagementBody.saveCardBody(
         ~cardNumber,
         ~month,
         ~year,
@@ -180,8 +181,8 @@ let make = (
         ~cardBrand=cardNetwork,
         ~nickname=nickname.value,
       )
-    | V2 =>
-      PaymentManagementBody.saveCardBody(
+    | (_, V1) =>
+      PaymentBody.cardPaymentBody(
         ~cardNumber,
         ~month,
         ~year,

@@ -279,19 +279,15 @@ module PreMountLoaderForPMMElements = {
     ~profileId,
   ) => {
     useMessageHandler(() =>
-      switch GlobalVars.sdkVersion {
-      | V1 => getMessageHandlerV1PMM(~ephemeralKey, ~logger, ~customPodUri, ~endpoint)
-      | V2 =>
-        getMessageHandlerV2PMM(
-          ~pmSessionId,
-          ~pmClientSecret,
-          ~publishableKey,
-          ~profileId,
-          ~logger,
-          ~customPodUri,
-          ~endpoint,
-        )
-      }
+      getMessageHandlerV2PMM(
+        ~pmSessionId,
+        ~pmClientSecret,
+        ~publishableKey,
+        ~profileId,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      )
     )
 
     React.null

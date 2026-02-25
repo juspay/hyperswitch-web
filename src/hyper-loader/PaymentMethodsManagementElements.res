@@ -249,10 +249,7 @@ let make = (
             !(expressCheckoutComponents->Array.includes(componentType))
           ) {
             try {
-              switch GlobalVars.sdkVersion {
-              | V1 => await fetchSavedPaymentMethods(mountedIframeRef, false, componentType)
-              | V2 => await fetchPaymentManagementList(mountedIframeRef, false, componentType)
-              }
+              await fetchPaymentManagementList(mountedIframeRef, false, componentType)
               let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
               preMountLoaderIframeDiv->Window.iframePostMessage(msg)
             } catch {

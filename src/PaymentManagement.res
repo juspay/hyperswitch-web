@@ -155,25 +155,23 @@ let make = (
       <RenderIf condition={isLoading}>
         <PaymentElementShimmer.SavedPaymentShimmer />
       </RenderIf>
-      <RenderIf condition={GlobalVars.sdkVersion == V2}>
-        <div
-          className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
-          style={
-            fontSize: "14px",
-            float: "left",
-            fontWeight: "500",
-            width: "fit-content",
-            color: themeObj.colorPrimary,
-          }
-          role="button"
-          ariaLabel="Click to use new payment methods"
-          tabIndex=0
-          onClick={_ => setShowAddScreen(_ => true)}
-          dataTestId={TestUtils.addNewCardIcon}>
-          <Icon name="plus" size=19 />
-          {React.string("Add new card")}
-        </div>
-      </RenderIf>
+      <div
+        className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
+        style={
+          fontSize: "14px",
+          float: "left",
+          fontWeight: "500",
+          width: "fit-content",
+          color: themeObj.colorPrimary,
+        }
+        role="button"
+        ariaLabel="Click to use new payment methods"
+        tabIndex=0
+        onClick={_ => setShowAddScreen(_ => true)}
+        dataTestId={TestUtils.addNewCardIcon}>
+        <Icon name="plus" size=19 />
+        {React.string("Add new card")}
+      </div>
     </RenderIf>
     <PoweredBy />
   </>
