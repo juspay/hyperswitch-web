@@ -125,7 +125,7 @@ let useOneClickWalletsMessageGetter = (~paymentMethodListValue) => {
           myMsg
         } else if index === oneClickWalletsArr->Array.length - 1 {
           <>
-            {React.string(`${Utils.nbsp}${localeString.and_}${Utils.nbsp}`)}
+            {React.string(`${Utils.nbsp}${localeString.\"and"}${Utils.nbsp}`)}
             {myMsg}
           </>
         } else {

@@ -120,7 +120,6 @@ let getLocaleFromS3 = async (locale: string) => {
   if response->Fetch.Response.ok {
     let json = await response->Fetch.Response.json
     let localeStrings = LocaleUtils.getLocaleStringsFromJson(json)
-    Console.log2("-- Locale strings fetched from S3: ", localeStrings)
     localeStrings
   } else {
     raise(Exn.raiseError("Failed to fetch locale"))
