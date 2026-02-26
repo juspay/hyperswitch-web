@@ -143,7 +143,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
-          ephemeralKey: config.ephemeralKey,
           pmClientSecret: config.pmClientSecret,
           pmSessionId: config.pmSessionId,
           loader: config.loader,
@@ -280,7 +279,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-                let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
                 let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
                 let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
                 let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
@@ -288,7 +286,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   ...prev,
                   clientSecret: Some(clientSecret),
                   sdkAuthorization: Some(sdkAuthorization),
-                  ephemeralKey,
                   pmClientSecret,
                   pmSessionId,
                 })
@@ -346,7 +343,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             let paymentOptions = dict->getDictFromObj("paymentOptions")
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-            let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
             let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
             let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
             let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
@@ -354,7 +350,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               ...prev,
               clientSecret: Some(clientSecret),
               sdkAuthorization: Some(sdkAuthorization),
-              ephemeralKey,
               pmClientSecret,
               pmSessionId,
             })
@@ -611,51 +606,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
               )
-            | _ => ()
-            }
-
-          switch optionsPayment.customerPaymentMethods {
-          | LoadingSavedCards => ()
-          | LoadedSavedCards(list, _) =>
-            if list->Array.length > 0 {
-              logger.setLogInfo(
-                ~value="Loaded",
-                ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadLatency,
-              )
-            } else {
-              evalMethodsList()
-            }
-          | NoResult(_) => evalMethodsList()
-          }
-        }
-        if dict->getDictIsSome("savedPaymentMethods") {
-          let savedPaymentMethods = dict->PaymentType.createCustomerObjArr("savedPaymentMethods")
-          setOptionsPayment(prev => {
-            ...prev,
-            savedPaymentMethods,
-          })
-          let finalLoadLatency = if launchTime <= 0.0 {
-            -1.0
-          } else {
-            Date.now() -. launchTime
-          }
-
-          let evalMethodsList = () =>
-            switch paymentMethodList {
-            | Loaded(_) =>
-              logger.setLogInfo(
-                ~value="Loaded",
-                ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadLatency,
-              )
-            | LoadError(x) =>
-              logger.setLogError(
-                ~value="LoadError: " ++ x->JSON.stringify,
-                ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadLatency,
-              )
-
             | _ => ()
             }
 
