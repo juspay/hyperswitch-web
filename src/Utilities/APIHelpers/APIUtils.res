@@ -110,9 +110,8 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchPaymentMethodList => "account/payment_methods"
   | FetchSessions => "payments/session_tokens"
   | FetchThreeDsAuth => `payments/${paymentIntentID}/3ds/authentication`
-  | FetchCustomerPaymentMethodList
-  | CalculateTax =>
-    `payments/${paymentIntentID}/calculate_tax`
+  | FetchCustomerPaymentMethodList => "customers/payment_methods"
+  | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
   | CreatePaymentMethod => "payment_methods"
   | RetrievePaymentIntent => `payments/${paymentIntentID}`
   | CallAuthLink => "payment_methods/auth/link"
