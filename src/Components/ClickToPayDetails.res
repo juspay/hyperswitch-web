@@ -11,7 +11,7 @@ let make = (
   let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isUnrecognizedUser = clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length == 0
 
-  let css = SaveDetailsCheckbox.saveDetailsCssStyle(themeObj)
+  let css = Checkbox.checkboxCssStyle(themeObj)
 
   let getPrivacyNoticeUrl = () => {
     switch String.toLowerCase(clickToPayCardBrand) {

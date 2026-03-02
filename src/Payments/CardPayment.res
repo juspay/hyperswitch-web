@@ -23,6 +23,46 @@ let make = (
   let fullName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
   let phoneNumber = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
   let (isSaveDetailsWithClickToPay, setIsSaveDetailsWithClickToPay) = React.useState(_ => false)
+  let (
+    selectedInstallmentPlan: option<InstallmentTypes.installmentPlan>,
+    setSelectedInstallmentPlan,
+  ) = React.useState(_ => None)
+
+  // Hardcoded installment options data for now
+  let installmentOptions: array<InstallmentTypes.installmentOption> = [
+    {
+      payment_method: "card",
+      available_plans: [
+        {
+          interest_rate: 7.00,
+          number_of_installments: 2,
+          billing_frequency: "month",
+          amount_details: {
+            amount_per_installment: 50000,
+            total_amount: 100000,
+          },
+        },
+        {
+          interest_rate: 0.0,
+          number_of_installments: 3,
+          billing_frequency: "month",
+          amount_details: {
+            amount_per_installment: 33334,
+            total_amount: 100002,
+          },
+        },
+        {
+          interest_rate: 9.5,
+          number_of_installments: 4,
+          billing_frequency: "month",
+          amount_details: {
+            amount_per_installment: 25000,
+            total_amount: 100000,
+          },
+        },
+      ],
+    },
+  ]
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (clickToPayCardBrand, setClickToPayCardBrand) = React.useState(_ => "")
   let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
@@ -572,16 +612,6 @@ let make = (
               </div>
             </RenderIf>
           </RenderIf>
-          <DynamicFields
-            paymentMethod
-            paymentMethodType
-            setRequiredFieldsBody
-            cardProps={Some(cardProps)}
-            expiryProps={Some(expiryProps)}
-            cvcProps={Some(cvcProps)}
-            isBancontact
-            isSaveDetailsWithClickToPay
-          />
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="flex items-center justify-start">
               <SaveDetailsCheckbox
@@ -594,6 +624,21 @@ let make = (
               paymentType == PaymentMethodsManagement}>
             <NicknamePaymentInput />
           </RenderIf>
+          <RenderIf condition={!isBancontact && installmentOptions->Array.length > 0}>
+            <CardInstallmentOptions
+              installmentOptions selectedInstallmentPlan setSelectedInstallmentPlan themeObj
+            />
+          </RenderIf>
+          <DynamicFields
+            paymentMethod
+            paymentMethodType
+            setRequiredFieldsBody
+            cardProps={Some(cardProps)}
+            expiryProps={Some(expiryProps)}
+            cvcProps={Some(cvcProps)}
+            isBancontact
+            isSaveDetailsWithClickToPay
+          />
         </div>
       </div>
     </RenderIf>

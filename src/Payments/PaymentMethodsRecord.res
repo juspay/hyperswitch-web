@@ -875,6 +875,23 @@ let defaultCardNetworks = {
   surcharge_details: None,
 }
 
+type amountDetails = {
+  amount_per_installment: int,
+  total_amount: int,
+}
+
+type installmentPlan = {
+  interest_rate: float,
+  number_of_installments: int,
+  billing_frequency: string,
+  amount_details: amountDetails,
+}
+
+type installmentOption = {
+  payment_method: string,
+  available_plans: array<installmentPlan>,
+}
+
 type paymentMethodTypes = {
   payment_method_type: string,
   payment_experience: array<paymentExperience>,
@@ -908,6 +925,8 @@ type mandate = {
 }
 type payment_type = NORMAL | NEW_MANDATE | SETUP_MANDATE | NONE
 
+type intentData = {installment_options: option<array<installmentOption>>, currency: string}
+
 type paymentMethodList = {
   redirect_url: string,
   currency: string,
@@ -918,6 +937,7 @@ type paymentMethodList = {
   collect_billing_details_from_wallets: bool,
   is_tax_calculation_enabled: bool,
   isGuestCustomer: option<bool>,
+  intent_data: intentData,
 }
 
 let defaultPaymentMethodType = {
@@ -932,6 +952,11 @@ let defaultPaymentMethodType = {
   pm_auth_connector: None,
 }
 
+let defaultIntentData = {
+  installment_options: None,
+  currency: "",
+}
+
 let defaultList = {
   redirect_url: "",
   currency: "",
@@ -942,6 +967,7 @@ let defaultList = {
   collect_billing_details_from_wallets: true,
   is_tax_calculation_enabled: false,
   isGuestCustomer: None,
+  intent_data: defaultIntentData,
 }
 
 let getPaymentExperienceType = str => {
@@ -1031,6 +1057,44 @@ let getAchConnectors = (dict, str) => {
   ->getStrArray("elligible_connectors")
 }
 
+let getAmountDetails = dict => {
+  amount_per_installment: getInt(dict, "amount_per_installment", 0),
+  total_amount: getInt(dict, "total_amount", 0),
+}
+
+let getInstallmentPlan = dict => {
+  interest_rate: getFloat(dict, "interest_rate", 0.0),
+  number_of_installments: getInt(dict, "number_of_installments", 0),
+  billing_frequency: getString(dict, "billing_frequency", ""),
+  amount_details: dict->getDictFromDict("amount_details")->getAmountDetails,
+}
+
+let getInstallmentOptions = dict => {
+  let installmentOptions =
+    dict
+    ->Dict.get("installment_options")
+    ->Option.flatMap(JSON.Decode.array)
+    ->Option.getOr([])
+
+  if installmentOptions->Array.length > 0 {
+    Some(
+      installmentOptions
+      ->Belt.Array.keepMap(JSON.Decode.object)
+      ->Array.map(json => {
+        {
+          payment_method: getString(json, "payment_method", ""),
+          available_plans: json
+          ->getArray("available_plans")
+          ->Belt.Array.keepMap(JSON.Decode.object)
+          ->Array.map(getInstallmentPlan),
+        }
+      }),
+    )
+  } else {
+    None
+  }
+}
+
 let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
   let requiredFields =
     getJsonFromDict(dict, "required_fields", JSON.Encode.null)
@@ -1110,6 +1174,14 @@ let getMandate = (dict, str) => {
   })
 }
 
+let getIntentData = dict => {
+  let intentDataDict = dict->getDictFromDict("intent_data")
+  {
+    installment_options: intentDataDict->getInstallmentOptions,
+    currency: dict->getString("currency", ""),
+  }
+}
+
 let paymentTypeMapper = payment_type => {
   switch payment_type {
   | "normal" => NORMAL
@@ -1143,6 +1215,7 @@ let itemToObjMapper = dict => {
     ),
     is_tax_calculation_enabled: getBool(dict, "is_tax_calculation_enabled", false),
     isGuestCustomer: getOptionBool(dict, "is_guest_customer"),
+    intent_data: dict->getIntentData,
   }
 }
 
