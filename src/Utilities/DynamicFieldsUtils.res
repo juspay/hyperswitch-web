@@ -40,6 +40,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "interac",
   "open_banking",
   "givex",
+  "qris",
 ]
 
 let getAtomBasedOnSplitPayments = (isSplitPaymentsEnabled, splitAtom, normalAtom) =>

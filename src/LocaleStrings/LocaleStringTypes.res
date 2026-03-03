@@ -236,6 +236,7 @@ type localeStrings = {
   giftCardAppliedText: string,
   giftCardPaymentCompleteMessage: string,
   giftCardPaymentRemainingMessage: (string, string) => string,
+  payment_methods_qris: string,
 }
 
 type constantStrings = {

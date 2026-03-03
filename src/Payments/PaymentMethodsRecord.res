@@ -660,6 +660,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     fields: [InfoElement],
     miniIcon: Some(icon("bank", ~size=19)),
   },
+  {
+    paymentMethodName: "qris",
+    icon: Some(icon("qris", ~size=19, ~width=40)),
+    displayName: localeString.payment_methods_qris,
+    fields: [InfoElement],
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
