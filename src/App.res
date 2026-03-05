@@ -90,6 +90,7 @@ let make = () => {
     | "cardVault" => <CardVault />
     | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
     | "preMountLoader" => {
+        let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
         let paymentId = getQueryParamsDictforKey(url.search, "paymentId")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
@@ -106,11 +107,15 @@ let make = () => {
           )->Types.getHyperComponentNameFromStr
         let merchantHostname = getQueryParamsDictforKey(url.search, "merchantHostname")
         let customPodUri = getQueryParamsDictforKey(url.search, "customPodUri")
+        let isTestMode = getQueryParamsDictforKey(url.search, "isTestMode") === "true"
+        let isSdkParamsEnabled =
+          getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
         <PreMountLoader
           publishableKey
           profileId
           sessionId
+          sdkAuthorization
           clientSecret
           paymentId
           endpoint
@@ -120,6 +125,8 @@ let make = () => {
           hyperComponentName
           merchantHostname
           customPodUri
+          isTestMode
+          isSdkParamsEnabled
         />
       }
     | "achBankTransfer"

@@ -14,7 +14,8 @@ export const enum connectorEnum {
   CRYPTOPAY,
   BANK_OF_AMERICA,
   CYBERSOURCE,
-  CASHTOCODE
+  CASHTOCODE,
+  JUSPAY
 }
 export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
@@ -27,6 +28,7 @@ export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.BANK_OF_AMERICA, "pro_Y90w9nPTg5eBOblKa2L9"],
   [connectorEnum.CYBERSOURCE, "pro_h9VHXnJx8s6W4KSZfSUL"],
   [connectorEnum.CASHTOCODE, "pro_JRdEyK7YyQaDAAzvJuMJ"],
+  [connectorEnum.JUSPAY, "pro_TD0ZZ3cwf87wpPoZroSE"],
 ]);
 
 export const createPaymentBody = {
@@ -145,3 +147,5 @@ export const amexTestCard = "378282246310005";
 export const visaTestCard = "4242424242424242";
 export const netceteraChallengeTestCard = "348638267931507";
 export const netceteraFrictionlessTestCard = "4929251897047956";
+export const juspayChallengeTestCard = "5306889942833340";
+export const juspayFrictionlessTestCard = "4929251897047956";

@@ -18,6 +18,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
+  let setTrustPayScriptStatus = Recoil.useSetRecoilState(trustPayScriptStatus)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
   let setUpdateSession = Recoil.useSetRecoilState(updateSession)
@@ -48,6 +49,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsPaymentButtonHandlerProvided = Recoil.useSetRecoilState(
     isPaymentButtonHandlerProvidedAtom,
   )
+  let setIsTestMode = Recoil.useSetRecoilState(RecoilAtoms.isTestMode)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -145,6 +147,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           pmClientSecret: config.pmClientSecret,
           pmSessionId: config.pmSessionId,
           loader: config.loader,
+          sdkAuthorization: config.sdkAuthorization,
         },
         themeObj: appearance.variables,
         localeString,
@@ -280,9 +283,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
                 let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
                 let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
+                let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
                 setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
+                  sdkAuthorization: Some(sdkAuthorization),
                   ephemeralKey,
                   pmClientSecret,
                   pmSessionId,
@@ -344,9 +349,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
             let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
             let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
+            let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
             setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
+              sdkAuthorization: Some(sdkAuthorization),
               ephemeralKey,
               pmClientSecret,
               pmSessionId,
@@ -396,6 +403,22 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
           | None => ()
           }
+          let sdkAuthorization = dict->Dict.get("sdkAuthorization")
+          switch sdkAuthorization {
+          | Some(val) =>
+            setKeys(prev => {
+              ...prev,
+              sdkAuthorization: Some(val->getStringFromJson("")),
+            })
+            setConfig(prev => {
+              ...prev,
+              config: {
+                ...prev.config,
+                sdkAuthorization: val->getStringFromJson(""),
+              },
+            })
+          | None => ()
+          }
           switch getThemePromise(optionsDict) {
           | Some(promise) =>
             promise
@@ -416,6 +439,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
           }->ignore
         }
+        if dict->Dict.get("isTestMode")->Option.isSome {
+          let isTestMode = dict->Utils.getBool("isTestMode", false)
+          setIsTestMode(_ => isTestMode)
+        }
         if dict->getDictIsSome("sessions") {
           setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))
         }
@@ -428,6 +455,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           setIsGooglePayReady(_ =>
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
+        }
+        if dict->getDictIsSome("trustPayScriptStatus") {
+          setTrustPayScriptStatus(_ => {
+            switch dict->getString("trustPayScriptStatus", "") {
+            | "loading" => Loading
+            | "loaded" => Loaded
+            | "failed" => Failed
+            | _ => NotLoaded
+            }
+          })
         }
         if dict->getDictIsSome("isSamsungPayReady") {
           setIsSamsungPayReady(_ => dict->getBool("isSamsungPayReady", false))

@@ -21,6 +21,7 @@ let make = (~walletOptions) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
   let paymentMethod = "wallet"
   let paymentMethodType = "paypal"
@@ -47,55 +48,64 @@ let make = (~walletOptions) => {
     ~paymentType=paymentMethodType,
   )
   let onPaypalClick = _ev => {
-    loggerState.setLogInfo(
-      ~value="Paypal Button Clicked",
-      ~eventName=PAYPAL_FLOW,
-      ~paymentMethod="PAYPAL",
-    )
-    PaymentUtils.emitPaymentMethodInfo(
-      ~paymentMethod,
-      ~paymentMethodType,
-      ~country,
-      ~state,
-      ~pinCode,
-    )
-    setPaypalClicked(_ => true)
-    open Promise
-    Utils.makeOneClickHandlerPromise(sdkHandleIsThere)
-    ->then(result => {
-      let result = result->JSON.Decode.bool->Option.getOr(false)
-      if result {
-        let body = switch GlobalVars.sdkVersion {
-        | V1 => PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)
-        | V2 => PaymentBodyV2.dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
-        }
-        let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
-          ~isGuestCustomer,
-          ~paymentType=paymentMethodListValue.payment_type,
-          ~body,
-        )
-        let modifiedPaymentBody = if isWallet {
-          basePaymentBody
-        } else {
-          basePaymentBody->Utils.mergeAndFlattenToTuples(requiredFieldsBody)
-        }
+    if isTestMode {
+      Console.warn("PayPal button clicked in test mode - interaction disabled")
+      loggerState.setLogInfo(
+        ~value="PayPal button clicked in test mode - interaction disabled",
+        ~eventName=PAYPAL_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
+    } else {
+      loggerState.setLogInfo(
+        ~value="Paypal Button Clicked",
+        ~eventName=PAYPAL_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod,
+        ~paymentMethodType,
+        ~country,
+        ~state,
+        ~pinCode,
+      )
+      setPaypalClicked(_ => true)
+      open Promise
+      Utils.makeOneClickHandlerPromise(sdkHandleIsThere)
+      ->then(result => {
+        let result = result->JSON.Decode.bool->Option.getOr(false)
+        if result {
+          let body = switch GlobalVars.sdkVersion {
+          | V1 => PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)
+          | V2 => PaymentBodyV2.dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
+          }
+          let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
+            ~isGuestCustomer,
+            ~paymentType=paymentMethodListValue.payment_type,
+            ~body,
+          )
+          let modifiedPaymentBody = if isWallet {
+            basePaymentBody
+          } else {
+            basePaymentBody->Utils.mergeAndFlattenToTuples(requiredFieldsBody)
+          }
 
-        intent(
-          ~bodyArr=modifiedPaymentBody,
-          ~confirmParam={
-            return_url: options.wallets.walletReturnUrl,
-            publishableKey,
-          },
-          ~handleUserError=true,
-          ~manualRetry=isManualRetryEnabled,
-        )
-      } else {
-        setPaypalClicked(_ => false)
-      }
-      resolve()
-    })
-    ->catch(_ => resolve())
-    ->ignore
+          intent(
+            ~bodyArr=modifiedPaymentBody,
+            ~confirmParam={
+              return_url: options.wallets.walletReturnUrl,
+              publishableKey,
+            },
+            ~handleUserError=true,
+            ~manualRetry=isManualRetryEnabled,
+          )
+        } else {
+          setPaypalClicked(_ => false)
+        }
+        resolve()
+      })
+      ->catch(_ => resolve())
+      ->ignore
+    }
   }
 
   React.useEffect0(() => {

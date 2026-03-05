@@ -199,6 +199,15 @@ let getDictFromDict = (dict, key) => {
   dict->getJsonObjectFromDict(key)->getDictFromJson
 }
 
+let getNonEmptyOption = val => {
+  switch val {
+  | Some("")
+  | None =>
+    None
+  | Some(str) => Some(str)
+  }
+}
+
 let getBool = (dict, key, default) => {
   getOptionBool(dict, key)->Option.getOr(default)
 }
@@ -898,6 +907,52 @@ let rgbaTorgb = bgColor => {
   }
 }
 
+let findVersion = (re, content) => {
+  let result = Js.Re.exec_(re, content)
+  let version = switch result {
+  | Some(val) => Js.Re.captures(val)
+  | None => []
+  }
+  version
+}
+
+let browserDetect = content => {
+  let patterns = [
+    ("Instagram", %re("/Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Instagram"),
+    ("FBAV", %re("/FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Facebook"),
+    ("Twitter", %re("/iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Twitter"),
+    ("LinkedIn", %re("/LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig"), "LinkedIn"),
+    ("Edg", %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Microsoft Edge"),
+    ("Chrome", %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Chrome"),
+    ("Safari", %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Safari"),
+    ("Opera", %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Opera"),
+    ("Firefox", %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
+    ("fxios", %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
+  ]
+
+  switch patterns
+  ->Belt.Array.keepMap(((keyword, regex, name)) =>
+    if RegExp.test(keyword->RegExp.fromString, content) {
+      let version = switch findVersion(regex, content)
+      ->Array.get(1)
+      ->Option.getOr(Nullable.null)
+      ->Nullable.toOption {
+      | Some(v) => v
+      | None => ""
+      }
+      Some(`${name}-${version}`)
+    } else {
+      None
+    }
+  )
+  ->Belt.Array.get(0) {
+  | Some(result) => result
+  | None => "Others-0"
+  }
+}
+
+let arrayOfNameAndVersion = String.split(Window.Navigator.userAgent->browserDetect, "-")
+
 let delay = timeOut => {
   Promise.make((resolve, _reject) => {
     setTimeout(() => {
@@ -914,6 +969,7 @@ let getHeaders = (
   ~publishableKey=None,
   ~clientSecret=None,
   ~profileId=None,
+  ~sdkAuthorization=None,
 ): Fetch.Headers.t => {
   let publishableKeyVal = publishableKey->Option.map(key => key)->Option.getOr("invalid_key")
   let profileIdVal = profileId->Option.getOr("invalid_key")
@@ -923,17 +979,22 @@ let getHeaders = (
     ("Content-Type", "application/json"),
     ("X-Client-Version", Window.version),
     ("X-Payment-Confirm-Source", "sdk"),
-    ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
-    ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+    ("X-Browser-Name", arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+    ("X-Browser-Version", arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
     ("X-Client-Platform", "web"),
   ]
+
+  let v1Headers = switch sdkAuthorization->getNonEmptyOption {
+  | Some(sdkAuth) => [("Authorization", sdkAuth)]
+  | None => [("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key"))]
+  }
 
   let authorizationHeaders = switch GlobalVars.sdkVersion {
   | V2 => [
       ("x-profile-id", profileIdVal),
       ("Authorization", `publishable-key=${publishableKeyVal},client-secret=${clientSecretVal}`),
     ]
-  | V1 => [("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key"))]
+  | V1 => v1Headers
   }
 
   let authHeader = switch (token, uri) {
@@ -990,6 +1051,7 @@ let fetchApi = (
   ~method: Fetch.method,
   ~customPodUri=None,
   ~publishableKey=None,
+  ~sdkAuthorization=None,
 ) => {
   open Promise
   let body = switch method {
@@ -1002,7 +1064,7 @@ let fetchApi = (
       {
         method,
         ?body,
-        headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey),
+        headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey, ~sdkAuthorization),
       },
     )
     ->catch(err => {
@@ -1029,6 +1091,7 @@ let fetchApiWithLogging = async (
   ~onCatchCallback=None,
   ~clientSecret=None,
   ~profileId=None,
+  ~sdkAuthorization=None,
 ) => {
   open LoggerUtils
 
@@ -1060,6 +1123,7 @@ let fetchApiWithLogging = async (
           ~publishableKey,
           ~clientSecret,
           ~profileId,
+          ~sdkAuthorization,
         ),
       },
     )
@@ -1790,6 +1854,7 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.getOr(defaultValue)
 }
 
+let getStringFromBool = val => val ? "true" : "false"
 let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventName) => {
   if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
     let script = Window.createElement("script")
@@ -1850,5 +1915,28 @@ let rec maskStringValuesInJson = (~value, ~currentPath, ~depth, ~shouldMaskField
       ->JSON.Encode.array
     | _ => value
     }
+  }
+}
+
+let getSdkAuthorizationData = sdkAuthorization => {
+  open Types
+
+  let arrOfKeys =
+    sdkAuthorization
+    ->Window.atob
+    ->String.split(",")
+
+  let getValueFromArrayOfKeys = keyName => {
+    let keyStr = arrOfKeys->Array.find(key => key->String.includes(keyName))
+    let value = keyStr->Option.flatMap(key => key->String.split("=")->Array.get(1))
+
+    value
+  }
+
+  {
+    publishableKey: getValueFromArrayOfKeys("publishable_key"),
+    clientSecret: getValueFromArrayOfKeys("client_secret"),
+    customerId: getValueFromArrayOfKeys("customer_id"),
+    profileId: getValueFromArrayOfKeys("profile_id"),
   }
 }

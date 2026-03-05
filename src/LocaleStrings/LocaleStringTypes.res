@@ -41,6 +41,7 @@ type localeStrings = {
   countryLabel: string,
   currencyLabel: string,
   bankLabel: string,
+  documentTypeLabel: string,
   redirectText: string,
   bankDetailsText: string,
   orPayUsing: string,

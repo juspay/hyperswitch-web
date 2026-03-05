@@ -22,8 +22,10 @@ let make = (
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Gpay)
   let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
+  let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
+  let isGooglePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsGooglePayDelayedSessionFlow()
   let isGooglePaySDKFlow = React.useMemo(() => {
     sessionObj->Option.isSome
   }, [sessionObj])
@@ -38,6 +40,7 @@ let make = (
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("google_pay")
+  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
@@ -67,14 +70,6 @@ let make = (
     ? paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Gpay(SDK)))
     : paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Gpay(Redirect)))
 
-  let isDelayedSessionToken = React.useMemo(() => {
-    thirdPartySessionObj
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.flatMap(x => x->Dict.get("delayed_session_token"))
-    ->Option.flatMap(JSON.Decode.bool)
-    ->Option.getOr(false)
-  }, [thirdPartySessionObj])
-
   GooglePayHelpers.useHandleGooglePayResponse(~connectors, ~intent, ~isWallet, ~requiredFieldsBody)
 
   let (_, buttonType, _, _) = options.wallets.style.type_
@@ -100,58 +95,70 @@ let make = (
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onGooglePaymentButtonClicked = () => {
-    loggerState.setLogInfo(
-      ~value="GooglePay Button Clicked",
-      ~eventName=GOOGLE_PAY_FLOW,
-      ~paymentMethod="GOOGLE_PAY",
-    )
-    PaymentUtils.emitPaymentMethodInfo(
-      ~paymentMethod="wallet",
-      ~paymentMethodType="google_pay",
-      ~country,
-      ~state,
-      ~pinCode,
-    )
-    makeOneClickHandlerPromise(isSDKHandleClick)->then(result => {
-      let result = result->JSON.Decode.bool->Option.getOr(false)
-      if result {
-        if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
-          if isDelayedSessionToken {
-            messageParentWindow([
-              ("fullscreen", true->JSON.Encode.bool),
-              ("param", "paymentloader"->JSON.Encode.string),
-              ("iframeId", iframeId->JSON.Encode.string),
-            ])
-            let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
+    if isTestMode {
+      Console.warn("Google Pay button clicked in test mode - interaction disabled")
+      loggerState.setLogInfo(
+        ~value="Google Pay button clicked in test mode - interaction disabled",
+        ~eventName=GOOGLE_PAY_FLOW,
+        ~paymentMethod="GOOGLE_PAY",
+      )
+    } else {
+      loggerState.setLogInfo(
+        ~value="GooglePay Button Clicked",
+        ~eventName=GOOGLE_PAY_FLOW,
+        ~paymentMethod="GOOGLE_PAY",
+      )
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="google_pay",
+        ~country,
+        ~state,
+        ~pinCode,
+      )
+      makeOneClickHandlerPromise(isSDKHandleClick)
+      ->then(result => {
+        let result = result->JSON.Decode.bool->Option.getOr(false)
+        if result {
+          if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
+            if isGooglePayDelayedSessionFlow {
+              messageParentWindow([
+                ("fullscreen", true->JSON.Encode.bool),
+                ("param", "paymentloader"->JSON.Encode.string),
+                ("iframeId", iframeId->JSON.Encode.string),
+              ])
+              let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
+              GooglePayHelpers.processPayment(
+                ~body=bodyDict,
+                ~isThirdPartyFlow=true,
+                ~intent,
+                ~options,
+                ~publishableKey,
+                ~isManualRetryEnabled,
+              )
+            } else {
+              GooglePayHelpers.handleGooglePayClicked(
+                ~sessionObj,
+                ~componentName,
+                ~iframeId,
+                ~readOnly=options.readOnly,
+              )
+            }
+          } else {
+            let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
             GooglePayHelpers.processPayment(
               ~body=bodyDict,
-              ~isThirdPartyFlow=true,
               ~intent,
               ~options,
               ~publishableKey,
               ~isManualRetryEnabled,
             )
-          } else {
-            GooglePayHelpers.handleGooglePayClicked(
-              ~sessionObj,
-              ~componentName,
-              ~iframeId,
-              ~readOnly=options.readOnly,
-            )
           }
-        } else {
-          let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
-          GooglePayHelpers.processPayment(
-            ~body=bodyDict,
-            ~intent,
-            ~options,
-            ~publishableKey,
-            ~isManualRetryEnabled,
-          )
         }
-      }
-      resolve()
-    })
+        resolve()
+      })
+      ->catch(_ => resolve())
+      ->ignore
+    }
   }
 
   let buttonStyle = {
@@ -179,7 +186,7 @@ let make = (
     if (
       status == "ready" &&
       (isGPayReady ||
-      isDelayedSessionToken ||
+      isGooglePayDelayedSessionFlow && trustPayScriptStatus === Loaded ||
       paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
       isWallet
     ) {
@@ -187,7 +194,15 @@ let make = (
       addGooglePayButton()
     }
     None
-  }, (status, paymentMethodListValue, sessionObj, thirdPartySessionObj, isGPayReady))
+  }, (
+    status,
+    paymentMethodListValue,
+    sessionObj,
+    thirdPartySessionObj,
+    isGPayReady,
+    trustPayScriptStatus,
+    isGooglePayDelayedSessionFlow,
+  ))
 
   React.useEffect0(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
@@ -218,7 +233,9 @@ let make = (
   let isRenderGooglePayButton =
     (isGPayReady ||
     paymentExperience == PaymentMethodsRecord.RedirectToURL ||
-    isDelayedSessionToken) && isWallet
+    (isGooglePayDelayedSessionFlow && trustPayScriptStatus === Loaded)) && isWallet
+
+  let shouldShowWalletShimmer = isGooglePayDelayedSessionFlow && trustPayScriptStatus === Loading
 
   React.useEffect(() => {
     areOneClickWalletsRendered(prev => {
@@ -235,17 +252,22 @@ let make = (
   let paymentMethodType = "google_pay"
 
   if isWallet {
-    <RenderIf condition={isRenderGooglePayButton}>
-      <div
-        style={
-          height: `${height->Int.toString}px`,
-          pointerEvents: updateSession ? "none" : "auto",
-          opacity: updateSession ? "0.5" : "1.0",
-        }
-        id="google-pay-button"
-        className={`w-full flex flex-row justify-center rounded-md`}
-      />
-    </RenderIf>
+    <>
+      <RenderIf condition={shouldShowWalletShimmer}>
+        <WalletShimmer />
+      </RenderIf>
+      <RenderIf condition={isRenderGooglePayButton}>
+        <div
+          style={
+            height: `${height->Int.toString}px`,
+            pointerEvents: updateSession ? "none" : "auto",
+            opacity: updateSession ? "0.5" : "1.0",
+          }
+          id="google-pay-button"
+          className={`w-full flex flex-row justify-center rounded-md`}
+        />
+      </RenderIf>
+    </>
   } else {
     <>
       <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />

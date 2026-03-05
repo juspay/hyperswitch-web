@@ -96,6 +96,7 @@ let make = () => {
               pmSessionId: themePmSessionId,
               pmClientSecret: themePmClientSecret,
               loader,
+              sdkAuthorization,
             } = CardTheme.itemToObjMapper(
               configValue,
               DefaultTheme.default,
@@ -116,6 +117,7 @@ let make = () => {
                 pmClientSecret: themePmClientSecret,
                 pmSessionId: themePmSessionId,
                 loader,
+                sdkAuthorization,
               },
               themeObj: appearance.variables,
               localeString: localeObject,

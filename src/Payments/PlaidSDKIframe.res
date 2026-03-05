@@ -7,6 +7,7 @@ let make = () => {
   let (pmAuthConnectorsArr, setPmAuthConnectorsArr) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
   let (clientSecret, setClientSecret) = React.useState(_ => "")
+  let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (isForceSync, setIsForceSync) = React.useState(_ => false)
   let logger = React.useMemo(
     () => HyperLogger.make(~source=Elements(Payment), ~clientSecret, ~merchantId=publishableKey),
@@ -26,6 +27,7 @@ let make = () => {
         )
         setPublishableKey(_ => metaData->getString("publishableKey", ""))
         setClientSecret(_ => metaData->getString("clientSecret", ""))
+        setSdkAuthorization(_ => metaData->getString("sdkAuthorization", ""))
         setIsForceSync(_ => metaData->getBool("isForceSync", false))
       }
     }
@@ -55,6 +57,7 @@ let make = () => {
         ~logger,
         ~customPodUri="",
         ~isForceSync=true,
+        ~sdkAuthorization=Some(sdkAuthorization),
       )
       let dict = json->getDictFromJson
       let status = dict->getString("status", "")

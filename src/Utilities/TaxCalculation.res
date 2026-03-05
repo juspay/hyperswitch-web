@@ -25,6 +25,7 @@ let calculateTax = (
   ~publishableKey,
   ~paymentMethodType,
   ~sessionId=None,
+  ~sdkAuthorization=None,
 ) => {
   PaymentHelpers.calculateTax(
     ~clientSecret,
@@ -34,5 +35,6 @@ let calculateTax = (
     ~logger,
     ~customPodUri="",
     ~sessionId,
+    ~sdkAuthorization,
   )
 }

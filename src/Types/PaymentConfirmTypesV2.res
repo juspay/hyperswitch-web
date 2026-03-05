@@ -91,9 +91,9 @@ let getAuthenticationDetails = (dict, str) => {
   ->Option.getOr(defaultAuthenticationDetails)
 }
 
-let getAssociatedPaymentMethods = (dict, str) => {
+let getAssociatedPaymentMethods = dict => {
   dict
-  ->Utils.getArray(str)
+  ->Utils.getArray("associated_payment_methods")
   ->Array.map(item => {
     let obj = item->JSON.Decode.object->Option.getOr(Dict.make())
     let tokenObj = obj->getDictFromDict("payment_method_token")
@@ -115,6 +115,6 @@ let itemToPMMConfirmMapper = dict => {
     customerId: getString(dict, "customer_id", ""),
     id: getString(dict, "id", ""),
     authenticationDetails: getAuthenticationDetails(dict, "authentication_details"),
-    associatedPaymentMethods: getAssociatedPaymentMethods(dict, "associated_payment_methods"),
+    associatedPaymentMethods: getAssociatedPaymentMethods(dict),
   }
 }

@@ -58,6 +58,7 @@ let make = () => {
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (return_url, setReturnUrl) = React.useState(_ => "")
   let (clientSecret, setClientSecret) = React.useState(_ => "")
+  let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (headers, setHeaders) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
@@ -107,6 +108,8 @@ let make = () => {
 
           let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
           setClientSecret(_ => paymentIntentId)
+          let sdkAuthorizationVal = metaDataDict->getString("sdkAuthorization", "")
+          setSdkAuthorization(_ => sdkAuthorizationVal)
           let headersDict =
             metaDataDict
             ->getJsonObjectFromDict("headers")
@@ -135,6 +138,7 @@ let make = () => {
               ~publishableKey,
               ~logger,
               ~customPodUri,
+              ~sdkAuthorization=Some(sdkAuthorizationVal),
             )
             Modal.close(setOpenModal)
             postSubmitResponse(~jsonData=res, ~url=return_url)
@@ -158,6 +162,7 @@ let make = () => {
         ~publishableKey,
         ~logger,
         ~customPodUri,
+        ~sdkAuthorization=Some(sdkAuthorization),
       )
 
       postSubmitResponse(~jsonData=json, ~url=return_url)

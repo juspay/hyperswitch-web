@@ -10,16 +10,19 @@ let make = () => {
 
   let handleCompleteAuthorizeCall = (
     threeDsMethodComp,
-    paymentIntentId,
+    clientSecret,
     publishableKey,
     headers,
     returnUrl,
+    sdkAuthorization,
   ) => {
     isCompleteAuthorizeCalledRef.current = true
-    let body = [
-      ("client_secret", paymentIntentId->JSON.Encode.string),
-      ("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string),
-    ]
+    let body = [("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string)]
+
+    if sdkAuthorization === "" {
+      body->Array.push(("client_secret", clientSecret->JSON.Encode.string))
+    }
+
     completeAuthorize(
       ~bodyArr=body,
       ~confirmParam={
@@ -28,7 +31,8 @@ let make = () => {
       },
       ~headers,
       ~iframeId="redsys3ds",
-      ~clientSecret=Some(paymentIntentId),
+      ~clientSecret=Some(clientSecret),
+      ~sdkAuthorization,
     )
   }
 
@@ -43,10 +47,11 @@ let make = () => {
         if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
           let metadata = dict->getJsonObjectFromDict("metadata")
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
-          let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
+          let clientSecret = metaDataDict->getString("clientSecret", "")
           let publishableKey = metaDataDict->getString("publishableKey", "")
+          let sdkAuthorization = metaDataDict->getString("sdkAuthorization", "")
 
-          logger.setClientSecret(paymentIntentId)
+          logger.setClientSecret(clientSecret)
           logger.setMerchantId(publishableKey)
 
           let headersDict = metaDataDict->getDictFromDict("headers")
@@ -80,10 +85,11 @@ let make = () => {
           timeoutRef.current = Some(setTimeout(() => {
               handleCompleteAuthorizeCall(
                 "N",
-                paymentIntentId,
+                clientSecret,
                 publishableKey,
                 headers,
                 returnUrl,
+                sdkAuthorization,
               )->ignore
             }, 10000))
 
@@ -94,10 +100,11 @@ let make = () => {
               if !isCompleteAuthorizeCalledRef.current {
                 handleCompleteAuthorizeCall(
                   "Y",
-                  paymentIntentId,
+                  clientSecret,
                   publishableKey,
                   headers,
                   returnUrl,
+                  sdkAuthorization,
                 )->ignore
               }
             })

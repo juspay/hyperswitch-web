@@ -88,6 +88,11 @@ type customerMethods = {
   networkTokenization?: networkTokenization,
 }
 
+type paymentMethodsUpdate = {
+  associatedPaymentMethods: PaymentConfirmTypesV2.associatedPaymentMethods,
+  paymentMethodData: card,
+}
+
 type paymentMethodsManagement = {
   paymentMethodsEnabled: array<paymentMethodEnabled>,
   customerPaymentMethods: array<customerMethods>,

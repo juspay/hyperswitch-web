@@ -46,45 +46,67 @@ let useMessageHandler = getMessageHandler => {
 }
 
 let getMessageHandlerV1Elements = (
+  ~sdkAuthorization,
   ~clientSecret,
   ~publishableKey,
   ~logger,
   ~customPodUri,
   ~endpoint,
   ~merchantHostname,
+  ~isTestMode=false,
+  ~isSdkParamsEnabled=false,
 ) => {
-  let paymentMethodsPromise = PaymentHelpers.fetchPaymentMethodList(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+  let (
+    paymentMethodsPromise,
+    customerPaymentMethodsPromise,
+    sessionTokensPromise,
+    blockedBinsPromise,
+  ) = if isTestMode || isSdkParamsEnabled {
+    let mockResponse = Dict.make()->JSON.Encode.object
 
-  let customerPaymentMethodsPromise = PaymentHelpers.fetchCustomerPaymentMethodList(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
-
-  let sessionTokensPromise = PaymentHelpers.fetchSessions(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-    ~merchantHostname,
-  )
-
-  let blockedBinsPromise = PaymentHelpers.fetchBlockedBins(
-    ~clientSecret,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
+    (
+      Promise.resolve(mockResponse),
+      Promise.resolve(mockResponse),
+      Promise.resolve(mockResponse),
+      Promise.resolve(mockResponse),
+    )
+  } else {
+    (
+      PaymentHelpers.fetchPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~sdkAuthorization=Some(sdkAuthorization),
+      ),
+      PaymentHelpers.fetchCustomerPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~sdkAuthorization=Some(sdkAuthorization),
+      ),
+      PaymentHelpers.fetchSessions(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~merchantHostname,
+        ~sdkAuthorization=Some(sdkAuthorization),
+      ),
+      PaymentHelpers.fetchBlockedBins(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~sdkAuthorization=Some(sdkAuthorization),
+      ),
+    )
+  }
 
   ev => {
     open Utils
@@ -203,23 +225,29 @@ module PreMountLoaderForElements = {
   let make = (
     ~logger,
     ~publishableKey,
+    ~sdkAuthorization,
     ~clientSecret,
     ~paymentId,
     ~endpoint,
     ~merchantHostname,
     ~customPodUri,
     ~profileId,
+    ~isTestMode=false,
+    ~isSdkParamsEnabled=false,
   ) => {
     useMessageHandler(() =>
       switch GlobalVars.sdkVersion {
       | V1 =>
         getMessageHandlerV1Elements(
+          ~sdkAuthorization,
           ~clientSecret,
           ~publishableKey,
           ~logger,
           ~customPodUri,
           ~endpoint,
           ~merchantHostname,
+          ~isTestMode,
+          ~isSdkParamsEnabled,
         )
       | V2 =>
         getMessageHandlerV2Elements(
@@ -275,6 +303,7 @@ let make = (
   ~sessionId,
   ~publishableKey,
   ~profileId,
+  ~sdkAuthorization,
   ~clientSecret,
   ~endpoint,
   ~paymentId,
@@ -284,6 +313,8 @@ let make = (
   ~hyperComponentName: Types.hyperComponentName,
   ~merchantHostname,
   ~customPodUri,
+  ~isTestMode=false,
+  ~isSdkParamsEnabled=false,
 ) => {
   let logger = HyperLogger.make(
     ~sessionId,
@@ -295,7 +326,17 @@ let make = (
   switch hyperComponentName {
   | Elements =>
     <PreMountLoaderForElements
-      logger publishableKey clientSecret endpoint merchantHostname customPodUri profileId paymentId
+      logger
+      publishableKey
+      sdkAuthorization
+      clientSecret
+      endpoint
+      merchantHostname
+      customPodUri
+      profileId
+      paymentId
+      isTestMode
+      isSdkParamsEnabled
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements
