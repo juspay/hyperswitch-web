@@ -210,6 +210,8 @@ let make = (
           savedCardlength={ctpCards->Array.length}
           cvcProps
           setRequiredFieldsBody
+          installmentOptions=[]
+          setSelectedInstallmentPlan={_ => ()}
         />
       })
       ->React.array}

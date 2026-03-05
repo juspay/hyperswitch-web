@@ -77,8 +77,7 @@ let make = (
     <label className={`container CheckboxInput ${checkedState}`}>
       <input tabIndex={-1} type_={`checkbox`} checked={isChecked} onChange={handleChange} />
       <div className={`checkmark CheckboxInput ${checkedState}`} />
-      <div
-        className={`CheckboxLabel ${checkBoxLabelState} ml-2 opacity-50 text-xs select-none`}>
+      <div className={`CheckboxLabel ${checkBoxLabelState} ml-2 opacity-50 text-xs select-none`}>
         {React.string(label)}
       </div>
     </label>

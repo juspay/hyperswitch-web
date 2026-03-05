@@ -67,6 +67,20 @@ let cardPaymentBody = (
   ]
 }
 
+let installmentBody = (plan: option<InstallmentTypes.installmentPlan>) =>
+  switch plan {
+  | Some(plan) => [
+      (
+        "installment_data",
+        [
+          ("number_of_installments", plan.number_of_installments->JSON.Encode.int),
+          ("billing_frequency", plan.billing_frequency->JSON.Encode.string),
+        ]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]
+  | None => []
+  }
+
 let bancontactBody = () => {
   let bancontactField =
     [("bancontact_card", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson

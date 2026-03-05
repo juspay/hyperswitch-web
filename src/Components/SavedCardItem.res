@@ -56,6 +56,8 @@ let make = (
   ~savedCardlength,
   ~cvcProps: CardUtils.cvcProps,
   ~setRequiredFieldsBody,
+  ~installmentOptions,
+  ~setSelectedInstallmentPlan,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {
@@ -154,47 +156,6 @@ let make = (
   let isCVCEmpty = cvcNumber->String.length == 0
 
   let {innerLayout} = config.appearance
-
-  let (
-    selectedInstallmentPlan: option<InstallmentTypes.installmentPlan>,
-    setSelectedInstallmentPlan,
-  ) = React.useState(_ => None)
-
-  // Hardcoded installment options data for now
-  let installmentOptions: array<InstallmentTypes.installmentOption> = [
-    {
-      payment_method: "card",
-      available_plans: [
-        {
-          interest_rate: 7.00,
-          number_of_installments: 2,
-          billing_frequency: "month",
-          amount_details: {
-            amount_per_installment: 50000,
-            total_amount: 100000,
-          },
-        },
-        {
-          interest_rate: 0.0,
-          number_of_installments: 3,
-          billing_frequency: "month",
-          amount_details: {
-            amount_per_installment: 33334,
-            total_amount: 100002,
-          },
-        },
-        {
-          interest_rate: 9.5,
-          number_of_installments: 4,
-          billing_frequency: "month",
-          amount_details: {
-            amount_per_installment: 25000,
-            total_amount: 100000,
-          },
-        },
-      ],
-    },
-  ]
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
@@ -328,7 +289,7 @@ let make = (
                     }
                     className="w-full flex">
                     <CardInstallmentOptions
-                      installmentOptions selectedInstallmentPlan setSelectedInstallmentPlan themeObj
+                      installmentOptions setSelectedInstallmentPlan themeObj
                     />
                   </div>
                 </RenderIf>

@@ -60,6 +60,60 @@ let make = (
             total_amount: 100000,
           },
         },
+        {
+          interest_rate: 9.5,
+          number_of_installments: 4,
+          billing_frequency: "month",
+          amount_details: {
+            amount_per_installment: 25000,
+            total_amount: 100000,
+          },
+        },
+        {
+          interest_rate: 9.5,
+          number_of_installments: 4,
+          billing_frequency: "month",
+          amount_details: {
+            amount_per_installment: 25000,
+            total_amount: 100000,
+          },
+        },
+        {
+          interest_rate: 9.5,
+          number_of_installments: 4,
+          billing_frequency: "month",
+          amount_details: {
+            amount_per_installment: 25000,
+            total_amount: 100000,
+          },
+        },
+        {
+          interest_rate: 9.5,
+          number_of_installments: 4,
+          billing_frequency: "month",
+          amount_details: {
+            amount_per_installment: 25000,
+            total_amount: 100000,
+          },
+        },
+        {
+          interest_rate: 9.5,
+          number_of_installments: 4,
+          billing_frequency: "month",
+          amount_details: {
+            amount_per_installment: 25000,
+            total_amount: 100000,
+          },
+        },
+        {
+          interest_rate: 9.5,
+          number_of_installments: 4,
+          billing_frequency: "month",
+          amount_details: {
+            amount_per_installment: 25000,
+            total_amount: 100000,
+          },
+        },
       ],
     },
   ]
@@ -266,9 +320,11 @@ let make = (
         !isCardBlocked
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
+        let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
+
         if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
           ClickToPayHelpers.handleOpenClickToPayWindow()
-
+          //TODO: check installment support for click to pay
           switch clickToPayProvider {
           | MASTERCARD =>
             try {
@@ -314,7 +370,9 @@ let make = (
                         ~xSrcFlowId,
                       )
                       intent(
-                        ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                        ~bodyArr=clickToPayBody
+                        ->Array.concat(installmentBody)
+                        ->mergeAndFlattenToTuples(requiredFieldsBody),
                         ~confirmParam=confirm.confirmParams,
                         ~handleUserError=false,
                         ~manualRetry=isManualRetryEnabled,
@@ -397,7 +455,9 @@ let make = (
                       ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
                     )
                     intent(
-                      ~bodyArr=clickToPayBody,
+                      ~bodyArr=clickToPayBody
+                      ->Array.concat(installmentBody)
+                      ->mergeAndFlattenToTuples(requiredFieldsBody),
                       ~confirmParam=confirm.confirmParams,
                       ~handleUserError=false,
                       ~manualRetry=isManualRetryEnabled,
@@ -442,9 +502,9 @@ let make = (
 
           intent(
             ~bodyArr={
-              (isBancontact ? banContactBody : modifiedCardBody)->mergeAndFlattenToTuples(
-                requiredFieldsBody,
-              )
+              (isBancontact ? banContactBody : modifiedCardBody)
+              ->Array.concat(installmentBody)
+              ->mergeAndFlattenToTuples(requiredFieldsBody)
             },
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
@@ -495,6 +555,7 @@ let make = (
     isClickToPayRememberMe,
     blockedBinsList,
     giftCardInfo,
+    selectedInstallmentPlan,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -625,9 +686,7 @@ let make = (
             <NicknamePaymentInput />
           </RenderIf>
           <RenderIf condition={!isBancontact && installmentOptions->Array.length > 0}>
-            <CardInstallmentOptions
-              installmentOptions selectedInstallmentPlan setSelectedInstallmentPlan themeObj
-            />
+            <CardInstallmentOptions installmentOptions setSelectedInstallmentPlan themeObj />
           </RenderIf>
           <DynamicFields
             paymentMethod
