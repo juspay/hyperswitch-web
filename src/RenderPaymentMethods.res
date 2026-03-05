@@ -88,13 +88,15 @@ let make = (
             onChange=changeCardNumber
             onBlur=handleCardBlur
             onFocus=handleElementFocus
-            type_="tel"
+            type_="text"
             maxLength=maxCardLength
             inputRef=cardRef
             placeholder="1234 1234 1234 1234"
-            id="card-number"
+            id="card-number-input"
             isFocus
             autocomplete="cc-number"
+            ariaPlaceholder=""
+            inputMode="numeric"
           />
         | CardExpiryElement =>
           <InputField
@@ -104,13 +106,14 @@ let make = (
             onChange=changeCardExpiry
             onBlur=handleExpiryBlur
             onFocus=handleElementFocus
-            type_="tel"
+            type_="text"
             maxLength=7
             inputRef=expiryRef
             placeholder=localeString.expiryPlaceholder
-            id="card-expiry"
+            id="card-expiry-input"
             isFocus
             autocomplete="cc-exp"
+            inputMode="numeric"
           />
         | CardCVCElement =>
           <InputField
@@ -120,14 +123,16 @@ let make = (
             onChange=changeCVCNumber
             onBlur=handleCVCBlur
             onFocus=handleElementFocus
-            type_="tel"
+            type_="text"
             className={`tracking-widest w-auto`}
             maxLength=4
             inputRef=cvcRef
             placeholder="123"
-            id="card-cvc"
+            id="card-csc-input"
             isFocus
             autocomplete="cc-csc"
+            ariaPlaceholder=""
+            inputMode="numeric"
           />
         | PaymentMethodsManagement =>
           <ReusableReactSuspense

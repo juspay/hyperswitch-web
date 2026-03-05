@@ -236,11 +236,13 @@ let make = (~setModalData) => {
         value=accountHolderName
         inputRef=nameRef
         onChange=handleAccountHolderNameChange
-        type_="tel"
+        type_="text"
         className={`p-2 text-base px-4`}
         maxLength=17
         placeholder="eg: John Doe"
         onBlur={_ => setInputFocus(_ => NONE)}
+        id="account-holder-name-input"
+        autocomplete="name"
       />
       <RenderIf condition={isSepaDebit}>
         <div
@@ -260,6 +262,8 @@ let make = (~setModalData) => {
           maxLength=42
           inputRef=ibanRef
           placeholder="eg: DE00 0000 0000 0000 0000 00"
+          id="iban-input"
+          autocomplete="off"
         />
       </RenderIf>
       <div className="flex flex-row items-center w-full justify-between">
@@ -281,13 +285,16 @@ let make = (~setModalData) => {
               isValid=isRoutingValid
               setIsValid=setIsRoutingValid
               onChange=handleRoutingChange
-              type_="tel"
+              type_="text"
               className={` p-2 text-base px-4`}
               maxLength=9
               placeholder="123456789"
               errorString=routingError
               onBlur=routingBlur
               onFocus={_ => setInputFocus(_ => Routing)}
+              id="routing-number-input"
+              autocomplete="off"
+              inputMode="numeric"
             />
           </div>
         </RenderIf>
@@ -307,12 +314,15 @@ let make = (~setModalData) => {
               value=accountNum
               inputRef=accountRef
               onChange=handleAccountNumChange
-              type_="tel"
+              type_="text"
               className={`p-2 text-base px-4`}
               maxLength={isBecsDebit ? 9 : 17}
               placeholder="000123456789"
               onFocus={_ => setInputFocus(_ => Account)}
               onBlur={_ => setInputFocus(_ => NONE)}
+              id="account-number-input"
+              autocomplete="off"
+              inputMode="numeric"
             />
           </div>
         </RenderIf>
@@ -359,10 +369,13 @@ let make = (~setModalData) => {
           value=sortCode
           inputRef=sortCodeRef
           onChange=changeSortCode
-          type_="tel"
+          type_="text"
           className={`p-2 text-base px-4`}
           maxLength=7
           placeholder="eg: 000-000"
+          id="bsb-input"
+          autocomplete="off"
+          inputMode="numeric"
         />
       </RenderIf>
       <Button

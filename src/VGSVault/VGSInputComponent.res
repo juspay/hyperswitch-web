@@ -24,8 +24,7 @@ let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?) => {
           fontSize: themeObj.fontSizeLg,
           marginBottom: "5px",
           opacity: "0.6",
-        }
-        ariaHidden=true>
+        }>
         {React.string(fieldName)}
       </div>
     </RenderIf>

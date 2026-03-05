@@ -69,6 +69,8 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
       placeholder
       className={config.appearance.innerLayout === Spaced ? "" : "!border-b-0"}
       name=TestUtils.cardHolderNameInputTestId
+      id="billing-name-input"
+      autocomplete="name"
     />
   </RenderIf>
 }

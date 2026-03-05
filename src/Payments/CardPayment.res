@@ -497,7 +497,7 @@ let make = (
               onBlur=handleCardBlur
               rightIcon={icon}
               errorString=cardError
-              type_="tel"
+              type_="text"
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
@@ -506,6 +506,9 @@ let make = (
                 : ""}
               name=TestUtils.cardNoInputTestId
               autocomplete="cc-number"
+              id="card-number-input"
+              ariaPlaceholder=""
+              inputMode="numeric"
             />
             <div
               className="flex flex-row w-full place-content-between"
@@ -521,12 +524,14 @@ let make = (
                   onChange=changeCardExpiry
                   onBlur=handleExpiryBlur
                   errorString=expiryError
-                  type_="tel"
+                  type_="text"
                   maxLength=7
                   inputRef=expiryRef
                   placeholder=localeString.expiryPlaceholder
                   name=TestUtils.expiryInputTestId
                   autocomplete="cc-exp"
+                  id="card-expiry-input"
+                  inputMode="numeric"
                 />
               </div>
               <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
@@ -544,13 +549,16 @@ let make = (
                     ~cardInvalid,
                     ~color=themeObj.colorIconCardCvcError,
                   )}
-                  type_="tel"
+                  type_="text"
                   className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
                   maxLength=4
                   inputRef=cvcRef
                   placeholder="123"
                   name=TestUtils.cardCVVInputTestId
                   autocomplete="cc-csc"
+                  id="card-csc-input"
+                  ariaPlaceholder=""
+                  inputMode="numeric"
                 />
               </div>
             </div>

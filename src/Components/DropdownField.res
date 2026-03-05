@@ -33,6 +33,9 @@ let make = (
   ~disabled=false,
   ~className="",
   ~width="w-full",
+  ~id="",
+  ~isRequired=true,
+  ~autocomplete="",
 ) => {
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -95,23 +98,27 @@ let make = (
   let inputClassStyles = isSpacedInnerLayout ? "Input" : "Input-Compressed"
 
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
+
+  let (id, suffix) = id == "" ? (fieldName, "select") : (id, "")
+  let selectId = AccessibilityUtils.generateElementId(~baseId=id, ~suffix)
+
   <RenderIf condition={options->Array.length > 0}>
     <div className={`flex flex-col ${width}`}>
       <RenderIf
         condition={fieldName->String.length > 0 &&
         appearance.labels == Above &&
         isSpacedInnerLayout}>
-        <div
+        <label
+          htmlFor=selectId
           className={`Label `}
           style={
             fontWeight: themeObj.fontWeightNormal,
             fontSize: themeObj.fontSizeLg,
             marginBottom: "5px",
             opacity: "0.6",
-          }
-          ariaHidden=true>
+          }>
           {React.string(fieldName)}
-        </div>
+        </label>
       </RenderIf>
       <div className="relative">
         <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
@@ -128,6 +135,7 @@ let make = (
           </div>
         </RenderIf>
         <select
+          id=selectId
           ref={dropdownRef->ReactDOM.Ref.domRef}
           style={
             background: disabled ? disbaledBG : themeObj.colorBackground,
@@ -142,7 +150,9 @@ let make = (
           onChange=handleChange
           onFocus=handleFocus
           className={`${inputClassStyles} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
-          ariaLabel={`${fieldName} option tab`}>
+          ariaLabel=fieldName
+          ariaRequired=isRequired
+          autoComplete=autocomplete>
           {options
           ->Array.mapWithIndex((item, index) => {
             <option key={Int.toString(index)} value=item.value>

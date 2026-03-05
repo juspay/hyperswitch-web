@@ -169,6 +169,8 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
         inputRef=line1Ref
         placeholder=localeString.line1Placeholder
         paymentType
+        id="address-line1-input"
+        autocomplete="address-line1"
       />
     </RenderIf>
     <RenderIf condition={showOtherFileds || hasDefaulltValues}>
@@ -190,6 +192,8 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
             inputRef=line2Ref
             placeholder=localeString.line2Placeholder
             paymentType
+            id="address-line2-input"
+            autocomplete="address-line2"
           />
         </RenderIf>
         <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>
@@ -200,6 +204,8 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               className
               setValue=setCountry
               options=countryNames
+              id="country-select"
+              autocomplete="country"
             />
           </RenderIf>
           <RenderIf
@@ -211,6 +217,8 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               className
               setValue=setState
               options={stateNames}
+              id="state-select"
+              autocomplete="address-level1"
             />
           </RenderIf>
         </div>
@@ -232,6 +240,8 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               inputRef=cityRef
               placeholder=localeString.cityLabel
               paymentType
+              id="city-input"
+              autocomplete="address-level2"
             />
           </RenderIf>
           <RenderIf condition={showField(showDetails.address, Postal) == Auto}>
@@ -246,6 +256,8 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               inputRef=postalRef
               placeholder=localeString.postalCodeLabel
               paymentType
+              id="postal-code-input"
+              autocomplete="postal-code"
             />
           </RenderIf>
         </div>

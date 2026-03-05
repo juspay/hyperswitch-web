@@ -1,5 +1,6 @@
 open RecoilAtoms
 open PaymentTypeContext
+open AccessibilityUtils
 
 @react.component
 let make = (
@@ -25,6 +26,9 @@ let make = (
   ~labelClassName="",
   ~paymentType: option<CardThemeType.mode>=?,
   ~autocomplete="on",
+  ~isRequired=true,
+  ~ariaPlaceholder=?,
+  ~inputMode=?,
 ) => {
   open ElementType
   let (eleClassName, setEleClassName) = React.useState(_ => "input-base")
@@ -89,11 +93,15 @@ let make = (
     None
   }, (value, isValid))
 
-  let direction = if type_ == "password" || type_ == "tel" {
+  let direction = if type_ == "password" || type_ == "tel" || inputMode == Some("numeric") {
     "ltr"
   } else {
     ""
   }
+
+  let ariaInvalid = isValid->getAriaInvalidState
+  let errorId = id->getErrorId
+  let ariaDescribedby = isValid == Some(false) ? errorId : ""
 
   let isValidValue = CardUtils.getBoolOptionVal(isValid)
 
@@ -124,7 +132,7 @@ let make = (
 
   <div className={` flex flex-col w-full`}>
     <RenderIf condition={fieldName->String.length > 0}>
-      <div className={`${labelClassName}`}> {React.string(fieldName)} </div>
+      <label htmlFor=id className=labelClassName> {React.string(fieldName)} </label>
     </RenderIf>
     <div className="flex flex-row " style={direction: direction}>
       <input
@@ -146,8 +154,13 @@ let make = (
         onChange
         onBlur=handleBlur
         onFocus=handleFocus
-        autoComplete={autocomplete}
-        ariaLabel={`Type to fill ${fieldName} input`}
+        autoComplete=autocomplete
+        ariaLabel=fieldName
+        ariaInvalid
+        ariaRequired=isRequired
+        ariaDescribedby
+        ?ariaPlaceholder
+        ?inputMode
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>
     </div>
@@ -156,7 +169,9 @@ let make = (
       switch errorString {
       | Some(val) =>
         <RenderIf condition={val->String.length > 0}>
-          <div className={`py-1 ${errorClases}`}> {React.string(val)} </div>
+          <div id=errorId role="alert" ariaLive=#polite className={`py-1 ${errorClases}`}>
+            {React.string(val)}
+          </div>
         </RenderIf>
       | None => React.null
       }

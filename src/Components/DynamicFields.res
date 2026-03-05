@@ -360,11 +360,14 @@ let make = (
               onBlur=handleCardBlur
               rightIcon={icon}
               errorString=cardError
-              type_="tel"
+              type_="text"
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
               autocomplete="cc-number"
+              id="card-number-input"
+              ariaPlaceholder=""
+              inputMode="numeric"
             />
           | GiftCardNumber => <GiftCardNumberInput />
           | CardExpiryMonth
@@ -378,11 +381,13 @@ let make = (
               onChange=changeCardExpiry
               onBlur=handleExpiryBlur
               errorString=expiryError
-              type_="tel"
+              type_="text"
               maxLength=7
               inputRef=expiryRef
               placeholder=localeString.expiryPlaceholder
               autocomplete="cc-exp"
+              id="card-expiry-input"
+              inputMode="numeric"
             />
           | CardCvc =>
             <PaymentInputField
@@ -399,12 +404,15 @@ let make = (
                 ~color=themeObj.colorIconCardCvcError,
                 ~cardComplete,
               )}
-              type_="tel"
+              type_="text"
               className="tracking-widest w-full"
               maxLength=4
               inputRef=cvcRef
               placeholder="123"
               autocomplete="cc-csc"
+              id="card-csc-input"
+              ariaPlaceholder=""
+              inputMode="numeric"
             />
           | GiftCardPin => <GiftCardPinInput />
 
@@ -418,11 +426,13 @@ let make = (
                 onChange=changeCardExpiry
                 onBlur=handleExpiryBlur
                 errorString=expiryError
-                type_="tel"
+                type_="text"
                 maxLength=7
                 inputRef=expiryRef
                 placeholder=localeString.expiryPlaceholder
                 autocomplete="cc-exp"
+                id="card-expiry-input"
+                inputMode="numeric"
               />
               <PaymentInputField
                 fieldName=localeString.cvcTextLabel
@@ -438,12 +448,15 @@ let make = (
                   ~color=themeObj.colorIconCardCvcError,
                   ~cardComplete,
                 )}
-                type_="tel"
+                type_="text"
                 className="tracking-widest w-full"
                 maxLength=4
                 inputRef=cvcRef
                 placeholder="123"
                 autocomplete="cc-csc"
+                id="card-csc-input"
+                ariaPlaceholder=""
+                inputMode="numeric"
               />
             </div>
           | Currency(currencyArr) =>
@@ -456,6 +469,8 @@ let make = (
               setValue=setCurrency
               disabled=false
               options=updatedCurrencyArray
+              id="currency-select"
+              autocomplete="transaction-currency"
             />
           | DocumentType(opt) => {
               let updatedDocumentTypeArray =
@@ -511,6 +526,8 @@ let make = (
               maxLength=42
               inputRef=bankAccountNumberRef
               placeholder="DE00 0000 0000 0000 0000 00"
+              id="iban-input"
+              autocomplete="off"
             />
           | SourceBankAccountId =>
             <PaymentField
@@ -537,6 +554,8 @@ let make = (
               maxLength=42
               inputRef=sourceBankAccountIdRef
               placeholder="DE00 0000 0000 0000 0000 00"
+              id="source-bank-account-id-input"
+              autocomplete="off"
             />
           | DocumentNumber
           | Email
@@ -625,6 +644,8 @@ let make = (
                       inputRef=cityRef
                       placeholder=localeString.cityLabel
                       className={isSpacedInnerLayout ? "" : "!border-r-0"}
+                      id="city-input"
+                      autocomplete="address-level2"
                     />
                     <RenderIf condition={stateNames->Array.length > 0}>
                       <PaymentDropDownField
@@ -632,6 +653,8 @@ let make = (
                         value=state
                         setValue=setState
                         options={stateNames}
+                        id="state-select"
+                        autocomplete="address-level1"
                       />
                     </RenderIf>
                   </div>
@@ -647,6 +670,8 @@ let make = (
                       disabled=false
                       options=updatedCountryArray
                       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
+                      id="country-select"
+                      autocomplete="country"
                     />
                     <PaymentField
                       fieldName=localeString.postalCodeLabel
@@ -664,6 +689,8 @@ let make = (
                       inputRef=postalRef
                       placeholder=localeString.postalCodeLabel
                       className={isSpacedInnerLayout ? "" : "!border-t-0"}
+                      id="postal-code-input"
+                      autocomplete="postal-code"
                     />
                   </div>
                 | AddressLine1 =>
@@ -691,6 +718,8 @@ let make = (
                     inputRef=line1Ref
                     placeholder=localeString.line1Placeholder
                     className={isSpacedInnerLayout ? "" : "!border-b-0"}
+                    id="address-line1-input"
+                    autocomplete="address-line1"
                   />
                 | AddressLine2 =>
                   <PaymentField
@@ -716,6 +745,8 @@ let make = (
                     name="line2"
                     inputRef=line2Ref
                     placeholder=localeString.line2Placeholder
+                    id="address-line2-input"
+                    autocomplete="address-line2"
                   />
                 | AddressCity =>
                   <PaymentField
@@ -741,6 +772,8 @@ let make = (
                     name="city"
                     inputRef=cityRef
                     placeholder=localeString.cityLabel
+                    id="city-input"
+                    autocomplete="address-level2"
                   />
                 | AddressState =>
                   <RenderIf condition={stateNames->Array.length > 0}>
@@ -748,7 +781,9 @@ let make = (
                       fieldName=localeString.stateLabel
                       value=state
                       setValue=setState
-                      options={stateNames}
+                      options=stateNames
+                      id="state-select"
+                      autocomplete="address-level1"
                     />
                   </RenderIf>
                 | AddressPincode =>
@@ -767,6 +802,8 @@ let make = (
                     name="postal"
                     inputRef=postalRef
                     placeholder=localeString.postalCodeLabel
+                    id="postal-code-input"
+                    autocomplete="postal-code"
                   />
                 | BlikCode => <BlikCodePaymentInput />
                 | Country =>
@@ -779,6 +816,8 @@ let make = (
                     setValue=setCountry
                     disabled=false
                     options=updatedCountryNames
+                    id="country-select"
+                    autocomplete="country"
                   />
                 | AddressCountry(countryArr) =>
                   let updatedCountryArr =
@@ -790,6 +829,8 @@ let make = (
                     setValue=setCountry
                     disabled=false
                     options=updatedCountryArr
+                    id="country-select"
+                    autocomplete="country"
                   />
                 | BankList(bankArr) =>
                   let updatedBankNames =
@@ -803,6 +844,8 @@ let make = (
                     setValue=setSelectedBank
                     disabled=false
                     options=updatedBankNames
+                    id="bank-list-select"
+                    autocomplete="off"
                   />
                 | Bank =>
                   let updatedBankNames =
@@ -814,6 +857,8 @@ let make = (
                     setValue=setSelectedBank
                     disabled=false
                     options=updatedBankNames
+                    id="bank-select"
+                    autocomplete="off"
                   />
                 | SpecialField(element) => element
                 | InfoElement
