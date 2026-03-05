@@ -1,5 +1,5 @@
 import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { getClientURL, createPaymentBody, changeObjectKeyValue } from "../support/utils";
+import { getClientURL, createPaymentBody, changeObjectKeyValue, connectorProfileIdMapping, connectorEnum } from "../support/utils";
 
 describe("GigaDat Interac Payment flow test", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
@@ -11,23 +11,19 @@ describe("GigaDat Interac Payment flow test", () => {
   beforeEach(() => {
     getIframeBody = () => cy.iframe(iframeSelector);
 
-    // Set profile_id for GigaDat/Loonio
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      "pro_Kkp5G7zlVxvOqvkX7yaZ",
+      connectorProfileIdMapping.get(connectorEnum.INTERAC),
     );
 
-    // Set currency to CAD
+   
     changeObjectKeyValue(createPaymentBody, "currency", "CAD");
 
-    // Set billing address country to CA (Canada)
     createPaymentBody.billing.address.country = "CA";
 
-    // Set shipping address country to CA (Canada)
     createPaymentBody.shipping.address.country = "CA";
 
-    // Pass connector as empty array
     changeObjectKeyValue(createPaymentBody, "connector", []);
   });
 
@@ -53,7 +49,7 @@ describe("GigaDat Interac Payment flow test", () => {
   });
 
   it("should complete Interac payment via GigaDat connector", () => {
-    // Set connector to gigadat
+
     changeObjectKeyValue(createPaymentBody, "connector", ["gigadat"]);
 
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
@@ -69,13 +65,11 @@ describe("GigaDat Interac Payment flow test", () => {
       .get("#submit")
       .click()
       .then(() => {
-        // Verify redirect to Interac payment page
         cy.url().should("include", "interac");
       });
   });
 
   it("should complete Interac payment via Loonio connector", () => {
-    // Set connector to loonio
     changeObjectKeyValue(createPaymentBody, "connector", ["loonio"]);
 
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
@@ -90,8 +84,7 @@ describe("GigaDat Interac Payment flow test", () => {
     getIframeBody()
       .get("#submit")
       .click()
-      .then(() => {
-        // Verify redirect to Interac payment page
+      .then(() => {   
         cy.url().should("include", "interac");
       });
   });
