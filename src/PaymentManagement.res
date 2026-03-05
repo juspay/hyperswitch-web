@@ -11,7 +11,6 @@ let make = (
   let divRef = React.useRef(Nullable.null)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {sdkHandleSavePayment} = Recoil.useRecoilValueFromAtom(optionAtom)
-  // let (savedMethods, setSavedMethods) = React.useState(_ => [])
   let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
   let (isLoading, setIsLoading) = React.useState(_ => false)
   let (showAddScreen, setShowAddScreen) = Recoil.useRecoilState(RecoilAtomsV2.showAddScreen)
@@ -50,7 +49,7 @@ let make = (
     | LoadedV2(val) =>
       setSavedPaymentMethodsV2(_ => val)
       setIsLoading(_ => false)
-    | _ => ()
+    | _ => setIsLoading(_ => true)
     }
     None
   }, [paymentManagementList])
@@ -125,27 +124,27 @@ let make = (
     <RenderIf condition={!showAddScreen}>
       <RenderIf condition={!isLoading}>
         <SavedPaymentManagement cvcProps />
+        <div
+          className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
+          style={
+            fontSize: "14px",
+            float: "left",
+            fontWeight: "500",
+            width: "fit-content",
+            color: themeObj.colorPrimary,
+          }
+          role="button"
+          ariaLabel="Click to use new payment methods"
+          tabIndex=0
+          onClick={_ => setShowAddScreen(_ => true)}
+          dataTestId={TestUtils.addNewCardIcon}>
+          <Icon name="plus" size=19 />
+          {React.string("Add new card")}
+        </div>
       </RenderIf>
       <RenderIf condition={isLoading}>
         <PaymentElementShimmer.SavedPaymentShimmer />
       </RenderIf>
-      <div
-        className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
-        style={
-          fontSize: "14px",
-          float: "left",
-          fontWeight: "500",
-          width: "fit-content",
-          color: themeObj.colorPrimary,
-        }
-        role="button"
-        ariaLabel="Click to use new payment methods"
-        tabIndex=0
-        onClick={_ => setShowAddScreen(_ => true)}
-        dataTestId={TestUtils.addNewCardIcon}>
-        <Icon name="plus" size=19 />
-        {React.string("Add new card")}
-      </div>
     </RenderIf>
     <PoweredBy />
   </>
