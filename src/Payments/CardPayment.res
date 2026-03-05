@@ -181,7 +181,7 @@ let make = (
         ~cardBrand=cardNetwork,
         ~nickname=nickname.value,
       )
-    | (_, V1) =>
+    | _ =>
       PaymentBody.cardPaymentBody(
         ~cardNumber,
         ~month,

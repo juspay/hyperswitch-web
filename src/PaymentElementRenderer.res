@@ -49,8 +49,8 @@ let make = (
     <WalletElement paymentType />
   } else {
     switch (paymentType, GlobalVars.sdkVersion) {
-    | (Payment, V2)
-    | (PaymentMethodsManagement, _) =>
+    | (PaymentMethodsManagement, _)
+    | (_, V2) =>
       <PaymentElementV2 cardProps expiryProps cvcProps paymentType />
     | _ => <PaymentElement cardProps expiryProps cvcProps paymentType />
     }
