@@ -629,6 +629,7 @@ let rec intentCall = (
                 resolve(data)
               } else if intent.nextAction.type_ === "qr_code_information" {
                 let qrData = intent.nextAction.image_data_url->Option.getOr("")
+                let rawQrData = intent.nextAction.raw_qr_data->Option.getOr("")
                 let displayText = intent.nextAction.display_text->Option.getOr("")
                 let borderColor = intent.nextAction.border_color->Option.getOr("")
                 let expiryTime = intent.nextAction.display_to_timestamp->Option.getOr(0.0)
@@ -637,6 +638,7 @@ let rec intentCall = (
                 let metaData =
                   [
                     ("qrData", qrData->JSON.Encode.string),
+                    ("rawQrData", rawQrData->JSON.Encode.string),
                     ("paymentIntentId", clientSecret->JSON.Encode.string),
                     ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
                     ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
