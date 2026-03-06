@@ -37,7 +37,7 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
       if fullName.value == "" {
         setFullName(prev => {
           ...prev,
-          errorString: fieldName->localeString.nameEmptyText,
+          errorString: `${localeString.nameEmptyText}${fieldName}`,
         })
       } else if !(fullName.isValid->Option.getOr(false)) {
         setFullName(prev => {
@@ -50,7 +50,7 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
           if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, FullName, fullName) {
             setFullName(prev => {
               ...prev,
-              errorString: fieldName->localeString.completeNameEmptyText,
+              errorString: `${localeString.completeNameEmptyText}${fieldName}`,
             })
           }
         | None => ()

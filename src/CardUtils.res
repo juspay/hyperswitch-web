@@ -736,10 +736,10 @@ let getCardBrandFromStates = (cardBrand, cardScheme, showPaymentMethodsScreen) =
   !showPaymentMethodsScreen ? cardScheme : cardBrand
 }
 
-let getCardBrandInvalidError = (~cardBrand, ~localeString: LocaleStringTypes.localeStrings) => {
+let getCardBrandInvalidError = (~cardBrand, ~localeString: LocaleDataType.localeStrings) => {
   switch cardBrand {
   | "" => localeString.enterValidCardNumberErrorText
-  | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)
+  | cardBrandValue => `${cardBrandValue}${localeString.cardBrandConfiguredErrorText}`
   }
 }
 

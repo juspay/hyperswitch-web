@@ -30,7 +30,7 @@ let getTokenizedData = data => {
   (cardNumber, expiryDetails.month, `${prefix}${expiryDetails.year}`, cardCvc)
 }
 
-let getErrorStr = (fieldname, ~empty=false, localeString: LocaleStringTypes.localeStrings) => {
+let getErrorStr = (fieldname, ~empty=false, localeString: LocaleDataType.localeStrings) => {
   switch (fieldname, empty) {
   | ("card_number", true) => localeString.cardNumberEmptyText
   | ("card_exp", true) => localeString.cardExpiryDateEmptyText
@@ -50,7 +50,7 @@ let vgsErrorHandler = (
   dict,
   fieldname,
   ~isSubmit=false,
-  localeString: LocaleStringTypes.localeStrings,
+  localeString: LocaleDataType.localeStrings,
 ) => {
   let emptyErr = getErrorStr(fieldname, ~empty=true, localeString)
   let invalidErr = getErrorStr(fieldname, localeString)

@@ -134,7 +134,7 @@ let defaultPaymentMethodFields = {
 
 let icon = (~size=22, ~width=size, name) => <Icon size width name />
 
-let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) => [
+let getPaymentMethodsFields = (~localeString: LocaleDataType.localeStrings) => [
   {
     paymentMethodName: "afterpay_clearpay",
     fields: [InfoElement],

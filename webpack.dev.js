@@ -39,6 +39,15 @@ const devServer = {
         "^/assets/v1/jsons/location/": "/assets/v1/jsons/location/",
       },
     },
+    {
+      context: ["/assets/v2/jsons/locales/"],
+      target: "https://beta.hyperswitch.io",
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: {
+        "^/assets/v2/jsons/locales/": "/assets/v2/jsons/locales/",
+      },
+    },
     // Uncomment the following if needed for 3DS method proxying
     // {
     //   context: ["/3dsmethod"],

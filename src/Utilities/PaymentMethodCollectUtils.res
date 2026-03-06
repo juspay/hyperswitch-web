@@ -198,7 +198,7 @@ let getPaymentMethodDataFieldKey = (key): string =>
     }
   }
 
-let getPaymentMethodDataFieldLabel = (key, localeString: LocaleStringTypes.localeStrings): string =>
+let getPaymentMethodDataFieldLabel = (key, localeString: LocaleDataType.localeStrings): string =>
   switch key {
   | PayoutMethodData(CardNumber) => localeString.cardNumberLabel
   | PayoutMethodData(CardExpDate(_)) => localeString.validThruText
@@ -244,8 +244,8 @@ let getPaymentMethodDataFieldLabel = (key, localeString: LocaleStringTypes.local
 
 let getPaymentMethodDataFieldPlaceholder = (
   key,
-  locale: LocaleStringTypes.localeStrings,
-  constant: LocaleStringTypes.constantStrings,
+  locale: LocaleDataType.localeStrings,
+  constant: LocaleDataType.constantStrings,
 ): string => {
   switch key {
   | PayoutMethodData(CardNumber) => constant.formFieldCardNumberPlaceholder
@@ -354,7 +354,7 @@ let getPayoutImageSource = (payoutStatus: payoutStatus): string => {
 
 let getPayoutReadableStatus = (
   payoutStatus: payoutStatus,
-  localeString: LocaleStringTypes.localeStrings,
+  localeString: LocaleDataType.localeStrings,
 ): string =>
   switch payoutStatus {
   | Success => localeString.payoutStatusSuccessText
@@ -393,7 +393,7 @@ let getPayoutStatusString = (payoutStatus: payoutStatus): string =>
 
 let getPayoutStatusMessage = (
   payoutStatus: payoutStatus,
-  localeString: LocaleStringTypes.localeStrings,
+  localeString: LocaleDataType.localeStrings,
 ): string =>
   switch payoutStatus {
   | Success => localeString.payoutStatusSuccessMessage
@@ -416,7 +416,7 @@ let getPayoutStatusMessage = (
 let getPaymentMethodDataErrorString = (
   key,
   value,
-  localeString: LocaleStringTypes.localeStrings,
+  localeString: LocaleDataType.localeStrings,
 ): string => {
   let len = value->String.length
   let notEmptyAndComplete = len >= 0 && len === key->getPaymentMethodDataFieldMaxLength
@@ -427,13 +427,13 @@ let getPaymentMethodDataErrorString = (
   | (PayoutMethodData(ACHRoutingNumber), false) => localeString.formFieldInvalidRoutingNumber
   | (PayoutMethodData(BacsSortCode), _) =>
     if value->String.trim->String.length === 0 {
-      localeString.sortCodeText->localeString.nameEmptyText
+      `${localeString.nameEmptyText}${localeString.sortCodeText}`
     } else {
       localeString.sortCodeInvalidText
     }
   | (PayoutMethodData(BacsAccountNumber), _) =>
     if value->String.trim->String.length === 0 {
-      localeString.accountNumberText->localeString.nameEmptyText
+      `${localeString.nameEmptyText}${localeString.accountNumberText}`
     } else {
       localeString.accountNumberInvalidText
     }
@@ -445,9 +445,9 @@ let getPaymentMethodDataErrorString = (
     }
   | (PayoutMethodData(CardHolderName), _) =>
     if value->String.trim->String.length === 0 {
-      localeString.cardHolderName->localeString.nameEmptyText
+      `${localeString.nameEmptyText}${localeString.cardHolderName}`
     } else {
-      localeString.cardHolderName->localeString.completeNameEmptyText
+      `${localeString.completeNameEmptyText}${localeString.cardHolderName}`
     }
   | (PayoutMethodData(SepaIban), _) =>
     if value->String.trim->String.length === 0 {
@@ -464,13 +464,15 @@ let getPaymentMethodDataErrorString = (
       localeString.postalCodeInvalidText
     }
   | (BillingAddress(PhoneNumber), _) =>
-    localeString.formFieldPhoneNumberLabel->localeString.nameEmptyText
+    `${localeString.nameEmptyText}${localeString.formFieldPhoneNumberLabel}`
   | (BillingAddress(PhoneCountryCode), _) =>
-    localeString.formFieldCountryCodeRequiredLabel->localeString.nameEmptyText
+    `${localeString.nameEmptyText}${localeString.formFieldCountryCodeRequiredLabel}`
   | (BillingAddress(CountryCode), _) =>
-    localeString.formFieldCountryCodeRequiredLabel->localeString.nameEmptyText
-  | (BillingAddress(FullName(_)), _) => localeString.fullNameLabel->localeString.nameEmptyText
-  | (BillingAddress(AddressCountry(_)), _) => localeString.countryLabel->localeString.nameEmptyText
+    `${localeString.nameEmptyText}${localeString.formFieldCountryCodeRequiredLabel}`
+  | (BillingAddress(FullName(_)), _) =>
+    `${localeString.nameEmptyText}${localeString.fullNameLabel}`
+  | (BillingAddress(AddressCountry(_)), _) =>
+    `${localeString.nameEmptyText}${localeString.countryLabel}`
   | (BillingAddress(Email), _) =>
     if value->String.trim->String.length === 0 {
       localeString.emailEmptyText
@@ -481,7 +483,7 @@ let getPaymentMethodDataErrorString = (
   | (BillingAddress(AddressLine2), _) => localeString.line2EmptyText
 
   | (PayoutMethodData(PaypalMobNumber), _) | (PayoutMethodData(VenmoMobNumber), _) =>
-    localeString.formFieldPhoneNumberLabel->localeString.nameEmptyText
+    `${localeString.nameEmptyText}${localeString.formFieldPhoneNumberLabel}`
   | _ => ""
   }
 }
@@ -690,7 +692,7 @@ let defaultPaymentMethodCollectOptions = {
 let defaultStatusInfo = {
   status: Success,
   payoutId: "",
-  message: EnglishLocale.localeStrings.payoutStatusSuccessMessage,
+  message: LocaleDataType.defaultLocale.payoutStatusSuccessMessage,
   code: None,
   errorMessage: None,
   reason: None,

@@ -67,9 +67,47 @@ let defaultConfig = {
 type recoilConfig = {
   config: configClass,
   themeObj: themeClass,
-  localeString: LocaleStringTypes.localeStrings,
-  constantString: LocaleStringTypes.constantStrings,
+  localeString: LocaleDataType.localeStrings,
+  constantString: LocaleDataType.constantStrings,
   showLoader: bool,
+}
+
+let getLocaleFileName = locale => {
+  switch locale->LocaleDataType.localeStringToType {
+  | Some(En) => "en"
+  | Some(He) => "he"
+  | Some(Fr) => "fr"
+  | Some(En_GB) => "en-GB"
+  | Some(Ar) => "ar"
+  | Some(Ja) => "ja"
+  | Some(De) => "de"
+  | Some(Fr_BE) => "fr-BE"
+  | Some(Es) => "es"
+  | Some(Ca) => "ca"
+  // | Some(Zh) => "zh" // Pending support
+  | Some(Pt) => "pt"
+  | Some(It) => "it"
+  | Some(Pl) => "pl"
+  | Some(Nl) => "nl"
+  | Some(NI_BE) => "nl-BE" // to check
+  | Some(Sv) => "sv"
+  | Some(Ru) => "ru"
+  // | Some(Zh_HANT) => "zh-Hant" // Pending support
+  | Some(Lt) => "lt"
+  | Some(Cs) => "cs"
+  | Some(Sk) => "sk"
+  | Some(Ls) => "is" // to check
+  | Some(Cy) => "cy"
+  | Some(El) => "el"
+  | Some(Et) => "et"
+  | Some(Fi) => "fi"
+  | Some(Nb) => "no" // to check
+  | Some(Bs) => "bs"
+  | Some(Da) => "da"
+  | Some(Ms) => "ms"
+  | Some(Tr_CY) => "tr-CY"
+  | None => "en"
+  }
 }
 
 let getLocaleObject = async string => {
@@ -80,48 +118,27 @@ let getLocaleObject = async string => {
       string
     }
 
-    let promiseLocale = switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
-    | EN => Js.import(EnglishLocale.localeStrings)
-    | HE => Js.import(HebrewLocale.localeStrings)
-    | FR => Js.import(FrenchLocale.localeStrings)
-    | EN_GB => Js.import(EnglishGBLocale.localeStrings)
-    | AR => Js.import(ArabicLocale.localeStrings)
-    | JA => Js.import(JapaneseLocale.localeStrings)
-    | DE => Js.import(DeutschLocale.localeStrings)
-    | FR_BE => Js.import(FrenchBelgiumLocale.localeStrings)
-    | ES => Js.import(SpanishLocale.localeStrings)
-    | CA => Js.import(CatalanLocale.localeStrings)
-    | ZH => Js.import(ChineseLocale.localeStrings)
-    | PT => Js.import(PortugueseLocale.localeStrings)
-    | IT => Js.import(ItalianLocale.localeStrings)
-    | PL => Js.import(PolishLocale.localeStrings)
-    | NL => Js.import(DutchLocale.localeStrings)
-    | SV => Js.import(SwedishLocale.localeStrings)
-    | RU => Js.import(RussianLocale.localeStrings)
-    | ZH_HANT => Js.import(TraditionalChineseLocale.localeStrings)
-    }
-
-    let awaitedLocaleValue = await promiseLocale
-    awaitedLocaleValue
+    let localeFileName = getLocaleFileName(locale)
+    await S3Utils.getLocaleFromS3(localeFileName)
   } catch {
-  | _ => EnglishLocale.localeStrings
+  | _ => LocaleDataType.defaultLocale
   }
 }
 
 let getConstantStringsObject = async () => {
   try {
-    let promiseConstantStrings = Js.import(ConstantStrings.constantStrings)
+    let promiseConstantStrings = Js.import(LocaleDataType.defaultConstantStrings)
     await promiseConstantStrings
   } catch {
-  | _ => ConstantStrings.constantStrings
+  | _ => LocaleDataType.defaultConstantStrings
   }
 }
 
 let defaultRecoilConfig: recoilConfig = {
   config: defaultConfig,
   themeObj: defaultConfig.appearance.variables,
-  localeString: EnglishLocale.localeStrings,
-  constantString: ConstantStrings.constantStrings,
+  localeString: LocaleDataType.defaultLocale,
+  constantString: LocaleDataType.defaultConstantStrings,
   showLoader: false,
 }
 
