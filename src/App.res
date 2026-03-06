@@ -97,7 +97,6 @@ let make = () => {
         let publishableKey = getQueryParamsDictforKey(url.search, "publishableKey")
         let profileId = getQueryParamsDictforKey(url.search, "profileId")
         let endpoint = getQueryParamsDictforKey(url.search, "endpoint")
-        let ephemeralKey = getQueryParamsDictforKey(url.search, "ephemeralKey")
         let pmClientSecret = getQueryParamsDictforKey(url.search, "pmClientSecret")
         let pmSessionId = getQueryParamsDictforKey(url.search, "pmSessionId")
         let hyperComponentName =
@@ -119,7 +118,6 @@ let make = () => {
           clientSecret
           paymentId
           endpoint
-          ephemeralKey
           pmSessionId
           pmClientSecret
           hyperComponentName

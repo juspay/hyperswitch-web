@@ -175,23 +175,6 @@ let getMessageHandlerV2Elements = (
   }
 }
 
-let getMessageHandlerV1PMM = (~ephemeralKey, ~logger, ~customPodUri, ~endpoint) => {
-  let savedPaymentMethodsPromise = PaymentHelpers.fetchSavedPaymentMethodList(
-    ~ephemeralKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
-
-  ev => {
-    open Utils
-    let dict = ev.data->safeParse->getDictFromJson
-    if dict->isKeyPresentInDict("sendSavedPaymentMethodsResponse") {
-      savedPaymentMethodsPromise->sendPromiseData("saved_payment_methods")
-    }
-  }
-}
-
 let getMessageHandlerV2PMM = (
   ~pmSessionId,
   ~pmClientSecret,
@@ -271,7 +254,6 @@ module PreMountLoaderForPMMElements = {
   let make = (
     ~logger,
     ~endpoint,
-    ~ephemeralKey,
     ~customPodUri,
     ~pmSessionId,
     ~pmClientSecret,
@@ -303,7 +285,6 @@ let make = (
   ~clientSecret,
   ~endpoint,
   ~paymentId,
-  ~ephemeralKey,
   ~pmSessionId,
   ~pmClientSecret,
   ~hyperComponentName: Types.hyperComponentName,
@@ -336,7 +317,7 @@ let make = (
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements
-      logger endpoint ephemeralKey customPodUri pmSessionId pmClientSecret publishableKey profileId
+      logger endpoint customPodUri pmSessionId pmClientSecret publishableKey profileId
     />
   }
 }

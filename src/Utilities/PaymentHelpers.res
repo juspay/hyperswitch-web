@@ -34,7 +34,6 @@ let retrievePaymentIntent = async (
       clientSecret: Some(clientSecret),
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
-      paymentMethodId: None,
       forceSync: isForceSync ? Some("true") : None,
       pollId: None,
       payoutId: None,
@@ -79,7 +78,6 @@ let fetchBlockedBins = async (
       clientSecret: Some(clientSecret),
       publishableKey: None,
       customBackendBaseUrl: Some(endpoint),
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -117,7 +115,6 @@ let threeDsAuth = async (
       clientSecret: Some(clientSecret),
       publishableKey: None,
       customBackendBaseUrl: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -228,7 +225,6 @@ let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger, ~sdk
       clientSecret: None,
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: Some(pollID),
       payoutId: None,
@@ -1494,7 +1490,6 @@ let fetchSessions = async (
       customBackendBaseUrl: Some(endpoint),
       clientSecret: None,
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1537,7 +1532,6 @@ let confirmPayout = async (
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: Some(publishableKey),
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: Some(payoutId),
@@ -1581,7 +1575,6 @@ let createPaymentMethod = async (
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: Some(publishableKey),
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1625,7 +1618,6 @@ let fetchPaymentMethodList = async (
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1665,7 +1657,6 @@ let fetchCustomerPaymentMethodList = async (
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1775,7 +1766,6 @@ let callAuthLink = async (
       clientSecret: None,
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1849,7 +1839,6 @@ let callAuthExchange = async (
       clientSecret: None,
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1918,75 +1907,6 @@ let callAuthExchange = async (
   )
 }
 
-let fetchSavedPaymentMethodList = async (
-  ~ephemeralKey,
-  ~endpoint,
-  ~logger,
-  ~customPodUri,
-  ~isPaymentSession=false,
-) => {
-  let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchSavedPaymentMethodList,
-    ~params={
-      customBackendBaseUrl: Some(endpoint),
-      clientSecret: None,
-      publishableKey: Some(ephemeralKey),
-      paymentMethodId: None,
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-      sdkAuthorization: None,
-    },
-  )
-
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=SAVED_PAYMENT_METHODS_CALL,
-    ~logger,
-    ~method=#GET,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(ephemeralKey),
-    ~onSuccess,
-    ~onFailure,
-    ~isPaymentSession,
-  )
-}
-
-let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodUri) => {
-  let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=DeletePaymentMethod,
-    ~params={
-      customBackendBaseUrl: None,
-      clientSecret: None,
-      publishableKey: Some(ephemeralKey),
-      paymentMethodId: Some(paymentMethodId),
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-      sdkAuthorization: None,
-    },
-  )
-
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=DELETE_PAYMENT_METHODS_CALL,
-    ~logger,
-    ~method=#DELETE,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(ephemeralKey),
-    ~onSuccess,
-    ~onFailure,
-  )
-}
-
 let calculateTax = async (
   ~apiKey,
   ~clientSecret,
@@ -2003,7 +1923,6 @@ let calculateTax = async (
       customBackendBaseUrl: None,
       clientSecret: Some(clientSecret),
       publishableKey: Some(apiKey),
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -2245,7 +2164,6 @@ let fetchEnabledAuthnMethodsToken = async (
       clientSecret: None,
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -2294,7 +2212,6 @@ let fetchEligibilityCheck = async (
       clientSecret: None,
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -2347,7 +2264,6 @@ let fetchAuthenticationSync = async (
       clientSecret: None,
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,

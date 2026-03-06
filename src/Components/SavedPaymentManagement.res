@@ -1,8 +1,4 @@
 @react.component
-let make = (
-  ~savedMethods: array<PaymentType.customerMethods>,
-  ~setSavedMethods,
-  ~cvcProps: CardUtils.cvcProps,
-) => {
+let make = (~cvcProps: CardUtils.cvcProps) => {
   <SavedMethodsV2 cvcProps />
 }

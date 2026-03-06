@@ -456,39 +456,3 @@ let getCustomerSavedPaymentMethods = (
     handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
   })
 }
-
-let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~customPodUri, ~endpoint) => {
-  let getSavedPaymentManagementMethodsList = _ => {
-    PaymentHelpers.fetchSavedPaymentMethodList(~ephemeralKey, ~logger, ~customPodUri, ~endpoint)
-    ->then(response => {
-      response->resolve
-    })
-    ->catch(err => {
-      let exceptionMessage = err->formatException->JSON.stringify
-      handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
-    })
-  }
-
-  let deleteSavedPaymentMethod = paymentMethodId => {
-    PaymentHelpers.deletePaymentMethod(
-      ~ephemeralKey,
-      ~paymentMethodId={paymentMethodId->JSON.Decode.string->Option.getOr("")},
-      ~logger,
-      ~customPodUri,
-    )
-    ->then(response => {
-      response->resolve
-    })
-    ->catch(err => {
-      let exceptionMessage = err->formatException->JSON.stringify
-      handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
-    })
-  }
-
-  {
-    getSavedPaymentManagementMethodsList,
-    deleteSavedPaymentMethod,
-  }
-  ->Identity.anyTypeToJson
-  ->resolve
-}

@@ -3,8 +3,6 @@ type apiCallV1 =
   | FetchCustomerPaymentMethodList
   | FetchSessions
   | FetchThreeDsAuth
-  | FetchSavedPaymentMethodList
-  | DeletePaymentMethod
   | CalculateTax
   | CreatePaymentMethod
   | RetrievePaymentIntent
@@ -29,7 +27,6 @@ type apiParamsV2 = {...commonApiParams, paymentIdV2: option<string>}
 type apiParamsV1 = {
   ...commonApiParams,
   clientSecret: option<string>,
-  paymentMethodId: option<string>,
   forceSync: option<string>,
   pollId: option<string>,
   payoutId: option<string>,
@@ -54,7 +51,6 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
     clientSecret,
     publishableKey,
     customBackendBaseUrl,
-    paymentMethodId,
     forceSync,
     pollId,
     payoutId,
@@ -64,7 +60,6 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   let clientSecretVal = clientSecret->Option.getOr("")
   let publishableKeyVal = publishableKey->Option.getOr("")
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
-  let paymentMethodIdVal = paymentMethodId->Option.getOr("")
   let pollIdVal = pollId->Option.getOr("")
   let payoutIdVal = payoutId->Option.getOr("")
 
@@ -99,8 +94,6 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchBlockedBins => list{("data_kind", "card_bin"), ...defaultParams}
   | FetchSessions
   | FetchThreeDsAuth
-  | FetchSavedPaymentMethodList
-  | DeletePaymentMethod
   | CalculateTax
   | CreatePaymentMethod
   | CallAuthLink
@@ -117,9 +110,7 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchPaymentMethodList => "account/payment_methods"
   | FetchSessions => "payments/session_tokens"
   | FetchThreeDsAuth => `payments/${paymentIntentID}/3ds/authentication`
-  | FetchCustomerPaymentMethodList
-  | FetchSavedPaymentMethodList => "customers/payment_methods"
-  | DeletePaymentMethod => `payment_methods/${paymentMethodIdVal}`
+  | FetchCustomerPaymentMethodList => "customers/payment_methods"
   | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
   | CreatePaymentMethod => "payment_methods"
   | RetrievePaymentIntent => `payments/${paymentIntentID}`
