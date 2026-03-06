@@ -34,7 +34,7 @@ let make = (
     paymentMethodsListV2,
   ) {
   | (V1, Payment, Loading, _, _)
-  | (V2, PaymentMethodsManagement, _, LoadingV2, _)
+  | (_, PaymentMethodsManagement, _, LoadingV2, _)
   | (V2, Payment, _, _, LoadingV2) => true
   | _ => false
   }
@@ -48,9 +48,11 @@ let make = (
   } else if isWalletElement {
     <WalletElement paymentType />
   } else {
-    switch GlobalVars.sdkVersion {
-    | V2 => <PaymentElementV2 cardProps expiryProps cvcProps paymentType />
-    | V1 => <PaymentElement cardProps expiryProps cvcProps paymentType />
+    switch (paymentType, GlobalVars.sdkVersion) {
+    | (PaymentMethodsManagement, _)
+    | (_, V2) =>
+      <PaymentElementV2 cardProps expiryProps cvcProps paymentType />
+    | _ => <PaymentElement cardProps expiryProps cvcProps paymentType />
     }
   }
 }

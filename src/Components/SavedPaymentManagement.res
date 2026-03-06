@@ -4,8 +4,5 @@ let make = (
   ~setSavedMethods,
   ~cvcProps: CardUtils.cvcProps,
 ) => {
-  switch GlobalVars.sdkVersion {
-  | V1 => <SavedMethodsV1 savedMethods setSavedMethods />
-  | V2 => <SavedMethodsV2 cvcProps />
-  }
+  <SavedMethodsV2 cvcProps />
 }
