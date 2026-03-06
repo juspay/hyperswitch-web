@@ -270,6 +270,7 @@ type rec ele = {
   mutable target: string,
   mutable enctype: string,
   mutable value: string,
+  mutable allow: string,
   submit: unit => unit,
   appendChild: ele => unit,
 }

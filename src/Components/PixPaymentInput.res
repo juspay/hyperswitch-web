@@ -18,7 +18,7 @@ let make = (~fieldType="") => {
     }
 
   let validatePixCNPJ = (val): RecoilAtomTypes.field => {
-    let isCNPJValid = %re("/^\d*$/")->RegExp.test(val) && val->String.length === 14
+    let isCNPJValid = CnpjValidation.isValidCNPJ(val)
     if isCNPJValid {
       {value: val, isValid: Some(true), errorString: ""}
     } else if val->String.length === 0 {
@@ -33,7 +33,7 @@ let make = (~fieldType="") => {
   }
 
   let validatePixCPF = (val): RecoilAtomTypes.field => {
-    let isCPFValid = %re("/^\d*$/")->RegExp.test(val) && val->String.length === 11
+    let isCPFValid = CpfValidation.isValidCPF(val)
     if isCPFValid {
       {value: val, isValid: Some(true), errorString: ""}
     } else if val->String.length === 0 {
