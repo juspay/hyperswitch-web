@@ -1,6 +1,5 @@
 open RecoilAtoms
 open Utils
-open PaymentModeType
 
 @react.component
 let make = () => {
