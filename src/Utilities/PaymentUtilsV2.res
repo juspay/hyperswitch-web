@@ -48,7 +48,7 @@ let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mo
 
   React.useMemo(() => {
     resolvePaymentList(methodslist)
-  }, methodslist)
+  }, [methodslist])
 }
 
 let getCreditFieldsRequired = (~paymentManagementListValue: paymentMethodsManagement) => {
