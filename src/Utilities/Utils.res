@@ -989,13 +989,7 @@ let getHeaders = (
   | None => [("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key"))]
   }
 
-  let authorizationHeaders = switch GlobalVars.sdkVersion {
-  | V2 => [
-      ("x-profile-id", profileIdVal),
-      ("Authorization", `publishable-key=${publishableKeyVal},client-secret=${clientSecretVal}`),
-    ]
-  | V1 => v1Headers
-  }
+  let authorizationHeaders = v1Headers
 
   let authHeader = switch (token, uri) {
   | (Some(tok), Some(_)) => [("Authorization", tok)]
@@ -1096,14 +1090,12 @@ let fetchApiWithLogging = async (
   open LoggerUtils
 
   // * Log request initiation
-  if GlobalVars.sdkVersion != V2 {
-    LogAPIResponse.logApiResponse(
-      ~logger,
-      ~uri,
-      ~eventName=apiEventInitMapper(eventName),
-      ~status=Request,
-    )
-  }
+  LogAPIResponse.logApiResponse(
+    ~logger,
+    ~uri,
+    ~eventName=apiEventInitMapper(eventName),
+    ~status=Request,
+  )
 
   try {
     let body = switch method {
@@ -1132,30 +1124,26 @@ let fetchApiWithLogging = async (
 
     if resp->Fetch.Response.ok {
       let data = await Fetch.Response.json(resp)
-      if GlobalVars.sdkVersion != V2 {
-        LogAPIResponse.logApiResponse(
-          ~logger,
-          ~uri,
-          ~eventName=Some(eventName),
-          ~status=Success,
-          ~statusCode,
-          ~isPaymentSession,
-        )
-      }
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=Some(eventName),
+        ~status=Success,
+        ~statusCode,
+        ~isPaymentSession,
+      )
       onSuccess(data)
     } else {
       let data = await resp->Fetch.Response.json
-      if GlobalVars.sdkVersion != V2 {
-        LogAPIResponse.logApiResponse(
-          ~logger,
-          ~uri,
-          ~eventName=Some(eventName),
-          ~status=Error,
-          ~statusCode,
-          ~data,
-          ~isPaymentSession,
-        )
-      }
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=Some(eventName),
+        ~status=Error,
+        ~statusCode,
+        ~data,
+        ~isPaymentSession,
+      )
       onFailure(data)
     }
   } catch {
@@ -1169,16 +1157,14 @@ let fetchApiWithLogging = async (
           "error": exceptionMessage,
         },
       )
-      if GlobalVars.sdkVersion != V2 {
-        LogAPIResponse.logApiResponse(
-          ~logger,
-          ~uri,
-          ~eventName=Some(eventName),
-          ~status=Exception,
-          ~data=exceptionMessage,
-          ~isPaymentSession,
-        )
-      }
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=Some(eventName),
+        ~status=Exception,
+        ~data=exceptionMessage,
+        ~isPaymentSession,
+      )
       switch onCatchCallback {
       | Some(fun) => fun(exceptionMessage)
       | None => onFailure(exceptionMessage)

@@ -429,10 +429,7 @@ let samsungPayBody = (~metadata) => {
 
 let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) => {
   open Utils
-  let (paymentMethodTypeKey, paymentMethodSubtypeKey) = switch GlobalVars.sdkVersion {
-  | V1 => ("payment_method", "payment_method_type")
-  | V2 => ("payment_method_type", "payment_method_subtype")
-  }
+  let (paymentMethodTypeKey, paymentMethodSubtypeKey) = ("payment_method", "payment_method_type")
 
   let paymentMethodData = {
     let paymentMethodData = payObj.paymentMethodData

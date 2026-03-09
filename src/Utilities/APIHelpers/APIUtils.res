@@ -15,14 +15,10 @@ type apiCallV1 =
   | FetchEligibilityCheck
   | FetchAuthenticationSync
 
-type apiCallV2 = FetchSessionsV2 | FetchIntent | CheckBalanceAndApplyPaymentMethod
-
 type commonApiParams = {
   publishableKey: option<string>,
   customBackendBaseUrl: option<string>,
 }
-
-type apiParamsV2 = {...commonApiParams, paymentIdV2: option<string>}
 
 type apiParamsV1 = {
   ...commonApiParams,
@@ -123,31 +119,6 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
     `authentication/${authenticationIdVal}/enabled_authn_methods_token`
   | FetchEligibilityCheck => `authentication/${authenticationIdVal}/eligibility-check`
   | FetchAuthenticationSync => `authentication/${merchantId}/${authenticationIdVal}/sync`
-  }
-
-  `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`
-}
-
-let generateApiUrlV2 = (~params: apiParamsV2, ~apiCallType: apiCallV2) => {
-  let {publishableKey, customBackendBaseUrl, paymentIdV2} = params
-
-  let publishableKeyVal = publishableKey->Option.getOr("")
-  let paymentIdVal = paymentIdV2->Option.getOr("")
-
-  let baseUrl =
-    customBackendBaseUrl->Option.getOr(
-      ApiEndpoint.getApiEndPoint(~publishableKey=publishableKeyVal),
-    )
-
-  let queryParams = switch apiCallType {
-  | _ => list{}
-  }
-
-  let path = switch apiCallType {
-  | FetchSessionsV2 => `v2/payments/${paymentIdVal}/create-external-sdk-tokens`
-  | FetchIntent => `v2/payments/${paymentIdVal}/get-intent`
-  | CheckBalanceAndApplyPaymentMethod =>
-    `v2/payments/${paymentIdVal}/eligibility/check-balance-and-apply-pm-data`
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`

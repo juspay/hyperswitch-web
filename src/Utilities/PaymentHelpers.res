@@ -1230,7 +1230,6 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let paymentMethodListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
@@ -1244,56 +1243,36 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry=false,
-    ~isExternalVaultFlow=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
-      let headers = switch GlobalVars.sdkVersion {
-      | V1 => {
-          let v1Headers = [
-            ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
-          ]
-          switch keys.sdkAuthorization->Utils.getNonEmptyOption {
-          | Some(sdkAuth) => v1Headers->Array.push(("Authorization", sdkAuth))
-          | _ => v1Headers->Array.push(("api-key", confirmParam.publishableKey))
-          }
+      let headers = {
+        let v1Headers = [
+          ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+        ]
+        switch keys.sdkAuthorization->Utils.getNonEmptyOption {
+        | Some(sdkAuth) => v1Headers->Array.push(("Authorization", sdkAuth))
+        | _ => v1Headers->Array.push(("api-key", confirmParam.publishableKey))
+        }
 
-          v1Headers
-        }
-      | V2 => {
-          let authorizationHeader = (
-            "Authorization",
-            `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
-          )
-          [
-            authorizationHeader,
-            ("x-profile-id", keys.profileId),
-            ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
-          ]
-        }
+        v1Headers
       }
+
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
       let clientSecretArr = switch keys.sdkAuthorization->Utils.getNonEmptyOption {
       | Some(_) => []
       | None => [("client_secret", clientSecret->JSON.Encode.string)]
       }
-      let body = switch GlobalVars.sdkVersion {
-      | V1 => clientSecretArr->Array.concatMany([returnUrlArr, manual_retry])
-      | V2 => []
-      }
+      let body = clientSecretArr->Array.concatMany([returnUrlArr, manual_retry])
 
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let path = switch GlobalVars.sdkVersion {
-      | V1 => `payments/${paymentIntentID}/confirm`
-      | V2 =>
-        let baseUrl = `v2/payments/${keys.paymentId}/confirm-intent`
-        isExternalVaultFlow ? `${baseUrl}/external-vault-proxy` : baseUrl
-      }
+      let path = `payments/${paymentIntentID}/confirm`
+
       let uri = `${endpoint}/${path}`
 
       let callIntent = body => {
@@ -1399,9 +1378,9 @@ let usePaymentIntent = (optLogger, paymentType) => {
         callIntent(bodyStr)
       }
 
-      switch (GlobalVars.sdkVersion, paymentMethodList, paymentMethodListV2) {
-      | (V1, LoadError(data), _)
-      | (V1, Loaded(data), _) =>
+      switch paymentMethodList {
+      | LoadError(data)
+      | Loaded(data) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
@@ -1427,19 +1406,8 @@ let usePaymentIntent = (optLogger, paymentType) => {
           )
           Console.warn("Please enable atleast one Payment method.")
         }
-      | (V2, _, LoadedV2(data)) =>
-        if data.paymentMethodsEnabled->Array.length > 0 {
-          intentWithoutMandate("")
-        } else {
-          postFailedSubmitResponse(
-            ~errortype="payment_methods_empty",
-            ~message="Payment Failed. Try again!",
-          )
-          Console.warn("Please enable atleast one Payment method.")
-        }
-      | (V1, SemiLoaded, _)
-      | (V2, _, SemiLoadedV2) =>
-        intentWithoutMandate("")
+
+      | SemiLoaded => intentWithoutMandate("")
       | _ =>
         postFailedSubmitResponse(
           ~errortype="payment_methods_loading",
@@ -1979,7 +1947,6 @@ let usePostSessionTokens = (
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry as _=false,
-    ~isExternalVaultFlow as _=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>

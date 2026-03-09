@@ -42,9 +42,6 @@ let dynamicFieldsEnabledPaymentMethods = [
   "givex",
 ]
 
-let getAtomBasedOnSplitPayments = (isSplitPaymentsEnabled, splitAtom, normalAtom) =>
-  isSplitPaymentsEnabled ? splitAtom : normalAtom
-
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
   let fieldNameArr = field.value->String.split(" ")
   let requiredFieldsArr = item.required_field->String.split(".")
@@ -197,7 +194,6 @@ let useRequiredFieldsEmptyAndValid = (
   ~cardExpiry,
   ~cvcNumber,
   ~isSavedCardFlow,
-  ~isSplitPaymentsEnabled=false,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
@@ -219,21 +215,10 @@ let useRequiredFieldsEmptyAndValid = (
   let documentType = Recoil.useRecoilValueFromAtom(userDocumentType)
   let documentNumber = Recoil.useRecoilValueFromAtom(userDocumentNumber)
 
-  let areRequiredFieldsValidAtom = getAtomBasedOnSplitPayments(
-    isSplitPaymentsEnabled,
-    RecoilAtomsV2.areSplitPaymentRequiredFieldsValid,
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
     areRequiredFieldsValid,
   )
-  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
-    areRequiredFieldsValidAtom,
-  )
-
-  let areRequiredFieldsEmptyAtom = getAtomBasedOnSplitPayments(
-    isSplitPaymentsEnabled,
-    RecoilAtomsV2.areSplitPaymentRequiredFieldsEmpty,
-    areRequiredFieldsEmpty,
-  )
-  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmptyAtom)
+  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
@@ -1291,15 +1276,4 @@ let getKlarnaRequiredFields = (
 
     acc
   })
-}
-
-let getGiftCardDataFromRequiredFieldsBody = requiredFieldsBody => {
-  open Utils
-  let giftCardTuples = []->mergeAndFlattenToTuples(requiredFieldsBody)
-  let data =
-    giftCardTuples
-    ->getJsonFromArrayOfJson
-    ->getDictFromJson
-    ->getDictFromDict("payment_method_data")
-  data
 }

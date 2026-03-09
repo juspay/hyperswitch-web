@@ -39,15 +39,9 @@ let make = (
   let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentManagementListValue,
   )
-  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
-    RecoilAtomsV2.paymentMethodListValueV2,
-  )
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let contextPaymentType = usePaymentType()
-  let listValue = switch contextPaymentType {
-  | PaymentMethodsManagement => paymentManagementListValue
-  | _ => paymentMethodListValueV2
-  }
+  let listValue = paymentManagementListValue
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -82,8 +76,8 @@ let make = (
 
   let requiredFieldsWithBillingDetails = React.useMemo(() => {
     if paymentMethod === "card" {
-      switch GlobalVars.sdkVersion {
-      | V2 =>
+      switch contextPaymentType {
+      | PaymentMethodsManagement =>
         let creditRequiredFields =
           listValue.paymentMethodsEnabled
           ->Array.filter(item => {
@@ -98,7 +92,7 @@ let make = (
           ...finalCreditRequiredFields,
         ]->removeRequiredFieldsDuplicates
 
-      | V1 =>
+      | _ =>
         let creditRequiredFields = creditPaymentMethodTypes.required_fields
 
         [
@@ -107,9 +101,9 @@ let make = (
         ]->removeRequiredFieldsDuplicates
       }
     } else if dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType) {
-      switch GlobalVars.sdkVersion {
-      | V1 => paymentMethodTypes.required_fields
-      | V2 => paymentMethodTypesV2.requiredFields
+      switch contextPaymentType {
+      | PaymentMethodsManagement => paymentMethodTypesV2.requiredFields
+      | _ => paymentMethodTypes.required_fields
       }
     } else {
       []
@@ -177,11 +171,8 @@ let make = (
     errorString: "",
   })
 
-  let bankNames = switch GlobalVars.sdkVersion {
-  | V2 =>
-    Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypesV2.bankNames->Option.getOr([]))
-  | V1 => Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
-  }
+  let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
+
   let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))
 
   let setCurrency = val => {
@@ -288,7 +279,6 @@ let make = (
     ~cardExpiry,
     ~cvcNumber,
     ~isSavedCardFlow,
-    ~isSplitPaymentsEnabled,
   )
 
   useSetInitialRequiredFields(
