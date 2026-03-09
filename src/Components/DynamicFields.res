@@ -41,7 +41,6 @@ let make = (
   )
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let contextPaymentType = usePaymentType()
-  let listValue = paymentManagementListValue
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -57,7 +56,7 @@ let make = (
   )
 
   let paymentMethodTypesV2 = PaymentUtilsV2.usePaymentMethodTypeFromListV2(
-    ~paymentsListValueV2=listValue,
+    ~paymentsListValueV2=paymentManagementListValue,
     ~paymentMethod,
     ~paymentMethodType,
   )
@@ -69,7 +68,7 @@ let make = (
   )
 
   let creditPaymentMethodTypesV2 = PaymentUtilsV2.usePaymentMethodTypeFromListV2(
-    ~paymentsListValueV2=listValue,
+    ~paymentsListValueV2=paymentManagementListValue,
     ~paymentMethod,
     ~paymentMethodType="credit",
   )
@@ -79,7 +78,7 @@ let make = (
       switch contextPaymentType {
       | PaymentMethodsManagement =>
         let creditRequiredFields =
-          listValue.paymentMethodsEnabled
+          paymentManagementListValue.paymentMethodsEnabled
           ->Array.filter(item => {
             item.paymentMethodSubtype === "credit" && item.paymentMethodType === "card"
           })
