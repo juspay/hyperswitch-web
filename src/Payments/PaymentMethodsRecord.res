@@ -156,13 +156,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     displayName: localeString.payment_methods_apple_pay,
     miniIcon: None,
   },
-  {
-    paymentMethodName: "mb_way",
-    fields: [SpecialField(<PhoneNumberPaymentInput />), InfoElement],
-    icon: Some(icon("mbway", ~size=19)),
-    displayName: localeString.payment_methods_mb_way,
-    miniIcon: None,
-  },
+  // {
+  //   paymentMethodName: "mb_way",
+  //   fields: [SpecialField(<PhoneNumberPaymentInput />), InfoElement],
+  //   icon: Some(icon("mbway", ~size=19)),
+  //   displayName: localeString.payment_methods_mb_way,
+  //   miniIcon: None,
+  // },
   {
     paymentMethodName: "mobile_pay",
     fields: [InfoElement],

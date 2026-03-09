@@ -20,40 +20,46 @@ let currentYear = Date.getFullYear(Date.make())
 let years = Array.fromInitializer(~length=currentYear - startYear, i => currentYear - i)
 
 @react.component
-let make = () => {
+let make = (~name: string) => {
   open Utils
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (error, setError) = React.useState(_ => false)
-  let (isNotEligible, setIsNotEligible) = React.useState(_ => false)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      switch dateOfBirth->Nullable.toOption {
-      | Some(_) => setError(_ => false)
-      | None => ()
-      }
-    }
-  }, (dateOfBirth, isNotEligible))
+  let field: ReactFinalForm.fieldProps<ReactEvent.Focus.t> = ReactFinalForm.useField(
+    name,
+    ~config={
+      validate: val => {
+        let date = val->Option.map(Date.fromString)
+        switch date {
+        | Some(date) =>
+          if date->checkIs18OrAbove {
+            None
+          } else {
+            Some(localeString.dateOfBirthInvalidText)
+          }
+        | None => Some(localeString.dateofBirthRequiredText)
+        }
+      },
+    },
+  )
 
-  useSubmitPaymentData(submitCallback)
+  let dateOfBirth =
+    field.input.value
+    ->Option.map(Date.fromString)
+    ->Nullable.fromOption
 
   let onChange = date => {
-    let isAbove18 = switch date->Nullable.toOption {
-    | Some(val) => val->checkIs18OrAbove
-    | None => false
-    }
     LoggerUtils.logInputChangeInfo("dateOfBirth", loggerState)
-    setDateOfBirth(_ => date)
-    setIsNotEligible(_ => !isAbove18)
+    let valStr =
+      date
+      ->Nullable.toOption
+      ->Option.map(d => d->Date.toISOString)
+      ->Option.getOr("")
+    field.input.onChange(valStr)
   }
 
-  let errorString = error
-    ? localeString.dateofBirthRequiredText
-    : localeString.dateOfBirthInvalidText
+  let isNotEligible = field.meta.touched && field.meta.error->Option.isSome
+  let errorString = field.meta.error->Option.getOr("")
 
   <div className="flex flex-col gap-1">
     <div
@@ -108,7 +114,7 @@ let make = () => {
         </div>
       }}
     />
-    <RenderIf condition={error || isNotEligible}>
+    <RenderIf condition={isNotEligible}>
       <div
         className="Error pt-1"
         style={

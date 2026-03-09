@@ -1,4 +1,5 @@
 open RecoilAtoms
+open SuperpositionTypes
 
 let dynamicFieldsEnabledPaymentMethods = [
   "crypto_currency",
@@ -401,198 +402,198 @@ let useRequiredFieldsEmptyAndValid = (
   }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid))
 }
 
-let useSetInitialRequiredFields = (
-  ~requiredFields: array<PaymentMethodsRecord.required_fields>,
-  ~paymentMethodType,
-) => {
-  let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
-  let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
-  let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
-  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
-  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
-  let (phone, setPhone) = Recoil.useRecoilState(userPhoneNumber)
-  let (state, setState) = Recoil.useRecoilState(userAddressState)
-  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
-  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
-  let (blikCode, setBlikCode) = Recoil.useRecoilState(userBlikCode)
-  let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
-  let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
-  let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
+// let useSetInitialRequiredFields = (
+//   ~requiredFields: array<PaymentMethodsRecord.required_fields>,
+//   ~paymentMethodType,
+// ) => {
+//   let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
+//   let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
+//   let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
+//   let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
+//   let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
+//   let (phone, setPhone) = Recoil.useRecoilState(userPhoneNumber)
+//   let (state, setState) = Recoil.useRecoilState(userAddressState)
+//   let (city, setCity) = Recoil.useRecoilState(userAddressCity)
+//   let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
+//   let (blikCode, setBlikCode) = Recoil.useRecoilState(userBlikCode)
+//   let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
+//   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
+//   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
 
-  let (country, setCountry) = Recoil.useRecoilState(userCountry)
-  let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
-  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
-  let (documentType, setDocumentType) = Recoil.useRecoilState(userDocumentType)
-  let (documentNumber, setDocumentNumber) = Recoil.useRecoilState(userDocumentNumber)
-  let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
-    cryptoCurrencyNetworks,
-  )
-  let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
-  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
-  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
+//   let (country, setCountry) = Recoil.useRecoilState(userCountry)
+//   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
+//   let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
+//   let (documentType, setDocumentType) = Recoil.useRecoilState(userDocumentType)
+//   let (documentNumber, setDocumentNumber) = Recoil.useRecoilState(userDocumentNumber)
+//   let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
+//     cryptoCurrencyNetworks,
+//   )
+//   let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
+//   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
+//   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+//   let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
+//   let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
 
-  React.useEffect(() => {
-    let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
-      requiredFields
-      ->Array.filter(requiredFields => requiredFields.field_type === item.field_type)
-      ->Array.reduce("", (acc, item) => {
-        let requiredFieldsArr = item.required_field->String.split(".")
-        switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
-        | "first_name" => item.value->String.concat(acc)
-        | "last_name" => acc->String.concatMany([" ", item.value])
-        | _ => acc
-        }
-      })
-      ->String.trim
-    }
+//   React.useEffect(() => {
+//     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
+//       requiredFields
+//       ->Array.filter(requiredFields => requiredFields.field_type === item.field_type)
+//       ->Array.reduce("", (acc, item) => {
+//         let requiredFieldsArr = item.required_field->String.split(".")
+//         switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
+//         | "first_name" => item.value->String.concat(acc)
+//         | "last_name" => acc->String.concatMany([" ", item.value])
+//         | _ => acc
+//         }
+//       })
+//       ->String.trim
+//     }
 
-    let setFields = (
-      setMethod: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
-      field: RecoilAtomTypes.field,
-      item: PaymentMethodsRecord.required_fields,
-      isNameField,
-      ~isCountryCodeAvailable=?,
-    ) => {
-      if isNameField && field.value === "" {
-        setMethod(prev => {
-          ...prev,
-          value: getNameValue(item),
-        })
-        if isCountryCodeAvailable->Option.isSome {
-          setMethod(prev => {
-            ...prev,
-            countryCode: getNameValue(item),
-          })
-        }
-      } else if field.value === "" {
-        if isCountryCodeAvailable->Option.isSome {
-          setMethod(prev => {
-            ...prev,
-            countryCode: item.value,
-          })
-        } else {
-          setMethod(prev => {
-            ...prev,
-            value: item.value,
-          })
-        }
-      }
-    }
+//     let setFields = (
+//       setMethod: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
+//       field: RecoilAtomTypes.field,
+//       item: PaymentMethodsRecord.required_fields,
+//       isNameField,
+//       ~isCountryCodeAvailable=?,
+//     ) => {
+//       if isNameField && field.value === "" {
+//         setMethod(prev => {
+//           ...prev,
+//           value: getNameValue(item),
+//         })
+//         if isCountryCodeAvailable->Option.isSome {
+//           setMethod(prev => {
+//             ...prev,
+//             countryCode: getNameValue(item),
+//           })
+//         }
+//       } else if field.value === "" {
+//         if isCountryCodeAvailable->Option.isSome {
+//           setMethod(prev => {
+//             ...prev,
+//             countryCode: item.value,
+//           })
+//         } else {
+//           setMethod(prev => {
+//             ...prev,
+//             value: item.value,
+//           })
+//         }
+//       }
+//     }
 
-    requiredFields->Array.forEach(requiredField => {
-      let value = requiredField.value
-      switch requiredField.field_type {
-      | Email => {
-          let emailValue = email.value
-          setFields(setEmail, email, requiredField, false)
-          if emailValue === "" {
-            let newEmail: RecoilAtomTypes.field = {
-              value,
-              isValid: None,
-              errorString: "",
-            }
-            Utils.checkEmailValid(newEmail, setEmail)
-          }
-        }
-      | FullName => setFields(setFullName, fullName, requiredField, true)
-      | AddressLine1 => setFields(setLine1, line1, requiredField, false)
-      | AddressLine2 => setFields(setLine2, line2, requiredField, false)
-      | StateAndCity => {
-          setFields(setState, state, requiredField, false)
-          setFields(setCity, city, requiredField, false)
-        }
-      | CountryAndPincode(_) => {
-          setFields(setPostalCode, postalCode, requiredField, false)
-          if value !== "" && country === "" {
-            let countryCode =
-              Country.getCountry(paymentMethodType, countryList)
-              ->Array.filter(item => item.isoAlpha2 === value)
-              ->Array.get(0)
-              ->Option.getOr(Country.defaultTimeZone)
-            setCountry(_ => countryCode.countryName)
-          }
-        }
-      | AddressState => setFields(setState, state, requiredField, false)
-      | GiftCardNumber => setFields(setGiftCardNumber, giftCardNumber, requiredField, false)
-      | GiftCardPin => setFields(setGiftCardPin, giftCardPin, requiredField, false)
-      | AddressCity => setFields(setCity, city, requiredField, false)
-      | PhoneCountryCode =>
-        setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
-      | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
-      | PhoneNumber => setFields(setPhone, phone, requiredField, false)
-      | PhoneNumberAndCountryCode =>
-        setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
-      | BlikCode => setFields(setBlikCode, blikCode, requiredField, false)
-      | PixKey => setFields(setPixKey, pixKey, requiredField, false)
-      | PixCNPJ => setFields(setPixCNPJ, pixCNPJ, requiredField, false)
-      | PixCPF => setFields(setPixCPF, pixCPF, requiredField, false)
-      | BillingName => setFields(setBillingName, billingName, requiredField, true)
-      | Country
-      | AddressCountry(_) =>
-        if value !== "" {
-          let defaultCountry =
-            Country.getCountry(paymentMethodType, countryList)
-            ->Array.filter(item => item.isoAlpha2 === value)
-            ->Array.get(0)
-            ->Option.getOr(Country.defaultTimeZone)
-          setCountry(_ => defaultCountry.countryName)
-        }
-      | Currency(_) =>
-        if value !== "" && currency === "" {
-          setCurrency(_ => value)
-        }
-      | Bank =>
-        if value !== "" && selectedBank === "" {
-          setSelectedBank(_ => value)
-        }
-      | CryptoCurrencyNetworks =>
-        if value !== "" && cryptoCurrencyNetworks === "" {
-          setCryptoCurrencyNetworks(_ => value)
-        }
-      | DateOfBirth =>
-        switch dateOfBirth->Nullable.toOption {
-        | Some(x) =>
-          if value !== "" && x->Date.toDateString === "" {
-            setDateOfBirth(_ => Nullable.make(x))
-          }
-        | None => ()
-        }
-      | IBAN
-      | BankAccountNumber =>
-        setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
-      | SourceBankAccountId =>
-        setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
-      | DocumentType(_) =>
-        if value !== "" && documentType === "" {
-          setDocumentType(_ => value)
-        }
-      | DocumentNumber => setFields(setDocumentNumber, documentNumber, requiredField, false)
-      | LanguagePreference(_)
-      | SpecialField(_)
-      | InfoElement
-      | CardNumber
-      | CardExpiryMonth
-      | CardExpiryYear
-      | CardExpiryMonthAndYear
-      | CardCvc
-      | CardExpiryAndCvc
-      | ShippingName // Shipping Details are currently supported by only one click widgets
-      | ShippingAddressLine1
-      | ShippingAddressLine2
-      | ShippingAddressCity
-      | ShippingAddressPincode
-      | ShippingAddressState
-      | ShippingAddressCountry(_)
-      | BankList(_)
-      | VpaId
-      | None => ()
-      }
-    })
-    None
-  }, [requiredFields])
-}
+//     requiredFields->Array.forEach(requiredField => {
+//       let value = requiredField.value
+//       switch requiredField.field_type {
+//       | Email => {
+//           let emailValue = email.value
+//           setFields(setEmail, email, requiredField, false)
+//           if emailValue === "" {
+//             let newEmail: RecoilAtomTypes.field = {
+//               value,
+//               isValid: None,
+//               errorString: "",
+//             }
+//             Utils.checkEmailValid(newEmail, setEmail)
+//           }
+//         }
+//       | FullName => setFields(setFullName, fullName, requiredField, true)
+//       | AddressLine1 => setFields(setLine1, line1, requiredField, false)
+//       | AddressLine2 => setFields(setLine2, line2, requiredField, false)
+//       | StateAndCity => {
+//           setFields(setState, state, requiredField, false)
+//           setFields(setCity, city, requiredField, false)
+//         }
+//       | CountryAndPincode(_) => {
+//           setFields(setPostalCode, postalCode, requiredField, false)
+//           if value !== "" && country === "" {
+//             let countryCode =
+//               Country.getCountry(paymentMethodType, countryList)
+//               ->Array.filter(item => item.isoAlpha2 === value)
+//               ->Array.get(0)
+//               ->Option.getOr(Country.defaultTimeZone)
+//             setCountry(_ => countryCode.countryName)
+//           }
+//         }
+//       | AddressState => setFields(setState, state, requiredField, false)
+//       | GiftCardNumber => setFields(setGiftCardNumber, giftCardNumber, requiredField, false)
+//       | GiftCardPin => setFields(setGiftCardPin, giftCardPin, requiredField, false)
+//       | AddressCity => setFields(setCity, city, requiredField, false)
+//       | PhoneCountryCode =>
+//         setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
+//       | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
+//       | PhoneNumber => setFields(setPhone, phone, requiredField, false)
+//       | PhoneNumberAndCountryCode =>
+//         setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
+//       | BlikCode => setFields(setBlikCode, blikCode, requiredField, false)
+//       | PixKey => setFields(setPixKey, pixKey, requiredField, false)
+//       | PixCNPJ => setFields(setPixCNPJ, pixCNPJ, requiredField, false)
+//       | PixCPF => setFields(setPixCPF, pixCPF, requiredField, false)
+//       | BillingName => setFields(setBillingName, billingName, requiredField, true)
+//       | Country
+//       | AddressCountry(_) =>
+//         if value !== "" {
+//           let defaultCountry =
+//             Country.getCountry(paymentMethodType, countryList)
+//             ->Array.filter(item => item.isoAlpha2 === value)
+//             ->Array.get(0)
+//             ->Option.getOr(Country.defaultTimeZone)
+//           setCountry(_ => defaultCountry.countryName)
+//         }
+//       | Currency(_) =>
+//         if value !== "" && currency === "" {
+//           setCurrency(_ => value)
+//         }
+//       | Bank =>
+//         if value !== "" && selectedBank === "" {
+//           setSelectedBank(_ => value)
+//         }
+//       | CryptoCurrencyNetworks =>
+//         if value !== "" && cryptoCurrencyNetworks === "" {
+//           setCryptoCurrencyNetworks(_ => value)
+//         }
+//       | DateOfBirth =>
+//         switch dateOfBirth->Nullable.toOption {
+//         | Some(x) =>
+//           if value !== "" && x->Date.toDateString === "" {
+//             setDateOfBirth(_ => Nullable.make(x))
+//           }
+//         | None => ()
+//         }
+//       | IBAN
+//       | BankAccountNumber =>
+//         setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
+//       | SourceBankAccountId =>
+//         setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
+//       | DocumentType(_) =>
+//         if value !== "" && documentType === "" {
+//           setDocumentType(_ => value)
+//         }
+//       | DocumentNumber => setFields(setDocumentNumber, documentNumber, requiredField, false)
+//       | LanguagePreference(_)
+//       | SpecialField(_)
+//       | InfoElement
+//       | CardNumber
+//       | CardExpiryMonth
+//       | CardExpiryYear
+//       | CardExpiryMonthAndYear
+//       | CardCvc
+//       | CardExpiryAndCvc
+//       | ShippingName // Shipping Details are currently supported by only one click widgets
+//       | ShippingAddressLine1
+//       | ShippingAddressLine2
+//       | ShippingAddressCity
+//       | ShippingAddressPincode
+//       | ShippingAddressState
+//       | ShippingAddressCountry(_)
+//       | BankList(_)
+//       | VpaId
+//       | None => ()
+//       }
+//     })
+//     None
+//   }, [requiredFields])
+// }
 
 let useRequiredFieldsBody = (
   ~requiredFields: array<PaymentMethodsRecord.required_fields>,
@@ -1303,3 +1304,526 @@ let getGiftCardDataFromRequiredFieldsBody = requiredFieldsBody => {
     ->getDictFromDict("payment_method_data")
   data
 }
+
+// Convert SuperpositionTypes.fieldType to PaymentMethodsRecord.paymentMethodsFields
+// outputPath-first: the full path from superposition (e.g. "payment_method_data.card.card_cvc")
+// is the most reliable signal. Fall back to fieldType only when no path matches.
+let superpositionFieldTypeToPaymentMethodField = (
+  fieldType: SuperpositionTypes.fieldType,
+  options: array<string>,
+  outputPath: string,
+): PaymentMethodsRecord.paymentMethodsFields => {
+  let p = outputPath->String.toLowerCase
+
+  // --- Card fields (path-first to avoid PasswordInput/TextInput fallback mismatches) ---
+  if p->String.includes("card.card_cvc") || p->String.includes("card.cvc") {
+    CardCvc
+  } else if p->String.includes("card.card_number") || p->String.includes("card.number") {
+    CardNumber
+  } else if p->String.includes("card.card_exp_month") || p->String.includes("card.exp_month") {
+    CardExpiryMonth
+  } else if p->String.includes("card.card_exp_year") || p->String.includes("card.exp_year") {
+    CardExpiryYear
+    // --- Billing fields ---
+  } else if (
+    p->String.includes("billing.address.first_name") ||
+      p->String.includes("billing.address.last_name")
+  ) {
+    BillingName
+  } else if p->String.includes("billing.address.line1") {
+    AddressLine1
+  } else if p->String.includes("billing.address.line2") {
+    AddressLine2
+  } else if p->String.includes("billing.address.city") {
+    AddressCity
+  } else if p->String.includes("billing.address.state") {
+    AddressState
+  } else if p->String.includes("billing.address.country") {
+    AddressCountry(options)
+  } else if p->String.includes("billing.address.zip") {
+    AddressPincode
+  } else if p->String.includes("billing.email") {
+    Email
+  } else if p->String.includes("billing.phone.country_code") {
+    PhoneCountryCode
+  } else if p->String.includes("billing.phone") {
+    PhoneNumber
+  } else {
+    // --- Fallback to fieldType when no path match ---
+    switch fieldType {
+    | CardNumberTextInput => CardNumber
+    | CvcPasswordInput => CardCvc
+    | MonthSelect => CardExpiryMonth
+    | YearSelect => CardExpiryYear
+    | EmailInput => Email
+    | CountrySelect => AddressCountry(options)
+    | StateSelect => AddressState
+    | PhoneInput => PhoneNumber
+    | CountryCodeSelect => PhoneCountryCode
+    | CurrencySelect => Currency(options)
+    | DropdownSelect => BankList(options)
+    | DatePicker => DateOfBirth
+    | TextInput => FullName
+    | PasswordInput => FullName
+    }
+  }
+}
+
+// Convert SuperpositionTypes.fieldConfig to PaymentMethodsRecord.required_fields
+// fc.outputPath from superposition already includes the full path (e.g. "payment_method_data.card.card_cvc"),
+// so we only prepend "payment_method_data." if the path doesn't already start with it.
+let superpositionFieldToRequiredField = (
+  fc: SuperpositionTypes.fieldConfig,
+  ~pmlRequiredFields: array<PaymentMethodsRecord.required_fields>,
+): PaymentMethodsRecord.required_fields => {
+  let requiredFieldPath =
+    fc.outputPath->String.startsWith("payment_method_data.")
+      ? fc.outputPath
+      : "payment_method_data." ++ fc.outputPath
+
+  let originalField = pmlRequiredFields->Array.find(r => r.required_field === requiredFieldPath)
+  let fieldType = switch originalField {
+  | Some(field) => field.field_type
+  | None => superpositionFieldTypeToPaymentMethodField(fc.fieldType, fc.options, fc.outputPath)
+  }
+
+  {
+    required_field: requiredFieldPath,
+    display_name: fc.displayName,
+    field_type: fieldType,
+    value: "",
+  }
+}
+
+// Get eligible connectors from payment method types (for cards from card_networks, for wallets from payment_experience)
+let getEligibleConnectors = (
+  paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+  paymentMethod: string,
+): array<JSON.t> => {
+  if paymentMethod === "card" {
+    // For cards, get connectors from card_networks
+    paymentMethodTypes.card_networks
+    ->Array.flatMap(cn => cn.eligible_connectors)
+    ->Array.map(c => c->JSON.Encode.string)
+  } else {
+    // For other payment methods, get from payment_experience
+    paymentMethodTypes.payment_experience
+    ->Array.flatMap(pe => pe.eligible_connectors)
+    ->Array.map(c => c->JSON.Encode.string)
+  }
+}
+
+// Build superpositionBaseContext from current payment state
+let buildSuperpositionContext = (
+  ~paymentMethod,
+  ~paymentMethodType,
+  ~userCountry,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+): SuperpositionTypes.superpositionBaseContext => {
+  let mandateType = switch paymentMethodListValue.payment_type {
+  | NEW_MANDATE => "new_mandate"
+  | SETUP_MANDATE => "setup_mandate"
+  | NORMAL => "non_mandate"
+  | NONE => "non_mandate"
+  }
+
+  {
+    payment_method: paymentMethod,
+    payment_method_type: paymentMethodType,
+    country: userCountry,
+    mandate_type: mandateType,
+    collect_shipping_details_from_wallet_connector: "false",
+    collect_billing_details_from_wallet_connector: paymentMethodListValue.collect_billing_details_from_wallets
+      ? "true"
+      : "false",
+  }
+}
+
+// Build requiredFieldsFromPML dict from PML required_fields array
+let buildRequiredFieldsFromPML = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+): Dict.t<string> => {
+  requiredFields->Array.reduce(Dict.make(), (acc, field) => {
+    let key = field.required_field // e.g. "payment_method_data.billing.address.city"
+    // Strip "payment_method_data." prefix to get the outputPath superposition expects
+    // let outputPath = key->String.replace("payment_method_data.", "")
+    let outputPath = key
+    if field.value !== "" {
+      acc->Dict.set(outputPath, field.value)
+    }
+    acc
+  })
+}
+
+// Extract values from PML required_fields array for pre-filling
+let extractValuesFromPMLRequiredFields = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+) => {
+  requiredFields->Array.reduce(Dict.make(), (acc, field) => {
+    if field.value !== "" {
+      // Store with the full path (including payment_method_data prefix)
+      acc->Dict.set(field.required_field, field.value)
+    }
+    acc
+  })
+}
+
+// Hook to get superposition fields - returns missingFields and initialValues
+// PML values are passed to superposition to identify which fields are already pre-filled
+// missingFields = fields that still need user input
+// initialValues = pre-filled values from both PML AND superposition config
+let useSuperpositionFields = (
+  ~paymentMethod,
+  ~paymentMethodType,
+  ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+) => {
+  let userCountry = Recoil.useRecoilValueFromAtom(userCountry)
+  let getSuperpositionFinalFields = ConfigurationService.useConfigurationService()
+
+  // Returns missing fields that need user input
+  let (superpositionMissingFields, setSuperpositionMissingFields) = React.useState(_ => [])
+  // Returns initial/pre-filled values from both PML and superposition
+  let (initialValues, setInitialValues) = React.useState(_ => Dict.make())
+  let (isLoading, setIsLoading) = React.useState(_ => false)
+
+  React.useEffect(() => {
+    // Reset state when payment method changes
+    setSuperpositionMissingFields(_ => [])
+    setInitialValues(_ => Dict.make())
+    setIsLoading(_ => true)
+
+    let eligibleConnectors = getEligibleConnectors(paymentMethodTypes, paymentMethod)
+
+    // Only call superposition if there are eligible connectors
+    // if eligibleConnectors->Array.length === 0 {
+    //   setIsLoading(_ => false)
+    //   None
+    // } else {
+    let configParams = buildSuperpositionContext(
+      ~paymentMethod,
+      ~paymentMethodType,
+      ~userCountry,
+      ~paymentMethodListValue,
+    )
+
+    // Pass PML values so superposition knows which fields are already pre-filled
+    // let pmlValues = buildRequiredFieldsFromPML(paymentMethodTypes.required_fields)
+
+    // Also extract direct values from PML required_fields array
+    let pmlDirectValues = extractValuesFromPMLRequiredFields(paymentMethodTypes.required_fields)
+
+    getSuperpositionFinalFields(eligibleConnectors, configParams, pmlDirectValues)
+    ->Promise.then(((_requiredFields, missingRequiredFields, superpositionInitialValues)) => {
+      // Merge PML direct values with superposition initial values
+      // PML values take precedence (they're already validated by the backend)
+      // let mergedInitialValues = Dict.copy(superpositionInitialValues)
+
+      // Add PML values (they may have different key format)
+      // pmlDirectValues
+      // ->Dict.keysToArray
+      // ->Array.forEach(
+      //   key => {
+      //     let value = pmlDirectValues->Dict.get(key)->Option.getOr(JSON.Null)
+      //     if mergedInitialValues->Dict.get(key)->Option.isNone {
+      //       mergedInitialValues->Dict.set(key, value)
+      //     }
+      //   },
+      // )
+
+      // Convert missing fields - these are fields that still need user input
+      let convertedMissingFields =
+        missingRequiredFields->Array.map(
+          fc =>
+            superpositionFieldToRequiredField(
+              fc,
+              ~pmlRequiredFields=paymentMethodTypes.required_fields,
+            ),
+        )
+      setSuperpositionMissingFields(_ => convertedMissingFields)
+      // setInitialValues(_ => mergedInitialValues)
+      setInitialValues(_ => superpositionInitialValues)
+      setIsLoading(_ => false)
+      Promise.resolve()
+    })
+    ->Promise.catch(ex => {
+      setIsLoading(_ => false)
+      Promise.resolve()
+    })
+    ->ignore
+
+    None
+    // }
+  }, (paymentMethod, paymentMethodType, userCountry, paymentMethodTypes))
+
+  (superpositionMissingFields, initialValues, isLoading)
+}
+
+// Helper to extract string value from JSON
+let jsonStringToString = (json: JSON.t): string => {
+  json->JSON.Decode.string->Option.getOr("")
+}
+
+// Helper to get nested string value from a nested JSON object
+// initialValues is Dict.t<JSON.t> where values can be nested JSON objects
+let rec getNestedStringValue = (dict: Dict.t<JSON.t>, path: array<string>): string => {
+  switch path->Array.get(0) {
+  | None => ""
+  | Some(key) =>
+    switch dict->Dict.get(key) {
+    | None => ""
+    | Some(jsonValue) =>
+      if path->Array.length === 1 {
+        // Last key in path, extract string value
+        jsonStringToString(jsonValue)
+      } else {
+        // More keys to traverse, decode as object and recurse
+        switch jsonValue->JSON.Decode.object {
+        | Some(nestedDict) => {
+            let remainingPath = path->Array.slice(~start=1, ~end=path->Array.length)
+            getNestedStringValue(nestedDict, remainingPath)
+          }
+        | None => ""
+        }
+      }
+    }
+  }
+}
+
+// Synchronous version for wallet flows - gets superposition fields as a promise
+// This can be called from wallet button handlers
+let getSuperpositionFieldsForWallet = (
+  ~getSuperpositionFinalFields,
+  ~paymentMethod,
+  ~paymentMethodType,
+  ~userCountry,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+  ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+) => {
+  let eligibleConnectors = getEligibleConnectors(paymentMethodTypes, paymentMethod)
+
+  if eligibleConnectors->Array.length === 0 {
+    Promise.resolve(([], [], Dict.make()))
+  } else {
+    let configParams = buildSuperpositionContext(
+      ~paymentMethod,
+      ~paymentMethodType,
+      ~userCountry,
+      ~paymentMethodListValue,
+    )
+
+    let pmlValues = buildRequiredFieldsFromPML(paymentMethodTypes.required_fields)
+
+    getSuperpositionFinalFields(eligibleConnectors, configParams, pmlValues)->Promise.then(((
+      allFields,
+      missingFields,
+      initialValues,
+    )) => {
+      // Convert missing fields to required_fields format
+      let convertedMissingFields =
+        missingFields->Array.map(fc =>
+          superpositionFieldToRequiredField(
+            fc,
+            ~pmlRequiredFields=paymentMethodTypes.required_fields,
+          )
+        )
+      Promise.resolve((allFields, convertedMissingFields, initialValues))
+    })
+  }
+}
+
+// Merge superposition missing fields with wallet required fields
+// let mergeSuperpositionWithWalletFields = (
+//   ~walletRequiredFields: Dict.t<JSON.t>,
+//   ~superpositionMissingFields as _: array<PaymentMethodsRecord.required_fields>,
+//   ~initialValues: Dict.t<JSON.t>,
+// ) => {
+//   // Start with wallet provided values
+//   let mergedDict = Dict.copy(walletRequiredFields)
+
+//   // Add initial values from superposition (these are pre-filled values from PML)
+//   initialValues
+//   ->Dict.keysToArray
+//   ->Array.forEach(key => {
+//     let value = initialValues->Dict.get(key)->Option.getOr(JSON.Null)
+
+//     // Only set if not already provided by wallet
+//     if mergedDict->Dict.get(key)->Option.isNone {
+//       mergedDict->Dict.set(key, value)
+//     }
+//   })
+
+//   mergedDict
+// }
+
+// Get superposition field paths for validation
+let getSuperpositionMissingFieldPaths = (
+  missingFields: array<PaymentMethodsRecord.required_fields>,
+): array<string> => {
+  missingFields->Array.map(field => field.required_field)
+}
+
+// Hook to pre-populate Recoil atoms from superposition initialValues.
+// initialValues keys are outputPaths like "billing.address.city" (no payment_method_data. prefix).
+// Values are JSON strings (or nested JSON objects for flat paths).
+let useSetInitialValuesFromSuperposition = (~initialValues: Dict.t<JSON.t>, ~paymentMethodType) => {
+  let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
+  let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
+  let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
+  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
+  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
+  let (phone, setPhone) = Recoil.useRecoilState(userPhoneNumber)
+  let (state, setState) = Recoil.useRecoilState(userAddressState)
+  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
+  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
+  let (country, setCountry) = Recoil.useRecoilState(userCountry)
+  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
+  let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
+
+  React.useEffect(() => {
+    // Helper: extract a plain string from a JSON value
+    let getString = (json: JSON.t): string => {
+      json->JSON.Decode.string->Option.getOr("")
+    }
+
+    // Helper: look up a value in initialValues by its superposition outputPath
+    // (e.g. "billing.address.city") and return it as a string.
+    // Superposition may return either a flat key "billing.address.city" -> "\"San Francisco\""
+    // or a nested structure "billing" -> { "address" -> { "city" -> "San Francisco" } }.
+    let getValue = (outputPath: string): string => {
+      // First try flat lookup (most common from superposition)
+      let res = switch initialValues->Dict.get(outputPath) {
+      | Some(json) => getString(json)
+      | None => {
+          // Try nested lookup
+          let parts = outputPath->String.split(".")
+          getNestedStringValue(initialValues, parts)
+        }
+      }
+
+      res
+    }
+
+    // Helper: set a field-type Recoil atom only when currently empty
+    let setFieldIfEmpty = (
+      setter: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
+      currentField: RecoilAtomTypes.field,
+      value: string,
+    ) => {
+      if value !== "" && currentField.value === "" {
+        setter(prev => {...prev, value})
+      }
+    }
+
+    // Billing name: superposition exposes first_name and last_name separately
+    let firstName = getValue("billing.address.first_name")
+    let lastName = getValue("billing.address.last_name")
+    if billingName.value === "" {
+      let fullNameStr = switch (firstName, lastName) {
+      | ("", "") => ""
+      | (f, "") => f
+      | ("", l) => l
+      | (f, l) => `${f} ${l}`
+      }
+      if fullNameStr !== "" {
+        setBillingName(prev => {...prev, value: fullNameStr})
+      }
+    }
+
+    // Full name (same fields, different atom)
+    if fullName.value === "" {
+      let fnFirst = getValue("billing.address.first_name")
+      let fnLast = getValue("billing.address.last_name")
+      let fullNameStr = switch (fnFirst, fnLast) {
+      | ("", "") => ""
+      | (f, "") => f
+      | ("", l) => l
+      | (f, l) => `${f} ${l}`
+      }
+      if fullNameStr !== "" {
+        setFullName(prev => {...prev, value: fullNameStr})
+      }
+    }
+
+    // Address fields
+    setFieldIfEmpty(setLine1, line1, getValue("billing.address.line1"))
+    setFieldIfEmpty(setLine2, line2, getValue("billing.address.line2"))
+    setFieldIfEmpty(setCity, city, getValue("billing.address.city"))
+    setFieldIfEmpty(setState, state, getValue("billing.address.state"))
+    setFieldIfEmpty(setPostalCode, postalCode, getValue("billing.address.zip"))
+
+    // Country: superposition returns an ISO alpha-2 code; we store the country name in Recoil
+    let countryCodeValue = getValue("billing.address.country")
+    if countryCodeValue !== "" && country === "" {
+      let defaultCountry =
+        Country.getCountry(paymentMethodType, countryList)
+        ->Array.filter(item => item.isoAlpha2 === countryCodeValue)
+        ->Array.get(0)
+        ->Option.getOr(Country.defaultTimeZone)
+      setCountry(_ => defaultCountry.countryName)
+    }
+
+    // Email
+    let emailValue = getValue("billing.email")
+    if emailValue !== "" && email.value === "" {
+      let newEmail: RecoilAtomTypes.field = {
+        value: emailValue,
+        isValid: None,
+        errorString: "",
+      }
+      setEmail(_ => newEmail)
+      Utils.checkEmailValid(newEmail, setEmail)
+    }
+
+    // Phone number
+    let phoneValue = getValue("billing.phone.number")
+    let phoneCountryCode = getValue("billing.phone.country_code")
+    if phoneValue !== "" && phone.value === "" {
+      setPhone(prev => {
+        ...prev,
+        value: phoneValue,
+        countryCode: phoneCountryCode !== ""
+          ? phoneCountryCode
+          : prev.countryCode->Option.getOr(""),
+      })
+    } else if phoneCountryCode !== "" && phone.countryCode->Option.getOr("") === "" {
+      // Only update country code if not already set
+      setPhone(prev => {...prev, countryCode: phoneCountryCode})
+    }
+
+    // Currency
+    let currencyValue = getValue("currency")
+    if currencyValue !== "" && currency === "" {
+      setCurrency(_ => currencyValue)
+    }
+
+    // Bank
+    let bankValue = getValue("bank")
+    if bankValue !== "" && selectedBank === "" {
+      setSelectedBank(_ => bankValue)
+    }
+
+    None
+  }, [initialValues])
+}
+
+let formatFormValues: Dict.t<JSON.t> => Dict.t<JSON.t> = %raw(`
+  function(formValues) {
+    let clone = JSON.parse(JSON.stringify(formValues));
+
+    if (clone && clone.payment_method_data && clone.payment_method_data.billing && clone.payment_method_data.billing.address) {
+      let address = clone.payment_method_data.billing.address;
+      if (typeof address.first_name === 'string') {
+        let nameArr = address.first_name.trim().split(" ");
+        address.first_name = nameArr[0] || "";
+        if (nameArr.length > 1) {
+          address.last_name = nameArr.slice(1).join(" ");
+        } else {
+          delete address.last_name;
+        }
+      }
+    }
+
+    return clone;
+  }
+`)
