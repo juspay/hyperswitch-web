@@ -40,10 +40,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   React.useEffect(() => {
     switch paymentManagementList {
     | LoadedV2(paymentlist) =>
-      let plist = paymentlist
-
       setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
-      setPaymentManagementListValue(_ => plist)
+      setPaymentManagementListValue(_ => paymentlist)
 
     | LoadErrorV2(_)
     | SemiLoadedV2 =>
