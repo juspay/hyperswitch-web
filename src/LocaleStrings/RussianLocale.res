@@ -257,4 +257,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Оставшаяся сумма к оплате отсутствует. Пожалуйста, продолжите оплату.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Пожалуйста, оплатите оставшуюся сумму ${amount} ${currency} другим способом оплаты ниже.`,
+  installmentPayInInstallments: "Оплатить в рассрочку",
+  installmentChoosePlan: "Выберите план рассрочки",
+  installmentInterestFree: "Без процентов",
+  installmentInterestRate: interestRate => `${interestRate}% процентов`,
+  installmentTotalPayable: "Итого к оплате",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    numPayments == 1
+      ? `1 платёж ${currency} ${amount}`
+      : `${numPayments->Int.toString} платежа по ${currency} ${amount}`,
 }

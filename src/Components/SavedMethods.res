@@ -75,6 +75,8 @@ let make = (
     layoutClass.savedMethodCustomization.groupingBehavior == GroupByPaymentMethods
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
 
+  let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
+
   let shouldShowClickToPaySection =
     clickToPayConfig.isReady == Some(true) &&
       (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")
@@ -94,6 +96,7 @@ let make = (
           savedCardlength
           cvcProps
           setRequiredFieldsBody
+          setSelectedInstallmentPlan
         />
       )
       ->React.array}
@@ -109,6 +112,7 @@ let make = (
           getVisaCards
           setIsClickToPayRememberMe
           closeComponentIfSavedMethodsAreEmpty
+          setSelectedInstallmentPlan
         />
       </RenderIf>
     </div>
@@ -152,7 +156,7 @@ let make = (
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not || isSaveCardsChecked
-
+    let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>
       PaymentBody.savedCardBody(
@@ -161,7 +165,7 @@ let make = (
         ~cvcNumber,
         ~requiresCvv=customerMethod.requiresCvv,
         ~isCustomerAcceptanceRequired,
-      )
+      )->Array.concat(installmentBody)
     | _ => {
         let paymentMethodType = switch customerMethod.paymentMethodType {
         | Some("")
@@ -207,7 +211,9 @@ let make = (
                 ~xSrcFlowId,
               )
               intent(
-                ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                ~bodyArr=clickToPayBody
+                ->Array.concat(installmentBody)
+                ->mergeAndFlattenToTuples(requiredFieldsBody),
                 ~confirmParam=confirm.confirmParams,
                 ~handleUserError=false,
                 ~manualRetry=isManualRetryEnabled,
@@ -219,7 +225,9 @@ let make = (
                 ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
               )
               intent(
-                ~bodyArr=clickToPayBody,
+                ~bodyArr=clickToPayBody
+                ->Array.concat(installmentBody)
+                ->mergeAndFlattenToTuples(requiredFieldsBody),
                 ~confirmParam=confirm.confirmParams,
                 ~handleUserError=false,
                 ~manualRetry=isManualRetryEnabled,
@@ -329,6 +337,7 @@ let make = (
     applePayToken,
     gPayToken,
     isManualRetryEnabled,
+    selectedInstallmentPlan,
   ))
   useSubmitPaymentData(submitCallback)
 

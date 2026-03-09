@@ -249,4 +249,11 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `残りの支払金額はありません。支払いを続行してください。`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `残りの ${amount}${currency} は、以下の別の支払い方法でお支払いください。`,
+  installmentPayInInstallments: "分割払い",
+  installmentChoosePlan: "分割払いプランを選択",
+  installmentInterestFree: "無利息",
+  installmentInterestRate: interestRate => `${interestRate}%利息`,
+  installmentTotalPayable: "お支払い総額",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    `${currency} ${amount} × ${numPayments->Int.toString}回払い`,
 }

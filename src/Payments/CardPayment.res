@@ -23,6 +23,8 @@ let make = (
   let fullName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
   let phoneNumber = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
   let (isSaveDetailsWithClickToPay, setIsSaveDetailsWithClickToPay) = React.useState(_ => false)
+  let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
+  let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (clickToPayCardBrand, setClickToPayCardBrand) = React.useState(_ => "")
   let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
@@ -224,6 +226,8 @@ let make = (
         !isCardBlocked
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
+        let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
+
         if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
           ClickToPayHelpers.handleOpenClickToPayWindow()
 
@@ -272,7 +276,9 @@ let make = (
                         ~xSrcFlowId,
                       )
                       intent(
-                        ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                        ~bodyArr=clickToPayBody
+                        ->Array.concat(installmentBody)
+                        ->mergeAndFlattenToTuples(requiredFieldsBody),
                         ~confirmParam=confirm.confirmParams,
                         ~handleUserError=false,
                         ~manualRetry=isManualRetryEnabled,
@@ -355,7 +361,9 @@ let make = (
                       ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
                     )
                     intent(
-                      ~bodyArr=clickToPayBody,
+                      ~bodyArr=clickToPayBody
+                      ->Array.concat(installmentBody)
+                      ->mergeAndFlattenToTuples(requiredFieldsBody),
                       ~confirmParam=confirm.confirmParams,
                       ~handleUserError=false,
                       ~manualRetry=isManualRetryEnabled,
@@ -388,9 +396,9 @@ let make = (
         } else {
           intent(
             ~bodyArr={
-              (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(
-                requiredFieldsBody,
-              )
+              (isBancontact ? banContactBody : cardBody)
+              ->Array.concat(installmentBody)
+              ->mergeAndFlattenToTuples(requiredFieldsBody)
             },
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
@@ -440,6 +448,7 @@ let make = (
     clickToPayCardBrand,
     isClickToPayRememberMe,
     blockedBinsList,
+    selectedInstallmentPlan,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -557,16 +566,6 @@ let make = (
               </div>
             </RenderIf>
           </RenderIf>
-          <DynamicFields
-            paymentMethod
-            paymentMethodType
-            setRequiredFieldsBody
-            cardProps={Some(cardProps)}
-            expiryProps={Some(expiryProps)}
-            cvcProps={Some(cvcProps)}
-            isBancontact
-            isSaveDetailsWithClickToPay
-          />
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="flex items-center justify-start">
               <SaveDetailsCheckbox
@@ -579,6 +578,23 @@ let make = (
               paymentType == PaymentMethodsManagement}>
             <NicknamePaymentInput />
           </RenderIf>
+          <InstallmentOptions
+            installmentOptions
+            setSelectedInstallmentPlan
+            themeObj
+            currency={paymentMethodListValue.intent_data.currency}
+            localeString
+          />
+          <DynamicFields
+            paymentMethod
+            paymentMethodType
+            setRequiredFieldsBody
+            cardProps={Some(cardProps)}
+            expiryProps={Some(expiryProps)}
+            cvcProps={Some(cvcProps)}
+            isBancontact
+            isSaveDetailsWithClickToPay
+          />
         </div>
       </div>
     </RenderIf>

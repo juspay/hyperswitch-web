@@ -56,8 +56,11 @@ let make = (
   ~savedCardlength,
   ~cvcProps: CardUtils.cvcProps,
   ~setRequiredFieldsBody,
+  ~setSelectedInstallmentPlan,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
   let {
     hideExpiredPaymentMethods,
     displayDefaultSavedPaymentIcon,
@@ -101,7 +104,7 @@ let make = (
     if isActive {
       // * Focus CVC
       focusCVC()
-
+      setSelectedInstallmentPlan(_ => None)
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->CardValidations.formatCardExpiryNumber
@@ -222,7 +225,7 @@ let make = (
             </RenderIf>
           </div>
           <div className="w-full">
-            <div className="flex flex-col items-start mx-8">
+            <div className="flex flex-col items-start ml-8">
               <RenderIf condition={isActive && isRenderCvv}>
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
@@ -280,6 +283,19 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf condition={isActive}>
+                <div
+                  style={
+                    paddingTop: themeObj.spacingUnit,
+                  }
+                  className="w-full flex">
+                  <InstallmentOptions
+                    installmentOptions
+                    setSelectedInstallmentPlan
+                    themeObj
+                    currency={paymentMethodListValue.intent_data.currency}
+                    localeString
+                  />
+                </div>
                 <DynamicFields
                   paymentMethod=paymentItem.paymentMethod
                   paymentMethodType

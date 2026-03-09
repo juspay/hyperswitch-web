@@ -249,4 +249,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Não há valor restante a pagar. Por favor, prossiga com o pagamento.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Por favor, pague o valor restante de ${amount} ${currency} com outro método de pagamento abaixo.`,
+  installmentPayInInstallments: "Pagar em parcelas",
+  installmentChoosePlan: "Escolha um plano de parcelamento",
+  installmentInterestFree: "Sem juros",
+  installmentInterestRate: interestRate => `${interestRate}% de juros`,
+  installmentTotalPayable: "Total a pagar",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    numPayments == 1
+      ? `1 parcela de ${currency} ${amount}`
+      : `${numPayments->Int.toString} parcelas de ${currency} ${amount}`,
 }

@@ -249,4 +249,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `לא נותר סכום לתשלום. אנא המשיכו לביצוע התשלום.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `אנא שלמו את הסכום שנותר ${amount} ${currency} באמצעות אמצעי תשלום אחר למטה.`,
+  installmentPayInInstallments: "תשלום בתשלומים",
+  installmentChoosePlan: "בחרו תוכנית תשלומים",
+  installmentInterestFree: "ללא ריבית",
+  installmentInterestRate: interestRate => `${interestRate}% ריבית`,
+  installmentTotalPayable: "סה\"כ לתשלום",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    numPayments == 1
+      ? `תשלום אחד של ${currency} ${amount}`
+      : `${numPayments->Int.toString} תשלומים של ${currency} ${amount}`,
 }

@@ -14,6 +14,7 @@ let make = (
   ~getVisaCards,
   ~setIsClickToPayRememberMe,
   ~closeComponentIfSavedMethodsAreEmpty,
+  ~setSelectedInstallmentPlan,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
@@ -210,6 +211,7 @@ let make = (
           savedCardlength={ctpCards->Array.length}
           cvcProps
           setRequiredFieldsBody
+          setSelectedInstallmentPlan
         />
       })
       ->React.array}

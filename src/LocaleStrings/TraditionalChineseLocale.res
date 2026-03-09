@@ -248,4 +248,11 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `無需支付剩餘金額。請繼續完成付款。`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `請使用下方的其他付款方式支付剩餘金額 ${currency}${amount}。`,
+  installmentPayInInstallments: "分期付款",
+  installmentChoosePlan: "選擇分期計劃",
+  installmentInterestFree: "免息",
+  installmentInterestRate: interestRate => `${interestRate}%利息`,
+  installmentTotalPayable: "應付總額",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    `${numPayments->Int.toString}期付款，每期 ${currency} ${amount}`,
 }
