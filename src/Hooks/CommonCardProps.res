@@ -1,5 +1,4 @@
 open CardUtils
-open CardThemeType
 open LoggerUtils
 open RecoilAtoms
 

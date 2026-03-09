@@ -315,14 +315,12 @@ let make = (
         preMountLoaderIframeDiv->Window.iframePostMessage(msg)
       })
     }
-    if !isTestMode {
-      !clientSecretReMatch
-        ? manageErrorWarning(
-            INVALID_FORMAT,
-            ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
-            ~logger,
-          )
-        : ()
+    if !isTestMode && !clientSecretReMatch {
+      manageErrorWarning(
+        INVALID_FORMAT,
+        ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
+        ~logger,
+      )
     }
 
     let setElementIframeRef = ref => {

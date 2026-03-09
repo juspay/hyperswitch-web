@@ -1248,15 +1248,15 @@ let usePaymentIntent = (optLogger, paymentType) => {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
       let headers = {
-        let v1Headers = [
+        let baseHeaders = [
           ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
         ]
         switch keys.sdkAuthorization->Utils.getNonEmptyOption {
-        | Some(sdkAuth) => v1Headers->Array.push(("Authorization", sdkAuth))
-        | _ => v1Headers->Array.push(("api-key", confirmParam.publishableKey))
+        | Some(sdkAuth) => baseHeaders->Array.push(("Authorization", sdkAuth))
+        | _ => baseHeaders->Array.push(("api-key", confirmParam.publishableKey))
         }
 
-        v1Headers
+        baseHeaders
       }
 
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]

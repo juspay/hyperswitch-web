@@ -967,14 +967,8 @@ let getHeaders = (
   ~customPodUri=None,
   ~headers=Dict.make(),
   ~publishableKey=None,
-  ~clientSecret=None,
-  ~profileId=None,
   ~sdkAuthorization=None,
 ): Fetch.Headers.t => {
-  let publishableKeyVal = publishableKey->Option.map(key => key)->Option.getOr("invalid_key")
-  let profileIdVal = profileId->Option.getOr("invalid_key")
-  let clientSecretVal = clientSecret->Option.getOr("invalid_key")
-
   let defaultHeaders = [
     ("Content-Type", "application/json"),
     ("X-Client-Version", Window.version),
@@ -984,12 +978,10 @@ let getHeaders = (
     ("X-Client-Platform", "web"),
   ]
 
-  let v1Headers = switch sdkAuthorization->getNonEmptyOption {
+  let authorizationHeaders = switch sdkAuthorization->getNonEmptyOption {
   | Some(sdkAuth) => [("Authorization", sdkAuth)]
   | None => [("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key"))]
   }
-
-  let authorizationHeaders = v1Headers
 
   let authHeader = switch (token, uri) {
   | (Some(tok), Some(_)) => [("Authorization", tok)]
@@ -1083,8 +1075,6 @@ let fetchApiWithLogging = async (
   ~publishableKey=None,
   ~isPaymentSession=false,
   ~onCatchCallback=None,
-  ~clientSecret=None,
-  ~profileId=None,
   ~sdkAuthorization=None,
 ) => {
   open LoggerUtils
@@ -1113,8 +1103,6 @@ let fetchApiWithLogging = async (
           ~uri,
           ~customPodUri,
           ~publishableKey,
-          ~clientSecret,
-          ~profileId,
           ~sdkAuthorization,
         ),
       },
