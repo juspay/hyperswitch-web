@@ -325,7 +325,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let iframeRef = ref([])
       let clientSecret = ref("")
-      let paymentId = ref("")
       let sdkAuthorization = ref("")
       let pmSessionId = ref("")
       let pmClientSecret = ref("")
@@ -514,14 +513,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         | None => elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
         }
 
-        let paymentIdVal = elementsOptionsDict->Utils.getStringFromDict("paymentId", "")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         let preloadSDKWithParams =
           elementsOptions->getDictFromJson->getDictFromDict("preloadSDKWithParams")
 
         sdkAuthorization := sdkAuthorizationId
         clientSecret := clientSecretId
-        paymentId := paymentIdVal
 
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
@@ -542,7 +539,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~profileId,
           ~sdkAuthorization={sdkAuthorizationId},
           ~clientSecret={clientSecretId},
-          ~paymentId={paymentIdVal},
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options

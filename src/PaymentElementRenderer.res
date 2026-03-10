@@ -12,7 +12,6 @@ let make = (
   let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let setFullName = Recoil.useSetRecoilState(userFullName)
   let setNickName = Recoil.useSetRecoilState(userCardNickName)
@@ -26,16 +25,9 @@ let make = (
     None
   }, [])
 
-  let isLoading = switch (
-    GlobalVars.sdkVersion,
-    paymentType,
-    paymentMethodList,
-    paymentManagementList,
-    paymentMethodsListV2,
-  ) {
-  | (V1, Payment, Loading, _, _)
-  | (_, PaymentMethodsManagement, _, LoadingV2, _)
-  | (V2, Payment, _, _, LoadingV2) => true
+  let isLoading = switch (paymentType, paymentMethodList, paymentManagementList) {
+  | (Payment, Loading, _)
+  | (PaymentMethodsManagement, _, LoadingV2) => true
   | _ => false
   }
 
@@ -48,10 +40,8 @@ let make = (
   } else if isWalletElement {
     <WalletElement paymentType />
   } else {
-    switch (paymentType, GlobalVars.sdkVersion) {
-    | (PaymentMethodsManagement, _)
-    | (_, V2) =>
-      <PaymentElementV2 cardProps expiryProps cvcProps paymentType />
+    switch paymentType {
+    | PaymentMethodsManagement => <PaymentElementV2 cardProps expiryProps cvcProps paymentType />
     | _ => <PaymentElement cardProps expiryProps cvcProps paymentType />
     }
   }

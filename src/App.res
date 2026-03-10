@@ -87,11 +87,9 @@ let make = () => {
     | "redsys3ds" => <Redsys3ds />
     | "3ds" => <ThreeDSMethod />
     | "voucherData" => <VoucherDisplay />
-    | "cardVault" => <CardVault />
     | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
     | "preMountLoader" => {
         let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
-        let paymentId = getQueryParamsDictforKey(url.search, "paymentId")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
         let publishableKey = getQueryParamsDictforKey(url.search, "publishableKey")
@@ -116,7 +114,6 @@ let make = () => {
           sessionId
           sdkAuthorization
           clientSecret
-          paymentId
           endpoint
           pmSessionId
           pmClientSecret
