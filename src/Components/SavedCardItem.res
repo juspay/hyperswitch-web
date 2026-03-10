@@ -286,21 +286,23 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf condition={isActive}>
-                <div
-                  style={
-                    paddingTop: themeObj.spacingUnit,
-                  }
-                  className="w-full flex">
-                  <InstallmentOptions
-                    installmentOptions
-                    setSelectedInstallmentPlan
-                    showInstallments
-                    setShowInstallments
-                    themeObj
-                    currency={paymentMethodListValue.intent_data.currency}
-                    localeString
-                  />
-                </div>
+                <RenderIf condition={isCard}>
+                  <div
+                    style={
+                      paddingTop: themeObj.spacingUnit,
+                    }
+                    className="w-full flex">
+                    <InstallmentOptions
+                      installmentOptions
+                      setSelectedInstallmentPlan
+                      showInstallments
+                      setShowInstallments
+                      themeObj
+                      currency={paymentMethodListValue.intent_data.currency}
+                      localeString
+                    />
+                  </div>
+                </RenderIf>
                 <DynamicFields
                   paymentMethod=paymentItem.paymentMethod
                   paymentMethodType
