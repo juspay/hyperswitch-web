@@ -19,7 +19,7 @@ let make = (~fieldType="") => {
 
   let validatePixCNPJ = (val): RecoilAtomTypes.field => {
     // transforming to uppercase to allow lowercase input to reduce friction, as CNPJ can contain letters (when formatted with punctuation)
-    let transformedVal = val->String.toUpperCase
+    let transformedVal = val->String.toUpperCase->String.replaceRegExp(%re("/[^A-Z0-9]/g"), "")
     let isCNPJValid = CnpjValidation.isValidCNPJ(transformedVal)
     if isCNPJValid {
       {value: transformedVal, isValid: Some(true), errorString: ""}
