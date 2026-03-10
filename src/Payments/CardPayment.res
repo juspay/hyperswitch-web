@@ -219,8 +219,7 @@ let make = (
         blockedBinsList,
       )
 
-      let isInstallmentValid =
-        !showInstallments || (showInstallments && selectedInstallmentPlan->Option.isSome)
+      let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
 
       let validFormat =
         (isBancontact || isCardDetailsValid) &&
