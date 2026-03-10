@@ -15,6 +15,8 @@ let make = (
   ~setIsClickToPayRememberMe,
   ~closeComponentIfSavedMethodsAreEmpty,
   ~setSelectedInstallmentPlan,
+  ~showInstallments,
+  ~setShowInstallments,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
@@ -212,6 +214,8 @@ let make = (
           cvcProps
           setRequiredFieldsBody
           setSelectedInstallmentPlan
+          showInstallments
+          setShowInstallments
         />
       })
       ->React.array}

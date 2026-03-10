@@ -57,6 +57,8 @@ let make = (
   ~cvcProps: CardUtils.cvcProps,
   ~setRequiredFieldsBody,
   ~setSelectedInstallmentPlan,
+  ~showInstallments,
+  ~setShowInstallments,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -105,6 +107,7 @@ let make = (
       // * Focus CVC
       focusCVC()
       setSelectedInstallmentPlan(_ => None)
+      setShowInstallments(_ => false)
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->CardValidations.formatCardExpiryNumber
@@ -291,6 +294,8 @@ let make = (
                   <InstallmentOptions
                     installmentOptions
                     setSelectedInstallmentPlan
+                    showInstallments
+                    setShowInstallments
                     themeObj
                     currency={paymentMethodListValue.intent_data.currency}
                     localeString

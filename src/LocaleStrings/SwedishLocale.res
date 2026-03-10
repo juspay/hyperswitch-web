@@ -257,4 +257,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     numPayments == 1
       ? `1 betalning à ${currency} ${amount}`
       : `${numPayments->Int.toString} betalningar à ${currency} ${amount}`,
+  installmentSelectPlanError: "Välj ett avbetalningsplan",
 }

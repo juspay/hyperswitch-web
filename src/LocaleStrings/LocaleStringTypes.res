@@ -242,6 +242,7 @@ type localeStrings = {
   installmentInterestRate: string => string,
   installmentTotalPayable: string,
   installmentPaymentLabel: (int, string, string) => string,
+  installmentSelectPlanError: string,
 }
 
 type constantStrings = {

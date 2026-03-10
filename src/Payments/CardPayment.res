@@ -24,6 +24,7 @@ let make = (
   let phoneNumber = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
   let (isSaveDetailsWithClickToPay, setIsSaveDetailsWithClickToPay) = React.useState(_ => false)
   let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
+  let (showInstallments, setShowInstallments) = React.useState(_ => false)
   let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (clickToPayCardBrand, setClickToPayCardBrand) = React.useState(_ => "")
@@ -219,11 +220,15 @@ let make = (
         blockedBinsList,
       )
 
+      let isInstallmentValid =
+        !showInstallments || (showInstallments && selectedInstallmentPlan->Option.isSome)
+
       let validFormat =
         (isBancontact || isCardDetailsValid) &&
         isNicknameValid &&
         areRequiredFieldsValid &&
-        !isCardBlocked
+        !isCardBlocked &&
+        isInstallmentValid
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
         let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
@@ -429,6 +434,9 @@ let make = (
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         }
+        if !isInstallmentValid {
+          setUserError(localeString.installmentSelectPlanError)
+        }
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)
         }
@@ -449,6 +457,7 @@ let make = (
     isClickToPayRememberMe,
     blockedBinsList,
     selectedInstallmentPlan,
+    showInstallments,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -581,6 +590,8 @@ let make = (
           <InstallmentOptions
             installmentOptions
             setSelectedInstallmentPlan
+            showInstallments
+            setShowInstallments
             themeObj
             currency={paymentMethodListValue.intent_data.currency}
             localeString

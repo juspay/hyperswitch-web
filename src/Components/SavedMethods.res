@@ -76,6 +76,7 @@ let make = (
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
 
   let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
+  let (showInstallments, setShowInstallments) = React.useState(_ => false)
 
   let shouldShowClickToPaySection =
     clickToPayConfig.isReady == Some(true) &&
@@ -97,6 +98,8 @@ let make = (
           cvcProps
           setRequiredFieldsBody
           setSelectedInstallmentPlan
+          showInstallments
+          setShowInstallments
         />
       )
       ->React.array}
@@ -113,6 +116,8 @@ let make = (
           setIsClickToPayRememberMe
           closeComponentIfSavedMethodsAreEmpty
           setSelectedInstallmentPlan
+          showInstallments
+          setShowInstallments
         />
       </RenderIf>
     </div>
@@ -157,6 +162,9 @@ let make = (
 
     let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not || isSaveCardsChecked
     let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
+
+    let isInstallmentValid =
+      !showInstallments || (showInstallments && selectedInstallmentPlan->Option.isSome)
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>
       PaymentBody.savedCardBody(
@@ -248,7 +256,8 @@ let make = (
         areRequiredFieldsValid &&
         !isUnknownPaymentMethod &&
         (!isCardPaymentMethod || isCardPaymentMethodValid) &&
-        confirm.confirmTimestamp >= confirm.readyTimestamp
+        confirm.confirmTimestamp >= confirm.readyTimestamp &&
+        isInstallmentValid
       ) {
         switch customerMethod.paymentMethodType {
         | Some("google_pay") =>
@@ -316,15 +325,20 @@ let make = (
         if isUnknownPaymentMethod || confirm.confirmTimestamp < confirm.readyTimestamp {
           setUserError(localeString.selectPaymentMethodText)
         }
-        if !isUnknownPaymentMethod && cvcNumber === "" {
-          setCvcError(_ => localeString.cvcNumberEmptyText)
-          setUserError(localeString.enterFieldsText)
-        }
-        if !(isCVCValid->Option.getOr(false)) {
-          setUserError(localeString.enterValidDetailsText)
+        if customerMethod.requiresCvv {
+          if !isUnknownPaymentMethod && cvcNumber === "" {
+            setCvcError(_ => localeString.cvcNumberEmptyText)
+            setUserError(localeString.enterFieldsText)
+          }
+          if !(isCVCValid->Option.getOr(false)) {
+            setUserError(localeString.enterValidDetailsText)
+          }
         }
         if !areRequiredFieldsValid {
           setUserError(localeString.enterValidDetailsText)
+        }
+        if !isInstallmentValid {
+          setUserError(localeString.installmentSelectPlanError)
         }
       }
     }
@@ -338,6 +352,7 @@ let make = (
     gPayToken,
     isManualRetryEnabled,
     selectedInstallmentPlan,
+    showInstallments,
   ))
   useSubmitPaymentData(submitCallback)
 

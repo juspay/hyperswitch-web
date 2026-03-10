@@ -2,11 +2,12 @@
 let make = (
   ~installmentOptions: array<PaymentMethodsRecord.installmentOption>,
   ~setSelectedInstallmentPlan,
+  ~showInstallments,
+  ~setShowInstallments,
   ~themeObj: CardThemeType.themeClass,
   ~currency,
   ~localeString: LocaleStringTypes.localeStrings,
 ) => {
-  let (showInstallments, setShowInstallments) = React.useState(_ => false)
   let (selectedIndex, setSelectedIndex) = React.useState(_ => None)
 
   let allPlans =
