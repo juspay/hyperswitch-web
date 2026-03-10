@@ -14,29 +14,27 @@ let make = (~setSelectedInstallmentPlan, ~showInstallments, ~setShowInstallments
     ->Option.map(option => option.available_plans)
     ->Option.getOr([])
 
-  if allPlans->Array.length == 0 {
-    React.null
-  } else {
-    let needsScroll = allPlans->Array.length > 4
+  let needsScroll = allPlans->Array.length > 4
 
-    let handleCheckboxClick = isChecked => {
-      setShowInstallments(_ => isChecked)
-      if !isChecked {
-        setSelectedInstallmentPlan(_ => None)
-        setSelectedIndex(_ => None)
-      }
+  let handleCheckboxClick = isChecked => {
+    setShowInstallments(_ => isChecked)
+    if !isChecked {
+      setSelectedInstallmentPlan(_ => None)
+      setSelectedIndex(_ => None)
     }
+  }
 
-    let handlePlanSelect = (plan: PaymentMethodsRecord.installmentPlan, index) => {
-      setSelectedInstallmentPlan(_ => Some(plan))
-      setSelectedIndex(_ => Some(index))
-    }
+  let handlePlanSelect = (plan: PaymentMethodsRecord.installmentPlan, index) => {
+    setSelectedInstallmentPlan(_ => Some(plan))
+    setSelectedIndex(_ => Some(index))
+  }
 
-    let isPlanSelected = index =>
-      selectedIndex
-      ->Option.map(selected => selected == index)
-      ->Option.getOr(false)
+  let isPlanSelected = index =>
+    selectedIndex
+    ->Option.map(selected => selected == index)
+    ->Option.getOr(false)
 
+  <RenderIf condition={allPlans->Array.length != 0}>
     <div className="w-full flex flex-col">
       <Checkbox
         isChecked=showInstallments
@@ -80,5 +78,5 @@ let make = (~setSelectedInstallmentPlan, ~showInstallments, ~setShowInstallments
         </div>
       </RenderIf>
     </div>
-  }
+  </RenderIf>
 }
