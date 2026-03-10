@@ -61,8 +61,6 @@ let make = (
   ~setShowInstallments,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
   let {
     hideExpiredPaymentMethods,
     displayDefaultSavedPaymentIcon,
@@ -293,13 +291,7 @@ let make = (
                     }
                     className="w-full flex">
                     <InstallmentOptions
-                      installmentOptions
-                      setSelectedInstallmentPlan
-                      showInstallments
-                      setShowInstallments
-                      themeObj
-                      currency={paymentMethodListValue.intent_data.currency}
-                      localeString
+                      setSelectedInstallmentPlan showInstallments setShowInstallments
                     />
                   </div>
                 </RenderIf>

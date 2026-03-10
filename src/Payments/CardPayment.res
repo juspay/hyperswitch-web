@@ -25,7 +25,6 @@ let make = (
   let (isSaveDetailsWithClickToPay, setIsSaveDetailsWithClickToPay) = React.useState(_ => false)
   let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
   let (showInstallments, setShowInstallments) = React.useState(_ => false)
-  let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (clickToPayCardBrand, setClickToPayCardBrand) = React.useState(_ => "")
   let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
@@ -587,15 +586,7 @@ let make = (
               paymentType == PaymentMethodsManagement}>
             <NicknamePaymentInput />
           </RenderIf>
-          <InstallmentOptions
-            installmentOptions
-            setSelectedInstallmentPlan
-            showInstallments
-            setShowInstallments
-            themeObj
-            currency={paymentMethodListValue.intent_data.currency}
-            localeString
-          />
+          <InstallmentOptions setSelectedInstallmentPlan showInstallments setShowInstallments />
           <DynamicFields
             paymentMethod
             paymentMethodType

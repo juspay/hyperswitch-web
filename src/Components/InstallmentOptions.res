@@ -1,13 +1,11 @@
 @react.component
-let make = (
-  ~installmentOptions: array<PaymentMethodsRecord.installmentOption>,
-  ~setSelectedInstallmentPlan,
-  ~showInstallments,
-  ~setShowInstallments,
-  ~themeObj: CardThemeType.themeClass,
-  ~currency,
-  ~localeString: LocaleStringTypes.localeStrings,
-) => {
+let make = (~setSelectedInstallmentPlan, ~showInstallments, ~setShowInstallments) => {
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
+  let currency = paymentMethodListValue.intent_data.currency
+
   let (selectedIndex, setSelectedIndex) = React.useState(_ => None)
 
   let allPlans =
