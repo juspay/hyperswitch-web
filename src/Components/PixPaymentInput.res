@@ -18,6 +18,7 @@ let make = (~fieldType="") => {
     }
 
   let validatePixCNPJ = (val): RecoilAtomTypes.field => {
+    // transforming to uppercase to allow lowercase input to reduce friction, as CNPJ can contain letters (when formatted with punctuation)
     let transformedVal = val->String.toUpperCase
     let isCNPJValid = CnpjValidation.isValidCNPJ(transformedVal)
     if isCNPJValid {
@@ -34,14 +35,15 @@ let make = (~fieldType="") => {
   }
 
   let validatePixCPF = (val): RecoilAtomTypes.field => {
-    let isCPFValid = CpfValidation.isValidCPF(val)
+    let transformedVal = val->CardValidations.clearSpaces
+    let isCPFValid = CpfValidation.isValidCPF(transformedVal)
     if isCPFValid {
-      {value: val, isValid: Some(true), errorString: ""}
-    } else if val->String.length === 0 {
-      {value: val, isValid: None, errorString: ""}
+      {value: transformedVal, isValid: Some(true), errorString: ""}
+    } else if transformedVal->String.length === 0 {
+      {value: transformedVal, isValid: None, errorString: ""}
     } else {
       {
-        value: val,
+        value: transformedVal,
         isValid: Some(false),
         errorString: localeString.pixCPFInvalidText,
       }
