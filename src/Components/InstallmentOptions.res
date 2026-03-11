@@ -34,6 +34,17 @@ let make = (~setSelectedInstallmentPlan, ~showInstallments, ~setShowInstallments
     ->Option.map(selected => selected == index)
     ->Option.getOr(false)
 
+  React.useEffect0(() => {
+    setSelectedInstallmentPlan(_ => None)
+    setShowInstallments(_ => false)
+    Some(
+      () => {
+        setSelectedInstallmentPlan(_ => None)
+        setShowInstallments(_ => false)
+      },
+    )
+  })
+
   <RenderIf condition={allPlans->Array.length != 0}>
     <div className="w-full flex flex-col">
       <Checkbox

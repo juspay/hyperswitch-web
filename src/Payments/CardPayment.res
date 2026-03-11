@@ -474,7 +474,7 @@ let make = (
   | Some(_) => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
   | None => ""
   }
-
+  let conditionToRenderInstallments = cardNumber->CardValidations.clearSpaces->String.length >= 6
   <div className="animate-slowShow">
     <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
@@ -573,6 +573,16 @@ let make = (
               </div>
             </RenderIf>
           </RenderIf>
+          <DynamicFields
+            paymentMethod
+            paymentMethodType
+            setRequiredFieldsBody
+            cardProps={Some(cardProps)}
+            expiryProps={Some(expiryProps)}
+            cvcProps={Some(cvcProps)}
+            isBancontact
+            isSaveDetailsWithClickToPay
+          />
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="flex items-center justify-start">
               <SaveDetailsCheckbox
@@ -585,17 +595,9 @@ let make = (
               paymentType == PaymentMethodsManagement}>
             <NicknamePaymentInput />
           </RenderIf>
-          <InstallmentOptions setSelectedInstallmentPlan showInstallments setShowInstallments />
-          <DynamicFields
-            paymentMethod
-            paymentMethodType
-            setRequiredFieldsBody
-            cardProps={Some(cardProps)}
-            expiryProps={Some(expiryProps)}
-            cvcProps={Some(cvcProps)}
-            isBancontact
-            isSaveDetailsWithClickToPay
-          />
+          <RenderIf condition=conditionToRenderInstallments>
+            <InstallmentOptions setSelectedInstallmentPlan showInstallments setShowInstallments />
+          </RenderIf>
         </div>
       </div>
     </RenderIf>
