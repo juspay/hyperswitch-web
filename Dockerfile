@@ -1,5 +1,5 @@
-# Use Node 20 with Alpine
-FROM node:20-alpine
+# Use Node 24 with Alpine
+FROM node:24-alpine
 
 # Install build essentials + git + bash
 RUN apk add --no-cache make gcc g++ python3 bash git

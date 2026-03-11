@@ -34,7 +34,6 @@ let retrievePaymentIntent = async (
       clientSecret: Some(clientSecret),
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
-      paymentMethodId: None,
       forceSync: isForceSync ? Some("true") : None,
       pollId: None,
       payoutId: None,
@@ -79,7 +78,6 @@ let fetchBlockedBins = async (
       clientSecret: Some(clientSecret),
       publishableKey: None,
       customBackendBaseUrl: Some(endpoint),
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -117,7 +115,6 @@ let threeDsAuth = async (
       clientSecret: Some(clientSecret),
       publishableKey: None,
       customBackendBaseUrl: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -228,7 +225,6 @@ let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger, ~sdk
       clientSecret: None,
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: Some(pollID),
       payoutId: None,
@@ -1234,7 +1230,6 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let paymentMethodListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
@@ -1248,56 +1243,36 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry=false,
-    ~isExternalVaultFlow=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
-      let headers = switch GlobalVars.sdkVersion {
-      | V1 => {
-          let v1Headers = [
-            ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
-          ]
-          switch keys.sdkAuthorization->Utils.getNonEmptyOption {
-          | Some(sdkAuth) => v1Headers->Array.push(("Authorization", sdkAuth))
-          | _ => v1Headers->Array.push(("api-key", confirmParam.publishableKey))
-          }
+      let headers = {
+        let baseHeaders = [
+          ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+        ]
+        switch keys.sdkAuthorization->Utils.getNonEmptyOption {
+        | Some(sdkAuth) => baseHeaders->Array.push(("Authorization", sdkAuth))
+        | _ => baseHeaders->Array.push(("api-key", confirmParam.publishableKey))
+        }
 
-          v1Headers
-        }
-      | V2 => {
-          let authorizationHeader = (
-            "Authorization",
-            `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
-          )
-          [
-            authorizationHeader,
-            ("x-profile-id", keys.profileId),
-            ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
-          ]
-        }
+        baseHeaders
       }
+
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
       let clientSecretArr = switch keys.sdkAuthorization->Utils.getNonEmptyOption {
       | Some(_) => []
       | None => [("client_secret", clientSecret->JSON.Encode.string)]
       }
-      let body = switch GlobalVars.sdkVersion {
-      | V1 => clientSecretArr->Array.concatMany([returnUrlArr, manual_retry])
-      | V2 => []
-      }
+      let body = clientSecretArr->Array.concatMany([returnUrlArr, manual_retry])
 
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let path = switch GlobalVars.sdkVersion {
-      | V1 => `payments/${paymentIntentID}/confirm`
-      | V2 =>
-        let baseUrl = `v2/payments/${keys.paymentId}/confirm-intent`
-        isExternalVaultFlow ? `${baseUrl}/external-vault-proxy` : baseUrl
-      }
+      let path = `payments/${paymentIntentID}/confirm`
+
       let uri = `${endpoint}/${path}`
 
       let callIntent = body => {
@@ -1403,9 +1378,9 @@ let usePaymentIntent = (optLogger, paymentType) => {
         callIntent(bodyStr)
       }
 
-      switch (GlobalVars.sdkVersion, paymentMethodList, paymentMethodListV2) {
-      | (V1, LoadError(data), _)
-      | (V1, Loaded(data), _) =>
+      switch paymentMethodList {
+      | LoadError(data)
+      | Loaded(data) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
@@ -1431,19 +1406,8 @@ let usePaymentIntent = (optLogger, paymentType) => {
           )
           Console.warn("Please enable atleast one Payment method.")
         }
-      | (V2, _, LoadedV2(data)) =>
-        if data.paymentMethodsEnabled->Array.length > 0 {
-          intentWithoutMandate("")
-        } else {
-          postFailedSubmitResponse(
-            ~errortype="payment_methods_empty",
-            ~message="Payment Failed. Try again!",
-          )
-          Console.warn("Please enable atleast one Payment method.")
-        }
-      | (V1, SemiLoaded, _)
-      | (V2, _, SemiLoadedV2) =>
-        intentWithoutMandate("")
+
+      | SemiLoaded => intentWithoutMandate("")
       | _ =>
         postFailedSubmitResponse(
           ~errortype="payment_methods_loading",
@@ -1494,7 +1458,6 @@ let fetchSessions = async (
       customBackendBaseUrl: Some(endpoint),
       clientSecret: None,
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1537,7 +1500,6 @@ let confirmPayout = async (
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: Some(publishableKey),
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: Some(payoutId),
@@ -1581,7 +1543,6 @@ let createPaymentMethod = async (
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: Some(publishableKey),
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1625,7 +1586,6 @@ let fetchPaymentMethodList = async (
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1665,7 +1625,6 @@ let fetchCustomerPaymentMethodList = async (
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1775,7 +1734,6 @@ let callAuthLink = async (
       clientSecret: None,
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1849,7 +1807,6 @@ let callAuthExchange = async (
       clientSecret: None,
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1918,75 +1875,6 @@ let callAuthExchange = async (
   )
 }
 
-let fetchSavedPaymentMethodList = async (
-  ~ephemeralKey,
-  ~endpoint,
-  ~logger,
-  ~customPodUri,
-  ~isPaymentSession=false,
-) => {
-  let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchSavedPaymentMethodList,
-    ~params={
-      customBackendBaseUrl: Some(endpoint),
-      clientSecret: None,
-      publishableKey: Some(ephemeralKey),
-      paymentMethodId: None,
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-      sdkAuthorization: None,
-    },
-  )
-
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=SAVED_PAYMENT_METHODS_CALL,
-    ~logger,
-    ~method=#GET,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(ephemeralKey),
-    ~onSuccess,
-    ~onFailure,
-    ~isPaymentSession,
-  )
-}
-
-let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodUri) => {
-  let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=DeletePaymentMethod,
-    ~params={
-      customBackendBaseUrl: None,
-      clientSecret: None,
-      publishableKey: Some(ephemeralKey),
-      paymentMethodId: Some(paymentMethodId),
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-      sdkAuthorization: None,
-    },
-  )
-
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=DELETE_PAYMENT_METHODS_CALL,
-    ~logger,
-    ~method=#DELETE,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(ephemeralKey),
-    ~onSuccess,
-    ~onFailure,
-  )
-}
-
 let calculateTax = async (
   ~apiKey,
   ~clientSecret,
@@ -2003,7 +1891,6 @@ let calculateTax = async (
       customBackendBaseUrl: None,
       clientSecret: Some(clientSecret),
       publishableKey: Some(apiKey),
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -2060,7 +1947,6 @@ let usePostSessionTokens = (
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry as _=false,
-    ~isExternalVaultFlow as _=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -2245,7 +2131,6 @@ let fetchEnabledAuthnMethodsToken = async (
       clientSecret: None,
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -2294,7 +2179,6 @@ let fetchEligibilityCheck = async (
       clientSecret: None,
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -2347,7 +2231,6 @@ let fetchAuthenticationSync = async (
       clientSecret: None,
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
-      paymentMethodId: None,
       forceSync: None,
       pollId: None,
       payoutId: None,

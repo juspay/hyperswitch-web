@@ -15,7 +15,6 @@ let make = (
   setIframeRef,
   ~sdkAuthorization,
   ~clientSecret,
-  ~paymentId,
   ~sdkSessionId,
   ~publishableKey,
   ~profileId,
@@ -92,7 +91,7 @@ let make = (
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabled}&sdkAuthorization=${sdkAuthorization}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabled}&sdkAuthorization=${sdkAuthorization}"
               allow="*"
               name="orca-payment"
               style="outline: none;"
@@ -117,10 +116,8 @@ let make = (
       manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="clientSecret", ~logger)
     }
 
-    let clientSecretReMatch = switch GlobalVars.sdkVersion {
-    | V1 => Some(RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret))
-    | V2 => None
-    }
+    let clientSecretReMatch = RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret)
+
     let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
     let isTaxCalculationEnabled = ref(false)
 
@@ -258,49 +255,6 @@ let make = (
       })
     }
 
-    let fetchIntent = (mountedIframeRef, componentType) => {
-      Promise.make((resolve, _) => {
-        let handleIntentLoaded = (event: Types.event) => {
-          let json = event.data->anyTypeToJson
-          let dict = json->getDictFromJson
-          let isGetIntentData = dict->getString("data", "") === "get_intent_v2"
-          if isGetIntentData {
-            resolve()
-            let msg = [("getIntent", json)]->Dict.fromArray
-            mountedIframeRef->Window.iframePostMessage(msg)
-          }
-        }
-        let msg = [("sendGetIntentResponse", true->JSON.Encode.bool)]->Dict.fromArray
-        addSmartEventListener("message", handleIntentLoaded, `onGetIntentLoaded-${componentType}`)
-        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-      })
-    }
-
-    let fetchPaymentsListV2 = (mountedIframeRef, componentType) => {
-      Promise.make((resolve, _) => {
-        let handlePaymentMethodsLoaded = (event: Types.event) => {
-          let json = event.data->anyTypeToJson
-          let dict = json->getDictFromJson
-          let isPaymentMethodsData = dict->getString("data", "") === "payment_methods_list_v2"
-          if isPaymentMethodsData {
-            resolve()
-            //Replicate V1 Behavior
-            // TODO - Checking Apple Pay and Google Pay
-            // TODO - Attach Event Listeners for Paze and Plaid
-            let msg = [("paymentsListV2", json)]->Dict.fromArray
-            mountedIframeRef->Window.iframePostMessage(msg)
-          }
-        }
-        let msg = [("sendPaymentMethodsListV2Response", true->JSON.Encode.bool)]->Dict.fromArray
-        addSmartEventListener(
-          "message",
-          handlePaymentMethodsLoaded,
-          `onPaymentMethodsLoaded-${componentType}`,
-        )
-        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-      })
-    }
-
     let fetchCustomerPaymentMethods = (
       mountedIframeRef,
       disableSavedPaymentMethods,
@@ -361,16 +315,12 @@ let make = (
         preMountLoaderIframeDiv->Window.iframePostMessage(msg)
       })
     }
-    if !isTestMode {
-      switch clientSecretReMatch {
-      | Some(false) =>
-        manageErrorWarning(
-          INVALID_FORMAT,
-          ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
-          ~logger,
-        )
-      | _ => ()
-      }
+    if !isTestMode && !clientSecretReMatch {
+      manageErrorWarning(
+        INVALID_FORMAT,
+        ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
+        ~logger,
+      )
     }
 
     let setElementIframeRef = ref => {
@@ -473,7 +423,6 @@ let make = (
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
           ("profileId", profileId->JSON.Encode.string),
-          ("paymentId", paymentId->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
           ("blockConfirm", blockConfirm->JSON.Encode.bool),
@@ -1520,23 +1469,16 @@ let make = (
             ->getBool("displaySavedPaymentMethods", true) &&
               !(spmComponents->Array.includes(componentType))->not
           let sessionTokensPromise = fetchSessionTokens(mountedIframeRef)
-          let promises = switch GlobalVars.sdkVersion {
-          | V1 => [
-              fetchPaymentsList(mountedIframeRef, componentType),
-              fetchCustomerPaymentMethods(
-                mountedIframeRef,
-                disableSavedPaymentMethods,
-                componentType,
-              ),
-              fetchBlockedBins(mountedIframeRef, componentType),
-              sessionTokensPromise,
-            ]
-          | V2 => [
-              fetchPaymentsListV2(mountedIframeRef, componentType),
-              sessionTokensPromise,
-              fetchIntent(mountedIframeRef, componentType),
-            ]
-          }
+          let promises = [
+            fetchPaymentsList(mountedIframeRef, componentType),
+            fetchCustomerPaymentMethods(
+              mountedIframeRef,
+              disableSavedPaymentMethods,
+              componentType,
+            ),
+            fetchBlockedBins(mountedIframeRef, componentType),
+            sessionTokensPromise,
+          ]
 
           Promise.all(promises)->then(_ => {
             let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
