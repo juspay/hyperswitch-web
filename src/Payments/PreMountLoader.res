@@ -123,75 +123,6 @@ let getMessageHandlerV1Elements = (
   }
 }
 
-let getMessageHandlerV2Elements = (
-  ~clientSecret,
-  ~paymentId,
-  ~publishableKey,
-  ~logger,
-  ~customPodUri,
-  ~endpoint,
-  ~profileId,
-) => {
-  let paymentMethodsListPromise = PaymentHelpersV2.fetchPaymentMethodList(
-    ~clientSecret,
-    ~paymentId,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-    ~profileId,
-  )
-
-  let sessionTokensPromise = PaymentHelpersV2.fetchSessions(
-    ~clientSecret,
-    ~paymentId,
-    ~profileId,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
-
-  let getIntentPromise = PaymentHelpersV2.fetchIntent(
-    ~clientSecret,
-    ~paymentId,
-    ~profileId,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
-
-  ev => {
-    open Utils
-    let dict = ev.data->safeParse->getDictFromJson
-    if dict->isKeyPresentInDict("sendPaymentMethodsListV2Response") {
-      paymentMethodsListPromise->sendPromiseData("payment_methods_list_v2")
-    } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
-      sessionTokensPromise->sendPromiseData("session_tokens")
-    } else if dict->isKeyPresentInDict("sendGetIntentResponse") {
-      getIntentPromise->sendPromiseData("get_intent_v2")
-    }
-  }
-}
-
-let getMessageHandlerV1PMM = (~ephemeralKey, ~logger, ~customPodUri, ~endpoint) => {
-  let savedPaymentMethodsPromise = PaymentHelpers.fetchSavedPaymentMethodList(
-    ~ephemeralKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
-
-  ev => {
-    open Utils
-    let dict = ev.data->safeParse->getDictFromJson
-    if dict->isKeyPresentInDict("sendSavedPaymentMethodsResponse") {
-      savedPaymentMethodsPromise->sendPromiseData("saved_payment_methods")
-    }
-  }
-}
-
 let getMessageHandlerV2PMM = (
   ~pmSessionId,
   ~pmClientSecret,
@@ -227,39 +158,24 @@ module PreMountLoaderForElements = {
     ~publishableKey,
     ~sdkAuthorization,
     ~clientSecret,
-    ~paymentId,
     ~endpoint,
     ~merchantHostname,
     ~customPodUri,
-    ~profileId,
     ~isTestMode=false,
     ~isSdkParamsEnabled=false,
   ) => {
     useMessageHandler(() =>
-      switch GlobalVars.sdkVersion {
-      | V1 =>
-        getMessageHandlerV1Elements(
-          ~sdkAuthorization,
-          ~clientSecret,
-          ~publishableKey,
-          ~logger,
-          ~customPodUri,
-          ~endpoint,
-          ~merchantHostname,
-          ~isTestMode,
-          ~isSdkParamsEnabled,
-        )
-      | V2 =>
-        getMessageHandlerV2Elements(
-          ~clientSecret,
-          ~paymentId,
-          ~publishableKey,
-          ~logger,
-          ~customPodUri,
-          ~endpoint,
-          ~profileId,
-        )
-      }
+      getMessageHandlerV1Elements(
+        ~sdkAuthorization,
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~merchantHostname,
+        ~isTestMode,
+        ~isSdkParamsEnabled,
+      )
     )
 
     React.null
@@ -271,7 +187,6 @@ module PreMountLoaderForPMMElements = {
   let make = (
     ~logger,
     ~endpoint,
-    ~ephemeralKey,
     ~customPodUri,
     ~pmSessionId,
     ~pmClientSecret,
@@ -279,19 +194,15 @@ module PreMountLoaderForPMMElements = {
     ~profileId,
   ) => {
     useMessageHandler(() =>
-      switch GlobalVars.sdkVersion {
-      | V1 => getMessageHandlerV1PMM(~ephemeralKey, ~logger, ~customPodUri, ~endpoint)
-      | V2 =>
-        getMessageHandlerV2PMM(
-          ~pmSessionId,
-          ~pmClientSecret,
-          ~publishableKey,
-          ~profileId,
-          ~logger,
-          ~customPodUri,
-          ~endpoint,
-        )
-      }
+      getMessageHandlerV2PMM(
+        ~pmSessionId,
+        ~pmClientSecret,
+        ~publishableKey,
+        ~profileId,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      )
     )
 
     React.null
@@ -306,8 +217,6 @@ let make = (
   ~sdkAuthorization,
   ~clientSecret,
   ~endpoint,
-  ~paymentId,
-  ~ephemeralKey,
   ~pmSessionId,
   ~pmClientSecret,
   ~hyperComponentName: Types.hyperComponentName,
@@ -333,14 +242,12 @@ let make = (
       endpoint
       merchantHostname
       customPodUri
-      profileId
-      paymentId
       isTestMode
       isSdkParamsEnabled
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements
-      logger endpoint ephemeralKey customPodUri pmSessionId pmClientSecret publishableKey profileId
+      logger endpoint customPodUri pmSessionId pmClientSecret publishableKey profileId
     />
   }
 }

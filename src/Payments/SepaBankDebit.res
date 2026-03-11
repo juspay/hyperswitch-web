@@ -35,10 +35,8 @@ let make = () => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    let body = switch GlobalVars.sdkVersion {
-    | V1 => PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)
-    | V2 => PaymentBodyV2.dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
-    }
+    let body = PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)
+
     if confirm.doSubmit {
       if areRequiredFieldsValid && !areRequiredFieldsEmpty {
         let sepaBody =

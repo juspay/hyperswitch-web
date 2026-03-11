@@ -89,7 +89,6 @@ type fonts = {
 type configClass = {
   appearance: appearance,
   locale: string,
-  ephemeralKey: string,
   pmClientSecret: string,
   pmSessionId: string,
   clientSecret: string,

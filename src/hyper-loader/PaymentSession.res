@@ -5,7 +5,6 @@ let make = (
   ~clientSecret,
   ~publishableKey,
   ~logger: option<HyperLoggerTypes.loggerMake>,
-  ~ephemeralKey,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
   let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
@@ -26,13 +25,6 @@ let make = (
         ~logger,
         ~customPodUri,
         ~redirectionFlags,
-      ),
-    getPaymentManagementMethods: _ =>
-      PaymentSessionMethods.getPaymentManagementMethods(
-        ~ephemeralKey,
-        ~logger,
-        ~customPodUri,
-        ~endpoint,
       ),
   }
 

@@ -52,15 +52,7 @@ type getCustomerSavedPaymentMethods = {
   confirmWithLastUsedPaymentMethod: JSON.t => promise<JSON.t>,
 }
 
-type getPaymentManagementMethods = {
-  getSavedPaymentManagementMethodsList: unit => promise<JSON.t>,
-  deleteSavedPaymentMethod: JSON.t => promise<JSON.t>,
-}
-
-type initPaymentSession = {
-  getCustomerSavedPaymentMethods: unit => promise<JSON.t>,
-  getPaymentManagementMethods: unit => promise<JSON.t>,
-}
+type initPaymentSession = {getCustomerSavedPaymentMethods: unit => promise<JSON.t>}
 
 type isCustomerPresentInput = {email: string}
 
@@ -174,14 +166,6 @@ let getCustomerDefaultSavedPaymentMethodData = () => {
   JSON.Encode.null
 }
 
-let getSavedPaymentManagementMethodsList = () => {
-  JSON.Encode.null
-}
-
-let deleteSavedPaymentMethod = () => {
-  JSON.Encode.null
-}
-
 let getCustomerLastUsedPaymentMethodData = () => {
   JSON.Encode.null
 }
@@ -203,13 +187,8 @@ let defaultGetCustomerSavedPaymentMethods = () => {
   Promise.resolve(JSON.Encode.null)
 }
 
-let defaultGetPaymentManagementMethods = () => {
-  Promise.resolve(JSON.Encode.null)
-}
-
 let defaultInitPaymentSession: initPaymentSession = {
   getCustomerSavedPaymentMethods: defaultGetCustomerSavedPaymentMethods,
-  getPaymentManagementMethods: defaultGetPaymentManagementMethods,
 }
 
 let defaultInitAuthenticationSession: initAuthenticationSession = {

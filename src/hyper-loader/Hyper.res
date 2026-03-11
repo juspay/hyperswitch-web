@@ -325,9 +325,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let iframeRef = ref([])
       let clientSecret = ref("")
-      let paymentId = ref("")
       let sdkAuthorization = ref("")
-      let ephemeralKey = ref("")
       let pmSessionId = ref("")
       let pmClientSecret = ref("")
       let setIframeRef = ref => {
@@ -341,7 +339,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             clientSecret: Some(clientSecret),
             publishableKey: Some(publishableKey),
             customBackendBaseUrl: None,
-            paymentMethodId: None,
             forceSync: None,
             pollId: None,
             payoutId: None,
@@ -516,14 +513,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         | None => elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
         }
 
-        let paymentIdVal = elementsOptionsDict->Utils.getStringFromDict("paymentId", "")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         let preloadSDKWithParams =
           elementsOptions->getDictFromJson->getDictFromDict("preloadSDKWithParams")
 
         sdkAuthorization := sdkAuthorizationId
         clientSecret := clientSecretId
-        paymentId := paymentIdVal
 
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
@@ -544,7 +539,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~profileId,
           ~sdkAuthorization={sdkAuthorizationId},
           ~clientSecret={clientSecretId},
-          ~paymentId={paymentIdVal},
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
@@ -564,17 +558,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
 
-        let ephemeralKeyId = pmManagementOptionsDict->getStringFromDict("ephemeralKey", "")
         let pmClientSecretId = pmManagementOptionsDict->getStringFromDict("pmClientSecret", "")
         let pmSessionIdVal = pmManagementOptionsDict->getStringFromDict("pmSessionId", "")
 
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
-        ephemeralKey := ephemeralKeyId
         pmSessionId := pmSessionIdVal
         pmClientSecret := pmClientSecretId
         Promise.make((resolve, _) => {
-          logger.setEphemeralKey(ephemeralKeyId)
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
@@ -593,7 +584,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sdkSessionId=sessionID,
           ~publishableKey,
           ~profileId,
-          ~ephemeralKey={ephemeralKeyId},
           ~pmClientSecret={pmClientSecretId},
           ~pmSessionId={pmSessionIdVal},
           ~logger=Some(logger),
@@ -736,7 +726,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~clientSecret={clientSecretId},
           ~publishableKey,
           ~logger=Some(logger),
-          ~ephemeralKey=ephemeralKey.contents,
           ~redirectionFlags,
         )
       }

@@ -21,9 +21,7 @@ type eventName =
   | SESSIONS_CALL_INIT
   | SESSIONS_CALL
   | PAYMENT_METHODS_CALL_INIT
-  | SAVED_PAYMENT_METHODS_CALL_INIT
   | PAYMENT_METHODS_CALL
-  | SAVED_PAYMENT_METHODS_CALL
   | CUSTOMER_PAYMENT_METHODS_CALL_INIT
   | CUSTOMER_PAYMENT_METHODS_CALL
   | CREATE_CUSTOMER_PAYMENT_METHODS_CALL_INIT
@@ -80,9 +78,6 @@ type eventName =
   | PAYMENT_METHODS_AUTH_LINK_CALL_INIT
   | PAYMENT_METHODS_AUTH_LINK_CALL
   | PAYMENT_MANAGEMENT_ELEMENTS_CALLED
-  | DELETE_SAVED_PAYMENT_METHOD
-  | DELETE_PAYMENT_METHODS_CALL_INIT
-  | DELETE_PAYMENT_METHODS_CALL
   | EXTERNAL_TAX_CALCULATION
   | POST_SESSION_TOKENS_CALL
   | POST_SESSION_TOKENS_CALL_INIT
@@ -132,7 +127,6 @@ type logFile = {
   firstEvent: bool,
   paymentMethod: string,
   metadata: JSON.t,
-  ephemeralKey: string,
 }
 
 type setlogApiValueType =
@@ -172,5 +166,4 @@ type loggerMake = {
   setMerchantId: string => unit,
   setMetadata: JSON.t => unit,
   setSource: string => unit,
-  setEphemeralKey: string => unit,
 }
