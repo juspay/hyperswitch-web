@@ -732,6 +732,29 @@ let getOptionsFromPaymentMethodFieldType = (dict, key, ~isAddressCountry=true) =
   }
 }
 
+/**
+ * Enhanced utility function to ensure proper mapping from CountryAlpha2 to human-readable names
+ * @param alpha2Codes - Array of ISO 3166-1 alpha-2 country codes (e.g., ["US", "GB", "IN"])
+ * @returns Array of human-readable country names (e.g., ["United States of America", "United Kingdom", "India"])
+ */
+let getCountryOptionsFromAlpha2Codes = (alpha2Codes: array<string>) => {
+  // Create a Set for O(1) lookup performance
+  let codeSet = alpha2Codes->Set.fromArray
+  countryData
+  ->Array.filter(country => codeSet->Set.has(country.isoAlpha2))
+  ->Array.map(country => country.countryName)
+}
+
+/**
+ * Utility function to convert human-readable country name back to CountryAlpha2 code
+ * @param countryName - The human-readable country name (e.g., "United States of America")
+ * @returns The ISO 3166-1 alpha-2 country code (e.g., "US")
+ */
+let getAlpha2CodeFromCountryName = (countryName: string) => {
+  // Use the robust version from Country module for better error handling
+  Country.getAlpha2FromCountryNameRobust(countryName)
+}
+
 let getPaymentMethodsFieldTypeFromDict = dict => {
   let keysArr = dict->Dict.keysToArray
   let key = keysArr->Array.get(0)->Option.getOr("")
