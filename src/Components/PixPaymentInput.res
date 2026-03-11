@@ -18,7 +18,7 @@ let make = (~fieldType="") => {
     }
 
   let validatePixCNPJ = (val): RecoilAtomTypes.field => {
-    let isCNPJValid = %re("/^\d*$/")->RegExp.test(val) && val->String.length === 14
+    let isCNPJValid = CnpjValidation.isValidCNPJ(val)
     if isCNPJValid {
       {value: val, isValid: Some(true), errorString: ""}
     } else if val->String.length === 0 {
@@ -33,7 +33,7 @@ let make = (~fieldType="") => {
   }
 
   let validatePixCPF = (val): RecoilAtomTypes.field => {
-    let isCPFValid = %re("/^\d*$/")->RegExp.test(val) && val->String.length === 11
+    let isCPFValid = CpfValidation.isValidCPF(val)
     if isCPFValid {
       {value: val, isValid: Some(true), errorString: ""}
     } else if val->String.length === 0 {
@@ -86,7 +86,14 @@ let make = (~fieldType="") => {
 
   let onChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    validateAndSetPixInputValue(val)
+
+    let transformedVal = switch fieldType {
+    // Transforming to uppercase to allow lowercase input to reduce friction, as CNPJ can contain letters (when formatted with punctuation)
+    | "pixCNPJ" => val->String.toUpperCase
+    | "pixCPF" => val->CardValidations.clearSpaces
+    | _ => val
+    }
+    validateAndSetPixInputValue(transformedVal)
   }
 
   let onBlur = ev => {
