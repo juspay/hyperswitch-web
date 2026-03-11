@@ -203,7 +203,7 @@ let make = (
         ->then(resp => {
           let dict = resp.payload->Utils.getDictFromJson
 
-          switch clickToPayProvider {
+          let clickToPayBody = switch clickToPayProvider {
           | MASTERCARD => {
               let headers = dict->Utils.getDictFromDict("headers")
               let merchantTransactionId = headers->Utils.getString("merchant-transaction-id", "")
@@ -213,36 +213,28 @@ let make = (
                 ->Utils.getDictFromDict("checkoutResponseData")
                 ->Utils.getString("srcCorrelationId", "")
 
-              let clickToPayBody = PaymentBody.mastercardClickToPayBody(
+              PaymentBody.mastercardClickToPayBody(
                 ~merchantTransactionId,
                 ~correlationId,
                 ~xSrcFlowId,
               )
-              intent(
-                ~bodyArr=clickToPayBody
-                ->Array.concat(installmentBody)
-                ->mergeAndFlattenToTuples(requiredFieldsBody),
-                ~confirmParam=confirm.confirmParams,
-                ~handleUserError=false,
-                ~manualRetry=isManualRetryEnabled,
-              )
             }
-          | VISA => {
-              let clickToPayBody = PaymentBody.visaClickToPayBody(
-                ~email=clickToPayConfig.email,
-                ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
-              )
-              intent(
-                ~bodyArr=clickToPayBody
-                ->Array.concat(installmentBody)
-                ->mergeAndFlattenToTuples(requiredFieldsBody),
-                ~confirmParam=confirm.confirmParams,
-                ~handleUserError=false,
-                ~manualRetry=isManualRetryEnabled,
-              )
-            }
-          | NONE => ()
+          | VISA =>
+            PaymentBody.visaClickToPayBody(
+              ~email=clickToPayConfig.email,
+              ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
+            )
+          | NONE => []
           }
+
+          intent(
+            ~bodyArr=clickToPayBody
+            ->Array.concat(installmentBody)
+            ->mergeAndFlattenToTuples(requiredFieldsBody),
+            ~confirmParam=confirm.confirmParams,
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
           resolve(resp)
         })
         ->catch(_ =>
@@ -253,11 +245,7 @@ let make = (
         )
         ->ignore
       } else if (
-        areRequiredFieldsValid &&
-        !isUnknownPaymentMethod &&
-        (!isCardPaymentMethod || isCardPaymentMethodValid) &&
-        confirm.confirmTimestamp >= confirm.readyTimestamp &&
-        isInstallmentValid
+        complete && confirm.confirmTimestamp >= confirm.readyTimestamp && isInstallmentValid
       ) {
         switch customerMethod.paymentMethodType {
         | Some("google_pay") =>
