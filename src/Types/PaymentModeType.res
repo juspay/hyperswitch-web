@@ -27,6 +27,7 @@ type payment =
   | PayPal
   | EFT
   | Givex
+  | QRIS
   | Unknown
 
 let paymentMode = str => {
@@ -59,6 +60,7 @@ let paymentMode = str => {
   | "paypal" => PayPal
   | "eft" => EFT
   | "givex" => Givex
+  | "qris" => QRIS
   | _ => Unknown
   }
 }
@@ -92,4 +94,5 @@ let defaultOrder = [
   "eft",
   "revolut_pay",
   "givex",
+  "qris",
 ]
