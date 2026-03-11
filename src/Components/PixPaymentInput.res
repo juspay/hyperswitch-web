@@ -89,7 +89,7 @@ let make = (~fieldType="") => {
 
     let transformedVal = switch fieldType {
     // Transforming to uppercase to allow lowercase input to reduce friction, as CNPJ can contain letters (when formatted with punctuation)
-    | "pixCNPJ" => val->String.toUpperCase->String.replaceRegExp(%re("/[^A-Z0-9]/g"), "")
+    | "pixCNPJ" => val->String.toUpperCase
     | "pixCPF" => val->CardValidations.clearSpaces
     | _ => val
     }
