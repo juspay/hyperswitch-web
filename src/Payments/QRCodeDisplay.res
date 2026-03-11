@@ -208,23 +208,20 @@ let make = () => {
   }, [expiryTime])
 
   let handleCopyQrData = _ => {
-    open Promise
-    LoaderPaymentElement.writeText(rawQrData)
-    ->then(_ => {
-      switch copyTimeoutRef.current {
-      | Some(id) => clearTimeout(id)
-      | None => ()
-      }
-      setIsCopied(_ => true)
-      let id = setTimeout(() => {
-        setIsCopied(_ => false)
-        copyTimeoutRef.current = None
-      }, copyResetTime)
-      copyTimeoutRef.current = Some(id)
-      resolve()
-    })
-    ->catch(_ => resolve())
-    ->ignore
+    messageParentWindow([
+      ("copy", true->JSON.Encode.bool),
+      ("copyDetails", rawQrData->JSON.Encode.string),
+    ])
+    switch copyTimeoutRef.current {
+    | Some(id) => clearTimeout(id)
+    | None => ()
+    }
+    setIsCopied(_ => true)
+    let id = setTimeout(() => {
+      setIsCopied(_ => false)
+      copyTimeoutRef.current = None
+    }, copyResetTime)
+    copyTimeoutRef.current = Some(id)
   }
 
   let displayColor = React.useMemo(() => {
@@ -264,18 +261,17 @@ let make = () => {
           </div>
         </RenderIf>
       </div>
-      <div className="flex flex-col mt-16 max-w-md justify-between items-center">
+      <div
+        className={`flex flex-col ${paymentMethodConfig.enableCopyRawQr
+            ? "mt-6"
+            : "mt-16"} max-w-md justify-between items-center`}>
         <RenderIf condition={paymentMethodConfig.enableCopyRawQr}>
-          <div className="button">
-            <div>
-              <button
-                className="w-full p-2 h-[40px] border border-[#006DF9] rounded-md"
-                style={color: "#006DF9", background: "transparent"}
-                onClick={handleCopyQrData}>
-                {isCopied ? React.string("Copied!") : React.string("Copy QR Data")}
-              </button>
-            </div>
-          </div>
+          <button
+            className="button  p-2 h-[40px] border border-[#006DF9] rounded-md"
+            style={color: "#006DF9", background: "transparent"}
+            onClick={handleCopyQrData}>
+            {isCopied ? React.string("Copied!") : React.string("Copy QR Data")}
+          </button>
         </RenderIf>
         <div
           className={`Disclaimer w-full ${paymentMethodConfig.enableCopyRawQr
