@@ -230,6 +230,9 @@ let make = () => {
       : paymentMethodConfig.color
   }, [paymentMethodConfig.color, paymentMethodConfig.defaultColor])
 
+  let qrBottomSectionMarginClass = paymentMethodConfig.enableCopyRawQr ? "mt-6" : "mt-16"
+  let disclaimerMarginClass = paymentMethodConfig.enableCopyRawQr ? "mt-6" : ""
+
   <Modal showClose=false openModal setOpenModal>
     <div className="flex flex-col h-full justify-between items-center">
       <RenderIf condition={paymentMethodConfig.showLogo && paymentMethodConfig.logoName !== ""}>
@@ -262,9 +265,7 @@ let make = () => {
         </RenderIf>
       </div>
       <div
-        className={`flex flex-col ${paymentMethodConfig.enableCopyRawQr
-            ? "mt-6"
-            : "mt-16"} max-w-md justify-between items-center`}>
+        className={`flex flex-col ${qrBottomSectionMarginClass} max-w-md justify-between items-center`}>
         <RenderIf condition={paymentMethodConfig.enableCopyRawQr}>
           <button
             className="button  p-2 h-[40px] border border-[#006DF9] rounded-md"
@@ -274,9 +275,7 @@ let make = () => {
           </button>
         </RenderIf>
         <div
-          className={`Disclaimer w-full ${paymentMethodConfig.enableCopyRawQr
-              ? "mt-6"
-              : ""} font-medium text-xs text-[#151A1F] opacity-50`}>
+          className={`Disclaimer w-full ${disclaimerMarginClass} font-medium text-xs text-[#151A1F] opacity-50`}>
           {React.string(
             "The QR Code is valid for the next 15 minutes, please do not close until you have successfully completed the payment, after which you will be automatically redirected.",
           )}
