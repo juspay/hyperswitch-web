@@ -18,16 +18,14 @@ let make = (~fieldType="") => {
     }
 
   let validatePixCNPJ = (val): RecoilAtomTypes.field => {
-    // transforming to uppercase to allow lowercase input to reduce friction, as CNPJ can contain letters (when formatted with punctuation)
-    let transformedVal = val->String.toUpperCase->String.replaceRegExp(%re("/[^A-Z0-9]/g"), "")
-    let isCNPJValid = CnpjValidation.isValidCNPJ(transformedVal)
+    let isCNPJValid = CnpjValidation.isValidCNPJ(val)
     if isCNPJValid {
-      {value: transformedVal, isValid: Some(true), errorString: ""}
-    } else if transformedVal->String.length === 0 {
-      {value: transformedVal, isValid: None, errorString: ""}
+      {value: val, isValid: Some(true), errorString: ""}
+    } else if val->String.length === 0 {
+      {value: val, isValid: None, errorString: ""}
     } else {
       {
-        value: transformedVal,
+        value: val,
         isValid: Some(false),
         errorString: localeString.pixCNPJInvalidText,
       }
@@ -35,15 +33,14 @@ let make = (~fieldType="") => {
   }
 
   let validatePixCPF = (val): RecoilAtomTypes.field => {
-    let transformedVal = val->CardValidations.clearSpaces
-    let isCPFValid = CpfValidation.isValidCPF(transformedVal)
+    let isCPFValid = CpfValidation.isValidCPF(val)
     if isCPFValid {
-      {value: transformedVal, isValid: Some(true), errorString: ""}
-    } else if transformedVal->String.length === 0 {
-      {value: transformedVal, isValid: None, errorString: ""}
+      {value: val, isValid: Some(true), errorString: ""}
+    } else if val->String.length === 0 {
+      {value: val, isValid: None, errorString: ""}
     } else {
       {
-        value: transformedVal,
+        value: val,
         isValid: Some(false),
         errorString: localeString.pixCPFInvalidText,
       }
@@ -89,7 +86,14 @@ let make = (~fieldType="") => {
 
   let onChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    validateAndSetPixInputValue(val)
+
+    let transformedVal = switch fieldType {
+    // Transforming to uppercase to allow lowercase input to reduce friction, as CNPJ can contain letters (when formatted with punctuation)
+    | "pixCNPJ" => val->String.toUpperCase
+    | "pixCPF" => val->CardValidations.clearSpaces
+    | _ => val
+    }
+    validateAndSetPixInputValue(transformedVal)
   }
 
   let onBlur = ev => {
