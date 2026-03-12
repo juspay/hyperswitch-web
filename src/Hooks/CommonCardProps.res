@@ -43,7 +43,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentMethodsScreen)
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
-  }, paymentMethodListValue)
+  }, [paymentMethodListValue])
 
   let maxCardLength = React.useMemo(() => {
     getMaxLength(cardBrand)
