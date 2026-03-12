@@ -81,6 +81,7 @@ let make = (
   let shouldShowClickToPaySection =
     clickToPayConfig.isReady == Some(true) &&
       (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")
+  let (installmentsError, setInstallmentsError) = React.useState(_ => "")
 
   let bottomElement = {
     <div
@@ -100,6 +101,8 @@ let make = (
           setSelectedInstallmentPlan
           showInstallments
           setShowInstallments
+          installmentsError
+          setInstallmentsError
         />
       )
       ->React.array}
@@ -118,6 +121,8 @@ let make = (
           setSelectedInstallmentPlan
           showInstallments
           setShowInstallments
+          installmentsError
+          setInstallmentsError
         />
       </RenderIf>
     </div>
@@ -139,11 +144,12 @@ let make = (
   let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
   let isCardPaymentMethod = customerMethod.paymentMethod === "card"
   let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
-
+  let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
   let complete =
     areRequiredFieldsValid &&
     !isUnknownPaymentMethod &&
-    (!isCardPaymentMethod || isCardPaymentMethodValid)
+    (!isCardPaymentMethod || isCardPaymentMethodValid) &&
+    isInstallmentValid
 
   let paymentMethodType =
     customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
@@ -163,8 +169,6 @@ let make = (
     let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not || isSaveCardsChecked
     let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
 
-    let isInstallmentValid =
-      !showInstallments || (showInstallments && selectedInstallmentPlan->Option.isSome)
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>
       PaymentBody.savedCardBody(
@@ -244,9 +248,7 @@ let make = (
           })
         )
         ->ignore
-      } else if (
-        complete && confirm.confirmTimestamp >= confirm.readyTimestamp && isInstallmentValid
-      ) {
+      } else if complete && confirm.confirmTimestamp >= confirm.readyTimestamp {
         switch customerMethod.paymentMethodType {
         | Some("google_pay") =>
           switch gPayToken {
@@ -327,6 +329,7 @@ let make = (
         }
         if !isInstallmentValid {
           setUserError(localeString.installmentSelectPlanError)
+          setInstallmentsError(_ => localeString.installmentSelectPlanError)
         }
       }
     }

@@ -4,14 +4,16 @@ let make = (
   ~currency,
   ~isSelected,
   ~onSelect,
-  ~themeObj: CardThemeType.themeClass,
   ~isLastItem,
-  ~localeString: LocaleStringTypes.localeStrings,
 ) => {
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+
+  let formatInterestRate = interestRate => Utils.formatAmountWithTwoDecimals(interestRate)
+
   let getInterestLabel = interestRate =>
     interestRate == 0.0
       ? localeString.installmentInterestFree
-      : localeString.installmentInterestRate(interestRate->Float.toString)
+      : localeString.installmentInterestRate(formatInterestRate(interestRate))
 
   let amountPerInstallment = Utils.formatAmountWithTwoDecimals(
     plan.amount_details.amount_per_installment,
@@ -61,7 +63,7 @@ let make = (
           style={
             color: themeObj.colorText,
           }>
-          {totalAmount->React.string}
+          {`${currency} ${totalAmount}`->React.string}
         </span>
       </div>
     </div>

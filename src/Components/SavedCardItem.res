@@ -59,6 +59,8 @@ let make = (
   ~setSelectedInstallmentPlan,
   ~showInstallments,
   ~setShowInstallments,
+  ~installmentsError,
+  ~setInstallmentsError,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {
@@ -158,6 +160,13 @@ let make = (
   let isCVCEmpty = cvcNumber->String.length == 0
 
   let {innerLayout} = config.appearance
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
+
+  let hasInstallmentPlans =
+    installmentOptions
+    ->PaymentUtils.filterInstallmentPlansByPaymentMethod(paymentItem.paymentMethod)
+    ->Array.length > 0
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
@@ -284,14 +293,19 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf condition={isActive}>
-                <RenderIf condition={isCard}>
+                <RenderIf condition={isCard && hasInstallmentPlans}>
                   <div
                     style={
                       paddingTop: themeObj.spacingUnit,
                     }
                     className="w-full flex">
                     <InstallmentOptions
-                      setSelectedInstallmentPlan showInstallments setShowInstallments
+                      setSelectedInstallmentPlan
+                      showInstallments
+                      setShowInstallments
+                      paymentMethod=paymentItem.paymentMethod
+                      errorString=installmentsError
+                      setErrorString=setInstallmentsError
                     />
                   </div>
                 </RenderIf>

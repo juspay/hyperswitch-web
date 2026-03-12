@@ -17,6 +17,8 @@ let make = (
   ~setSelectedInstallmentPlan,
   ~showInstallments,
   ~setShowInstallments,
+  ~installmentsError,
+  ~setInstallmentsError,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
@@ -216,6 +218,8 @@ let make = (
           setSelectedInstallmentPlan
           showInstallments
           setShowInstallments
+          installmentsError
+          setInstallmentsError
         />
       })
       ->React.array}

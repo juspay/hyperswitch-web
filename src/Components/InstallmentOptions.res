@@ -1,7 +1,15 @@
 @react.component
-let make = (~setSelectedInstallmentPlan, ~showInstallments, ~setShowInstallments) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+let make = (
+  ~setSelectedInstallmentPlan,
+  ~showInstallments,
+  ~setShowInstallments,
+  ~paymentMethod,
+  ~errorString,
+  ~setErrorString,
+) => {
+  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let {innerLayout} = config.appearance
 
   let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
   let currency = paymentMethodListValue.intent_data.currency
@@ -9,15 +17,13 @@ let make = (~setSelectedInstallmentPlan, ~showInstallments, ~setShowInstallments
   let (selectedIndex, setSelectedIndex) = React.useState(_ => None)
 
   let allPlans =
-    installmentOptions
-    ->Array.get(0)
-    ->Option.map(option => option.available_plans)
-    ->Option.getOr([])
+    installmentOptions->PaymentUtils.filterInstallmentPlansByPaymentMethod(paymentMethod)
 
   let needsScroll = allPlans->Array.length > 4
 
   let handleCheckboxClick = isChecked => {
     setShowInstallments(_ => isChecked)
+    setErrorString(_ => "")
     if !isChecked {
       setSelectedInstallmentPlan(_ => None)
       setSelectedIndex(_ => None)
@@ -27,6 +33,7 @@ let make = (~setSelectedInstallmentPlan, ~showInstallments, ~setShowInstallments
   let handlePlanSelect = (plan: PaymentMethodsRecord.installmentPlan, index) => {
     setSelectedInstallmentPlan(_ => Some(plan))
     setSelectedIndex(_ => Some(index))
+    setErrorString(_ => "")
   }
 
   let isPlanSelected = index =>
@@ -34,15 +41,15 @@ let make = (~setSelectedInstallmentPlan, ~showInstallments, ~setShowInstallments
     ->Option.map(selected => selected == index)
     ->Option.getOr(false)
 
-  React.useEffect0(() => {
+  let cleanUpStates = () => {
     setSelectedInstallmentPlan(_ => None)
     setShowInstallments(_ => false)
-    Some(
-      () => {
-        setSelectedInstallmentPlan(_ => None)
-        setShowInstallments(_ => false)
-      },
-    )
+    setErrorString(_ => "")
+  }
+
+  React.useEffect0(() => {
+    cleanUpStates()
+    Some(cleanUpStates)
   })
 
   <RenderIf condition={allPlans->Array.length != 0}>
@@ -78,14 +85,24 @@ let make = (~setSelectedInstallmentPlan, ~showInstallments, ~setShowInstallments
                 plan
                 isSelected={isPlanSelected(i)}
                 onSelect={() => handlePlanSelect(plan, i)}
-                themeObj
                 isLastItem
                 currency
-                localeString
               />
             })
             ->React.array}
           </div>
+        </div>
+      </RenderIf>
+      <RenderIf condition={innerLayout === Spaced && errorString != ""}>
+        <div
+          className="Error pt-1"
+          style={
+            color: themeObj.colorDangerText,
+            fontSize: themeObj.fontSizeSm,
+            alignSelf: "start",
+            textAlign: "left",
+          }>
+          {React.string(errorString)}
         </div>
       </RenderIf>
     </div>

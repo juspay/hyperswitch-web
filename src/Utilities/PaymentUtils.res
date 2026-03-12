@@ -762,3 +762,13 @@ let checkRenderOrComp = (
 ) => {
   walletOptions->Array.includes("paypal") || isShowOrPayUsing || isShowOrPayUsingWhileLoading
 }
+
+let filterInstallmentPlansByPaymentMethod = (
+  installmentOptions: array<PaymentMethodsRecord.installmentOption>,
+  paymentMethod,
+) => {
+  installmentOptions
+  ->Array.find(option => option.payment_method === paymentMethod)
+  ->Option.map(option => option.available_plans)
+  ->Option.getOr([])
+}

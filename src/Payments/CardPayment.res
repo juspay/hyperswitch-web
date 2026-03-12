@@ -126,17 +126,15 @@ let make = (
   let isCardBrandValid = combinedCardNetworks->Array.includes(cardBrand->String.toLowerCase)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-
+  let (installmentsError, setInstallmentsError) = React.useState(_ => "")
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
-  let complete = isAllValid(
-    isCardValid,
-    isCardSupported,
-    isCVCValid,
-    isExpiryValid,
-    true,
-    "payment",
-  )
+  let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
+
+  let complete =
+    isAllValid(isCardValid, isCardSupported, isCVCValid, isExpiryValid, true, "payment") &&
+    isInstallmentValid
+
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect(() => {
     setComplete(_ => complete)
@@ -218,8 +216,6 @@ let make = (
         cardNumber->CardValidations.clearSpaces,
         blockedBinsList,
       )
-
-      let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
 
       let validFormat =
         (isBancontact || isCardDetailsValid) &&
@@ -434,6 +430,7 @@ let make = (
         }
         if !isInstallmentValid {
           setUserError(localeString.installmentSelectPlanError)
+          setInstallmentsError(_ => localeString.installmentSelectPlanError)
         }
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)
@@ -474,7 +471,7 @@ let make = (
   | Some(_) => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
   | None => ""
   }
-  let conditionToRenderInstallments = cardNumber->CardValidations.clearSpaces->String.length >= 6
+  let conditionToRenderInstallments = cardNumber->CardUtils.getCardBin->String.length >= 6
   <div className="animate-slowShow">
     <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
@@ -596,7 +593,14 @@ let make = (
             <NicknamePaymentInput />
           </RenderIf>
           <RenderIf condition=conditionToRenderInstallments>
-            <InstallmentOptions setSelectedInstallmentPlan showInstallments setShowInstallments />
+            <InstallmentOptions
+              setSelectedInstallmentPlan
+              showInstallments
+              setShowInstallments
+              paymentMethod
+              errorString=installmentsError
+              setErrorString=setInstallmentsError
+            />
           </RenderIf>
         </div>
       </div>
