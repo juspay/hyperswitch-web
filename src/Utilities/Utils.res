@@ -1715,6 +1715,21 @@ let isKeyPresentInDict = (dict, key) => dict->Dict.get(key)->Option.isSome
 
 let minorUnitToString = val => (val->Int.toFloat /. 100.)->Float.toString
 
+let formatAmountWithTwoDecimals = amount => {
+  let amountStr = amount->Float.toString
+  let parts = amountStr->String.split(".")
+  let wholePart = parts->Array.get(0)->Option.getOr("0")
+  let decimalPart = parts->Array.get(1)->Option.getOr("00")
+  let paddedDecimal = if decimalPart->String.length < 2 {
+    decimalPart ++ "0"
+  } else if decimalPart->String.length > 2 {
+    decimalPart->String.slice(~start=0, ~end=2)
+  } else {
+    decimalPart
+  }
+  `${wholePart}.${paddedDecimal}`
+}
+
 let mergeAndFlattenToTuples = (body, requiredFieldsBody) =>
   body
   ->getJsonFromArrayOfJson
