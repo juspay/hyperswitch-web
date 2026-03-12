@@ -1,17 +1,16 @@
-open RecoilAtoms
-open RecoilAtomTypes
+open JotaiAtomTypes
 open Utils
 
 @react.component
 let make = (~paymentMethodName: string) => {
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
-  let phoneNumber = Recoil.useRecoilValueFromAtom(userPhoneNumber)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let {iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let blikCode = Jotai.useAtomValue(JotaiAtoms.userBlikCode)
+  let phoneNumber = Jotai.useAtomValue(JotaiAtoms.userPhoneNumber)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let optionPaymentMethodDetails =
     paymentMethodListValue
     ->PaymentMethodsRecord.buildFromPaymentList(~localeString)
@@ -29,17 +28,17 @@ let make = (~paymentMethodName: string) => {
       Some(flow)
     })
     ->Option.getOr(RedirectToURL)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let currency = Recoil.useRecoilValueFromAtom(userCurrency)
-  let (country, _) = Recoil.useRecoilState(userCountry)
-  let (selectedBank, _) = Recoil.useRecoilState(userBank)
-  let setFieldComplete = Recoil.useSetRecoilState(fieldsComplete)
+  let fullName = Jotai.useAtomValue(JotaiAtoms.userFullName)
+  let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
+  let currency = Jotai.useAtomValue(JotaiAtoms.userCurrency)
+  let (country, _) = Jotai.useAtom(JotaiAtoms.userCountry)
+  let (selectedBank, _) = Jotai.useAtom(JotaiAtoms.userBank)
+  let setFieldComplete = Jotai.useSetAtom(JotaiAtoms.fieldsComplete)
   let cleanPhoneNumber = str => str->String.replaceRegExp(%re("/\s/g"), "")
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsEmpty)
   let countryList = CountryStateDataRefs.countryDataRef.contents
 
   React.useEffect(() => {

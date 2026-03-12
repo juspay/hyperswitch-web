@@ -1,11 +1,8 @@
 @react.component
 let make = (~styles: JsxDOMStyle.t={}, ~paymentMethod, ~paymentMethodType) => {
-  open RecoilAtoms
-  let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {customMessageForCardTerms, business, terms} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let {payment_type: paymentType} = Recoil.useRecoilValueFromAtom(
-    PaymentUtils.paymentMethodListValue,
-  )
+  let {localeString, themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {customMessageForCardTerms, business, terms} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let {payment_type: paymentType} = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let cardTermsValue =
     customMessageForCardTerms != ""
       ? customMessageForCardTerms

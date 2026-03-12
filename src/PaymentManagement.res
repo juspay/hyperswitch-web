@@ -1,5 +1,4 @@
 open PaymentType
-open RecoilAtoms
 
 @react.component
 let make = (
@@ -9,15 +8,13 @@ let make = (
   ~cvcProps: CardUtils.cvcProps,
 ) => {
   let divRef = React.useRef(Nullable.null)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {sdkHandleSavePayment} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {sdkHandleSavePayment} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let (savedMethodsV2, setSavedMethodsV2) = Jotai.useAtom(JotaiAtomsV2.savedMethodsV2)
   let (isLoading, setIsLoading) = React.useState(_ => false)
-  let (showAddScreen, setShowAddScreen) = Recoil.useRecoilState(RecoilAtomsV2.showAddScreen)
-  let (cardBrandValue, setCardBrand) = Recoil.useRecoilState(cardBrand)
-  let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
-    PaymentUtils.paymentManagementListValue,
-  )
+  let (showAddScreen, setShowAddScreen) = Jotai.useAtom(JotaiAtomsV2.showAddScreen)
+  let (cardBrandValue, setCardBrand) = Jotai.useAtom(JotaiAtoms.cardBrand)
+  let paymentManagementListValue = Jotai.useAtomValue(PaymentUtils.paymentManagementListValue)
   let handleBack = _ => {
     setShowAddScreen(_ => false)
   }
@@ -39,11 +36,11 @@ let make = (
     None
   }, [savedMethodsV2->Array.length])
 
-  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let (savedPaymentMethodsV2, setSavedPaymentMethodsV2) = Recoil.useRecoilState(
+  let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
+  let (savedPaymentMethodsV2, setSavedPaymentMethodsV2) = Jotai.useAtom(
     PaymentUtils.paymentManagementListValue,
   )
-  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {displaySavedPaymentMethods} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   React.useEffect(() => {
     switch paymentManagementList {
     | LoadedV2(val) =>

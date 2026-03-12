@@ -2,7 +2,7 @@ open UnifiedPaymentsTypesV2
 
 let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) => {
   let walletsList = []
-  let walletToBeDisplayedInTabs = [
+  let _walletToBeDisplayedInTabs = [
     "mb_way",
     "ali_pay",
     "ali_pay_hk",
@@ -33,7 +33,7 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
 
 let useGetPaymentMethodListV2 = (~paymentOptions) => {
   open Utils
-  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+  let methodslist = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
 
   let resolvePaymentList = list => {
     switch list {

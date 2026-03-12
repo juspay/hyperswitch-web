@@ -1,4 +1,3 @@
-open RecoilAtoms
 @react.component
 let make = (
   ~isValid=None,
@@ -19,10 +18,10 @@ let make = (
   ~className="",
   ~inputRef,
 ) => {
-  let options = Recoil.useRecoilValueFromAtom(elementOptions)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.elementOptions)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let (_inputFocused, setInputFocused) = React.useState(_ => false)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
 
   let setFocus = (val: bool) => {
     switch onFocus {

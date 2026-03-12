@@ -1,22 +1,21 @@
 @react.component
 let make = (~token: SessionsType.token) => {
   open Utils
-  open RecoilAtoms
 
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
-  let {iframeId, publishableKey, clientSecret} = Recoil.useRecoilValueFromAtom(keys)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let options = Recoil.useRecoilValueFromAtom(optionAtom)
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let {iframeId, publishableKey, clientSecret} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let setIsShowOrPayUsing = Jotai.useSetAtom(JotaiAtoms.isShowOrPayUsing)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onClick = _ => {

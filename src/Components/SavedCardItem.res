@@ -57,13 +57,13 @@ let make = (
   ~cvcProps: CardUtils.cvcProps,
   ~setRequiredFieldsBody,
 ) => {
-  let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {
     hideExpiredPaymentMethods,
     displayDefaultSavedPaymentIcon,
     displayBillingDetails,
-  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
+  } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let (cardBrand, setCardBrand) = Jotai.useAtom(JotaiAtoms.cardBrand)
   let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcError} = cvcProps
   let cvcRef = React.useRef(Nullable.null)
   let pickerItemClass = isActive ? "PickerItem--selected" : ""
@@ -175,7 +175,7 @@ let make = (
         opacity: {isCardExpired ? "0.7" : "1"},
       }
       onClick={_ => {
-        open RecoilAtomTypes
+        open JotaiAtomTypes
         setPaymentToken(_ => {
           paymentToken: paymentItem.paymentToken,
           customerId: paymentItem.customerId,

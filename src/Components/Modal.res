@@ -15,7 +15,7 @@ let make = (
   ~setOpenModal,
   ~openModal,
 ) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let closeModal = () => {
     setOpenModal(_ => false)
     switch closeCallback {

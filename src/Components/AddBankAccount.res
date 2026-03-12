@@ -1,9 +1,8 @@
-open RecoilAtoms
 open Utils
 module ToolTip = {
   @react.component
   let make = (~openTip, ~forwardRef, ~onclick) => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+    let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     <RenderIf condition={openTip}>
       <button
         className="h-auto max-w-30 w-auto cursor-pointer absolute m-1 px-1 py-2 top-[-3rem] right-[1em]"
@@ -30,8 +29,8 @@ module ToolTip = {
 @react.component
 let make = (~modalData, ~setModalData) => {
   let isDataAvailable = modalData->Option.isSome
-  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {themeObj, localeString, config} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
   let (openToolTip, setOpenToolTip) = React.useState(_ => false)
   let toolTipRef = React.useRef(Nullable.null)
 

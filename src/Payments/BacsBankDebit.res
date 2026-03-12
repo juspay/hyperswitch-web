@@ -1,5 +1,4 @@
-open RecoilAtoms
-open RecoilAtomTypes
+open JotaiAtomTypes
 open Utils
 
 let formatSortCode = sortcode => {
@@ -22,24 +21,24 @@ let cleanSortCode = str => str->String.replaceRegExp(%re("/-/g"), "")
 
 @react.component
 let make = () => {
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {displaySavedPaymentMethods} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let country = Recoil.useRecoilValueFromAtom(userAddressCountry)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let setComplete = Recoil.useSetRecoilState(fieldsComplete)
+  let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
+  let line1 = Jotai.useAtomValue(JotaiAtoms.userAddressline1)
+  let line2 = Jotai.useAtomValue(JotaiAtoms.userAddressline2)
+  let country = Jotai.useAtomValue(JotaiAtoms.userAddressCountry)
+  let city = Jotai.useAtomValue(JotaiAtoms.userAddressCity)
+  let postalCode = Jotai.useAtomValue(JotaiAtoms.userAddressPincode)
+  let state = Jotai.useAtomValue(JotaiAtoms.userAddressState)
+  let fullName = Jotai.useAtomValue(JotaiAtoms.userFullName)
+  let setComplete = Jotai.useSetAtom(JotaiAtoms.fieldsComplete)
   let (sortcode, setSortcode) = React.useState(_ => "")
   let (accountNumber, setAccountNumber) = React.useState(_ => "")
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 

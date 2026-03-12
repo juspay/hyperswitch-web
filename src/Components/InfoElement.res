@@ -1,8 +1,8 @@
 @react.component
 let make = () => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let selectedOption =
-    Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)->PaymentModeType.paymentMode
+    Jotai.useAtomValue(JotaiAtoms.selectedOptionAtom)->PaymentModeType.paymentMode
   <div
     className="InfoElement flex flex-row w-full pr-3 gap-3"
     style={

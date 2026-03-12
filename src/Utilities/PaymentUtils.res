@@ -1,8 +1,5 @@
-let paymentMethodListValue = Recoil.atom("paymentMethodListValue", PaymentMethodsRecord.defaultList)
-let paymentManagementListValue = Recoil.atom(
-  "paymentManagementListValue",
-  UnifiedHelpersV2.defaultPaymentsList,
-)
+let paymentMethodListValue = Jotai.atom(PaymentMethodsRecord.defaultList)
+let paymentManagementListValue = Jotai.atom(UnifiedHelpersV2.defaultPaymentsList)
 
 let paymentListLookupNew = (
   list: PaymentMethodsRecord.paymentMethodList,
@@ -358,17 +355,17 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
 
 let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode, ~sessions) => {
   open Utils
-  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let methodslist = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
-  let {paymentMethodOrder} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {paymentMethodOrder} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let optionAtomValue = Jotai.useAtomValue(JotaiAtoms.optionAtom)
 
   let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
 
   let isKlarnaSDKFlow = getIsKlarnaSDKFlow(sessions)
 
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(paymentMethodListValue)
 
   let areAllApplePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
     ~paymentMethodListValue,
@@ -388,8 +385,8 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode
     ~paymentMethodType="paypal",
   )
 
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
-  let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
+  let isGooglePayReady = Jotai.useAtomValue(JotaiAtoms.isGooglePayReady)
 
   let (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist) = usePaypalFlowStatus(
     ~sessions,
@@ -655,9 +652,9 @@ type nonPiiAdderessData = {
 }
 
 let useNonPiiAddressData = () => {
-  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
-  let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState).value
-  let pinCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode).value
+  let country = Jotai.useAtomValue(JotaiAtoms.userCountry)
+  let state = Jotai.useAtomValue(JotaiAtoms.userAddressState).value
+  let pinCode = Jotai.useAtomValue(JotaiAtoms.userAddressPincode).value
 
   {
     country,
@@ -672,7 +669,7 @@ let useEmitPaymentMethodInfo = (
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
 ) => {
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let {country, state, pinCode} = useNonPiiAddressData()
 
   let {cardNumber, cardBrand} = cardProps

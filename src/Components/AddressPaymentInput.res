@@ -1,4 +1,3 @@
-open RecoilAtoms
 open PaymentType
 open Utils
 open PaymentTypeContext
@@ -30,18 +29,18 @@ let showField = (val: PaymentType.addressType, type_: addressType) => {
 
 @react.component
 let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
-  let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {localeString, themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {fields} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
 
-  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
-  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
-  let (country, setCountry) = Recoil.useRecoilState(userAddressCountry)
-  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
-  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
-  let (state, setState) = Recoil.useRecoilState(userAddressState)
+  let (line1, setLine1) = Jotai.useAtom(JotaiAtoms.userAddressline1)
+  let (line2, setLine2) = Jotai.useAtom(JotaiAtoms.userAddressline2)
+  let (country, setCountry) = Jotai.useAtom(JotaiAtoms.userAddressCountry)
+  let (city, setCity) = Jotai.useAtom(JotaiAtoms.userAddressCity)
+  let (postalCode, setPostalCode) = Jotai.useAtom(JotaiAtoms.userAddressPincode)
+  let (state, setState) = Jotai.useAtom(JotaiAtoms.userAddressState)
 
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
@@ -55,8 +54,8 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let countryNames = getCountryNames(countryData)
 
   let checkPostalValidity = (
-    postal: RecoilAtomTypes.field,
-    setPostal: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
+    postal: JotaiAtomTypes.field,
+    setPostal: (JotaiAtomTypes.field => JotaiAtomTypes.field) => unit,
   ) => {
     if postal.value !== "" {
       setPostal(prev => {

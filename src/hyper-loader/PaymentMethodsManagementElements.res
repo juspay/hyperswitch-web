@@ -239,7 +239,7 @@ let make = (
         iframeRef,
         mountPostMessage,
         ~isPaymentManagementElement=true,
-        ~redirectionFlags=RecoilAtoms.defaultRedirectionFlags,
+        ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
         ~logger=Some(logger),
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)

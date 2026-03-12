@@ -33,7 +33,7 @@ module SavedPaymentShimmer = {
 module SavedPaymentCardShimmer = {
   @react.component
   let make = () => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     <div
       className="Label flex flex-row gap-3 items-end cursor-pointer"
       style={

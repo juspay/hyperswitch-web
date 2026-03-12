@@ -998,13 +998,12 @@ let rec intentCall = (
 }
 
 let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
-  open RecoilAtoms
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
-  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
+  let keys = Jotai.useAtomValue(JotaiAtoms.keys)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
+  let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
+  let setIsManualRetryEnabled = Jotai.useSetAtom(JotaiAtoms.isManualRetryEnabled)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="") => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -1082,13 +1081,11 @@ let rec maskPayload = payloadJson => {
 }
 
 let useCompleteAuthorizeHandler = () => {
-  open RecoilAtoms
-
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(isCompleteCallbackUsed)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
+  let setIsManualRetryEnabled = Jotai.useSetAtom(JotaiAtoms.isManualRetryEnabled)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
+  let keys = Jotai.useAtomValue(JotaiAtoms.keys)
 
   (
     ~clientSecret: option<string>,
@@ -1172,8 +1169,8 @@ let useCompleteAuthorizeHandler = () => {
 
 let useCompleteAuthorize = (optLogger, paymentType) => {
   let completeAuthorizeHandler = useCompleteAuthorizeHandler()
-  let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
+  let keys = Jotai.useAtomValue(JotaiAtoms.keys)
+  let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
   let url = RescriptReactRouter.useUrl()
   let mode =
     CardUtils.getQueryParamsDictforKey(url.search, "componentName")
@@ -1224,19 +1221,20 @@ let useRedsysCompleteAuthorize = optLogger => {
 }
 
 let usePaymentIntent = (optLogger, paymentType) => {
-  open RecoilAtoms
   open Promise
+
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
-  let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
 
-  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let blockConfirm = Jotai.useAtomValue(JotaiAtoms.isConfirmBlocked)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
+  let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
+  let keys = Jotai.useAtomValue(JotaiAtoms.keys)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
+
+  let setIsManualRetryEnabled = Jotai.useSetAtom(JotaiAtoms.isManualRetryEnabled)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -1930,17 +1928,16 @@ let usePostSessionTokens = (
   paymentType: payment,
   paymentMethod: PaymentMethodCollectTypes.paymentMethod,
 ) => {
-  open RecoilAtoms
   open Promise
   let url = RescriptReactRouter.useUrl()
   let paymentTypeFromUrl =
     CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(RecoilAtoms.redirectionFlagsAtom)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
+  let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
+  let keys = Jotai.useAtomValue(JotaiAtoms.keys)
+  let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
 
-  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let setIsManualRetryEnabled = Jotai.useSetAtom(JotaiAtoms.isManualRetryEnabled)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,

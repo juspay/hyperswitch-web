@@ -1,6 +1,5 @@
 open PaymentMethodCollectTypes
 open PaymentMethodCollectUtils
-open RecoilAtoms
 
 @react.component
 let make = (
@@ -12,17 +11,17 @@ let make = (
   ~renderAddressForm,
   ~renderPayoutMethodForm,
 ) => {
-  // Recoil states
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let payoutDynamicFields = Recoil.useRecoilValueFromAtom(payoutDynamicFieldsAtom)
-  let formData = Recoil.useRecoilValueFromAtom(formDataAtom)
-  let (activePmt, setActivePmt) = Recoil.useRecoilState(paymentMethodTypeAtom)
-  let (validityDict, setValidityDict) = Recoil.useRecoilState(validityDictAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  // Jotai states
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let payoutDynamicFields = Jotai.useAtomValue(JotaiAtoms.payoutDynamicFieldsAtom)
+  let formData = Jotai.useAtomValue(JotaiAtoms.formDataAtom)
+  let (activePmt, setActivePmt) = Jotai.useAtom(JotaiAtoms.paymentMethodTypeAtom)
+  let (validityDict, setValidityDict) = Jotai.useAtom(JotaiAtoms.validityDictAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
-  // let (validityDict, setValidityDict) = Recoil.useRecoilState(validityDictAtom)
+  // let (validityDict, setValidityDict) = Jotai.useAtom(JotaiAtoms.validityDictAtom)
 
   // Component states
   let (orderedPmts, setOrderedPmts): (

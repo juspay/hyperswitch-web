@@ -1,12 +1,12 @@
 @react.component
 let make = (~paymentType) => {
-  let sessionsObj = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
-  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
+  let sessionsObj = Jotai.useAtomValue(JotaiAtoms.sessions)
+  let methodslist = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
 
-  let setPaymentMethodListValue = Recoil.useSetRecoilState(PaymentUtils.paymentMethodListValue)
+  let setPaymentMethodListValue = Jotai.useSetAtom(PaymentUtils.paymentMethodListValue)
 
   let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(
     ~paymentOptions=[],

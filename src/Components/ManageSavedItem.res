@@ -1,5 +1,3 @@
-open RecoilAtoms
-
 @react.component
 let make = (
   ~paymentItem: UnifiedPaymentsTypesV2.customerMethods,
@@ -9,10 +7,10 @@ let make = (
   ~expiryYear,
 ) => {
   let (_, startTransition) = React.useTransition()
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {config, themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {innerLayout} = config.appearance
-  let setFullName = Recoil.useSetRecoilState(userFullName)
-  let setNickName = Recoil.useSetRecoilState(userCardNickName)
+  let setFullName = Jotai.useSetAtom(JotaiAtoms.userFullName)
+  let setNickName = Jotai.useSetAtom(JotaiAtoms.userCardNickName)
 
   let cardHolderName = switch paymentItem.paymentMethodData.card.cardHolderName {
   | Some(val) => val

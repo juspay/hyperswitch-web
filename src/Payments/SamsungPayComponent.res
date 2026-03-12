@@ -1,21 +1,20 @@
 @react.component
 let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   open Utils
-  open RecoilAtoms
 
   let url = RescriptReactRouter.useUrl()
-  let isSamsungPayReady = Recoil.useRecoilValueFromAtom(isSamsungPayReady)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let options = Recoil.useRecoilValueFromAtom(optionAtom)
-  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
-  let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let isSamsungPayReady = Jotai.useAtomValue(JotaiAtoms.isSamsungPayReady)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
+  let setIsShowOrPayUsing = Jotai.useSetAtom(JotaiAtoms.isShowOrPayUsing)
+  let areOneClickWalletsRendered = Jotai.useSetAtom(JotaiAtoms.areOneClickWalletsRendered)
+  let {iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
   let status = CommonHooks.useScript("https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js")
   let isWallet = walletOptions->Array.includes("samsung_pay")
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Samsungpay)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let (_, _, _, _, heightType) = options.wallets.style.height

@@ -1,13 +1,12 @@
-open RecoilAtoms
 open PaymentType
 open Utils
 
 @react.component
 let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) => {
-  let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {fields} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
 
-  let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
+  let (billingName, setBillingName) = Jotai.useAtom(JotaiAtoms.userBillingName)
 
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 

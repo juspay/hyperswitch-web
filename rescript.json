@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/rescript-lang/rescript-compiler/master/docs/docson/build-schema.json",
-  "name": "orca-payment-page",
+  "name": "@juspay-tech/hyperswitch-web",
   "jsx": {
     "version": 4,
     "mode": "classic"
@@ -27,5 +27,8 @@
     "@rescript/react",
     "@rescript/core",
     "@glennsl/rescript-fetch"
-  ]
+  ],
+  "warnings": {
+    "error": "+a-4-9-45"
+  }
 }

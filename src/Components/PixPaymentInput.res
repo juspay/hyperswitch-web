@@ -1,23 +1,22 @@
 @react.component
 let make = (~fieldType="") => {
-  open RecoilAtoms
   open Utils
 
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
-  let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
-  let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let (pixCNPJ, setPixCNPJ) = Jotai.useAtom(JotaiAtoms.userPixCNPJ)
+  let (pixCPF, setPixCPF) = Jotai.useAtom(JotaiAtoms.userPixCPF)
+  let (pixKey, setPixKey) = Jotai.useAtom(JotaiAtoms.userPixKey)
+  let (sourceBankAccountId, setSourceBankAccountId) = Jotai.useAtom(JotaiAtoms.sourceBankAccountId)
   let inputRef = React.useRef(Nullable.null)
 
-  let validatePixKey = (val): RecoilAtomTypes.field =>
+  let validatePixKey = (val): JotaiAtomTypes.field =>
     if val->String.length > 0 {
       {value: val, isValid: Some(true), errorString: ""}
     } else {
       {value: val, isValid: None, errorString: ""}
     }
 
-  let validatePixCNPJ = (val): RecoilAtomTypes.field => {
+  let validatePixCNPJ = (val): JotaiAtomTypes.field => {
     let isCNPJValid = CnpjValidation.isValidCNPJ(val)
     if isCNPJValid {
       {value: val, isValid: Some(true), errorString: ""}
@@ -32,7 +31,7 @@ let make = (~fieldType="") => {
     }
   }
 
-  let validatePixCPF = (val): RecoilAtomTypes.field => {
+  let validatePixCPF = (val): JotaiAtomTypes.field => {
     let isCPFValid = CpfValidation.isValidCPF(val)
     if isCPFValid {
       {value: val, isValid: Some(true), errorString: ""}
@@ -72,14 +71,7 @@ let make = (~fieldType="") => {
       Some(14),
       validatePixCNPJ,
     )
-  | _ => (
-      "",
-      _ => (),
-      RecoilAtoms.defaultFieldValues,
-      "",
-      None,
-      _ => RecoilAtoms.defaultFieldValues,
-    )
+  | _ => ("", _ => (), JotaiAtoms.defaultFieldValues, "", None, _ => JotaiAtoms.defaultFieldValues)
   }
 
   let validateAndSetPixInputValue = val => setValue(_ => val->validationFn)

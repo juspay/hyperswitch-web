@@ -1,7 +1,6 @@
 open CardUtils
 open CardThemeType
 open CardTheme
-open RecoilAtoms
 open PaymentTypeContext
 open CommonCardProps
 
@@ -11,10 +10,10 @@ let setUserError = message => {
 
 @react.component
 let make = (~paymentMode, ~integrateError, ~logger) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
   let (isFocus, setIsFocus) = React.useState(_ => false)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(logger), Card)
@@ -48,7 +47,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     intent(~bodyArr=body, ~confirmParam, ~handleUserError=false, ~manualRetry=isManualRetryEnabled)
   }
 
-  let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
+  let blockedBinsList = Jotai.useAtomValue(JotaiAtoms.blockedBins)
   let submitValue = (_ev, confirmParam) => {
     // Check if card is blocked
     let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(

@@ -1,15 +1,14 @@
 open CardUtils
 open LoggerUtils
-open RecoilAtoms
 
 let useCardForm = (~logger, ~paymentType) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
-  let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(showPaymentMethodsScreen)
-  let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
-  let blockedBinsList = Recoil.useRecoilValueFromAtom(blockedBins)
-  let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let cardScheme = Jotai.useAtomValue(JotaiAtoms.cardBrand)
+  let showPaymentMethodsScreen = Jotai.useAtomValue(JotaiAtoms.showPaymentMethodsScreen)
+  let selectedOption = Jotai.useAtomValue(JotaiAtoms.selectedOptionAtom)
+  let blockedBinsList = Jotai.useAtomValue(JotaiAtoms.blockedBins)
+  let paymentToken = Jotai.useAtomValue(JotaiAtoms.paymentTokenAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -43,7 +42,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentMethodsScreen)
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
-  }, paymentMethodListValue)
+  }, [paymentMethodListValue])
 
   let maxCardLength = React.useMemo(() => {
     getMaxLength(cardBrand)

@@ -1,17 +1,15 @@
-open RecoilAtoms
 open Utils
-open PaymentModeType
 
 @react.component
 let make = () => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {displaySavedPaymentMethods} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
+  let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
+  let fullName = Jotai.useAtomValue(JotaiAtoms.userFullName)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
 
@@ -22,15 +20,15 @@ let make = () => {
   let (modalData, setModalData) = React.useState(_ => None)
 
   let toolTipRef = React.useRef(Nullable.null)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let country = Recoil.useRecoilValueFromAtom(userAddressCountry)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
+  let line1 = Jotai.useAtomValue(JotaiAtoms.userAddressline1)
+  let line2 = Jotai.useAtomValue(JotaiAtoms.userAddressline2)
+  let country = Jotai.useAtomValue(JotaiAtoms.userAddressCountry)
+  let city = Jotai.useAtomValue(JotaiAtoms.userAddressCity)
+  let postalCode = Jotai.useAtomValue(JotaiAtoms.userAddressPincode)
+  let state = Jotai.useAtomValue(JotaiAtoms.userAddressState)
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
 
   let pmAuthMapper = React.useMemo1(
     () =>

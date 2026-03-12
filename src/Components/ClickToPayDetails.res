@@ -6,9 +6,9 @@ let make = (
   ~isClickToPayRememberMe,
   ~setIsClickToPayRememberMe,
 ) => {
-  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let clickToPayConfig = Jotai.useAtomValue(JotaiAtoms.clickToPayConfig)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
   let isUnrecognizedUser = clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length == 0
 
   let css = SaveDetailsCheckbox.saveDetailsCssStyle(themeObj)

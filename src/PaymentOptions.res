@@ -1,4 +1,3 @@
-open RecoilAtoms
 module TabLoader = {
   @react.component
   let make = (~cardShimmerCount) => {
@@ -6,9 +5,9 @@ module TabLoader = {
     open PaymentElementShimmer
     open PaymentTypeContext
 
-    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-    let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+    let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
+    let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
+    let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     let contextPaymentType = usePaymentType()
 
     switch (contextPaymentType, paymentMethodList, paymentManagementList) {
@@ -56,16 +55,16 @@ let make = (
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
 ) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {readOnly, customMethodNames, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {readOnly, customMethodNames, layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let payOptionsRef = React.useRef(Nullable.null)
   let selectRef = React.useRef(Nullable.null)
   let (winW, winH) = Utils.useWindowSize()
-  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
+  let (selectedOption, setSelectedOption) = Jotai.useAtom(JotaiAtoms.selectedOptionAtom)
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   React.useEffect(() => {
     let width = switch payOptionsRef.current->Nullable.toOption {
     | Some(ref) => ref->Window.Element.clientWidth
