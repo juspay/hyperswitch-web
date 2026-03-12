@@ -41,14 +41,14 @@ let make = (
 
   let shouldRenderAddMethodsButton = savedMethodsCount > 0 || shouldShowClickToPayCards
 
-  let selectedToken: RecoilAtomTypes.paymentToken = switch savedMethodsForSelectedOption->Array.get(
+  let selectedToken: JotaiAtomTypes.paymentToken = switch savedMethodsForSelectedOption->Array.get(
     0,
   ) {
   | Some(firstSavedMethod) => {
       paymentToken: firstSavedMethod.paymentToken,
       customerId: firstSavedMethod.customerId,
     }
-  | None => RecoilAtomTypes.defaultPaymentToken
+  | None => JotaiAtomTypes.defaultPaymentToken
   }
 
   React.useEffect(() => {

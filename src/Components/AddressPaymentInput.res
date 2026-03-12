@@ -54,8 +54,8 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let countryNames = getCountryNames(countryData)
 
   let checkPostalValidity = (
-    postal: RecoilAtomTypes.field,
-    setPostal: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
+    postal: JotaiAtomTypes.field,
+    setPostal: (JotaiAtomTypes.field => JotaiAtomTypes.field) => unit,
   ) => {
     if postal.value !== "" {
       setPostal(prev => {

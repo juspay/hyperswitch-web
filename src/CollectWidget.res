@@ -10,7 +10,7 @@ let make = (
   ~handleSubmit,
   ~formLayout: formLayout,
 ) => {
-  // Recoil states
+  // Jotai states
   let {config, constantString, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {enabledPaymentMethodsWithDynamicFields} = Jotai.useAtomValue(
     JotaiAtoms.paymentMethodCollectOptionAtom,

@@ -15,7 +15,7 @@ let make = (
   iframeRef,
   mountPostMessage,
   ~isPaymentManagementElement=false,
-  ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~logger: option<HyperLoggerTypes.loggerMake>,
 ) => {
   try {

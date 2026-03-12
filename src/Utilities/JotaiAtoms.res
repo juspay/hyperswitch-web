@@ -1,7 +1,7 @@
-open RecoilAtomTypes
+open JotaiAtomTypes
 
 let keys = Jotai.atom(CommonHooks.defaultkeys)
-let configAtom = Jotai.atom(CardTheme.defaultRecoilConfig)
+let configAtom = Jotai.atom(CardTheme.defaultJotaiConfig)
 let portalNodes = Jotai.atom(PortalState.defaultDict)
 let elementOptions = Jotai.atom(ElementType.defaultOptions)
 let optionAtom = Jotai.atom(PaymentType.defaultOptions)
@@ -14,7 +14,7 @@ let sessionId = Jotai.atom("")
 let isConfirmBlocked = Jotai.atom(false)
 let customPodUri = Jotai.atom("")
 let selectedOptionAtom = Jotai.atom("")
-let paymentTokenAtom = Jotai.atom(RecoilAtomTypes.defaultPaymentToken)
+let paymentTokenAtom = Jotai.atom(JotaiAtomTypes.defaultPaymentToken)
 let showPaymentMethodsScreen = Jotai.atom(false)
 let phoneJson = Jotai.atom(Loading)
 let cardBrand = Jotai.atom("")

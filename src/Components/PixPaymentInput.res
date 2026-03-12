@@ -9,14 +9,14 @@ let make = (~fieldType="") => {
   let (sourceBankAccountId, setSourceBankAccountId) = Jotai.useAtom(JotaiAtoms.sourceBankAccountId)
   let inputRef = React.useRef(Nullable.null)
 
-  let validatePixKey = (val): RecoilAtomTypes.field =>
+  let validatePixKey = (val): JotaiAtomTypes.field =>
     if val->String.length > 0 {
       {value: val, isValid: Some(true), errorString: ""}
     } else {
       {value: val, isValid: None, errorString: ""}
     }
 
-  let validatePixCNPJ = (val): RecoilAtomTypes.field => {
+  let validatePixCNPJ = (val): JotaiAtomTypes.field => {
     let isCNPJValid = CnpjValidation.isValidCNPJ(val)
     if isCNPJValid {
       {value: val, isValid: Some(true), errorString: ""}
@@ -31,7 +31,7 @@ let make = (~fieldType="") => {
     }
   }
 
-  let validatePixCPF = (val): RecoilAtomTypes.field => {
+  let validatePixCPF = (val): JotaiAtomTypes.field => {
     let isCPFValid = CpfValidation.isValidCPF(val)
     if isCPFValid {
       {value: val, isValid: Some(true), errorString: ""}

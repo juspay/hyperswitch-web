@@ -40,7 +40,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "givex",
 ]
 
-let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
+let getName = (item: PaymentMethodsRecord.required_fields, field: JotaiAtomTypes.field) => {
   let fieldNameArr = field.value->String.split(" ")
   let requiredFieldsArr = item.required_field->String.split(".")
   switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
@@ -162,7 +162,7 @@ let addClickToPayFieldsIfSaveDetailsWithClickToPay = (
 let checkIfNameIsValid = (
   requiredFieldsType: array<PaymentMethodsRecord.required_fields>,
   paymentMethodFields,
-  field: RecoilAtomTypes.field,
+  field: JotaiAtomTypes.field,
 ) => {
   requiredFieldsType
   ->Array.filter(required_field => required_field.field_type === paymentMethodFields)
@@ -432,8 +432,8 @@ let useSetInitialRequiredFields = (
     }
 
     let setFields = (
-      setMethod: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
-      field: RecoilAtomTypes.field,
+      setMethod: (JotaiAtomTypes.field => JotaiAtomTypes.field) => unit,
+      field: JotaiAtomTypes.field,
       item: PaymentMethodsRecord.required_fields,
       isNameField,
       ~isCountryCodeAvailable=?,
@@ -471,7 +471,7 @@ let useSetInitialRequiredFields = (
           let emailValue = email.value
           setFields(setEmail, email, requiredField, false)
           if emailValue === "" {
-            let newEmail: RecoilAtomTypes.field = {
+            let newEmail: JotaiAtomTypes.field = {
               value,
               isValid: None,
               errorString: "",

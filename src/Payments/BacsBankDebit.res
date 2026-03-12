@@ -1,4 +1,4 @@
-open RecoilAtomTypes
+open JotaiAtomTypes
 open Utils
 
 let formatSortCode = sortcode => {

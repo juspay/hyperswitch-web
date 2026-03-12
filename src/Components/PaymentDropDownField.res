@@ -1,7 +1,7 @@
 @react.component
 let make = (
-  ~value: RecoilAtomTypes.field,
-  ~setValue: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
+  ~value: JotaiAtomTypes.field,
+  ~setValue: (JotaiAtomTypes.field => JotaiAtomTypes.field) => unit,
   ~fieldName,
   ~options,
   ~disabled=false,

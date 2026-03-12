@@ -11,7 +11,7 @@ let make = (
   ~renderAddressForm,
   ~renderPayoutMethodForm,
 ) => {
-  // Recoil states
+  // Jotai states
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let payoutDynamicFields = Jotai.useAtomValue(JotaiAtoms.payoutDynamicFieldsAtom)
   let formData = Jotai.useAtomValue(JotaiAtoms.formDataAtom)

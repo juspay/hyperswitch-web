@@ -1,10 +1,10 @@
-open RecoilAtomTypes
+open JotaiAtomTypes
 open PaymentTypeContext
 
 @react.component
 let make = (
   ~setValue=?,
-  ~value: RecoilAtomTypes.field,
+  ~value: JotaiAtomTypes.field,
   ~valueDropDown=?,
   ~setValueDropDown=?,
   ~dropDownFieldName=?,

@@ -1,6 +1,6 @@
 @react.component
 let make = (
-  ~paymentToken: RecoilAtomTypes.paymentToken,
+  ~paymentToken: JotaiAtomTypes.paymentToken,
   ~setPaymentToken,
   ~savedMethods: array<PaymentType.customerMethods>,
   ~loadSavedCards: PaymentType.savedCardsLoadState,

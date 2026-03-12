@@ -21,7 +21,7 @@ let make = (
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
-  ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~isTestMode=false,
   ~preloadSDKWithParams=Dict.make(),
 ) => {
@@ -1498,7 +1498,7 @@ let make = (
         setElementIframeRef,
         iframeRef,
         mountPostMessage,
-        ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+        ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
         ~logger=Some(logger),
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)

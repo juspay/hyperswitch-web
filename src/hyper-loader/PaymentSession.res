@@ -5,7 +5,7 @@ let make = (
   ~clientSecret,
   ~publishableKey,
   ~logger: option<HyperLoggerTypes.loggerMake>,
-  ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
 ) => {
   let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =

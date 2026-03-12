@@ -8,7 +8,7 @@ let make = (
   ~isActive,
   ~cvcProps: CardUtils.cvcProps,
 ) => {
-  open RecoilAtomTypes
+  open JotaiAtomTypes
 
   let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {hideExpiredPaymentMethods} = Jotai.useAtomValue(JotaiAtoms.optionAtom)

@@ -175,7 +175,7 @@ let make = (
         opacity: {isCardExpired ? "0.7" : "1"},
       }
       onClick={_ => {
-        open RecoilAtomTypes
+        open JotaiAtomTypes
         setPaymentToken(_ => {
           paymentToken: paymentItem.paymentToken,
           customerId: paymentItem.customerId,
