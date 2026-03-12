@@ -93,7 +93,7 @@ let make = (
           </div>
         </div>
       </RenderIf>
-      <RenderIf condition={innerLayout === Spaced && errorString != ""}>
+      <RenderIf condition={errorString != ""}>
         <div
           className="Error pt-1"
           style={
