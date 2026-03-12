@@ -277,4 +277,5 @@ type sdkAuthorizationData = {
   clientSecret: option<string>,
   customerId: option<string>,
   profileId: option<string>,
+  pmSessionId: option<string>,
 }
