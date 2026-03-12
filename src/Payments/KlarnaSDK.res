@@ -1,4 +1,3 @@
-open RecoilAtoms
 open Utils
 open Promise
 open KlarnaSDKTypes
@@ -9,21 +8,20 @@ open KlarnaSDKTypes
 let make = (~sessionObj: SessionsType.token) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
-  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
-  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
-  let options = Recoil.useRecoilValueFromAtom(optionAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let setIsShowOrPayUsing = Jotai.useSetAtom(JotaiAtoms.isShowOrPayUsing)
+  let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
+  let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
 
-  let setAreOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
+  let setAreOneClickWalletsRendered = Jotai.useSetAtom(JotaiAtoms.areOneClickWalletsRendered)
 
   let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {

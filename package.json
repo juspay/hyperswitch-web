@@ -1,5 +1,5 @@
 {
-  "name": "orca-payment-page",
+  "name": "@juspay-tech/hyperswitch-web",
   "version": "0.129.0",
   "main": "index.js",
   "private": true,
@@ -9,10 +9,10 @@
     "@rescript/react": "^0.13.1",
     "@sentry/react": "^9.9.0",
     "@sentry/webpack-plugin": "^3.2.2",
+    "jotai": "^2.18.1",
     "react": "^18.2.0",
     "react-datepicker": "^8.4.0",
     "react-dom": "^18.2.0",
-    "recoil": "^0.7.7",
     "webpack-merge": "^6.0.1"
   },
   "scripts": {

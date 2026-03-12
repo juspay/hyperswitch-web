@@ -1,29 +1,29 @@
 open Utils
 @react.component
 let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
-  open RecoilAtoms
-  open RecoilAtomsV2
+  open JotaiAtoms
+  // open JotaiAtomsV2
 
-  let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
-  let (keys, setKeys) = Recoil.useRecoilState(keys)
-  let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
-  let (_, setSessions) = Recoil.useRecoilState(sessions)
-  let setBlockedBins = Recoil.useSetRecoilState(blockedBins)
-  let (options, setOptions) = Recoil.useRecoilState(elementOptions)
-  let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
-  let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
-  let setSessionId = Recoil.useSetRecoilState(sessionId)
-  let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
-  let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
-  let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
-  let setTrustPayScriptStatus = Recoil.useSetRecoilState(trustPayScriptStatus)
-  let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
-  let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
-  let setUpdateSession = Recoil.useSetRecoilState(updateSession)
+  let (configAtom, setConfig) = Jotai.useAtom(configAtom)
+  let (keys, setKeys) = Jotai.useAtom(keys)
+  let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
+  let (_, setSessions) = Jotai.useAtom(sessions)
+  let setBlockedBins = Jotai.useSetAtom(blockedBins)
+  let (options, setOptions) = Jotai.useAtom(elementOptions)
+  let (optionsPayment, setOptionsPayment) = Jotai.useAtom(optionAtom)
+  let setPaymentManagementList = Jotai.useSetAtom(JotaiAtomsV2.paymentManagementList)
+  let setSessionId = Jotai.useSetAtom(JotaiAtoms.sessionId)
+  let setBlockConfirm = Jotai.useSetAtom(JotaiAtoms.isConfirmBlocked)
+  let setCustomPodUri = Jotai.useSetAtom(customPodUri)
+  let setIsGooglePayReady = Jotai.useSetAtom(isGooglePayReady)
+  let setTrustPayScriptStatus = Jotai.useSetAtom(trustPayScriptStatus)
+  let setIsApplePayReady = Jotai.useSetAtom(isApplePayReady)
+  let setIsSamsungPayReady = Jotai.useSetAtom(isSamsungPayReady)
+  let setUpdateSession = Jotai.useSetAtom(JotaiAtoms.updateSession)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
-  let (_, setPaymentMethodCollectOptions) = Recoil.useRecoilState(paymentMethodCollectOptionAtom)
+  let (_, setPaymentMethodCollectOptions) = Jotai.useAtom(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
@@ -34,20 +34,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   let messageParentWindow = data => messageParentWindow(data, ~targetOrigin=keys.parentURL)
 
-  let setUserFullName = Recoil.useSetRecoilState(userFullName)
-  let setUserEmail = Recoil.useSetRecoilState(userEmailAddress)
-  let setUserAddressline1 = Recoil.useSetRecoilState(userAddressline1)
-  let setUserAddressline2 = Recoil.useSetRecoilState(userAddressline2)
-  let setUserAddressCity = Recoil.useSetRecoilState(userAddressCity)
-  let setUserAddressPincode = Recoil.useSetRecoilState(userAddressPincode)
-  let setUserAddressState = Recoil.useSetRecoilState(userAddressState)
-  let setUserAddressCountry = Recoil.useSetRecoilState(userAddressCountry)
-  let setCountry = Recoil.useSetRecoilState(userCountry)
-  let setIsCompleteCallbackUsed = Recoil.useSetRecoilState(isCompleteCallbackUsed)
-  let setIsPaymentButtonHandlerProvided = Recoil.useSetRecoilState(
-    isPaymentButtonHandlerProvidedAtom,
-  )
-  let setIsTestMode = Recoil.useSetRecoilState(RecoilAtoms.isTestMode)
+  let setUserFullName = Jotai.useSetAtom(userFullName)
+  let setUserEmail = Jotai.useSetAtom(userEmailAddress)
+  let setUserAddressline1 = Jotai.useSetAtom(userAddressline1)
+  let setUserAddressline2 = Jotai.useSetAtom(userAddressline2)
+  let setUserAddressCity = Jotai.useSetAtom(userAddressCity)
+  let setUserAddressPincode = Jotai.useSetAtom(userAddressPincode)
+  let setUserAddressState = Jotai.useSetAtom(userAddressState)
+  let setUserAddressCountry = Jotai.useSetAtom(userAddressCountry)
+  let setCountry = Jotai.useSetAtom(userCountry)
+  let setIsCompleteCallbackUsed = Jotai.useSetAtom(isCompleteCallbackUsed)
+  let setIsPaymentButtonHandlerProvided = Jotai.useSetAtom(isPaymentButtonHandlerProvidedAtom)
+
+  let setIsTestMode = Jotai.useSetAtom(JotaiAtoms.isTestMode)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [

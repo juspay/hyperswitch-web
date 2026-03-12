@@ -1,14 +1,13 @@
-open RecoilAtoms
 open Utils
 
 @react.component
 let make = () => {
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let {iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsEmpty)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())

@@ -1,18 +1,17 @@
-open RecoilAtoms
 open Utils
 
 @react.component
 let make = () => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
-  let {config, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
+  let {config, themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
-  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let {displaySavedPaymentMethods} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsEmpty)
 
   let pmAuthMapper = React.useMemo1(
     () =>

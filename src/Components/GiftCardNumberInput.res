@@ -1,10 +1,9 @@
 @react.component
 let make = () => {
-  open RecoilAtoms
   open Utils
 
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let (giftCardNumber, setGiftCardNumber) = Jotai.useAtom(JotaiAtoms.userGiftCardNumber)
   let giftCardNumberRef = React.useRef(Nullable.null)
 
   let updateGiftCardNumber = val => {

@@ -1,5 +1,4 @@
 open PaymentType
-open RecoilAtoms
 open Utils
 open PaymentUtils
 
@@ -11,21 +10,21 @@ let cardsToRender = (width: int) => {
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
-  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
-  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
+  let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let optionAtomValue = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
+  let (paymentManagementListValue, setPaymentManagementListValue) = Jotai.useAtom(
     paymentManagementListValue,
   )
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
 
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
+  let (selectedOption, setSelectedOption) = Jotai.useAtom(JotaiAtoms.selectedOptionAtom)
   let (dropDownOptions: array<string>, setDropDownOptions) = React.useState(_ => [])
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let setShowPaymentMethodsScreen = Jotai.useSetAtom(JotaiAtoms.showPaymentMethodsScreen)
 
   let (paymentOptionsList, actualList) = PaymentUtilsV2.useGetPaymentMethodListV2(~paymentOptions)
 

@@ -386,12 +386,11 @@ let updatePaymentMethod = (
 }
 
 let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
-  open RecoilAtoms
-  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
+  let keys = Jotai.useAtomValue(JotaiAtoms.keys)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -449,12 +448,11 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
 }
 
 let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
-  open RecoilAtoms
-  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
+  let keys = Jotai.useAtomValue(JotaiAtoms.keys)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,

@@ -1,4 +1,3 @@
-open RecoilAtoms
 @react.component
 let make = (
   ~paymentType: CardThemeType.mode,
@@ -10,8 +9,8 @@ let make = (
   ~blurState,
   ~isFocus,
 ) => {
-  let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {showLoader} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {
     isCardValid,
     setIsCardValid,

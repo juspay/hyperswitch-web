@@ -28,10 +28,8 @@ type walletSurchargeDetails = {
 }
 
 let useSurchargeDetailsForOneClickWallets = (~paymentMethodListValue) => {
-  let areOneClickWalletsRendered = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.areOneClickWalletsRendered,
-  )
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let areOneClickWalletsRendered = Jotai.useAtomValue(JotaiAtoms.areOneClickWalletsRendered)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   React.useMemo(() => {
     oneClickWallets(~localeString)->Array.reduce([], (acc, wallet) => {
@@ -68,8 +66,8 @@ let useSurchargeDetailsForOneClickWallets = (~paymentMethodListValue) => {
 }
 
 let useMessageGetter = () => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {showShortSurchargeMessage} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {showShortSurchargeMessage} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
 
   let getMessage = (
     ~surchargeDetails: PaymentMethodsRecord.surchargeDetails,
@@ -95,7 +93,7 @@ let useMessageGetter = () => {
 }
 
 let useOneClickWalletsMessageGetter = (~paymentMethodListValue) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   let oneClickWalletsArr = useSurchargeDetailsForOneClickWallets(~paymentMethodListValue)
 

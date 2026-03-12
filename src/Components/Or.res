@@ -1,6 +1,6 @@
 @react.component
 let make = () => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   <div className="w-full w-max-[750px] relative flex flex-row my-4 " ariaHidden=true>
     <div className="OrPayUsingLine relative top-[50%] h-[1px] bg-gray-400  w-full self-center" />
     <div

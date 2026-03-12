@@ -1,4 +1,3 @@
-open RecoilAtoms
 open PaymentTypeContext
 
 @react.component
@@ -25,10 +24,10 @@ let make = (
   ~isDisabled=false,
   ~autocomplete="on",
 ) => {
-  let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, config} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {innerLayout} = config.appearance
-  let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let {readOnly} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
 

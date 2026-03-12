@@ -19,7 +19,6 @@ let defaultValue = {
   value: "",
 }
 
-open RecoilAtoms
 @react.component
 let make = (
   ~appearance: CardThemeType.appearance,
@@ -34,12 +33,12 @@ let make = (
   ~className="",
   ~width="w-full",
 ) => {
-  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let {themeObj, localeString, config} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {readOnly} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let handleFocus = _ => {

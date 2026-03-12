@@ -1,9 +1,8 @@
-open RecoilAtoms
 open Utils
 
 @react.component
 let make = () => {
-  let (blikCode, setblikCode) = Recoil.useRecoilState(userBlikCode)
+  let (blikCode, setblikCode) = Jotai.useAtom(JotaiAtoms.userBlikCode)
 
   let blikCodeRef = React.useRef(Nullable.null)
   let formatBSB = bsb => {

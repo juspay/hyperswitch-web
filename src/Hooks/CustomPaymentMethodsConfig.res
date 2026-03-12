@@ -1,5 +1,5 @@
 let useCustomPaymentMethodConfigs = (~paymentMethod, ~paymentMethodType) => {
-  let {paymentMethodsConfig} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {paymentMethodsConfig} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let allowedPmTypeForCardPayment = ["debit", "credit"]
   React.useMemo3(() => {
     paymentMethodsConfig

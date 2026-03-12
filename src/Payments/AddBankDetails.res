@@ -1,7 +1,7 @@
 module Loader = {
   @react.component
   let make = () => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     <div className="w-full flex items-center justify-center">
       <div className="w-8 h-8 animate-spin" style={color: themeObj.colorTextSecondary}>
         <Icon size=28 name="loader" />
@@ -14,15 +14,15 @@ module Loader = {
 let make = (~paymentMethodType) => {
   open Utils
   open Promise
-  let {publishableKey, clientSecret, iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.keys,
+  let {publishableKey, clientSecret, iframeId, sdkAuthorization} = Jotai.useAtomValue(
+    JotaiAtoms.keys,
   )
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let setOptionValue = Recoil.useSetRecoilState(RecoilAtoms.optionAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let setOptionValue = Jotai.useSetAtom(JotaiAtoms.optionAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let setShowPaymentMethodsScreen = Jotai.useSetAtom(JotaiAtoms.showPaymentMethodsScreen)
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   let pmAuthConnectorsArr =
     PmAuthConnectorUtils.findPmAuthAllPMAuthConnectors(

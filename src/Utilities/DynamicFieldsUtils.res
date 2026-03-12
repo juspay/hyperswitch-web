@@ -1,5 +1,3 @@
-open RecoilAtoms
-
 let dynamicFieldsEnabledPaymentMethods = [
   "crypto_currency",
   "debit",
@@ -141,7 +139,7 @@ let removeClickToPayFieldsIfSaveDetailsWithClickToPay = (
 let addClickToPayFieldsIfSaveDetailsWithClickToPay = (
   fieldsArr,
   isSaveDetailsWithClickToPay,
-  clickToPayConfig,
+  clickToPayConfig: JotaiAtoms.clickToPayConfig,
 ) => {
   open ClickToPayHelpers
   open PaymentMethodsRecord
@@ -195,37 +193,37 @@ let useRequiredFieldsEmptyAndValid = (
   ~cvcNumber,
   ~isSavedCardFlow,
 ) => {
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
-  let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
-  let pixCPF = Recoil.useRecoilValueFromAtom(userPixCPF)
-  let pixKey = Recoil.useRecoilValueFromAtom(userPixKey)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let phone = Recoil.useRecoilValueFromAtom(userPhoneNumber)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
-  let country = Recoil.useRecoilValueFromAtom(userCountry)
-  let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
-  let currency = Recoil.useRecoilValueFromAtom(userCurrency)
-  let documentType = Recoil.useRecoilValueFromAtom(userDocumentType)
-  let documentNumber = Recoil.useRecoilValueFromAtom(userDocumentNumber)
+  let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
+  let vpaId = Jotai.useAtomValue(JotaiAtoms.userVpaId)
+  let pixCNPJ = Jotai.useAtomValue(JotaiAtoms.userPixCNPJ)
+  let pixCPF = Jotai.useAtomValue(JotaiAtoms.userPixCPF)
+  let pixKey = Jotai.useAtomValue(JotaiAtoms.userPixKey)
+  let fullName = Jotai.useAtomValue(JotaiAtoms.userFullName)
+  let billingName = Jotai.useAtomValue(JotaiAtoms.userBillingName)
+  let line1 = Jotai.useAtomValue(JotaiAtoms.userAddressline1)
+  let line2 = Jotai.useAtomValue(JotaiAtoms.userAddressline2)
+  let phone = Jotai.useAtomValue(JotaiAtoms.userPhoneNumber)
+  let state = Jotai.useAtomValue(JotaiAtoms.userAddressState)
+  let city = Jotai.useAtomValue(JotaiAtoms.userAddressCity)
+  let postalCode = Jotai.useAtomValue(JotaiAtoms.userAddressPincode)
+  let blikCode = Jotai.useAtomValue(JotaiAtoms.userBlikCode)
+  let country = Jotai.useAtomValue(JotaiAtoms.userCountry)
+  let selectedBank = Jotai.useAtomValue(JotaiAtoms.userBank)
+  let currency = Jotai.useAtomValue(JotaiAtoms.userCurrency)
+  let documentType = Jotai.useAtomValue(JotaiAtoms.userDocumentType)
+  let documentNumber = Jotai.useAtomValue(JotaiAtoms.userDocumentNumber)
 
-  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
-    areRequiredFieldsValid,
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Jotai.useAtom(
+    JotaiAtoms.areRequiredFieldsValid,
   )
-  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
-  let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
-  let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
-  let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
-  let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
-  let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardPin)
+  let setAreRequiredFieldsEmpty = Jotai.useSetAtom(JotaiAtoms.areRequiredFieldsEmpty)
+  let {billingAddress} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let cryptoCurrencyNetworks = Jotai.useAtomValue(JotaiAtoms.cryptoCurrencyNetworks)
+  let dateOfBirth = Jotai.useAtomValue(JotaiAtoms.dateOfBirth)
+  let bankAccountNumber = Jotai.useAtomValue(JotaiAtoms.userBankAccountNumber)
+  let sourceBankAccountId = Jotai.useAtomValue(JotaiAtoms.sourceBankAccountId)
+  let giftCardNumber = Jotai.useAtomValue(JotaiAtoms.userGiftCardNumber)
+  let giftCardPin = Jotai.useAtomValue(JotaiAtoms.userGiftCardPin)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
@@ -390,33 +388,33 @@ let useSetInitialRequiredFields = (
   ~requiredFields: array<PaymentMethodsRecord.required_fields>,
   ~paymentMethodType,
 ) => {
-  let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
-  let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
-  let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
-  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
-  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
-  let (phone, setPhone) = Recoil.useRecoilState(userPhoneNumber)
-  let (state, setState) = Recoil.useRecoilState(userAddressState)
-  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
-  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
-  let (blikCode, setBlikCode) = Recoil.useRecoilState(userBlikCode)
-  let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
-  let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
-  let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
+  let (email, setEmail) = Jotai.useAtom(JotaiAtoms.userEmailAddress)
+  let (fullName, setFullName) = Jotai.useAtom(JotaiAtoms.userFullName)
+  let (billingName, setBillingName) = Jotai.useAtom(JotaiAtoms.userBillingName)
+  let (line1, setLine1) = Jotai.useAtom(JotaiAtoms.userAddressline1)
+  let (line2, setLine2) = Jotai.useAtom(JotaiAtoms.userAddressline2)
+  let (phone, setPhone) = Jotai.useAtom(JotaiAtoms.userPhoneNumber)
+  let (state, setState) = Jotai.useAtom(JotaiAtoms.userAddressState)
+  let (city, setCity) = Jotai.useAtom(JotaiAtoms.userAddressCity)
+  let (postalCode, setPostalCode) = Jotai.useAtom(JotaiAtoms.userAddressPincode)
+  let (blikCode, setBlikCode) = Jotai.useAtom(JotaiAtoms.userBlikCode)
+  let (pixCNPJ, setPixCNPJ) = Jotai.useAtom(JotaiAtoms.userPixCNPJ)
+  let (pixCPF, setPixCPF) = Jotai.useAtom(JotaiAtoms.userPixCPF)
+  let (pixKey, setPixKey) = Jotai.useAtom(JotaiAtoms.userPixKey)
 
-  let (country, setCountry) = Recoil.useRecoilState(userCountry)
-  let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
-  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
-  let (documentType, setDocumentType) = Recoil.useRecoilState(userDocumentType)
-  let (documentNumber, setDocumentNumber) = Recoil.useRecoilState(userDocumentNumber)
-  let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
-    cryptoCurrencyNetworks,
+  let (country, setCountry) = Jotai.useAtom(JotaiAtoms.userCountry)
+  let (selectedBank, setSelectedBank) = Jotai.useAtom(JotaiAtoms.userBank)
+  let (currency, setCurrency) = Jotai.useAtom(JotaiAtoms.userCurrency)
+  let (documentType, setDocumentType) = Jotai.useAtom(JotaiAtoms.userDocumentType)
+  let (documentNumber, setDocumentNumber) = Jotai.useAtom(JotaiAtoms.userDocumentNumber)
+  let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Jotai.useAtom(
+    JotaiAtoms.cryptoCurrencyNetworks,
   )
-  let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
-  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
-  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
+  let (dateOfBirth, setDateOfBirth) = Jotai.useAtom(JotaiAtoms.dateOfBirth)
+  let (bankAccountNumber, setBankAccountNumber) = Jotai.useAtom(JotaiAtoms.userBankAccountNumber)
+  let (sourceBankAccountId, setSourceBankAccountId) = Jotai.useAtom(JotaiAtoms.sourceBankAccountId)
+  let (giftCardNumber, setGiftCardNumber) = Jotai.useAtom(JotaiAtoms.userGiftCardNumber)
+  let (giftCardPin, setGiftCardPin) = Jotai.useAtom(JotaiAtoms.userGiftCardPin)
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -589,35 +587,35 @@ let useRequiredFieldsBody = (
   ~isAllStoredCardsHaveName,
   ~setRequiredFieldsBody,
 ) => {
-  let configValue = Recoil.useRecoilValueFromAtom(configAtom)
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
-  let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
-  let pixCPF = Recoil.useRecoilValueFromAtom(userPixCPF)
-  let pixKey = Recoil.useRecoilValueFromAtom(userPixKey)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let phone = Recoil.useRecoilValueFromAtom(userPhoneNumber)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
-  let country = Recoil.useRecoilValueFromAtom(userCountry)
-  let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
-  let currency = Recoil.useRecoilValueFromAtom(userCurrency)
-  let documentType = Recoil.useRecoilValueFromAtom(userDocumentType)
-  let documentNumber = Recoil.useRecoilValueFromAtom(userDocumentNumber)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
-  let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
-  let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
-  let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
+  let configValue = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
+  let vpaId = Jotai.useAtomValue(JotaiAtoms.userVpaId)
+  let pixCNPJ = Jotai.useAtomValue(JotaiAtoms.userPixCNPJ)
+  let pixCPF = Jotai.useAtomValue(JotaiAtoms.userPixCPF)
+  let pixKey = Jotai.useAtomValue(JotaiAtoms.userPixKey)
+  let fullName = Jotai.useAtomValue(JotaiAtoms.userFullName)
+  let billingName = Jotai.useAtomValue(JotaiAtoms.userBillingName)
+  let line1 = Jotai.useAtomValue(JotaiAtoms.userAddressline1)
+  let line2 = Jotai.useAtomValue(JotaiAtoms.userAddressline2)
+  let phone = Jotai.useAtomValue(JotaiAtoms.userPhoneNumber)
+  let state = Jotai.useAtomValue(JotaiAtoms.userAddressState)
+  let city = Jotai.useAtomValue(JotaiAtoms.userAddressCity)
+  let postalCode = Jotai.useAtomValue(JotaiAtoms.userAddressPincode)
+  let blikCode = Jotai.useAtomValue(JotaiAtoms.userBlikCode)
+  let country = Jotai.useAtomValue(JotaiAtoms.userCountry)
+  let selectedBank = Jotai.useAtomValue(JotaiAtoms.userBank)
+  let currency = Jotai.useAtomValue(JotaiAtoms.userCurrency)
+  let documentType = Jotai.useAtomValue(JotaiAtoms.userDocumentType)
+  let documentNumber = Jotai.useAtomValue(JotaiAtoms.userDocumentNumber)
+  let {billingAddress} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let cryptoCurrencyNetworks = Jotai.useAtomValue(JotaiAtoms.cryptoCurrencyNetworks)
+  let dateOfBirth = Jotai.useAtomValue(JotaiAtoms.dateOfBirth)
+  let bankAccountNumber = Jotai.useAtomValue(JotaiAtoms.userBankAccountNumber)
+  let sourceBankAccountId = Jotai.useAtomValue(JotaiAtoms.sourceBankAccountId)
   let countryCode = Utils.getCountryCode(country).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
-  let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
-  let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardPin)
+  let giftCardNumber = Jotai.useAtomValue(JotaiAtoms.userGiftCardNumber)
+  let giftCardPin = Jotai.useAtomValue(JotaiAtoms.userGiftCardPin)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -944,14 +942,14 @@ let updateDynamicFields = (
 }
 
 let useSubmitCallback = () => {
-  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
-  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
-  let (state, setState) = Recoil.useRecoilState(userAddressState)
-  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
-  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let (line1, setLine1) = Jotai.useAtom(JotaiAtoms.userAddressline1)
+  let (line2, setLine2) = Jotai.useAtom(JotaiAtoms.userAddressline2)
+  let (state, setState) = Jotai.useAtom(JotaiAtoms.userAddressState)
+  let (postalCode, setPostalCode) = Jotai.useAtom(JotaiAtoms.userAddressPincode)
+  let (city, setCity) = Jotai.useAtom(JotaiAtoms.userAddressCity)
+  let {billingAddress} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
 
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   React.useCallback((ev: Window.event) => {
     let json = ev.data->Utils.safeParse

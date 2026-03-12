@@ -207,10 +207,10 @@ let useHandleApplePayResponse = (
   ~isWallet=true,
   ~requiredFieldsBody=Dict.make(),
 ) => {
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
@@ -220,7 +220,7 @@ let useHandleApplePayResponse = (
     ~paymentMethodType="apple_pay",
   )
 
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
   React.useEffect(() => {
     let handleApplePayMessages = (ev: Window.event) => {
@@ -328,11 +328,11 @@ let handleApplePayButtonClicked = (
 }
 
 let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsEmpty)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
 
   React.useCallback((ev: Window.event) => {
     if !isWallet {

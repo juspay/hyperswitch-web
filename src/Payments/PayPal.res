@@ -1,5 +1,3 @@
-open RecoilAtoms
-
 module Loader = {
   @react.component
   let make = () => {
@@ -12,16 +10,16 @@ let payPalIcon = <Icon size=35 width=90 name="paypal" />
 
 @react.component
 let make = (~walletOptions) => {
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
-  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
-  let options = Recoil.useRecoilValueFromAtom(optionAtom)
-  let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
+  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let areOneClickWalletsRendered = Jotai.useSetAtom(JotaiAtoms.areOneClickWalletsRendered)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
   let paymentMethod = "wallet"
   let paymentMethodType = "paypal"
@@ -39,7 +37,7 @@ let make = (~walletOptions) => {
   let (buttonColor, textColor) =
     options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   UtilityHooks.useHandlePostMessages(
@@ -114,10 +112,10 @@ let make = (~walletOptions) => {
   })
 
   let useSubmitCallback = (~isWallet) => {
-    let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-    let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
-    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-    let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+    let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+    let areRequiredFieldsEmpty = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsEmpty)
+    let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+    let {iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
 
     React.useCallback((ev: Window.event) => {
       if !isWallet {

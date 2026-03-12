@@ -1,10 +1,10 @@
 @react.component
 let make = () => {
   open DropdownField
-  let currencyVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
-  let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
-    RecoilAtoms.cryptoCurrencyNetworks,
+  let currencyVal = Jotai.useAtomValue(JotaiAtoms.userCurrency)
+  let {config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Jotai.useAtom(
+    JotaiAtoms.cryptoCurrencyNetworks,
   )
 
   let dropdownOptions =

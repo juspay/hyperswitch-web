@@ -1,7 +1,7 @@
 module DynamicFieldsToRenderWrapper = {
   @react.component
   let make = (~children, ~index, ~isInside=true) => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
     <RenderIf condition={children != React.null}>
       <div
@@ -34,19 +34,16 @@ let make = (
   open DynamicFieldsUtils
   open PaymentTypeContext
   open Utils
-  open RecoilAtoms
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
-    PaymentUtils.paymentManagementListValue,
-  )
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let paymentManagementListValue = Jotai.useAtomValue(PaymentUtils.paymentManagementListValue)
+  let {config, themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let contextPaymentType = usePaymentType()
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
   }, [paymentMethodType])
 
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {billingAddress} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
 
   //<...>//
   let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
@@ -128,7 +125,7 @@ let make = (
 
   //<...>//
 
-  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+  let clickToPayConfig = Jotai.useAtomValue(JotaiAtoms.clickToPayConfig)
 
   let fieldsArr = React.useMemo(() => {
     PaymentMethodsRecord.getPaymentMethodFields(
@@ -145,24 +142,24 @@ let make = (
 
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
-  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
-  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
-  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
-  let (state, setState) = Recoil.useRecoilState(userAddressState)
-  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
+  let (line1, setLine1) = Jotai.useAtom(JotaiAtoms.userAddressline1)
+  let (line2, setLine2) = Jotai.useAtom(JotaiAtoms.userAddressline2)
+  let (city, setCity) = Jotai.useAtom(JotaiAtoms.userAddressCity)
+  let (state, setState) = Jotai.useAtom(JotaiAtoms.userAddressState)
+  let (postalCode, setPostalCode) = Jotai.useAtom(JotaiAtoms.userAddressPincode)
 
-  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
+  let (currency, setCurrency) = Jotai.useAtom(JotaiAtoms.userCurrency)
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
   let bankAccountNumberRef = React.useRef(Nullable.null)
   let sourceBankAccountIdRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
-  let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
-  let (country, setCountry) = Recoil.useRecoilState(userCountry)
+  let (selectedBank, setSelectedBank) = Jotai.useAtom(JotaiAtoms.userBank)
+  let (country, setCountry) = Jotai.useAtom(JotaiAtoms.userCountry)
 
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let (bankAccountNumber, setBankAccountNumber) = Jotai.useAtom(JotaiAtoms.userBankAccountNumber)
+  let (sourceBankAccountId, setSourceBankAccountId) = Jotai.useAtom(JotaiAtoms.sourceBankAccountId)
   let countryList = CountryStateDataRefs.countryDataRef.contents
   let stateNames = getStateNames({
     value: country,

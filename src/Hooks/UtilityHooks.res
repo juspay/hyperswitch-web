@@ -1,6 +1,6 @@
 let useIsGuestCustomer = () => {
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
-  let {customerPaymentMethods} = RecoilAtoms.optionAtom->Recoil.useRecoilValueFromAtom
+  let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
+  let {customerPaymentMethods} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
 
   React.useMemo(() => {
     switch paymentMethodList {
@@ -22,9 +22,7 @@ let useIsGuestCustomer = () => {
 }
 
 let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false) => {
-  open RecoilAtoms
-
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   React.useEffect(() => {
     Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod)
@@ -37,7 +35,7 @@ let useIsCustomerAcceptanceRequired = (
   ~isSaveCardsChecked,
   ~isGuestCustomer,
 ) => {
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
 
   React.useMemo(() => {
     if displaySavedPaymentMethodsCheckbox {
@@ -74,7 +72,7 @@ let useSendEventsToParent = eventsToSendToParent => {
 }
 
 let useUpdateRedirectionFlags = () => {
-  let setRedirectionFlags = Recoil.useSetRecoilState(RecoilAtoms.redirectionFlagsAtom)
+  let setRedirectionFlags = Jotai.useSetAtom(JotaiAtoms.redirectionFlagsAtom)
   let updateRedirectionFlagsAtom = paymentOptions => {
     let topRedirection =
       paymentOptions

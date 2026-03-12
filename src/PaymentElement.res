@@ -18,28 +18,24 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     customerPaymentMethods,
     displaySavedPaymentMethods,
     sdkHandleConfirmPayment,
-  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
-  let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
-  let isShowOrPayUsingWhileLoading = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.isShowOrPayUsingWhileLoading,
-  )
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let optionAtomValue = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
+  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
+  let isGPayReady = Jotai.useAtomValue(JotaiAtoms.isGooglePayReady)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let isShowOrPayUsing = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsing)
+  let isShowOrPayUsingWhileLoading = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsingWhileLoading)
+  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
 
-  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
-  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(RecoilAtoms.selectedOptionAtom)
-  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
-    RecoilAtoms.showPaymentMethodsScreen,
+  let clickToPayConfig = Jotai.useAtomValue(JotaiAtoms.clickToPayConfig)
+  let (selectedOption, setSelectedOption) = Jotai.useAtom(JotaiAtoms.selectedOptionAtom)
+  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Jotai.useAtom(
+    JotaiAtoms.showPaymentMethodsScreen,
   )
-  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
-  let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
-    paymentMethodListValue,
-  )
+  let (paymentToken, setPaymentToken) = Jotai.useAtom(JotaiAtoms.paymentTokenAtom)
+  let (paymentMethodListValue, setPaymentMethodListValue) = Jotai.useAtom(paymentMethodListValue)
 
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])

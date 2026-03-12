@@ -76,11 +76,11 @@ let useHandleGooglePayResponse = (
   ~isWallet=true,
   ~requiredFieldsBody=Dict.make(),
 ) => {
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
@@ -147,11 +147,11 @@ let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly)
 }
 
 let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsEmpty)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
 
   React.useCallback((ev: Window.event) => {
     if !isWallet {

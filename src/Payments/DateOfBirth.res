@@ -22,11 +22,11 @@ let years = Array.fromInitializer(~length=currentYear - startYear, i => currentY
 @react.component
 let make = () => {
   open Utils
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let (error, setError) = React.useState(_ => false)
   let (isNotEligible, setIsNotEligible) = React.useState(_ => false)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let (dateOfBirth, setDateOfBirth) = Jotai.useAtom(JotaiAtoms.dateOfBirth)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse

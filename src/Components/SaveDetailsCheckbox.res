@@ -35,10 +35,10 @@ let saveDetailsCssStyle = (themeObj: CardThemeType.themeClass) => {
 
 @react.component
 let make = (~isChecked, ~setIsChecked) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(RecoilAtoms.showPaymentMethodsScreen)
-  let {business, customMessageForCardTerms} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let showPaymentMethodsScreen = Jotai.useAtomValue(JotaiAtoms.showPaymentMethodsScreen)
+  let {business, customMessageForCardTerms} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customCardPaymentConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
     ~paymentMethod="card",
     ~paymentMethodType="debit",
@@ -56,7 +56,7 @@ let make = (~isChecked, ~setIsChecked) => {
     LoggerUtils.logInputChangeInfo("saveDetails", loggerState)
     setIsChecked(_ => value)
   }
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let (checkboxState, checkedState, checkBoxLabelState) = isChecked
     ? ("Checkbox--checked", "CheckboxInput--checked", "CheckboxLabel--checked")
     : ("", "", "")

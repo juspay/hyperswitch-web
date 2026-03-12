@@ -1,10 +1,9 @@
-open RecoilAtoms
 open Utils
 
 @react.component
 let make = () => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (vpaId, setVpaId) = Recoil.useRecoilState(userVpaId)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let (vpaId, setVpaId) = Jotai.useAtom(JotaiAtoms.userVpaId)
 
   let vpaIdRef = React.useRef(Nullable.null)
 

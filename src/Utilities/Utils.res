@@ -459,7 +459,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
   ->getJsonFromArrayOfJson
 }
 
-let rec transformKeysWithoutModifyingValue = (json: JSON.t, to: case) => {
+let transformKeysWithoutModifyingValue = (json: JSON.t, to: case) => {
   let toCase = switch to {
   | CamelCase => toCamelCaseWithNumberSupport
   | SnakeCase => toSnakeCase

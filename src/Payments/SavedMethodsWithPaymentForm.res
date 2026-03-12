@@ -13,7 +13,7 @@ let make = (
   ~closeComponentIfSavedMethodsAreEmpty,
   ~isShowPaymentMethodsDependingOnClickToPay,
 ) => {
-  let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
+  let selectedOption = Jotai.useAtomValue(JotaiAtoms.selectedOptionAtom)
   let savedMethodsGroupedByType = savedMethods->Array.reduce(Dict.make(), (acc, savedMethod) => {
     let paymentTypeKey = PaymentHelpers.getConstructedPaymentMethodName(
       ~paymentMethod=savedMethod.paymentMethod,
@@ -31,9 +31,9 @@ let make = (
     savedMethodsGroupedByType->Dict.get(selectedOption)->Option.getOr([])
 
   let savedMethodsCount = savedMethodsForSelectedOption->Array.length
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
-    RecoilAtoms.showPaymentMethodsScreen,
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Jotai.useAtom(
+    JotaiAtoms.showPaymentMethodsScreen,
   )
 
   let shouldShowClickToPayCards =

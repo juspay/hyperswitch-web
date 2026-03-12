@@ -1,7 +1,6 @@
 open Types
 open Promise
 open Utils
-open ClickToPayHelpers
 
 let clickToPayTokenCache = Dict.make()
 
@@ -69,7 +68,9 @@ let initClickToPaySession = async (
 
   let ctpToken = getClickToPayToken(data)
 
-  let getMaskedCardsListFromResponse = authenticationResponse => {
+  let getMaskedCardsListFromResponse = (
+    authenticationResponse: ClickToPayHelpers.getCardsResultType,
+  ) => {
     authenticationResponse.profiles
     ->Option.flatMap(profiles => Some(profiles->Array.flatMap(profile => profile.maskedCards)))
     ->Option.getOr([])
@@ -80,7 +81,7 @@ let initClickToPaySession = async (
   }
 
   let getClickToPayErrorResponse = (
-    ~error: option<errorObj>,
+    ~error: option<ClickToPayHelpers.errorObj>,
     ~defaultErrorType="ERROR",
     ~defaultErrorMessage,
   ) => {
@@ -100,10 +101,7 @@ let initClickToPaySession = async (
     }
   }
 
-  let isCustomerPresent = async (
-    ~visaDirectSdk: option<OrcaPaymentPage.ClickToPayHelpers.visaDirect>,
-    ~email,
-  ) => {
+  let isCustomerPresent = async (~visaDirectSdk: option<ClickToPayHelpers.visaDirect>, ~email) => {
     logger.setLogInfo(~value="CUSTOMER_CHECK | STARTED", ~eventName=CLICK_TO_PAY_FLOW)
     switch email {
     | Some(emailVal) => customerEmail := emailVal
@@ -114,7 +112,7 @@ let initClickToPaySession = async (
       )
     }
 
-    let consumerIdentity = {
+    let consumerIdentity: ClickToPayHelpers.consumerIdentity = {
       identityProvider: "SRC",
       identityType: EMAIL_ADDRESS,
       identityValue: customerEmail.contents,
@@ -125,7 +123,7 @@ let initClickToPaySession = async (
 
     let clickToPayData = []
 
-    let mastercardDirectIdentityLookupPromise = mastercardDirectSdk.identityLookup({
+    let mastercardDirectIdentityLookupPromise = ClickToPayHelpers.mastercardDirectSdk.identityLookup({
       consumerIdentity: consumerIdentity,
     })
     let visaDirectIdentityLookupPromise = switch visaDirectSdk {
@@ -219,7 +217,7 @@ let initClickToPaySession = async (
   }
 
   let getUserType = async () => {
-    let getCardsConfig = {
+    let getCardsConfig: ClickToPayHelpers.getCardsConfig = {
       consumerIdentity: {
         identityProvider: "SRC",
         identityType: EMAIL_ADDRESS,
@@ -233,7 +231,7 @@ let initClickToPaySession = async (
       ~eventName=CLICK_TO_PAY_FLOW,
     )
     try {
-      let getCardsResponse = await vsdk.getCards(getCardsConfig)
+      let getCardsResponse = await ClickToPayHelpers.vsdk.getCards(getCardsConfig)
 
       let statusCode = switch getCardsResponse.actionCode {
       | PENDING_CONSUMER_IDV => {
@@ -284,7 +282,7 @@ let initClickToPaySession = async (
         }
       | _ => {
           logger.setLogError(
-            ~value=`GET_USER_TYPE | actionCode: ${getCardsResponse.actionCode->getStrFromActionCode} | reason : ${getCardsResponse.error
+            ~value=`GET_USER_TYPE | actionCode: ${getCardsResponse.actionCode->ClickToPayHelpers.getStrFromActionCode} | reason : ${getCardsResponse.error
               ->Option.flatMap(err => err.reason)
               ->Option.getOr("UNKNOWN_ERROR")}`,
             ~eventName=CLICK_TO_PAY_FLOW,
@@ -325,7 +323,7 @@ let initClickToPaySession = async (
   ) => {
     let value = otpValue.value
 
-    let getCardsConfig = {
+    let getCardsConfig: ClickToPayHelpers.getCardsConfig = {
       consumerIdentity: {
         identityProvider: "SRC",
         identityType: EMAIL_ADDRESS,
@@ -337,7 +335,9 @@ let initClickToPaySession = async (
     let validateCustomerAuthenticationErrorMessage = "An unknown error occurred during customer authentication validation."
 
     try {
-      let validateCustomerAuthenticationResponse = await vsdk.getCards(getCardsConfig)
+      let validateCustomerAuthenticationResponse = await ClickToPayHelpers.vsdk.getCards(
+        getCardsConfig,
+      )
 
       switch validateCustomerAuthenticationResponse.actionCode {
       | SUCCESS =>
@@ -364,7 +364,7 @@ let initClickToPaySession = async (
         maskedCards.contents->Identity.anyTypeToJson
       | _ =>
         logger.setLogError(
-          ~value=`AUTH_VALIDATION | Validate Customer Authentication returned error action code ${validateCustomerAuthenticationResponse.actionCode->getStrFromActionCode} | reason : ${validateCustomerAuthenticationResponse.error
+          ~value=`AUTH_VALIDATION | Validate Customer Authentication returned error action code ${validateCustomerAuthenticationResponse.actionCode->ClickToPayHelpers.getStrFromActionCode} | reason : ${validateCustomerAuthenticationResponse.error
             ->Option.flatMap(err => err.reason)
             ->Option.getOr("UNKNOWN_ERROR")}`,
           ~eventName=CLICK_TO_PAY_FLOW,
@@ -412,19 +412,19 @@ let initClickToPaySession = async (
             ~value="CHECKOUT | No window reference provided. Opening new window for Click to Pay checkout flow.",
             ~eventName=CLICK_TO_PAY_FLOW,
           )
-          if clickToPayWindowRef.contents->Nullable.toOption->Option.isNone {
-            handleOpenClickToPayWindow()
+          if ClickToPayHelpers.clickToPayWindowRef.contents->Nullable.toOption->Option.isNone {
+            ClickToPayHelpers.handleOpenClickToPayWindow()
           }
 
-          clickToPayWindowRef.contents->Nullable.toOption
+          ClickToPayHelpers.clickToPayWindowRef.contents->Nullable.toOption
         }
       }
 
       switch clickToPayWindow {
       | Some(window) => {
-          let clickToPayProvider = VISA
+          let clickToPayProvider = ClickToPayHelpers.VISA
 
-          let consumer: consumer = {
+          let consumer: ClickToPayHelpers.consumer = {
             fullName: "",
             emailAddress: customerEmail.contents,
             mobileNumber: {
@@ -433,7 +433,7 @@ let initClickToPaySession = async (
             },
           }
 
-          let checkoutWithCardResponse = await checkoutVisaUnified(
+          let checkoutWithCardResponse = await ClickToPayHelpers.checkoutVisaUnified(
             ~srcDigitalCardId,
             ~clickToPayToken=token,
             ~windowRef=window,
@@ -445,7 +445,7 @@ let initClickToPaySession = async (
             ),
           )
 
-          handleCloseClickToPayWindow()
+          ClickToPayHelpers.handleCloseClickToPayWindow()
 
           let actionCode =
             checkoutWithCardResponse->Utils.getDictFromJson->Utils.getString("actionCode", "")
@@ -533,7 +533,7 @@ let initClickToPaySession = async (
             ->JSON.stringify}`,
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        handleCloseClickToPayWindow()
+        ClickToPayHelpers.handleCloseClickToPayWindow()
         getFailedSubmitResponse(~errorType="ERROR", ~message=checkoutWithCardErrorMessage)
       }
     }
@@ -542,7 +542,7 @@ let initClickToPaySession = async (
   let signOut = async () => {
     let unbindAppInstanceErrorMessage = "Failed to sign out customer."
     try {
-      let unbindAppInstanceResponse = await vsdk.unbindAppInstance()
+      let unbindAppInstanceResponse = await ClickToPayHelpers.vsdk.unbindAppInstance()
       switch unbindAppInstanceResponse.error {
       | Some(err) => {
           logger.setLogError(
@@ -585,9 +585,7 @@ let initClickToPaySession = async (
     | Some(token) => {
         customerEmail := token.email
 
-        let getSessionObject = (
-          visaDirectSdk: option<OrcaPaymentPage.ClickToPayHelpers.visaDirect>,
-        ) => {
+        let getSessionObject = (visaDirectSdk: option<ClickToPayHelpers.visaDirect>) => {
           {
             isCustomerPresent: isCustomerPresentInput => {
               let email =
@@ -634,7 +632,7 @@ let initClickToPaySession = async (
 
               ClickToPayHelpers.vsdk.initialize(initConfig)
               ->then(async _ => {
-                let mastercardDirectInitData = {
+                let mastercardDirectInitData: ClickToPayHelpers.c2pDirectInitData = {
                   srciTransactionId: clientSecret,
                   srcInitiatorId: GlobalVars.isProd
                     ? "78fbc211-73e1-4c3a-bc5c-60a7921afb97"
@@ -648,7 +646,7 @@ let initClickToPaySession = async (
                 }
 
                 let visaDirectSdk = ClickToPayHelpers.createVisaDirectSRCIAdapter()
-                let visaDirectInitData = {
+                let visaDirectInitData: ClickToPayHelpers.c2pDirectInitData = {
                   srciTransactionId: clientSecret,
                   srcInitiatorId: token.dpaId,
                   srciDpaId: token.dpaName,

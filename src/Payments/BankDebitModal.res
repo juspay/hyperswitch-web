@@ -107,13 +107,13 @@ module AccountNumberCard = {
 let clearSpaces = str => str->String.replaceRegExp(%re("/\D+/g"), "")
 @react.component
 let make = (~setModalData) => {
-  let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
+  let selectedOption = Jotai.useAtomValue(JotaiAtoms.selectedOptionAtom)
   let (routingNumber, setRoutingNumber) = React.useState(_ => "")
   let (iban, setIban) = React.useState(_ => "")
   let (sortCode, setSortCode) = React.useState(_ => "")
   let (isRoutingValid, setIsRoutingValid) = React.useState(_ => None)
   let (routingError, setRoutingError) = React.useState(_ => "")
-  let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let (accountType, setAccountType) = React.useState(() => "Savings")
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())

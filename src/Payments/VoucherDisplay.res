@@ -5,7 +5,7 @@ let make = () => {
   let (returnUrl, setReturnUrl) = React.useState(_ => "")
   let (downloadUrl, setDownloadUrl) = React.useState(_ => "")
   let (reference, setReference) = React.useState(_ => "")
-  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let (downloadCounter, setDownloadCounter) = React.useState(_ => 0)
   let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
   let (paymentIntent, setPaymentIntent) = React.useState(_ => JSON.Encode.null)

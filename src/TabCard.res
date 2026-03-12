@@ -1,9 +1,8 @@
-open RecoilAtoms
 @react.component
 let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: bool) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let setSelectedOption = Recoil.useSetRecoilState(selectedOptionAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {readOnly, customMethodNames} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let setSelectedOption = Jotai.useSetAtom(JotaiAtoms.selectedOptionAtom)
   let (tabClass, tabLabelClass, tabIconClass) = React.useMemo(
     () => isActive ? ("Tab--selected", "TabLabel--selected", "TabIcon--selected") : ("", "", ""),
     [isActive],

@@ -1,4 +1,3 @@
-open RecoilAtoms
 @react.component
 let make = (
   ~paymentType: CardThemeType.mode,
@@ -9,12 +8,12 @@ let make = (
   let _cardsToRender = width => {
     (width - 40) / 110
   }
-  let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let setFullName = Recoil.useSetRecoilState(userFullName)
-  let setNickName = Recoil.useSetRecoilState(userCardNickName)
+  let {showLoader} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
+  let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let setFullName = Jotai.useSetAtom(JotaiAtoms.userFullName)
+  let setNickName = Jotai.useSetAtom(JotaiAtoms.userCardNickName)
   let (_, startTransition) = React.useTransition()
 
   React.useEffect(() => {
