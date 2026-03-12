@@ -5,7 +5,6 @@ let maxQRTime = 900000.0
 
 type paymentMethod =
   | DuitNow
-  | Pix
   | Other
 
 type paymentMethodConfig = {
@@ -15,7 +14,6 @@ type paymentMethodConfig = {
   showLogo: bool,
   color: string,
   logoName: string,
-  enableCopyRawQr: bool,
 }
 
 let getKeyValue = (json, str) => {
@@ -29,7 +27,6 @@ let getKeyValue = (json, str) => {
 let parsePaymentMethod = methodString => {
   switch methodString {
   | "duit_now" => DuitNow
-  | "pix" => Pix
   | _ => Other
   }
 }
@@ -41,7 +38,6 @@ let baseConfig: paymentMethodConfig = {
   showLogo: false,
   color: "",
   logoName: "",
-  enableCopyRawQr: false,
 }
 
 let getPaymentMethodConfig = method => {
@@ -53,10 +49,6 @@ let getPaymentMethodConfig = method => {
       footerText: "MALAYSIA NATIONAL QR",
       showLogo: true,
       logoName: "duitNow",
-    }
-  | Pix => {
-      ...baseConfig,
-      enableCopyRawQr: true,
     }
   | Other => baseConfig
   }
@@ -230,8 +222,9 @@ let make = () => {
       : paymentMethodConfig.color
   }, [paymentMethodConfig.color, paymentMethodConfig.defaultColor])
 
-  let qrBottomSectionMarginClass = paymentMethodConfig.enableCopyRawQr ? "mt-6" : "mt-16"
-  let disclaimerMarginClass = paymentMethodConfig.enableCopyRawQr ? "mt-6" : ""
+  let isRawQrDataAvailable = rawQrData->String.length > 0
+  let qrBottomSectionMarginClass = isRawQrDataAvailable ? "mt-6" : "mt-16"
+  let disclaimerMarginClass = isRawQrDataAvailable ? "mt-6" : ""
 
   <Modal showClose=false openModal setOpenModal>
     <div className="flex flex-col h-full justify-between items-center">
@@ -266,7 +259,7 @@ let make = () => {
       </div>
       <div
         className={`flex flex-col ${qrBottomSectionMarginClass} max-w-md justify-between items-center`}>
-        <RenderIf condition={paymentMethodConfig.enableCopyRawQr}>
+        <RenderIf condition={isRawQrDataAvailable}>
           <button
             className="button  p-2 h-[40px] border border-[#006DF9] rounded-md"
             style={color: "#006DF9", background: "transparent"}
