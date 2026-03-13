@@ -1,5 +1,6 @@
 open Utils
 
+let copyResetTime = 1000
 let maxQRTime = 900000.0
 
 type paymentMethod =
@@ -30,30 +31,34 @@ let parsePaymentMethod = methodString => {
   }
 }
 
-let getPaymentMethodConfig = (method): paymentMethodConfig => {
+let baseConfig: paymentMethodConfig = {
+  defaultColor: "transparent",
+  showBorder: false,
+  footerText: "",
+  showLogo: false,
+  color: "",
+  logoName: "",
+}
+
+let getPaymentMethodConfig = method => {
   switch method {
   | DuitNow => {
+      ...baseConfig,
       defaultColor: "#ED2E67",
       showBorder: true,
       footerText: "MALAYSIA NATIONAL QR",
       showLogo: true,
-      color: "",
       logoName: "duitNow",
     }
-  | Other => {
-      defaultColor: "transparent",
-      showBorder: false,
-      footerText: "",
-      showLogo: false,
-      color: "",
-      logoName: "",
-    }
+  | Other => baseConfig
   }
 }
 
 @react.component
 let make = () => {
   let (qrCode, setQrCode) = React.useState(_ => "")
+  let (rawQrData, setRawQrData) = React.useState(_ => "")
+  let (isCopied, setIsCopied) = React.useState(_ => false)
   let (expiryTime, setExpiryTime) = React.useState(_ => maxQRTime)
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (return_url, setReturnUrl) = React.useState(_ => "")
@@ -66,6 +71,7 @@ let make = () => {
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
     getPaymentMethodConfig(Other)
   )
+  let copyTimeoutRef = React.useRef(None)
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -83,9 +89,11 @@ let make = () => {
           let defaultConfig = getPaymentMethodConfig(parsedPaymentMethod)
 
           let qrData = metaDataDict->getString("qrData", "")
+          let rawQrData = metaDataDict->getString("rawQrData", "")
           let publishableKey = metaDataDict->getString("publishableKey", "")
           setPublishableKey(_ => publishableKey)
           setQrCode(_ => qrData)
+          setRawQrData(_ => rawQrData)
 
           switch parsedPaymentMethod {
           | Other => setPaymentMethodConfig(_ => defaultConfig)
@@ -191,11 +199,31 @@ let make = () => {
     `${minutes}:${formatedSeconds}`
   }, [expiryTime])
 
+  let handleCopyQrData = _ => {
+    messageParentWindow([
+      ("copy", true->JSON.Encode.bool),
+      ("copyDetails", rawQrData->JSON.Encode.string),
+    ])
+    switch copyTimeoutRef.current {
+    | Some(id) => clearTimeout(id)
+    | None => ()
+    }
+    setIsCopied(_ => true)
+    let id = setTimeout(() => {
+      setIsCopied(_ => false)
+      copyTimeoutRef.current = None
+    }, copyResetTime)
+    copyTimeoutRef.current = Some(id)
+  }
+
   let displayColor = React.useMemo(() => {
     !isValidHexColor(paymentMethodConfig.color) || paymentMethodConfig.color === ""
       ? paymentMethodConfig.defaultColor
       : paymentMethodConfig.color
   }, [paymentMethodConfig.color, paymentMethodConfig.defaultColor])
+
+  let isRawQrDataAvailable = rawQrData->String.length > 0
+  let qrBottomSectionMarginClass = isRawQrDataAvailable ? "mt-6" : "mt-16"
 
   <Modal showClose=false openModal setOpenModal>
     <div className="flex flex-col h-full justify-between items-center">
@@ -228,8 +256,17 @@ let make = () => {
           </div>
         </RenderIf>
       </div>
-      <div className="flex flex-col max-w-md justify-between items-center">
-        <div className="Disclaimer w-full mt-16 font-medium text-xs text-[#151A1F] opacity-50">
+      <div
+        className={`flex flex-col ${qrBottomSectionMarginClass} max-w-md justify-between items-center`}>
+        <RenderIf condition={isRawQrDataAvailable}>
+          <button
+            className="button mb-6 p-2 h-[40px] border border-[#006DF9] rounded-md"
+            style={color: "#006DF9", background: "transparent"}
+            onClick={handleCopyQrData}>
+            {isCopied ? React.string("Copied!") : React.string("Copy QR Data")}
+          </button>
+        </RenderIf>
+        <div className={`Disclaimer w-full  font-medium text-xs text-[#151A1F] opacity-50`}>
           {React.string(
             "The QR Code is valid for the next 15 minutes, please do not close until you have successfully completed the payment, after which you will be automatically redirected.",
           )}

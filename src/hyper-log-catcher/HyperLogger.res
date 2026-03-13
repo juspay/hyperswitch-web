@@ -63,14 +63,7 @@ let getSourceString = source => {
   }
 }
 
-let make = (
-  ~sessionId=?,
-  ~source: source,
-  ~clientSecret=?,
-  ~merchantId=?,
-  ~metadata=?,
-  ~ephemeralKey=?,
-) => {
+let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~metadata=?) => {
   let loggingLevel = switch GlobalVars.loggingLevelStr {
   | "DEBUG" => DEBUG
   | "INFO" => INFO
@@ -158,14 +151,9 @@ let make = (
   }
 
   let clientSecret = getRefFromOption(clientSecret)
-  let ephemeralKey = getRefFromOption(ephemeralKey)
 
   let setClientSecret = value => {
     clientSecret := value
-  }
-
-  let setEphemeralKey = value => {
-    ephemeralKey := value
   }
 
   let sourceRef = ref(source->getSourceString)
@@ -323,7 +311,6 @@ let make = (
             paymentMethod,
             firstEvent: true,
             metadata: metadata.contents,
-            ephemeralKey: ephemeralKey.contents,
           }
           ->conditionalLogPush
           ->ignore
@@ -351,7 +338,6 @@ let make = (
             paymentMethod,
             firstEvent: true,
             metadata: metadata.contents,
-            ephemeralKey: ephemeralKey.contents,
           }
           ->conditionalLogPush
           ->ignore
@@ -402,7 +388,6 @@ let make = (
       paymentMethod,
       firstEvent,
       metadata: metadata.contents,
-      ephemeralKey: ephemeralKey.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -459,7 +444,6 @@ let make = (
       paymentMethod,
       firstEvent,
       metadata: metadata.contents,
-      ephemeralKey: ephemeralKey.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -506,7 +490,6 @@ let make = (
       paymentMethod,
       firstEvent,
       metadata: metadata.contents,
-      ephemeralKey: ephemeralKey.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -540,7 +523,6 @@ let make = (
       paymentMethod: "",
       firstEvent,
       metadata: metadata.contents,
-      ephemeralKey: ephemeralKey.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -570,6 +552,5 @@ let make = (
     setLogApi,
     setLogError,
     setSource,
-    setEphemeralKey,
   }
 }

@@ -10,8 +10,7 @@ let make = (
 ) => {
   let divRef = React.useRef(Nullable.null)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {savedPaymentMethods, sdkHandleSavePayment} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let (savedMethods, setSavedMethods) = React.useState(_ => [])
+  let {sdkHandleSavePayment} = Recoil.useRecoilValueFromAtom(optionAtom)
   let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
   let (isLoading, setIsLoading) = React.useState(_ => false)
   let (showAddScreen, setShowAddScreen) = Recoil.useRecoilState(RecoilAtomsV2.showAddScreen)
@@ -50,36 +49,10 @@ let make = (
     | LoadedV2(val) =>
       setSavedPaymentMethodsV2(_ => val)
       setIsLoading(_ => false)
-    | _ => ()
+    | _ => setIsLoading(_ => true)
     }
     None
   }, [paymentManagementList])
-
-  React.useEffect(() => {
-    switch savedPaymentMethods {
-    | LoadedSavedCards(savedPaymentMethods, _) => {
-        let defaultPaymentMethod =
-          savedPaymentMethods->Array.find(savedCard => savedCard.defaultPaymentMethodSet)
-
-        let savedCardsWithoutDefaultPaymentMethod = savedPaymentMethods->Array.filter(savedCard => {
-          !savedCard.defaultPaymentMethodSet
-        })
-
-        let finalSavedPaymentMethods = switch defaultPaymentMethod {
-        | Some(defaultPaymentMethod) =>
-          [defaultPaymentMethod]->Array.concat(savedCardsWithoutDefaultPaymentMethod)
-        | None => savedCardsWithoutDefaultPaymentMethod
-        }
-
-        setSavedMethods(_ => finalSavedPaymentMethods)
-        setIsLoading(_ => false)
-      }
-    | LoadingSavedCards => setIsLoading(_ => true)
-    | NoResult(_) => setIsLoading(_ => false)
-    }
-
-    None
-  }, (savedPaymentMethods, displaySavedPaymentMethods))
 
   React.useEffect(() => {
     let cardError = switch (
@@ -150,12 +123,7 @@ let make = (
     </RenderIf>
     <RenderIf condition={!showAddScreen}>
       <RenderIf condition={!isLoading}>
-        <SavedPaymentManagement savedMethods setSavedMethods cvcProps />
-      </RenderIf>
-      <RenderIf condition={isLoading}>
-        <PaymentElementShimmer.SavedPaymentShimmer />
-      </RenderIf>
-      <RenderIf condition={GlobalVars.sdkVersion == V2}>
+        <SavedPaymentManagement cvcProps />
         <div
           className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
           style={
@@ -173,6 +141,9 @@ let make = (
           <Icon name="plus" size=19 />
           {React.string("Add new card")}
         </div>
+      </RenderIf>
+      <RenderIf condition={isLoading}>
+        <PaymentElementShimmer.SavedPaymentShimmer />
       </RenderIf>
     </RenderIf>
     <PoweredBy />

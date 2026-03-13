@@ -12,8 +12,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
   let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
-  let setPaymentMethodsListV2 = Recoil.useSetRecoilState(paymentMethodsListV2)
-  let setIntentList = Recoil.useSetRecoilState(intentList)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
@@ -143,7 +141,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
-          ephemeralKey: config.ephemeralKey,
           pmClientSecret: config.pmClientSecret,
           pmSessionId: config.pmSessionId,
           loader: config.loader,
@@ -280,7 +277,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-                let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
                 let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
                 let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
                 let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
@@ -288,7 +284,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   ...prev,
                   clientSecret: Some(clientSecret),
                   sdkAuthorization: Some(sdkAuthorization),
-                  ephemeralKey,
                   pmClientSecret,
                   pmSessionId,
                 })
@@ -346,7 +341,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             let paymentOptions = dict->getDictFromObj("paymentOptions")
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-            let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
             let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
             let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
             let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
@@ -354,7 +348,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               ...prev,
               clientSecret: Some(clientSecret),
               sdkAuthorization: Some(sdkAuthorization),
-              ephemeralKey,
               pmClientSecret,
               pmSessionId,
             })
@@ -482,43 +475,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }
           }
         }
-        if dict->getDictIsSome("getIntent") {
-          let getIntentDict = dict->getJsonObjectFromDict("getIntent")->getDictFromJson
-          let intentDetails = getIntentDict->UnifiedHelpersV2.createIntentDetails("response")
-          setIntentList(_ => intentDetails)
-        }
-        if dict->getDictIsSome("paymentsListV2") {
-          let paymentsListV2 = dict->getJsonObjectFromDict("paymentsListV2")
-          let listDict = paymentsListV2->getDictFromJson
-
-          let updatedState: UnifiedPaymentsTypesV2.loadstate =
-            paymentsListV2 == Dict.make()->JSON.Encode.object
-              ? LoadErrorV2(paymentsListV2)
-              : switch listDict->Dict.get("error") {
-                | Some(_) => LoadErrorV2(paymentsListV2)
-                | None =>
-                  let isNonEmptyPaymentMethodList = switch listDict->Dict.get("response") {
-                  | Some(val) =>
-                    val->getDictFromJson->getArray("payment_methods_enabled")->Array.length > 0
-                  | None => false
-                  }
-                  isNonEmptyPaymentMethodList
-                    ? listDict->UnifiedHelpersV2.createPaymentsObjArr("response")
-                    : LoadErrorV2(paymentsListV2)
-                }
-
-          let evalMethodsList = () =>
-            switch updatedState {
-            | LoadedV2(_) => Console.info("Loaded payment methods list v2")
-            | LoadErrorV2(x) =>
-              Console.error2("Error in loading payment methods list v2: ", x->JSON.stringify)
-            | _ => ()
-            }
-
-          evalMethodsList()
-
-          setPaymentMethodsListV2(_ => updatedState)
-        }
         if dict->getDictIsSome("paymentMethodList") {
           let paymentMethodList = dict->getJsonObjectFromDict("paymentMethodList")
           let listDict = paymentMethodList->getDictFromJson
@@ -611,51 +567,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
               )
-            | _ => ()
-            }
-
-          switch optionsPayment.customerPaymentMethods {
-          | LoadingSavedCards => ()
-          | LoadedSavedCards(list, _) =>
-            if list->Array.length > 0 {
-              logger.setLogInfo(
-                ~value="Loaded",
-                ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadLatency,
-              )
-            } else {
-              evalMethodsList()
-            }
-          | NoResult(_) => evalMethodsList()
-          }
-        }
-        if dict->getDictIsSome("savedPaymentMethods") {
-          let savedPaymentMethods = dict->PaymentType.createCustomerObjArr("savedPaymentMethods")
-          setOptionsPayment(prev => {
-            ...prev,
-            savedPaymentMethods,
-          })
-          let finalLoadLatency = if launchTime <= 0.0 {
-            -1.0
-          } else {
-            Date.now() -. launchTime
-          }
-
-          let evalMethodsList = () =>
-            switch paymentMethodList {
-            | Loaded(_) =>
-              logger.setLogInfo(
-                ~value="Loaded",
-                ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadLatency,
-              )
-            | LoadError(x) =>
-              logger.setLogError(
-                ~value="LoadError: " ++ x->JSON.stringify,
-                ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadLatency,
-              )
-
             | _ => ()
             }
 

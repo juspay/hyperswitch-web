@@ -236,6 +236,13 @@ type localeStrings = {
   giftCardAppliedText: string,
   giftCardPaymentCompleteMessage: string,
   giftCardPaymentRemainingMessage: (string, string) => string,
+  installmentPayInInstallments: string,
+  installmentChoosePlan: string,
+  installmentInterestFree: string,
+  installmentInterestRate: string => string,
+  installmentTotalPayable: string,
+  installmentPaymentLabel: (int, string, string) => string,
+  installmentSelectPlanError: string,
 }
 
 type constantStrings = {

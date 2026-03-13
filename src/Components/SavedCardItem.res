@@ -56,6 +56,11 @@ let make = (
   ~savedCardlength,
   ~cvcProps: CardUtils.cvcProps,
   ~setRequiredFieldsBody,
+  ~setSelectedInstallmentPlan,
+  ~showInstallments,
+  ~setShowInstallments,
+  ~installmentsError,
+  ~setInstallmentsError,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {
@@ -101,7 +106,8 @@ let make = (
     if isActive {
       // * Focus CVC
       focusCVC()
-
+      setSelectedInstallmentPlan(_ => None)
+      setShowInstallments(_ => false)
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->CardValidations.formatCardExpiryNumber
@@ -154,6 +160,13 @@ let make = (
   let isCVCEmpty = cvcNumber->String.length == 0
 
   let {innerLayout} = config.appearance
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
+
+  let hasInstallmentPlans =
+    installmentOptions
+    ->PaymentUtils.filterInstallmentPlansByPaymentMethod(paymentItem.paymentMethod)
+    ->Array.length > 0
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
@@ -222,7 +235,7 @@ let make = (
             </RenderIf>
           </div>
           <div className="w-full">
-            <div className="flex flex-col items-start mx-8">
+            <div className="flex flex-col items-start ml-8">
               <RenderIf condition={isActive && isRenderCvv}>
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
@@ -280,6 +293,22 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf condition={isActive}>
+                <RenderIf condition={isCard && hasInstallmentPlans}>
+                  <div
+                    style={
+                      paddingTop: themeObj.spacingUnit,
+                    }
+                    className="w-full flex">
+                    <InstallmentOptions
+                      setSelectedInstallmentPlan
+                      showInstallments
+                      setShowInstallments
+                      paymentMethod=paymentItem.paymentMethod
+                      errorString=installmentsError
+                      setErrorString=setInstallmentsError
+                    />
+                  </div>
+                </RenderIf>
                 <DynamicFields
                   paymentMethod=paymentItem.paymentMethod
                   paymentMethodType

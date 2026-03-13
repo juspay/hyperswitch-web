@@ -5,7 +5,6 @@ type keys = {
   clientSecret: option<string>,
   sdkAuthorization: option<string>,
   paymentId: string,
-  ephemeralKey?: string,
   pmSessionId?: string,
   pmClientSecret?: string,
   publishableKey: string,
