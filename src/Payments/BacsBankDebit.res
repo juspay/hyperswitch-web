@@ -77,6 +77,7 @@ let make = () => {
     country.value == "" ||
     state.value == ""
 
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bacs_bank_debit")
 
   React.useEffect(() => {

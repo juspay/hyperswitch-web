@@ -12,6 +12,7 @@ let setUserError = message => {
 @react.component
 let make = (~paymentMode, ~integrateError, ~logger) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
@@ -39,6 +40,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
       CardUtils.emitIsFormReadyForSubmission(
         cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+        ~subscriptionEvents=options.subscriptionEvents,
       )
     | _ => ()
     }

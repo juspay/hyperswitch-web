@@ -18,6 +18,13 @@ let make = (~token: SessionsType.token) => {
   let (showLoader, setShowLoader) = React.useState(() => false)
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
+  SubscriptionEventHooks.useFormStatus(
+    ~empty=!showLoader,
+    ~complete=showLoader,
+    ~isOneClickWallet=true,
+  )
+
+  UtilityHooks.useHandlePostMessages(~complete=showLoader, ~empty=!showLoader, ~paymentType="paze")
 
   let onClick = _ => {
     if isTestMode {
@@ -39,6 +46,20 @@ let make = (~token: SessionsType.token) => {
         ~country,
         ~state,
         ~pinCode,
+        ~subscriptionEvents=options.subscriptionEvents,
+      )
+      SubscriptionEventHooks.emitPaymentMethodStatus(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~paymentMethod="wallet",
+        ~paymentMethodType="paze",
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=true,
+      )
+      SubscriptionEventHooks.emitBillingAddress(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~country,
+        ~state,
+        ~postalCode=pinCode,
       )
       setShowLoader(_ => true)
       let metadata =
