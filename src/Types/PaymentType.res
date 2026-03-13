@@ -207,6 +207,7 @@ type options = {
   business: business,
   customerPaymentMethods: savedCardsLoadState,
   paymentMethodOrder: option<array<string>>,
+  subscriptionEvents: option<array<SubscriptionEventTypes.events>>,
   displaySavedPaymentMethodsCheckbox: bool,
   displaySavedPaymentMethods: bool,
   savedPaymentMethodsCheckboxCheckedByDefault: bool,
@@ -385,6 +386,7 @@ let defaultOptions = {
   customerPaymentMethods: LoadingSavedCards,
   layout: ObjectLayout(defaultLayout),
   paymentMethodOrder: None,
+  subscriptionEvents: None,
   fields: defaultFields,
   displaySavedPaymentMethodsCheckbox: true,
   displaySavedPaymentMethods: true,
@@ -1286,6 +1288,7 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     layout: getLayout(dict, "layout", logger),
     customerPaymentMethods: getCustomerMethods(dict, "customerPaymentMethods"),
     paymentMethodOrder: getOptionalStrArray(dict, "paymentMethodOrder"),
+    subscriptionEvents: SubscriptionEventTypes.getSubscriptionEvents(dict, "subscriptionEvents"),
     fields: getFields(dict, "fields", logger),
     branding: getWarningString(dict, "branding", "auto", ~logger)->getShowType("options.branding"),
     displaySavedPaymentMethodsCheckbox: getBoolWithWarning(

@@ -26,7 +26,7 @@ module This = {
 }
 
 type paymentElement = {
-  on: (string, option<option<eventData> => unit>) => unit,
+  on: (string, option<option<JSON.t> => unit>) => unit,
   collapse: unit => unit,
   blur: unit => unit,
   update: JSON.t => unit,

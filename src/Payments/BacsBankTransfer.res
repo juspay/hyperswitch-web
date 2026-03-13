@@ -20,7 +20,9 @@ let default = () => {
   let paymentMethodType = "bacs"
   let paymentMethod = "bank_transfer"
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethod)
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
+
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType)
 
   React.useEffect(() => {
     setComplete(_ => complete)

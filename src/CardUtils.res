@@ -743,13 +743,23 @@ let getCardBrandInvalidError = (~cardBrand, ~localeString: LocaleStringTypes.loc
   }
 }
 
-let emitExpiryDate = formattedExpiry =>
-  Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
+let emitExpiryDate = (formattedExpiry, ~subscriptionEvents) => {
+  if (
+    SubscriptionEventTypes.shouldEmitEvent(subscriptionEvents, SubscriptionEventTypes.UNKNOWN_EVENT)
+  ) {
+    Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
+  }
+}
 
-let emitIsFormReadyForSubmission = isFormReadyForSubmission =>
-  Utils.messageParentWindow([
-    ("isFormReadyForSubmission", isFormReadyForSubmission->JSON.Encode.bool),
-  ])
+let emitIsFormReadyForSubmission = (isFormReadyForSubmission, ~subscriptionEvents) => {
+  if (
+    SubscriptionEventTypes.shouldEmitEvent(subscriptionEvents, SubscriptionEventTypes.UNKNOWN_EVENT)
+  ) {
+    Utils.messageParentWindow([
+      ("isFormReadyForSubmission", isFormReadyForSubmission->JSON.Encode.bool),
+    ])
+  }
+}
 
 let getCardBin = cardNumber =>
   cardNumber->CardValidations.clearSpaces->String.substring(~start=0, ~end=6)

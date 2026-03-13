@@ -195,6 +195,7 @@ let useRequiredFieldsEmptyAndValid = (
   ~cvcNumber,
   ~isSavedCardFlow,
 ) => {
+  let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
   let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
@@ -379,6 +380,7 @@ let useRequiredFieldsEmptyAndValid = (
     | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
       CardUtils.emitIsFormReadyForSubmission(
         cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+        ~subscriptionEvents=options.subscriptionEvents,
       )
     | _ => ()
     }

@@ -78,6 +78,8 @@ let make = (
   let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
   let (showInstallments, setShowInstallments) = React.useState(_ => false)
 
+  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+
   let shouldShowClickToPaySection =
     clickToPayConfig.isReady == Some(true) &&
       (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")
@@ -153,8 +155,41 @@ let make = (
 
   let paymentMethodType =
     customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
+  UtilityHooks.useHandlePostMessages(
+    ~complete,
+    ~empty,
+    ~paymentType=paymentMethodType,
+    ~savedMethod=true,
+  )
 
-  useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType, ~savedMethod=true)
+  // Emit card info for saved card methods
+  React.useEffect(() => {
+    if isCardPaymentMethod && !isUnknownPaymentMethod {
+      let card = customerMethod.card
+      SubscriptionEventHooks.emitCardInfo(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~bin=card.cardBin,
+        ~last4=card.last4Digits,
+        ~brand=card.scheme->Option.getOr(""),
+        ~expiryMonth=card.expiryMonth,
+        ~expiryYear=card.expiryYear,
+        ~formattedExpiry=`${card.expiryMonth}${String.substring(
+            ~start=2,
+            ~end=4,
+            card.expiryYear,
+          )}`->CardValidations.formatCardExpiryNumber,
+        ~isCardNumberComplete=true,
+        ~isCvcComplete=complete,
+        ~isExpiryComplete=true,
+        ~isCardNumberValid=true,
+        ~isExpiryValid=true,
+        ~isCvcValid=isCVCValid->Option.getOr(false),
+        ~isSavedCard=true,
+      )
+    }
+    None
+  }, (customerMethod, isCardPaymentMethod, isUnknownPaymentMethod, complete, isCVCValid))
 
   GooglePayHelpers.useHandleGooglePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
 
