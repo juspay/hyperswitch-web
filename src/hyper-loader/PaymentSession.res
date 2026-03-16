@@ -59,8 +59,9 @@ let make = (
       ),
     )
 
-    // Guard: no iframes mounted yet
-    if iframeRef.contents->Array.length === 0 {
+    // Guard: no iframes actually mounted (filter out null entries that may exist pre-mount)
+    let mountedIframes = iframeRef.contents->Array.filterMap(Nullable.toOption)
+    if mountedIframes->Array.length === 0 {
       Promise.resolve(
         handleFailureResponse(
           ~message="No payment elements are mounted. Call initUpdateIntent after elements are ready.",
