@@ -68,6 +68,7 @@ type localeStrings = {
   billingNameLabel: string,
   billingNamePlaceholder: string,
   cardHolderName: string,
+  cardHolderNameRequiredText: string,
   on: string,
   \"and": string,
   nameEmptyText: string => string,
@@ -236,6 +237,7 @@ type localeStrings = {
   giftCardAppliedText: string,
   giftCardPaymentCompleteMessage: string,
   giftCardPaymentRemainingMessage: (string, string) => string,
+  mandatoryFieldText: string,
 }
 
 type constantStrings = {

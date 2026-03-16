@@ -1,4 +1,5 @@
 open RecoilAtoms
+open DynamicFieldsUtils
 
 @react.component
 let make = (
@@ -23,6 +24,37 @@ let make = (
   | Some(val) => val
   | _ => ""
   }
+
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let paymentMethod = "card"
+  let paymentMethodType = "credit"
+
+  let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
+  let (superpositionMissingFields, _, _) = useSuperpositionFields(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~paymentMethodTypes,
+    ~paymentMethodListValue,
+  )
+
+  let (firstNamePath, lastNamePath) = React.useMemo(() => {
+    let fullNameFields =
+      superpositionMissingFields->Array.filter((r: PaymentMethodsRecord.required_fields) =>
+        r.field_type === FullName
+      )
+    let findPath = suffix =>
+      fullNameFields
+      ->Array.find(r => r.required_field->String.endsWith(suffix))
+      ->Option.map(r => r.required_field)
+      ->Option.getOr("")
+    (findPath("first_name"), findPath("last_name"))
+  }, [superpositionMissingFields])
 
   React.useEffect(() => {
     startTransition(() => {
@@ -81,7 +113,11 @@ let make = (
         />
       </div>
     </div>
-    <FullNamePaymentInput customFieldName=Some(localeString.cardHolderName) />
+    <FullNamePaymentInput.RffFullNamePaymentInput
+      customFieldName=Some(localeString.cardHolderName)
+      firstNamePath
+      lastNamePath
+    />
     <NicknamePaymentInput />
   </div>
 }

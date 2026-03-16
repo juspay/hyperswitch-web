@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `Nom de facturation`,
   billingNamePlaceholder: `Prénom et nom de famille`,
   cardHolderName: `Nom du titulaire`,
+  cardHolderNameRequiredText: `Nom du titulaire de la carte requis`,
   on: `sur`,
   \"and": `et`,
   nameEmptyText: str => `Veuillez fournir votre ${str}`,
@@ -250,4 +251,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Aucun montant restant à payer. Veuillez poursuivre le paiement.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Veuillez payer le montant restant de ${amount} ${currency} avec un autre moyen de paiement ci-dessous.`,
-}
+  mandatoryFieldText: "Ce champ est obligatoire",
+  }

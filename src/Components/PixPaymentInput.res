@@ -1,136 +1,58 @@
 @react.component
-let make = (~fieldType="") => {
+let make = (~name: string, ~fieldType: string) => {
   open RecoilAtoms
-  open Utils
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
-  let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
-  let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
   let inputRef = React.useRef(Nullable.null)
 
-  let validatePixKey = (val): RecoilAtomTypes.field =>
-    if val->String.length > 0 {
-      {value: val, isValid: Some(true), errorString: ""}
-    } else {
-      {value: val, isValid: None, errorString: ""}
-    }
-
-  let validatePixCNPJ = (val): RecoilAtomTypes.field => {
-    let isCNPJValid = %re("/^\d*$/")->RegExp.test(val) && val->String.length === 14
-    if isCNPJValid {
-      {value: val, isValid: Some(true), errorString: ""}
-    } else if val->String.length === 0 {
-      {value: val, isValid: None, errorString: ""}
-    } else {
-      {
-        value: val,
-        isValid: Some(false),
-        errorString: localeString.pixCNPJInvalidText,
-      }
-    }
-  }
-
-  let validatePixCPF = (val): RecoilAtomTypes.field => {
-    let isCPFValid = %re("/^\d*$/")->RegExp.test(val) && val->String.length === 11
-    if isCPFValid {
-      {value: val, isValid: Some(true), errorString: ""}
-    } else if val->String.length === 0 {
-      {value: val, isValid: None, errorString: ""}
-    } else {
-      {
-        value: val,
-        isValid: Some(false),
-        errorString: localeString.pixCPFInvalidText,
-      }
-    }
-  }
-
-  let (fieldName, setValue, value, placeholder, maxLength, validationFn) = switch fieldType {
-  | "pixKey" => (
-      localeString.pixKeyLabel,
-      setPixKey,
-      pixKey,
-      localeString.pixKeyPlaceholder,
-      None,
-      validatePixKey,
+  let createValidator = rule =>
+    Validation.createFieldValidator(
+      rule,
+      ~enabledCardSchemes=[],
+      ~localeObject=localeString->Obj.magic,
     )
+
+  let (fieldName, placeholder, maxLength, validationRule) = switch fieldType {
+  | "pixKey" => (localeString.pixKeyLabel, localeString.pixKeyPlaceholder, None, Validation.PixKey)
   | "pixCPF" => (
       localeString.pixCPFLabel,
-      setPixCPF,
-      pixCPF,
       localeString.pixCPFPlaceholder,
       Some(11),
-      validatePixCPF,
+      Validation.PixCPF,
     )
   | "pixCNPJ" => (
       localeString.pixCNPJLabel,
-      setPixCNPJ,
-      pixCNPJ,
       localeString.pixCNPJPlaceholder,
       Some(14),
-      validatePixCNPJ,
+      Validation.PixCNPJ,
     )
-  | _ => (
-      "",
-      _ => (),
-      RecoilAtoms.defaultFieldValues,
-      "",
-      None,
-      _ => RecoilAtoms.defaultFieldValues,
-    )
+  | _ => ("", "", None, Validation.Required)
   }
 
-  let validateAndSetPixInputValue = val => setValue(_ => val->validationFn)
+  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+    name,
+    ~config={validate: createValidator(validationRule)},
+  )
+
+  let pixValue = field.input.value->Option.getOr("")
 
   let onChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    validateAndSetPixInputValue(val)
+    field.input.onChange(val)
   }
 
-  let onBlur = ev => {
-    let val = ReactEvent.Focus.target(ev)["value"]
-    validateAndSetPixInputValue(val)
+  let onBlur = (_ev: JsxEventU.Focus.t) => {
+    field.input.onBlur()
   }
-
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if pixKey.value == "" {
-        setPixKey(prev => {
-          ...prev,
-          errorString: localeString.pixKeyEmptyText,
-        })
-      }
-      if pixCNPJ.value == "" {
-        setPixCNPJ(prev => {
-          ...prev,
-          errorString: localeString.pixCNPJEmptyText,
-        })
-      }
-      if pixCPF.value == "" {
-        setPixCPF(prev => {
-          ...prev,
-          errorString: localeString.pixCPFEmptyText,
-        })
-      }
-      if sourceBankAccountId.value == "" {
-        setSourceBankAccountId(prev => {
-          ...prev,
-          errorString: localeString.sourceBankAccountIdEmptyText,
-        })
-      }
-    }
-  }, [pixCNPJ.value, pixKey.value, pixCPF.value])
-
-  useSubmitPaymentData(submitCallback)
 
   <PaymentField
     fieldName
-    setValue
-    value
+    setValue={_ => ()}
+    value={
+      RecoilAtomTypes.value: pixValue,
+      isValid: Some(field.meta.valid),
+      errorString: field.meta.touched ? field.meta.error->Option.getOr("") : "",
+    }
     onChange
     onBlur
     type_=fieldType

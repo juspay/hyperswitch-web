@@ -1,6 +1,7 @@
 open RecoilAtoms
 open RecoilAtomTypes
 open Utils
+open DynamicFieldsUtils
 
 @react.component
 let make = () => {
@@ -86,9 +87,41 @@ let make = () => {
   let paymentMethod = "bank_debit"
   let paymentMethodType = "becs"
 
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
+  let (superpositionMissingFields, _, _) = useSuperpositionFields(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~paymentMethodTypes,
+    ~paymentMethodListValue,
+  )
+
+  let (firstNamePath, lastNamePath) = React.useMemo(() => {
+    let fullNameFields =
+      superpositionMissingFields->Array.filter((r: PaymentMethodsRecord.required_fields) =>
+        r.field_type === FullName
+      )
+    let findPath = suffix =>
+      fullNameFields
+      ->Array.find(r => r.required_field->String.endsWith(suffix))
+      ->Option.map(r => r.required_field)
+      ->Option.getOr("")
+    (findPath("first_name"), findPath("last_name"))
+  }, [superpositionMissingFields])
+
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <EmailPaymentInput />
-    <FullNamePaymentInput />
+    <FullNamePaymentInput.RffFullNamePaymentInput
+      customFieldName=None
+      firstNamePath
+      lastNamePath
+    />
     <AddBankAccount modalData setModalData />
     <FullScreenPortal>
       <BankDebitModal setModalData />

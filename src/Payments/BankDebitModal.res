@@ -1,5 +1,6 @@
 open CardUtils
 open ACHTypes
+open DynamicFieldsUtils
 
 type focus = Routing | Account | NONE
 
@@ -118,6 +119,8 @@ let make = (~setModalData) => {
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
   let (openModal, setOpenModal) = React.useState(_ => false)
 
   let (accountNum, setAccountNum) = React.useState(_ => "")
@@ -176,6 +179,33 @@ let make = (~setModalData) => {
   let isAchDebit = selectedOption->String.includes("ach_debit")
   let isBecsDebit = selectedOption->String.includes("becs_debit")
 
+  let paymentMethod = "bank_debit"
+  let paymentMethodType = switch (isAchDebit, isBecsDebit) {
+  | (true, _) => "ach"
+  | (_, true) => "becs"
+  | _ => "sepa"
+  }
+
+  let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
+  let (superpositionMissingFields, _, _) = useSuperpositionFields(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~paymentMethodTypes,
+    ~paymentMethodListValue,
+  )
+
+  let getRequiredFieldPath = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
+    superpositionMissingFields
+    ->Array.find(r => r.field_type === fieldType)
+    ->Option.map(r => r.required_field)
+    ->Option.getOr(getBillingAddressPathFromFieldType(fieldType))
+  }
+
   let handleAccountHolderNameChange = ev => {
     let accName = ReactEvent.Form.target(ev)["value"]
     setAccountHolderName(_ => accName)
@@ -204,6 +234,7 @@ let make = (~setModalData) => {
       <PayNowButton onClickHandler label="Done" />
     </div>
 
+  // TODO: to check why this was named as nonDynamicFieldsModalBody and if this is still required.
   let nonDynamicFieldsModalBody =
     <>
       <div
@@ -215,6 +246,12 @@ let make = (~setModalData) => {
         <AddressPaymentInput
           paymentType=Payment
           className="focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
+          line1Path={getRequiredFieldPath(PaymentMethodsRecord.AddressLine1)}
+          line2Path={getRequiredFieldPath(PaymentMethodsRecord.AddressLine2)}
+          cityPath={getRequiredFieldPath(PaymentMethodsRecord.AddressCity)}
+          statePath={getRequiredFieldPath(PaymentMethodsRecord.AddressState)}
+          countryPath={getRequiredFieldPath(PaymentMethodsRecord.AddressCountry([]))}
+          postalPath={getRequiredFieldPath(PaymentMethodsRecord.AddressPincode)}
         />
       </div>
       <div

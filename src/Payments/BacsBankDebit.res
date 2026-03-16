@@ -1,6 +1,7 @@
 open RecoilAtoms
 open RecoilAtomTypes
 open Utils
+open DynamicFieldsUtils
 
 let formatSortCode = sortcode => {
   let formatted = sortcode->String.replaceRegExp(%re("/\D+/g"), "")
@@ -135,6 +136,26 @@ let make = () => {
   let paymentMethodType = "bacs"
   let paymentMethod = "bank_debit"
 
+  let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
+  let (superpositionMissingFields, _, _) = useSuperpositionFields(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~paymentMethodTypes,
+    ~paymentMethodListValue,
+  )
+
+  let getRequiredFieldPath = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
+    superpositionMissingFields
+    ->Array.find(r => r.field_type === fieldType)
+    ->Option.map(r => r.required_field)
+    ->Option.getOr(getBillingAddressPathFromFieldType(fieldType))
+  }
+
   <>
     <RenderIf condition={isVerifyPMAuthConnectorConfigured}>
       <AddBankDetails paymentMethodType="bacs" />
@@ -164,8 +185,19 @@ let make = () => {
           />
         </div>
         <EmailPaymentInput />
-        <FullNamePaymentInput customFieldName=Some("Bank Holder Name") />
-        <AddressPaymentInput />
+        <FullNamePaymentInput.RffFullNamePaymentInput
+          customFieldName={Some("Bank Holder Name")}
+          firstNamePath={getRequiredFieldPath(PaymentMethodsRecord.BillingName)}
+          lastNamePath={getRequiredFieldPath(PaymentMethodsRecord.BillingName)}
+        />
+        <AddressPaymentInput
+          line1Path={getRequiredFieldPath(PaymentMethodsRecord.AddressLine1)}
+          line2Path={getRequiredFieldPath(PaymentMethodsRecord.AddressLine2)}
+          cityPath={getRequiredFieldPath(PaymentMethodsRecord.AddressCity)}
+          statePath={getRequiredFieldPath(PaymentMethodsRecord.AddressState)}
+          countryPath={getRequiredFieldPath(PaymentMethodsRecord.AddressCountry([]))}
+          postalPath={getRequiredFieldPath(PaymentMethodsRecord.AddressPincode)}
+        />
         <Surcharge paymentMethod paymentMethodType />
         <Terms paymentMethod paymentMethodType />
       </div>

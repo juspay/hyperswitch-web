@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   card: `Karta`,
   billingNameLabel: `Nazwisko do faktury`,
   cardHolderName: `Imię i nazwisko posiadacza karty`,
+  cardHolderNameRequiredText: `wymagane nazwisko właściciela karty`,
   cardNickname: `Przezwisko karty`,
   billingNamePlaceholder: `Imię i nazwisko`,
   ibanEmptyText: `IBAN nie może być pusty`,
@@ -249,4 +250,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Nie pozostała żadna kwota do zapłaty. Proszę kontynuować płatność.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Proszę zapłacić pozostałą kwotę ${amount} ${currency} inną metodą płatności poniżej.`,
+  mandatoryFieldText: "To pole jest obowiązkowe",
 }

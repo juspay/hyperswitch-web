@@ -1,3 +1,24 @@
+module RffField = {
+  @react.component
+  let make = (~name: string, ~validationRule=?, ~render) => {
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+
+    let createValidator = rule =>
+      Validation.createFieldValidator(
+        rule,
+        ~enabledCardSchemes=[],
+        ~localeObject=localeString->Obj.magic,
+      )
+
+    let field: ReactFinalForm.Field.fieldProps = switch validationRule {
+    | Some(rule) => ReactFinalForm.useField(name, ~config={validate: createValidator(rule)})
+    | None => ReactFinalForm.useField(name)
+    }
+
+    render(field)
+  }
+}
+
 module DynamicFieldsToRenderWrapper = {
   @react.component
   let make = (~children, ~index, ~isInside=true) => {
@@ -35,6 +56,7 @@ let make = (
   open PaymentTypeContext
   open Utils
   open RecoilAtoms
+
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentManagementListValue,
@@ -80,54 +102,61 @@ let make = (
     ~paymentMethodType="credit",
   )
 
+  let (superpositionMissingFields, initialValues, _) = useSuperpositionFields(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~paymentMethodTypes,
+    ~paymentMethodListValue,
+  )
+
   let requiredFieldsWithBillingDetails = React.useMemo(() => {
-    if paymentMethod === "card" {
-      switch GlobalVars.sdkVersion {
-      | V2 =>
-        let creditRequiredFields =
-          listValue.paymentMethodsEnabled
-          ->Array.filter(item => {
-            item.paymentMethodSubtype === "credit" && item.paymentMethodType === "card"
-          })
-          ->Array.get(0)
-          ->Option.getOr(UnifiedHelpersV2.defaultPaymentMethods)
-
-        let finalCreditRequiredFields = creditRequiredFields.requiredFields
-        [
-          ...paymentMethodTypes.required_fields,
-          ...finalCreditRequiredFields,
-        ]->removeRequiredFieldsDuplicates
-
-      | V1 =>
-        let creditRequiredFields = creditPaymentMethodTypes.required_fields
-
-        [
-          ...paymentMethodTypes.required_fields,
-          ...creditRequiredFields,
-        ]->removeRequiredFieldsDuplicates
-      }
-    } else if dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType) {
-      switch GlobalVars.sdkVersion {
-      | V1 => paymentMethodTypes.required_fields
-      | V2 => paymentMethodTypesV2.requiredFields
-      }
-    } else {
-      []
-    }
-  }, (
-    paymentMethod,
-    paymentMethodTypes.required_fields,
-    paymentMethodTypesV2.requiredFields,
-    paymentMethodType,
-    creditPaymentMethodTypes.required_fields,
-    creditPaymentMethodTypesV2.requiredFields,
-  ))
+    superpositionMissingFields
+  }, [superpositionMissingFields])
 
   let requiredFields = React.useMemo(() => {
     requiredFieldsWithBillingDetails
     ->removeBillingDetailsIfUseBillingAddress(billingAddress)
     ->removeClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay)
   }, (requiredFieldsWithBillingDetails, isSaveDetailsWithClickToPay))
+
+  // TODO: cleanup by removing this extra filtering logic is required.
+  let getRequiredFieldPath = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
+    // First try exact match
+    let exactMatch = requiredFields->Array.find(r => r.field_type === fieldType)
+
+    switch exactMatch {
+    | Some(r) =>
+      // For Email, prefer the billing path ("payment_method_data.billing.email") over bare paths
+      // (e.g. "payment_method_data.email") since both may exist in requiredFields with the same field_type.
+      switch fieldType {
+      | Email =>
+        requiredFields
+        ->Array.find(e =>
+          e.field_type === Email && e.required_field->String.includes("billing.email")
+        )
+        ->Option.map(e => e.required_field)
+        ->Option.getOr(r.required_field)
+      | _ => r.required_field
+      }
+    | None =>
+      // Handle the case where AddressCountry lookup fails due to array reference inequality
+      // When CountryAndPincode is rendered, it passes a newly created AddressCountry variant
+      // which doesn't match the one in requiredFields due to different array references
+      switch fieldType {
+      | AddressCountry(_) =>
+        requiredFields
+        ->Array.find(r =>
+          switch r.field_type {
+          | AddressCountry(_) => true
+          | _ => false
+          }
+        )
+        ->Option.map(r => r.required_field)
+        ->Option.getOr("")
+      | _ => ""
+      }
+    }
+  }
 
   let isAllStoredCardsHaveName = React.useMemo(() => {
     PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
@@ -258,58 +287,65 @@ let make = (
     None
   })
 
-  let onPostalChange = ev => {
-    let val = ReactEvent.Form.target(ev)["value"]
+  // let onPostalChange = ev => {
+  //   let val = ReactEvent.Form.target(ev)["value"]
 
-    if val !== "" {
-      setPostalCode(_ => {
-        isValid: Some(true),
-        value: val,
-        errorString: "",
-      })
-    } else {
-      setPostalCode(_ => {
-        isValid: Some(false),
-        value: val,
-        errorString: "",
-      })
+  //   if val !== "" {
+  //     setPostalCode(_ => {
+  //       isValid: Some(true),
+  //       value: val,
+  //       errorString: "",
+  //     })
+  //   } else {
+  //     setPostalCode(_ => {
+  //       isValid: Some(false),
+  //       value: val,
+  //       errorString: "",
+  //     })
+  //   }
+  // }
+
+  // useRequiredFieldsEmptyAndValid(
+  //   ~requiredFields,
+  //   ~fieldsArr,
+  //   ~countryNames,
+  //   ~bankNames,
+  //   ~isCardValid,
+  //   ~isExpiryValid,
+  //   ~isCVCValid,
+  //   ~cardNumber,
+  //   ~cardExpiry,
+  //   ~cvcNumber,
+  //   ~isSavedCardFlow,
+  //   ~isSplitPaymentsEnabled,
+  // )
+
+  // useSetInitialRequiredFields(
+  //   ~requiredFields={
+  //     billingAddress.usePrefilledValues === Auto ? requiredFieldsWithBillingDetails : requiredFields
+  //   },
+  //   ~paymentMethodType,
+  // )
+
+  // useRequiredFieldsBody(
+  //   ~requiredFields,
+  //   ~paymentMethodType,
+  //   ~cardNumber,
+  //   ~cardExpiry,
+  //   ~cvcNumber,
+  //   ~isSavedCardFlow,
+  //   ~isAllStoredCardsHaveName,
+  //   ~setRequiredFieldsBody,
+  // )
+
+  let formSubmitRef = React.useRef(None)
+
+  let submitCallback = useSubmitCallback(~onConfirm=() => {
+    switch formSubmitRef.current {
+    | Some(submitFn) => submitFn()
+    | None => ()
     }
-  }
-
-  useRequiredFieldsEmptyAndValid(
-    ~requiredFields,
-    ~fieldsArr,
-    ~countryNames,
-    ~bankNames,
-    ~isCardValid,
-    ~isExpiryValid,
-    ~isCVCValid,
-    ~cardNumber,
-    ~cardExpiry,
-    ~cvcNumber,
-    ~isSavedCardFlow,
-    ~isSplitPaymentsEnabled,
-  )
-
-  useSetInitialRequiredFields(
-    ~requiredFields={
-      billingAddress.usePrefilledValues === Auto ? requiredFieldsWithBillingDetails : requiredFields
-    },
-    ~paymentMethodType,
-  )
-
-  useRequiredFieldsBody(
-    ~requiredFields,
-    ~paymentMethodType,
-    ~cardNumber,
-    ~cardExpiry,
-    ~cvcNumber,
-    ~isSavedCardFlow,
-    ~isAllStoredCardsHaveName,
-    ~setRequiredFieldsBody,
-  )
-
-  let submitCallback = useSubmitCallback()
+  })
   useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
@@ -329,6 +365,19 @@ let make = (
     }
   }
 
+  let (firstNamePath, lastNamePath) = React.useMemo(() => {
+    let fullNameFields =
+      requiredFields->Array.filter((r: PaymentMethodsRecord.required_fields) =>
+        r.field_type === FullName
+      )
+    let findPath = suffix =>
+      fullNameFields
+      ->Array.find(r => r.required_field->String.endsWith(suffix))
+      ->Option.map(r => r.required_field)
+      ->Option.getOr("")
+    (findPath("first_name"), findPath("last_name"))
+  }, [requiredFields])
+
   let dynamicFieldsToRenderOutsideBilling = React.useMemo(() => {
     fieldsArr->Array.filter(isFieldTypeToRenderOutsideBilling)
   }, [fieldsArr])
@@ -344,528 +393,773 @@ let make = (
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
 
-  <RenderIf condition={!isSavedCardFlow && fieldsArr->Array.length > 0}>
-    {<>
-      {dynamicFieldsToRenderOutsideBilling
-      ->Array.mapWithIndex((item, index) => {
-        <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index} isInside={false}>
-          {switch item {
-          | CardNumber =>
-            <PaymentInputField
-              fieldName=localeString.cardNumberLabel
-              isValid=isCardValid
-              setIsValid=setIsCardValid
-              value=cardNumber
-              onChange=changeCardNumber
-              onBlur=handleCardBlur
-              rightIcon={icon}
-              errorString=cardError
-              type_="tel"
-              maxLength=maxCardLength
-              inputRef=cardRef
-              placeholder="1234 1234 1234 1234"
-              autocomplete="cc-number"
-            />
-          | GiftCardNumber => <GiftCardNumberInput />
-          | CardExpiryMonth
-          | CardExpiryYear
-          | CardExpiryMonthAndYear =>
-            <PaymentInputField
-              fieldName=localeString.validThruText
-              isValid=isExpiryValid
-              setIsValid=setIsExpiryValid
-              value=cardExpiry
-              onChange=changeCardExpiry
-              onBlur=handleExpiryBlur
-              errorString=expiryError
-              type_="tel"
-              maxLength=7
-              inputRef=expiryRef
-              placeholder=localeString.expiryPlaceholder
-              autocomplete="cc-exp"
-            />
-          | CardCvc =>
-            <PaymentInputField
-              fieldName=localeString.cvcTextLabel
-              isValid=isCVCValid
-              setIsValid=setIsCVCValid
-              value=cvcNumber
-              onChange=changeCVCNumber
-              onBlur=handleCVCBlur
-              errorString=cvcError
-              rightIcon={CardUtils.setRightIconForCvc(
-                ~cardEmpty,
-                ~cardInvalid,
-                ~color=themeObj.colorIconCardCvcError,
-                ~cardComplete,
-              )}
-              type_="tel"
-              className="tracking-widest w-full"
-              maxLength=4
-              inputRef=cvcRef
-              placeholder="123"
-              autocomplete="cc-csc"
-            />
-          | GiftCardPin => <GiftCardPinInput />
+  let formValidator = React.useMemo(() => {
+    _ => Dict.make()
+  }, [fieldsArr])
 
-          | CardExpiryAndCvc =>
-            <div className="flex gap-10">
-              <PaymentInputField
-                fieldName=localeString.validThruText
-                isValid=isExpiryValid
-                setIsValid=setIsExpiryValid
-                value=cardExpiry
-                onChange=changeCardExpiry
-                onBlur=handleExpiryBlur
-                errorString=expiryError
-                type_="tel"
-                maxLength=7
-                inputRef=expiryRef
-                placeholder=localeString.expiryPlaceholder
-                autocomplete="cc-exp"
-              />
-              <PaymentInputField
-                fieldName=localeString.cvcTextLabel
-                isValid=isCVCValid
-                setIsValid=setIsCVCValid
-                value=cvcNumber
-                onChange=changeCVCNumber
-                onBlur=handleCVCBlur
-                errorString=cvcError
-                rightIcon={CardUtils.setRightIconForCvc(
-                  ~cardEmpty,
-                  ~cardInvalid,
-                  ~color=themeObj.colorIconCardCvcError,
-                  ~cardComplete,
-                )}
-                type_="tel"
-                className="tracking-widest w-full"
-                maxLength=4
-                inputRef=cvcRef
-                placeholder="123"
-                autocomplete="cc-csc"
-              />
-            </div>
-          | Currency(currencyArr) =>
-            let updatedCurrencyArray =
-              currencyArr->DropdownField.updateArrayOfStringToOptionsTypeArray
-            <DropdownField
-              appearance=config.appearance
-              fieldName=localeString.currencyLabel
-              value=currency
-              setValue=setCurrency
-              disabled=false
-              options=updatedCurrencyArray
-            />
-          | DocumentType(opt) => {
-              let updatedDocumentTypeArray =
-                opt->DropdownField.updateArrayOfStringToOptionsTypeArrayWithUpperCaseLabel
-              <DocumentNumberInput options={updatedDocumentTypeArray} />
-            }
-          | FullName =>
-            <>
-              <RenderIf condition={!isSpacedInnerLayout}>
-                <div
-                  style={
-                    marginBottom: "5px",
-                    fontSize: themeObj.fontSizeLg,
-                    opacity: "0.6",
-                  }>
-                  {item->getCustomFieldName->Option.getOr("")->React.string}
+  let (_, setAreRequiredFieldsValid) = Recoil.useRecoilState(areRequiredFieldsValid)
+
+  // let (formMethods, setFormMethods) = React.useState(_ => None)
+
+  <RenderIf condition={!isSavedCardFlow && fieldsArr->Array.length > 0}>
+    <ReactFinalForm.Form
+      onSubmit={_ => ()}
+      initialValues={Some(initialValues)}
+      validate={Some(formValidator)}
+      render={formProps => {
+        formSubmitRef.current = Some(formProps.form.submit)
+        let submitFailed = formProps.submitFailed
+        // React.useEffect0(() => {
+        //   setFormMethods(_ => Some(formProps))
+        //   None
+        // })
+        ReactFinalForm.useFormStateHandler(
+          ~onFormChange=values => {
+            setRequiredFieldsBody(_ => values)
+          },
+          ~onValidationChange=isValid => {
+            setAreRequiredFieldsValid(_ => isValid)
+          },
+          ~formProps,
+        )
+        <>
+          {dynamicFieldsToRenderOutsideBilling
+          ->Array.mapWithIndex((item, index) => {
+            <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index} isInside={false}>
+              {switch item {
+              | CardNumber =>
+                <PaymentInputField
+                  fieldName=localeString.cardNumberLabel
+                  isValid=isCardValid
+                  setIsValid=setIsCardValid
+                  value=cardNumber
+                  onChange=changeCardNumber
+                  onBlur=handleCardBlur
+                  rightIcon={icon}
+                  errorString=cardError
+                  type_="tel"
+                  maxLength=maxCardLength
+                  inputRef=cardRef
+                  placeholder="1234 1234 1234 1234"
+                  autocomplete="cc-number"
+                />
+              | GiftCardNumber => <GiftCardNumberInput />
+              | CardExpiryMonth
+              | CardExpiryYear
+              | CardExpiryMonthAndYear =>
+                <PaymentInputField
+                  fieldName=localeString.validThruText
+                  isValid=isExpiryValid
+                  setIsValid=setIsExpiryValid
+                  value=cardExpiry
+                  onChange=changeCardExpiry
+                  onBlur=handleExpiryBlur
+                  errorString=expiryError
+                  type_="tel"
+                  maxLength=7
+                  inputRef=expiryRef
+                  placeholder=localeString.expiryPlaceholder
+                  autocomplete="cc-exp"
+                />
+              | CardCvc =>
+                <PaymentInputField
+                  fieldName=localeString.cvcTextLabel
+                  isValid=isCVCValid
+                  setIsValid=setIsCVCValid
+                  value=cvcNumber
+                  onChange=changeCVCNumber
+                  onBlur=handleCVCBlur
+                  errorString=cvcError
+                  rightIcon={CardUtils.setRightIconForCvc(
+                    ~cardEmpty,
+                    ~cardInvalid,
+                    ~color=themeObj.colorIconCardCvcError,
+                    ~cardComplete,
+                  )}
+                  type_="tel"
+                  className="tracking-widest w-full"
+                  maxLength=4
+                  inputRef=cvcRef
+                  placeholder="123"
+                  autocomplete="cc-csc"
+                />
+              | GiftCardPin => <GiftCardPinInput />
+
+              | CardExpiryAndCvc =>
+                <div className="flex gap-10">
+                  <PaymentInputField
+                    fieldName=localeString.validThruText
+                    isValid=isExpiryValid
+                    setIsValid=setIsExpiryValid
+                    value=cardExpiry
+                    onChange=changeCardExpiry
+                    onBlur=handleExpiryBlur
+                    errorString=expiryError
+                    type_="tel"
+                    maxLength=7
+                    inputRef=expiryRef
+                    placeholder=localeString.expiryPlaceholder
+                    autocomplete="cc-exp"
+                  />
+                  <PaymentInputField
+                    fieldName=localeString.cvcTextLabel
+                    isValid=isCVCValid
+                    setIsValid=setIsCVCValid
+                    value=cvcNumber
+                    onChange=changeCVCNumber
+                    onBlur=handleCVCBlur
+                    errorString=cvcError
+                    rightIcon={CardUtils.setRightIconForCvc(
+                      ~cardEmpty,
+                      ~cardInvalid,
+                      ~color=themeObj.colorIconCardCvcError,
+                      ~cardComplete,
+                    )}
+                    type_="tel"
+                    className="tracking-widest w-full"
+                    maxLength=4
+                    inputRef=cvcRef
+                    placeholder="123"
+                    autocomplete="cc-csc"
+                  />
                 </div>
-              </RenderIf>
-              <FullNamePaymentInput
-                customFieldName={item->getCustomFieldName}
-                optionalRequiredFields={Some(requiredFields)}
-              />
-            </>
-          | CryptoCurrencyNetworks => <CryptoCurrencyNetworks />
-          | DateOfBirth => <DateOfBirth />
-          | VpaId => <VpaIdPaymentInput />
-          | PixKey => <PixPaymentInput fieldType="pixKey" />
-          | PixCPF => <PixPaymentInput fieldType="pixCPF" />
-          | PixCNPJ => <PixPaymentInput fieldType="pixCNPJ" />
-          | BankAccountNumber | IBAN =>
-            <PaymentField
-              fieldName="IBAN"
-              setValue={setBankAccountNumber}
-              value=bankAccountNumber
-              onChange={ev => {
-                let value = ReactEvent.Form.target(ev)["value"]
-                setBankAccountNumber(_ => {
-                  isValid: Some(value !== ""),
-                  value,
-                  errorString: value !== "" ? "" : localeString.ibanEmptyText,
-                })
-              }}
-              onBlur={ev => {
-                let value = ReactEvent.Focus.target(ev)["value"]
-                setBankAccountNumber(prev => {
-                  ...prev,
-                  errorString: value !== "" ? "" : localeString.ibanEmptyText,
-                  isValid: Some(value !== ""),
-                })
-              }}
-              type_="text"
-              name="bankAccountNumber"
-              maxLength=42
-              inputRef=bankAccountNumberRef
-              placeholder="DE00 0000 0000 0000 0000 00"
-            />
-          | SourceBankAccountId =>
-            <PaymentField
-              fieldName="Source Bank Account ID"
-              setValue={setSourceBankAccountId}
-              value=sourceBankAccountId
-              onChange={ev => {
-                let value = ReactEvent.Form.target(ev)["value"]
-                setSourceBankAccountId(_ => {
-                  isValid: Some(value !== ""),
-                  value,
-                  errorString: value !== "" ? "" : localeString.sourceBankAccountIdEmptyText,
-                })
-              }}
-              onBlur={ev => {
-                let value = ReactEvent.Focus.target(ev)["value"]
-                setSourceBankAccountId(prev => {
-                  ...prev,
-                  isValid: Some(value !== ""),
-                })
-              }}
-              type_="text"
-              name="sourceBankAccountId"
-              maxLength=42
-              inputRef=sourceBankAccountIdRef
-              placeholder="DE00 0000 0000 0000 0000 00"
-            />
-          | DocumentNumber
-          | Email
-          | InfoElement
-          | Country
-          | Bank
-          | None
-          | BillingName
-          | PhoneNumber
-          | AddressLine1
-          | AddressLine2
-          | AddressCity
-          | StateAndCity
-          | AddressPincode
-          | AddressState
-          | BlikCode
-          | SpecialField(_)
-          | CountryAndPincode(_)
-          | AddressCountry(_)
-          | ShippingName // Shipping Details are currently supported by only one click widgets
-          | ShippingAddressLine1
-          | ShippingAddressLine2
-          | ShippingAddressCity
-          | ShippingAddressPincode
-          | ShippingAddressState
-          | PhoneCountryCode
-          | PhoneNumberAndCountryCode
-          | LanguagePreference(_)
-          | ShippingAddressCountry(_)
-          | BankList(_) => React.null
-          }}
-        </DynamicFieldsToRenderWrapper>
-      })
-      ->React.array}
-      <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
-        <div
-          className={`billing-section ${spacedStylesForBiilingDetails} w-full text-left`}
-          style={
-            border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
-            borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
-          }>
-          <div
-            className="billing-details-text"
-            style={
-              marginBottom: "5px",
-              fontSize: themeObj.fontSizeLg,
-              opacity: "0.6",
-            }>
-            {React.string(localeString.billingDetailsText)}
-          </div>
-          <div
-            className={`flex flex-col`}
-            style={
-              gap: isSpacedInnerLayout ? themeObj.spacingGridRow : "",
-            }>
-            {dynamicFieldsToRenderInsideBilling
-            ->Array.mapWithIndex((item, index) => {
-              <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index}>
-                {switch item {
-                | BillingName => <BillingNamePaymentInput requiredFields />
-                | Email => <EmailPaymentInput />
-                | PhoneNumberAndCountryCode => <PhoneNumberPaymentInput />
-                | StateAndCity =>
-                  <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""} overflow-hidden`}>
-                    <PaymentField
-                      fieldName=localeString.cityLabel
-                      setValue={setCity}
-                      value=city
-                      onChange={ev => {
-                        let value = ReactEvent.Form.target(ev)["value"]
-                        setCity(prev => {
-                          isValid: Some(value !== ""),
-                          value,
-                          errorString: value !== "" ? "" : prev.errorString,
-                        })
-                      }}
-                      onBlur={ev => {
-                        let value = ReactEvent.Focus.target(ev)["value"]
-                        setCity(prev => {
-                          ...prev,
-                          isValid: Some(value !== ""),
-                        })
-                      }}
-                      type_="text"
-                      name="city"
-                      inputRef=cityRef
-                      placeholder=localeString.cityLabel
-                      className={isSpacedInnerLayout ? "" : "!border-r-0"}
-                    />
-                    <RenderIf condition={stateNames->Array.length > 0}>
-                      <PaymentDropDownField
-                        fieldName=localeString.stateLabel
-                        value=state
-                        setValue=setState
-                        options={stateNames}
-                      />
-                    </RenderIf>
-                  </div>
-                | CountryAndPincode(countryArr) =>
-                  let updatedCountryArray =
-                    countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
-                  <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""}`}>
+              | Currency(currencyArr) =>
+                let updatedCurrencyArray =
+                  currencyArr->DropdownField.updateArrayOfStringToOptionsTypeArray
+                <RffField
+                  name={getRequiredFieldPath(Currency(currencyArr))}
+                  render={(field: ReactFinalForm.Field.fieldProps) => {
+                    let val = field.input.value->Option.getOr(currency)
                     <DropdownField
                       appearance=config.appearance
-                      fieldName=localeString.countryLabel
-                      value=country
-                      setValue=setCountry
-                      disabled=false
-                      options=updatedCountryArray
-                      className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
-                    />
-                    <PaymentField
-                      fieldName=localeString.postalCodeLabel
-                      setValue={setPostalCode}
-                      value=postalCode
-                      onBlur={ev => {
-                        let value = ReactEvent.Focus.target(ev)["value"]
-                        setPostalCode(prev => {
-                          ...prev,
-                          isValid: Some(value !== ""),
-                        })
+                      fieldName=localeString.currencyLabel
+                      value=val
+                      setValue={setter => {
+                        let newVal = setter(val)
+                        setCurrency(_ => newVal)
+                        field.input.onChange(newVal)
                       }}
-                      onChange=onPostalChange
-                      name="postal"
-                      inputRef=postalRef
-                      placeholder=localeString.postalCodeLabel
-                      className={isSpacedInnerLayout ? "" : "!border-t-0"}
+                      disabled=false
+                      options=updatedCurrencyArray
                     />
-                  </div>
-                | AddressLine1 =>
-                  <PaymentField
-                    fieldName=localeString.line1Label
-                    setValue={setLine1}
-                    value=line1
-                    onChange={ev => {
-                      let value = ReactEvent.Form.target(ev)["value"]
-                      setLine1(prev => {
-                        isValid: Some(value !== ""),
-                        value,
-                        errorString: value !== "" ? "" : prev.errorString,
-                      })
-                    }}
-                    onBlur={ev => {
-                      let value = ReactEvent.Focus.target(ev)["value"]
-                      setLine1(prev => {
-                        ...prev,
-                        isValid: Some(value !== ""),
-                      })
-                    }}
-                    type_="text"
-                    name="line1"
-                    inputRef=line1Ref
-                    placeholder=localeString.line1Placeholder
-                    className={isSpacedInnerLayout ? "" : "!border-b-0"}
+                  }}
+                />
+              | DocumentType(opt) => {
+                  let updatedDocumentTypeArray =
+                    opt->DropdownField.updateArrayOfStringToOptionsTypeArrayWithUpperCaseLabel
+                  <DocumentNumberInput
+                    name={getRequiredFieldPath(DocumentNumber)} options={updatedDocumentTypeArray}
                   />
-                | AddressLine2 =>
-                  <PaymentField
-                    fieldName=localeString.line2Label
-                    setValue={setLine2}
-                    value=line2
-                    onChange={ev => {
-                      let value = ReactEvent.Form.target(ev)["value"]
-                      setLine2(prev => {
-                        isValid: Some(value !== ""),
-                        value,
-                        errorString: value !== "" ? "" : prev.errorString,
-                      })
-                    }}
-                    onBlur={ev => {
-                      let value = ReactEvent.Focus.target(ev)["value"]
-                      setLine2(prev => {
-                        ...prev,
-                        isValid: Some(value !== ""),
-                      })
-                    }}
-                    type_="text"
-                    name="line2"
-                    inputRef=line2Ref
-                    placeholder=localeString.line2Placeholder
-                  />
-                | AddressCity =>
-                  <PaymentField
-                    fieldName=localeString.cityLabel
-                    setValue={setCity}
-                    value=city
-                    onChange={ev => {
-                      let value = ReactEvent.Form.target(ev)["value"]
-                      setCity(prev => {
-                        isValid: Some(value !== ""),
-                        value,
-                        errorString: value !== "" ? "" : prev.errorString,
-                      })
-                    }}
-                    onBlur={ev => {
-                      let value = ReactEvent.Focus.target(ev)["value"]
-                      setCity(prev => {
-                        ...prev,
-                        isValid: Some(value !== ""),
-                      })
-                    }}
-                    type_="text"
-                    name="city"
-                    inputRef=cityRef
-                    placeholder=localeString.cityLabel
-                  />
-                | AddressState =>
-                  <RenderIf condition={stateNames->Array.length > 0}>
-                    <PaymentDropDownField
-                      fieldName=localeString.stateLabel
-                      value=state
-                      setValue=setState
-                      options={stateNames}
-                    />
+                }
+              | FullName =>
+                let defaultName =
+                  paymentMethod === "card"
+                    ? localeString.cardHolderName
+                    : localeString.fullNameLabel
+                let customName = item->getCustomFieldName->Option.getOr(defaultName)
+                <>
+                  <RenderIf condition={!isSpacedInnerLayout}>
+                    <div
+                      style={
+                        marginBottom: "5px",
+                        fontSize: themeObj.fontSizeLg,
+                        opacity: "0.6",
+                      }>
+                      {customName->React.string}
+                    </div>
                   </RenderIf>
-                | AddressPincode =>
-                  <PaymentField
-                    fieldName=localeString.postalCodeLabel
-                    setValue=setPostalCode
-                    value=postalCode
-                    onBlur={ev => {
-                      let value = ReactEvent.Focus.target(ev)["value"]
-                      setPostalCode(prev => {
-                        ...prev,
-                        isValid: Some(value !== ""),
-                      })
+                  // TODO: rename properly
+                  <FullNamePaymentInput.RffFullNamePaymentInput
+                    // name={getRequiredFieldPath(FullName)}
+                    customFieldName={Some(customName)}
+                    firstNamePath
+                    lastNamePath
+                  />
+                </>
+              | CryptoCurrencyNetworks =>
+                <CryptoCurrencyNetworks name={getRequiredFieldPath(CryptoCurrencyNetworks)} />
+              | DateOfBirth => <DateOfBirth name={getRequiredFieldPath(DateOfBirth)} />
+              | VpaId => <VpaIdPaymentInput name={getRequiredFieldPath(VpaId)} />
+              | PixKey => <PixPaymentInput name={getRequiredFieldPath(PixKey)} fieldType="pixKey" />
+              | PixCPF => <PixPaymentInput name={getRequiredFieldPath(PixCPF)} fieldType="pixCPF" />
+              | PixCNPJ =>
+                <PixPaymentInput name={getRequiredFieldPath(PixCNPJ)} fieldType="pixCNPJ" />
+              | BankAccountNumber | IBAN =>
+                <RffField
+                  name={getRequiredFieldPath(BankAccountNumber)}
+                  validationRule={DynamicFieldsUtils.getValidationRuleForFieldType(
+                    BankAccountNumber,
+                  )}
+                  render={(field: ReactFinalForm.Field.fieldProps) => {
+                    let val = field.input.value->Option.getOr("")
+                    <PaymentField
+                      fieldName="IBAN"
+                      setValue={_ => ()}
+                      value={
+                        RecoilAtomTypes.value: val,
+                        isValid: Some(field.meta.valid),
+                        errorString: submitFailed || field.meta.touched
+                          ? field.meta.error->Option.getOr("")
+                          : "",
+                      }
+                      onChange={ev => field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                      onBlur={_ev => field.input.onBlur()}
+                      type_="text"
+                      name="bankAccountNumber"
+                      maxLength=42
+                      inputRef=bankAccountNumberRef
+                      placeholder="DE00 0000 0000 0000 0000 00"
+                    />
+                  }}
+                />
+              | SourceBankAccountId =>
+                <RffField
+                  name={getRequiredFieldPath(SourceBankAccountId)}
+                  render={(field: ReactFinalForm.Field.fieldProps) => {
+                    let val = field.input.value->Option.getOr("")
+                    <PaymentField
+                      fieldName="Source Bank Account ID"
+                      setValue={_ => ()}
+                      value={
+                        RecoilAtomTypes.value: val,
+                        isValid: Some(field.meta.valid),
+                        errorString: submitFailed || field.meta.touched
+                          ? field.meta.error->Option.getOr("")
+                          : "",
+                      }
+                      onChange={ev => field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                      onBlur={_ev => field.input.onBlur()}
+                      type_="text"
+                      name="sourceBankAccountId"
+                      maxLength=42
+                      inputRef=sourceBankAccountIdRef
+                      placeholder="DE00 0000 0000 0000 0000 00"
+                    />
+                  }}
+                />
+              | DocumentNumber
+              | Email
+              | InfoElement
+              | Country
+              | Bank
+              | None
+              | BillingName
+              | PhoneNumber
+              | AddressLine1
+              | AddressLine2
+              | AddressCity
+              | StateAndCity
+              | AddressPincode
+              | AddressState
+              | BlikCode
+              | SpecialField(_)
+              | CountryAndPincode(_)
+              | AddressCountry(_)
+              | ShippingName // Shipping Details are currently supported by only one click widgets
+              | ShippingAddressLine1
+              | ShippingAddressLine2
+              | ShippingAddressCity
+              | ShippingAddressPincode
+              | ShippingAddressState
+              | PhoneCountryCode
+              | PhoneNumberAndCountryCode
+              | LanguagePreference(_)
+              | ShippingAddressCountry(_)
+              | BankList(_) => React.null
+              }}
+            </DynamicFieldsToRenderWrapper>
+          })
+          ->React.array}
+          <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
+            <div
+              className={`billing-section ${spacedStylesForBiilingDetails} w-full text-left`}
+              style={
+                border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
+                borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
+              }>
+              <div
+                className="billing-details-text"
+                style={
+                  marginBottom: "5px",
+                  fontSize: themeObj.fontSizeLg,
+                  opacity: "0.6",
+                }>
+                {React.string(localeString.billingDetailsText)}
+              </div>
+              <div
+                className={`flex flex-col`}
+                style={
+                  gap: isSpacedInnerLayout ? themeObj.spacingGridRow : "",
+                }>
+                {dynamicFieldsToRenderInsideBilling
+                ->Array.mapWithIndex((item, index) => {
+                  <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index}>
+                    {switch item {
+                    | BillingName =>
+                      <RffField
+                        name={getRequiredFieldPath(BillingName)}
+                        validationRule={DynamicFieldsUtils.getValidationRuleForFieldType(
+                          BillingName,
+                        )}
+                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                          let val = field.input.value->Option.getOr("")
+                          <PaymentField
+                            fieldName=localeString.billingNameLabel
+                            setValue={_ => ()}
+                            value={
+                              value: val,
+                              isValid: Some(field.meta.valid),
+                              errorString: submitFailed || field.meta.touched
+                                ? field.meta.error->Option.getOr("")
+                                : "",
+                            }
+                            onChange={ev =>
+                              field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                            onBlur={_ev => field.input.onBlur()}
+                            type_="text"
+                            name=TestUtils.cardHolderNameInputTestId
+                            inputRef={React.useRef(Nullable.null)}
+                            placeholder=localeString.billingNamePlaceholder
+                            className={isSpacedInnerLayout ? "" : "!border-b-0"}
+                          />
+                        }}
+                      />
+                    | Email =>
+                      <RffField
+                        name={getRequiredFieldPath(Email)}
+                        validationRule={DynamicFieldsUtils.getValidationRuleForFieldType(Email)}
+                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                          let val = field.input.value->Option.getOr("")
+                          <>
+                            // <FullNamePaymentInput.FieldSpy name={getRequiredFieldPath(Email)} />
+                            <PaymentField
+                              fieldName=localeString.emailLabel
+                              setValue={_ => ()}
+                              value={
+                                value: val,
+                                isValid: Some(field.meta.valid),
+                                errorString: submitFailed || field.meta.touched
+                                  ? field.meta.error->Option.getOr("")
+                                  : "",
+                              }
+                              onChange={ev =>
+                                field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                              onBlur={_ev => field.input.onBlur()}
+                              type_="email"
+                              name=TestUtils.emailInputTestId
+                              inputRef={React.useRef(Nullable.null)}
+                              placeholder="Eg: johndoe@gmail.com"
+                            />
+                          </>
+                        }}
+                      />
+                    | PhoneNumberAndCountryCode =>
+                      // TODO: rename properly
+                      <PhoneNumberPaymentInput.RffPhoneNumberPaymentInput
+                        numberName={getRequiredFieldPath(PhoneNumber)}
+                        codeName={getRequiredFieldPath(PhoneCountryCode)}
+                      />
+                    | StateAndCity =>
+                      <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""} overflow-hidden`}>
+                        <RffField
+                          name={getRequiredFieldPath(AddressCity)}
+                          validationRule={DynamicFieldsUtils.getValidationRuleForFieldType(
+                            AddressCity,
+                          )}
+                          render={(field: ReactFinalForm.Field.fieldProps) => {
+                            let val = field.input.value->Option.getOr("")
+                            <PaymentField
+                              fieldName=localeString.cityLabel
+                              setValue={_ => ()}
+                              value={
+                                value: val,
+                                isValid: Some(field.meta.valid),
+                                errorString: submitFailed || field.meta.touched
+                                  ? field.meta.error->Option.getOr("")
+                                  : "",
+                              }
+                              onChange={ev =>
+                                field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                              onBlur={_ev => field.input.onBlur()}
+                              type_="text"
+                              name="city"
+                              inputRef=cityRef
+                              placeholder=localeString.cityLabel
+                              className={isSpacedInnerLayout ? "" : "!border-r-0"}
+                            />
+                          }}
+                        />
+                        <RenderIf condition={stateNames->Array.length > 0}>
+                          <RffField
+                            name={getRequiredFieldPath(AddressState)}
+                            validationRule={DynamicFieldsUtils.getValidationRuleForFieldType(
+                              AddressState,
+                            )}
+                            render={(field: ReactFinalForm.Field.fieldProps) => {
+                              let val = field.input.value->Option.getOr("")
+                              <PaymentDropDownField
+                                fieldName=localeString.stateLabel
+                                value={
+                                  value: val,
+                                  isValid: Some(field.meta.valid),
+                                  errorString: submitFailed || field.meta.touched
+                                    ? field.meta.error->Option.getOr("")
+                                    : "",
+                                }
+                                setValue={setter => {
+                                  let newVal = setter({
+                                    value: val,
+                                    isValid: Some(field.meta.valid),
+                                    errorString: "",
+                                  })
+                                  field.input.onChange(newVal.value)
+                                }}
+                                options={stateNames}
+                              />
+                            }}
+                          />
+                        </RenderIf>
+                      </div>
+                    | CountryAndPincode(countryArr) =>
+                      let updatedCountryArray =
+                        countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
+                      <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""}`}>
+                        <RffField
+                          name={getRequiredFieldPath(AddressCountry(countryArr))}
+                          render={(field: ReactFinalForm.Field.fieldProps) => {
+                            // let val = field.input.value->Option.getOr(country)
+                            <DropdownField
+                              appearance=config.appearance
+                              fieldName=localeString.countryLabel
+                              value=country
+                              setValue={setter => {
+                                let newVal = setter(field.input.value->Option.getOr(country))
+                                setCountry(_ => newVal)
+                                field.input.onChange(newVal)
+                              }}
+                              disabled=false
+                              options=updatedCountryArray
+                              className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
+                            />
+                          }}
+                        />
+                        <RffField
+                          name={getRequiredFieldPath(AddressPincode)}
+                          validationRule={DynamicFieldsUtils.getValidationRuleForFieldType(
+                            AddressPincode,
+                            ~country,
+                          )}
+                          render={(field: ReactFinalForm.Field.fieldProps) => {
+                            let val = field.input.value->Option.getOr("")
+                            <PaymentField
+                              fieldName=localeString.postalCodeLabel
+                              setValue={_ => ()}
+                              value={
+                                value: val,
+                                isValid: Some(field.meta.valid),
+                                errorString: submitFailed || field.meta.touched
+                                  ? field.meta.error->Option.getOr("")
+                                  : "",
+                              }
+                              onChange={ev =>
+                                field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                              onBlur={_ev => field.input.onBlur()}
+                              name="postal"
+                              inputRef=postalRef
+                              placeholder=localeString.postalCodeLabel
+                              className={isSpacedInnerLayout ? "" : "!border-t-0"}
+                            />
+                          }}
+                        />
+                      </div>
+                    | AddressLine1 =>
+                      <RffField
+                        name={getRequiredFieldPath(AddressLine1)}
+                        validationRule={DynamicFieldsUtils.getValidationRuleForFieldType(
+                          AddressLine1,
+                        )}
+                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                          let val = field.input.value->Option.getOr("")
+                          <PaymentField
+                            fieldName=localeString.line1Label
+                            setValue={_ => ()}
+                            value={
+                              value: val,
+                              isValid: Some(field.meta.valid),
+                              errorString: submitFailed || field.meta.touched
+                                ? field.meta.error->Option.getOr("")
+                                : "",
+                            }
+                            onChange={ev =>
+                              field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                            onBlur={_ev => field.input.onBlur()}
+                            type_="text"
+                            name="line1"
+                            inputRef=line1Ref
+                            placeholder=localeString.line1Placeholder
+                            className={isSpacedInnerLayout ? "" : "!border-b-0"}
+                          />
+                        }}
+                      />
+                    | AddressLine2 =>
+                      <RffField
+                        name={getRequiredFieldPath(AddressLine2)}
+                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                          let val = field.input.value->Option.getOr("")
+                          <PaymentField
+                            fieldName=localeString.line2Label
+                            setValue={_ => ()}
+                            value={
+                              value: val,
+                              isValid: Some(field.meta.valid),
+                              errorString: submitFailed || field.meta.touched
+                                ? field.meta.error->Option.getOr("")
+                                : "",
+                            }
+                            onChange={ev =>
+                              field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                            onBlur={_ev => field.input.onBlur()}
+                            type_="text"
+                            name="line2"
+                            inputRef=line2Ref
+                            placeholder=localeString.line2Placeholder
+                          />
+                        }}
+                      />
+                    | AddressCity =>
+                      <RffField
+                        name={getRequiredFieldPath(AddressCity)}
+                        validationRule={DynamicFieldsUtils.getValidationRuleForFieldType(
+                          AddressCity,
+                        )}
+                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                          let val = field.input.value->Option.getOr("")
+                          <PaymentField
+                            fieldName=localeString.cityLabel
+                            setValue={_ => ()}
+                            value={
+                              value: val,
+                              isValid: Some(field.meta.valid),
+                              errorString: submitFailed || field.meta.touched
+                                ? field.meta.error->Option.getOr("")
+                                : "",
+                            }
+                            onChange={ev =>
+                              field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                            onBlur={_ev => field.input.onBlur()}
+                            type_="text"
+                            name="city"
+                            inputRef=cityRef
+                            placeholder=localeString.cityLabel
+                          />
+                        }}
+                      />
+                    | AddressState =>
+                      <RenderIf condition={stateNames->Array.length > 0}>
+                        <RffField
+                          name={getRequiredFieldPath(AddressState)}
+                          validationRule={DynamicFieldsUtils.getValidationRuleForFieldType(
+                            AddressState,
+                          )}
+                          render={(field: ReactFinalForm.Field.fieldProps) => {
+                            let val = field.input.value->Option.getOr("")
+                            <PaymentDropDownField
+                              fieldName=localeString.stateLabel
+                              value={
+                                value: val,
+                                isValid: Some(field.meta.valid),
+                                errorString: submitFailed || field.meta.touched
+                                  ? field.meta.error->Option.getOr("")
+                                  : "",
+                              }
+                              setValue={setter => {
+                                let newVal = setter({
+                                  value: val,
+                                  isValid: Some(field.meta.valid),
+                                  errorString: "",
+                                })
+                                field.input.onChange(newVal.value)
+                              }}
+                              options={stateNames}
+                            />
+                          }}
+                        />
+                      </RenderIf>
+                    | AddressPincode =>
+                      <RffField
+                        name={getRequiredFieldPath(AddressPincode)}
+                        validationRule={DynamicFieldsUtils.getValidationRuleForFieldType(
+                          AddressPincode,
+                          ~country,
+                        )}
+                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                          let val = field.input.value->Option.getOr("")
+                          <PaymentField
+                            fieldName=localeString.postalCodeLabel
+                            setValue={_ => ()}
+                            value={
+                              value: val,
+                              isValid: Some(field.meta.valid),
+                              errorString: submitFailed || field.meta.touched
+                                ? field.meta.error->Option.getOr("")
+                                : "",
+                            }
+                            onChange={ev => {
+                              let newVal = ReactEvent.Form.target(ev)["value"]
+                              setPostalCode(prev => {
+                                ...prev,
+                                value: newVal,
+                                isValid: Some(newVal !== ""),
+                              })
+                              field.input.onChange(newVal)
+                            }}
+                            onBlur={_ev => field.input.onBlur()}
+                            name="postal"
+                            inputRef=postalRef
+                            placeholder=localeString.postalCodeLabel
+                          />
+                        }}
+                      />
+                    | BlikCode => <BlikCodePaymentInput />
+                    | Country =>
+                      let updatedCountryNames =
+                        countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
+                      <RffField
+                        name={getRequiredFieldPath(Country)}
+                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                          // let val = field.input.value->Option.getOr(country)
+                          <DropdownField
+                            appearance=config.appearance
+                            fieldName=localeString.countryLabel
+                            value=country
+                            setValue={setter => {
+                              let newVal = setter(field.input.value->Option.getOr(country))
+                              setCountry(_ => newVal)
+                              field.input.onChange(newVal)
+                            }}
+                            disabled=false
+                            options=updatedCountryNames
+                          />
+                        }}
+                      />
+                    | AddressCountry(countryArr) =>
+                      let updatedCountryArr =
+                        countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
+                      <RffField
+                        name={getRequiredFieldPath(AddressCountry(countryArr))}
+                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                          // let val = field.input.value->Option.getOr(country)
+                          <DropdownField
+                            appearance=config.appearance
+                            fieldName=localeString.countryLabel
+                            value=country
+                            setValue={setter => {
+                              let newVal = setter(field.input.value->Option.getOr(country))
+                              setCountry(_ => newVal)
+                              field.input.onChange(newVal)
+                            }}
+                            disabled=false
+                            options=updatedCountryArr
+                          />
+                        }}
+                      />
+                    | BankList(bankArr) =>
+                      let updatedBankNames =
+                        Bank.getBanks(paymentMethodType)
+                        ->getBankNames(bankArr)
+                        ->DropdownField.updateArrayOfStringToOptionsTypeArray
+                      <RffField
+                        name={getRequiredFieldPath(BankList(bankArr))}
+                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                          let val = field.input.value->Option.getOr(selectedBank)
+                          <DropdownField
+                            appearance=config.appearance
+                            fieldName=localeString.bankLabel
+                            value=val
+                            setValue={setter => {
+                              let newVal = setter(val)
+                              setSelectedBank(_ => newVal)
+                              field.input.onChange(newVal)
+                            }}
+                            disabled=false
+                            options=updatedBankNames
+                          />
+                        }}
+                      />
+                    | Bank =>
+                      let updatedBankNames =
+                        bankNames->DropdownField.updateArrayOfStringToOptionsTypeArray
+                      <RffField
+                        name={getRequiredFieldPath(Bank)}
+                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                          let val = field.input.value->Option.getOr(selectedBank)
+                          <DropdownField
+                            appearance=config.appearance
+                            fieldName=localeString.bankLabel
+                            value=val
+                            setValue={setter => {
+                              let newVal = setter(val)
+                              setSelectedBank(_ => newVal)
+                              field.input.onChange(newVal)
+                            }}
+                            disabled=false
+                            options=updatedBankNames
+                          />
+                        }}
+                      />
+                    | SpecialField(element) => element
+                    | InfoElement
+                    | PixKey
+                    | PixCPF
+                    | PixCNPJ
+                    | DocumentType(_)
+                    | DocumentNumber
+                    | CardNumber
+                    | CardExpiryMonth
+                    | CardExpiryYear
+                    | CardExpiryMonthAndYear
+                    | CardCvc
+                    | CardExpiryAndCvc
+                    | Currency(_)
+                    | FullName
+                    | GiftCardNumber
+                    | GiftCardPin
+                    | ShippingName // Shipping Details are currently supported by only one click widgets
+                    | ShippingAddressLine1
+                    | ShippingAddressLine2
+                    | ShippingAddressCity
+                    | ShippingAddressPincode
+                    | ShippingAddressState
+                    | ShippingAddressCountry(_)
+                    | CryptoCurrencyNetworks
+                    | DateOfBirth
+                    | PhoneNumber
+                    | PhoneCountryCode
+                    | VpaId
+                    | LanguagePreference(_)
+                    | BankAccountNumber
+                    | IBAN
+                    | SourceBankAccountId
+                    | None => React.null
                     }}
-                    onChange=onPostalChange
-                    name="postal"
-                    inputRef=postalRef
-                    placeholder=localeString.postalCodeLabel
-                  />
-                | BlikCode => <BlikCodePaymentInput />
-                | Country =>
-                  let updatedCountryNames =
-                    countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
-                  <DropdownField
-                    appearance=config.appearance
-                    fieldName=localeString.countryLabel
-                    value=country
-                    setValue=setCountry
-                    disabled=false
-                    options=updatedCountryNames
-                  />
-                | AddressCountry(countryArr) =>
-                  let updatedCountryArr =
-                    countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
-                  <DropdownField
-                    appearance=config.appearance
-                    fieldName=localeString.countryLabel
-                    value=country
-                    setValue=setCountry
-                    disabled=false
-                    options=updatedCountryArr
-                  />
-                | BankList(bankArr) =>
-                  let updatedBankNames =
-                    Bank.getBanks(paymentMethodType)
-                    ->getBankNames(bankArr)
-                    ->DropdownField.updateArrayOfStringToOptionsTypeArray
-                  <DropdownField
-                    appearance=config.appearance
-                    fieldName=localeString.bankLabel
-                    value=selectedBank
-                    setValue=setSelectedBank
-                    disabled=false
-                    options=updatedBankNames
-                  />
-                | Bank =>
-                  let updatedBankNames =
-                    bankNames->DropdownField.updateArrayOfStringToOptionsTypeArray
-                  <DropdownField
-                    appearance=config.appearance
-                    fieldName=localeString.bankLabel
-                    value=selectedBank
-                    setValue=setSelectedBank
-                    disabled=false
-                    options=updatedBankNames
-                  />
-                | SpecialField(element) => element
-                | InfoElement
-                | PixKey
-                | PixCPF
-                | PixCNPJ
-                | DocumentType(_)
-                | DocumentNumber
-                | CardNumber
-                | CardExpiryMonth
-                | CardExpiryYear
-                | CardExpiryMonthAndYear
-                | CardCvc
-                | CardExpiryAndCvc
-                | Currency(_)
-                | FullName
-                | GiftCardNumber
-                | GiftCardPin
-                | ShippingName // Shipping Details are currently supported by only one click widgets
-                | ShippingAddressLine1
-                | ShippingAddressLine2
-                | ShippingAddressCity
-                | ShippingAddressPincode
-                | ShippingAddressState
-                | ShippingAddressCountry(_)
-                | CryptoCurrencyNetworks
-                | DateOfBirth
-                | PhoneNumber
-                | PhoneCountryCode
-                | VpaId
-                | LanguagePreference(_)
-                | BankAccountNumber
-                | IBAN
-                | SourceBankAccountId
-                | None => React.null
-                }}
-              </DynamicFieldsToRenderWrapper>
-            })
-            ->React.array}
-          </div>
-        </div>
-      </RenderIf>
-      <Surcharge paymentMethod paymentMethodType />
-      <RenderIf condition={isRenderInfoElement}>
-        {<>
-          {if fieldsArr->Array.length > 1 {
-            bottomElement
-          } else {
-            <Block bottomElement />
-          }}
-        </>}
-      </RenderIf>
-    </>}
+                  </DynamicFieldsToRenderWrapper>
+                })
+                ->React.array}
+              </div>
+            </div>
+          </RenderIf>
+          <Surcharge paymentMethod paymentMethodType />
+          <RenderIf condition={isRenderInfoElement}>
+            {<>
+              {if fieldsArr->Array.length > 1 {
+                bottomElement
+              } else {
+                <Block bottomElement />
+              }}
+            </>}
+          </RenderIf>
+        </>
+      }}
+    />
   </RenderIf>
 }
