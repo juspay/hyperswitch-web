@@ -456,7 +456,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("sdkAuthorization") {
           let newAuth = dict->getString("sdkAuthorization", "")
-          messageParentWindow([("sdkAuthorization", newAuth->JSON.Encode.string)])
+
+          // Only forward to parent when targetOrigin is explicitly set (not wildcard)
+          if keys.parentURL !== "*" && keys.parentURL !== "" {
+            messageParentWindow([("sdkAuthorization", newAuth->JSON.Encode.string)])
+          }
         }
         if dict->getDictIsSome("isReadyToPay") {
           setIsGooglePayReady(_ =>

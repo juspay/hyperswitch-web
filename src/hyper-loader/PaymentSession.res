@@ -50,6 +50,15 @@ let make = (
     // Clear any prior pending timeout (idempotent)
     clearUpdateIntentTimeout()
 
+    // Re-entrancy guard: if a previous initUpdateIntent promise is still pending,
+    // resolve it with a cancellation error before replacing
+    resolvePendingInit(
+      handleFailureResponse(
+        ~message="initUpdateIntent was called again before completeUpdateIntent finished. The previous call has been cancelled.",
+        ~errorType="update_intent_cancelled",
+      ),
+    )
+
     // Guard: no iframes mounted yet
     if iframeRef.contents->Array.length === 0 {
       Promise.resolve(
@@ -144,9 +153,7 @@ let make = (
 
         // Post refreshed data — LoaderController.res already handles these keys
         iframeRef.contents->Array.forEach(ifR => {
-          ifR->Window.iframePostMessage(
-            [("paymentMethodList", paymentMethods)]->Dict.fromArray,
-          )
+          ifR->Window.iframePostMessage([("paymentMethodList", paymentMethods)]->Dict.fromArray)
           ifR->Window.iframePostMessage(
             [("customerPaymentMethods", customerPaymentMethods)]->Dict.fromArray,
           )
@@ -164,7 +171,19 @@ let make = (
         let errorMsg = Exn.message(e)->Option.getOr("Something went wrong!")
         // Always unblock, even on failure — don't leave SDK frozen
         resetUpdateIntentState()
-        let errorResult = handleFailureResponse(~message=errorMsg, ~errorType="update_intent_failed")
+        let errorResult = handleFailureResponse(
+          ~message=errorMsg,
+          ~errorType="update_intent_failed",
+        )
+        resolvePendingInit(errorResult)
+        errorResult
+      | _ =>
+        // Catch-all for non-Error exceptions — ensure SDK never stays frozen
+        resetUpdateIntentState()
+        let errorResult = handleFailureResponse(
+          ~message="An unexpected error occurred during completeUpdateIntent.",
+          ~errorType="update_intent_failed",
+        )
         resolvePendingInit(errorResult)
         errorResult
       }

@@ -32,9 +32,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
-  let isUpdateIntentInProgress = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.isUpdateIntentInProgress,
-  )
+  let isUpdateIntentInProgress = Recoil.useRecoilValueFromAtom(RecoilAtoms.isUpdateIntentInProgress)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(RecoilAtoms.selectedOptionAtom)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
     RecoilAtoms.showPaymentMethodsScreen,
