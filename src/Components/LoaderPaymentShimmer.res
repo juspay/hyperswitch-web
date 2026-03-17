@@ -2,6 +2,7 @@
 let make = () => {
   open RecoilAtoms
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
-  UtilityHooks.useHandlePostMessages(~complete=false, ~empty=false, ~paymentType=selectedOption)
+  SubscriptionEventHooks.useFormStatus(~empty=true, ~complete=false)
+  UtilityHooks.useHandlePostMessages(~complete=false, ~empty=true, ~paymentType=selectedOption)
   <PaymentShimmer />
 }

@@ -26,11 +26,11 @@ let make = () => {
   let isVerifyPMAuthConnectorConfigured =
     displaySavedPaymentMethods && pmAuthMapper->Dict.get(paymentMethodType)->Option.isSome
 
-  UtilityHooks.useHandlePostMessages(
-    ~complete=areRequiredFieldsValid,
-    ~empty=areRequiredFieldsEmpty,
-    ~paymentType="sepa_bank_debit",
-  )
+  let empty = areRequiredFieldsEmpty
+  let complete = areRequiredFieldsValid
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
+
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="sepa_bank_debit")
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse

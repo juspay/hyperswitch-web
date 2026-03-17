@@ -122,6 +122,14 @@ let make = (
     ~expiryProps,
   )
 
+  SubscriptionEventHooks.useBillingAddress()
+  SubscriptionEventHooks.usePaymentMethodStatus(
+    ~paymentMethodName=selectedPaymentOption.paymentMethodName,
+    ~paymentMethods=paymentMethodListValue.payment_methods,
+    ~isSavedPaymentMethod=false,
+    ~isOneClickWallet=false,
+  )
+
   let displayIcon = ele => {
     <span className={`scale-90 animate-slowShow ${toggleIconElement ? "hidden" : ""}`}> ele </span>
   }
