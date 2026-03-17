@@ -45,29 +45,6 @@ let getSubscriptionEvents = (dict, key) => {
   }
 }
 
-let shouldEmitEvent = (subscriptionEvents: option<array<events>>, event: events) => {
-  switch subscriptionEvents {
-  | None => true // No subscription list provided, emit all events (backward compatible)
-  | Some(events) => events->Array.includes(event) // Only emit if event is in the subscription list
-  }
-}
-
-type cardInfo = {
-  bin: string,
-  last4: string,
-  brand: string,
-  expiryMonth: string,
-  expiryYear: string,
-  formattedExpiry: string,
-  isCardNumberComplete: bool,
-  isCvcComplete: bool,
-  isExpiryComplete: bool,
-  isCardNumberValid: bool,
-  isExpiryValid: bool,
-  isCvcValid: bool,
-  isSavedCard: bool,
-}
-
 type paymentMethodStatus = {
   paymentMethod: string,
   paymentMethodType: string,
@@ -80,52 +57,21 @@ type billingAddress = {
   state: string,
   postalCode: string,
 }
-
-let createFormStatusPayload = (~status) => {
-  let formStatusEvent = PaymentEventData.buildFormStatusEvent(~status)
-  let payload = formStatusEvent->PaymentEventData.formStatusEventToJson
-
+let createCardInfoPayload = (cardInfo: PaymentEventData.cardInfo) => {
+  let payload = PaymentEventData.cardInfoToJson(cardInfo)
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", "FORM_STATUS"->JSON.Encode.string),
+    ("eventName", PaymentMethodInfoCard->PaymentEventTypes.eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
 
-let createCardInfoPayload = (
-  ~bin,
-  ~last4,
-  ~brand,
-  ~expiryMonth,
-  ~expiryYear,
-  ~formattedExpiry,
-  ~isCardNumberComplete,
-  ~isCvcComplete,
-  ~isExpiryComplete,
-  ~isCardNumberValid,
-  ~isExpiryValid,
-  ~isCvcValid,
-  ~isSavedCard,
-) => {
-  let payloadDict = Dict.make()
-  payloadDict->Dict.set("bin", bin->JSON.Encode.string)
-  payloadDict->Dict.set("last4", last4->JSON.Encode.string)
-  payloadDict->Dict.set("brand", brand->JSON.Encode.string)
-  payloadDict->Dict.set("expiryMonth", expiryMonth->JSON.Encode.string)
-  payloadDict->Dict.set("expiryYear", expiryYear->JSON.Encode.string)
-  payloadDict->Dict.set("formattedExpiry", formattedExpiry->JSON.Encode.string)
-  payloadDict->Dict.set("isCardNumberComplete", isCardNumberComplete->JSON.Encode.bool)
-  payloadDict->Dict.set("isCvcComplete", isCvcComplete->JSON.Encode.bool)
-  payloadDict->Dict.set("isExpiryComplete", isExpiryComplete->JSON.Encode.bool)
-  payloadDict->Dict.set("isCardNumberValid", isCardNumberValid->JSON.Encode.bool)
-  payloadDict->Dict.set("isExpiryValid", isExpiryValid->JSON.Encode.bool)
-  payloadDict->Dict.set("isCvcValid", isCvcValid->JSON.Encode.bool)
-  payloadDict->Dict.set("isSavedCard", isSavedCard->JSON.Encode.bool)
-
+let createFormStatusPayload = (~status) => {
+  let payload = PaymentEventData.formStatusEventToJson(~status)
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", "CARD_INFO"->JSON.Encode.string),
-    ("payload", payloadDict->JSON.Encode.object),
+    ("eventName", FormStatus->eventToString->JSON.Encode.string),
+    ("payload", payload),
   ]
 }
 
@@ -135,32 +81,26 @@ let createPaymentMethodStatusPayload = (
   ~isSavedPaymentMethod,
   ~isOneClickWallet=false,
 ) => {
-  let paymentMethodStatusEvent = PaymentEventData.buildPaymentMethodStatusEvent(
+  let payload = PaymentEventData.paymentMethodStatusEventToJson(
     ~paymentMethod,
     ~paymentMethodType,
     ~isSavedPaymentMethod,
     ~isOneClickWallet,
   )
-  let payload = paymentMethodStatusEvent->PaymentEventData.paymentMethodStatusEventToJson
 
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", "PAYMENT_METHOD_STATUS"->JSON.Encode.string),
+    ("eventName", PaymentMethodStatus->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
 
 let createBillingAddressPayload = (~country, ~state, ~postalCode) => {
-  let paymentMethodInfoAddress = PaymentEventData.buildPaymentMethodInfoAddress(
-    ~country,
-    ~state,
-    ~postalCode,
-  )
-  let payload = paymentMethodInfoAddress->PaymentEventData.paymentMethodInfoAddressToJson
+  let payload = PaymentEventData.paymentMethodInfoAddressToJson(~country, ~state, ~postalCode)
 
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", "PAYMENT_METHOD_INFO_BILLING_ADDRESS"->JSON.Encode.string),
+    ("eventName", PaymentMethodInfoBillingAddress->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }

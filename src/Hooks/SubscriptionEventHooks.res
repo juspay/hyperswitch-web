@@ -1,43 +1,16 @@
 open SubscriptionEventTypes
+open PaymentEventData
+open PaymentEventTypes
 
-let emitCardInfo = (
-  ~subscriptionEvents,
-  ~bin,
-  ~last4,
-  ~brand,
-  ~expiryMonth,
-  ~expiryYear,
-  ~formattedExpiry,
-  ~isCardNumberComplete,
-  ~isCvcComplete,
-  ~isExpiryComplete,
-  ~isCardNumberValid,
-  ~isExpiryValid,
-  ~isCvcValid,
-  ~isSavedCard,
-) => {
+let emitCardInfo = (~subscriptionEvents, ~cardInfo: cardInfo) => {
   if (
     subscriptionEvents->Option.isNone ||
-      PaymentEventData.shouldEmitEvent(
+      shouldEmitEvent(
         ~subscribedEvents=subscriptionEvents->Option.getOr([]),
-        ~eventType=PaymentEventTypes.PaymentMethodInfoCard,
+        ~eventType=PaymentMethodInfoCard,
       )
   ) {
-    let payload = createCardInfoPayload(
-      ~bin,
-      ~last4,
-      ~brand,
-      ~expiryMonth,
-      ~expiryYear,
-      ~formattedExpiry,
-      ~isCardNumberComplete,
-      ~isCvcComplete,
-      ~isExpiryComplete,
-      ~isCardNumberValid,
-      ~isExpiryValid,
-      ~isCvcValid,
-      ~isSavedCard,
-    )
+    let payload = createCardInfoPayload(cardInfo)
     Utils.messageParentWindow(payload)
   }
 }
@@ -51,9 +24,9 @@ let emitPaymentMethodStatus = (
 ) => {
   if (
     subscriptionEvents->Option.isNone ||
-      PaymentEventData.shouldEmitEvent(
+      shouldEmitEvent(
         ~subscribedEvents=subscriptionEvents->Option.getOr([]),
-        ~eventType=PaymentEventTypes.PaymentMethodStatus,
+        ~eventType=PaymentMethodStatus,
       )
   ) {
     let payload = createPaymentMethodStatusPayload(
@@ -69,9 +42,9 @@ let emitPaymentMethodStatus = (
 let emitBillingAddress = (~subscriptionEvents, ~country, ~state, ~postalCode) => {
   if (
     subscriptionEvents->Option.isNone ||
-      PaymentEventData.shouldEmitEvent(
+      shouldEmitEvent(
         ~subscribedEvents=subscriptionEvents->Option.getOr([]),
-        ~eventType=PaymentEventTypes.PaymentMethodInfoBillingAddress,
+        ~eventType=PaymentMethodInfoBillingAddress,
       )
   ) {
     let payload = createBillingAddressPayload(~country, ~state, ~postalCode)
@@ -85,12 +58,12 @@ let useFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=fals
 
   React.useEffect(() => {
     if !isOneClickWallet {
-      let formStatusValue = PaymentEventData.computeFormStatus(~isComplete=complete, ~isEmpty=empty)
+      let formStatusValue = computeFormStatus(~isComplete=complete, ~isEmpty=empty)
       if (
         subscriptionEvents->Option.isNone ||
-          PaymentEventData.shouldEmitEvent(
+          shouldEmitEvent(
             ~subscribedEvents=subscriptionEvents->Option.getOr([]),
-            ~eventType=PaymentEventTypes.FormStatus,
+            ~eventType=FormStatus,
           )
       ) {
         let payload = SubscriptionEventTypes.createFormStatusPayload(~status=formStatusValue)

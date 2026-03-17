@@ -167,29 +167,18 @@ let make = (
   React.useEffect(() => {
     if isCardPaymentMethod && !isUnknownPaymentMethod {
       let card = customerMethod.card
-      SubscriptionEventHooks.emitCardInfo(
-        ~subscriptionEvents=options.subscriptionEvents,
+      let cardInfo = PaymentEventData.buildCardInfoFromSavedCard(
         ~bin=card.cardBin,
         ~last4=card.last4Digits,
         ~brand=card.scheme->Option.getOr(""),
         ~expiryMonth=card.expiryMonth,
         ~expiryYear=card.expiryYear,
-        ~formattedExpiry=`${card.expiryMonth}${String.substring(
-            ~start=2,
-            ~end=4,
-            card.expiryYear,
-          )}`->CardValidations.formatCardExpiryNumber,
-        ~isCardNumberComplete=true,
         ~isCvcComplete=complete,
-        ~isExpiryComplete=true,
-        ~isCardNumberValid=true,
-        ~isExpiryValid=true,
-        ~isCvcValid=isCVCValid->Option.getOr(false),
-        ~isSavedCard=true,
       )
+      SubscriptionEventHooks.emitCardInfo(~subscriptionEvents=options.subscriptionEvents, ~cardInfo)
     }
     None
-  }, (customerMethod, isCardPaymentMethod, isUnknownPaymentMethod, complete, isCVCValid))
+  }, (customerMethod, isCardPaymentMethod, isUnknownPaymentMethod, complete))
 
   GooglePayHelpers.useHandleGooglePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
 

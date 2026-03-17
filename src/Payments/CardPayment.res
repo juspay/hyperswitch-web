@@ -141,29 +141,16 @@ let make = (
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="card")
 
   React.useEffect(() => {
-    let (month, year) = CardUtils.getExpiryDates(cardExpiry)
-    let isCardNumberComplete = cardNumber->String.length > 0 && isCardValid->Option.getOr(false)
-    let isExpiryComplete = cardExpiry->String.length > 0 && isExpiryValid->Option.getOr(false)
-    let isCvcComplete = cvcNumber->String.length > 0 && isCVCValid->Option.getOr(false)
-
-    SubscriptionEventHooks.emitCardInfo(
-      ~subscriptionEvents=options.subscriptionEvents,
-      ~bin=cardNumber->CardUtils.getCardBin,
-      ~last4=cardNumber->CardUtils.getCardLast4,
+    let cardInfo = PaymentEventData.buildCardInfo(
+      ~cardNumber,
+      ~expiry=cardExpiry,
+      ~cvc=cvcNumber,
       ~brand=cardBrand,
-      ~expiryMonth=month,
-      ~expiryYear=isExpiryComplete ? year : "", // Return empty year if expiry incomplete since getExpiryDates adds 20xx prefix by default
-      ~formattedExpiry=cardExpiry,
-      ~isCardNumberComplete,
-      ~isCvcComplete,
-      ~isExpiryComplete,
-      ~isCardNumberValid=isCardValid->Option.getOr(false),
-      ~isExpiryValid=isExpiryValid->Option.getOr(false),
-      ~isCvcValid=isCVCValid->Option.getOr(false),
-      ~isSavedCard=false,
     )
+
+    SubscriptionEventHooks.emitCardInfo(~subscriptionEvents=options.subscriptionEvents, ~cardInfo)
     None
-  }, (cardNumber, cardExpiry, cvcNumber, isCardValid, isExpiryValid, isCVCValid, cardBrand))
+  }, (cardNumber, cardExpiry, cvcNumber, cardBrand))
 
   React.useEffect(() => {
     setComplete(_ => complete)
