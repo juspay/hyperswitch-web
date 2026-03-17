@@ -270,7 +270,7 @@ let fetchPaymentManagementList = (
   ~sdkAuthorization,
 ) => {
   open Promise
-  let headers = [("Authorization", `${sdkAuthorization}`)]
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/list-payment-methods`
 
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
@@ -301,7 +301,7 @@ let deletePaymentMethodV2 = (
 ) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Authorization", `${sdkAuthorization}`)]
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
   fetchApi(
     uri,
@@ -338,7 +338,7 @@ let updatePaymentMethod = (
 ) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Authorization", `${sdkAuthorization}`), ("Content-Type", "application/json")]
+  let headers = [("Authorization", sdkAuthorization), ("Content-Type", "application/json")]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
   fetchApi(

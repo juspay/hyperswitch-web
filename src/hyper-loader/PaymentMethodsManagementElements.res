@@ -14,7 +14,6 @@ let make = (
   ~analyticsMetadata,
   ~customBackendUrl,
 ) => {
-  Console.log2("PM SESSION ID=>", pmSessionId)
   let hyperComponentName = PaymentMethodsManagementElements
   try {
     let iframeRef = []
