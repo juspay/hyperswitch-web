@@ -1295,7 +1295,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
       let path = switch GlobalVars.sdkVersion {
       | V1 => `payments/${paymentIntentID}/confirm`
       | V2 =>
-        let baseUrl = `v2/payments/${keys.paymentId}/confirm-intent`
+        let baseUrl = `v2/payments/${keys.paymentId}/confirm-intent/external-vault-proxy`
         isExternalVaultFlow ? `${baseUrl}/external-vault-proxy` : baseUrl
       }
       let uri = `${endpoint}/${path}`

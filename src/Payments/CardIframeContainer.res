@@ -3,7 +3,22 @@ let make = () => {
   open Utils
   open RecoilAtoms
   open RecoilAtomsV2
+  let newHyperswitchVaultBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {
+    let cardBody = [
+      ("card_number", cardNumber->JSON.Encode.string),
+      ("card_exp_month", month->JSON.Encode.string),
+      ("card_exp_year", year->JSON.Encode.string),
+      ("card_cvc", cvcNumber->JSON.Encode.string),
+    ]
 
+    let paymentMethodData = [("vault_data_card", cardBody->Utils.getJsonFromArrayOfJson)]
+
+    [
+      ("payment_method_type", "card"->JSON.Encode.string),
+      ("payment_method_subtype", "debit"->JSON.Encode.string),
+      ("payment_method_data", paymentMethodData->Utils.getJsonFromArrayOfJson),
+    ]
+  }
   let config = Recoil.useRecoilValueFromAtom(configAtom)
   let setKeys = Recoil.useSetRecoilState(keys)
   let session = Recoil.useRecoilValueFromAtom(sessions)
@@ -65,15 +80,15 @@ let make = () => {
 
         let metaData =
           [
-            ("config", config.config->Identity.anyTypeToJson),
-            ("pmSessionId", pmSessionId->JSON.Encode.string),
+          ("config", config.config->Identity.anyTypeToJson),
+          ("pmSessionId", pmSessionId->JSON.Encode.string),
             ("pmClientSecret", pmClientSecret->JSON.Encode.string),
-            ("vaultPublishableKey", vaultPublishableKey->JSON.Encode.string),
-            ("vaultProfileId", vaultProfileId->JSON.Encode.string),
-            ("paymentList", paymentMethodListValueV2->Identity.anyTypeToJson),
-            ("endpoint", ApiEndpoint.getApiEndPoint()->JSON.Encode.string),
-            ("customPodUri", customPodUri->JSON.Encode.string),
-          ]->getJsonFromArrayOfJson
+          ("vaultPublishableKey", vaultPublishableKey->JSON.Encode.string),
+          ("vaultProfileId", vaultProfileId->JSON.Encode.string),
+          ("paymentList", paymentMethodListValueV2->Identity.anyTypeToJson),
+          ("endpoint", ApiEndpoint.getApiEndPoint()->JSON.Encode.string),
+          ("customPodUri", customPodUri->JSON.Encode.string),
+        ]->getJsonFromArrayOfJson
         let innerIframe = Window.querySelector(`#orca-inneriframe`)
         innerIframe->Window.iframePostMessage(
           [("metadata", metaData), ("innerIframeMounted", true->JSON.Encode.bool)]->Dict.fromArray,
@@ -98,8 +113,13 @@ let make = () => {
         let dict = json->getDictFromJson
         if dict->Dict.get("paymentToken")->Option.isSome {
           let token = dict->getString("paymentToken", "")
-          let cardBody = PaymentManagementBody.hyperswitchVaultBody(token)
-
+          let cardBody = newHyperswitchVaultBody(
+            ~cardNumber=token,
+            ~month=token,
+            ~year=token,
+            ~cvcNumber=token,
+          )
+          Console.log3("the token and body==>", token, body)
           intent(
             ~bodyArr=cardBody,
             ~confirmParam=confirm.confirmParams,

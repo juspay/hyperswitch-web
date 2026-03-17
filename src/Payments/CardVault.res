@@ -4,7 +4,14 @@ let make = () => {
   open ResizeObserver
   open RecoilAtoms
   open RecoilAtomsV2
-
+  let getTokenFromResponse = dict => {
+    Console.log2("the Dict==>", dict)
+    let obj = dict->Utils.getDictFromDict("payment_method_token")
+    Console.log2("The obj =>", obj)
+    let token = obj->Utils.getString("data", "")
+    Console.log2("Token==>", token)
+    token
+  }
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (customPodUri, setCustomPodUri) = Recoil.useRecoilState(customPodUri)
@@ -165,17 +172,24 @@ let make = () => {
       )
 
       let dict = res->getDictFromJson
-      let sessionResponse = dict->getStrArray("associated_payment_methods")
-      let paymentToken = sessionResponse->Array.get(0)
-      if paymentToken->Option.isSome {
-        let msg =
-          [("paymentToken", paymentToken->Option.getOr("")->JSON.Encode.string)]->Dict.fromArray
+      let sessionResponse = dict->getArray("associated_payment_methods")
 
-        ev.source->Window.sendPostMessage(msg)
-      } else {
-        let msg = [("errorMsg", "Payment token not found"->JSON.Encode.string)]->Dict.fromArray
-        ev.source->Window.sendPostMessage(msg)
-        Console.error("Payment token not found ")
+      let paymentTokenStart = sessionResponse->Array.get(0)
+      switch paymentTokenStart {
+      | Some(paymentTokenStart) => {
+          Console.log2("The response==>", paymentTokenStart)
+          let paymentToken = getTokenFromResponse(paymentTokenStart->Utils.getDictFromJson)
+          if paymentToken != "" {
+            let msg = [("paymentToken", paymentToken->JSON.Encode.string)]->Dict.fromArray
+
+            ev.source->Window.sendPostMessage(msg)
+          } else {
+            let msg = [("errorMsg", "Payment token not found"->JSON.Encode.string)]->Dict.fromArray
+            ev.source->Window.sendPostMessage(msg)
+            Console.error("Payment token not found ")
+          }
+        }
+      | None => ()
       }
     } catch {
     | Exn.Error(err) =>
