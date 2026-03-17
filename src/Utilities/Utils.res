@@ -782,7 +782,11 @@ let handlePostMessageEvents = (
   ~subscriptionEvents,
 ) => {
   if (
-    SubscriptionEventTypes.shouldEmitEvent(subscriptionEvents, SubscriptionEventTypes.UNKNOWN_EVENT)
+    subscriptionEvents->Option.isNone ||
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscriptionEvents->Option.getOr([]),
+        ~eventType=PaymentEventTypes.UnknownEvent,
+      )
   ) {
     if complete && paymentType !== "" {
       let value = `Payment Data Filled: ${savedMethod

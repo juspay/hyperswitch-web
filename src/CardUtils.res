@@ -745,7 +745,11 @@ let getCardBrandInvalidError = (~cardBrand, ~localeString: LocaleStringTypes.loc
 
 let emitExpiryDate = (formattedExpiry, ~subscriptionEvents) => {
   if (
-    SubscriptionEventTypes.shouldEmitEvent(subscriptionEvents, SubscriptionEventTypes.UNKNOWN_EVENT)
+    subscriptionEvents->Option.isNone ||
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscriptionEvents->Option.getOr([]),
+        ~eventType=PaymentEventTypes.UnknownEvent,
+      )
   ) {
     Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
   }
@@ -753,7 +757,11 @@ let emitExpiryDate = (formattedExpiry, ~subscriptionEvents) => {
 
 let emitIsFormReadyForSubmission = (isFormReadyForSubmission, ~subscriptionEvents) => {
   if (
-    SubscriptionEventTypes.shouldEmitEvent(subscriptionEvents, SubscriptionEventTypes.UNKNOWN_EVENT)
+    subscriptionEvents->Option.isNone ||
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscriptionEvents->Option.getOr([]),
+        ~eventType=PaymentEventTypes.UnknownEvent,
+      )
   ) {
     Utils.messageParentWindow([
       ("isFormReadyForSubmission", isFormReadyForSubmission->JSON.Encode.bool),

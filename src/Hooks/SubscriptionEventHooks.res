@@ -16,7 +16,13 @@ let emitCardInfo = (
   ~isCvcValid,
   ~isSavedCard,
 ) => {
-  if shouldEmitEvent(subscriptionEvents, CARD_INFO) {
+  if (
+    subscriptionEvents->Option.isNone ||
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscriptionEvents->Option.getOr([]),
+        ~eventType=PaymentEventTypes.PaymentMethodInfoCard,
+      )
+  ) {
     let payload = createCardInfoPayload(
       ~bin,
       ~last4,
@@ -43,7 +49,13 @@ let emitPaymentMethodStatus = (
   ~isSavedPaymentMethod,
   ~isOneClickWallet=false,
 ) => {
-  if shouldEmitEvent(subscriptionEvents, PAYMENT_METHOD_STATUS) {
+  if (
+    subscriptionEvents->Option.isNone ||
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscriptionEvents->Option.getOr([]),
+        ~eventType=PaymentEventTypes.PaymentMethodStatus,
+      )
+  ) {
     let payload = createPaymentMethodStatusPayload(
       ~paymentMethod,
       ~paymentMethodType,
@@ -55,7 +67,13 @@ let emitPaymentMethodStatus = (
 }
 
 let emitBillingAddress = (~subscriptionEvents, ~country, ~state, ~postalCode) => {
-  if shouldEmitEvent(subscriptionEvents, PAYMENT_METHOD_INFO_BILLING_ADDRESS) {
+  if (
+    subscriptionEvents->Option.isNone ||
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscriptionEvents->Option.getOr([]),
+        ~eventType=PaymentEventTypes.PaymentMethodInfoBillingAddress,
+      )
+  ) {
     let payload = createBillingAddressPayload(~country, ~state, ~postalCode)
     Utils.messageParentWindow(payload)
   }
@@ -67,15 +85,15 @@ let useFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=fals
 
   React.useEffect(() => {
     if !isOneClickWallet {
-      let formStatusValue = if complete {
-        Complete
-      } else if empty {
-        Empty
-      } else {
-        Filling
-      }
-      if shouldEmitEvent(subscriptionEvents, FORM_STATUS) {
-        let payload = createFormStatusPayload(~status=formStatusValue->formStatusValueToString)
+      let formStatusValue = PaymentEventData.computeFormStatus(~isComplete=complete, ~isEmpty=empty)
+      if (
+        subscriptionEvents->Option.isNone ||
+          PaymentEventData.shouldEmitEvent(
+            ~subscribedEvents=subscriptionEvents->Option.getOr([]),
+            ~eventType=PaymentEventTypes.FormStatus,
+          )
+      ) {
+        let payload = SubscriptionEventTypes.createFormStatusPayload(~status=formStatusValue)
         Utils.messageParentWindow(payload)
       }
     }

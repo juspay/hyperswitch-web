@@ -1,38 +1,22 @@
 open ErrorUtils
-
-type events =
-  | FORM_STATUS
-  | PAYMENT_METHOD_STATUS
-  | CARD_INFO
-  | PAYMENT_METHOD_INFO_BILLING_ADDRESS
-  | UNKNOWN_EVENT
+open PaymentEventTypes
 
 let validSubscriptionEvents = [
-  "FORM_STATUS",
+  "PAYMENT_METHOD_INFO_CARD",
   "PAYMENT_METHOD_STATUS",
-  "CARD_INFO",
+  "FORM_STATUS",
   "PAYMENT_METHOD_INFO_BILLING_ADDRESS",
 ]
 
-let eventToString = event => {
-  switch event {
-  | FORM_STATUS => "FORM_STATUS"
-  | PAYMENT_METHOD_STATUS => "PAYMENT_METHOD_STATUS"
-  | CARD_INFO => "CARD_INFO"
-  | PAYMENT_METHOD_INFO_BILLING_ADDRESS => "PAYMENT_METHOD_INFO_BILLING_ADDRESS"
-  | UNKNOWN_EVENT => "UNKNOWN_EVENT"
-  }
-}
-
 let stringToEvent = (str, key) =>
   switch str {
-  | "FORM_STATUS" => FORM_STATUS
-  | "PAYMENT_METHOD_STATUS" => PAYMENT_METHOD_STATUS
-  | "CARD_INFO" => CARD_INFO
-  | "PAYMENT_METHOD_INFO_BILLING_ADDRESS" => PAYMENT_METHOD_INFO_BILLING_ADDRESS
+  | "PAYMENT_METHOD_INFO_CARD" => PaymentMethodInfoCard
+  | "PAYMENT_METHOD_STATUS" => PaymentMethodStatus
+  | "FORM_STATUS" => FormStatus
+  | "PAYMENT_METHOD_INFO_BILLING_ADDRESS" => PaymentMethodInfoBillingAddress
   | _ => {
       str->unknownPropValueWarning(validSubscriptionEvents, key)
-      UNKNOWN_EVENT
+      UnknownEvent
     }
   }
 
@@ -49,10 +33,10 @@ let getSubscriptionEvents = (dict, key) => {
     ->Array.map(item =>
       switch JSON.Decode.string(item) {
       | Some(str) => stringToEvent(str, context)
-      | None => UNKNOWN_EVENT
+      | None => UnknownEvent
       }
     )
-    ->Array.filter(opt => opt != UNKNOWN_EVENT)
+    ->Array.filter(opt => opt != UnknownEvent)
 
   if mappedSubscriptionEvents->Array.length === 0 {
     None
@@ -67,21 +51,6 @@ let shouldEmitEvent = (subscriptionEvents: option<array<events>>, event: events)
   | Some(events) => events->Array.includes(event) // Only emit if event is in the subscription list
   }
 }
-
-type formStatusValue =
-  | Empty
-  | Filling
-  | Complete
-
-let formStatusValueToString = (status: formStatusValue): string => {
-  switch status {
-  | Empty => "EMPTY"
-  | Filling => "FILLING"
-  | Complete => "COMPLETE"
-  }
-}
-
-type formStatus = {status: string} // "EMPTY" | "FILLING" | "COMPLETE"
 
 type cardInfo = {
   bin: string,
@@ -113,13 +82,13 @@ type billingAddress = {
 }
 
 let createFormStatusPayload = (~status) => {
-  let payloadDict = Dict.make()
-  payloadDict->Dict.set("status", status->JSON.Encode.string)
+  let formStatusEvent = PaymentEventData.buildFormStatusEvent(~status)
+  let payload = formStatusEvent->PaymentEventData.formStatusEventToJson
 
   [
     ("elementType", "payment"->JSON.Encode.string),
     ("eventName", "FORM_STATUS"->JSON.Encode.string),
-    ("payload", payloadDict->JSON.Encode.object),
+    ("payload", payload),
   ]
 }
 
@@ -166,28 +135,32 @@ let createPaymentMethodStatusPayload = (
   ~isSavedPaymentMethod,
   ~isOneClickWallet=false,
 ) => {
-  let payloadDict = Dict.make()
-  payloadDict->Dict.set("paymentMethod", paymentMethod->JSON.Encode.string)
-  payloadDict->Dict.set("paymentMethodType", paymentMethodType->JSON.Encode.string)
-  payloadDict->Dict.set("isSavedPaymentMethod", isSavedPaymentMethod->JSON.Encode.bool)
-  payloadDict->Dict.set("isOneClickWallet", isOneClickWallet->JSON.Encode.bool)
+  let paymentMethodStatusEvent = PaymentEventData.buildPaymentMethodStatusEvent(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~isSavedPaymentMethod,
+    ~isOneClickWallet,
+  )
+  let payload = paymentMethodStatusEvent->PaymentEventData.paymentMethodStatusEventToJson
 
   [
     ("elementType", "payment"->JSON.Encode.string),
     ("eventName", "PAYMENT_METHOD_STATUS"->JSON.Encode.string),
-    ("payload", payloadDict->JSON.Encode.object),
+    ("payload", payload),
   ]
 }
 
 let createBillingAddressPayload = (~country, ~state, ~postalCode) => {
-  let payloadDict = Dict.make()
-  payloadDict->Dict.set("country", country->JSON.Encode.string)
-  payloadDict->Dict.set("state", state->JSON.Encode.string)
-  payloadDict->Dict.set("postalCode", postalCode->JSON.Encode.string)
+  let paymentMethodInfoAddress = PaymentEventData.buildPaymentMethodInfoAddress(
+    ~country,
+    ~state,
+    ~postalCode,
+  )
+  let payload = paymentMethodInfoAddress->PaymentEventData.paymentMethodInfoAddressToJson
 
   [
     ("elementType", "payment"->JSON.Encode.string),
     ("eventName", "PAYMENT_METHOD_INFO_BILLING_ADDRESS"->JSON.Encode.string),
-    ("payload", payloadDict->JSON.Encode.object),
+    ("payload", payload),
   ]
 }

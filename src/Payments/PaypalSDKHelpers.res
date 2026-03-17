@@ -28,7 +28,7 @@ let loadPaypalSDK = (
   ~isTestMode=false,
   ~nonPiiAdderessData: PaymentUtils.nonPiiAdderessData,
   ~sdkAuthorization,
-  ~subscriptionEvents: option<array<SubscriptionEventTypes.events>>,
+  ~subscriptionEvents: option<array<PaymentEventTypes.events>>,
 ) => {
   open Promise
 
