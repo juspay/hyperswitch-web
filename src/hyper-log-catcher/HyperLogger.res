@@ -1,50 +1,6 @@
 open HyperLoggerTypes
 open LoggerUtils
 
-let logFileToObj = logFile => {
-  [
-    ("timestamp", logFile.timestamp->JSON.Encode.string),
-    (
-      "log_type",
-      switch logFile.logType {
-      | DEBUG => "DEBUG"
-      | INFO => "INFO"
-      | ERROR => "ERROR"
-      | WARNING => "WARNING"
-      | SILENT => "SILENT"
-      }->JSON.Encode.string,
-    ),
-    ("component", "WEB"->JSON.Encode.string),
-    (
-      "category",
-      switch logFile.category {
-      | API => "API"
-      | USER_ERROR => "USER_ERROR"
-      | USER_EVENT => "USER_EVENT"
-      | MERCHANT_EVENT => "MERCHANT_EVENT"
-      }->JSON.Encode.string,
-    ),
-    ("source", logFile.source->convertToScreamingSnakeCase->JSON.Encode.string),
-    ("version", logFile.version->JSON.Encode.string),
-    ("value", logFile.value->JSON.Encode.string),
-    // ("internal_metadata", logFile.internalMetadata->JSON.Encode.string),
-    ("session_id", logFile.sessionId->JSON.Encode.string),
-    ("merchant_id", logFile.merchantId->JSON.Encode.string),
-    ("payment_id", logFile.paymentId->JSON.Encode.string),
-    ("app_id", logFile.appId->JSON.Encode.string),
-    ("platform", logFile.platform->convertToScreamingSnakeCase->JSON.Encode.string),
-    ("user_agent", logFile.userAgent->JSON.Encode.string),
-    ("event_name", logFile.eventName->eventNameToStrMapper->JSON.Encode.string),
-    ("browser_name", logFile.browserName->convertToScreamingSnakeCase->JSON.Encode.string),
-    ("browser_version", logFile.browserVersion->JSON.Encode.string),
-    ("latency", logFile.latency->JSON.Encode.string),
-    ("first_event", logFile.firstEvent->Utils.getStringFromBool->JSON.Encode.string),
-    ("payment_method", logFile.paymentMethod->convertToScreamingSnakeCase->JSON.Encode.string),
-  ]
-  ->Dict.fromArray
-  ->JSON.Encode.object
-}
-
 let getRefFromOption = val => {
   let innerValue = val->Option.getOr("")
   ref(innerValue)
@@ -140,10 +96,9 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
   }
   let sendCachedLogsFromIDB = async () => {
     try {
-      let logs = await retrieveLogsFromIndexedDB()
+      let logs = await retrieveAndClearLogsFromIndexedDB()
       if logs->Array.length > 0 {
         beaconApiCall(logs)
-        await clearLogsFromIndexedDB()
       }
     } catch {
     | _ => ()
@@ -171,22 +126,36 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
 
   let sendLogsToIndexedDB = async () => {
     try {
-      let _ = await saveLogsToIndexedDB(mainLogFile)
+      let logs = Array.copy(mainLogFile)
       clearLogFile(mainLogFile)
+      let _ = await saveLogsToIndexedDB(logs)
     } catch {
     | _ => ()
     }
   }
 
-  let sendLogsOverNetwork = async () => {
+  let fallbackToBeaconApiCall = logs => {
+    beaconApiCall(logs)
+    sendCachedLogsFromIDB()->ignore
+  }
+
+  let sendLogsOverNetwork = () => {
+    let logs = Array.copy(mainLogFile)
+    clearLogFile(mainLogFile)
     try {
-      await sendCachedLogsFromIDB()
-      beaconApiCall(mainLogFile)
-      clearLogFile(mainLogFile)
+      if ServiceWorkerHelpers.isAvailable() {
+        ServiceWorkerHelpers.sendMessage({
+          "type": "SEND_LOGS",
+          "logs": logs->Array.map(logFileToObj)->JSON.Encode.array,
+        })
+      } else {
+        logs->fallbackToBeaconApiCall
+      }
     } catch {
-    | _ => ()
+    | _ => logs->fallbackToBeaconApiCall
     }
   }
+
   let rec sendLogs = () => {
     switch timeOut.contents {
     | Some(val) => {
@@ -202,7 +171,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     }
 
     if networkStatus.isOnline {
-      sendLogsOverNetwork()->ignore
+      sendLogsOverNetwork()
     } else {
       sendLogsToIndexedDB()->ignore
     }
