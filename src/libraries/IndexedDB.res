@@ -5,8 +5,22 @@ type objectStore
 type request<'a>
 type event
 
+type idbFactory
+
+@val @scope("self") external selfIndexedDB: option<idbFactory> = "indexedDB"
+
+@val @scope("window") external windowIndexedDB: option<idbFactory> = "indexedDB"
+
+let getGlobalIndexedDB = () => {
+  switch selfIndexedDB {
+  | Some(idb) => Some(idb)
+  | None => windowIndexedDB
+  }
+}
+
+let indexedDBInstance = getGlobalIndexedDB()
+
 module IndexedDB = {
-  @val @scope("window") external instance: 'a = "indexedDB"
   @send external open_: ('a, string, int) => openDBRequest = "open"
 }
 
@@ -71,29 +85,35 @@ let getErrorMessageFromEvent = event => {
 }
 
 let openDBAndGetRequest = (~dbName, ~objectStoreName) => {
-  let request = IndexedDB.instance->IndexedDB.open_(dbName, 1)
+  switch indexedDBInstance {
+  | Some(idb) =>
+    let request = idb->IndexedDB.open_(dbName, 1)
 
-  request->OpenDBRequest.onupgradeneeded(event => {
-    let db = getDbFromEvent(event)
-    let _ =
-      db->DB.createObjectStore(objectStoreName, {"keyPath": "timestamp", "autoIncrement": true})
-  })
+    request->OpenDBRequest.onupgradeneeded(event => {
+      let db = getDbFromEvent(event)
+      let _ =
+        db->DB.createObjectStore(objectStoreName, {"keyPath": "timestamp", "autoIncrement": true})
+    })
 
-  request
+    Some(request)
+  | None => None
+  }
 }
 
 let setupDatabase = (~dbName, ~objectStoreName, ~onSuccess, ~onError) => {
-  let request = openDBAndGetRequest(~dbName, ~objectStoreName)
+  switch openDBAndGetRequest(~dbName, ~objectStoreName) {
+  | Some(request) =>
+    request->OpenDBRequest.onsuccess(event => {
+      let db = getDbFromEvent(event)
+      onSuccess(db)
+    })
 
-  request->OpenDBRequest.onsuccess(event => {
-    let db = getDbFromEvent(event)
-    onSuccess(db)
-  })
-
-  request->OpenDBRequest.onerror(event => {
-    let errorMessage = getErrorMessageFromEvent(event)
-    onError(errorMessage)
-  })
+    request->OpenDBRequest.onerror(event => {
+      let errorMessage = getErrorMessageFromEvent(event)
+      onError(errorMessage)
+    })
+  | None => onError("IndexedDB not available in this environment")
+  }
 }
 
 let addData = (db, objectStoreName, data) => {

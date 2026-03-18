@@ -87,6 +87,51 @@ let toSnakeCaseWithSeparator = (str, separator) => {
   )
 }
 
+let logFileToObj = (logFile: HyperLoggerTypes.logFile) => {
+  let getStringFromBool = val => val ? "true" : "false"
+  [
+    ("timestamp", logFile.timestamp->JSON.Encode.string),
+    (
+      "log_type",
+      switch logFile.logType {
+      | DEBUG => "DEBUG"
+      | INFO => "INFO"
+      | ERROR => "ERROR"
+      | WARNING => "WARNING"
+      | SILENT => "SILENT"
+      }->JSON.Encode.string,
+    ),
+    ("component", "WEB"->JSON.Encode.string),
+    (
+      "category",
+      switch logFile.category {
+      | API => "API"
+      | USER_ERROR => "USER_ERROR"
+      | USER_EVENT => "USER_EVENT"
+      | MERCHANT_EVENT => "MERCHANT_EVENT"
+      }->JSON.Encode.string,
+    ),
+    ("source", logFile.source->convertToScreamingSnakeCase->JSON.Encode.string),
+    ("version", logFile.version->JSON.Encode.string),
+    ("value", logFile.value->JSON.Encode.string),
+    // ("internal_metadata", logFile.internalMetadata->JSON.Encode.string),
+    ("session_id", logFile.sessionId->JSON.Encode.string),
+    ("merchant_id", logFile.merchantId->JSON.Encode.string),
+    ("payment_id", logFile.paymentId->JSON.Encode.string),
+    ("app_id", logFile.appId->JSON.Encode.string),
+    ("platform", logFile.platform->convertToScreamingSnakeCase->JSON.Encode.string),
+    ("user_agent", logFile.userAgent->JSON.Encode.string),
+    ("event_name", logFile.eventName->eventNameToStrMapper->JSON.Encode.string),
+    ("browser_name", logFile.browserName->convertToScreamingSnakeCase->JSON.Encode.string),
+    ("browser_version", logFile.browserVersion->JSON.Encode.string),
+    ("latency", logFile.latency->JSON.Encode.string),
+    ("first_event", logFile.firstEvent->getStringFromBool->JSON.Encode.string),
+    ("payment_method", logFile.paymentMethod->convertToScreamingSnakeCase->JSON.Encode.string),
+  ]
+  ->Dict.fromArray
+  ->JSON.Encode.object
+}
+
 let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   sendLogs: () => (),
   setClientSecret: _x => (),
@@ -131,106 +176,112 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
 
 let saveLogsToIndexedDB = (logs: array<HyperLoggerTypes.logFile>) => {
   Promise.make((resolve, reject) => {
-    let request = openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs")
+    switch openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs") {
+    | Some(request) =>
+      request->OpenDBRequest.onsuccess(_ => {
+        let db = OpenDBRequest.result(request)
 
-    request->OpenDBRequest.onsuccess(_ => {
-      let db = OpenDBRequest.result(request)
+        if logs->Array.length > 0 {
+          let transaction = db->DB.transaction(["logs"], "readwrite")
+          let store = transaction->Transaction.objectStore("logs")
 
-      if logs->Array.length > 0 {
+          transaction->Transaction.oncomplete(
+            _ => {
+              db->DB.close
+              resolve()
+            },
+          )
+
+          transaction->Transaction.onerror(
+            _ => {
+              db->DB.close
+              reject()
+            },
+          )
+
+          logs->Array.forEach(
+            log => {
+              let _ = store->ObjectStore.put(log)
+            },
+          )
+        } else {
+          db->DB.close
+          reject()
+        }
+      })
+
+      request->OpenDBRequest.onerror(_ => {
+        reject()
+      })
+    | None => reject()
+    }
+  })
+}
+
+let retrieveLogsFromIndexedDB = () => {
+  Promise.make((resolve, reject) => {
+    switch openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs") {
+    | Some(request) =>
+      request->OpenDBRequest.onsuccess(_ => {
+        let db = OpenDBRequest.result(request)
+        let transaction = db->DB.transaction(["logs"], "readonly")
+        let store = transaction->Transaction.objectStore("logs")
+        let getAllRequest = store->ObjectStore.getAll
+
+        getAllRequest->Request.onsuccess(
+          _ => {
+            let result = Request.result(getAllRequest)
+            db->DB.close
+            resolve(result)
+          },
+        )
+
+        getAllRequest->Request.onerror(
+          _ => {
+            db->DB.close
+            reject([])
+          },
+        )
+      })
+
+      request->OpenDBRequest.onerror(_ => {
+        reject([])
+      })
+    | None => reject([])
+    }
+  })
+}
+
+let clearLogsFromIndexedDB = () => {
+  Promise.make((resolve, reject) => {
+    switch openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs") {
+    | Some(request) =>
+      request->OpenDBRequest.onsuccess(_ => {
+        let db = OpenDBRequest.result(request)
         let transaction = db->DB.transaction(["logs"], "readwrite")
         let store = transaction->Transaction.objectStore("logs")
+        let clearRequest = store->ObjectStore.clear
 
-        transaction->Transaction.oncomplete(
+        clearRequest->Request.onsuccess(
           _ => {
             db->DB.close
             resolve()
           },
         )
 
-        transaction->Transaction.onerror(
+        clearRequest->Request.onerror(
           _ => {
             db->DB.close
             reject()
           },
         )
+      })
 
-        logs->Array.forEach(
-          log => {
-            let _ = store->ObjectStore.put(log)
-          },
-        )
-      } else {
-        db->DB.close
+      request->OpenDBRequest.onerror(_ => {
         reject()
-      }
-    })
-
-    request->OpenDBRequest.onerror(_ => {
-      reject()
-    })
-  })
-}
-
-let retrieveLogsFromIndexedDB = () => {
-  Promise.make((resolve, reject) => {
-    let request = openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs")
-
-    request->OpenDBRequest.onsuccess(_ => {
-      let db = OpenDBRequest.result(request)
-      let transaction = db->DB.transaction(["logs"], "readonly")
-      let store = transaction->Transaction.objectStore("logs")
-      let getAllRequest = store->ObjectStore.getAll
-
-      getAllRequest->Request.onsuccess(
-        _ => {
-          let result = Request.result(getAllRequest)
-          db->DB.close
-          resolve(result)
-        },
-      )
-
-      getAllRequest->Request.onerror(
-        _ => {
-          db->DB.close
-          reject([])
-        },
-      )
-    })
-
-    request->OpenDBRequest.onerror(_ => {
-      reject([])
-    })
-  })
-}
-
-let clearLogsFromIndexedDB = () => {
-  Promise.make((resolve, reject) => {
-    let request = openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs")
-
-    request->OpenDBRequest.onsuccess(_ => {
-      let db = OpenDBRequest.result(request)
-      let transaction = db->DB.transaction(["logs"], "readwrite")
-      let store = transaction->Transaction.objectStore("logs")
-      let clearRequest = store->ObjectStore.clear
-
-      clearRequest->Request.onsuccess(
-        _ => {
-          db->DB.close
-          resolve()
-        },
-      )
-
-      clearRequest->Request.onerror(
-        _ => {
-          db->DB.close
-          reject()
-        },
-      )
-    })
-
-    request->OpenDBRequest.onerror(_ => {
-      reject()
-    })
+      })
+    | None => reject()
+    }
   })
 }
 
