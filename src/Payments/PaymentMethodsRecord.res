@@ -427,7 +427,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
   },
   {
     paymentMethodName: "ideal",
-    icon: Some(icon("ideal", ~size=19, ~width=25)),
+    icon: Some(icon("ideal_wero", ~size=19, ~width=25)),
     displayName: localeString.payment_methods_ideal,
     fields: [InfoElement],
     miniIcon: None,
