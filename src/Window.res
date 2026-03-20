@@ -105,6 +105,8 @@ module ServiceWorker = {
   type t
   @send
   external postMessage: (t, {..}) => unit = "postMessage"
+  @get
+  external scriptURL: t => string = "scriptURL"
 }
 
 module ServiceWorkerContainer = {

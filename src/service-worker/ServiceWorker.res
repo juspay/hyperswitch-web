@@ -1,8 +1,7 @@
-@val @scope("self") external claim: unit => unit = "claim"
+@val @scope("self.clients") external claim: unit => unit = "claim"
+@val @scope("self") external skipWaiting: unit => unit = "skipWaiting"
 
-external dictToObj: Dict.t<'a> => {..} = "%identity"
-
-let sendLogs = async (logs, endpoint) => {
+let sendLogs = async (logs, endpoint) =>
   if logs->Array.length > 0 {
     try {
       let bodyStr = logs->JSON.Encode.array->JSON.stringify
@@ -12,7 +11,7 @@ let sendLogs = async (logs, endpoint) => {
           method: #POST,
           body: Fetch.Body.string(bodyStr),
           headers: Fetch.Headers.fromObject(
-            Dict.fromArray([("Content-Type", "application/json")])->dictToObj,
+            Dict.fromArray([("Content-Type", "application/json")])->Utils.dictToObj,
           ),
         },
       )
@@ -23,11 +22,10 @@ let sendLogs = async (logs, endpoint) => {
     | err => Console.error2("[ServiceWorker] Failed to send logs:", err)
     }
   }
-}
 
 @val @scope("self") external addEventListener: (string, 'event => unit) => unit = "addEventListener"
 
-let processMessage = async event => {
+let processMessage = async event =>
   try {
     let data = event["data"]
     let type_ = data->Dict.get("type")->CommonUtils.getStringFromOptionalJson("")
@@ -49,22 +47,20 @@ let processMessage = async event => {
   } catch {
   | err => Console.error2("[ServiceWorker] Error:", err)
   }
-}
 
-addEventListener("message", event => {
-  processMessage(event)->ignore
-})
+addEventListener("message", event => processMessage(event)->ignore)
 
-let processActivate = async () => {
+let processActivate = async () =>
   try {
     let logs = await LoggerUtils.retrieveLogsFromIndexedDB()
     await sendLogs(logs, GlobalVars.logEndpoint)
   } catch {
   | err => Console.error2("[ServiceWorker] Failed to send logs on activate:", err)
   }
-}
 
-addEventListener("activate", _event => {
+addEventListener("install", _ => skipWaiting())
+
+addEventListener("activate", _ => {
   claim()
   processActivate()->ignore
 })

@@ -134,23 +134,19 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     }
   }
 
-  let sendLogsOverNetwork = async () =>
-    try {
-      if ServiceWorkerHelpers.isAvailable() {
-        let logs = mainLogFile->Array.map(logFileToObj)
-        ServiceWorkerHelpers.sendMessage({
-          "type": "SEND_LOGS",
-          "logs": logs->JSON.Encode.array,
-        })
-      } else {
-        beaconApiCall(mainLogFile)
-        sendCachedLogsFromIDB()->ignore
-      }
-      clearLogFile(mainLogFile)
-    } catch {
-    | _ => ()
+  let sendLogsOverNetwork = () => {
+    if ServiceWorkerHelpers.isAvailable() {
+      let logs = mainLogFile->Array.map(logFileToObj)
+      ServiceWorkerHelpers.sendMessage({
+        "type": "SEND_LOGS",
+        "logs": logs->JSON.Encode.array,
+      })
+    } else {
+      beaconApiCall(mainLogFile)
+      sendCachedLogsFromIDB()->ignore
     }
-
+    clearLogFile(mainLogFile)
+  }
   let rec sendLogs = () => {
     switch timeOut.contents {
     | Some(val) => {
@@ -166,7 +162,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     }
 
     if networkStatus.isOnline {
-      sendLogsOverNetwork()->ignore
+      sendLogsOverNetwork()
     } else {
       sendLogsToIndexedDB()->ignore
     }
