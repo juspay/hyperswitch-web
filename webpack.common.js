@@ -204,6 +204,7 @@ const logEndpoint = envLoggingUrl;
 
 const loggingLevel = "DEBUG";
 const maxLogsPushedPerEventName = 100;
+const updateIntentTimeoutMs = 120000; // 2 minutes default
 
 // Function to determine the current environment type
 const getEnvironmentType = (env) => {
@@ -240,6 +241,7 @@ module.exports = (publicPath = "auto") => {
     enableLogging: ENABLE_LOGGING,
     loggingLevel: JSON.stringify(loggingLevel),
     maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
+    updateIntentTimeoutMs: JSON.stringify(updateIntentTimeoutMs),
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,

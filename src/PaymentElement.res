@@ -32,6 +32,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+  let isUpdateIntentInProgress = Recoil.useRecoilValueFromAtom(RecoilAtoms.isUpdateIntentInProgress)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(RecoilAtoms.selectedOptionAtom)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
     RecoilAtoms.showPaymentMethodsScreen,
@@ -512,7 +513,25 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     shouldDisplayPaymentMethodsScreen &&
     clickToPayConfig.isReady->Option.isSome
 
-  <>
+  <div style={position: "relative"}>
+    <RenderIf condition={isUpdateIntentInProgress}>
+      <div
+        style={
+          position: "absolute",
+          top: "0",
+          left: "0",
+          width: "100%",
+          height: "100%",
+          background: "rgba(255,255,255,0.6)",
+          backdropFilter: "blur(4px)",
+          zIndex: "9999",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }>
+        <Spinner />
+      </div>
+    </RenderIf>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div
         className="PaymentLabel text-2xl font-semibold text-[#151619] mb-6"
@@ -612,5 +631,5 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     <PoweredBy />
-  </>
+  </div>
 }

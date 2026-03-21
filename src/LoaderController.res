@@ -20,6 +20,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
   let setUpdateSession = Recoil.useSetRecoilState(updateSession)
+  let setUpdateIntentInProgress = Recoil.useSetRecoilState(isUpdateIntentInProgress)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
@@ -443,6 +444,23 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           setUpdateSession(_ => {
             dict->getJsonObjectFromDict("sessionUpdate")->JSON.Decode.bool->Option.getOr(false)
           })
+        }
+        if dict->getDictIsSome("updateIntentInProgress") {
+          let isInProgress =
+            dict
+            ->getJsonObjectFromDict("updateIntentInProgress")
+            ->JSON.Decode.bool
+            ->Option.getOr(false)
+          setUpdateIntentInProgress(_ => isInProgress)
+          setBlockConfirm(_ => isInProgress)
+        }
+        if dict->getDictIsSome("sdkAuthorization") {
+          let newAuth = dict->getString("sdkAuthorization", "")
+
+          // Only forward to parent when targetOrigin is explicitly set (not wildcard)
+          if keys.parentURL !== "*" && keys.parentURL !== "" {
+            messageParentWindow([("sdkAuthorization", newAuth->JSON.Encode.string)])
+          }
         }
         if dict->getDictIsSome("isReadyToPay") {
           setIsGooglePayReady(_ =>

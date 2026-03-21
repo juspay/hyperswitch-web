@@ -52,7 +52,11 @@ type getCustomerSavedPaymentMethods = {
   confirmWithLastUsedPaymentMethod: JSON.t => promise<JSON.t>,
 }
 
-type initPaymentSession = {getCustomerSavedPaymentMethods: unit => promise<JSON.t>}
+type initPaymentSession = {
+  getCustomerSavedPaymentMethods: unit => promise<JSON.t>,
+  initUpdateIntent: unit => promise<JSON.t>,
+  completeUpdateIntent: JSON.t => promise<JSON.t>,
+}
 
 type isCustomerPresentInput = {email: string}
 
@@ -189,6 +193,8 @@ let defaultGetCustomerSavedPaymentMethods = () => {
 
 let defaultInitPaymentSession: initPaymentSession = {
   getCustomerSavedPaymentMethods: defaultGetCustomerSavedPaymentMethods,
+  initUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
+  completeUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
 }
 
 let defaultInitAuthenticationSession: initAuthenticationSession = {
