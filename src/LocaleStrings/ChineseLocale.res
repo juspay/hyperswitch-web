@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `适用额外费用`,
   billingNamePlaceholder: `名字和姓氏`,
   cardHolderName: `持卡人姓名`,
+  cardHolderNameRequiredText: `持卡人姓名必填`,
   on: `在`,
   \"and": `和`,
   nameEmptyText: str => `请提供您的 ${str}`,
@@ -248,4 +249,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `无需支付剩余金额。请继续完成付款。`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `请使用下方的其他支付方式支付剩余金额 ${currency}${amount}。`,
+  mandatoryFieldText: "此字段为必填项",
 }

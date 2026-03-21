@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `اسم الفواتير`,
   billingNamePlaceholder: `الاسم الأول والاسم الأخير`,
   cardHolderName: `إسم صاحب البطاقة`,
+  cardHolderNameRequiredText: `اسم حامل البطاقة مطلوب`,
   on: `على`,
   \"and": `و`,
   nameEmptyText: str => `يرجى تقديم الخاص بك ${str}`,
@@ -251,4 +252,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `لا يوجد مبلغ متبقٍ للدفع. يرجى المتابعة لإتمام عملية الدفع.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `يرجى دفع المبلغ المتبقي ${amount} ${currency} باستخدام وسيلة دفع أخرى أدناه.`,
+  mandatoryFieldText: "هذا الحقل إلزامي.",
 }

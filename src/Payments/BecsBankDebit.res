@@ -1,6 +1,6 @@
 open RecoilAtoms
-open RecoilAtomTypes
 open Utils
+open ACHTypes
 
 @react.component
 let make = () => {
@@ -10,24 +10,16 @@ let make = () => {
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let (modalData, setModalData) = React.useState(_ => None)
-
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let country = Recoil.useRecoilValueFromAtom(userAddressCountry)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let countryCode = Utils.getCountryCode(country.value).isoAlpha2
-  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
+
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let complete =
-    email.value != "" &&
-    fullName.value != "" &&
-    email.isValid->Option.getOr(false) &&
+    areRequiredFieldsValid &&
+    !areRequiredFieldsEmpty &&
     switch modalData {
     | Some(data: ACHTypes.data) =>
       data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6
@@ -35,8 +27,7 @@ let make = () => {
     }
 
   let empty =
-    email.value == "" ||
-    fullName.value == "" ||
+    areRequiredFieldsEmpty ||
     switch modalData {
     | Some(data: ACHTypes.data) => data.accountNumber == "" && data.sortCode == ""
     | None => true
@@ -56,17 +47,22 @@ let make = () => {
       if complete {
         switch modalData {
         | Some(data: ACHTypes.data) => {
-            let body = PaymentBody.becsBankDebitBody(
-              ~fullName=fullName.value,
-              ~email=email.value,
-              ~data,
-              ~line1=line1.value,
-              ~line2=line2.value,
-              ~country=countryCode,
-              ~city=city.value,
-              ~postalCode=postalCode.value,
-              ~stateCode,
-            )
+            let body =
+              PaymentBody.dynamicPaymentBody("bank_debit", "becs")
+              ->getJsonFromArrayOfJson
+              ->flattenObject(true)
+              ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+              ->getArrayOfTupleFromDict
+              ->Array.concat([
+                (
+                  "payment_method_data.bank_debit.becs_bank_debit.account_number",
+                  data.accountNumber->JSON.Encode.string,
+                ),
+                (
+                  "payment_method_data.bank_debit.becs_bank_debit.bsb_number",
+                  data.sortCode->JSON.Encode.string,
+                ),
+              ])
             intent(
               ~bodyArr=body,
               ~confirmParam=confirm.confirmParams,
@@ -80,15 +76,20 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, modalData, isManualRetryEnabled))
+  }, (
+    modalData,
+    isManualRetryEnabled,
+    requiredFieldsBody,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+  ))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethod = "bank_debit"
   let paymentMethodType = "becs"
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
-    <EmailPaymentInput />
-    <FullNamePaymentInput />
+    <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
     <AddBankAccount modalData setModalData />
     <FullScreenPortal>
       <BankDebitModal setModalData />

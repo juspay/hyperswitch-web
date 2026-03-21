@@ -158,7 +158,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
   },
   {
     paymentMethodName: "mb_way",
-    fields: [SpecialField(<PhoneNumberPaymentInput />), InfoElement],
+    fields: [PhoneNumber, InfoElement],
     icon: Some(icon("mbway", ~size=19)),
     displayName: localeString.payment_methods_mb_way,
     miniIcon: None,

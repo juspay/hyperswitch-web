@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   card: `Kort`,
   billingNameLabel: `Faktureringsnavn`,
   cardHolderName: `Naam van de kaarthouder`,
+  cardHolderNameRequiredText: `Naam van de kaarthouder vereist`,
   cardNickname: `Kaartbijnaam`,
   billingNamePlaceholder: `Voornaam en achternaam`,
   ibanEmptyText: `IBAN mag niet leeg zijn`,
@@ -248,4 +249,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Er staat geen resterend bedrag open. Ga verder met de betaling.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Betaal het resterende bedrag van ${amount} ${currency} met een andere betaalmethode hieronder.`,
+  mandatoryFieldText: "This field is mandatory",
 }

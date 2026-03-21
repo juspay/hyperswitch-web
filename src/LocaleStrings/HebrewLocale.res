@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `שם החיוב`,
   billingNamePlaceholder: `שם פרטי ושם משפחה`,
   cardHolderName: `שם בעל הכרטיס`,
+  cardHolderNameRequiredText: `נדرش שם בעל הכרטיס`,
   on: `עַל`,
   \"and": `ו`,
   nameEmptyText: str => `אנא ספק את שלך ${str}`,
@@ -249,4 +250,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `לא נותר סכום לתשלום. אנא המשיכו לביצוע התשלום.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `אנא שלמו את הסכום שנותר ${amount} ${currency} באמצעות אמצעי תשלום אחר למטה.`,
+  mandatoryFieldText: "שדה זה הוא חובה",
 }

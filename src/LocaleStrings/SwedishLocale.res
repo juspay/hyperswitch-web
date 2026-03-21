@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   card: `Kort`,
   billingNameLabel: `Faktureringsnamn`,
   cardHolderName: `Korthållarens namn`,
+  cardHolderNameRequiredText: `Korthållarens namn krävs`,
   cardNickname: `Kortets smeknamn`,
   billingNamePlaceholder: `Förnamn och efternamn`,
   ibanEmptyText: `IBAN får inte vara tomt`,
@@ -248,4 +249,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Ingen kvarvarande summa att betala. Vänligen fortsätt med betalningen.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Vänligen betala den kvarvarande summan ${amount} ${currency} med en annan betalningsmetod nedan.`,
+  mandatoryFieldText: "Detta fält är obligatoriskt",
 }

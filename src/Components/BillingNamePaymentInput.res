@@ -1,67 +1,55 @@
 open RecoilAtoms
 open PaymentType
-open Utils
 
 @react.component
-let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) => {
+let make = (
+  ~name="billingName",
+  ~customFieldName=None,
+  ~requiredFields as _optionalRequiredFields=?,
+) => {
   let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
 
-  let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
-
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
-  let changeName = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]
-    setBillingName(prev => {
-      value: val,
-      isValid: Some(val !== ""),
-      errorString: val !== "" ? "" : prev.errorString,
-    })
-  }
-  let onBlur = ev => {
-    let val: string = ReactEvent.Focus.target(ev)["value"]
-    setBillingName(prev => {
-      ...prev,
-      isValid: Some(val !== ""),
-    })
-  }
   let (placeholder, fieldName) = switch customFieldName {
   | Some(val) => (val, val)
   | None => (localeString.billingNamePlaceholder, localeString.billingNameLabel)
   }
   let nameRef = React.useRef(Nullable.null)
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if billingName.value == "" {
-        setBillingName(prev => {
-          ...prev,
-          errorString: fieldName->localeString.nameEmptyText,
-        })
-      } else {
-        switch optionalRequiredFields {
-        | Some(requiredFields) =>
-          if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, BillingName, billingName) {
-            setBillingName(prev => {
-              ...prev,
-              errorString: fieldName->localeString.completeNameEmptyText,
-            })
-          }
-        | None => ()
-        }
-      }
-    }
-  }, [billingName])
-  useSubmitPaymentData(submitCallback)
+  let createValidator = rule =>
+    Validation.createFieldValidator(
+      rule,
+      ~enabledCardSchemes=[],
+      ~localeObject=localeString->Obj.magic,
+    )
+
+  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+    name,
+    ~config={validate: createValidator(Validation.Required)},
+  )
+
+  let billingNameValue = field.input.value->Option.getOr("")
+
+  let changeName = ev => {
+    let val: string = ReactEvent.Form.target(ev)["value"]
+    field.input.onChange(val)
+  }
+
+  let onBlur = (_ev: JsxEventU.Focus.t) => {
+    field.input.onBlur()
+  }
 
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField
       fieldName
-      setValue=setBillingName
-      value=billingName
+      setValue={_ => ()}
+      value={
+        RecoilAtomTypes.value: billingNameValue,
+        isValid: Some(field.meta.valid),
+        errorString: field.meta.touched ? field.meta.error->Option.getOr("") : "",
+      }
       onChange=changeName
       onBlur
       type_="text"

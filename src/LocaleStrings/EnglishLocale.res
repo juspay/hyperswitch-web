@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: "Billing name",
   billingNamePlaceholder: "First and last name",
   cardHolderName: "Card Holder Name",
+  cardHolderNameRequiredText: "Card Holder's name required",
   on: "on",
   \"and": "and",
   nameEmptyText: str => `Please provide your ${str}`,
@@ -248,4 +249,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `No remaining amount to pay. Please proceed with payment.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Pay remaining ${currency} ${amount} with other payment method below.`,
+  mandatoryFieldText: "This field is mandatory",
 }

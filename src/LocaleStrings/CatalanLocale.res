@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   card: `Targeta`,
   billingNameLabel: `Nom de facturació`,
   cardHolderName: `Nom del titular de la targeta`,
+  cardHolderNameRequiredText: `Cal el nom del titular de la targeta`,
   cardNickname: `Sobrenom de la targeta`,
   billingNamePlaceholder: `Nom i cognom`,
   ibanEmptyText: `L'IBAN no pot estar buit`,
@@ -250,4 +251,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `No queda cap import pendent de pagament. Si us plau, continueu amb el pagament.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Pagueu l'import restant de ${currency} ${amount} amb un altre mètode de pagament a continuació.`,
+  mandatoryFieldText: "Aquest camp és obligatori",
 }
