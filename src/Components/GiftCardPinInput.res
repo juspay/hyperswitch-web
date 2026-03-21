@@ -1,51 +1,43 @@
 @react.component
-let make = () => {
+let make = (~name="giftCardPin") => {
   open RecoilAtoms
-  open Utils
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
   let giftCardPinRef = React.useRef(Nullable.null)
 
-  let updateGiftCardPin = val => {
-    setGiftCardPin(_ => {
-      value: val,
-      isValid: Some(val !== ""),
-      errorString: val !== "" ? "" : localeString.giftCardPinEmptyText,
-    })
-  }
+  let createValidator = rule =>
+    Validation.createFieldValidator(
+      rule,
+      ~enabledCardSchemes=[],
+      ~localeObject=localeString->Obj.magic,
+    )
+
+  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+    name,
+    ~config={validate: createValidator(Validation.GiftCardPin)},
+  )
+
+  let giftCardPinValue = field.input.value->Option.getOr("")
 
   let changeGiftCardPin = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    updateGiftCardPin(val)
+    field.input.onChange(val)
   }
 
-  let onBlurGiftCardPin = ev => {
-    let val = ReactEvent.Focus.target(ev)["value"]
-    updateGiftCardPin(val)
+  let onBlur = (_ev: JsxEventU.Focus.t) => {
+    field.input.onBlur()
   }
-
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if giftCardPin.value == "" {
-        setGiftCardPin(prev => {
-          ...prev,
-          errorString: localeString.giftCardPinEmptyText,
-        })
-      }
-    }
-  }, [giftCardPin.value])
-
-  useSubmitPaymentData(submitCallback)
 
   <PaymentField
     fieldName={localeString.giftCardPinLabel}
-    setValue=setGiftCardPin
-    value=giftCardPin
+    setValue={_ => ()}
+    value={
+      RecoilAtomTypes.value: giftCardPinValue,
+      isValid: Some(field.meta.valid),
+      errorString: field.meta.touched ? field.meta.error->Option.getOr("") : "",
+    }
     onChange=changeGiftCardPin
-    onBlur=onBlurGiftCardPin
+    onBlur
     type_="text"
     name="giftCardPin"
     inputRef=giftCardPinRef

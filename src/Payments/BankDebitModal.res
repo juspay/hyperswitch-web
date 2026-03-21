@@ -1,5 +1,6 @@
 open CardUtils
 open ACHTypes
+open DynamicFieldsUtils
 
 type focus = Routing | Account | NONE
 
@@ -118,6 +119,8 @@ let make = (~setModalData) => {
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
   let (openModal, setOpenModal) = React.useState(_ => false)
 
   let (accountNum, setAccountNum) = React.useState(_ => "")
@@ -176,6 +179,39 @@ let make = (~setModalData) => {
   let isAchDebit = selectedOption->String.includes("ach_debit")
   let isBecsDebit = selectedOption->String.includes("becs_debit")
 
+  let paymentMethod = "bank_debit"
+  let paymentMethodType = switch (isAchDebit, isBecsDebit) {
+  | (true, _) => "ach"
+  | (_, true) => "becs"
+  | _ => "sepa"
+  }
+
+  let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
+  let (superpositionMissingFields, initialValues, _) = useSuperpositionFields(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~paymentMethodTypes,
+    ~paymentMethodListValue,
+  )
+
+  let getRequiredFieldPath = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
+    superpositionMissingFields
+    ->Array.find(r => {
+      let convertedFieldType = DynamicFieldsUtils.fieldTypeToPaymentMethodsField(
+        r.fieldType,
+        r.options,
+      )
+      convertedFieldType === fieldType
+    })
+    ->Option.map(r => r.outputPath)
+    ->Option.getOr(getBillingAddressPathFromFieldType(fieldType))
+  }
+
   let handleAccountHolderNameChange = ev => {
     let accName = ReactEvent.Form.target(ev)["value"]
     setAccountHolderName(_ => accName)
@@ -204,95 +240,60 @@ let make = (~setModalData) => {
       <PayNowButton onClickHandler label="Done" />
     </div>
 
+  let formValidator = React.useMemo(() => {
+    _ => Dict.make()
+  }, [])
+
   let nonDynamicFieldsModalBody =
-    <>
-      <div
-        style={color: themeObj.colorPrimary, marginBottom: "5px"}
-        className="self-start font-semibold text-lg text-[#151A1F]">
-        {React.string(localeString.billingDetailsText)}
-      </div>
-      <div className="my-4">
-        <AddressPaymentInput
-          paymentType=Payment
-          className="focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
-        />
-      </div>
-      <div
-        style={color: themeObj.colorPrimary, marginBottom: "5px"}
-        className="self-start font-semibold text-lg text-[#151A1F]">
-        {React.string("Bank Details")}
-      </div>
-      <div
-        className={`Label mb-1 mt-5`}
-        style={
-          fontWeight: themeObj.fontWeightNormal,
-          fontSize: themeObj.fontSizeLg,
-          color: themeObj.colorText,
-          marginBottom: "5px",
-        }>
-        {React.string("Account Holder Name")}
-      </div>
-      <Input
-        value=accountHolderName
-        inputRef=nameRef
-        onChange=handleAccountHolderNameChange
-        type_="tel"
-        className={`p-2 text-base px-4`}
-        maxLength=17
-        placeholder="eg: John Doe"
-        onBlur={_ => setInputFocus(_ => NONE)}
-      />
-      <RenderIf condition={isSepaDebit}>
-        <div
-          className={`Label mb-1 mt-5`}
-          style={
-            fontWeight: themeObj.fontWeightNormal,
-            fontSize: themeObj.fontSizeLg,
-            color: themeObj.colorText,
-            marginBottom: "5px",
-          }>
-          {React.string("IBAN")}
-        </div>
-        <Input
-          value=iban
-          onChange=changeIBAN
-          type_="text"
-          maxLength=42
-          inputRef=ibanRef
-          placeholder="eg: DE00 0000 0000 0000 0000 00"
-        />
-      </RenderIf>
-      <div className="flex flex-row items-center w-full justify-between">
-        <RenderIf condition={isAchDebit}>
-          <div className="w-full" style={marginRight: "1rem"}>
-            <div
-              className={`Label mb-1 mt-5`}
-              style={
-                fontWeight: themeObj.fontWeightNormal,
-                fontSize: themeObj.fontSizeLg,
-                color: themeObj.colorText,
-                marginBottom: "5px",
-              }>
-              {React.string("Routing number")}
-            </div>
-            <Input
-              value=routingNumber
-              inputRef=routeref
-              isValid=isRoutingValid
-              setIsValid=setIsRoutingValid
-              onChange=handleRoutingChange
-              type_="tel"
-              className={` p-2 text-base px-4`}
-              maxLength=9
-              placeholder="123456789"
-              errorString=routingError
-              onBlur=routingBlur
-              onFocus={_ => setInputFocus(_ => Routing)}
+    <ReactFinalForm.Form
+      onSubmit={_ => ()}
+      initialValues={Some(initialValues)}
+      validate={Some(formValidator)}
+      render={_ => {
+        <>
+          <div
+            style={color: themeObj.colorPrimary, marginBottom: "5px"}
+            className="self-start font-semibold text-lg text-[#151A1F]">
+            {React.string(localeString.billingDetailsText)}
+          </div>
+          <div className="my-4">
+            <AddressPaymentInput
+              paymentType=Payment
+              className="focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
+              line1Path={getRequiredFieldPath(PaymentMethodsRecord.AddressLine1)}
+              line2Path={getRequiredFieldPath(PaymentMethodsRecord.AddressLine2)}
+              cityPath={getRequiredFieldPath(PaymentMethodsRecord.AddressCity)}
+              statePath={getRequiredFieldPath(PaymentMethodsRecord.AddressState)}
+              countryPath={getRequiredFieldPath(PaymentMethodsRecord.AddressCountry([]))}
+              postalPath={getRequiredFieldPath(PaymentMethodsRecord.AddressPincode)}
             />
           </div>
-        </RenderIf>
-        <RenderIf condition={isAchDebit || isBecsDebit}>
-          <div className="w-full ">
+          <div
+            style={color: themeObj.colorPrimary, marginBottom: "5px"}
+            className="self-start font-semibold text-lg text-[#151A1F]">
+            {React.string("Bank Details")}
+          </div>
+          <div
+            className={`Label mb-1 mt-5`}
+            style={
+              fontWeight: themeObj.fontWeightNormal,
+              fontSize: themeObj.fontSizeLg,
+              color: themeObj.colorText,
+              marginBottom: "5px",
+            }>
+            {React.string("Account Holder Name")}
+          </div>
+          <Input
+            value=accountHolderName
+            inputRef=nameRef
+            onChange=handleAccountHolderNameChange
+            type_="tel"
+            className={`p-2 text-base px-4`}
+            maxLength=17
+            placeholder="eg: John Doe"
+            onBlur={_ => setInputFocus(_ => NONE)}
+          />
+          <RenderIf condition={isSepaDebit}>
             <div
               className={`Label mb-1 mt-5`}
               style={
@@ -301,85 +302,137 @@ let make = (~setModalData) => {
                 color: themeObj.colorText,
                 marginBottom: "5px",
               }>
-              {React.string("Account number")}
+              {React.string("IBAN")}
             </div>
             <Input
-              value=accountNum
-              inputRef=accountRef
-              onChange=handleAccountNumChange
+              value=iban
+              onChange=changeIBAN
+              type_="text"
+              maxLength=42
+              inputRef=ibanRef
+              placeholder="eg: DE00 0000 0000 0000 0000 00"
+            />
+          </RenderIf>
+          <div className="flex flex-row items-center w-full justify-between">
+            <RenderIf condition={isAchDebit}>
+              <div className="w-full" style={marginRight: "1rem"}>
+                <div
+                  className={`Label mb-1 mt-5`}
+                  style={
+                    fontWeight: themeObj.fontWeightNormal,
+                    fontSize: themeObj.fontSizeLg,
+                    color: themeObj.colorText,
+                    marginBottom: "5px",
+                  }>
+                  {React.string("Routing number")}
+                </div>
+                <Input
+                  value=routingNumber
+                  inputRef=routeref
+                  isValid=isRoutingValid
+                  setIsValid=setIsRoutingValid
+                  onChange=handleRoutingChange
+                  type_="tel"
+                  className={` p-2 text-base px-4`}
+                  maxLength=9
+                  placeholder="123456789"
+                  errorString=routingError
+                  onBlur=routingBlur
+                  onFocus={_ => setInputFocus(_ => Routing)}
+                />
+              </div>
+            </RenderIf>
+            <RenderIf condition={isAchDebit || isBecsDebit}>
+              <div className="w-full ">
+                <div
+                  className={`Label mb-1 mt-5`}
+                  style={
+                    fontWeight: themeObj.fontWeightNormal,
+                    fontSize: themeObj.fontSizeLg,
+                    color: themeObj.colorText,
+                    marginBottom: "5px",
+                  }>
+                  {React.string("Account number")}
+                </div>
+                <Input
+                  value=accountNum
+                  inputRef=accountRef
+                  onChange=handleAccountNumChange
+                  type_="tel"
+                  className={`p-2 text-base px-4`}
+                  maxLength={isBecsDebit ? 9 : 17}
+                  placeholder="000123456789"
+                  onFocus={_ => setInputFocus(_ => Account)}
+                  onBlur={_ => setInputFocus(_ => NONE)}
+                />
+              </div>
+            </RenderIf>
+          </div>
+          <RenderIf condition={isAchDebit}>
+            <div
+              className="w-full mb-1 mt-5"
+              style={
+                fontWeight: themeObj.fontWeightNormal,
+                fontSize: themeObj.fontSizeLg,
+                color: themeObj.colorText,
+                marginBottom: "5px",
+              }>
+              <DropdownField
+                appearance=config.appearance
+                fieldName="Account type"
+                value=accountType
+                setValue=setAccountType
+                disabled=false
+                options=[
+                  {
+                    value: "Savings",
+                  },
+                  {
+                    value: "Checking",
+                  },
+                ]
+                className=" focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
+              />
+            </div>
+          </RenderIf>
+          <RenderIf condition={isBecsDebit}>
+            <div
+              className={`Label mb-1 mt-5`}
+              style={
+                fontWeight: themeObj.fontWeightNormal,
+                fontSize: themeObj.fontSizeLg,
+                color: themeObj.colorText,
+                marginBottom: "5px",
+              }>
+              {React.string("BSB")}
+            </div>
+            <Input
+              value=sortCode
+              inputRef=sortCodeRef
+              onChange=changeSortCode
               type_="tel"
               className={`p-2 text-base px-4`}
-              maxLength={isBecsDebit ? 9 : 17}
-              placeholder="000123456789"
-              onFocus={_ => setInputFocus(_ => Account)}
-              onBlur={_ => setInputFocus(_ => NONE)}
+              maxLength=7
+              placeholder="eg: 000-000"
             />
-          </div>
-        </RenderIf>
-      </div>
-      <RenderIf condition={isAchDebit}>
-        <div
-          className="w-full mb-1 mt-5"
-          style={
-            fontWeight: themeObj.fontWeightNormal,
-            fontSize: themeObj.fontSizeLg,
-            color: themeObj.colorText,
-            marginBottom: "5px",
-          }>
-          <DropdownField
-            appearance=config.appearance
-            fieldName="Account type"
-            value=accountType
-            setValue=setAccountType
-            disabled=false
-            options=[
-              {
-                value: "Savings",
-              },
-              {
-                value: "Checking",
-              },
-            ]
-            className=" focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
+          </RenderIf>
+          <Button
+            active=submitActive
+            onclick={_ => {
+              setModalData(_ => Some({
+                routingNumber,
+                accountNumber: accountNum,
+                accountHolderName,
+                accountType: accountType->String.toLowerCase,
+                iban,
+                sortCode,
+              }))
+              Modal.close(setOpenModal)
+            }}
           />
-        </div>
-      </RenderIf>
-      <RenderIf condition={isBecsDebit}>
-        <div
-          className={`Label mb-1 mt-5`}
-          style={
-            fontWeight: themeObj.fontWeightNormal,
-            fontSize: themeObj.fontSizeLg,
-            color: themeObj.colorText,
-            marginBottom: "5px",
-          }>
-          {React.string("BSB")}
-        </div>
-        <Input
-          value=sortCode
-          inputRef=sortCodeRef
-          onChange=changeSortCode
-          type_="tel"
-          className={`p-2 text-base px-4`}
-          maxLength=7
-          placeholder="eg: 000-000"
-        />
-      </RenderIf>
-      <Button
-        active=submitActive
-        onclick={_ => {
-          setModalData(_ => Some({
-            routingNumber,
-            accountNumber: accountNum,
-            accountHolderName,
-            accountType: accountType->String.toLowerCase,
-            iban,
-            sortCode,
-          }))
-          Modal.close(setOpenModal)
-        }}
-      />
-    </>
+        </>
+      }}
+    />
 
   <Modal loader=false testMode=true openModal setOpenModal>
     <div className="flex flex-col w-full h-auto overflow-scroll">

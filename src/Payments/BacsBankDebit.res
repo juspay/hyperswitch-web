@@ -1,5 +1,4 @@
 open RecoilAtoms
-open RecoilAtomTypes
 open Utils
 
 let formatSortCode = sortcode => {
@@ -28,20 +27,12 @@ let make = () => {
   let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let country = Recoil.useRecoilValueFromAtom(userAddressCountry)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let (sortcode, setSortcode) = React.useState(_ => "")
   let (accountNumber, setAccountNumber) = React.useState(_ => "")
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let countryCode = Utils.getCountryCode(country.value).isoAlpha2
-  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
 
   let (sortCodeError, setSortCodeError) = React.useState(_ => "")
 
@@ -57,25 +48,15 @@ let make = () => {
   let isVerifyPMAuthConnectorConfigured =
     displaySavedPaymentMethods && pmAuthMapper->Dict.get("sepa")->Option.isSome
 
-  let complete =
-    email.value != "" &&
-    email.isValid->Option.getOr(false) &&
-    sortcode->cleanSortCode->String.length == 6 &&
-    accountNumber != "" &&
-    fullName.value != "" &&
-    isAddressComplete(line1, state, city, country, postalCode) &&
-    postalCode.isValid->Option.getOr(false)
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  let empty =
-    email.value == "" ||
-    sortcode == "" ||
-    fullName.value != "" ||
-    accountNumber == "" ||
-    line1.value == "" && line2.value == "" ||
-    city.value == "" ||
-    postalCode.value == "" ||
-    country.value == "" ||
-    state.value == ""
+  let complete =
+    areRequiredFieldsValid &&
+    !areRequiredFieldsEmpty &&
+    sortcode->cleanSortCode->String.length == 6 &&
+    accountNumber != ""
+
+  let empty = areRequiredFieldsEmpty || sortcode == "" || accountNumber == ""
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bacs_bank_debit")
 
@@ -90,18 +71,22 @@ let make = () => {
 
     if confirm.doSubmit {
       if complete {
-        let body = PaymentBody.bacsBankDebitBody(
-          ~email=email.value,
-          ~accNum=accountNumber,
-          ~sortCode=sortcode,
-          ~line1=line1.value,
-          ~line2=line2.value,
-          ~city=city.value,
-          ~zip=postalCode.value,
-          ~stateCode,
-          ~country=countryCode,
-          ~bankAccountHolderName=fullName.value,
-        )
+        let body =
+          PaymentBody.dynamicPaymentBody("bank_debit", "bacs")
+          ->getJsonFromArrayOfJson
+          ->flattenObject(true)
+          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->getArrayOfTupleFromDict
+          ->Array.concat([
+            (
+              "payment_method_data.bank_debit.bacs_bank_debit.account_number",
+              accountNumber->JSON.Encode.string,
+            ),
+            (
+              "payment_method_data.bank_debit.bacs_bank_debit.sort_code",
+              sortcode->cleanSortCode->JSON.Encode.string,
+            ),
+          ])
         intent(
           ~bodyArr=body,
           ~confirmParam=confirm.confirmParams,
@@ -163,9 +148,7 @@ let make = () => {
             placeholder="00012345"
           />
         </div>
-        <EmailPaymentInput />
-        <FullNamePaymentInput customFieldName=Some("Bank Holder Name") />
-        <AddressPaymentInput />
+        <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
         <Surcharge paymentMethod paymentMethodType />
         <Terms paymentMethod paymentMethodType />
       </div>

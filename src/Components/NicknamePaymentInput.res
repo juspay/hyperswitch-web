@@ -1,25 +1,40 @@
 @react.component
-let make = () => {
+let make = (~name="userCardNickName") => {
   open RecoilAtoms
-  open Utils
 
-  let (nickName, setNickName) = Recoil.useRecoilState(userCardNickName)
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+
+  let createValidator = rule =>
+    Validation.createFieldValidator(
+      rule,
+      ~enabledCardSchemes=[],
+      ~localeObject=localeString->Obj.magic,
+    )
+
+  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+    name,
+    ~config={validate: createValidator(Validation.Nickname)},
+  )
+
+  let nickNameValue = field.input.value->Option.getOr("")
 
   let onChange = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setNickName(prev => setNickNameState(val, prev, localeString))
+    field.input.onChange(val)
   }
 
-  let onBlur = ev => {
-    let val: string = ReactEvent.Focus.target(ev)["value"]
-    setNickName(prev => setNickNameState(val, prev, localeString))
+  let onBlur = (_ev: JsxEventU.Focus.t) => {
+    field.input.onBlur()
   }
 
   <PaymentField
     fieldName=localeString.cardNickname
-    value=nickName
-    setValue=setNickName
+    value={
+      RecoilAtomTypes.value: nickNameValue,
+      isValid: Some(field.meta.valid),
+      errorString: field.meta.touched ? field.meta.error->Option.getOr("") : "",
+    }
+    setValue={_ => ()}
     onChange
     onBlur
     type_="userCardNickName"

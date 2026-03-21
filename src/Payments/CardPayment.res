@@ -573,6 +573,7 @@ let make = (
             cvcProps={Some(cvcProps)}
             isBancontact
             isSaveDetailsWithClickToPay
+            areCardFieldsRendered=true
           />
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="flex items-center justify-start">

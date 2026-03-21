@@ -39,6 +39,24 @@ const devServer = {
         "^/assets/v1/jsons/location/": "/assets/v1/jsons/location/",
       },
     },
+    {
+      context: ["/assets/v1/configs/superposition.config.json"],
+      target: "https://beta.hyperswitch.io",
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: {
+        "^/assets/v1/configs/superposition.config.json": "/assets/v1/configs/superposition.config.json",
+      },
+    },
+    {
+      context: ["/assets/v2/configs/superposition.config.json"],
+      target: "https://beta.hyperswitch.io",
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: {
+        "^/assets/v2/configs/superposition.config.json": "/assets/v2/configs/superposition.config.json",
+      },
+    },
     // Uncomment the following if needed for 3DS method proxying
     // {
     //   context: ["/3dsmethod"],
