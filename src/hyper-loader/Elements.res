@@ -90,7 +90,7 @@ let make = (
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabled}&sdkAuthorization=${sdkAuthorization}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabled}&sdkAuthorization=${sdkAuthorization}"
               allow="*"
               name="orca-payment"
               style="outline: none;"
