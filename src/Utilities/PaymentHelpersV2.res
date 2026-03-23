@@ -379,10 +379,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
   ) => {
     switch keys.pmSessionId {
     | Some(pmSessionId) =>
-      let headers = [
-        ("Content-Type", "application/json"),
-        ("Authorization", `${keys.sdkAuthorization->Option.getOr("")}`),
-      ]
+      let headers = [("Authorization", `${keys.sdkAuthorization->Option.getOr("")}`)]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/confirm`
 
@@ -439,10 +436,7 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
   ) => {
     switch keys.pmSessionId {
     | Some(pmSessionId) =>
-      let headers = [
-        ("Content-Type", "application/json"),
-        ("Authorization", `${keys.sdkAuthorization->Option.getOr("")}`),
-      ]
+      let headers = [("Authorization", `${keys.sdkAuthorization->Option.getOr("")}`)]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
