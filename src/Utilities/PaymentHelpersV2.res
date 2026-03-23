@@ -338,7 +338,7 @@ let updatePaymentMethod = (
 ) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Authorization", sdkAuthorization), ("Content-Type", "application/json")]
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
   fetchApi(
