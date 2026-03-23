@@ -227,6 +227,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_open_banking_pis: `开放银行`,
   payment_methods_evoucher: `电子代金券`,
   payment_methods_pix_transfer: `Pix`,
+  payment_methods_pix_automatico_qr: `Pix 自动 QR`,
+  payment_methods_pix_automatico_push: `Pix 自动推送`,
   payment_methods_boleto: `Boleto`,
   payment_methods_paypal: `Paypal`,
   payment_methods_local_bank_transfer_transfer: `银联`,

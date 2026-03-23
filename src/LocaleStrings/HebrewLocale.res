@@ -228,6 +228,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_open_banking_pis: `בנקאות פתוחה`,
   payment_methods_evoucher: `שובר אלקטרוני`,
   payment_methods_pix_transfer: `פיקס`,
+  payment_methods_pix_automatico_qr: `פיקס אוטומטי QR`,
+  payment_methods_pix_automatico_push: `פיקס אוטומטי Push`,
   payment_methods_boleto: `בולטו`,
   payment_methods_paypal: `פייפאל`,
   payment_methods_local_bank_transfer_transfer: `יוניון פיי`,
