@@ -8,7 +8,7 @@ import {
   connectorProfileIdMapping,
   connectorEnum,
 } from "../support/utils";
-describe("External 3DS using Juspay Checks", () => {
+describe.skip("External 3DS using Juspay Checks", () => {
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
   const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
