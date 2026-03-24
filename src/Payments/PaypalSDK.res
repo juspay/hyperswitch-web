@@ -77,6 +77,15 @@ let make = (~sessionObj: SessionsType.token) => {
     loggerState.setLogInfo(~value="PayPal SDK Script Loading", ~eventName=PAYPAL_SDK_FLOW)
     let paypalScript = Window.createElement("script")
     paypalScript->Window.elementSrc(paypalScriptURL)
+
+    // Add data-user-id-token attribute if available
+    if sessionObj.dataUserIdToken !== "" {
+      Console.log2(
+        "Adding Paypal USER ID TOKEN to Paypal SDK Script===>",
+        sessionObj.dataUserIdToken,
+      )
+      paypalScript->Window.setAttribute("data-user-id-token", sessionObj.dataUserIdToken)
+    }
     paypalScript->Window.elementOnerror(exn => {
       let err = exn->Identity.anyTypeToJson->JSON.stringify
       loggerState.setLogError(
