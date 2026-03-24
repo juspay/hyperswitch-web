@@ -86,6 +86,9 @@ let make = (
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
+  let setPaymentFailedErrorMessage = Recoil.useSetRecoilState(
+    RecoilAtoms.paymentFailedErrorMessage,
+  )
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
   )
@@ -105,6 +108,11 @@ let make = (
     }
     None
   }, (cardBrand, clickToPayConfig.availableCardBrands))
+
+  React.useEffect(() => {
+    setPaymentFailedErrorMessage(_ => "")
+    None
+  }, (cardNumber, cardExpiry, cvcNumber))
 
   let combinedCardNetworks = React.useMemo1(() => {
     let cardPaymentMethod =

@@ -37,6 +37,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     RecoilAtoms.showPaymentMethodsScreen,
   )
   let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
+  let setPaymentFailedErrorMessage = Recoil.useSetRecoilState(RecoilAtoms.paymentFailedErrorMessage)
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     paymentMethodListValue,
   )
@@ -259,6 +260,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
     None
   }, (selectedOption, cardOptions, dropDownOptions, showAllPaymentMethods, layoutClass))
+
+  React.useEffect(() => {
+    setPaymentFailedErrorMessage(_ => "")
+    None
+  }, [selectedOption])
 
   let isSelectedOptionValid = React.useMemo(() => {
     selectedOption !== "" && paymentOptions->Array.includes(selectedOption)
@@ -606,6 +612,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <PaymentElementShimmer />
       </RenderIf>
     }}
+    <PaymentErrorBanner />
     <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
       <div className="mt-4">
         <PayNowButton />
