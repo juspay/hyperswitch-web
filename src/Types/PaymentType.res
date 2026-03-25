@@ -3,7 +3,7 @@ type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
 type layout = Accordion | Tabs
 type groupingBehavior = GroupByPaymentMethods | Default
-type savedMethodCustomization = {groupingBehavior: groupingBehavior, hideExpiryDate: bool}
+type savedMethodCustomization = {groupingBehavior: groupingBehavior, hideCardExpiry: bool}
 open Utils
 open ErrorUtils
 
@@ -236,7 +236,7 @@ type payerDetails = {
   phone: option<string>,
 }
 
-let defaultSavedMethodCustomization = {groupingBehavior: Default, hideExpiryDate: false}
+let defaultSavedMethodCustomization = {groupingBehavior: Default, hideCardExpiry: false}
 let defaultCardDetails = {
   scheme: None,
   last4Digits: "",
@@ -791,7 +791,7 @@ let getSavedMethodCustomization = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["groupingBehavior", "hideExpiryDate"],
+      ["groupingBehavior", "hideCardExpiry"],
       json,
       "options.layout.savedMethodCustomization",
     )
@@ -802,7 +802,7 @@ let getSavedMethodCustomization = (dict, str, logger) => {
         "default",
         ~logger,
       )->getSavedMethodLayout,
-      hideExpiryDate: getBool(json, "hideExpiryDate", false),
+      hideCardExpiry: getBool(json, "hideCardExpiry", false),
     }
   })
   ->Option.getOr(defaultSavedMethodCustomization)

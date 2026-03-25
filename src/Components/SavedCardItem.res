@@ -69,7 +69,7 @@ let make = (
     displayBillingDetails,
     layout,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let {hideExpiryDate} = CardUtils.getLayoutClass(layout).savedMethodCustomization
+  let {hideCardExpiry} = CardUtils.getLayoutClass(layout).savedMethodCustomization
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
   let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcError} = cvcProps
   let cvcRef = React.useRef(Nullable.null)
@@ -244,7 +244,7 @@ let make = (
                 </div>
               </div>
             </div>
-            <RenderIf condition={isCard && !hideExpiryDate}>
+            <RenderIf condition={isCard && !hideCardExpiry}>
               <div
                 className={`flex flex-row items-center justify-end gap-3 -mt-1`}
                 style={fontSize: "14px", opacity: "0.5"}
@@ -254,7 +254,7 @@ let make = (
                 </div>
               </div>
             </RenderIf>
-            <RenderIf condition={hideExpiryDate && isActive && isRenderCvv}>
+            <RenderIf condition={hideCardExpiry && isActive && isRenderCvv}>
               <div className="flex flex-row items-center gap-2 mr-2 text-sm">
                 <div className="tracking-widest opacity-50">
                   {React.string(`${localeString.cvcTextLabel}:`)}
@@ -265,7 +265,7 @@ let make = (
           </div>
           <div className="w-full">
             <div className="flex flex-col items-start ml-8">
-              <RenderIf condition={!hideExpiryDate && isActive && isRenderCvv}>
+              <RenderIf condition={!hideCardExpiry && isActive && isRenderCvv}>
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
                   style={fontSize: "14px", opacity: "0.5"}>
