@@ -1,4 +1,5 @@
 open RecoilAtoms
+open Utils
 @react.component
 let make = (
   ~paymentType: CardThemeType.mode,
@@ -32,6 +33,164 @@ let make = (
   } = expiryProps
 
   let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef} = cvcProps
+
+  let keys = Recoil.useRecoilValueFromAtom(keys)
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let (cvcErrorMessage, setCvcErrorMessage) = React.useState(_ => "")
+  let cvcNumberRef = React.useRef(cvcNumber)
+  let isCVCValidRef = React.useRef(isCVCValid)
+
+  React.useEffect(() => {
+    cvcNumberRef.current = cvcNumber
+    isCVCValidRef.current = isCVCValid
+    None
+  }, [cvcNumber, isCVCValid->Option.getOr(false)->Js.Json.boolean->Js.Json.stringify])
+
+  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.elementOptions)
+  let displayErrorMessage = if options.showError {
+    cvcErrorMessage
+  } else {
+    ""
+  }
+  React.useEffect0(() => {
+    open Promise
+    let handleRequestCVCConfirm = (ev: Window.event) => {
+      let json = ev.data->safeParse
+      try {
+        let dict = json->getDictFromJson
+        switch dict->Dict.get("requestCVCConfirm") {
+        | Some(confirmParams) => {
+            let confirmParamsDict = confirmParams->getDictFromJson
+            let componentType = confirmParamsDict->getString("componentType", "")
+            let requiresCvv = confirmParamsDict->getBool("requiresCvv", true)
+
+            if componentType === "cardCvc" && paymentType === CardCVCElement {
+              let body = confirmParamsDict->getJsonObjectFromDict("body")
+              let bodyArr = body->JSON.Decode.object->Option.getOr(Dict.make())->Dict.toArray
+              let payload = confirmParamsDict->getJsonFromDict("payload", JSON.Encode.null)
+              let paymentTypeStr = confirmParamsDict->getString("paymentType", "card")
+              let publishableKeyVal =
+                confirmParamsDict->getString("publishableKey", keys.publishableKey)
+              let clientSecretVal =
+                confirmParamsDict->getString("clientSecret", keys.clientSecret->Option.getOr(""))
+
+              let cardBrandFromMessage = confirmParamsDict->getString("cardBrand", "")
+
+              let currentCvcNumber = cvcNumberRef.current
+              let currentIsCVCValid = isCVCValidRef.current->Option.getOr(false)
+
+              let cvcPatternObj = CardValidations.getobjFromCardPattern(cardBrandFromMessage)
+              let maxCvcLength = cvcPatternObj.maxCVCLength
+              let isCvcComplete =
+                currentCvcNumber->String.length == maxCvcLength &&
+                  CardUtils.cvcNumberInRange(
+                    currentCvcNumber,
+                    cardBrandFromMessage,
+                  )->Array.includes(true)
+
+              if requiresCvv && currentIsCVCValid && isCvcComplete {
+                setCvcErrorMessage(_ => "")
+
+                let bodyWithCvc =
+                  bodyArr->Array.concat([("card_cvc", currentCvcNumber->JSON.Encode.string)])
+
+                let paymentType = paymentTypeStr->PaymentHelpers.getPaymentType
+                let redirectionFlags = RecoilAtoms.defaultRedirectionFlags
+
+                PaymentHelpers.paymentIntentForPaymentSession(
+                  ~body=bodyWithCvc,
+                  ~paymentType,
+                  ~payload,
+                  ~publishableKey=publishableKeyVal,
+                  ~clientSecret=clientSecretVal,
+                  ~logger=loggerState,
+                  ~customPodUri,
+                  ~redirectionFlags,
+                  ~isPaymentSession=false,
+                )
+                ->then(response => {
+                  messageParentWindow([
+                    ("cvcWidgetConfirmResponse", response),
+                    ("success", true->JSON.Encode.bool),
+                  ])
+                  resolve()
+                })
+                ->catch(err => {
+                  messageParentWindow([
+                    (
+                      "cvcWidgetConfirmResponse",
+                      err->formatException->JSON.stringify->JSON.Encode.string,
+                    ),
+                    ("success", false->JSON.Encode.bool),
+                  ])
+                  resolve()
+                })
+                ->ignore
+              } else if requiresCvv {
+                let isEmptyCVC = currentCvcNumber->String.length == 0
+                let errorMsg = if isEmptyCVC {
+                  localeString.cvcNumberEmptyText
+                } else {
+                  localeString.inCompleteCVCErrorText
+                }
+
+                setCvcErrorMessage(_ => errorMsg)
+
+                let failedResponseMsg = if isEmptyCVC {
+                  localeString.enterFieldsText
+                } else {
+                  localeString.enterValidDetailsText
+                }
+                postFailedSubmitResponse(~errortype="validation_error", ~message=failedResponseMsg)
+
+                messageParentWindow([
+                  ("cvcWidgetConfirmResponse", errorMsg->JSON.Encode.string),
+                  ("success", false->JSON.Encode.bool),
+                ])
+              } else {
+                messageParentWindow([
+                  ("cvcWidgetConfirmResponse", JSON.Encode.null),
+                  ("success", true->JSON.Encode.bool),
+                ])
+              }
+            }
+          }
+        | None => ()
+        }
+      } catch {
+      | _ => ()
+      }
+    }
+    Window.addEventListener("message", handleRequestCVCConfirm)
+    Some(
+      () => {
+        Window.removeEventListener("message", handleRequestCVCConfirm)
+      },
+    )
+  })
+
+  React.useEffect0(() => {
+    let handleCheckCVCWidgetPresent = (ev: Window.event) => {
+      let json = ev.data->safeParse
+      try {
+        let dict = json->getDictFromJson
+        if dict->Dict.get("checkCVCWidgetPresent")->Option.isSome {
+          if paymentType === CardCVCElement {
+            messageParentWindow([("cvcWidgetPresent", true->JSON.Encode.bool)])
+          }
+        }
+      } catch {
+      | _ => ()
+      }
+    }
+    Window.addEventListener("message", handleCheckCVCWidgetPresent)
+    Some(
+      () => {
+        Window.removeEventListener("message", handleCheckCVCWidgetPresent)
+      },
+    )
+  })
 
   let blur = blurState ? "blur(2px)" : ""
   let frameRef = React.useRef(Nullable.null)
@@ -124,10 +283,12 @@ let make = (
             className={`tracking-widest w-auto`}
             maxLength=4
             inputRef=cvcRef
-            placeholder="123"
+            placeholder=options.placeholder
             id="card-cvc"
             isFocus
             autocomplete="cc-csc"
+            errorString=displayErrorMessage
+            errorStringClasses="text-xs text-red-950"
           />
         | PaymentMethodsManagement =>
           <ReusableReactSuspense

@@ -1661,6 +1661,7 @@ let paymentIntentForPaymentSession = (
   ~logger,
   ~customPodUri,
   ~redirectionFlags,
+  ~isPaymentSession=true,
 ) => {
   let confirmParams =
     payload
@@ -1716,7 +1717,7 @@ let paymentIntentForPaymentSession = (
     ~customPodUri,
     ~sdkHandleOneClickConfirmPayment=false,
     ~counter=0,
-    ~isPaymentSession=true,
+    ~isPaymentSession,
     ~redirectionFlags,
   )
 }
