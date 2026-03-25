@@ -1013,11 +1013,12 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   let setPaymentFailedErrorMessage = Recoil.useSetRecoilState(paymentFailedErrorMessage)
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="") => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
-      let headers = [("Content-Type", "application/json")]
+      let headers = [("Content-Type", "application/json"), ("Accept-Language", config.locale)]
 
       switch keys.sdkAuthorization->Utils.getNonEmptyOption {
       | Some(_) => ()
@@ -1099,6 +1100,7 @@ let useCompleteAuthorizeHandler = () => {
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   (
     ~clientSecret: option<string>,
@@ -1125,6 +1127,8 @@ let useCompleteAuthorizeHandler = () => {
           ("X-Client-Source", paymentMode->Option.getOr("")),
         ]
       }
+
+      finalHeaders->Array.push(("Accept-Language", config.locale))
 
       let sdkAuth = switch (
         keys.sdkAuthorization->Utils.getNonEmptyOption,
@@ -1249,6 +1253,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   let setPaymentFailedErrorMessage = Recoil.useSetRecoilState(paymentFailedErrorMessage)
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -1264,6 +1269,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
       let headers = {
         let baseHeaders = [
           ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+          ("Accept-Language", config.locale),
         ]
         switch keys.sdkAuthorization->Utils.getNonEmptyOption {
         | Some(sdkAuth) => baseHeaders->Array.push(("Authorization", sdkAuth))
@@ -1956,6 +1962,7 @@ let usePostSessionTokens = (
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   let setPaymentFailedErrorMessage = Recoil.useSetRecoilState(paymentFailedErrorMessage)
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -1972,6 +1979,7 @@ let usePostSessionTokens = (
       let headers = [
         ("Content-Type", "application/json"),
         ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+        ("Accept-Language", config.locale),
       ]
 
       let body = [

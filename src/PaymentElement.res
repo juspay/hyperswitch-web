@@ -18,6 +18,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     customerPaymentMethods,
     displaySavedPaymentMethods,
     sdkHandleConfirmPayment,
+    displayPaymentFailureMessage,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -612,7 +613,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <PaymentElementShimmer />
       </RenderIf>
     }}
-    <PaymentErrorBanner />
+    <RenderIf condition={displayPaymentFailureMessage}>
+      <PaymentErrorBanner />
+    </RenderIf>
     <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
       <div className="mt-4">
         <PayNowButton />

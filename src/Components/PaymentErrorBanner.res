@@ -1,10 +1,29 @@
+@val @scope("document")
+external addDocumentEventListener: (string, _ => unit) => unit = "addEventListener"
+
+@val @scope("document")
+external removeDocumentEventListener: (string, _ => unit) => unit = "removeEventListener"
+
 @react.component
 let make = () => {
   let errorMessage = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentFailedErrorMessage)
+  let setErrorMessage = Recoil.useSetRecoilState(RecoilAtoms.paymentFailedErrorMessage)
+
+  React.useEffect(() => {
+    if errorMessage->String.length > 0 {
+      let handler = _event => {
+        setErrorMessage(_ => "")
+      }
+      addDocumentEventListener("input", handler)
+      Some(() => removeDocumentEventListener("input", handler))
+    } else {
+      None
+    }
+  }, [errorMessage])
 
   <RenderIf condition={errorMessage->String.length > 0}>
     <div
-      className="flex flex-row items-center gap-2 p-3 rounded-lg"
+      className="flex flex-row items-center gap-2 p-3 mt-4 rounded-lg"
       style={
         backgroundColor: "#FEF0F0",
         border: "1px solid #F5C6C6",
