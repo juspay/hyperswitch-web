@@ -235,6 +235,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `שמורים`,
   giftCardSectionTitle: `יש לך כרטיס מתנה?`,
   giftCardNumberLabel: `מספר כרטיס מתנה`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -259,4 +260,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `תשלום אחד של ${currency} ${amount}`
       : `${numPayments->Int.toString} תשלומים של ${currency} ${amount}`,
   installmentSelectPlanError: "אנא בחר תוכנית תשלומים",
+  showMore: "הצג עוד",
+  showLess: "הצג פחות",
 }
