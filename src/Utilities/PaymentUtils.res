@@ -405,8 +405,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode
     displayInSeparateScreen,
     groupByPaymentMethods,
   } = layoutClass.savedMethodCustomization.groupingBehavior
-  let displayGroupedSavedMethods =
-    displayInSeparateScreen == false && groupByPaymentMethods == false
+  let displayGroupedSavedMethods = !displayInSeparateScreen && !groupByPaymentMethods
 
   let showWalletsWithOtherPaymentMethods =
     !layoutClass.displayOneClickPaymentMethodsOnTop && paymentType === Payment

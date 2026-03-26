@@ -789,11 +789,10 @@ let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
 let getGroupingBehaviorFromString = str => {
   switch str {
   | "groupByPaymentMethods" => {displayInSeparateScreen: false, groupByPaymentMethods: true}
-  | "groupBySavedMethods" => {displayInSeparateScreen: true, groupByPaymentMethods: false}
   | "default" => defaultGroupingBehavior
   | str => {
       str->unknownPropValueWarning(
-        ["groupByPaymentMethods", "groupBySavedMethods", "default"],
+        ["groupByPaymentMethods", "default"],
         "options.layout.savedMethodCustomization.groupingBehavior",
       )
       defaultGroupingBehavior

@@ -6,7 +6,7 @@ let make = (~showMore, ~setShowMore) => {
     style={
       color: themeObj.colorPrimary,
     }
-    onClick={_ => setShowMore(_ => !showMore)}>
+    onClick={_ => setShowMore(prev => !prev)}>
     {showMore ? React.string(localeString.showMore) : React.string(localeString.showLess)}
     <div className="m-1">
       {showMore ? <Icon name="arrow-down" size=10 /> : <Icon name="arrow-up" size=10 />}

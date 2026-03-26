@@ -75,11 +75,9 @@ let make = (
     displayInSeparateScreen,
     groupByPaymentMethods,
   } = layoutClass.savedMethodCustomization.groupingBehavior
-  let groupSavedMethodsWithPaymentMethods =
-    displayInSeparateScreen == false && groupByPaymentMethods == true
+  let groupSavedMethodsWithPaymentMethods = !displayInSeparateScreen && groupByPaymentMethods
 
-  let groupSavedMethodsSeparately =
-    displayInSeparateScreen == false && groupByPaymentMethods == false
+  let groupSavedMethodsSeparately = !displayInSeparateScreen && !groupByPaymentMethods
 
   let maxItems = layoutClass.savedMethodCustomization.maxItems
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)

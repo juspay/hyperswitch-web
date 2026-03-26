@@ -67,11 +67,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     displayInSeparateScreen,
     groupByPaymentMethods,
   } = layoutClass.savedMethodCustomization.groupingBehavior
-  let groupSavedMethodsWithPaymentMethods =
-    displayInSeparateScreen == false && groupByPaymentMethods == true
+  let groupSavedMethodsWithPaymentMethods = !displayInSeparateScreen && groupByPaymentMethods
 
-  let groupSavedMethodsSeparately =
-    displayInSeparateScreen == false && groupByPaymentMethods == false
+  let groupSavedMethodsSeparately = !displayInSeparateScreen && !groupByPaymentMethods
 
   let (getVisaCards, closeComponentIfSavedMethodsAreEmpty) = ClickToPayHook.useClickToPay(
     ~areClickToPayUIScriptsLoaded,
