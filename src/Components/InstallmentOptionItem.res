@@ -7,6 +7,7 @@ let make = (
   ~isLastItem,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let installmentConfig = CustomPaymentMethodsConfig.useInstallmentConfig(~paymentMethod="card")
 
   let formatInterestRate = interestRate => Utils.formatAmountWithTwoDecimals(interestRate)
 
@@ -21,6 +22,9 @@ let make = (
   let totalAmount = Utils.formatAmountWithTwoDecimals(plan.amount_details.total_amount)
   let numberOfInstallments = plan.number_of_installments
   let interestLabel = getInterestLabel(plan.interest_rate)
+  let showInterestRates = installmentConfig
+    ->Option.map(c => c.showInterestRates == Auto)
+    ->Option.getOr(true)
 
   let mainInstallmentLabel = localeString.installmentPaymentLabel(
     numberOfInstallments,
@@ -52,13 +56,15 @@ let make = (
         </div>
       </div>
       <div className="flex flex-row w-full justify-between">
-        <span
-          className="opacity-60"
-          style={
-            fontSize: themeObj.fontSizeSm,
-          }>
-          {interestLabel->React.string}
-        </span>
+        <RenderIf condition={showInterestRates}>
+          <span
+            className="opacity-60"
+            style={
+              fontSize: themeObj.fontSizeSm,
+            }>
+            {interestLabel->React.string}
+          </span>
+        </RenderIf>
         <span
           style={
             color: themeObj.colorText,
