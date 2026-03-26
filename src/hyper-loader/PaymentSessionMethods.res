@@ -2,6 +2,10 @@ open Promise
 open Types
 open Utils
 
+let cvcWidgetNotFoundErrorType = "cvc_widget_not_found"
+let cvcValidationErrorType = "cvc_validation"
+let cvcWidgetTimeoutErrorType = "cvc_widget_timeout"
+
 let getCustomerSavedPaymentMethods = (
   ~clientSecret,
   ~publishableKey,
@@ -147,7 +151,7 @@ let getCustomerSavedPaymentMethods = (
                     ~message=responseData
                     ->JSON.Decode.string
                     ->Option.getOr("CVC validation failed"),
-                    ~errorType="cvc_validation",
+                    ~errorType=cvcValidationErrorType,
                   ),
                 )
               }
@@ -167,8 +171,6 @@ let getCustomerSavedPaymentMethods = (
             ("paymentType", (paymentType :> string)->JSON.Encode.string),
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("clientSecret", clientSecret->JSON.Encode.string),
-            ("customPodUri", customPodUri->JSON.Encode.string),
-            ("componentType", "cardCvc"->JSON.Encode.string),
             ("requiresCvv", requiresCvv->JSON.Encode.bool),
             ("cardBrand", cardBrand->JSON.Encode.string),
           ]->Dict.fromArray
@@ -178,7 +180,71 @@ let getCustomerSavedPaymentMethods = (
             iframe->Window.iframePostMessage(message)
           },
         )
+
+        // Timeout fallback: if the CVC widget iframe does not respond within 10 seconds
+        // (e.g. iframe crashed, message lost, slow network), resolve with a failure response
+        // so the payment flow is not left hanging indefinitely.
+        setTimeout(
+          () => {
+            resolve(
+              handleFailureResponse(
+                ~message="CVC widget response timed out",
+                ~errorType=cvcWidgetTimeoutErrorType,
+              ),
+            )
+          },
+          10000,
+        )->ignore
       })
+    }
+
+    let confirmWithCVCOrPaymentSession = (
+      ~body,
+      ~payload,
+      ~paymentType,
+      ~requiresCvv,
+      ~cardBrand,
+    ) => {
+      let payloadDict = payload->JSON.Decode.object->Option.getOr(Dict.make())
+      switch payloadDict->Dict.get("cvc") {
+      | Some(cvcValue) => {
+          body->Array.push(("card_cvc", cvcValue))->ignore
+          PaymentHelpers.paymentIntentForPaymentSession(
+            ~body,
+            ~paymentType,
+            ~payload,
+            ~publishableKey,
+            ~clientSecret,
+            ~logger,
+            ~customPodUri,
+            ~redirectionFlags,
+          )
+        }
+      | None =>
+        if requiresCvv {
+          checkCVCWidgetPresent()->then(isWidgetPresent => {
+            if isWidgetPresent {
+              confirmWithCVCWidget(~body, ~payload, ~paymentType, ~requiresCvv=true, ~cardBrand)
+            } else {
+              handleFailureResponse(
+                ~message="CVC is required. Mount CVC Widget or pass cvc props",
+                ~errorType=cvcWidgetNotFoundErrorType,
+              )->resolve
+            }
+          })
+        } else {
+          PaymentHelpers.paymentIntentForPaymentSession(
+            ~body,
+            ~paymentType,
+            ~payload,
+            ~publishableKey,
+            ~clientSecret,
+            ~logger,
+            ~customPodUri,
+            ~redirectionFlags,
+          )
+        }
+      }
     }
 
     let confirmWithCustomerDefaultPaymentMethod = payload => {
@@ -198,57 +264,13 @@ let getCustomerSavedPaymentMethods = (
             body->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))->ignore
           }
 
-          let payloadDict = payload->JSON.Decode.object->Option.getOr(Dict.make())
-
-          switch payloadDict->Dict.get("cvc") {
-          | Some(cvcValue) => {
-              body->Array.push(("card_cvc", cvcValue))->ignore
-              PaymentHelpers.paymentIntentForPaymentSession(
-                ~body,
-                ~paymentType,
-                ~payload,
-                ~publishableKey,
-                ~clientSecret,
-                ~logger,
-                ~customPodUri,
-                ~redirectionFlags,
-              )
-            }
-          | None => {
-              let requiresCvv = defaultPaymentMethod.requiresCvv
-              if requiresCvv {
-                let cardBrand = defaultPaymentMethod.card.scheme->Option.getOr("")
-
-                checkCVCWidgetPresent()->then(isWidgetPresent => {
-                  if isWidgetPresent {
-                    confirmWithCVCWidget(
-                      ~body,
-                      ~payload,
-                      ~paymentType,
-                      ~requiresCvv=true,
-                      ~cardBrand,
-                    )
-                  } else {
-                    handleFailureResponse(
-                      ~message="CVC is required. Mount CVC Widget or pass cvc props",
-                      ~errorType="cvc_widget_not_found",
-                    )->resolve
-                  }
-                })
-              } else {
-                PaymentHelpers.paymentIntentForPaymentSession(
-                  ~body,
-                  ~paymentType,
-                  ~payload,
-                  ~publishableKey,
-                  ~clientSecret,
-                  ~logger,
-                  ~customPodUri,
-                  ~redirectionFlags,
-                )
-              }
-            }
-          }
+          confirmWithCVCOrPaymentSession(
+            ~body,
+            ~payload,
+            ~paymentType,
+            ~requiresCvv=defaultPaymentMethod.requiresCvv,
+            ~cardBrand=defaultPaymentMethod.card.scheme->Option.getOr(""),
+          )
         }
       | None =>
         handleFailureResponse(
@@ -399,56 +421,13 @@ let getCustomerSavedPaymentMethods = (
             body->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))->ignore
           }
 
-          let payloadDict = payload->JSON.Decode.object->Option.getOr(Dict.make())
-          switch payloadDict->Dict.get("cvc") {
-          | Some(cvcValue) => {
-              body->Array.push(("card_cvc", cvcValue))->ignore
-              PaymentHelpers.paymentIntentForPaymentSession(
-                ~body,
-                ~paymentType,
-                ~payload,
-                ~publishableKey,
-                ~clientSecret,
-                ~logger,
-                ~customPodUri,
-                ~redirectionFlags,
-              )
-            }
-          | None => {
-              let requiresCvv = lastUsedPaymentMethod.requiresCvv
-              if requiresCvv {
-                let cardBrand = lastUsedPaymentMethod.card.scheme->Option.getOr("")
-
-                checkCVCWidgetPresent()->then(isWidgetPresent => {
-                  if isWidgetPresent {
-                    confirmWithCVCWidget(
-                      ~body,
-                      ~payload,
-                      ~paymentType,
-                      ~requiresCvv=true,
-                      ~cardBrand,
-                    )
-                  } else {
-                    handleFailureResponse(
-                      ~message="CVC is required. Mount CVC Widget or pass cvc props",
-                      ~errorType="cvc_widget_not_found",
-                    )->resolve
-                  }
-                })
-              } else {
-                PaymentHelpers.paymentIntentForPaymentSession(
-                  ~body,
-                  ~paymentType,
-                  ~payload,
-                  ~publishableKey,
-                  ~clientSecret,
-                  ~logger,
-                  ~customPodUri,
-                  ~redirectionFlags,
-                )
-              }
-            }
-          }
+          confirmWithCVCOrPaymentSession(
+            ~body,
+            ~payload,
+            ~paymentType,
+            ~requiresCvv=lastUsedPaymentMethod.requiresCvv,
+            ~cardBrand=lastUsedPaymentMethod.card.scheme->Option.getOr(""),
+          )
         }
       | None =>
         handleFailureResponse(

@@ -5,6 +5,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   inValidCardErrorText: `El número de targeta no és vàlid.`,
   inValidExpiryErrorText: `La data de caducitat no és vàlida.`,
   inCompleteCVCErrorText: `El codi de seguretat de la targeta està incomplet.`,
+  cvcTooLongErrorText: n => `El CVC no pot tenir més de ${n->Int.toString} dígits.`,
   inCompleteExpiryErrorText: `La data de venciment de la targeta està incompleta.`,
   enterValidCardNumberErrorText: `Introduïu un número de targeta vàlid.`,
   pastExpiryErrorText: `La data de venciment de la targeta ja ha passat.`,

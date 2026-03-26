@@ -125,7 +125,7 @@ let defaultOptions = {
   hideIcon: false,
   showIcon: false,
   disabled: false,
-  placeholder: "CVC",
+  placeholder: "",
   showError: true,
 }
 let getClasses = (str, dict, logger) => {
@@ -253,7 +253,7 @@ let itemToObjMapper = (dict, logger) => {
     hideIcon: getBoolWithWarning(dict, "hideIcon", false, ~logger),
     showIcon: getBoolWithWarning(dict, "showIcon", false, ~logger),
     disabled: getBoolWithWarning(dict, "disabled", false, ~logger),
-    placeholder: getWarningString(dict, "placeholder", "CVC", ~logger),
+    placeholder: getWarningString(dict, "placeholder", "", ~logger),
     showError: getBoolWithWarning(dict, "showError", true, ~logger),
   }
 }

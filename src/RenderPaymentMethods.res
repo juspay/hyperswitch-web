@@ -37,15 +37,14 @@ let make = (
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let redirectionFlags = Recoil.useRecoilValueFromAtom(RecoilAtoms.redirectionFlagsAtom)
   let (cvcErrorMessage, setCvcErrorMessage) = React.useState(_ => "")
   let cvcNumberRef = React.useRef(cvcNumber)
-  let isCVCValidRef = React.useRef(isCVCValid)
 
   React.useEffect(() => {
     cvcNumberRef.current = cvcNumber
-    isCVCValidRef.current = isCVCValid
     None
-  }, [cvcNumber, isCVCValid->Option.getOr(false)->Js.Json.boolean->Js.Json.stringify])
+  }, [cvcNumber])
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.elementOptions)
   let displayErrorMessage = if options.showError {
@@ -62,10 +61,9 @@ let make = (
         switch dict->Dict.get("requestCVCConfirm") {
         | Some(confirmParams) => {
             let confirmParamsDict = confirmParams->getDictFromJson
-            let componentType = confirmParamsDict->getString("componentType", "")
             let requiresCvv = confirmParamsDict->getBool("requiresCvv", true)
 
-            if componentType === "cardCvc" && paymentType === CardCVCElement {
+            if paymentType === CardCVCElement {
               let body = confirmParamsDict->getJsonObjectFromDict("body")
               let bodyArr = body->JSON.Decode.object->Option.getOr(Dict.make())->Dict.toArray
               let payload = confirmParamsDict->getJsonFromDict("payload", JSON.Encode.null)
@@ -78,25 +76,16 @@ let make = (
               let cardBrandFromMessage = confirmParamsDict->getString("cardBrand", "")
 
               let currentCvcNumber = cvcNumberRef.current
-              let currentIsCVCValid = isCVCValidRef.current->Option.getOr(false)
 
-              let cvcPatternObj = CardValidations.getobjFromCardPattern(cardBrandFromMessage)
-              let maxCvcLength = cvcPatternObj.maxCVCLength
-              let isCvcComplete =
-                currentCvcNumber->String.length == maxCvcLength &&
-                  CardUtils.cvcNumberInRange(
-                    currentCvcNumber,
-                    cardBrandFromMessage,
-                  )->Array.includes(true)
+              let isCvcComplete = CardUtils.checkCardCVC(currentCvcNumber, cardBrandFromMessage)
 
-              if requiresCvv && currentIsCVCValid && isCvcComplete {
+              if requiresCvv && isCvcComplete {
                 setCvcErrorMessage(_ => "")
 
                 let bodyWithCvc =
                   bodyArr->Array.concat([("card_cvc", currentCvcNumber->JSON.Encode.string)])
 
                 let paymentType = paymentTypeStr->PaymentHelpers.getPaymentType
-                let redirectionFlags = RecoilAtoms.defaultRedirectionFlags
 
                 PaymentHelpers.paymentIntentForPaymentSession(
                   ~body=bodyWithCvc,
@@ -129,8 +118,12 @@ let make = (
                 ->ignore
               } else if requiresCvv {
                 let isEmptyCVC = currentCvcNumber->String.length == 0
+                let cardPatternObj = CardValidations.getobjFromCardPattern(cardBrandFromMessage)
+                let isTooLong = currentCvcNumber->String.length > cardPatternObj.maxCVCLength
                 let errorMsg = if isEmptyCVC {
                   localeString.cvcNumberEmptyText
+                } else if isTooLong {
+                  localeString.cvcTooLongErrorText(cardPatternObj.maxCVCLength)
                 } else {
                   localeString.inCompleteCVCErrorText
                 }
@@ -283,7 +276,9 @@ let make = (
             className={`tracking-widest w-auto`}
             maxLength=4
             inputRef=cvcRef
-            placeholder=options.placeholder
+            placeholder={options.placeholder === ""
+              ? localeString.cvcTextLabel
+              : options.placeholder}
             id="card-cvc"
             isFocus
             autocomplete="cc-csc"

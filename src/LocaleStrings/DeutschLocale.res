@@ -5,6 +5,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   inValidCardErrorText: `Kartennummer ist ungültig.`,
   inValidExpiryErrorText: `Das Ablaufdatum der Karte ist ungültig.`,
   inCompleteCVCErrorText: `Der Sicherheitscode Ihrer Karte ist unvollständig.`,
+  cvcTooLongErrorText: n => `CVC darf höchstens ${n->Int.toString} Ziffern haben.`,
   inCompleteExpiryErrorText: `Das Ablaufdatum Ihrer Karte ist unvollständig.`,
   enterValidCardNumberErrorText: `Bitte geben Sie eine gültige Kartennummer ein.`,
   pastExpiryErrorText: `Das Ablaufjahr Ihrer Karte liegt in der Vergangenheit.`,

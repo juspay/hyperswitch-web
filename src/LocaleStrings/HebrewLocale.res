@@ -5,6 +5,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   inValidCardErrorText: `אינו תקין`,
   inValidExpiryErrorText: `תוקף הכרטיס אינו תקף.`,
   inCompleteCVCErrorText: `קוד האבטחה של הכרטיס שלך אינו שלם`,
+  cvcTooLongErrorText: n =>
+    `CVC חייב להכיל לכל היותר ${n->Int.toString} ספרות.`,
   inCompleteExpiryErrorText: `פרטי תוקף של הכרטיס שלך אינם מלאים`,
   enterValidCardNumberErrorText: `נא להזין מספר כרטיס תקף.`,
   pastExpiryErrorText: `שנת תוקף של הכרטיס שלך עברה.`,
