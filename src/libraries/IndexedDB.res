@@ -105,22 +105,6 @@ let openDBAndGetRequest = (~dbName, ~objectStoreName) => {
   }
 }
 
-let setupDatabase = (~dbName, ~objectStoreName, ~onSuccess, ~onError) => {
-  switch openDBAndGetRequest(~dbName, ~objectStoreName) {
-  | Some(request) =>
-    request->OpenDBRequest.onsuccess(event => {
-      let db = getDbFromEvent(event)
-      onSuccess(db)
-    })
-
-    request->OpenDBRequest.onerror(event => {
-      let errorMessage = getErrorMessageFromEvent(event)
-      onError(errorMessage)
-    })
-  | None => onError("IndexedDB not available in this environment")
-  }
-}
-
 let addData = (db, objectStoreName, data) => {
   let transaction = db->DB.transaction([objectStoreName], "readwrite")
   let store = transaction->Transaction.objectStore(objectStoreName)
