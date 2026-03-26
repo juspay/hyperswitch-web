@@ -1,5 +1,7 @@
 @val @scope("self.clients") external claim: unit => unit = "claim"
 @val @scope("self") external skipWaiting: unit => unit = "skipWaiting"
+@val @scope("self")
+external selfAddEventListener: (string, 'event => unit) => unit = "addEventListener"
 
 let sendLogs = async (logs: array<JSON.t>) => {
   if logs->Array.length > 0 {
@@ -33,8 +35,6 @@ let sendIdbLogs = async () => {
   }
 }
 
-@val @scope("self") external addEventListener: (string, 'event => unit) => unit = "addEventListener"
-
 let processMessage = event => {
   try {
     let data = event["data"]
@@ -51,7 +51,7 @@ let processMessage = event => {
   }
 }
 
-addEventListener("message", event => processMessage(event))
+selfAddEventListener("message", event => processMessage(event))
 
 let processActivate = async () => {
   try {
@@ -62,9 +62,9 @@ let processActivate = async () => {
   }
 }
 
-addEventListener("install", _ => skipWaiting())
+selfAddEventListener("install", _ => skipWaiting())
 
-addEventListener("activate", _ => {
+selfAddEventListener("activate", _ => {
   claim()
   processActivate()->ignore
 })
