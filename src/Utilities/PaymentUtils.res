@@ -492,8 +492,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode
     }
     (
       wallets->removeDuplicate->Utils.getWalletPaymentMethod(paymentType),
-      paymentOptions
-      ->Array.concat(otherOptions)
+      otherOptions
       ->removeDuplicate
       ->filterPaymentMethods,
       otherOptions,

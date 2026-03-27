@@ -6,6 +6,7 @@ let make = (
   ~publishableKey,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
 ) => {
   let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =
@@ -15,6 +16,18 @@ let make = (
     ->Option.flatMap(JSON.Decode.string)
     ->Option.getOr("")
   let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
+
+  let updateIntent = (callback: unit => promise<string>) => {
+    UpdateIntentHelper.updateIntent(
+      ~iframes=iframeRef.contents,
+      ~clientSecret,
+      ~publishableKey,
+      ~logger,
+      ~customPodUri,
+      ~endpoint,
+      ~callback,
+    )
+  }
 
   let defaultInitPaymentSession = {
     getCustomerSavedPaymentMethods: _ =>
@@ -26,6 +39,7 @@ let make = (
         ~customPodUri,
         ~redirectionFlags,
       ),
+    updateIntent,
   }
 
   defaultInitPaymentSession
