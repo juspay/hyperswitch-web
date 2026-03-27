@@ -5,7 +5,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   inValidCardErrorText: `カード番号が無効です`,
   inValidExpiryErrorText: `カードの有効期限が無効です。`,
   inCompleteCVCErrorText: `カードのセキュリティ コードが不完全です`,
-  cvcTooLongErrorText: n => `CVCは最大${n->Int.toString}桁までです。`,
   inCompleteExpiryErrorText: `カードの有効期限が不完全です`,
   enterValidCardNumberErrorText: `有効なカード番号を入力してください。`,
   pastExpiryErrorText: `カードの有効期限が過ぎています`,

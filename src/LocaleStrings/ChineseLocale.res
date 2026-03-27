@@ -5,7 +5,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   inValidCardErrorText: `卡号无效。`,
   inValidExpiryErrorText: `卡片有效期无效。`,
   inCompleteCVCErrorText: `您的卡片安全码不完整。`,
-  cvcTooLongErrorText: n => `CVC最多为${n->Int.toString}位数字。`,
   inCompleteExpiryErrorText: `您的卡片到期日期不完整。`,
   enterValidCardNumberErrorText: `请输入有效的卡号。`,
   pastExpiryErrorText: `您的卡片到期年份已过期。`,

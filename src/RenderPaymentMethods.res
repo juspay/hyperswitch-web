@@ -67,9 +67,7 @@ let make = (
               let clientSecretVal =
                 confirmParamsDict->getString("clientSecret", keys.clientSecret->Option.getOr(""))
 
-              let cardBrandFromMessage = confirmParamsDict->getString("cardBrand", "")
-
-              let isCvcComplete = CardUtils.checkCardCVC(cvcNumber, cardBrandFromMessage)
+              let isCvcComplete = cvcNumber->String.length >= 3
 
               if requiresCvv && isCvcComplete {
                 setCvcErrorMessage(_ => "")
@@ -110,24 +108,15 @@ let make = (
                 ->ignore
               } else if requiresCvv {
                 let isEmptyCVC = cvcNumber->String.length == 0
-                let cardPatternObj = CardValidations.getobjFromCardPattern(cardBrandFromMessage)
-                let isTooLong = cvcNumber->String.length > cardPatternObj.maxCVCLength
+                // Future improvement: We can check if the CVC entered is more than 3 digits and show an appropriate error message. For now, we are just checking if it's less than 3 digits.
+
                 let errorMsg = if isEmptyCVC {
                   localeString.cvcNumberEmptyText
-                } else if isTooLong {
-                  localeString.cvcTooLongErrorText(cardPatternObj.maxCVCLength)
                 } else {
                   localeString.inCompleteCVCErrorText
                 }
 
                 setCvcErrorMessage(_ => errorMsg)
-
-                let failedResponseMsg = if isEmptyCVC {
-                  localeString.enterFieldsText
-                } else {
-                  localeString.enterValidDetailsText
-                }
-                postFailedSubmitResponse(~errortype="validation_error", ~message=failedResponseMsg)
 
                 messageParentWindow([
                   ("cvcWidgetConfirmResponse", errorMsg->JSON.Encode.string),

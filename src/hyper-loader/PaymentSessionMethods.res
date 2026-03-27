@@ -135,7 +135,6 @@ let getCustomerSavedPaymentMethods = (
       ~payload,
       ~paymentType: PaymentHelpersTypes.payment,
       ~requiresCvv,
-      ~cardBrand,
     ) => {
       Promise.make((resolve, _) => {
         let handleCVCWidgetConfirmResponse = (event: Types.event) => {
@@ -173,7 +172,6 @@ let getCustomerSavedPaymentMethods = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("clientSecret", clientSecret->JSON.Encode.string),
             ("requiresCvv", requiresCvv->JSON.Encode.bool),
-            ("cardBrand", cardBrand->JSON.Encode.string),
           ]->Dict.fromArray
         let message = [("requestCVCConfirm", confirmParams->JSON.Encode.object)]->Dict.fromArray
         iframeRef.contents->Array.forEach(
@@ -200,13 +198,7 @@ let getCustomerSavedPaymentMethods = (
       })
     }
 
-    let confirmWithCVCOrPaymentSession = (
-      ~body,
-      ~payload,
-      ~paymentType,
-      ~requiresCvv,
-      ~cardBrand,
-    ) => {
+    let confirmWithCVCOrPaymentSession = (~body, ~payload, ~paymentType, ~requiresCvv) => {
       let payloadDict = payload->JSON.Decode.object->Option.getOr(Dict.make())
       switch payloadDict->Dict.get("cvc") {
       | Some(cvcValue) => {
@@ -226,7 +218,7 @@ let getCustomerSavedPaymentMethods = (
         if requiresCvv {
           checkCVCWidgetPresent()->then(isWidgetPresent => {
             if isWidgetPresent {
-              confirmWithCVCWidget(~body, ~payload, ~paymentType, ~requiresCvv=true, ~cardBrand)
+              confirmWithCVCWidget(~body, ~payload, ~paymentType, ~requiresCvv=true)
             } else {
               handleFailureResponse(
                 ~message="CVC is required. Mount CVC Widget or pass cvc props",
@@ -271,7 +263,6 @@ let getCustomerSavedPaymentMethods = (
             ~payload,
             ~paymentType,
             ~requiresCvv=defaultPaymentMethod.requiresCvv,
-            ~cardBrand=defaultPaymentMethod.card.scheme->Option.getOr(""),
           )
         }
       | None =>
@@ -428,7 +419,6 @@ let getCustomerSavedPaymentMethods = (
             ~payload,
             ~paymentType,
             ~requiresCvv=lastUsedPaymentMethod.requiresCvv,
-            ~cardBrand=lastUsedPaymentMethod.card.scheme->Option.getOr(""),
           )
         }
       | None =>
