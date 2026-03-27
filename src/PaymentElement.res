@@ -109,10 +109,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         let finalSavedPaymentMethods =
           savedPaymentMethods
           ->Array.copy
-          ->filterSavedMethodsByWalletReadiness(
-            ~isApplePayReady,
-            ~isGooglePayReady=isGPayReady,
-          )
+          ->filterSavedMethodsByWalletReadiness(~isApplePayReady, ~isGooglePayReady=isGPayReady)
         finalSavedPaymentMethods->Array.sort(sortSavedPaymentMethods)
 
         let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate

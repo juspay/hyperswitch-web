@@ -122,7 +122,7 @@ let make = (
       )
       ->React.array}
       <RenderIf condition={hasMoreSavedMethods}>
-        <ShowMoreToggle showMore=isCollapsed setShowMore=setIsCollapsed />
+        <ShowMoreToggle isCollapsed setIsCollapsed />
       </RenderIf>
       <RenderIf condition={shouldShowClickToPaySection}>
         <ClickToPayAuthenticate
