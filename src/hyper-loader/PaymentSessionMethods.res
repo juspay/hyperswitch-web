@@ -122,6 +122,7 @@ let getCustomerSavedPaymentMethods = (
         setTimeout(
           () => {
             // No response means widget not present
+            EventListenerManager.removeSmartEventListener("message", "onCVCWidgetPresent")
             resolve(false)
           },
           500,
@@ -186,6 +187,7 @@ let getCustomerSavedPaymentMethods = (
         // so the payment flow is not left hanging indefinitely.
         setTimeout(
           () => {
+            EventListenerManager.removeSmartEventListener("message", "onCVCWidgetConfirmResponse")
             resolve(
               handleFailureResponse(
                 ~message="CVC widget response timed out",
