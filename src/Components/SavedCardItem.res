@@ -171,7 +171,7 @@ let make = (
       errorString=""
       inputFieldClassName="flex justify-start"
       type_="tel"
-      className={`tracking-widest justify-start w-full`}
+      className={`tracking-widest justify-start w-full opacity-50`}
       maxLength=4
       inputRef=cvcRef
       placeholder="123"
@@ -255,7 +255,7 @@ let make = (
               </div>
             </RenderIf>
             <RenderIf condition={hideCardExpiry && isActive && isRenderCvv}>
-              <div className="flex flex-row items-center gap-2 mr-2 text-sm">
+              <div className="flex flex-row items-center gap-2 mr-2">
                 <div className="tracking-widest opacity-50">
                   {React.string(`${localeString.cvcTextLabel}:`)}
                 </div>
@@ -281,6 +281,17 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf
+                condition={hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
+                <div
+                  className="Error pt-1 mt-1 ml-3"
+                  style={
+                    color: themeObj.colorDangerText,
+                    fontSize: themeObj.fontSizeSm,
+                  }>
+                  {React.string(cvcError)}
+                </div>
+              </RenderIf>
+              <RenderIf
                 condition={isActive && displayBillingDetails && billingDetailsArrayLength > 0}>
                 <div className="tracking-wide text-sm text-left gap-2 mt-4 ml-2">
                   <div className="font-semibold"> {React.string(billingDetailsText)} </div>
@@ -290,9 +301,9 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf
-                condition={isActive && isCVCEmpty && innerLayout === Spaced && cvcError != ""}>
+                condition={!hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
                 <div
-                  className="Error pt-1 mt-1 ml-2"
+                  className="Error pt-1 mt-1 ml-1"
                   style={
                     color: themeObj.colorDangerText,
                     fontSize: themeObj.fontSizeSm,
