@@ -171,7 +171,7 @@ let make = (
       errorString=""
       inputFieldClassName="flex justify-start"
       type_="tel"
-      className={`tracking-widest justify-start w-full opacity-50`}
+      className={`tracking-widest justify-start w-full`}
       maxLength=4
       inputRef=cvcRef
       placeholder="123"
@@ -259,7 +259,7 @@ let make = (
                 <div className="tracking-widest opacity-50">
                   {React.string(`${localeString.cvcTextLabel}:`)}
                 </div>
-                <div className="flex w-16"> cvcInputElement </div>
+                <div className="flex w-16 opacity-50"> cvcInputElement </div>
               </div>
             </RenderIf>
           </div>
