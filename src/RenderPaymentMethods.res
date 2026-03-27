@@ -39,12 +39,6 @@ let make = (
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(RecoilAtoms.redirectionFlagsAtom)
   let (cvcErrorMessage, setCvcErrorMessage) = React.useState(_ => "")
-  let cvcNumberRef = React.useRef(cvcNumber)
-
-  React.useEffect(() => {
-    cvcNumberRef.current = cvcNumber
-    None
-  }, [cvcNumber])
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.elementOptions)
   let displayErrorMessage = if options.showError {
@@ -52,7 +46,7 @@ let make = (
   } else {
     ""
   }
-  React.useEffect0(() => {
+  React.useEffect(() => {
     open Promise
     let handleRequestCVCConfirm = (ev: Window.event) => {
       let json = ev.data->safeParse
@@ -75,15 +69,13 @@ let make = (
 
               let cardBrandFromMessage = confirmParamsDict->getString("cardBrand", "")
 
-              let currentCvcNumber = cvcNumberRef.current
-
-              let isCvcComplete = CardUtils.checkCardCVC(currentCvcNumber, cardBrandFromMessage)
+              let isCvcComplete = CardUtils.checkCardCVC(cvcNumber, cardBrandFromMessage)
 
               if requiresCvv && isCvcComplete {
                 setCvcErrorMessage(_ => "")
 
                 let bodyWithCvc =
-                  bodyArr->Array.concat([("card_cvc", currentCvcNumber->JSON.Encode.string)])
+                  bodyArr->Array.concat([("card_cvc", cvcNumber->JSON.Encode.string)])
 
                 let paymentType = paymentTypeStr->PaymentHelpers.getPaymentType
 
@@ -117,9 +109,9 @@ let make = (
                 })
                 ->ignore
               } else if requiresCvv {
-                let isEmptyCVC = currentCvcNumber->String.length == 0
+                let isEmptyCVC = cvcNumber->String.length == 0
                 let cardPatternObj = CardValidations.getobjFromCardPattern(cardBrandFromMessage)
-                let isTooLong = currentCvcNumber->String.length > cardPatternObj.maxCVCLength
+                let isTooLong = cvcNumber->String.length > cardPatternObj.maxCVCLength
                 let errorMsg = if isEmptyCVC {
                   localeString.cvcNumberEmptyText
                 } else if isTooLong {
@@ -161,7 +153,7 @@ let make = (
         Window.removeEventListener("message", handleRequestCVCConfirm)
       },
     )
-  })
+  }, [cvcNumber])
 
   React.useEffect0(() => {
     let handleCheckCVCWidgetPresent = (ev: Window.event) => {
