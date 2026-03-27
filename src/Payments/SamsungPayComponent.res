@@ -17,14 +17,18 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Samsungpay)
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
 
   let (_, _, _, _, heightType) = options.wallets.style.height
   let height = switch heightType {
   | SamsungPay(val) => val
   | _ => 48
   }
-
+  let empty = areRequiredFieldsEmpty
+  let complete = areRequiredFieldsValid && !areRequiredFieldsEmpty
   SamsungPayHelpers.useHandleSamsungPayResponse(~intent, ~isWallet)
+  SubscriptionEventHooks.useFormStatus(~complete, ~empty, ~isOneClickWallet=true)
 
   let getSamsungPaymentsClient = _ =>
     SamsungPayType.samsung({
@@ -51,6 +55,20 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~country,
         ~state,
         ~pinCode,
+        ~subscriptionEvents=options.subscriptionEvents,
+      )
+      SubscriptionEventHooks.emitPaymentMethodStatus(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~paymentMethod="wallet",
+        ~paymentMethodType="samsung_pay",
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=true,
+      )
+      SubscriptionEventHooks.emitBillingAddress(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~country,
+        ~state,
+        ~postalCode=pinCode,
       )
       SamsungPayHelpers.handleSamsungPayClicked(
         ~sessionObj=sessionObj->Option.getOr(JSON.Encode.null)->getDictFromJson,

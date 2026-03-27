@@ -36,6 +36,12 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   | _ => 48
   }
 
+  SubscriptionEventHooks.useFormStatus(
+    ~empty=areRequiredFieldsEmpty,
+    ~complete=areRequiredFieldsValid,
+    ~isOneClickWallet=isWallet,
+  )
+
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
@@ -236,6 +242,20 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~country,
         ~state,
         ~pinCode,
+        ~subscriptionEvents=options.subscriptionEvents,
+      )
+      SubscriptionEventHooks.emitPaymentMethodStatus(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~paymentMethod="wallet",
+        ~paymentMethodType="apple_pay",
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=isWallet,
+      )
+      SubscriptionEventHooks.emitBillingAddress(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~country,
+        ~state,
+        ~postalCode=pinCode,
       )
       setApplePayClicked(_ => true)
       makeOneClickHandlerPromise(sdkHandleIsThere)

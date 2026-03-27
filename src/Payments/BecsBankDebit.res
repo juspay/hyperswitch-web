@@ -42,6 +42,8 @@ let make = () => {
     | None => true
     }
 
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
+
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="becs_bank_debit")
 
   React.useEffect(() => {

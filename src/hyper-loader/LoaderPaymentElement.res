@@ -101,7 +101,7 @@ let make = (
           (ev: Types.event) => {
             if ev.key === "Escape" {
               switch eventHandler {
-              | Some(eH) => eH(Some(ev.data))
+              | Some(eH) => eH(Some(ev.data->Identity.anyTypeToJson))
               | None => ()
               }
             }
