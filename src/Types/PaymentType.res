@@ -9,6 +9,7 @@ type groupingBehavior = {
 type savedMethodCustomization = {
   groupingBehavior: groupingBehavior,
   maxItems: int,
+  hideCardExpiry: bool,
 }
 open Utils
 open ErrorUtils
@@ -290,6 +291,7 @@ let defaultGroupingBehavior = {
 let defaultSavedMethodCustomization = {
   groupingBehavior: defaultGroupingBehavior,
   maxItems: 4,
+  hideCardExpiry: false,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -831,13 +833,14 @@ let getSavedMethodCustomization = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["groupingBehavior", "maxItems"],
+      ["groupingBehavior", "maxItems", "hideCardExpiry"],
       json,
       "options.layout.savedMethodCustomization",
     )
     {
       groupingBehavior: json->getGroupingBehavior(~logger),
       maxItems: getNumberWithWarning(json, "maxItems", 4, ~logger),
+      hideCardExpiry: getBool(json, "hideCardExpiry", false),
     }
   })
   ->Option.getOr(defaultSavedMethodCustomization)
