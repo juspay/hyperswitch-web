@@ -46,6 +46,7 @@ let make = (~walletOptions) => {
     ~complete=paypalClicked,
     ~empty=!paypalClicked,
     ~paymentType=paymentMethodType,
+    ~isOneClickWallet=isWallet,
   )
   let onPaypalClick = _ev => {
     if isTestMode {
