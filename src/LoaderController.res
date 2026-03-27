@@ -632,7 +632,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     None
   }, (divH, iframeId))
 
-  <div ref={divRef->ReactDOM.Ref.domRef} style={position: "relative"}>
+  <div ref={divRef->ReactDOM.Ref.domRef} className="relative">
     <UpdateIntentOverlay />
     children
   </div>
