@@ -260,4 +260,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanError: "分割払いプランを選択してください",
   showMore: "もっと見る",
   showLess: "表示を減らす",
+  refreshingText: "更新中...",
 }

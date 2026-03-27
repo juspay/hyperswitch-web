@@ -262,4 +262,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanError: "אנא בחר תוכנית תשלומים",
   showMore: "הצג עוד",
   showLess: "הצג פחות",
+  refreshingText: "מרענן...",
 }

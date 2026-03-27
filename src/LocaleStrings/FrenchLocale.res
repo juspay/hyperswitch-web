@@ -263,4 +263,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanError: "Veuillez sélectionner un plan de paiement",
   showMore: "Afficher plus",
   showLess: "Afficher moins",
+  refreshingText: "Actualisation...",
 }

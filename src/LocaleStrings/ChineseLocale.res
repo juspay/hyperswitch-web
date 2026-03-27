@@ -259,4 +259,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanError: "请选择分期计划",
   showMore: "显示更多",
   showLess: "收起",
+  refreshingText: "刷新中...",
 }
