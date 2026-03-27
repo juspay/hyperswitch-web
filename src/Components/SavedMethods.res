@@ -319,8 +319,8 @@ let make = (
           if !isUnknownPaymentMethod && cvcNumber === "" {
             setCvcError(_ => localeString.cvcNumberEmptyText)
             setUserError(localeString.enterFieldsText)
-          }
-          if !(isCVCValid->Option.getOr(false)) {
+          } else if !(isCVCValid->Option.getOr(false)) {
+            setCvcError(_ => localeString.inCompleteCVCErrorText)
             setUserError(localeString.enterValidDetailsText)
           }
         }
