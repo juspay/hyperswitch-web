@@ -234,6 +234,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `已儲存`,
   giftCardSectionTitle: `有禮品卡嗎？`,
   giftCardNumberLabel: `禮品卡號碼`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -256,4 +257,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentPaymentLabel: (numPayments, currency, amount) =>
     `${numPayments->Int.toString}期付款，每期 ${currency} ${amount}`,
   installmentSelectPlanError: "請選擇分期計劃",
+  showMore: "顯示更多",
+  showLess: "收起",
+  refreshingText: "重新整理中...",
 }

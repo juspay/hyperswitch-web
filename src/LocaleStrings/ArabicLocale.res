@@ -237,6 +237,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `المحفوظة`,
   giftCardSectionTitle: `هل لديك بطاقة هدايا؟`,
   giftCardNumberLabel: `رقم بطاقة الهدايا`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -261,4 +262,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `دفعة واحدة بقيمة ${currency} ${amount}`
       : `${numPayments->Int.toString} دفعات بقيمة ${currency} ${amount}`,
   installmentSelectPlanError: "يرجى اختيار خطة تقسيط",
+  showMore: "عرض المزيد",
+  showLess: "عرض أقل",
+  refreshingText: "جارٍ التحديث...",
 }

@@ -234,6 +234,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Sparade`,
   giftCardSectionTitle: `Har du ett presentkort?`,
   giftCardNumberLabel: `Presentkortsnummer`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -258,4 +259,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 betalning à ${currency} ${amount}`
       : `${numPayments->Int.toString} betalningar à ${currency} ${amount}`,
   installmentSelectPlanError: "Välj ett avbetalningsplan",
+  showMore: "Visa mer",
+  showLess: "Visa mindre",
+  refreshingText: "Uppdaterar...",
 }

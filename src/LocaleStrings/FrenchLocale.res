@@ -236,6 +236,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Enregistrés`,
   giftCardSectionTitle: `Avez-vous une carte cadeau ?`,
   giftCardNumberLabel: `Numéro de carte cadeau`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -260,4 +261,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 paiement à ${currency} ${amount}`
       : `${numPayments->Int.toString} paiements à ${currency} ${amount}`,
   installmentSelectPlanError: "Veuillez sélectionner un plan de paiement",
+  showMore: "Afficher plus",
+  showLess: "Afficher moins",
+  refreshingText: "Actualisation...",
 }

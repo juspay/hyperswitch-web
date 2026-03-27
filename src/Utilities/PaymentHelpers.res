@@ -65,7 +65,7 @@ let retrievePaymentIntent = async (
 }
 
 let fetchBlockedBins = async (
-  ~sdkAuthorization,
+  ~sdkAuthorization=None,
   ~clientSecret,
   ~publishableKey,
   ~logger,

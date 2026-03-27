@@ -235,6 +235,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `保存済み`,
   giftCardSectionTitle: `ギフトカードをお持ちですか？`,
   giftCardNumberLabel: `ギフトカード番号`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -257,4 +258,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentPaymentLabel: (numPayments, currency, amount) =>
     `${currency} ${amount} × ${numPayments->Int.toString}回払い`,
   installmentSelectPlanError: "分割払いプランを選択してください",
+  showMore: "もっと見る",
+  showLess: "表示を減らす",
+  refreshingText: "更新中...",
 }
