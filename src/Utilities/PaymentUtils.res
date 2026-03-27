@@ -361,6 +361,20 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
   (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist)
 }
 
+let filterSavedMethodsByWalletReadiness = (
+  savedMethods: array<PaymentType.customerMethods>,
+  ~isApplePayReady,
+  ~isGooglePayReady,
+) => {
+  savedMethods->Array.filter(savedMethod =>
+    switch savedMethod.paymentMethodType {
+    | Some("apple_pay") => isApplePayReady
+    | Some("google_pay") => isGooglePayReady
+    | _ => true
+    }
+  )
+}
+
 let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode, ~sessions) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
@@ -439,15 +453,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode
 
     let filteredSaved = switch savedPaymentMethods {
     | Some(methods) =>
-      methods
-      ->Array.copy
-      ->Array.filter(savedMethod =>
-        switch savedMethod.paymentMethodType {
-        | Some("apple_pay") => isApplePayReady
-        | Some("google_pay") => isGooglePayReady
-        | _ => true
-        }
-      )
+      methods->filterSavedMethodsByWalletReadiness(~isApplePayReady, ~isGooglePayReady)
     | None => []
     }
 

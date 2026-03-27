@@ -800,25 +800,25 @@ let getGroupingBehaviorFromString = str => {
   }
 }
 
-let getGroupingBehaviorFromObject = json => {
+let getGroupingBehaviorFromObject = (json, ~logger) => {
   unknownKeysWarning(
     ["displayInSeparateScreen", "groupByPaymentMethods"],
     json,
     "options.layout.savedMethodCustomization.groupingBehavior",
   )
   {
-    displayInSeparateScreen: getBool(json, "displayInSeparateScreen", true),
-    groupByPaymentMethods: getBool(json, "groupByPaymentMethods", false),
+    displayInSeparateScreen: getBoolWithWarning(json, "displayInSeparateScreen", true, ~logger),
+    groupByPaymentMethods: getBoolWithWarning(json, "groupByPaymentMethods", false, ~logger),
   }
 }
 
-let getGroupingBehavior = dict => {
+let getGroupingBehavior = (dict, ~logger) => {
   dict
   ->Dict.get("groupingBehavior")
   ->Option.map(val => {
     switch val->JSON.Classify.classify {
     | String(str) => str->getGroupingBehaviorFromString
-    | Object(json) => json->getGroupingBehaviorFromObject
+    | Object(json) => json->getGroupingBehaviorFromObject(~logger)
     | _ => defaultGroupingBehavior
     }
   })
@@ -836,7 +836,7 @@ let getSavedMethodCustomization = (dict, str, logger) => {
       "options.layout.savedMethodCustomization",
     )
     {
-      groupingBehavior: json->getGroupingBehavior,
+      groupingBehavior: json->getGroupingBehavior(~logger),
       maxItems: getNumberWithWarning(json, "maxItems", 4, ~logger),
     }
   })
