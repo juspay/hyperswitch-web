@@ -3,7 +3,7 @@ type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
 type layout = Accordion | Tabs
 type groupingBehavior = GroupByPaymentMethods | Default
-type savedMethodCustomization = {groupingBehavior: groupingBehavior}
+type savedMethodCustomization = {groupingBehavior: groupingBehavior, hideCardExpiry: bool}
 open Utils
 open ErrorUtils
 
@@ -236,6 +236,7 @@ type payerDetails = {
   phone: option<string>,
 }
 
+let defaultSavedMethodCustomization = {groupingBehavior: Default, hideCardExpiry: false}
 let defaultCardDetails = {
   scheme: None,
   last4Digits: "",
@@ -283,7 +284,7 @@ let defaultLayout = {
   spacedAccordionItems: false,
   maxAccordionItems: 4,
   \"type": Tabs,
-  savedMethodCustomization: {groupingBehavior: Default},
+  savedMethodCustomization: defaultSavedMethodCustomization,
   paymentMethodsArrangementForTabs: Default,
   displayOneClickPaymentMethodsOnTop: true,
 }
@@ -789,7 +790,11 @@ let getSavedMethodCustomization = (dict, str, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    unknownKeysWarning(["groupingBehavior"], json, "options.layout.savedMethodCustomization")
+    unknownKeysWarning(
+      ["groupingBehavior", "hideCardExpiry"],
+      json,
+      "options.layout.savedMethodCustomization",
+    )
     {
       groupingBehavior: getWarningString(
         json,
@@ -797,9 +802,10 @@ let getSavedMethodCustomization = (dict, str, logger) => {
         "default",
         ~logger,
       )->getSavedMethodLayout,
+      hideCardExpiry: getBool(json, "hideCardExpiry", false),
     }
   })
-  ->Option.getOr({groupingBehavior: Default})
+  ->Option.getOr(defaultSavedMethodCustomization)
 }
 
 let getLayoutValues = (val, logger) => {

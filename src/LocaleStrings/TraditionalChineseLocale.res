@@ -202,7 +202,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `斯洛伐克網銀`,
   payment_methods_online_banking_finland: `芬蘭網銀`,
   payment_methods_online_banking_poland: `波蘭網銀`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `ACH 直接扣帳`,
   payment_methods_przelewy24: `Przelewy24`,
