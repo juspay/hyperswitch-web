@@ -254,6 +254,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentInterestRate: interestRate => `${interestRate}%利息`,
   installmentTotalPayable: "應付總額",
   installmentPaymentLabel: (numPayments, currency, amount) =>
-    `${numPayments->Int.toString}期付款，每期 ${currency} ${amount}`,
+    `${numPayments->Int.toString} x ${currency} ${amount}`,
   installmentSelectPlanError: "請選擇分期計劃",
 }

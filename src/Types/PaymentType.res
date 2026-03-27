@@ -189,6 +189,8 @@ type paymentMethodMessage = {
   displayMode: messageDisplayMode,
 }
 
+type installmentConfig = {showInterestRates: showType}
+
 type paymentMethodTypeConfig = {
   paymentMethodType: string,
   message: paymentMethodMessage,
@@ -196,6 +198,7 @@ type paymentMethodTypeConfig = {
 
 type paymentMethodConfig = {
   paymentMethod: string,
+  installments: option<installmentConfig>,
   paymentMethodTypes: array<paymentMethodTypeConfig>,
 }
 
@@ -420,6 +423,17 @@ let getMessageDisplayMode = (str, key) => {
   }
 }
 
+let getShowType = (str, key) => {
+  switch str {
+  | "auto" => Auto
+  | "never" => Never
+  | str => {
+      str->unknownPropValueWarning(["auto", "never"], key)
+      Auto
+    }
+  }
+}
+
 let defaultPaymentMethodMessage = {
   value: None,
   displayMode: DefaultSdkMessage,
@@ -458,11 +472,30 @@ let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
   }
 }
 
+let getInstallmentConfig = (json, logger, context) => {
+  let installmentDict = json->getDictFromDict("installments")
+  if installmentDict->Dict.toArray->Array.length > 0 {
+    unknownKeysWarning(["showInterestRates"], installmentDict, context ++ ".installments")
+    Some({
+      showInterestRates: getWarningString(
+        installmentDict,
+        "showInterestRates",
+        "auto",
+        ~logger,
+      )->getShowType(context ++ ".installments.showInterestRates"),
+    })
+  } else {
+    None
+  }
+}
+
 let getPaymentMethodConfig = (json, logger) => {
-  unknownKeysWarning(["paymentMethod", "paymentMethodTypes"], json, "options.paymentMethodsConfig")
   let paymentMethod = json->getWarningString("paymentMethod", "", ~logger)
+  let context = "options.paymentMethodsConfig." ++ paymentMethod
+  unknownKeysWarning(["paymentMethod", "installments", "paymentMethodTypes"], json, context)
   {
     paymentMethod,
+    installments: getInstallmentConfig(json, logger, context),
     paymentMethodTypes: json
     ->getArrayOfObjectsFromDict("paymentMethodTypes")
     ->Array.map(pmTypeJson => getPaymentMethodTypeConfig(pmTypeJson, logger, paymentMethod)),
@@ -572,16 +605,6 @@ let getBusiness = (dict, str, logger) => {
     }
   })
   ->Option.getOr(defaultBusiness)
-}
-let getShowType = (str, key) => {
-  switch str {
-  | "auto" => Auto
-  | "never" => Never
-  | str => {
-      str->unknownPropValueWarning(["auto", "never"], key)
-      Auto
-    }
-  }
 }
 let getApplePayType = str => {
   switch str {
