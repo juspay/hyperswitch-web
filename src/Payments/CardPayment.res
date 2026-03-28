@@ -566,7 +566,7 @@ let make = (
                   alignSelf: "start",
                   textAlign: "left",
                 }>
-                {React.string("Invalid input")}
+                {React.string(localeString.enterValidDetailsText)}
               </div>
             </RenderIf>
           </RenderIf>
