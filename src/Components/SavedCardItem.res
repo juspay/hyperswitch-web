@@ -67,7 +67,9 @@ let make = (
     hideExpiredPaymentMethods,
     displayDefaultSavedPaymentIcon,
     displayBillingDetails,
+    layout,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {hideCardExpiry} = CardUtils.getLayoutClass(layout).savedMethodCustomization
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
   let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcError} = cvcProps
   let cvcRef = React.useRef(Nullable.null)
@@ -159,6 +161,25 @@ let make = (
 
   let isCVCEmpty = cvcNumber->String.length == 0
 
+  let cvcInputElement =
+    <PaymentInputField
+      isValid=isCVCValid
+      setIsValid=setIsCVCValid
+      value=cvcNumber
+      onChange=changeCVCNumber
+      onBlur=handleCVCBlur
+      errorString=""
+      inputFieldClassName="flex justify-start"
+      type_="tel"
+      className={`tracking-widest justify-start w-full`}
+      maxLength=4
+      inputRef=cvcRef
+      placeholder="123"
+      height="1.8rem"
+      name={TestUtils.cardCVVInputTestId}
+      autocomplete="cc-csc"
+    />
+
   let {innerLayout} = config.appearance
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
@@ -223,7 +244,7 @@ let make = (
                 </div>
               </div>
             </div>
-            <RenderIf condition={isCard}>
+            <RenderIf condition={isCard && !hideCardExpiry}>
               <div
                 className={`flex flex-row items-center justify-end gap-3 -mt-1`}
                 style={fontSize: "14px", opacity: "0.5"}
@@ -233,10 +254,18 @@ let make = (
                 </div>
               </div>
             </RenderIf>
+            <RenderIf condition={hideCardExpiry && isActive && isRenderCvv}>
+              <div className="flex flex-row items-center gap-2 mr-2">
+                <div className="tracking-widest opacity-50">
+                  {React.string(`${localeString.cvcTextLabel}:`)}
+                </div>
+                <div className="flex w-16 opacity-50"> cvcInputElement </div>
+              </div>
+            </RenderIf>
           </div>
           <div className="w-full">
             <div className="flex flex-col items-start ml-8">
-              <RenderIf condition={isActive && isRenderCvv}>
+              <RenderIf condition={!hideCardExpiry && isActive && isRenderCvv}>
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
                   style={fontSize: "14px", opacity: "0.5"}>
@@ -247,24 +276,19 @@ let make = (
                     className={`flex h mx-4 justify-start w-16 ${isActive
                         ? "opacity-1 mt-4"
                         : "opacity-0"}`}>
-                    <PaymentInputField
-                      isValid=isCVCValid
-                      setIsValid=setIsCVCValid
-                      value=cvcNumber
-                      onChange=changeCVCNumber
-                      onBlur=handleCVCBlur
-                      errorString=""
-                      inputFieldClassName="flex justify-start"
-                      type_="tel"
-                      className={`tracking-widest justify-start w-full`}
-                      maxLength=4
-                      inputRef=cvcRef
-                      placeholder="123"
-                      height="1.8rem"
-                      name={TestUtils.cardCVVInputTestId}
-                      autocomplete="cc-csc"
-                    />
+                    cvcInputElement
                   </div>
+                </div>
+              </RenderIf>
+              <RenderIf
+                condition={hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
+                <div
+                  className="Error pt-1 mt-1 ml-3"
+                  style={
+                    color: themeObj.colorDangerText,
+                    fontSize: themeObj.fontSizeSm,
+                  }>
+                  {React.string(cvcError)}
                 </div>
               </RenderIf>
               <RenderIf
@@ -277,9 +301,9 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf
-                condition={isActive && isCVCEmpty && innerLayout === Spaced && cvcError != ""}>
+                condition={!hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
                 <div
-                  className="Error pt-1 mt-1 ml-2"
+                  className="Error pt-1 mt-1 ml-1"
                   style={
                     color: themeObj.colorDangerText,
                     fontSize: themeObj.fontSizeSm,

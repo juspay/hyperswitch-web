@@ -727,6 +727,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~publishableKey,
           ~logger=Some(logger),
           ~redirectionFlags,
+          ~iframeRef,
         )
       }
 

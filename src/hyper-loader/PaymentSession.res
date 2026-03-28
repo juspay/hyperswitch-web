@@ -6,6 +6,7 @@ let make = (
   ~publishableKey,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
 ) => {
   let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =
@@ -25,6 +26,7 @@ let make = (
         ~logger,
         ~customPodUri,
         ~redirectionFlags,
+        ~iframeRef,
       ),
   }
 
