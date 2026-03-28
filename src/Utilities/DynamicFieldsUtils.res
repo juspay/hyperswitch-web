@@ -13,6 +13,8 @@ let dynamicFieldsEnabledPaymentMethods = [
   "ideal",
   "sofort",
   "pix_transfer",
+  "pix_automatico_push_transfer",
+  "pix_automatico_qr_transfer",
   "giropay",
   "local_bank_transfer_transfer",
   "afterpay_clearpay",

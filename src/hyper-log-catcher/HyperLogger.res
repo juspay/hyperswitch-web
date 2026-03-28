@@ -221,6 +221,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       REDIRECTING_USER,
       DISPLAY_BANK_TRANSFER_INFO_PAGE,
       DISPLAY_QR_CODE_INFO_PAGE,
+      DISPLAY_WAIT_SCREEN,
       DISPLAY_VOUCHER,
       LOADER_CHANGED,
       PAYMENT_METHODS_CALL,

@@ -216,6 +216,8 @@ type localeStrings = {
   payment_methods_open_banking_pis: string,
   payment_methods_evoucher: string,
   payment_methods_pix_transfer: string,
+  payment_methods_pix_automatico_qr: string,
+  payment_methods_pix_automatico_push: string,
   payment_methods_boleto: string,
   payment_methods_paypal: string,
   payment_methods_local_bank_transfer_transfer: string,

@@ -2,6 +2,7 @@
 let make = () => {
   open Utils
   let (branding, setBranding) = React.useState(_ => "auto")
+  let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -12,6 +13,10 @@ let make = () => {
         if dict->getDictFromDict("options")->getOptionString("branding")->Option.isSome {
           setBranding(_ => dict->getDictFromDict("options")->getString("branding", "auto"))
         }
+        let metadata = dict->getJsonObjectFromDict("metadata")
+        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+        let paymentMethodStr = metaDataDict->getString("paymentMethod", "")
+        setPaymentMethod(_ => paymentMethodStr)
       }
     }
     Window.addEventListener("message", handle)
@@ -25,7 +30,7 @@ let make = () => {
 
   <div className={`h-screen w-screen flex m-auto items-center ${styles}`}>
     <div className={`flex flex-col justify-center m-auto visible`}>
-      <Loader branding />
+      <Loader branding paymentMethod />
     </div>
   </div>
 }
