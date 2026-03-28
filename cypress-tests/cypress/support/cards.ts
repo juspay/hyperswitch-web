@@ -147,3 +147,55 @@ export const bankOfAmericaCards = {
     ...bankOfAmericaCardsDefaultData,
   },
 };
+
+// ─── Stripe Decline / Special Test Cards ────────────────────────────────────
+export const stripeSpecialCards = {
+  // This card is always declined by Stripe sandbox
+  declinedCard: {
+    cardNo: "4000000000000002",
+    cardScheme: "Visa",
+    cvc: "123",
+    card_exp_month: "12",
+    card_exp_year: "30",
+  },
+  // Insufficient funds decline
+  insufficientFundsCard: {
+    cardNo: "4000000000009995",
+    cardScheme: "Visa",
+    cvc: "123",
+    card_exp_month: "12",
+    card_exp_year: "30",
+  },
+};
+
+// ─── Gift Card (Givex / Adyen) ───────────────────────────────────────────────
+export const givexGiftCardDetails = {
+  // Adyen Givex sandbox test card
+  successCard: {
+    cardNo: "6006491588888886",
+    cardPin: "1234",
+  },
+};
+
+// ─── ACH Bank Transfer (Stripe) ──────────────────────────────────────────────
+export const achBankTransferDetails = {
+  // Stripe test bank account (US)
+  success: {
+    routingNumber: "110000000",
+    accountNumber: "000123456789",
+    accountHolderName: "John Doe",
+  },
+  invalid: {
+    routingNumber: "000000000",
+    accountNumber: "000",
+    accountHolderName: "John Doe",
+  },
+};
+
+// ─── PIX Transfer (Adyen / Brazil) ──────────────────────────────────────────
+export const pixTransferDetails = {
+  validCpf: "12345678909",
+  validEmail: "test@hyperswitch.io",
+  validPhone: "+5511999999999",
+  invalidKey: "not-a-valid-pix-key",
+};
