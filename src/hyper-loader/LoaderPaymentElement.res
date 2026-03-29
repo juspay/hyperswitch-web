@@ -387,7 +387,7 @@ let make = (
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->getClasses("base")
       let additionalIframeStyle =
-        componentType->Utils.isOtherElements ? "height: 3rem;" : "height: 0;"
+        componentType->Utils.isOtherElements ? "height: 2rem;" : "height: 0;"
       switch oElement->Nullable.toOption {
       | Some(elem) => {
           let iframeDiv = `<div id="orca-${elementIframeWrapperDivId}-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">

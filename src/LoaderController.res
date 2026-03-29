@@ -242,101 +242,95 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             ->Option.flatMap(JSON.Decode.bool)
             ->Option.getOr(false)
           ) {
-            if (
-              dict->Dict.get("otherElements")->Option.flatMap(JSON.Decode.bool)->Option.getOr(false)
-            ) {
-              updateOptions(dict)
-            } else {
-              let sdkSessionId = dict->getString("sdkSessionId", "no-element")
-              logger.setSessionId(sdkSessionId)
-              if GlobalVars.isInteg {
-                setBlockConfirm(_ => dict->getBool("blockConfirm", false))
-              }
-              setCustomPodUri(_ => dict->getString("customPodUri", ""))
-              setSessionId(_ => {
-                sdkSessionId
+            let sdkSessionId = dict->getString("sdkSessionId", "no-element")
+            logger.setSessionId(sdkSessionId)
+            if GlobalVars.isInteg {
+              setBlockConfirm(_ => dict->getBool("blockConfirm", false))
+            }
+            setCustomPodUri(_ => dict->getString("customPodUri", ""))
+            setSessionId(_ => {
+              sdkSessionId
+            })
+            if dict->getDictIsSome("publishableKey") {
+              let publishableKey = dict->getString("publishableKey", "")
+              logger.setMerchantId(publishableKey)
+            }
+            if dict->getDictIsSome("analyticsMetadata") {
+              let metadata = dict->getJsonObjectFromDict("analyticsMetadata")
+              logger.setMetadata(metadata)
+            }
+
+            if dict->getDictIsSome("onCompleteDoThisUsed") {
+              let isCallbackUsedVal = dict->Utils.getBool("onCompleteDoThisUsed", false)
+              setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
+            }
+            if dict->getDictIsSome("isPaymentButtonHandlerProvided") {
+              let isSDKClick = dict->Utils.getBool("isPaymentButtonHandlerProvided", false)
+              setIsPaymentButtonHandlerProvided(_ => isSDKClick)
+            }
+            if dict->getDictIsSome("paymentOptions") {
+              let paymentOptions = dict->getDictFromObj("paymentOptions")
+
+              let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
+              let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
+              let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
+              let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
+              setKeys(prev => {
+                ...prev,
+                clientSecret: Some(clientSecret),
+                sdkAuthorization: Some(sdkAuthorization),
+                pmClientSecret,
+                pmSessionId,
               })
-              if dict->getDictIsSome("publishableKey") {
-                let publishableKey = dict->getString("publishableKey", "")
-                logger.setMerchantId(publishableKey)
-              }
-              if dict->getDictIsSome("analyticsMetadata") {
-                let metadata = dict->getJsonObjectFromDict("analyticsMetadata")
-                logger.setMetadata(metadata)
-              }
+              logger.setClientSecret(clientSecret)
 
-              if dict->getDictIsSome("onCompleteDoThisUsed") {
-                let isCallbackUsedVal = dict->Utils.getBool("onCompleteDoThisUsed", false)
-                setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
-              }
-              if dict->getDictIsSome("isPaymentButtonHandlerProvided") {
-                let isSDKClick = dict->Utils.getBool("isPaymentButtonHandlerProvided", false)
-                setIsPaymentButtonHandlerProvided(_ => isSDKClick)
-              }
-              if dict->getDictIsSome("paymentOptions") {
-                let paymentOptions = dict->getDictFromObj("paymentOptions")
+              // Update top redirection atom
+              updateRedirectionFlags(paymentOptions)
 
-                let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-                let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
-                let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
-                let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
-                setKeys(prev => {
-                  ...prev,
-                  clientSecret: Some(clientSecret),
-                  sdkAuthorization: Some(sdkAuthorization),
-                  pmClientSecret,
-                  pmSessionId,
+              switch getThemePromise(paymentOptions) {
+              | Some(promise) =>
+                promise
+                ->then(res => {
+                  dict->setConfigs(res)
                 })
-                logger.setClientSecret(clientSecret)
-
-                // Update top redirection atom
-                updateRedirectionFlags(paymentOptions)
-
-                switch getThemePromise(paymentOptions) {
-                | Some(promise) =>
-                  promise
-                  ->then(res => {
-                    dict->setConfigs(res)
-                  })
-                  ->catch(_ => {
-                    dict->setConfigs({
-                      default: DefaultTheme.default,
-                      defaultRules: DefaultTheme.defaultRules,
-                    })
-                  })
-                | None =>
+                ->catch(_ => {
                   dict->setConfigs({
                     default: DefaultTheme.default,
                     defaultRules: DefaultTheme.defaultRules,
                   })
-                }->ignore
-              }
-              let newLaunchTime = dict->getFloat("launchTime", 0.0)
-              setLaunchTime(_ => newLaunchTime)
-              let initLoadlatency = Date.now() -. newLaunchTime
-              logger.setLogInfo(
-                ~value=Window.hrefWithoutSearch,
-                ~eventName=APP_RENDERED,
-                ~latency=initLoadlatency,
-              )
-              [
-                ("iframeId", "no-element"->JSON.Encode.string),
-                ("publishableKey", ""->JSON.Encode.string),
-                ("profileId", ""->JSON.Encode.string),
-                ("paymentId", ""->JSON.Encode.string),
-                ("parentURL", "*"->JSON.Encode.string),
-                ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
-              ]->Array.forEach(keyPair => {
-                dict->CommonHooks.updateKeys(keyPair, setKeys)
-              })
-              let renderLatency = Date.now() -. initTimestamp
-              logger.setLogInfo(
-                ~eventName=PAYMENT_OPTIONS_PROVIDED,
-                ~latency=renderLatency,
-                ~value="",
-              )
-              updateOptions(dict)
+                })
+              | None =>
+                dict->setConfigs({
+                  default: DefaultTheme.default,
+                  defaultRules: DefaultTheme.defaultRules,
+                })
+              }->ignore
             }
+            let newLaunchTime = dict->getFloat("launchTime", 0.0)
+            setLaunchTime(_ => newLaunchTime)
+            let initLoadlatency = Date.now() -. newLaunchTime
+            logger.setLogInfo(
+              ~value=Window.hrefWithoutSearch,
+              ~eventName=APP_RENDERED,
+              ~latency=initLoadlatency,
+            )
+            [
+              ("iframeId", "no-element"->JSON.Encode.string),
+              ("publishableKey", ""->JSON.Encode.string),
+              ("profileId", ""->JSON.Encode.string),
+              ("paymentId", ""->JSON.Encode.string),
+              ("parentURL", "*"->JSON.Encode.string),
+              ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
+            ]->Array.forEach(keyPair => {
+              dict->CommonHooks.updateKeys(keyPair, setKeys)
+            })
+            let renderLatency = Date.now() -. initTimestamp
+            logger.setLogInfo(
+              ~eventName=PAYMENT_OPTIONS_PROVIDED,
+              ~latency=renderLatency,
+              ~value="",
+            )
+            updateOptions(dict)
           } else if dict->getDictIsSome("paymentOptions") {
             let paymentOptions = dict->getDictFromObj("paymentOptions")
 
