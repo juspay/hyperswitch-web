@@ -1564,10 +1564,12 @@ let expressCheckoutComponents = [
 
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
 
+let cardElementsForPayment = ["cardCvc"] // We are only including cardCvc as part of payment element create since that is the only card element that can be used in isolation for payment use case.
 let componentsForPaymentElementCreate =
-  ["payment", "paymentMethodCollect", "paymentMethodsManagement"]->Array.concat(
+  ["payment", "paymentMethodCollect", "paymentMethodsManagement"]->Array.concatMany([
     expressCheckoutComponents,
-  )
+    cardElementsForPayment,
+  ])
 
 let getIsExpressCheckoutComponent = componentType => {
   expressCheckoutComponents->Array.includes(componentType)
@@ -1753,6 +1755,19 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
     mountedIframeRef->Window.iframePostMessage(msg)
   }
 }
+
+let isWidgetPresent = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~componentName) =>
+  iframeRef.contents->Array.some(iframe => {
+    switch iframe->Nullable.toOption {
+    | Some(elem) =>
+      elem
+      ->Window.getAttribute("src")
+      ->Nullable.toOption
+      ->Option.getOr("")
+      ->String.includes(`componentName=${componentName}`)
+    | None => false
+    }
+  })
 
 let isDigitLimitExceeded = (val, ~digit) => {
   switch val->String.match(%re("/\d/g")) {
