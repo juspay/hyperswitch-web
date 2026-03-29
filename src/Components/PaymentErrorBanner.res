@@ -30,7 +30,7 @@ let make = () => {
 
   <RenderIf condition={errorMessage->String.length > 0}>
     <div style={paddingTop: "24px"}>
-      <div
+        <div
         style={
           display: "flex",
           flexDirection: "row",
@@ -38,8 +38,8 @@ let make = () => {
           gap: themeObj.spacingUnit,
           padding: themeObj.spacingTab,
           borderRadius: themeObj.borderRadius,
-          backgroundColor: "#FEF0F0",
-          border: `1px solid ${themeObj.colorDanger}20`,
+          backgroundColor: `${themeObj.colorDanger}15`,
+          border: `1px solid ${themeObj.colorDanger}40`,
           width: "100%",
           boxSizing: "border-box",
           fontFamily: themeObj.fontFamily,
@@ -50,7 +50,7 @@ let make = () => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          stroke={themeObj.colorText}
+          stroke={themeObj.colorDanger}
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -64,7 +64,7 @@ let make = () => {
         </svg>
         <span
           style={
-            color: themeObj.colorText,
+            color: themeObj.colorDangerText,
             fontSize: themeObj.fontSizeLg,
             lineHeight: "20px",
           }>
