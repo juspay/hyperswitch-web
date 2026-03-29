@@ -229,6 +229,7 @@ type options = {
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
   paymentMethodsConfig: paymentMethodsConfig,
+  displayPaymentFailureMessage: bool,
 }
 
 type payerDetails = {
@@ -406,6 +407,7 @@ let defaultOptions = {
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
   paymentMethodsConfig: [],
+  displayPaymentFailureMessage: false,
 }
 
 let getMessageDisplayMode = (str, key) => {
@@ -1239,6 +1241,7 @@ let allowedPaymentElementOptions = [
   "customMessageForCardTerms",
   "showShortSurchargeMessage",
   "paymentMethodsConfig",
+  "displayPaymentFailureMessage",
 ]
 
 let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
@@ -1333,6 +1336,7 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
     paymentMethodsConfig: getPaymentMethodsConfig(dict, "paymentMethodsConfig", logger),
+    displayPaymentFailureMessage: getBool(dict, "displayPaymentFailureMessage", false),
   }
 }
 
