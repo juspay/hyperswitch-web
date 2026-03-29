@@ -134,11 +134,17 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         optionsLocaleString == "" ? config.locale : optionsLocaleString,
       )
       let constantString = await CardTheme.getConstantStringsObject()
-      let _ = await S3Utils.initializeCountryData(~locale=config.locale, ~logger)
+      let resolvedLocale =
+        optionsLocaleString != ""
+          ? optionsLocaleString
+          : config.locale === "auto"
+          ? Window.Navigator.language
+          : config.locale
+      let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
       setConfig(_ => {
         config: {
           appearance,
-          locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
+          locale: resolvedLocale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
           pmClientSecret: config.pmClientSecret,
