@@ -251,12 +251,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `残りの ${amount}${currency} は、以下の別の支払い方法でお支払いください。`,
   installmentPayInInstallments: "分割払い",
-  installmentChoosePlan: "分割払いプランを選択",
   installmentInterestFree: "無利息",
-  installmentInterestRate: interestRate => `${interestRate}%利息`,
-  installmentTotalPayable: "お支払い総額",
+  installmentWithInterest: "利息あり",
+  installmentTotal: "合計:",
+  installmentSelectedPlan: "選択済みプラン",
   installmentPaymentLabel: (numPayments, currency, amount) =>
-    `${currency} ${amount} × ${numPayments->Int.toString}回払い`,
+    `${numPayments->Int.toString} X ${currency} ${amount}`,
   installmentSelectPlanError: "分割払いプランを選択してください",
   showMore: "もっと見る",
   showLess: "表示を減らす",

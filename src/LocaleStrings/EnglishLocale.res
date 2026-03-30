@@ -250,14 +250,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Pay remaining ${currency} ${amount} with other payment method below.`,
   installmentPayInInstallments: "Pay in installments",
-  installmentChoosePlan: "Choose an installment plan",
   installmentInterestFree: "Interest free",
-  installmentInterestRate: interestRate => `${interestRate}% interest`,
-  installmentTotalPayable: "Total payable",
+  installmentWithInterest: "with interest",
+  installmentTotal: "Total:",
+  installmentSelectedPlan: "Selected plan",
   installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 payment of ${currency} ${amount}`
-      : `${numPayments->Int.toString} payments of ${currency} ${amount}`,
+    `${numPayments->Int.toString} X ${currency} ${amount}`,
   installmentSelectPlanError: "Please select an installment plan",
   showMore: "Show more",
   showLess: "Show less",

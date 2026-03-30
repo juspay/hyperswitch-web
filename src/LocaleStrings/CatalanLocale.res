@@ -252,14 +252,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Pagueu l'import restant de ${currency} ${amount} amb un altre mètode de pagament a continuació.`,
   installmentPayInInstallments: "Pagar a terminis",
-  installmentChoosePlan: "Trieu un pla de terminis",
   installmentInterestFree: "Sense interessos",
-  installmentInterestRate: interestRate => `${interestRate}% interessos`,
-  installmentTotalPayable: "Total a pagar",
+  installmentWithInterest: "amb interessos",
+  installmentTotal: "Total:",
+  installmentSelectedPlan: "Pla seleccionat",
   installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 termini de ${currency} ${amount}`
-      : `${numPayments->Int.toString} terminis de ${currency} ${amount}`,
+    `${numPayments->Int.toString} X ${currency} ${amount}`,
   installmentSelectPlanError: "Si us plau, seleccioneu un pla de terminis",
   showMore: "Mostra més",
   showLess: "Mostra menys",
