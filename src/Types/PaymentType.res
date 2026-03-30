@@ -827,6 +827,21 @@ let getGroupingBehavior = (dict, ~logger) => {
   ->Option.getOr(defaultGroupingBehavior)
 }
 
+let getMaxItems = (dict, key, default, ~logger) => {
+  let parsedMaxItems = getNumberWithWarning(dict, key, default, ~logger)
+  if parsedMaxItems > 0 {
+    parsedMaxItems
+  } else {
+    valueOutRangeWarning(
+      parsedMaxItems,
+      "options.layout.savedMethodCustomization.maxItems",
+      "[>0] - maxItems must be a positive number. Value set to default (4)",
+      ~logger,
+    )
+    default
+  }
+}
+
 let getSavedMethodCustomization = (dict, str, logger) => {
   dict
   ->Dict.get(str)
@@ -839,7 +854,7 @@ let getSavedMethodCustomization = (dict, str, logger) => {
     )
     {
       groupingBehavior: json->getGroupingBehavior(~logger),
-      maxItems: getNumberWithWarning(json, "maxItems", 4, ~logger),
+      maxItems: getMaxItems(json, "maxItems", 4, ~logger),
       hideCardExpiry: getBool(json, "hideCardExpiry", false),
     }
   })
