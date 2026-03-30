@@ -3,7 +3,7 @@ open Utils
 
 @react.component
 let make = (~cvcProps: CardUtils.cvcProps, ~handleElementFocus, ~isFocus) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -112,6 +112,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~handleElementFocus, ~isFocus) => {
   }, (cvcNumber, keys, loggerState, customPodUri, redirectionFlags, localeString))
 
   <InputField
+    fieldName=localeString.cvcTextLabel
     isValid=isCVCValid
     setIsValid=setIsCVCValid
     value=cvcNumber
@@ -122,11 +123,11 @@ let make = (~cvcProps: CardUtils.cvcProps, ~handleElementFocus, ~isFocus) => {
     className={`tracking-widest w-auto`}
     maxLength=4
     inputRef=cvcRef
-    placeholder={options.placeholder === "" ? localeString.cvcTextLabel : options.placeholder}
+    placeholder={options.placeholder === "" ? "123" : options.placeholder}
     id="card-cvc"
     isFocus
     autocomplete="cc-csc"
     errorString=displayErrorMessage
-    errorStringClasses="text-xs text-red-950"
+    errorStringClasses={`text-xs text-[${themeObj.colorDangerText}]`}
   />
 }

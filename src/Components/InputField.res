@@ -27,7 +27,9 @@ let make = (
   ~autocomplete="on",
 ) => {
   open ElementType
-  let (eleClassName, setEleClassName) = React.useState(_ => "input-base")
+  let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {innerLayout} = config.appearance
+  let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
   let {iframeId, parentURL} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(elementOptions)
   let contextPaymentType = usePaymentType()
@@ -39,55 +41,52 @@ let make = (
     | None => ()
     }
   }
-  let setClass = val => {
-    switch paymentType {
-    | Card
-    | CardCVCElement
-    | CardExpiryElement
-    | CardNumberElement
-    | PaymentMethodCollectElement
-    | PaymentMethodsManagement =>
-      setEleClassName(_ => val)
-    | _ => ()
-    }
+
+  let backgroundClass = switch paymentType {
+  | Card
+  | CardCVCElement
+  | CardExpiryElement
+  | CardNumberElement
+  | PaymentMethodCollectElement
+  | Payment
+  | PaymentMethodsManagement =>
+    themeObj.colorBackground
+  | _ => "transparent"
   }
-  let textColor = switch isValid {
-  | Some(val) => val ? "" : "#eb1c26"
-  | None => ""
-  }
-  let setValidClasses = () => {
-    switch isValid {
-    | Some(val) => val ? setClass("input-complete") : setClass("input-invalid")
-    | None => setClass("input-base")
-    }
-  }
-  let handleFocus = _ => {
+
+  let getClassName = initialLabel => {
     if value->String.length == 0 {
-      setClass("input-empty")
-    } else if value->String.length > 0 {
-      setValidClasses()
+      `${initialLabel}--empty`
+    } else {
+      switch isValid {
+      | Some(valid) => valid ? `${initialLabel}--valid` : `${initialLabel}--invalid`
+      | None => ""
+      }
     }
+  }
+  let labelClass = getClassName("Label")
+  let inputClass = getClassName("Input")
+  let inputLogoClass = getClassName("InputLogo")
+  let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
+
+  let focusClass = if isFocus || value->String.length > 0 {
+    `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`
+  } else {
+    "transition-all ease-in duration-75"
+  }
+  let floatinglabelClass = isFocus ? "Label--floating" : "Label--resting"
+
+  let handleFocus = _ => {
     setFocus(true)
     setIsValid(_ => None)
     Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
   }
 
   let handleBlur = ev => {
-    if value->String.length == 0 {
-      setClass("input-base")
-    } else if value->String.length > 0 {
-      setValidClasses()
-    }
     setFocus(false)
     onBlur(ev)
     Utils.handleOnBlurPostMessage(~targetOrigin=parentURL)
   }
-  React.useEffect(() => {
-    if value->String.length > 0 {
-      setValidClasses()
-    }
-    None
-  }, (value, isValid))
 
   let direction = if type_ == "password" || type_ == "tel" {
     "ltr"
@@ -122,44 +121,81 @@ let make = (
     None
   }, (isValid, setIsValid, value, onChange, onBlur))
 
-  <div className={` flex flex-col w-full`}>
-    <RenderIf condition={fieldName->String.length > 0}>
-      <div className={`${labelClassName}`}> {React.string(fieldName)} </div>
+  <div className="flex flex-col w-full" style={color: themeObj.colorText}>
+    <RenderIf
+      condition={fieldName->String.length > 0 &&
+      config.appearance.labels == Above &&
+      innerLayout === Spaced}>
+      <div
+        className={`Label ${labelClass} ${labelClassName}`}
+        style={
+          fontWeight: themeObj.fontWeightNormal,
+          fontSize: themeObj.fontSizeLg,
+          marginBottom: "5px",
+          opacity: "0.6",
+        }
+        ariaHidden=true>
+        {React.string(fieldName)}
+      </div>
     </RenderIf>
     <div className="flex flex-row " style={direction: direction}>
-      <input
-        id
-        style={
-          background: "transparent",
-          width: "-webkit-fill-available",
-          color: textColor,
-        }
-        disabled=options.disabled
-        ref={inputRef->ReactDOM.Ref.domRef}
-        type_
-        ?onKeyDown
-        ?maxLength
-        ?pattern
-        className={`${eleClassName} ${className} focus:outline-none transition-shadow ease-out duration-200`}
-        placeholder
-        value
-        onChange
-        onBlur=handleBlur
-        onFocus=handleFocus
-        autoComplete={autocomplete}
-        ariaLabel={`Type to fill ${fieldName} input`}
-      />
-      <div className={`flex -ml-10  items-center`}> {rightIcon} </div>
+      <div className="relative w-full">
+        <input
+          id
+          style={
+            background: options.disabled ? themeObj.disabledFieldColor : backgroundClass,
+            padding: themeObj.spacingUnit,
+            width: "-webkit-fill-available",
+          }
+          disabled={options.disabled || readOnly}
+          ref={inputRef->ReactDOM.Ref.domRef}
+          type_
+          ?onKeyDown
+          ?maxLength
+          ?pattern
+          className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
+          placeholder={config.appearance.labels == Above ? placeholder : ""}
+          value
+          onChange
+          onBlur=handleBlur
+          onFocus=handleFocus
+          autoComplete={autocomplete}
+          ariaLabel={`Type to fill ${fieldName} input`}
+        />
+        <RenderIf condition={config.appearance.labels == Floating}>
+          <div
+            className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} pointer-events-none`}
+            style={
+              marginBottom: {
+                isFocus || value->String.length > 0 ? "" : themeObj.spacingUnit
+              },
+              fontSize: {isFocus || value->String.length > 0 ? themeObj.fontSizeXs : ""},
+              opacity: "0.6",
+            }
+            ariaHidden=true>
+            {React.string(fieldName)}
+          </div>
+        </RenderIf>
+      </div>
+      <div className={`InputLogo ${inputLogoClass} flex -ml-10 items-center`}> {rightIcon} </div>
     </div>
-    {
-      let errorClases = errorStringClasses->Option.getOr("")
-      switch errorString {
+    <RenderIf condition={innerLayout === Spaced}>
+      {switch errorString {
       | Some(val) =>
         <RenderIf condition={val->String.length > 0}>
-          <div className={`py-1 ${errorClases}`}> {React.string(val)} </div>
+          <div
+            className={`Error pt-1 ${errorStringClasses->Option.getOr("")}`}
+            style={
+              color: themeObj.colorDangerText,
+              fontSize: themeObj.fontSizeSm,
+              alignSelf: "start",
+              textAlign: "left",
+            }>
+            {React.string(val)}
+          </div>
         </RenderIf>
       | None => React.null
-      }
-    }
+      }}
+    </RenderIf>
   </div>
 }
