@@ -180,22 +180,25 @@ let make = (
       <div className={`InputLogo ${inputLogoClass} flex -ml-10 items-center`}> {rightIcon} </div>
     </div>
     <RenderIf condition={innerLayout === Spaced}>
-      {switch errorString {
-      | Some(val) =>
-        <RenderIf condition={val->String.length > 0}>
-          <div
-            className={`Error pt-1 ${errorStringClasses->Option.getOr("")}`}
-            style={
-              color: themeObj.colorDangerText,
-              fontSize: themeObj.fontSizeSm,
-              alignSelf: "start",
-              textAlign: "left",
-            }>
-            {React.string(val)}
-          </div>
-        </RenderIf>
-      | None => React.null
-      }}
+      {
+        let errorClasses = errorStringClasses->Option.getOr("")
+        switch errorString {
+        | Some(val) =>
+          <RenderIf condition={val->String.length > 0}>
+            <div
+              className={`Error pt-1 ${errorClasses}`}
+              style={
+                color: themeObj.colorDangerText,
+                fontSize: themeObj.fontSizeSm,
+                alignSelf: "start",
+                textAlign: "left",
+              }>
+              {React.string(val)}
+            </div>
+          </RenderIf>
+        | None => React.null
+        }
+      }
     </RenderIf>
   </div>
 }
