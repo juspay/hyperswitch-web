@@ -8,19 +8,16 @@ let make = (
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
-  let formatInterestRate = interestRate => Utils.formatAmountWithTwoDecimals(interestRate)
-
-  let getInterestLabel = interestRate =>
-    interestRate == 0.0
+  let interestLabel =
+    plan.interest_rate == 0.0
       ? localeString.installmentInterestFree
-      : localeString.installmentInterestRate(formatInterestRate(interestRate))
+      : localeString.installmentWithInterest
 
   let amountPerInstallment = Utils.formatAmountWithTwoDecimals(
     plan.amount_details.amount_per_installment,
   )
   let totalAmount = Utils.formatAmountWithTwoDecimals(plan.amount_details.total_amount)
   let numberOfInstallments = plan.number_of_installments
-  let interestLabel = getInterestLabel(plan.interest_rate)
 
   let mainInstallmentLabel = localeString.installmentPaymentLabel(
     numberOfInstallments,
@@ -31,37 +28,31 @@ let make = (
   <div
     onClick={_ => onSelect()}
     style={
-      padding: themeObj.spacingUnit,
+      padding: `calc(${themeObj.spacingUnit} + 0.2rem)`,
       borderColor: themeObj.borderColor,
     }
-    className={`flex gap-3 w-full ${isLastItem ? "" : "border-b"} !px-0 cursor-pointer text-left`}>
-    <div className="pt-1" style={color: isSelected ? themeObj.colorPrimary : ""}>
+    className={`flex items-center gap-3 w-full ${isLastItem
+        ? ""
+        : "border-b"} cursor-pointer text-left`}>
+    <div className="flex-shrink-0" style={color: isSelected ? themeObj.colorPrimary : ""}>
       <Radio checked=isSelected />
     </div>
-    <div className="flex flex-col w-full">
-      <div className="flex w-full justify-between gap-1">
-        <div className="flex">
-          <span className="mr-0.5"> {mainInstallmentLabel->React.string} </span>
-        </div>
-        <div
-          className="opacity-60 text-nowrap"
-          style={
-            fontSize: themeObj.fontSizeSm,
-          }>
-          {localeString.installmentTotalPayable->React.string}
-        </div>
-      </div>
-      <div className="flex flex-row w-full justify-between">
+    <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+      <div className="flex items-center gap-1">
         <span
-          className="opacity-60"
           style={
-            fontSize: themeObj.fontSizeSm,
+            fontWeight: themeObj.fontWeightMedium,
           }>
-          {interestLabel->React.string}
+          {mainInstallmentLabel->React.string}
         </span>
+        <span className="opacity-40"> {`\u2022`->React.string} </span>
+        <span className="opacity-50"> {interestLabel->React.string} </span>
+      </div>
+      <div className="flex items-center gap-1 text-nowrap">
+        <span className="opacity-50"> {localeString.installmentTotal->React.string} </span>
         <span
           style={
-            color: themeObj.colorText,
+            fontWeight: themeObj.fontWeightMedium,
           }>
           {`${currency} ${totalAmount}`->React.string}
         </span>
