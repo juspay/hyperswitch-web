@@ -38,6 +38,7 @@ let make = (
         ~logger,
         ~customPodUri,
         ~redirectionFlags,
+        ~iframeRef,
       ),
     updateIntent,
   }
