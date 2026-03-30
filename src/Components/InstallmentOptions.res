@@ -127,18 +127,13 @@ let make = (
         }
         className="flex flex-col gap-2 w-full">
         // Selected plan pill
-        <span
-          style={
-            backgroundColor: `color-mix(in srgb, ${themeObj.colorPrimary} 12%, transparent)`,
-            color: themeObj.colorPrimary,
-            fontSize: themeObj.fontSizeXs,
-            fontWeight: themeObj.fontWeightMedium,
-            padding: "1px 6px",
-            borderRadius: "3px",
-            width: "fit-content",
-          }>
-          {localeString.installmentSelectedPlan->React.string}
-        </span>
+        <Pill
+          text=localeString.installmentSelectedPlan
+          bgColor={`color-mix(in srgb, ${themeObj.colorPrimary} 12%, transparent)`}
+          textColor=themeObj.colorPrimary
+          fontSize=themeObj.fontSizeXs
+          fontWeight=themeObj.fontWeightMedium
+        />
         // Plan details row
         <div className="flex items-center justify-between w-full gap-2 flex-wrap">
           <div className="flex items-center gap-1">
@@ -167,22 +162,11 @@ let make = (
               style={
                 marginLeft: `calc(${themeObj.spacingUnit} / 2)`,
                 backgroundColor: `color-mix(in srgb, ${themeObj.colorDanger} 10%, transparent)`,
-                borderColor: `color-mix(in srgb, ${themeObj.colorDanger} 25%, transparent)`,
+                borderColor: themeObj.colorDanger,
                 color: themeObj.colorDanger,
               }
-              className="flex items-center justify-center rounded-full border cursor-pointer">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round">
-                <line x1="8" y1="8" x2="16" y2="16" />
-                <line x1="16" y1="8" x2="8" y2="16" />
-              </svg>
+              className="flex items-center justify-center rounded-full border cursor-pointer p-0.5">
+              <Icon name="cross" size=14 />
             </button>
           </div>
         </div>
