@@ -13,3 +13,13 @@ let addSmartEventListener = (type_, handlerMethod: Types.event => unit, activity
   eventListenerMap->Dict.set(activity, handlerMethod)
   Window.addEventListener(type_, handlerMethod)
 }
+
+let removeSmartEventListener = (type_, activity) => {
+  switch eventListenerMap->Dict.get(activity) {
+  | Some(value) => {
+      Window.removeEventListener(type_, value)
+      eventListenerMap->Dict.delete(activity)
+    }
+  | None => ()
+  }
+}
