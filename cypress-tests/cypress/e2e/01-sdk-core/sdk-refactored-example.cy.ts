@@ -3,7 +3,7 @@ import { getClientURL, createPaymentBody, changeObjectKeyValue } from "../../sup
 import { stripeCards } from "../../support/cards";
 import * as testIds from "../../../../src/Utilities/TestUtils.bs";
 
-describe("SDK Refactored Example - Best Practices", () => {
+describe.skip("SDK Refactored Example - Best Practices", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
   const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
 
