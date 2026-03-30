@@ -162,7 +162,6 @@ let getCustomerSavedPaymentMethods = (
     }
 
     let confirmWithCVCOrPaymentSession = (~body, ~payload, ~paymentType, ~requiresCvv) => {
-      open CardThemeType
       let payloadDict = payload->JSON.Decode.object->Option.getOr(Dict.make())
       switch payloadDict->Dict.get("cvc") {
       | Some(cvcValue) => {
@@ -180,7 +179,7 @@ let getCustomerSavedPaymentMethods = (
         }
       | None =>
         if requiresCvv {
-          if isWidgetPresent(~iframeRef, ~componentName=CardCVCElement->getPaymentModeToStrMapper) {
+          if isWidgetPresent(~iframeRef, ~componentName="cardCvc") {
             confirmWithCVCWidget(~body, ~payload, ~paymentType, ~requiresCvv=true)
           } else {
             handleFailureResponse(

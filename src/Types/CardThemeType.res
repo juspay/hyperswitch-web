@@ -117,21 +117,4 @@ let getPaymentMode = val => {
   }
 }
 
-let getPaymentModeToStrMapper = (val: mode) =>
-  switch val {
-  | Card => "card"
-  | Payment => "payment"
-  | CardNumberElement => "cardNumber"
-  | CardExpiryElement => "cardExpiry"
-  | CardCVCElement => "cardCvc"
-  | GooglePayElement => "googlePay"
-  | PayPalElement => "payPal"
-  | ApplePayElement => "applePay"
-  | PaymentMethodCollectElement => "paymentMethodCollect"
-  | SamsungPayElement => "samsungPay"
-  | KlarnaElement => "klarna"
-  | ExpressCheckoutElement => "expressCheckout"
-  | PazeElement => "paze"
-  | PaymentMethodsManagement => "paymentMethodsManagement"
-  | NONE => ""
-  }
+let getPaymentModeToStrMapper = (val: mode) => (val :> string)
