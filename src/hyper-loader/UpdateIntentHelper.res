@@ -1,22 +1,17 @@
 open Utils
 
-// Posts a dict message to all mounted iframes.
 let postMessageToIframes = (iframes: array<Nullable.t<Dom.element>>, message) => {
   iframes->Array.forEach(ifR => ifR->Window.iframePostMessage(message))
 }
 
-// Posts a single key-value response to all mounted iframes.
 let postResponseToIframes = (iframes, key, response) => {
   postMessageToIframes(iframes, [(key, response)]->Dict.fromArray)
 }
 
-// Sends updateIntentLoading flag to inner iframe to show/hide the overlay.
 let setOverlayLoading = (iframes, isLoading) => {
   postResponseToIframes(iframes, "updateIntentLoading", isLoading->JSON.Encode.bool)
 }
 
-// Waits for the "ready" event from the inner iframe.
-// Uses addSmartEventListener so repeated updateIntent calls auto-cleanup the previous listener.
 let waitForReady = () => {
   Promise.make((resolve, _) => {
     let onMessage = (event: Types.event) => {
@@ -41,17 +36,14 @@ let updateIntent = async (
   try {
     setOverlayLoading(iframes, true)
 
-    // Execute merchant callback to get new sdkAuthorization
     let newSdkAuthorization = await callback()
 
-    // Extract clientSecret from the new sdkAuthorization
     let sdkAuthorizationData = newSdkAuthorization->getSdkAuthorizationData
     let newClientSecret = switch sdkAuthorizationData.clientSecret->getNonEmptyOption {
     | Some(cs) => cs
     | None => clientSecret
     }
 
-    // Re-execute all 4 API calls in parallel
     let (
       paymentMethodListResponse,
       customerPaymentMethodsResponse,
@@ -92,7 +84,6 @@ let updateIntent = async (
       ),
     ))
 
-    // Post updated credentials to inner iframe so confirm calls use the new token
     postMessageToIframes(
       iframes,
       [
@@ -103,7 +94,6 @@ let updateIntent = async (
       ]->Dict.fromArray,
     )
 
-    // Post API responses and wait for iframe to re-render
     let readyPromise = waitForReady()
     postResponseToIframes(iframes, "paymentMethodList", paymentMethodListResponse)
     postResponseToIframes(iframes, "customerPaymentMethods", customerPaymentMethodsResponse)
