@@ -1,7 +1,7 @@
-import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { getClientURL } from "../support/utils";
-import { createPaymentBody } from "../support/utils";
-import { changeObjectKeyValue } from "../support/utils";
+import * as testIds from "../../../../src/Utilities/TestUtils.bs";
+import { getClientURL } from "../../support/utils";
+import { createPaymentBody } from "../../support/utils";
+import { changeObjectKeyValue } from "../../support/utils";
 
 describe("Card payment flow test", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
