@@ -677,6 +677,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     fields: [InfoElement],
     miniIcon: Some(icon("bank", ~size=19)),
   },
+  {
+    paymentMethodName: "saved_methods",
+    icon: Some(icon("default-card", ~size=19)),
+    fields: [],
+    displayName: localeString.payment_methods_saved_methods,
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
