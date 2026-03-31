@@ -19,6 +19,7 @@ let make = (
   ~paymentMethod,
   ~errorString,
   ~setErrorString,
+  ~disabled=false,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -165,25 +166,15 @@ let make = (
       amountPerInstallment,
     )
 
-    <div
-      style={
-        borderColor: themeObj.borderColor,
-      }
-      className="border-t">
+    <div>
       <div
         style={
           padding: `calc(${themeObj.spacingUnit} + 0.2rem)`,
         }
-        className="flex flex-col gap-2 w-full">
-        // Selected plan pill
-        <Pill
-          text=localeString.installmentSelectedPlan
-          bgColor={`color-mix(in srgb, ${themeObj.colorPrimary} 12%, transparent)`}
-          textColor=themeObj.colorPrimary
-          fontSize=themeObj.fontSizeXs
-          fontWeight=themeObj.fontWeightMedium
-        />
-        // Plan details row
+        className="flex items-center gap-3 w-full">
+        <div className="flex-shrink-0" style={color: themeObj.colorPrimary}>
+          <Radio checked=true />
+        </div>
         <div className="flex items-center justify-between w-full gap-2 flex-wrap">
           <div className="flex items-center gap-1">
             <span
@@ -214,8 +205,8 @@ let make = (
                 borderColor: themeObj.colorDanger,
                 color: themeObj.colorDanger,
               }
-              className="flex items-center justify-center rounded-full border cursor-pointer p-0.5">
-              <Icon name="cross" size=14 />
+              className="flex items-center justify-center rounded-full border cursor-pointer p-px">
+              <Icon name="cross" size=12 />
             </button>
           </div>
         </div>
@@ -224,40 +215,54 @@ let make = (
   }
 
   <RenderIf condition={allPlans->Array.length != 0}>
-    <div className="w-full flex flex-col">
-      <div
-        style={
-          borderRadius: themeObj.borderRadius,
-          borderColor: themeObj.borderColor,
-          color: themeObj.colorText,
-          fontWeight: themeObj.fontWeightNormal,
-          fontSize: themeObj.fontSizeLg,
-        }
-        className="flex flex-col border">
-        <div style={padding: themeObj.spacingUnit}>
-          <Toggle
-            isToggled=showInstallments
-            onToggle=handleToggle
-            label={localeString.installmentPayInInstallments}
-          />
-        </div>
-        // Selected summary view
-        {switch selectedPlan {
-        | Some(plan) if showInstallments => renderSelectedSummary(plan)
-        | _ => React.null
-        }}
-        // Expandable list (hidden when a plan is selected)
+    <div
+      className="w-full flex flex-col"
+      style={
+        opacity: if disabled {
+          "0.5"
+        } else {
+          "1"
+        },
+        pointerEvents: if disabled {
+          "none"
+        } else {
+          "auto"
+        },
+        transition: "opacity 0.15s ease-in-out",
+        color: themeObj.colorText,
+        fontWeight: themeObj.fontWeightNormal,
+        fontSize: themeObj.fontSizeLg,
+      }>
+      // Toggle row — inline like save card checkbox
+      <div className="flex items-center">
+        <Toggle
+          isToggled=showInstallments
+          onToggle=handleToggle
+          label={localeString.installmentPayInInstallments}
+          disabled
+        />
+      </div>
+      // Selected summary or expandable plan list — in bordered container
+      <RenderIf condition={showInstallments && !disabled}>
         <div
           style={
-            maxHeight: listMaxHeight,
-            transition: "max-height 0.15s ease-in-out",
-            overflow: "hidden",
-          }>
+            borderRadius: themeObj.borderRadius,
+            borderColor: themeObj.borderColor,
+            marginTop: themeObj.spacingUnit,
+          }
+          className="flex flex-col border">
+          // Selected summary view
+          {switch selectedPlan {
+          | Some(plan) if showInstallments => renderSelectedSummary(plan)
+          | _ => React.null
+          }}
+          // Expandable list (hidden when a plan is selected)
           <div
             style={
-              borderColor: themeObj.borderColor,
-            }
-            className="border-t">
+              maxHeight: listMaxHeight,
+              transition: "max-height 0.15s ease-in-out",
+              overflow: "hidden",
+            }>
             <div className="relative">
               // Scrollable list (native scrollbar hidden)
               <div
@@ -324,7 +329,7 @@ let make = (
             </div>
           </div>
         </div>
-      </div>
+      </RenderIf>
       <RenderIf condition={errorString != ""}>
         <div
           className="Error pt-1"

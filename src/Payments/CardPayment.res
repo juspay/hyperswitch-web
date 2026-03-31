@@ -471,7 +471,7 @@ let make = (
   | Some(_) => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
   | None => ""
   }
-  let conditionToRenderInstallments = cardNumber->CardUtils.getCardBin->String.length >= 6
+  let installmentsDisabled = cardNumber->CardUtils.getCardBin->String.length < 6
   <div className="animate-slowShow">
     <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
@@ -592,16 +592,15 @@ let make = (
               paymentType == PaymentMethodsManagement}>
             <NicknamePaymentInput />
           </RenderIf>
-          <RenderIf condition=conditionToRenderInstallments>
-            <InstallmentOptions
-              setSelectedInstallmentPlan
-              showInstallments
-              setShowInstallments
-              paymentMethod
-              errorString=installmentsError
-              setErrorString=setInstallmentsError
-            />
-          </RenderIf>
+          <InstallmentOptions
+            setSelectedInstallmentPlan
+            showInstallments
+            setShowInstallments
+            paymentMethod
+            errorString=installmentsError
+            setErrorString=setInstallmentsError
+            disabled=installmentsDisabled
+          />
         </div>
       </div>
     </RenderIf>

@@ -1,36 +1,35 @@
 @react.component
-let make = (~isToggled, ~onToggle, ~label) => {
+let make = (~isToggled, ~onToggle, ~label, ~disabled=false) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   let handleToggle = _ => {
-    onToggle(!isToggled)
+    if !disabled {
+      onToggle(!isToggled)
+    }
   }
 
   let toggleTrackColor = isToggled ? themeObj.colorPrimary : themeObj.borderColor
 
   <div
-    className="flex items-center justify-between w-full cursor-pointer"
-    tabIndex=0
+    className={`flex items-center gap-2 w-full ${disabled
+        ? "cursor-not-allowed"
+        : "cursor-pointer"}`}
+    tabIndex={disabled ? -1 : 0}
     role="switch"
     ariaChecked={isToggled ? #"true" : #"false"}
     ariaLabel=label
+    ariaDisabled=disabled
     onClick=handleToggle
     onKeyDown={event => {
-      let key = JsxEvent.Keyboard.key(event)
-      let keyCode = JsxEvent.Keyboard.keyCode(event)
-      if key == "Enter" || keyCode == 13 || key == " " || keyCode == 32 {
-        event->JsxEvent.Keyboard.preventDefault
-        onToggle(!isToggled)
+      if !disabled {
+        let key = JsxEvent.Keyboard.key(event)
+        let keyCode = JsxEvent.Keyboard.keyCode(event)
+        if key == "Enter" || keyCode == 13 || key == " " || keyCode == 32 {
+          event->JsxEvent.Keyboard.preventDefault
+          onToggle(!isToggled)
+        }
       }
     }}>
-    <span
-      style={
-        color: themeObj.colorText,
-        fontSize: themeObj.fontSizeLg,
-        fontWeight: themeObj.fontWeightNormal,
-      }>
-      {label->React.string}
-    </span>
     <div
       style={
         backgroundColor: toggleTrackColor,
@@ -53,5 +52,13 @@ let make = (~isToggled, ~onToggle, ~label) => {
         }
       />
     </div>
+    <span
+      style={
+        color: themeObj.colorText,
+        fontWeight: themeObj.fontWeightNormal,
+      }
+      className="opacity-50 text-xs select-none">
+      {label->React.string}
+    </span>
   </div>
 }
