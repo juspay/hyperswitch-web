@@ -24,15 +24,14 @@ describe("Stripe Non-3DS Card Payment", () => {
     it("should complete the card payment successfully", () => {
       const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.successCard;
 
-      getIframeBody().find("[data-testid=cardNoInput]").type(cardNo);
-      getIframeBody().find("[data-testid=expiryInput]").type(card_exp_month);
-      getIframeBody().find("[data-testid=expiryInput]").type(card_exp_year);
-      getIframeBody().find("[data-testid=cvvInput]").type(cvc);
+      getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo);
+      getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month);
+      getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year);
+      getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc);
 
       getIframeBody().get("#submit").click();
 
-      cy.wait(3000);
-      cy.contains("Thanks for your order!").should("be.visible");
+      cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
     });
   });
 
@@ -40,30 +39,28 @@ describe("Stripe Non-3DS Card Payment", () => {
     it("should fail with an invalid card number", () => {
       const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.invalidCard;
 
-      getIframeBody().find("[data-testid=cardNoInput]").type(cardNo);
-      getIframeBody().find("[data-testid=expiryInput]").type(card_exp_month);
-      getIframeBody().find("[data-testid=expiryInput]").type(card_exp_year);
-      getIframeBody().find("[data-testid=cvvInput]").type(cvc);
+      getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo);
+      getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month);
+      getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year);
+      getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc);
 
       getIframeBody().get("#submit").click();
 
-      cy.wait(3000);
-      cy.contains("Please enter valid details").should("be.visible");
+      cy.contains("Please enter valid details", { timeout: 10000 }).should("be.visible");
     });
 
     it("should show error for expired card year", () => {
       const { cardNo, card_exp_month, cvc } = stripeCards.successCard;
 
-      getIframeBody().find("[data-testid=cardNoInput]").type(cardNo);
-      getIframeBody().find("[data-testid=expiryInput]").type(card_exp_month);
-      getIframeBody().find("[data-testid=expiryInput]").type("10");
-      getIframeBody().find("[data-testid=cvvInput]").type(cvc);
+      getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo);
+      getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month);
+      getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type("10");
+      getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc);
 
       getIframeBody().get("#submit").click();
 
-      cy.wait(3000);
       getIframeBody()
-        .find(".Error.pt-1")
+        .find(".Error.pt-1", { timeout: 10000 })
         .should("be.visible")
         .and("contain.text", "Your card's expiration year is in the past.");
     });
@@ -71,16 +68,15 @@ describe("Stripe Non-3DS Card Payment", () => {
     it("should show error for incomplete card CVV", () => {
       const { cardNo, card_exp_month, card_exp_year } = stripeCards.successCard;
 
-      getIframeBody().find("[data-testid=cardNoInput]").type(cardNo);
-      getIframeBody().find("[data-testid=expiryInput]").type(card_exp_month);
-      getIframeBody().find("[data-testid=expiryInput]").type(card_exp_year);
-      getIframeBody().find("[data-testid=cvvInput]").type("1");
+      getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo);
+      getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month);
+      getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year);
+      getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type("1");
 
       getIframeBody().get("#submit").click();
 
-      cy.wait(3000);
       getIframeBody()
-        .find(".Error.pt-1")
+        .find(".Error.pt-1", { timeout: 10000 })
         .should("be.visible")
         .and("contain.text", "Your card's security code is incomplete.");
     });

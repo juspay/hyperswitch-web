@@ -23,11 +23,11 @@ describe("Stripe 3DS Card Payment", () => {
 
   it("should complete the 3DS card payment successfully", () => {
     const { cardNo, cvc, card_exp_month, card_exp_year } = stripeCards.threeDSCard;
-    
-    getIframeBody().find("[data-testid=cardNoInput]").type(cardNo);
-    getIframeBody().find("[data-testid=expiryInput]").type(card_exp_month);
-    getIframeBody().find("[data-testid=expiryInput]").type(card_exp_year);
-    getIframeBody().find("[data-testid=cvvInput]").type(cvc);
+
+    getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo);
+    getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month);
+    getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year);
+    getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc);
 
     getIframeBody()
       .get("#submit")
@@ -39,15 +39,14 @@ describe("Stripe 3DS Card Payment", () => {
 
   it("should redirect to 3DS authentication page", () => {
     const { cardNo, cvc, card_exp_month, card_exp_year } = stripeCards.threeDSCard;
-    
-    getIframeBody().find("[data-testid=cardNoInput]").type(cardNo);
-    getIframeBody().find("[data-testid=expiryInput]").type(card_exp_month);
-    getIframeBody().find("[data-testid=expiryInput]").type(card_exp_year);
-    getIframeBody().find("[data-testid=cvvInput]").type(cvc);
+
+    getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo);
+    getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month);
+    getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year);
+    getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc);
 
     getIframeBody().get("#submit").click();
-    
-    cy.wait(3000);
-    cy.url().should("include", "stripe.com");
+
+    cy.url({ timeout: 10000 }).should("include", "stripe.com");
   });
 });
