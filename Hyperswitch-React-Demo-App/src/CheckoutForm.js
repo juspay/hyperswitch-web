@@ -15,7 +15,27 @@ import {
   paymentElementOptions,
 } from "./utils";
 
-export default function CheckoutForm() {
+// Parse layout query param - can be a simple string or JSON-encoded object
+const parseLayoutParam = (layoutParam) => {
+  if (!layoutParam) return undefined;
+  try {
+    return JSON.parse(layoutParam);
+  } catch {
+    return layoutParam;
+  }
+};
+
+// Parse options query param - accepts JSON-encoded PaymentElement options
+const parseOptionsParam = (optionsParam) => {
+  if (!optionsParam) return undefined;
+  try {
+    return JSON.parse(optionsParam);
+  } catch {
+    return undefined;
+  }
+};
+
+export default function CheckoutForm({ layoutQueryParam, optionsQueryParam }) {
   const hyper = useHyper();
   const elements = useWidgets();
 
@@ -106,7 +126,7 @@ export default function CheckoutForm() {
                 <div className="paymentElement">
                   <PaymentElement
                     id="payment-element"
-                    options={paymentElementOptions}
+                    options={paymentElementOptions(parseLayoutParam(layoutQueryParam), parseOptionsParam(optionsQueryParam))}
                   />
                 </div>
                 <button

@@ -191,3 +191,48 @@ Cypress.Commands.add("nestedIFrame", (selector, callback) => {
       callback($body);
     });
 });
+
+// Smart wait utilities to replace hard waits
+// Note: iframeSelector is already declared at the top of this file
+
+Cypress.Commands.add("waitForSDKReady", () => {
+  return cy
+    .get(iframeSelector, { timeout: 15000 })
+    .should("be.visible")
+    .its("0.contentDocument")
+    .its("body")
+    .should("not.be.empty");
+});
+
+Cypress.Commands.add("safeType", { prevSubject: "element" }, (subject, text, options = {}) => {
+  cy.wrap(subject)
+    .should("not.be.disabled")
+    .should("be.visible")
+    .clear({ force: true })
+    .type(text, { delay: 50, ...options });
+  return cy.wrap(subject);
+});
+
+Cypress.Commands.add("safeClick", { prevSubject: "element" }, (subject) => {
+  cy.wrap(subject)
+    .should("not.be.disabled")
+    .should("be.visible")
+    .click({ force: true });
+  return cy.wrap(subject);
+});
+
+Cypress.Commands.add("enterCardDetails", (cardDetails: any) => {
+  const iframeBody = () => cy.iframe(iframeSelector);
+  
+  iframeBody()
+    .find('[data-testid="cardNoInput"]')
+    .safeType(cardDetails.cardNo);
+  
+  iframeBody()
+    .find('[data-testid="expiryInput"]')
+    .safeType(cardDetails.card_exp_month + cardDetails.card_exp_year);
+  
+  iframeBody()
+    .find('[data-testid="cvvInput"]')
+    .safeType(cardDetails.cvc);
+});
