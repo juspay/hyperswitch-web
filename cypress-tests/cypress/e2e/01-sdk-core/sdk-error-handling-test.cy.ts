@@ -13,12 +13,10 @@ import {
      });
 
      it("should handle missing client secret error", () => {
-       // Visit with empty client secret
        cy.visit(getClientURL("", publishableKey), {
          failOnStatusCode: false,
        });
 
-       // SDK should fail to initialize without client secret
        cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element", { timeout: 5000 })
          .should("not.exist");
      });
@@ -30,13 +28,11 @@ import {
          failOnStatusCode: false,
        });
 
-       // SDK should fail to initialize with invalid client secret
        cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element", { timeout: 5000 })
          .should("not.exist");
      });
 
      it("should handle network errors gracefully", () => {
-       // Intercept and fail payment intent creation
        cy.intercept("POST", "**/payment_intents", {
          forceNetworkError: true,
        }).as("createPaymentIntent");
@@ -68,7 +64,6 @@ import {
          body: createPaymentBody,
          failOnStatusCode: false,
        }).then((response) => {
-         // API may return 401 or 404 depending on implementation
          expect([401, 404]).to.include(response.status);
        });
      });
@@ -83,14 +78,13 @@ import {
          },
          failOnStatusCode: false,
        }).then((response) => {
-         // API may return 404 or 200 depending on routing
          expect([200, 404]).to.include(response.status);
        });
      });
 
      it("should handle timeout errors", () => {
        cy.intercept("POST", "**/payment_intents", {
-         delay: 31000, // Delay longer than default timeout
+         delay: 31000,
          statusCode: 200,
          body: { id: "pi_test", client_secret: "pi_test_secret_test" },
        }).as("slowPaymentIntent");
@@ -106,7 +100,6 @@ import {
          failOnStatusCode: false,
          timeout: 5000,
        }).then((response) => {
-         // Should handle timeout appropriately
          expect(response.status).to.satisfy((status: number) => status === 0 || status >= 400);
        });
      });
@@ -118,15 +111,12 @@ import {
          });
        });
 
-       // Wait for SDK to load
        cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
          .should("be.visible");
        cy.wait(2000);
 
-       // Trigger a validation error (submit empty form)
        cy.get("#submit").click();
 
-       // Verify error message is displayed (Error class may be in iframe)
        cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
          .its("0.contentDocument")
          .its("body")
@@ -135,7 +125,6 @@ import {
      });
 
      it("should handle SDK script loading errors", () => {
-       // Intercept SDK script and return 500
        cy.intercept("GET", "**/app.js", {
          statusCode: 500,
          body: "Server Error",
@@ -147,7 +136,6 @@ import {
          });
        });
 
-       // Should handle script loading error
        cy.on("window:before:load", (win) => {
          cy.stub(win.console, "error").as("consoleError");
        });
@@ -156,7 +144,6 @@ import {
      it("should recover from temporary network failures", () => {
        let requestCount = 0;
        
-       // First request fails, second succeeds
        cy.intercept("GET", "**/payment_methods*", (req) => {
          requestCount++;
          if (requestCount === 1) {
@@ -177,7 +164,6 @@ import {
          });
        });
 
-       // SDK should retry and eventually load
        cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element", {
          timeout: 10000,
        }).should("be.visible");
@@ -192,7 +178,6 @@ import {
          });
        });
 
-       // Should log error for invalid key prefix
        cy.on("window:before:load", (win) => {
          cy.stub(win.console, "error").as("consoleError");
        });
@@ -201,10 +186,8 @@ import {
      });
 
      it("should handle missing required parameters", () => {
-       // Visit without any parameters
        cy.visit(`${getClientURL("", "")}`);
 
-       // Should show error
        cy.on("window:before:load", (win) => {
          cy.stub(win.console, "error").as("consoleError");
        });
@@ -217,7 +200,6 @@ import {
        
        if (sentryDsn) {
          cy.intercept("POST", "**sentry.io**", (req) => {
-           // Capture Sentry error reports
            expect(req.body).to.exist;
          }).as("sentryRequest");
 
@@ -227,14 +209,12 @@ import {
            });
          });
 
-         // Trigger an error
          cy.window().then((win: any) => {
            if (win.triggerTestError) {
              win.triggerTestError();
            }
          });
 
-         // Verify Sentry was called
          cy.wait("@sentryRequest", { timeout: 5000 });
        }
      });

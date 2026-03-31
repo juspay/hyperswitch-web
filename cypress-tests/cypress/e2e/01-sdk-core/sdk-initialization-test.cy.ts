@@ -19,7 +19,6 @@ describe("SDK Initialization Tests", () => {
       });
     });
 
-    // Verify iframe loads successfully
     cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
       .should("be.visible")
       .its("0.contentDocument")
@@ -36,7 +35,6 @@ describe("SDK Initialization Tests", () => {
       });
     });
 
-    // Should show error for invalid publishable key
     cy.on("window:before:load", (win) => {
       cy.stub(win.console, "error").as("consoleError");
     });
@@ -54,7 +52,6 @@ describe("SDK Initialization Tests", () => {
       });
     });
 
-    // Verify SDK loads with custom backend
     cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
       .should("be.visible");
   });
@@ -67,12 +64,10 @@ describe("SDK Initialization Tests", () => {
       });
     });
 
-    // Verify SDK reinitializes properly
     cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
       .should("be.visible");
     
-    // Check that the SDK script is reloaded
-    cy.window().then((win) => {
+    cy.window().then((win: any) => {
       expect(win.Hyper).to.exist;
     });
   });
@@ -87,7 +82,6 @@ describe("SDK Initialization Tests", () => {
       });
     });
 
-    // Verify SDK loads with profile ID
     cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
       .should("be.visible");
   });

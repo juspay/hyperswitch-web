@@ -24,13 +24,11 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
          });
        });
 
-       // Wait for iframe to be visible
        cy.get(iframeSelector)
          .should("be.visible")
          .its("0.contentDocument")
          .its("body");
 
-       // Verify payment element is rendered
        cy.wait(2000);
        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).should("exist");
      });
@@ -42,14 +40,11 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
          });
        });
 
-       // Wait for element to mount
        cy.get(iframeSelector).should("be.visible");
        cy.wait(2000);
 
-       // Verify iframe can receive messages
        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).should("be.visible");
-       
-       // Verify iframe height is set
+
        cy.get(iframeSelector).should("have.attr", "style").and("include", "height");
      });
 
@@ -60,15 +55,12 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
          });
        });
 
-       // Wait for element to mount
        cy.get(iframeSelector).should("be.visible");
        cy.wait(2000);
 
-       // Navigate away and back
        cy.visit("about:blank");
        cy.go("back");
 
-       // Verify SDK reinitializes
        cy.get(iframeSelector, { timeout: 10000 }).should("be.visible");
      });
 
@@ -79,24 +71,19 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
          });
        });
 
-       // Wait for element to mount
        cy.get(iframeSelector).should("be.visible");
        cy.wait(2000);
 
-       // Type a card number
        getIframeBody()
          .find(`[data-testid=${testIds.cardNoInputTestId}]`)
          .type("4242424242424242");
 
-       // Verify value is entered
        getIframeBody()
          .find(`[data-testid=${testIds.cardNoInputTestId}]`)
          .should("have.value", "4242 4242 4242 4242");
 
-       // Refresh the page
        cy.reload();
 
-       // Verify SDK reinitializes
        cy.get(iframeSelector, { timeout: 10000 }).should("be.visible");
      });
 
@@ -107,11 +94,9 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
          });
        });
 
-       // Wait for element to mount
        cy.get(iframeSelector).should("be.visible");
        cy.wait(2000);
 
-       // Check that the element is properly isolated
        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).should("have.length", 1);
      });
 
@@ -122,14 +107,11 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
          });
        });
 
-       // Wait for element to mount
        cy.get(iframeSelector).should("be.visible");
        cy.wait(2000);
 
-       // Submit without entering card details
        cy.get("#submit").click();
 
-       // Should show validation error
        getIframeBody().find(".Error").should("be.visible");
      });
 
@@ -140,16 +122,13 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
          });
        });
 
-       // Wait for element to mount
        cy.get(iframeSelector).should("be.visible");
        cy.wait(2000);
 
-       // Type card number without spaces
        getIframeBody()
          .find(`[data-testid=${testIds.cardNoInputTestId}]`)
          .type("4242424242424242");
 
-       // Should be auto-formatted with spaces
        getIframeBody()
          .find(`[data-testid=${testIds.cardNoInputTestId}]`)
          .should("have.value", "4242 4242 4242 4242");
@@ -162,17 +141,13 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
          });
        });
 
-       // Wait for element to mount
        cy.get(iframeSelector).should("be.visible");
        cy.wait(2000);
 
-       // Type Visa card number
        getIframeBody()
          .find(`[data-testid=${testIds.cardNoInputTestId}]`)
          .type("4242");
 
-       // Should show card brand icon or indicator in the UI
-       // This verifies that the SDK is processing the card number
        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`)
          .should("have.value", "4242");
      });
@@ -184,17 +159,14 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
          });
        });
 
-       // Wait for element to mount
        cy.get(iframeSelector).should("be.visible");
        cy.wait(2000);
 
-       // Enter card number
        getIframeBody()
          .find(`[data-testid=${testIds.cardNoInputTestId}]`)
          .type("4242424242424242")
          .should("have.value", "4242 4242 4242 4242");
 
-       // Enter expiry (format includes space: "12 / 30")
        getIframeBody()
          .find(`[data-testid=${testIds.expiryInputTestId}]`)
          .type("1230")
@@ -203,7 +175,6 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
            expect(val).to.match(/12\s*\/?\s*30/);
          });
 
-       // Enter CVC
        getIframeBody()
          .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
          .type("123")

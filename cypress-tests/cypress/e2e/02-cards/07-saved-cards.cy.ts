@@ -38,7 +38,6 @@ describe("Card payment flow test", () => {
   });
 
   it("should check if cards are saved", () => {
-    // Visit the page where the test will be performed
     getIframeBody()
       .find(`[data-testid=${testIds.addNewCardIcon}]`)
       .then(($element) => {

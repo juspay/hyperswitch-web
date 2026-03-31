@@ -1,7 +1,3 @@
-/**
- * Stripe 3DS Card Payment Tests
- * Tests for 3D Secure authentication with Stripe
- */
 import * as testIds from "../../../../src/Utilities/TestUtils.bs";
 import { getClientURL, createPaymentBody, changeObjectKeyValue } from "../../support/utils";
 import { stripeCards } from "../../support/cards";

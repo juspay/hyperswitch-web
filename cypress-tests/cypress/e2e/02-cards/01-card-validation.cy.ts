@@ -1,7 +1,3 @@
-/**
- * Card Validation Tests
- * Consolidated tests for card number validation, brand detection, and formatting
- */
 import * as testIds from "../../../../src/Utilities/TestUtils.bs";
 import { getClientURL, createPaymentBody, changeObjectKeyValue } from "../../support/utils";
 import { stripeCards } from "../../support/cards";
@@ -223,7 +219,6 @@ describe("Card Number Validation", () => {
     });
   });
 
-
   describe("Expiry Date Validation", () => {
     it("should reject expired card (past year)", () => {
       const { cardNo, cvc } = stripeCards.successCard;
@@ -233,7 +228,7 @@ describe("Card Number Validation", () => {
         .type(cardNo);
       getIframeBody()
         .find(`[data-testid=${testIds.expiryInputTestId}]`)
-        .type("0123"); // Expired: Jan 2023
+        .type("0123");
       getIframeBody()
         .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
         .type(cvc);
@@ -254,7 +249,7 @@ describe("Card Number Validation", () => {
         .type(cardNo);
       getIframeBody()
         .find(`[data-testid=${testIds.expiryInputTestId}]`)
-        .type("0030"); // Invalid month 00
+        .type("0030");
       getIframeBody()
         .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
         .type(cvc);
@@ -300,7 +295,7 @@ describe("Card Number Validation", () => {
         .type(card_exp_year);
       getIframeBody()
         .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
-        .type("12"); // Only 2 digits
+        .type("12");
 
       getIframeBody().get("#submit").click();
 
@@ -324,7 +319,7 @@ describe("Card Number Validation", () => {
         .type(card_exp_year);
       getIframeBody()
         .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
-        .type("123"); // Only 3 digits for Amex
+        .type("123");
 
       getIframeBody().get("#submit").click();
 
@@ -352,7 +347,7 @@ describe("Card Number Validation", () => {
 
       getIframeBody()
         .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
-        .should("have.value", ""); // Should not accept letters
+        .should("have.value", "");
     });
 
     it("should accept valid 3-digit CVC for Visa", () => {
@@ -404,7 +399,7 @@ describe("Card Number Validation", () => {
 
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
-        .should("have.value", "4242 4242 4242 4242"); // Formatted with spaces
+        .should("have.value", "4242 4242 4242 4242");
     });
 
     it("should reject card number with letters", () => {
@@ -414,7 +409,7 @@ describe("Card Number Validation", () => {
 
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
-        .should("have.value", "4242 4242"); // Only numbers accepted
+        .should("have.value", "4242 4242");
     });
 
     it("should enforce max length for card number (19 digits)", () => {
@@ -425,7 +420,7 @@ describe("Card Number Validation", () => {
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .invoke("val")
-        .should("have.length.at.most", 23); // 19 digits + 4 spaces
+        .should("have.length.at.most", 23);
     });
 
     it("should handle paste event with formatted number", () => {
@@ -444,7 +439,7 @@ describe("Card Number Validation", () => {
 
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
-        .type("111111"); // Invalid card
+        .type("111111");
       getIframeBody()
         .find(`[data-testid=${testIds.expiryInputTestId}]`)
         .type("12");
@@ -457,18 +452,15 @@ describe("Card Number Validation", () => {
 
       getIframeBody().get("#submit").click();
 
-      // Error should be visible
       getIframeBody()
         .find(".Error.pt-1")
         .should("be.visible");
 
-      // Start fixing - error should clear or remain based on implementation
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .clear()
         .type("4242");
 
-      // Card icon should update to Visa
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .should("have.value", "4242");
@@ -481,7 +473,6 @@ describe("Card Number Validation", () => {
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .type("4");
 
-      // After typing first digit, should detect Visa
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .should("have.value", "4");
@@ -496,7 +487,6 @@ describe("Card Number Validation", () => {
     });
 
     it("should update card brand when changing from Visa to MasterCard", () => {
-      // Type Visa first
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .type("4242424242424242");
@@ -505,7 +495,6 @@ describe("Card Number Validation", () => {
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .clear();
 
-      // Type MasterCard
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .type("5555555555554444");
@@ -520,7 +509,7 @@ describe("Card Number Validation", () => {
 
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
-        .type("4242"); // Too short
+        .type("4242");
       getIframeBody()
         .find(`[data-testid=${testIds.expiryInputTestId}]`)
         .type(card_exp_month);
@@ -542,7 +531,6 @@ describe("Card Number Validation", () => {
 
   describe("Cross-field Validation", () => {
     it("should require all fields before submit", () => {
-      // Only fill card number
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .type(stripeCards.successCard.cardNo);
@@ -568,11 +556,10 @@ describe("Card Number Validation", () => {
         .type(card_exp_year);
       getIframeBody()
         .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
-        .type("12"); // Invalid CVC
+        .type("12");
 
       getIframeBody().get("#submit").click();
 
-      // Check valid fields are preserved
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .should("have.value", "4242 4242 4242 4242");
@@ -580,14 +567,6 @@ describe("Card Number Validation", () => {
         .find(`[data-testid=${testIds.expiryInputTestId}]`)
         .should("have.value", `12 / ${card_exp_year}`);
     });
-
-    // it("should show all field errors on submit with empty form", () => {
-    //   getIframeBody().get("#submit").click();
-
-    //   getIframeBody()
-    //     .find(".Error.pt-1")
-    //     .should("be.visible");
-    // });
   });
 
   describe.skip("Saved Card CVC Validation", () => {
