@@ -14,7 +14,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   let (_, setManagePaymentMethod) = Recoil.useRecoilState(RecoilAtomsV2.managePaymentMethod)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let updateCard = PaymentHelpersV2.useUpdateCard(Some(loggerState), Card)
-  let {iframeId} = keys
+  let {iframeId, sdkAuthorization} = keys
   let {isCVCValid, cvcNumber, setCvcError} = cvcProps
   let complete = isCVCValid->Option.getOr(false) && paymentTokenAtom.paymentToken !== ""
   let isEmpty = cvcNumber == ""
@@ -60,7 +60,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
         ~pmSessionId=keys.pmSessionId->Option.getOr(""),
         ~logger,
         ~customPodUri,
-        ~sdkAuthorization=keys.sdkAuthorization->Option.getOr(""),
+        ~sdkAuthorization=sdkAuthorization->Option.getOr(""),
       )
 
       let dict = res->getDictFromJson
@@ -100,7 +100,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
         ~pmSessionId=keys.pmSessionId->Option.getOr(""),
         ~logger,
         ~customPodUri,
-        ~sdkAuthorization=keys.sdkAuthorization->Option.getOr(""),
+        ~sdkAuthorization=sdkAuthorization->Option.getOr(""),
       )
 
       let dict = res->getDictFromJson

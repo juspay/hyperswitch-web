@@ -369,6 +369,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
   open RecoilAtoms
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let {sdkAuthorization} = keys
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
@@ -379,7 +380,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
   ) => {
     switch keys.pmSessionId {
     | Some(pmSessionId) =>
-      let headers = [("Authorization", `${keys.sdkAuthorization->Option.getOr("")}`)]
+      let headers = [("Authorization", sdkAuthorization->Option.getOr(""))]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/confirm`
 
@@ -426,6 +427,7 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
   open RecoilAtoms
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let {sdkAuthorization} = keys
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
@@ -436,7 +438,7 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
   ) => {
     switch keys.pmSessionId {
     | Some(pmSessionId) =>
-      let headers = [("Authorization", `${keys.sdkAuthorization->Option.getOr("")}`)]
+      let headers = [("Authorization", sdkAuthorization->Option.getOr(""))]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
