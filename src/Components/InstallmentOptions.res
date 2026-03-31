@@ -5,7 +5,8 @@
 @get external scrollTop: Dom.element => float = "scrollTop"
 @set external setScrollTop: (Dom.element, float) => unit = "scrollTop"
 @send
-external addScrollListener: (Dom.element, @as("scroll") _, unit => unit) => unit = "addEventListener"
+external addScrollListener: (Dom.element, @as("scroll") _, unit => unit) => unit =
+  "addEventListener"
 @send
 external removeScrollListener: (Dom.element, @as("scroll") _, unit => unit) => unit =
   "removeEventListener"
@@ -233,17 +234,12 @@ let make = (
           fontSize: themeObj.fontSizeLg,
         }
         className="flex flex-col border">
-        <div style={padding: themeObj.spacingUnit} className="flex items-center gap-2">
-          <div className="opacity-60">
-            <Icon name="installments" size=20 />
-          </div>
-          <div className="flex-1">
-            <Toggle
-              isToggled=showInstallments
-              onToggle=handleToggle
-              label={localeString.installmentPayInInstallments}
-            />
-          </div>
+        <div style={padding: themeObj.spacingUnit}>
+          <Toggle
+            isToggled=showInstallments
+            onToggle=handleToggle
+            label={localeString.installmentPayInInstallments}
+          />
         </div>
         // Selected summary view
         {switch selectedPlan {
@@ -273,9 +269,7 @@ let make = (
                     "none"
                   },
                 }
-                className={`flex flex-col ${needsScroll
-                    ? "overflow-y-auto no-scrollbar"
-                    : ""}`}>
+                className={`flex flex-col ${needsScroll ? "overflow-y-auto no-scrollbar" : ""}`}>
                 {allPlans
                 ->Array.mapWithIndex((plan, i) => {
                   let isLastItem = allPlans->Array.length - 1 == i
