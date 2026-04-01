@@ -392,6 +392,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -404,6 +405,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
         ("Content-Type", "application/json"),
         ("Authorization", `publishable-key=${keys.publishableKey},client-secret=${pmClientSecret}`),
         ("x-profile-id", keys.profileId),
+        ("Accept-Language", config.locale),
       ]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/confirm`
@@ -455,6 +457,7 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -467,6 +470,7 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
         ("Content-Type", "application/json"),
         ("Authorization", `publishable-key=${keys.publishableKey},client-secret=${pmClientSecret}`),
         ("x-profile-id", keys.profileId),
+        ("Accept-Language", config.locale),
       ]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`

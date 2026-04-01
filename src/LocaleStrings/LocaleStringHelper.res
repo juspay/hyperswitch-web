@@ -1,4 +1,29 @@
 open LocaleStringTypes
+
+// Converts a locale type to the canonical string used by the backend translations table
+let localeTypeToString = locale => {
+  switch locale {
+  | EN => "en"
+  | EN_GB => "en-GB"
+  | HE => "he"
+  | FR => "fr"
+  | FR_BE => "fr-BE"
+  | AR => "ar"
+  | JA => "ja"
+  | DE => "de"
+  | ES => "es"
+  | CA => "ca"
+  | PT => "pt"
+  | IT => "it"
+  | PL => "pl"
+  | NL => "nl"
+  | SV => "sv"
+  | RU => "ru"
+  | ZH => "zh"
+  | ZH_HANT => "zh-Hant"
+  }
+}
+
 let mapLocalStringToTypeLocale = val => {
   // First try the exact match
   let exactMatch = switch val->String.toLowerCase {
