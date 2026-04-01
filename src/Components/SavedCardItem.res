@@ -127,10 +127,11 @@ let make = (
         ~cardLast4,
         ~cardBin,
         ~isSavedPaymentMethod=true,
+        ~isCvcEmpty=cvcNumber->String.length == 0,
       )
     }
     None
-  }, (isActive, paymentItem, country, state, pinCode))
+  }, (isActive, paymentItem, country, state, pinCode, cvcNumber))
 
   React.useEffect(() => {
     CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
@@ -158,8 +159,6 @@ let make = (
     ->Array.filter(item => String.trim(item) !== "")
 
   let billingDetailsArrayLength = Array.length(billingDetailsArray)
-
-  let isCVCEmpty = cvcNumber->String.length == 0
 
   let cvcInputElement =
     <PaymentInputField
