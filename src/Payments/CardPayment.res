@@ -136,13 +136,27 @@ let make = (
     isInstallmentValid
 
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
+
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete=complete && areRequiredFieldsValid)
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="card")
+
+  React.useEffect(() => {
+    let cardInfo = PaymentEventData.buildCardInfo(
+      ~cardNumber,
+      ~expiry=cardExpiry,
+      ~cvc=cvcNumber,
+      ~brand=cardBrand,
+    )
+
+    SubscriptionEventHooks.emitCardInfo(~subscriptionEvents=options.subscriptionEvents, ~cardInfo)
+    None
+  }, (cardNumber, cardExpiry, cvcNumber, cardBrand))
+
   React.useEffect(() => {
     setComplete(_ => complete)
     setShowPaymentMethodsScreen(_ => true)
     None
   }, [complete])
-
-  useHandlePostMessages(~complete=complete && areRequiredFieldsValid, ~empty, ~paymentType="card")
 
   let isGuestCustomer = useIsGuestCustomer()
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)

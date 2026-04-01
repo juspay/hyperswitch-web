@@ -25,11 +25,19 @@ let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false
   open RecoilAtoms
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let options = Recoil.useRecoilValueFromAtom(optionAtom)
 
   React.useEffect(() => {
-    Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod)
+    Utils.handlePostMessageEvents(
+      ~complete,
+      ~empty,
+      ~paymentType,
+      ~loggerState,
+      ~savedMethod,
+      ~subscriptionEvents=options.subscriptionEvents,
+    )
     None
-  }, (complete, empty, paymentType))
+  }, (complete, empty, paymentType, options.subscriptionEvents))
 }
 
 let useIsCustomerAcceptanceRequired = (

@@ -17,11 +17,11 @@ let make = () => {
   let paymentMethodType = "instant_bank_transfer"
   let paymentMethod = "bank_transfer"
 
-  UtilityHooks.useHandlePostMessages(
-    ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
-    ~empty=areRequiredFieldsEmpty,
-    ~paymentType=paymentMethod,
-  )
+  let complete = areRequiredFieldsValid && !areRequiredFieldsEmpty
+  let empty = areRequiredFieldsEmpty
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
+
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethod)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse

@@ -16,7 +16,8 @@ let make = () => {
   let complete = email.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == ""
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="ach_bank_transfer")
 
   React.useEffect(() => {
     setComplete(_ => complete)

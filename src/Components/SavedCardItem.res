@@ -101,7 +101,7 @@ let make = (
   | None => "debit"
   }
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
-
+  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   React.useEffect(() => {
     open CardUtils
 
@@ -113,7 +113,7 @@ let make = (
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->CardValidations.formatCardExpiryNumber
-      ->emitExpiryDate
+      ->emitExpiryDate(~subscriptionEvents=options.subscriptionEvents)
 
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod=paymentItem.paymentMethod,
@@ -127,13 +127,30 @@ let make = (
         ~cardLast4,
         ~cardBin,
         ~isSavedPaymentMethod=true,
+        ~subscriptionEvents=options.subscriptionEvents,
+      )
+      SubscriptionEventHooks.emitPaymentMethodStatus(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~paymentMethod=paymentItem.paymentMethod,
+        ~paymentMethodType,
+        ~isSavedPaymentMethod=true,
+        ~isOneClickWallet=false,
+      )
+      SubscriptionEventHooks.emitBillingAddress(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~country,
+        ~state,
+        ~postalCode=pinCode,
       )
     }
     None
   }, (isActive, paymentItem, country, state, pinCode))
 
   React.useEffect(() => {
-    CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
+    CardUtils.emitIsFormReadyForSubmission(
+      isCVCValid->Option.getOr(false),
+      ~subscriptionEvents=options.subscriptionEvents,
+    )
     None
   }, [isCVCValid])
 
