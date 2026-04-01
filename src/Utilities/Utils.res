@@ -1754,6 +1754,24 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
   }
 }
 
+let getWidgetIframe = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {
+  let selector = `orca-payment-element-iframeRef-orca-elements-payment-element-${id}`
+  iframeRef.contents->Array.find(iframe => {
+    switch iframe->Nullable.toOption {
+    | Some(elem) =>
+      elem
+      ->Window.getAttribute("id")
+      ->Nullable.toOption
+      ->Option.getOr("") == selector
+    | None => false
+    }
+  })
+}
+
+let isWidgetPresent = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {
+  getWidgetIframe(~iframeRef, ~id)->Option.isSome
+}
+
 let isDigitLimitExceeded = (val, ~digit) => {
   switch val->String.match(%re("/\d/g")) {
   | Some(matches) => matches->Array.length > digit
