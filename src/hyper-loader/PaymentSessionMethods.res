@@ -102,13 +102,27 @@ let getCustomerSavedPaymentMethods = (
       ~requiresCvv,
       ~id,
     ) => {
+      let redirect = payload->getDictFromJson->getString("redirect", "if_required")
       Promise.make((resolve, _) => {
         let handleCVCWidgetConfirmResponse = (event: Types.event) => {
           let json = event.data->Identity.anyTypeToJson
           let dict = json->getDictFromJson
-          switch dict->Dict.get("cvcWidgetConfirmResponse") {
-          | Some(responseData) => resolve(responseData)
-          | None => ()
+          if dict->Dict.get("cvcWidgetConfirmResponse")->Option.isSome {
+            let responseData =
+              dict->Dict.get("cvcWidgetConfirmResponse")->Option.getOr(JSON.Encode.null)
+            let responseDataDict = responseData->getDictFromJson
+            let data = responseDataDict->Dict.get("data")->Option.getOr(JSON.Encode.null)
+            let returnUrl = responseDataDict->getString("returnUrl", "")
+
+            if redirect == "always" {
+              Window.Location.replace(returnUrl)
+            } else {
+              resolve(data)
+            }
+          } else if dict->Dict.get("cvcWidgetConfirmErrorResponse")->Option.isSome {
+            let errorResponseData =
+              dict->Dict.get("cvcWidgetConfirmErrorResponse")->Option.getOr(JSON.Encode.null)
+            resolve(errorResponseData)
           }
         }
         EventListenerManager.addSmartEventListener(
@@ -116,6 +130,8 @@ let getCustomerSavedPaymentMethods = (
           handleCVCWidgetConfirmResponse,
           "onCVCWidgetConfirmResponse",
         )
+        // Extract redirect from payload (top level, like in Hyper.res confirmPaymentWrapper)
+        let redirect = payload->getDictFromJson->getString("redirect", "if_required")
         let confirmParams =
           [
             ("body", body->getJsonFromArrayOfJson),
@@ -124,6 +140,7 @@ let getCustomerSavedPaymentMethods = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("clientSecret", clientSecret->JSON.Encode.string),
             ("requiresCvv", requiresCvv->JSON.Encode.bool),
+            ("redirect", redirect->JSON.Encode.string),
           ]->Dict.fromArray
         let message = [("requestCVCConfirm", confirmParams->JSON.Encode.object)]->Dict.fromArray
         switch getWidgetIframe(~iframeRef, ~id) {
@@ -140,9 +157,15 @@ let getCustomerSavedPaymentMethods = (
     }
 
     let confirmWithCVCOrPaymentSession = (~body, ~payload, ~paymentType, ~requiresCvv) => {
-      let payloadDict = payload->JSON.Decode.object->Option.getOr(Dict.make())
-      let id = payloadDict->Dict.get("id")->Option.flatMap(JSON.Decode.string)
+      let redirect = payload->getDictFromJson->getString("redirect", "if_required")
+      let payloadDict = payload->getDictFromJson
 
+      let confirmParams = payloadDict->getDictFromDict("confirmParams")
+
+      confirmParams->Dict.set("redirect", redirect->JSON.Encode.string)
+
+      let updatedPayload = payloadDict->JSON.Encode.object
+      let id = payloadDict->Dict.get("id")->Option.flatMap(JSON.Decode.string)
       let hasCvc = payloadDict->Dict.get("cvc")
       if hasCvc->Option.isSome {
         let cvcValue = hasCvc->Option.getOr(JSON.Encode.null)
@@ -150,7 +173,7 @@ let getCustomerSavedPaymentMethods = (
         PaymentHelpers.paymentIntentForPaymentSession(
           ~body,
           ~paymentType,
-          ~payload,
+          ~payload=updatedPayload,
           ~publishableKey,
           ~clientSecret,
           ~logger,
@@ -165,7 +188,13 @@ let getCustomerSavedPaymentMethods = (
             ~errorType="invalid_request",
           )->resolve
         } else if isWidgetPresent(~iframeRef, ~id=idVal) {
-          confirmWithCVCWidget(~body, ~payload, ~paymentType, ~requiresCvv=true, ~id=idVal)
+          confirmWithCVCWidget(
+            ~body,
+            ~payload=updatedPayload,
+            ~paymentType,
+            ~requiresCvv=true,
+            ~id=idVal,
+          )
         } else {
           handleFailureResponse(
             ~message="INTEGRATION ERROR: Mount the CVC widget with a valid ID or pass the required CVC value.",
@@ -176,7 +205,7 @@ let getCustomerSavedPaymentMethods = (
         PaymentHelpers.paymentIntentForPaymentSession(
           ~body,
           ~paymentType,
-          ~payload,
+          ~payload=updatedPayload,
           ~publishableKey,
           ~clientSecret,
           ~logger,
