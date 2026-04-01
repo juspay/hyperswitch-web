@@ -177,38 +177,38 @@ let make = (
             />
           </div>
           <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex items-center justify-between w-full">
-            <span
-              style={
-                fontSize: themeObj.fontSizeLg,
-                color: themeObj.colorText,
-              }>
-              {mainLabel->React.string}
-            </span>
-            <span
-              style={
-                fontSize: themeObj.fontSizeSm,
-                color: themeObj.colorTextSecondary,
-              }>
-              {totalLabel->React.string}
-            </span>
-          </div>
-          <div className="flex items-center justify-between w-full mt-px">
-            <span
-              style={
-                fontSize: themeObj.fontSizeSm,
-                color: themeObj.colorTextSecondary,
-              }>
-              {interestLabel->React.string}
-            </span>
-            <span
-              style={
-                fontSize: themeObj.fontSizeLg,
-                color: themeObj.colorText,
-              }>
-              {`${currency} ${totalAmount}`->React.string}
-            </span>
-          </div>
+            <div className="flex items-center justify-between w-full">
+              <span
+                style={
+                  fontSize: themeObj.fontSizeLg,
+                  color: themeObj.colorText,
+                }>
+                {mainLabel->React.string}
+              </span>
+              <span
+                style={
+                  fontSize: themeObj.fontSizeSm,
+                  color: themeObj.colorTextSecondary,
+                }>
+                {totalLabel->React.string}
+              </span>
+            </div>
+            <div className="flex items-center justify-between w-full mt-px">
+              <span
+                style={
+                  fontSize: themeObj.fontSizeSm,
+                  color: themeObj.colorTextSecondary,
+                }>
+                {interestLabel->React.string}
+              </span>
+              <span
+                style={
+                  fontSize: themeObj.fontSizeLg,
+                  color: themeObj.colorText,
+                }>
+                {`${currency} ${totalAmount}`->React.string}
+              </span>
+            </div>
           </div>
         </div>
       }

@@ -64,7 +64,8 @@ let make = (
       </RenderIf>
     </div>
     <div className="flex flex-col flex-1 min-w-0">
-      <div className="flex items-center justify-between w-full">        <span
+      <div className="flex items-center justify-between w-full">
+        <span
           style={
             fontSize: themeObj.fontSizeLg,
             color: themeObj.colorText,
