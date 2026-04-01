@@ -65,10 +65,7 @@ let make = (
                   ~isPaymentSession=false,
                 )
                 ->then(response => {
-                  messageParentWindow([
-                    ("cvcWidgetConfirmResponse", response),
-                    ("success", true->JSON.Encode.bool),
-                  ])
+                  messageParentWindow([("cvcWidgetConfirmResponse", response)])
                   resolve()
                 })
                 ->catch(err => {
@@ -77,12 +74,12 @@ let make = (
                       "cvcWidgetConfirmResponse",
                       err->formatException->JSON.stringify->JSON.Encode.string,
                     ),
-                    ("success", false->JSON.Encode.bool),
                   ])
                   resolve()
                 })
                 ->ignore
               } else if requiresCvv {
+                // Future improvement: We can check if the CVC entered is more than 3 digits and show an appropriate error message. For now, we are just checking if it's less than 3 digits.
                 let isEmptyCVC = cvcNumber->String.length == 0
 
                 let errorMsg = if isEmptyCVC {
@@ -94,21 +91,46 @@ let make = (
                 setCvcErrorMessage(_ => errorMsg)
 
                 messageParentWindow([
-                  ("cvcWidgetConfirmResponse", errorMsg->JSON.Encode.string),
-                  ("success", false->JSON.Encode.bool),
+                  (
+                    "cvcWidgetConfirmResponse",
+                    handleFailureResponse(~message=errorMsg, ~errorType="CVC validation failed"),
+                  ),
                 ])
               } else {
                 messageParentWindow([
-                  ("cvcWidgetConfirmResponse", JSON.Encode.null),
-                  ("success", true->JSON.Encode.bool),
+                  (
+                    "cvcWidgetConfirmResponse",
+                    handleFailureResponse(
+                      ~message="Something went wrong",
+                      ~errorType="CVC validation failed",
+                    ),
+                  ),
                 ])
               }
             }
           }
-        | None => ()
+        | None =>
+          messageParentWindow([
+            (
+              "cvcWidgetConfirmResponse",
+              handleFailureResponse(
+                ~message="Something went wrong",
+                ~errorType="CVC validation failed",
+              ),
+            ),
+          ])
         }
       } catch {
-      | _ => ()
+      | _ =>
+        messageParentWindow([
+          (
+            "cvcWidgetConfirmResponse",
+            handleFailureResponse(
+              ~message="Something went wrong",
+              ~errorType="CVC validation failed",
+            ),
+          ),
+        ])
       }
     }
     Window.addEventListener("message", handleRequestCVCConfirm)

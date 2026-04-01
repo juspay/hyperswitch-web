@@ -107,21 +107,7 @@ let getCustomerSavedPaymentMethods = (
           let json = event.data->Identity.anyTypeToJson
           let dict = json->getDictFromJson
           switch dict->Dict.get("cvcWidgetConfirmResponse") {
-          | Some(responseData) => {
-              let success = dict->getBool("success", false)
-              if success {
-                resolve(responseData)
-              } else {
-                resolve(
-                  handleFailureResponse(
-                    ~message=responseData
-                    ->JSON.Decode.string
-                    ->Option.getOr("CVC validation failed"),
-                    ~errorType=cvcValidationErrorType,
-                  ),
-                )
-              }
-            }
+          | Some(responseData) => resolve(responseData)
           | None => ()
           }
         }
