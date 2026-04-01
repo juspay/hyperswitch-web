@@ -255,8 +255,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentWithInterest: "z odsetkami",
   installmentTotal: "Razem",
   installmentSelectedPlan: "Wybrany plan",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    `${numPayments->Int.toString} X ${currency} ${amount}`,
   installmentSelectPlanError: "Proszę wybrać plan rat",
   installmentSelectPlanPlaceholder: "Wybierz plan rat",
   showMore: "Pokaż więcej",

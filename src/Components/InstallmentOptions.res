@@ -1,16 +1,3 @@
-@get external offsetHeight: Dom.element => float = "offsetHeight"
-@get external firstElementChild: Dom.element => Nullable.t<Dom.element> = "firstElementChild"
-@get external scrollHeight: Dom.element => float = "scrollHeight"
-@get external clientHeight: Dom.element => float = "clientHeight"
-@get external scrollTop: Dom.element => float = "scrollTop"
-@set external setScrollTop: (Dom.element, float) => unit = "scrollTop"
-@send
-external addScrollListener: (Dom.element, @as("scroll") _, unit => unit) => unit =
-  "addEventListener"
-@send
-external removeScrollListener: (Dom.element, @as("scroll") _, unit => unit) => unit =
-  "removeEventListener"
-
 @react.component
 let make = (
   ~setSelectedInstallmentPlan,
@@ -43,13 +30,13 @@ let make = (
   let updateScrollbar = () => {
     switch scrollContainerRef.current->Nullable.toOption {
     | Some(container) => {
-        let sH = container->scrollHeight
-        let cH = container->clientHeight
+        let sH = container->Window.Element.scrollHeight
+        let cH = container->Window.Element.clientHeight
         if sH > 0.0 && cH > 0.0 && sH > cH {
           let ratio = cH /. sH
           setThumbHeightPct(_ => ratio *. 100.0)
           let maxScroll = sH -. cH
-          let sT = container->scrollTop
+          let sT = container->Window.Element.scrollTop
           let scrollPos = if maxScroll > 0.0 {
             sT /. maxScroll
           } else {
@@ -67,16 +54,16 @@ let make = (
     if needsScroll && isDropdownOpen {
       switch scrollContainerRef.current->Nullable.toOption {
       | Some(container) => {
-          switch container->firstElementChild->Nullable.toOption {
+          switch container->Window.Element.firstElementChild->Nullable.toOption {
           | Some(firstChild) => {
-              let height = firstChild->offsetHeight
+              let height = firstChild->Window.Element.offsetHeight
               if height > 0.0 {
                 setItemHeight(_ => Some(height))
               }
             }
           | None => ()
           }
-          container->addScrollListener(updateScrollbar)
+          container->Window.Element.addScrollListener(updateScrollbar)
           let _ = setTimeout(() => updateScrollbar(), 50)
         }
       | None => ()
@@ -85,7 +72,7 @@ let make = (
     Some(
       () => {
         switch scrollContainerRef.current->Nullable.toOption {
-        | Some(container) => container->removeScrollListener(updateScrollbar)
+        | Some(container) => container->Window.Element.removeScrollListener(updateScrollbar)
         | None => ()
         }
       },
@@ -116,6 +103,7 @@ let make = (
 
   let cleanUpStates = () => {
     setSelectedInstallmentPlan(_ => None)
+    setSelectedIndex(_ => None)
     setShowInstallments(_ => false)
     setErrorString(_ => "")
     setIsDropdownOpen(_ => false)
@@ -126,16 +114,23 @@ let make = (
     Some(cleanUpStates)
   })
 
+  React.useEffect2(() => {
+    switch (selectedIndex, selectedPlan) {
+    | (Some(_), None) => {
+        setSelectedInstallmentPlan(_ => None)
+        setSelectedIndex(_ => None)
+      }
+    | _ => ()
+    }
+    None
+  }, (selectedIndex, selectedPlan))
+
   let toggleDropdown = _ => {
     setIsDropdownOpen(prev => !prev)
   }
 
-  let totalLabel = localeString.installmentTotal
-
-  let scrollContainerMaxHeight = switch itemHeight {
-  | Some(h) => `${(h *. 3.5)->Float.toString}px`
-  | None => "none"
-  }
+  let scrollContainerMaxHeight =
+    (needsScroll ? itemHeight : None)->Option.mapOr("none", h => `${(h *. 3.5)->Float.toString}px`)
 
   let fadeHeight = switch itemHeight {
   | Some(h) => `${(h *. 0.25)->Float.toString}px`
@@ -144,74 +139,24 @@ let make = (
 
   let renderDropdownTrigger = () => {
     switch selectedPlan {
-    | Some(plan) => {
-        let interestLabel =
-          plan.interest_rate == 0.0
-            ? localeString.installmentInterestFree
-            : localeString.installmentWithInterest
-        let amountPerInstallment = Utils.formatAmountWithTwoDecimals(
-          plan.amount_details.amount_per_installment,
-        )
-        let totalAmount = Utils.formatAmountWithTwoDecimals(plan.amount_details.total_amount)
-        let mainLabel = localeString.installmentPaymentLabel(
-          plan.number_of_installments,
-          currency,
-          amountPerInstallment,
-        )
-
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+    | Some(plan) =>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div
+          style={
+            width: "16px",
+            height: "16px",
+            border: `1.5px solid ${themeObj.colorPrimary}`,
+          }
+          className="rounded-full shrink-0 flex items-center justify-center">
           <div
             style={
-              width: "16px",
-              height: "16px",
-              border: `1.5px solid ${themeObj.colorPrimary}`,
+              backgroundColor: themeObj.colorPrimary,
             }
-            className="rounded-full shrink-0 flex items-center justify-center">
-            <div
-              style={
-                width: "8px",
-                height: "8px",
-                backgroundColor: themeObj.colorPrimary,
-              }
-              className="rounded-full"
-            />
-          </div>
-          <div className="flex flex-col flex-1 min-w-0">
-            <div className="flex items-center justify-between w-full">
-              <span
-                style={
-                  fontSize: themeObj.fontSizeLg,
-                  color: themeObj.colorText,
-                }>
-                {mainLabel->React.string}
-              </span>
-              <span
-                style={
-                  fontSize: themeObj.fontSizeSm,
-                  color: themeObj.colorTextSecondary,
-                }>
-                {totalLabel->React.string}
-              </span>
-            </div>
-            <div className="flex items-center justify-between w-full mt-px">
-              <span
-                style={
-                  fontSize: themeObj.fontSizeSm,
-                  color: themeObj.colorTextSecondary,
-                }>
-                {interestLabel->React.string}
-              </span>
-              <span
-                style={
-                  fontSize: themeObj.fontSizeLg,
-                  color: themeObj.colorText,
-                }>
-                {`${currency} ${totalAmount}`->React.string}
-              </span>
-            </div>
-          </div>
+            className="w-2 h-2 rounded-full"
+          />
         </div>
-      }
+        <InstallmentPlanDetails plan currency />
+      </div>
     | None =>
       <span
         className="flex-1 text-left opacity-50"
@@ -275,11 +220,7 @@ let make = (
               <div
                 ref={scrollContainerRef->ReactDOM.Ref.domRef}
                 style={
-                  maxHeight: if needsScroll {
-                    scrollContainerMaxHeight
-                  } else {
-                    "none"
-                  },
+                  maxHeight: scrollContainerMaxHeight,
                 }
                 className={`flex flex-col ${needsScroll ? "overflow-y-auto no-scrollbar" : ""}`}>
                 {allPlans
@@ -305,8 +246,6 @@ let make = (
                   }
                   className="absolute bottom-0 left-0 right-0 pointer-events-none"
                 />
-              </RenderIf>
-              <RenderIf condition=needsScroll>
                 <div
                   style={
                     width: "3px",
@@ -319,9 +258,8 @@ let make = (
                       height: `${thumbHeightPct->Float.toString}%`,
                       backgroundColor: `color-mix(in srgb, ${themeObj.colorText} 15%, transparent)`,
                       borderRadius: themeObj.borderRadius,
-                      minHeight: "16px",
                     }
-                    className="absolute left-0 right-0"
+                    className="absolute left-0 right-0 min-h-4"
                   />
                 </div>
               </RenderIf>
