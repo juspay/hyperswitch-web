@@ -127,10 +127,11 @@ let make = (
         ~cardLast4,
         ~cardBin,
         ~isSavedPaymentMethod=true,
+        ~isCvcEmpty=cvcNumber->String.length == 0,
       )
     }
     None
-  }, (isActive, paymentItem, country, state, pinCode))
+  }, (isActive, paymentItem, country, state, pinCode, cvcNumber))
 
   React.useEffect(() => {
     CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
