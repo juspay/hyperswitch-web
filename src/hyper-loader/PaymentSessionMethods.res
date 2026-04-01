@@ -175,14 +175,14 @@ let getCustomerSavedPaymentMethods = (
         let idVal = id->Option.getOr("")
         if id->Option.isNone {
           handleFailureResponse(
-            ~message="Missing required parameter: 'id' must be provided in the payload when CVV is required.",
+            ~message="INTEGRATION ERROR: CVC required, mount CVC widget with id or pass cvc props.",
             ~errorType="invalid_request",
           )->resolve
         } else if isWidgetPresent(~iframeRef, ~id=idVal) {
           confirmWithCVCWidget(~body, ~payload, ~paymentType, ~requiresCvv=true, ~id=idVal)
         } else {
           handleFailureResponse(
-            ~message="CVC is required. Mount CVC Widget or pass cvc props",
+            ~message="INTEGRATION ERROR: CVC required, mount CVC widget with correct id or pass cvc props.",
             ~errorType=cvcWidgetNotFoundErrorType,
           )->resolve
         }
