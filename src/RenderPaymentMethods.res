@@ -42,6 +42,7 @@ let make = (
       marginLeft: "4px",
       marginRight: "4px",
       marginTop: "4px",
+      marginBottom: "4px",
       fontFamily: themeObj.fontFamily,
       fontSize: themeObj.fontSizeBase,
       filter: blur,
@@ -111,7 +112,7 @@ let make = (
             isFocus
             autocomplete="cc-exp"
           />
-        | CardCVCElement => <CVCWidget cvcProps paymentType handleElementFocus isFocus />
+        | CardCVCElement => <CardCVCElement cvcProps paymentType />
         | PaymentMethodsManagement =>
           <ReusableReactSuspense
             loaderComponent={<RenderIf condition={showLoader}>

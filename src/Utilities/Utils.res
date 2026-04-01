@@ -1185,6 +1185,11 @@ let isOtherElements = componentType => {
   componentType == "cardCvc"
 }
 
+// Elements that can have multiple instances (for event listener naming)
+let canHaveMultipleInstances = componentType => {
+  componentType == "cardNumber" || componentType == "cardExpiry" || componentType == "cardCvc"
+}
+
 let nbsp = `\u00A0`
 
 let callbackFuncForExtractingValFromDict = key => {

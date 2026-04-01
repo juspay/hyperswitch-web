@@ -2,27 +2,27 @@ open RecoilAtoms
 open Utils
 
 @react.component
-let make = (
-  ~cvcProps: CardUtils.cvcProps,
-  ~paymentType: CardThemeType.mode,
-  ~handleElementFocus,
-  ~isFocus,
-) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => {
+  let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {innerLayout} = config.appearance
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(RecoilAtoms.redirectionFlagsAtom)
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.elementOptions)
-  let (cvcErrorMessage, setCvcErrorMessage) = React.useState(_ => "")
 
-  let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef} = cvcProps
+  let {
+    isCVCValid,
+    setIsCVCValid,
+    cvcNumber,
+    changeCVCNumber,
+    handleCVCBlur,
+    cvcRef,
+    cvcError,
+    setCvcError,
+  } = cvcProps
 
-  let displayErrorMessage = if options.showError {
-    cvcErrorMessage
-  } else {
-    ""
-  }
+  let compressedLayoutStyleForCvcError =
+    innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
 
   React.useEffect(() => {
     open Promise
@@ -46,7 +46,7 @@ let make = (
 
               let isCvcComplete = cvcNumber->String.length >= 3
               if requiresCvv && isCvcComplete {
-                setCvcErrorMessage(_ => "")
+                setCvcError(_ => "")
 
                 let bodyWithCvc =
                   bodyArr->Array.concat([("card_cvc", cvcNumber->JSON.Encode.string)])
@@ -62,7 +62,7 @@ let make = (
                   ~logger=loggerState,
                   ~customPodUri,
                   ~redirectionFlags,
-                  ~isPaymentSession=false,
+                  ~mode=CardCVCElement,
                 )
                 ->then(response => {
                   messageParentWindow([("cvcWidgetConfirmResponse", response)])
@@ -71,7 +71,7 @@ let make = (
                 ->catch(err => {
                   messageParentWindow([
                     (
-                      "cvcWidgetConfirmResponse",
+                      "cvcWidgetConfirmErrorResponse",
                       err->formatException->JSON.stringify->JSON.Encode.string,
                     ),
                   ])
@@ -88,18 +88,18 @@ let make = (
                   localeString.inCompleteCVCErrorText
                 }
 
-                setCvcErrorMessage(_ => errorMsg)
+                setCvcError(_ => errorMsg)
 
                 messageParentWindow([
                   (
-                    "cvcWidgetConfirmResponse",
+                    "cvcWidgetConfirmErrorResponse",
                     handleFailureResponse(~message=errorMsg, ~errorType="CVC validation failed"),
                   ),
                 ])
               } else {
                 messageParentWindow([
                   (
-                    "cvcWidgetConfirmResponse",
+                    "cvcWidgetConfirmErrorResponse",
                     handleFailureResponse(
                       ~message="Something went wrong",
                       ~errorType="CVC validation failed",
@@ -109,16 +109,7 @@ let make = (
               }
             }
           }
-        | None =>
-          messageParentWindow([
-            (
-              "cvcWidgetConfirmResponse",
-              handleFailureResponse(
-                ~message="Something went wrong",
-                ~errorType="CVC validation failed",
-              ),
-            ),
-          ])
+        | None => ()
         }
       } catch {
       | _ =>
@@ -160,22 +151,20 @@ let make = (
     None
   }, [cvcNumber])
 
-  <InputField
+  <PaymentInputField
+    fieldName=localeString.cvcTextLabel
     isValid=isCVCValid
     setIsValid=setIsCVCValid
     value=cvcNumber
     onChange=changeCVCNumber
     onBlur=handleCVCBlur
-    onFocus=handleElementFocus
+    errorString=cvcError
     type_="tel"
-    className={`tracking-widest w-auto`}
+    className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
     maxLength=4
     inputRef=cvcRef
-    placeholder={options.placeholder === "" ? localeString.cvcTextLabel : options.placeholder}
-    id="card-cvc"
-    isFocus
+    placeholder="123"
+    name=TestUtils.cardCVVInputTestId
     autocomplete="cc-csc"
-    errorString=displayErrorMessage
-    errorStringClasses="text-xs text-red-950"
   />
 }
