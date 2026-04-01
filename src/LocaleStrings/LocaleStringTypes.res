@@ -244,6 +244,7 @@ type localeStrings = {
   installmentSelectedPlan: string,
   installmentPaymentLabel: (int, string, string) => string,
   installmentSelectPlanError: string,
+  installmentSelectPlanPlaceholder: string,
   showMore: string,
   showLess: string,
 }

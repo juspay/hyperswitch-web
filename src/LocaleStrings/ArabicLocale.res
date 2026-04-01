@@ -255,11 +255,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentPayInInstallments: "الدفع على أقساط",
   installmentInterestFree: "بدون فوائد",
   installmentWithInterest: "مع فوائد",
-  installmentTotal: "المجموع:",
+  installmentTotal: "المجموع",
   installmentSelectedPlan: "الخطة المختارة",
   installmentPaymentLabel: (numPayments, currency, amount) =>
     `${numPayments->Int.toString} X ${currency} ${amount}`,
   installmentSelectPlanError: "يرجى اختيار خطة تقسيط",
+  installmentSelectPlanPlaceholder: "اختر خطة التقسيط",
   showMore: "عرض المزيد",
   showLess: "عرض أقل",
 }

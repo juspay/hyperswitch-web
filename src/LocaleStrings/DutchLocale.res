@@ -252,11 +252,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentPayInInstallments: "Betaal in termijnen",
   installmentInterestFree: "Rentevrij",
   installmentWithInterest: "met rente",
-  installmentTotal: "Totaal:",
+  installmentTotal: "Totaal",
   installmentSelectedPlan: "Geselecteerd plan",
   installmentPaymentLabel: (numPayments, currency, amount) =>
     `${numPayments->Int.toString} X ${currency} ${amount}`,
   installmentSelectPlanError: "Selecteer een aflossingsplan",
+  installmentSelectPlanPlaceholder: "Selecteer een aflossingsplan",
   showMore: "Meer tonen",
   showLess: "Minder tonen",
 }

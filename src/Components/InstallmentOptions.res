@@ -19,7 +19,6 @@ let make = (
   ~paymentMethod,
   ~errorString,
   ~setErrorString,
-  ~disabled=false,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -28,6 +27,7 @@ let make = (
   let currency = paymentMethodListValue.intent_data.currency
 
   let (selectedIndex, setSelectedIndex) = React.useState(_ => None)
+  let (isDropdownOpen, setIsDropdownOpen) = React.useState(_ => false)
   let (itemHeight, setItemHeight) = React.useState(_ => None)
   let (thumbTop, setThumbTop) = React.useState(_ => 0.0)
   let (thumbHeightPct, setThumbHeightPct) = React.useState(_ => 100.0)
@@ -36,10 +36,9 @@ let make = (
   let allPlans =
     installmentOptions->PaymentUtils.filterInstallmentPlansByPaymentMethod(paymentMethod)
 
-  let needsScroll = allPlans->Array.length > 4
+  let needsScroll = allPlans->Array.length > 3
 
   let selectedPlan = selectedIndex->Option.flatMap(i => allPlans->Array.get(i))
-  let hasSelection = selectedPlan->Option.isSome
 
   let updateScrollbar = () => {
     switch scrollContainerRef.current->Nullable.toOption {
@@ -64,11 +63,8 @@ let make = (
     }
   }
 
-  let handleScroll = () => updateScrollbar()
-
-  // Measure first item height, attach scroll listener, compute initial thumb
   React.useEffect1(() => {
-    if needsScroll && showInstallments && !hasSelection {
+    if needsScroll && isDropdownOpen {
       switch scrollContainerRef.current->Nullable.toOption {
       | Some(container) => {
           switch container->firstElementChild->Nullable.toOption {
@@ -80,8 +76,7 @@ let make = (
             }
           | None => ()
           }
-          container->addScrollListener(handleScroll)
-          // Compute initial scrollbar metrics after a frame so layout is settled
+          container->addScrollListener(updateScrollbar)
           let _ = setTimeout(() => updateScrollbar(), 50)
         }
       | None => ()
@@ -90,19 +85,20 @@ let make = (
     Some(
       () => {
         switch scrollContainerRef.current->Nullable.toOption {
-        | Some(container) => container->removeScrollListener(handleScroll)
+        | Some(container) => container->removeScrollListener(updateScrollbar)
         | None => ()
         }
       },
     )
-  }, [showInstallments])
+  }, [isDropdownOpen])
 
-  let handleToggle = isToggled => {
-    setShowInstallments(_ => isToggled)
+  let handleToggle = isChecked => {
+    setShowInstallments(_ => isChecked)
     setErrorString(_ => "")
-    if !isToggled {
+    if !isChecked {
       setSelectedInstallmentPlan(_ => None)
       setSelectedIndex(_ => None)
+      setIsDropdownOpen(_ => false)
     }
   }
 
@@ -110,11 +106,7 @@ let make = (
     setSelectedInstallmentPlan(_ => Some(plan))
     setSelectedIndex(_ => Some(index))
     setErrorString(_ => "")
-  }
-
-  let handleRemoveSelection = () => {
-    setSelectedInstallmentPlan(_ => None)
-    setSelectedIndex(_ => None)
+    setIsDropdownOpen(_ => false)
   }
 
   let isPlanSelected = index =>
@@ -126,6 +118,7 @@ let make = (
     setSelectedInstallmentPlan(_ => None)
     setShowInstallments(_ => false)
     setErrorString(_ => "")
+    setIsDropdownOpen(_ => false)
   }
 
   React.useEffect0(() => {
@@ -133,14 +126,14 @@ let make = (
     Some(cleanUpStates)
   })
 
-  let listMaxHeight = if showInstallments && !hasSelection {
-    "500px"
-  } else {
-    "0px"
+  let toggleDropdown = _ => {
+    setIsDropdownOpen(prev => !prev)
   }
 
+  let totalLabel = localeString.installmentTotal
+
   let scrollContainerMaxHeight = switch itemHeight {
-  | Some(h) => `${(h *. 4.5)->Float.toString}px`
+  | Some(h) => `${(h *. 3.5)->Float.toString}px`
   | None => "none"
   }
 
@@ -149,122 +142,136 @@ let make = (
   | None => "24px"
   }
 
-  let renderSelectedSummary = (plan: PaymentMethodsRecord.installmentPlan) => {
-    let interestLabel =
-      plan.interest_rate == 0.0
-        ? localeString.installmentInterestFree
-        : localeString.installmentWithInterest
+  let renderDropdownTrigger = () => {
+    switch selectedPlan {
+    | Some(plan) => {
+        let interestLabel =
+          plan.interest_rate == 0.0
+            ? localeString.installmentInterestFree
+            : localeString.installmentWithInterest
+        let amountPerInstallment = Utils.formatAmountWithTwoDecimals(
+          plan.amount_details.amount_per_installment,
+        )
+        let totalAmount = Utils.formatAmountWithTwoDecimals(plan.amount_details.total_amount)
+        let mainLabel = localeString.installmentPaymentLabel(
+          plan.number_of_installments,
+          currency,
+          amountPerInstallment,
+        )
 
-    let amountPerInstallment = Utils.formatAmountWithTwoDecimals(
-      plan.amount_details.amount_per_installment,
-    )
-    let totalAmount = Utils.formatAmountWithTwoDecimals(plan.amount_details.total_amount)
-
-    let mainLabel = localeString.installmentPaymentLabel(
-      plan.number_of_installments,
-      currency,
-      amountPerInstallment,
-    )
-
-    <div>
-      <div
-        style={
-          padding: `calc(${themeObj.spacingUnit} + 0.2rem)`,
-        }
-        className="flex items-center gap-3 w-full">
-        <div className="flex-shrink-0" style={color: themeObj.colorPrimary}>
-          <Radio checked=true />
-        </div>
-        <div className="flex items-center justify-between w-full gap-2 flex-wrap">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div
+            style={
+              width: "16px",
+              height: "16px",
+              border: `1.5px solid ${themeObj.colorPrimary}`,
+            }
+            className="rounded-full shrink-0 flex items-center justify-center">
+            <div
+              style={
+                width: "8px",
+                height: "8px",
+                backgroundColor: themeObj.colorPrimary,
+              }
+              className="rounded-full"
+            />
+          </div>
+          <div className="flex flex-col flex-1 min-w-0">
+          <div className="flex items-center justify-between w-full">
             <span
               style={
-                fontWeight: themeObj.fontWeightMedium,
+                fontSize: themeObj.fontSizeLg,
+                color: themeObj.colorText,
               }>
               {mainLabel->React.string}
             </span>
-            <span className="opacity-40"> {`\u2022`->React.string} </span>
-            <span className="opacity-50"> {interestLabel->React.string} </span>
-          </div>
-          <div className="flex items-center gap-1 text-nowrap">
-            <span className="opacity-50"> {localeString.installmentTotal->React.string} </span>
             <span
               style={
-                fontWeight: themeObj.fontWeightMedium,
+                fontSize: themeObj.fontSizeSm,
+                color: themeObj.colorTextSecondary,
+              }>
+              {totalLabel->React.string}
+            </span>
+          </div>
+          <div className="flex items-center justify-between w-full mt-px">
+            <span
+              style={
+                fontSize: themeObj.fontSizeSm,
+                color: themeObj.colorTextSecondary,
+              }>
+              {interestLabel->React.string}
+            </span>
+            <span
+              style={
+                fontSize: themeObj.fontSizeLg,
+                color: themeObj.colorText,
               }>
               {`${currency} ${totalAmount}`->React.string}
             </span>
-            // Remove button
-            <button
-              type_="button"
-              onClick={_ => handleRemoveSelection()}
-              ariaLabel="Remove selection"
-              style={
-                marginLeft: `calc(${themeObj.spacingUnit} / 2)`,
-                backgroundColor: `color-mix(in srgb, ${themeObj.colorDanger} 10%, transparent)`,
-                borderColor: themeObj.colorDanger,
-                color: themeObj.colorDanger,
-              }
-              className="flex items-center justify-center rounded-full border cursor-pointer p-px">
-              <Icon name="cross" size=12 />
-            </button>
+          </div>
           </div>
         </div>
-      </div>
-    </div>
+      }
+    | None =>
+      <span
+        className="flex-1 text-left opacity-50"
+        style={
+          fontSize: themeObj.fontSizeLg,
+          color: themeObj.colorText,
+        }>
+        {localeString.installmentSelectPlanPlaceholder->React.string}
+      </span>
+    }
   }
 
   <RenderIf condition={allPlans->Array.length != 0}>
     <div
       className="w-full flex flex-col"
       style={
-        opacity: if disabled {
-          "0.5"
-        } else {
-          "1"
-        },
-        pointerEvents: if disabled {
-          "none"
-        } else {
-          "auto"
-        },
-        transition: "opacity 0.15s ease-in-out",
         color: themeObj.colorText,
         fontWeight: themeObj.fontWeightNormal,
         fontSize: themeObj.fontSizeLg,
       }>
-      // Toggle row — inline like save card checkbox
       <div className="flex items-center">
-        <Toggle
-          isToggled=showInstallments
-          onToggle=handleToggle
+        <Checkbox
+          isChecked=showInstallments
+          onChange=handleToggle
           label={localeString.installmentPayInInstallments}
-          disabled
         />
       </div>
-      // Selected summary or expandable plan list — in bordered container
-      <RenderIf condition={showInstallments && !disabled}>
+      <RenderIf condition={showInstallments}>
         <div
           style={
-            borderRadius: themeObj.borderRadius,
-            borderColor: themeObj.borderColor,
             marginTop: themeObj.spacingUnit,
+            border: `1px solid ${themeObj.borderColor}`,
+            borderRadius: themeObj.borderRadius,
           }
-          className="flex flex-col border">
-          // Selected summary view
-          {switch selectedPlan {
-          | Some(plan) if showInstallments => renderSelectedSummary(plan)
-          | _ => React.null
-          }}
-          // Expandable list (hidden when a plan is selected)
+          className="overflow-hidden">
           <div
+            onClick=toggleDropdown
             style={
-              maxHeight: listMaxHeight,
-              transition: "max-height 0.15s ease-in-out",
-              overflow: "hidden",
-            }>
-            <div className="relative">
-              // Scrollable list (native scrollbar hidden)
+              padding: `calc(${themeObj.spacingUnit} * 0.8) ${themeObj.spacingUnit}`,
+              backgroundColor: themeObj.colorBackground,
+            }
+            className="flex items-center gap-2 cursor-pointer w-full">
+            {renderDropdownTrigger()}
+            <div
+              style={
+                color: themeObj.colorTextSecondary,
+                transition: "transform 0.2s ease",
+                transform: isDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+              }
+              className="shrink-0 flex items-center ml-0.5">
+              <Icon name="arrow-down" size=12 />
+            </div>
+          </div>
+          <RenderIf condition=isDropdownOpen>
+            <div
+              style={
+                borderTop: `1px solid ${themeObj.borderColor}`,
+                backgroundColor: themeObj.colorBackground,
+              }
+              className="relative">
               <div
                 ref={scrollContainerRef->ReactDOM.Ref.domRef}
                 style={
@@ -289,45 +296,37 @@ let make = (
                 })
                 ->React.array}
               </div>
-              // Fade overlay at bottom
               <RenderIf condition=needsScroll>
                 <div
                   style={
                     background: `linear-gradient(to top, ${themeObj.colorBackground}, transparent)`,
                     height: fadeHeight,
-                    pointerEvents: "none",
                     borderRadius: `0 0 ${themeObj.borderRadius} ${themeObj.borderRadius}`,
                   }
-                  className="absolute bottom-0 left-0 right-0"
+                  className="absolute bottom-0 left-0 right-0 pointer-events-none"
                 />
               </RenderIf>
-              // Custom scrollbar — overlays on top of content and fade
               <RenderIf condition=needsScroll>
                 <div
                   style={
                     width: "3px",
-                    pointerEvents: "none",
                     borderRadius: themeObj.borderRadius,
-                    marginRight: "1px",
                   }
-                  className="absolute top-0 bottom-0 right-0">
-                  // Thumb
+                  className="absolute top-0 bottom-0 right-0 pointer-events-none mr-px">
                   <div
                     style={
-                      position: "absolute",
                       top: `${thumbTop->Float.toString}%`,
-                      left: "0",
-                      right: "0",
                       height: `${thumbHeightPct->Float.toString}%`,
                       backgroundColor: `color-mix(in srgb, ${themeObj.colorText} 15%, transparent)`,
                       borderRadius: themeObj.borderRadius,
                       minHeight: "16px",
                     }
+                    className="absolute left-0 right-0"
                   />
                 </div>
               </RenderIf>
             </div>
-          </div>
+          </RenderIf>
         </div>
       </RenderIf>
       <RenderIf condition={errorString != ""}>
