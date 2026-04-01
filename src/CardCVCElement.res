@@ -93,7 +93,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
                 messageParentWindow([
                   (
                     "cvcWidgetConfirmErrorResponse",
-                    handleFailureResponse(~message=errorMsg, ~errorType="CVC validation failed"),
+                    handleFailureResponse(~message=errorMsg, ~errorType="cvc_validation_failed"),
                   ),
                 ])
               } else {
@@ -102,7 +102,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
                     "cvcWidgetConfirmErrorResponse",
                     handleFailureResponse(
                       ~message="Something went wrong",
-                      ~errorType="CVC validation failed",
+                      ~errorType="cvc_validation_failed",
                     ),
                   ),
                 ])
@@ -115,10 +115,10 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
       | _ =>
         messageParentWindow([
           (
-            "cvcWidgetConfirmResponse",
+            "cvcWidgetConfirmErrorResponse",
             handleFailureResponse(
               ~message="Something went wrong",
-              ~errorType="CVC validation failed",
+              ~errorType="cvc_validation_failed",
             ),
           ),
         ])
