@@ -22,11 +22,9 @@ let make = (
     className={`flex items-center gap-2 w-full ${isLastItem ? "" : "border-b"} cursor-pointer`}>
     <div
       style={
-        width: "16px",
-        height: "16px",
         border: `1.5px solid ${radioBorderColor}`,
       }
-      className="rounded-full shrink-0 flex items-center justify-center">
+      className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center">
       <RenderIf condition=isSelected>
         <div
           style={

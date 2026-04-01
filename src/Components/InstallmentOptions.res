@@ -143,11 +143,9 @@ let make = (
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <div
           style={
-            width: "16px",
-            height: "16px",
             border: `1.5px solid ${themeObj.colorPrimary}`,
           }
-          className="rounded-full shrink-0 flex items-center justify-center">
+          className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center">
           <div
             style={
               backgroundColor: themeObj.colorPrimary,
