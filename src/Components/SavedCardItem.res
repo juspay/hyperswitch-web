@@ -160,8 +160,6 @@ let make = (
 
   let billingDetailsArrayLength = Array.length(billingDetailsArray)
 
-  let isCVCEmpty = cvcNumber->String.length == 0
-
   let cvcInputElement =
     <PaymentInputField
       isValid=isCVCValid

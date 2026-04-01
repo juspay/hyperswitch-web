@@ -4,7 +4,6 @@ open Utils
 
 let cvcWidgetNotFoundErrorType = "cvc_widget_not_found"
 let cvcValidationErrorType = "cvc_validation"
-let cvcWidgetTimeoutErrorType = "cvc_widget_timeout"
 
 let getCustomerSavedPaymentMethods = (
   ~clientSecret,
@@ -154,8 +153,10 @@ let getCustomerSavedPaymentMethods = (
       })
     }
 
-    let confirmWithCVCOrPaymentSession = (~body, ~payload, ~paymentType, ~requiresCvv, ~id) => {
+    let confirmWithCVCOrPaymentSession = (~body, ~payload, ~paymentType, ~requiresCvv) => {
       let payloadDict = payload->JSON.Decode.object->Option.getOr(Dict.make())
+      let id = payloadDict->Dict.get("id")->Option.flatMap(JSON.Decode.string)
+
       let hasCvc = payloadDict->Dict.get("cvc")
       if hasCvc->Option.isSome {
         let cvcValue = hasCvc->Option.getOr(JSON.Encode.null)
@@ -200,8 +201,6 @@ let getCustomerSavedPaymentMethods = (
     }
 
     let confirmWithCustomerDefaultPaymentMethod = payload => {
-      let payloadDict = payload->JSON.Decode.object->Option.getOr(Dict.make())
-      let id = payloadDict->Dict.get("id")->Option.flatMap(JSON.Decode.string)
       switch customerDefaultPaymentMethod {
       | Some(defaultPaymentMethod) => {
           let paymentToken = defaultPaymentMethod.paymentToken
@@ -225,7 +224,6 @@ let getCustomerSavedPaymentMethods = (
             ~payload,
             ~paymentType,
             ~requiresCvv=defaultPaymentMethod.requiresCvv,
-            ~id,
           )
         }
       | None =>
@@ -349,8 +347,6 @@ let getCustomerSavedPaymentMethods = (
     }
 
     let confirmWithLastUsedPaymentMethod = payload => {
-      let payloadDict = payload->JSON.Decode.object->Option.getOr(Dict.make())
-      let id = payloadDict->Dict.get("id")->Option.flatMap(JSON.Decode.string)
       switch customerPaymentMethodsRef.contents->Array.get(0) {
       | Some(lastUsedPaymentMethod) =>
         if lastUsedPaymentMethod.paymentMethodType === Some("apple_pay") {
@@ -386,7 +382,6 @@ let getCustomerSavedPaymentMethods = (
             ~payload,
             ~paymentType,
             ~requiresCvv=lastUsedPaymentMethod.requiresCvv,
-            ~id,
           )
         }
       | None =>
