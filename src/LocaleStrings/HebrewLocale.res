@@ -254,7 +254,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentInterestFree: "ללא ריבית",
   installmentWithInterest: "עם ריבית",
   installmentTotal: "סה\"כ",
-  installmentSelectedPlan: "תוכנית שנבחרה",
   installmentSelectPlanError: "אנא בחר תוכנית תשלומים",
   installmentSelectPlanPlaceholder: "בחר תוכנית תשלומים",
   showMore: "הצג עוד",

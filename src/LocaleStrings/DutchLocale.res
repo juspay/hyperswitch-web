@@ -253,7 +253,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentInterestFree: "Rentevrij",
   installmentWithInterest: "met rente",
   installmentTotal: "Totaal",
-  installmentSelectedPlan: "Geselecteerd plan",
   installmentSelectPlanError: "Selecteer een aflossingsplan",
   installmentSelectPlanPlaceholder: "Selecteer een aflossingsplan",
   showMore: "Meer tonen",

@@ -254,7 +254,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentInterestFree: "無利息",
   installmentWithInterest: "利息あり",
   installmentTotal: "合計",
-  installmentSelectedPlan: "選択済みプラン",
   installmentSelectPlanError: "分割払いプランを選択してください",
   installmentSelectPlanPlaceholder: "分割払いプランを選択",
   showMore: "もっと見る",

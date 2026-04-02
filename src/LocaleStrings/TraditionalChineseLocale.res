@@ -253,7 +253,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentInterestFree: "免息",
   installmentWithInterest: "有利息",
   installmentTotal: "合計",
-  installmentSelectedPlan: "已選方案",
   installmentSelectPlanError: "請選擇分期計劃",
   installmentSelectPlanPlaceholder: "選擇分期計劃",
   showMore: "顯示更多",

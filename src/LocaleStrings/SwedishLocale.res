@@ -253,7 +253,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentInterestFree: "Räntefritt",
   installmentWithInterest: "med ränta",
   installmentTotal: "Totalt",
-  installmentSelectedPlan: "Vald plan",
   installmentSelectPlanError: "Välj ett avbetalningsplan",
   installmentSelectPlanPlaceholder: "Välj ett avbetalningsplan",
   showMore: "Visa mer",

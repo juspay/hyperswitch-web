@@ -181,7 +181,6 @@ module Element = {
   @get external scrollHeight: Dom.element => float = "scrollHeight"
   @get external clientHeight: Dom.element => float = "clientHeight"
   @get external scrollTop: Dom.element => float = "scrollTop"
-  @set external setScrollTop: (Dom.element, float) => unit = "scrollTop"
   @send
   external addScrollListener: (Dom.element, @as("scroll") _, unit => unit) => unit =
     "addEventListener"

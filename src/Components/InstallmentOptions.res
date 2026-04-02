@@ -27,33 +27,31 @@ let make = (
 
   let selectedPlan = selectedIndex->Option.flatMap(i => allPlans->Array.get(i))
 
-  let updateScrollbar = () => {
-    switch scrollContainerRef.current->Nullable.toOption {
-    | Some(container) => {
-        let sH = container->Window.Element.scrollHeight
-        let cH = container->Window.Element.clientHeight
-        if sH > 0.0 && cH > 0.0 && sH > cH {
-          let ratio = cH /. sH
-          setThumbHeightPct(_ => ratio *. 100.0)
-          let maxScroll = sH -. cH
-          let sT = container->Window.Element.scrollTop
-          let scrollPos = if maxScroll > 0.0 {
-            sT /. maxScroll
-          } else {
-            0.0
-          }
-          let trackAvailable = 100.0 -. ratio *. 100.0
-          setThumbTop(_ => scrollPos *. trackAvailable)
-        }
-      }
-    | None => ()
-    }
-  }
+  React.useEffect2(() => {
+    let timerId = ref(None)
+    let scrollHandler = ref(None)
 
-  React.useEffect1(() => {
     if needsScroll && isDropdownOpen {
       switch scrollContainerRef.current->Nullable.toOption {
       | Some(container) => {
+          let updateScrollbar = () => {
+            let sH = container->Window.Element.scrollHeight
+            let cH = container->Window.Element.clientHeight
+            if sH > 0.0 && cH > 0.0 && sH > cH {
+              let ratio = cH /. sH
+              setThumbHeightPct(_ => ratio *. 100.0)
+              let maxScroll = sH -. cH
+              let sT = container->Window.Element.scrollTop
+              let scrollPos = if maxScroll > 0.0 {
+                sT /. maxScroll
+              } else {
+                0.0
+              }
+              let trackAvailable = 100.0 -. ratio *. 100.0
+              setThumbTop(_ => scrollPos *. trackAvailable)
+            }
+          }
+
           switch container->Window.Element.firstElementChild->Nullable.toOption {
           | Some(firstChild) => {
               let height = firstChild->Window.Element.offsetHeight
@@ -63,21 +61,29 @@ let make = (
             }
           | None => ()
           }
+
+          scrollHandler := Some(updateScrollbar)
           container->Window.Element.addScrollListener(updateScrollbar)
-          let _ = setTimeout(() => updateScrollbar(), 50)
+          timerId := Some(setTimeout(() => updateScrollbar(), 50))
         }
       | None => ()
       }
     }
+
     Some(
       () => {
-        switch scrollContainerRef.current->Nullable.toOption {
-        | Some(container) => container->Window.Element.removeScrollListener(updateScrollbar)
+        switch timerId.contents {
+        | Some(id) => clearTimeout(id)
         | None => ()
+        }
+        switch (scrollContainerRef.current->Nullable.toOption, scrollHandler.contents) {
+        | (Some(container), Some(handler)) =>
+          container->Window.Element.removeScrollListener(handler)
+        | _ => ()
         }
       },
     )
-  }, [isDropdownOpen])
+  }, (isDropdownOpen, needsScroll))
 
   let handleToggle = isChecked => {
     setShowInstallments(_ => isChecked)
@@ -201,10 +207,8 @@ let make = (
             <div
               style={
                 color: themeObj.colorTextSecondary,
-                transition: "transform 0.2s ease",
-                transform: isDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
               }
-              className="shrink-0 flex items-center ml-0.5">
+              className={`shrink-0 flex items-center ml-0.5 transition-transform duration-200 ease-in-out ${isDropdownOpen ? "rotate-180" : "rotate-0"}`}>
               <Icon name="arrow-down" size=12 />
             </div>
           </div>

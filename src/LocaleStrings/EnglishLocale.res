@@ -253,7 +253,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentInterestFree: "Interest free",
   installmentWithInterest: "with interest",
   installmentTotal: "Total",
-  installmentSelectedPlan: "Selected plan",
   installmentSelectPlanError: "Please select an installment plan",
   installmentSelectPlanPlaceholder: "Select installment plan",
   showMore: "Show more",

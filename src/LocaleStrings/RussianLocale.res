@@ -262,7 +262,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentInterestFree: "Без процентов",
   installmentWithInterest: "с процентами",
   installmentTotal: "Итого",
-  installmentSelectedPlan: "Выбранный план",
   installmentSelectPlanError: "Пожалуйста, выберите план рассрочки",
   installmentSelectPlanPlaceholder: "Выберите план рассрочки",
   showMore: "Показать ещё",

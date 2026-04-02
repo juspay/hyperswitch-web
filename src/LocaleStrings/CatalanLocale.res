@@ -255,7 +255,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentInterestFree: "Sense interessos",
   installmentWithInterest: "amb interessos",
   installmentTotal: "Total",
-  installmentSelectedPlan: "Pla seleccionat",
   installmentSelectPlanError: "Si us plau, seleccioneu un pla de terminis",
   installmentSelectPlanPlaceholder: "Seleccioneu un pla de terminis",
   showMore: "Mostra més",

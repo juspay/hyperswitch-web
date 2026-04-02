@@ -241,7 +241,6 @@ type localeStrings = {
   installmentInterestFree: string,
   installmentWithInterest: string,
   installmentTotal: string,
-  installmentSelectedPlan: string,
   installmentSelectPlanError: string,
   installmentSelectPlanPlaceholder: string,
   showMore: string,
