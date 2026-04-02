@@ -1933,22 +1933,47 @@ let rec maskStringValuesInJson = (~value, ~currentPath, ~depth, ~shouldMaskField
 let getSdkAuthorizationData = sdkAuthorization => {
   open Types
 
-  let arrOfKeys =
-    sdkAuthorization
-    ->Window.atob
-    ->String.split(",")
-
-  let getValueFromArrayOfKeys = keyName => {
-    let keyStr = arrOfKeys->Array.find(key => key->String.includes(keyName))
-    let value = keyStr->Option.flatMap(key => key->String.split("=")->Array.get(1))
-
-    value
+  let emptyResult = {
+    publishableKey: None,
+    clientSecret: None,
+    customerId: None,
+    profileId: None,
   }
 
-  {
-    publishableKey: getValueFromArrayOfKeys("publishable_key"),
-    clientSecret: getValueFromArrayOfKeys("client_secret"),
-    customerId: getValueFromArrayOfKeys("customer_id"),
-    profileId: getValueFromArrayOfKeys("profile_id"),
+  try {
+    let arrOfKeys = sdkAuthorization->Window.atob->String.split(",")
+
+    let getValueFromArrayOfKeys = (~keyName, ~regex) => {
+      let prefix = keyName ++ "="
+      let keyStr = arrOfKeys->Array.find(key => key->String.startsWith(prefix))
+      keyStr->Option.flatMap(key => {
+        let idx = key->String.indexOf("=")
+        if idx !== -1 {
+          let value = key->String.sliceToEnd(~start=idx + 1)
+          if RegExp.test(regex, value) {
+            Some(value)
+          } else {
+            None
+          }
+        } else {
+          None
+        }
+      })
+    }
+
+    {
+      publishableKey: getValueFromArrayOfKeys(
+        ~keyName="publishable_key",
+        ~regex=%re("/^pk_(prd|snd|dev)_[a-zA-Z0-9]+$/"),
+      ),
+      clientSecret: getValueFromArrayOfKeys(
+        ~keyName="client_secret",
+        ~regex=%re("/^[A-Za-z0-9_-]+_secret_[A-Za-z0-9]+$/"),
+      ),
+      customerId: getValueFromArrayOfKeys(~keyName="customer_id", ~regex=%re("/^[a-zA-Z0-9_-]+$/")),
+      profileId: getValueFromArrayOfKeys(~keyName="profile_id", ~regex=%re("/^[a-zA-Z0-9_-]+$/")),
+    }
+  } catch {
+  | _ => emptyResult
   }
 }
