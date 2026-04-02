@@ -223,6 +223,7 @@ type localeStrings = {
   payment_methods_upi_collect: string,
   payment_methods_eft: string,
   payment_methods_givex: string,
+  payment_methods_saved_methods: string,
   giftCardSectionTitle: string,
   giftCardNumberLabel: string,
   giftCardNumberPlaceholder: string,
@@ -237,12 +238,13 @@ type localeStrings = {
   giftCardPaymentCompleteMessage: string,
   giftCardPaymentRemainingMessage: (string, string) => string,
   installmentPayInInstallments: string,
-  installmentChoosePlan: string,
   installmentInterestFree: string,
-  installmentInterestRate: string => string,
-  installmentTotalPayable: string,
-  installmentPaymentLabel: (int, string, string) => string,
+  installmentWithInterest: string,
+  installmentTotal: string,
   installmentSelectPlanError: string,
+  installmentSelectPlanPlaceholder: string,
+  showMore: string,
+  showLess: string,
 }
 
 type constantStrings = {
