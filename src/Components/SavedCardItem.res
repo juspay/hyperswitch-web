@@ -103,13 +103,17 @@ let make = (
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   React.useEffect(() => {
+    setSelectedInstallmentPlan(_ => None)
+    setShowInstallments(_ => false)
+    None
+  }, [paymentItem])
+
+  React.useEffect(() => {
     open CardUtils
 
     if isActive {
       // * Focus CVC
       focusCVC()
-      setSelectedInstallmentPlan(_ => None)
-      setShowInstallments(_ => false)
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->CardValidations.formatCardExpiryNumber
@@ -321,7 +325,7 @@ let make = (
                     style={
                       paddingTop: themeObj.spacingUnit,
                     }
-                    className="w-full flex">
+                    className="w-full flex pl-1">
                     <InstallmentOptions
                       setSelectedInstallmentPlan
                       showInstallments
