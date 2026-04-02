@@ -1,5 +1,5 @@
-import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { getClientURL, createPaymentBody, changeObjectKeyValue, connectorProfileIdMapping, connectorEnum } from "../support/utils";
+import * as testIds from "../../../../src/Utilities/TestUtils.bs";
+import { getClientURL, createPaymentBody, changeObjectKeyValue, connectorProfileIdMapping, connectorEnum } from "../../support/utils";
 
 describe("GigaDat Interac Payment flow test", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
