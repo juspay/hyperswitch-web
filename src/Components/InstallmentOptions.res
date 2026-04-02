@@ -88,7 +88,9 @@ let make = (
   let handleToggle = isChecked => {
     setShowInstallments(_ => isChecked)
     setErrorString(_ => "")
-    if !isChecked {
+    if isChecked {
+      setIsDropdownOpen(_ => true)
+    } else {
       setSelectedInstallmentPlan(_ => None)
       setSelectedIndex(_ => None)
       setIsDropdownOpen(_ => false)
@@ -144,24 +146,12 @@ let make = (
   }
 
   let renderDropdownTrigger = () => {
-    switch selectedPlan {
-    | Some(plan) =>
+    switch (isDropdownOpen, selectedPlan) {
+    | (false, Some(plan)) =>
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <div
-          style={
-            border: `1.5px solid ${themeObj.colorPrimary}`,
-          }
-          className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center">
-          <div
-            style={
-              backgroundColor: themeObj.colorPrimary,
-            }
-            className="w-2 h-2 rounded-full"
-          />
-        </div>
         <InstallmentPlanDetails plan currency />
       </div>
-    | None =>
+    | _ =>
       <span
         className="flex-1 text-left opacity-50"
         style={
