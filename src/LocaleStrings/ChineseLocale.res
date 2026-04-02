@@ -250,13 +250,11 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `请使用下方的其他支付方式支付剩余金额 ${currency}${amount}。`,
   installmentPayInInstallments: "分期付款",
-  installmentChoosePlan: "选择分期计划",
   installmentInterestFree: "免息",
-  installmentInterestRate: interestRate => `${interestRate}%利息`,
-  installmentTotalPayable: "应付总额",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    `${numPayments->Int.toString}期付款，每期 ${currency} ${amount}`,
+  installmentWithInterest: "有利息",
+  installmentTotal: "合计",
   installmentSelectPlanError: "请选择分期计划",
+  installmentSelectPlanPlaceholder: "选择分期计划",
   showMore: "显示更多",
   showLess: "收起",
 }
