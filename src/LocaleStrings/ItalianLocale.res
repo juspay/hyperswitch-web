@@ -205,7 +205,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `Banca online Slovacchia`,
   payment_methods_online_banking_finland: `Banca online Finlandia`,
   payment_methods_online_banking_poland: `Banca online Polonia`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `Addebito bancario ACH`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -237,6 +237,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Salvati`,
   giftCardSectionTitle: `Hai una carta regalo?`,
   giftCardNumberLabel: `Numero carta regalo`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -251,5 +252,17 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Non rimane alcun importo da pagare. Procedi con il pagamento.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Paga l’importo rimanente di ${amount} ${currency} con un altro metodo di pagamento qui sotto.`,
+  installmentPayInInstallments: "Paga a rate",
+  installmentChoosePlan: "Scegli un piano a rate",
+  installmentInterestFree: "Senza interessi",
+  installmentInterestRate: interestRate => `${interestRate}% di interessi`,
+  installmentTotalPayable: "Totale da pagare",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    numPayments == 1
+      ? `1 rata da ${currency} ${amount}`
+      : `${numPayments->Int.toString} rate da ${currency} ${amount}`,
+  installmentSelectPlanError: "Seleziona un piano a rate",
+  showMore: "Mostra di più",
+  showLess: "Mostra meno",
   mandatoryFieldText: "Questo campo è obbligatorio",
 }

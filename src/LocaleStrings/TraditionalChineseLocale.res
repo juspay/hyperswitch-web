@@ -203,7 +203,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `斯洛伐克網銀`,
   payment_methods_online_banking_finland: `芬蘭網銀`,
   payment_methods_online_banking_poland: `波蘭網銀`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `ACH 直接扣帳`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -235,6 +235,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `已儲存`,
   giftCardSectionTitle: `有禮品卡嗎？`,
   giftCardNumberLabel: `禮品卡號碼`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -249,5 +250,15 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `無需支付剩餘金額。請繼續完成付款。`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `請使用下方的其他付款方式支付剩餘金額 ${currency}${amount}。`,
+  installmentPayInInstallments: "分期付款",
+  installmentChoosePlan: "選擇分期計劃",
+  installmentInterestFree: "免息",
+  installmentInterestRate: interestRate => `${interestRate}%利息`,
+  installmentTotalPayable: "應付總額",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    `${numPayments->Int.toString}期付款，每期 ${currency} ${amount}`,
+  installmentSelectPlanError: "請選擇分期計劃",
+  showMore: "顯示更多",
+  showLess: "收起",
   mandatoryFieldText: "此欄位為必填項",
 }

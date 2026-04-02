@@ -67,6 +67,20 @@ let cardPaymentBody = (
   ]
 }
 
+let installmentBody = (plan: option<PaymentMethodsRecord.installmentPlan>) =>
+  switch plan {
+  | Some(plan) => [
+      (
+        "installment_data",
+        [
+          ("number_of_installments", plan.number_of_installments->JSON.Encode.int),
+          ("billing_frequency", plan.billing_frequency->JSON.Encode.string),
+        ]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]
+  | None => []
+  }
+
 let bancontactBody = () => {
   let bancontactField =
     [("bancontact_card", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
@@ -429,10 +443,7 @@ let samsungPayBody = (~metadata) => {
 
 let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) => {
   open Utils
-  let (paymentMethodTypeKey, paymentMethodSubtypeKey) = switch GlobalVars.sdkVersion {
-  | V1 => ("payment_method", "payment_method_type")
-  | V2 => ("payment_method_type", "payment_method_subtype")
-  }
+  let (paymentMethodTypeKey, paymentMethodSubtypeKey) = ("payment_method", "payment_method_type")
 
   let paymentMethodData = {
     let paymentMethodData = payObj.paymentMethodData

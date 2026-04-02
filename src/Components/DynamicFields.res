@@ -43,15 +43,8 @@ let make = (
   let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentManagementListValue,
   )
-  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
-    RecoilAtomsV2.paymentMethodListValueV2,
-  )
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let contextPaymentType = usePaymentType()
-  let listValue = switch contextPaymentType {
-  | PaymentMethodsManagement => paymentManagementListValue
-  | _ => paymentMethodListValueV2
-  }
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -67,7 +60,7 @@ let make = (
   )
 
   let paymentMethodTypesV2 = PaymentUtilsV2.usePaymentMethodTypeFromListV2(
-    ~paymentsListValueV2=listValue,
+    ~paymentsListValueV2=paymentManagementListValue,
     ~paymentMethod,
     ~paymentMethodType,
   )
@@ -79,12 +72,65 @@ let make = (
   // )
 
   // let creditPaymentMethodTypesV2 = PaymentUtilsV2.usePaymentMethodTypeFromListV2(
-  //   ~paymentsListValueV2=listValue,
+  //   ~paymentsListValueV2=paymentManagementListValue,
   //   ~paymentMethod,
   //   ~paymentMethodType="credit",
   // )
 
-  let (missingRequiredFields, initialValues, _) = useSuperpositionFields(
+  // let requiredFieldsWithBillingDetails = React.useMemo(() => {
+  //   if paymentMethod === "card" {
+  //     switch GlobalVars.sdkVersion {
+  //     | V2 =>
+  //       let creditRequiredFields =
+  //         paymentManagementListValue.paymentMethodsEnabled
+  //         ->Array.filter(item => {
+  //           item.paymentMethodSubtype === "credit" && item.paymentMethodType === "card"
+  //         })
+  //         ->Array.get(0)
+  //         ->Option.getOr(UnifiedHelpersV2.defaultPaymentMethods)
+
+  //       let finalCreditRequiredFields = creditRequiredFields.requiredFields
+  //       [
+  //         ...paymentMethodTypes.required_fields,
+  //         ...finalCreditRequiredFields,
+  //       ]->removeRequiredFieldsDuplicates
+
+  //     | V1 =>
+  //       let creditRequiredFields = creditPaymentMethodTypes.required_fields
+
+  //       [
+  //         ...paymentMethodTypes.required_fields,
+  //         ...creditRequiredFields,
+  //       ]->removeRequiredFieldsDuplicates
+  //     }
+  //   } else if dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType) {
+  //     switch GlobalVars.sdkVersion {
+  //     | V1 => paymentMethodTypes.required_fields
+  //     | V2 => paymentMethodTypesV2.requiredFields
+  //     }
+  //   } else {
+  //     []
+  //   }
+  // }, (
+  //   paymentMethod,
+  //   paymentMethodTypes.required_fields,
+  //   paymentMethodTypesV2.requiredFields,
+  //   paymentMethodType,
+  //   creditPaymentMethodTypes.required_fields,
+  //   creditPaymentMethodTypesV2.requiredFields,
+  // ))
+
+  // let requiredFields = React.useMemo(() => {
+  //   requiredFieldsWithBillingDetails
+  //   ->removeBillingDetailsIfUseBillingAddress(billingAddress)
+  //   ->removeClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay)
+  // }, (requiredFieldsWithBillingDetails, isSaveDetailsWithClickToPay))
+
+  // let isAllStoredCardsHaveName = React.useMemo(() => {
+  //   PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
+  // }, [savedMethod])
+
+    let (missingRequiredFields, initialValues, _) = useSuperpositionFields(
     ~paymentMethod,
     ~paymentMethodType,
     ~paymentMethodTypes,
@@ -98,6 +144,7 @@ let make = (
     ->removeCardFieldsFromFieldConfigs(areCardFieldsRendered)
     ->processFieldConfigs(billingAddress, isSaveDetailsWithClickToPay)
   }, (missingRequiredFields, billingAddress, isSaveDetailsWithClickToPay, areCardFieldsRendered))
+
 
   // let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
 
@@ -119,11 +166,8 @@ let make = (
     errorString: "",
   })
 
-  let bankNames = switch GlobalVars.sdkVersion {
-  | V2 =>
-    Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypesV2.bankNames->Option.getOr([]))
-  | V1 => Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
-  }
+  let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
+
   let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))
 
   let setCurrency = val => {

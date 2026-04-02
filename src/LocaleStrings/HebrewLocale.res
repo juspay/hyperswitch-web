@@ -204,7 +204,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `בנקאות מקוונת סלובקיה`,
   payment_methods_online_banking_finland: `בנקאות מקוונת פינלנד`,
   payment_methods_online_banking_poland: `בנקאות מקוונת פולין`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `בן קונקט`,
   payment_methods_ach_bank_debit: `חיוב ישיר ACH`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -236,6 +236,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `שמורים`,
   giftCardSectionTitle: `יש לך כרטיס מתנה?`,
   giftCardNumberLabel: `מספר כרטיס מתנה`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -250,5 +251,17 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `לא נותר סכום לתשלום. אנא המשיכו לביצוע התשלום.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `אנא שלמו את הסכום שנותר ${amount} ${currency} באמצעות אמצעי תשלום אחר למטה.`,
+  installmentPayInInstallments: "תשלום בתשלומים",
+  installmentChoosePlan: "בחרו תוכנית תשלומים",
+  installmentInterestFree: "ללא ריבית",
+  installmentInterestRate: interestRate => `${interestRate}% ריבית`,
+  installmentTotalPayable: "סה\"כ לתשלום",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    numPayments == 1
+      ? `תשלום אחד של ${currency} ${amount}`
+      : `${numPayments->Int.toString} תשלומים של ${currency} ${amount}`,
+  installmentSelectPlanError: "אנא בחר תוכנית תשלומים",
+  showMore: "הצג עוד",
+  showLess: "הצג פחות",
   mandatoryFieldText: "שדה זה הוא חובה",
 }

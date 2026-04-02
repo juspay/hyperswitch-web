@@ -206,7 +206,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `خدمات مصرفية عبر الإنترنت سلوفاكيا`,
   payment_methods_online_banking_finland: `خدمات مصرفية عبر الإنترنت فنلندا`,
   payment_methods_online_banking_poland: `خدمات مصرفية عبر الإنترنت بولندا`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `خصم مباشر ACH`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -238,6 +238,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `المحفوظة`,
   giftCardSectionTitle: `هل لديك بطاقة هدايا؟`,
   giftCardNumberLabel: `رقم بطاقة الهدايا`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -252,5 +253,17 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `لا يوجد مبلغ متبقٍ للدفع. يرجى المتابعة لإتمام عملية الدفع.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `يرجى دفع المبلغ المتبقي ${amount} ${currency} باستخدام وسيلة دفع أخرى أدناه.`,
+  installmentPayInInstallments: "الدفع على أقساط",
+  installmentChoosePlan: "اختر خطة تقسيط",
+  installmentInterestFree: "بدون فوائد",
+  installmentInterestRate: interestRate => `${interestRate}% فائدة`,
+  installmentTotalPayable: "المبلغ الإجمالي المستحق",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    numPayments == 1
+      ? `دفعة واحدة بقيمة ${currency} ${amount}`
+      : `${numPayments->Int.toString} دفعات بقيمة ${currency} ${amount}`,
+  installmentSelectPlanError: "يرجى اختيار خطة تقسيط",
+  showMore: "عرض المزيد",
+  showLess: "عرض أقل",
   mandatoryFieldText: "هذا الحقل إلزامي.",
 }

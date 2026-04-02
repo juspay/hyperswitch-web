@@ -203,7 +203,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `Online Bankieren Slowakije`,
   payment_methods_online_banking_finland: `Online Bankieren Finland`,
   payment_methods_online_banking_poland: `Online Bankieren Polen`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `ACH Direct Incasso`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -235,6 +235,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Opgeslagen`,
   giftCardSectionTitle: `Heb je een cadeaukaart?`,
   giftCardNumberLabel: `Cadeaukaart nummer`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -249,5 +250,17 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Er staat geen resterend bedrag open. Ga verder met de betaling.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Betaal het resterende bedrag van ${amount} ${currency} met een andere betaalmethode hieronder.`,
+  installmentPayInInstallments: "Betaal in termijnen",
+  installmentChoosePlan: "Kies een aflossingsplan",
+  installmentInterestFree: "Rentevrij",
+  installmentInterestRate: interestRate => `${interestRate}% rente`,
+  installmentTotalPayable: "Totaal te betalen",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    numPayments == 1
+      ? `1 betaling van ${currency} ${amount}`
+      : `${numPayments->Int.toString} betalingen van ${currency} ${amount}`,
+  installmentSelectPlanError: "Selecteer een aflossingsplan",
+  showMore: "Meer tonen",
+  showLess: "Minder tonen",
   mandatoryFieldText: "This field is mandatory",
 }

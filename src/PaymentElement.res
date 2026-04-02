@@ -63,8 +63,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (clickToPayConfig, isClickToPayAuthenticateError))
 
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let groupSavedMethodsWithPaymentMethods =
-    layoutClass.savedMethodCustomization.groupingBehavior == GroupByPaymentMethods
+  let {
+    displayInSeparateScreen,
+    groupByPaymentMethods,
+  } = layoutClass.savedMethodCustomization.groupingBehavior
+  let groupSavedMethodsWithPaymentMethods = !displayInSeparateScreen && groupByPaymentMethods
+
+  let groupSavedMethodsSeparately = !displayInSeparateScreen && !groupByPaymentMethods
 
   let (getVisaCards, closeComponentIfSavedMethodsAreEmpty) = ClickToPayHook.useClickToPay(
     ~areClickToPayUIScriptsLoaded,
@@ -104,13 +109,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         let finalSavedPaymentMethods =
           savedPaymentMethods
           ->Array.copy
-          ->Array.filter(savedMethod => {
-            switch savedMethod.paymentMethodType {
-            | Some("apple_pay") => isApplePayReady
-            | Some("google_pay") => isGPayReady
-            | _ => true
-            }
-          })
+          ->filterSavedMethodsByWalletReadiness(~isApplePayReady, ~isGooglePayReady=isGPayReady)
         finalSavedPaymentMethods->Array.sort(sortSavedPaymentMethods)
 
         let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
@@ -317,6 +316,19 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let paymentFormElement = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
       {switch selectedOption->PaymentModeType.paymentMode {
+      | SavedMethods =>
+        <SavedMethods
+          paymentToken
+          setPaymentToken
+          savedMethods
+          loadSavedCards
+          cvcProps
+          sessions
+          isClickToPayAuthenticateError
+          setIsClickToPayAuthenticateError
+          getVisaCards
+          closeComponentIfSavedMethodsAreEmpty
+        />
       | Card => <CardPayment cardProps expiryProps cvcProps />
       | ACHTransfer =>
         <ReusableReactSuspense
@@ -458,13 +470,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }
 
   React.useEffect(() => {
-    if groupSavedMethodsWithPaymentMethods {
+    if groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately {
       setShowPaymentMethodsScreen(_ => true)
     }
     let evalMethodsList = () =>
       switch paymentMethodList {
       | SemiLoaded | LoadError(_) | Loaded(_) =>
-        messageParentWindow([("ready", true->JSON.Encode.bool)])
+        messageParentWindow([
+          ("ready", true->JSON.Encode.bool),
+          ("elementType", CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string),
+        ])
       | _ => ()
       }
     if !displaySavedPaymentMethods {
@@ -474,7 +489,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | LoadingSavedCards => ()
       | LoadedSavedCards(list, _) =>
         list->Array.length > 0
-          ? messageParentWindow([("ready", true->JSON.Encode.bool)])
+          ? messageParentWindow([
+              ("ready", true->JSON.Encode.bool),
+              (
+                "elementType",
+                CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string,
+              ),
+            ])
           : evalMethodsList()
       | NoResult(_) => evalMethodsList()
       }
@@ -486,23 +507,28 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay
 
   let shouldShowSavedMethodsScreen =
-    !groupSavedMethodsWithPaymentMethods && !showPaymentMethodsScreen && shouldShowSavedMethods
+    !groupSavedMethodsWithPaymentMethods &&
+    !groupSavedMethodsSeparately &&
+    !showPaymentMethodsScreen &&
+    shouldShowSavedMethods
 
   let hasSavedPaymentMethods = displaySavedPaymentMethods && savedMethods->Array.length > 0
 
   let shouldShowUseExistingMethodsButton =
     !groupSavedMethodsWithPaymentMethods &&
+    !groupSavedMethodsSeparately &&
     (hasSavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay) &&
     showPaymentMethodsScreen
 
   let isLoadingGroupedSavedMethods =
-    customerPaymentMethods == LoadingSavedCards && groupSavedMethodsWithPaymentMethods
+    customerPaymentMethods == LoadingSavedCards &&
+      (groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately)
 
   let hasPaymentOrWalletOptions =
     paymentOptions->Array.length > 0 || walletOptions->Array.length > 0
 
   let shouldDisplayPaymentMethodsScreen =
-    groupSavedMethodsWithPaymentMethods || showPaymentMethodsScreen
+    groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately || showPaymentMethodsScreen
 
   let shouldShowShimmer = clickToPayConfig.isReady->Option.isNone || isLoadingGroupedSavedMethods
 
@@ -524,7 +550,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     {if shouldShowShimmer {
       if areClickToPayUIScriptsLoaded {
         <ClickToPayHelpers.SrcLoader />
-      } else if groupSavedMethodsWithPaymentMethods {
+      } else if groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately {
         <PaymentElementShimmer />
       } else {
         <PaymentElementShimmer.SavedPaymentCardShimmer />
@@ -573,8 +599,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             cardShimmerCount
             cardProps
             expiryProps
+            cvcProps
           />
-        | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps expiryProps />
+        | Accordion =>
+          <AccordionContainer paymentOptions checkoutEle cardProps expiryProps cvcProps />
         }}
       </div>
     </RenderIf>

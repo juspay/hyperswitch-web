@@ -23,6 +23,8 @@ let make = (
   let fullName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
   let phoneNumber = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
   let (isSaveDetailsWithClickToPay, setIsSaveDetailsWithClickToPay) = React.useState(_ => false)
+  let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
+  let (showInstallments, setShowInstallments) = React.useState(_ => false)
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (clickToPayCardBrand, setClickToPayCardBrand) = React.useState(_ => "")
   let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
@@ -32,7 +34,6 @@ let make = (
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
-  let giftCardInfo = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.giftCardInfoAtom)
   let isPMMFlow = switch paymentTypeFromUrl {
   | PaymentMethodsManagement => true
   | _ => false
@@ -125,17 +126,15 @@ let make = (
   let isCardBrandValid = combinedCardNetworks->Array.includes(cardBrand->String.toLowerCase)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-
+  let (installmentsError, setInstallmentsError) = React.useState(_ => "")
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
-  let complete = isAllValid(
-    isCardValid,
-    isCardSupported,
-    isCVCValid,
-    isExpiryValid,
-    true,
-    "payment",
-  )
+  let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
+
+  let complete =
+    isAllValid(isCardValid, isCardSupported, isCVCValid, isExpiryValid, true, "payment") &&
+    isInstallmentValid
+
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect(() => {
     setComplete(_ => complete)
@@ -169,9 +168,8 @@ let make = (
       ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
     ]
 
-    let defaultCardBody = switch (paymentType, GlobalVars.sdkVersion) {
-    | (PaymentMethodsManagement, _)
-    | (_, V2) =>
+    let defaultCardBody = switch paymentType {
+    | PaymentMethodsManagement =>
       PaymentManagementBody.saveCardBody(
         ~cardNumber,
         ~month,
@@ -223,9 +221,12 @@ let make = (
         (isBancontact || isCardDetailsValid) &&
         isNicknameValid &&
         areRequiredFieldsValid &&
-        !isCardBlocked
+        !isCardBlocked &&
+        isInstallmentValid
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
+        let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
+
         if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
           ClickToPayHelpers.handleOpenClickToPayWindow()
 
@@ -274,7 +275,9 @@ let make = (
                         ~xSrcFlowId,
                       )
                       intent(
-                        ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                        ~bodyArr=clickToPayBody
+                        ->Array.concat(installmentBody)
+                        ->mergeAndFlattenToTuples(requiredFieldsBody),
                         ~confirmParam=confirm.confirmParams,
                         ~handleUserError=false,
                         ~manualRetry=isManualRetryEnabled,
@@ -357,7 +360,9 @@ let make = (
                       ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
                     )
                     intent(
-                      ~bodyArr=clickToPayBody,
+                      ~bodyArr=clickToPayBody
+                      ->Array.concat(installmentBody)
+                      ->mergeAndFlattenToTuples(requiredFieldsBody),
                       ~confirmParam=confirm.confirmParams,
                       ~handleUserError=false,
                       ~manualRetry=isManualRetryEnabled,
@@ -388,23 +393,11 @@ let make = (
             ~handleUserError=true,
           )
         } else {
-          let hasGiftCards = giftCardInfo.appliedGiftCards->Array.length > 0
-          let modifiedCardBody = if hasGiftCards {
-            let splitPaymentBody =
-              PaymentBodyV2.splitPaymentBody(~appliedGiftCards=giftCardInfo.appliedGiftCards)
-              ->getJsonFromArrayOfJson
-              ->getDictFromJson
-
-            cardBody->mergeAndFlattenToTuples(splitPaymentBody)
-          } else {
-            cardBody
-          }
-
           intent(
             ~bodyArr={
-              (isBancontact ? banContactBody : modifiedCardBody)->mergeAndFlattenToTuples(
-                requiredFieldsBody,
-              )
+              (isBancontact ? banContactBody : cardBody)
+              ->Array.concat(installmentBody)
+              ->mergeAndFlattenToTuples(requiredFieldsBody)
             },
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
@@ -435,6 +428,10 @@ let make = (
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         }
+        if !isInstallmentValid {
+          setUserError(localeString.installmentSelectPlanError)
+          setInstallmentsError(_ => localeString.installmentSelectPlanError)
+        }
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)
         }
@@ -454,7 +451,8 @@ let make = (
     clickToPayCardBrand,
     isClickToPayRememberMe,
     blockedBinsList,
-    giftCardInfo,
+    selectedInstallmentPlan,
+    showInstallments,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -473,7 +471,7 @@ let make = (
   | Some(_) => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
   | None => ""
   }
-
+  let conditionToRenderInstallments = cardNumber->CardUtils.getCardBin->String.length >= 6
   <div className="animate-slowShow">
     <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
@@ -594,6 +592,16 @@ let make = (
             condition={(!options.hideCardNicknameField && isCustomerAcceptanceRequired) ||
               paymentType == PaymentMethodsManagement}>
             <NicknamePaymentInput />
+          </RenderIf>
+          <RenderIf condition=conditionToRenderInstallments>
+            <InstallmentOptions
+              setSelectedInstallmentPlan
+              showInstallments
+              setShowInstallments
+              paymentMethod
+              errorString=installmentsError
+              setErrorString=setInstallmentsError
+            />
           </RenderIf>
         </div>
       </div>

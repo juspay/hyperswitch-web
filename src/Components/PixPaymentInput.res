@@ -38,7 +38,14 @@ let make = (~name: string, ~fieldType: string) => {
 
   let onChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    field.input.onChange(val)
+
+    let transformedVal = switch fieldType {
+    // Transforming to uppercase to allow lowercase input to reduce friction, as CNPJ can contain letters (when formatted with punctuation)
+    | "pixCNPJ" => val->String.toUpperCase
+    | "pixCPF" => val->CardValidations.clearSpaces
+    | _ => val
+    }
+    field.input.onChange(transformedVal)
   }
 
   let onBlur = (_ev: JsxEventU.Focus.t) => {

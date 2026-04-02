@@ -212,7 +212,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `Интернет-банк Словакия`,
   payment_methods_online_banking_finland: `Интернет-банк Финляндия`,
   payment_methods_online_banking_poland: `Интернет-банк Польша`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `ACH Прямой дебет`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -244,6 +244,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Сохранённые`,
   giftCardSectionTitle: `У вас есть подарочная карта?`,
   giftCardNumberLabel: `Номер подарочной карты`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -258,5 +259,17 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Оставшаяся сумма к оплате отсутствует. Пожалуйста, продолжите оплату.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Пожалуйста, оплатите оставшуюся сумму ${amount} ${currency} другим способом оплаты ниже.`,
+  installmentPayInInstallments: "Оплатить в рассрочку",
+  installmentChoosePlan: "Выберите план рассрочки",
+  installmentInterestFree: "Без процентов",
+  installmentInterestRate: interestRate => `${interestRate}% процентов`,
+  installmentTotalPayable: "Итого к оплате",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    numPayments == 1
+      ? `1 платёж ${currency} ${amount}`
+      : `${numPayments->Int.toString} платежа по ${currency} ${amount}`,
+  installmentSelectPlanError: "Пожалуйста, выберите план рассрочки",
+  showMore: "Показать ещё",
+  showLess: "Показать меньше",
   mandatoryFieldText: "Это поле обязательно для заполнения.",
 }

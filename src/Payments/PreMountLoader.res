@@ -32,7 +32,16 @@ let useMessageHandler = getMessageHandler => {
       }
     }
 
+    let handleResendMountedCallback = (ev: Window.event) => {
+      open Utils
+      let dict = ev.data->safeParse->getDictFromJson
+      if dict->Dict.get("requestPreMountLoaderMountedCallback")->Option.isSome {
+        messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
+      }
+    }
+
     Window.addEventListener("message", handleCleanUpEventListener)
+    Window.addEventListener("message", handleResendMountedCallback)
 
     setupMessageListener()
 
@@ -40,6 +49,7 @@ let useMessageHandler = getMessageHandler => {
       () => {
         cleanupMessageListener()
         Window.removeEventListener("message", handleCleanUpEventListener)
+        Window.removeEventListener("message", handleResendMountedCallback)
       },
     )
   }, [])
@@ -123,58 +133,6 @@ let getMessageHandlerV1Elements = (
   }
 }
 
-let getMessageHandlerV2Elements = (
-  ~clientSecret,
-  ~paymentId,
-  ~publishableKey,
-  ~logger,
-  ~customPodUri,
-  ~endpoint,
-  ~profileId,
-) => {
-  let paymentMethodsListPromise = PaymentHelpersV2.fetchPaymentMethodList(
-    ~clientSecret,
-    ~paymentId,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-    ~profileId,
-  )
-
-  let sessionTokensPromise = PaymentHelpersV2.fetchSessions(
-    ~clientSecret,
-    ~paymentId,
-    ~profileId,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
-
-  let getIntentPromise = PaymentHelpersV2.fetchIntent(
-    ~clientSecret,
-    ~paymentId,
-    ~profileId,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~endpoint,
-  )
-
-  ev => {
-    open Utils
-    let dict = ev.data->safeParse->getDictFromJson
-    if dict->isKeyPresentInDict("sendPaymentMethodsListV2Response") {
-      paymentMethodsListPromise->sendPromiseData("payment_methods_list_v2")
-    } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
-      sessionTokensPromise->sendPromiseData("session_tokens")
-    } else if dict->isKeyPresentInDict("sendGetIntentResponse") {
-      getIntentPromise->sendPromiseData("get_intent_v2")
-    }
-  }
-}
-
 let getMessageHandlerV2PMM = (
   ~pmSessionId,
   ~pmClientSecret,
@@ -210,39 +168,24 @@ module PreMountLoaderForElements = {
     ~publishableKey,
     ~sdkAuthorization,
     ~clientSecret,
-    ~paymentId,
     ~endpoint,
     ~merchantHostname,
     ~customPodUri,
-    ~profileId,
     ~isTestMode=false,
     ~isSdkParamsEnabled=false,
   ) => {
     useMessageHandler(() =>
-      switch GlobalVars.sdkVersion {
-      | V1 =>
-        getMessageHandlerV1Elements(
-          ~sdkAuthorization,
-          ~clientSecret,
-          ~publishableKey,
-          ~logger,
-          ~customPodUri,
-          ~endpoint,
-          ~merchantHostname,
-          ~isTestMode,
-          ~isSdkParamsEnabled,
-        )
-      | V2 =>
-        getMessageHandlerV2Elements(
-          ~clientSecret,
-          ~paymentId,
-          ~publishableKey,
-          ~logger,
-          ~customPodUri,
-          ~endpoint,
-          ~profileId,
-        )
-      }
+      getMessageHandlerV1Elements(
+        ~sdkAuthorization,
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~merchantHostname,
+        ~isTestMode,
+        ~isSdkParamsEnabled,
+      )
     )
 
     React.null
@@ -284,7 +227,6 @@ let make = (
   ~sdkAuthorization,
   ~clientSecret,
   ~endpoint,
-  ~paymentId,
   ~pmSessionId,
   ~pmClientSecret,
   ~hyperComponentName: Types.hyperComponentName,
@@ -310,8 +252,6 @@ let make = (
       endpoint
       merchantHostname
       customPodUri
-      profileId
-      paymentId
       isTestMode
       isSdkParamsEnabled
     />

@@ -2,6 +2,9 @@ open Promise
 open Types
 open Utils
 
+let cvcWidgetNotFoundErrorType = "cvc_widget_not_found"
+let cvcValidationErrorType = "cvc_validation"
+
 let getCustomerSavedPaymentMethods = (
   ~clientSecret,
   ~publishableKey,
@@ -9,6 +12,7 @@ let getCustomerSavedPaymentMethods = (
   ~logger,
   ~customPodUri,
   ~redirectionFlags,
+  ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
 ) => {
   open ApplePayTypes
   open GooglePayType
@@ -91,6 +95,126 @@ let getCustomerSavedPaymentMethods = (
       }
     }
 
+    let confirmWithCVCWidget = (
+      ~body,
+      ~payload,
+      ~paymentType: PaymentHelpersTypes.payment,
+      ~requiresCvv,
+      ~id,
+    ) => {
+      let redirect = payload->getDictFromJson->getString("redirect", "if_required")
+      Promise.make((resolve, _) => {
+        let handleCVCWidgetConfirmResponse = (event: Types.event) => {
+          let json = event.data->Identity.anyTypeToJson
+          let dict = json->getDictFromJson
+          if dict->Dict.get("cvcWidgetConfirmResponse")->Option.isSome {
+            let responseData =
+              dict->Dict.get("cvcWidgetConfirmResponse")->Option.getOr(JSON.Encode.null)
+            let responseDataDict = responseData->getDictFromJson
+            let data = responseDataDict->Dict.get("data")->Option.getOr(JSON.Encode.null)
+            let returnUrl = responseDataDict->getString("returnUrl", "")
+
+            if redirect == "always" {
+              Window.Location.replace(returnUrl)
+            } else {
+              resolve(data)
+            }
+          } else if dict->Dict.get("cvcWidgetConfirmErrorResponse")->Option.isSome {
+            let errorResponseData =
+              dict->Dict.get("cvcWidgetConfirmErrorResponse")->Option.getOr(JSON.Encode.null)
+            resolve(errorResponseData)
+          }
+        }
+        EventListenerManager.addSmartEventListener(
+          "message",
+          handleCVCWidgetConfirmResponse,
+          "onCVCWidgetConfirmResponse",
+        )
+        // Extract redirect from payload (top level, like in Hyper.res confirmPaymentWrapper)
+        let redirect = payload->getDictFromJson->getString("redirect", "if_required")
+        let confirmParams =
+          [
+            ("body", body->getJsonFromArrayOfJson),
+            ("payload", payload),
+            ("paymentType", (paymentType :> string)->JSON.Encode.string),
+            ("publishableKey", publishableKey->JSON.Encode.string),
+            ("clientSecret", clientSecret->JSON.Encode.string),
+            ("requiresCvv", requiresCvv->JSON.Encode.bool),
+            ("redirect", redirect->JSON.Encode.string),
+          ]->Dict.fromArray
+        let message = [("requestCVCConfirm", confirmParams->JSON.Encode.object)]->Dict.fromArray
+        switch getWidgetIframe(~iframeRef, ~id) {
+        | Some(iframe) => iframe->Window.iframePostMessage(message)
+        | None =>
+          resolve(
+            handleFailureResponse(
+              ~message="INTEGRATION ERROR: Mount the CVC widget with a valid ID or pass the required CVC value.",
+              ~errorType=cvcWidgetNotFoundErrorType,
+            ),
+          )
+        }
+      })
+    }
+
+    let confirmWithCVCOrPaymentSession = (~body, ~payload, ~paymentType, ~requiresCvv) => {
+      let redirect = payload->getDictFromJson->getString("redirect", "if_required")
+      let payloadDict = payload->getDictFromJson
+
+      let confirmParams = payloadDict->getDictFromDict("confirmParams")
+
+      confirmParams->Dict.set("redirect", redirect->JSON.Encode.string)
+
+      let updatedPayload = payloadDict->JSON.Encode.object
+      let id = payloadDict->Dict.get("id")->Option.flatMap(JSON.Decode.string)
+      let hasCvc = payloadDict->Dict.get("cvc")
+      if hasCvc->Option.isSome {
+        let cvcValue = hasCvc->Option.getOr(JSON.Encode.null)
+        body->Array.push(("card_cvc", cvcValue))->ignore
+        PaymentHelpers.paymentIntentForPaymentSession(
+          ~body,
+          ~paymentType,
+          ~payload=updatedPayload,
+          ~publishableKey,
+          ~clientSecret,
+          ~logger,
+          ~customPodUri,
+          ~redirectionFlags,
+        )
+      } else if requiresCvv {
+        let idVal = id->Option.getOr("")
+        if id->Option.isNone {
+          handleFailureResponse(
+            ~message="INTEGRATION ERROR: Mount the CVC widget with a valid ID or pass the required CVC value.",
+            ~errorType="invalid_request",
+          )->resolve
+        } else if isWidgetPresent(~iframeRef, ~id=idVal) {
+          confirmWithCVCWidget(
+            ~body,
+            ~payload=updatedPayload,
+            ~paymentType,
+            ~requiresCvv=true,
+            ~id=idVal,
+          )
+        } else {
+          handleFailureResponse(
+            ~message="INTEGRATION ERROR: Mount the CVC widget with a valid ID or pass the required CVC value.",
+            ~errorType=cvcWidgetNotFoundErrorType,
+          )->resolve
+        }
+      } else {
+        PaymentHelpers.paymentIntentForPaymentSession(
+          ~body,
+          ~paymentType,
+          ~payload=updatedPayload,
+          ~publishableKey,
+          ~clientSecret,
+          ~logger,
+          ~customPodUri,
+          ~redirectionFlags,
+        )
+      }
+    }
+
     let confirmWithCustomerDefaultPaymentMethod = payload => {
       switch customerDefaultPaymentMethod {
       | Some(defaultPaymentMethod) => {
@@ -105,18 +229,16 @@ let getCustomerSavedPaymentMethods = (
           ]
 
           if paymentMethodType !== "" {
-            body->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))->ignore
+            body
+            ->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))
+            ->ignore
           }
 
-          PaymentHelpers.paymentIntentForPaymentSession(
+          confirmWithCVCOrPaymentSession(
             ~body,
-            ~paymentType,
             ~payload,
-            ~publishableKey,
-            ~clientSecret,
-            ~logger,
-            ~customPodUri,
-            ~redirectionFlags,
+            ~paymentType,
+            ~requiresCvv=defaultPaymentMethod.requiresCvv,
           )
         }
       | None =>
@@ -265,18 +387,16 @@ let getCustomerSavedPaymentMethods = (
           }
 
           if paymentMethodType !== "" {
-            body->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))->ignore
+            body
+            ->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))
+            ->ignore
           }
 
-          PaymentHelpers.paymentIntentForPaymentSession(
+          confirmWithCVCOrPaymentSession(
             ~body,
-            ~paymentType,
             ~payload,
-            ~publishableKey,
-            ~clientSecret,
-            ~logger,
-            ~customPodUri,
-            ~redirectionFlags,
+            ~paymentType,
+            ~requiresCvv=lastUsedPaymentMethod.requiresCvv,
           )
         }
       | None =>

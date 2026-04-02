@@ -204,7 +204,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `オンラインバンキング スロバキア`,
   payment_methods_online_banking_finland: `オンラインバンキング フィンランド`,
   payment_methods_online_banking_poland: `オンラインバンキング ポーランド`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `ACH 口座引落`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -236,6 +236,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `保存済み`,
   giftCardSectionTitle: `ギフトカードをお持ちですか？`,
   giftCardNumberLabel: `ギフトカード番号`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -250,5 +251,15 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `残りの支払金額はありません。支払いを続行してください。`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `残りの ${amount}${currency} は、以下の別の支払い方法でお支払いください。`,
+  installmentPayInInstallments: "分割払い",
+  installmentChoosePlan: "分割払いプランを選択",
+  installmentInterestFree: "無利息",
+  installmentInterestRate: interestRate => `${interestRate}%利息`,
+  installmentTotalPayable: "お支払い総額",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    `${currency} ${amount} × ${numPayments->Int.toString}回払い`,
+  installmentSelectPlanError: "分割払いプランを選択してください",
+  showMore: "もっと見る",
+  showLess: "表示を減らす",
   mandatoryFieldText: "このフィールドは必須です",
 }

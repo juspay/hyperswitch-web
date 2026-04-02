@@ -203,7 +203,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `Onlinebank Slovakien`,
   payment_methods_online_banking_finland: `Onlinebank Finland`,
   payment_methods_online_banking_poland: `Onlinebank Polen`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `ACH Direktdebitering`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -235,6 +235,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Sparade`,
   giftCardSectionTitle: `Har du ett presentkort?`,
   giftCardNumberLabel: `Presentkortsnummer`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -249,5 +250,17 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Ingen kvarvarande summa att betala. Vänligen fortsätt med betalningen.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Vänligen betala den kvarvarande summan ${amount} ${currency} med en annan betalningsmetod nedan.`,
+  installmentPayInInstallments: "Betala i avbetalningar",
+  installmentChoosePlan: "Välj ett avbetalningsplan",
+  installmentInterestFree: "Räntefritt",
+  installmentInterestRate: interestRate => `${interestRate}% ränta`,
+  installmentTotalPayable: "Totalt att betala",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    numPayments == 1
+      ? `1 betalning à ${currency} ${amount}`
+      : `${numPayments->Int.toString} betalningar à ${currency} ${amount}`,
+  installmentSelectPlanError: "Välj ett avbetalningsplan",
+  showMore: "Visa mer",
+  showLess: "Visa mindre",
   mandatoryFieldText: "Detta fält är obligatoriskt",
 }

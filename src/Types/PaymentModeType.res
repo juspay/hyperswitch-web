@@ -27,6 +27,7 @@ type payment =
   | PayPal
   | EFT
   | Givex
+  | SavedMethods
   | Unknown
 
 let paymentMode = str => {
@@ -59,11 +60,13 @@ let paymentMode = str => {
   | "paypal" => PayPal
   | "eft" => EFT
   | "givex" => Givex
+  | "saved_methods" => SavedMethods
   | _ => Unknown
   }
 }
 
 let defaultOrder = [
+  "saved_methods",
   "card",
   "apple_pay",
   "google_pay",

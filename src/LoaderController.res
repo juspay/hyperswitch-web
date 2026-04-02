@@ -12,8 +12,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
   let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
-  let setPaymentMethodsListV2 = Recoil.useSetRecoilState(paymentMethodsListV2)
-  let setIntentList = Recoil.useSetRecoilState(intentList)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
@@ -238,6 +236,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       try {
         let dict = json->getDictFromJson
         if dict->getDictIsSome("paymentElementCreate") {
+          // Set iframeId for ALL elements including individual card elements (cardNumber, cardExpiry, cardCvc)
+          if dict->getDictIsSome("iframeId") {
+            setKeys(prev => {
+              ...prev,
+              iframeId: dict->getString("iframeId", "no-element"),
+            })
+          }
           if (
             dict
             ->Dict.get("paymentElementCreate")
@@ -476,43 +481,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
             }
           }
-        }
-        if dict->getDictIsSome("getIntent") {
-          let getIntentDict = dict->getJsonObjectFromDict("getIntent")->getDictFromJson
-          let intentDetails = getIntentDict->UnifiedHelpersV2.createIntentDetails("response")
-          setIntentList(_ => intentDetails)
-        }
-        if dict->getDictIsSome("paymentsListV2") {
-          let paymentsListV2 = dict->getJsonObjectFromDict("paymentsListV2")
-          let listDict = paymentsListV2->getDictFromJson
-
-          let updatedState: UnifiedPaymentsTypesV2.loadstate =
-            paymentsListV2 == Dict.make()->JSON.Encode.object
-              ? LoadErrorV2(paymentsListV2)
-              : switch listDict->Dict.get("error") {
-                | Some(_) => LoadErrorV2(paymentsListV2)
-                | None =>
-                  let isNonEmptyPaymentMethodList = switch listDict->Dict.get("response") {
-                  | Some(val) =>
-                    val->getDictFromJson->getArray("payment_methods_enabled")->Array.length > 0
-                  | None => false
-                  }
-                  isNonEmptyPaymentMethodList
-                    ? listDict->UnifiedHelpersV2.createPaymentsObjArr("response")
-                    : LoadErrorV2(paymentsListV2)
-                }
-
-          let evalMethodsList = () =>
-            switch updatedState {
-            | LoadedV2(_) => Console.info("Loaded payment methods list v2")
-            | LoadErrorV2(x) =>
-              Console.error2("Error in loading payment methods list v2: ", x->JSON.stringify)
-            | _ => ()
-            }
-
-          evalMethodsList()
-
-          setPaymentMethodsListV2(_ => updatedState)
         }
         if dict->getDictIsSome("paymentMethodList") {
           let paymentMethodList = dict->getJsonObjectFromDict("paymentMethodList")

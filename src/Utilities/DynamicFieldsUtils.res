@@ -1,9 +1,6 @@
 open RecoilAtoms
 open SuperpositionTypes
 
-let getAtomBasedOnSplitPayments = (isSplitPaymentsEnabled, splitAtom, normalAtom) =>
-  isSplitPaymentsEnabled ? splitAtom : normalAtom
-
 let countryList = CountryStateDataRefs.countryDataRef.contents
 let countryNames = Utils.getCountryNames(countryList)
 

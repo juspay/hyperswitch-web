@@ -240,7 +240,6 @@ module.exports = (publicPath = "auto") => {
     enableLogging: ENABLE_LOGGING,
     loggingLevel: JSON.stringify(loggingLevel),
     maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
-    sdkVersionValue: JSON.stringify(sdkVersionValue),
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,

@@ -205,7 +205,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `Banque en ligne Slovaquie`,
   payment_methods_online_banking_finland: `Banque en ligne Finlande`,
   payment_methods_online_banking_poland: `Banque en ligne Pologne`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `Prélèvement bancaire ACH`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -237,6 +237,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Mètodes desats`,
   giftCardSectionTitle: `Tens una targeta regal?`,
   giftCardNumberLabel: `Número de targeta regal`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -251,5 +252,17 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `No queda cap import pendent de pagament. Si us plau, continueu amb el pagament.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Pagueu l'import restant de ${currency} ${amount} amb un altre mètode de pagament a continuació.`,
+  installmentPayInInstallments: "Pagar a terminis",
+  installmentChoosePlan: "Trieu un pla de terminis",
+  installmentInterestFree: "Sense interessos",
+  installmentInterestRate: interestRate => `${interestRate}% interessos`,
+  installmentTotalPayable: "Total a pagar",
+  installmentPaymentLabel: (numPayments, currency, amount) =>
+    numPayments == 1
+      ? `1 termini de ${currency} ${amount}`
+      : `${numPayments->Int.toString} terminis de ${currency} ${amount}`,
+  installmentSelectPlanError: "Si us plau, seleccioneu un pla de terminis",
+  showMore: "Mostra més",
+  showLess: "Mostra menys",
   mandatoryFieldText: "Aquest camp és obligatori",
 }

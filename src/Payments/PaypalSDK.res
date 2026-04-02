@@ -156,8 +156,13 @@ let make = (~sessionObj: SessionsType.token) => {
 
   <div
     id="paypal-button"
-    style={pointerEvents: updateSession ? "none" : "auto", opacity: updateSession ? "0.5" : "1.0"}
-    className="w-full flex flex-row justify-center rounded-md h-auto"
+    style={
+      pointerEvents: updateSession ? "none" : "auto",
+      opacity: updateSession ? "0.5" : "1.0",
+      borderRadius: `${options.wallets.style.buttonRadius->Int.toString}px`,
+      overflow: "hidden",
+    }
+    className="w-full flex flex-row justify-center h-auto"
   />
 }
 
