@@ -6,11 +6,10 @@ open EventListenerManager
 let make = (
   options,
   setIframeRef,
-  ~pmClientSecret,
   ~pmSessionId,
   ~sdkSessionId,
   ~publishableKey,
-  ~profileId,
+  ~sdkAuthorization,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
@@ -55,7 +54,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&profileId=${profileId}&pmSessionId=${pmSessionId}&pmClientSecret=${pmClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}"
+          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&pmSessionId=${pmSessionId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}&sdkAuthorization=${sdkAuthorization}"
           allow="*"
           name="orca-payment"
           style="outline: none;"
@@ -146,6 +145,10 @@ let make = (
       | Some(val) => localOptions->Dict.set("appearance", val)
       | None => ()
       }
+      switch newOptionsDict->Dict.get("sdkAuthorization") {
+      | Some(val) => localOptions->Dict.set("sdkAuthorization", val)
+      | None => ()
+      }
 
       iframeRef->Array.forEach(iframe => {
         let message =
@@ -179,8 +182,8 @@ let make = (
 
         let widgetOptions =
           [
-            ("pmClientSecret", pmClientSecret->JSON.Encode.string),
             ("pmSessionId", pmSessionId->JSON.Encode.string),
+            ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
             ("appearance", appearance),
             ("locale", locale),
             ("loader", loader),
@@ -198,7 +201,6 @@ let make = (
             ("paymentOptions", widgetOptions),
             ("iframeId", selectorString->JSON.Encode.string),
             ("publishableKey", publishableKey->JSON.Encode.string),
-            ("profileId", profileId->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
             ("customPodUri", customPodUri->JSON.Encode.string),
