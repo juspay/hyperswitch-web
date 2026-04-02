@@ -208,7 +208,9 @@ let make = (
               style={
                 color: themeObj.colorTextSecondary,
               }
-              className={`shrink-0 flex items-center ml-0.5 transition-transform duration-200 ease-in-out ${isDropdownOpen ? "rotate-180" : "rotate-0"}`}>
+              className={`shrink-0 flex items-center ml-0.5 transition-transform duration-200 ease-in-out ${isDropdownOpen
+                  ? "rotate-180"
+                  : "rotate-0"}`}>
               <Icon name="arrow-down" size=12 />
             </div>
           </div>
