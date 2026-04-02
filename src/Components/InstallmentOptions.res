@@ -27,7 +27,7 @@ let make = (
 
   let selectedPlan = selectedIndex->Option.flatMap(i => allPlans->Array.get(i))
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     let timerId = ref(None)
     let scrollHandler = ref(None)
 
