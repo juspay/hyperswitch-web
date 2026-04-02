@@ -68,6 +68,10 @@ let make = (
         }
       | None => ()
       }
+    } else {
+      setThumbTop(_ => 0.0)
+      setThumbHeightPct(_ => 100.0)
+      setItemHeight(_ => None)
     }
 
     Some(
@@ -121,17 +125,6 @@ let make = (
     cleanUpStates()
     Some(cleanUpStates)
   })
-
-  React.useEffect2(() => {
-    switch (selectedIndex, selectedPlan) {
-    | (Some(_), None) => {
-        setSelectedInstallmentPlan(_ => None)
-        setSelectedIndex(_ => None)
-      }
-    | _ => ()
-    }
-    None
-  }, (selectedIndex, selectedPlan))
 
   let toggleDropdown = _ => {
     setIsDropdownOpen(prev => !prev)
@@ -252,10 +245,10 @@ let make = (
                     style={
                       top: `${thumbTop->Float.toString}%`,
                       height: `${thumbHeightPct->Float.toString}%`,
-                      backgroundColor: `color-mix(in srgb, ${themeObj.colorText} 15%, transparent)`,
+                      backgroundColor: themeObj.colorText,
                       borderRadius: themeObj.borderRadius,
                     }
-                    className="absolute left-0 right-0 min-h-4"
+                    className="absolute left-0 right-0 min-h-4 opacity-[0.15]"
                   />
                 </div>
               </RenderIf>

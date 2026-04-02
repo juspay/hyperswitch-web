@@ -15,11 +15,15 @@ let make = (
     style={
       padding: `calc(${themeObj.spacingUnit} * 0.8) ${themeObj.spacingUnit}`,
       borderColor: themeObj.borderColor,
-      backgroundColor: isSelected
-        ? `color-mix(in srgb, ${themeObj.colorPrimary} 6%, ${themeObj.colorBackground})`
-        : themeObj.colorBackground,
+      backgroundColor: themeObj.colorBackground,
     }
-    className={`flex items-center gap-2 w-full ${isLastItem ? "" : "border-b"} cursor-pointer`}>
+    className={`relative flex items-center gap-2 w-full ${isLastItem ? "" : "border-b"} cursor-pointer`}>
+    <RenderIf condition=isSelected>
+      <div
+        style={backgroundColor: themeObj.colorPrimary}
+        className="absolute inset-0 opacity-[0.06] pointer-events-none"
+      />
+    </RenderIf>
     <div
       style={
         border: `1.5px solid ${radioBorderColor}`,
