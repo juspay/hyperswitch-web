@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: "帳單姓名",
   billingNamePlaceholder: "名字和姓氏",
   cardHolderName: "持卡人姓名",
+  cardHolderNameRequiredText: "持卡人姓名必填",
   on: "於",
   \"and": "及",
   nameEmptyText: str => `請提供您的${str}`,
@@ -257,4 +258,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "選擇分期計劃",
   showMore: "顯示更多",
   showLess: "收起",
+  mandatoryFieldText: "此欄位為必填項",
 }

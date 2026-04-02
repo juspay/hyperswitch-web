@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   card: `Targeta`,
   billingNameLabel: `Nom de facturació`,
   cardHolderName: `Nom del titular de la targeta`,
+  cardHolderNameRequiredText: `Cal el nom del titular de la targeta`,
   cardNickname: `Sobrenom de la targeta`,
   billingNamePlaceholder: `Nom i cognom`,
   ibanEmptyText: `L'IBAN no pot estar buit`,
@@ -259,4 +260,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "Seleccioneu un pla de terminis",
   showMore: "Mostra més",
   showLess: "Mostra menys",
+  mandatoryFieldText: "Aquest camp és obligatori",
 }

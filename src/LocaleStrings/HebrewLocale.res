@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `שם החיוב`,
   billingNamePlaceholder: `שם פרטי ושם משפחה`,
   cardHolderName: `שם בעל הכרטיס`,
+  cardHolderNameRequiredText: `נדرش שם בעל הכרטיס`,
   on: `עַל`,
   \"and": `ו`,
   nameEmptyText: str => `אנא ספק את שלך ${str}`,
@@ -258,4 +259,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "בחר תוכנית תשלומים",
   showMore: "הצג עוד",
   showLess: "הצג פחות",
+  mandatoryFieldText: "שדה זה הוא חובה",
 }

@@ -1,51 +1,43 @@
 @react.component
-let make = () => {
+let make = (~name="giftCardNumber") => {
   open RecoilAtoms
-  open Utils
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
   let giftCardNumberRef = React.useRef(Nullable.null)
 
-  let updateGiftCardNumber = val => {
-    setGiftCardNumber(_ => {
-      value: val,
-      isValid: Some(val !== ""),
-      errorString: val !== "" ? "" : localeString.giftCardNumberEmptyText,
-    })
-  }
+  let createValidator = rule =>
+    Validation.createFieldValidator(
+      rule,
+      ~enabledCardSchemes=[],
+      ~localeObject=localeString->Obj.magic,
+    )
+
+  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+    name,
+    ~config={validate: createValidator(Validation.GiftCardNumber)},
+  )
+
+  let giftCardNumberValue = field.input.value->Option.getOr("")
 
   let changeGiftCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    updateGiftCardNumber(val)
+    field.input.onChange(val)
   }
 
-  let onBlurGiftCardNumber = ev => {
-    let val = ReactEvent.Focus.target(ev)["value"]
-    updateGiftCardNumber(val)
+  let onBlur = (_ev: JsxEventU.Focus.t) => {
+    field.input.onBlur()
   }
-
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if giftCardNumber.value == "" {
-        setGiftCardNumber(prev => {
-          ...prev,
-          errorString: localeString.giftCardNumberEmptyText,
-        })
-      }
-    }
-  }, [giftCardNumber.value])
-
-  useSubmitPaymentData(submitCallback)
 
   <PaymentField
     fieldName={localeString.giftCardNumberLabel}
-    setValue=setGiftCardNumber
-    value=giftCardNumber
+    setValue={_ => ()}
+    value={
+      RecoilAtomTypes.value: giftCardNumberValue,
+      isValid: Some(field.meta.valid),
+      errorString: field.meta.touched ? field.meta.error->Option.getOr("") : "",
+    }
     onChange=changeGiftCardNumber
-    onBlur=onBlurGiftCardNumber
+    onBlur
     type_="text"
     name="giftCardNumber"
     inputRef=giftCardNumberRef

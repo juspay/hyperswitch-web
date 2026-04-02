@@ -1,17 +1,16 @@
 open RecoilAtoms
 open Utils
-open PaymentModeType
+open ACHTypes
 
 @react.component
 let make = () => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
 
@@ -22,14 +21,7 @@ let make = () => {
   let (modalData, setModalData) = React.useState(_ => None)
 
   let toolTipRef = React.useRef(Nullable.null)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let country = Recoil.useRecoilValueFromAtom(userAddressCountry)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
-  let countryCode = Utils.getCountryCode(country.value).isoAlpha2
-  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
+
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let pmAuthMapper = React.useMemo1(
@@ -56,12 +48,10 @@ let make = () => {
     None
   }, [modalData])
 
-  let complete =
-    email.value != "" &&
-    fullName.value != "" &&
-    email.isValid->Option.getOr(false) &&
-    modalData->Option.isSome
-  let empty = email.value == "" || fullName.value != ""
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+
+  let complete = areRequiredFieldsValid && !areRequiredFieldsEmpty && modalData->Option.isSome
+  let empty = areRequiredFieldsEmpty
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="ach_bank_debit")
 
@@ -75,18 +65,31 @@ let make = () => {
       }
       if complete {
         switch modalData {
-        | Some(data) =>
-          let body = PaymentBody.achBankDebitBody(
-            ~email=email.value,
-            ~bank=data,
-            ~cardHolderName=fullName.value,
-            ~line1=line1.value,
-            ~line2=line2.value,
-            ~country=countryCode,
-            ~city=city.value,
-            ~postalCode=postalCode.value,
-            ~stateCode,
-          )
+        | Some(data: ACHTypes.data) =>
+          let body =
+            PaymentBody.dynamicPaymentBody("bank_debit", "ach")
+            ->getJsonFromArrayOfJson
+            ->flattenObject(true)
+            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+            ->getArrayOfTupleFromDict
+            ->Array.concat([
+              (
+                "payment_method_data.bank_debit.ach_bank_debit.account_number",
+                data.accountNumber->JSON.Encode.string,
+              ),
+              (
+                "payment_method_data.bank_debit.ach_bank_debit.routing_number",
+                data.routingNumber->JSON.Encode.string,
+              ),
+              (
+                "payment_method_data.bank_debit.ach_bank_debit.bank_account_holder_name",
+                data.accountHolderName->JSON.Encode.string,
+              ),
+              (
+                "payment_method_data.bank_debit.ach_bank_debit.account_type",
+                data.accountType->JSON.Encode.string,
+              ),
+            ])
           intent(
             ~bodyArr=body,
             ~confirmParam=confirm.confirmParams,
@@ -100,7 +103,13 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, modalData, fullName, isManualRetryEnabled))
+  }, (
+    modalData,
+    isManualRetryEnabled,
+    requiredFieldsBody,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+  ))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"
@@ -112,8 +121,7 @@ let make = () => {
     </RenderIf>
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
-        <FullNamePaymentInput />
-        <EmailPaymentInput />
+        <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
         <div className="flex flex-col">
           <AddBankAccount modalData setModalData />
           <RenderIf condition={bankError->String.length > 0}>

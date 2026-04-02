@@ -1716,6 +1716,8 @@ let getFirstAndLastNameFromFullName = fullName => {
   (firstName, lastNameJson)
 }
 
+let isEmptyDict = (dict: Dict.t<'a>) => dict->Dict.keysToArray->Array.length === 0
+
 let isKeyPresentInDict = (dict, key) => dict->Dict.get(key)->Option.isSome
 
 let minorUnitToString = val => (val->Int.toFloat /. 100.)->Float.toString
