@@ -35,15 +35,15 @@ let make = (
       switch scrollContainerRef.current->Nullable.toOption {
       | Some(container) => {
           let updateScrollbar = () => {
-            let sH = container->Window.Element.scrollHeight
-            let cH = container->Window.Element.clientHeight
-            if sH > 0.0 && cH > 0.0 && sH > cH {
-              let ratio = cH /. sH
+            let scrollHeight = container->Window.Element.scrollHeight
+            let clientHeight = container->Window.Element.clientHeight
+            if scrollHeight > 0.0 && clientHeight > 0.0 && scrollHeight > clientHeight {
+              let ratio = clientHeight /. scrollHeight
               setThumbHeightPct(_ => ratio *. 100.0)
-              let maxScroll = sH -. cH
-              let sT = container->Window.Element.scrollTop
+              let maxScroll = scrollHeight -. clientHeight
+              let currentScroll = container->Window.Element.scrollTop
               let scrollPos = if maxScroll > 0.0 {
-                sT /. maxScroll
+                currentScroll /. maxScroll
               } else {
                 0.0
               }
@@ -138,10 +138,12 @@ let make = (
   }
 
   let scrollContainerMaxHeight =
-    (needsScroll ? itemHeight : None)->Option.mapOr("none", h => `${(h *. 3.5)->Float.toString}px`)
+    (needsScroll ? itemHeight : None)->Option.mapOr("none", height =>
+      `${(height *. 3.5)->Float.toString}px`
+    )
 
   let fadeHeight = switch itemHeight {
-  | Some(h) => `${(h *. 0.25)->Float.toString}px`
+  | Some(height) => `${(height *. 0.25)->Float.toString}px`
   | None => "24px"
   }
 
