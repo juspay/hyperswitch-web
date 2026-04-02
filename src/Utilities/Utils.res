@@ -1185,6 +1185,11 @@ let isOtherElements = componentType => {
   componentType == "cardCvc"
 }
 
+// Elements that can have multiple instances (for event listener naming)
+let canHaveMultipleInstances = componentType => {
+  componentType == "cardNumber" || componentType == "cardExpiry" || componentType == "cardCvc"
+}
+
 let nbsp = `\u00A0`
 
 let callbackFuncForExtractingValFromDict = key => {
@@ -1752,6 +1757,24 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
   if !isMessageSent.contents {
     mountedIframeRef->Window.iframePostMessage(msg)
   }
+}
+
+let getWidgetIframe = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {
+  let selector = `orca-payment-element-iframeRef-orca-elements-payment-element-${id}`
+  iframeRef.contents->Array.find(iframe => {
+    switch iframe->Nullable.toOption {
+    | Some(elem) =>
+      elem
+      ->Window.getAttribute("id")
+      ->Nullable.toOption
+      ->Option.getOr("") == selector
+    | None => false
+    }
+  })
+}
+
+let isWidgetPresent = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {
+  getWidgetIframe(~iframeRef, ~id)->Option.isSome
 }
 
 let isDigitLimitExceeded = (val, ~digit) => {

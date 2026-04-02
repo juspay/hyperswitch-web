@@ -659,6 +659,8 @@ let emitPaymentMethodInfo = (
   ~state="",
   ~pinCode="",
   ~isSavedPaymentMethod=false,
+  ~isCvcEmpty=false,
+  ~isCVCCardElement=false,
 ) => {
   let baseCardsFields = [
     ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
@@ -675,6 +677,8 @@ let emitPaymentMethodInfo = (
   ]
 
   let baseSavedPaymentField = [("isSavedPaymentMethod", isSavedPaymentMethod->JSON.Encode.bool)]
+
+  let baseCVCField = [("isCvcEmpty", isCvcEmpty->JSON.Encode.bool)]
 
   let basePaymentInfoFields = switch paymentMethod {
   | "card" => [("paymentMethod", paymentMethod->JSON.Encode.string)]
@@ -693,7 +697,15 @@ let emitPaymentMethodInfo = (
   let finalMsg =
     msg->Array.filter(((_, value)) => value->JSON.Decode.string->Option.getOr("") != "")
 
-  emitMessage(finalMsg->Array.concat(baseSavedPaymentField)->Dict.fromArray)
+  let postFilterFields = if (
+    isCVCCardElement || (paymentMethod === "card" && cardBrand !== CardUtils.NOTFOUND)
+  ) {
+    baseSavedPaymentField->Array.concat(baseCVCField)
+  } else {
+    baseSavedPaymentField
+  }
+
+  emitMessage(finalMsg->Array.concat(postFilterFields)->Dict.fromArray)
 }
 
 type nonPiiAdderessData = {
@@ -719,6 +731,7 @@ let useEmitPaymentMethodInfo = (
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {country, state, pinCode} = useNonPiiAddressData()
@@ -731,6 +744,9 @@ let useEmitPaymentMethodInfo = (
   let isExpiryValid = expiryProps.isExpiryValid->Option.getOr(false)
   let (cardExpiryMonth, cardExpiryYear) = cardExpiry->CardUtils.getExpiryDates
   let shouldEmitCardInfo = isCardValid && isExpiryValid && paymentMethodName == "card"
+
+  let {cvcNumber} = cvcProps
+  let isCvcEmpty = cvcNumber->String.length == 0
 
   let emitPaymentMethodInfoWrapper = (~paymentMethod, ~paymentMethodType) => {
     if shouldEmitCardInfo {
@@ -745,9 +761,17 @@ let useEmitPaymentMethodInfo = (
         ~country,
         ~state,
         ~pinCode,
+        ~isCvcEmpty,
       )
     } else {
-      emitPaymentMethodInfo(~paymentMethod, ~paymentMethodType, ~country, ~state, ~pinCode)
+      emitPaymentMethodInfo(
+        ~paymentMethod,
+        ~paymentMethodType,
+        ~country,
+        ~state,
+        ~pinCode,
+        ~isCvcEmpty,
+      )
     }
   }
 
@@ -800,6 +824,7 @@ let useEmitPaymentMethodInfo = (
     country,
     state,
     pinCode,
+    cvcNumber,
   ))
 }
 

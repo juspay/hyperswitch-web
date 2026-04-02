@@ -1461,6 +1461,8 @@ let make = (
             preMountLoaderIframeDiv->Window.iframePostMessage(msg)
           })
         }
+        let msg = [("requestPreMountLoaderMountedCallback", true->JSON.Encode.bool)]->Dict.fromArray
+        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
         preMountLoaderMountedPromise
         ->then(_ => {
           let disableSavedPaymentMethods =

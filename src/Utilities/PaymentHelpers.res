@@ -341,6 +341,7 @@ let rec intentCall = (
   ~componentName="payment",
   ~redirectionFlags,
   ~sdkAuthorization=None,
+  ~mode: CardThemeType.mode=NONE,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -537,11 +538,11 @@ let rec intentCall = (
             url.searchParams.set("status", intent.status)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
-              switch (paymentType, sdkHandleOneClickConfirmPayment) {
-              | (Card, _)
-              | (Gpay, false)
-              | (Applepay, false)
-              | (Paypal, false) =>
+              switch (paymentType, sdkHandleOneClickConfirmPayment, mode) {
+              | (Card, _, _)
+              | (Gpay, false, _)
+              | (Applepay, false, _)
+              | (Paypal, false, _) =>
                 if !isPaymentSession {
                   if isCallbackUsedVal->Option.getOr(false) {
                     handleOnCompleteDoThisMessage()
@@ -559,6 +560,13 @@ let rec intentCall = (
                 } else {
                   resolve(data)
                 }
+              | (_, _, CardCVCElement) =>
+                resolve(
+                  [
+                    ("data", data),
+                    ("returnUrl", url.href->JSON.Encode.string),
+                  ]->Utils.getJsonFromArrayOfJson,
+                )
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
                   closePaymentLoaderIfAny()
@@ -1662,6 +1670,7 @@ let paymentIntentForPaymentSession = (
   ~customPodUri,
   ~redirectionFlags,
   ~isPaymentSession=true,
+  ~mode: CardThemeType.mode=NONE,
 ) => {
   let confirmParams =
     payload
@@ -1719,6 +1728,7 @@ let paymentIntentForPaymentSession = (
     ~counter=0,
     ~isPaymentSession,
     ~redirectionFlags,
+    ~mode,
   )
 }
 
