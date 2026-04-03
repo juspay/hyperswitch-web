@@ -8,6 +8,9 @@ let make = (~fieldType="") => {
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
+  let (branchCode, setBranchCode) = Recoil.useRecoilState(userBranchCode)
+  let (bankIdentifier, setBankIdentifier) = Recoil.useRecoilState(userBankIdentifier)
   let inputRef = React.useRef(Nullable.null)
 
   let validatePixKey = (val): RecoilAtomTypes.field =>
@@ -129,8 +132,26 @@ let make = (~fieldType="") => {
           errorString: localeString.sourceBankAccountIdEmptyText,
         })
       }
+      if bankAccountNumber.value == "" {
+        setBankAccountNumber(prev => {
+          ...prev,
+          errorString: localeString.ibanEmptyText,
+        })
+      }
+      if branchCode.value == "" {
+        setBranchCode(prev => {
+          ...prev,
+          errorString: localeString.branchCodeEmptyText,
+        })
+      }
+      if bankIdentifier.value == "" {
+        setBankIdentifier(prev => {
+          ...prev,
+          errorString: localeString.bankIdentifierEmptyText,
+        })
+      }
     }
-  }, [pixCNPJ.value, pixKey.value, pixCPF.value])
+  }, [pixCNPJ.value, pixKey.value, pixCPF.value, sourceBankAccountId.value, bankAccountNumber.value, branchCode.value, bankIdentifier.value])
 
   useSubmitPaymentData(submitCallback)
 
