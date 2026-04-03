@@ -157,12 +157,16 @@ let make = (
   let cityRef = React.useRef(Nullable.null)
   let bankAccountNumberRef = React.useRef(Nullable.null)
   let sourceBankAccountIdRef = React.useRef(Nullable.null)
+  let branchCodeRef = React.useRef(Nullable.null)
+  let bankIdentifierRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let (branchCode, setBranchCode) = Recoil.useRecoilState(userBranchCode)
+  let (bankIdentifier, setBankIdentifier) = Recoil.useRecoilState(userBankIdentifier)
   let countryList = CountryStateDataRefs.countryDataRef.contents
   let stateNames = getStateNames({
     value: country,
@@ -527,6 +531,58 @@ let make = (
               inputRef=sourceBankAccountIdRef
               placeholder="DE00 0000 0000 0000 0000 00"
             />
+          | BranchCode =>
+            <PaymentField
+              fieldName="Branch Code"
+              setValue={setBranchCode}
+              value=branchCode
+              onChange={ev => {
+                let value = ReactEvent.Form.target(ev)["value"]
+                setBranchCode(_ => {
+                  isValid: Some(value !== ""),
+                  value,
+                  errorString: value !== "" ? "" : localeString.branchCodeEmptyText,
+                })
+              }}
+              onBlur={ev => {
+                let value = ReactEvent.Focus.target(ev)["value"]
+                setBranchCode(prev => {
+                  ...prev,
+                  isValid: Some(value !== ""),
+                })
+              }}
+              type_="text"
+              name="branchCode"
+              maxLength=20
+              inputRef=branchCodeRef
+              placeholder=""
+            />
+          | BankIdentifier =>
+            <PaymentField
+              fieldName="Bank Identifier"
+              setValue={setBankIdentifier}
+              value=bankIdentifier
+              onChange={ev => {
+                let value = ReactEvent.Form.target(ev)["value"]
+                setBankIdentifier(_ => {
+                  isValid: Some(value !== ""),
+                  value,
+                  errorString: value !== "" ? "" : localeString.bankIdentifierEmptyText,
+                })
+              }}
+              onBlur={ev => {
+                let value = ReactEvent.Focus.target(ev)["value"]
+                setBankIdentifier(prev => {
+                  ...prev,
+                  isValid: Some(value !== ""),
+                })
+              }}
+              type_="text"
+              name="bankIdentifier"
+              maxLength=20
+              inputRef=bankIdentifierRef
+              placeholder=""
+            />
           | DocumentNumber
           | Email
           | InfoElement
@@ -837,6 +893,8 @@ let make = (
                 | BankAccountNumber
                 | IBAN
                 | SourceBankAccountId
+                | BranchCode
+                | BankIdentifier
                 | None => React.null
                 }}
               </DynamicFieldsToRenderWrapper>

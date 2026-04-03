@@ -150,6 +150,8 @@ type localeStrings = {
   pixKeyLabel: string,
   pixKeyPlaceholder: string,
   sourceBankAccountIdEmptyText: string,
+  branchCodeEmptyText: string,
+  bankIdentifierEmptyText: string,
   invalidCardHolderNameError: string,
   invalidNickNameError: string,
   expiry: string,

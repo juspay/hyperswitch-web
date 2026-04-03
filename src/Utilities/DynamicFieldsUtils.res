@@ -226,6 +226,8 @@ let useRequiredFieldsEmptyAndValid = (
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
+  let branchCode = Recoil.useRecoilValueFromAtom(userBranchCode)
+  let bankIdentifier = Recoil.useRecoilValueFromAtom(userBankIdentifier)
   let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
   let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardPin)
 
@@ -280,6 +282,8 @@ let useRequiredFieldsEmptyAndValid = (
       | GiftCardNumber => giftCardNumber.value !== ""
       | GiftCardPin => giftCardPin.value !== ""
       | SourceBankAccountId => sourceBankAccountId.value !== ""
+      | BranchCode => branchCode.value !== ""
+      | BankIdentifier => bankIdentifier.value !== ""
       | _ => true
       }
     })
@@ -336,6 +340,8 @@ let useRequiredFieldsEmptyAndValid = (
       | GiftCardNumber => giftCardNumber.value === ""
       | GiftCardPin => giftCardPin.value === ""
       | SourceBankAccountId => sourceBankAccountId.value === ""
+      | BranchCode => branchCode.value === ""
+      | BankIdentifier => bankIdentifier.value === ""
       | _ => false
       }
     })
@@ -371,6 +377,8 @@ let useRequiredFieldsEmptyAndValid = (
     cvcNumber,
     bankAccountNumber,
     sourceBankAccountId.value,
+    branchCode.value,
+    bankIdentifier.value,
     cryptoCurrencyNetworks,
     documentType,
     documentNumber.value,
@@ -417,6 +425,8 @@ let useSetInitialRequiredFields = (
   let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let (branchCode, setBranchCode) = Recoil.useRecoilState(userBranchCode)
+  let (bankIdentifier, setBankIdentifier) = Recoil.useRecoilState(userBankIdentifier)
   let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
   let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
 
@@ -551,6 +561,10 @@ let useSetInitialRequiredFields = (
         setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
       | SourceBankAccountId =>
         setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
+      | BranchCode =>
+        setFields(setBranchCode, branchCode, requiredField, false)
+      | BankIdentifier =>
+        setFields(setBankIdentifier, bankIdentifier, requiredField, false)
       | DocumentType(_) =>
         if value !== "" && documentType === "" {
           setDocumentType(_ => value)
@@ -616,6 +630,8 @@ let useRequiredFieldsBody = (
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
+  let branchCode = Recoil.useRecoilValueFromAtom(userBranchCode)
+  let bankIdentifier = Recoil.useRecoilValueFromAtom(userBankIdentifier)
   let countryCode = Utils.getCountryCode(country).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
   let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
@@ -681,6 +697,8 @@ let useRequiredFieldsBody = (
     | BankAccountNumber =>
       bankAccountNumber.value
     | SourceBankAccountId => sourceBankAccountId.value
+    | BranchCode => branchCode.value
+    | BankIdentifier => bankIdentifier.value
     | StateAndCity
     | PhoneNumberAndCountryCode
     | CountryAndPincode(_)
@@ -789,6 +807,8 @@ let useRequiredFieldsBody = (
     dateOfBirth,
     bankAccountNumber,
     sourceBankAccountId,
+    branchCode,
+    bankIdentifier,
   ))
 }
 
@@ -815,6 +835,8 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | IBAN
   | SourceBankAccountId
   | BankAccountNumber
+  | BranchCode
+  | BankIdentifier
   | InfoElement => true
   | _ => false
   }

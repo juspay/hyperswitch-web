@@ -162,6 +162,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyPlaceholder: `הכנס מפתח Pix`,
   pixKeyLabel: `מפתח Pix`,
   sourceBankAccountIdEmptyText: `מזהה חשבון בנק מקור לא יכול להיות ריק`,
+  branchCodeEmptyText: `קוד סניף לא יכול להיות ריק`,
+  bankIdentifierEmptyText: `מזהה בנק לא יכול להיות ריק`,
   invalidCardHolderNameError: `שם בעל הכרטיס לא יכול לכלול ספרות`,
   invalidNickNameError: `הכינוי לא יכול לכלול יותר משתי ספרות`,
   expiry: `תְפוּגָה`,

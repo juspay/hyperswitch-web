@@ -889,9 +889,9 @@ let rec intentCall = (
                   ]->getJsonFromArrayOfJson
                 resolve(response)
               } else if intent.nextAction.type_ === "wait_screen_information" {
-                let displayToTimestamp = intent.nextAction.display_to_timestamp->Option.getOr(0.0)
+                let displayToTimestamp = intent.nextAction.display_to_timestamp
                 let pollConfig =
-                  intent.nextAction.poll_config->Option.getOr({delay_in_secs: 2, frequency: 0})
+                  intent.nextAction.poll_config->Option.getOr(PaymentConfirmTypes.defaultPollConfig)
                 let headersDict = headers->Dict.fromArray
 
                 handleLogging(~optLogger, ~value="", ~eventName=DISPLAY_WAIT_SCREEN, ~paymentMethod)
@@ -914,7 +914,7 @@ let rec intentCall = (
                     ~customPodUri,
                     ~sdkAuthorization,
                     ~delayInMs=pollConfig.delay_in_secs * 1000,
-                    ~endTimestamp=Some(displayToTimestamp),
+                    ~endTimestamp=displayToTimestamp,
                   )
                   ->Promise.then(
                     retrievedData => {

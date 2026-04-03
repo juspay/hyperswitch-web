@@ -163,6 +163,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyPlaceholder: `Introdueix la clau Pix`,
   pixKeyLabel: `Clau Pix`,
   sourceBankAccountIdEmptyText: `L'identificador del compte bancari d'origen no pot estar buit`,
+  branchCodeEmptyText: `El codi de sucursal no pot estar buit`,
+  bankIdentifierEmptyText: `L'identificador bancari no pot estar buit`,
   invalidCardHolderNameError: `El nom del titular de la targeta no pot contenir dígits`,
   invalidNickNameError: `El sobrenom no pot contenir més de 2 dígits`,
   expiry: `caducitat`,
