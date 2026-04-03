@@ -364,6 +364,18 @@ let make = (
       })
     }
 
+    let updateIntent = (callback: unit => promise<string>) => {
+      UpdateIntentHelper.updateIntent(
+        ~iframes=iframeRef,
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~callback,
+      )
+    }
+
     let create = (componentType, newOptions) => {
       componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
       let otherElements = componentType->isOtherElements
@@ -1511,6 +1523,7 @@ let make = (
       update,
       fetchUpdates,
       create,
+      updateIntent,
     }
   } catch {
   | e => {

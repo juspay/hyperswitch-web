@@ -20,6 +20,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
   let setUpdateSession = Recoil.useSetRecoilState(updateSession)
+  let setIsUpdateIntentLoading = Recoil.useSetRecoilState(isUpdateIntentLoading)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
@@ -607,6 +608,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let blockedBins = dict->getJsonObjectFromDict("blockedBins")
           setBlockedBins(_ => Loaded(blockedBins))
         }
+        if dict->Dict.get("updateIntentLoading")->Option.isSome {
+          setIsUpdateIntentLoading(_ => dict->getBool("updateIntentLoading", false))
+        }
       } catch {
       | _ => setIntegrateErrorError(_ => true)
       }
@@ -635,5 +639,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     None
   }, (divH, iframeId))
 
-  <div ref={divRef->ReactDOM.Ref.domRef}> children </div>
+  <div ref={divRef->ReactDOM.Ref.domRef} className="relative">
+    <UpdateIntentOverlay />
+    children
+  </div>
 }

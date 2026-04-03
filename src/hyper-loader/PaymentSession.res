@@ -17,6 +17,18 @@ let make = (
     ->Option.getOr("")
   let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
 
+  let updateIntent = (callback: unit => promise<string>) => {
+    UpdateIntentHelper.updateIntent(
+      ~iframes=iframeRef.contents,
+      ~clientSecret,
+      ~publishableKey,
+      ~logger,
+      ~customPodUri,
+      ~endpoint,
+      ~callback,
+    )
+  }
+
   let defaultInitPaymentSession = {
     getCustomerSavedPaymentMethods: _ =>
       PaymentSessionMethods.getCustomerSavedPaymentMethods(
@@ -28,6 +40,7 @@ let make = (
         ~redirectionFlags,
         ~iframeRef,
       ),
+    updateIntent,
   }
 
   defaultInitPaymentSession

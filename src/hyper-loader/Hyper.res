@@ -702,13 +702,19 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let initPaymentSession = paymentSessionOptions => {
         open Promise
+        let paymentSessionOptionsDict = paymentSessionOptions->JSON.Decode.object
 
-        let clientSecretId =
-          paymentSessionOptions
-          ->JSON.Decode.object
-          ->Option.flatMap(x => x->Dict.get("clientSecret"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
+        let sdkAuthorizationId =
+          paymentSessionOptionsDict->getStringFromDict("sdkAuthorization", "")
+
+        let sdkAuthorizationData = sdkAuthorizationId->Utils.getSdkAuthorizationData
+
+        let clientSecretId = switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
+        | Some(cs) => cs
+        | None => paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
+        }
+
+        sdkAuthorization := sdkAuthorizationId
         clientSecret := clientSecretId
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
