@@ -264,4 +264,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 termini de ${currency} ${amount}`
       : `${numPayments->Int.toString} terminis de ${currency} ${amount}`,
   installmentSelectPlanError: "Si us plau, seleccioneu un pla de terminis",
+  loaderPaymentProcessingTitle: "Estem processant el vostre pagament...",
+  loaderPaymentProcessingSubtitle: `Heu estat redirigit a una nova pestanya per completar el pagament. L'estat s'actualitzarà automàticament`,
+  loaderPaymentConfirmBankingAppTitle: `Si us plau, confirmeu el pagament a la vostra aplicació bancària`,
+  loaderPaymentConfirmBankingAppSubtitle: `Obriu la vostra aplicació bancària i autoritzeu la sol·licitud de pagament. L'estat s'actualitzarà automàticament un cop confirmat.`,
+  branchCodeLabel: "Codi de sucursal",
+  bankIdentifierLabel: "Identificador bancari",
 }

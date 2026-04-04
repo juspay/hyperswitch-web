@@ -271,4 +271,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 платёж ${currency} ${amount}`
       : `${numPayments->Int.toString} платежа по ${currency} ${amount}`,
   installmentSelectPlanError: "Пожалуйста, выберите план рассрочки",
+  loaderPaymentProcessingTitle: "Мы обрабатываем ваш платёж...",
+  loaderPaymentProcessingSubtitle: "Вы были перенаправлены на новую вкладку для завершения платежа. Статус обновится автоматически",
+  loaderPaymentConfirmBankingAppTitle: "Пожалуйста, подтвердите платёж в вашем банковском приложении",
+  loaderPaymentConfirmBankingAppSubtitle: "Откройте ваше банковское приложение и подтвердите запрос на оплату. Статус обновится автоматически после подтверждения.",
+  branchCodeLabel: "Код отделения",
+  bankIdentifierLabel: "Идентификатор банка",
 }

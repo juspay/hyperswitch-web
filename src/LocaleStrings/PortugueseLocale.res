@@ -263,4 +263,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 parcela de ${currency} ${amount}`
       : `${numPayments->Int.toString} parcelas de ${currency} ${amount}`,
   installmentSelectPlanError: "Por favor, selecione um plano de parcelamento",
+  loaderPaymentProcessingTitle: "Estamos processando seu pagamento...",
+  loaderPaymentProcessingSubtitle: `Você foi redirecionado para uma nova aba para concluir seu pagamento. O status será atualizado automaticamente`,
+  loaderPaymentConfirmBankingAppTitle: "Por favor, confirme o pagamento no seu aplicativo bancário",
+  loaderPaymentConfirmBankingAppSubtitle: `Abra seu aplicativo bancário e autorize a solicitação de pagamento. O status será atualizado automaticamente após a confirmação.`,
+  branchCodeLabel: `Código da agência`,
+  bankIdentifierLabel: `Identificador bancário`,
 }

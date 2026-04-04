@@ -561,10 +561,8 @@ let useSetInitialRequiredFields = (
         setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
       | SourceBankAccountId =>
         setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
-      | BranchCode =>
-        setFields(setBranchCode, branchCode, requiredField, false)
-      | BankIdentifier =>
-        setFields(setBankIdentifier, bankIdentifier, requiredField, false)
+      | BranchCode => setFields(setBranchCode, branchCode, requiredField, false)
+      | BankIdentifier => setFields(setBankIdentifier, bankIdentifier, requiredField, false)
       | DocumentType(_) =>
         if value !== "" && documentType === "" {
           setDocumentType(_ => value)

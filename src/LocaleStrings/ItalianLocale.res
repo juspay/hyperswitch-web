@@ -264,4 +264,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 rata da ${currency} ${amount}`
       : `${numPayments->Int.toString} rate da ${currency} ${amount}`,
   installmentSelectPlanError: "Seleziona un piano a rate",
+  loaderPaymentProcessingTitle: "Stiamo elaborando il tuo pagamento...",
+  loaderPaymentProcessingSubtitle: "Sei stato reindirizzato a una nuova scheda per completare il pagamento. Lo stato verrà aggiornato automaticamente",
+  loaderPaymentConfirmBankingAppTitle: "Conferma il pagamento nella tua app bancaria",
+  loaderPaymentConfirmBankingAppSubtitle: `Apri la tua applicazione bancaria e autorizza la richiesta di pagamento. Lo stato verrà aggiornato automaticamente una volta confermato.`,
+  branchCodeLabel: "Codice filiale",
+  bankIdentifierLabel: "Identificativo bancario",
 }

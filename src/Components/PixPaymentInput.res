@@ -151,7 +151,15 @@ let make = (~fieldType="") => {
         })
       }
     }
-  }, [pixCNPJ.value, pixKey.value, pixCPF.value, sourceBankAccountId.value, bankAccountNumber.value, branchCode.value, bankIdentifier.value])
+  }, (
+    pixCNPJ.value,
+    pixKey.value,
+    pixCPF.value,
+    sourceBankAccountId.value,
+    bankAccountNumber.value,
+    branchCode.value,
+    bankIdentifier.value,
+  ))
 
   useSubmitPaymentData(submitCallback)
 

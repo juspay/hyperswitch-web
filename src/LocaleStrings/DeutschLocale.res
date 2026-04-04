@@ -263,4 +263,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 Zahlung à ${currency} ${amount}`
       : `${numPayments->Int.toString} Zahlungen à ${currency} ${amount}`,
   installmentSelectPlanError: "Bitte wählen Sie einen Ratenplan",
+  loaderPaymentProcessingTitle: "Ihre Zahlung wird verarbeitet...",
+  loaderPaymentProcessingSubtitle: "Sie wurden auf eine neue Registerkarte weitergeleitet, um Ihre Zahlung abzuschließen. Der Status wird automatisch aktualisiert",
+  loaderPaymentConfirmBankingAppTitle: "Bitte bestätigen Sie die Zahlung in Ihrer Banking-App",
+  loaderPaymentConfirmBankingAppSubtitle: `Öffnen Sie Ihre Banking-Anwendung und autorisieren Sie die Zahlungsanforderung. Der Status wird automatisch aktualisiert, sobald die Bestätigung erfolgt ist.`,
+  branchCodeLabel: "Bankleitzahl",
+  bankIdentifierLabel: "Bankkennung",
 }

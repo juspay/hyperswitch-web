@@ -262,4 +262,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 betaling van ${currency} ${amount}`
       : `${numPayments->Int.toString} betalingen van ${currency} ${amount}`,
   installmentSelectPlanError: "Selecteer een aflossingsplan",
+  loaderPaymentProcessingTitle: "We verwerken uw betaling...",
+  loaderPaymentProcessingSubtitle: "U bent doorgestuurd naar een nieuw tabblad om uw betaling te voltooien. De status wordt automatisch bijgewerkt",
+  loaderPaymentConfirmBankingAppTitle: "Bevestig de betaling in uw bankieren-app",
+  loaderPaymentConfirmBankingAppSubtitle: "Open uw bankieren-applicatie en autoriseer het betalingsverzoek. De status wordt automatisch bijgewerkt zodra dit is bevestigd.",
+  branchCodeLabel: "Filiaalcode",
+  bankIdentifierLabel: "Bankidentificatie",
 }

@@ -185,12 +185,9 @@ let getNextAction = (dict, str) => {
         ->Dict.get("three_ds_data")
         ->Option.getOr(Dict.make()->JSON.Encode.object),
       ),
-      display_to_timestamp: Some(
-        json
-        ->Dict.get("display_to_timestamp")
-        ->Option.flatMap(JSON.Decode.float)
-        ->Option.getOr(0.0),
-      ),
+      display_to_timestamp: json
+      ->Dict.get("display_to_timestamp")
+      ->Option.flatMap(JSON.Decode.float),
       voucher_details: {
         json
         ->Dict.get("voucher_details")

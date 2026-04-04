@@ -261,4 +261,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentPaymentLabel: (numPayments, currency, amount) =>
     `${currency} ${amount} × ${numPayments->Int.toString}回払い`,
   installmentSelectPlanError: "分割払いプランを選択してください",
+  loaderPaymentProcessingTitle: "お支払いを処理しています...",
+  loaderPaymentProcessingSubtitle: "お支払いを完了するために新しいタブにリダイレクトされました。ステータスは自動的に更新されます",
+  loaderPaymentConfirmBankingAppTitle: "銀行アプリでお支払いを確認してください",
+  loaderPaymentConfirmBankingAppSubtitle: "銀行アプリケーションを開き、支払いリクエストを承認してください。確認後、ステータスは自動的に更新されます。",
+  branchCodeLabel: "支店コード",
+  bankIdentifierLabel: "銀行識別コード",
 }

@@ -172,75 +172,30 @@ let rec pollRetrievePaymentIntent = (
   ~isForceSync=false,
   ~sdkAuthorization=None,
   ~delayInMs=2000,
-  ~endTimestamp=None,
+  ~endTimestampNanos=None,
 ) => {
   open Promise
 
-  switch endTimestamp {
+  let isExpired = switch endTimestampNanos {
   | Some(timestamp) =>
     let currentTime = Date.now() *. 1000000.0 // convert to nanoseconds
-    if currentTime >= timestamp {
-      retrievePaymentIntent(
-        clientSecret,
-        ~headers,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-        ~isForceSync,
-        ~sdkAuthorization,
-      )
-      ->then(json => resolve(json))
-      ->catch(_ => resolve(JSON.Encode.null))
-    } else {
-      retrievePaymentIntent(
-        clientSecret,
-        ~headers,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-        ~isForceSync,
-        ~sdkAuthorization,
-      )
-      ->then(json => {
-        let dict = json->getDictFromJson
-        let status = dict->getString("status", "")
+    currentTime >= timestamp
+  | None => false
+  }
 
-        if status === "succeeded" || status === "failed" {
-          resolve(json)
-        } else {
-          delay(delayInMs)
-          ->then(_val => {
-            pollRetrievePaymentIntent(
-              clientSecret,
-              ~headers,
-              ~publishableKey,
-              ~logger,
-              ~customPodUri,
-              ~isForceSync,
-              ~sdkAuthorization,
-              ~delayInMs,
-              ~endTimestamp=Some(timestamp),
-            )
-          })
-          ->catch(_ => Promise.resolve(JSON.Encode.null))
-        }
-      })
-      ->catch(e => {
-        Console.error2("Unable to retrieve payment due to following error", e)
-        pollRetrievePaymentIntent(
-          clientSecret,
-          ~headers,
-          ~publishableKey,
-          ~logger,
-          ~customPodUri,
-          ~isForceSync,
-          ~sdkAuthorization,
-          ~delayInMs,
-          ~endTimestamp=Some(timestamp),
-        )
-      })
-    }
-  | None =>
+  if isExpired {
+    retrievePaymentIntent(
+      clientSecret,
+      ~headers,
+      ~publishableKey,
+      ~logger,
+      ~customPodUri,
+      ~isForceSync,
+      ~sdkAuthorization,
+    )
+    ->then(json => resolve(json))
+    ->catch(_ => resolve(JSON.Encode.null))
+  } else {
     retrievePaymentIntent(
       clientSecret,
       ~headers,
@@ -268,6 +223,7 @@ let rec pollRetrievePaymentIntent = (
             ~isForceSync,
             ~sdkAuthorization,
             ~delayInMs,
+            ~endTimestampNanos,
           )
         })
         ->catch(_ => Promise.resolve(JSON.Encode.null))
@@ -284,6 +240,7 @@ let rec pollRetrievePaymentIntent = (
         ~isForceSync,
         ~sdkAuthorization,
         ~delayInMs,
+        ~endTimestampNanos,
       )
     })
   }
@@ -889,7 +846,12 @@ let rec intentCall = (
                   ]->getJsonFromArrayOfJson
                 resolve(response)
               } else if intent.nextAction.type_ === "wait_screen_information" {
-                let displayToTimestamp = intent.nextAction.display_to_timestamp
+                let displayToTimestamp = switch intent.nextAction.display_to_timestamp {
+                | Some(timestamp) => Some(timestamp)
+                | None =>
+                  let fifteenMinsNanos = Date.now() *. 1000000.0 +. 15.0 *. 60.0 *. 1000000000.0
+                  Some(fifteenMinsNanos)
+                }
                 let pollConfig =
                   intent.nextAction.poll_config->Option.getOr(PaymentConfirmTypes.defaultPollConfig)
                 let headersDict = headers->Dict.fromArray
@@ -914,7 +876,7 @@ let rec intentCall = (
                     ~customPodUri,
                     ~sdkAuthorization,
                     ~delayInMs=pollConfig.delay_in_secs * 1000,
-                    ~endTimestamp=displayToTimestamp,
+                    ~endTimestampNanos=displayToTimestamp,
                   )
                   ->Promise.then(
                     retrievedData => {
@@ -931,8 +893,9 @@ let rec intentCall = (
                     },
                   )
                   ->ignore
+                } else {
+                  resolve(data)
                 }
-                resolve(data)
               } else {
                 if !isPaymentSession {
                   postFailedSubmitResponse(

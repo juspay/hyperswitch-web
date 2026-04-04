@@ -264,4 +264,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 paiement à ${currency} ${amount}`
       : `${numPayments->Int.toString} paiements à ${currency} ${amount}`,
   installmentSelectPlanError: "Veuillez sélectionner un plan de paiement",
+  loaderPaymentProcessingTitle: "Nous traitons votre paiement...",
+  loaderPaymentProcessingSubtitle: `Vous avez été redirigé vers un nouvel onglet pour finaliser votre paiement. Le statut sera mis à jour automatiquement`,
+  loaderPaymentConfirmBankingAppTitle: "Veuillez confirmer le paiement dans votre application bancaire",
+  loaderPaymentConfirmBankingAppSubtitle: `Ouvrez votre application bancaire et autorisez la demande de paiement. Le statut sera mis à jour automatiquement une fois la confirmation effectuée.`,
+  branchCodeLabel: "Code agence",
+  bankIdentifierLabel: "Identifiant bancaire",
 }

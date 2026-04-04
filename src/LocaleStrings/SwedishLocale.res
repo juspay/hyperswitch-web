@@ -262,4 +262,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 betalning à ${currency} ${amount}`
       : `${numPayments->Int.toString} betalningar à ${currency} ${amount}`,
   installmentSelectPlanError: "Välj ett avbetalningsplan",
+  loaderPaymentProcessingTitle: "Vi behandlar din betalning...",
+  loaderPaymentProcessingSubtitle: `Du har omdirigerats till en ny flik för att slutföra din betalning. Statusen uppdateras automatiskt`,
+  loaderPaymentConfirmBankingAppTitle: `Bekräfta betalningen i din bankapp`,
+  loaderPaymentConfirmBankingAppSubtitle: `Öppna din bankapplikation och godkänn betalningsförfrågan. Statusen uppdateras automatiskt när den har bekräftats.`,
+  branchCodeLabel: "Kontorskod",
+  bankIdentifierLabel: "Bankidentifierare",
 }

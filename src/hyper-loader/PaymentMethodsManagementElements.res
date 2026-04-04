@@ -238,6 +238,7 @@ let make = (
         setElementIframeRef,
         iframeRef,
         mountPostMessage,
+        ~locale=locale->Utils.getStringFromJson("auto"),
         ~isPaymentManagementElement=true,
         ~redirectionFlags=RecoilAtoms.defaultRedirectionFlags,
         ~logger=Some(logger),

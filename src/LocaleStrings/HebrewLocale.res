@@ -263,4 +263,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `תשלום אחד של ${currency} ${amount}`
       : `${numPayments->Int.toString} תשלומים של ${currency} ${amount}`,
   installmentSelectPlanError: "אנא בחר תוכנית תשלומים",
+  loaderPaymentProcessingTitle: "אנחנו מעבדים את התשלום שלך...",
+  loaderPaymentProcessingSubtitle: "הופנית לכרטיסייה חדשה להשלמת התשלום. הסטטוס יתעדכן אוטומטית",
+  loaderPaymentConfirmBankingAppTitle: "אנא אשר את התשלום באפליקציית הבנק שלך",
+  loaderPaymentConfirmBankingAppSubtitle: "פתח את אפליקציית הבנק שלך ואשר את בקשת התשלום. הסטטוס יתעדכן אוטומטית לאחר האישור.",
+  branchCodeLabel: "קוד סניף",
+  bankIdentifierLabel: "מזהה בנק",
 }

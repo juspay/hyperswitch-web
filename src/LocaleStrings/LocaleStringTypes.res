@@ -247,6 +247,12 @@ type localeStrings = {
   installmentTotalPayable: string,
   installmentPaymentLabel: (int, string, string) => string,
   installmentSelectPlanError: string,
+  loaderPaymentProcessingTitle: string,
+  loaderPaymentProcessingSubtitle: string,
+  loaderPaymentConfirmBankingAppTitle: string,
+  loaderPaymentConfirmBankingAppSubtitle: string,
+  branchCodeLabel: string,
+  bankIdentifierLabel: string,
 }
 
 type constantStrings = {

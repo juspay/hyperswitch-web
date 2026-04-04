@@ -260,4 +260,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentPaymentLabel: (numPayments, currency, amount) =>
     `${numPayments->Int.toString}期付款，每期 ${currency} ${amount}`,
   installmentSelectPlanError: "請選擇分期計劃",
+  loaderPaymentProcessingTitle: "我們正在處理您的付款...",
+  loaderPaymentProcessingSubtitle: "您已被重新導向到新分頁以完成付款。狀態將自動更新",
+  loaderPaymentConfirmBankingAppTitle: "請在您的銀行應用程式中確認付款",
+  loaderPaymentConfirmBankingAppSubtitle: "開啟您的銀行應用程式並授權付款請求。確認後狀態將自動更新。",
+  branchCodeLabel: "分行代碼",
+  bankIdentifierLabel: "銀行識別碼",
 }

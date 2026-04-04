@@ -262,4 +262,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `1 payment of ${currency} ${amount}`
       : `${numPayments->Int.toString} payments of ${currency} ${amount}`,
   installmentSelectPlanError: "Please select an instalment plan",
+  loaderPaymentProcessingTitle: "We are processing your payment...",
+  loaderPaymentProcessingSubtitle: "You have been redirected to new tab to complete your payments. Status will be updated automatically",
+  loaderPaymentConfirmBankingAppTitle: "Please confirm the payment in your banking app",
+  loaderPaymentConfirmBankingAppSubtitle: "Open your banking application and authorise the payment request. The status will be updated automatically once confirmed.",
+  branchCodeLabel: "Branch Code",
+  bankIdentifierLabel: "Bank Identifier",
 }

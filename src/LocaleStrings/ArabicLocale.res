@@ -265,4 +265,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
       ? `دفعة واحدة بقيمة ${currency} ${amount}`
       : `${numPayments->Int.toString} دفعات بقيمة ${currency} ${amount}`,
   installmentSelectPlanError: "يرجى اختيار خطة تقسيط",
+  loaderPaymentProcessingTitle: "جارٍ معالجة دفعتك...",
+  loaderPaymentProcessingSubtitle: "تمت إعادة توجيهك إلى علامة تبويب جديدة لإتمام الدفع. سيتم تحديث الحالة تلقائيًا",
+  loaderPaymentConfirmBankingAppTitle: "يرجى تأكيد الدفع في تطبيق البنك الخاص بك",
+  loaderPaymentConfirmBankingAppSubtitle: "افتح تطبيق البنك الخاص بك وقم بتفويض طلب الدفع. سيتم تحديث الحالة تلقائيًا بعد التأكيد.",
+  branchCodeLabel: "رمز الفرع",
+  bankIdentifierLabel: "معرف البنك",
 }

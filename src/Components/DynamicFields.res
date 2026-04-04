@@ -533,7 +533,7 @@ let make = (
             />
           | BranchCode =>
             <PaymentField
-              fieldName="Branch Code"
+              fieldName=localeString.branchCodeLabel
               setValue={setBranchCode}
               value=branchCode
               onChange={ev => {
@@ -559,7 +559,7 @@ let make = (
             />
           | BankIdentifier =>
             <PaymentField
-              fieldName="Bank Identifier"
+              fieldName=localeString.bankIdentifierLabel
               setValue={setBankIdentifier}
               value=bankIdentifier
               onChange={ev => {

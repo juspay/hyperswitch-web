@@ -14,15 +14,18 @@ let parsePaymentMethod = methodString => {
   }
 }
 
-let getLoaderTextConfig = (paymentMethod: loaderPaymentMethod) => {
+let getLoaderTextConfig = (
+  paymentMethod: loaderPaymentMethod,
+  ~localeString: LocaleStringTypes.localeStrings,
+) => {
   switch paymentMethod {
   | PixAutomaticoPush => {
-      title: "Please confirm the payment in your banking app",
-      subtitle: "Open your banking application and authorize the payment request. The status will be updated automatically once confirmed.",
+      title: localeString.loaderPaymentConfirmBankingAppTitle,
+      subtitle: localeString.loaderPaymentConfirmBankingAppSubtitle,
     }
   | Other => {
-      title: "We are processing your payment...",
-      subtitle: "You have been redirected to new tab to complete your payments. Status will be updated automatically",
+      title: localeString.loaderPaymentProcessingTitle,
+      subtitle: localeString.loaderPaymentProcessingSubtitle,
     }
   }
 }
@@ -30,9 +33,10 @@ let getLoaderTextConfig = (paymentMethod: loaderPaymentMethod) => {
 @react.component
 let make = (~branding="auto", ~showText=true, ~paymentMethod="") => {
   let arr = ["hyperswitch-triangle", "hyperswitch-square", "hyperswitch-circle"]
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   let parsedPaymentMethod = parsePaymentMethod(paymentMethod)
-  let textConfig = getLoaderTextConfig(parsedPaymentMethod)
+  let textConfig = getLoaderTextConfig(parsedPaymentMethod, ~localeString)
 
   <div className="flex flex-col gap-10 justify-center items-center">
     <div className="flex flex-row gap-10">
