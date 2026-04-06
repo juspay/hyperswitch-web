@@ -319,4 +319,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCardText: `Lägg till nytt kort`,
   somethingWentWrongText: `Hoppsan, något gick fel!`,
   selectCardBrandText: `Välj ett kortmärke`,
+  saveCardText: `Spara kort`,
 }

@@ -319,7 +319,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   ctpRememberMeText: `Запомнить меня в этом браузере`,
   ctpRememberMeTooltipLine1: `При запоминании вы пропустите проверку и получите безопасный доступ к сохранённым картам при оплате через Click to Pay.`,
   ctpRememberMeTooltipLine2: `Не рекомендуется для общедоступных или общих устройств, так как используются файлы cookie.`,
-  ctpTermsConsentText: cardBrand => `Продолжая, вы соглашаетесь с `,
+  ctpTermsConsentText: _cardBrand => `Продолжая, вы соглашаетесь с `,
   termsText: `Условиями`,
   ctpPrivacyConsentText: `и понимаете, что ваши данные будут обработаны в соответствии с `,
   privacyNoticeText: `Уведомлением о конфиденциальности`,
@@ -329,4 +329,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCardText: `Добавить новую карту`,
   somethingWentWrongText: `Ой, что-то пошло не так!`,
   selectCardBrandText: `Выберите бренд карты`,
+  saveCardText: `Сохранить карту`,
 }

@@ -322,4 +322,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCardText: `新しいカードを追加`,
   somethingWentWrongText: `エラーが発生しました。もう一度お試しください。`,
   selectCardBrandText: `カードブランドを選択`,
+  saveCardText: `カードを保存`,
 }

@@ -320,4 +320,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCardText: `新增卡片`,
   somethingWentWrongText: `糟糕，出了點問題！`,
   selectCardBrandText: `選擇卡片品牌`,
+  saveCardText: `儲存卡片`,
 }

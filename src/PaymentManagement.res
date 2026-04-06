@@ -111,7 +111,7 @@ let make = (
         <PaymentElementRendererLazy paymentType cardProps cvcProps expiryProps />
         <RenderIf condition={sdkHandleSavePayment.handleSave}>
           <div className="mt-4">
-            <PayNowButton label="Save card" />
+            <PayNowButton label={localeString.saveCardText} />
           </div>
         </RenderIf>
       </div>

@@ -311,7 +311,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   ctpRememberMeText: `Lembrar-me neste navegador`,
   ctpRememberMeTooltipLine1: `Quando memorizado(a), não precisará de verificação e acederá de forma segura aos seus cartões guardados ao pagar com Click to Pay.`,
   ctpRememberMeTooltipLine2: `Não recomendado para dispositivos públicos ou partilhados pois utiliza cookies.`,
-  ctpTermsConsentText: cardBrand => `Ao continuar, concorda com os `,
+  ctpTermsConsentText: _cardBrand => `Ao continuar, concorda com os `,
   termsText: `Termos`,
   ctpPrivacyConsentText: `e compreende que os seus dados serão tratados de acordo com o `,
   privacyNoticeText: `Aviso de privacidade`,
@@ -321,4 +321,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCardText: `Adicionar novo cartão`,
   somethingWentWrongText: `Ups, algo correu mal!`,
   selectCardBrandText: `Selecione uma marca de cartão`,
+  saveCardText: `Guardar cartão`,
 }
