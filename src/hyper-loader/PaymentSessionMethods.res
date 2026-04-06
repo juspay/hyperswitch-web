@@ -114,10 +114,12 @@ let getCustomerSavedPaymentMethods = (
             let data = responseDataDict->Dict.get("data")->Option.getOr(JSON.Encode.null)
             let returnUrl = responseDataDict->getString("returnUrl", "")
 
-            if redirect == "always" {
+            if data !== JSON.Encode.null && redirect == "always" {
               Window.Location.replace(returnUrl)
-            } else {
+            } else if data !== JSON.Encode.null {
               resolve(data)
+            } else {
+              resolve(responseData)
             }
           } else if dict->Dict.get("cvcWidgetConfirmErrorResponse")->Option.isSome {
             let errorResponseData =
@@ -156,7 +158,12 @@ let getCustomerSavedPaymentMethods = (
       })
     }
 
-    let confirmWithCVCOrPaymentSession = (~body, ~payload, ~paymentType, ~requiresCvv) => {
+    let confirmWithCVCOrPaymentSession = (
+      ~body,
+      ~payload,
+      ~paymentType: PaymentHelpersTypes.payment,
+      ~requiresCvv,
+    ) => {
       let redirect = payload->getDictFromJson->getString("redirect", "if_required")
       let payloadDict = payload->getDictFromJson
 

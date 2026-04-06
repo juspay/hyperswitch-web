@@ -1760,14 +1760,12 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
 }
 
 let getWidgetIframe = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {
-  let selector = `orca-payment-element-iframeRef-orca-elements-payment-element-${id}`
   iframeRef.contents->Array.find(iframe => {
     switch iframe->Nullable.toOption {
     | Some(elem) =>
-      elem
-      ->Window.getAttribute("id")
-      ->Nullable.toOption
-      ->Option.getOr("") == selector
+      let iframeId = elem->Window.getAttribute("id")->Nullable.toOption->Option.getOr("")
+      let isConnected = elem->Window.Element.isConnected
+      isConnected && iframeId->String.includes(id)
     | None => false
     }
   })
