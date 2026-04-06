@@ -20,7 +20,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
     cvcError,
     setCvcError,
   } = cvcProps
-  let isCvcEmpty = cvcNumber->String.length == 0
+  let isCvcEmpty = cvcNumber === ""
   let compressedLayoutStyleForCvcError =
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
 
