@@ -257,7 +257,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "Selecteer een aflossingsplan",
   showMore: "Meer tonen",
   showLess: "Minder tonen",
-  // --- TD-005: Localized hardcoded strings ---
   copiedText: `Gekopieerd!`,
   copyText: `Kopiëren`,
   copyQRDataText: `QR-gegevens kopiëren`,
@@ -266,8 +265,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   moreText: `Meer`,
   addBankDetailsConfirmText: `Voeg bankgegevens toe en bevestig vervolgens de betaling met de toegevoegde betaalmethoden.`,
   addBankDetailsButtonText: `Bankgegevens toevoegen`,
-  bankDebitStepsText: pmt =>
-    `${pmt} Incasso heeft 2 stappen om te betalen. Volg de instructies:`,
+  bankDebitStepsText: pmt => `${pmt} Incasso heeft 2 stappen om te betalen. Volg de instructies:`,
   bankDebitStep1Text: `Klik op „Bankgegevens toevoegen" en ga verder om uw bankrekeninggegevens toe te voegen.`,
   bankDebitStep2Text: `Na verificatie ziet u uw toegevoegde rekening(en). U kunt de rekening selecteren waarmee u wilt betalen en op de betaalknop klikken.`,
   removeAccountText: `Rekening verwijderen`,

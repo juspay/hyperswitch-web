@@ -260,7 +260,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "اختر خطة التقسيط",
   showMore: "عرض المزيد",
   showLess: "عرض أقل",
-  // --- TD-005: Localized hardcoded strings ---
   copiedText: `تم النسخ!`,
   copyText: `نسخ`,
   copyQRDataText: `نسخ بيانات رمز QR`,
@@ -314,7 +313,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   ctpRememberMeText: `تذكرني على هذا المتصفح`,
   ctpRememberMeTooltipLine1: `عند التذكر، ستتخطى عملية التحقق وتصل بأمان إلى بطاقاتك المحفوظة عند الدفع باستخدام Click to Pay.`,
   ctpRememberMeTooltipLine2: `لا يُنصح به للأجهزة العامة أو المشتركة لأنه يستخدم ملفات تعريف الارتباط.`,
-  ctpTermsConsentText: cardBrand => `بالمتابعة، فإنك توافق على شروط ${cardBrand} `,
+  ctpTermsConsentText: cardBrand =>
+    `بالمتابعة، فإنك توافق على شروط ${cardBrand} `,
   termsText: `الشروط`,
   ctpPrivacyConsentText: `وتفهم أنه سيتم معالجة بياناتك وفقًا لـ `,
   privacyNoticeText: `إشعار الخصوصية`,

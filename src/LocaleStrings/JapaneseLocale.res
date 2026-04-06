@@ -258,7 +258,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "分割払いプランを選択",
   showMore: "もっと見る",
   showLess: "表示を減らす",
-  // --- TD-005: Localized hardcoded strings ---
   copiedText: `コピーしました！`,
   copyText: `コピー`,
   copyQRDataText: `QRデータをコピー`,
@@ -312,7 +311,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   ctpRememberMeText: `このブラウザで記憶する`,
   ctpRememberMeTooltipLine1: `記憶されると、Click to Pay での支払い時に認証をスキップして、保存されたカードに安全にアクセスできます。`,
   ctpRememberMeTooltipLine2: `Cookieを使用するため、公共のデバイスや共有デバイスではお勧めしません。`,
-  ctpTermsConsentText: cardBrand => `続行すると、${cardBrand} の利用規約に同意したことになります `,
+  ctpTermsConsentText: cardBrand =>
+    `続行すると、${cardBrand} の利用規約に同意したことになります `,
   termsText: `利用規約`,
   ctpPrivacyConsentText: `また、お客様のデータが以下に従って処理されることを理解します `,
   privacyNoticeText: `プライバシーポリシー`,

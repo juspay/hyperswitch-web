@@ -257,7 +257,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "選擇分期計劃",
   showMore: "顯示更多",
   showLess: "收起",
-  // --- TD-005: Localized hardcoded strings ---
   copiedText: `已複製！`,
   copyText: `複製`,
   copyQRDataText: `複製 QR 碼資料`,

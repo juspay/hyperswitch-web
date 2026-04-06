@@ -257,7 +257,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "Välj ett avbetalningsplan",
   showMore: "Visa mer",
   showLess: "Visa mindre",
-  // --- TD-005: Localized hardcoded strings ---
   copiedText: `Kopierat!`,
   copyText: `Kopiera`,
   copyQRDataText: `Kopiera QR-data`,
@@ -266,8 +265,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   moreText: `Mer`,
   addBankDetailsConfirmText: `Lägg till bankuppgifter och bekräfta sedan betalningen med de tillagda betalningsmetoderna.`,
   addBankDetailsButtonText: `Lägg till bankuppgifter`,
-  bankDebitStepsText: pmt =>
-    `${pmt} Autogiro har 2 steg för betalning. Följ instruktionerna:`,
+  bankDebitStepsText: pmt => `${pmt} Autogiro har 2 steg för betalning. Följ instruktionerna:`,
   bankDebitStep1Text: `Klicka på „Lägg till bankuppgifter" och fortsätt för att lägga till dina bankkontouppgifter.`,
   bankDebitStep2Text: `Efter verifiering ser du ditt/dina tillagda konto(n). Du kan välja det konto du vill betala med och klicka på betala-knappen.`,
   removeAccountText: `Ta bort konto`,

@@ -245,7 +245,6 @@ type localeStrings = {
   installmentSelectPlanPlaceholder: string,
   showMore: string,
   showLess: string,
-  // --- TD-005: Localized hardcoded strings ---
   copiedText: string,
   copyText: string,
   copyQRDataText: string,

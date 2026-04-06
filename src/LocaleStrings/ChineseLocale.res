@@ -257,7 +257,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "选择分期计划",
   showMore: "显示更多",
   showLess: "收起",
-  // --- TD-005: Localized hardcoded strings ---
   copiedText: `已复制！`,
   copyText: `复制`,
   copyQRDataText: `复制二维码数据`,

@@ -258,7 +258,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "Seleccione un plan de cuotas",
   showMore: "Mostrar más",
   showLess: "Mostrar menos",
-  // --- TD-005: Localized hardcoded strings ---
   copiedText: `¡Copiado!`,
   copyText: `Copiar`,
   copyQRDataText: `Copiar datos QR`,
