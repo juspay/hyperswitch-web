@@ -77,7 +77,9 @@ let make = (
     <style> {React.string(css)} </style>
     {!isUnrecognizedUser
       ? <div className="text-xs font-normal">
-          {React.string(localeString.ctpConsentSharingText(clickToPayConfig.dpaName, formattedCardBrand))}
+          {React.string(
+            localeString.ctpConsentSharingText(clickToPayConfig.dpaName, formattedCardBrand),
+          )}
           {React.string(" ")}
           <span
             className="underline decoration-1 underline-offset-2 cursor-pointer"
@@ -141,19 +143,15 @@ let make = (
                       className="invisible group-hover:visible absolute z-10 w-64 bg-white text-xs rounded-md p-2 left-1/2 transform -translate-x-1/2 bottom-[150%] shadow-md border border-gray-200 before:content-[''] before:absolute before:top-[100%] before:left-1/2 before:ml-[-5px] before:border-[5px] before:border-solid before:border-gray-200 before:border-b-transparent before:border-l-transparent before:border-r-transparent after:content-[''] after:absolute after:top-[100%] after:left-1/2 after:ml-[-4px] after:border-[4px] after:border-solid after:border-white after:border-b-transparent after:border-l-transparent after:border-r-transparent">
                       //   {/* Content */}
                       <div className="flex flex-col space-y-2">
-                        <span>
-                          {React.string(localeString.ctpRememberMeTooltipLine1)}
-                        </span>
-                        <span>
-                          {React.string(localeString.ctpRememberMeTooltipLine2)}
-                        </span>
+                        <span> {React.string(localeString.ctpRememberMeTooltipLine1)} </span>
+                        <span> {React.string(localeString.ctpRememberMeTooltipLine2)} </span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
               <div>
-                          {React.string(localeString.ctpTermsConsentText(formattedCardBrand))}
+                {React.string(localeString.ctpTermsConsentText(formattedCardBrand))}
                 <span
                   className="underline decoration-1 underline-offset-2 cursor-pointer"
                   onClick={ev => handleOpenUrl(ev, getTermsUrl())}>

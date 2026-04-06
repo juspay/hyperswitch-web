@@ -188,7 +188,9 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
               value={identifierType->getIdentityType}
               onChange={handleTypeChange}
               className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none">
-              <option value={EMAIL_ADDRESS->getIdentityType}> {React.string(localeString.emailLabel)} </option>
+              <option value={EMAIL_ADDRESS->getIdentityType}>
+                {React.string(localeString.emailLabel)}
+              </option>
               <option value={MOBILE_PHONE_NUMBER->getIdentityType}>
                 {React.string(localeString.phoneLabel)}
               </option>

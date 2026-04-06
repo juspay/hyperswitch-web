@@ -70,7 +70,9 @@ let make = (~modalData, ~setModalData) => {
           <div>
             <Icon size=22 name="bank" />
           </div>
-          <div className="tracking-wider"> {React.string(localeString.bankAccountDisplayText(last4digts))} </div>
+          <div className="tracking-wider">
+            {React.string(localeString.bankAccountDisplayText(last4digts))}
+          </div>
         </div>
         <ToolTip
           openTip=openToolTip forwardRef=toolTipRef onclick={_ => {setModalData(_ => None)}}

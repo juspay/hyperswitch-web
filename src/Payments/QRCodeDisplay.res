@@ -264,7 +264,9 @@ let make = () => {
             className="button mb-6 p-2 h-[40px] border border-[#006DF9] rounded-md"
             style={color: "#006DF9", background: "transparent"}
             onClick={handleCopyQrData}>
-            {isCopied ? React.string(localeString.copiedText) : React.string(localeString.copyQRDataText)}
+            {isCopied
+              ? React.string(localeString.copiedText)
+              : React.string(localeString.copyQRDataText)}
           </button>
         </RenderIf>
         <div className={`Disclaimer w-full  font-medium text-xs text-[#151A1F] opacity-50`}>

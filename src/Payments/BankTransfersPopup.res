@@ -81,7 +81,9 @@ let make = (~transferType) => {
           <Icon name="ach-transfer" size=45 />
         </div>
         <div className="Popuptitle flex w-[90%] justify-center">
-          <span className="font-bold text-lg"> {React.string(localeString.bankTransferTitleText(title))} </span>
+          <span className="font-bold text-lg">
+            {React.string(localeString.bankTransferTitleText(title))}
+          </span>
         </div>
         <div className="PopupSubtitle w-[90%] text-center">
           <span className="font-medium text-sm text-[#151A1F] opacity-50">
@@ -98,7 +100,9 @@ let make = (~transferType) => {
           <div
             className="flex font-medium p-5 justify-between text-sm"
             style={borderBottom: "1px dashed rgba(21, 26, 31, 0.06)"}>
-            <span className="text-[#151a1fe6]"> {React.string(localeString.bankAccountDetailsText)} </span>
+            <span className="text-[#151a1fe6]">
+              {React.string(localeString.bankAccountDetailsText)}
+            </span>
             <button
               className={`flex flex-row ${text} cursor-pointer`} onClick={_ => handleClick(keys)}>
               {buttonElement}

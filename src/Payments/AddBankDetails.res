@@ -1,7 +1,7 @@
 module Loader = {
   @react.component
   let make = () => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     <div className="w-full flex items-center justify-center">
       <div className="w-8 h-8 animate-spin" style={color: themeObj.colorTextSecondary}>
         <Icon size=28 name="loader" />
@@ -111,12 +111,8 @@ let make = (~paymentMethodType) => {
     <div className="opacity-50 text-xs mb-2 text-left mt-8" style={color: themeObj.colorText}>
       {React.string(localeString.bankDebitStepsText(paymentMethodType->String.toUpperCase))}
       <ul className="list-disc px-5 py-2">
-        <li>
-          {React.string(localeString.bankDebitStep1Text)}
-        </li>
-        <li>
-          {React.string(localeString.bankDebitStep2Text)}
-        </li>
+        <li> {React.string(localeString.bankDebitStep1Text)} </li>
+        <li> {React.string(localeString.bankDebitStep2Text)} </li>
       </ul>
     </div>
   </>

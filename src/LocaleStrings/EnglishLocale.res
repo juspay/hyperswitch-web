@@ -266,13 +266,15 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   moreText: "More",
   addBankDetailsConfirmText: "Please add Bank Details and then confirm payment with the added payment methods.",
   addBankDetailsButtonText: "Add Bank Details",
-  bankDebitStepsText: pmt => `${pmt} Bank Debit has 2 steps to pay. Please follow the instructions:`,
+  bankDebitStepsText: pmt =>
+    `${pmt} Bank Debit has 2 steps to pay. Please follow the instructions:`,
   bankDebitStep1Text: "Please Click on Add Bank Details and proceed to add your bank account details.",
   bankDebitStep2Text: "Post verification, you will see your account(s) added. You can select the account that you want to pay with and click on the pay button.",
   removeAccountText: "Remove account",
   bankAccountDisplayText: last4 => `Bank  **** ${last4}`,
   microDepositsInitiatedText: "Micro-deposits initiated",
-  microDepositsExpectText: last4 => `Expect a $0.01 deposit to the account ending in **** ${last4} in 1-2 business days and an email with additional instructions to verify your account.`,
+  microDepositsExpectText: last4 =>
+    `Expect a $0.01 deposit to the account ending in **** ${last4} in 1-2 business days and an email with additional instructions to verify your account.`,
   bankStatementDisplayText: last4 => `**** ${last4}  BANK STATEMENT`,
   transactionText: "Transaction",
   amountText: "Amount",
@@ -286,7 +288,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   useDetailsToTransferText: "Use these details to transfer amount",
   bankAccountDetailsText: "Bank Account Details",
   bankTransferDisclaimerText: "Please make a note of these details, before closing this popup. You will not be able to generate this details again.",
-  voucherGeneratedText: pm => `${pm} voucher was successfully generated! If the document hasn't started downloading automatically, click `,
+  voucherGeneratedText: pm =>
+    `${pm} voucher was successfully generated! If the document hasn't started downloading automatically, click `,
   hereText: "here",
   toDownloadItText: " to download it.",
   barCodeReferenceText: "Bar Code Reference: ",
@@ -298,7 +301,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   enterEmailPlaceholder: "Enter email",
   mobileNumberPlaceholder: "Mobile number",
   switchIdButtonText: "Switch ID",
-  ctpConsentSharingText: (dpaName, cardBrand) => `By continuing, ${dpaName} will share your card details, billing address, and email with ${cardBrand} to allow you to securely enroll in Click to Pay for faster checkouts.`,
+  ctpConsentSharingText: (dpaName, cardBrand) =>
+    `By continuing, ${dpaName} will share your card details, billing address, and email with ${cardBrand} to allow you to securely enroll in Click to Pay for faster checkouts.`,
   learnMoreText: "Learn more",
   ctpSaveInfoText: cardBrand => `Save my information with ${cardBrand} `,
   ctpFasterCheckoutText: "for a faster and secure checkout",
