@@ -141,7 +141,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
   })
 
   React.useEffect(() => {
-    let cvcInfoDict = [("isCVCEmpty", isCvcEmpty->JSON.Encode.bool)]->Dict.fromArray
+    let cvcInfoDict = [("isCvcEmpty", isCvcEmpty->JSON.Encode.bool)]->Dict.fromArray
     Utils.messageParentWindow([("cvcInfo", cvcInfoDict->JSON.Encode.object)])
     None
   }, [isCvcEmpty])
