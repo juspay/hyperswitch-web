@@ -1,12 +1,23 @@
+import React from "react";
+
+interface PaymentStatusMessages {
+  [key: string]: string;
+}
+
 export const getPaymentIntentData = async ({
   baseUrl,
   isCypressTestMode,
   clientSecretQueryParam,
   setError,
-}) => {
+}: {
+  baseUrl: string;
+  isCypressTestMode: boolean;
+  clientSecretQueryParam: string | null;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+}): Promise<{ clientSecret: string; paymentId?: string } | null> => {
   try {
     if (isCypressTestMode) {
-      return { clientSecret: clientSecretQueryParam };
+      return { clientSecret: clientSecretQueryParam ?? "" };
     }
 
     const res = await fetch(`${baseUrl}/create-intent`);
@@ -20,10 +31,12 @@ export const getPaymentIntentData = async ({
   }
 };
 
-export const getQueryParam = (param) =>
+export const getQueryParam = (param: string): string | null =>
   new URLSearchParams(window.location.search).get(param);
 
-export const fetchConfigAndUrls = async (baseUrl) => {
+export const fetchConfigAndUrls = async (
+  baseUrl: string
+): Promise<{ configData: any; urlsData: any }> => {
   const [configRes, urlsRes] = await Promise.all([
     fetch(`${baseUrl}/config`),
     fetch(`${baseUrl}/urls`),
@@ -46,7 +59,14 @@ export const loadHyperScript = ({
   profileId,
   isScriptLoaded,
   setIsScriptLoaded,
-}) => {
+}: {
+  clientUrl: string;
+  publishableKey: string;
+  customBackendUrl?: string;
+  profileId?: string;
+  isScriptLoaded: boolean;
+  setIsScriptLoaded: React.Dispatch<React.SetStateAction<boolean>>;
+}): Promise<any> => {
   return new Promise((resolve, reject) => {
     if (isScriptLoaded) return resolve(window.Hyper);
 
@@ -74,13 +94,17 @@ export const loadHyperScript = ({
   });
 };
 
-export const getClientSecretFromUrl = () =>
+export const getClientSecretFromUrl = (): string | null =>
   new URLSearchParams(window.location.search).get(
     "payment_intent_client_secret"
   );
 
-export const handlePaymentStatus = (status, setMessage, setIsSuccess) => {
-  const statusMessages = {
+export const handlePaymentStatus = (
+  status: string,
+  setMessage: React.Dispatch<React.SetStateAction<string | null>>,
+  setIsSuccess: React.Dispatch<React.SetStateAction<boolean>>
+): void => {
+  const statusMessages: PaymentStatusMessages = {
     succeeded: "Payment successful.",
     processing: "Your payment is processing.",
     requires_payment_method:
@@ -110,7 +134,7 @@ export const paymentElementOptions = {
   },
 };
 
-export const hyperOptionsV1 = (clientSecret) => {
+export const hyperOptionsV1 = (clientSecret: string) => {
   return {
     clientSecret,
     appearance: {
@@ -119,7 +143,7 @@ export const hyperOptionsV1 = (clientSecret) => {
   };
 };
 
-export const hyperOptionsV2 = (clientSecret, paymentId) => {
+export const hyperOptionsV2 = (clientSecret: string, paymentId: string) => {
   return {
     clientSecret,
     paymentId,
