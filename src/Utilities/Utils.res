@@ -1760,15 +1760,19 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
 }
 
 let getWidgetIframe = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {
-  iframeRef.contents->Array.find(iframe => {
-    switch iframe->Nullable.toOption {
-    | Some(elem) =>
-      let iframeId = elem->Window.getAttribute("id")->Nullable.toOption->Option.getOr("")
-      let isConnected = elem->Window.Element.isConnected
-      isConnected && iframeId->String.includes(id)
-    | None => false
-    }
-  })
+  if id === "" {
+    None
+  } else {
+    iframeRef.contents->Array.find(iframe => {
+      switch iframe->Nullable.toOption {
+      | Some(elem) =>
+        let iframeId = elem->Window.getAttribute("id")->Nullable.toOption->Option.getOr("")
+        let isConnected = elem->Window.Element.isConnected
+        isConnected && iframeId->String.endsWith(id)
+      | None => false
+      }
+    })
+  }
 }
 
 let isWidgetPresent = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {
