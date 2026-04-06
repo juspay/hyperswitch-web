@@ -599,10 +599,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             cardShimmerCount
             cardProps
             expiryProps
-            cvcProps
           />
-        | Accordion =>
-          <AccordionContainer paymentOptions checkoutEle cardProps expiryProps cvcProps />
+        | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps expiryProps />
         }}
       </div>
     </RenderIf>
