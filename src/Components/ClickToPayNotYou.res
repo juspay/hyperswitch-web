@@ -178,9 +178,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
       </div>
     </div>
     <div className="flex flex-col justify-center items-center space-y-4 px-4">
-      <p className="text-sm font-normal">
-        {React.string(localeString.ctpSwitchIdentifierText)}
-      </p>
+      <p className="text-sm font-normal"> {React.string(localeString.ctpSwitchIdentifierText)} </p>
       <form
         onSubmit={handleSubmit}
         className="w-full flex flex-col justify-center items-center space-y-4">
@@ -190,7 +188,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
               value={identifierType->getIdentityType}
               onChange={handleTypeChange}
               className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none">
-              <option value={EMAIL_ADDRESS->getIdentityType}> {React.string("Email")} </option>
+              <option value={EMAIL_ADDRESS->getIdentityType}> {React.string(localeString.emailLabel)} </option>
               <option value={MOBILE_PHONE_NUMBER->getIdentityType}>
                 {React.string(localeString.phoneLabel)}
               </option>
@@ -239,7 +237,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                   type_="tel"
                   value={identifier}
                   onChange={handlePhoneInputChange}
-                   placeholder=localeString.mobileNumberPlaceholder
+                  placeholder=localeString.mobileNumberPlaceholder
                   className="flex-grow p-3 focus:outline-none w-full"
                   required=true
                 />

@@ -273,7 +273,7 @@ let make = (~setModalData) => {
                 color: themeObj.colorText,
                 marginBottom: "5px",
               }>
-              {React.string("Routing number")}
+              {React.string(localeString.formFieldACHRoutingNumberLabel)}
             </div>
             <Input
               value=routingNumber
@@ -301,7 +301,7 @@ let make = (~setModalData) => {
                 color: themeObj.colorText,
                 marginBottom: "5px",
               }>
-              {React.string("Account number")}
+              {React.string(localeString.accountNumberText)}
             </div>
             <Input
               value=accountNum

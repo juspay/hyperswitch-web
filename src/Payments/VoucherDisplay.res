@@ -51,7 +51,7 @@ let make = () => {
       <div className="flex flex-col max-w-md justify-between items-center">
         <div className="flex flex-row w-full">
           <p className="Disclaimer font-medium text-sm text-[#151A1F] opacity-70">
-            {React.string(localeString.voucherGeneratedText(paymentMethod->Utils.snakeToTitleCase))}
+            {React.string(localeString.voucherGeneratedText(paymentMethod->snakeToTitleCase))}
             <a
               className="text font-medium text-sm text-[#006DF9] underline"
               href=downloadUrl
