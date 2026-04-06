@@ -323,4 +323,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   somethingWentWrongText: `エラーが発生しました。もう一度お試しください。`,
   selectCardBrandText: `カードブランドを選択`,
   saveCardText: `カードを保存`,
+  errorBackShortlyText: `まもなく復旧いたします :)`,
+  tryAnotherPaymentMethodText: `別のお支払い方法をお試しください :)`,
 }

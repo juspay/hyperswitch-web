@@ -321,4 +321,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   somethingWentWrongText: `抱歉，出了点问题！`,
   selectCardBrandText: `选择卡品牌`,
   saveCardText: `保存卡片`,
+  errorBackShortlyText: `我们很快就会回来 :)`,
+  tryAnotherPaymentMethodText: `请尝试其他支付方式 :)`,
 }

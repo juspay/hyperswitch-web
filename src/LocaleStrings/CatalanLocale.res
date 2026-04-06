@@ -312,7 +312,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   ctpRememberMeText: `Recorda'm en aquest navegador`,
   ctpRememberMeTooltipLine1: `Quan se us recordi, ometreu la verificació i accedireu de manera segura a les vostres targetes desades en pagar amb Click to Pay.`,
   ctpRememberMeTooltipLine2: `No recomanat per a dispositius públics o compartits perquè utilitza galetes.`,
-  ctpTermsConsentText: _cardBrand => `En continuar, accepteu els `,
+  ctpTermsConsentText: cardBrand => `En continuar, accepteu els termes de ${cardBrand} `,
   termsText: `Termes`,
   ctpPrivacyConsentText: `i enteneu que les vostres dades seran processades d'acord amb l'`,
   privacyNoticeText: `Avís de privadesa`,
@@ -323,4 +323,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   somethingWentWrongText: `Ups, alguna cosa ha anat malament!`,
   selectCardBrandText: `Seleccioneu una marca de targeta`,
   saveCardText: `Desar targeta`,
+  errorBackShortlyText: `Tornarem aviat :)`,
+  tryAnotherPaymentMethodText: `Proveu un altre mètode de pagament :)`,
 }

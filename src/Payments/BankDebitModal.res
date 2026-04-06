@@ -5,14 +5,13 @@ type focus = Routing | Account | NONE
 
 module Button = {
   @react.component
-  let make = (~active=true, ~onclick) => {
-    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let make = (~active=true, ~onclick, ~label) => {
     <div
       onClick={ev => active ? onclick(ev) : ()}
       className={`p-2 mt-10 rounded-md w-full flex justify-center items-center text-white text-sm bg-[#006DF9] ${active
           ? "cursor-pointer"
           : "opacity-50 cursor-not-allowed"}`}>
-      {React.string(localeString.doneText)}
+      {React.string(label)}
     </div>
   }
 }
@@ -57,7 +56,7 @@ module MicroDepositScreen = {
           <CardItem keyItem=localeString.typeText value="ACH Direct Debit" />
         </div>
       </div>
-      <Button onclick={ev => onclick(ev)} />
+      <Button onclick={ev => onclick(ev)} label=localeString.doneText />
       <PoweredBy className="mt-5" />
     </div>
   }
@@ -367,6 +366,7 @@ let make = (~setModalData) => {
       </RenderIf>
       <Button
         active=submitActive
+        label=localeString.doneText
         onclick={_ => {
           setModalData(_ => Some({
             routingNumber,

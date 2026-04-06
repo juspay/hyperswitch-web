@@ -97,8 +97,8 @@ module ErrorTextAndImage = {
   let make = (~divRef, ~level) => {
     let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let message = switch level {
-    | Top => "We'll be back with you shortly :)"
-    | _ => "Try another payment method :)"
+    | Top => localeString.errorBackShortlyText
+    | _ => localeString.tryAnotherPaymentMethodText
     }
 
     <div

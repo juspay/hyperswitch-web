@@ -305,6 +305,8 @@ type localeStrings = {
   somethingWentWrongText: string,
   selectCardBrandText: string,
   saveCardText: string,
+  errorBackShortlyText: string,
+  tryAnotherPaymentMethodText: string,
 }
 
 type constantStrings = {

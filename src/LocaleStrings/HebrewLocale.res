@@ -322,4 +322,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   somethingWentWrongText: `אופס, משהו השתבש!`,
   selectCardBrandText: `בחר מותג כרטיס`,
   saveCardText: `שמור כרטיס`,
+  errorBackShortlyText: `נחזור אליך בקרוב :)`,
+  tryAnotherPaymentMethodText: `נסה אמצעי תשלום אחר :)`,
 }

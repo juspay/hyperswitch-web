@@ -320,4 +320,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   somethingWentWrongText: `Hoppsan, något gick fel!`,
   selectCardBrandText: `Välj ett kortmärke`,
   saveCardText: `Spara kort`,
+  errorBackShortlyText: `Vi är snart tillbaka :)`,
+  tryAnotherPaymentMethodText: `Prova en annan betalningsmetod :)`,
 }

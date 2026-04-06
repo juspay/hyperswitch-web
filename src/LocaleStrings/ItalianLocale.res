@@ -323,4 +323,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   somethingWentWrongText: `Ops, qualcosa è andato storto!`,
   selectCardBrandText: `Seleziona un marchio di carta`,
   saveCardText: `Salva carta`,
+  errorBackShortlyText: `Torneremo a breve :)`,
+  tryAnotherPaymentMethodText: `Prova un altro metodo di pagamento :)`,
 }
