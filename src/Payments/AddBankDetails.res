@@ -1,7 +1,7 @@
 module Loader = {
   @react.component
   let make = () => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     <div className="w-full flex items-center justify-center">
       <div className="w-8 h-8 animate-spin" style={color: themeObj.colorTextSecondary}>
         <Icon size=28 name="loader" />
@@ -17,7 +17,7 @@ let make = (~paymentMethodType) => {
   let {publishableKey, clientSecret, iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.keys,
   )
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let setOptionValue = Recoil.useSetRecoilState(RecoilAtoms.optionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
@@ -72,7 +72,7 @@ let make = (~paymentMethodType) => {
     if confirm.doSubmit {
       postFailedSubmitResponse(
         ~errortype="validation_error",
-        ~message="Please add Bank Details and then confirm payment with the added payment methods.",
+        ~message=localeString.addBankDetailsConfirmText,
       )
     }
   }, [])
@@ -105,23 +105,17 @@ let make = (~paymentMethodType) => {
       {if showLoader {
         <Loader />
       } else {
-        {React.string("Add Bank Details")}
+        {React.string(localeString.addBankDetailsButtonText)}
       }}
     </button>
     <div className="opacity-50 text-xs mb-2 text-left mt-8" style={color: themeObj.colorText}>
-      {React.string(
-        `${paymentMethodType->String.toUpperCase} Bank Debit has 2 steps to pay. Please follow the instructions:`,
-      )}
+      {React.string(localeString.bankDebitStepsText(paymentMethodType->String.toUpperCase))}
       <ul className="list-disc px-5 py-2">
         <li>
-          {React.string(
-            "Please Click on Add Bank Details and proceed to add your bank account details.",
-          )}
+          {React.string(localeString.bankDebitStep1Text)}
         </li>
         <li>
-          {React.string(
-            "Post verification, you will see your account(s) added. You can select the account that you want to pay with and click on the pay button.",
-          )}
+          {React.string(localeString.bankDebitStep2Text)}
         </li>
       </ul>
     </div>

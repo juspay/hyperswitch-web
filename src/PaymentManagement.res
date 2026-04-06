@@ -139,7 +139,7 @@ let make = (
           onClick={_ => setShowAddScreen(_ => true)}
           dataTestId={TestUtils.addNewCardIcon}>
           <Icon name="plus" size=19 />
-          {React.string("Add new card")}
+          {React.string(localeString.addNewCardText)}
         </div>
       </RenderIf>
       <RenderIf condition={isLoading}>

@@ -130,7 +130,7 @@ let make = (
                             <div
                               className={`flex flex-row items-center justify-end gap-3 -mt-1`}
                               style={fontSize: "14px", opacity: "0.5"}>
-                              <div> {React.string(`Expiry`)} </div>
+                              <div> {React.string(localeString.validThruText)} </div>
                               <div className="flex">
                                 {React.string(
                                   `${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`,
@@ -154,7 +154,7 @@ let make = (
                     ReactEvent.Mouse.stopPropagation(event)
                     handleUpdate(paymentItem)->ignore
                   }}>
-                  {React.string("Save")}
+                  {React.string(localeString.formSaveText)}
                 </div>
                 <Icon
                   size=18

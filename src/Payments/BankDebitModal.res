@@ -6,12 +6,13 @@ type focus = Routing | Account | NONE
 module Button = {
   @react.component
   let make = (~active=true, ~onclick) => {
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     <div
       onClick={ev => active ? onclick(ev) : ()}
       className={`p-2 mt-10 rounded-md w-full flex justify-center items-center text-white text-sm bg-[#006DF9] ${active
           ? "cursor-pointer"
           : "opacity-50 cursor-not-allowed"}`}>
-      {React.string("Done")}
+      {React.string(localeString.doneText)}
     </div>
   }
 }
@@ -29,6 +30,7 @@ module CardItem = {
 module MicroDepositScreen = {
   @react.component
   let make = (~showMicroDepScreen, ~accountNum, ~onclick) => {
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let last4digits = accountNum->String.sliceToEnd(~start=-4)
     <div
       className={`flex flex-col animate-slideLeft ${showMicroDepScreen
@@ -36,25 +38,23 @@ module MicroDepositScreen = {
           : "hidden"} justify-center items-center`}>
       <Icon name="wallet-savings" size=55 className="mb-8" />
       <div className=" font-semibold text-lg text-[#151A1F] mb-4">
-        {React.string("Micro-deposits initiated")}
+        {React.string(localeString.microDepositsInitiatedText)}
       </div>
       <div className="text-center text-sm text-[#151A1F]/30 mb-8">
-        {React.string(
-          `Expect a $0.01 deposit to the account ending in **** ${last4digits} in 1-2 business days and an email with additional instructions to verify your account.`,
-        )}
+        {React.string(localeString.microDepositsExpectText(last4digits))}
       </div>
       <div className="flex flex-col bg-[#F6F5F5] w-full border border-[#DFDFE0] rounded-md mb-10">
         <div
           className="flex flex-row gap-6 px-6 py-4 items-center border-dotted border-b-2 border-[#DFDFE0]">
           <Icon name="bank" size=20 className="text-[#151A1F]/60" />
           <div className="text-[#151A1F]/80 text-sm">
-            {React.string(`**** ${last4digits}  BANK STATEMENT`)}
+            {React.string(localeString.bankStatementDisplayText(last4digits))}
           </div>
         </div>
         <div className="flex flex-row gap-4 px-6 py-4 items-center">
-          <CardItem keyItem="Transaction" value="SMXXXX" />
-          <CardItem keyItem="Amount" value="$0.01" />
-          <CardItem keyItem="Type" value="ACH Direct Debit" />
+          <CardItem keyItem=localeString.transactionText value="SMXXXX" />
+          <CardItem keyItem=localeString.amountText value="$0.01" />
+          <CardItem keyItem=localeString.typeText value="ACH Direct Debit" />
         </div>
       </div>
       <Button onclick={ev => onclick(ev)} />
@@ -201,7 +201,7 @@ let make = (~setModalData) => {
   let dynamicFieldsModalBody =
     <div className="flex flex-col item-center gap-5">
       <DynamicFields paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody />
-      <PayNowButton onClickHandler label="Done" />
+      <PayNowButton onClickHandler label=localeString.doneText />
     </div>
 
   let nonDynamicFieldsModalBody =
@@ -220,7 +220,7 @@ let make = (~setModalData) => {
       <div
         style={color: themeObj.colorPrimary, marginBottom: "5px"}
         className="self-start font-semibold text-lg text-[#151A1F]">
-        {React.string("Bank Details")}
+        {React.string(localeString.bankDetailsHeadingText)}
       </div>
       <div
         className={`Label mb-1 mt-5`}
@@ -230,7 +230,7 @@ let make = (~setModalData) => {
           color: themeObj.colorText,
           marginBottom: "5px",
         }>
-        {React.string("Account Holder Name")}
+        {React.string(localeString.accountHolderNameLabel)}
       </div>
       <Input
         value=accountHolderName
@@ -239,7 +239,7 @@ let make = (~setModalData) => {
         type_="tel"
         className={`p-2 text-base px-4`}
         maxLength=17
-        placeholder="eg: John Doe"
+        placeholder=localeString.accountHolderNamePlaceholder
         onBlur={_ => setInputFocus(_ => NONE)}
       />
       <RenderIf condition={isSepaDebit}>
@@ -328,7 +328,7 @@ let make = (~setModalData) => {
           }>
           <DropdownField
             appearance=config.appearance
-            fieldName="Account type"
+            fieldName=localeString.accountTypeLabel
             value=accountType
             setValue=setAccountType
             disabled=false

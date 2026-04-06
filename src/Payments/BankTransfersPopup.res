@@ -13,6 +13,7 @@ let make = (~transferType) => {
   let (json, setJson) = React.useState(_ => Dict.make())
   let (postData, setPostData) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (return_url, setReturnUrl) = React.useState(_ => "")
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (responseType, title) = switch transferType {
   | "achBankTransfer" => ("ach_credit_transfer", "ACH")
   | "bacsBankTransfer" => ("bacs_bank_instructions", "BACS")
@@ -27,14 +28,14 @@ let make = (~transferType) => {
       ? (
           <>
             <Icon name="copyIcon" size=22 />
-            {React.string("Copy")}
+            {React.string(localeString.copyText)}
           </>,
           "text-[#006DF9]",
         )
       : (
           <>
             <Icon name="ticMark" size=22 />
-            {React.string("Copied")}
+            {React.string(localeString.copiedText)}
           </>,
           "text-[#c0c0c0] font-medium ",
         )
@@ -80,11 +81,11 @@ let make = (~transferType) => {
           <Icon name="ach-transfer" size=45 />
         </div>
         <div className="Popuptitle flex w-[90%] justify-center">
-          <span className="font-bold text-lg"> {React.string(`${title} bank transfer`)} </span>
+          <span className="font-bold text-lg"> {React.string(localeString.bankTransferTitleText(title))} </span>
         </div>
         <div className="PopupSubtitle w-[90%] text-center">
           <span className="font-medium text-sm text-[#151A1F] opacity-50">
-            {React.string("Use these details to transfer amount")}
+            {React.string(localeString.useDetailsToTransferText)}
           </span>
         </div>
         <div
@@ -97,7 +98,7 @@ let make = (~transferType) => {
           <div
             className="flex font-medium p-5 justify-between text-sm"
             style={borderBottom: "1px dashed rgba(21, 26, 31, 0.06)"}>
-            <span className="text-[#151a1fe6]"> {React.string("Bank Account Details")} </span>
+            <span className="text-[#151a1fe6]"> {React.string(localeString.bankAccountDetailsText)} </span>
             <button
               className={`flex flex-row ${text} cursor-pointer`} onClick={_ => handleClick(keys)}>
               {buttonElement}
@@ -123,9 +124,7 @@ let make = (~transferType) => {
       </div>
       <div className=" flex flex-col max-w-md justify-between items-center">
         <div className="Disclaimer w-full mt-16 font-medium text-xs text-[#151A1F] opacity-50">
-          {React.string(
-            " Please make a note of these details, before closing this popup. You will not be able to generate this details again. ",
-          )}
+          {React.string(localeString.bankTransferDisclaimerText)}
         </div>
         <div className="button w-full">
           <div>
@@ -140,7 +139,7 @@ let make = (~transferType) => {
                 postSubmitResponse(~jsonData=postData, ~url=return_url)
                 Modal.close(setOpenModal)
               }}>
-              {React.string("Done")}
+              {React.string(localeString.doneText)}
             </button>
           </div>
         </div>

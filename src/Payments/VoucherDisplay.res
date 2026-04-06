@@ -6,6 +6,7 @@ let make = () => {
   let (downloadUrl, setDownloadUrl) = React.useState(_ => "")
   let (reference, setReference) = React.useState(_ => "")
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (downloadCounter, setDownloadCounter) = React.useState(_ => 0)
   let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
   let (paymentIntent, setPaymentIntent) = React.useState(_ => JSON.Encode.null)
@@ -50,9 +51,7 @@ let make = () => {
       <div className="flex flex-col max-w-md justify-between items-center">
         <div className="flex flex-row w-full">
           <p className="Disclaimer font-medium text-sm text-[#151A1F] opacity-70">
-            {React.string(
-              `${paymentMethod->snakeToTitleCase} voucher was successfully generated! If the document hasn't started downloading automatically, click `,
-            )}
+            {React.string(localeString.voucherGeneratedText(paymentMethod->Utils.snakeToTitleCase))}
             <a
               className="text font-medium text-sm text-[#006DF9] underline"
               href=downloadUrl
@@ -66,23 +65,21 @@ let make = () => {
                   ~paymentMethod,
                 )
               }}>
-              {React.string("here")}
+              {React.string(localeString.hereText)}
             </a>
-            {React.string(" to download it.")}
+            {React.string(localeString.toDownloadItText)}
           </p>
         </div>
         <div className="flex flex-row mt-4 w-full">
           <p className="Disclaimer font-medium text-sm text-[#151A1F] opacity-70">
-            {React.string("Bar Code Reference: ")}
+            {React.string(localeString.barCodeReferenceText)}
             <span className="Disclaimer font-bold text-sm text-[#151A1F] opacity-90">
               {React.string(reference)}
             </span>
           </p>
         </div>
         <div className="Disclaimer w-full mt-16 font-medium text-xs text-[#151A1F] opacity-50">
-          {React.string(
-            "Please do not close until you have successfully downloaded the voucher, after which you will be automatically redirected.",
-          )}
+          {React.string(localeString.voucherDisclaimerText)}
         </div>
         <div className="button w-full">
           <div>
@@ -96,7 +93,7 @@ let make = () => {
               onClick={_ => {
                 closeModal()
               }}>
-              {React.string("Done")}
+              {React.string(localeString.doneText)}
             </button>
           </div>
         </div>

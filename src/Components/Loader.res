@@ -1,5 +1,6 @@
 @react.component
 let make = (~branding="auto", ~showText=true) => {
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let arr = ["hyperswitch-triangle", "hyperswitch-square", "hyperswitch-circle"]
 
   <div className="flex flex-col gap-10 justify-center items-center">
@@ -25,7 +26,7 @@ let make = (~branding="auto", ~showText=true) => {
           role="status">
           <span
             className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-            {"Loading..."->React.string}
+            {localeString.loadingText->React.string}
           </span>
         </div>
       </RenderIf>
@@ -33,12 +34,10 @@ let make = (~branding="auto", ~showText=true) => {
     <RenderIf condition={showText}>
       <div className="flex flex-col gap-5">
         <div className="font-semibold text-sm text-gray-200 self-center ">
-          {React.string("We are processing your payment...")}
+          {React.string(localeString.processingPaymentText)}
         </div>
         <div className="font-medium text-xs text-gray-400 self-center text-center w-3/4 ">
-          {React.string(
-            "You have been redirected to new tab to complete your payments. Status will be updated automatically",
-          )}
+          {React.string(localeString.redirectedToNewTabText)}
         </div>
       </div>
     </RenderIf>
