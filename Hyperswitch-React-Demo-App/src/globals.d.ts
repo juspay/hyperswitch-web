@@ -9,8 +9,12 @@ interface Window {
   Hyper: (
     options: { publishableKey: string; profileId?: string },
     config?: { customBackendUrl?: string }
-  ) => any;
+  ) => HyperInstance;
 }
+
+// Forward-declare HyperInstance at global scope so Window.Hyper can reference it.
+// The full definition lives in the @juspay-tech/hyper-js ambient module below.
+type HyperInstance = import("@juspay-tech/hyper-js").HyperInstance;
 
 // Asset modules
 declare module "*.svg" {
@@ -25,6 +29,12 @@ declare module "*.css" {}
 
 // ---------------------------------------------------------------------------
 // @juspay-tech/hyper-js — subset used by the demo app
+//
+// TODO: These ambient module declarations are TEMPORARY. They exist because the
+// published npm packages (@juspay-tech/hyper-js, @juspay-tech/react-hyper-js)
+// do not yet ship .d.ts files. Once PRs juspay/hyper-js#18 and
+// juspay/react-hyper-js#11 are merged and released, DELETE these declare module
+// blocks — the real .d.ts files from node_modules will take over automatically.
 // ---------------------------------------------------------------------------
 declare module "@juspay-tech/hyper-js" {
   export interface HyperInstance {
@@ -38,7 +48,6 @@ declare module "@juspay-tech/hyper-js" {
     retrievePaymentIntent(paymentIntentId: string): Promise<any>;
     widgets(options: any): Element;
     paymentRequest(options: object): object;
-    [key: string]: any;
   }
 
   export interface Element {
@@ -51,6 +60,8 @@ declare module "@juspay-tech/hyper-js" {
 
 // ---------------------------------------------------------------------------
 // @juspay-tech/react-hyper-js — subset used by the demo app
+//
+// TODO: Same as above — delete this block once juspay/react-hyper-js#11 ships.
 // ---------------------------------------------------------------------------
 declare module "@juspay-tech/react-hyper-js" {
   import type { ReactNode } from "react";
@@ -66,7 +77,6 @@ declare module "@juspay-tech/react-hyper-js" {
     ): Promise<any>;
     retrievePaymentIntent(paymentIntentId: string): Promise<any>;
     paymentRequest(options: any): any;
-    [key: string]: any;
   }
 
   export interface UseWidgetsReturn {

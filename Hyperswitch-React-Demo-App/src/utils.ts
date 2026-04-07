@@ -1,4 +1,5 @@
-import React from "react";
+import type { HyperInstance } from "@juspay-tech/hyper-js";
+import type React from "react";
 
 interface PaymentStatusMessages {
   [key: string]: string;
@@ -52,6 +53,10 @@ export const fetchConfigAndUrls = async (
   return { configData, urlsData };
 };
 
+// Cached singleton — avoids creating multiple Hyper instances when the merchant
+// (or React strict-mode) triggers loadHyperScript more than once.
+let hyperInstance: HyperInstance | null = null;
+
 export const loadHyperScript = ({
   clientUrl,
   publishableKey,
@@ -66,9 +71,9 @@ export const loadHyperScript = ({
   profileId?: string;
   isScriptLoaded: boolean;
   setIsScriptLoaded: React.Dispatch<React.SetStateAction<boolean>>;
-}): Promise<any> => {
+}): Promise<HyperInstance> => {
   return new Promise((resolve, reject) => {
-    if (isScriptLoaded) return resolve(window.Hyper);
+    if (isScriptLoaded && hyperInstance) return resolve(hyperInstance);
 
     const script = document.createElement("script");
     script.src = `${clientUrl}/HyperLoader.js`;
@@ -76,14 +81,11 @@ export const loadHyperScript = ({
 
     script.onload = () => {
       setIsScriptLoaded(true);
-      resolve(
-        window.Hyper(
-          { publishableKey, profileId },
-          {
-            customBackendUrl,
-          }
-        )
+      hyperInstance = window.Hyper(
+        { publishableKey, profileId },
+        { customBackendUrl }
       );
+      resolve(hyperInstance);
     };
 
     script.onerror = () => {
