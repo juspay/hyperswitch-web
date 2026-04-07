@@ -102,27 +102,29 @@ let getCustomerSavedPaymentMethods = (
       ~requiresCvv,
       ~id,
     ) => {
-      let redirect = payload->getDictFromJson->getString("redirect", "if_required")
+      let payloadDict = payload->getDictFromJson
+      let redirect = payloadDict->getString("redirect", "if_required")
       Promise.make((resolve, _) => {
         let handleCVCWidgetConfirmResponse = (event: Types.event) => {
-          let json = event.data->Identity.anyTypeToJson
-          let dict = json->getDictFromJson
-          if dict->Dict.get("cvcWidgetConfirmResponse")->Option.isSome {
-            let responseData =
-              dict->Dict.get("cvcWidgetConfirmResponse")->Option.getOr(JSON.Encode.null)
+          let eventDataDict = event.data->Identity.anyTypeToJson->getDictFromJson
+          switch eventDataDict->Dict.get("cvcWidgetConfirmResponse") {
+          | Some(responseData) =>
             let responseDataDict = responseData->getDictFromJson
-            let data = responseDataDict->Dict.get("data")->Option.getOr(JSON.Encode.null)
             let returnUrl = responseDataDict->getString("returnUrl", "")
-
-            if redirect == "always" {
-              Window.Location.replace(returnUrl)
-            } else {
-              resolve(data)
+            switch responseDataDict->Dict.get("data") {
+            | Some(data) =>
+              if redirect == "always" {
+                Window.Location.replace(returnUrl)
+              } else {
+                resolve(data)
+              }
+            | None => resolve(responseData)
             }
-          } else if dict->Dict.get("cvcWidgetConfirmErrorResponse")->Option.isSome {
-            let errorResponseData =
-              dict->Dict.get("cvcWidgetConfirmErrorResponse")->Option.getOr(JSON.Encode.null)
-            resolve(errorResponseData)
+          | None =>
+            switch eventDataDict->Dict.get("cvcWidgetConfirmErrorResponse") {
+            | Some(errorResponseData) => resolve(errorResponseData)
+            | None => ()
+            }
           }
         }
         EventListenerManager.addSmartEventListener(
@@ -130,8 +132,6 @@ let getCustomerSavedPaymentMethods = (
           handleCVCWidgetConfirmResponse,
           "onCVCWidgetConfirmResponse",
         )
-        // Extract redirect from payload (top level, like in Hyper.res confirmPaymentWrapper)
-        let redirect = payload->getDictFromJson->getString("redirect", "if_required")
         let confirmParams =
           [
             ("body", body->getJsonFromArrayOfJson),
@@ -141,8 +141,8 @@ let getCustomerSavedPaymentMethods = (
             ("clientSecret", clientSecret->JSON.Encode.string),
             ("requiresCvv", requiresCvv->JSON.Encode.bool),
             ("redirect", redirect->JSON.Encode.string),
-          ]->Dict.fromArray
-        let message = [("requestCVCConfirm", confirmParams->JSON.Encode.object)]->Dict.fromArray
+          ]->getJsonFromArrayOfJson
+        let message = [("requestCVCConfirm", confirmParams)]->Dict.fromArray
         switch getWidgetIframe(~iframeRef, ~id) {
         | Some(iframe) => iframe->Window.iframePostMessage(message)
         | None =>
@@ -156,7 +156,12 @@ let getCustomerSavedPaymentMethods = (
       })
     }
 
-    let confirmWithCVCOrPaymentSession = (~body, ~payload, ~paymentType, ~requiresCvv) => {
+    let confirmWithCVCOrPaymentSession = (
+      ~body,
+      ~payload,
+      ~paymentType: PaymentHelpersTypes.payment,
+      ~requiresCvv,
+    ) => {
       let redirect = payload->getDictFromJson->getString("redirect", "if_required")
       let payloadDict = payload->getDictFromJson
 
