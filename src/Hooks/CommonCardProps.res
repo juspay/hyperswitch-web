@@ -12,7 +12,9 @@ let useCardForm = (~logger, ~paymentType) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {clientSecret, publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let (isEligibilityDenied, setIsCardEligibilityDenied) = Recoil.useRecoilState(isCardEligibilityDenied)
+  let (isEligibilityDenied, setIsCardEligibilityDenied) = Recoil.useRecoilState(
+    isCardEligibilityDenied,
+  )
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -106,10 +108,12 @@ let useCardForm = (~logger, ~paymentType) => {
   }, (paymentToken.paymentToken, showPaymentMethodsScreen))
 
   React.useEffect0(() => {
-    Some(() => {
-      eligibilityTimerRef.current->Option.forEach(clearTimeout)
-      eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
-    })
+    Some(
+      () => {
+        eligibilityTimerRef.current->Option.forEach(clearTimeout)
+        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+      },
+    )
   })
 
   let changeCardNumber = ev => {
@@ -152,7 +156,7 @@ let useCardForm = (~logger, ~paymentType) => {
 
     // Card eligibility check - debounced at 300ms
     let newCardBrand = CardUtils.getCardBrand(clearValue)
-    let isCardComplete = focusCardValid(clearValue, newCardBrand)
+    let isCardComplete = CardUtils.cardValid(clearValue, newCardBrand)
 
     // Always clear any pending debounce timer
     eligibilityTimerRef.current->Option.forEach(clearTimeout)
