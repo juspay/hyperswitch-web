@@ -6,66 +6,25 @@ let make = (
   ~onSelect,
   ~isLastItem,
 ) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-
-  let formatInterestRate = interestRate => Utils.formatAmountWithTwoDecimals(interestRate)
-
-  let getInterestLabel = interestRate =>
-    interestRate == 0.0
-      ? localeString.installmentInterestFree
-      : localeString.installmentInterestRate(formatInterestRate(interestRate))
-
-  let amountPerInstallment = Utils.formatAmountWithTwoDecimals(
-    plan.amount_details.amount_per_installment,
-  )
-  let totalAmount = Utils.formatAmountWithTwoDecimals(plan.amount_details.total_amount)
-  let numberOfInstallments = plan.number_of_installments
-  let interestLabel = getInterestLabel(plan.interest_rate)
-
-  let mainInstallmentLabel = localeString.installmentPaymentLabel(
-    numberOfInstallments,
-    currency,
-    amountPerInstallment,
-  )
+  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   <div
     onClick={_ => onSelect()}
     style={
-      padding: themeObj.spacingUnit,
+      padding: `calc(${themeObj.spacingUnit} * 0.8) ${themeObj.spacingUnit}`,
       borderColor: themeObj.borderColor,
+      backgroundColor: themeObj.colorBackground,
     }
-    className={`flex gap-3 w-full ${isLastItem ? "" : "border-b"} !px-0 cursor-pointer text-left`}>
-    <div className="pt-1" style={color: isSelected ? themeObj.colorPrimary : ""}>
-      <Radio checked=isSelected />
-    </div>
-    <div className="flex flex-col w-full">
-      <div className="flex w-full justify-between gap-1">
-        <div className="flex">
-          <span className="mr-0.5"> {mainInstallmentLabel->React.string} </span>
-        </div>
-        <div
-          className="opacity-60 text-nowrap"
-          style={
-            fontSize: themeObj.fontSizeSm,
-          }>
-          {localeString.installmentTotalPayable->React.string}
-        </div>
-      </div>
-      <div className="flex flex-row w-full justify-between">
-        <span
-          className="opacity-60"
-          style={
-            fontSize: themeObj.fontSizeSm,
-          }>
-          {interestLabel->React.string}
-        </span>
-        <span
-          style={
-            color: themeObj.colorText,
-          }>
-          {`${currency} ${totalAmount}`->React.string}
-        </span>
-      </div>
-    </div>
+    className={`relative flex items-center gap-2 w-full ${isLastItem
+        ? ""
+        : "border-b"} cursor-pointer`}>
+    <RenderIf condition=isSelected>
+      <div
+        style={backgroundColor: themeObj.colorPrimary}
+        className="absolute inset-0 opacity-[0.06] pointer-events-none"
+      />
+    </RenderIf>
+    <RadioIndicator isSelected />
+    <InstallmentPlanDetails plan currency />
   </div>
 }

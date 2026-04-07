@@ -253,15 +253,11 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `يرجى دفع المبلغ المتبقي ${amount} ${currency} باستخدام وسيلة دفع أخرى أدناه.`,
   installmentPayInInstallments: "الدفع على أقساط",
-  installmentChoosePlan: "اختر خطة تقسيط",
   installmentInterestFree: "بدون فوائد",
-  installmentInterestRate: interestRate => `${interestRate}% فائدة`,
-  installmentTotalPayable: "المبلغ الإجمالي المستحق",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `دفعة واحدة بقيمة ${currency} ${amount}`
-      : `${numPayments->Int.toString} دفعات بقيمة ${currency} ${amount}`,
+  installmentWithInterest: "مع فوائد",
+  installmentTotal: "المجموع",
   installmentSelectPlanError: "يرجى اختيار خطة تقسيط",
+  installmentSelectPlanPlaceholder: "اختر خطة التقسيط",
   showMore: "عرض المزيد",
   showLess: "عرض أقل",
   refreshingText: "جارٍ التحديث...",

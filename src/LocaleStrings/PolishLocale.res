@@ -251,15 +251,11 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Proszę zapłacić pozostałą kwotę ${amount} ${currency} inną metodą płatności poniżej.`,
   installmentPayInInstallments: "Zapłać w ratach",
-  installmentChoosePlan: "Wybierz plan rat",
   installmentInterestFree: "Bez odsetek",
-  installmentInterestRate: interestRate => `${interestRate}% odsetek`,
-  installmentTotalPayable: "Do zapłaty",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 rata po ${currency} ${amount}`
-      : `${numPayments->Int.toString} raty po ${currency} ${amount}`,
+  installmentWithInterest: "z odsetkami",
+  installmentTotal: "Razem",
   installmentSelectPlanError: "Proszę wybrać plan rat",
+  installmentSelectPlanPlaceholder: "Wybierz plan rat",
   showMore: "Pokaż więcej",
   showLess: "Pokaż mniej",
   refreshingText: "Odświeżanie...",

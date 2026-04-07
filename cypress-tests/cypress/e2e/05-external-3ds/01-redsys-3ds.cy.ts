@@ -4,9 +4,9 @@ import {
   changeObjectKeyValue,
   connectorProfileIdMapping,
   connectorEnum,
-} from "../support/utils";
-import { redsysCards } from "cypress/support/cards";
-import * as testIds from "../../../src/Utilities/TestUtils.bs";
+} from "../../support/utils";
+import { redsysCards } from "../../support/cards";
+import * as testIds from "../../../../src/Utilities/TestUtils.bs";
 
 type updatesType = [Record<string, any>, string, string | boolean][];
 

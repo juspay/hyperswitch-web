@@ -32,140 +32,6 @@ let make = (
     expiryRef,
   } = expiryProps
 
-  let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef} = cvcProps
-
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(RecoilAtoms.redirectionFlagsAtom)
-  let (cvcErrorMessage, setCvcErrorMessage) = React.useState(_ => "")
-
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.elementOptions)
-  let displayErrorMessage = if options.showError {
-    cvcErrorMessage
-  } else {
-    ""
-  }
-  React.useEffect(() => {
-    open Promise
-    let handleRequestCVCConfirm = (ev: Window.event) => {
-      let json = ev.data->safeParse
-      try {
-        let dict = json->getDictFromJson
-        switch dict->Dict.get("requestCVCConfirm") {
-        | Some(confirmParams) => {
-            let confirmParamsDict = confirmParams->getDictFromJson
-            let requiresCvv = confirmParamsDict->getBool("requiresCvv", true)
-
-            if paymentType === CardCVCElement {
-              let body = confirmParamsDict->getJsonObjectFromDict("body")
-              let bodyArr = body->JSON.Decode.object->Option.getOr(Dict.make())->Dict.toArray
-              let payload = confirmParamsDict->getJsonFromDict("payload", JSON.Encode.null)
-              let paymentTypeStr = confirmParamsDict->getString("paymentType", "card")
-              let publishableKeyVal =
-                confirmParamsDict->getString("publishableKey", keys.publishableKey)
-              let clientSecretVal =
-                confirmParamsDict->getString("clientSecret", keys.clientSecret->Option.getOr(""))
-
-              let isCvcComplete = cvcNumber->String.length >= 3
-
-              if requiresCvv && isCvcComplete {
-                setCvcErrorMessage(_ => "")
-
-                let bodyWithCvc =
-                  bodyArr->Array.concat([("card_cvc", cvcNumber->JSON.Encode.string)])
-
-                let paymentType = paymentTypeStr->PaymentHelpers.getPaymentType
-
-                PaymentHelpers.paymentIntentForPaymentSession(
-                  ~body=bodyWithCvc,
-                  ~paymentType,
-                  ~payload,
-                  ~publishableKey=publishableKeyVal,
-                  ~clientSecret=clientSecretVal,
-                  ~logger=loggerState,
-                  ~customPodUri,
-                  ~redirectionFlags,
-                  ~isPaymentSession=false,
-                )
-                ->then(response => {
-                  messageParentWindow([
-                    ("cvcWidgetConfirmResponse", response),
-                    ("success", true->JSON.Encode.bool),
-                  ])
-                  resolve()
-                })
-                ->catch(err => {
-                  messageParentWindow([
-                    (
-                      "cvcWidgetConfirmResponse",
-                      err->formatException->JSON.stringify->JSON.Encode.string,
-                    ),
-                    ("success", false->JSON.Encode.bool),
-                  ])
-                  resolve()
-                })
-                ->ignore
-              } else if requiresCvv {
-                let isEmptyCVC = cvcNumber->String.length == 0
-                // Future improvement: We can check if the CVC entered is more than 3 digits and show an appropriate error message. For now, we are just checking if it's less than 3 digits.
-
-                let errorMsg = if isEmptyCVC {
-                  localeString.cvcNumberEmptyText
-                } else {
-                  localeString.inCompleteCVCErrorText
-                }
-
-                setCvcErrorMessage(_ => errorMsg)
-
-                messageParentWindow([
-                  ("cvcWidgetConfirmResponse", errorMsg->JSON.Encode.string),
-                  ("success", false->JSON.Encode.bool),
-                ])
-              } else {
-                messageParentWindow([
-                  ("cvcWidgetConfirmResponse", JSON.Encode.null),
-                  ("success", true->JSON.Encode.bool),
-                ])
-              }
-            }
-          }
-        | None => ()
-        }
-      } catch {
-      | _ => ()
-      }
-    }
-    Window.addEventListener("message", handleRequestCVCConfirm)
-    Some(
-      () => {
-        Window.removeEventListener("message", handleRequestCVCConfirm)
-      },
-    )
-  }, [cvcNumber])
-
-  React.useEffect0(() => {
-    let handleCheckCVCWidgetPresent = (ev: Window.event) => {
-      let json = ev.data->safeParse
-      try {
-        let dict = json->getDictFromJson
-        if dict->Dict.get("checkCVCWidgetPresent")->Option.isSome {
-          if paymentType === CardCVCElement {
-            messageParentWindow([("cvcWidgetPresent", true->JSON.Encode.bool)])
-          }
-        }
-      } catch {
-      | _ => ()
-      }
-    }
-    Window.addEventListener("message", handleCheckCVCWidgetPresent)
-    Some(
-      () => {
-        Window.removeEventListener("message", handleCheckCVCWidgetPresent)
-      },
-    )
-  })
-
   let blur = blurState ? "blur(2px)" : ""
   let frameRef = React.useRef(Nullable.null)
   <div
@@ -176,6 +42,7 @@ let make = (
       marginLeft: "4px",
       marginRight: "4px",
       marginTop: "4px",
+      marginBottom: "4px",
       fontFamily: themeObj.fontFamily,
       fontSize: themeObj.fontSizeBase,
       filter: blur,
@@ -245,27 +112,7 @@ let make = (
             isFocus
             autocomplete="cc-exp"
           />
-        | CardCVCElement =>
-          <InputField
-            isValid=isCVCValid
-            setIsValid=setIsCVCValid
-            value=cvcNumber
-            onChange=changeCVCNumber
-            onBlur=handleCVCBlur
-            onFocus=handleElementFocus
-            type_="tel"
-            className={`tracking-widest w-auto`}
-            maxLength=4
-            inputRef=cvcRef
-            placeholder={options.placeholder === ""
-              ? localeString.cvcTextLabel
-              : options.placeholder}
-            id="card-cvc"
-            isFocus
-            autocomplete="cc-csc"
-            errorString=displayErrorMessage
-            errorStringClasses="text-xs text-red-950"
-          />
+        | CardCVCElement => <CardCVCElement cvcProps paymentType />
         | PaymentMethodsManagement =>
           <ReusableReactSuspense
             loaderComponent={<RenderIf condition={showLoader}>

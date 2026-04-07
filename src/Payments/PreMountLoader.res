@@ -32,7 +32,16 @@ let useMessageHandler = getMessageHandler => {
       }
     }
 
+    let handleResendMountedCallback = (ev: Window.event) => {
+      open Utils
+      let dict = ev.data->safeParse->getDictFromJson
+      if dict->Dict.get("requestPreMountLoaderMountedCallback")->Option.isSome {
+        messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
+      }
+    }
+
     Window.addEventListener("message", handleCleanUpEventListener)
+    Window.addEventListener("message", handleResendMountedCallback)
 
     setupMessageListener()
 
@@ -40,6 +49,7 @@ let useMessageHandler = getMessageHandler => {
       () => {
         cleanupMessageListener()
         Window.removeEventListener("message", handleCleanUpEventListener)
+        Window.removeEventListener("message", handleResendMountedCallback)
       },
     )
   }, [])

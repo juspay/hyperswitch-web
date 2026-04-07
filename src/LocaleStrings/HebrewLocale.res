@@ -251,15 +251,11 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `אנא שלמו את הסכום שנותר ${amount} ${currency} באמצעות אמצעי תשלום אחר למטה.`,
   installmentPayInInstallments: "תשלום בתשלומים",
-  installmentChoosePlan: "בחרו תוכנית תשלומים",
   installmentInterestFree: "ללא ריבית",
-  installmentInterestRate: interestRate => `${interestRate}% ריבית`,
-  installmentTotalPayable: "סה\"כ לתשלום",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `תשלום אחד של ${currency} ${amount}`
-      : `${numPayments->Int.toString} תשלומים של ${currency} ${amount}`,
+  installmentWithInterest: "עם ריבית",
+  installmentTotal: "סה\"כ",
   installmentSelectPlanError: "אנא בחר תוכנית תשלומים",
+  installmentSelectPlanPlaceholder: "בחר תוכנית תשלומים",
   showMore: "הצג עוד",
   showLess: "הצג פחות",
   refreshingText: "מרענן...",

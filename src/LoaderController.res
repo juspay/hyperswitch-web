@@ -237,6 +237,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       try {
         let dict = json->getDictFromJson
         if dict->getDictIsSome("paymentElementCreate") {
+          // Set iframeId for ALL elements including individual card elements (cardNumber, cardExpiry, cardCvc)
+          if dict->getDictIsSome("iframeId") {
+            setKeys(prev => {
+              ...prev,
+              iframeId: dict->getString("iframeId", "no-element"),
+            })
+          }
           if (
             dict
             ->Dict.get("paymentElementCreate")

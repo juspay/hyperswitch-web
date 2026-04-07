@@ -1,17 +1,15 @@
-import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { getClientURL } from "../support/utils";
-import { createPaymentBody } from "../support/utils";
+import * as testIds from "../../../../src/Utilities/TestUtils.bs";
+import { getClientURL } from "../../support/utils";
+import { createPaymentBody } from "../../support/utils";
 import {
   changeObjectKeyValue,
   connectorProfileIdMapping,
   connectorEnum,
-} from "../support/utils";
-import { stripeCards } from "cypress/support/cards";
+} from "../../support/utils";
+import { stripeCards } from "../../support/cards";
 
 
-
-
-describe("cashtocode cash / voucher test ", () => {
+describe("cashtocode E-voucher test ", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
   const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
@@ -22,7 +20,7 @@ describe("cashtocode cash / voucher test ", () => {
     "profile_id",
     connectorProfileIdMapping.get(connectorEnum.CASHTOCODE),
   );
-  changeObjectKeyValue(createPaymentBody, "currency", "EUR");
+  changeObjectKeyValue(createPaymentBody, "currency", "USD");
 
   beforeEach(() => {
     getIframeBody = () => cy.iframe(iframeSelector);
@@ -44,17 +42,17 @@ describe("cashtocode cash / voucher test ", () => {
       .its("body");
   });
 
-  it("should complete the Cash / Voucher payment successfully", () => {
+  it("should complete the E-voucher payment successfully", () => {
     cy.wait(2000);
     getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    getIframeBody().contains("div", "Cash / Voucher").click();
+    getIframeBody().contains("div", "E-Voucher").click();
     getIframeBody()
       .get("#submit")
       .click()
       .then(() => {
         cy.url().should(
           "include",
-          "https://cluster05.wcl-test.cashtocode.com/",
+          "https://dev.evoucher.cashtocode.com/",
         );
       });
   });

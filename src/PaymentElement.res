@@ -475,7 +475,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let evalMethodsList = () =>
       switch paymentMethodList {
       | SemiLoaded | LoadError(_) | Loaded(_) =>
-        messageParentWindow([("ready", true->JSON.Encode.bool)])
+        messageParentWindow([
+          ("ready", true->JSON.Encode.bool),
+          ("elementType", CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string),
+        ])
       | _ => ()
       }
     if !displaySavedPaymentMethods {
@@ -485,7 +488,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | LoadingSavedCards => ()
       | LoadedSavedCards(list, _) =>
         list->Array.length > 0
-          ? messageParentWindow([("ready", true->JSON.Encode.bool)])
+          ? messageParentWindow([
+              ("ready", true->JSON.Encode.bool),
+              (
+                "elementType",
+                CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string,
+              ),
+            ])
           : evalMethodsList()
       | NoResult(_) => evalMethodsList()
       }
