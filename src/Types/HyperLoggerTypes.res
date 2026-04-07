@@ -102,6 +102,7 @@ type eventName =
   | PAYMENT_ELEMENT_OPTIONS
   | TEST_MODE
   | CARD_ELIGIBILITY_CALL
+  | CARD_ELIGIBILITY_CALL_INIT
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

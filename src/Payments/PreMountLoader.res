@@ -66,18 +66,12 @@ let getMessageHandlerV1Elements = (
   ~isTestMode=false,
   ~isSdkParamsEnabled=false,
 ) => {
-  let (
-    paymentMethodsPromise,
-    customerPaymentMethodsPromise,
-    sessionTokensPromise,
-  ) = if isTestMode || isSdkParamsEnabled {
+  let (paymentMethodsPromise, customerPaymentMethodsPromise, sessionTokensPromise) = if (
+    isTestMode || isSdkParamsEnabled
+  ) {
     let mockResponse = Dict.make()->JSON.Encode.object
 
-    (
-      Promise.resolve(mockResponse),
-      Promise.resolve(mockResponse),
-      Promise.resolve(mockResponse),
-    )
+    (Promise.resolve(mockResponse), Promise.resolve(mockResponse), Promise.resolve(mockResponse))
   } else {
     (
       PaymentHelpers.fetchPaymentMethodList(

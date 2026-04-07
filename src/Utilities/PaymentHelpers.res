@@ -250,7 +250,7 @@ let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger, ~sdk
     ~params={
       clientSecret: None,
       publishableKey: Some(publishableKey),
-      customBackendBaseUrl: None,
+      customBackendBaseUrl: Some(customPodUri),
       forceSync: None,
       pollId: Some(pollID),
       payoutId: None,

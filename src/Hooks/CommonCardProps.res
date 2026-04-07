@@ -156,8 +156,7 @@ let useCardForm = (~logger, ~paymentType) => {
       // Reset eligibility denied state synchronously when card becomes incomplete
       setIsCardEligibilityDenied(_ => false)
     } else if (
-      isCardComplete &&
-      paymentMethodListValue.sdk_next_action === Some("eligibility_check")
+      isCardComplete && paymentMethodListValue.sdk_next_action === Some("eligibility_check")
     ) {
       // Clear stale denied state immediately
       setIsCardEligibilityDenied(_ => false)
