@@ -48,25 +48,16 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     intent(~bodyArr=body, ~confirmParam, ~handleUserError=false, ~manualRetry=isManualRetryEnabled)
   }
 
-  let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
   let submitValue = (_ev, confirmParam) => {
-    // Check if card is blocked
-    let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(
-      cardNumber->CardValidations.clearSpaces,
-      blockedBinsList,
-    )
-
     let validFormat = switch paymentMode->getPaymentMode {
     | Card =>
       isCardValid->Option.getOr(false) &&
       isExpiryValid->Option.getOr(false) &&
-      isCVCValid->Option.getOr(false) &&
-      !isCardBlocked
+      isCVCValid->Option.getOr(false)
     | CardNumberElement =>
       isCardValid->Option.getOr(false) &&
       checkCardCVC(getCardElementValue(iframeId, "card-cvc"), cardBrand) &&
-      checkCardExpiry(getCardElementValue(iframeId, "card-expiry")) &&
-      !isCardBlocked
+      checkCardExpiry(getCardElementValue(iframeId, "card-expiry"))
     | _ => true
     }
     let cardNetwork = [
@@ -109,9 +100,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       if cardNumber === "" {
         setCardError(_ => localeString.cardNumberEmptyText)
         setUserError(localeString.enterFieldsText)
-      } else if isCardBlocked {
-        setCardError(_ => localeString.blockedCardText)
-        setUserError(localeString.blockedCardText)
       }
       if cardExpiry === "" {
         setExpiryError(_ => localeString.cardExpiryDateEmptyText)

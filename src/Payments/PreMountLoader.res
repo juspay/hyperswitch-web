@@ -70,12 +70,10 @@ let getMessageHandlerV1Elements = (
     paymentMethodsPromise,
     customerPaymentMethodsPromise,
     sessionTokensPromise,
-    blockedBinsPromise,
   ) = if isTestMode || isSdkParamsEnabled {
     let mockResponse = Dict.make()->JSON.Encode.object
 
     (
-      Promise.resolve(mockResponse),
       Promise.resolve(mockResponse),
       Promise.resolve(mockResponse),
       Promise.resolve(mockResponse),
@@ -107,14 +105,6 @@ let getMessageHandlerV1Elements = (
         ~merchantHostname,
         ~sdkAuthorization=Some(sdkAuthorization),
       ),
-      PaymentHelpers.fetchBlockedBins(
-        ~clientSecret,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-        ~endpoint,
-        ~sdkAuthorization=Some(sdkAuthorization),
-      ),
     )
   }
 
@@ -127,8 +117,6 @@ let getMessageHandlerV1Elements = (
       customerPaymentMethodsPromise->sendPromiseData("customer_payment_methods")
     } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
       sessionTokensPromise->sendPromiseData("session_tokens")
-    } else if dict->isKeyPresentInDict("sendBlockedBinsResponse") {
-      blockedBinsPromise->sendPromiseData("blocked_bins")
     }
   }
 }

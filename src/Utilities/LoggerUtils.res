@@ -329,7 +329,6 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | NETWORK_STATE
   | CARD_SCHEME_SELECTION
   | S3_API
-  | BLOCKED_BIN_CALL
   | CARD_ELIGIBILITY_CALL
   | PRELOAD_SDK_WITH_PARAMS
   | APPLE_PAY_BRAINTREE_SCRIPT

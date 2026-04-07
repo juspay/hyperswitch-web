@@ -64,44 +64,6 @@ let retrievePaymentIntent = async (
   )
 }
 
-let fetchBlockedBins = async (
-  ~sdkAuthorization,
-  ~clientSecret,
-  ~publishableKey,
-  ~logger,
-  ~customPodUri,
-  ~endpoint,
-) => {
-  let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchBlockedBins,
-    ~params={
-      clientSecret: Some(clientSecret),
-      publishableKey: None,
-      customBackendBaseUrl: Some(endpoint),
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-      sdkAuthorization,
-    },
-  )
-
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=BLOCKED_BIN_CALL,
-    ~logger,
-    ~method=#GET,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(publishableKey),
-    ~onSuccess,
-    ~onFailure,
-    ~sdkAuthorization,
-  )
-}
-
 let fetchCardEligibility = async (
   ~clientSecret,
   ~publishableKey,

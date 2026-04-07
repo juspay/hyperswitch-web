@@ -85,7 +85,6 @@ let make = (
     RecoilAtoms.showPaymentMethodsScreen,
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
-  let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
   let isEligibilityDenied = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCardEligibilityDenied)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
@@ -212,17 +211,10 @@ let make = (
 
       let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
 
-      // Check if card is blocked
-      let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(
-        cardNumber->CardValidations.clearSpaces,
-        blockedBinsList,
-      )
-
       let validFormat =
         (isBancontact || isCardDetailsValid) &&
         isNicknameValid &&
         areRequiredFieldsValid &&
-        !isCardBlocked &&
         !isEligibilityDenied &&
         isInstallmentValid
 
@@ -410,9 +402,6 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
-        } else if isCardBlocked {
-          setCardError(_ => localeString.blockedCardText)
-          setUserError(localeString.blockedCardText)
         } else if isEligibilityDenied {
           setCardError(_ => localeString.cardNotEligibleText)
           setUserError(localeString.cardNotEligibleText)
@@ -455,7 +444,6 @@ let make = (
     clickToPayConfig,
     clickToPayCardBrand,
     isClickToPayRememberMe,
-    blockedBinsList,
     selectedInstallmentPlan,
     showInstallments,
     isEligibilityDenied,
