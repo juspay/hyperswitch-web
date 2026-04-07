@@ -11,12 +11,14 @@ let getCustomerSavedPaymentMethods = (
   ~endpoint,
   ~logger,
   ~customPodUri,
+  ~sdkAuthorization,
   ~redirectionFlags,
   ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
 ) => {
   open ApplePayTypes
   open GooglePayType
   let applePaySessionRef = ref(Nullable.null)
+  let sdkAuthorizationOption = Some(sdkAuthorization)->Utils.getNonEmptyOption
 
   PaymentHelpers.fetchCustomerPaymentMethodList(
     ~clientSecret,
@@ -25,6 +27,7 @@ let getCustomerSavedPaymentMethods = (
     ~customPodUri,
     ~logger,
     ~isPaymentSession=true,
+    ~sdkAuthorization=sdkAuthorizationOption,
   )
   ->then(customerDetails => {
     let gPayClient = google(
@@ -173,18 +176,31 @@ let getCustomerSavedPaymentMethods = (
       let id = payloadDict->Dict.get("id")->Option.flatMap(JSON.Decode.string)
       let hasCvc = payloadDict->Dict.get("cvc")
       if hasCvc->Option.isSome {
-        let cvcValue = hasCvc->Option.getOr(JSON.Encode.null)
-        body->Array.push(("card_cvc", cvcValue))->ignore
-        PaymentHelpers.paymentIntentForPaymentSession(
-          ~body,
-          ~paymentType,
-          ~payload=updatedPayload,
-          ~publishableKey,
-          ~clientSecret,
-          ~logger,
-          ~customPodUri,
-          ~redirectionFlags,
-        )
+        let cvcString =
+          hasCvc
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+          ->onlyDigits
+        let cvcLength = cvcString->String.length
+        if cvcLength < 3 || cvcLength > 4 {
+          handleFailureResponse(
+            ~message="The CVC must be a 3 to 4 digit string.",
+            ~errorType=cvcValidationErrorType,
+          )->resolve
+        } else {
+          body->Array.push(("card_cvc", cvcString->JSON.Encode.string))->ignore
+          PaymentHelpers.paymentIntentForPaymentSession(
+            ~body,
+            ~paymentType,
+            ~payload=updatedPayload,
+            ~publishableKey,
+            ~clientSecret,
+            ~logger,
+            ~customPodUri,
+            ~redirectionFlags,
+            ~sdkAuthorization=sdkAuthorizationOption,
+          )
+        }
       } else if requiresCvv {
         let idVal = id->Option.getOr("")
         if id->Option.isNone {
@@ -216,6 +232,7 @@ let getCustomerSavedPaymentMethods = (
           ~logger,
           ~customPodUri,
           ~redirectionFlags,
+          ~sdkAuthorization=sdkAuthorizationOption,
         )
       }
     }
@@ -292,6 +309,7 @@ let getCustomerSavedPaymentMethods = (
             ~logger,
             ~customPodUri,
             ~redirectionFlags,
+            ~sdkAuthorization=sdkAuthorizationOption,
           )->then(val => {
             val->resolvePromise
             resolve()
@@ -346,6 +364,7 @@ let getCustomerSavedPaymentMethods = (
             ~logger,
             ~customPodUri,
             ~redirectionFlags,
+            ~sdkAuthorization=sdkAuthorizationOption,
           )
         }
 
@@ -437,6 +456,7 @@ let getCustomerSavedPaymentMethods = (
         ~logger,
         ~customPodUri,
         ~endpoint,
+        ~sdkAuthorization=sdkAuthorizationOption,
       )
       ->then(sessionDetails => {
         let componentName = "headless"
