@@ -14,6 +14,7 @@ type apiCallV1 =
   | FetchEnabledAuthnMethodsToken
   | FetchEligibilityCheck
   | FetchAuthenticationSync
+  | FetchCardEligibility
 
 type commonApiParams = {
   publishableKey: option<string>,
@@ -98,7 +99,8 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | ConfirmPayout
   | FetchEnabledAuthnMethodsToken
   | FetchEligibilityCheck
-  | FetchAuthenticationSync =>
+  | FetchAuthenticationSync
+  | FetchCardEligibility =>
     list{}
   }
 
@@ -119,6 +121,7 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
     `authentication/${authenticationIdVal}/enabled_authn_methods_token`
   | FetchEligibilityCheck => `authentication/${authenticationIdVal}/eligibility-check`
   | FetchAuthenticationSync => `authentication/${merchantId}/${authenticationIdVal}/sync`
+  | FetchCardEligibility => `payments/${paymentIntentID}/eligibility`
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`

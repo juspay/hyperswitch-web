@@ -102,6 +102,70 @@ let fetchBlockedBins = async (
   )
 }
 
+let fetchCardEligibility = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~cardNumber,
+  ~sdkAuthorization=None,
+  ~signal: option<Fetch.AbortSignal.t>=?,
+) => {
+  let uri = APIUtils.generateApiUrlV1(
+    ~apiCallType=FetchCardEligibility,
+    ~params={
+      clientSecret: Some(clientSecret),
+      publishableKey: Some(publishableKey),
+      customBackendBaseUrl: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      sdkAuthorization,
+    },
+  )
+
+  let cardPaymentMethodData =
+    [
+      (
+        "card",
+        [
+          ("card_number", cardNumber->CardValidations.clearSpaces->JSON.Encode.string),
+        ]->getJsonFromArrayOfJson,
+      ),
+    ]->getJsonFromArrayOfJson
+
+  let bodyArr = PaymentBody.eligibilityBody(
+    ~paymentMethodType="card",
+    ~paymentMethodData=cardPaymentMethodData,
+  )
+
+  let body = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => bodyArr->getJsonFromArrayOfJson
+  | _ =>
+    bodyArr
+    ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
+    ->getJsonFromArrayOfJson
+  }
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=CARD_ELIGIBILITY_CALL,
+    ~logger,
+    ~bodyStr=body->JSON.stringify,
+    ~method=#POST,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+    ~sdkAuthorization,
+    ~signal?,
+  )
+}
+
 let threeDsAuth = async (
   ~clientSecret,
   ~logger,
@@ -321,6 +385,7 @@ let rec intentCall = (
     ~customPodUri: option<string>=?,
     ~publishableKey: option<string>=?,
     ~sdkAuthorization: option<string>=?,
+    ~signal: Fetch.AbortSignal.t=?,
   ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,

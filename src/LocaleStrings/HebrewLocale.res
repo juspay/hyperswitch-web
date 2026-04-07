@@ -94,6 +94,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardHeader: `מידע כרטיס`,
   cardBrandConfiguredErrorText: str => `${str} לא נתמך כרגע.`,
   blockedCardText: "כרטיס זה אינו מורשה לתשלומים.",
+  cardNotEligibleText: "כרטיס זה אינו זכאי לתשלום זה.",
   currencyNetwork: `רשתות מטבעות`,
   expiryPlaceholder: `MM / YY`,
   dateOfBirth: `תאריך לידה`,

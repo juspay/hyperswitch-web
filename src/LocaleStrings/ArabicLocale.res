@@ -94,6 +94,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardHeader: `معلومات البطاقة`,
   cardBrandConfiguredErrorText: str => `${str} غير مدعوم في الوقت الحالي.`,
   blockedCardText: "هذه البطاقة غير مسموحة للمدفوعات.",
+  cardNotEligibleText: "هذه البطاقة غير مؤهلة لهذا الدفع.",
   currencyNetwork: `شبكات العملات`,
   expiryPlaceholder: `MM / YY`,
   dateOfBirth: `تاريخ الميلاد`,

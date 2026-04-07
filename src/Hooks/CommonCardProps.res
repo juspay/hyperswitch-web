@@ -10,6 +10,9 @@ let useCardForm = (~logger, ~paymentType) => {
   let blockedBinsList = Recoil.useRecoilValueFromAtom(blockedBins)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let {clientSecret, publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let (isEligibilityDenied, setIsCardEligibilityDenied) = Recoil.useRecoilState(isCardEligibilityDenied)
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -27,6 +30,8 @@ let useCardForm = (~logger, ~paymentType) => {
   let zipRef = React.useRef(Nullable.null)
   let isCoBadgedCardDetectedOnce = React.useRef(false)
   let prevCardBrandRef = React.useRef("")
+  let eligibilityTimerRef = React.useRef(None)
+  let eligibilityControllerRef = React.useRef(None)
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
   let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
@@ -100,6 +105,13 @@ let useCardForm = (~logger, ~paymentType) => {
     None
   }, (paymentToken.paymentToken, showPaymentMethodsScreen))
 
+  React.useEffect0(() => {
+    Some(() => {
+      eligibilityTimerRef.current->Option.forEach(clearTimeout)
+      eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+    })
+  })
+
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
@@ -136,6 +148,75 @@ let useCardForm = (~logger, ~paymentType) => {
       setIsExpiryValid(_ => None)
       setIsCVCValid(_ => None)
       setIsCardValid(_ => Some(false))
+    }
+
+    // Card eligibility check - debounced at 300ms
+    let newCardBrand = CardUtils.getCardBrand(clearValue)
+    let isCardComplete = focusCardValid(clearValue, newCardBrand)
+
+    // Always clear any pending debounce timer
+    eligibilityTimerRef.current->Option.forEach(clearTimeout)
+
+    if !isCardComplete {
+      // Reset eligibility denied state synchronously when card becomes incomplete
+      setIsCardEligibilityDenied(_ => false)
+    } else if (
+      isCardComplete &&
+      !isCardBlocked &&
+      paymentMethodListValue.sdk_next_action === Some("eligibility_check")
+    ) {
+      // Clear stale denied state immediately
+      setIsCardEligibilityDenied(_ => false)
+      // Debounce the API call by 300ms
+      let timerId = setTimeout(() => {
+        // Abort any in-flight eligibility request
+        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+        // Create a new AbortController for this request
+        let controller = Fetch.AbortController.make()
+        eligibilityControllerRef.current = Some(controller)
+        let signal = Fetch.AbortController.signal(controller)
+        switch clientSecret {
+        | Some(clientSecret) =>
+          PaymentHelpers.fetchCardEligibility(
+            ~clientSecret,
+            ~publishableKey,
+            ~logger,
+            ~customPodUri,
+            ~cardNumber=clearValue,
+            ~sdkAuthorization,
+            ~signal,
+          )
+          ->Promise.then(json => {
+            open Utils
+            let dict = json->getDictFromJson
+            let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
+            let nextAction = sdkNextActionDict->Dict.get("next_action")
+            switch nextAction {
+            | Some(nextActionJson) =>
+              switch nextActionJson->JSON.Decode.string {
+              | Some(_) =>
+                // Any string value (e.g. "confirm") means allowed
+                setIsCardEligibilityDenied(_ => false)
+              | None =>
+                // It's an object — check if "deny" key exists
+                let nextActionDict = nextActionJson->getDictFromJson
+                let isDenied = nextActionDict->Dict.get("deny")->Option.isSome
+                setIsCardEligibilityDenied(_ => isDenied)
+              }
+            | None => setIsCardEligibilityDenied(_ => false)
+            }
+            Promise.resolve()
+          })
+          ->Promise.catch(_ => {
+            // Fail open on API error
+            setIsCardEligibilityDenied(_ => false)
+            Promise.resolve()
+          })
+          ->ignore
+        | None => ()
+        }
+      }, 300)
+      eligibilityTimerRef.current = Some(timerId)
     }
   }
 
@@ -268,17 +349,19 @@ let useCardForm = (~logger, ~paymentType) => {
       isCardValid->Option.getOr(true),
       cardNumber->String.length == 0,
       isCardBlocked,
+      isEligibilityDenied,
     ) {
-    | (_, _, _, true) => localeString.blockedCardText
-    | (_, _, true, _) => ""
-    | (true, true, _, _) => ""
-    | (true, _, _, _) => localeString.inValidCardErrorText
+    | (_, _, _, true, _) => localeString.blockedCardText
+    | (_, _, _, _, true) => localeString.cardNotEligibleText
+    | (_, _, true, _, _) => ""
+    | (true, true, _, _, _) => ""
+    | (true, _, _, _, _) => localeString.inValidCardErrorText
     | _ => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
     }
     let cardError = isCardValid->Option.isSome ? cardError : ""
     setCardError(_ => cardError)
     None
-  }, (isCardValid, isCardSupported, cardNumber, blockedBinsList))
+  }, (isCardValid, isCardSupported, cardNumber, blockedBinsList, isEligibilityDenied))
 
   React.useEffect(() => {
     setCvcError(_ => isCVCValid->Option.getOr(true) ? "" : localeString.inCompleteCVCErrorText)

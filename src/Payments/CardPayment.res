@@ -86,6 +86,7 @@ let make = (
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
+  let isEligibilityDenied = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCardEligibilityDenied)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
   )
@@ -222,6 +223,7 @@ let make = (
         isNicknameValid &&
         areRequiredFieldsValid &&
         !isCardBlocked &&
+        !isEligibilityDenied &&
         isInstallmentValid
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
@@ -411,6 +413,9 @@ let make = (
         } else if isCardBlocked {
           setCardError(_ => localeString.blockedCardText)
           setUserError(localeString.blockedCardText)
+        } else if isEligibilityDenied {
+          setCardError(_ => localeString.cardNotEligibleText)
+          setUserError(localeString.cardNotEligibleText)
         } else if isCardSupported->Option.getOr(true)->not {
           if cardBrand == "" {
             setCardError(_ => localeString.enterValidCardNumberErrorText)
@@ -453,6 +458,7 @@ let make = (
     blockedBinsList,
     selectedInstallmentPlan,
     showInstallments,
+    isEligibilityDenied,
   ))
   useSubmitPaymentData(submitCallback)
 

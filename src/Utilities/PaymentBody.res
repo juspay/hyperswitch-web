@@ -1065,3 +1065,10 @@ let getPaymentBody = (
   | "eft" => eftBody()
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }
+
+let eligibilityBody = (~paymentMethodType, ~paymentMethodData) => {
+  [
+    ("payment_method_type", paymentMethodType->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}

@@ -94,6 +94,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardHeader: "卡片信息",
   cardBrandConfiguredErrorText: str => `${str} 暫時不支援。`,
   blockedCardText: "此卡不允許用於付款。",
+  cardNotEligibleText: "此卡不符合此付款資格。",
   currencyNetwork: "貨幣網絡",
   expiryPlaceholder: "月 / 年",
   dateOfBirth: "出生日期",
