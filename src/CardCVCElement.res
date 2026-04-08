@@ -43,7 +43,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
                 confirmParamsDict->getString("publishableKey", keys.publishableKey)
               let clientSecretVal =
                 confirmParamsDict->getString("clientSecret", keys.clientSecret->Option.getOr(""))
-
+              Console.log2("The keys insnide cvcc==>", keys.sdkAuthorization)
               let isCvcComplete = cvcNumber->String.length >= 3
               if requiresCvv && isCvcComplete {
                 setCvcError(_ => "")
@@ -52,7 +52,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
                   bodyArr->Array.concat([("card_cvc", cvcNumber->JSON.Encode.string)])
 
                 let paymentType = paymentTypeStr->PaymentHelpers.getPaymentType
-
+                Console.log2("The keys insnide cvcc==>", keys.sdkAuthorization)
                 PaymentHelpers.paymentIntentForPaymentSession(
                   ~body=bodyWithCvc,
                   ~paymentType,
@@ -131,7 +131,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
         Window.removeEventListener("message", handleRequestCVCConfirm)
       },
     )
-  }, [cvcNumber])
+  }, (cvcNumber, keys, paymentType, loggerState, customPodUri, redirectionFlags, localeString))
 
   React.useEffect0(() => {
     messageParentWindow([

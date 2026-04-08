@@ -13,8 +13,6 @@ type trustPayFunctions = {
 let make = (
   options,
   setIframeRef,
-  ~sdkAuthorization,
-  ~clientSecret,
   ~sdkSessionId,
   ~publishableKey,
   ~profileId,
@@ -24,6 +22,12 @@ let make = (
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
   ~isTestMode=false,
   ~preloadSDKWithParams=Dict.make(),
+  ~isUpdateIntentInProgress: ref<bool>,
+  ~clientSecretRef: ref<string>,
+  ~sdkAuthorizationRef: ref<string>,
+  ~paymentMethodsDataPromise: ref<promise<JSON.t>>,
+  ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
+  ~sessionTokensDataPromise: ref<promise<JSON.t>>,
 ) => {
   try {
     let iframeRef = []
@@ -72,149 +76,60 @@ let make = (
       ~eventName=PRELOAD_SDK_WITH_PARAMS,
     )
 
-    let merchantHostname = Window.Location.hostname
-
     let localSelectorString = "hyper-preMountLoader-iframe"
-    let mountPreMountLoaderIframe = () => {
-      if (
-        Window.querySelector(
-          `#orca-payment-element-iframeRef-${localSelectorString}`,
-        )->Js.Nullable.isNullable
-      ) {
-        let componentType = "preMountLoader"
-        let isTestModeValue = isTestMode->getStringFromBool
-        let isSdkParamsEnabled =
-          (preloadSDKWithParams->Dict.toArray->Array.length > 0)->getStringFromBool
-        let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
-          <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
-            <iframe
-              id="orca-payment-element-iframeRef-${localSelectorString}"
-              name="orca-payment-element-iframeRef-${localSelectorString}"
-              title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabled}&sdkAuthorization=${sdkAuthorization}"
-              allow="*"
-              name="orca-payment"
-              style="outline: none;"
-            ></iframe>
-          </div>`
-        let iframeDiv = Window.createElement("div")
-        iframeDiv->Window.innerHTML(iframeDivHtml)
-        Window.body->Window.appendChild(iframeDiv)
-      }
-
-      let elem = Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`)
-      elem
-    }
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
 
-    let clientSecret =
-      clientSecret->String.trim !== "" ? clientSecret : localOptions->getString("clientSecret", "")
-
-    if !isTestMode && clientSecret === "" {
+    if !isTestMode && clientSecretRef.contents === "" {
       manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="clientSecret", ~logger)
     }
 
-    let clientSecretReMatch = RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret)
+    let clientSecretReMatch = RegExp.test(
+      ".+_secret_[A-Za-z0-9]+"->RegExp.fromString,
+      clientSecretRef.contents,
+    )
 
-    let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
     let isTaxCalculationEnabled = ref(false)
 
-    let unMountPreMountLoaderIframe = () => {
-      switch preMountLoaderIframeDiv->Nullable.toOption {
-      | Some(iframe) => iframe->remove
-      | None => ()
-      }
-    }
+    // Only payment element iframes — used for overlay during updateIntent.
+    // Other widgets (CVC, expressCheckout, etc.) don't handle overlay removal
+    // and don't send the "ready" signal, so they must be excluded.
+    let paymentElementIframeRef: array<Nullable.t<Dom.element>> = []
 
-    let preMountLoaderMountedPromise = Promise.make((resolve, _reject) => {
-      let preMountLoaderIframeCallback = (ev: Types.event) => {
-        let json = ev.data->anyTypeToJson
-        let dict = json->getDictFromJson
-        if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
-          resolve(true->JSON.Encode.bool)
-        } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
-          unMountPreMountLoaderIframe()
-        }
-      }
-      addSmartEventListener(
-        "message",
-        preMountLoaderIframeCallback,
-        "onPreMountLoaderIframeCallback",
-      )
+    let isSdkParamsEnabled = preloadSDKWithParams->Dict.toArray->Array.length > 0
+
+    // --- Initial preMountLoader setup ---
+    let (
+      initialPaymentMethodsPromise,
+      initialCustomerPaymentMethodsPromise,
+      initialSessionTokensPromise,
+    ) = UpdateIntentHelpersNew.setupPreMountLoaderPromises(
+      ~publishableKey,
+      ~profileId,
+      ~sdkSessionId,
+      ~endpoint,
+      ~customPodUri,
+      ~isTestMode,
+      ~isSdkParamsEnabled,
+      ~selectorString=localSelectorString,
+      ~currentClientSecret=clientSecretRef.contents,
+      ~currentSdkAuthorization=sdkAuthorizationRef.contents,
+    )
+
+    // Extract isTaxCalculationEnabled from the paymentMethods response (Elements-specific)
+    initialPaymentMethodsPromise
+    ->Promise.then(json => {
+      isTaxCalculationEnabled.contents =
+        json->getDictFromJson->getBool("is_tax_calculation_enabled", false)
+      Promise.resolve(json)
     })
-
-    let paymentMethodsDataPromise = preMountLoaderMountedPromise->Promise.then(_ => {
-      Promise.make((resolve, _) => {
-        let handlePaymentMethodsData = (event: Types.event) => {
-          let json = event.data->anyTypeToJson
-          let dict = json->getDictFromJson
-          if dict->getString("data", "") === "payment_methods" {
-            let responseJson = dict->getJsonFromDict("response", JSON.Encode.null)
-            isTaxCalculationEnabled.contents =
-              dict->getDictFromDict("response")->getBool("is_tax_calculation_enabled", false)
-            resolve(responseJson)
-          }
-        }
-        addSmartEventListener("message", handlePaymentMethodsData, "onPaymentMethodsData-shared")
-        let msg = [("sendPaymentMethodsResponse", true->JSON.Encode.bool)]->Dict.fromArray
-        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-      })
-    })
-
-    let customerPaymentMethodsDataPromise = preMountLoaderMountedPromise->Promise.then(_ => {
-      Promise.make((resolve, _) => {
-        let handleCustomerPaymentMethodsData = (event: Types.event) => {
-          let json = event.data->anyTypeToJson
-          let dict = json->getDictFromJson
-          if dict->getString("data", "") === "customer_payment_methods" {
-            let responseJson = dict->getJsonFromDict("response", JSON.Encode.null)
-            resolve(responseJson)
-          }
-        }
-        addSmartEventListener(
-          "message",
-          handleCustomerPaymentMethodsData,
-          "onCustomerPaymentMethodsData-shared",
-        )
-        let msg = [("sendCustomerPaymentMethodsResponse", true->JSON.Encode.bool)]->Dict.fromArray
-        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-      })
-    })
-
-    let sessionTokensDataPromise = preMountLoaderMountedPromise->Promise.then(_ => {
-      Promise.make((resolve, _) => {
-        let handleSessionTokensData = (event: Types.event) => {
-          let json = event.data->anyTypeToJson
-          let dict = json->getDictFromJson
-          if dict->getString("data", "") === "session_tokens" {
-            let responseJson = dict->getJsonFromDict("response", JSON.Encode.null)
-            resolve(responseJson)
-          }
-        }
-        addSmartEventListener("message", handleSessionTokensData, "onSessionTokensData-shared")
-        let msg = [("sendSessionTokensResponse", true->JSON.Encode.bool)]->Dict.fromArray
-        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-      })
-    })
-
-    let requestMsg =
-      [("requestPreMountLoaderMountedCallback", true->JSON.Encode.bool)]->Dict.fromArray
-    preMountLoaderIframeDiv->Window.iframePostMessage(requestMsg)
-
-    Promise.all([
-      paymentMethodsDataPromise,
-      customerPaymentMethodsDataPromise,
-      sessionTokensDataPromise,
-    ])
-    ->Promise.then(_ => {
-      let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
-      preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-      Promise.resolve()
-    })
-    ->Promise.catch(_ => Promise.resolve())
     ->ignore
+
+    // Store initial data promises in shared refs so they're accessible during updateIntent
+    paymentMethodsDataPromise.contents = initialPaymentMethodsPromise
+    customerPaymentMethodsDataPromise.contents = initialCustomerPaymentMethodsPromise
+    sessionTokensDataPromise.contents = initialSessionTokensPromise
 
     let onPlaidCallback = mountedIframeRef => {
       (ev: Types.event) => {
@@ -242,7 +157,7 @@ let make = (
     }
 
     let forwardPaymentMethodsToIframe = mountedIframeRef => {
-      paymentMethodsDataPromise->Promise.then(json => {
+      paymentMethodsDataPromise.contents->Promise.then(json => {
         addSmartEventListener("message", onPlaidCallback(mountedIframeRef), "onPlaidCallback")
         addSmartEventListener("message", onPazeCallback(mountedIframeRef), "onPazeCallback")
 
@@ -310,7 +225,7 @@ let make = (
 
     let forwardCustomerPaymentMethodsToIframe = (mountedIframeRef, disableSavedPaymentMethods) => {
       if !disableSavedPaymentMethods {
-        customerPaymentMethodsDataPromise->Promise.then(json => {
+        customerPaymentMethodsDataPromise.contents->Promise.then(json => {
           let customerMethodsList =
             preloadSDKWithParams->getJsonFromDict("customerMethodsList", json)
           let msg = [("customerPaymentMethods", customerMethodsList)]->Dict.fromArray
@@ -322,6 +237,16 @@ let make = (
       }
     }
 
+    // Top-level session tokens forwarder for updateIntent use.
+    // The full forwardSessionTokensToIframe (with wallet client setup) is inside mountPostMessage.
+    let forwardSessionTokensDataToIframe = mountedIframeRef => {
+      sessionTokensDataPromise.contents->Promise.then(json => {
+        let sessionTokens = preloadSDKWithParams->getJsonFromDict("sessionTokens", json)
+        let msg = [("sessions", sessionTokens)]->Dict.fromArray
+        mountedIframeRef->Window.iframePostMessage(msg)
+        Promise.resolve()
+      })
+    }
     if !isTestMode && !clientSecretReMatch {
       manageErrorWarning(
         INVALID_FORMAT,
@@ -371,16 +296,65 @@ let make = (
       })
     }
 
-    let updateIntent = (callback: unit => promise<string>) => {
-      UpdateIntentHelper.updateIntent(
-        ~iframes=iframeRef,
-        ~clientSecret,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-        ~endpoint,
-        ~callback,
-      )
+    let updateIntent = async (callback: unit => promise<string>) => {
+      open UpdateIntentHelpersNew
+
+      if isUpdateIntentInProgress.contents {
+        updateIntentInProgressResponse()
+      } else {
+        // Show overlay only on payment element iframes (CVC/expressCheckout don't handle overlay)
+        setOverlayLoading(paymentElementIframeRef, true)
+
+        let response = await performUpdateIntent(
+          ~isUpdateIntentInProgress,
+          ~clientSecretRef,
+          ~sdkAuthorizationRef,
+          ~paymentMethodsDataPromise,
+          ~customerPaymentMethodsDataPromise,
+          ~sessionTokensDataPromise,
+          ~iframes=iframeRef,
+          ~callback,
+          ~publishableKey,
+          ~profileId,
+          ~sdkSessionId,
+          ~endpoint,
+          ~customPodUri,
+          ~isTestMode,
+          ~isSdkParamsEnabled,
+          ~selectorString=localSelectorString,
+          ~shouldWaitForReady=paymentElementIframeRef->Array.length > 0,
+        )
+
+        // Only forward data and update tax calculation if updateIntent succeeded
+        let isSuccess = response->getDictFromJson->getString("status", "") === "succeeded"
+
+        if isSuccess {
+          // Extract isTaxCalculationEnabled from latest paymentMethods response
+          paymentMethodsDataPromise.contents
+          ->Promise.then(json => {
+            isTaxCalculationEnabled.contents =
+              json->getDictFromJson->getBool("is_tax_calculation_enabled", false)
+            Promise.resolve(json)
+          })
+          ->ignore
+
+          // Forward fresh data to all Elements iframes (reusing existing forward functions)
+          let _ = await Promise.all(
+            iframeRef->Array.map(iframe => {
+              Promise.all([
+                forwardPaymentMethodsToIframe(iframe),
+                forwardCustomerPaymentMethodsToIframe(iframe, false),
+                forwardSessionTokensDataToIframe(iframe),
+              ])
+            }),
+          )
+        }
+
+        // Always hide overlay on payment element iframes
+        setOverlayLoading(paymentElementIframeRef, false)
+
+        response
+      }
     }
 
     let create = (componentType, newOptions) => {
@@ -404,6 +378,14 @@ let make = (
       | str => Console.warn(`Unknown Key: ${str} type in create`)
       }
 
+      // Wrap setElementIframeRef so payment element iframes are also tracked separately
+      let setIframeRefForComponent = ref => {
+        setElementIframeRef(ref)
+        if componentType === "payment" {
+          paymentElementIframeRef->Array.push(ref)->ignore
+        }
+      }
+
       let mountPostMessage = (
         mountedIframeRef,
         selectorString,
@@ -422,8 +404,8 @@ let make = (
 
         let widgetOptions =
           [
-            ("clientSecret", clientSecret->JSON.Encode.string),
-            ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
+            ("clientSecret", clientSecretRef.contents->JSON.Encode.string),
+            ("sdkAuthorization", sdkAuthorizationRef.contents->JSON.Encode.string),
             ("appearance", appearance),
             ("locale", locale),
             ("loader", loader),
@@ -583,12 +565,12 @@ let make = (
                       delay(2000)->then(_ =>
                         PaymentHelpers.pollRetrievePaymentIntent(
                           ~headers=Dict.make(),
-                          clientSecret,
+                          clientSecretRef.contents,
                           ~publishableKey,
                           ~logger,
                           ~customPodUri,
                           ~isForceSync=true,
-                          ~sdkAuthorization=Some(sdkAuthorization),
+                          ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
                         )
                       )
                     let executeGooglePayment = trustpay.executeGooglePayment(
@@ -824,7 +806,7 @@ let make = (
             let dict = json->getDictFromJson
             let status = dict->getString("status", "")
             let returnUrl = dict->getString("return_url", "")
-            let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`
+            let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecretRef.contents}&status=${status}`
             if redirect.contents === "always" {
               Utils.replaceRootHref(redirectUrl, redirectionFlags)
               resolve(JSON.Encode.null)
@@ -864,16 +846,16 @@ let make = (
               ~count,
               ~returnUrl=url,
               ~logger,
-              ~sdkAuthorization=Some(sdkAuthorization),
+              ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
             )
             ->then(_ => {
               PaymentHelpers.retrievePaymentIntent(
-                clientSecret,
+                clientSecretRef.contents,
                 ~publishableKey,
                 ~logger,
                 ~customPodUri,
                 ~isForceSync=true,
-                ~sdkAuthorization=Some(sdkAuthorization),
+                ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
               )
               ->then(json => json->handleRetrievePaymentResponse)
               ->catch(err => {
@@ -905,12 +887,12 @@ let make = (
 
           let retrievePaymentIntentWrapper = redirectUrl => {
             PaymentHelpers.retrievePaymentIntent(
-              clientSecret,
+              clientSecretRef.contents,
               ~publishableKey,
               ~logger,
               ~customPodUri,
               ~isForceSync=true,
-              ~sdkAuthorization=Some(sdkAuthorization),
+              ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
             )
             ->then(json => json->handleRetrievePaymentResponse)
             ->catch(err => {
@@ -954,7 +936,7 @@ let make = (
         addSmartEventListener("message", handleApplePayThirdPartyFlow, "onApplePayThirdParty")
 
         let forwardSessionTokensToIframe = mountedIframeRef => {
-          sessionTokensDataPromise
+          sessionTokensDataPromise.contents
           ->then(json => {
             let sessionsArr =
               json
@@ -1044,9 +1026,9 @@ let make = (
                         ("hyperApplePayButtonClicked", true->JSON.Encode.bool),
                         ("paymentRequest", paymentRequest),
                         ("applePayPresent", applePayPresent->Option.getOr(JSON.Encode.null)),
-                        ("clientSecret", clientSecret->JSON.Encode.string),
+                        ("clientSecret", clientSecretRef.contents->JSON.Encode.string),
                         ("publishableKey", publishableKey->JSON.Encode.string),
-                        ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
+                        ("sdkAuthorization", sdkAuthorizationRef.contents->JSON.Encode.string),
                         ("isTaxCalculationEnabled", isTaxCalculationEnabled->JSON.Encode.bool),
                         ("sdkSessionId", sdkSessionId->JSON.Encode.string),
                         ("analyticsMetadata", analyticsMetadata),
@@ -1161,9 +1143,9 @@ let make = (
                       ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
                       ~logger,
                       ~publishableKey,
-                      ~clientSecret,
+                      ~clientSecret=clientSecretRef.contents,
                       ~paymentMethodType,
-                      ~sdkAuthorization=Some(sdkAuthorization),
+                      ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
                     )->then(resp => {
                       switch resp->TaxCalculation.taxResponseToObjMapper {
                       | Some(taxCalculationResponse) => {
@@ -1432,7 +1414,7 @@ let make = (
       let paymentElement = LoaderPaymentElement.make(
         componentType,
         newOptions,
-        setElementIframeRef,
+        setIframeRefForComponent,
         iframeRef,
         mountPostMessage,
         ~redirectionFlags: RecoilAtomTypes.redirectionFlags,

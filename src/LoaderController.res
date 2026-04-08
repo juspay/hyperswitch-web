@@ -419,25 +419,27 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
           | None => ()
           }
-          switch getThemePromise(optionsDict) {
-          | Some(promise) =>
-            promise
-            ->then(res => {
-              dict->setConfigs(res)
-            })
-            ->catch(_ => {
+          if optionsDict->Dict.keysToArray->Array.length > 0 {
+            switch getThemePromise(optionsDict) {
+            | Some(promise) =>
+              promise
+              ->then(res => {
+                dict->setConfigs(res)
+              })
+              ->catch(_ => {
+                dict->setConfigs({
+                  default: DefaultTheme.default,
+                  defaultRules: DefaultTheme.defaultRules,
+                })
+              })
+
+            | None =>
               dict->setConfigs({
                 default: DefaultTheme.default,
                 defaultRules: DefaultTheme.defaultRules,
               })
-            })
-
-          | None =>
-            dict->setConfigs({
-              default: DefaultTheme.default,
-              defaultRules: DefaultTheme.defaultRules,
-            })
-          }->ignore
+            }->ignore
+          }
         }
         if dict->Dict.get("isTestMode")->Option.isSome {
           let isTestMode = dict->Utils.getBool("isTestMode", false)
