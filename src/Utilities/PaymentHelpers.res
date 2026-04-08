@@ -1670,6 +1670,7 @@ let paymentIntentForPaymentSession = (
   ~customPodUri,
   ~redirectionFlags,
   ~isPaymentSession=true,
+  ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
 ) => {
   let confirmParams =
@@ -1694,17 +1695,25 @@ let paymentIntentForPaymentSession = (
     ~isConfirmCall=true,
   )
   let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
-  let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
+  let headers = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(sdkAuth) => [("Authorization", sdkAuth)]
+  | None => [("api-key", confirmParam.publishableKey)]
+  }
 
   let broswerInfo = BrowserSpec.broswerInfo()
 
   let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
 
+  let clientSecretArr = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => []
+  | None => [("client_secret", clientSecret->JSON.Encode.string)]
+  }
+
   let bodyStr =
     body
     ->Array.concatMany([
       broswerInfo,
-      [("client_secret", clientSecret->JSON.Encode.string)],
+      clientSecretArr,
       returnUrlArr,
     ])
     ->getJsonFromArrayOfJson
@@ -1728,6 +1737,7 @@ let paymentIntentForPaymentSession = (
     ~counter=0,
     ~isPaymentSession,
     ~redirectionFlags,
+    ~sdkAuthorization,
     ~mode,
   )
 }

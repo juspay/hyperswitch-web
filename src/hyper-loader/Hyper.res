@@ -702,22 +702,21 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let initPaymentSession = paymentSessionOptions => {
         open Promise
+
         let paymentSessionOptionsDict = paymentSessionOptions->JSON.Decode.object
 
-        let sdkAuthorizationId =
-          paymentSessionOptionsDict->getStringFromDict("sdkAuthorization", "")
+        sdkAuthorization := paymentSessionOptionsDict->getStringFromDict("sdkAuthorization", "")
 
-        let sdkAuthorizationData = sdkAuthorizationId->Utils.getSdkAuthorizationData
+        let sdkAuthorizationData = sdkAuthorization.contents->Utils.getSdkAuthorizationData
 
-        let clientSecretId = switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
-        | Some(cs) => cs
-        | None => paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
-        }
+        clientSecret :=
+          switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
+          | Some(cs) => cs
+          | None => paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
+          }
 
-        sdkAuthorization := sdkAuthorizationId
-        clientSecret := clientSecretId
         Promise.make((resolve, _) => {
-          logger.setClientSecret(clientSecretId)
+          logger.setClientSecret(clientSecret.contents)
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
@@ -729,8 +728,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         PaymentSession.make(
           paymentSessionOptions,
-          ~clientSecret={clientSecretId},
+          ~clientSecret={clientSecret.contents},
           ~publishableKey,
+          ~sdkAuthorization={Some(sdkAuthorization.contents)->Utils.getNonEmptyOption},
           ~logger=Some(logger),
           ~redirectionFlags,
           ~iframeRef,
