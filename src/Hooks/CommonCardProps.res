@@ -11,7 +11,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {clientSecret, publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let (isCardEligible, setIsCardEligible) = React.useState(() => true)
+  let (isCardEligible, setIsCardEligible) = React.useState(_ => true)
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -141,20 +141,16 @@ let useCardForm = (~logger, ~paymentType) => {
         let dict = json->getDictFromJson
         let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
         let nextAction = sdkNextActionDict->Dict.get("next_action")
-        switch nextAction {
+        let isEligible = switch nextAction {
         | Some(nextActionJson) =>
           switch nextActionJson->JSON.Classify.classify {
-          | String(str) =>
-            let isEligible = str !== "deny"
-            setIsCardEligible(_ => isEligible)
-          | Object(nextActionDict) =>
-            let isEligible = nextActionDict->Dict.get("deny")->Option.isNone
-            setIsCardEligible(_ => isEligible)
-          | _ =>
-            setIsCardEligible(_ => true)
+          | String(str) => str !== "deny"
+          | Object(nextActionDict) => nextActionDict->Dict.get("deny")->Option.isNone
+          | _ => true
           }
-        | None => setIsCardEligible(_ => true)
+        | None => true
         }
+        setIsCardEligible(_ => isEligible)
       } catch {
       | exn =>
         // Fail open on API error
@@ -213,9 +209,7 @@ let useCardForm = (~logger, ~paymentType) => {
       eligibilityControllerRef.current = None
       // Reset eligibility denied state synchronously when card becomes incomplete
       setIsCardEligible(_ => true)
-    } else if (
-      paymentMethodListValue.sdk_next_action === Some("eligibility_check")
-    ) {
+    } else if paymentMethodListValue.sdk_next_action === Some("eligibility_check") {
       // Clear stale denied state immediately
       setIsCardEligible(_ => true)
       // Debounce the API call by 300ms
