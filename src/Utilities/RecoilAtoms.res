@@ -139,4 +139,3 @@ let defaultRedirectionFlags: redirectionFlags = {
 }
 let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)
 let isTestMode = Recoil.atom("isTestMode", false)
-let isCardEligibilityDenied = Recoil.atom("isCardEligibilityDenied", false)

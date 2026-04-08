@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `このカードは期限切れです`,
   cardHeader: `カード情報`,
   cardBrandConfiguredErrorText: str => `${str} は現在サポートされていません。`,
-  cardNotEligibleText: "このカードはこのお支払いにご利用いただけません。",
+  cardNotEligibleText: "このカードはこのお支払いにご利用いただけません",
   currencyNetwork: `通貨ネットワーク`,
   expiryPlaceholder: `MM / YY`,
   dateOfBirth: `生年月日`,

@@ -64,41 +64,27 @@ let retrievePaymentIntent = async (
   )
 }
 
-let fetchCardEligibility = async (
+let fetchEligibility = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
   ~customPodUri,
-  ~cardNumber,
+  ~bodyArr: array<(string, JSON.t)>,
   ~sdkAuthorization=None,
+  ~endpoint,
   ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchCardEligibility,
+    ~apiCallType=FetchPaymentEligibility,
     ~params={
       clientSecret: Some(clientSecret),
       publishableKey: Some(publishableKey),
-      customBackendBaseUrl: None,
+      customBackendBaseUrl: Some(endpoint),
       forceSync: None,
       pollId: None,
       payoutId: None,
       sdkAuthorization,
     },
-  )
-
-  let cardPaymentMethodData =
-    [
-      (
-        "card",
-        [
-          ("card_number", cardNumber->CardValidations.clearSpaces->JSON.Encode.string),
-        ]->getJsonFromArrayOfJson,
-      ),
-    ]->getJsonFromArrayOfJson
-
-  let bodyArr = PaymentBody.eligibilityBody(
-    ~paymentMethodType="card",
-    ~paymentMethodData=cardPaymentMethodData,
   )
 
   let body = switch sdkAuthorization->Utils.getNonEmptyOption {
@@ -115,7 +101,7 @@ let fetchCardEligibility = async (
 
   await fetchApiWithLogging(
     uri,
-    ~eventName=CARD_ELIGIBILITY_CALL,
+    ~eventName=PAYMENT_ELIGIBILITY_CALL,
     ~logger,
     ~bodyStr=body->JSON.stringify,
     ~method=#POST,

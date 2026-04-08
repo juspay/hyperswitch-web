@@ -1072,3 +1072,12 @@ let eligibilityBody = (~paymentMethodType, ~paymentMethodData) => {
     ("payment_method_data", paymentMethodData),
   ]
 }
+
+let cardEligibilityBody = (~cardNumber) => {
+  let cardPaymentMethodData =
+    [
+      ("card", [("card_number", cardNumber->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
+    ]->Utils.getJsonFromArrayOfJson
+
+  eligibilityBody(~paymentMethodType="card", ~paymentMethodData=cardPaymentMethodData)
+}

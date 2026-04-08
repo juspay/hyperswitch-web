@@ -101,8 +101,8 @@ type eventName =
   | ONE_CLICK_HANDLER_CALLBACK
   | PAYMENT_ELEMENT_OPTIONS
   | TEST_MODE
-  | CARD_ELIGIBILITY_CALL
-  | CARD_ELIGIBILITY_CALL_INIT
+  | PAYMENT_ELIGIBILITY_CALL
+  | PAYMENT_ELIGIBILITY_CALL_INIT
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

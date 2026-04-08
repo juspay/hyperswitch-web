@@ -52,6 +52,7 @@ let make = (
     setCardError,
     maxCardLength,
     cardBrand,
+    isCardEligible,
   } = cardProps
 
   let {
@@ -85,7 +86,6 @@ let make = (
     RecoilAtoms.showPaymentMethodsScreen,
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
-  let isEligibilityDenied = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCardEligibilityDenied)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
   )
@@ -215,7 +215,7 @@ let make = (
         (isBancontact || isCardDetailsValid) &&
         isNicknameValid &&
         areRequiredFieldsValid &&
-        !isEligibilityDenied &&
+        isCardEligible &&
         isInstallmentValid
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
@@ -402,7 +402,7 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
-        } else if isEligibilityDenied {
+        } else if !isCardEligible {
           setCardError(_ => localeString.cardNotEligibleText)
           setUserError(localeString.cardNotEligibleText)
         } else if isCardSupported->Option.getOr(true)->not {
@@ -446,7 +446,7 @@ let make = (
     isClickToPayRememberMe,
     selectedInstallmentPlan,
     showInstallments,
-    isEligibilityDenied,
+    isCardEligible,
   ))
   useSubmitPaymentData(submitCallback)
 
