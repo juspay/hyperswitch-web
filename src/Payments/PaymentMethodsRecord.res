@@ -948,6 +948,7 @@ type paymentMethodList = {
   is_tax_calculation_enabled: bool,
   isGuestCustomer: option<bool>,
   intent_data: intentData,
+  sdk_next_action: option<string>,
 }
 
 let defaultPaymentMethodType = {
@@ -978,6 +979,7 @@ let defaultList = {
   is_tax_calculation_enabled: false,
   isGuestCustomer: None,
   intent_data: defaultIntentData,
+  sdk_next_action: None,
 }
 
 let getPaymentExperienceType = str => {
@@ -1216,6 +1218,7 @@ let itemToObjMapper = dict => {
     is_tax_calculation_enabled: getBool(dict, "is_tax_calculation_enabled", false),
     isGuestCustomer: getOptionBool(dict, "is_guest_customer"),
     intent_data: dict->getIntentData,
+    sdk_next_action: dict->getDictFromDict("sdk_next_action")->getOptionString("next_action"),
   }
 }
 
@@ -1296,4 +1299,19 @@ let getPaymentExperienceTypeFromPML = (
     ->Some
   )
   ->Option.getOr([])
+}
+
+let parseEligibilityResponse = (json: JSON.t): bool => {
+  let dict = json->getDictFromJson
+  let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
+  let nextAction = sdkNextActionDict->Dict.get("next_action")
+  switch nextAction {
+  | Some(nextActionJson) =>
+    switch nextActionJson->JSON.Classify.classify {
+    | String(str) => str !== "deny"
+    | Object(nextActionDict) => nextActionDict->Dict.get("deny")->Option.isNone
+    | _ => true
+    }
+  | None => true
+  }
 }
