@@ -186,24 +186,18 @@ let useCardForm = (~logger, ~paymentType) => {
       setIsCardValid(_ => Some(false))
     }
 
-    // Card eligibility check - debounced at 300ms
-    // Always cancel any pending debounce
-    cancelEligibilityDebounce()
 
-    if !isCardSupportedAndValid {
-      // Abort any in-flight eligibility request to prevent stale responses
-      // from overwriting the reset (e.g., card goes from 16 valid digits to 17)
+  if paymentMethodListValue.sdk_next_action === Some("eligibility_check") {
+    cancelEligibilityDebounce()
+      setIsCardEligible(_ => true)
+      if !isCardSupportedAndValid {
       eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
       eligibilityControllerRef.current = None
-      // Reset eligibility denied state synchronously when card becomes incomplete
-      setIsCardEligible(_ => true)
-    } else if paymentMethodListValue.sdk_next_action === Some("eligibility_check") {
-      // Clear stale denied state immediately
-      setIsCardEligible(_ => true)
-      // Debounce the API call by 300ms
+    } else {
       startEligibilityDebounce(() => {
         checkCardEligibility(~cardNumber=clearValue)->ignore
       })
+    }
     }
   }
 
