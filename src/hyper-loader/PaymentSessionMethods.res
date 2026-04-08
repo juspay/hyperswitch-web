@@ -11,7 +11,7 @@ let getCustomerSavedPaymentMethods = (
   ~endpoint,
   ~logger,
   ~customPodUri,
-  ~sdkAuthorization: option<string>=None,
+  ~sdkAuthorization,
   ~redirectionFlags,
   ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
 ) => {
