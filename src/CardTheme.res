@@ -59,7 +59,6 @@ let defaultConfig = {
   locale: "auto",
   fonts: [],
   clientSecret: "",
-  pmClientSecret: "",
   pmSessionId: "",
   loader: Auto,
   sdkAuthorization: "",
@@ -399,16 +398,7 @@ let itemToObjMapper = (
   logger,
 ) => {
   unknownKeysWarning(
-    [
-      "appearance",
-      "fonts",
-      "locale",
-      "clientSecret",
-      "loader",
-      "pmClientSecret",
-      "pmSessionId",
-      "sdkAuthorization",
-    ],
+    ["appearance", "fonts", "locale", "clientSecret", "loader", "pmSessionId", "sdkAuthorization"],
     dict,
     "elements",
   )
@@ -418,7 +408,6 @@ let itemToObjMapper = (
     fonts: getFonts("fonts", dict, logger),
     clientSecret: getWarningString(dict, "clientSecret", "", ~logger),
     pmSessionId: getWarningString(dict, "pmSessionId", "", ~logger),
-    pmClientSecret: getWarningString(dict, "pmClientSecret", "", ~logger),
     loader: getWarningString(dict, "loader", "auto", ~logger)->getShowLoader,
     sdkAuthorization: getString(dict, "sdkAuthorization", ""),
   }

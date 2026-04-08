@@ -18,7 +18,6 @@ let intentCall = (
   ~headers,
   ~bodyStr,
   ~confirmParam: ConfirmType.confirmParams,
-  ~clientSecret,
   ~optLogger,
   ~handleUserError,
   ~paymentType,
@@ -46,7 +45,6 @@ let intentCall = (
   )
   ->then(res => {
     let url = makeUrl(confirmParam.return_url)
-    url.searchParams.set("client_secret", clientSecret)
     url.searchParams.set("status", "failed")
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
@@ -126,7 +124,6 @@ let intentCall = (
             }
 
             let url = makeUrl(confirmParam.return_url)
-            url.searchParams.set("client_secret", clientSecret)
             url.searchParams.set("status", intent.authenticationDetails.status)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
@@ -234,7 +231,6 @@ let intentCall = (
     Promise.make((resolve, _) => {
       try {
         let url = makeUrl(confirmParam.return_url)
-        url.searchParams.set("client_secret", clientSecret)
         url.searchParams.set("status", "failed")
         let _exceptionMessage = err->formatException
 
@@ -268,18 +264,13 @@ let intentCall = (
 
 let fetchPaymentManagementList = (
   ~pmSessionId,
-  ~pmClientSecret,
-  ~publishableKey,
-  ~profileId,
   ~endpoint,
   ~optLogger as _,
   ~customPodUri,
+  ~sdkAuthorization,
 ) => {
   open Promise
-  let headers = [
-    ("x-profile-id", `${profileId}`),
-    ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
-  ]
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/list-payment-methods`
 
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
@@ -302,20 +293,15 @@ let fetchPaymentManagementList = (
 }
 
 let deletePaymentMethodV2 = (
-  ~pmClientSecret,
-  ~publishableKey,
-  ~profileId,
   ~paymentMethodToken,
   ~pmSessionId,
   ~logger as _,
   ~customPodUri,
+  ~sdkAuthorization,
 ) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [
-    ("x-profile-id", `${profileId}`),
-    ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
-  ]
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
   fetchApi(
     uri,
@@ -345,20 +331,14 @@ let deletePaymentMethodV2 = (
 
 let updatePaymentMethod = (
   ~bodyArr,
-  ~pmClientSecret,
-  ~publishableKey,
-  ~profileId,
   ~pmSessionId,
   ~logger as _,
   ~customPodUri,
+  ~sdkAuthorization,
 ) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [
-    ("x-profile-id", `${profileId}`),
-    ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
-    ("Content-Type", "application/json"),
-  ]
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
   fetchApi(
@@ -389,6 +369,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
   open RecoilAtoms
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let {sdkAuthorization} = keys
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
@@ -397,22 +378,17 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
     ~bodyArr: array<(string, JSON.t)>,
     ~confirmParam: ConfirmType.confirmParams,
   ) => {
-    switch keys.pmClientSecret {
-    | Some(pmClientSecret) =>
-      let pmSessionId = keys.pmSessionId->Option.getOr("")
-      let headers = [
-        ("Content-Type", "application/json"),
-        ("Authorization", `publishable-key=${keys.publishableKey},client-secret=${pmClientSecret}`),
-        ("x-profile-id", keys.profileId),
-      ]
+    switch keys.pmSessionId {
+    | Some(pmSessionId) =>
+      let headers = [("Authorization", sdkAuthorization->Option.getOr(""))]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/confirm`
 
       let browserInfo = BrowserSpec.broswerInfo
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let bodyStr =
-        [("client_secret", pmClientSecret->JSON.Encode.string)]
-        ->Array.concatMany([bodyArr, browserInfo(), returnUrlArr])
+        bodyArr
+        ->Array.concatMany([browserInfo(), returnUrlArr])
         ->getJsonFromArrayOfJson
         ->JSON.stringify
 
@@ -423,7 +399,6 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
           ~headers,
           ~bodyStr,
           ~confirmParam: ConfirmType.confirmParams,
-          ~clientSecret=pmClientSecret,
           ~optLogger,
           ~handleUserError,
           ~paymentType,
@@ -452,6 +427,7 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
   open RecoilAtoms
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let {sdkAuthorization} = keys
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
@@ -460,22 +436,17 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
     ~bodyArr: array<(string, JSON.t)>,
     ~confirmParam: ConfirmType.confirmParams,
   ) => {
-    switch keys.pmClientSecret {
-    | Some(pmClientSecret) =>
-      let pmSessionId = keys.pmSessionId->Option.getOr("")
-      let headers = [
-        ("Content-Type", "application/json"),
-        ("Authorization", `publishable-key=${keys.publishableKey},client-secret=${pmClientSecret}`),
-        ("x-profile-id", keys.profileId),
-      ]
+    switch keys.pmSessionId {
+    | Some(pmSessionId) =>
+      let headers = [("Authorization", sdkAuthorization->Option.getOr(""))]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
       let browserInfo = BrowserSpec.broswerInfo
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let bodyStr =
-        [("client_secret", pmClientSecret->JSON.Encode.string)]
-        ->Array.concatMany([bodyArr, browserInfo(), returnUrlArr])
+        bodyArr
+        ->Array.concatMany([browserInfo(), returnUrlArr])
         ->getJsonFromArrayOfJson
         ->JSON.stringify
 
@@ -486,7 +457,6 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
           ~headers,
           ~bodyStr,
           ~confirmParam: ConfirmType.confirmParams,
-          ~clientSecret=pmClientSecret,
           ~optLogger,
           ~handleUserError,
           ~paymentType,

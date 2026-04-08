@@ -141,7 +141,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
-          pmClientSecret: config.pmClientSecret,
           pmSessionId: config.pmSessionId,
           loader: config.loader,
           sdkAuthorization: config.sdkAuthorization,
@@ -284,14 +283,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-                let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
                 let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
                 let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
                 setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
                   sdkAuthorization: Some(sdkAuthorization),
-                  pmClientSecret,
                   pmSessionId,
                 })
                 logger.setClientSecret(clientSecret)
@@ -329,7 +326,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
-                ("profileId", ""->JSON.Encode.string),
                 ("paymentId", ""->JSON.Encode.string),
                 ("parentURL", "*"->JSON.Encode.string),
                 ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
@@ -348,14 +344,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             let paymentOptions = dict->getDictFromObj("paymentOptions")
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-            let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
             let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
             let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
             setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
               sdkAuthorization: Some(sdkAuthorization),
-              pmClientSecret,
               pmSessionId,
             })
             logger.setClientSecret(clientSecret)

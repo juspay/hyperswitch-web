@@ -93,9 +93,7 @@ let make = () => {
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
         let publishableKey = getQueryParamsDictforKey(url.search, "publishableKey")
-        let profileId = getQueryParamsDictforKey(url.search, "profileId")
         let endpoint = getQueryParamsDictforKey(url.search, "endpoint")
-        let pmClientSecret = getQueryParamsDictforKey(url.search, "pmClientSecret")
         let pmSessionId = getQueryParamsDictforKey(url.search, "pmSessionId")
         let hyperComponentName =
           getQueryParamsDictforKey(
@@ -110,13 +108,11 @@ let make = () => {
 
         <PreMountLoader
           publishableKey
-          profileId
           sessionId
           sdkAuthorization
           clientSecret
           endpoint
           pmSessionId
-          pmClientSecret
           hyperComponentName
           merchantHostname
           customPodUri

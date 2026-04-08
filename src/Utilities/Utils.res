@@ -1952,5 +1952,6 @@ let getSdkAuthorizationData = sdkAuthorization => {
     clientSecret: getValueFromArrayOfKeys("client_secret"),
     customerId: getValueFromArrayOfKeys("customer_id"),
     profileId: getValueFromArrayOfKeys("profile_id"),
+    pmSessionId: getValueFromArrayOfKeys("payment_method_session_id"),
   }
 }

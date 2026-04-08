@@ -14,7 +14,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   let (_, setManagePaymentMethod) = Recoil.useRecoilState(RecoilAtomsV2.managePaymentMethod)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let updateCard = PaymentHelpersV2.useUpdateCard(Some(loggerState), Card)
-  let {iframeId, publishableKey, profileId} = keys
+  let {iframeId, sdkAuthorization} = keys
   let {isCVCValid, cvcNumber, setCvcError} = cvcProps
   let complete = isCVCValid->Option.getOr(false) && paymentTokenAtom.paymentToken !== ""
   let isEmpty = cvcNumber == ""
@@ -57,12 +57,10 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
     try {
       let res = await PaymentHelpersV2.updatePaymentMethod(
         ~bodyArr,
-        ~pmClientSecret=keys.pmClientSecret->Option.getOr(""),
-        ~publishableKey,
-        ~profileId,
         ~pmSessionId=keys.pmSessionId->Option.getOr(""),
         ~logger,
         ~customPodUri,
+        ~sdkAuthorization=sdkAuthorization->Option.getOr(""),
       )
 
       let dict = res->getDictFromJson
@@ -98,13 +96,11 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
 
     try {
       let res = await PaymentHelpersV2.deletePaymentMethodV2(
-        ~publishableKey,
-        ~profileId,
-        ~pmClientSecret=keys.pmClientSecret->Option.getOr(""),
         ~paymentMethodToken=paymentItem.paymentToken,
         ~pmSessionId=keys.pmSessionId->Option.getOr(""),
         ~logger,
         ~customPodUri,
+        ~sdkAuthorization=sdkAuthorization->Option.getOr(""),
       )
 
       let dict = res->getDictFromJson
