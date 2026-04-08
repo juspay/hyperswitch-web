@@ -375,7 +375,7 @@ let filterSavedMethodsByWalletReadiness = (
   )
 }
 
-let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode, ~sessions) => {
+let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
@@ -498,8 +498,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType: CardThemeType.mode
     }
     (
       wallets->removeDuplicate->Utils.getWalletPaymentMethod(paymentType),
-      paymentOptions
-      ->Array.concat(otherOptions)
+      otherOptions
       ->removeDuplicate
       ->filterPaymentMethods,
       otherOptions,

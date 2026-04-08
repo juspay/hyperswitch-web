@@ -173,7 +173,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, [savedMethods])
 
   let (walletList, paymentOptionsList, actualList) = useGetPaymentMethodList(
-    ~paymentOptions=[],
     ~paymentType,
     ~sessions,
   )
