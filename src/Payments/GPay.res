@@ -41,7 +41,6 @@ let make = (
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("google_pay")
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
-
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
@@ -114,6 +113,20 @@ let make = (
         ~country,
         ~state,
         ~pinCode,
+        ~subscriptionEvents=options.subscriptionEvents,
+      )
+      SubscriptionEventHooks.emitPaymentMethodStatus(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~paymentMethod="wallet",
+        ~paymentMethodType="google_pay",
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=isWallet,
+      )
+      SubscriptionEventHooks.emitBillingAddress(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~country,
+        ~state,
+        ~postalCode=pinCode,
       )
       makeOneClickHandlerPromise(isSDKHandleClick)
       ->then(result => {

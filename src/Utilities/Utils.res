@@ -779,19 +779,28 @@ let handlePostMessageEvents = (
   ~paymentType,
   ~loggerState: HyperLoggerTypes.loggerMake,
   ~savedMethod=false,
+  ~subscriptionEvents,
 ) => {
-  if complete && paymentType !== "" {
-    let value = `Payment Data Filled: ${savedMethod
-        ? "Saved Payment Method"
-        : "New Payment Method"}`
-    loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
+  if (
+    subscriptionEvents->Option.isNone ||
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscriptionEvents->Option.getOr([]),
+        ~eventType=PaymentEventTypes.UnknownEvent,
+      )
+  ) {
+    if complete && paymentType !== "" {
+      let value = `Payment Data Filled: ${savedMethod
+          ? "Saved Payment Method"
+          : "New Payment Method"}`
+      loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
+    }
+    messageParentWindow([
+      ("elementType", "payment"->JSON.Encode.string),
+      ("complete", complete->JSON.Encode.bool),
+      ("empty", empty->JSON.Encode.bool),
+      ("value", [("type", paymentType->JSON.Encode.string)]->getJsonFromArrayOfJson),
+    ])
   }
-  messageParentWindow([
-    ("elementType", "payment"->JSON.Encode.string),
-    ("complete", complete->JSON.Encode.bool),
-    ("empty", empty->JSON.Encode.bool),
-    ("value", [("type", paymentType->JSON.Encode.string)]->getJsonFromArrayOfJson),
-  ])
 }
 
 let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
@@ -1454,7 +1463,24 @@ let eventHandlerFunc = (
       | OneClickConfirmPayment
       | Blur =>
         switch eventHandler {
-        | Some(eH) => eH(Some(ev.data))
+        | Some(eH) => {
+            let data = ev.data->Identity.anyTypeToJson
+            let dataDict = data->getDictFromJson
+
+            // Check if this is a subscription event by looking for eventName key
+            let isSubscriptionEvent = dataDict->Dict.get("eventName")->Option.isSome
+
+            // For subscription events, remove elementType from the data before sending to merchant
+            let sanitizedData = if isSubscriptionEvent {
+              let dataCopy = dataDict->deepCopyDict
+              dataCopy->Dict.delete("elementType")
+              dataCopy->JSON.Encode.object
+            } else {
+              data
+            }
+
+            eH(Some(sanitizedData))
+          }
         | None => ()
         }
       | _ => ()

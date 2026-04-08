@@ -64,6 +64,11 @@ let make = (~sessionObj: SessionsType.token) => {
     ~paymentMethod="wallet",
     ~paymentMethodType="paypal",
   )
+  SubscriptionEventHooks.useFormStatus(
+    ~empty=!isCompleted,
+    ~complete=isCompleted,
+    ~isOneClickWallet=true,
+  )
 
   UtilityHooks.useHandlePostMessages(
     ~complete=isCompleted,
@@ -110,6 +115,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~isTestMode,
         ~nonPiiAdderessData,
         ~sdkAuthorization,
+        ~subscriptionEvents=options.subscriptionEvents,
       )
     })
     Window.body->Window.appendChild(paypalScript)

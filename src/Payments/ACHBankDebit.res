@@ -1,6 +1,5 @@
 open RecoilAtoms
 open Utils
-open PaymentModeType
 
 @react.component
 let make = () => {
@@ -61,7 +60,9 @@ let make = () => {
     fullName.value != "" &&
     email.isValid->Option.getOr(false) &&
     modalData->Option.isSome
-  let empty = email.value == "" || fullName.value != ""
+  let empty = email.value == "" || fullName.value == ""
+
+  SubscriptionEventHooks.useFormStatus(~complete, ~empty)
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="ach_bank_debit")
 

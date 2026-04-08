@@ -659,41 +659,50 @@ let emitPaymentMethodInfo = (
   ~state="",
   ~pinCode="",
   ~isSavedPaymentMethod=false,
+  ~subscriptionEvents,
 ) => {
-  let baseCardsFields = [
-    ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
-    ("cardLast4", cardLast4->JSON.Encode.string),
-    ("cardBin", cardBin->JSON.Encode.string),
-    ("cardExpiryMonth", cardExpiryMonth->JSON.Encode.string),
-    ("cardExpiryYear", cardExpiryYear->JSON.Encode.string),
-  ]
-
-  let baseAddressFields = [
-    ("country", country->JSON.Encode.string),
-    ("state", state->JSON.Encode.string),
-    ("pincode", pinCode->JSON.Encode.string),
-  ]
-
-  let baseSavedPaymentField = [("isSavedPaymentMethod", isSavedPaymentMethod->JSON.Encode.bool)]
-
-  let basePaymentInfoFields = switch paymentMethod {
-  | "card" => [("paymentMethod", paymentMethod->JSON.Encode.string)]
-  | _ => [
-      ("paymentMethod", paymentMethod->JSON.Encode.string),
-      ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+  if (
+    subscriptionEvents->Option.isNone ||
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscriptionEvents->Option.getOr([]),
+        ~eventType=PaymentEventTypes.UnknownEvent,
+      )
+  ) {
+    let baseCardsFields = [
+      ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
+      ("cardLast4", cardLast4->JSON.Encode.string),
+      ("cardBin", cardBin->JSON.Encode.string),
+      ("cardExpiryMonth", cardExpiryMonth->JSON.Encode.string),
+      ("cardExpiryYear", cardExpiryYear->JSON.Encode.string),
     ]
+
+    let baseAddressFields = [
+      ("country", country->JSON.Encode.string),
+      ("state", state->JSON.Encode.string),
+      ("pincode", pinCode->JSON.Encode.string),
+    ]
+
+    let baseSavedPaymentField = [("isSavedPaymentMethod", isSavedPaymentMethod->JSON.Encode.bool)]
+
+    let basePaymentInfoFields = switch paymentMethod {
+    | "card" => [("paymentMethod", paymentMethod->JSON.Encode.string)]
+    | _ => [
+        ("paymentMethod", paymentMethod->JSON.Encode.string),
+        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+      ]
+    }
+
+    let msg = if cardBrand === CardUtils.NOTFOUND || paymentMethod !== "card" {
+      [...basePaymentInfoFields, ...baseAddressFields]
+    } else {
+      [...basePaymentInfoFields, ...baseAddressFields, ...baseCardsFields]
+    }
+
+    let finalMsg =
+      msg->Array.filter(((_, value)) => value->JSON.Decode.string->Option.getOr("") != "")
+
+    emitMessage(finalMsg->Array.concat(baseSavedPaymentField)->Dict.fromArray)
   }
-
-  let msg = if cardBrand === CardUtils.NOTFOUND || paymentMethod !== "card" {
-    [...basePaymentInfoFields, ...baseAddressFields]
-  } else {
-    [...basePaymentInfoFields, ...baseAddressFields, ...baseCardsFields]
-  }
-
-  let finalMsg =
-    msg->Array.filter(((_, value)) => value->JSON.Decode.string->Option.getOr("") != "")
-
-  emitMessage(finalMsg->Array.concat(baseSavedPaymentField)->Dict.fromArray)
 }
 
 type nonPiiAdderessData = {
@@ -714,6 +723,42 @@ let useNonPiiAddressData = () => {
   }
 }
 
+let getPaymentMethodAndType = (
+  ~paymentMethodName: string,
+  ~paymentMethods: array<PaymentMethodsRecord.methods>,
+  ~logger: HyperLoggerTypes.loggerMake,
+) => {
+  if paymentMethodName->String.includes("_debit") {
+    Some(("bank_debit", paymentMethodName))
+  } else if paymentMethodName->String.includes("_transfer") {
+    Some(("bank_transfer", paymentMethodName))
+  } else if paymentMethodName === "card" {
+    Some(("card", "debit"))
+  } else {
+    let finalOptionalPaymentMethodTypeValue =
+      paymentMethods
+      ->Array.filter(paymentMethodData =>
+        paymentMethodData.payment_method_types
+        ->Array.filter(paymentMethodType =>
+          paymentMethodType.payment_method_type === paymentMethodName
+        )
+        ->Array.length > 0
+      )
+      ->Array.get(0)
+
+    switch finalOptionalPaymentMethodTypeValue {
+    | Some(finalPaymentMethodType) =>
+      Some((finalPaymentMethodType.payment_method, paymentMethodName))
+    | None =>
+      logger.setLogError(
+        ~value="Payment method type not found",
+        ~eventName=PAYMENT_METHOD_TYPE_DETECTION_FAILED,
+      )
+      None
+    }
+  }
+}
+
 let useEmitPaymentMethodInfo = (
   ~paymentMethodName,
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
@@ -722,6 +767,7 @@ let useEmitPaymentMethodInfo = (
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {country, state, pinCode} = useNonPiiAddressData()
+  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
   let {cardNumber, cardBrand} = cardProps
   let cardBin = cardNumber->CardUtils.getCardBin
@@ -745,49 +791,25 @@ let useEmitPaymentMethodInfo = (
         ~country,
         ~state,
         ~pinCode,
+        ~subscriptionEvents=options.subscriptionEvents,
       )
     } else {
-      emitPaymentMethodInfo(~paymentMethod, ~paymentMethodType, ~country, ~state, ~pinCode)
+      emitPaymentMethodInfo(
+        ~paymentMethod,
+        ~paymentMethodType,
+        ~country,
+        ~state,
+        ~pinCode,
+        ~subscriptionEvents=options.subscriptionEvents,
+      )
     }
   }
 
   React.useEffect(() => {
-    if paymentMethodName->String.includes("_debit") {
-      emitPaymentMethodInfoWrapper(
-        ~paymentMethod="bank_debit",
-        ~paymentMethodType=paymentMethodName,
-      )
-    } else if paymentMethodName->String.includes("_transfer") {
-      emitPaymentMethodInfoWrapper(
-        ~paymentMethod="bank_transfer",
-        ~paymentMethodType=paymentMethodName,
-      )
-    } else if paymentMethodName === "card" {
-      emitPaymentMethodInfoWrapper(~paymentMethod="card", ~paymentMethodType="debit")
-    } else {
-      let finalOptionalPaymentMethodTypeValue =
-        paymentMethods
-        ->Array.filter(paymentMethodData =>
-          paymentMethodData.payment_method_types
-          ->Array.filter(
-            paymentMethodType => paymentMethodType.payment_method_type === paymentMethodName,
-          )
-          ->Array.length > 0
-        )
-        ->Array.get(0)
-
-      switch finalOptionalPaymentMethodTypeValue {
-      | Some(finalPaymentMethodType) =>
-        emitPaymentMethodInfoWrapper(
-          ~paymentMethod=finalPaymentMethodType.payment_method,
-          ~paymentMethodType=paymentMethodName,
-        )
-      | None =>
-        loggerState.setLogError(
-          ~value="Payment method type not found",
-          ~eventName=PAYMENT_METHOD_TYPE_DETECTION_FAILED,
-        )
-      }
+    switch getPaymentMethodAndType(~paymentMethodName, ~paymentMethods, ~logger=loggerState) {
+    | Some((paymentMethod, paymentMethodType)) =>
+      emitPaymentMethodInfoWrapper(~paymentMethod, ~paymentMethodType)
+    | None => ()
     }
 
     None

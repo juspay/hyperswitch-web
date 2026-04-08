@@ -49,6 +49,8 @@ let make = (~paymentMethodName: string) => {
 
   let empty = areRequiredFieldsEmpty
 
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete=areRequiredFieldsValid)
+
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
     ~empty,

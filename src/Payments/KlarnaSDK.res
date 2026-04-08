@@ -41,6 +41,12 @@ let make = (~sessionObj: SessionsType.token) => {
     ~paymentMethodType="klarna",
   )
 
+  SubscriptionEventHooks.useFormStatus(
+    ~complete=isCompleted,
+    ~empty=!isCompleted,
+    ~isOneClickWallet=true,
+  )
+
   UtilityHooks.useHandlePostMessages(
     ~complete=isCompleted,
     ~empty=!isCompleted,
@@ -82,6 +88,20 @@ let make = (~sessionObj: SessionsType.token) => {
                 ~country,
                 ~state,
                 ~pinCode,
+                ~subscriptionEvents=options.subscriptionEvents,
+              )
+              SubscriptionEventHooks.emitPaymentMethodStatus(
+                ~subscriptionEvents=options.subscriptionEvents,
+                ~paymentMethod="wallet",
+                ~paymentMethodType="klarna",
+                ~isSavedPaymentMethod=false,
+                ~isOneClickWallet=true,
+              )
+              SubscriptionEventHooks.emitBillingAddress(
+                ~subscriptionEvents=options.subscriptionEvents,
+                ~country,
+                ~state,
+                ~postalCode=pinCode,
               )
               makeOneClickHandlerPromise(sdkHandleIsThere)->then(
                 result => {

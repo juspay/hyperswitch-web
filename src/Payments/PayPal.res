@@ -42,11 +42,13 @@ let make = (~walletOptions) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
-  UtilityHooks.useHandlePostMessages(
-    ~complete=paypalClicked,
-    ~empty=!paypalClicked,
-    ~paymentType=paymentMethodType,
-  )
+
+  let complete = paypalClicked
+  let empty = !paypalClicked
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete, ~isOneClickWallet=isWallet)
+
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType)
+
   let onPaypalClick = _ev => {
     if isTestMode {
       Console.warn("PayPal button clicked in test mode - interaction disabled")
@@ -67,6 +69,20 @@ let make = (~walletOptions) => {
         ~country,
         ~state,
         ~pinCode,
+        ~subscriptionEvents=options.subscriptionEvents,
+      )
+      SubscriptionEventHooks.emitPaymentMethodStatus(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~paymentMethod,
+        ~paymentMethodType,
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=isWallet,
+      )
+      SubscriptionEventHooks.emitBillingAddress(
+        ~subscriptionEvents=options.subscriptionEvents,
+        ~country,
+        ~state,
+        ~postalCode=pinCode,
       )
       setPaypalClicked(_ => true)
       open Promise

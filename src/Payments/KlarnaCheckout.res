@@ -22,6 +22,18 @@ let make = () => {
   let (buttonColor, textColor) =
     options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#0b051d", "#000000")
 
+  SubscriptionEventHooks.useFormStatus(
+    ~empty=!klarnaClicked,
+    ~complete=klarnaClicked,
+    ~isOneClickWallet=true,
+  )
+
+  UtilityHooks.useHandlePostMessages(
+    ~complete=klarnaClicked,
+    ~empty=!klarnaClicked,
+    ~paymentType="klarna_checkout",
+  )
+
   let onKlarnaClick = async _ev => {
     try {
       if isTestMode {

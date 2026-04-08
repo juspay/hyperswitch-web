@@ -139,13 +139,15 @@ let useCardForm = (~logger, ~paymentType) => {
     }
   }
 
+  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+
   let changeCardExpiry = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardExpiry", logger)
     let formattedExpiry = val->CardValidations.formatCardExpiryNumber
     if isExipryValid(formattedExpiry) {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
-      emitExpiryDate(formattedExpiry)
+      CardUtils.emitExpiryDate(formattedExpiry, ~subscriptionEvents=options.subscriptionEvents)
     }
     setExpiryValid(formattedExpiry, setIsExpiryValid)
     setCardExpiry(_ => formattedExpiry)

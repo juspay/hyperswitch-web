@@ -433,16 +433,22 @@ let make = (
             ),
           ]->Dict.fromArray
 
-        let widgetOptions =
-          [
-            ("clientSecret", clientSecret->JSON.Encode.string),
-            ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
-            ("appearance", appearance),
-            ("locale", locale),
-            ("loader", loader),
-            ("fonts", fonts),
-            ("redirectionFlags", redirectionFlagsDict->JSON.Encode.object),
-          ]->getJsonFromArrayOfJson
+        let widgetOptions = [
+          ("clientSecret", clientSecret->JSON.Encode.string),
+          ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
+          ("appearance", appearance),
+          ("locale", locale),
+          ("loader", loader),
+          ("fonts", fonts),
+          ("redirectionFlags", redirectionFlagsDict->JSON.Encode.object),
+          (
+            "subscriptionEvents",
+            newOptions
+            ->getDictFromJson
+            ->Dict.get("subscriptionEvents")
+            ->Option.getOr(JSON.Encode.null),
+          ),
+        ]->getJsonFromArrayOfJson
         let message = [
           (
             "paymentElementCreate",
