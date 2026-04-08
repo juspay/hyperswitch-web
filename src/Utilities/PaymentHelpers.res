@@ -1696,8 +1696,8 @@ let paymentIntentForPaymentSession = (
   )
   let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
   let headers = switch sdkAuthorization->Utils.getNonEmptyOption {
-  | Some(sdkAuth) => [("Content-Type", "application/json"), ("Authorization", sdkAuth)]
-  | None => [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
+  | Some(sdkAuth) => [("Authorization", sdkAuth)]
+  | None => [("api-key", confirmParam.publishableKey)]
   }
 
   let broswerInfo = BrowserSpec.broswerInfo()
