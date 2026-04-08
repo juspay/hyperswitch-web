@@ -48,7 +48,6 @@ let getNewCredentials = async (~callback, ~currentClientSecret) => {
 // --- Send credentials update to iframes ---
 
 let sendElementsUpdateToIframes = (iframes, ~newSdkAuthorization, ~newClientSecret) => {
-  Console.log2("SeNDING UPDATED SDKAUTH TO IFRAME", newSdkAuthorization)
   postMessageToIframes(
     iframes,
     [

@@ -8,7 +8,11 @@ let make = (~paymentType) => {
 
   let setPaymentMethodListValue = Recoil.useSetRecoilState(PaymentUtils.paymentMethodListValue)
 
-  let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(~paymentType, ~sessions)
+  let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(
+    ~paymentOptions=[],
+    ~paymentType,
+    ~sessions,
+  )
 
   React.useEffect(() => {
     switch methodslist {
