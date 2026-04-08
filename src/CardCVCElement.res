@@ -62,6 +62,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
                   ~logger=loggerState,
                   ~customPodUri,
                   ~redirectionFlags,
+                  ~sdkAuthorization=keys.sdkAuthorization,
                   ~mode=CardCVCElement,
                 )
                 ->then(response => {

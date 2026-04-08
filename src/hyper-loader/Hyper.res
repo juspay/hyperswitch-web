@@ -703,15 +703,20 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let initPaymentSession = paymentSessionOptions => {
         open Promise
 
-        let clientSecretId =
-          paymentSessionOptions
-          ->JSON.Decode.object
-          ->Option.flatMap(x => x->Dict.get("clientSecret"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
-        clientSecret := clientSecretId
+        let paymentSessionOptionsDict = paymentSessionOptions->JSON.Decode.object
+
+        sdkAuthorization := paymentSessionOptionsDict->getStringFromDict("sdkAuthorization", "")
+
+        let sdkAuthorizationData = sdkAuthorization.contents->Utils.getSdkAuthorizationData
+
+        clientSecret :=
+          switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
+          | Some(cs) => cs
+          | None => paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
+          }
+
         Promise.make((resolve, _) => {
-          logger.setClientSecret(clientSecretId)
+          logger.setClientSecret(clientSecret.contents)
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
@@ -723,8 +728,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         PaymentSession.make(
           paymentSessionOptions,
-          ~clientSecret={clientSecretId},
+          ~clientSecret={clientSecret.contents},
           ~publishableKey,
+          ~sdkAuthorization={Some(sdkAuthorization.contents)->Utils.getNonEmptyOption},
           ~logger=Some(logger),
           ~redirectionFlags,
           ~iframeRef,
