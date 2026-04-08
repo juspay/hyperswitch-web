@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Ta karta wygasła`,
   cardHeader: `Informacje o karcie`,
   cardBrandConfiguredErrorText: str => `${str} nie jest obecnie obsługiwany.`,
-  cardNotEligibleText: "Ta karta nie kwalifikuje się do tej płatności",
+  cardNotEligibleText: "Ta karta nie jest akceptowana dla tej płatności",
   currencyNetwork: `Sieci Walutowe`,
   expiryPlaceholder: `MM / RR`,
   dateOfBirth: `Data urodzenia`,

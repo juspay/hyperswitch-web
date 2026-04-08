@@ -33,7 +33,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let {
     startDebounce: startEligibilityDebounce,
     cancelDebounce: cancelEligibilityDebounce,
-  } = UseDebounce.useDebounce(~delayMs=300)
+  } = CommonHooks.useDebounce(~delayMs=300)
   let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
@@ -116,6 +116,54 @@ let useCardForm = (~logger, ~paymentType) => {
     )
   })
 
+  let checkCardEligibility = async (~cardNumber) => {
+    // Abort any in-flight eligibility request
+    eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+    // Create a new AbortController for this request
+    let controller = Fetch.AbortController.make()
+    eligibilityControllerRef.current = Some(controller)
+    let signal = Fetch.AbortController.signal(controller)
+
+    switch clientSecret {
+    | Some(clientSecret) =>
+      try {
+        let json = await PaymentHelpers.fetchEligibility(
+          ~clientSecret,
+          ~publishableKey,
+          ~logger,
+          ~customPodUri,
+          ~bodyArr=PaymentBody.cardEligibilityBody(~cardNumber),
+          ~sdkAuthorization,
+          ~endpoint,
+          ~signal,
+        )
+        open Utils
+        let dict = json->getDictFromJson
+        let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
+        let nextAction = sdkNextActionDict->Dict.get("next_action")
+        switch nextAction {
+        | Some(nextActionJson) =>
+          switch nextActionJson->JSON.Decode.string {
+          | Some(_) =>
+            // Any string value (e.g. "confirm") means allowed
+            setIsCardEligible(_ => true)
+          | None =>
+            // It's an object — check if "deny" key exists
+            let nextActionDict = nextActionJson->getDictFromJson
+            let isEligible = nextActionDict->Dict.get("deny")->Option.isNone
+            setIsCardEligible(_ => isEligible)
+          }
+        | None => setIsCardEligible(_ => true)
+        }
+      } catch {
+      | _ =>
+        // Fail open on API error
+        setIsCardEligible(_ => true)
+      }
+    | None => ()
+    }
+  }
+
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
@@ -164,55 +212,7 @@ let useCardForm = (~logger, ~paymentType) => {
       setIsCardEligible(_ => true)
       // Debounce the API call by 300ms
       startEligibilityDebounce(() => {
-        // Abort any in-flight eligibility request
-        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
-        // Create a new AbortController for this request
-        let controller = Fetch.AbortController.make()
-        eligibilityControllerRef.current = Some(controller)
-        let signal = Fetch.AbortController.signal(controller)
-        switch clientSecret {
-        | Some(clientSecret) =>
-          let bodyArr = PaymentBody.cardEligibilityBody(~cardNumber=clearValue)
-
-          PaymentHelpers.fetchEligibility(
-            ~clientSecret,
-            ~publishableKey,
-            ~logger,
-            ~customPodUri,
-            ~bodyArr,
-            ~sdkAuthorization,
-            ~endpoint,
-            ~signal,
-          )
-          ->Promise.then(json => {
-            open Utils
-            let dict = json->getDictFromJson
-            let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
-            let nextAction = sdkNextActionDict->Dict.get("next_action")
-            switch nextAction {
-            | Some(nextActionJson) =>
-              switch nextActionJson->JSON.Decode.string {
-              | Some(_) =>
-                // Any string value (e.g. "confirm") means allowed
-                setIsCardEligible(_ => true)
-              | None =>
-                // It's an object — check if "deny" key exists
-                let nextActionDict = nextActionJson->getDictFromJson
-                let isEligible = nextActionDict->Dict.get("deny")->Option.isNone
-                setIsCardEligible(_ => isEligible)
-              }
-            | None => setIsCardEligible(_ => true)
-            }
-            Promise.resolve()
-          })
-          ->Promise.catch(_ => {
-            // Fail open on API error
-            setIsCardEligible(_ => true)
-            Promise.resolve()
-          })
-          ->ignore
-        | None => ()
-        }
+        checkCardEligibility(~cardNumber=clearValue)->ignore
       })
     }
   }
