@@ -137,19 +137,7 @@ let useCardForm = (~logger, ~paymentType) => {
           ~endpoint,
           ~signal,
         )
-        open Utils
-        let dict = json->getDictFromJson
-        let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
-        let nextAction = sdkNextActionDict->Dict.get("next_action")
-        let isEligible = switch nextAction {
-        | Some(nextActionJson) =>
-          switch nextActionJson->JSON.Classify.classify {
-          | String(str) => str !== "deny"
-          | Object(nextActionDict) => nextActionDict->Dict.get("deny")->Option.isNone
-          | _ => true
-          }
-        | None => true
-        }
+        let isEligible = PaymentMethodsRecord.parseEligibilityResponse(json)
         setIsCardEligible(_ => isEligible)
       } catch {
       | exn =>

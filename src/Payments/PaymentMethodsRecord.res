@@ -1300,3 +1300,18 @@ let getPaymentExperienceTypeFromPML = (
   )
   ->Option.getOr([])
 }
+
+let parseEligibilityResponse = (json: JSON.t): bool => {
+  let dict = json->getDictFromJson
+  let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
+  let nextAction = sdkNextActionDict->Dict.get("next_action")
+  switch nextAction {
+  | Some(nextActionJson) =>
+    switch nextActionJson->JSON.Classify.classify {
+    | String(str) => str !== "deny"
+    | Object(nextActionDict) => nextActionDict->Dict.get("deny")->Option.isNone
+    | _ => true
+    }
+  | None => true
+  }
+}
