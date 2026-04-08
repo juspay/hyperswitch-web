@@ -4,7 +4,7 @@ let make = (
   options,
   ~clientSecret,
   ~publishableKey,
-  ~sdkAuthorization,
+  ~sdkAuthorization: option<string>=None,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
   ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
