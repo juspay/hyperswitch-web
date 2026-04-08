@@ -199,12 +199,8 @@ let getNextAction = (dict, str) => {
       ->Dict.get("ddc_data")
       ->Option.flatMap(JSON.Decode.object)
       ->Option.map(ddcDict => {
-        iframe_url: getString(ddcDict, "iframe_url", ""),
-        timeout_ms: ddcDict
-        ->Dict.get("timeout_ms")
-        ->Option.flatMap(JSON.Decode.float)
-        ->Option.map(Float.toInt)
-        ->Option.getOr(30000),
+        iframe_url: ddcDict->getString("iframe_url", ""),
+        timeout_ms: ddcDict->getInt("timeout_ms", 30000),
       }),
     }
   })
