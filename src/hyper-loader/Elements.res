@@ -124,6 +124,7 @@ let make = (
         json->getDictFromJson->getBool("is_tax_calculation_enabled", false)
       Promise.resolve(json)
     })
+    ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
     ->ignore
 
     // Store initial data promises in shared refs so they're accessible during updateIntent
@@ -336,6 +337,7 @@ let make = (
               json->getDictFromJson->getBool("is_tax_calculation_enabled", false)
             Promise.resolve(json)
           })
+          ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
           ->ignore
 
           // Forward fresh data to all Elements iframes (reusing existing forward functions)
