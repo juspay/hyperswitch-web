@@ -245,6 +245,7 @@ type localeStrings = {
   installmentSelectPlanPlaceholder: string,
   showMore: string,
   showLess: string,
+  refreshingText: string,
 }
 
 type constantStrings = {
