@@ -143,15 +143,15 @@ let useCardForm = (~logger, ~paymentType) => {
         let nextAction = sdkNextActionDict->Dict.get("next_action")
         switch nextAction {
         | Some(nextActionJson) =>
-          switch nextActionJson->JSON.Decode.string {
-          | Some(_) =>
-            // Any string value (e.g. "confirm") means allowed
-            setIsCardEligible(_ => true)
-          | None =>
-            // It's an object — check if "deny" key exists
-            let nextActionDict = nextActionJson->getDictFromJson
+          switch nextActionJson->JSON.Classify.classify {
+          | String(str) =>
+            let isEligible = str !== "deny"
+            setIsCardEligible(_ => isEligible)
+          | Object(nextActionDict) =>
             let isEligible = nextActionDict->Dict.get("deny")->Option.isNone
             setIsCardEligible(_ => isEligible)
+          | _ =>
+            setIsCardEligible(_ => true)
           }
         | None => setIsCardEligible(_ => true)
         }
@@ -214,7 +214,6 @@ let useCardForm = (~logger, ~paymentType) => {
       // Reset eligibility denied state synchronously when card becomes incomplete
       setIsCardEligible(_ => true)
     } else if (
-      isCardSupportedAndValid &&
       paymentMethodListValue.sdk_next_action === Some("eligibility_check")
     ) {
       // Clear stale denied state immediately
