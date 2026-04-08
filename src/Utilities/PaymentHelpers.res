@@ -1724,11 +1724,7 @@ let paymentIntentForPaymentSession = (
 
   let bodyStr =
     body
-    ->Array.concatMany([
-      broswerInfo,
-      clientSecretArr,
-      returnUrlArr,
-    ])
+    ->Array.concatMany([broswerInfo, clientSecretArr, returnUrlArr])
     ->getJsonFromArrayOfJson
     ->JSON.stringify
 

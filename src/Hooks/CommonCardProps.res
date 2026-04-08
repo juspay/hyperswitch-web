@@ -117,9 +117,8 @@ let useCardForm = (~logger, ~paymentType) => {
   })
 
   let checkCardEligibility = async (~cardNumber) => {
-    // Abort any in-flight eligibility request
     eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
-    // Create a new AbortController for this request
+
     let controller = Fetch.AbortController.make()
     eligibilityControllerRef.current = Some(controller)
     let signal = Fetch.AbortController.signal(controller)
@@ -141,7 +140,6 @@ let useCardForm = (~logger, ~paymentType) => {
         setIsCardEligible(_ => isEligible)
       } catch {
       | exn =>
-        // Fail open on API error
         logger.setLogError(
           ~value={
             "message": "Card payment eligibility check failed",
@@ -186,18 +184,17 @@ let useCardForm = (~logger, ~paymentType) => {
       setIsCardValid(_ => Some(false))
     }
 
-
-  if paymentMethodListValue.sdk_next_action === Some("eligibility_check") {
-    cancelEligibilityDebounce()
+    if paymentMethodListValue.sdk_next_action === Some("eligibility_check") {
+      cancelEligibilityDebounce()
       setIsCardEligible(_ => true)
       if !isCardSupportedAndValid {
-      eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
-      eligibilityControllerRef.current = None
-    } else {
-      startEligibilityDebounce(() => {
-        checkCardEligibility(~cardNumber=clearValue)->ignore
-      })
-    }
+        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+        eligibilityControllerRef.current = None
+      } else {
+        startEligibilityDebounce(() => {
+          checkCardEligibility(~cardNumber=clearValue)->ignore
+        })
+      }
     }
   }
 
