@@ -180,9 +180,8 @@ let getCustomerSavedPaymentMethods = (
           hasCvc
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
-          ->onlyDigits
-        let cvcLength = cvcString->String.length
-        if cvcLength < 3 || cvcLength > 4 {
+        let isValidCvc = %re("/^\d{3,4}$/")->RegExp.test(cvcString)
+        if !isValidCvc {
           handleFailureResponse(
             ~message="The CVC must be a 3 to 4 digit string.",
             ~errorType=cvcValidationErrorType,
