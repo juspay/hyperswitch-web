@@ -1038,6 +1038,7 @@ let fetchApi = (
   ~customPodUri=None,
   ~publishableKey=None,
   ~sdkAuthorization=None,
+  ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   open Promise
   let body = switch method {
@@ -1050,6 +1051,7 @@ let fetchApi = (
       {
         method,
         ?body,
+        ?signal,
         headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey, ~sdkAuthorization),
       },
     )
@@ -1076,6 +1078,7 @@ let fetchApiWithLogging = async (
   ~isPaymentSession=false,
   ~onCatchCallback=None,
   ~sdkAuthorization=None,
+  ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   open LoggerUtils
 
@@ -1098,6 +1101,7 @@ let fetchApiWithLogging = async (
       {
         method,
         ?body,
+        ?signal,
         headers: getHeaders(
           ~headers=headers->Option.getOr(Dict.make()),
           ~uri,

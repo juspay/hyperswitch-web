@@ -183,22 +183,6 @@ let make = (
       })
     })
 
-    let blockedBinsDataPromise = preMountLoaderMountedPromise->Promise.then(_ => {
-      Promise.make((resolve, _) => {
-        let handleBlockedBinsData = (event: Types.event) => {
-          let json = event.data->anyTypeToJson
-          let dict = json->getDictFromJson
-          if dict->getString("data", "") === "blocked_bins" {
-            let responseJson = dict->getJsonFromDict("response", JSON.Encode.null)
-            resolve(responseJson)
-          }
-        }
-        addSmartEventListener("message", handleBlockedBinsData, "onBlockedBinsData-shared")
-        let msg = [("sendBlockedBinsResponse", true->JSON.Encode.bool)]->Dict.fromArray
-        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-      })
-    })
-
     let sessionTokensDataPromise = preMountLoaderMountedPromise->Promise.then(_ => {
       Promise.make((resolve, _) => {
         let handleSessionTokensData = (event: Types.event) => {
@@ -222,7 +206,6 @@ let make = (
     Promise.all([
       paymentMethodsDataPromise,
       customerPaymentMethodsDataPromise,
-      blockedBinsDataPromise,
       sessionTokensDataPromise,
     ])
     ->Promise.then(_ => {
@@ -339,14 +322,6 @@ let make = (
       }
     }
 
-    let forwardBlockedBinsToIframe = mountedIframeRef => {
-      blockedBinsDataPromise->Promise.then(json => {
-        let blockedBins = preloadSDKWithParams->getJsonFromDict("blockedBins", json)
-        let msg = [("blockedBins", blockedBins)]->Dict.fromArray
-        mountedIframeRef->Window.iframePostMessage(msg)
-        Promise.resolve()
-      })
-    }
     if !isTestMode && !clientSecretReMatch {
       manageErrorWarning(
         INVALID_FORMAT,
@@ -1449,7 +1424,6 @@ let make = (
         forwardCustomerPaymentMethodsToIframe(mountedIframeRef, disableSavedPaymentMethods)
         ->catch(_ => resolve())
         ->ignore
-        forwardBlockedBinsToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
         forwardSessionTokensToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
 
         mountedIframeRef->Window.iframePostMessage(message)

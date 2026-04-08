@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `הכרטיס הזה פג תוקף`,
   cardHeader: `מידע כרטיס`,
   cardBrandConfiguredErrorText: str => `${str} לא נתמך כרגע.`,
-  blockedCardText: "כרטיס זה אינו מורשה לתשלומים.",
+  cardNotEligibleText: "כרטיס זה אינו מתקבל לתשלום זה",
   currencyNetwork: `רשתות מטבעות`,
   expiryPlaceholder: `MM / YY`,
   dateOfBirth: `תאריך לידה`,
