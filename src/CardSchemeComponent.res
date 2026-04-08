@@ -2,6 +2,7 @@ module CoBadgeCardSchemeDropDown = {
   @react.component
   let make = (~eligibleCardSchemes, ~setCardBrand) => {
     let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     <select
       className="w-4"
       onClick={_ =>
@@ -11,7 +12,7 @@ module CoBadgeCardSchemeDropDown = {
         let value = target["value"]
         setCardBrand(_ => value)
       }}>
-      <option disabled=true> {"Select a card brand"->React.string} </option>
+      <option disabled=true> {localeString.selectCardBrandText->React.string} </option>
       {eligibleCardSchemes
       ->Array.mapWithIndex((item, i) => {
         <option key={Int.toString(i)} value=item> {item->React.string} </option>

@@ -7,7 +7,7 @@ let make = (
   ~setIsClickToPayRememberMe,
 ) => {
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isUnrecognizedUser = clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length == 0
 
@@ -78,15 +78,13 @@ let make = (
     {!isUnrecognizedUser
       ? <div className="text-xs font-normal">
           {React.string(
-            `By continuing, ${clickToPayConfig.dpaName} will share your card details, billing address,
-        and email with ${formattedCardBrand} to allow you to securely enroll in Click to
-        Pay for faster checkouts.`,
+            localeString.ctpConsentSharingText(clickToPayConfig.dpaName, formattedCardBrand),
           )}
           {React.string(" ")}
           <span
             className="underline decoration-1 underline-offset-2 cursor-pointer"
             onClick={handleLearnMore}>
-            {React.string("Learn more")}
+            {React.string(localeString.learnMoreText)}
           </span>
         </div>
       : <>
@@ -104,18 +102,18 @@ let make = (
               className={`CheckboxLabel ${isSaveDetailsCheckBoxLabelState} ml-2 w-11/12 text-xs space-y-2`}
               style={color: "#a9a9a9"}>
               <div>
-                {React.string(`Save my information with ${formattedCardBrand} `)}
+                {React.string(localeString.ctpSaveInfoText(formattedCardBrand))}
                 <span
                   className="underline decoration-1 underline-offset-2 cursor-pointer"
                   onClick={handleLearnMore}>
                   {React.string("Click to Pay")}
                 </span>
                 {React.string(" ")}
-                {React.string("for a faster and secure checkout")}
+                {React.string(localeString.ctpFasterCheckoutText)}
               </div>
               <div>
-                {React.string("Your email or mobile number will be used to verify you.")}
-                {React.string("Message/data rates may apply.")}
+                {React.string(localeString.ctpVerifyIdentityText)}
+                {React.string(localeString.ctpDataRatesText)}
               </div>
             </div>
           </div>
@@ -132,7 +130,7 @@ let make = (
               className={`CheckboxLabel ${isRememberMeCheckBoxLabelState} ml-2 w-11/12 text-xs space-y-2`}
               style={color: "#a9a9a9"}>
               <div className="flex items-center">
-                {React.string("Remember me on this browser")}
+                {React.string(localeString.ctpRememberMeText)}
                 <div className="relative inline-block ml-2">
                   <div className="group cursor-help">
                     <div
@@ -145,32 +143,26 @@ let make = (
                       className="invisible group-hover:visible absolute z-10 w-64 bg-white text-xs rounded-md p-2 left-1/2 transform -translate-x-1/2 bottom-[150%] shadow-md border border-gray-200 before:content-[''] before:absolute before:top-[100%] before:left-1/2 before:ml-[-5px] before:border-[5px] before:border-solid before:border-gray-200 before:border-b-transparent before:border-l-transparent before:border-r-transparent after:content-[''] after:absolute after:top-[100%] after:left-1/2 after:ml-[-4px] after:border-[4px] after:border-solid after:border-white after:border-b-transparent after:border-l-transparent after:border-r-transparent">
                       //   {/* Content */}
                       <div className="flex flex-col space-y-2">
-                        <span>
-                          {React.string("When remembered, you'll skip verification and securely")}
-                          {React.string("access your saved cards when paying with Click to Pay.")}
-                        </span>
-                        <span>
-                          {React.string("Not recommended for public or shared devices because")}
-                          {React.string("this uses cookies.")}
-                        </span>
+                        <span> {React.string(localeString.ctpRememberMeTooltipLine1)} </span>
+                        <span> {React.string(localeString.ctpRememberMeTooltipLine2)} </span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
               <div>
-                {React.string(`By continuing, you agree to ${formattedCardBrand}'s `)}
+                {React.string(localeString.ctpTermsConsentText(formattedCardBrand))}
                 <span
                   className="underline decoration-1 underline-offset-2 cursor-pointer"
                   onClick={ev => handleOpenUrl(ev, getTermsUrl())}>
-                  {React.string("Terms")}
+                  {React.string(localeString.termsText)}
                 </span>
                 {React.string(" ")}
-                {React.string("and understand your data will be processed according to the ")}
+                {React.string(localeString.ctpPrivacyConsentText)}
                 <span
                   className="underline decoration-1 underline-offset-2 cursor-pointer"
                   onClick={ev => handleOpenUrl(ev, getPrivacyNoticeUrl())}>
-                  {React.string("Privacy Notice")}
+                  {React.string(localeString.privacyNoticeText)}
                 </span>
                 {React.string(".")}
               </div>

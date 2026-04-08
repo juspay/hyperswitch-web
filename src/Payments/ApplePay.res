@@ -15,6 +15,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Applepay)
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Applepay)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -352,7 +353,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
               }
               className="apple-pay-button-with-text apple-pay-button-black-with-text"
               onClick={_ => onApplePayButtonClicked()}>
-              <span className="text"> {React.string("Pay with")} </span>
+              <span className="text"> {React.string(localeString.payWithText)} </span>
               <span className="logo" />
             </button>
           }}

@@ -67,6 +67,7 @@ let make = () => {
   let (headers, setHeaders) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
     getPaymentMethodConfig(Other)
@@ -263,13 +264,13 @@ let make = () => {
             className="button mb-6 p-2 h-[40px] border border-[#006DF9] rounded-md"
             style={color: "#006DF9", background: "transparent"}
             onClick={handleCopyQrData}>
-            {isCopied ? React.string("Copied!") : React.string("Copy QR Data")}
+            {isCopied
+              ? React.string(localeString.copiedText)
+              : React.string(localeString.copyQRDataText)}
           </button>
         </RenderIf>
         <div className={`Disclaimer w-full  font-medium text-xs text-[#151A1F] opacity-50`}>
-          {React.string(
-            "The QR Code is valid for the next 15 minutes, please do not close until you have successfully completed the payment, after which you will be automatically redirected.",
-          )}
+          {React.string(localeString.qrCodeValidityText)}
         </div>
         <div className="button w-full">
           <div>
@@ -283,7 +284,7 @@ let make = () => {
               onClick={_ => {
                 closeModal()->ignore
               }}>
-              {React.string("Done")}
+              {React.string(localeString.doneText)}
             </button>
           </div>
         </div>

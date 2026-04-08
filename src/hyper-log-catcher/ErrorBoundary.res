@@ -95,10 +95,10 @@ let errorIcon = {
 module ErrorTextAndImage = {
   @react.component
   let make = (~divRef, ~level) => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let message = switch level {
-    | Top => "We'll be back with you shortly :)"
-    | _ => "Try another payment method :)"
+    | Top => localeString.errorBackShortlyText
+    | _ => localeString.tryAnotherPaymentMethodText
     }
 
     <div
@@ -113,7 +113,7 @@ module ErrorTextAndImage = {
       <div className="flex flex-row  items-center m-6">
         <div style={marginLeft: "1rem"}> {errorIcon} </div>
         <div className="flex flex-col items-center justify-center" style={marginLeft: "3rem"}>
-          <div> {"Oops, something went wrong!"->React.string} </div>
+          <div> {localeString.somethingWentWrongText->React.string} </div>
           <div className="text-sm"> {message->React.string} </div>
         </div>
       </div>

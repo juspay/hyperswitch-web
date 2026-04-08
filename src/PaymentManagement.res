@@ -111,7 +111,7 @@ let make = (
         <PaymentElementRendererLazy paymentType cardProps cvcProps expiryProps />
         <RenderIf condition={sdkHandleSavePayment.handleSave}>
           <div className="mt-4">
-            <PayNowButton label="Save card" />
+            <PayNowButton label={localeString.saveCardText} />
           </div>
         </RenderIf>
       </div>
@@ -139,7 +139,7 @@ let make = (
           onClick={_ => setShowAddScreen(_ => true)}
           dataTestId={TestUtils.addNewCardIcon}>
           <Icon name="plus" size=19 />
-          {React.string("Add new card")}
+          {React.string(localeString.addNewCardText)}
         </div>
       </RenderIf>
       <RenderIf condition={isLoading}>

@@ -3,7 +3,7 @@ open Utils
 
 @react.component
 let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVisaCards) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
 
   let (identifier, setIdentifier) = React.useState(_ => "")
@@ -157,7 +157,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
     <div className="flex space-x-2 text-sm text-[#484848]">
       <button
         onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]">
-        {React.string("Not you?")}
+        {React.string(localeString.notYouText)}
       </button>
     </div>
   }
@@ -178,11 +178,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
       </div>
     </div>
     <div className="flex flex-col justify-center items-center space-y-4 px-4">
-      <p className="text-sm font-normal">
-        {React.string(
-          "Enter a new email or mobile number to access a different set of linked cards.",
-        )}
-      </p>
+      <p className="text-sm font-normal"> {React.string(localeString.ctpSwitchIdentifierText)} </p>
       <form
         onSubmit={handleSubmit}
         className="w-full flex flex-col justify-center items-center space-y-4">
@@ -192,9 +188,11 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
               value={identifierType->getIdentityType}
               onChange={handleTypeChange}
               className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none">
-              <option value={EMAIL_ADDRESS->getIdentityType}> {React.string("Email")} </option>
+              <option value={EMAIL_ADDRESS->getIdentityType}>
+                {React.string(localeString.emailLabel)}
+              </option>
               <option value={MOBILE_PHONE_NUMBER->getIdentityType}>
-                {React.string("Phone")}
+                {React.string(localeString.phoneLabel)}
               </option>
             </select>
             <div
@@ -209,7 +207,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                 type_="text"
                 value={identifier}
                 onChange={handleInputChange}
-                placeholder="Enter email"
+                placeholder=localeString.enterEmailPlaceholder
                 className="w-2/3 p-3 border border-gray-300 rounded-md"
                 required=true
               />
@@ -241,7 +239,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                   type_="tel"
                   value={identifier}
                   onChange={handlePhoneInputChange}
-                  placeholder="Mobile number"
+                  placeholder=localeString.mobileNumberPlaceholder
                   className="flex-grow p-3 focus:outline-none w-full"
                   required=true
                 />
@@ -257,7 +255,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
             fontSize: themeObj.buttonTextFontSize,
           }
           disabled={!isValid}>
-          {React.string("Switch ID")}
+          {React.string(localeString.switchIdButtonText)}
         </button>
       </form>
     </div>
@@ -267,6 +265,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
 module ClickToPayNotYouText = {
   @react.component
   let make = (~setIsShowClickToPayNotYou) => {
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let onNotYouClick = _ => {
       setIsShowClickToPayNotYou(_ => true)
     }
@@ -274,7 +273,7 @@ module ClickToPayNotYouText = {
     <div className="flex space-x-2 text-sm text-[#484848]">
       <button
         onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]">
-        {React.string("Not you?")}
+        {React.string(localeString.notYouText)}
       </button>
     </div>
   }

@@ -191,7 +191,7 @@ let make = (
           <div className="m-2">
             <Icon size=10 name="arrow-down" />
           </div>
-          <div className="AccordionItemLabel"> {React.string("More")} </div>
+          <div className="AccordionItemLabel"> {React.string(localeString.moreText)} </div>
         </div>
       </button>
     </RenderIf>

@@ -3,7 +3,7 @@ open Utils
 module ToolTip = {
   @react.component
   let make = (~openTip, ~forwardRef, ~onclick) => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+    let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
     <RenderIf condition={openTip}>
       <button
         className="h-auto max-w-30 w-auto cursor-pointer absolute m-1 px-1 py-2 top-[-3rem] right-[1em]"
@@ -21,7 +21,7 @@ module ToolTip = {
         }
         onClick={ev => onclick(ev)}
         ref={forwardRef->ReactDOM.Ref.domRef}>
-        {React.string("Remove account")}
+        {React.string(localeString.removeAccountText)}
       </button>
     </RenderIf>
   }
@@ -70,7 +70,9 @@ let make = (~modalData, ~setModalData) => {
           <div>
             <Icon size=22 name="bank" />
           </div>
-          <div className="tracking-wider"> {React.string(`Bank  **** ${last4digts}`)} </div>
+          <div className="tracking-wider">
+            {React.string(localeString.bankAccountDisplayText(last4digts))}
+          </div>
         </div>
         <ToolTip
           openTip=openToolTip forwardRef=toolTipRef onclick={_ => {setModalData(_ => None)}}
