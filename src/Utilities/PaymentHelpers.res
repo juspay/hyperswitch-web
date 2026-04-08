@@ -64,7 +64,7 @@ let retrievePaymentIntent = async (
   )
 }
 
-let fetchEligibility = async (
+let fetchPaymentMethodEligibility = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
@@ -75,7 +75,7 @@ let fetchEligibility = async (
   ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchPaymentEligibility,
+    ~apiCallType=FetchPaymentMethodEligibility,
     ~params={
       clientSecret: Some(clientSecret),
       publishableKey: Some(publishableKey),
@@ -101,7 +101,7 @@ let fetchEligibility = async (
 
   await fetchApiWithLogging(
     uri,
-    ~eventName=PAYMENT_ELIGIBILITY_CALL,
+    ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
     ~logger,
     ~bodyStr=body->JSON.stringify,
     ~method=#POST,

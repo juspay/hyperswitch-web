@@ -127,12 +127,12 @@ let useCardForm = (~logger, ~paymentType) => {
     switch clientSecret {
     | Some(clientSecret) =>
       try {
-        let json = await PaymentHelpers.fetchEligibility(
+        let json = await PaymentHelpers.fetchPaymentMethodEligibility(
           ~clientSecret,
           ~publishableKey,
           ~logger,
           ~customPodUri,
-          ~bodyArr=PaymentBody.cardEligibilityBody(~cardNumber),
+          ~bodyArr=PaymentBody.cardPaymentMethodEligibilityBody(~cardNumber),
           ~sdkAuthorization,
           ~endpoint,
           ~signal,
@@ -156,8 +156,17 @@ let useCardForm = (~logger, ~paymentType) => {
         | None => setIsCardEligible(_ => true)
         }
       } catch {
-      | _ =>
+      | exn =>
         // Fail open on API error
+        logger.setLogError(
+          ~value={
+            "message": "Card payment eligibility check failed",
+            "error": exn->Identity.anyTypeToJson->JSON.stringify,
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
+        )
         setIsCardEligible(_ => true)
       }
     | None => ()

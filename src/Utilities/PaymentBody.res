@@ -1066,18 +1066,18 @@ let getPaymentBody = (
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }
 
-let eligibilityBody = (~paymentMethodType, ~paymentMethodData) => {
+let paymentMethodEligibilityBody = (~paymentMethodType, ~paymentMethodData) => {
   [
     ("payment_method_type", paymentMethodType->JSON.Encode.string),
     ("payment_method_data", paymentMethodData),
   ]
 }
 
-let cardEligibilityBody = (~cardNumber) => {
+let cardPaymentMethodEligibilityBody = (~cardNumber) => {
   let cardPaymentMethodData =
     [
       ("card", [("card_number", cardNumber->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
     ]->Utils.getJsonFromArrayOfJson
 
-  eligibilityBody(~paymentMethodType="card", ~paymentMethodData=cardPaymentMethodData)
+  paymentMethodEligibilityBody(~paymentMethodType="card", ~paymentMethodData=cardPaymentMethodData)
 }
