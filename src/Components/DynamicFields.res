@@ -478,6 +478,7 @@ let make = (
           | PixKey => <PixPaymentInput fieldType="pixKey" />
           | PixCPF => <PixPaymentInput fieldType="pixCPF" />
           | PixCNPJ => <PixPaymentInput fieldType="pixCNPJ" />
+          | PixAccountNumber => <PixPaymentInput fieldType="pixAccountNumber" />
           | BankAccountNumber | IBAN =>
             <PaymentField
               fieldName="IBAN"
@@ -555,7 +556,7 @@ let make = (
               name="branchCode"
               maxLength=20
               inputRef=branchCodeRef
-              placeholder=""
+              placeholder=localeString.branchCodePlaceholder
             />
           | BankIdentifier =>
             <PaymentField
@@ -581,7 +582,7 @@ let make = (
               name="bankIdentifier"
               maxLength=20
               inputRef=bankIdentifierRef
-              placeholder=""
+              placeholder=localeString.bankIdentifierPlaceholder
             />
           | DocumentNumber
           | Email
@@ -865,6 +866,7 @@ let make = (
                 | PixKey
                 | PixCPF
                 | PixCNPJ
+                | PixAccountNumber
                 | DocumentType(_)
                 | DocumentNumber
                 | CardNumber

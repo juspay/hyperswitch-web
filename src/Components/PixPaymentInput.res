@@ -7,8 +7,8 @@ let make = (~fieldType="") => {
   let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
+  let (pixAccountNumber, setPixAccountNumber) = Recoil.useRecoilState(userPixAccountNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
   let (branchCode, setBranchCode) = Recoil.useRecoilState(userBranchCode)
   let (bankIdentifier, setBankIdentifier) = Recoil.useRecoilState(userBankIdentifier)
   let inputRef = React.useRef(Nullable.null)
@@ -75,6 +75,14 @@ let make = (~fieldType="") => {
       Some(14),
       validatePixCNPJ,
     )
+  | "pixAccountNumber" => (
+      localeString.pixAccountNumberLabel,
+      setPixAccountNumber,
+      pixAccountNumber,
+      localeString.pixAccountNumberPlaceholder,
+      None,
+      validatePixKey,
+    )
   | _ => (
       "",
       _ => (),
@@ -126,16 +134,16 @@ let make = (~fieldType="") => {
           errorString: localeString.pixCPFEmptyText,
         })
       }
+      if pixAccountNumber.value == "" {
+        setPixAccountNumber(prev => {
+          ...prev,
+          errorString: localeString.pixAccountNumberEmptyText,
+        })
+      }
       if sourceBankAccountId.value == "" {
         setSourceBankAccountId(prev => {
           ...prev,
           errorString: localeString.sourceBankAccountIdEmptyText,
-        })
-      }
-      if bankAccountNumber.value == "" {
-        setBankAccountNumber(prev => {
-          ...prev,
-          errorString: localeString.ibanEmptyText,
         })
       }
       if branchCode.value == "" {
@@ -155,8 +163,8 @@ let make = (~fieldType="") => {
     pixCNPJ.value,
     pixKey.value,
     pixCPF.value,
+    pixAccountNumber.value,
     sourceBankAccountId.value,
-    bankAccountNumber.value,
     branchCode.value,
     bankIdentifier.value,
   ))

@@ -70,6 +70,7 @@ type paymentMethodsFields =
   | SourceBankAccountId
   | BranchCode
   | BankIdentifier
+  | PixAccountNumber
   | GiftCardNumber
   | GiftCardPin
 
@@ -93,6 +94,7 @@ let getPaymentMethodsFieldsOrder = paymentMethodField => {
   | PixCPF => 9
   | CryptoCurrencyNetworks => 10
   | PixCNPJ => 10
+  | PixAccountNumber => 11
   | InfoElement => 99
   | _ => 3
   }
@@ -735,6 +737,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_cpf", _) => PixCPF
   | ("user_cnpj", _) => PixCNPJ
   | ("user_pix_key", _) => PixKey
+  | ("user_pix_account_number", _) => PixAccountNumber
   | ("user_bank_account_number", _) => BankAccountNumber
   | ("user_iban", _) => BankAccountNumber
   | ("user_source_bank_account_id", _) => SourceBankAccountId

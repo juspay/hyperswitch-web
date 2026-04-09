@@ -162,6 +162,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `La clau Pix no pot estar buida`,
   pixKeyPlaceholder: `Introdueix la clau Pix`,
   pixKeyLabel: `Clau Pix`,
+  pixAccountNumberEmptyText: `El número de compte Pix no pot estar buit`,
+  pixAccountNumberLabel: "Nombre de compte Pix",
+  pixAccountNumberPlaceholder: `Introduïu el nombre de compte Pix`,
   sourceBankAccountIdEmptyText: `L'identificador del compte bancari d'origen no pot estar buit`,
   branchCodeEmptyText: `El codi de sucursal no pot estar buit`,
   bankIdentifierEmptyText: `L'identificador bancari no pot estar buit`,
@@ -270,4 +273,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   loaderPaymentConfirmBankingAppSubtitle: `Obriu la vostra aplicació bancària i autoritzeu la sol·licitud de pagament. L'estat s'actualitzarà automàticament un cop confirmat.`,
   branchCodeLabel: "Codi de sucursal",
   bankIdentifierLabel: "Identificador bancari",
+  branchCodePlaceholder: `Introduïu el codi de sucursal`,
+  bankIdentifierPlaceholder: `Introduïu l'identificador bancari`,
 }

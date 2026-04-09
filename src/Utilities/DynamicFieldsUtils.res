@@ -202,6 +202,7 @@ let useRequiredFieldsEmptyAndValid = (
   let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
   let pixCPF = Recoil.useRecoilValueFromAtom(userPixCPF)
   let pixKey = Recoil.useRecoilValueFromAtom(userPixKey)
+  let pixAccountNumber = Recoil.useRecoilValueFromAtom(userPixAccountNumber)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
   let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
@@ -276,6 +277,7 @@ let useRequiredFieldsEmptyAndValid = (
       | PixCNPJ => pixCNPJ.isValid->Option.getOr(false)
       | PixCPF => pixCPF.isValid->Option.getOr(false)
       | PixKey => pixKey.isValid->Option.getOr(false)
+      | PixAccountNumber => pixAccountNumber.isValid->Option.getOr(false)
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value !== ""
@@ -315,6 +317,7 @@ let useRequiredFieldsEmptyAndValid = (
       | PixCNPJ => pixCNPJ.value === ""
       | PixCPF => pixCPF.value === ""
       | PixKey => pixKey.value === ""
+      | PixAccountNumber => pixAccountNumber.value === ""
       | CryptoCurrencyNetworks => cryptoCurrencyNetworks === ""
       | Currency(currencyArr) => currency === "" && currencyArr->Array.length > 0
       | DocumentType(optArr) => documentType === "" && optArr->Array.length > 0
@@ -367,6 +370,7 @@ let useRequiredFieldsEmptyAndValid = (
     pixCNPJ.value,
     pixKey.value,
     pixCPF.value,
+    pixAccountNumber.value,
     giftCardPin.value,
     giftCardNumber.value,
     isCardValid,
@@ -413,6 +417,7 @@ let useSetInitialRequiredFields = (
   let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
+  let (pixAccountNumber, setPixAccountNumber) = Recoil.useRecoilState(userPixAccountNumber)
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
@@ -525,6 +530,7 @@ let useSetInitialRequiredFields = (
       | PixKey => setFields(setPixKey, pixKey, requiredField, false)
       | PixCNPJ => setFields(setPixCNPJ, pixCNPJ, requiredField, false)
       | PixCPF => setFields(setPixCPF, pixCPF, requiredField, false)
+      | PixAccountNumber => setFields(setPixAccountNumber, pixAccountNumber, requiredField, false)
       | BillingName => setFields(setBillingName, billingName, requiredField, true)
       | Country
       | AddressCountry(_) =>
@@ -609,6 +615,7 @@ let useRequiredFieldsBody = (
   let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
   let pixCPF = Recoil.useRecoilValueFromAtom(userPixCPF)
   let pixKey = Recoil.useRecoilValueFromAtom(userPixKey)
+  let pixAccountNumber = Recoil.useRecoilValueFromAtom(userPixAccountNumber)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
   let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
@@ -691,6 +698,7 @@ let useRequiredFieldsBody = (
     | PixCNPJ => pixCNPJ.value
     | PixCPF => pixCPF.value
     | PixKey => pixKey.value
+    | PixAccountNumber => pixAccountNumber.value
     | IBAN
     | BankAccountNumber =>
       bankAccountNumber.value
@@ -784,6 +792,7 @@ let useRequiredFieldsBody = (
     pixCNPJ.value,
     pixCPF.value,
     pixKey.value,
+    pixAccountNumber.value,
     documentType,
     documentNumber.value,
     city.value,
@@ -825,6 +834,7 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | PixKey
   | PixCPF
   | PixCNPJ
+  | PixAccountNumber
   | DateOfBirth
   | Currency(_)
   | DocumentType(_)

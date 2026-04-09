@@ -160,6 +160,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pix 密钥不能为空`,
   pixKeyPlaceholder: `输入 Pix 密钥`,
   pixKeyLabel: `Pix 密钥`,
+  pixAccountNumberEmptyText: "Pix账户号码不能为空",
+  pixAccountNumberLabel: "Pix账户号码",
+  pixAccountNumberPlaceholder: "输入Pix账户号码",
   sourceBankAccountIdEmptyText: `源银行账户ID不能为空`,
   branchCodeEmptyText: `支行代码不能为空`,
   bankIdentifierEmptyText: `银行标识符不能为空`,
@@ -266,4 +269,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   loaderPaymentConfirmBankingAppSubtitle: "打开您的银行应用程序并授权付款请求。确认后状态将自动更新。",
   branchCodeLabel: "支行代码",
   bankIdentifierLabel: "银行识别码",
+  branchCodePlaceholder: "输入分行代码",
+  bankIdentifierPlaceholder: "输入银行识别码",
 }

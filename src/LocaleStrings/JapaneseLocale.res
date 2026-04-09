@@ -161,6 +161,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pixキーは空にできません`,
   pixKeyPlaceholder: `Pixキーを入力`,
   pixKeyLabel: `Pixキー`,
+  pixAccountNumberEmptyText: "Pixアカウント番号を入力してください",
+  pixAccountNumberLabel: "Pixアカウント番号",
+  pixAccountNumberPlaceholder: "Pixアカウント番号を入力",
   sourceBankAccountIdEmptyText: `送金元銀行口座IDを入力してください`,
   branchCodeEmptyText: `支店コードを入力してください`,
   bankIdentifierEmptyText: `銀行識別子を入力してください`,
@@ -267,4 +270,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   loaderPaymentConfirmBankingAppSubtitle: "銀行アプリケーションを開き、支払いリクエストを承認してください。確認後、ステータスは自動的に更新されます。",
   branchCodeLabel: "支店コード",
   bankIdentifierLabel: "銀行識別コード",
+  branchCodePlaceholder: "支店コードを入力",
+  bankIdentifierPlaceholder: "銀行識別コードを入力",
 }

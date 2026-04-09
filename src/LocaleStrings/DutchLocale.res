@@ -160,6 +160,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pix-sleutel mag niet leeg zijn`,
   pixKeyPlaceholder: `Voer Pix-sleutel in`,
   pixKeyLabel: `Pix-sleutel`,
+  pixAccountNumberEmptyText: "Pix-rekeningnummer mag niet leeg zijn",
+  pixAccountNumberLabel: "Pix-rekeningnummer",
+  pixAccountNumberPlaceholder: "Voer het Pix-rekeningnummer in",
   sourceBankAccountIdEmptyText: `Bron bankrekeningnummer mag niet leeg zijn`,
   branchCodeEmptyText: `Bankfiliaalkode mag niet leeg zijn`,
   bankIdentifierEmptyText: `Bankidentificatie mag niet leeg zijn`,
@@ -268,4 +271,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   loaderPaymentConfirmBankingAppSubtitle: "Open uw bankieren-applicatie en autoriseer het betalingsverzoek. De status wordt automatisch bijgewerkt zodra dit is bevestigd.",
   branchCodeLabel: "Filiaalcode",
   bankIdentifierLabel: "Bankidentificatie",
+  branchCodePlaceholder: "Voer de filiaalcode in",
+  bankIdentifierPlaceholder: "Voer de bankidentificatie in",
 }

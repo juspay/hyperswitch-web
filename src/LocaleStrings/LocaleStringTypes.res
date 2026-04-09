@@ -149,6 +149,9 @@ type localeStrings = {
   pixKeyEmptyText: string,
   pixKeyLabel: string,
   pixKeyPlaceholder: string,
+  pixAccountNumberEmptyText: string,
+  pixAccountNumberLabel: string,
+  pixAccountNumberPlaceholder: string,
   sourceBankAccountIdEmptyText: string,
   branchCodeEmptyText: string,
   bankIdentifierEmptyText: string,
@@ -253,6 +256,8 @@ type localeStrings = {
   loaderPaymentConfirmBankingAppSubtitle: string,
   branchCodeLabel: string,
   bankIdentifierLabel: string,
+  branchCodePlaceholder: string,
+  bankIdentifierPlaceholder: string,
 }
 
 type constantStrings = {

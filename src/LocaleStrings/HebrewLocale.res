@@ -161,6 +161,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `מפתח Pix לא יכול להיות ריק`,
   pixKeyPlaceholder: `הכנס מפתח Pix`,
   pixKeyLabel: `מפתח Pix`,
+  pixAccountNumberEmptyText: "מספר חשבון Pix לא יכול להיות ריק",
+  pixAccountNumberLabel: "מספר חשבון Pix",
+  pixAccountNumberPlaceholder: "הזן מספר חשבון Pix",
   sourceBankAccountIdEmptyText: `מזהה חשבון בנק מקור לא יכול להיות ריק`,
   branchCodeEmptyText: `קוד סניף לא יכול להיות ריק`,
   bankIdentifierEmptyText: `מזהה בנק לא יכול להיות ריק`,
@@ -269,4 +272,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   loaderPaymentConfirmBankingAppSubtitle: "פתח את אפליקציית הבנק שלך ואשר את בקשת התשלום. הסטטוס יתעדכן אוטומטית לאחר האישור.",
   branchCodeLabel: "קוד סניף",
   bankIdentifierLabel: "מזהה בנק",
+  branchCodePlaceholder: "הזן קוד סניף",
+  bankIdentifierPlaceholder: "הזן מזהה בנק",
 }

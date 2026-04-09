@@ -162,6 +162,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `La chiave Pix non può essere vuota`,
   pixKeyPlaceholder: `Inserisci la chiave Pix`,
   pixKeyLabel: `Chiave Pix`,
+  pixAccountNumberEmptyText: `Il numero di conto Pix non può essere vuoto`,
+  pixAccountNumberLabel: "Numero di conto Pix",
+  pixAccountNumberPlaceholder: "Inserisci il numero di conto Pix",
   sourceBankAccountIdEmptyText: `L'ID del conto bancario di origine non può essere vuoto`,
   branchCodeEmptyText: `Il codice di filiale non può essere vuoto`,
   bankIdentifierEmptyText: `L'identificatore bancario non può essere vuoto`,
@@ -270,4 +273,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   loaderPaymentConfirmBankingAppSubtitle: `Apri la tua applicazione bancaria e autorizza la richiesta di pagamento. Lo stato verrà aggiornato automaticamente una volta confermato.`,
   branchCodeLabel: "Codice filiale",
   bankIdentifierLabel: "Identificativo bancario",
+  branchCodePlaceholder: "Inserisci il codice filiale",
+  bankIdentifierPlaceholder: `Inserisci l'identificativo bancario`,
 }

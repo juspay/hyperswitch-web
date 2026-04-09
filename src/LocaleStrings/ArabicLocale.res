@@ -163,6 +163,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `مفتاح Pix لا يمكن أن يكون فارغًا`,
   pixKeyPlaceholder: `أدخل مفتاح Pix`,
   pixKeyLabel: `مفتاح Pix`,
+  pixAccountNumberEmptyText: "لا يمكن أن يكون رقم حساب Pix فارغًا",
+  pixAccountNumberLabel: "رقم حساب Pix",
+  pixAccountNumberPlaceholder: "أدخل رقم حساب Pix",
   sourceBankAccountIdEmptyText: `لا يمكن أن يكون معرف الحساب المصرفي المصدر فارغاً`,
   branchCodeEmptyText: `لا يمكن أن يكون رمز الفرع فارغاً`,
   bankIdentifierEmptyText: `لا يمكن أن يكون معرف البنك فارغاً`,
@@ -271,4 +274,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   loaderPaymentConfirmBankingAppSubtitle: "افتح تطبيق البنك الخاص بك وقم بتفويض طلب الدفع. سيتم تحديث الحالة تلقائيًا بعد التأكيد.",
   branchCodeLabel: "رمز الفرع",
   bankIdentifierLabel: "معرف البنك",
+  branchCodePlaceholder: "أدخل رمز الفرع",
+  bankIdentifierPlaceholder: "أدخل معرف البنك",
 }

@@ -169,6 +169,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Ключ Pix не может быть пустым`,
   pixKeyPlaceholder: `Введите ключ Pix`,
   pixKeyLabel: `Ключ Pix`,
+  pixAccountNumberEmptyText: "Номер счета Pix не может быть пустым",
+  pixAccountNumberLabel: "Номер счета Pix",
+  pixAccountNumberPlaceholder: "Введите номер счета Pix",
   sourceBankAccountIdEmptyText: `Идентификатор исходного банковского счета не может быть пустым`,
   branchCodeEmptyText: `Код отделения не может быть пустым`,
   bankIdentifierEmptyText: `Идентификатор банка не может быть пустым`,
@@ -277,4 +280,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   loaderPaymentConfirmBankingAppSubtitle: "Откройте ваше банковское приложение и подтвердите запрос на оплату. Статус обновится автоматически после подтверждения.",
   branchCodeLabel: "Код отделения",
   bankIdentifierLabel: "Идентификатор банка",
+  branchCodePlaceholder: "Введите код отделения",
+  bankIdentifierPlaceholder: "Введите идентификатор банка",
 }

@@ -160,6 +160,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pix-nyckel kan inte vara tom`,
   pixKeyPlaceholder: `Ange Pix-nyckel`,
   pixKeyLabel: `Pix-nyckel`,
+  pixAccountNumberEmptyText: `Pix-kontonummer får inte vara tomt`,
+  pixAccountNumberLabel: "Pix-kontonummer",
+  pixAccountNumberPlaceholder: "Ange Pix-kontonummer",
   sourceBankAccountIdEmptyText: `Käll bankkonto-ID kan inte vara tomt`,
   branchCodeEmptyText: `Bankfilialskod kan inte vara tom`,
   bankIdentifierEmptyText: `Bankidentifierare kan inte vara tom`,
@@ -268,4 +271,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   loaderPaymentConfirmBankingAppSubtitle: `Öppna din bankapplikation och godkänn betalningsförfrågan. Statusen uppdateras automatiskt när den har bekräftats.`,
   branchCodeLabel: "Kontorskod",
   bankIdentifierLabel: "Bankidentifierare",
+  branchCodePlaceholder: "Ange filialkod",
+  bankIdentifierPlaceholder: "Ange bankidentifierare",
 }
