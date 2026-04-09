@@ -1,0 +1,45 @@
+{
+  "name": "hyperswitch-bundle-analyzer",
+  "version": "1.0.0",
+  "description": "Bundle analyzer for Hyperswitch Web SDK - optimized for ReScript/React/Webpack projects",
+  "main": "cli.js",
+  "bin": {
+    "bundle-analyze": "./cli.js"
+  },
+  "scripts": {
+    "analyze": "node cli.js",
+    "build-stats": "node scripts/build-stats.js",
+    "diff": "node scripts/diff.js",
+    "analyze-stats": "node scripts/analyze.js",
+    "generate-comment": "node scripts/comment.js",
+    "test": "node test/test-runner.js"
+  },
+  "keywords": [
+    "webpack",
+    "bundle",
+    "analyzer",
+    "ai",
+    "optimization",
+    "rescript",
+    "react",
+    "hyperswitch",
+    "payment-sdk"
+  ],
+  "author": "Hyperswitch Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "webpack": ">=5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juspay/hyperswitch-web"
+  },
+  "bugs": {
+    "url": "https://github.com/juspay/hyperswitch-web/issues"
+  },
+  "homepage": "https://github.com/juspay/hyperswitch-web#readme"
+}

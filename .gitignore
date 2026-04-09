@@ -26,3 +26,12 @@ user_data.sh
 *.pem
 # Sentry Auth Token
 .env.sentry-build-plugin
+
+# Environment files
+.env
+.env.local
+
+# Bundle AI
+.bundle-ai-cache/
+bundle-ai/tmp/
+bundle-ai/reports/

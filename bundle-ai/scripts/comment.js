@@ -1,0 +1,512 @@
+#!/usr/bin/env node
+/**
+ * @fileoverview Comment Script
+ * Generates PR comment markdown from analysis results
+ */
+
+const fs = require('fs');
+
+/**
+ * Generate PR comment markdown
+ * @param {Object} analysis - Analysis results from analyze.js
+ * @param {Object} options
+ * @returns {string} Markdown comment
+ */
+function generateComment(analysis, options = {}) {
+  // Handle both raw analysis object and JSON serialized format
+  const summary = analysis.summary || analysis.diff || {};
+  const ai = analysis.aiAnalysis || analysis.ai || {};
+  const detections = analysis.issues || analysis.detections || { violations: [], critical: [], warnings: [], info: [] };
+  const changes = analysis.changes || {};
+
+  const lines = [];
+
+  // Header
+  lines.push('## 📦 Bundle Analysis Report');
+  lines.push('');
+
+  // Summary table
+  const baseSizeFormatted = summary.baseSizeFormatted || formatAbsoluteBytes(summary.baseSize || 0);
+  const prSizeFormatted = summary.prSizeFormatted || formatAbsoluteBytes(summary.prSize || 0);
+  const totalDiff = summary.totalDiff || (summary.prSize || 0) - (summary.baseSize || 0);
+  const totalDiffFormatted = summary.totalDiffFormatted || formatBytes(totalDiff);
+  const nodeModulesDiff = summary.nodeModulesDiff || 0;
+
+  lines.push('| Metric | Value |');
+  lines.push('|--------|-------|');
+  lines.push(`| Base Size | ${baseSizeFormatted} |`);
+  lines.push(`| PR Size | ${prSizeFormatted} |`);
+  lines.push(`| Change | ${renderSizeChange(totalDiff, totalDiffFormatted)} |`);
+  lines.push(`| node_modules | ${renderSizeChange(nodeModulesDiff, formatBytes(nodeModulesDiff))} |`);
+  lines.push('');
+
+  // AI Verdict
+  lines.push('### 🤖 AI Verdict');
+  lines.push('');
+
+  const verdictBadge = getVerdictBadge(ai.verdict || 'needs_review');
+  lines.push(`**Status:** ${verdictBadge}`);
+  lines.push(`**Confidence:** ${((ai.confidence || 0) * 100).toFixed(0)}%`);
+  lines.push('');
+  lines.push(`**Explanation:** ${ai.explanation || 'No explanation available'}`);
+  lines.push('');
+  lines.push(`**Root Cause:** ${ai.rootCause || 'Unknown'}`);
+  lines.push('');
+
+  // Suggested Fixes
+  const suggestedFixes = ai.suggestedFixes || [];
+  if (suggestedFixes.length > 0) {
+    lines.push('<details>');
+    lines.push('<summary><b>💡 Suggested Fixes</b></summary>');
+    lines.push('');
+    lines.push('');
+    suggestedFixes.forEach((fix, i) => {
+      lines.push(`${i + 1}. ${fix}`);
+    });
+    lines.push('');
+    lines.push('</details>');
+    lines.push('');
+  }
+
+  // Issues
+  const violations = detections.details || detections.violations || [];
+  const critical = detections.critical || [];
+  const warnings = detections.warnings || [];
+
+  if (violations.length > 0) {
+    lines.push('### 🚨 Issues');
+    lines.push('');
+
+    if (critical.length > 0) {
+      lines.push('#### 🔴 Critical');
+      lines.push('');
+      for (const v of critical) {
+        lines.push(`- **${v.id}**: ${v.message}`);
+        if (v.details?.module) {
+          lines.push(`  - Module: \`${v.details.module}\``);
+        }
+      }
+      lines.push('');
+    }
+
+    if (warnings.length > 0) {
+      lines.push('#### 🟡 Warnings');
+      lines.push('');
+      for (const v of warnings.slice(0, 10)) {
+        lines.push(`- **${v.id}**: ${v.message}`);
+        if (v.details?.suggestion) {
+          lines.push(`  - 💡 ${v.details.suggestion}`);
+        }
+      }
+      lines.push('');
+    }
+  }
+
+  // Top Changes
+  const topChanges = changes.top || [];
+  if (topChanges.length > 0) {
+    lines.push('<details>');
+    lines.push(`<summary><b>📈 Top ${Math.min(10, topChanges.length)} Changes</b></summary>`);
+    lines.push('');
+    lines.push('| Module | Change | Type |');
+    lines.push('|--------|--------|------|');
+
+    for (const change of topChanges.slice(0, 10)) {
+      const emoji = change.type === 'added' ? '🆕' : change.type === 'removed' ? '🗑️' : '📝';
+      const changeFormatted = change.changeFormatted || formatBytes(change.change);
+      lines.push(`| \`${truncate(change.name, 40)}\` | ${changeFormatted} | ${emoji} ${change.type} |`);
+    }
+
+    lines.push('');
+    lines.push('</details>');
+    lines.push('');
+  }
+
+  // Package Changes
+  const packages = changes.packages || [];
+  const pkgChanges = packages
+    .filter(p => Math.abs(p.change) > 1024)
+    .slice(0, 10);
+
+  if (pkgChanges.length > 0) {
+    lines.push('<details>');
+    lines.push('<summary><b>📦 Package Changes</b></summary>');
+    lines.push('');
+    lines.push('| Package | Change |');
+    lines.push('|---------|--------|');
+
+    for (const pkg of pkgChanges) {
+      const formatted = formatBytes(pkg.change);
+      const icon = pkg.change > 0 ? '📈' : '📉';
+      lines.push(`| ${pkg.name} | ${icon} ${formatted} |`);
+    }
+
+    lines.push('');
+    lines.push('</details>');
+    lines.push('');
+  }
+
+  // Footer
+  lines.push('---');
+  lines.push('*Generated by Hyperswitch Bundle Analyzer*');
+
+  return lines.join('\n');
+}
+
+/**
+ * Generate compact comment for minimal output
+ * @param {Object} analysis
+ * @returns {string}
+ */
+function generateCompactComment(analysis) {
+  const summary = analysis.summary || analysis.diff || {};
+  const ai = analysis.aiAnalysis || analysis.ai || {};
+  const detections = analysis.issues || analysis.detections || {};
+
+  const lines = [];
+
+  const totalDiff = summary.totalDiff || (summary.prSize || 0) - (summary.baseSize || 0);
+  const totalDiffFormatted = summary.totalDiffFormatted || formatBytes(totalDiff);
+
+  lines.push('## 📦 Bundle Analysis');
+  lines.push('');
+  lines.push(`**Change:** ${renderSizeChange(totalDiff, totalDiffFormatted)}`);
+  lines.push(`**Verdict:** ${getVerdictBadge(ai.verdict || 'needs_review')} (${((ai.confidence || 0) * 100).toFixed(0)}% confidence)`);
+
+  const criticalCount = detections.critical?.length || 0;
+  const warningCount = detections.warnings?.length || 0;
+
+  if (criticalCount > 0) {
+    lines.push(`**Issues:** 🔴 ${criticalCount} critical`);
+  } else if (warningCount > 0) {
+    lines.push(`**Issues:** 🟡 ${warningCount} warnings`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Post comment to GitHub PR
+ * @param {string} comment - Comment body
+ * @param {Object} options
+ * @returns {Promise<void>}
+ */
+async function postComment(comment, options = {}) {
+  const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_EVENT_PATH } = process.env;
+
+  if (!GITHUB_TOKEN || !GITHUB_REPOSITORY) {
+    throw new Error('GITHUB_TOKEN and GITHUB_REPOSITORY environment variables required');
+  }
+
+  // Get PR number from event
+  let prNumber = options.prNumber;
+
+  if (!prNumber && GITHUB_EVENT_PATH) {
+    try {
+      const event = JSON.parse(fs.readFileSync(GITHUB_EVENT_PATH, 'utf-8'));
+      prNumber = event.pull_request?.number;
+    } catch {
+      // Ignore
+    }
+  }
+
+  if (!prNumber) {
+    throw new Error('Could not determine PR number');
+  }
+
+  const [owner, repo] = GITHUB_REPOSITORY.split('/');
+  const url = `https://api.github.com/repos/${owner}/${repo}/issues/${prNumber}/comments`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `token ${GITHUB_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ body: comment }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`GitHub API error: ${response.status} - ${error}`);
+  }
+
+  console.log(`✓ Comment posted to PR #${prNumber}`);
+}
+
+/**
+ * Update existing comment or create new one
+ * @param {string} comment - Comment body
+ * @param {Object} options
+ * @returns {Promise<void>}
+ */
+async function upsertComment(comment, options = {}) {
+  const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_EVENT_PATH } = process.env;
+
+  if (!GITHUB_TOKEN || !GITHUB_REPOSITORY) {
+    throw new Error('Missing required environment variables');
+  }
+
+  // Get PR number
+  let prNumber = options.prNumber;
+
+  if (!prNumber && GITHUB_EVENT_PATH) {
+    try {
+      const event = JSON.parse(fs.readFileSync(GITHUB_EVENT_PATH, 'utf-8'));
+      prNumber = event.pull_request?.number;
+    } catch {
+      // Ignore
+    }
+  }
+
+  if (!prNumber) {
+    throw new Error('Could not determine PR number');
+  }
+
+  const [owner, repo] = GITHUB_REPOSITORY.split('/');
+  const marker = options.marker || '<!-- bundle-ai -->';
+  const fullComment = `${marker}\n${comment}`;
+
+  // Find existing comment
+  const listUrl = `https://api.github.com/repos/${owner}/${repo}/issues/${prNumber}/comments`;
+
+  const listResponse = await fetch(listUrl, {
+    headers: {
+      'Authorization': `token ${GITHUB_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json',
+    },
+  });
+
+  if (!listResponse.ok) {
+    throw new Error(`Failed to list comments: ${listResponse.status}`);
+  }
+
+  const comments = await listResponse.json();
+  const existingComment = comments.find(c => c.body?.includes(marker));
+
+  if (existingComment) {
+    // Update existing comment
+    const updateUrl = `https://api.github.com/repos/${owner}/${repo}/issues/comments/${existingComment.id}`;
+
+    const updateResponse = await fetch(updateUrl, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ body: fullComment }),
+    });
+
+    if (!updateResponse.ok) {
+      throw new Error(`Failed to update comment: ${updateResponse.status}`);
+    }
+
+    console.log(`✓ Updated existing comment #${existingComment.id}`);
+  } else {
+    // Create new comment
+    await postComment(fullComment, options);
+  }
+}
+
+/**
+ * Get verdict badge markdown
+ * @param {string} verdict
+ * @returns {string}
+ */
+function getVerdictBadge(verdict) {
+  switch (verdict) {
+    case 'expected':
+      return '![expected](https://img.shields.io/badge/-expected-success)';
+    case 'unexpected':
+      return '![unexpected](https://img.shields.io/badge/-unexpected-critical)';
+    case 'needs_review':
+      return '![needs_review](https://img.shields.io/badge/-needs_review-yellow)';
+    default:
+      return '![unknown](https://img.shields.io/badge/-unknown-lightgrey)';
+  }
+}
+
+/**
+ * Render size change with color
+ * @param {number} bytes
+ * @param {string} formatted
+ * @returns {string}
+ */
+function renderSizeChange(bytes, formatted) {
+  if (bytes > 0) {
+    return `🔺 ${formatted}`;
+  } else if (bytes < 0) {
+    return `🟢 ${formatted}`;
+  }
+  return `➖ ${formatted}`;
+}
+
+/**
+ * Format bytes as a diff value (with +/- sign)
+ * @param {number} bytes
+ * @returns {string}
+ */
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(k));
+  const value = parseFloat((Math.abs(bytes) / Math.pow(k, i)).toFixed(2));
+  const sign = bytes >= 0 ? '+' : '-';
+  return `${sign}${value} ${sizes[i]}`;
+}
+
+/**
+ * Format bytes as an absolute value (no sign)
+ * @param {number} bytes
+ * @returns {string}
+ */
+function formatAbsoluteBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(k));
+  const value = parseFloat((Math.abs(bytes) / Math.pow(k, i)).toFixed(2));
+  return `${value} ${sizes[i]}`;
+}
+
+/**
+ * Truncate string with ellipsis
+ * @param {string} str
+ * @param {number} maxLen
+ * @returns {string}
+ */
+function truncate(str, maxLen) {
+  if (str.length <= maxLen) return str;
+  return str.substring(0, maxLen - 3) + '...';
+}
+
+/**
+ * CLI entry point
+ */
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  const options = parseArgs(args);
+
+  if (!options.input) {
+    console.error('Error: --input is required');
+    console.log(`
+Usage: node comment.js --input <analysis.json> [options]
+
+Options:
+  --input <path>      Path to analysis JSON file (required)
+  --output <path>     Save comment to file instead of posting
+  --compact           Generate compact comment
+  --post              Post to GitHub PR
+  --upsert            Update existing comment or create new
+  --pr <number>       PR number (auto-detected in CI)
+  --marker <text>     Comment marker for upsert
+`);
+    process.exit(1);
+  }
+
+  try {
+    const analysis = JSON.parse(fs.readFileSync(options.input, 'utf-8'));
+
+    let comment;
+    if (options.compact) {
+      comment = generateCompactComment(analysis);
+    } else {
+      comment = generateComment(analysis, options);
+    }
+
+    if (options.output) {
+      fs.writeFileSync(options.output, comment);
+      console.log(`Comment saved to: ${options.output}`);
+    } else if (options.post || options.upsert) {
+      if (options.upsert) {
+        upsertComment(comment, options)
+          .then(() => process.exit(0))
+          .catch(error => {
+            console.error('Error:', error.message);
+            process.exit(1);
+          });
+      } else {
+        postComment(comment, options)
+          .then(() => process.exit(0))
+          .catch(error => {
+            console.error('Error:', error.message);
+            process.exit(1);
+          });
+      }
+    } else {
+      console.log(comment);
+    }
+  } catch (error) {
+    console.error('Error:', error.message);
+    process.exit(1);
+  }
+}
+
+/**
+ * Parse CLI arguments
+ * @param {string[]} args
+ * @returns {Object}
+ */
+function parseArgs(args) {
+  const options = {};
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    switch (arg) {
+      case '--input':
+      case '-i':
+        options.input = args[++i];
+        break;
+      case '--output':
+      case '-o':
+        options.output = args[++i];
+        break;
+      case '--pr':
+        options.prNumber = args[++i];
+        break;
+      case '--marker':
+        options.marker = args[++i];
+        break;
+      case '--compact':
+        options.compact = true;
+        break;
+      case '--post':
+        options.post = true;
+        break;
+      case '--upsert':
+        options.upsert = true;
+        break;
+      case '--help':
+      case '-h':
+        console.log(`
+Usage: node comment.js --input <analysis.json> [options]
+
+Generate PR comment from bundle analysis results.
+
+Options:
+  -i, --input <path>    Path to analysis JSON (required)
+  -o, --output <path>   Save comment to file
+  --pr <number>         PR number (auto-detected in CI)
+  --marker <text>       Comment marker for upsert
+  --compact             Generate compact comment
+  --post                Post to GitHub PR
+  --upsert              Update existing or create new
+  -h, --help            Show this help
+`);
+        process.exit(0);
+    }
+  }
+
+  return options;
+}
+
+module.exports = {
+  generateComment,
+  generateCompactComment,
+  postComment,
+  upsertComment,
+};

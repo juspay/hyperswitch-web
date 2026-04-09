@@ -1,0 +1,144 @@
+{
+  "version": "5.88.0",
+  "hash": "abc123def456",
+  "time": 1205,
+  "builtAt": 1712707200000,
+  "publicPath": "/",
+  "outputPath": "/project/dist",
+  "assetsByChunkName": {
+    "main": [
+      "main.bundle.js"
+    ]
+  },
+  "assets": [
+    {
+      "name": "main.bundle.js",
+      "size": 1245184,
+      "chunks": [0],
+      "chunkNames": ["main"]
+    }
+  ],
+  "chunks": [
+    {
+      "id": 0,
+      "rendered": true,
+      "initial": true,
+      "entry": true,
+      "size": 1245184,
+      "names": ["main"],
+      "files": ["main.bundle.js"],
+      "modules": []
+    }
+  ],
+  "modules": [
+    {
+      "id": 0,
+      "identifier": "/project/src/index.js",
+      "name": "./src/index.js",
+      "size": 1024,
+      "chunks": [0],
+      "reasons": [],
+      "usedExports": true
+    },
+    {
+      "id": 1,
+      "identifier": "/project/node_modules/react/index.js",
+      "name": "./node_modules/react/index.js",
+      "size": 5120,
+      "chunks": [0],
+      "reasons": [
+        {
+          "moduleIdentifier": "/project/src/index.js",
+          "module": "./src/index.js",
+          "moduleName": "./src/index.js",
+          "type": "harmony side effect evaluation",
+          "userRequest": "react",
+          "loc": "1:0-26"
+        }
+      ],
+      "usedExports": true
+    },
+    {
+      "id": 2,
+      "identifier": "/project/node_modules/react-dom/index.js",
+      "name": "./node_modules/react-dom/index.js",
+      "size": 20480,
+      "chunks": [0],
+      "reasons": [
+        {
+          "moduleIdentifier": "/project/src/index.js",
+          "module": "./src/index.js",
+          "moduleName": "./src/index.js",
+          "type": "harmony side effect evaluation",
+          "userRequest": "react-dom",
+          "loc": "2:0-30"
+        }
+      ],
+      "usedExports": true
+    },
+    {
+      "id": 3,
+      "identifier": "/project/src/App.js",
+      "name": "./src/App.js",
+      "size": 3072,
+      "chunks": [0],
+      "reasons": [
+        {
+          "moduleIdentifier": "/project/src/index.js",
+          "module": "./src/index.js",
+          "moduleName": "./src/index.js",
+          "type": "harmony side effect evaluation",
+          "userRequest": "./App",
+          "loc": "4:0-24"
+        }
+      ],
+      "usedExports": true
+    },
+    {
+      "id": 4,
+      "identifier": "/project/src/utils/helpers.js",
+      "name": "./src/utils/helpers.js",
+      "size": 1536,
+      "chunks": [0],
+      "reasons": [
+        {
+          "moduleIdentifier": "/project/src/App.js",
+          "module": "./src/App.js",
+          "moduleName": "./src/App.js",
+          "type": "harmony side effect evaluation",
+          "userRequest": "./utils/helpers",
+          "loc": "5:0-40"
+        }
+      ],
+      "usedExports": true
+    },
+    {
+      "id": 5,
+      "identifier": "/project/node_modules/date-fns/esm/index.js",
+      "name": "./node_modules/date-fns/esm/index.js",
+      "size": 51200,
+      "chunks": [0],
+      "reasons": [
+        {
+          "moduleIdentifier": "/project/src/utils/helpers.js",
+          "module": "./src/utils/helpers.js",
+          "moduleName": "./src/utils/helpers.js",
+          "type": "harmony side effect evaluation",
+          "userRequest": "date-fns",
+          "loc": "1:0-35"
+        }
+      ],
+      "usedExports": false
+    }
+  ],
+  "namedChunkGroups": {
+    "main": {
+      "chunks": [0],
+      "assets": ["main.bundle.js"],
+      "children": {},
+      "childAssets": {}
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

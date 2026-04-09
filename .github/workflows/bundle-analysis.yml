@@ -1,0 +1,268 @@
+name: Bundle Analysis
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.js'
+      - '**.jsx'
+      - '**.ts'
+      - '**.tsx'
+      - '**.res'
+      - '**.resi'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'yarn.lock'
+      - 'pnpm-lock.yaml'
+      - 'webpack.config.*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-bundle:
+    name: Analyze Bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Get base branch
+        id: base-branch
+        run: |
+          echo "name=${{ github.base_ref }}" >> $GITHUB_OUTPUT
+
+      # Cache stats files to speed up subsequent runs
+      - name: Cache bundle stats
+        uses: actions/cache@v4
+        id: bundle-stats-cache
+        with:
+          path: .bundle-ai-cache
+          key: bundle-stats-${{ github.sha }}
+          restore-keys: |
+            bundle-stats-
+
+      # Install dependencies for base branch
+      - name: Install dependencies (base)
+        run: |
+          # Save current state
+          git stash push -m "bundle-ai-ci-stash" || true
+
+          # Checkout base branch
+          git fetch origin ${{ github.base_ref }}
+          git checkout origin/${{ github.base_ref }}
+
+          # Install dependencies
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          elif [ -f "yarn.lock" ]; then
+            yarn install --frozen-lockfile
+          elif [ -f "pnpm-lock.yaml" ]; then
+            pnpm install --frozen-lockfile
+          else
+            npm install
+          fi
+
+      # Build base stats
+      - name: Build base stats
+        run: |
+          npx webpack --profile --json > base-stats.json 2>/dev/null || \
+          npx webpack --mode production --profile --json > base-stats.json 2>/dev/null || \
+          ./node_modules/.bin/webpack --profile --json > base-stats.json 2>/dev/null
+
+          # Verify stats file
+          if [ ! -s "base-stats.json" ] || ! jq empty base-stats.json 2>/dev/null; then
+            echo "Warning: Failed to generate valid base stats"
+            echo '{"modules":[],"chunks":[],"assets":[]}' > base-stats.json
+          fi
+
+          mv base-stats.json .bundle-ai-cache/base-stats.json
+
+      # Restore PR state
+      - name: Restore PR state
+        run: |
+          git checkout -
+          git stash pop || true
+
+      # Install dependencies for PR
+      - name: Install dependencies (PR)
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          elif [ -f "yarn.lock" ]; then
+            yarn install --frozen-lockfile
+          elif [ -f "pnpm-lock.yaml" ]; then
+            pnpm install --frozen-lockfile
+          else
+            npm install
+          fi
+
+      # Build PR stats
+      - name: Build PR stats
+        run: |
+          npx webpack --profile --json > pr-stats.json 2>/dev/null || \
+          npx webpack --mode production --profile --json > pr-stats.json 2>/dev/null || \
+          ./node_modules/.bin/webpack --profile --json > pr-stats.json 2>/dev/null
+
+          # Verify stats file
+          if [ ! -s "pr-stats.json" ] || ! jq empty pr-stats.json 2>/dev/null; then
+            echo "Warning: Failed to generate valid PR stats"
+            echo '{"modules":[],"chunks":[],"assets":[]}' > pr-stats.json
+          fi
+
+          mv pr-stats.json .bundle-ai-cache/pr-stats.json
+
+      # Get lines changed
+      - name: Get lines changed
+        id: lines
+        run: |
+          LINES=$(git diff --numstat origin/${{ github.base_ref }} HEAD | awk '{sum+=$1+$2} END {print sum}')
+          echo "count=${LINES:-0}" >> $GITHUB_OUTPUT
+
+      # Run bundle analysis
+      - name: Analyze bundle
+        id: analysis
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          cd bundle-ai || true
+
+          ANALYSIS_FILE="../.bundle-ai-cache/analysis.json"
+
+          # Determine which directory we're in
+          if [ -f "cli.js" ]; then
+            CLI_DIR="."
+          elif [ -f "bundle-ai/cli.js" ]; then
+            CLI_DIR="bundle-ai"
+          else
+            echo "Cannot find bundle-ai CLI"
+            exit 1
+          fi
+
+          # Run analysis
+          node $CLI_DIR/cli.js \
+            --base-stats ../.bundle-ai-cache/base-stats.json \
+            --pr-stats ../.bundle-ai-cache/pr-stats.json \
+            --lines ${{ steps.lines.outputs.count }} \
+            --json "$ANALYSIS_FILE" \
+            --no-comment-file
+
+          # Check if analysis was successful
+          if [ ! -f "$ANALYSIS_FILE" ]; then
+            echo "Analysis failed"
+            exit 1
+          fi
+
+          # Output summary for next step
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          cat "$ANALYSIS_FILE" | jq -r '.ai.verdict // "unknown"' >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # Generate PR comment
+      - name: Generate PR comment
+        if: always()
+        run: |
+          cd bundle-ai || true
+
+          if [ -f "../.bundle-ai-cache/analysis.json" ]; then
+            if [ -f "cli.js" ]; then
+              CLI_DIR="."
+            elif [ -f "bundle-ai/cli.js" ]; then
+              CLI_DIR="bundle-ai"
+            else
+              echo "Cannot find bundle-ai CLI"
+              exit 0
+            fi
+
+            node $CLI_DIR/scripts/comment.js \
+              --input ../.bundle-ai-cache/analysis.json \
+              --output ../.bundle-ai-cache/comment.md
+          fi
+
+      # Post PR comment
+      - name: Post PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = '.bundle-ai-cache/comment.md';
+
+            if (!fs.existsSync(path)) {
+              console.log('Comment file not found, skipping');
+              return;
+            }
+
+            const body = fs.readFileSync(path, 'utf-8');
+            const marker = '<!-- bundle-ai -->';
+            const fullBody = `${marker}\n${body}`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existingComment = comments.find(c => c.body?.includes(marker));
+
+            if (existingComment) {
+              // Update existing
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: fullBody,
+              });
+              console.log('Updated existing comment');
+            } else {
+              // Create new
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: fullBody,
+              });
+              console.log('Created new comment');
+            }
+
+      # Upload artifacts
+      - name: Upload analysis artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-analysis
+          path: |
+            .bundle-ai-cache/*.json
+            .bundle-ai-cache/*.md
+          retention-days: 30
+
+      # Fail on critical issues (optional - remove if you don't want blocking)
+      - name: Check for critical issues
+        if: always()
+        run: |
+          ANALYSIS_FILE=".bundle-ai-cache/analysis.json"
+
+          if [ -f "$ANALYSIS_FILE" ]; then
+            CRITICAL=$(cat "$ANALYSIS_FILE" | jq '.issues.critical // 0')
+            if [ "$CRITICAL" -gt "0" ]; then
+              echo "⚠️ Critical bundle issues detected!"
+              echo "Review the PR comment for details."
+              # Uncomment the next line to make this a blocking failure
+              # exit 1
+            fi
+          fi
