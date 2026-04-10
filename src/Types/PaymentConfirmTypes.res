@@ -23,18 +23,21 @@ let defaultBacsBankInstruction = {
 }
 
 type bankTransfer = {ach_credit_transfer: achCreditTransfer}
-type redirectToUrl = {
-  returnUrl: string,
-  url: string,
-}
 
 type voucherDetails = {
   download_url: string,
   reference: string,
 }
 
+type ddcData = {
+  iframe_url: string,
+  timeout_ms: int,
+}
+
 type nextAction = {
   redirectToUrl: string,
+  redirectMode: string,
+  postDdcRedirectUrl: string,
   popupUrl: string,
   redirectResponseUrl: string,
   type_: string,
@@ -49,6 +52,7 @@ type nextAction = {
   display_text: option<string>,
   border_color: option<string>,
   iframe_data: option<JSON.t>,
+  ddc_data: option<ddcData>,
 }
 type intent = {
   nextAction: nextAction,
@@ -62,12 +66,10 @@ type intent = {
 }
 open Utils
 
-let defaultRedirectTourl = {
-  returnUrl: "",
-  url: "",
-}
 let defaultNextAction = {
   redirectToUrl: "",
+  redirectMode: "required",
+  postDdcRedirectUrl: "",
   popupUrl: "",
   redirectResponseUrl: "",
   type_: "",
@@ -82,6 +84,7 @@ let defaultNextAction = {
   display_text: None,
   border_color: None,
   iframe_data: None,
+  ddc_data: None,
 }
 let defaultIntent = {
   nextAction: defaultNextAction,
@@ -146,6 +149,8 @@ let getNextAction = (dict, str) => {
   ->Option.map(json => {
     {
       redirectToUrl: getString(json, "redirect_to_url", ""),
+      redirectMode: getString(json, "redirect_mode", "required"),
+      postDdcRedirectUrl: getString(json, "url", ""),
       popupUrl: getString(json, "popup_url", ""),
       redirectResponseUrl: getString(json, "redirect_response_url", ""),
       type_: getString(json, "type", ""),
@@ -182,6 +187,12 @@ let getNextAction = (dict, str) => {
       display_text: json->getOptionString("display_text"),
       border_color: json->getOptionString("border_color"),
       iframe_data: Some(json->Utils.getJsonObjectFromDict("iframe_data")),
+      ddc_data: json
+      ->getOptionalDict("ddc_data")
+      ->Option.map(ddcDict => {
+        iframe_url: ddcDict->getString("iframe_url", ""),
+        timeout_ms: ddcDict->getInt("timeout_ms", 30000),
+      }),
     }
   })
   ->Option.getOr(defaultNextAction)

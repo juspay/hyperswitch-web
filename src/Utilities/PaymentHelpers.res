@@ -17,8 +17,6 @@ let getPaymentType = paymentMethodType =>
   | _ => Other
   }
 
-let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-
 let retrievePaymentIntent = async (
   clientSecret,
   ~headers=?,
@@ -759,6 +757,16 @@ let rec intentCall = (
                   ("iframeId", iframeId->JSON.Encode.string),
                   ("metadata", metaData->JSON.Encode.object),
                 ])
+              } else if intent.nextAction.type_ === "invoke_ddc" {
+                NextActionHelpers.handleDDC(
+                  ~ddcData=intent.nextAction.ddc_data,
+                  ~iframeId,
+                  ~isPaymentSession,
+                  ~resolve,
+                  ~data,
+                  ~optLogger,
+                  ~paymentMethod,
+                )
               } else if intent.nextAction.type_ === "display_voucher_information" {
                 let voucherData = intent.nextAction.voucher_details->Option.getOr({
                   download_url: "",
