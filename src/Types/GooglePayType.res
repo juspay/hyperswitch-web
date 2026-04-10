@@ -54,6 +54,7 @@ type parameters = {
   gatewayMerchantId: option<string>,
   allowedAuthMethods: option<array<string>>,
   allowedCardNetworks: option<array<string>>,
+  allowCreditCards: option<bool>,
 }
 
 type tokenizationSpecification = {
