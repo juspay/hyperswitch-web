@@ -100,6 +100,7 @@ function extractBaseDSNUrl(dsn) {
 const authorizedConnectSources = [
   "'self'",
   "https://checkout.hyperswitch.io",
+  "https://eu.hyperswitch.io",
   "https://dev.hyperswitch.io",
   "https://beta.hyperswitch.io",
   "https://live.hyperswitch.io",
@@ -134,6 +135,8 @@ const getEnvVariable = (variable, defaultValue) => {
 };
 
 const sdkEnv = getEnvVariable("sdkEnv", "local");
+const hyperswitchStack = getEnvVariable("HYPERSWITCH_STACK", "");
+const isEUStack = hyperswitchStack === "eu";
 const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const DISABLE_CSP = getEnvVariable("DISABLE_CSP", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
@@ -165,6 +168,7 @@ const repoPublicPath =
 // Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
+  if (isEUStack && env === "prod") return "https://eu.hyperswitch.io";
   const urls = {
     prod: "https://checkout.hyperswitch.io",
     sandbox: "https://beta.hyperswitch.io",
@@ -195,10 +199,16 @@ const confirmDomain = getEnvironmentDomain("live", "integ", "app");
 
 // Backend and confirm endpoints
 const backendEndPoint =
-  envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
+  envBackendUrl ||
+  (isEUStack && sdkEnv === "prod"
+    ? "https://eu.hyperswitch.io/api"
+    : `https://${backendDomain}.hyperswitch.io/api`);
 
 const confirmEndPoint =
-  envBackendUrl || `https://${confirmDomain}.hyperswitch.io/api`;
+  envBackendUrl ||
+  (isEUStack && sdkEnv === "prod"
+    ? "https://eu.hyperswitch.io/api"
+    : `https://${confirmDomain}.hyperswitch.io/api`);
 
 const logEndpoint = envLoggingUrl;
 
@@ -352,7 +362,12 @@ module.exports = (publicPath = "auto") => {
     output: {
       path: isLocal
         ? path.resolve(__dirname, "dist")
-        : path.resolve(__dirname, "dist", sdkEnv, sdkVersionValue),
+        : path.resolve(
+            __dirname,
+            "dist",
+            isEUStack ? `${sdkEnv}_eu` : sdkEnv,
+            sdkVersionValue
+          ),
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,
