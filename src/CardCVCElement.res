@@ -131,7 +131,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
         Window.removeEventListener("message", handleRequestCVCConfirm)
       },
     )
-  }, [cvcNumber])
+  }, (cvcNumber, keys, paymentType, loggerState, customPodUri, redirectionFlags, localeString))
 
   React.useEffect0(() => {
     messageParentWindow([

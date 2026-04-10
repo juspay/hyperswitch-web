@@ -381,7 +381,7 @@ let rec intentCall = (
     ~isPaymentSession,
   )
   let handleOpenUrl = url => {
-    if isPaymentSession {
+    if isPaymentSession && mode != CardCVCElement {
       replaceRootHref(url, redirectionFlags)
     } else {
       openUrl(url)

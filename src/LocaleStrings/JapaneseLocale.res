@@ -258,4 +258,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "分割払いプランを選択",
   showMore: "もっと見る",
   showLess: "表示を減らす",
+  refreshingText: "更新中...",
 }

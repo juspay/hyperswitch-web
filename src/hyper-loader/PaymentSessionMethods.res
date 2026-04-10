@@ -6,27 +6,28 @@ let cvcWidgetNotFoundErrorType = "cvc_widget_not_found"
 let cvcValidationErrorType = "cvc_validation"
 
 let getCustomerSavedPaymentMethods = (
-  ~clientSecret,
+  ~clientSecretRef: ref<string>,
   ~publishableKey,
   ~endpoint,
   ~logger,
   ~customPodUri,
-  ~sdkAuthorization,
+  ~sdkAuthorizationRef: ref<string>,
   ~redirectionFlags,
   ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
+  ~isUpdateIntentInProgress: ref<bool>,
 ) => {
   open ApplePayTypes
   open GooglePayType
   let applePaySessionRef = ref(Nullable.null)
 
   PaymentHelpers.fetchCustomerPaymentMethodList(
-    ~clientSecret,
+    ~clientSecret=clientSecretRef.contents,
     ~publishableKey,
     ~endpoint,
     ~customPodUri,
     ~logger,
     ~isPaymentSession=true,
-    ~sdkAuthorization,
+    ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
   )
   ->then(customerDetails => {
     let gPayClient = google(
@@ -140,7 +141,7 @@ let getCustomerSavedPaymentMethods = (
             ("payload", payload),
             ("paymentType", (paymentType :> string)->JSON.Encode.string),
             ("publishableKey", publishableKey->JSON.Encode.string),
-            ("clientSecret", clientSecret->JSON.Encode.string),
+            ("clientSecret", clientSecretRef.contents->JSON.Encode.string),
             ("requiresCvv", requiresCvv->JSON.Encode.bool),
             ("redirect", redirect->JSON.Encode.string),
           ]->getJsonFromArrayOfJson
@@ -189,11 +190,11 @@ let getCustomerSavedPaymentMethods = (
             ~paymentType,
             ~payload=updatedPayload,
             ~publishableKey,
-            ~clientSecret,
+            ~clientSecret=clientSecretRef.contents,
             ~logger,
             ~customPodUri,
             ~redirectionFlags,
-            ~sdkAuthorization,
+            ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
           )
         }
       } else if requiresCvv {
@@ -223,46 +224,50 @@ let getCustomerSavedPaymentMethods = (
           ~paymentType,
           ~payload=updatedPayload,
           ~publishableKey,
-          ~clientSecret,
+          ~clientSecret=clientSecretRef.contents,
           ~logger,
           ~customPodUri,
           ~redirectionFlags,
-          ~sdkAuthorization,
+          ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
         )
       }
     }
 
     let confirmWithCustomerDefaultPaymentMethod = payload => {
-      switch customerDefaultPaymentMethod {
-      | Some(defaultPaymentMethod) => {
-          let paymentToken = defaultPaymentMethod.paymentToken
-          let paymentMethod = defaultPaymentMethod.paymentMethod
-          let paymentMethodType = defaultPaymentMethod.paymentMethodType->Option.getOr("")
-          let paymentType = paymentMethodType->PaymentHelpers.getPaymentType
+      if isUpdateIntentInProgress.contents {
+        UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
+      } else {
+        switch customerDefaultPaymentMethod {
+        | Some(defaultPaymentMethod) => {
+            let paymentToken = defaultPaymentMethod.paymentToken
+            let paymentMethod = defaultPaymentMethod.paymentMethod
+            let paymentMethodType = defaultPaymentMethod.paymentMethodType->Option.getOr("")
+            let paymentType = paymentMethodType->PaymentHelpers.getPaymentType
 
-          let body = [
-            ("payment_method", paymentMethod->JSON.Encode.string),
-            ("payment_token", paymentToken->JSON.Encode.string),
-          ]
+            let body = [
+              ("payment_method", paymentMethod->JSON.Encode.string),
+              ("payment_token", paymentToken->JSON.Encode.string),
+            ]
 
-          if paymentMethodType !== "" {
-            body
-            ->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))
-            ->ignore
+            if paymentMethodType !== "" {
+              body
+              ->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))
+              ->ignore
+            }
+
+            confirmWithCVCOrPaymentSession(
+              ~body,
+              ~payload,
+              ~paymentType,
+              ~requiresCvv=defaultPaymentMethod.requiresCvv,
+            )
           }
-
-          confirmWithCVCOrPaymentSession(
-            ~body,
-            ~payload,
-            ~paymentType,
-            ~requiresCvv=defaultPaymentMethod.requiresCvv,
-          )
+        | None =>
+          handleFailureResponse(
+            ~message="There is no default saved payment method data for this customer.",
+            ~errorType="no_data",
+          )->resolve
         }
-      | None =>
-        handleFailureResponse(
-          ~message="There is no default saved payment method data for this customer.",
-          ~errorType="no_data",
-        )->resolve
       }
     }
 
@@ -300,11 +305,11 @@ let getCustomerSavedPaymentMethods = (
             ~paymentType,
             ~payload,
             ~publishableKey,
-            ~clientSecret,
+            ~clientSecret=clientSecretRef.contents,
             ~logger,
             ~customPodUri,
             ~redirectionFlags,
-            ~sdkAuthorization,
+            ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
           )->then(val => {
             val->resolvePromise
             resolve()
@@ -320,7 +325,7 @@ let getCustomerSavedPaymentMethods = (
         ~applePayPresent=applePayTokenRef.contents.sessionTokenData,
         ~logger,
         ~callBackFunc=processPayment,
-        ~clientSecret,
+        ~clientSecret=clientSecretRef.contents,
         ~publishableKey,
         ~resolvePromise,
       )
@@ -355,11 +360,11 @@ let getCustomerSavedPaymentMethods = (
             ~paymentType,
             ~payload,
             ~publishableKey,
-            ~clientSecret,
+            ~clientSecret=clientSecretRef.contents,
             ~logger,
             ~customPodUri,
             ~redirectionFlags,
-            ~sdkAuthorization,
+            ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
           )
         }
 
@@ -381,48 +386,52 @@ let getCustomerSavedPaymentMethods = (
     }
 
     let confirmWithLastUsedPaymentMethod = payload => {
-      switch customerPaymentMethodsRef.contents->Array.get(0) {
-      | Some(lastUsedPaymentMethod) =>
-        if lastUsedPaymentMethod.paymentMethodType === Some("apple_pay") {
-          Promise.make((resolve, _) => {
-            handleApplePayConfirmPayment(lastUsedPaymentMethod, payload, resolve)
-          })
-        } else if lastUsedPaymentMethod.paymentMethodType === Some("google_pay") {
-          handleGooglePayConfirmPayment(lastUsedPaymentMethod, payload)
-        } else {
-          let paymentToken = lastUsedPaymentMethod.paymentToken
-          let paymentMethod = lastUsedPaymentMethod.paymentMethod
-          let paymentMethodType = lastUsedPaymentMethod.paymentMethodType->Option.getOr("")
-          let paymentType = paymentMethodType->PaymentHelpers.getPaymentType
-          let isCustomerAcceptanceRequired = lastUsedPaymentMethod.recurringEnabled->not
+      if isUpdateIntentInProgress.contents {
+        UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
+      } else {
+        switch customerPaymentMethodsRef.contents->Array.get(0) {
+        | Some(lastUsedPaymentMethod) =>
+          if lastUsedPaymentMethod.paymentMethodType === Some("apple_pay") {
+            Promise.make((resolve, _) => {
+              handleApplePayConfirmPayment(lastUsedPaymentMethod, payload, resolve)
+            })
+          } else if lastUsedPaymentMethod.paymentMethodType === Some("google_pay") {
+            handleGooglePayConfirmPayment(lastUsedPaymentMethod, payload)
+          } else {
+            let paymentToken = lastUsedPaymentMethod.paymentToken
+            let paymentMethod = lastUsedPaymentMethod.paymentMethod
+            let paymentMethodType = lastUsedPaymentMethod.paymentMethodType->Option.getOr("")
+            let paymentType = paymentMethodType->PaymentHelpers.getPaymentType
+            let isCustomerAcceptanceRequired = lastUsedPaymentMethod.recurringEnabled->not
 
-          let body = [
-            ("payment_method", paymentMethod->JSON.Encode.string),
-            ("payment_token", paymentToken->JSON.Encode.string),
-          ]
+            let body = [
+              ("payment_method", paymentMethod->JSON.Encode.string),
+              ("payment_token", paymentToken->JSON.Encode.string),
+            ]
 
-          if isCustomerAcceptanceRequired {
-            body->Array.push(("customer_acceptance", PaymentBody.customerAcceptanceBody))->ignore
+            if isCustomerAcceptanceRequired {
+              body->Array.push(("customer_acceptance", PaymentBody.customerAcceptanceBody))->ignore
+            }
+
+            if paymentMethodType !== "" {
+              body
+              ->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))
+              ->ignore
+            }
+
+            confirmWithCVCOrPaymentSession(
+              ~body,
+              ~payload,
+              ~paymentType,
+              ~requiresCvv=lastUsedPaymentMethod.requiresCvv,
+            )
           }
-
-          if paymentMethodType !== "" {
-            body
-            ->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))
-            ->ignore
-          }
-
-          confirmWithCVCOrPaymentSession(
-            ~body,
-            ~payload,
-            ~paymentType,
-            ~requiresCvv=lastUsedPaymentMethod.requiresCvv,
-          )
+        | None =>
+          handleFailureResponse(
+            ~message="No recent payments found for this customer.",
+            ~errorType="no_data",
+          )->resolve
         }
-      | None =>
-        handleFailureResponse(
-          ~message="No recent payments found for this customer.",
-          ~errorType="no_data",
-        )->resolve
       }
     }
 
@@ -446,12 +455,12 @@ let getCustomerSavedPaymentMethods = (
 
     if (isApplePayPresent && canMakePayments) || isGooglePayPresent {
       PaymentHelpers.fetchSessions(
-        ~clientSecret,
+        ~clientSecret=clientSecretRef.contents,
         ~publishableKey,
         ~logger,
         ~customPodUri,
         ~endpoint,
-        ~sdkAuthorization,
+        ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
       )
       ->then(sessionDetails => {
         let componentName = "headless"
