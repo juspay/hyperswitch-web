@@ -13,6 +13,7 @@ let intentCall = (
     ~customPodUri: option<string>=?,
     ~publishableKey: option<string>=?,
     ~sdkAuthorization: option<string>=?,
+    ~signal: Fetch.AbortSignal.t=?,
   ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,

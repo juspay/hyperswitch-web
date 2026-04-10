@@ -173,7 +173,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, [savedMethods])
 
   let (walletList, paymentOptionsList, actualList) = useGetPaymentMethodList(
-    ~paymentOptions,
     ~paymentType,
     ~sessions,
   )
@@ -295,7 +294,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   useSubmitPaymentData(submitCallback)
   React.useEffect(() => {
     setSelectedOption(prev =>
-      selectedOption !== ""
+      selectedOption !== "" && paymentOptions->Array.includes(selectedOption)
         ? prev
         : layoutClass.defaultCollapsed
         ? ""
@@ -599,10 +598,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             cardShimmerCount
             cardProps
             expiryProps
-            cvcProps
           />
-        | Accordion =>
-          <AccordionContainer paymentOptions checkoutEle cardProps expiryProps cvcProps />
+        | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps expiryProps />
         }}
       </div>
     </RenderIf>

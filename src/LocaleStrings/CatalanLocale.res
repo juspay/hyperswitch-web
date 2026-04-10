@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Aquesta targeta ha caducat`,
   cardHeader: `Informació de la targeta`,
   cardBrandConfiguredErrorText: str => `${str} no està suportat en aquest moment.`,
-  blockedCardText: "Aquesta targeta no està permesa per a pagaments.",
+  cardNotEligibleText: "Aquesta targeta no s'accepta per a aquest pagament",
   currencyNetwork: `Xarxes de Monedes`,
   expiryPlaceholder: `MM / AA`,
   dateOfBirth: `Data de naixement`,
@@ -259,4 +259,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "Seleccioneu un pla de terminis",
   showMore: "Mostra més",
   showLess: "Mostra menys",
+  refreshingText: "Actualitzant...",
 }

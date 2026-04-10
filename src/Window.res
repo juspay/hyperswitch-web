@@ -172,6 +172,7 @@ module LocalStorage = {
 }
 
 module Element = {
+  @get external isConnected: Dom.element => bool = "isConnected"
   @get external clientWidth: Dom.element => int = "clientWidth"
   @get external nullableContentWindow: Dom.element => Nullable.t<Dom.element> = "contentWindow"
   @get external nullableContentDocument: Dom.element => Nullable.t<document> = "contentDocument"

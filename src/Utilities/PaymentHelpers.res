@@ -62,19 +62,21 @@ let retrievePaymentIntent = async (
   )
 }
 
-let fetchBlockedBins = async (
-  ~sdkAuthorization,
+let fetchPaymentMethodEligibility = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
   ~customPodUri,
+  ~bodyArr: array<(string, JSON.t)>,
+  ~sdkAuthorization=None,
   ~endpoint,
+  ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchBlockedBins,
+    ~apiCallType=FetchPaymentMethodEligibility,
     ~params={
       clientSecret: Some(clientSecret),
-      publishableKey: None,
+      publishableKey: Some(publishableKey),
       customBackendBaseUrl: Some(endpoint),
       forceSync: None,
       pollId: None,
@@ -83,20 +85,30 @@ let fetchBlockedBins = async (
     },
   )
 
+  let body = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => bodyArr->getJsonFromArrayOfJson
+  | _ =>
+    bodyArr
+    ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
+    ->getJsonFromArrayOfJson
+  }
+
   let onSuccess = data => data
 
   let onFailure = _ => JSON.Encode.null
 
   await fetchApiWithLogging(
     uri,
-    ~eventName=BLOCKED_BIN_CALL,
+    ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
     ~logger,
-    ~method=#GET,
+    ~bodyStr=body->JSON.stringify,
+    ~method=#POST,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
     ~sdkAuthorization,
+    ~signal?,
   )
 }
 
@@ -319,6 +331,7 @@ let rec intentCall = (
     ~customPodUri: option<string>=?,
     ~publishableKey: option<string>=?,
     ~sdkAuthorization: option<string>=?,
+    ~signal: Fetch.AbortSignal.t=?,
   ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,
@@ -366,7 +379,7 @@ let rec intentCall = (
     ~isPaymentSession,
   )
   let handleOpenUrl = url => {
-    if isPaymentSession {
+    if isPaymentSession && mode != CardCVCElement {
       replaceRootHref(url, redirectionFlags)
     } else {
       openUrl(url)
@@ -1678,6 +1691,7 @@ let paymentIntentForPaymentSession = (
   ~customPodUri,
   ~redirectionFlags,
   ~isPaymentSession=true,
+  ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
 ) => {
   let confirmParams =
@@ -1702,19 +1716,23 @@ let paymentIntentForPaymentSession = (
     ~isConfirmCall=true,
   )
   let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
-  let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
+  let headers = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(sdkAuth) => [("Authorization", sdkAuth)]
+  | None => [("api-key", confirmParam.publishableKey)]
+  }
 
   let broswerInfo = BrowserSpec.broswerInfo()
 
   let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
 
+  let clientSecretArr = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => []
+  | None => [("client_secret", clientSecret->JSON.Encode.string)]
+  }
+
   let bodyStr =
     body
-    ->Array.concatMany([
-      broswerInfo,
-      [("client_secret", clientSecret->JSON.Encode.string)],
-      returnUrlArr,
-    ])
+    ->Array.concatMany([broswerInfo, clientSecretArr, returnUrlArr])
     ->getJsonFromArrayOfJson
     ->JSON.stringify
 
@@ -1736,6 +1754,7 @@ let paymentIntentForPaymentSession = (
     ~counter=0,
     ~isPaymentSession,
     ~redirectionFlags,
+    ~sdkAuthorization,
     ~mode,
   )
 }
