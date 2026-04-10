@@ -18,15 +18,15 @@ let handleDDC = (
     ("iframeId", iframeId->JSON.Encode.string),
   ])
 
+  let errorType = "confirm_payment_failed"
+  let errorMessage = "Something went wrong"
+
   if iframeUrl === "" {
     if !isPaymentSession {
       closePaymentLoaderIfAny()
-      postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message="Something went wrong")
+      postFailedSubmitResponse(~errortype=errorType, ~message=errorMessage)
     } else {
-      let failedSubmitResponse = getFailedSubmitResponse(
-        ~errorType="confirm_payment_failed",
-        ~message="Something went wrong",
-      )
+      let failedSubmitResponse = getFailedSubmitResponse(~errorType, ~message=errorMessage)
       resolve(failedSubmitResponse)
     }
   } else {
@@ -46,15 +46,9 @@ let handleDDC = (
     let handleFailure = () =>
       if !isPaymentSession {
         closePaymentLoaderIfAny()
-        postFailedSubmitResponse(
-          ~errortype="confirm_payment_failed",
-          ~message="Something went wrong",
-        )
+        postFailedSubmitResponse(~errortype=errorType, ~message=errorMessage)
       } else {
-        let failedSubmitResponse = getFailedSubmitResponse(
-          ~errorType="confirm_payment_failed",
-          ~message="Something went wrong",
-        )
+        let failedSubmitResponse = getFailedSubmitResponse(~errorType, ~message=errorMessage)
         resolve(failedSubmitResponse)
       }
 
@@ -104,7 +98,7 @@ let handleDDC = (
       }
     }
 
-    let iframe = Window.body->makeHiddenIframe(iframeUrl, "ddc-iframe")
+    let iframe = Window.body->makeHiddenIframe(~src=iframeUrl, ~id="ddc-iframe")
     iframeRef := Some(iframe)
 
     timeoutIdRef := Some(setTimeout(() => {

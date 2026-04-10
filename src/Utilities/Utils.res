@@ -1486,10 +1486,10 @@ let makeIframe = (element, url) => {
     element->appendChild(iframe)
   })
 }
-let makeHiddenIframe = (element, url, id) => {
+let makeHiddenIframe = (element, ~src, ~id) => {
   let iframe = Window.createElement("iframe")
   iframe->Window.setAttribute("id", id)
-  iframe->Window.setAttribute("src", url)
+  iframe->Window.setAttribute("src", src)
   iframe->Window.setAttribute(
     "style",
     "position: absolute; width: 1px; height: 1px; border: none; overflow: hidden; left: -9999px; top: -9999px;",
