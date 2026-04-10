@@ -34,6 +34,8 @@ type ddcData = {
   timeout_ms: int,
 }
 
+let defaultDdcTimeoutMs = 30000
+
 type nextAction = {
   redirectToUrl: string,
   redirectMode: string,
@@ -191,7 +193,7 @@ let getNextAction = (dict, str) => {
       ->getOptionalDict("ddc_data")
       ->Option.map(ddcDict => {
         iframe_url: ddcDict->getString("iframe_url", ""),
-        timeout_ms: ddcDict->getInt("timeout_ms", 30000),
+        timeout_ms: ddcDict->getInt("timeout_ms", defaultDdcTimeoutMs),
       }),
     }
   })

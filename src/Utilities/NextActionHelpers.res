@@ -10,7 +10,10 @@ let handleDDC = (
   ~paymentMethod,
 ) => {
   let iframeUrl = ddcData->Option.map(data => data.iframe_url)->Option.getOr("")
-  let timeoutMs = ddcData->Option.map(data => data.timeout_ms)->Option.getOr(30000)
+  let timeoutMs =
+    ddcData
+    ->Option.map(data => data.timeout_ms)
+    ->Option.getOr(PaymentConfirmTypes.defaultDdcTimeoutMs)
 
   messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
@@ -21,14 +24,17 @@ let handleDDC = (
   let errorType = "confirm_payment_failed"
   let errorMessage = "Something went wrong"
 
-  if iframeUrl === "" {
+  let handleFailure = () => {
+    closePaymentLoaderIfAny()
     if !isPaymentSession {
-      closePaymentLoaderIfAny()
       postFailedSubmitResponse(~errortype=errorType, ~message=errorMessage)
-    } else {
-      let failedSubmitResponse = getFailedSubmitResponse(~errorType, ~message=errorMessage)
-      resolve(failedSubmitResponse)
     }
+    let failedSubmitResponse = getFailedSubmitResponse(~errorType, ~message=errorMessage)
+    resolve(failedSubmitResponse)
+  }
+
+  if iframeUrl === "" {
+    handleFailure()
   } else {
     let timeoutIdRef = ref(None)
     let messageHandlerRef = ref(None)
@@ -42,15 +48,6 @@ let handleDDC = (
       messageHandlerRef := None
       iframeRef := None
     }
-
-    let handleFailure = () =>
-      if !isPaymentSession {
-        closePaymentLoaderIfAny()
-        postFailedSubmitResponse(~errortype=errorType, ~message=errorMessage)
-      } else {
-        let failedSubmitResponse = getFailedSubmitResponse(~errorType, ~message=errorMessage)
-        resolve(failedSubmitResponse)
-      }
 
     let handleRedirectToUrl = (redirectUrl, redirectMode) => {
       closePaymentLoaderIfAny()
@@ -98,6 +95,9 @@ let handleDDC = (
       }
     }
 
+    messageHandlerRef := Some(handleMessage)
+    Window.addEventListener("message", handleMessage)
+
     let iframe = Window.body->makeHiddenIframe(~src=iframeUrl, ~id="ddc-iframe")
     iframeRef := Some(iframe)
 
@@ -105,8 +105,5 @@ let handleDDC = (
           cleanup()
           handleFailure()
         }, timeoutMs))
-
-    messageHandlerRef := Some(handleMessage)
-    Window.addEventListener("message", handleMessage)
   }
 }
