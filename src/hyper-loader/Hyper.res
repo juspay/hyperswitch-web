@@ -412,9 +412,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           )
           Promise.resolve(errorResponse)
         } else {
+          let iframeCount = iframeRef.contents->Array.length
           Promise.make((resolve1, _) => {
-            let isReadyPromise = isReadyPromise
-            isReadyPromise
+            let readyGate = if iframeCount >= 1 {
+              Promise.resolve(Date.now())
+            } else {
+              isReadyPromise
+            }
+            readyGate
             ->Promise.then(readyTimestamp => {
               let handleMessage = (event: Types.event) => {
                 let json = event.data->anyTypeToJson
