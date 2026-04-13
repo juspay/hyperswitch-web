@@ -30,11 +30,14 @@ type voucherDetails = {
 }
 
 type ddcData = {
-  iframe_url: string,
-  timeout_ms: int,
+  iframeUrl: string,
+  timeoutMs: int,
 }
 
-let defaultDdcTimeoutMs = 30000
+let defaultDdcData = {
+  iframeUrl: "",
+  timeoutMs: 30000,
+}
 
 type nextAction = {
   redirectToUrl: string,
@@ -144,6 +147,15 @@ let getVoucherDetails = json => {
   }
 }
 
+let getDdcData = json => {
+  json
+  ->getOptionalDict("ddc_data")
+  ->Option.map(ddcDict => {
+    iframeUrl: ddcDict->getString("iframe_url", ""),
+    timeoutMs: ddcDict->getInt("timeout_ms", 30000),
+  })
+}
+
 let getNextAction = (dict, str) => {
   dict
   ->Dict.get(str)
@@ -189,12 +201,7 @@ let getNextAction = (dict, str) => {
       display_text: json->getOptionString("display_text"),
       border_color: json->getOptionString("border_color"),
       iframe_data: Some(json->Utils.getJsonObjectFromDict("iframe_data")),
-      ddc_data: json
-      ->getOptionalDict("ddc_data")
-      ->Option.map(ddcDict => {
-        iframe_url: ddcDict->getString("iframe_url", ""),
-        timeout_ms: ddcDict->getInt("timeout_ms", defaultDdcTimeoutMs),
-      }),
+      ddc_data: json->getDdcData,
     }
   })
   ->Option.getOr(defaultNextAction)

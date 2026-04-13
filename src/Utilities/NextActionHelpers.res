@@ -9,11 +9,7 @@ let handleDDC = (
   ~optLogger,
   ~paymentMethod,
 ) => {
-  let iframeUrl = ddcData->Option.map(data => data.iframe_url)->Option.getOr("")
-  let timeoutMs =
-    ddcData
-    ->Option.map(data => data.timeout_ms)
-    ->Option.getOr(PaymentConfirmTypes.defaultDdcTimeoutMs)
+  let {iframeUrl, timeoutMs} = ddcData->Option.getOr(PaymentConfirmTypes.defaultDdcData)
 
   messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
