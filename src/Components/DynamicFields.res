@@ -130,7 +130,7 @@ let make = (
   //   PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
   // }, [savedMethod])
 
-    let (missingRequiredFields, initialValues, _) = useSuperpositionFields(
+  let (missingRequiredFields, initialValues, _) = useSuperpositionFields(
     ~paymentMethod,
     ~paymentMethodType,
     ~paymentMethodTypes,
@@ -142,9 +142,9 @@ let make = (
     ->removeBillingDetailsFromFieldConfigs(billingAddress)
     ->removeClickToPayFieldsFromFieldConfigs(isSaveDetailsWithClickToPay)
     ->removeCardFieldsFromFieldConfigs(areCardFieldsRendered)
+    ->removeCardNetworkFromFieldConfigs
     ->processFieldConfigs(billingAddress, isSaveDetailsWithClickToPay)
   }, (missingRequiredFields, billingAddress, isSaveDetailsWithClickToPay, areCardFieldsRendered))
-
 
   // let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
 
@@ -169,6 +169,16 @@ let make = (
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
 
   let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))
+
+  let initialCountryIso = {
+    let effectiveCountry =
+      country !== ""
+        ? country
+        : countryNames->Array.get(0)->Option.getOr("")
+    Utils.getCountryCode(effectiveCountry).isoAlpha2
+  }
+
+  let countryIso = Utils.getCountryCode(country).isoAlpha2
 
   let setCurrency = val => {
     setCurrency(val)
@@ -779,7 +789,14 @@ let make = (
                                       isValid: Some(field.meta.valid),
                                       errorString: "",
                                     })
-                                    field.input.onChange(newVal.value)
+                                    let countryIso =
+                                      Utils.getCountryCode(country).isoAlpha2
+                                    let stateCode =
+                                      Utils.getStateCodeFromStateName(
+                                        newVal.value,
+                                        countryIso,
+                                      )
+                                    field.input.onChange(stateCode)
                                   }}
                                   options={stateNames}
                                 />
@@ -858,7 +875,14 @@ let make = (
                                     isValid: Some(field.meta.valid),
                                     errorString: "",
                                   })
-                                  field.input.onChange(newVal.value)
+                                  let countryIso =
+                                    Utils.getCountryCode(country).isoAlpha2
+                                  let stateCode =
+                                    Utils.getStateCodeFromStateName(
+                                      newVal.value,
+                                      countryIso,
+                                    )
+                                  field.input.onChange(stateCode)
                                 }}
                                 options={stateNames}
                               />
@@ -885,13 +909,14 @@ let make = (
                           }}
                         />
                       }
-                    | AddressCountryInput =>
+                      | AddressCountryInput =>
                       if hasBothCountryAndPostal {
                         let updatedCountryArray =
                           countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                         <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""}`}>
                           <ReactFinalFormField
                             name={countryOutputPath}
+                            initialValue=initialCountryIso
                             render={(field: ReactFinalForm.Field.fieldProps) => {
                               <DropdownField
                                 appearance=config.appearance
@@ -900,7 +925,9 @@ let make = (
                                 setValue={setter => {
                                   let newVal = setter(field.input.value->Option.getOr(country))
                                   setCountry(_ => newVal)
-                                  field.input.onChange(newVal)
+                                  let countryIso =
+                                    Utils.getCountryCode(newVal).isoAlpha2
+                                  field.input.onChange(countryIso)
                                 }}
                                 disabled=false
                                 options=updatedCountryArray
@@ -912,7 +939,7 @@ let make = (
                             name={postalOutputPath}
                             validationRule={Validation.fieldTypeToValidationRule(
                               AddressPostalCodeInput,
-                              ~country,
+                              ~country=countryIso,
                             )}
                             render={(field: ReactFinalForm.Field.fieldProps) => {
                               let val = field.input.value->Option.getOr("")
@@ -942,6 +969,7 @@ let make = (
                           countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                         <ReactFinalFormField
                           name={item.outputPath}
+                          initialValue=initialCountryIso
                           render={(field: ReactFinalForm.Field.fieldProps) => {
                             <DropdownField
                               appearance=config.appearance
@@ -950,7 +978,9 @@ let make = (
                               setValue={setter => {
                                 let newVal = setter(field.input.value->Option.getOr(country))
                                 setCountry(_ => newVal)
-                                field.input.onChange(newVal)
+                                let countryIso =
+                                  Utils.getCountryCode(newVal).isoAlpha2
+                                field.input.onChange(countryIso)
                               }}
                               disabled=false
                               options=updatedCountryArr
@@ -966,7 +996,7 @@ let make = (
                           name={item.outputPath}
                           validationRule={Validation.fieldTypeToValidationRule(
                             AddressPostalCodeInput,
-                            ~country,
+                            ~country=countryIso,
                           )}
                           render={(field: ReactFinalForm.Field.fieldProps) => {
                             let val = field.input.value->Option.getOr("")
@@ -1048,6 +1078,7 @@ let make = (
                         countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                       <ReactFinalFormField
                         name={item.outputPath}
+                        initialValue=initialCountryIso
                         render={(field: ReactFinalForm.Field.fieldProps) => {
                           <DropdownField
                             appearance=config.appearance
@@ -1056,7 +1087,9 @@ let make = (
                             setValue={setter => {
                               let newVal = setter(field.input.value->Option.getOr(country))
                               setCountry(_ => newVal)
-                              field.input.onChange(newVal)
+                              let countryIso =
+                                Utils.getCountryCode(newVal).isoAlpha2
+                              field.input.onChange(countryIso)
                             }}
                             disabled=false
                             options=updatedCountryNames

@@ -501,9 +501,9 @@ let getFieldTypeFromConfig = (fc: SuperpositionTypes.fieldConfig): Superposition
     IbanInput
   } else if p->String.includes("source_bank_account_id") {
     SourceBankAccountIdInput
-  } else if p->String.includes("gift_card.number") {
+  } else if p->String.includes("gift_card") && p->String.endsWith("number") {
     GiftCardNumberInput
-  } else if p->String.includes("gift_card.pin") {
+  } else if p->String.includes("gift_card") && p->String.endsWith("cvc") {
     GiftCardPinInput
   } else if p->String.includes("document.type") {
     DocumentTypeSelect
@@ -640,6 +640,11 @@ let removeCardFieldsFromFieldConfigs = (
   }
 }
 
+// Remove card_network field from field configs (handled separately via card brand detection)
+let removeCardNetworkFromFieldConfigs = (fields: array<SuperpositionTypes.fieldConfig>) => {
+  fields->Array.filter(fc => !(fc.outputPath->String.toLowerCase->String.includes("card_network")))
+}
+
 let useSuperpositionFields = (
   ~paymentMethod,
   ~paymentMethodType,
@@ -738,23 +743,7 @@ let useSuperpositionFields = (
         | CountrySelect => "country"
         | DropdownSelect => "dropdown"
         | BankSelect => "bank"
-        | _ => "unknown"
         }
-      }
-
-      let deduplicateByFieldType = fields => {
-        let seen = Set.make()
-        fields->Array.filter(
-          fc => {
-            let key = fc.fieldType->fieldTypeToKey
-            if seen->Set.has(key) {
-              false
-            } else {
-              seen->Set.add(key)
-              true
-            }
-          },
-        )
       }
 
       let createFullNameField = (firstName, lastName) => {
@@ -779,13 +768,11 @@ let useSuperpositionFields = (
       let (firstNameField, lastNameField) = enhancedFields->extractNameFields
 
       let nonNameFields = enhancedFields->Array.filter(fc => !(fc->isNameField))
-      let deduplicatedFields = nonNameFields->deduplicateByFieldType
-
       let finalFields = switch (firstNameField, lastNameField) {
-      | (None, None) => deduplicatedFields
+      | (None, None) => nonNameFields
       | _ => {
           let fullNameField = createFullNameField(firstNameField, lastNameField)
-          [fullNameField, ...deduplicatedFields]
+          [fullNameField, ...nonNameFields]
         }
       }
 
