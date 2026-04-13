@@ -332,17 +332,36 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         iframeRef.contents->Array.push(ref)->ignore
       }
 
-      let retrievePaymentIntentFn = async clientSecret => {
+      // Shared refs for updateIntent — created once, passed to both Elements and PaymentSession.
+      let isUpdateIntentInProgress = ref(false)
+      let emptyJsonPromise = Promise.resolve(JSON.Encode.null)
+      let paymentMethodsDataPromise = ref(emptyJsonPromise)
+      let customerPaymentMethodsDataPromise = ref(emptyJsonPromise)
+      let sessionTokensDataPromise = ref(emptyJsonPromise)
+
+      let retrievePaymentIntentFn = async clientSecretOrSdkAuth => {
+        // Try to decode clientSecret as base64 — if decodable, it's an SDK authorization token.
+        let (actualClientSecret, sdkAuthorizationValue) = try {
+          let sdkAuthorizationData = clientSecretOrSdkAuth->Utils.getSdkAuthorizationData
+          let extractedClientSecret = switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
+          | Some(cs) => cs
+          | None => clientSecretOrSdkAuth
+          }
+          (extractedClientSecret, Some(clientSecretOrSdkAuth))
+        } catch {
+        | _ => (clientSecretOrSdkAuth, None)
+        }
+
         let uri = APIUtils.generateApiUrlV1(
           ~apiCallType=RetrievePaymentIntent,
           ~params={
-            clientSecret: Some(clientSecret),
+            clientSecret: Some(actualClientSecret),
             publishableKey: Some(publishableKey),
             customBackendBaseUrl: None,
             forceSync: None,
             pollId: None,
             payoutId: None,
-            sdkAuthorization: Some(sdkAuthorization.contents),
+            sdkAuthorization: sdkAuthorizationValue,
           },
         )
 
@@ -359,7 +378,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~publishableKey=Some(publishableKey),
           ~onSuccess,
           ~onFailure,
-          ~sdkAuthorization=Some(sdkAuthorization.contents),
+          ~sdkAuthorization=sdkAuthorizationValue,
         )
       }
 
@@ -466,7 +485,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       let confirmPayment = payload => {
-        confirmPaymentWrapper(payload, false, true)
+        if isUpdateIntentInProgress.contents {
+          Promise.resolve(UpdateIntentHelpersNew.confirmBlockedResponse())
+        } else {
+          confirmPaymentWrapper(payload, false, true)
+        }
       }
 
       let confirmOneClickPayment = (payload, result: bool) => {
@@ -537,8 +560,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sdkSessionId=sessionID,
           ~publishableKey,
           ~profileId,
-          ~sdkAuthorization={sdkAuthorizationId},
-          ~clientSecret={clientSecretId},
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
@@ -548,6 +569,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~redirectionFlags,
           ~isTestMode,
           ~preloadSDKWithParams,
+          ~isUpdateIntentInProgress,
+          ~clientSecretRef=clientSecret,
+          ~sdkAuthorizationRef=sdkAuthorization,
+          ~paymentMethodsDataPromise,
+          ~customerPaymentMethodsDataPromise,
+          ~sessionTokensDataPromise,
         )
       }
 
@@ -728,12 +755,19 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         PaymentSession.make(
           paymentSessionOptions,
-          ~clientSecret={clientSecret.contents},
           ~publishableKey,
-          ~sdkAuthorization={Some(sdkAuthorization.contents)->Utils.getNonEmptyOption},
+          ~profileId,
+          ~sdkSessionId=sessionID,
           ~logger=Some(logger),
           ~redirectionFlags,
           ~iframeRef,
+          ~isTestMode,
+          ~isUpdateIntentInProgress,
+          ~clientSecretRef=clientSecret,
+          ~sdkAuthorizationRef=sdkAuthorization,
+          ~paymentMethodsDataPromise,
+          ~customerPaymentMethodsDataPromise,
+          ~sessionTokensDataPromise,
         )
       }
 
