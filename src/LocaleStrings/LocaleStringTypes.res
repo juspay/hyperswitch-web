@@ -83,7 +83,7 @@ type localeStrings = {
   cardExpiredText: string,
   cardHeader: string,
   cardBrandConfiguredErrorText: string => string,
-  blockedCardText: string,
+  cardNotEligibleText: string,
   currencyNetwork: string,
   expiryPlaceholder: string,
   dateOfBirth: string,
@@ -239,15 +239,15 @@ type localeStrings = {
   giftCardPaymentCompleteMessage: string,
   giftCardPaymentRemainingMessage: (string, string) => string,
   installmentPayInInstallments: string,
-  installmentChoosePlan: string,
   installmentInterestFree: string,
-  installmentInterestRate: string => string,
-  installmentTotalPayable: string,
-  installmentPaymentLabel: (int, string, string) => string,
+  installmentWithInterest: string,
+  installmentTotal: string,
   installmentSelectPlanError: string,
+  installmentSelectPlanPlaceholder: string,
   showMore: string,
   showLess: string,
   mandatoryFieldText: string,
+  refreshingText: string,
 }
 
 type constantStrings = {

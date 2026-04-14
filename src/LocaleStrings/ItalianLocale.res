@@ -94,7 +94,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Questa carta è scaduta`,
   cardHeader: `Informazioni sulla carta`,
   cardBrandConfiguredErrorText: str => `${str} non è supportato al momento.`,
-  blockedCardText: "Questa carta non è consentita per i pagamenti.",
+  cardNotEligibleText: "Questa carta non è accettata per questo pagamento",
   currencyNetwork: `Reti Valutarie`,
   expiryPlaceholder: `MM / AA`,
   dateOfBirth: `Data di nascita`,
@@ -253,16 +253,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Paga l’importo rimanente di ${amount} ${currency} con un altro metodo di pagamento qui sotto.`,
   installmentPayInInstallments: "Paga a rate",
-  installmentChoosePlan: "Scegli un piano a rate",
   installmentInterestFree: "Senza interessi",
-  installmentInterestRate: interestRate => `${interestRate}% di interessi`,
-  installmentTotalPayable: "Totale da pagare",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 rata da ${currency} ${amount}`
-      : `${numPayments->Int.toString} rate da ${currency} ${amount}`,
+  installmentWithInterest: "con interessi",
+  installmentTotal: "Totale",
   installmentSelectPlanError: "Seleziona un piano a rate",
+  installmentSelectPlanPlaceholder: "Seleziona un piano a rate",
   showMore: "Mostra di più",
   showLess: "Mostra meno",
   mandatoryFieldText: "Questo campo è obbligatorio",
+  refreshingText: "Aggiornamento...",
 }

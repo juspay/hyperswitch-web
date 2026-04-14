@@ -94,7 +94,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `הכרטיס הזה פג תוקף`,
   cardHeader: `מידע כרטיס`,
   cardBrandConfiguredErrorText: str => `${str} לא נתמך כרגע.`,
-  blockedCardText: "כרטיס זה אינו מורשה לתשלומים.",
+  cardNotEligibleText: "כרטיס זה אינו מתקבל לתשלום זה",
   currencyNetwork: `רשתות מטבעות`,
   expiryPlaceholder: `MM / YY`,
   dateOfBirth: `תאריך לידה`,
@@ -252,16 +252,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `אנא שלמו את הסכום שנותר ${amount} ${currency} באמצעות אמצעי תשלום אחר למטה.`,
   installmentPayInInstallments: "תשלום בתשלומים",
-  installmentChoosePlan: "בחרו תוכנית תשלומים",
   installmentInterestFree: "ללא ריבית",
-  installmentInterestRate: interestRate => `${interestRate}% ריבית`,
-  installmentTotalPayable: "סה\"כ לתשלום",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `תשלום אחד של ${currency} ${amount}`
-      : `${numPayments->Int.toString} תשלומים של ${currency} ${amount}`,
+  installmentWithInterest: "עם ריבית",
+  installmentTotal: "סה\"כ",
   installmentSelectPlanError: "אנא בחר תוכנית תשלומים",
+  installmentSelectPlanPlaceholder: "בחר תוכנית תשלומים",
   showMore: "הצג עוד",
   showLess: "הצג פחות",
   mandatoryFieldText: "שדה זה הוא חובה",
+  refreshingText: "מרענן...",
 }

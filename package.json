@@ -1,6 +1,6 @@
 {
   "name": "orca-payment-page",
-  "version": "0.129.0",
+  "version": "0.130.0",
   "main": "index.js",
   "private": true,
   "dependencies": {
@@ -24,9 +24,11 @@
     "build:playground": "npm run setup:playground && webpack --config webpack.common.js",
     "build:sandbox": "cross-env NODE_ENV=production sdkEnv=sandbox webpack --config webpack.common.js",
     "build:prod": "cross-env NODE_ENV=production sdkEnv=prod webpack --config webpack.common.js",
+    "build:prod:eu": "cross-env NODE_ENV=production sdkEnv=prod HYPERSWITCH_STACK=eu webpack --config webpack.common.js",
     "build:integ:v2": "cross-env NODE_ENV=production sdkEnv=integ SDK_VERSION=v2 webpack --config webpack.common.js",
     "build:sandbox:v2": "cross-env NODE_ENV=production sdkEnv=sandbox SDK_VERSION=v2 webpack --config webpack.common.js",
     "build:prod:v2": "cross-env NODE_ENV=production sdkEnv=prod SDK_VERSION=v2 webpack --config webpack.common.js",
+    "build:prod:eu:v2": "cross-env NODE_ENV=production sdkEnv=prod HYPERSWITCH_STACK=eu SDK_VERSION=v2 webpack --config webpack.common.js",
     "deploy-to-s3": "node ./scripts/pushToS3.js",
     "setup:hooks": "git config core.hooksPath .githooks && chmod +x .githooks/commit-msg",
     "setup:submodules": "git submodule update --init --recursive",

@@ -94,7 +94,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Detta kort har gått ut`,
   cardHeader: `Kortinformation`,
   cardBrandConfiguredErrorText: str => `${str} stöds inte för tillfället.`,
-  blockedCardText: "Detta kort är inte tillåtet för betalningar.",
+  cardNotEligibleText: "Detta kort accepteras inte för denna betalning",
   currencyNetwork: `Valutanätverk`,
   expiryPlaceholder: `MM / ÅÅ`,
   dateOfBirth: `Födelsedatum`,
@@ -251,16 +251,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Vänligen betala den kvarvarande summan ${amount} ${currency} med en annan betalningsmetod nedan.`,
   installmentPayInInstallments: "Betala i avbetalningar",
-  installmentChoosePlan: "Välj ett avbetalningsplan",
   installmentInterestFree: "Räntefritt",
-  installmentInterestRate: interestRate => `${interestRate}% ränta`,
-  installmentTotalPayable: "Totalt att betala",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 betalning à ${currency} ${amount}`
-      : `${numPayments->Int.toString} betalningar à ${currency} ${amount}`,
+  installmentWithInterest: "med ränta",
+  installmentTotal: "Totalt",
   installmentSelectPlanError: "Välj ett avbetalningsplan",
+  installmentSelectPlanPlaceholder: "Välj ett avbetalningsplan",
   showMore: "Visa mer",
   showLess: "Visa mindre",
   mandatoryFieldText: "Detta fält är obligatoriskt",
+  refreshingText: "Uppdaterar...",
 }

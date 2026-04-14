@@ -94,7 +94,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `此卡已过期`,
   cardHeader: `卡片信息`,
   cardBrandConfiguredErrorText: str => `${str} 目前不支持。`,
-  blockedCardText: "此卡不允许用于付款。",
+  cardNotEligibleText: "此卡不被接受用于此付款",
   currencyNetwork: `货币网络`,
   expiryPlaceholder: `MM / YY`,
   dateOfBirth: `出生日期`,
@@ -251,14 +251,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `请使用下方的其他支付方式支付剩余金额 ${currency}${amount}。`,
   installmentPayInInstallments: "分期付款",
-  installmentChoosePlan: "选择分期计划",
   installmentInterestFree: "免息",
-  installmentInterestRate: interestRate => `${interestRate}%利息`,
-  installmentTotalPayable: "应付总额",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    `${numPayments->Int.toString}期付款，每期 ${currency} ${amount}`,
+  installmentWithInterest: "有利息",
+  installmentTotal: "合计",
   installmentSelectPlanError: "请选择分期计划",
+  installmentSelectPlanPlaceholder: "选择分期计划",
   showMore: "显示更多",
   showLess: "收起",
   mandatoryFieldText: "此字段为必填项",
+  refreshingText: "刷新中...",
 }

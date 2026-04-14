@@ -1,8 +1,8 @@
-import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { getClientURL } from "../support/utils";
-import { createPaymentBody } from "../support/utils";
-import { changeObjectKeyValue } from "../support/utils";
-import { stripeCards } from "cypress/support/cards";
+import * as testIds from "../../../../src/Utilities/TestUtils.bs";
+import { getClientURL } from "../../support/utils";
+import { createPaymentBody } from "../../support/utils";
+import { changeObjectKeyValue } from "../../support/utils";
+import { stripeCards } from "../../support/cards";
 
 describe("Card payment flow test", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
@@ -11,7 +11,6 @@ describe("Card payment flow test", () => {
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  // changeObjectKeyValue(createPaymentBody,"profile_id","YOUR_PROFILE_ID")
   changeObjectKeyValue(createPaymentBody, "customer_id", "new_user");
 
   beforeEach(() => {

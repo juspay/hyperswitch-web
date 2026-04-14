@@ -98,7 +98,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardHeader: `Информация о карте`,
   cardBrandConfiguredErrorText: str =>
     `${str} в данный момент не поддерживается.`,
-  blockedCardText: "Эта карта не разрешена для платежей.",
+  cardNotEligibleText: "Эта карта не принимается для данного платежа",
   currencyNetwork: `Валютные сети`,
   expiryPlaceholder: `MM / ГГ`,
   dateOfBirth: `Дата рождения`,
@@ -260,16 +260,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Пожалуйста, оплатите оставшуюся сумму ${amount} ${currency} другим способом оплаты ниже.`,
   installmentPayInInstallments: "Оплатить в рассрочку",
-  installmentChoosePlan: "Выберите план рассрочки",
   installmentInterestFree: "Без процентов",
-  installmentInterestRate: interestRate => `${interestRate}% процентов`,
-  installmentTotalPayable: "Итого к оплате",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 платёж ${currency} ${amount}`
-      : `${numPayments->Int.toString} платежа по ${currency} ${amount}`,
+  installmentWithInterest: "с процентами",
+  installmentTotal: "Итого",
   installmentSelectPlanError: "Пожалуйста, выберите план рассрочки",
+  installmentSelectPlanPlaceholder: "Выберите план рассрочки",
   showMore: "Показать ещё",
   showLess: "Показать меньше",
   mandatoryFieldText: "Это поле обязательно для заполнения.",
+  refreshingText: "Обновление...",
 }

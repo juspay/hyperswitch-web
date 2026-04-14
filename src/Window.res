@@ -172,10 +172,22 @@ module LocalStorage = {
 }
 
 module Element = {
+  @get external isConnected: Dom.element => bool = "isConnected"
   @get external clientWidth: Dom.element => int = "clientWidth"
   @get external nullableContentWindow: Dom.element => Nullable.t<Dom.element> = "contentWindow"
   @get external nullableContentDocument: Dom.element => Nullable.t<document> = "contentDocument"
   @get external document: Dom.element => Nullable.t<document> = "document"
+  @get external offsetHeight: Dom.element => float = "offsetHeight"
+  @get external firstElementChild: Dom.element => Nullable.t<Dom.element> = "firstElementChild"
+  @get external scrollHeight: Dom.element => float = "scrollHeight"
+  @get external clientHeight: Dom.element => float = "clientHeight"
+  @get external scrollTop: Dom.element => float = "scrollTop"
+  @send
+  external addScrollListener: (Dom.element, @as("scroll") _, unit => unit) => unit =
+    "addEventListener"
+  @send
+  external removeScrollListener: (Dom.element, @as("scroll") _, unit => unit) => unit =
+    "removeEventListener"
 }
 
 /* Helper Functions */

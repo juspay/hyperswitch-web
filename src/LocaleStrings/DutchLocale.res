@@ -94,7 +94,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Deze kaart is verlopen`,
   cardHeader: `Kaartinformatie`,
   cardBrandConfiguredErrorText: str => `${str} wordt op dit moment niet ondersteund.`,
-  blockedCardText: "Deze kaart is niet toegestaan voor betalingen.",
+  cardNotEligibleText: "Deze kaart wordt niet geaccepteerd voor deze betaling",
   currencyNetwork: `Valutanetwerken`,
   expiryPlaceholder: `MM / JJ`,
   dateOfBirth: `Geboortedatum`,
@@ -251,16 +251,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Betaal het resterende bedrag van ${amount} ${currency} met een andere betaalmethode hieronder.`,
   installmentPayInInstallments: "Betaal in termijnen",
-  installmentChoosePlan: "Kies een aflossingsplan",
   installmentInterestFree: "Rentevrij",
-  installmentInterestRate: interestRate => `${interestRate}% rente`,
-  installmentTotalPayable: "Totaal te betalen",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 betaling van ${currency} ${amount}`
-      : `${numPayments->Int.toString} betalingen van ${currency} ${amount}`,
+  installmentWithInterest: "met rente",
+  installmentTotal: "Totaal",
   installmentSelectPlanError: "Selecteer een aflossingsplan",
+  installmentSelectPlanPlaceholder: "Selecteer een aflossingsplan",
   showMore: "Meer tonen",
   showLess: "Minder tonen",
   mandatoryFieldText: "This field is mandatory",
+  refreshingText: "Vernieuwen...",
 }
