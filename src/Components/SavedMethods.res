@@ -71,22 +71,37 @@ let make = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let groupSavedMethodsWithPaymentMethods =
-    layoutClass.savedMethodCustomization.groupingBehavior == GroupByPaymentMethods
+  let {
+    displayInSeparateScreen,
+    groupByPaymentMethods,
+  } = layoutClass.savedMethodCustomization.groupingBehavior
+  let groupSavedMethodsWithPaymentMethods = !displayInSeparateScreen && groupByPaymentMethods
+
+  let groupSavedMethodsSeparately = !displayInSeparateScreen && !groupByPaymentMethods
+
+  let maxItems = layoutClass.savedMethodCustomization.maxItems
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
 
   let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
   let (showInstallments, setShowInstallments) = React.useState(_ => false)
+  let (isCollapsed, setIsCollapsed) = React.useState(_ => true)
 
   let shouldShowClickToPaySection =
     clickToPayConfig.isReady == Some(true) &&
       (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")
   let (installmentsError, setInstallmentsError) = React.useState(_ => "")
 
+  let hasMoreSavedMethods = savedCardlength > maxItems
+  let visibleSavedMethods = if hasMoreSavedMethods && isCollapsed {
+    savedMethods->Array.slice(~start=0, ~end=maxItems)
+  } else {
+    savedMethods
+  }
+
   let bottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
-      {savedMethods
+      {visibleSavedMethods
       ->Array.mapWithIndex((obj, i) =>
         <SavedCardItem
           key={i->Int.toString}
@@ -106,6 +121,9 @@ let make = (
         />
       )
       ->React.array}
+      <RenderIf condition={hasMoreSavedMethods}>
+        <ShowMoreToggle isCollapsed setIsCollapsed />
+      </RenderIf>
       <RenderIf condition={shouldShowClickToPaySection}>
         <ClickToPayAuthenticate
           loggerState
@@ -319,8 +337,8 @@ let make = (
           if !isUnknownPaymentMethod && cvcNumber === "" {
             setCvcError(_ => localeString.cvcNumberEmptyText)
             setUserError(localeString.enterFieldsText)
-          }
-          if !(isCVCValid->Option.getOr(false)) {
+          } else if !(isCVCValid->Option.getOr(false)) {
+            setCvcError(_ => localeString.inCompleteCVCErrorText)
             setUserError(localeString.enterValidDetailsText)
           }
         }
@@ -359,6 +377,8 @@ let make = (
     customerMethod,
   ))
 
+  let showSavedCards = groupSavedMethodsSeparately || !showPaymentMethodsScreen
+
   let enableSavedPaymentShimmer = React.useMemo(() => {
     savedCardlength === 0 &&
     !showPaymentMethodsScreen &&
@@ -369,7 +389,7 @@ let make = (
     {if enableSavedPaymentShimmer {
       <PaymentElementShimmer.SavedPaymentCardShimmer />
     } else {
-      <RenderIf condition={!showPaymentMethodsScreen}> {bottomElement} </RenderIf>
+      <RenderIf condition=showSavedCards> {bottomElement} </RenderIf>
     }}
     <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
       <div className="pt-4 pb-2 flex items-center justify-start">
@@ -387,7 +407,7 @@ let make = (
         paymentMethodType="debit"
       />
     </RenderIf>
-    <RenderIf condition={!enableSavedPaymentShimmer}>
+    <RenderIf condition={!enableSavedPaymentShimmer && !groupSavedMethodsSeparately}>
       <SwitchViewButton
         onClick={_ => setShowPaymentMethodsScreen(_ => true)}
         icon={<Icon name="circle-plus" size=22 />}

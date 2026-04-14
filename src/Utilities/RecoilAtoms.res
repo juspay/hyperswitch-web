@@ -6,7 +6,6 @@ let portalNodes = Recoil.atom("portalNodes", PortalState.defaultDict)
 let elementOptions = Recoil.atom("elementOptions", ElementType.defaultOptions)
 let optionAtom = Recoil.atom("options", PaymentType.defaultOptions)
 let sessions = Recoil.atom("sessions", PaymentType.Loading)
-let blockedBins = Recoil.atom("blockedBins", PaymentType.Loading)
 let updateSession = Recoil.atom("updateSession", false)
 let paymentMethodList = Recoil.atom("paymentMethodList", PaymentType.Loading)
 let loggerAtom = Recoil.atom("component", LoggerUtils.defaultLoggerConfig)
@@ -143,3 +142,4 @@ let defaultRedirectionFlags: redirectionFlags = {
 }
 let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)
 let isTestMode = Recoil.atom("isTestMode", false)
+let isUpdateIntentLoading = Recoil.atom("isUpdateIntentLoading", false)

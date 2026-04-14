@@ -52,6 +52,7 @@ let make = (
     setCardError,
     maxCardLength,
     cardBrand,
+    isCardEligible,
   } = cardProps
 
   let {
@@ -85,7 +86,6 @@ let make = (
     RecoilAtoms.showPaymentMethodsScreen,
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
-  let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
   )
@@ -211,17 +211,11 @@ let make = (
 
       let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
 
-      // Check if card is blocked
-      let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(
-        cardNumber->CardValidations.clearSpaces,
-        blockedBinsList,
-      )
-
       let validFormat =
         (isBancontact || isCardDetailsValid) &&
         isNicknameValid &&
         areRequiredFieldsValid &&
-        !isCardBlocked &&
+        isCardEligible &&
         isInstallmentValid
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
@@ -408,9 +402,9 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
-        } else if isCardBlocked {
-          setCardError(_ => localeString.blockedCardText)
-          setUserError(localeString.blockedCardText)
+        } else if !isCardEligible {
+          setCardError(_ => localeString.cardNotEligibleText)
+          setUserError(localeString.cardNotEligibleText)
         } else if isCardSupported->Option.getOr(true)->not {
           if cardBrand == "" {
             setCardError(_ => localeString.enterValidCardNumberErrorText)
@@ -450,9 +444,9 @@ let make = (
     clickToPayConfig,
     clickToPayCardBrand,
     isClickToPayRememberMe,
-    blockedBinsList,
     selectedInstallmentPlan,
     showInstallments,
+    isCardEligible,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -471,7 +465,6 @@ let make = (
   | Some(_) => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
   | None => ""
   }
-  let conditionToRenderInstallments = cardNumber->CardUtils.getCardBin->String.length >= 6
   <div className="animate-slowShow">
     <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
@@ -592,16 +585,14 @@ let make = (
               paymentType == PaymentMethodsManagement}>
             <NicknamePaymentInput />
           </RenderIf>
-          <RenderIf condition=conditionToRenderInstallments>
-            <InstallmentOptions
-              setSelectedInstallmentPlan
-              showInstallments
-              setShowInstallments
-              paymentMethod
-              errorString=installmentsError
-              setErrorString=setInstallmentsError
-            />
-          </RenderIf>
+          <InstallmentOptions
+            setSelectedInstallmentPlan
+            showInstallments
+            setShowInstallments
+            paymentMethod
+            errorString=installmentsError
+            setErrorString=setInstallmentsError
+          />
         </div>
       </div>
     </RenderIf>

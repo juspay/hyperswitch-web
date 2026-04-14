@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Diese Karte ist abgelaufen`,
   cardHeader: `Kartendaten`,
   cardBrandConfiguredErrorText: str => `${str} wird derzeit nicht unterstützt.`,
-  blockedCardText: "Diese Karte ist für Zahlungen nicht zugelassen.",
+  cardNotEligibleText: "Diese Karte wird für diese Zahlung nicht akzeptiert",
   currencyNetwork: `Währungsnetzwerke`,
   expiryPlaceholder: `MM / JJ`,
   dateOfBirth: `Geburtsdatum`,
@@ -208,7 +208,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `Online-Banking Slowakei`,
   payment_methods_online_banking_finland: `Online-Banking Finnland`,
   payment_methods_online_banking_poland: `Online-Banking Polen`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `ACH Direktabbuchung`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -242,6 +242,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Gespeichert`,
   giftCardSectionTitle: `Haben Sie eine Geschenkkarte?`,
   giftCardNumberLabel: `Geschenkkartennummer`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -257,14 +258,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Bitte zahlen Sie den verbleibenden Betrag von ${amount} ${currency} mit einer anderen Zahlungsmethode unten.`,
   installmentPayInInstallments: "In Raten zahlen",
-  installmentChoosePlan: "Wählen Sie einen Ratenplan",
   installmentInterestFree: "Zinsfrei",
-  installmentInterestRate: interestRate => `${interestRate}% Zinsen`,
-  installmentTotalPayable: "Gesamtbetrag",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 Zahlung à ${currency} ${amount}`
-      : `${numPayments->Int.toString} Zahlungen à ${currency} ${amount}`,
+  installmentWithInterest: "mit Zinsen",
+  installmentTotal: "Gesamt",
   installmentSelectPlanError: "Bitte wählen Sie einen Ratenplan",
   loaderPaymentProcessingTitle: "Ihre Zahlung wird verarbeitet...",
   loaderPaymentProcessingSubtitle: "Sie wurden auf eine neue Registerkarte weitergeleitet, um Ihre Zahlung abzuschließen. Der Status wird automatisch aktualisiert",
@@ -274,4 +270,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   bankIdentifierLabel: "Bankkennung",
   branchCodePlaceholder: "Bankleitzahl eingeben",
   bankIdentifierPlaceholder: "Bankkennung eingeben",
+  installmentSelectPlanPlaceholder: "Ratenplan auswählen",
+  showMore: "Mehr anzeigen",
+  showLess: "Weniger anzeigen",
+  refreshingText: "Aktualisierung...",
 }

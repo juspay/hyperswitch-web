@@ -56,6 +56,8 @@ type options = {
   hideIcon: bool,
   showIcon: bool,
   disabled: bool,
+  placeholder: string,
+  showError: bool,
 }
 let getIconStyle = str => {
   switch str {
@@ -123,6 +125,8 @@ let defaultOptions = {
   hideIcon: false,
   showIcon: false,
   disabled: false,
+  placeholder: "",
+  showError: true,
 }
 let getClasses = (str, dict, logger) => {
   dict
@@ -233,6 +237,8 @@ let itemToObjMapper = (dict, logger) => {
       "hideIcon",
       "showIcon",
       "disabled",
+      "placeholder",
+      "showError",
     ],
     dict,
     "options",
@@ -247,5 +253,7 @@ let itemToObjMapper = (dict, logger) => {
     hideIcon: getBoolWithWarning(dict, "hideIcon", false, ~logger),
     showIcon: getBoolWithWarning(dict, "showIcon", false, ~logger),
     disabled: getBoolWithWarning(dict, "disabled", false, ~logger),
+    placeholder: getWarningString(dict, "placeholder", "", ~logger),
+    showError: getBoolWithWarning(dict, "showError", true, ~logger),
   }
 }

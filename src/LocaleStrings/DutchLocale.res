@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Deze kaart is verlopen`,
   cardHeader: `Kaartinformatie`,
   cardBrandConfiguredErrorText: str => `${str} wordt op dit moment niet ondersteund.`,
-  blockedCardText: "Deze kaart is niet toegestaan voor betalingen.",
+  cardNotEligibleText: "Deze kaart wordt niet geaccepteerd voor deze betaling",
   currencyNetwork: `Valutanetwerken`,
   expiryPlaceholder: `MM / JJ`,
   dateOfBirth: `Geboortedatum`,
@@ -207,7 +207,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `Online Bankieren Slowakije`,
   payment_methods_online_banking_finland: `Online Bankieren Finland`,
   payment_methods_online_banking_poland: `Online Bankieren Polen`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `ACH Direct Incasso`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -241,6 +241,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Opgeslagen`,
   giftCardSectionTitle: `Heb je een cadeaukaart?`,
   giftCardNumberLabel: `Cadeaukaart nummer`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -256,14 +257,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Betaal het resterende bedrag van ${amount} ${currency} met een andere betaalmethode hieronder.`,
   installmentPayInInstallments: "Betaal in termijnen",
-  installmentChoosePlan: "Kies een aflossingsplan",
   installmentInterestFree: "Rentevrij",
-  installmentInterestRate: interestRate => `${interestRate}% rente`,
-  installmentTotalPayable: "Totaal te betalen",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 betaling van ${currency} ${amount}`
-      : `${numPayments->Int.toString} betalingen van ${currency} ${amount}`,
+  installmentWithInterest: "met rente",
+  installmentTotal: "Totaal",
   installmentSelectPlanError: "Selecteer een aflossingsplan",
   loaderPaymentProcessingTitle: "We verwerken uw betaling...",
   loaderPaymentProcessingSubtitle: "U bent doorgestuurd naar een nieuw tabblad om uw betaling te voltooien. De status wordt automatisch bijgewerkt",
@@ -273,4 +269,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   bankIdentifierLabel: "Bankidentificatie",
   branchCodePlaceholder: "Voer de filiaalcode in",
   bankIdentifierPlaceholder: "Voer de bankidentificatie in",
+  installmentSelectPlanPlaceholder: "Selecteer een aflossingsplan",
+  showMore: "Meer tonen",
+  showLess: "Minder tonen",
+  refreshingText: "Vernieuwen...",
 }

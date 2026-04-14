@@ -1,4 +1,5 @@
 open RecoilAtoms
+open Utils
 @react.component
 let make = (
   ~paymentType: CardThemeType.mode,
@@ -31,8 +32,6 @@ let make = (
     expiryRef,
   } = expiryProps
 
-  let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef} = cvcProps
-
   let blur = blurState ? "blur(2px)" : ""
   let frameRef = React.useRef(Nullable.null)
   <div
@@ -43,6 +42,7 @@ let make = (
       marginLeft: "4px",
       marginRight: "4px",
       marginTop: "4px",
+      marginBottom: "4px",
       fontFamily: themeObj.fontFamily,
       fontSize: themeObj.fontSizeBase,
       filter: blur,
@@ -112,23 +112,7 @@ let make = (
             isFocus
             autocomplete="cc-exp"
           />
-        | CardCVCElement =>
-          <InputField
-            isValid=isCVCValid
-            setIsValid=setIsCVCValid
-            value=cvcNumber
-            onChange=changeCVCNumber
-            onBlur=handleCVCBlur
-            onFocus=handleElementFocus
-            type_="tel"
-            className={`tracking-widest w-auto`}
-            maxLength=4
-            inputRef=cvcRef
-            placeholder="123"
-            id="card-cvc"
-            isFocus
-            autocomplete="cc-csc"
-          />
+        | CardCVCElement => <CardCVCElement cvcProps paymentType />
         | PaymentMethodsManagement =>
           <ReusableReactSuspense
             loaderComponent={<RenderIf condition={showLoader}>

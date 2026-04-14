@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Aquesta targeta ha caducat`,
   cardHeader: `Informació de la targeta`,
   cardBrandConfiguredErrorText: str => `${str} no està suportat en aquest moment.`,
-  blockedCardText: "Aquesta targeta no està permesa per a pagaments.",
+  cardNotEligibleText: "Aquesta targeta no s'accepta per a aquest pagament",
   currencyNetwork: `Xarxes de Monedes`,
   expiryPlaceholder: `MM / AA`,
   dateOfBirth: `Data de naixement`,
@@ -209,7 +209,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `Banque en ligne Slovaquie`,
   payment_methods_online_banking_finland: `Banque en ligne Finlande`,
   payment_methods_online_banking_poland: `Banque en ligne Pologne`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `Prélèvement bancaire ACH`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -243,6 +243,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Mètodes desats`,
   giftCardSectionTitle: `Tens una targeta regal?`,
   giftCardNumberLabel: `Número de targeta regal`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -258,14 +259,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Pagueu l'import restant de ${currency} ${amount} amb un altre mètode de pagament a continuació.`,
   installmentPayInInstallments: "Pagar a terminis",
-  installmentChoosePlan: "Trieu un pla de terminis",
   installmentInterestFree: "Sense interessos",
-  installmentInterestRate: interestRate => `${interestRate}% interessos`,
-  installmentTotalPayable: "Total a pagar",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 termini de ${currency} ${amount}`
-      : `${numPayments->Int.toString} terminis de ${currency} ${amount}`,
+  installmentWithInterest: "amb interessos",
+  installmentTotal: "Total",
   installmentSelectPlanError: "Si us plau, seleccioneu un pla de terminis",
   loaderPaymentProcessingTitle: "Estem processant el vostre pagament...",
   loaderPaymentProcessingSubtitle: `Heu estat redirigit a una nova pestanya per completar el pagament. L'estat s'actualitzarà automàticament`,
@@ -275,4 +271,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   bankIdentifierLabel: "Identificador bancari",
   branchCodePlaceholder: `Introduïu el codi de sucursal`,
   bankIdentifierPlaceholder: `Introduïu l'identificador bancari`,
+  installmentSelectPlanPlaceholder: "Seleccioneu un pla de terminis",
+  showMore: "Mostra més",
+  showLess: "Mostra menys",
+  refreshingText: "Actualitzant...",
 }

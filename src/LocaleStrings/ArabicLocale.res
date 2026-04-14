@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `انتهت صلاحية هذه البطاقة`,
   cardHeader: `معلومات البطاقة`,
   cardBrandConfiguredErrorText: str => `${str} غير مدعوم في الوقت الحالي.`,
-  blockedCardText: "هذه البطاقة غير مسموحة للمدفوعات.",
+  cardNotEligibleText: "هذه البطاقة غير مقبولة لهذا الدفع",
   currencyNetwork: `شبكات العملات`,
   expiryPlaceholder: `MM / YY`,
   dateOfBirth: `تاريخ الميلاد`,
@@ -210,7 +210,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_online_banking_slovakia: `خدمات مصرفية عبر الإنترنت سلوفاكيا`,
   payment_methods_online_banking_finland: `خدمات مصرفية عبر الإنترنت فنلندا`,
   payment_methods_online_banking_poland: `خدمات مصرفية عبر الإنترنت بولندا`,
-  payment_methods_ideal: `iDEAL`,
+  payment_methods_ideal: `iDEAL | Wero`,
   payment_methods_ban_connect: `Ban Connect`,
   payment_methods_ach_bank_debit: `خصم مباشر ACH`,
   payment_methods_przelewy24: `Przelewy24`,
@@ -244,6 +244,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `المحفوظة`,
   giftCardSectionTitle: `هل لديك بطاقة هدايا؟`,
   giftCardNumberLabel: `رقم بطاقة الهدايا`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -259,14 +260,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `يرجى دفع المبلغ المتبقي ${amount} ${currency} باستخدام وسيلة دفع أخرى أدناه.`,
   installmentPayInInstallments: "الدفع على أقساط",
-  installmentChoosePlan: "اختر خطة تقسيط",
   installmentInterestFree: "بدون فوائد",
-  installmentInterestRate: interestRate => `${interestRate}% فائدة`,
-  installmentTotalPayable: "المبلغ الإجمالي المستحق",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `دفعة واحدة بقيمة ${currency} ${amount}`
-      : `${numPayments->Int.toString} دفعات بقيمة ${currency} ${amount}`,
+  installmentWithInterest: "مع فوائد",
+  installmentTotal: "المجموع",
   installmentSelectPlanError: "يرجى اختيار خطة تقسيط",
   loaderPaymentProcessingTitle: "جارٍ معالجة دفعتك...",
   loaderPaymentProcessingSubtitle: "تمت إعادة توجيهك إلى علامة تبويب جديدة لإتمام الدفع. سيتم تحديث الحالة تلقائيًا",
@@ -276,4 +272,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   bankIdentifierLabel: "معرف البنك",
   branchCodePlaceholder: "أدخل رمز الفرع",
   bankIdentifierPlaceholder: "أدخل معرف البنك",
+  installmentSelectPlanPlaceholder: "اختر خطة التقسيط",
+  showMore: "عرض المزيد",
+  showLess: "عرض أقل",
+  refreshingText: "جارٍ التحديث...",
 }
