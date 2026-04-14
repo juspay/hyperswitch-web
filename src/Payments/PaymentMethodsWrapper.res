@@ -109,7 +109,6 @@ let make = (~paymentMethodName: string) => {
     selectedBank,
     currency,
     requiredFieldsBody,
-    setRequiredFieldsBody,
     areRequiredFieldsValid,
   ))
   useSubmitPaymentData(submitCallback)
