@@ -45,7 +45,18 @@ let make = (~name: string) => {
 
   let dateOfBirth =
     field.input.value
-    ->Option.map(Date.fromString)
+    ->Option.flatMap(val => {
+      if val === "" {
+        None
+      } else {
+        let date = Date.fromString(val)
+        if Date.getTime(date)->Float.isNaN {
+          None
+        } else {
+          Some(date)
+        }
+      }
+    })
     ->Nullable.fromOption
 
   let onChange = date => {
@@ -53,7 +64,7 @@ let make = (~name: string) => {
     let valStr =
       date
       ->Nullable.toOption
-      ->Option.map(d => d->Date.toISOString)
+      ->Option.map(d => d->Date.toLocaleDateStringWithLocale("en-CA"))
       ->Option.getOr("")
     field.input.onChange(valStr)
   }
