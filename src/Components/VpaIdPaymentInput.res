@@ -12,7 +12,7 @@ let make = (~name: string) => {
       ~localeObject=localeString->Obj.magic,
     )
 
-  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let field = ReactFinalForm.useField(
     name,
     ~config={validate: createValidator(Validation.VpaId)},
   )
@@ -31,7 +31,6 @@ let make = (~name: string) => {
 
   <PaymentField
     fieldName=localeString.vpaIdLabel
-    setValue={_ => ()}
     value={
       RecoilAtomTypes.value: vpaIdValue,
       isValid: Some(field.meta.valid),

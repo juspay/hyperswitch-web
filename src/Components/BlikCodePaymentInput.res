@@ -14,7 +14,7 @@ let make = (~name="blikCode") => {
     )
 
   let formatBSB = bsb => {
-    let formatted = bsb->String.replaceRegExp(%re("/\\D+/g"), "")
+    let formatted = bsb->String.replaceRegExp(%re("/\D+/g"), "")
     let firstPart = formatted->String.slice(~start=0, ~end=3)
     let secondPart = formatted->String.slice(~start=3, ~end=6)
 
@@ -27,7 +27,7 @@ let make = (~name="blikCode") => {
     }
   }
 
-  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let field = ReactFinalForm.useField(
     name,
     ~config={validate: createValidator(Validation.BlikCode)},
   )
@@ -46,7 +46,6 @@ let make = (~name="blikCode") => {
   <RenderIf condition={true}>
     <PaymentField
       fieldName="Blik code"
-      setValue={_ => ()}
       value={
         RecoilAtomTypes.value: blikValue,
         isValid: Some(field.meta.valid),

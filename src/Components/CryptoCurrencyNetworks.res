@@ -22,7 +22,7 @@ let make = (~name: string) => {
     })
   ).value
 
-  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let field = ReactFinalForm.useField(
     name,
     ~config={
       initialValue: initialValue->JSON.Encode.string,

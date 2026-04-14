@@ -12,7 +12,7 @@ let make = (~name="giftCardPin") => {
       ~localeObject=localeString->Obj.magic,
     )
 
-  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let field = ReactFinalForm.useField(
     name,
     ~config={validate: createValidator(Validation.GiftCardPin)},
   )
@@ -30,7 +30,6 @@ let make = (~name="giftCardPin") => {
 
   <PaymentField
     fieldName={localeString.giftCardPinLabel}
-    setValue={_ => ()}
     value={
       RecoilAtomTypes.value: giftCardPinValue,
       isValid: Some(field.meta.valid),

@@ -4,7 +4,6 @@ open PaymentTypeContext
 
 @react.component
 let make = (
-  ~setValue=?,
   ~value: RecoilAtomTypes.field,
   ~valueDropDown=?,
   ~setValueDropDown=?,
@@ -38,15 +37,6 @@ let make = (
 
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    switch setValue {
-    | Some(fn) =>
-      fn(prev => {
-        ...prev,
-        isValid: None,
-        errorString: "",
-      })
-    | None => ()
-    }
     Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
   }
 

@@ -11,7 +11,7 @@ let make = (~name: string, ~validationRule=?, ~initialValue="", ~render) => {
 
   let hasInitialValue = initialValue !== ""
 
-  let field: ReactFinalForm.Field.fieldProps = switch (validationRule, hasInitialValue) {
+  let field = switch (validationRule, hasInitialValue) {
   | (Some(rule), true) =>
     ReactFinalForm.useField(
       name,

@@ -17,7 +17,7 @@ let make = (~name="email") => {
       ~localeObject=localeString->Obj.magic,
     )
 
-  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let field = ReactFinalForm.useField(
     name,
     ~config={validate: createValidator(Validation.Email)},
   )
@@ -36,7 +36,6 @@ let make = (~name="email") => {
   <RenderIf condition={showDetails.email == Auto}>
     <PaymentField
       fieldName=localeString.emailLabel
-      setValue={_ => ()}
       value={
         RecoilAtomTypes.value: emailValue,
         isValid: Some(field.meta.valid),
