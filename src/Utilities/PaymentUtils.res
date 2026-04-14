@@ -658,6 +658,7 @@ let emitPaymentMethodInfo = (
   ~state="",
   ~pinCode="",
   ~isSavedPaymentMethod=false,
+  ~isCvcEmpty=true,
 ) => {
   let cardBrandString = cardBrand->CardUtils.getCardStringFromType
   let cardBrandValue = cardBrandString == "NOTFOUND" ? "Unknown" : cardBrandString
@@ -667,6 +668,7 @@ let emitPaymentMethodInfo = (
     ("cardBin", cardBin->JSON.Encode.string),
     ("cardExpiryMonth", cardExpiryMonth->JSON.Encode.string),
     ("cardExpiryYear", cardExpiryYear->JSON.Encode.string),
+    ("isCvcEmpty", isCvcEmpty->JSON.Encode.bool),
   ]
 
   let baseAddressFields = [
@@ -691,8 +693,13 @@ let emitPaymentMethodInfo = (
     [...basePaymentInfoFields, ...baseAddressFields, ...baseCardsFields]
   }
 
-  let finalMsg =
-    msg->Array.filter(((_, value)) => value->JSON.Decode.string->Option.getOr("") != "")
+  let finalMsg = msg->Array.filter(((_, value)) =>
+    switch JSON.Classify.classify(value) {
+    | String(_) => value->JSON.Decode.string->Option.getOr("") != ""
+    | Bool(_) => true
+    | _ => false
+    }
+  )
 
   emitMessage(finalMsg->Array.concat(baseSavedPaymentField)->Dict.fromArray)
 }
@@ -720,6 +727,7 @@ let useEmitPaymentMethodInfo = (
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {country, state, pinCode} = useNonPiiAddressData()
@@ -728,10 +736,17 @@ let useEmitPaymentMethodInfo = (
   let cardBin = cardNumber->CardUtils.getCardBin
   let cardLast4 = cardNumber->CardUtils.getCardLast4
   let {cardExpiry} = expiryProps
+  let {cvcNumber} = cvcProps
+  let isCvcEmpty = cvcNumber->String.length === 0
   let isCardValid = cardProps.isCardValid->Option.getOr(false)
   let isExpiryValid = expiryProps.isExpiryValid->Option.getOr(false)
   let (cardExpiryMonth, cardExpiryYear) = cardExpiry->CardUtils.getExpiryDates
   let shouldEmitCardInfo = isCardValid && isExpiryValid && paymentMethodName == "card"
+
+  React.useEffect(() => {
+    Console.log2("isCvcEmpty", isCvcEmpty)
+    None
+  }, [isCvcEmpty])
 
   let emitPaymentMethodInfoWrapper = (~paymentMethod, ~paymentMethodType) => {
     if shouldEmitCardInfo {
@@ -746,6 +761,7 @@ let useEmitPaymentMethodInfo = (
         ~country,
         ~state,
         ~pinCode,
+        ~isCvcEmpty,
       )
     } else {
       emitPaymentMethodInfo(~paymentMethod, ~paymentMethodType, ~country, ~state, ~pinCode)
@@ -798,6 +814,7 @@ let useEmitPaymentMethodInfo = (
     paymentMethods,
     isCardValid,
     isExpiryValid,
+    isCvcEmpty,
     country,
     state,
     pinCode,
