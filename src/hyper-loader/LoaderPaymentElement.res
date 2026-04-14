@@ -21,7 +21,7 @@ let make = (
 ) => {
   try {
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
-    let optionsWithLocale = {
+    let updatedOptions = {
       let dict = options->Utils.getDictFromJson->Dict.copy
       dict->Dict.set("locale", locale->JSON.Encode.string)
       dict->JSON.Encode.object
@@ -341,7 +341,7 @@ let make = (
                           [
                             ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
-                            ("options", optionsWithLocale),
+                            ("options", updatedOptions),
                           ]->Dict.fromArray,
                         )
                       }
@@ -350,7 +350,7 @@ let make = (
                           [
                             ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
-                            ("options", optionsWithLocale),
+                            ("options", updatedOptions),
                           ]->Dict.fromArray,
                         )
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
@@ -372,7 +372,7 @@ let make = (
                   mainElement->Window.iframePostMessage(
                     [
                       ("fullScreenIframeMounted", false->JSON.Encode.bool),
-                      ("options", optionsWithLocale),
+                      ("options", updatedOptions),
                     ]->Dict.fromArray,
                   )
                 }

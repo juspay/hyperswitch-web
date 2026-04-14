@@ -94,7 +94,6 @@ let getPaymentMethodsFieldsOrder = paymentMethodField => {
   | PixCPF => 9
   | CryptoCurrencyNetworks => 10
   | PixCNPJ => 10
-  | PixAccountNumber => 11
   | InfoElement => 99
   | _ => 3
   }
