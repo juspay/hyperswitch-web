@@ -659,8 +659,10 @@ let emitPaymentMethodInfo = (
   ~pinCode="",
   ~isSavedPaymentMethod=false,
 ) => {
+  let cardBrandString = cardBrand->CardUtils.getCardStringFromType
+  let cardBrandValue = cardBrandString == "NOTFOUND" ? "Unknown" : cardBrandString
   let baseCardsFields = [
-    ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
+    ("cardBrand", cardBrandValue->JSON.Encode.string),
     ("cardLast4", cardLast4->JSON.Encode.string),
     ("cardBin", cardBin->JSON.Encode.string),
     ("cardExpiryMonth", cardExpiryMonth->JSON.Encode.string),
@@ -683,7 +685,7 @@ let emitPaymentMethodInfo = (
     ]
   }
 
-  let msg = if cardBrand === CardUtils.NOTFOUND || paymentMethod !== "card" {
+  let msg = if paymentMethod !== "card" {
     [...basePaymentInfoFields, ...baseAddressFields]
   } else {
     [...basePaymentInfoFields, ...baseAddressFields, ...baseCardsFields]
