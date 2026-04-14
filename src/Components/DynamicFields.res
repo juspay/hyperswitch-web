@@ -171,10 +171,7 @@ let make = (
   let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))
 
   let initialCountryIso = {
-    let effectiveCountry =
-      country !== ""
-        ? country
-        : countryNames->Array.get(0)->Option.getOr("")
+    let effectiveCountry = country !== "" ? country : countryNames->Array.get(0)->Option.getOr("")
     Utils.getCountryCode(effectiveCountry).isoAlpha2
   }
 
@@ -379,7 +376,9 @@ let make = (
         let submitFailed = formProps.submitFailed
         ReactFinalForm.useFormStateHandler(
           ~onFormChange=values => {
-            setRequiredFieldsBody(_ => values)
+            // Flatten the nested form values so keys align correctly during merge using `mergeAndFlattenToTuples`.
+            let flatValues = values->JSON.Encode.object->Utils.flattenObject(false)
+            setRequiredFieldsBody(_ => flatValues)
           },
           ~onValidationChange=isValid => {
             setAreRequiredFieldsValid(_ => isValid)
@@ -789,13 +788,11 @@ let make = (
                                       isValid: Some(field.meta.valid),
                                       errorString: "",
                                     })
-                                    let countryIso =
-                                      Utils.getCountryCode(country).isoAlpha2
-                                    let stateCode =
-                                      Utils.getStateCodeFromStateName(
-                                        newVal.value,
-                                        countryIso,
-                                      )
+                                    let countryIso = Utils.getCountryCode(country).isoAlpha2
+                                    let stateCode = Utils.getStateCodeFromStateName(
+                                      newVal.value,
+                                      countryIso,
+                                    )
                                     field.input.onChange(stateCode)
                                   }}
                                   options={stateNames}
@@ -875,13 +872,11 @@ let make = (
                                     isValid: Some(field.meta.valid),
                                     errorString: "",
                                   })
-                                  let countryIso =
-                                    Utils.getCountryCode(country).isoAlpha2
-                                  let stateCode =
-                                    Utils.getStateCodeFromStateName(
-                                      newVal.value,
-                                      countryIso,
-                                    )
+                                  let countryIso = Utils.getCountryCode(country).isoAlpha2
+                                  let stateCode = Utils.getStateCodeFromStateName(
+                                    newVal.value,
+                                    countryIso,
+                                  )
                                   field.input.onChange(stateCode)
                                 }}
                                 options={stateNames}
@@ -909,7 +904,7 @@ let make = (
                           }}
                         />
                       }
-                      | AddressCountryInput =>
+                    | AddressCountryInput =>
                       if hasBothCountryAndPostal {
                         let updatedCountryArray =
                           countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
@@ -925,8 +920,7 @@ let make = (
                                 setValue={setter => {
                                   let newVal = setter(field.input.value->Option.getOr(country))
                                   setCountry(_ => newVal)
-                                  let countryIso =
-                                    Utils.getCountryCode(newVal).isoAlpha2
+                                  let countryIso = Utils.getCountryCode(newVal).isoAlpha2
                                   field.input.onChange(countryIso)
                                 }}
                                 disabled=false
@@ -978,8 +972,7 @@ let make = (
                               setValue={setter => {
                                 let newVal = setter(field.input.value->Option.getOr(country))
                                 setCountry(_ => newVal)
-                                let countryIso =
-                                  Utils.getCountryCode(newVal).isoAlpha2
+                                let countryIso = Utils.getCountryCode(newVal).isoAlpha2
                                 field.input.onChange(countryIso)
                               }}
                               disabled=false
@@ -1087,8 +1080,7 @@ let make = (
                             setValue={setter => {
                               let newVal = setter(field.input.value->Option.getOr(country))
                               setCountry(_ => newVal)
-                              let countryIso =
-                                Utils.getCountryCode(newVal).isoAlpha2
+                              let countryIso = Utils.getCountryCode(newVal).isoAlpha2
                               field.input.onChange(countryIso)
                             }}
                             disabled=false

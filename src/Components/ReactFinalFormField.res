@@ -17,10 +17,8 @@ let make = (~name: string, ~validationRule=?, ~initialValue="", ~render) => {
       name,
       ~config={validate: createValidator(rule), initialValue: Some(initialValue)},
     )
-  | (Some(rule), false) =>
-    ReactFinalForm.useField(name, ~config={validate: createValidator(rule)})
-  | (None, true) =>
-    ReactFinalForm.useField(name, ~config={initialValue: Some(initialValue)})
+  | (Some(rule), false) => ReactFinalForm.useField(name, ~config={validate: createValidator(rule)})
+  | (None, true) => ReactFinalForm.useField(name, ~config={initialValue: Some(initialValue)})
   | (None, false) => ReactFinalForm.useField(name)
   }
 
