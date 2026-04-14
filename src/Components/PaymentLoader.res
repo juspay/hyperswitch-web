@@ -20,6 +20,7 @@ let make = () => {
         ->Promise.thenResolve(localeString => {
           setConfig(prev => {...prev, localeString})
         })
+        ->Promise.catch(_ => Promise.resolve())
         ->ignore
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
