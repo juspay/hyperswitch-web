@@ -660,10 +660,8 @@ let emitPaymentMethodInfo = (
   ~isSavedPaymentMethod=false,
   ~isCvcEmpty=true,
 ) => {
-  let cardBrandString = cardBrand->CardUtils.getCardStringFromType
-  let cardBrandValue = cardBrandString == "NOTFOUND" ? "Unknown" : cardBrandString
   let baseCardsFields = [
-    ("cardBrand", cardBrandValue->JSON.Encode.string),
+    ("cardBrand", cardBrand->CardUtils.getCardBrandDisplayName->JSON.Encode.string),
     ("cardLast4", cardLast4->JSON.Encode.string),
     ("cardBin", cardBin->JSON.Encode.string),
     ("cardExpiryMonth", cardExpiryMonth->JSON.Encode.string),
@@ -736,8 +734,7 @@ let useEmitPaymentMethodInfo = (
   let cardBin = cardNumber->CardUtils.getCardBin
   let cardLast4 = cardNumber->CardUtils.getCardLast4
   let {cardExpiry} = expiryProps
-  let {cvcNumber} = cvcProps
-  let isCvcEmpty = cvcNumber->String.length === 0
+  let isCvcEmpty = cvcProps.cvcNumber->String.length === 0
   let isCardValid = cardProps.isCardValid->Option.getOr(false)
   let isExpiryValid = expiryProps.isExpiryValid->Option.getOr(false)
   let (cardExpiryMonth, cardExpiryYear) = cardExpiry->CardUtils.getExpiryDates
