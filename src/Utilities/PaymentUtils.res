@@ -743,11 +743,6 @@ let useEmitPaymentMethodInfo = (
   let (cardExpiryMonth, cardExpiryYear) = cardExpiry->CardUtils.getExpiryDates
   let shouldEmitCardInfo = isCardValid && isExpiryValid && paymentMethodName == "card"
 
-  React.useEffect(() => {
-    Console.log2("isCvcEmpty", isCvcEmpty)
-    None
-  }, [isCvcEmpty])
-
   let emitPaymentMethodInfoWrapper = (~paymentMethod, ~paymentMethodType) => {
     if shouldEmitCardInfo {
       emitPaymentMethodInfo(
