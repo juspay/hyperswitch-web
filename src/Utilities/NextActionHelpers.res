@@ -30,6 +30,13 @@ let handleDDC = (
   }
 
   if iframeUrl === "" {
+    LoggerUtils.handleLogging(
+      ~optLogger,
+      ~eventName=DDC_FLOW,
+      ~value="DDC failed: empty iframe URL",
+      ~paymentMethod,
+      ~logType=ERROR,
+    )
     handleFailure()
   } else {
     let timeoutIdRef = ref(None)
@@ -58,7 +65,7 @@ let handleDDC = (
           LoggerUtils.handleLogging(
             ~optLogger,
             ~eventName=REDIRECTING_USER,
-            ~value=redirectUrl,
+            ~value="Post DDC redirection url : " ++ redirectUrl,
             ~paymentMethod,
             ~logType=INFO,
           )
@@ -79,13 +86,34 @@ let handleDDC = (
           let redirectMode = nextAction.redirectMode
           cleanup()
           if nextActionType === "redirect_to_url" && redirectUrl !== "" {
+            LoggerUtils.handleLogging(
+              ~optLogger,
+              ~eventName=DDC_FLOW,
+              ~value="DDC completed successfully",
+              ~paymentMethod,
+            )
             handleRedirectToUrl(redirectUrl, redirectMode)
           } else {
+            LoggerUtils.handleLogging(
+              ~optLogger,
+              ~eventName=DDC_FLOW,
+              ~value="DDC failed: invalid next action type - " ++ nextActionType,
+              ~paymentMethod,
+              ~logType=ERROR,
+            )
             handleFailure()
           }
         }
       } catch {
-      | _ =>
+      | exn =>
+        let err = exn->Identity.anyTypeToJson->JSON.stringify
+        LoggerUtils.handleLogging(
+          ~optLogger,
+          ~eventName=DDC_FLOW,
+          ~value="DDC failed: message parse error - " ++ err,
+          ~paymentMethod,
+          ~logType=ERROR,
+        )
         cleanup()
         handleFailure()
       }
@@ -94,10 +122,24 @@ let handleDDC = (
     messageHandlerRef := Some(handleMessage)
     Window.addEventListener("message", handleMessage)
 
+    LoggerUtils.handleLogging(
+      ~optLogger,
+      ~eventName=DDC_FLOW,
+      ~value="DDC initiated - iframe URL: " ++ iframeUrl,
+      ~paymentMethod,
+    )
+
     let iframe = Window.body->makeHiddenIframe(~src=iframeUrl, ~id="ddc-iframe")
     iframeRef := Some(iframe)
 
     timeoutIdRef := Some(setTimeout(() => {
+          LoggerUtils.handleLogging(
+            ~optLogger,
+            ~eventName=DDC_FLOW,
+            ~value="DDC timed out",
+            ~paymentMethod,
+            ~logType=ERROR,
+          )
           cleanup()
           handleFailure()
         }, timeoutMs))
