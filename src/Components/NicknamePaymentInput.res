@@ -11,7 +11,7 @@ let make = (~name="userCardNickName") => {
       ~localeObject=localeString->Obj.magic,
     )
 
-  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let field = ReactFinalForm.useField(
     name,
     ~config={validate: createValidator(Validation.Nickname)},
   )
@@ -19,7 +19,7 @@ let make = (~name="userCardNickName") => {
   let nickNameValue = field.input.value->Option.getOr("")
 
   let onChange = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]
+    let val = ReactEvent.Form.target(ev)["value"]
     field.input.onChange(val)
   }
 
@@ -34,7 +34,6 @@ let make = (~name="userCardNickName") => {
       isValid: Some(field.meta.valid),
       errorString: field.meta.touched ? field.meta.error->Option.getOr("") : "",
     }
-    setValue={_ => ()}
     onChange
     onBlur
     type_="userCardNickName"

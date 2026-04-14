@@ -59,21 +59,21 @@ let make = (
       ~localeObject=localeString->Obj.magic,
     )
 
-  let line1Field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let line1Field = ReactFinalForm.useField(
     line1Path,
     ~config={validate: createValidator(Validation.Required)},
   )
-  let line2Field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(line2Path)
-  let cityField: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let line2Field = ReactFinalForm.useField(line2Path)
+  let cityField = ReactFinalForm.useField(
     cityPath,
     ~config={validate: createValidator(Validation.Required)},
   )
-  let stateField: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let stateField = ReactFinalForm.useField(
     statePath,
     ~config={validate: createValidator(Validation.Required)},
   )
-  let countryField: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(countryPath)
-  let postalField: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let countryField = ReactFinalForm.useField(countryPath)
+  let postalField = ReactFinalForm.useField(
     postalPath,
     ~config={
       validate: createValidator(Validation.PostalCode(countryField.input.value->Option.getOr(""))),
@@ -114,7 +114,6 @@ let make = (
     <RenderIf condition={showField(showDetails.address, Line1) == Auto}>
       <PaymentField
         fieldName=localeString.line1Label
-        setValue={_ => ()}
         value={
           value: line1Field.input.value->Option.getOr(""),
           isValid: Some(line1Field.meta.valid),
@@ -138,7 +137,6 @@ let make = (
         <RenderIf condition={showField(showDetails.address, Line2) == Auto}>
           <PaymentField
             fieldName=localeString.line2Label
-            setValue={_ => ()}
             value={
               value: line2Field.input.value->Option.getOr(""),
               isValid: Some(line2Field.meta.valid),
@@ -204,7 +202,6 @@ let make = (
           <RenderIf condition={showField(showDetails.address, City) == Auto}>
             <PaymentField
               fieldName=localeString.cityLabel
-              setValue={_ => ()}
               className
               value={
                 value: cityField.input.value->Option.getOr(""),
@@ -225,7 +222,6 @@ let make = (
           <RenderIf condition={showField(showDetails.address, Postal) == Auto}>
             <PaymentField
               fieldName=localeString.postalCodeLabel
-              setValue={_ => ()}
               value={
                 value: postalField.input.value->Option.getOr(""),
                 isValid: Some(postalField.meta.valid),

@@ -550,7 +550,6 @@ let make = (
                     let val = field.input.value->Option.getOr("")
                     <PaymentField
                       fieldName="Account Number"
-                      setValue={_ => ()}
                       value={
                         RecoilAtomTypes.value: val,
                         isValid: Some(field.meta.valid),
@@ -580,7 +579,6 @@ let make = (
                     let val = field.input.value->Option.getOr("")
                     <PaymentField
                       fieldName="IBAN"
-                      setValue={_ => ()}
                       value={
                         RecoilAtomTypes.value: val,
                         isValid: Some(field.meta.valid),
@@ -605,7 +603,6 @@ let make = (
                     let val = field.input.value->Option.getOr("")
                     <PaymentField
                       fieldName="Source Bank Account ID"
-                      setValue={_ => ()}
                       value={
                         RecoilAtomTypes.value: val,
                         isValid: Some(field.meta.valid),
@@ -686,7 +683,6 @@ let make = (
                           let val = field.input.value->Option.getOr("")
                           <PaymentField
                             fieldName=localeString.emailLabel
-                            setValue={_ => ()}
                             value={
                               value: val,
                               isValid: Some(field.meta.valid),
@@ -717,7 +713,6 @@ let make = (
                             let val = field.input.value->Option.getOr("")
                             <PaymentField
                               fieldName=localeString.formFieldPhoneNumberLabel
-                              setValue={_ => ()}
                               value={
                                 value: val,
                                 isValid: Some(field.meta.valid),
@@ -748,7 +743,6 @@ let make = (
                               let val = field.input.value->Option.getOr("")
                               <PaymentField
                                 fieldName=localeString.cityLabel
-                                setValue={_ => ()}
                                 value={
                                   value: val,
                                   isValid: Some(field.meta.valid),
@@ -800,7 +794,6 @@ let make = (
                               } else {
                                 <PaymentField
                                   fieldName=localeString.stateLabel
-                                  setValue={_ => ()}
                                   value={
                                     value: val,
                                     isValid: Some(field.meta.valid),
@@ -828,7 +821,6 @@ let make = (
                             let val = field.input.value->Option.getOr("")
                             <PaymentField
                               fieldName=localeString.cityLabel
-                              setValue={_ => ()}
                               value={
                                 value: val,
                                 isValid: Some(field.meta.valid),
@@ -884,7 +876,6 @@ let make = (
                             } else {
                               <PaymentField
                                 fieldName=localeString.stateLabel
-                                setValue={_ => ()}
                                 value={
                                   value: val,
                                   isValid: Some(field.meta.valid),
@@ -939,7 +930,6 @@ let make = (
                               let val = field.input.value->Option.getOr("")
                               <PaymentField
                                 fieldName=localeString.postalCodeLabel
-                                setValue={_ => ()}
                                 value={
                                   value: val,
                                   isValid: Some(field.meta.valid),
@@ -995,7 +985,6 @@ let make = (
                             let val = field.input.value->Option.getOr("")
                             <PaymentField
                               fieldName=localeString.postalCodeLabel
-                              setValue={_ => ()}
                               value={
                                 value: val,
                                 isValid: Some(field.meta.valid),
@@ -1021,7 +1010,6 @@ let make = (
                           let val = field.input.value->Option.getOr("")
                           <PaymentField
                             fieldName=localeString.line1Label
-                            setValue={_ => ()}
                             value={
                               value: val,
                               isValid: Some(field.meta.valid),
@@ -1047,7 +1035,6 @@ let make = (
                           let val = field.input.value->Option.getOr("")
                           <PaymentField
                             fieldName=localeString.line2Label
-                            setValue={_ => ()}
                             value={
                               value: val,
                               isValid: Some(field.meta.valid),

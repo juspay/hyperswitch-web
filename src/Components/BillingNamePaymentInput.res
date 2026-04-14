@@ -25,7 +25,7 @@ let make = (
       ~localeObject=localeString->Obj.magic,
     )
 
-  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let field = ReactFinalForm.useField(
     name,
     ~config={validate: createValidator(Validation.Required)},
   )
@@ -33,7 +33,7 @@ let make = (
   let billingNameValue = field.input.value->Option.getOr("")
 
   let changeName = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]
+    let val = ReactEvent.Form.target(ev)["value"]
     field.input.onChange(val)
   }
 
@@ -44,7 +44,6 @@ let make = (
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField
       fieldName
-      setValue={_ => ()}
       value={
         RecoilAtomTypes.value: billingNameValue,
         isValid: Some(field.meta.valid),

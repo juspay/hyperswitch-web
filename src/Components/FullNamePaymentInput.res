@@ -20,13 +20,13 @@ let make = (~customFieldName, ~firstNamePath, ~lastNamePath) => {
 
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
-  let firstField: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let firstField = ReactFinalForm.useField(
     firstNamePath,
     ~config={
       validate: createValidator(Validation.FirstName),
     },
   )
-  let lastField: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let lastField = ReactFinalForm.useField(
     lastNamePath,
     ~config={
       validate: createValidator(Validation.LastName),
@@ -78,7 +78,6 @@ let make = (~customFieldName, ~firstNamePath, ~lastNamePath) => {
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField
       fieldName
-      setValue={_ => ()}
       value={
         value: inputValue,
         isValid: Some(isValid),

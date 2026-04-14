@@ -13,11 +13,11 @@ let make = (~numberName: string, ~codeName: string) => {
       ~localeObject=localeString->Obj.magic,
     )
 
-  let numberField: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let numberField = ReactFinalForm.useField(
     numberName,
     ~config={validate: createValidator(Validation.Phone)},
   )
-  let codeField: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(codeName)
+  let codeField = ReactFinalForm.useField(codeName)
 
   let numberVal = numberField.input.value->Option.getOr("")
   let codeVal = codeField.input.value->Option.getOr("")
@@ -104,7 +104,6 @@ let make = (~numberName: string, ~codeName: string) => {
         isValid: Some(numberField.meta.valid),
         errorString: numberField.meta.touched ? numberField.meta.error->Option.getOr("") : "",
       }
-      setValue={_ => ()}
       onChange=changePhone
       paymentType=Payment
       type_="tel"

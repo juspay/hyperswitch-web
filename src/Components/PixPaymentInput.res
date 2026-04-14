@@ -29,7 +29,7 @@ let make = (~name: string, ~fieldType: string) => {
   | _ => ("", "", None, Validation.Required)
   }
 
-  let field: ReactFinalForm.Field.fieldProps = ReactFinalForm.useField(
+  let field = ReactFinalForm.useField(
     name,
     ~config={validate: createValidator(validationRule)},
   )
@@ -54,7 +54,6 @@ let make = (~name: string, ~fieldType: string) => {
 
   <PaymentField
     fieldName
-    setValue={_ => ()}
     value={
       RecoilAtomTypes.value: pixValue,
       isValid: Some(field.meta.valid),
