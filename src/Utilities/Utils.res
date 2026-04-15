@@ -1707,6 +1707,8 @@ let checkIs18OrAbove = dateOfBirth => {
   dateOfBirth <= compareDate
 }
 
+let formatPaymentDate = date => date->Moment.make->Moment.format("YYYY-MM-DD")
+
 let getFirstAndLastNameFromFullName = fullName => {
   let nameStrings = fullName->String.split(" ")
   let firstName =

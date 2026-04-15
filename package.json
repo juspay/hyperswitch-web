@@ -9,6 +9,7 @@
     "@rescript/react": "^0.13.1",
     "@sentry/react": "^9.9.0",
     "@sentry/webpack-plugin": "^3.2.2",
+    "moment": "^2.30.1",
     "react": "^18.2.0",
     "react-datepicker": "^8.4.0",
     "react-dom": "^18.2.0",
