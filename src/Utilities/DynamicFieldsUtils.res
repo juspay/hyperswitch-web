@@ -703,49 +703,6 @@ let useSuperpositionFields = (
         p->String.endsWith(firstNameSuffix) || p->String.endsWith(lastNameSuffix)
       }
 
-      // Get a string key for fieldType to enable deduplication
-      let fieldTypeToKey = (ft: SuperpositionTypes.fieldType) => {
-        switch ft {
-        | CardNumberTextInput => "card_number"
-        | CvcPasswordInput => "cvc"
-        | MonthSelect => "month"
-        | YearSelect => "year"
-        | EmailInput => "email"
-        | PhoneInput => "phone"
-        | CountryCodeSelect => "country_code"
-        | FullNameInput(_) => "full_name"
-        | AddressLine1Input => "address_line1"
-        | AddressLine2Input => "address_line2"
-        | AddressCityInput => "address_city"
-        | AddressStateInput => "address_state"
-        | AddressPostalCodeInput => "address_postal"
-        | AddressCountryInput => "address_country"
-        | CryptoNetworkSelect => "crypto"
-        | VpaTextInput => "vpa"
-        | PixKeyInput => "pix_key"
-        | PixCpfInput => "pix_cpf"
-        | PixCnpjInput => "pix_cnpj"
-        | BlikCodeInput => "blik"
-        | BankAccountNumberInput => "bank_account"
-        | IbanInput => "iban"
-        | SourceBankAccountIdInput => "source_bank"
-        | GiftCardNumberInput => "gift_card_number"
-        | GiftCardPinInput => "gift_card_pin"
-        | DocumentTypeSelect => "document_type"
-        | DocumentNumberInput => "document_number"
-        | DatePicker => "date_of_birth"
-        | CurrencySelect => "currency"
-        | BankListSelect => "bank_list"
-        | InfoElementType => "info"
-        | TextInput => "text"
-        | PasswordInput => "password"
-        | StateSelect => "state"
-        | CountrySelect => "country"
-        | DropdownSelect => "dropdown"
-        | BankSelect => "bank"
-        }
-      }
-
       let createFullNameField = (firstName, lastName) => {
         let fullNameConfig = {firstName, lastName}
 

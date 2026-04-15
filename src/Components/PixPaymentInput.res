@@ -29,10 +29,7 @@ let make = (~name: string, ~fieldType: string) => {
   | _ => ("", "", None, Validation.Required)
   }
 
-  let field = ReactFinalForm.useField(
-    name,
-    ~config={validate: createValidator(validationRule)},
-  )
+  let field = ReactFinalForm.useField(name, ~config={validate: createValidator(validationRule)})
 
   let pixValue = field.input.value->Option.getOr("")
 

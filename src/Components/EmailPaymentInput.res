@@ -17,10 +17,7 @@ let make = (~name="email") => {
       ~localeObject=localeString->Obj.magic,
     )
 
-  let field = ReactFinalForm.useField(
-    name,
-    ~config={validate: createValidator(Validation.Email)},
-  )
+  let field = ReactFinalForm.useField(name, ~config={validate: createValidator(Validation.Email)})
 
   let emailValue = field.input.value->Option.getOr("")
 

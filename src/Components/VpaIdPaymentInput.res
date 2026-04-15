@@ -12,10 +12,7 @@ let make = (~name: string) => {
       ~localeObject=localeString->Obj.magic,
     )
 
-  let field = ReactFinalForm.useField(
-    name,
-    ~config={validate: createValidator(Validation.VpaId)},
-  )
+  let field = ReactFinalForm.useField(name, ~config={validate: createValidator(Validation.VpaId)})
 
   let vpaIdValue = field.input.value->Option.getOr("")
   let vpaIdRef = React.useRef(Nullable.null)
