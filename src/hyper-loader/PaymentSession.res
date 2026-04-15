@@ -1,5 +1,4 @@
 open Types
-open Utils
 
 let make = (
   options,

@@ -35,16 +35,16 @@ let make = (
   ~areCardFieldsRendered=false,
 ) => {
   open DynamicFieldsUtils
-  open PaymentTypeContext
+  // open PaymentTypeContext
   open Utils
   open RecoilAtoms
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
-    PaymentUtils.paymentManagementListValue,
-  )
+  // let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
+  //   PaymentUtils.paymentManagementListValue,
+  // )
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let contextPaymentType = usePaymentType()
+  // let contextPaymentType = usePaymentType()
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -59,11 +59,11 @@ let make = (
     ~paymentMethodType,
   )
 
-  let paymentMethodTypesV2 = PaymentUtilsV2.usePaymentMethodTypeFromListV2(
-    ~paymentsListValueV2=paymentManagementListValue,
-    ~paymentMethod,
-    ~paymentMethodType,
-  )
+  // let paymentMethodTypesV2 = PaymentUtilsV2.usePaymentMethodTypeFromListV2(
+  //   ~paymentsListValueV2=paymentManagementListValue,
+  //   ~paymentMethod,
+  //   ~paymentMethodType,
+  // )
 
   // let creditPaymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
   //   ~paymentMethodListValue,
@@ -130,7 +130,7 @@ let make = (
   //   PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
   // }, [savedMethod])
 
-  let (missingRequiredFields, initialValues, _) = useSuperpositionFields(
+  let (missingRequiredFields, initialValues, isLoading) = useSuperpositionFields(
     ~paymentMethod,
     ~paymentMethodType,
     ~paymentMethodTypes,
@@ -365,6 +365,14 @@ let make = (
   }, [processedFieldConfigs])
 
   let (_, setAreRequiredFieldsValid) = Recoil.useRecoilState(areRequiredFieldsValid)
+
+  React.useEffect(() => {
+    // this sideEffect is for resetting the validation context when payment method changes and there are no required fields to render.
+    if processedFieldConfigs->Array.length === 0 && !isLoading {
+      setAreRequiredFieldsValid(_ => true)
+    }
+    None
+  }, (processedFieldConfigs, isLoading))
 
   <RenderIf condition={!isSavedCardFlow && processedFieldConfigs->Array.length > 0}>
     <ReactFinalForm.Form
