@@ -183,42 +183,20 @@ let rec pollRetrievePaymentIntent = (
   ~customPodUri,
   ~isForceSync=false,
   ~sdkAuthorization=None,
+  ~delayInMs=2000,
+  ~endTimestampNanos=None,
 ) => {
   open Promise
-  retrievePaymentIntent(
-    clientSecret,
-    ~headers,
-    ~publishableKey,
-    ~logger,
-    ~customPodUri,
-    ~isForceSync,
-    ~sdkAuthorization,
-  )
-  ->then(json => {
-    let dict = json->getDictFromJson
-    let status = dict->getString("status", "")
 
-    if status === "succeeded" || status === "failed" {
-      resolve(json)
-    } else {
-      delay(2000)
-      ->then(_val => {
-        pollRetrievePaymentIntent(
-          clientSecret,
-          ~headers,
-          ~publishableKey,
-          ~logger,
-          ~customPodUri,
-          ~isForceSync,
-          ~sdkAuthorization,
-        )
-      })
-      ->catch(_ => Promise.resolve(JSON.Encode.null))
-    }
-  })
-  ->catch(e => {
-    Console.error2("Unable to retrieve payment due to following error", e)
-    pollRetrievePaymentIntent(
+  let isExpired = switch endTimestampNanos {
+  | Some(timestamp) =>
+    let currentTime = Date.now() *. 1000000.0 // convert to nanoseconds
+    currentTime >= timestamp
+  | None => false
+  }
+
+  if isExpired {
+    retrievePaymentIntent(
       clientSecret,
       ~headers,
       ~publishableKey,
@@ -227,7 +205,57 @@ let rec pollRetrievePaymentIntent = (
       ~isForceSync,
       ~sdkAuthorization,
     )
-  })
+    ->then(json => resolve(json))
+    ->catch(_ => resolve(JSON.Encode.null))
+  } else {
+    retrievePaymentIntent(
+      clientSecret,
+      ~headers,
+      ~publishableKey,
+      ~logger,
+      ~customPodUri,
+      ~isForceSync,
+      ~sdkAuthorization,
+    )
+    ->then(json => {
+      let dict = json->getDictFromJson
+      let status = dict->getString("status", "")
+
+      if status === "succeeded" || status === "failed" {
+        resolve(json)
+      } else {
+        delay(delayInMs)
+        ->then(_val => {
+          pollRetrievePaymentIntent(
+            clientSecret,
+            ~headers,
+            ~publishableKey,
+            ~logger,
+            ~customPodUri,
+            ~isForceSync,
+            ~sdkAuthorization,
+            ~delayInMs,
+            ~endTimestampNanos,
+          )
+        })
+        ->catch(_ => Promise.resolve(JSON.Encode.null))
+      }
+    })
+    ->catch(e => {
+      Console.error2("Unable to retrieve payment due to following error", e)
+      pollRetrievePaymentIntent(
+        clientSecret,
+        ~headers,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~isForceSync,
+        ~sdkAuthorization,
+        ~delayInMs,
+        ~endTimestampNanos,
+      )
+    })
+  }
 }
 
 let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger, ~sdkAuthorization) => {
@@ -838,6 +866,57 @@ let rec intentCall = (
                     ("nextActionData", nextActionData),
                   ]->getJsonFromArrayOfJson
                 resolve(response)
+              } else if intent.nextAction.type_ === "wait_screen_information" {
+                let displayToTimestamp = switch intent.nextAction.display_to_timestamp {
+                | Some(timestamp) => Some(timestamp)
+                | None =>
+                  let fifteenMinsNanos = Date.now() *. 1000000.0 +. 15.0 *. 60.0 *. 1000000000.0
+                  Some(fifteenMinsNanos)
+                }
+                let pollConfig =
+                  intent.nextAction.poll_config->Option.getOr(PaymentConfirmTypes.defaultPollConfig)
+                let headersDict = headers->Dict.fromArray
+
+                handleLogging(~optLogger, ~value="", ~eventName=DISPLAY_WAIT_SCREEN, ~paymentMethod)
+
+                if !isPaymentSession {
+                  let metaData =
+                    [("paymentMethod", paymentMethod->JSON.Encode.string)]->getJsonFromArrayOfJson
+                  messageParentWindow([
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `paymentloader`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData),
+                  ])
+
+                  pollRetrievePaymentIntent(
+                    clientSecret,
+                    ~headers=headersDict,
+                    ~publishableKey=confirmParam.publishableKey,
+                    ~logger=optLogger->Option.getOr(LoggerUtils.defaultLoggerConfig),
+                    ~customPodUri,
+                    ~sdkAuthorization,
+                    ~delayInMs=pollConfig.delay_in_secs * 1000,
+                    ~endTimestampNanos=displayToTimestamp,
+                  )
+                  ->Promise.then(
+                    retrievedData => {
+                      closePaymentLoaderIfAny()
+                      postSubmitResponse(~jsonData=retrievedData, ~url=url.href)
+                      Promise.resolve()
+                    },
+                  )
+                  ->Promise.catch(
+                    _ => {
+                      closePaymentLoaderIfAny()
+                      postSubmitResponse(~jsonData=data, ~url=url.href)
+                      Promise.resolve()
+                    },
+                  )
+                  ->ignore
+                } else {
+                  resolve(data)
+                }
               } else {
                 if !isPaymentSession {
                   postFailedSubmitResponse(

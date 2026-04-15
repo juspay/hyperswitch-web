@@ -74,12 +74,15 @@ let userVpaId = Recoil.atom("userVpaId", defaultFieldValues)
 let userPixKey = Recoil.atom("userPixKey", defaultFieldValues)
 let userPixCPF = Recoil.atom("userPixCPF", defaultFieldValues)
 let userPixCNPJ = Recoil.atom("userPixCNPJ", defaultFieldValues)
+let userPixAccountNumber = Recoil.atom("userPixAccountNumber", defaultFieldValues)
 let userDocumentType = Recoil.atom("userDocumentType", "")
 let userDocumentNumber = Recoil.atom("userDocumentNumber", defaultFieldValues)
 let isCompleteCallbackUsed = Recoil.atom("isCompleteCallbackUsed", false)
 let isPaymentButtonHandlerProvidedAtom = Recoil.atom("isPaymentButtonHandlerProvidedAtom", false)
 let userBankAccountNumber = Recoil.atom("userBankAccountNumber", defaultFieldValues)
 let sourceBankAccountId = Recoil.atom("sourceBankAccountId", defaultFieldValues)
+let userBranchCode = Recoil.atom("userBranchCode", defaultFieldValues)
+let userBankIdentifier = Recoil.atom("userBankIdentifier", defaultFieldValues)
 
 type areOneClickWalletsRendered = {
   isGooglePay: bool,

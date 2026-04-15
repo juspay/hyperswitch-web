@@ -68,6 +68,9 @@ type paymentMethodsFields =
   | BankAccountNumber
   | IBAN
   | SourceBankAccountId
+  | BranchCode
+  | BankIdentifier
+  | PixAccountNumber
   | GiftCardNumber
   | GiftCardPin
 
@@ -594,10 +597,24 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     miniIcon: Some(icon("cash_voucher", ~size=19)),
   },
   {
+    paymentMethodName: "pix_automatico_push_transfer",
+    fields: [InfoElement],
+    icon: Some(icon("pix", ~size=26, ~width=40)),
+    displayName: localeString.payment_methods_pix_automatico_push,
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "pix_transfer",
     fields: [InfoElement],
     icon: Some(icon("pix", ~size=26, ~width=40)),
     displayName: localeString.payment_methods_pix_transfer,
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "pix_automatico_qr_transfer",
+    fields: [InfoElement],
+    icon: Some(icon("pix", ~size=26, ~width=40)),
+    displayName: localeString.payment_methods_pix_automatico_qr,
     miniIcon: None,
   },
   {
@@ -726,9 +743,12 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_cpf", _) => PixCPF
   | ("user_cnpj", _) => PixCNPJ
   | ("user_pix_key", _) => PixKey
+  | ("user_pix_account_number", _) => PixAccountNumber
   | ("user_bank_account_number", _) => BankAccountNumber
   | ("user_iban", _) => BankAccountNumber
   | ("user_source_bank_account_id", _) => SourceBankAccountId
+  | ("user_branch_code", _) => BranchCode
+  | ("user_bank_identifier", _) => BankIdentifier
   | ("user_social_security_number", _) => DocumentNumber
   | _ => None
   }

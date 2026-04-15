@@ -2,6 +2,8 @@
 let make = () => {
   open Utils
   let (branding, setBranding) = React.useState(_ => "auto")
+  let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
+  let setConfig = Recoil.useSetRecoilState(RecoilAtoms.configAtom)
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -9,9 +11,21 @@ let make = () => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
       if dict->Utils.getBool("fullScreenIframeMounted", false) {
-        if dict->getDictFromDict("options")->getOptionString("branding")->Option.isSome {
-          setBranding(_ => dict->getDictFromDict("options")->getString("branding", "auto"))
+        let optionsDict = dict->getDictFromDict("options")
+        if optionsDict->getOptionString("branding")->Option.isSome {
+          setBranding(_ => optionsDict->getString("branding", "auto"))
         }
+        let locale = optionsDict->getString("locale", "auto")
+        CardTheme.getLocaleObject(locale)
+        ->Promise.thenResolve(localeString => {
+          setConfig(prev => {...prev, localeString})
+        })
+        ->Promise.catch(_ => Promise.resolve())
+        ->ignore
+        let metadata = dict->getJsonObjectFromDict("metadata")
+        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+        let paymentMethodStr = metaDataDict->getString("paymentMethod", "")
+        setPaymentMethod(_ => paymentMethodStr)
       }
     }
     Window.addEventListener("message", handle)
@@ -25,7 +39,7 @@ let make = () => {
 
   <div className={`h-screen w-screen flex m-auto items-center ${styles}`}>
     <div className={`flex flex-col justify-center m-auto visible`}>
-      <Loader branding />
+      <Loader branding paymentMethod />
     </div>
   </div>
 }

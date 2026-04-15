@@ -14,12 +14,18 @@ let make = (
   setIframeRef,
   iframeRef,
   mountPostMessage,
+  ~locale,
   ~isPaymentManagementElement=false,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
   ~logger: option<HyperLoggerTypes.loggerMake>,
 ) => {
   try {
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
+    let updatedOptions = {
+      let dict = options->Utils.getDictFromJson->Dict.copy
+      dict->Dict.set("locale", locale->JSON.Encode.string)
+      dict->JSON.Encode.object
+    }
     let mountId = ref("")
     let setPaymentIframeRef = ref => {
       setIframeRef(ref)
@@ -335,7 +341,7 @@ let make = (
                           [
                             ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
-                            ("options", options),
+                            ("options", updatedOptions),
                           ]->Dict.fromArray,
                         )
                       }
@@ -344,7 +350,7 @@ let make = (
                           [
                             ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
-                            ("options", options),
+                            ("options", updatedOptions),
                           ]->Dict.fromArray,
                         )
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
@@ -366,7 +372,7 @@ let make = (
                   mainElement->Window.iframePostMessage(
                     [
                       ("fullScreenIframeMounted", false->JSON.Encode.bool),
-                      ("options", options),
+                      ("options", updatedOptions),
                     ]->Dict.fromArray,
                   )
                 }

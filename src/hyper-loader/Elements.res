@@ -1419,6 +1419,7 @@ let make = (
         setIframeRefForComponent,
         iframeRef,
         mountPostMessage,
+        ~locale=locale->Utils.getStringFromJson("auto"),
         ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
         ~logger=Some(logger),
       )
