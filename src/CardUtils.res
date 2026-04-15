@@ -206,6 +206,11 @@ let getCardStringFromType = val => {
   }
 }
 
+let getCardBrandDisplayName = cardBrand => {
+  let cardBrandString = cardBrand->getCardStringFromType
+  cardBrandString == "NOTFOUND" ? "Unknown" : cardBrandString
+}
+
 let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
   open CardValidations
   let tempTimeDateString = dateTimeIsoString->String.replace("Z", "")
