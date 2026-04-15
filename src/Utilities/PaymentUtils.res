@@ -658,13 +658,15 @@ let emitPaymentMethodInfo = (
   ~state="",
   ~pinCode="",
   ~isSavedPaymentMethod=false,
+  ~isCvcEmpty=true,
 ) => {
   let baseCardsFields = [
-    ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
+    ("cardBrand", cardBrand->CardUtils.getCardBrandDisplayName->JSON.Encode.string),
     ("cardLast4", cardLast4->JSON.Encode.string),
     ("cardBin", cardBin->JSON.Encode.string),
     ("cardExpiryMonth", cardExpiryMonth->JSON.Encode.string),
     ("cardExpiryYear", cardExpiryYear->JSON.Encode.string),
+    ("isCvcEmpty", isCvcEmpty->JSON.Encode.bool),
   ]
 
   let baseAddressFields = [
@@ -683,14 +685,19 @@ let emitPaymentMethodInfo = (
     ]
   }
 
-  let msg = if cardBrand === CardUtils.NOTFOUND || paymentMethod !== "card" {
+  let msg = if paymentMethod !== "card" {
     [...basePaymentInfoFields, ...baseAddressFields]
   } else {
     [...basePaymentInfoFields, ...baseAddressFields, ...baseCardsFields]
   }
 
-  let finalMsg =
-    msg->Array.filter(((_, value)) => value->JSON.Decode.string->Option.getOr("") != "")
+  let finalMsg = msg->Array.filter(((_, value)) =>
+    switch JSON.Classify.classify(value) {
+    | String(_) => value->JSON.Decode.string->Option.getOr("") != ""
+    | Bool(_) => true
+    | _ => false
+    }
+  )
 
   emitMessage(finalMsg->Array.concat(baseSavedPaymentField)->Dict.fromArray)
 }
@@ -718,6 +725,7 @@ let useEmitPaymentMethodInfo = (
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {country, state, pinCode} = useNonPiiAddressData()
@@ -726,6 +734,7 @@ let useEmitPaymentMethodInfo = (
   let cardBin = cardNumber->CardUtils.getCardBin
   let cardLast4 = cardNumber->CardUtils.getCardLast4
   let {cardExpiry} = expiryProps
+  let isCvcEmpty = cvcProps.cvcNumber->String.length === 0
   let isCardValid = cardProps.isCardValid->Option.getOr(false)
   let isExpiryValid = expiryProps.isExpiryValid->Option.getOr(false)
   let (cardExpiryMonth, cardExpiryYear) = cardExpiry->CardUtils.getExpiryDates
@@ -744,6 +753,7 @@ let useEmitPaymentMethodInfo = (
         ~country,
         ~state,
         ~pinCode,
+        ~isCvcEmpty,
       )
     } else {
       emitPaymentMethodInfo(~paymentMethod, ~paymentMethodType, ~country, ~state, ~pinCode)
@@ -796,6 +806,7 @@ let useEmitPaymentMethodInfo = (
     paymentMethods,
     isCardValid,
     isExpiryValid,
+    isCvcEmpty,
     country,
     state,
     pinCode,
