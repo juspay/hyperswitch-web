@@ -55,6 +55,7 @@ let make = (
   ~cardShimmerCount: int,
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -120,6 +121,7 @@ let make = (
     ~paymentMethods=paymentMethodListValue.payment_methods,
     ~cardProps,
     ~expiryProps,
+    ~cvcProps,
   )
 
   let displayIcon = ele => {

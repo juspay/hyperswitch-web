@@ -62,6 +62,7 @@ let make = (
   ~checkoutEle: React.element,
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
@@ -76,6 +77,7 @@ let make = (
     ~paymentMethods=paymentMethodListValue.payment_methods,
     ~cardProps,
     ~expiryProps,
+    ~cvcProps,
   )
 
   let cardOptionDetails =
