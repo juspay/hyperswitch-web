@@ -24,7 +24,8 @@ jobs:
     runs-on: self-hosted
     if: |
       (github.event_name == 'pull_request_review_comment' || github.event.issue.pull_request) &&
-      contains(github.event.comment.body, '@hyperswitch-web-review-bot')
+      contains(github.event.comment.body, '@hyperswitch-web-review-bot') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
 
     steps:
       - name: Resolve context
