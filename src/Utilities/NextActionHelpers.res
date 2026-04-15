@@ -11,13 +11,15 @@ let handleDDC = (
 ) => {
   let {iframeUrl, timeoutMs} = ddcData->Option.getOr(PaymentConfirmTypes.defaultDdcData)
 
+  LoggerUtils.handleLogging(~optLogger, ~eventName=DDC_FLOW, ~value="DDC initiated", ~paymentMethod)
+
   messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
     ("param", "paymentloader"->JSON.Encode.string),
     ("iframeId", iframeId->JSON.Encode.string),
   ])
 
-  let errorType = "confirm_payment_failed"
+  let errorType = "error"
   let errorMessage = "Something went wrong"
 
   let handleFailure = () => {
@@ -65,7 +67,7 @@ let handleDDC = (
           LoggerUtils.handleLogging(
             ~optLogger,
             ~eventName=REDIRECTING_USER,
-            ~value="Post DDC redirection url : " ++ redirectUrl,
+            ~value="Post DDC redirection",
             ~paymentMethod,
             ~logType=INFO,
           )
@@ -97,7 +99,7 @@ let handleDDC = (
             LoggerUtils.handleLogging(
               ~optLogger,
               ~eventName=DDC_FLOW,
-              ~value="DDC failed: invalid next action type - " ++ nextActionType,
+              ~value=`DDC failed: invalid next action type - ${nextActionType}`,
               ~paymentMethod,
               ~logType=ERROR,
             )
@@ -110,7 +112,7 @@ let handleDDC = (
         LoggerUtils.handleLogging(
           ~optLogger,
           ~eventName=DDC_FLOW,
-          ~value="DDC failed: message parse error - " ++ err,
+          ~value=`DDC failed: message parse error - ${err}`,
           ~paymentMethod,
           ~logType=ERROR,
         )
@@ -121,13 +123,6 @@ let handleDDC = (
 
     messageHandlerRef := Some(handleMessage)
     Window.addEventListener("message", handleMessage)
-
-    LoggerUtils.handleLogging(
-      ~optLogger,
-      ~eventName=DDC_FLOW,
-      ~value="DDC initiated - iframe URL: " ++ iframeUrl,
-      ~paymentMethod,
-    )
 
     let iframe = Window.body->makeHiddenIframe(~src=iframeUrl, ~id="ddc-iframe")
     iframeRef := Some(iframe)
