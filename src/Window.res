@@ -99,6 +99,26 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @val external windowOpen: (string, string, string) => Nullable.t<window> = "open"
 @val external isSecureContext: bool = "isSecureContext"
 
+type serviceWorkerRegistration
+
+module ServiceWorker = {
+  type t
+  @send
+  external postMessage: (t, {..}) => unit = "postMessage"
+  @get
+  external scriptURL: t => string = "scriptURL"
+}
+
+module ServiceWorkerContainer = {
+  type t
+
+  @get
+  external controller: t => Nullable.t<ServiceWorker.t> = "controller"
+
+  @send
+  external register: (t, string) => promise<serviceWorkerRegistration> = "register"
+}
+
 /* Module Definitions */
 module Navigator = {
   @val @scope("navigator")
@@ -118,6 +138,9 @@ module Navigator = {
 
   @val @scope("navigator")
   external sendBeacon: (string, string) => unit = "sendBeacon"
+
+  @val @scope(("window", "navigator"))
+  external serviceWorker: option<ServiceWorkerContainer.t> = "serviceWorker"
 }
 
 module Location = {
