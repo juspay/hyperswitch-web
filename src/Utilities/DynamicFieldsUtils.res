@@ -478,7 +478,7 @@ let getFieldTypeFromConfig = (fc: SuperpositionTypes.fieldConfig): Superposition
   ) {
     AddressPostalCodeInput
   } else if p->String.includes("billing.email") {
-    EmailInput
+    EmailInput([])
   } else if p->String.includes("billing.phone.country_code") {
     CountryCodeSelect
   } else if p->String.includes("billing.phone") {
@@ -535,7 +535,7 @@ let isBillingAddressFieldConfig = (fc: SuperpositionTypes.fieldConfig) => {
 // Check if a fieldConfig is a ClickToPay field (Email or Phone)
 let isClickToPayFieldConfig = (fc: SuperpositionTypes.fieldConfig) => {
   switch fc.fieldType {
-  | EmailInput
+  | EmailInput(_)
   | PhoneInput
   | CountryCodeSelect => true
   | _ => false
@@ -617,6 +617,32 @@ let isFieldTypeToRenderOutsideBillingConfig = (fc: SuperpositionTypes.fieldConfi
   }
 }
 
+// Deduplicate Email field.
+let deduplicateFieldConfigsByFieldType = (
+  fields: array<SuperpositionTypes.fieldConfig>,
+): array<SuperpositionTypes.fieldConfig> => {
+  let emailFields = fields->Array.filter(fc =>
+    switch fc.fieldType {
+    | EmailInput(_) => true
+    | _ => false
+    }
+  )
+  if emailFields->Array.length <= 1 {
+    fields
+  } else {
+    let nonEmailFields = fields->Array.filter(fc =>
+      switch fc.fieldType {
+      | EmailInput(_) => false
+      | _ => true
+      }
+    )
+    switch emailFields->Array.get(0) {
+    | Some(emailField) => [{...emailField, fieldType: EmailInput(emailFields)}, ...nonEmailFields]
+    | None => fields
+    }
+  }
+}
+
 // Check if a field is a card field (card number, expiry, cvc)
 let isCardField = (fc: SuperpositionTypes.fieldConfig) => {
   switch fc.fieldType {
@@ -678,12 +704,10 @@ let useSuperpositionFields = (
 
     getSuperpositionFinalFields(eligibleConnectors, configParams, requiredFieldsFromPML)
     ->Promise.then(((_requiredFields, missingRequiredFields, superpositionInitialValues)) => {
-      // Constants for path suffixes
       let firstNameSuffix = "first_name"
       let lastNameSuffix = "last_name"
       let defaultFullNamePath = "payment_method_data.billing.address.first_name"
 
-      // Enhance fields with inferred types
       let enhancedFields = missingRequiredFields->Array.map(
         fc => {
           {...fc, fieldType: fc->getFieldTypeFromConfig}
@@ -733,7 +757,7 @@ let useSuperpositionFields = (
         }
       }
 
-      setSuperpositionMissingFields(_ => finalFields)
+      setSuperpositionMissingFields(_ => finalFields->deduplicateFieldConfigsByFieldType)
       setInitialValues(_ => superpositionInitialValues)
       setIsLoading(_ => false)
       Promise.resolve()
@@ -788,7 +812,7 @@ let fieldTypeToPaymentMethodsField = (
   | CvcPasswordInput => CardCvc
   | MonthSelect => CardExpiryMonth
   | YearSelect => CardExpiryYear
-  | EmailInput => Email
+  | EmailInput(_) => Email
   | PhoneInput => PhoneNumber
   | CountryCodeSelect => PhoneCountryCode
   | FullNameInput(_) => FullName
