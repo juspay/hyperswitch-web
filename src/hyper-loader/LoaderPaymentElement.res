@@ -382,7 +382,13 @@ let make = (
           )
         }
       }
-      addSmartEventListener("message", handle, `onMount-${componentType}`)
+      // Elements that can have multiple instances need unique event listener names per instance
+      let eventListenerActivityName = if componentType->Utils.canHaveMultipleInstances {
+        `onMount-${componentType}-${localSelectorString}`
+      } else {
+        `onMount-${componentType}`
+      }
+      addSmartEventListener("message", handle, eventListenerActivityName)
 
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->getClasses("base")

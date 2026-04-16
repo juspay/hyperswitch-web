@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Este cartão expirou`,
   cardHeader: `Informações do cartão`,
   cardBrandConfiguredErrorText: str => `${str} não é suportado no momento.`,
-  blockedCardText: "Este cartão não é permitido para pagamentos.",
+  cardNotEligibleText: "Este cartão não é aceite para este pagamento",
   currencyNetwork: `Redes de Moeda`,
   expiryPlaceholder: `MM / AA`,
   dateOfBirth: `Data de nascimento`,
@@ -235,6 +235,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Salvos`,
   giftCardSectionTitle: `Tem um cartão presente?`,
   giftCardNumberLabel: `Número do cartão presente`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -250,13 +251,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Por favor, pague o valor restante de ${amount} ${currency} com outro método de pagamento abaixo.`,
   installmentPayInInstallments: "Pagar em parcelas",
-  installmentChoosePlan: "Escolha um plano de parcelamento",
   installmentInterestFree: "Sem juros",
-  installmentInterestRate: interestRate => `${interestRate}% de juros`,
-  installmentTotalPayable: "Total a pagar",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 parcela de ${currency} ${amount}`
-      : `${numPayments->Int.toString} parcelas de ${currency} ${amount}`,
+  installmentWithInterest: "com juros",
+  installmentTotal: "Total",
   installmentSelectPlanError: "Por favor, selecione um plano de parcelamento",
+  installmentSelectPlanPlaceholder: "Selecione um plano de parcelamento",
+  showMore: "Mostrar mais",
+  showLess: "Mostrar menos",
+  refreshingText: "Atualizando...",
 }

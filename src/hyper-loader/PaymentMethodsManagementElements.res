@@ -250,6 +250,7 @@ let make = (
       update,
       fetchUpdates,
       create,
+      updateIntent: _ => Promise.resolve(JSON.Encode.null),
     }
   } catch {
   | e => {

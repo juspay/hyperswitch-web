@@ -2,8 +2,15 @@ type showTerms = Auto | Always | Never
 type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
 type layout = Accordion | Tabs
-type groupingBehavior = GroupByPaymentMethods | Default
-type savedMethodCustomization = {groupingBehavior: groupingBehavior, hideCardExpiry: bool}
+type groupingBehavior = {
+  displayInSeparateScreen: bool,
+  groupByPaymentMethods: bool,
+}
+type savedMethodCustomization = {
+  groupingBehavior: groupingBehavior,
+  maxItems: int,
+  hideCardExpiry: bool,
+}
 open Utils
 open ErrorUtils
 
@@ -236,7 +243,6 @@ type payerDetails = {
   phone: option<string>,
 }
 
-let defaultSavedMethodCustomization = {groupingBehavior: Default, hideCardExpiry: false}
 let defaultCardDetails = {
   scheme: None,
   last4Digits: "",
@@ -278,6 +284,15 @@ let defaultCustomerMethods = {
   recurringEnabled: false,
   billing: defaultDisplayBillingDetails,
 }
+let defaultGroupingBehavior = {
+  displayInSeparateScreen: true,
+  groupByPaymentMethods: false,
+}
+let defaultSavedMethodCustomization = {
+  groupingBehavior: defaultGroupingBehavior,
+  maxItems: 4,
+  hideCardExpiry: false,
+}
 let defaultLayout = {
   defaultCollapsed: false,
   radios: false,
@@ -288,6 +303,7 @@ let defaultLayout = {
   paymentMethodsArrangementForTabs: Default,
   displayOneClickPaymentMethodsOnTop: true,
 }
+
 let defaultAddress: address = {
   line1: "",
   line2: "",
@@ -771,17 +787,58 @@ let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
   })
   ->Option.getOr(defaultFields)
 }
-let getSavedMethodLayout = str => {
+
+let getGroupingBehaviorFromString = str => {
   switch str {
-  | "groupByPaymentMethods" => GroupByPaymentMethods
-  | "default" => Default
+  | "groupByPaymentMethods" => {displayInSeparateScreen: false, groupByPaymentMethods: true}
+  | "default" => defaultGroupingBehavior
   | str => {
       str->unknownPropValueWarning(
         ["groupByPaymentMethods", "default"],
         "options.layout.savedMethodCustomization.groupingBehavior",
       )
-      Default
+      defaultGroupingBehavior
     }
+  }
+}
+
+let getGroupingBehaviorFromObject = (json, ~logger) => {
+  unknownKeysWarning(
+    ["displayInSeparateScreen", "groupByPaymentMethods"],
+    json,
+    "options.layout.savedMethodCustomization.groupingBehavior",
+  )
+  {
+    displayInSeparateScreen: getBoolWithWarning(json, "displayInSeparateScreen", true, ~logger),
+    groupByPaymentMethods: getBoolWithWarning(json, "groupByPaymentMethods", false, ~logger),
+  }
+}
+
+let getGroupingBehavior = (dict, ~logger) => {
+  dict
+  ->Dict.get("groupingBehavior")
+  ->Option.map(val => {
+    switch val->JSON.Classify.classify {
+    | String(str) => str->getGroupingBehaviorFromString
+    | Object(json) => json->getGroupingBehaviorFromObject(~logger)
+    | _ => defaultGroupingBehavior
+    }
+  })
+  ->Option.getOr(defaultGroupingBehavior)
+}
+
+let getMaxItems = (dict, key, default, ~logger) => {
+  let parsedMaxItems = getNumberWithWarning(dict, key, default, ~logger)
+  if parsedMaxItems > 0 {
+    parsedMaxItems
+  } else {
+    valueOutRangeWarning(
+      parsedMaxItems,
+      "options.layout.savedMethodCustomization.maxItems",
+      "[>0] - maxItems must be a positive number. Value set to default (4)",
+      ~logger,
+    )
+    default
   }
 }
 
@@ -791,17 +848,13 @@ let getSavedMethodCustomization = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["groupingBehavior", "hideCardExpiry"],
+      ["groupingBehavior", "maxItems", "hideCardExpiry"],
       json,
       "options.layout.savedMethodCustomization",
     )
     {
-      groupingBehavior: getWarningString(
-        json,
-        "groupingBehavior",
-        "default",
-        ~logger,
-      )->getSavedMethodLayout,
+      groupingBehavior: json->getGroupingBehavior(~logger),
+      maxItems: getMaxItems(json, "maxItems", 4, ~logger),
       hideCardExpiry: getBool(json, "hideCardExpiry", false),
     }
   })
@@ -828,6 +881,8 @@ let getLayoutValues = (val, logger) => {
           "type",
           "maxAccordionItems",
           "savedMethodCustomization",
+          "paymentMethodsArrangementForTabs",
+          "displayOneClickPaymentMethodsOnTop",
         ],
         json,
         "options.layout",

@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Aquesta targeta ha caducat`,
   cardHeader: `Informació de la targeta`,
   cardBrandConfiguredErrorText: str => `${str} no està suportat en aquest moment.`,
-  blockedCardText: "Aquesta targeta no està permesa per a pagaments.",
+  cardNotEligibleText: "Aquesta targeta no s'accepta per a aquest pagament",
   currencyNetwork: `Xarxes de Monedes`,
   expiryPlaceholder: `MM / AA`,
   dateOfBirth: `Data de naixement`,
@@ -236,6 +236,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Mètodes desats`,
   giftCardSectionTitle: `Tens una targeta regal?`,
   giftCardNumberLabel: `Número de targeta regal`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -251,13 +252,12 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Pagueu l'import restant de ${currency} ${amount} amb un altre mètode de pagament a continuació.`,
   installmentPayInInstallments: "Pagar a terminis",
-  installmentChoosePlan: "Trieu un pla de terminis",
   installmentInterestFree: "Sense interessos",
-  installmentInterestRate: interestRate => `${interestRate}% interessos`,
-  installmentTotalPayable: "Total a pagar",
-  installmentPaymentLabel: (numPayments, currency, amount) =>
-    numPayments == 1
-      ? `1 termini de ${currency} ${amount}`
-      : `${numPayments->Int.toString} terminis de ${currency} ${amount}`,
+  installmentWithInterest: "amb interessos",
+  installmentTotal: "Total",
   installmentSelectPlanError: "Si us plau, seleccioneu un pla de terminis",
+  installmentSelectPlanPlaceholder: "Seleccioneu un pla de terminis",
+  showMore: "Mostra més",
+  showLess: "Mostra menys",
+  refreshingText: "Actualitzant...",
 }

@@ -10,10 +10,10 @@ type apiCallV1 =
   | CallAuthExchange
   | RetrieveStatus
   | ConfirmPayout
-  | FetchBlockedBins
   | FetchEnabledAuthnMethodsToken
   | FetchEligibilityCheck
   | FetchAuthenticationSync
+  | FetchPaymentMethodEligibility
 
 type commonApiParams = {
   publishableKey: option<string>,
@@ -87,7 +87,6 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchPaymentMethodList
   | FetchCustomerPaymentMethodList
   | RetrievePaymentIntent => defaultParams
-  | FetchBlockedBins => list{("data_kind", "card_bin"), ...defaultParams}
   | FetchSessions
   | FetchThreeDsAuth
   | CalculateTax
@@ -98,7 +97,8 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | ConfirmPayout
   | FetchEnabledAuthnMethodsToken
   | FetchEligibilityCheck
-  | FetchAuthenticationSync =>
+  | FetchAuthenticationSync
+  | FetchPaymentMethodEligibility =>
     list{}
   }
 
@@ -114,11 +114,11 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | CallAuthExchange => "payment_methods/auth/exchange"
   | RetrieveStatus => `poll/status/${pollIdVal}`
   | ConfirmPayout => `payouts/${payoutIdVal}/confirm`
-  | FetchBlockedBins => "blocklist"
   | FetchEnabledAuthnMethodsToken =>
     `authentication/${authenticationIdVal}/enabled_authn_methods_token`
   | FetchEligibilityCheck => `authentication/${authenticationIdVal}/eligibility-check`
   | FetchAuthenticationSync => `authentication/${merchantId}/${authenticationIdVal}/sync`
+  | FetchPaymentMethodEligibility => `payments/${paymentIntentID}/eligibility`
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`
