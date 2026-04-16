@@ -17,7 +17,7 @@ const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
 
 module.exports = (endpoint, publicPath = "auto") => {
   const entries = {
-    app: "./src/index.js",
+    app: "./src/index.tsx",
   };
 
   return {
@@ -29,7 +29,7 @@ module.exports = (endpoint, publicPath = "auto") => {
     },
     // Add this resolve section to fix the jsx-runtime issue
     resolve: {
-      extensions: [".js", ".jsx", ".json", ".mjs"],
+      extensions: [".ts", ".tsx", ".js", ".jsx", ".json", ".mjs"],
       alias: {
         "react/jsx-runtime": require.resolve("react/jsx-runtime"),
       },
@@ -74,7 +74,7 @@ module.exports = (endpoint, publicPath = "auto") => {
     module: {
       rules: [
         {
-          test: /\.?js$/,
+          test: /\.[jt]sx?$/,
           exclude: /node_modules/,
           use: {
             loader: "babel-loader",
@@ -82,6 +82,7 @@ module.exports = (endpoint, publicPath = "auto") => {
               presets: [
                 "@babel/preset-env",
                 ["@babel/preset-react", { runtime: "automatic" }],
+                "@babel/preset-typescript",
               ],
             },
           },
