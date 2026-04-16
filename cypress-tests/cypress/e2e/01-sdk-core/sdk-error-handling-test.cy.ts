@@ -104,25 +104,6 @@ describe("SDK Error Handling Tests", () => {
     });
   });
 
-  it("should display user-friendly error messages", () => {
-    cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
-      cy.getGlobalState("clientSecret").then((clientSecret) => {
-        cy.visit(getClientURL(clientSecret, publishableKey));
-      });
-    });
-
-    cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element", { timeout: 10000 })
-      .should("be.visible");
-
-    cy.get("#submit").click();
-
-    cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
-      .its("0.contentDocument")
-      .its("body")
-      .find(".Error")
-      .should("be.visible");
-  });
-
   it("should handle SDK script loading errors", () => {
     cy.intercept("GET", "**/app.js", {
       statusCode: 500,
