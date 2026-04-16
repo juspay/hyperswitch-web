@@ -629,7 +629,7 @@ let make = (
                   }}
                 />
               | DocumentNumberInput
-              | EmailInput
+              | EmailInput(_)
               | InfoElementType
               | CountrySelect
               | BankSelect
@@ -683,31 +683,8 @@ let make = (
                 ->Array.mapWithIndex((item, index) => {
                   <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index}>
                     {switch item.fieldType {
-                    | EmailInput =>
-                      <ReactFinalFormField
-                        name={item.outputPath}
-                        validationRule={Validation.fieldTypeToValidationRule(EmailInput)}
-                        render={(field: ReactFinalForm.Field.fieldProps) => {
-                          let val = field.input.value->Option.getOr("")
-                          <PaymentField
-                            fieldName=localeString.emailLabel
-                            value={
-                              value: val,
-                              isValid: Some(field.meta.valid),
-                              errorString: submitFailed || field.meta.touched
-                                ? field.meta.error->Option.getOr("")
-                                : "",
-                            }
-                            onChange={ev =>
-                              field.input.onChange(ReactEvent.Form.target(ev)["value"])}
-                            onBlur={_ev => field.input.onBlur()}
-                            type_="email"
-                            name=TestUtils.emailInputTestId
-                            inputRef={React.useRef(Nullable.null)}
-                            placeholder="Eg: johndoe@gmail.com"
-                          />
-                        }}
-                      />
+                    | EmailInput(emailFields) =>
+                      <EmailPaymentInput emailFields />
                     | PhoneInput =>
                       if hasBothPhoneAndCountryCode {
                         <PhoneNumberPaymentInput
