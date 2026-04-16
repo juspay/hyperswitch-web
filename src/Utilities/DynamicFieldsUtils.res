@@ -618,28 +618,26 @@ let isFieldTypeToRenderOutsideBillingConfig = (fc: SuperpositionTypes.fieldConfi
 }
 
 // Deduplicate Email field.
-let deduplicateFieldConfigsByFieldType = (
-  fields: array<SuperpositionTypes.fieldConfig>,
-): array<SuperpositionTypes.fieldConfig> => {
+let deduplicateFieldConfigsByFieldType = (fields: array<SuperpositionTypes.fieldConfig>): array<
+  SuperpositionTypes.fieldConfig,
+> => {
   let emailFields = fields->Array.filter(fc =>
     switch fc.fieldType {
     | EmailInput(_) => true
     | _ => false
     }
   )
-  if emailFields->Array.length <= 1 {
-    fields
-  } else {
-    let nonEmailFields = fields->Array.filter(fc =>
-      switch fc.fieldType {
-      | EmailInput(_) => false
-      | _ => true
-      }
-    )
-    switch emailFields->Array.get(0) {
-    | Some(emailField) => [{...emailField, fieldType: EmailInput(emailFields)}, ...nonEmailFields]
-    | None => fields
+
+  let nonEmailFields = fields->Array.filter(fc =>
+    switch fc.fieldType {
+    | EmailInput(_) => false
+    | _ => true
     }
+  )
+
+  switch emailFields->Array.get(0) {
+  | Some(emailField) => [{...emailField, fieldType: EmailInput(emailFields)}, ...nonEmailFields]
+  | None => fields
   }
 }
 
