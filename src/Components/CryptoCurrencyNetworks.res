@@ -1,8 +1,9 @@
 @react.component
-let make = (~name: string) => {
+let make = (~name: string, ~currencyFieldName: string) => {
   open DropdownField
-  let currencyVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
   let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let currencyField = ReactFinalForm.useField(currencyFieldName)
+  let currencyVal = currencyField.input.value->Option.getOr("")
 
   let dropdownOptions =
     Utils.currencyNetworksDict
@@ -24,9 +25,7 @@ let make = (~name: string) => {
 
   let field = ReactFinalForm.useField(
     name,
-    ~config={
-      initialValue: initialValue->JSON.Encode.string,
-    },
+    ~config={initialValue: initialValue->JSON.Encode.string}
   )
 
   let cryptoCurrencyNetworks = field.input.value->Option.getOr(initialValue)

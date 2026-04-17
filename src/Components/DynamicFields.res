@@ -150,7 +150,6 @@ let make = (
 
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
-  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
@@ -177,9 +176,19 @@ let make = (
 
   let countryIso = Utils.getCountryCode(country).isoAlpha2
 
-  let setCurrency = val => {
-    setCurrency(val)
+  let getStateDropdownValue = stateValue => {
+    let effectiveCountryIso = countryIso !== "" ? countryIso : initialCountryIso
+    if stateValue === "" || stateNames->Array.includes(stateValue) {
+      stateValue
+    } else {
+      getStateNameFromStateCodeAndCountry(
+        CountryStateDataRefs.stateDataRef.contents,
+        stateValue,
+        effectiveCountryIso,
+      )
+    }
   }
+
   let setSelectedBank = val => {
     setSelectedBank(val)
   }
@@ -295,6 +304,10 @@ let make = (
 
   let stateOutputPath = React.useMemo(() => {
     processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressStateInput)
+  }, [processedFieldConfigs])
+
+  let currencyOutputPath = React.useMemo(() => {
+    processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(CurrencySelect)
   }, [processedFieldConfigs])
 
   let hasBothStateAndCity = React.useMemo(() => {
@@ -499,26 +512,7 @@ let make = (
                   />
                 }
               | CurrencySelect =>
-                let updatedCurrencyArray =
-                  item.options->DropdownField.updateArrayOfStringToOptionsTypeArray
-                <ReactFinalFormField
-                  name={item.outputPath}
-                  render={(field: ReactFinalForm.Field.fieldProps) => {
-                    let val = field.input.value->Option.getOr(currency)
-                    <DropdownField
-                      appearance=config.appearance
-                      fieldName=localeString.currencyLabel
-                      value=val
-                      setValue={setter => {
-                        let newVal = setter(val)
-                        setCurrency(_ => newVal)
-                        field.input.onChange(newVal)
-                      }}
-                      disabled=false
-                      options=updatedCurrencyArray
-                    />
-                  }}
-                />
+                <CryptoCurrencySelect name={item.outputPath} options={item.options} />
               | DocumentTypeSelect => {
                   let updatedDocumentTypeArray =
                     item.options->DropdownField.updateArrayOfStringToOptionsTypeArrayWithUpperCaseLabel
@@ -544,7 +538,7 @@ let make = (
                     customFieldName={Some(defaultName)} firstNamePath lastNamePath
                   />
                 </>
-              | CryptoNetworkSelect => <CryptoCurrencyNetworks name={item.outputPath} />
+              | CryptoNetworkSelect => <CryptoCurrencyNetworks name={item.outputPath} currencyFieldName=currencyOutputPath />
               | DatePicker => <DateOfBirth name={item.outputPath} />
               | VpaTextInput => <VpaIdPaymentInput name={item.outputPath} />
               | PixKeyInput => <PixPaymentInput name={item.outputPath} fieldType="pixKey" />
@@ -751,11 +745,12 @@ let make = (
                             validationRule={Validation.fieldTypeToValidationRule(AddressStateInput)}
                             render={(field: ReactFinalForm.Field.fieldProps) => {
                               let val = field.input.value->Option.getOr("")
+                              let dropdownValue = getStateDropdownValue(val)
                               if stateNames->Array.length > 0 {
                                 <PaymentDropDownField
                                   fieldName=localeString.stateLabel
                                   value={
-                                    value: val,
+                                    value: dropdownValue,
                                     isValid: Some(field.meta.valid),
                                     errorString: submitFailed || field.meta.touched
                                       ? field.meta.error->Option.getOr("")
@@ -763,7 +758,7 @@ let make = (
                                   }
                                   setValue={setter => {
                                     let newVal = setter({
-                                      value: val,
+                                      value: dropdownValue,
                                       isValid: Some(field.meta.valid),
                                       errorString: "",
                                     })
@@ -833,11 +828,12 @@ let make = (
                           validationRule={Validation.fieldTypeToValidationRule(AddressStateInput)}
                           render={(field: ReactFinalForm.Field.fieldProps) => {
                             let val = field.input.value->Option.getOr("")
+                            let dropdownValue = getStateDropdownValue(val)
                             if stateNames->Array.length > 0 {
                               <PaymentDropDownField
                                 fieldName=localeString.stateLabel
                                 value={
-                                  value: val,
+                                  value: dropdownValue,
                                   isValid: Some(field.meta.valid),
                                   errorString: submitFailed || field.meta.touched
                                     ? field.meta.error->Option.getOr("")
@@ -845,7 +841,7 @@ let make = (
                                 }
                                 setValue={setter => {
                                   let newVal = setter({
-                                    value: val,
+                                    value: dropdownValue,
                                     isValid: Some(field.meta.valid),
                                     errorString: "",
                                   })

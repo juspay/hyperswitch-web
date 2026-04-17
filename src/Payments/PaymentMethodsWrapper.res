@@ -31,7 +31,6 @@ let make = (~paymentMethodName: string) => {
     ->Option.getOr(RedirectToURL)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let currency = Recoil.useRecoilValueFromAtom(userCurrency)
   let (country, _) = Recoil.useRecoilState(userCountry)
   let (selectedBank, _) = Recoil.useRecoilState(userBank)
   let setFieldComplete = Recoil.useSetRecoilState(fieldsComplete)
@@ -107,7 +106,6 @@ let make = (~paymentMethodName: string) => {
     isManualRetryEnabled,
     phoneNumber.value,
     selectedBank,
-    currency,
     requiredFieldsBody,
     areRequiredFieldsValid,
   ))
