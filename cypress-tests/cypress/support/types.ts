@@ -36,11 +36,16 @@ declare global {
         secretKey: string,
         createPaymentBody: Record<string, any>,
       ): Chainable<Response<any>>;
-      getGlobalState(key: string): Chainable<Response<any>>;
+      getGlobalState(key: string): Chainable<string>;
       nestedIFrame(
         selector: string,
         callback: (body: Chainable<JQuery<HTMLElement>>) => void,
       ): Chainable<void>;
+      // New smart wait utilities
+      waitForSDKReady(): Chainable<JQuery<HTMLBodyElement>>;
+      safeType(text: string, options?: Partial<Cypress.TypeOptions>): Chainable<JQuery<HTMLElement>>;
+      safeClick(): Chainable<JQuery<HTMLElement>>;
+      enterCardDetails(cardDetails: any): Chainable<void>;
     }
   }
 }

@@ -96,8 +96,9 @@ export const handlePaymentStatus = (status, setMessage, setIsSuccess) => {
   setIsSuccess(status === "succeeded");
 };
 
-export const paymentElementOptions = {
+export const paymentElementOptions = (layout, extraOptions) => ({
   displayDefaultSavedPaymentIcon: false,
+  ...(layout && { layout }),
   wallets: {
     walletReturnUrl: window.location.origin,
     applePay: "auto",
@@ -108,23 +109,28 @@ export const paymentElementOptions = {
       height: 55,
     },
   },
-};
+  ...(extraOptions && extraOptions),
+});
 
-export const hyperOptionsV1 = (clientSecret) => {
+export const hyperOptionsV1 = (clientSecret, locale, theme) => {
   return {
     clientSecret,
+    ...(locale && { locale }),
     appearance: {
       labels: "floating",
+      ...(theme && { theme }),
     },
   };
 };
 
-export const hyperOptionsV2 = (clientSecret, paymentId) => {
+export const hyperOptionsV2 = (clientSecret, paymentId, locale, theme) => {
   return {
     clientSecret,
     paymentId,
+    ...(locale && { locale }),
     appearance: {
       labels: "floating",
+      ...(theme && { theme }),
     },
   };
 };

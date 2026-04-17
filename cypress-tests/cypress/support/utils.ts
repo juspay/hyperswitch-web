@@ -1,7 +1,29 @@
 export const CLIENT_BASE_URL = "http://localhost:9060";
 
-export const getClientURL = (clientSecret, publishableKey) => {
-  return `${CLIENT_BASE_URL}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
+export const getClientURL = (
+  clientSecret: string,
+  publishableKey: string,
+  locale?: string,
+  theme?: string,
+  layout?: string | Record<string, unknown>,
+  options?: Record<string, unknown>,
+) => {
+  let url = `${CLIENT_BASE_URL}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
+  if (locale) {
+    url += `&locale=${locale}`;
+  }
+  if (theme) {
+    url += `&theme=${theme}`;
+  }
+  if (layout) {
+    const layoutValue =
+      typeof layout === "string" ? layout : JSON.stringify(layout);
+    url += `&layout=${encodeURIComponent(layoutValue)}`;
+  }
+  if (options) {
+    url += `&options=${encodeURIComponent(JSON.stringify(options))}`;
+  }
+  return url;
 };
 
 export const enum connectorEnum {
@@ -16,7 +38,8 @@ export const enum connectorEnum {
   CYBERSOURCE,
   CASHTOCODE,
   JUSPAY,
-  INTERAC
+  INTERAC,
+  PAYPAL
 }
 export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
@@ -31,6 +54,7 @@ export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.CASHTOCODE, "pro_JRdEyK7YyQaDAAzvJuMJ"],
   [connectorEnum.JUSPAY, "pro_TD0ZZ3cwf87wpPoZroSE"],
   [connectorEnum.INTERAC, "pro_TD0ZZ3cwf87wpPoZroSE"],
+  [connectorEnum.PAYPAL, "pro_JTM1xVeUrEJImozvBnxv"],
 ]);
 
 export const createPaymentBody = {
@@ -99,6 +123,13 @@ export const changeObjectKeyValue = (
   value: boolean | string | object,
 ) => {
   object[key] = value;
+};
+
+export const removeObjectKey = (
+  object: Record<string, any>,
+  key: string,
+) => {
+  delete object[key];
 };
 
 export const confirmBody = {

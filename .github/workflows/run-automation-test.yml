@@ -7,7 +7,6 @@ on:
     branches:
       - main
 
-# ✅ Add explicit permissions block for least privilege
 permissions:
   contents: read
 
@@ -15,30 +14,32 @@ jobs:
   cypress:
     runs-on: ubuntu-latest
     environment: Testing
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        category: [01-sdk-core, 02-cards, 03-bank-transfers, 04-alternative-payments, 05-external-3ds]
 
     env:
       HS_Prof_Id: ${{ secrets.PROFILE_ID }}
       HS_Server_Url: "https://sandbox.hyperswitch.io"
       HS_Client_Url: "http://localhost:9050"
-      # Environment variables for Hyperswitch credentials and URLs
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        # Checks out the repository so that the workflow can access the code
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20" # Specifies the version of Node.js to use
-          cache: "npm" # Caches npm dependencies to speed up subsequent installs
+          node-version: "20"
+          cache: "npm"
 
       - name: Update git submodules
         run: git submodule update --init --recursive
 
       - name: Install dependencies
         run: npm install
-        # Installs the necessary npm dependencies for the project
 
       - name: Create .env file
         working-directory: ./Hyperswitch-React-Demo-App
@@ -50,7 +51,6 @@ jobs:
           echo PROFILE_ID = $HS_Prof_Id >> .env
           echo HYPERSWITCH_SERVER_URL = $HS_Server_Url >> .env
           echo HYPERSWITCH_CLIENT_URL = $HS_Client_Url >> .env
-        # Creates a .env file with environment variables needed for the application
 
       - name: Build and start local server
         run: |
@@ -58,13 +58,12 @@ jobs:
           echo "Hyperswitch Web started"
           cd Hyperswitch-React-Demo-App && npm run start &
           echo "Demo App started"
-        # Builds the project and starts both the Hyperswitch Web and Demo App servers in the background
 
-      - name: Run Cypress
+      - name: Run Cypress Tests (${{ matrix.category }})
         uses: cypress-io/github-action@v6
         with:
           working-directory: ./cypress-tests
+          spec: cypress/e2e/${{ matrix.category }}/**/*.cy.ts
         env:
           CYPRESS_HYPERSWITCH_PUBLISHABLE_KEY: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
           CYPRESS_HYPERSWITCH_SECRET_KEY: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
-        # Runs Cypress tests located in the specified directory
