@@ -483,7 +483,7 @@ let getFieldTypeFromConfig = (fc: SuperpositionTypes.fieldConfig): Superposition
     CountryCodeSelect
   } else if p->String.includes("billing.phone") {
     PhoneInput
-  } else if p->String.includes("crypto") {
+  } else if p->String.includes("crypto.network") {
     CryptoNetworkSelect
   } else if p->String.includes("vpa") {
     VpaTextInput

@@ -31,12 +31,11 @@ let make = (~emailFields: array<SuperpositionTypes.fieldConfig>) => {
 
   switch formEmailFields->Array.get(0) {
   | Some(primaryField) =>
-    let onBlur = (_) => {
+    let onBlur = _ => {
       primaryField.input.onBlur()
     }
     let emailValue = primaryField.input.value->Option.getOr("")
-    let errorString =
-      primaryField.meta.touched ? primaryField.meta.error->Option.getOr("") : ""
+    let errorString = primaryField.meta.touched ? primaryField.meta.error->Option.getOr("") : ""
 
     <RenderIf condition={showDetails.email == Auto}>
       <PaymentField
