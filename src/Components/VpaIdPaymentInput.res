@@ -2,53 +2,37 @@ open RecoilAtoms
 open Utils
 
 @react.component
-let make = () => {
+let make = (~name: string) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (vpaId, setVpaId) = Recoil.useRecoilState(userVpaId)
 
+  let createValidator = rule =>
+    Validation.createFieldValidator(
+      rule,
+      ~enabledCardSchemes=[],
+      ~localeObject=localeString->Obj.magic,
+    )
+
+  let field = ReactFinalForm.useField(name, ~config={validate: createValidator(Validation.VpaId)})
+
+  let vpaIdValue = field.input.value->Option.getOr("")
   let vpaIdRef = React.useRef(Nullable.null)
 
   let changeVpaId = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setVpaId(prev => {
-      value: val,
-      isValid: val->isVpaIdValid,
-      errorString: val->isVpaIdValid->Option.getOr(false) ? "" : prev.errorString,
-    })
-  }
-  let onBlur = ev => {
-    let val = ReactEvent.Focus.target(ev)["value"]
-    let isValid = val->isVpaIdValid
-    let errorString = switch isValid {
-    | Some(val) => val ? "" : localeString.vpaIdInvalidText
-    | None => ""
-    }
-
-    setVpaId(prev => {
-      ...prev,
-      isValid,
-      errorString,
-    })
+    field.input.onChange(val)
   }
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if vpaId.value == "" {
-        setVpaId(prev => {
-          ...prev,
-          errorString: localeString.vpaIdEmptyText,
-        })
-      }
-    }
-  }, [vpaId])
-  useSubmitPaymentData(submitCallback)
+  let onBlur = (_ev: JsxEventU.Focus.t) => {
+    field.input.onBlur()
+  }
 
   <PaymentField
     fieldName=localeString.vpaIdLabel
-    setValue={setVpaId}
-    value=vpaId
+    value={
+      RecoilAtomTypes.value: vpaIdValue,
+      isValid: Some(field.meta.valid),
+      errorString: field.meta.touched ? field.meta.error->Option.getOr("") : "",
+    }
     onChange=changeVpaId
     onBlur
     type_="text"

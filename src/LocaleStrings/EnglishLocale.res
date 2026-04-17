@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: "Billing name",
   billingNamePlaceholder: "First and last name",
   cardHolderName: "Card Holder Name",
+  cardHolderNameRequiredText: "Card Holder's name required",
   on: "on",
   \"and": "and",
   nameEmptyText: str => `Please provide your ${str}`,
@@ -257,5 +258,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "Select installment plan",
   showMore: "Show more",
   showLess: "Show less",
+  mandatoryFieldText: "This field is mandatory",
   refreshingText: "Refreshing...",
 }

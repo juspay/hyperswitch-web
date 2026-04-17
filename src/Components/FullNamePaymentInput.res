@@ -1,71 +1,89 @@
 open RecoilAtoms
 open PaymentType
-open Utils
 
 @react.component
-let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
+let make = (~customFieldName, ~firstNamePath, ~lastNamePath) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
-  let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
-
-  let changeName = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]
-    setFullName(prev => validateName(val, prev, localeString))
-  }
-
-  let onBlur = ev => {
-    let val: string = ReactEvent.Focus.target(ev)["value"]
-    setFullName(prev => validateName(val, prev, localeString))
-  }
 
   let (placeholder, fieldName) = switch customFieldName {
   | Some(val) => (val, val)
   | None => (localeString.fullNamePlaceholder, localeString.fullNameLabel)
   }
+
+  let createValidator = rule =>
+    Validation.createFieldValidator(
+      rule,
+      ~enabledCardSchemes=[],
+      ~localeObject=localeString->Obj.magic,
+    )
+
+  let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
+
+  let firstField = ReactFinalForm.useField(
+    firstNamePath,
+    ~config={
+      validate: createValidator(Validation.FirstName),
+    },
+  )
+  let lastField = ReactFinalForm.useField(
+    lastNamePath,
+    ~config={
+      validate: createValidator(Validation.LastName),
+    },
+  )
+
+  // Local state: the combined display value shown in the single <input>.
+  let (inputValue, setInputValue) = React.useState(() => "")
+
+  let handleChange = ev => {
+    let value: string = ReactEvent.Form.target(ev)["value"]
+    setInputValue(_ => value)
+    let spaceIndex = value->String.indexOf(" ")
+    if spaceIndex === -1 {
+      firstField.input.onChange(value)
+      lastField.input.onChange("")
+    } else {
+      let firstName = value->String.substring(~start=0, ~end=spaceIndex)
+      let lastName = value->String.substringToEnd(~start=spaceIndex + 1)
+      firstField.input.onChange(firstName)
+      lastField.input.onChange(lastName)
+    }
+  }
+
+  let onBlur = (_ev: JsxEventU.Focus.t) => {
+    firstField.input.onBlur()
+    lastField.input.onBlur()
+  }
+
   let nameRef = React.useRef(Nullable.null)
 
-  React.useEffect(() => {
-    setFullName(prev => validateName(prev.value, prev, localeString))
-    None
-  }, [])
-
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if fullName.value == "" {
-        setFullName(prev => {
-          ...prev,
-          errorString: fieldName->localeString.nameEmptyText,
-        })
-      } else if !(fullName.isValid->Option.getOr(false)) {
-        setFullName(prev => {
-          ...prev,
-          errorString: localeString.invalidCardHolderNameError,
-        })
-      } else {
-        switch optionalRequiredFields {
-        | Some(requiredFields) =>
-          if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, FullName, fullName) {
-            setFullName(prev => {
-              ...prev,
-              errorString: fieldName->localeString.completeNameEmptyText,
-            })
-          }
-        | None => ()
-        }
-      }
+  let errorString = if (
+    (firstField.meta.touched && !firstField.meta.active) ||
+      (lastField.meta.touched && !lastField.meta.active)
+  ) {
+    switch (firstField.meta.error, lastField.meta.error) {
+    | (Some(err), _) => err
+    | (_, Some(err)) => err
+    | _ => ""
     }
-  }, [fullName])
-  useSubmitPaymentData(submitCallback)
+  } else {
+    ""
+  }
+
+  let isValid =
+    firstField.meta.valid &&
+    (lastField.meta.valid || !lastField.meta.touched || lastField.meta.active)
 
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField
       fieldName
-      setValue=setFullName
-      value=fullName
-      onChange=changeName
+      value={
+        value: inputValue,
+        isValid: Some(isValid),
+        errorString,
+      }
+      onChange=handleChange
       onBlur
       type_="text"
       inputRef=nameRef

@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `اسم الفواتير`,
   billingNamePlaceholder: `الاسم الأول والاسم الأخير`,
   cardHolderName: `إسم صاحب البطاقة`,
+  cardHolderNameRequiredText: `اسم حامل البطاقة مطلوب`,
   on: `على`,
   \"and": `و`,
   nameEmptyText: str => `يرجى تقديم الخاص بك ${str}`,
@@ -260,5 +261,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "اختر خطة التقسيط",
   showMore: "عرض المزيد",
   showLess: "عرض أقل",
+  mandatoryFieldText: "هذا الحقل إلزامي.",
   refreshingText: "جارٍ التحديث...",
 }

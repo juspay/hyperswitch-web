@@ -1,11 +1,18 @@
 open RecoilAtoms
-open Utils
 
 @react.component
-let make = () => {
-  let (blikCode, setblikCode) = Recoil.useRecoilState(userBlikCode)
+let make = (~name="blikCode") => {
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   let blikCodeRef = React.useRef(Nullable.null)
+
+  let createValidator = rule =>
+    Validation.createFieldValidator(
+      rule,
+      ~enabledCardSchemes=[],
+      ~localeObject=localeString->Obj.magic,
+    )
+
   let formatBSB = bsb => {
     let formatted = bsb->String.replaceRegExp(%re("/\D+/g"), "")
     let firstPart = formatted->String.slice(~start=0, ~end=3)
@@ -20,45 +27,32 @@ let make = () => {
     }
   }
 
+  let field = ReactFinalForm.useField(
+    name,
+    ~config={validate: createValidator(Validation.BlikCode)},
+  )
+
+  let blikValue = field.input.value->Option.getOr("")
+
   let changeblikCode = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setblikCode(prev => {
-      ...prev,
-      value: val->formatBSB,
-    })
+    field.input.onChange(val->formatBSB)
   }
 
-  React.useEffect(() => {
-    setblikCode(prev => {
-      ...prev,
-      errorString: switch prev.isValid {
-      | Some(val) => val ? "" : "Invalid blikCode"
-      | None => ""
-      },
-    })
-    None
-  }, [blikCode.isValid])
-
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if blikCode.value == "" {
-        setblikCode(prev => {
-          ...prev,
-          errorString: "blikCode cannot be empty",
-        })
-      }
-    }
-  }, [blikCode])
-  useSubmitPaymentData(submitCallback)
+  let onBlur = (_ev: JsxEventU.Focus.t) => {
+    field.input.onBlur()
+  }
 
   <RenderIf condition={true}>
     <PaymentField
       fieldName="Blik code"
-      setValue={setblikCode}
-      value=blikCode
+      value={
+        RecoilAtomTypes.value: blikValue,
+        isValid: Some(field.meta.valid),
+        errorString: field.meta.touched ? field.meta.error->Option.getOr("") : "",
+      }
       onChange=changeblikCode
+      onBlur
       paymentType=Payment
       type_="blikCode"
       name="blikCode"

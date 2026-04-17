@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `課金名`,
   billingNamePlaceholder: `名前と苗字`,
   cardHolderName: `クレジットカード名義人氏名`,
+  cardHolderNameRequiredText: `カード所有者の名前が必要です`,
   on: `の上`,
   \"and": `そして`,
   nameEmptyText: str => `あなたの情報を提供してください ${str}`,
@@ -258,5 +259,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "分割払いプランを選択",
   showMore: "もっと見る",
   showLess: "表示を減らす",
+  mandatoryFieldText: "このフィールドは必須です",
   refreshingText: "更新中...",
 }

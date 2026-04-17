@@ -79,6 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `Nom de facturation`,
   billingNamePlaceholder: `Prénom et nom de famille`,
   cardHolderName: `Nom du titulaire`,
+  cardHolderNameRequiredText: `Nom du titulaire de la carte requis`,
   on: `sur`,
   \"and": `et`,
   nameEmptyText: str => `Veuillez fournir votre ${str}`,
@@ -259,5 +260,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "Sélectionner un plan de paiement",
   showMore: "Afficher plus",
   showLess: "Afficher moins",
+  mandatoryFieldText: "Ce champ est obligatoire",
   refreshingText: "Actualisation...",
 }
