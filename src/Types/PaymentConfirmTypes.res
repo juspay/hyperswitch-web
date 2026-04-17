@@ -68,6 +68,7 @@ type intent = {
   payment_method_type: string,
   manualRetryAllowed: bool,
   connectorTransactionId: string,
+  userGuidanceMessage: string,
 }
 open Utils
 
@@ -100,6 +101,7 @@ let defaultIntent = {
   payment_method_type: "",
   manualRetryAllowed: false,
   connectorTransactionId: "",
+  userGuidanceMessage: "",
 }
 
 let getAchCreditTransfer = (dict, str) => {
@@ -206,6 +208,16 @@ let getNextAction = (dict, str) => {
   })
   ->Option.getOr(defaultNextAction)
 }
+let getUserGuidanceMessage = dict => {
+  dict
+  ->Dict.get("error_details")
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.flatMap(errorDetails => errorDetails->Dict.get("unified_details"))
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.flatMap(unifiedDetails => getOptionString(unifiedDetails, "user_guidance_message"))
+  ->Option.getOr("")
+}
+
 let itemToObjMapper = dict => {
   {
     nextAction: getNextAction(dict, "next_action"),
@@ -216,5 +228,6 @@ let itemToObjMapper = dict => {
     payment_method_type: getString(dict, "payment_method_type", ""),
     manualRetryAllowed: getBool(dict, "manual_retry_allowed", false),
     connectorTransactionId: getString(dict, "connector_transaction_id", ""),
+    userGuidanceMessage: getUserGuidanceMessage(dict),
   }
 }

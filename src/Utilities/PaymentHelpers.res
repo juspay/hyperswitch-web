@@ -344,6 +344,7 @@ let rec intentCall = (
   ~iframeId,
   ~fetchMethod,
   ~setIsManualRetryEnabled,
+  ~setPaymentFailedErrorMessage,
   ~customPodUri,
   ~sdkHandleOneClickConfirmPayment,
   ~counter,
@@ -356,6 +357,9 @@ let rec intentCall = (
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
+  if isConfirm {
+    setPaymentFailedErrorMessage(_ => "")
+  }
 
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
   let isPostSessionTokens = uri->String.includes("/post_session_tokens")
@@ -504,6 +508,7 @@ let rec intentCall = (
                 ~iframeId,
                 ~fetchMethod=#GET,
                 ~setIsManualRetryEnabled,
+                ~setPaymentFailedErrorMessage,
                 ~customPodUri,
                 ~sdkHandleOneClickConfirmPayment,
                 ~counter=counter + 1,
@@ -923,6 +928,7 @@ let rec intentCall = (
               }
               if intent.status === "failed" {
                 setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
+                setPaymentFailedErrorMessage(_ => intent.userGuidanceMessage)
               }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else if !isPaymentSession {
@@ -994,6 +1000,7 @@ let rec intentCall = (
             ~iframeId,
             ~fetchMethod=#GET,
             ~setIsManualRetryEnabled,
+            ~setPaymentFailedErrorMessage,
             ~customPodUri,
             ~sdkHandleOneClickConfirmPayment,
             ~counter=counter + 1,
@@ -1034,11 +1041,13 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let setPaymentFailedErrorMessage = Recoil.useSetRecoilState(paymentFailedErrorMessage)
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="") => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
-      let headers = [("Content-Type", "application/json")]
+      let headers = [("Content-Type", "application/json"), ("Accept-Language", config.locale)]
 
       switch keys.sdkAuthorization->Utils.getNonEmptyOption {
       | Some(_) => ()
@@ -1068,6 +1077,7 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
           ~iframeId,
           ~fetchMethod=#GET,
           ~setIsManualRetryEnabled,
+          ~setPaymentFailedErrorMessage,
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
@@ -1115,9 +1125,11 @@ let useCompleteAuthorizeHandler = () => {
 
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let setPaymentFailedErrorMessage = Recoil.useSetRecoilState(paymentFailedErrorMessage)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   (
     ~clientSecret: option<string>,
@@ -1144,6 +1156,8 @@ let useCompleteAuthorizeHandler = () => {
           ("X-Client-Source", paymentMode->Option.getOr("")),
         ]
       }
+
+      finalHeaders->Array.push(("Accept-Language", config.locale))
 
       let sdkAuth = switch (
         keys.sdkAuthorization->Utils.getNonEmptyOption,
@@ -1184,6 +1198,7 @@ let useCompleteAuthorizeHandler = () => {
         ~iframeId,
         ~fetchMethod=#POST,
         ~setIsManualRetryEnabled,
+        ~setPaymentFailedErrorMessage,
         ~customPodUri,
         ~sdkHandleOneClickConfirmPayment,
         ~counter=0,
@@ -1266,6 +1281,8 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let setPaymentFailedErrorMessage = Recoil.useSetRecoilState(paymentFailedErrorMessage)
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -1281,6 +1298,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
       let headers = {
         let baseHeaders = [
           ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+          ("Accept-Language", config.locale),
         ]
         switch keys.sdkAuthorization->Utils.getNonEmptyOption {
         | Some(sdkAuth) => baseHeaders->Array.push(("Authorization", sdkAuth))
@@ -1368,6 +1386,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~iframeId,
             ~fetchMethod=#POST,
             ~setIsManualRetryEnabled,
+            ~setPaymentFailedErrorMessage,
             ~customPodUri,
             ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
             ~counter=0,
@@ -1749,6 +1768,7 @@ let paymentIntentForPaymentSession = (
     ~iframeId="",
     ~fetchMethod=#POST,
     ~setIsManualRetryEnabled={_ => ()},
+    ~setPaymentFailedErrorMessage={_ => ()},
     ~customPodUri,
     ~sdkHandleOneClickConfirmPayment=false,
     ~counter=0,
@@ -1979,6 +1999,8 @@ let usePostSessionTokens = (
   let redirectionFlags = Recoil.useRecoilValueFromAtom(RecoilAtoms.redirectionFlagsAtom)
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let setPaymentFailedErrorMessage = Recoil.useSetRecoilState(paymentFailedErrorMessage)
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -1995,6 +2017,7 @@ let usePostSessionTokens = (
       let headers = [
         ("Content-Type", "application/json"),
         ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+        ("Accept-Language", config.locale),
       ]
 
       let body = [
@@ -2073,6 +2096,7 @@ let usePostSessionTokens = (
           ~iframeId,
           ~fetchMethod=#POST,
           ~setIsManualRetryEnabled,
+          ~setPaymentFailedErrorMessage,
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
