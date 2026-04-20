@@ -1,11 +1,11 @@
-import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { getClientURL } from "../support/utils";
-import { createPaymentBody } from "../support/utils";
+import * as testIds from "../../../../src/Utilities/TestUtils.bs";
+import { getClientURL } from "../../support/utils";
+import { createPaymentBody } from "../../support/utils";
 import {
   changeObjectKeyValue,
   connectorProfileIdMapping,
   connectorEnum,
-} from "../support/utils";
+} from "../../support/utils";
 
 describe("TrustPay iDEAL Bank Redirect Payment flow test", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");

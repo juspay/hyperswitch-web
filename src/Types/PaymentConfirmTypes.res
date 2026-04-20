@@ -23,24 +23,33 @@ let defaultBacsBankInstruction = {
 }
 
 type bankTransfer = {ach_credit_transfer: achCreditTransfer}
-type redirectToUrl = {
-  returnUrl: string,
-  url: string,
-}
 
 type voucherDetails = {
   download_url: string,
   reference: string,
 }
 
+type ddcData = {
+  iframeUrl: string,
+  timeoutMs: int,
+}
+
+let defaultDdcData = {
+  iframeUrl: "",
+  timeoutMs: 30000,
+}
+
 type nextAction = {
   redirectToUrl: string,
+  redirectMode: string,
+  postDdcRedirectUrl: string,
   popupUrl: string,
   redirectResponseUrl: string,
   type_: string,
   bank_transfer_steps_and_charges_details: option<JSON.t>,
   session_token: option<JSON.t>,
   image_data_url: option<string>,
+  raw_qr_data: option<string>,
   three_ds_data: option<JSON.t>,
   voucher_details: option<voucherDetails>,
   display_to_timestamp: option<float>,
@@ -48,6 +57,7 @@ type nextAction = {
   display_text: option<string>,
   border_color: option<string>,
   iframe_data: option<JSON.t>,
+  ddc_data: option<ddcData>,
 }
 type intent = {
   nextAction: nextAction,
@@ -61,18 +71,17 @@ type intent = {
 }
 open Utils
 
-let defaultRedirectTourl = {
-  returnUrl: "",
-  url: "",
-}
 let defaultNextAction = {
   redirectToUrl: "",
+  redirectMode: "required",
+  postDdcRedirectUrl: "",
   popupUrl: "",
   redirectResponseUrl: "",
   type_: "",
   bank_transfer_steps_and_charges_details: None,
   session_token: None,
   image_data_url: None,
+  raw_qr_data: None,
   three_ds_data: None,
   voucher_details: None,
   display_to_timestamp: None,
@@ -80,6 +89,7 @@ let defaultNextAction = {
   display_text: None,
   border_color: None,
   iframe_data: None,
+  ddc_data: None,
 }
 let defaultIntent = {
   nextAction: defaultNextAction,
@@ -137,6 +147,15 @@ let getVoucherDetails = json => {
   }
 }
 
+let getDdcData = json => {
+  json
+  ->getOptionalDict("ddc_data")
+  ->Option.map(ddcDict => {
+    iframeUrl: ddcDict->getString("iframe_url", ""),
+    timeoutMs: ddcDict->getInt("timeout_ms", 30000),
+  })
+}
+
 let getNextAction = (dict, str) => {
   dict
   ->Dict.get(str)
@@ -144,6 +163,8 @@ let getNextAction = (dict, str) => {
   ->Option.map(json => {
     {
       redirectToUrl: getString(json, "redirect_to_url", ""),
+      redirectMode: getString(json, "redirect_mode", "required"),
+      postDdcRedirectUrl: getString(json, "url", ""),
       popupUrl: getString(json, "popup_url", ""),
       redirectResponseUrl: getString(json, "redirect_response_url", ""),
       type_: getString(json, "type", ""),
@@ -158,6 +179,7 @@ let getNextAction = (dict, str) => {
         getJsonObjFromDict(json, "session_token", Dict.make())->JSON.Encode.object,
       ),
       image_data_url: Some(json->getString("image_data_url", "")),
+      raw_qr_data: Some(json->getString("raw_qr_data", "")),
       three_ds_data: Some(
         json
         ->Dict.get("three_ds_data")
@@ -179,6 +201,7 @@ let getNextAction = (dict, str) => {
       display_text: json->getOptionString("display_text"),
       border_color: json->getOptionString("border_color"),
       iframe_data: Some(json->Utils.getJsonObjectFromDict("iframe_data")),
+      ddc_data: json->getDdcData,
     }
   })
   ->Option.getOr(defaultNextAction)

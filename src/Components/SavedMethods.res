@@ -71,18 +71,37 @@ let make = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let groupSavedMethodsWithPaymentMethods =
-    layoutClass.savedMethodCustomization.groupingBehavior == GroupByPaymentMethods
+  let {
+    displayInSeparateScreen,
+    groupByPaymentMethods,
+  } = layoutClass.savedMethodCustomization.groupingBehavior
+  let groupSavedMethodsWithPaymentMethods = !displayInSeparateScreen && groupByPaymentMethods
+
+  let groupSavedMethodsSeparately = !displayInSeparateScreen && !groupByPaymentMethods
+
+  let maxItems = layoutClass.savedMethodCustomization.maxItems
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
+
+  let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
+  let (showInstallments, setShowInstallments) = React.useState(_ => false)
+  let (isCollapsed, setIsCollapsed) = React.useState(_ => true)
 
   let shouldShowClickToPaySection =
     clickToPayConfig.isReady == Some(true) &&
       (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")
+  let (installmentsError, setInstallmentsError) = React.useState(_ => "")
+
+  let hasMoreSavedMethods = savedCardlength > maxItems
+  let visibleSavedMethods = if hasMoreSavedMethods && isCollapsed {
+    savedMethods->Array.slice(~start=0, ~end=maxItems)
+  } else {
+    savedMethods
+  }
 
   let bottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
-      {savedMethods
+      {visibleSavedMethods
       ->Array.mapWithIndex((obj, i) =>
         <SavedCardItem
           key={i->Int.toString}
@@ -94,9 +113,17 @@ let make = (
           savedCardlength
           cvcProps
           setRequiredFieldsBody
+          setSelectedInstallmentPlan
+          showInstallments
+          setShowInstallments
+          installmentsError
+          setInstallmentsError
         />
       )
       ->React.array}
+      <RenderIf condition={hasMoreSavedMethods}>
+        <ShowMoreToggle isCollapsed setIsCollapsed />
+      </RenderIf>
       <RenderIf condition={shouldShowClickToPaySection}>
         <ClickToPayAuthenticate
           loggerState
@@ -109,6 +136,11 @@ let make = (
           getVisaCards
           setIsClickToPayRememberMe
           closeComponentIfSavedMethodsAreEmpty
+          setSelectedInstallmentPlan
+          showInstallments
+          setShowInstallments
+          installmentsError
+          setInstallmentsError
         />
       </RenderIf>
     </div>
@@ -130,11 +162,12 @@ let make = (
   let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
   let isCardPaymentMethod = customerMethod.paymentMethod === "card"
   let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
-
+  let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
   let complete =
     areRequiredFieldsValid &&
     !isUnknownPaymentMethod &&
-    (!isCardPaymentMethod || isCardPaymentMethodValid)
+    (!isCardPaymentMethod || isCardPaymentMethodValid) &&
+    isInstallmentValid
 
   let paymentMethodType =
     customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
@@ -152,6 +185,7 @@ let make = (
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not || isSaveCardsChecked
+    let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
 
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>
@@ -161,7 +195,7 @@ let make = (
         ~cvcNumber,
         ~requiresCvv=customerMethod.requiresCvv,
         ~isCustomerAcceptanceRequired,
-      )
+      )->Array.concat(installmentBody)
     | _ => {
         let paymentMethodType = switch customerMethod.paymentMethodType {
         | Some("")
@@ -191,7 +225,7 @@ let make = (
         ->then(resp => {
           let dict = resp.payload->Utils.getDictFromJson
 
-          switch clickToPayProvider {
+          let clickToPayBody = switch clickToPayProvider {
           | MASTERCARD => {
               let headers = dict->Utils.getDictFromDict("headers")
               let merchantTransactionId = headers->Utils.getString("merchant-transaction-id", "")
@@ -201,32 +235,28 @@ let make = (
                 ->Utils.getDictFromDict("checkoutResponseData")
                 ->Utils.getString("srcCorrelationId", "")
 
-              let clickToPayBody = PaymentBody.mastercardClickToPayBody(
+              PaymentBody.mastercardClickToPayBody(
                 ~merchantTransactionId,
                 ~correlationId,
                 ~xSrcFlowId,
               )
-              intent(
-                ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
-                ~confirmParam=confirm.confirmParams,
-                ~handleUserError=false,
-                ~manualRetry=isManualRetryEnabled,
-              )
             }
-          | VISA => {
-              let clickToPayBody = PaymentBody.visaClickToPayBody(
-                ~email=clickToPayConfig.email,
-                ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
-              )
-              intent(
-                ~bodyArr=clickToPayBody,
-                ~confirmParam=confirm.confirmParams,
-                ~handleUserError=false,
-                ~manualRetry=isManualRetryEnabled,
-              )
-            }
-          | NONE => ()
+          | VISA =>
+            PaymentBody.visaClickToPayBody(
+              ~email=clickToPayConfig.email,
+              ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
+            )
+          | NONE => []
           }
+
+          intent(
+            ~bodyArr=clickToPayBody
+            ->Array.concat(installmentBody)
+            ->mergeAndFlattenToTuples(requiredFieldsBody),
+            ~confirmParam=confirm.confirmParams,
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
           resolve(resp)
         })
         ->catch(_ =>
@@ -236,12 +266,7 @@ let make = (
           })
         )
         ->ignore
-      } else if (
-        areRequiredFieldsValid &&
-        !isUnknownPaymentMethod &&
-        (!isCardPaymentMethod || isCardPaymentMethodValid) &&
-        confirm.confirmTimestamp >= confirm.readyTimestamp
-      ) {
+      } else if complete && confirm.confirmTimestamp >= confirm.readyTimestamp {
         switch customerMethod.paymentMethodType {
         | Some("google_pay") =>
           switch gPayToken {
@@ -308,15 +333,21 @@ let make = (
         if isUnknownPaymentMethod || confirm.confirmTimestamp < confirm.readyTimestamp {
           setUserError(localeString.selectPaymentMethodText)
         }
-        if !isUnknownPaymentMethod && cvcNumber === "" {
-          setCvcError(_ => localeString.cvcNumberEmptyText)
-          setUserError(localeString.enterFieldsText)
-        }
-        if !(isCVCValid->Option.getOr(false)) {
-          setUserError(localeString.enterValidDetailsText)
+        if customerMethod.requiresCvv {
+          if !isUnknownPaymentMethod && cvcNumber === "" {
+            setCvcError(_ => localeString.cvcNumberEmptyText)
+            setUserError(localeString.enterFieldsText)
+          } else if !(isCVCValid->Option.getOr(false)) {
+            setCvcError(_ => localeString.inCompleteCVCErrorText)
+            setUserError(localeString.enterValidDetailsText)
+          }
         }
         if !areRequiredFieldsValid {
           setUserError(localeString.enterValidDetailsText)
+        }
+        if !isInstallmentValid {
+          setUserError(localeString.installmentSelectPlanError)
+          setInstallmentsError(_ => localeString.installmentSelectPlanError)
         }
       }
     }
@@ -329,6 +360,8 @@ let make = (
     applePayToken,
     gPayToken,
     isManualRetryEnabled,
+    selectedInstallmentPlan,
+    showInstallments,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -344,6 +377,8 @@ let make = (
     customerMethod,
   ))
 
+  let showSavedCards = groupSavedMethodsSeparately || !showPaymentMethodsScreen
+
   let enableSavedPaymentShimmer = React.useMemo(() => {
     savedCardlength === 0 &&
     !showPaymentMethodsScreen &&
@@ -354,7 +389,7 @@ let make = (
     {if enableSavedPaymentShimmer {
       <PaymentElementShimmer.SavedPaymentCardShimmer />
     } else {
-      <RenderIf condition={!showPaymentMethodsScreen}> {bottomElement} </RenderIf>
+      <RenderIf condition=showSavedCards> {bottomElement} </RenderIf>
     }}
     <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
       <div className="pt-4 pb-2 flex items-center justify-start">
@@ -372,7 +407,7 @@ let make = (
         paymentMethodType="debit"
       />
     </RenderIf>
-    <RenderIf condition={!enableSavedPaymentShimmer}>
+    <RenderIf condition={!enableSavedPaymentShimmer && !groupSavedMethodsSeparately}>
       <SwitchViewButton
         onClick={_ => setShowPaymentMethodsScreen(_ => true)}
         icon={<Icon name="circle-plus" size=22 />}

@@ -1,9 +1,9 @@
-import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { getClientURL } from "../support/utils";
-import { createPaymentBody } from "../support/utils";
-import { changeObjectKeyValue } from "../support/utils";
-import { trustpayCards } from "cypress/support/cards";
-import { connectorEnum, connectorProfileIdMapping } from "../support/utils";
+import * as testIds from "../../../../src/Utilities/TestUtils.bs";
+import { getClientURL } from "../../support/utils";
+import { createPaymentBody } from "../../support/utils";
+import { changeObjectKeyValue } from "../../support/utils";
+import { trustpayCards } from "../../support/cards";
+import { connectorEnum, connectorProfileIdMapping } from "../../support/utils";
 
 describe("Trustpay Card Payment flow test", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");

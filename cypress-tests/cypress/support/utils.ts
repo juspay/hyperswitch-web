@@ -15,7 +15,8 @@ export const enum connectorEnum {
   BANK_OF_AMERICA,
   CYBERSOURCE,
   CASHTOCODE,
-  JUSPAY
+  JUSPAY,
+  INTERAC
 }
 export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
@@ -29,6 +30,7 @@ export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.CYBERSOURCE, "pro_h9VHXnJx8s6W4KSZfSUL"],
   [connectorEnum.CASHTOCODE, "pro_JRdEyK7YyQaDAAzvJuMJ"],
   [connectorEnum.JUSPAY, "pro_TD0ZZ3cwf87wpPoZroSE"],
+  [connectorEnum.INTERAC, "pro_TD0ZZ3cwf87wpPoZroSE"],
 ]);
 
 export const createPaymentBody = {

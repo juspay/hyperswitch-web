@@ -1,12 +1,12 @@
-import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { getClientURL } from "../support/utils";
-import { createPaymentBody } from "../support/utils";
+import * as testIds from "../../../../src/Utilities/TestUtils.bs";
+import { getClientURL } from "../../support/utils";
+import { createPaymentBody } from "../../support/utils";
 import {
   changeObjectKeyValue,
   connectorProfileIdMapping,
   connectorEnum,
-} from "../support/utils";
-import { stripeCards } from "cypress/support/cards";
+} from "../../support/utils";
+import { stripeCards } from "../../support/cards";
 
 describe("Card payment flow test", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");

@@ -32,7 +32,16 @@ let useMessageHandler = getMessageHandler => {
       }
     }
 
+    let handleResendMountedCallback = (ev: Window.event) => {
+      open Utils
+      let dict = ev.data->safeParse->getDictFromJson
+      if dict->Dict.get("requestPreMountLoaderMountedCallback")->Option.isSome {
+        messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
+      }
+    }
+
     Window.addEventListener("message", handleCleanUpEventListener)
+    Window.addEventListener("message", handleResendMountedCallback)
 
     setupMessageListener()
 
@@ -40,6 +49,7 @@ let useMessageHandler = getMessageHandler => {
       () => {
         cleanupMessageListener()
         Window.removeEventListener("message", handleCleanUpEventListener)
+        Window.removeEventListener("message", handleResendMountedCallback)
       },
     )
   }, [])
@@ -56,20 +66,12 @@ let getMessageHandlerV1Elements = (
   ~isTestMode=false,
   ~isSdkParamsEnabled=false,
 ) => {
-  let (
-    paymentMethodsPromise,
-    customerPaymentMethodsPromise,
-    sessionTokensPromise,
-    blockedBinsPromise,
-  ) = if isTestMode || isSdkParamsEnabled {
+  let (paymentMethodsPromise, customerPaymentMethodsPromise, sessionTokensPromise) = if (
+    isTestMode || isSdkParamsEnabled
+  ) {
     let mockResponse = Dict.make()->JSON.Encode.object
 
-    (
-      Promise.resolve(mockResponse),
-      Promise.resolve(mockResponse),
-      Promise.resolve(mockResponse),
-      Promise.resolve(mockResponse),
-    )
+    (Promise.resolve(mockResponse), Promise.resolve(mockResponse), Promise.resolve(mockResponse))
   } else {
     (
       PaymentHelpers.fetchPaymentMethodList(
@@ -97,14 +99,6 @@ let getMessageHandlerV1Elements = (
         ~merchantHostname,
         ~sdkAuthorization=Some(sdkAuthorization),
       ),
-      PaymentHelpers.fetchBlockedBins(
-        ~clientSecret,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-        ~endpoint,
-        ~sdkAuthorization=Some(sdkAuthorization),
-      ),
     )
   }
 
@@ -117,8 +111,6 @@ let getMessageHandlerV1Elements = (
       customerPaymentMethodsPromise->sendPromiseData("customer_payment_methods")
     } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
       sessionTokensPromise->sendPromiseData("session_tokens")
-    } else if dict->isKeyPresentInDict("sendBlockedBinsResponse") {
-      blockedBinsPromise->sendPromiseData("blocked_bins")
     }
   }
 }

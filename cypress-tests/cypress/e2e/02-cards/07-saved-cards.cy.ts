@@ -1,7 +1,7 @@
-import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { getClientURL } from "../support/utils";
-import { createPaymentBody } from "../support/utils";
-import { changeObjectKeyValue } from "../support/utils";
+import * as testIds from "../../../../src/Utilities/TestUtils.bs";
+import { getClientURL } from "../../support/utils";
+import { createPaymentBody } from "../../support/utils";
+import { changeObjectKeyValue } from "../../support/utils";
 
 describe("Card payment flow test", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
@@ -38,11 +38,11 @@ describe("Card payment flow test", () => {
   });
 
   it("should check if cards are saved", () => {
-    // Visit the page where the test will be performed
     getIframeBody()
       .find(`[data-testid=${testIds.addNewCardIcon}]`)
       .then(($element) => {
         if ($element.length > 0) {
+          getIframeBody().contains("4 digit").click();
           getIframeBody().find("[data-testid=cvvInput]").type("1234");
           getIframeBody().get("#submit").click();
           cy.wait(2000);

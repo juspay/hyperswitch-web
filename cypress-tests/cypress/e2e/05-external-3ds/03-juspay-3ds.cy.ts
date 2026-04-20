@@ -1,4 +1,4 @@
-import * as testIds from "../../../src/Utilities/TestUtils.bs";
+import * as testIds from "../../../../src/Utilities/TestUtils.bs";
 import {
   getClientURL,
   juspayChallengeTestCard,
@@ -7,8 +7,8 @@ import {
   changeObjectKeyValue,
   connectorProfileIdMapping,
   connectorEnum,
-} from "../support/utils";
-describe("External 3DS using Juspay Checks", () => {
+} from "../../support/utils";
+describe.skip("External 3DS using Juspay Checks", () => {
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
   const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");

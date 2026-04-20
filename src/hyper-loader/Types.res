@@ -43,6 +43,7 @@ type element = {
   update: JSON.t => unit,
   fetchUpdates: unit => promise<JSON.t>,
   create: (string, JSON.t) => paymentElement,
+  updateIntent: (unit => promise<string>) => promise<JSON.t>,
 }
 
 type getCustomerSavedPaymentMethods = {
@@ -52,7 +53,10 @@ type getCustomerSavedPaymentMethods = {
   confirmWithLastUsedPaymentMethod: JSON.t => promise<JSON.t>,
 }
 
-type initPaymentSession = {getCustomerSavedPaymentMethods: unit => promise<JSON.t>}
+type initPaymentSession = {
+  getCustomerSavedPaymentMethods: unit => promise<JSON.t>,
+  updateIntent: (unit => promise<string>) => promise<JSON.t>,
+}
 
 type isCustomerPresentInput = {email: string}
 
@@ -160,6 +164,7 @@ let defaultElement = {
   update,
   fetchUpdates,
   create,
+  updateIntent: _ => Promise.resolve(JSON.Encode.null),
 }
 
 let getCustomerDefaultSavedPaymentMethodData = () => {
@@ -189,6 +194,7 @@ let defaultGetCustomerSavedPaymentMethods = () => {
 
 let defaultInitPaymentSession: initPaymentSession = {
   getCustomerSavedPaymentMethods: defaultGetCustomerSavedPaymentMethods,
+  updateIntent: _ => Promise.resolve(JSON.Encode.null),
 }
 
 let defaultInitAuthenticationSession: initAuthenticationSession = {

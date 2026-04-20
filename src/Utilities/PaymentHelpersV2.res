@@ -13,6 +13,7 @@ let intentCall = (
     ~customPodUri: option<string>=?,
     ~publishableKey: option<string>=?,
     ~sdkAuthorization: option<string>=?,
+    ~signal: Fetch.AbortSignal.t=?,
   ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,
@@ -73,7 +74,7 @@ let intentCall = (
             let dict = data->getDictFromJson
             let errorObj = PaymentError.itemToObjMapper(dict)
             if !isPaymentSession {
-              PaymentHelpers.closePaymentLoaderIfAny()
+              closePaymentLoaderIfAny()
               postFailedSubmitResponse(
                 ~errortype=errorObj.error.type_,
                 ~message=errorObj.error.message,
@@ -96,7 +97,7 @@ let intentCall = (
           (resolve, _) => {
             let _exceptionMessage = err->formatException
             if !isPaymentSession {
-              PaymentHelpers.closePaymentLoaderIfAny()
+              closePaymentLoaderIfAny()
               postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
             }
             if handleUserError {
@@ -136,7 +137,7 @@ let intentCall = (
                   if isCallbackUsedVal->Option.getOr(false) {
                     handleOnCompleteDoThisMessage()
                   } else {
-                    PaymentHelpers.closePaymentLoaderIfAny()
+                    closePaymentLoaderIfAny()
                   }
 
                   postSubmitResponse(~jsonData=data, ~url=url.href)
@@ -151,7 +152,7 @@ let intentCall = (
                 }
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
-                  PaymentHelpers.closePaymentLoaderIfAny()
+                  closePaymentLoaderIfAny()
                   handleOnCompleteDoThisMessage()
                 } else {
                   handleOpenUrl(url.href)
@@ -235,7 +236,7 @@ let intentCall = (
         let _exceptionMessage = err->formatException
 
         if !isPaymentSession {
-          PaymentHelpers.closePaymentLoaderIfAny()
+          closePaymentLoaderIfAny()
           postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
         }
         if handleUserError {
