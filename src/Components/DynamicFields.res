@@ -132,7 +132,10 @@ let make = (
 
   let (missingRequiredFields, initialValues, isLoading) = useSuperpositionFields(
     ~paymentMethod,
-    ~paymentMethodType,
+    ~paymentMethodType=PaymentUtils.getPaymentMethodName(
+      ~paymentMethodType=paymentMethod,
+      ~paymentMethodName=paymentMethodType,
+    ),
     ~paymentMethodTypes,
     ~paymentMethodListValue,
   )
