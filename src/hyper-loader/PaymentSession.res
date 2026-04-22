@@ -28,7 +28,7 @@ let make = (
 
   let localSelectorString = "hyper-preMountLoader-session-iframe"
 
-  let updateIntent = (callback: unit => promise<JSON.t>) => {
+  let updateIntent = (callback: unit => promise<Types.updateIntentReturnObject>) => {
     UpdateIntentHelpersNew.performUpdateIntent(
       ~isUpdateIntentInProgress,
       ~clientSecretRef,
