@@ -53,6 +53,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `Nom de facturació`,
   cardHolderName: `Nom del titular de la targeta`,
   cardHolderNameRequiredText: `Cal el nom del titular de la targeta`,
+  lastNameRequiredText: `Cognom necessari`,
   cardNickname: `Sobrenom de la targeta`,
   billingNamePlaceholder: `Nom i cognom`,
   ibanEmptyText: `L'IBAN no pot estar buit`,

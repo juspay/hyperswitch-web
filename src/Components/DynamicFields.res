@@ -690,6 +690,7 @@ let make = (
                     />
                   }}
                 />
+              | BlikCodeInput => <BlikCodePaymentInput name={item.outputPath} />
               | DocumentNumberInput
               | EmailInput(_)
               | InfoElementType
@@ -702,7 +703,6 @@ let make = (
               | AddressCityInput
               | AddressPostalCodeInput
               | AddressStateInput
-              | BlikCodeInput
               | AddressCountryInput
               | // | ShippingNameInput // Shipping Details are currently supported by only one click widgets
               // | ShippingAddressLine1Input
@@ -1104,7 +1104,6 @@ let make = (
                           />
                         }}
                       />
-                    | BlikCodeInput => <BlikCodePaymentInput name={item.outputPath} />
                     | CountrySelect =>
                       let updatedCountryNames =
                         item.options->Array.length > 0
@@ -1203,6 +1202,7 @@ let make = (
                     | TextInput
                     | PasswordInput
                     | StateSelect
+                    | BlikCodeInput
                     | DropdownSelect => React.null
                     }}
                   </DynamicFieldsToRenderWrapper>

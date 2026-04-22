@@ -53,6 +53,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `Имя плательщика`,
   cardHolderName: `Имя держателя карты`,
   cardHolderNameRequiredText: `Требуется имя держателя карты`,
+  lastNameRequiredText: `Требуется фамилия`,
   cardNickname: `Прозвище карты`,
   billingNamePlaceholder: `Имя и фамилия`,
   ibanEmptyText: `IBAN не может быть пустым`,

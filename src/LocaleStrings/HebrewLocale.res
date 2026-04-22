@@ -80,6 +80,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNamePlaceholder: `שם פרטי ושם משפחה`,
   cardHolderName: `שם בעל הכרטיס`,
   cardHolderNameRequiredText: `נדرش שם בעל הכרטיס`,
+  lastNameRequiredText: `שם משפחה נדרש`,
   on: `עַל`,
   \"and": `ו`,
   nameEmptyText: str => `אנא ספק את שלך ${str}`,
