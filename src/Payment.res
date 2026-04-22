@@ -24,7 +24,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, [paymentMode])
 
   let {cardProps, expiryProps, cvcProps, zipProps, blurState} = useCardForm(~logger, ~paymentType)
-  let {isCardValid, setCardError, cardNumber, cardBrand, isCardEligible} = cardProps
+  let {isCardValid, setCardError, cardNumber, cardBrand, cardEligibilityError} = cardProps
   let {isExpiryValid, setExpiryError, cardExpiry} = expiryProps
   let {isCVCValid, setCvcError, cvcNumber} = cvcProps
   let {isZipValid} = zipProps
@@ -54,12 +54,12 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       isCardValid->Option.getOr(false) &&
       isExpiryValid->Option.getOr(false) &&
       isCVCValid->Option.getOr(false) &&
-      isCardEligible
+      cardEligibilityError->Option.isNone
     | CardNumberElement =>
       isCardValid->Option.getOr(false) &&
       checkCardCVC(getCardElementValue(iframeId, "card-cvc"), cardBrand) &&
       checkCardExpiry(getCardElementValue(iframeId, "card-expiry")) &&
-      isCardEligible
+      cardEligibilityError->Option.isNone
     | _ => true
     }
     let cardNetwork = [
@@ -102,9 +102,13 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       if cardNumber === "" {
         setCardError(_ => localeString.cardNumberEmptyText)
         setUserError(localeString.enterFieldsText)
-      } else if !isCardEligible {
-        setCardError(_ => localeString.cardNotEligibleText)
-        setUserError(localeString.cardNotEligibleText)
+      } else if cardEligibilityError->Option.isSome {
+        let msg =
+          cardEligibilityError->Option.getOr("")->String.length > 0
+            ? cardEligibilityError->Option.getOr("")
+            : localeString.cardNotEligibleText
+        setCardError(_ => msg)
+        setUserError(msg)
       }
       if cardExpiry === "" {
         setExpiryError(_ => localeString.cardExpiryDateEmptyText)
@@ -131,7 +135,15 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       }
     }
     handleMessage(handleDoSubmit, "")
-  }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid, isCardEligible))
+  }, (
+    cardNumber,
+    cvcNumber,
+    cardExpiry,
+    isCVCValid,
+    isExpiryValid,
+    isCardValid,
+    cardEligibilityError,
+  ))
 
   if integrateError {
     <ErrorOccured />
