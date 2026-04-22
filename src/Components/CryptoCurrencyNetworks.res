@@ -25,7 +25,7 @@ let make = (~name: string, ~currencyFieldName: string) => {
 
   let field = ReactFinalForm.useField(
     name,
-    ~config={initialValue: initialValue->JSON.Encode.string}
+    ~config={initialValue: initialValue->JSON.Encode.string},
   )
 
   let cryptoCurrencyNetworks = field.input.value->Option.getOr(initialValue)

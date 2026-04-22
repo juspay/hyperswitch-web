@@ -446,17 +446,65 @@ let extractValuesFromPMLRequiredFields = (
   })
 }
 
+let extractDocumentTypeOptionsFromPML = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+): array<string> => {
+  requiredFields->Array.reduce([], (acc, field) => {
+    switch field.field_type {
+    | DocumentType(options) => acc->Array.concat(options)
+    | _ => acc
+    }
+  })
+}
+
+let extractAddressCountryOptionsFromPML = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+): array<string> => {
+  requiredFields->Array.reduce([], (acc, field) => {
+    switch field.field_type {
+    | AddressCountry(options) => acc->Array.concat(options)
+    | _ => acc
+    }
+  })
+}
+
+let extractCurrencyOptionsFromPML = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+): array<string> => {
+  requiredFields->Array.reduce([], (acc, field) => {
+    switch field.field_type {
+    | Currency(options) => acc->Array.concat(options)
+    | _ => acc
+    }
+  })
+}
+
+let extractBankListOptionsFromPML = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+): array<string> => {
+  requiredFields->Array.reduce([], (acc, field) => {
+    switch field.field_type {
+    | BankList(options) => acc->Array.concat(options)
+    | _ => acc
+    }
+  })
+}
+
 // Get field type from outputPath when superposition fieldType is generic
 let getFieldTypeFromConfig = (fc: SuperpositionTypes.fieldConfig): SuperpositionTypes.fieldType => {
   let p = fc.outputPath->String.toLowerCase
 
-  if p->String.includes("card.card_cvc") || p->String.includes("card.cvc") {
+  if p->String.includes("gift_card") && p->String.endsWith("number") {
+    GiftCardNumberInput
+  } else if p->String.includes("gift_card") && p->String.endsWith("cvc") {
+    GiftCardPinInput
+  } else if p->String.includes("card_cvc") || p->String.includes("card.cvc") {
     CvcPasswordInput
-  } else if p->String.includes("card.card_number") || p->String.includes("card.number") {
+  } else if p->String.includes("card_number") || p->String.includes("card.number") {
     CardNumberTextInput
-  } else if p->String.includes("card.card_exp_month") || p->String.includes("card.exp_month") {
+  } else if p->String.includes("card_exp_month") || p->String.includes("card.exp_month") {
     MonthSelect
-  } else if p->String.includes("card.card_exp_year") || p->String.includes("card.exp_year") {
+  } else if p->String.includes("card_exp_year") || p->String.includes("card.exp_year") {
     YearSelect
   } else if (
     p->String.includes("billing.address.first_name") ||
@@ -493,7 +541,7 @@ let getFieldTypeFromConfig = (fc: SuperpositionTypes.fieldConfig): Superposition
     PixCpfInput
   } else if p->String.includes("pix.cnpj") {
     PixCnpjInput
-  } else if p->String.includes("blik") {
+  } else if p->String.includes("blik_code") {
     BlikCodeInput
   } else if p->String.includes("bank_account_number") {
     BankAccountNumberInput
@@ -501,16 +549,14 @@ let getFieldTypeFromConfig = (fc: SuperpositionTypes.fieldConfig): Superposition
     IbanInput
   } else if p->String.includes("source_bank_account_id") {
     SourceBankAccountIdInput
-  } else if p->String.includes("gift_card") && p->String.endsWith("number") {
-    GiftCardNumberInput
-  } else if p->String.includes("gift_card") && p->String.endsWith("cvc") {
-    GiftCardPinInput
-  } else if p->String.includes("document.type") {
+  } else if p->String.includes("document_details.document_type") {
     DocumentTypeSelect
-  } else if p->String.includes("document.number") {
+  } else if p->String.includes("document_details.document_number") {
     DocumentNumberInput
   } else if p->String.includes("date_of_birth") {
     DatePicker
+  } else if p->String.includes("bank_redirect") && p->String.includes(".issuer") {
+    BankSelect
   } else {
     fc.fieldType
   }
@@ -609,6 +655,7 @@ let isFieldTypeToRenderOutsideBillingConfig = (fc: SuperpositionTypes.fieldConfi
   | GiftCardNumberInput
   | GiftCardPinInput
   | DocumentNumberInput
+  | DocumentTypeSelect
   | DatePicker
   | CurrencySelect
   | BankListSelect
@@ -643,12 +690,17 @@ let deduplicateFieldConfigsByFieldType = (fields: array<SuperpositionTypes.field
 
 // Check if a field is a card field (card number, expiry, cvc)
 let isCardField = (fc: SuperpositionTypes.fieldConfig) => {
-  switch fc.fieldType {
-  | CardNumberTextInput
-  | MonthSelect
-  | YearSelect
-  | CvcPasswordInput => true
-  | _ => false
+  let isBankRedirectCard = fc.outputPath->String.toLowerCase->String.includes("bank_redirect")
+  if isBankRedirectCard {
+    false
+  } else {
+    switch fc.fieldType {
+    | CardNumberTextInput
+    | MonthSelect
+    | YearSelect
+    | CvcPasswordInput => true
+    | _ => false
+    }
   }
 }
 
@@ -706,9 +758,47 @@ let useSuperpositionFields = (
       let lastNameSuffix = "last_name"
       let defaultFullNamePath = "payment_method_data.billing.address.first_name"
 
+      let documentTypeOptions = extractDocumentTypeOptionsFromPML(
+        paymentMethodTypes.required_fields,
+      )
+      let addressCountryOptions = extractAddressCountryOptionsFromPML(
+        paymentMethodTypes.required_fields,
+      )
+      let currencyOptions = extractCurrencyOptionsFromPML(paymentMethodTypes.required_fields)
+      let bankListOptions = extractBankListOptionsFromPML(paymentMethodTypes.required_fields)
+
       let enhancedFields = missingRequiredFields->Array.map(
         fc => {
-          {...fc, fieldType: fc->getFieldTypeFromConfig}
+          let fieldType = fc->getFieldTypeFromConfig
+          
+          let options = switch fieldType {
+          | DocumentTypeSelect =>
+            if fc.options->Array.length === 0 && documentTypeOptions->Array.length > 0 {
+              documentTypeOptions
+            } else {
+              fc.options
+            }
+          | AddressCountryInput =>
+            if fc.options->Array.length === 0 && addressCountryOptions->Array.length > 0 {
+              addressCountryOptions
+            } else {
+              fc.options
+            }
+          | CurrencySelect =>
+            if fc.options->Array.length === 0 && currencyOptions->Array.length > 0 {
+              currencyOptions
+            } else {
+              fc.options
+            }
+          | BankListSelect =>
+            if fc.options->Array.length === 0 && bankListOptions->Array.length > 0 {
+              bankListOptions
+            } else {
+              fc.options
+            }
+          | _ => fc.options
+          }
+          {...fc, fieldType, options}
         },
       )
 

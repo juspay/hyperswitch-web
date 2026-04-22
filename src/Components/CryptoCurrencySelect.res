@@ -16,7 +16,7 @@ let make = (~name: string, ~options: array<string>) => {
     name,
     ~config={
       initialValue: Some(initialValue),
-      validate: createValidator(Validation.Required)
+      validate: createValidator(Validation.Required),
     },
   )
 
