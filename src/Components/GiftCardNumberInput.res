@@ -1,5 +1,5 @@
 @react.component
-let make = (~name="giftCardNumber") => {
+let make = (~name) => {
   open RecoilAtoms
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)

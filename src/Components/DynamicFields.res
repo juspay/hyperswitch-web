@@ -275,31 +275,6 @@ let make = (
 
   let bottomElement = <InfoElement />
 
-  let fullNameConfig = React.useMemo(() => {
-    missingRequiredFields
-    ->Array.find(fc =>
-      switch fc.fieldType {
-      | FullNameInput(_) => true
-      | _ => false
-      }
-    )
-    ->Option.map(fc =>
-      switch fc.fieldType {
-      | FullNameInput(config) => config
-      | _ => {firstName: None, lastName: None}
-      }
-    )
-    ->Option.getOr({firstName: None, lastName: None})
-  }, [missingRequiredFields])
-
-  let firstNamePath = React.useMemo(() => {
-    fullNameConfig.firstName->Option.map(fc => fc.outputPath)->Option.getOr("")
-  }, [fullNameConfig])
-
-  let lastNamePath = React.useMemo(() => {
-    fullNameConfig.lastName->Option.map(fc => fc.outputPath)->Option.getOr("")
-  }, [fullNameConfig])
-
   // State + City: both present → render as a side-by-side pair.
   let cityOutputPath = React.useMemo(() => {
     processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressCityInput)
@@ -341,12 +316,15 @@ let make = (
   let countryCodeOutputPath = React.useMemo(() => {
     processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(CountryCodeSelect)
   }, [processedFieldConfigs])
+  
+  let documentNumberOutputPath = React.useMemo(() => {
+    processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(DocumentNumberInput)
+  }, [processedFieldConfigs])
 
   let hasBothPhoneAndCountryCode = React.useMemo(() => {
     processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(PhoneInput, CountryCodeSelect)
   }, [processedFieldConfigs])
 
-  // Month + Year expiry: both present → render as a single expiry input (outside billing).
   let hasBothMonthAndYear = React.useMemo(() => {
     processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(MonthSelect, YearSelect)
   }, [processedFieldConfigs])
@@ -430,8 +408,8 @@ let make = (
                   placeholder="1234 1234 1234 1234"
                   autocomplete="cc-number"
                 />
-              | GiftCardNumberInput => <GiftCardNumberInput />
-              | GiftCardPinInput => <GiftCardPinInput />
+              | GiftCardNumberInput => <GiftCardNumberInput name={item.outputPath} />
+              | GiftCardPinInput => <GiftCardPinInput name={item.outputPath} />
               | MonthSelect =>
                 if hasExpiryAndCvc {
                   <div className="flex gap-10">
@@ -519,29 +497,116 @@ let make = (
               | DocumentTypeSelect => {
                   let updatedDocumentTypeArray =
                     item.options->DropdownField.updateArrayOfStringToOptionsTypeArrayWithUpperCaseLabel
-                  <DocumentNumberInput name={item.outputPath} options={updatedDocumentTypeArray} />
+                  <DocumentNumberInput
+                    name={item.outputPath}
+                    documentNumberName={documentNumberOutputPath}
+                    options={updatedDocumentTypeArray}
+                  />
                 }
-              | FullNameInput(_) =>
+              | FullNameInput(config) =>
                 let defaultName =
                   paymentMethod === "card"
                     ? localeString.cardHolderName
                     : localeString.fullNameLabel
-                <>
-                  <RenderIf condition={!isSpacedInnerLayout}>
-                    <div
-                      style={
-                        marginBottom: "5px",
-                        fontSize: themeObj.fontSizeLg,
-                        opacity: "0.6",
-                      }>
-                      {defaultName->React.string}
-                    </div>
-                  </RenderIf>
-                  <FullNamePaymentInput
-                    customFieldName={Some(defaultName)} firstNamePath lastNamePath
-                  />
-                </>
-              | CryptoNetworkSelect => <CryptoCurrencyNetworks name={item.outputPath} currencyFieldName=currencyOutputPath />
+                switch (config.firstName, config.lastName) {
+                | (Some(firstNameFC), Some(lastNameFC)) =>
+                  <>
+                    <RenderIf condition={!isSpacedInnerLayout}>
+                      <div
+                        style={
+                          marginBottom: "5px",
+                          fontSize: themeObj.fontSizeLg,
+                          opacity: "0.6",
+                        }>
+                        {defaultName->React.string}
+                      </div>
+                    </RenderIf>
+                    <FullNamePaymentInput
+                      customFieldName={Some(defaultName)}
+                      firstNamePath={firstNameFC.outputPath}
+                      lastNamePath={lastNameFC.outputPath}
+                    />
+                  </>
+                | (Some(firstNameFC), None) =>
+                  <>
+                    <RenderIf condition={!isSpacedInnerLayout}>
+                      <div
+                        style={
+                          marginBottom: "5px",
+                          fontSize: themeObj.fontSizeLg,
+                          opacity: "0.6",
+                        }>
+                        {defaultName->React.string}
+                      </div>
+                    </RenderIf>
+                    <ReactFinalFormField
+                      name={firstNameFC.outputPath}
+                      validationRule=Validation.FirstName
+                      render={(field: ReactFinalForm.Field.fieldProps) => {
+                        let val = field.input.value->Option.getOr("")
+                        let nameRef = React.useRef(Nullable.null)
+                        <PaymentField
+                          fieldName=defaultName
+                          value={
+                            value: val,
+                            isValid: Some(field.meta.valid),
+                            errorString: submitFailed || field.meta.touched
+                              ? field.meta.error->Option.getOr("")
+                              : "",
+                          }
+                          onChange={ev => field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                          onBlur={_ => field.input.onBlur()}
+                          type_="text"
+                          inputRef=nameRef
+                          placeholder=localeString.fullNamePlaceholder
+                          name=TestUtils.fullNameInputTestId
+                        />
+                      }}
+                    />
+                  </>
+                | (None, Some(lastNameFC)) =>
+                  <>
+                    <RenderIf condition={!isSpacedInnerLayout}>
+                      <div
+                        style={
+                          marginBottom: "5px",
+                          fontSize: themeObj.fontSizeLg,
+                          opacity: "0.6",
+                        }>
+                        {localeString.fullNameLabel->React.string}
+                      </div>
+                    </RenderIf>
+                    <ReactFinalFormField
+                      name={lastNameFC.outputPath}
+                      validationRule=Validation.LastName
+                      render={(field: ReactFinalForm.Field.fieldProps) => {
+                        let val = field.input.value->Option.getOr("")
+                        let nameRef = React.useRef(Nullable.null)
+                        <PaymentField
+                          fieldName=localeString.fullNameLabel
+                          value={
+                            value: val,
+                            isValid: Some(field.meta.valid),
+                            errorString: submitFailed || field.meta.touched
+                              ? field.meta.error->Option.getOr("")
+                              : "",
+                          }
+                          onChange={ev => field.input.onChange(ReactEvent.Form.target(ev)["value"])}
+                          onBlur={_ => field.input.onBlur()}
+                          type_="text"
+                          inputRef=nameRef
+                          placeholder=localeString.fullNamePlaceholder
+                          name=TestUtils.fullNameInputTestId
+                        />
+                      }}
+                    />
+                  </>
+                | (None, None) => React.null
+                }
+              | CryptoNetworkSelect =>
+                <CryptoCurrencyNetworks
+                  name={item.outputPath} currencyFieldName=currencyOutputPath
+                />
               | DatePicker => <DateOfBirth name={item.outputPath} />
               | VpaTextInput => <VpaIdPaymentInput name={item.outputPath} />
               | PixKeyInput => <PixPaymentInput name={item.outputPath} fieldType="pixKey" />
@@ -680,8 +745,7 @@ let make = (
                 ->Array.mapWithIndex((item, index) => {
                   <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index}>
                     {switch item.fieldType {
-                    | EmailInput(emailFields) =>
-                      <EmailPaymentInput emailFields />
+                    | EmailInput(emailFields) => <EmailPaymentInput emailFields />
                     | PhoneInput =>
                       if hasBothPhoneAndCountryCode {
                         <PhoneNumberPaymentInput
@@ -882,7 +946,9 @@ let make = (
                     | AddressCountryInput =>
                       if hasBothCountryAndPostal {
                         let updatedCountryArray =
-                          countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
+                          item.options->Array.length > 0
+                            ? item.options->DropdownField.updateArrayOfStringToOptionsTypeArray
+                            : countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                         <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""}`}>
                           <ReactFinalFormField
                             name={countryOutputPath}
@@ -934,7 +1000,9 @@ let make = (
                         </div>
                       } else {
                         let updatedCountryArr =
-                          countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
+                          item.options->Array.length > 0
+                            ? item.options->DropdownField.updateArrayOfStringToOptionsTypeArray
+                            : countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                         <ReactFinalFormField
                           name={item.outputPath}
                           initialValue=initialCountryIso
@@ -1036,10 +1104,12 @@ let make = (
                           />
                         }}
                       />
-                    | BlikCodeInput => <BlikCodePaymentInput />
+                    | BlikCodeInput => <BlikCodePaymentInput name={item.outputPath} />
                     | CountrySelect =>
                       let updatedCountryNames =
-                        countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
+                        item.options->Array.length > 0
+                          ? item.options->DropdownField.updateArrayOfStringToOptionsTypeArray
+                          : countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                       <ReactFinalFormField
                         name={item.outputPath}
                         initialValue=initialCountryIso

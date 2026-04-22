@@ -1,7 +1,7 @@
 open RecoilAtoms
 
 @react.component
-let make = (~name="blikCode") => {
+let make = (~name) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   let blikCodeRef = React.useRef(Nullable.null)
