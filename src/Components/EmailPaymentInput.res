@@ -12,7 +12,7 @@ let make = (~emailFields: array<SuperpositionTypes.fieldConfig>) => {
     Validation.createFieldValidator(
       rule,
       ~enabledCardSchemes=[],
-      ~localeObject=localeString->Obj.magic,
+      ~localeObject=localeString->LocaleStringTypes.toValidationLocale,
     )
 
   let formEmailFields = emailFields->Array.map(fc =>

@@ -9,7 +9,7 @@ let make = (~name: string, ~options: array<string>) => {
     Validation.createFieldValidator(
       rule,
       ~enabledCardSchemes=[],
-      ~localeObject=localeString->Obj.magic,
+      ~localeObject=localeString->LocaleStringTypes.toValidationLocale,
     )
 
   let field = ReactFinalForm.useField(

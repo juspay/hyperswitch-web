@@ -6,7 +6,7 @@ let make = (~name: string, ~validationRule=?, ~initialValue="", ~render) => {
     Validation.createFieldValidator(
       rule,
       ~enabledCardSchemes=[],
-      ~localeObject=localeString->Obj.magic,
+      ~localeObject=localeString->LocaleStringTypes.toValidationLocale,
     )
 
   let hasInitialValue = initialValue !== ""

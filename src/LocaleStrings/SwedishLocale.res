@@ -53,6 +53,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `Faktureringsnamn`,
   cardHolderName: `Korthållarens namn`,
   cardHolderNameRequiredText: `Korthållarens namn krävs`,
+  lastNameRequiredText: `Efternamn krävs`,
   cardNickname: `Kortets smeknamn`,
   billingNamePlaceholder: `Förnamn och efternamn`,
   ibanEmptyText: `IBAN får inte vara tomt`,

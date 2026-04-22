@@ -80,6 +80,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNamePlaceholder: `名前と苗字`,
   cardHolderName: `クレジットカード名義人氏名`,
   cardHolderNameRequiredText: `カード所有者の名前が必要です`,
+  lastNameRequiredText: `姓が必要です`,
   on: `の上`,
   \"and": `そして`,
   nameEmptyText: str => `あなたの情報を提供してください ${str}`,

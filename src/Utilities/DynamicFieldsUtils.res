@@ -536,6 +536,8 @@ let getFieldTypeFromConfig = (fc: SuperpositionTypes.fieldConfig): Superposition
     PhoneInput
   } else if p->String.includes("crypto.network") {
     CryptoNetworkSelect
+  } else if p->String.includes("crypto.pay_currency") {
+    CurrencySelect
   } else if p->String.includes("vpa") {
     VpaTextInput
   } else if p->String.includes("pix.key") {

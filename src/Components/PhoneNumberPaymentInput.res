@@ -10,7 +10,7 @@ let make = (~numberName: string, ~codeName: string) => {
     Validation.createFieldValidator(
       rule,
       ~enabledCardSchemes=[],
-      ~localeObject=localeString->Obj.magic,
+      ~localeObject=localeString->LocaleStringTypes.toValidationLocale,
     )
 
   let numberField = ReactFinalForm.useField(

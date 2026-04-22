@@ -9,7 +9,7 @@ let make = (~name: string, ~fieldType: string) => {
     Validation.createFieldValidator(
       rule,
       ~enabledCardSchemes=[],
-      ~localeObject=localeString->Obj.magic,
+      ~localeObject=localeString->LocaleStringTypes.toValidationLocale,
     )
 
   let (fieldName, placeholder, maxLength, validationRule) = switch fieldType {

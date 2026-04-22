@@ -15,7 +15,7 @@ let make = (~customFieldName, ~firstNamePath, ~lastNamePath) => {
     Validation.createFieldValidator(
       rule,
       ~enabledCardSchemes=[],
-      ~localeObject=localeString->Obj.magic,
+      ~localeObject=localeString->LocaleStringTypes.toValidationLocale,
     )
 
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)

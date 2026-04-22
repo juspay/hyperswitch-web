@@ -53,6 +53,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   billingNameLabel: `Intestatario della fattura`,
   cardHolderName: `Nome del titolare della carta`,
   cardHolderNameRequiredText: `Il nome del titolare della carta è obbligatorio`,
+  lastNameRequiredText: `Cognome richiesto`,
   cardNickname: `Soprannome della carta`,
   billingNamePlaceholder: `Nome e cognome`,
   ibanEmptyText: `L'IBAN non può essere vuoto`,
