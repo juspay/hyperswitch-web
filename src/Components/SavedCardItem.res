@@ -72,6 +72,7 @@ let make = (
   let {hideCardExpiry} = CardUtils.getLayoutClass(layout).savedMethodCustomization
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
   let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcError} = cvcProps
+  let isCvcEmpty = cvcNumber->String.length == 0
   let cvcRef = React.useRef(Nullable.null)
   let pickerItemClass = isActive ? "PickerItem--selected" : ""
 
@@ -109,16 +110,7 @@ let make = (
   }, [paymentItem])
 
   React.useEffect(() => {
-    open CardUtils
-
     if isActive {
-      // * Focus CVC
-      focusCVC()
-      // * Sending card expiry to handle cases where the card expires before the use date.
-      `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
-      ->CardValidations.formatCardExpiryNumber
-      ->emitExpiryDate
-
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod=paymentItem.paymentMethod,
         ~paymentMethodType,
@@ -131,7 +123,21 @@ let make = (
         ~cardLast4,
         ~cardBin,
         ~isSavedPaymentMethod=true,
+        ~isCvcEmpty,
       )
+    }
+    None
+  }, (isActive, paymentItem, country, state, pinCode, isCvcEmpty))
+
+  React.useEffect(() => {
+    open CardUtils
+    if isActive {
+      // * Focus CVC
+      focusCVC()
+      // * Sending card expiry to handle cases where the card expires before the use date.
+      `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
+      ->CardValidations.formatCardExpiryNumber
+      ->emitExpiryDate
     }
     None
   }, (isActive, paymentItem, country, state, pinCode))

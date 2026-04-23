@@ -297,7 +297,7 @@ let make = (
       })
     }
 
-    let updateIntent = async (callback: unit => promise<string>) => {
+    let updateIntent = async (callback: unit => promise<JSON.t>) => {
       open UpdateIntentHelpersNew
 
       if isUpdateIntentInProgress.contents {

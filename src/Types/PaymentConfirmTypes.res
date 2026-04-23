@@ -23,10 +23,6 @@ let defaultBacsBankInstruction = {
 }
 
 type bankTransfer = {ach_credit_transfer: achCreditTransfer}
-type redirectToUrl = {
-  returnUrl: string,
-  url: string,
-}
 
 type voucherDetails = {
   download_url: string,
@@ -34,9 +30,20 @@ type voucherDetails = {
 }
 
 type pollConfig = {delay_in_secs: int}
+type ddcData = {
+  iframeUrl: string,
+  timeoutMs: int,
+}
+
+let defaultDdcData = {
+  iframeUrl: "",
+  timeoutMs: 30000,
+}
 
 type nextAction = {
   redirectToUrl: string,
+  redirectMode: string,
+  postDdcRedirectUrl: string,
   popupUrl: string,
   redirectResponseUrl: string,
   type_: string,
@@ -52,6 +59,7 @@ type nextAction = {
   border_color: option<string>,
   iframe_data: option<JSON.t>,
   poll_config: option<pollConfig>,
+  ddc_data: option<ddcData>,
 }
 type intent = {
   nextAction: nextAction,
@@ -65,16 +73,14 @@ type intent = {
 }
 open Utils
 
-let defaultRedirectTourl = {
-  returnUrl: "",
-  url: "",
-}
 let defaultPollConfig = {
   delay_in_secs: 2,
 }
 
 let defaultNextAction = {
   redirectToUrl: "",
+  redirectMode: "required",
+  postDdcRedirectUrl: "",
   popupUrl: "",
   redirectResponseUrl: "",
   type_: "",
@@ -90,6 +96,7 @@ let defaultNextAction = {
   border_color: None,
   iframe_data: None,
   poll_config: None,
+  ddc_data: None,
 }
 let defaultIntent = {
   nextAction: defaultNextAction,
@@ -153,6 +160,15 @@ let getPollConfig = json => {
   }
 }
 
+let getDdcData = json => {
+  json
+  ->getOptionalDict("ddc_data")
+  ->Option.map(ddcDict => {
+    iframeUrl: ddcDict->getString("iframe_url", ""),
+    timeoutMs: ddcDict->getInt("timeout_ms", 30000),
+  })
+}
+
 let getNextAction = (dict, str) => {
   dict
   ->Dict.get(str)
@@ -160,6 +176,8 @@ let getNextAction = (dict, str) => {
   ->Option.map(json => {
     {
       redirectToUrl: getString(json, "redirect_to_url", ""),
+      redirectMode: getString(json, "redirect_mode", "required"),
+      postDdcRedirectUrl: getString(json, "url", ""),
       popupUrl: getString(json, "popup_url", ""),
       redirectResponseUrl: getString(json, "redirect_response_url", ""),
       type_: getString(json, "type", ""),
@@ -199,6 +217,7 @@ let getNextAction = (dict, str) => {
         ->Option.flatMap(JSON.Decode.object)
         ->Option.map(json => json->getPollConfig)
       },
+      ddc_data: json->getDdcData,
     }
   })
   ->Option.getOr(defaultNextAction)

@@ -185,6 +185,10 @@ let getDictFromObj = (dict, key) => {
   dict->Dict.get(key)->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
 }
 
+let getOptionalDict = (dict, key) => {
+  dict->Dict.get(key)->Option.flatMap(JSON.Decode.object)
+}
+
 let getJsonObjectFromDict = (dict, key) => {
   dict->Dict.get(key)->Option.getOr(JSON.Encode.object(Dict.make()))
 }
@@ -1482,6 +1486,17 @@ let makeIframe = (element, url) => {
     element->appendChild(iframe)
   })
 }
+let makeHiddenIframe = (element, ~src, ~id) => {
+  let iframe = Window.createElement("iframe")
+  iframe->Window.setAttribute("id", id)
+  iframe->Window.setAttribute("src", src)
+  iframe->Window.setAttribute(
+    "style",
+    "position: absolute; width: 1px; height: 1px; border: none; overflow: hidden; left: -9999px; top: -9999px;",
+  )
+  element->Window.appendChild(iframe)
+  iframe
+}
 let makeForm = (element, url, id) => {
   open Types
   let form = createElement("form")
@@ -1694,6 +1709,8 @@ let handleFailureResponse = (~message, ~errorType) =>
       ]->getJsonFromArrayOfJson,
     ),
   ]->getJsonFromArrayOfJson
+
+let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
 
 let getPaymentId = clientSecret =>
   String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
