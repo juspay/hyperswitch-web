@@ -14,11 +14,11 @@ let make = () => {
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
 
-  let (bankError, setBankError) = React.useState(_ => "")
+  let (_bankError, setBankError) = React.useState(_ => "")
 
   let (openToolTip, setOpenToolTip) = React.useState(_ => false)
 
-  let (modalData, setModalData) = React.useState(_ => None)
+  let (modalData, _setModalData) = React.useState(_ => None)
 
   let toolTipRef = React.useRef(Nullable.null)
 
@@ -122,26 +122,26 @@ let make = () => {
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
         <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
-        <div className="flex flex-col">
-          <AddBankAccount modalData setModalData />
-          <RenderIf condition={bankError->String.length > 0}>
-            <div
-              className="Error pt-1"
-              style={
-                color: themeObj.colorDangerText,
-                fontSize: themeObj.fontSizeSm,
-                alignSelf: "start",
-                textAlign: "left",
-              }>
-              {React.string(bankError)}
-            </div>
-          </RenderIf>
-        </div>
+        // <div className="flex flex-col">
+        //   <AddBankAccount modalData setModalData />
+        //   <RenderIf condition={bankError->String.length > 0}>
+        //     <div
+        //       className="Error pt-1"
+        //       style={
+        //         color: themeObj.colorDangerText,
+        //         fontSize: themeObj.fontSizeSm,
+        //         alignSelf: "start",
+        //         textAlign: "left",
+        //       }>
+        //       {React.string(bankError)}
+        //     </div>
+        //   </RenderIf>
+        // </div>
         <Surcharge paymentMethod paymentMethodType />
         <Terms paymentMethod paymentMethodType />
-        <FullScreenPortal>
-          <BankDebitModal setModalData />
-        </FullScreenPortal>
+        // <FullScreenPortal>
+        //   <BankDebitModal setModalData />
+        // </FullScreenPortal>
       </div>
     </RenderIf>
   </>

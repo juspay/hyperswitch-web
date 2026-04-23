@@ -7,7 +7,7 @@ let make = (~name: string, ~documentNumberName: string, ~options) => {
   <div className="flex w-full">
     <ReactFinalFormField
       name={name}
-      render={(field: ReactFinalForm.Field.fieldProps) => {
+      render={field => {
         let value = field.input.value->Option.getOr(selectedDocumentType)
         React.useEffect(() => {
           if value === "" && options->Array.length > 0 {
