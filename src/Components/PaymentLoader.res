@@ -8,25 +8,24 @@ let make = () => {
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->safeParse
-      let dict = json->getDictFromJson
-      if dict->Utils.getBool("fullScreenIframeMounted", false) {
-        let optionsDict = dict->getDictFromDict("options")
-        if optionsDict->getOptionString("branding")->Option.isSome {
-          setBranding(_ => optionsDict->getString("branding", "auto"))
-        }
-        let locale = optionsDict->getString("locale", "auto")
-        CardTheme.getLocaleObject(locale)
-        ->Promise.thenResolve(localeString => {
+      let handleAsync = async () => {
+        let json = ev.data->safeParse
+        let dict = json->getDictFromJson
+        if dict->Utils.getBool("fullScreenIframeMounted", false) {
+          let optionsDict = dict->getDictFromDict("options")
+          if optionsDict->getOptionString("branding")->Option.isSome {
+            setBranding(_ => optionsDict->getString("branding", "auto"))
+          }
+          let locale = optionsDict->getString("locale", "auto")
+          let localeString = await CardTheme.getLocaleObject(locale)
           setConfig(prev => {...prev, localeString})
-        })
-        ->Promise.catch(_ => Promise.resolve())
-        ->ignore
-        let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
-        let paymentMethodStr = metaDataDict->getString("paymentMethod", "")
-        setPaymentMethod(_ => paymentMethodStr)
+          let metadata = dict->getJsonObjectFromDict("metadata")
+          let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+          let paymentMethodStr = metaDataDict->getString("paymentMethod", "")
+          setPaymentMethod(_ => paymentMethodStr)
+        }
       }
+      handleAsync()->ignore
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
