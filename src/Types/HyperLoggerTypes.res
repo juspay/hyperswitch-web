@@ -103,6 +103,7 @@ type eventName =
   | TEST_MODE
   | PAYMENT_METHOD_ELIGIBILITY_CALL
   | PAYMENT_METHOD_ELIGIBILITY_CALL_INIT
+  | DDC_FLOW
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
