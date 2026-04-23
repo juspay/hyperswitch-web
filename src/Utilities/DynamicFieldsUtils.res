@@ -633,9 +633,7 @@ let sortFieldConfigsByPriority = (fields: array<SuperpositionTypes.fieldConfig>)
 
 // Process field configs: sort by priority only.
 let processFieldConfigs = (
-  fields: array<SuperpositionTypes.fieldConfig>,
-  _billingAddress: PaymentType.billingAddress,
-  _isSaveDetailsWithClickToPay: bool,
+  fields: array<SuperpositionTypes.fieldConfig>
 ) => {
   fields->sortFieldConfigsByPriority
 }
@@ -895,44 +893,3 @@ let hasBothFieldTypes = (
   processedFieldConfigs->hasFieldType(fieldType1) && processedFieldConfigs->hasFieldType(fieldType2)
 }
 
-// [TO DEPRECATE]: Convert SuperpositionTypes.fieldType to PaymentMethodsRecord.paymentMethodsFields
-let fieldTypeToPaymentMethodsField = (
-  fieldType: SuperpositionTypes.fieldType,
-  options: array<string>,
-): PaymentMethodsRecord.paymentMethodsFields => {
-  switch fieldType {
-  | CardNumberTextInput => CardNumber
-  | CvcPasswordInput => CardCvc
-  | MonthSelect => CardExpiryMonth
-  | YearSelect => CardExpiryYear
-  | EmailInput(_) => Email
-  | PhoneInput => PhoneNumber
-  | CountryCodeSelect => PhoneCountryCode
-  | FullNameInput(_) => FullName
-  // | ShippingNameInput => ShippingName
-  | AddressLine1Input => AddressLine1
-  | AddressLine2Input => AddressLine2
-  | AddressCityInput => AddressCity
-  | AddressStateInput => AddressState
-  | AddressPostalCodeInput => AddressPincode
-  | AddressCountryInput => AddressCountry(options)
-  | CryptoNetworkSelect => CryptoCurrencyNetworks
-  | VpaTextInput => VpaId
-  | PixKeyInput => PixKey
-  | PixCpfInput => PixCPF
-  | PixCnpjInput => PixCNPJ
-  | BlikCodeInput => BlikCode
-  | BankAccountNumberInput => BankAccountNumber
-  | IbanInput => IBAN
-  | SourceBankAccountIdInput => SourceBankAccountId
-  | GiftCardNumberInput => GiftCardNumber
-  | GiftCardPinInput => GiftCardPin
-  | DocumentNumberInput => DocumentNumber
-  | DocumentTypeSelect => DocumentType(options)
-  | DatePicker => DateOfBirth
-  | CurrencySelect => Currency(options)
-  | BankListSelect => BankList(options)
-  | InfoElementType => InfoElement
-  | _ => None
-  }
-}

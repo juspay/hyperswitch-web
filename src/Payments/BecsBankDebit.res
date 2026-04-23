@@ -9,7 +9,7 @@ let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (modalData, setModalData) = React.useState(_ => None)
+  let (modalData, _setModalData) = React.useState(_ => None)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
@@ -90,10 +90,10 @@ let make = () => {
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
-    <AddBankAccount modalData setModalData />
-    <FullScreenPortal>
-      <BankDebitModal setModalData />
-    </FullScreenPortal>
+    // <AddBankAccount modalData setModalData />
+    // <FullScreenPortal>
+    //   <BankDebitModal setModalData />
+    // </FullScreenPortal>
     <Surcharge paymentMethod paymentMethodType />
     <Terms paymentMethod paymentMethodType />
   </div>

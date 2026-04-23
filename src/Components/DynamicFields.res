@@ -146,7 +146,7 @@ let make = (
     ->removeClickToPayFieldsFromFieldConfigs(isSaveDetailsWithClickToPay)
     ->removeCardFieldsFromFieldConfigs(areCardFieldsRendered)
     ->removeCardNetworkFromFieldConfigs
-    ->processFieldConfigs(billingAddress, isSaveDetailsWithClickToPay)
+    ->processFieldConfigs
   }, (missingRequiredFields, billingAddress, isSaveDetailsWithClickToPay, areCardFieldsRendered))
 
   // let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
@@ -542,7 +542,7 @@ let make = (
                     <ReactFinalFormField
                       name={firstNameFC.outputPath}
                       validationRule=Validation.FirstName
-                      render={(field: ReactFinalForm.Field.fieldProps) => {
+                      render={field => {
                         let val = field.input.value->Option.getOr("")
                         let nameRef = React.useRef(Nullable.null)
                         <PaymentField
@@ -579,7 +579,7 @@ let make = (
                     <ReactFinalFormField
                       name={lastNameFC.outputPath}
                       validationRule=Validation.LastName
-                      render={(field: ReactFinalForm.Field.fieldProps) => {
+                      render={field => {
                         let val = field.input.value->Option.getOr("")
                         let nameRef = React.useRef(Nullable.null)
                         <PaymentField
@@ -616,7 +616,7 @@ let make = (
                 <ReactFinalFormField
                   name={item.outputPath}
                   validationRule={Validation.fieldTypeToValidationRule(BankAccountNumberInput)}
-                  render={(field: ReactFinalForm.Field.fieldProps) => {
+                  render={field => {
                     let val = field.input.value->Option.getOr("")
                     <PaymentField
                       fieldName="Account Number"
@@ -645,7 +645,7 @@ let make = (
                 <ReactFinalFormField
                   name={item.outputPath}
                   validationRule={Validation.fieldTypeToValidationRule(IbanInput)}
-                  render={(field: ReactFinalForm.Field.fieldProps) => {
+                  render={field => {
                     let val = field.input.value->Option.getOr("")
                     <PaymentField
                       fieldName="IBAN"
@@ -669,7 +669,7 @@ let make = (
               | SourceBankAccountIdInput =>
                 <ReactFinalFormField
                   name={item.outputPath}
-                  render={(field: ReactFinalForm.Field.fieldProps) => {
+                  render={field => {
                     let val = field.input.value->Option.getOr("")
                     <PaymentField
                       fieldName="Source Bank Account ID"
@@ -755,7 +755,7 @@ let make = (
                         <ReactFinalFormField
                           name={item.outputPath}
                           validationRule={Validation.fieldTypeToValidationRule(PhoneInput)}
-                          render={(field: ReactFinalForm.Field.fieldProps) => {
+                          render={field => {
                             let val = field.input.value->Option.getOr("")
                             <PaymentField
                               fieldName=localeString.formFieldPhoneNumberLabel
@@ -785,7 +785,7 @@ let make = (
                           <ReactFinalFormField
                             name={cityOutputPath}
                             validationRule={Validation.fieldTypeToValidationRule(AddressCityInput)}
-                            render={(field: ReactFinalForm.Field.fieldProps) => {
+                            render={field => {
                               let val = field.input.value->Option.getOr("")
                               <PaymentField
                                 fieldName=localeString.cityLabel
@@ -810,7 +810,7 @@ let make = (
                           <ReactFinalFormField
                             name={stateOutputPath}
                             validationRule={Validation.fieldTypeToValidationRule(AddressStateInput)}
-                            render={(field: ReactFinalForm.Field.fieldProps) => {
+                            render={field => {
                               let val = field.input.value->Option.getOr("")
                               let dropdownValue = getStateDropdownValue(val)
                               if stateNames->Array.length > 0 {
@@ -864,7 +864,7 @@ let make = (
                         <ReactFinalFormField
                           name={item.outputPath}
                           validationRule={Validation.fieldTypeToValidationRule(AddressCityInput)}
-                          render={(field: ReactFinalForm.Field.fieldProps) => {
+                          render={field => {
                             let val = field.input.value->Option.getOr("")
                             <PaymentField
                               fieldName=localeString.cityLabel
@@ -893,7 +893,7 @@ let make = (
                         <ReactFinalFormField
                           name={item.outputPath}
                           validationRule={Validation.fieldTypeToValidationRule(AddressStateInput)}
-                          render={(field: ReactFinalForm.Field.fieldProps) => {
+                          render={field => {
                             let val = field.input.value->Option.getOr("")
                             let dropdownValue = getStateDropdownValue(val)
                             if stateNames->Array.length > 0 {
@@ -953,7 +953,7 @@ let make = (
                           <ReactFinalFormField
                             name={countryOutputPath}
                             initialValue=initialCountryIso
-                            render={(field: ReactFinalForm.Field.fieldProps) => {
+                            render={field => {
                               <DropdownField
                                 appearance=config.appearance
                                 fieldName=localeString.countryLabel
@@ -976,7 +976,7 @@ let make = (
                               AddressPostalCodeInput,
                               ~country=countryIso,
                             )}
-                            render={(field: ReactFinalForm.Field.fieldProps) => {
+                            render={field => {
                               let val = field.input.value->Option.getOr("")
                               <PaymentField
                                 fieldName=localeString.postalCodeLabel
@@ -1006,7 +1006,7 @@ let make = (
                         <ReactFinalFormField
                           name={item.outputPath}
                           initialValue=initialCountryIso
-                          render={(field: ReactFinalForm.Field.fieldProps) => {
+                          render={field => {
                             <DropdownField
                               appearance=config.appearance
                               fieldName=localeString.countryLabel
@@ -1033,7 +1033,7 @@ let make = (
                             AddressPostalCodeInput,
                             ~country=countryIso,
                           )}
-                          render={(field: ReactFinalForm.Field.fieldProps) => {
+                          render={field => {
                             let val = field.input.value->Option.getOr("")
                             <PaymentField
                               fieldName=localeString.postalCodeLabel
@@ -1058,7 +1058,7 @@ let make = (
                       <ReactFinalFormField
                         name={item.outputPath}
                         validationRule={Validation.fieldTypeToValidationRule(AddressLine1Input)}
-                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                        render={field => {
                           let val = field.input.value->Option.getOr("")
                           <PaymentField
                             fieldName=localeString.line1Label
@@ -1083,7 +1083,7 @@ let make = (
                     | AddressLine2Input =>
                       <ReactFinalFormField
                         name={item.outputPath}
-                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                        render={field => {
                           let val = field.input.value->Option.getOr("")
                           <PaymentField
                             fieldName=localeString.line2Label
@@ -1112,7 +1112,7 @@ let make = (
                       <ReactFinalFormField
                         name={item.outputPath}
                         initialValue=initialCountryIso
-                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                        render={field => {
                           <DropdownField
                             appearance=config.appearance
                             fieldName=localeString.countryLabel
@@ -1135,7 +1135,7 @@ let make = (
                         ->DropdownField.updateArrayOfStringToOptionsTypeArray
                       <ReactFinalFormField
                         name={item.outputPath}
-                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                        render={field => {
                           let val = field.input.value->Option.getOr(selectedBank)
                           <DropdownField
                             appearance=config.appearance
@@ -1156,7 +1156,7 @@ let make = (
                         bankNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                       <ReactFinalFormField
                         name={item.outputPath}
-                        render={(field: ReactFinalForm.Field.fieldProps) => {
+                        render={field => {
                           let val = field.input.value->Option.getOr(selectedBank)
                           <DropdownField
                             appearance=config.appearance
