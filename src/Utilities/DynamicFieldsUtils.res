@@ -629,9 +629,7 @@ let sortFieldConfigsByPriority = (fields: array<SuperpositionTypes.fieldConfig>)
 }
 
 // Process field configs: sort by priority only.
-let processFieldConfigs = (
-  fields: array<SuperpositionTypes.fieldConfig>
-) => {
+let processFieldConfigs = (fields: array<SuperpositionTypes.fieldConfig>) => {
   fields->sortFieldConfigsByPriority
 }
 
@@ -721,6 +719,90 @@ let removeCardNetworkFromFieldConfigs = (fields: array<SuperpositionTypes.fieldC
   fields->Array.filter(fc => !(fc.outputPath->String.toLowerCase->String.includes("card_network")))
 }
 
+let resolveFieldOptions = (
+  fields: array<SuperpositionTypes.fieldConfig>,
+  ~requiredFields: array<PaymentMethodsRecord.required_fields>,
+): array<SuperpositionTypes.fieldConfig> => {
+  let documentTypeOptions = extractDocumentTypeOptionsFromPML(requiredFields)
+  let addressCountryOptions = extractAddressCountryOptionsFromPML(requiredFields)
+  let currencyOptions = extractCurrencyOptionsFromPML(requiredFields)
+  let bankListOptions = extractBankListOptionsFromPML(requiredFields)
+
+  fields->Array.map(fc => {
+    let fieldType = fc->getFieldTypeFromConfig
+
+    let options = switch fieldType {
+    | DocumentTypeSelect =>
+      if fc.options->Array.length === 0 && documentTypeOptions->Array.length > 0 {
+        documentTypeOptions
+      } else {
+        fc.options
+      }
+    | AddressCountryInput =>
+      if fc.options->Array.length === 0 && addressCountryOptions->Array.length > 0 {
+        addressCountryOptions
+      } else {
+        fc.options
+      }
+    | CurrencySelect =>
+      if fc.options->Array.length === 0 && currencyOptions->Array.length > 0 {
+        currencyOptions
+      } else {
+        fc.options
+      }
+    | BankListSelect =>
+      if fc.options->Array.length === 0 && bankListOptions->Array.length > 0 {
+        bankListOptions
+      } else {
+        fc.options
+      }
+    | _ => fc.options
+    }
+    {...fc, fieldType, options}
+  })
+}
+
+// Merge separate first_name / last_name fields into a single FullNameInput field.
+let mergeNameFieldsIntoFullName = (
+  fields: array<SuperpositionTypes.fieldConfig>,
+): array<SuperpositionTypes.fieldConfig> => {
+  let firstNameSuffix = "first_name"
+  let lastNameSuffix = "last_name"
+  let defaultFullNamePath = "payment_method_data.billing.address.first_name"
+
+  let isNameField = (fc: SuperpositionTypes.fieldConfig) => {
+    let p = fc.outputPath
+    p->String.endsWith(firstNameSuffix) || p->String.endsWith(lastNameSuffix)
+  }
+
+  let firstName = fields->Array.find(fc => fc.outputPath->String.endsWith(firstNameSuffix))
+  let lastName = fields->Array.find(fc => fc.outputPath->String.endsWith(lastNameSuffix))
+  let nonNameFields = fields->Array.filter(fc => !(fc->isNameField))
+
+  switch (firstName, lastName) {
+  | (None, None) => nonNameFields
+  | _ => {
+      let fullNameConfig = {firstName, lastName}
+
+      let baseField =
+        firstName
+        ->Option.orElse(lastName)
+        ->Option.getOr({
+          name: "full_name",
+          displayName: "Full Name",
+          fieldType: FullNameInput(fullNameConfig),
+          priority: 0,
+          required: true,
+          options: [],
+          outputPath: defaultFullNamePath,
+        })
+
+      let fullNameField = {...baseField, fieldType: FullNameInput(fullNameConfig)}
+      [fullNameField, ...nonNameFields]
+    }
+  }
+}
+
 let useSuperpositionFields = (
   ~paymentMethod,
   ~paymentMethodType,
@@ -754,96 +836,10 @@ let useSuperpositionFields = (
 
     getSuperpositionFinalFields(eligibleConnectors, configParams, requiredFieldsFromPML)
     ->Promise.then(((_requiredFields, missingRequiredFields, superpositionInitialValues)) => {
-      let firstNameSuffix = "first_name"
-      let lastNameSuffix = "last_name"
-      let defaultFullNamePath = "payment_method_data.billing.address.first_name"
-
-      let documentTypeOptions = extractDocumentTypeOptionsFromPML(
-        paymentMethodTypes.required_fields,
-      )
-      let addressCountryOptions = extractAddressCountryOptionsFromPML(
-        paymentMethodTypes.required_fields,
-      )
-      let currencyOptions = extractCurrencyOptionsFromPML(paymentMethodTypes.required_fields)
-      let bankListOptions = extractBankListOptionsFromPML(paymentMethodTypes.required_fields)
-
-      let enhancedFields = missingRequiredFields->Array.map(
-        fc => {
-          let fieldType = fc->getFieldTypeFromConfig
-          
-          let options = switch fieldType {
-          | DocumentTypeSelect =>
-            if fc.options->Array.length === 0 && documentTypeOptions->Array.length > 0 {
-              documentTypeOptions
-            } else {
-              fc.options
-            }
-          | AddressCountryInput =>
-            if fc.options->Array.length === 0 && addressCountryOptions->Array.length > 0 {
-              addressCountryOptions
-            } else {
-              fc.options
-            }
-          | CurrencySelect =>
-            if fc.options->Array.length === 0 && currencyOptions->Array.length > 0 {
-              currencyOptions
-            } else {
-              fc.options
-            }
-          | BankListSelect =>
-            if fc.options->Array.length === 0 && bankListOptions->Array.length > 0 {
-              bankListOptions
-            } else {
-              fc.options
-            }
-          | _ => fc.options
-          }
-          {...fc, fieldType, options}
-        },
-      )
-
-      // Extract name fields from the list
-      let extractNameFields = fields => {
-        let firstName = fields->Array.find(fc => fc.outputPath->String.endsWith(firstNameSuffix))
-        let lastName = fields->Array.find(fc => fc.outputPath->String.endsWith(lastNameSuffix))
-        (firstName, lastName)
-      }
-
-      // Check if field is a name field
-      let isNameField = (fc: SuperpositionTypes.fieldConfig) => {
-        let p = fc.outputPath
-        p->String.endsWith(firstNameSuffix) || p->String.endsWith(lastNameSuffix)
-      }
-
-      let createFullNameField = (firstName, lastName) => {
-        let fullNameConfig = {firstName, lastName}
-
-        let baseField =
-          firstName
-          ->Option.orElse(lastName)
-          ->Option.getOr({
-            name: "full_name",
-            displayName: "Full Name",
-            fieldType: FullNameInput(fullNameConfig),
-            priority: 0,
-            required: true,
-            options: [],
-            outputPath: defaultFullNamePath,
-          })
-
-        {...baseField, fieldType: FullNameInput(fullNameConfig)}
-      }
-
-      let (firstNameField, lastNameField) = enhancedFields->extractNameFields
-
-      let nonNameFields = enhancedFields->Array.filter(fc => !(fc->isNameField))
-      let finalFields = switch (firstNameField, lastNameField) {
-      | (None, None) => nonNameFields
-      | _ => {
-          let fullNameField = createFullNameField(firstNameField, lastNameField)
-          [fullNameField, ...nonNameFields]
-        }
-      }
+      let finalFields =
+        missingRequiredFields
+        ->resolveFieldOptions(~requiredFields=paymentMethodTypes.required_fields)
+        ->mergeNameFieldsIntoFullName
 
       setSuperpositionMissingFields(_ => finalFields->deduplicateFieldConfigsByFieldType)
       setInitialValues(_ => superpositionInitialValues)
