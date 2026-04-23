@@ -323,7 +323,8 @@ let useCardForm = (~logger, ~paymentType) => {
       cardNumber->String.length == 0,
       cardEligibilityError,
     ) {
-    | (_, _, _, Some(msg)) => msg->String.length > 0 ? msg : localeString.cardNotEligibleText
+    | (_, _, _, Some(msg)) =>
+      PaymentHelpers.getCardEligibilityErrorText(~cardEligibilityError=Some(msg), ~localeString)
     | (_, _, true, None) => ""
     | (true, true, _, None) => ""
     | (true, _, _, None) => localeString.inValidCardErrorText

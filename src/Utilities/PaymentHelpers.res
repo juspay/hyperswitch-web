@@ -2319,3 +2319,15 @@ let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
   | _ => paymentMethodType
   }
 }
+
+let getCardEligibilityErrorText = (
+  ~cardEligibilityError,
+  ~localeString: LocaleStringTypes.localeStrings,
+) => {
+  switch cardEligibilityError {
+  | Some("")
+  | None =>
+    localeString.cardNotEligibleText
+  | Some(eligibilityErrorText) => eligibilityErrorText
+  }
+}
