@@ -223,6 +223,20 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     miniIcon: None,
   },
   {
+    paymentMethodName: "jazz_cash",
+    fields: [InfoElement],
+    icon: None,
+    displayName: "JazzCash",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "easy_paisa",
+    fields: [InfoElement],
+    icon: None,
+    displayName: "EasyPaisa",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "affirm",
     fields: [InfoElement],
     icon: Some(icon("affirm", ~size=20)),

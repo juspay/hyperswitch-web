@@ -17,6 +17,8 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
     "momo",
     "touch_n_go",
     "mifinity",
+    "jazz_cash",
+    "easy_paisa",
   ]
   let otherPaymentList = []
   paymentMethodListValue.paymentMethodsEnabled->Array.forEach(item => {

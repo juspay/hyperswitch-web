@@ -38,6 +38,8 @@ let paymentListLookupNew = (
     "mifinity",
     "bluecode",
     "revolut_pay",
+    "jazz_cash",
+    "easy_paisa",
     "skrill",
   ]
   let otherPaymentList = []
