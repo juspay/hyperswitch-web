@@ -146,7 +146,6 @@ let make = (
     ->removeClickToPayFieldsFromFieldConfigs(isSaveDetailsWithClickToPay)
     ->removeCardFieldsFromFieldConfigs(areCardFieldsRendered)
     ->removeCardNetworkFromFieldConfigs
-    ->processFieldConfigs
   }, (missingRequiredFields, billingAddress, isSaveDetailsWithClickToPay, areCardFieldsRendered))
 
   // let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)

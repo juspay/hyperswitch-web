@@ -614,25 +614,6 @@ let removeClickToPayFieldsFromFieldConfigs = (
   }
 }
 
-// Sort fieldConfig array by priority
-let sortFieldConfigsByPriority = (fields: array<SuperpositionTypes.fieldConfig>) => {
-  fields->Array.toSorted((a, b) => {
-    let diff = a.priority - b.priority
-    if diff < 0 {
-      -1.0
-    } else if diff > 0 {
-      1.0
-    } else {
-      0.0
-    }
-  })
-}
-
-// Process field configs: sort by priority only.
-let processFieldConfigs = (fields: array<SuperpositionTypes.fieldConfig>) => {
-  fields->sortFieldConfigsByPriority
-}
-
 // Check if a field type should be rendered outside billing section
 let isFieldTypeToRenderOutsideBillingConfig = (fc: SuperpositionTypes.fieldConfig) => {
   switch fc.fieldType {
@@ -763,9 +744,9 @@ let resolveFieldOptions = (
 }
 
 // Merge separate first_name / last_name fields into a single FullNameInput field.
-let mergeNameFieldsIntoFullName = (
-  fields: array<SuperpositionTypes.fieldConfig>,
-): array<SuperpositionTypes.fieldConfig> => {
+let mergeNameFieldsIntoFullName = (fields: array<SuperpositionTypes.fieldConfig>): array<
+  SuperpositionTypes.fieldConfig,
+> => {
   let firstNameSuffix = "first_name"
   let lastNameSuffix = "last_name"
   let defaultFullNamePath = "payment_method_data.billing.address.first_name"
@@ -885,4 +866,3 @@ let hasBothFieldTypes = (
 ): bool => {
   processedFieldConfigs->hasFieldType(fieldType1) && processedFieldConfigs->hasFieldType(fieldType2)
 }
-
