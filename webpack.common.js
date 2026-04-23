@@ -90,6 +90,9 @@ const authorizedFrameSources = [
   // Add other trusted sources here
 ];
 function extractBaseDSNUrl(dsn) {
+  if (typeof dsn !== "string" || dsn.length === 0) {
+    return null;
+  }
   const match = dsn.match(/^https:\/\/[^@]+@([^/]+)\//);
   if (match && match[1]) {
     return `https://${match[1]}`;
