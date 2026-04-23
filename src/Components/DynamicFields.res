@@ -316,7 +316,7 @@ let make = (
   let countryCodeOutputPath = React.useMemo(() => {
     processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(CountryCodeSelect)
   }, [processedFieldConfigs])
-  
+
   let documentNumberOutputPath = React.useMemo(() => {
     processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(DocumentNumberInput)
   }, [processedFieldConfigs])
