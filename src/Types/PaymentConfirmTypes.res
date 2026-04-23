@@ -33,10 +33,7 @@ type voucherDetails = {
   reference: string,
 }
 
-type pollConfig = {
-  delay_in_secs: int,
-  frequency: int,
-}
+type pollConfig = {delay_in_secs: int}
 
 type nextAction = {
   redirectToUrl: string,
@@ -74,7 +71,6 @@ let defaultRedirectTourl = {
 }
 let defaultPollConfig = {
   delay_in_secs: 2,
-  frequency: 0,
 }
 
 let defaultNextAction = {
@@ -154,7 +150,6 @@ let getVoucherDetails = json => {
 let getPollConfig = json => {
   {
     delay_in_secs: json->getInt("delay_in_secs", 2),
-    frequency: json->getInt("frequency", 0),
   }
 }
 
