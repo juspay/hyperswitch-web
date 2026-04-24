@@ -52,7 +52,7 @@ let make = (
     setCardError,
     maxCardLength,
     cardBrand,
-    isCardEligible,
+    cardEligibilityError,
   } = cardProps
 
   let {
@@ -215,7 +215,7 @@ let make = (
         (isBancontact || isCardDetailsValid) &&
         isNicknameValid &&
         areRequiredFieldsValid &&
-        isCardEligible &&
+        cardEligibilityError->Option.isNone &&
         isInstallmentValid
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
@@ -402,9 +402,10 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
-        } else if !isCardEligible {
-          setCardError(_ => localeString.cardNotEligibleText)
-          setUserError(localeString.cardNotEligibleText)
+        } else if cardEligibilityError->Option.isSome {
+          let msg = PaymentHelpers.getCardEligibilityErrorText(~cardEligibilityError, ~localeString)
+          setCardError(_ => msg)
+          setUserError(msg)
         } else if isCardSupported->Option.getOr(true)->not {
           if cardBrand == "" {
             setCardError(_ => localeString.enterValidCardNumberErrorText)
@@ -446,7 +447,7 @@ let make = (
     isClickToPayRememberMe,
     selectedInstallmentPlan,
     showInstallments,
-    isCardEligible,
+    cardEligibilityError,
   ))
   useSubmitPaymentData(submitCallback)
 
