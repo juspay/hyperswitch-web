@@ -229,7 +229,7 @@ describe("Cobadge Card Flow - Cybersource", () => {
 
     cy.wait(1000);
 
-    cy.get("#submit").click();
+    cy.get("#submit").should("be.visible").click();
 
     cy.contains("Thanks for your order!", { timeout: 30000 }).should(
       "be.visible"

@@ -62,7 +62,7 @@ describe("Submit Button States", () => {
 
       cy.enterCardDetails({ cardNo, card_exp_month, card_exp_year, cvc });
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.get("#submit").should("be.disabled");
     });
@@ -73,7 +73,7 @@ describe("Submit Button States", () => {
 
       cy.enterCardDetails({ cardNo, card_exp_month, card_exp_year, cvc });
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.get("#submit")
         .should("be.disabled");
@@ -90,7 +90,7 @@ describe("Submit Button States", () => {
         .find(`[data-testid=${testIds.expiryInputTestId}]`)
         .safeType("12");
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 10000 })
@@ -106,7 +106,7 @@ describe("Submit Button States", () => {
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .safeType("4242 4242");
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 5000 })
@@ -121,7 +121,7 @@ describe("Submit Button States", () => {
 
       cy.enterCardDetails({ cardNo, card_exp_month, card_exp_year, cvc });
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.contains("Thanks for your order!", { timeout: 10000 }).should(
         "be.visible",
@@ -135,7 +135,7 @@ describe("Submit Button States", () => {
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .safeType(stripeCards.successCard.cardNo);
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 5000 })
@@ -157,7 +157,7 @@ describe("Submit Button States", () => {
             stripeCards.successCard.card_exp_year,
         );
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 5000 })
@@ -173,7 +173,7 @@ describe("Submit Button States", () => {
         .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
         .safeType(stripeCards.successCard.cvc);
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 5000 })

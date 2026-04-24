@@ -47,7 +47,7 @@ describe("Card Payment Edge Cases", () => {
 
       cy.enterCardDetails({ cardNo, card_exp_month, card_exp_year, cvc });
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.contains("Please enter valid details", { timeout: 10000 }).should(
         "be.visible",
@@ -64,7 +64,7 @@ describe("Card Payment Edge Cases", () => {
         cvc: invalidCard.cvc,
       });
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.contains("Please enter valid details", { timeout: 10000 }).should(
         "be.visible",
@@ -85,7 +85,7 @@ describe("Card Payment Edge Cases", () => {
         .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
         .safeType(validCard.cvc);
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.contains("Thanks for your order!", { timeout: 10000 }).should(
         "be.visible",
@@ -101,7 +101,7 @@ describe("Card Payment Edge Cases", () => {
       cy.enterCardDetails({ cardNo, card_exp_month, card_exp_year, cvc });
 
       // Click submit multiple times rapidly
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       // After first click, verify the button is disabled while processing
       cy.get("#submit").should("be.disabled");
@@ -118,7 +118,7 @@ describe("Card Payment Edge Cases", () => {
 
       cy.enterCardDetails({ cardNo, card_exp_month, card_exp_year, cvc });
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       // Immediately check that the submit button is in a disabled/processing state
       cy.get("#submit").should("be.disabled");
@@ -188,7 +188,7 @@ describe("Card Payment Edge Cases", () => {
 
   describe("Empty Form Submission", () => {
     it("should show error when submitting completely empty form", () => {
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 5000 })
@@ -201,7 +201,7 @@ describe("Card Payment Edge Cases", () => {
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .safeType(stripeCards.successCard.cardNo);
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 5000 })

@@ -33,9 +33,8 @@ describe("Mandate Card Flow - Cybersource", () => {
   const { cardNo, card_exp_month, card_exp_year, cvc } =
     cybersourceCards.successCard;
 
-  it("should save card with off_session setup and complete first payment", () => {
+  beforeEach(() => {
     getIframeBody = () => cy.iframe(iframeSelector);
-
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
@@ -52,7 +51,9 @@ describe("Mandate Card Flow - Cybersource", () => {
       "setup_future_usage",
       "off_session"
     );
+  });
 
+  it("should save card with off_session setup and complete first payment", () => {
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
         cy.visit(getClientURL(clientSecret, publishableKey));
@@ -84,7 +85,7 @@ describe("Mandate Card Flow - Cybersource", () => {
       .find('[role="checkbox"][aria-checked="true"]')
       .should("exist");
 
-    cy.get("#submit").click();
+    cy.get("#submit").should("be.visible").click();
 
     cy.contains("Thanks for your order!", { timeout: 30000 }).should(
       "be.visible"
@@ -92,25 +93,6 @@ describe("Mandate Card Flow - Cybersource", () => {
   });
 
   it("should use saved card for second payment without CVC (mandate)", () => {
-    getIframeBody = () => cy.iframe(iframeSelector);
-
-    changeObjectKeyValue(
-      createPaymentBody,
-      "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE)
-    );
-    changeObjectKeyValue(
-      createPaymentBody,
-      "authentication_type",
-      "no_three_ds"
-    );
-    changeObjectKeyValue(createPaymentBody, "customer_id", customerId);
-    changeObjectKeyValue(
-      createPaymentBody,
-      "setup_future_usage",
-      "off_session"
-    );
-
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
         cy.visit(getClientURL(clientSecret, publishableKey));
@@ -129,7 +111,7 @@ describe("Mandate Card Flow - Cybersource", () => {
       .find("[data-testid=cvvInput]")
       .should("not.exist");
 
-    cy.get("#submit").click();
+    cy.get("#submit").should("be.visible").click();
 
     cy.contains("Thanks for your order!", { timeout: 30000 }).should(
       "be.visible"

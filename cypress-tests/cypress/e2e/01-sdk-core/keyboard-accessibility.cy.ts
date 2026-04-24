@@ -8,6 +8,9 @@ import {
   getClientURL,
   createPaymentBody,
   changeObjectKeyValue,
+  connectorEnum,
+  connectorProfileIdMapping,
+  defaultBillingAddress,
 } from "../../support/utils";
 import { stripeCards } from "../../support/cards";
 
@@ -23,26 +26,9 @@ describe("Keyboard Navigation and Accessibility", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      "pro_5fVcCxU8MFTYozgtf0P8",
+      connectorProfileIdMapping.get(connectorEnum.STRIPE),
     );
-    changeObjectKeyValue(createPaymentBody, "billing", {
-      email: "hyperswitch_sdk_demo_id@gmail.com",
-      address: {
-        line1: "1467",
-        line2: "Harrison Street",
-        line3: "Harrison Street",
-        city: "San Fransico",
-        state: "California",
-        zip: "94122",
-        country: "US",
-        first_name: "joseph",
-        last_name: "Doe",
-      },
-      phone: {
-        number: "8056594427",
-        country_code: "+91",
-      },
-    });
+    changeObjectKeyValue(createPaymentBody, "billing", defaultBillingAddress);
     changeObjectKeyValue(
       createPaymentBody,
       "customer_id",
@@ -106,7 +92,7 @@ describe("Keyboard Navigation and Accessibility", () => {
         .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
         .type(cvc);
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.contains("Thanks for your order!", { timeout: 10000 }).should(
         "be.visible",
@@ -185,7 +171,7 @@ describe("Keyboard Navigation and Accessibility", () => {
         .find(`[data-testid=${testIds.expiryInputTestId}]`)
         .safeType("12");
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 10000 })
@@ -195,7 +181,7 @@ describe("Keyboard Navigation and Accessibility", () => {
     });
 
     it("should clear error message when user starts correcting input", () => {
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 10000 })

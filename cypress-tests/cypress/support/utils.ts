@@ -117,6 +117,25 @@ export const createPaymentBody = {
   },
 };
 
+export const defaultBillingAddress = {
+  email: "hyperswitch_sdk_demo_id@gmail.com",
+  address: {
+    line1: "1467",
+    line2: "Harrison Street",
+    line3: "Harrison Street",
+    city: "San Fransico",
+    state: "California",
+    zip: "94122",
+    country: "US",
+    first_name: "joseph",
+    last_name: "Doe",
+  },
+  phone: {
+    number: "8056594427",
+    country_code: "+91",
+  },
+};
+
 export const changeObjectKeyValue = (
   object: Record<string, any>,
   key: string,

@@ -26,12 +26,9 @@ import {
   removeObjectKey,
   connectorEnum,
   connectorProfileIdMapping,
+  defaultBillingAddress,
 } from "../../support/utils";
 import { stripeCards } from "../../support/cards";
-
-/* ------------------------------------------------------------------ */
-/*  Lookup tables for expected translated strings per locale           */
-/* ------------------------------------------------------------------ */
 
 interface LocaleExpectations {
   code: string;
@@ -127,10 +124,6 @@ const locales: LocaleExpectations[] = [
   },
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Helper: create payment intent and visit with a specific locale     */
-/* ------------------------------------------------------------------ */
-
 const setupWithLocale = (
   locale: string,
   secretKey: string,
@@ -158,10 +151,6 @@ const setupWithLocale = (
   cy.waitForSDKReady();
 };
 
-/* ================================================================== */
-/*  TEST SUITES                                                        */
-/* ================================================================== */
-
 describe("Locale / i18n Tests", () => {
   const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
   const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
@@ -176,29 +165,8 @@ describe("Locale / i18n Tests", () => {
       "profile_id",
       connectorProfileIdMapping.get(connectorEnum.STRIPE),
     );
-    changeObjectKeyValue(createPaymentBody, "billing", {
-      email: "hyperswitch_sdk_demo_id@gmail.com",
-      address: {
-        line1: "1467",
-        line2: "Harrison Street",
-        line3: "Harrison Street",
-        city: "San Fransico",
-        state: "California",
-        zip: "94122",
-        country: "US",
-        first_name: "joseph",
-        last_name: "Doe",
-      },
-      phone: {
-        number: "8056594427",
-        country_code: "+91",
-      },
-    });
+    changeObjectKeyValue(createPaymentBody, "billing", defaultBillingAddress);
   });
-
-  /* ---------------------------------------------------------------- */
-  /*  1. Card label translations for every major locale                */
-  /* ---------------------------------------------------------------- */
 
   describe("Card Field Label Translations", () => {
     locales.forEach(
@@ -222,10 +190,6 @@ describe("Locale / i18n Tests", () => {
     );
   });
 
-  /* ---------------------------------------------------------------- */
-  /*  2. Expiry placeholder locale-specific format                     */
-  /* ---------------------------------------------------------------- */
-
   describe("Expiry Placeholder Localisation", () => {
     locales.forEach(({ code, name, validThruText }) => {
       it(`should show expiry floating label "${validThruText}" in ${name} (${code})`, () => {
@@ -240,10 +204,6 @@ describe("Locale / i18n Tests", () => {
     });
   });
 
-  /* ---------------------------------------------------------------- */
-  /*  3. Error message translations                                    */
-  /* ---------------------------------------------------------------- */
-
   describe("Error Message Translations", () => {
     locales.forEach(({ code, name, cardNumberEmptyText }) => {
       it(`should display translated empty-card error in ${name} (${code})`, () => {
@@ -257,7 +217,7 @@ describe("Locale / i18n Tests", () => {
           .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
           .safeType("123");
 
-        cy.get("#submit").click();
+        cy.get("#submit").should("be.visible").click();
 
         getIframeBody()
           .find(".Error.pt-1", { timeout: 5000 })
@@ -266,10 +226,6 @@ describe("Locale / i18n Tests", () => {
       });
     });
   });
-
-  /* ---------------------------------------------------------------- */
-  /*  4. RTL layout for Arabic and Hebrew                              */
-  /* ---------------------------------------------------------------- */
 
   describe("RTL Layout Support", () => {
     const rtlLocales = locales.filter((l) => l.direction === "rtl");
@@ -298,10 +254,6 @@ describe("Locale / i18n Tests", () => {
       });
     });
   });
-
-  /* ---------------------------------------------------------------- */
-  /*  5. Dynamic billing field label translations                      */
-  /* ---------------------------------------------------------------- */
 
   describe("Billing Field Label Translations", () => {
     const billingLocales: Array<{
@@ -369,10 +321,6 @@ describe("Locale / i18n Tests", () => {
     });
   });
 
-  /* ---------------------------------------------------------------- */
-  /*  6. Fallback behaviour for unsupported locale                     */
-  /* ---------------------------------------------------------------- */
-
   describe("Locale Fallback Behaviour", () => {
     it("should fall back to English for an unsupported locale code", () => {
       setupWithLocale("xx-UNKNOWN", secretKey, publishableKey);
@@ -414,10 +362,6 @@ describe("Locale / i18n Tests", () => {
     });
   });
 
-  /* ---------------------------------------------------------------- */
-  /*  7. Successful payment in non-English locales                     */
-  /* ---------------------------------------------------------------- */
-
   describe("Payment Completion in Non-English Locales", () => {
     const paymentLocales = [
       { code: "fr", name: "French" },
@@ -440,7 +384,7 @@ describe("Locale / i18n Tests", () => {
           cvc,
         });
 
-        cy.get("#submit").click();
+        cy.get("#submit").should("be.visible").click();
 
         cy.contains("Thanks for your order!", { timeout: 10000 }).should(
           "be.visible",
@@ -448,10 +392,6 @@ describe("Locale / i18n Tests", () => {
       });
     });
   });
-
-  /* ---------------------------------------------------------------- */
-  /*  8. RTL payment flow (Arabic)                                     */
-  /* ---------------------------------------------------------------- */
 
   describe("RTL Payment Flow", () => {
     it("should complete a card payment successfully in Arabic (RTL)", () => {
@@ -467,7 +407,7 @@ describe("Locale / i18n Tests", () => {
         cvc,
       });
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.contains("Thanks for your order!", { timeout: 10000 }).should(
         "be.visible",
@@ -487,17 +427,13 @@ describe("Locale / i18n Tests", () => {
         cvc,
       });
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.contains("Thanks for your order!", { timeout: 10000 }).should(
         "be.visible",
       );
     });
   });
-
-  /* ---------------------------------------------------------------- */
-  /*  9. All 18 supported locales – SDK loads without error            */
-  /* ---------------------------------------------------------------- */
 
   describe("SDK Loads for All Supported Locales", () => {
     const allLocales = [

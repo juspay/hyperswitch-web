@@ -9,6 +9,9 @@ import {
   getClientURL,
   createPaymentBody,
   changeObjectKeyValue,
+  connectorEnum,
+  connectorProfileIdMapping,
+  defaultBillingAddress,
 } from "../../support/utils";
 import { stripeCards } from "../../support/cards";
 
@@ -40,23 +43,9 @@ describe("Layout - Spaced Accordion", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      "pro_5fVcCxU8MFTYozgtf0P8",
+      connectorProfileIdMapping.get(connectorEnum.STRIPE),
     );
-    changeObjectKeyValue(createPaymentBody, "billing", {
-      email: "hyperswitch_sdk_demo_id@gmail.com",
-      address: {
-        line1: "1467",
-        line2: "Harrison Street",
-        line3: "Harrison Street",
-        city: "San Fransico",
-        state: "California",
-        zip: "94122",
-        country: "US",
-        first_name: "joseph",
-        last_name: "Doe",
-      },
-      phone: { number: "8056594427", country_code: "+91" },
-    });
+    changeObjectKeyValue(createPaymentBody, "billing", defaultBillingAddress);
 
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
@@ -159,7 +148,7 @@ describe("Layout - Spaced Accordion", () => {
 
       cy.enterCardDetails({ cardNo, card_exp_month, card_exp_year, cvc });
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.contains("Thanks for your order!", { timeout: 10000 }).should(
         "be.visible",

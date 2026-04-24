@@ -186,7 +186,7 @@ describe("Dynamic Billing Fields Comprehensive", () => {
       getIframeBody().find('input[name="city"]').type("San Francisco");
       getIframeBody().find('input[name="postal"]').type("94122");
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.get("#submit").should("be.visible");
     });
@@ -224,7 +224,7 @@ describe("Dynamic Billing Fields Comprehensive", () => {
 
       getIframeBody().find('input[name="postal"]').type("94122");
 
-      cy.get("#submit").click();
+      cy.get("#submit").should("be.visible").click();
 
       cy.get("#submit").should("be.disabled");
 
