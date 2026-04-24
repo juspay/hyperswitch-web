@@ -1197,26 +1197,57 @@ let make = (
                       : "TEST",
                   }->anyTypeToJson
                 }
-                let gPayClient = GooglePayType.google(gpayClientRequest)
-
-                gPayClient.isReadyToPay(payRequest)
-                ->then(res => {
-                  let dict = res->getDictFromJson
-                  let isReadyToPay = getBool(dict, "result", false)
-                  let msg = [("isReadyToPay", isReadyToPay->JSON.Encode.bool)]->Dict.fromArray
-                  mountedIframeRef->Window.iframePostMessage(msg)
-                  resolve()
-                })
-                ->catch(err => {
-                  logger.setLogInfo(
-                    ~value=err->anyTypeToJson->JSON.stringify,
-                    ~eventName=GOOGLE_PAY_FLOW,
+                let gPayClient = try {
+                  Some(GooglePayType.google(gpayClientRequest))
+                } catch {
+                | _ =>
+                  logger.setLogError(
+                    ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT - Client creation failed",
+                    ~eventName=GOOGLE_PAY_SCRIPT,
                     ~paymentMethod="GOOGLE_PAY",
-                    ~logType=DEBUG,
                   )
-                  resolve()
-                })
-                ->ignore
+                  let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
+                  mountedIframeRef->Window.iframePostMessage(msg)
+                  None
+                }
+
+                switch gPayClient {
+                | Some(client) =>
+                  try {
+                    client.isReadyToPay(payRequest)
+                    ->then(res => {
+                      let dict = res->getDictFromJson
+                      let isReadyToPay = getBool(dict, "result", false)
+                      let msg = [("isReadyToPay", isReadyToPay->JSON.Encode.bool)]->Dict.fromArray
+                      mountedIframeRef->Window.iframePostMessage(msg)
+                      resolve()
+                    })
+                    ->catch(err => {
+                      logger.setLogInfo(
+                        ~value=err->anyTypeToJson->JSON.stringify,
+                        ~eventName=GOOGLE_PAY_FLOW,
+                        ~paymentMethod="GOOGLE_PAY",
+                        ~logType=DEBUG,
+                      )
+                      let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
+                      mountedIframeRef->Window.iframePostMessage(msg)
+                      resolve()
+                    })
+                    ->ignore
+                  } catch {
+                  | exn =>
+                    logger.setLogInfo(
+                      ~value=exn->Identity.anyTypeToJson->JSON.stringify,
+                      ~eventName=GOOGLE_PAY_FLOW,
+                      ~paymentMethod="GOOGLE_PAY",
+                      ~logType=DEBUG,
+                    )
+                    let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
+                    mountedIframeRef->Window.iframePostMessage(msg)
+                    Promise.resolve()->catch(_ => resolve())->ignore
+                  }
+                | None => Promise.resolve()->catch(_ => resolve())->ignore
+                }
 
                 let handleGooglePayMessages = (event: Types.event) => {
                   let evJson = event.data->anyTypeToJson
@@ -1232,42 +1263,64 @@ let make = (
                     ->Option.getOr(JSON.Encode.null)
 
                   if gpayClicked && paymentDataRequest !== JSON.Encode.null {
-                    setTimeout(() => {
-                      gPayClient.loadPaymentData(paymentDataRequest)
-                      ->then(
-                        json => {
-                          let msg = [("gpayResponse", json->anyTypeToJson)]->Dict.fromArray
-                          event.source->Window.sendPostMessage(msg)
-                          let value = "Payment Data Filled: New Payment Method"
-                          logger.setLogInfo(
-                            ~value,
-                            ~eventName=PAYMENT_DATA_FILLED,
-                            ~paymentMethod="GOOGLE_PAY",
-                          )
-                          resolve()
-                        },
-                      )
-                      ->catch(
-                        err => {
-                          logger.setLogInfo(
-                            ~value=err->anyTypeToJson->JSON.stringify,
-                            ~eventName=GOOGLE_PAY_FLOW,
-                            ~paymentMethod="GOOGLE_PAY",
-                            ~logType=DEBUG,
-                          )
+                    switch gPayClient {
+                    | Some(client) => setTimeout(() => {
+                        client.loadPaymentData(paymentDataRequest)
+                        ->then(
+                          json => {
+                            let msg = [("gpayResponse", json->anyTypeToJson)]->Dict.fromArray
+                            event.source->Window.sendPostMessage(msg)
+                            let value = "Payment Data Filled: New Payment Method"
+                            logger.setLogInfo(
+                              ~value,
+                              ~eventName=PAYMENT_DATA_FILLED,
+                              ~paymentMethod="GOOGLE_PAY",
+                            )
+                            resolve()
+                          },
+                        )
+                        ->catch(
+                          err => {
+                            logger.setLogInfo(
+                              ~value=err->anyTypeToJson->JSON.stringify,
+                              ~eventName=GOOGLE_PAY_FLOW,
+                              ~paymentMethod="GOOGLE_PAY",
+                              ~logType=DEBUG,
+                            )
 
-                          let msg = [("gpayError", err->anyTypeToJson)]->Dict.fromArray
-                          event.source->Window.sendPostMessage(msg)
-                          resolve()
-                        },
+                            let msg = [("gpayError", err->anyTypeToJson)]->Dict.fromArray
+                            event.source->Window.sendPostMessage(msg)
+                            resolve()
+                          },
+                        )
+                        ->ignore
+                      }, 0)->ignore
+                    | None =>
+                      logger.setLogInfo(
+                        ~value="GooglePay client unavailable for loadPaymentData",
+                        ~eventName=GOOGLE_PAY_FLOW,
+                        ~paymentMethod="GOOGLE_PAY",
+                        ~logType=DEBUG,
                       )
-                      ->ignore
-                    }, 0)->ignore
+                      let msg =
+                        [
+                          ("gpayError", "GooglePay client unavailable"->JSON.Encode.string),
+                        ]->Dict.fromArray
+                      event.source->Window.sendPostMessage(msg)
+                      Promise.resolve()->then(_ => resolve())->catch(_ => resolve())->ignore
+                    }
                   }
                 }
                 addSmartEventListener("message", handleGooglePayMessages, "onGooglePayMessages")
               } catch {
-              | _ => Console.error("Error loading Gpay")
+              | err =>
+                logger.setLogError(
+                  ~value=`ERROR DURING LOADING GOOGLE PAY SCRIPT - ${err
+                    ->formatException
+                    ->JSON.stringify}`,
+                  ~eventName=GOOGLE_PAY_SCRIPT,
+                  ~paymentMethod="GOOGLE_PAY",
+                )
               }
             } else if wallets.googlePay === Never {
               logger.setLogInfo(
