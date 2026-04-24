@@ -1134,11 +1134,18 @@ type visaInitConfig = {dpaTransactionOptions: dpaTransactionOptionsVisa}
 type getCardsConfig = {consumerIdentity: consumerIdentity, validationData?: string}
 type errorObj = {reason?: string, message?: string}
 type profile = {maskedCards: array<clickToPayCard>}
+type identityValidationChannel = {
+  validationChannelId: string,
+  identityProvider?: string,
+  identityType: string,
+  maskedValidationChannel?: string,
+}
 type getCardsResultType = {
   actionCode: actionCode,
   error?: errorObj,
   profiles?: array<profile>,
   maskedValidationChannel?: string,
+  supportedValidationChannels?: array<identityValidationChannel>,
 }
 
 let getStrFromActionCode = actionCode => {
@@ -1204,6 +1211,9 @@ type visaEncryptCardPayload = {
 @val @scope("window") external initializedVSDK: Nullable.t<bool> = "initializedVSDK"
 @val @scope("window") external windowVisaDirectSdk: Nullable.t<visaDirect> = "visaDirectSdk"
 
+// Tracks which direct SDK scripts loaded successfully, set in onLoadCallback
+type directSdkLoadStatus = {visaDirectLoaded: bool, mastercardDirectLoaded: bool}
+
 @val external mastercardDirectSdk: mastercardDirect = "window.SRCSDK_MASTERCARD"
 @new external createVisaDirectSRCIAdapter: unit => visaDirect = "window.vAdapters.VisaSRCI"
 
@@ -1257,27 +1267,22 @@ let loadVisaUnifiedClickToPayScriptAndDirectSdkScripts = (
   let evaluate = () => {
     // Guard: only fire the final callback once
     if !callbackFired.contents {
-      let directScriptLoaded = visaDirectLoaded.contents || mastercardDirectLoaded.contents
-      let directScriptFailed = visaDirectFailed.contents && mastercardDirectFailed.contents
-
       let allSettled =
         (mainLoaded.contents || mainFailed.contents) &&
         (visaDirectLoaded.contents || visaDirectFailed.contents) &&
         (mastercardDirectLoaded.contents || mastercardDirectFailed.contents)
 
+      // Wait for ALL scripts to settle before deciding.
+      // If main loaded: fire onLoadCallback with direct SDK load status (even if direct scripts failed).
+      // If main failed: fire onErrorCallback — main UCTP script is required.
       if allSettled {
         callbackFired := true
-        if mainLoaded.contents && directScriptLoaded {
-          onLoadCallback()
+        if mainLoaded.contents {
+          onLoadCallback({
+            visaDirectLoaded: visaDirectLoaded.contents,
+            mastercardDirectLoaded: mastercardDirectLoaded.contents,
+          })
         } else {
-          onErrorCallback()
-        }
-      } else if mainFailed.contents || directScriptFailed {
-        // Early exit: main failed OR both direct scripts already failed — no point waiting
-        // We still wait if the other direct script hasn't settled yet (handled by allSettled above)
-        // But if BOTH direct scripts failed we know no recovery is possible
-        if mainFailed.contents || (visaDirectFailed.contents && mastercardDirectFailed.contents) {
-          callbackFired := true
           onErrorCallback()
         }
       }

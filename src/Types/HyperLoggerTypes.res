@@ -161,6 +161,7 @@ type eventName =
   | RECHECK_WINDOW_INIT
   | RECHECK_WINDOW_RETURNED
   | VISA_UCTP_CHECKOUT_INIT
+  | VISA_UCTP_CHECKOUT_CARD_MATCH
   | VISA_UCTP_CHECKOUT_RETURNED
   | VISA_UCTP_CHECKOUT_RESPONSE
   | AUTHENTICATION_SYNC_INIT
@@ -170,6 +171,8 @@ type eventName =
   | SIGN_OUT_RETURNED
   | VISA_UCTP_UNBIND_APP_INSTANCE_INIT
   | VISA_UCTP_UNBIND_APP_INSTANCE_RETURNED
+  | HYPER_DEINIT_INIT
+  | HYPER_DEINIT_RETURNED
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
@@ -239,4 +242,5 @@ type loggerMake = {
   setMetadata: JSON.t => unit,
   setSource: string => unit,
   setEphemeralKey: string => unit,
+  flushLogs: unit => promise<unit>,
 }

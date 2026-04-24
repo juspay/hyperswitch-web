@@ -251,6 +251,7 @@ let make = (
     | _ => ()
     }
   }
+  let flushLogs = () => sendLogsOverNetwork()
   let rec sendLogs = () => {
     switch timeOut.contents {
     | Some(val) => {
@@ -691,5 +692,6 @@ let make = (
     setLogError,
     setSource,
     setEphemeralKey,
+    flushLogs,
   }
 }

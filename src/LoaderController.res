@@ -646,6 +646,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let blockedBins = dict->getJsonObjectFromDict("blockedBins")
           setBlockedBins(_ => Loaded(blockedBins))
         }
+        if dict->getString("type", "") === "flushLogs" {
+          logger.flushLogs()->ignore
+        }
       } catch {
       | _ => setIntegrateErrorError(_ => true)
       }

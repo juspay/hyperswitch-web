@@ -139,6 +139,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   setSessionId: _x => (),
   setMetadata: _x => (),
   setSource: _x => (),
+  flushLogs: () => Promise.resolve(),
 }
 
 let saveLogsToIndexedDB = (logs: array<HyperLoggerTypes.logFile>) => {
@@ -291,6 +292,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | VISA_UCTP_CHECKOUT_RETURNED => Some(VISA_UCTP_CHECKOUT_INIT)
   | SIGN_OUT_RETURNED => Some(SIGN_OUT_INIT)
   | VISA_UCTP_UNBIND_APP_INSTANCE_RETURNED => Some(VISA_UCTP_UNBIND_APP_INSTANCE_INIT)
+  | HYPER_DEINIT_RETURNED => Some(HYPER_DEINIT_INIT)
   | CREATE_WINDOW_TIMEOUT => Some(CREATE_WINDOW)
   | APP_RENDERED
   | PAYMENT_METHOD_CHANGED
@@ -416,6 +418,8 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | AUTHENTICATION_SYNC_INIT
   | SIGN_OUT
   | SIGN_OUT_INIT
-  | VISA_UCTP_UNBIND_APP_INSTANCE_INIT =>
+  | VISA_UCTP_UNBIND_APP_INSTANCE_INIT
+  | HYPER_DEINIT_INIT
+  | VISA_UCTP_CHECKOUT_CARD_MATCH =>
     None
   }

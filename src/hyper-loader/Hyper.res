@@ -778,6 +778,16 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
+      let deinit = async () => {
+        logger.setLogDebug(~value="deinit started", ~eventName=HYPER_DEINIT_INIT)
+        await logger.flushLogs()
+        iframeRef.contents->Array.forEach(ifR => {
+          ifR->Window.iframePostMessage([("type", "flushLogs"->JSON.Encode.string)]->Dict.fromArray)
+        })
+        let _ = await Utils.delay(500)
+        logger.setLogInfo(~value="deinit completed", ~eventName=HYPER_DEINIT_RETURNED)
+      }
+
       let returnObject: hyperInstance = {
         confirmOneClickPayment,
         confirmPayment,
@@ -791,6 +801,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
+        deinit,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject
