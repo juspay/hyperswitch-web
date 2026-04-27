@@ -29,6 +29,24 @@ let isCustomerPresentForMastercard = ref(false)
 let isCustomerPresentForVisa = ref(false)
 let hadIdentityLookupError = ref(false)
 
+let maskEmail = (email: string): string => {
+  let parts = email->String.split("@")
+  switch (parts->Array.get(0), parts->Array.get(1)) {
+  | (Some(local), Some(domain)) =>
+    switch local->String.length {
+    | 0 | 1 => email
+    | len =>
+      let maskCount = len - 2 > 0 ? len - 2 : 0
+      local->String.slice(~start=0, ~end=1) ++
+      Array.make(~length=maskCount, "*")->Array.join("") ++
+      local->String.sliceToEnd(~start=len - 1) ++
+      "@" ++
+      domain
+    }
+  | _ => email
+  }
+}
+
 let initClickToPaySession = async (
   ~clientSecret,
   ~publishableKey,
@@ -137,15 +155,18 @@ let initClickToPaySession = async (
         ->getStringFromBool}`,
       ~eventName=IS_CUSTOMER_PRESENT,
     )
-    logger.setLogDebug(
-      ~value=`Is customer present method called with email: ${email
-        ->Option.isSome
-        ->getStringFromBool}`,
-      ~eventName=IS_CUSTOMER_PRESENT_INIT,
-    )
     switch email {
-    | Some(emailVal) => customerEmail := emailVal
-    | None => ()
+    | Some(emailVal) =>
+      logger.setLogDebug(
+        ~value=`Is customer present method called with email: ${maskEmail(emailVal)}`,
+        ~eventName=IS_CUSTOMER_PRESENT_INIT,
+      )
+      customerEmail := emailVal
+    | None =>
+      logger.setLogDebug(
+        ~value=`Is customer present method called without email`,
+        ~eventName=IS_CUSTOMER_PRESENT_INIT,
+      )
     }
 
     // Early return: if any direct SDK script failed to load or init failed,
@@ -195,7 +216,11 @@ let initClickToPaySession = async (
         ~eventName=IS_CUSTOMER_PRESENT_RETURNED,
       )
 
-      let eligibilityCheckData = [("click_to_pay", []->Utils.getJsonFromArrayOfJson)]
+      let mastercardData = [("consumerPresent", false->JSON.Encode.bool)]->getJsonFromArrayOfJson
+      let visaData = [("consumerPresent", false->JSON.Encode.bool)]->getJsonFromArrayOfJson
+      let clickToPayData =
+        [("mastercard", mastercardData), ("visa", visaData)]->getJsonFromArrayOfJson
+      let eligibilityCheckData = [("click_to_pay", clickToPayData)]
       let eligibilityCheckBodyArr = [
         ("eligibility_check_data", eligibilityCheckData->Utils.getJsonFromArrayOfJson),
       ]
@@ -274,6 +299,10 @@ let initClickToPaySession = async (
                 ->JSON.stringify}`,
               ~eventName=MASTERCARD_DCTP_ID_LOOKUP_RETURNED,
             )
+            clickToPayData->Array.push((
+              "mastercard",
+              [("consumerPresent", false->JSON.Encode.bool)]->getJsonFromArrayOfJson,
+            ))
           }
         }
 
@@ -299,6 +328,10 @@ let initClickToPaySession = async (
                 ->JSON.stringify}`,
               ~eventName=VISA_DCTP_ID_LOOKUP_RETURNED,
             )
+            clickToPayData->Array.push((
+              "visa",
+              [("consumerPresent", false->JSON.Encode.bool)]->getJsonFromArrayOfJson,
+            ))
           }
         }
       | _ => ()
@@ -378,6 +411,12 @@ let initClickToPaySession = async (
         ~eventName=VISA_UCTP_GET_CARDS_INIT,
       )
       let getCardsResponse = await vsdk.getCards(getCardsConfig)
+      logger.setLogDebug(
+        ~value=`Unified Click to Pay Get Cards Response: ${getCardsResponse
+          ->Identity.anyTypeToJson
+          ->JSON.stringify}`,
+        ~eventName=VISA_UCTP_GET_CARDS_RETURNED,
+      )
 
       let statusCode = switch getCardsResponse.actionCode {
       | PENDING_CONSUMER_IDV => "TRIGGERED_CUSTOMER_AUTHENTICATION"
@@ -397,11 +436,6 @@ let initClickToPaySession = async (
       }
 
       if statusCode !== "ERROR" {
-        logger.setLogDebug(
-          ~value=`Unified Click to Pay Get Cards Returned statusCode: ${statusCode}`,
-          ~eventName=VISA_UCTP_GET_CARDS_RETURNED,
-        )
-        logger.setLogDebug(~value=statusCode, ~eventName=GET_USER_TYPE_RETURNED)
         let baseFields = [("statusCode", statusCode->JSON.Encode.string)]
 
         let enrichedFields = switch getCardsResponse.actionCode {
@@ -425,14 +459,14 @@ let initClickToPaySession = async (
         | _ => baseFields
         }
 
-        enrichedFields->getJsonFromArrayOfJson
-      } else {
-        logger.setLogError(
-          ~value=`Error while calling getCards method from Visa Unified Click to Pay: ${getCardsResponse
-            ->Identity.anyTypeToJson
-            ->JSON.stringify}`,
-          ~eventName=VISA_UCTP_GET_CARDS_RETURNED,
+        let responseJson = enrichedFields->getJsonFromArrayOfJson
+
+        logger.setLogDebug(
+          ~value=`getUserType returned: ${responseJson->JSON.stringify}`,
+          ~eventName=GET_USER_TYPE_RETURNED,
         )
+        responseJson
+      } else {
         logger.setLogError(
           ~value=`Error while calling getCards method from Visa Unified Click to Pay: ${getCardsResponse
             ->Identity.anyTypeToJson
