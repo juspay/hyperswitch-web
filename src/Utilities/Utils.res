@@ -760,23 +760,6 @@ let addSize = (str: string, value: float, unit: sizeunit) => {
 }
 let toInt = val => val->Int.fromString->Option.getOr(0)
 
-let validateRountingNumber = str => {
-  if str->String.length != 9 {
-    false
-  } else {
-    let firstWeight = 3
-    let weights = [firstWeight, 7, 1, 3, 7, 1, 3, 7, 1]
-    let sum =
-      str
-      ->String.split("")
-      ->Array.mapWithIndex((item, i) => item->toInt * weights[i]->Option.getOr(firstWeight))
-      ->Array.reduce(0, (acc, val) => {
-        acc + val
-      })
-    mod(sum, 10) == 0
-  }
-}
-
 let handlePostMessageEvents = (
   ~complete,
   ~empty,

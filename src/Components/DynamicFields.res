@@ -508,7 +508,7 @@ let make = (
                     ? localeString.cardHolderName
                     : localeString.fullNameLabel
                 switch (config.firstName, config.lastName) {
-                | (Some(firstNameFC), Some(lastNameFC)) =>
+                | (Some(firstNameFieldConfig), Some(lastNameFieldConfig)) =>
                   <>
                     <RenderIf condition={!isSpacedInnerLayout}>
                       <div
@@ -522,11 +522,11 @@ let make = (
                     </RenderIf>
                     <FullNamePaymentInput
                       customFieldName={Some(defaultName)}
-                      firstNamePath={firstNameFC.outputPath}
-                      lastNamePath={lastNameFC.outputPath}
+                      firstNamePath={firstNameFieldConfig.outputPath}
+                      lastNamePath={lastNameFieldConfig.outputPath}
                     />
                   </>
-                | (Some(firstNameFC), None) =>
+                | (Some(firstNameFieldConfig), None) =>
                   <>
                     <RenderIf condition={!isSpacedInnerLayout}>
                       <div
@@ -539,7 +539,7 @@ let make = (
                       </div>
                     </RenderIf>
                     <ReactFinalFormField
-                      name={firstNameFC.outputPath}
+                      name={firstNameFieldConfig.outputPath}
                       validationRule=Validation.FirstName
                       render={field => {
                         let val = field.input.value->Option.getOr("")
@@ -563,7 +563,7 @@ let make = (
                       }}
                     />
                   </>
-                | (None, Some(lastNameFC)) =>
+                | (None, Some(lastNameFieldConfig)) =>
                   <>
                     <RenderIf condition={!isSpacedInnerLayout}>
                       <div
@@ -576,7 +576,7 @@ let make = (
                       </div>
                     </RenderIf>
                     <ReactFinalFormField
-                      name={lastNameFC.outputPath}
+                      name={lastNameFieldConfig.outputPath}
                       validationRule=Validation.LastName
                       render={field => {
                         let val = field.input.value->Option.getOr("")
@@ -618,7 +618,7 @@ let make = (
                   render={field => {
                     let val = field.input.value->Option.getOr("")
                     <PaymentField
-                      fieldName="Account Number"
+                      fieldName={item.displayName}
                       value={
                         RecoilAtomTypes.value: val,
                         isValid: Some(field.meta.valid),
@@ -632,7 +632,7 @@ let make = (
                         field.input.onChange(cleanValue)
                       }}
                       onBlur={_ev => field.input.onBlur()}
-                      type_="tel"
+                      type_="text"
                       name="bankAccountNumber"
                       maxLength=17
                       inputRef=bankAccountNumberRef
@@ -690,6 +690,34 @@ let make = (
                   }}
                 />
               | BlikCodeInput => <BlikCodePaymentInput name={item.outputPath} />
+              | RoutingNumberInput =>
+                <ReactFinalFormField
+                  name={item.outputPath}
+                  validationRule={Validation.fieldTypeToValidationRule(RoutingNumberInput)}
+                  render={field => {
+                    let val = field.input.value->Option.getOr("")
+                    <PaymentField
+                      fieldName={item.displayName}
+                      value={
+                        RecoilAtomTypes.value: val,
+                        isValid: Some(field.meta.valid),
+                        errorString: submitFailed || field.meta.touched
+                          ? field.meta.error->Option.getOr("")
+                          : "",
+                      }
+                      onChange={ev => {
+                        let value = ReactEvent.Form.target(ev)["value"]
+                        field.input.onChange(value)
+                      }}
+                      onBlur={_ev => field.input.onBlur()}
+                      type_="text"
+                      name="routingNumber"
+                      maxLength=9
+                      inputRef={React.useRef(Nullable.null)}
+                      placeholder="123456789"
+                    />
+                  }}
+                />
               | DocumentNumberInput
               | EmailInput(_)
               | InfoElementType
@@ -1195,6 +1223,7 @@ let make = (
                     CryptoNetworkSelect
                     | DatePicker
                     | VpaTextInput
+                    | RoutingNumberInput
                     | BankAccountNumberInput
                     | IbanInput
                     | SourceBankAccountIdInput

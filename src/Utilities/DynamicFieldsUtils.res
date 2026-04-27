@@ -494,82 +494,93 @@ let extractBankListOptionsFromPML = (
 }
 
 // Get field type from outputPath when superposition fieldType is generic
-let getFieldTypeFromConfig = (fc: SuperpositionTypes.fieldConfig): SuperpositionTypes.fieldType => {
-  let p = fc.outputPath->String.toLowerCase
+let getFieldTypeFromConfig = (
+  fieldConfig: SuperpositionTypes.fieldConfig,
+): SuperpositionTypes.fieldType => {
+  let outputPath = fieldConfig.outputPath->String.toLowerCase
 
-  if p->String.includes("gift_card") && p->String.endsWith("number") {
+  if outputPath->String.includes("gift_card") && outputPath->String.endsWith("number") {
     GiftCardNumberInput
-  } else if p->String.includes("gift_card") && p->String.endsWith("cvc") {
+  } else if outputPath->String.includes("gift_card") && outputPath->String.endsWith("cvc") {
     GiftCardPinInput
-  } else if p->String.includes("card_cvc") || p->String.includes("card.cvc") {
+  } else if outputPath->String.includes("card_cvc") || outputPath->String.includes("card.cvc") {
     CvcPasswordInput
-  } else if p->String.includes("card_number") || p->String.includes("card.number") {
+  } else if (
+    outputPath->String.includes("card_number") || outputPath->String.includes("card.number")
+  ) {
     CardNumberTextInput
-  } else if p->String.includes("card_exp_month") || p->String.includes("card.exp_month") {
+  } else if (
+    outputPath->String.includes("card_exp_month") || outputPath->String.includes("card.exp_month")
+  ) {
     MonthSelect
-  } else if p->String.includes("card_exp_year") || p->String.includes("card.exp_year") {
+  } else if (
+    outputPath->String.includes("card_exp_year") || outputPath->String.includes("card.exp_year")
+  ) {
     YearSelect
   } else if (
-    p->String.includes("billing.address.first_name") ||
-      p->String.includes("billing.address.last_name")
+    outputPath->String.includes("billing.address.first_name") ||
+      outputPath->String.includes("billing.address.last_name")
   ) {
     FullNameInput({firstName: None, lastName: None})
-  } else if p->String.includes("billing.address.line1") {
+  } else if outputPath->String.includes("billing.address.line1") {
     AddressLine1Input
-  } else if p->String.includes("billing.address.line2") {
+  } else if outputPath->String.includes("billing.address.line2") {
     AddressLine2Input
-  } else if p->String.includes("billing.address.city") {
+  } else if outputPath->String.includes("billing.address.city") {
     AddressCityInput
-  } else if p->String.includes("billing.address.state") {
+  } else if outputPath->String.includes("billing.address.state") {
     AddressStateInput
-  } else if p->String.includes("billing.address.country") {
+  } else if outputPath->String.includes("billing.address.country") {
     AddressCountryInput
   } else if (
-    p->String.includes("billing.address.zip") || p->String.includes("billing.address.postal")
+    outputPath->String.includes("billing.address.zip") ||
+      outputPath->String.includes("billing.address.postal")
   ) {
     AddressPostalCodeInput
-  } else if p->String.includes("billing.email") {
+  } else if outputPath->String.includes("billing.email") {
     EmailInput([])
-  } else if p->String.includes("billing.phone.country_code") {
+  } else if outputPath->String.includes("billing.phone.country_code") {
     CountryCodeSelect
-  } else if p->String.includes("billing.phone") {
+  } else if outputPath->String.includes("billing.phone") {
     PhoneInput
-  } else if p->String.includes("crypto.network") {
+  } else if outputPath->String.includes("crypto.network") {
     CryptoNetworkSelect
-  } else if p->String.includes("crypto.pay_currency") {
+  } else if outputPath->String.includes("crypto.pay_currency") {
     CurrencySelect
-  } else if p->String.includes("vpa") {
+  } else if outputPath->String.includes("vpa") {
     VpaTextInput
-  } else if p->String.includes("pix.key") {
+  } else if outputPath->String.includes("pix.key") {
     PixKeyInput
-  } else if p->String.includes("pix.cpf") {
+  } else if outputPath->String.includes("pix.cpf") {
     PixCpfInput
-  } else if p->String.includes("pix.cnpj") {
+  } else if outputPath->String.includes("pix.cnpj") {
     PixCnpjInput
-  } else if p->String.includes("blik_code") {
+  } else if outputPath->String.includes("blik_code") {
     BlikCodeInput
-  } else if p->String.includes("bank_account_number") {
+  } else if outputPath->String.includes("account_number") {
     BankAccountNumberInput
-  } else if p->String.includes("iban") {
+  } else if outputPath->String.includes("iban") {
     IbanInput
-  } else if p->String.includes("source_bank_account_id") {
+  } else if outputPath->String.includes("source_bank_account_id") {
     SourceBankAccountIdInput
-  } else if p->String.includes("document_details.document_type") {
+  } else if outputPath->String.includes("routing_number") {
+    RoutingNumberInput
+  } else if outputPath->String.includes("document_details.document_type") {
     DocumentTypeSelect
-  } else if p->String.includes("document_details.document_number") {
+  } else if outputPath->String.includes("document_details.document_number") {
     DocumentNumberInput
-  } else if p->String.includes("date_of_birth") {
+  } else if outputPath->String.includes("date_of_birth") {
     DatePicker
-  } else if p->String.includes("bank_redirect") && p->String.includes(".issuer") {
+  } else if outputPath->String.includes("bank_redirect") && outputPath->String.includes(".issuer") {
     BankSelect
   } else {
-    fc.fieldType
+    fieldConfig.fieldType
   }
 }
 
 // Check if a fieldConfig is a billing address field
-let isBillingAddressFieldConfig = (fc: SuperpositionTypes.fieldConfig) => {
-  switch fc.fieldType {
+let isBillingAddressFieldConfig = (fieldConfig: SuperpositionTypes.fieldConfig) => {
+  switch fieldConfig.fieldType {
   // | BillingNameInput
   | AddressLine1Input
   | AddressLine2Input
@@ -579,13 +590,13 @@ let isBillingAddressFieldConfig = (fc: SuperpositionTypes.fieldConfig) => {
   | AddressCountryInput => true
   | _ =>
     // Also check outputPath for billing address fields
-    fc.outputPath->String.includes("billing.address")
+    fieldConfig.outputPath->String.includes("billing.address")
   }
 }
 
 // Check if a fieldConfig is a ClickToPay field (Email or Phone)
-let isClickToPayFieldConfig = (fc: SuperpositionTypes.fieldConfig) => {
-  switch fc.fieldType {
+let isClickToPayFieldConfig = (fieldConfig: SuperpositionTypes.fieldConfig) => {
+  switch fieldConfig.fieldType {
   | EmailInput(_)
   | PhoneInput
   | CountryCodeSelect => true
@@ -618,8 +629,8 @@ let removeClickToPayFieldsFromFieldConfigs = (
 }
 
 // Check if a field type should be rendered outside billing section
-let isFieldTypeToRenderOutsideBillingConfig = (fc: SuperpositionTypes.fieldConfig) => {
-  switch fc.fieldType {
+let isFieldTypeToRenderOutsideBillingConfig = (fieldConfig: SuperpositionTypes.fieldConfig) => {
+  switch fieldConfig.fieldType {
   | CardNumberTextInput
   | CvcPasswordInput
   | MonthSelect
@@ -634,6 +645,7 @@ let isFieldTypeToRenderOutsideBillingConfig = (fc: SuperpositionTypes.fieldConfi
   | BankAccountNumberInput
   | IbanInput
   | SourceBankAccountIdInput
+  | RoutingNumberInput
   | GiftCardNumberInput
   | GiftCardPinInput
   | DocumentNumberInput
@@ -671,12 +683,13 @@ let deduplicateFieldConfigsByFieldType = (fields: array<SuperpositionTypes.field
 }
 
 // Check if a field is a card field (card number, expiry, cvc)
-let isCardField = (fc: SuperpositionTypes.fieldConfig) => {
-  let isBankRedirectCard = fc.outputPath->String.toLowerCase->String.includes("bank_redirect")
+let isCardField = (fieldConfig: SuperpositionTypes.fieldConfig) => {
+  let isBankRedirectCard =
+    fieldConfig.outputPath->String.toLowerCase->String.includes("bank_redirect")
   if isBankRedirectCard {
     false
   } else {
-    switch fc.fieldType {
+    switch fieldConfig.fieldType {
     | CardNumberTextInput
     | MonthSelect
     | YearSelect
@@ -754,9 +767,9 @@ let mergeNameFieldsIntoFullName = (fields: array<SuperpositionTypes.fieldConfig>
   let lastNameSuffix = "last_name"
   let defaultFullNamePath = "payment_method_data.billing.address.first_name"
 
-  let isNameField = (fc: SuperpositionTypes.fieldConfig) => {
-    let p = fc.outputPath
-    p->String.endsWith(firstNameSuffix) || p->String.endsWith(lastNameSuffix)
+  let isNameField = (fieldConfig: SuperpositionTypes.fieldConfig) => {
+    let outputPath = fieldConfig.outputPath
+    outputPath->String.endsWith(firstNameSuffix) || outputPath->String.endsWith(lastNameSuffix)
   }
 
   let firstName = fields->Array.find(fc => fc.outputPath->String.endsWith(firstNameSuffix))
