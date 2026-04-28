@@ -212,6 +212,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     let priorityEventNames = [
       APP_RENDERED,
       ORCA_ELEMENTS_CALLED,
+      ORCA_ELEMENTS,
       PAYMENT_DATA_FILLED,
       PAYMENT_ATTEMPT,
       CONFIRM_CALL,

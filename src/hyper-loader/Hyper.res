@@ -548,7 +548,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
-          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=ORCA_ELEMENTS_CALLED)
+          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=ORCA_ELEMENTS)
           resolve()
         })
         ->catch(_ => resolve())
