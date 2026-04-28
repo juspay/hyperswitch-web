@@ -193,67 +193,53 @@ let rec pollRetrievePaymentIntent = (
   | None => false
   }
 
-  if isExpired {
-    retrievePaymentIntent(
-      clientSecret,
-      ~headers,
-      ~publishableKey,
-      ~logger,
-      ~customPodUri,
-      ~isForceSync,
-      ~sdkAuthorization,
-    )
-    ->then(json => resolve(json))
-    ->catch(_ => resolve(JSON.Encode.null))
-  } else {
-    retrievePaymentIntent(
-      clientSecret,
-      ~headers,
-      ~publishableKey,
-      ~logger,
-      ~customPodUri,
-      ~isForceSync,
-      ~sdkAuthorization,
-    )
-    ->then(json => {
-      let dict = json->getDictFromJson
-      let status = dict->getString("status", "")
+  retrievePaymentIntent(
+    clientSecret,
+    ~headers,
+    ~publishableKey,
+    ~logger,
+    ~customPodUri,
+    ~isForceSync,
+    ~sdkAuthorization,
+  )
+  ->then(json => {
+    let dict = json->getDictFromJson
+    let status = dict->getString("status", "")
 
-      if status === "succeeded" || status === "failed" {
-        resolve(json)
-      } else {
-        delay(delayInMs)
-        ->then(_val => {
-          pollRetrievePaymentIntent(
-            clientSecret,
-            ~headers,
-            ~publishableKey,
-            ~logger,
-            ~customPodUri,
-            ~isForceSync,
-            ~sdkAuthorization,
-            ~delayInMs,
-            ~endTimestampNanos,
-          )
-        })
-        ->catch(_ => Promise.resolve(JSON.Encode.null))
-      }
-    })
-    ->catch(e => {
-      Console.error2("Unable to retrieve payment due to following error", e)
-      pollRetrievePaymentIntent(
-        clientSecret,
-        ~headers,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-        ~isForceSync,
-        ~sdkAuthorization,
-        ~delayInMs,
-        ~endTimestampNanos,
-      )
-    })
-  }
+    if status === "succeeded" || status === "failed" || isExpired {
+      resolve(json)
+    } else {
+      delay(delayInMs)
+      ->then(_val => {
+        pollRetrievePaymentIntent(
+          clientSecret,
+          ~headers,
+          ~publishableKey,
+          ~logger,
+          ~customPodUri,
+          ~isForceSync,
+          ~sdkAuthorization,
+          ~delayInMs,
+          ~endTimestampNanos,
+        )
+      })
+      ->catch(_ => Promise.resolve(JSON.Encode.null))
+    }
+  })
+  ->catch(e => {
+    Console.error2("Unable to retrieve payment due to following error", e)
+    pollRetrievePaymentIntent(
+      clientSecret,
+      ~headers,
+      ~publishableKey,
+      ~logger,
+      ~customPodUri,
+      ~isForceSync,
+      ~sdkAuthorization,
+      ~delayInMs,
+      ~endTimestampNanos,
+    )
+  })
 }
 
 let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger, ~sdkAuthorization) => {

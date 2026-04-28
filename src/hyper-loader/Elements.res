@@ -1413,13 +1413,18 @@ let make = (
         mountedIframeRef->Window.iframePostMessage(message)
       }
 
+      let updatedOptions = {
+        let dict = newOptions->Utils.getDictFromJson->Dict.copy
+        dict->Dict.set("locale", locale)
+        dict->JSON.Encode.object
+      }
+
       let paymentElement = LoaderPaymentElement.make(
         componentType,
-        newOptions,
+        updatedOptions,
         setIframeRefForComponent,
         iframeRef,
         mountPostMessage,
-        ~locale=locale->Utils.getStringFromJson("auto"),
         ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
         ~logger=Some(logger),
       )

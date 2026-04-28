@@ -20,6 +20,13 @@ let make = (~fieldType="") => {
       {value: val, isValid: None, errorString: ""}
     }
 
+  let validatePixAccountNumber = (val): RecoilAtomTypes.field =>
+    if val->String.length > 0 {
+      {value: val, isValid: Some(true), errorString: ""}
+    } else {
+      {value: val, isValid: None, errorString: ""}
+    }
+
   let validatePixCNPJ = (val): RecoilAtomTypes.field => {
     let isCNPJValid = CnpjValidation.isValidCNPJ(val)
     if isCNPJValid {
@@ -81,7 +88,7 @@ let make = (~fieldType="") => {
       pixAccountNumber,
       localeString.pixAccountNumberPlaceholder,
       None,
-      validatePixKey,
+      validatePixAccountNumber,
     )
   | _ => (
       "",

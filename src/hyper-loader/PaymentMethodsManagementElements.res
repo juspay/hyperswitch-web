@@ -232,13 +232,18 @@ let make = (
         mountedIframeRef->Window.iframePostMessage(message)
       }
 
+      let updatedOptions = {
+        let dict = newOptions->Utils.getDictFromJson->Dict.copy
+        dict->Dict.set("locale", locale)
+        dict->JSON.Encode.object
+      }
+
       let paymentElement = LoaderPaymentElement.make(
         componentType,
-        newOptions,
+        updatedOptions,
         setElementIframeRef,
         iframeRef,
         mountPostMessage,
-        ~locale=locale->Utils.getStringFromJson("auto"),
         ~isPaymentManagementElement=true,
         ~redirectionFlags=RecoilAtoms.defaultRedirectionFlags,
         ~logger=Some(logger),

@@ -213,8 +213,7 @@ let getNextAction = (dict, str) => {
       iframe_data: Some(json->Utils.getJsonObjectFromDict("iframe_data")),
       poll_config: {
         json
-        ->Dict.get("poll_config")
-        ->Option.flatMap(JSON.Decode.object)
+        ->getOptionalDict("poll_config")
         ->Option.map(json => json->getPollConfig)
       },
       ddc_data: json->getDdcData,
