@@ -134,11 +134,24 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         optionsLocaleString == "" ? config.locale : optionsLocaleString,
       )
       let constantString = await CardTheme.getConstantStringsObject()
-      let _ = await S3Utils.initializeCountryData(~locale=config.locale, ~logger)
+      let rawLocale =
+        optionsLocaleString != ""
+          ? optionsLocaleString
+          : config.locale === "auto"
+          ? Window.Navigator.language
+          : config.locale
+      // Normalize locale to canonical form using the SDK's locale mapping
+      // Known locales (e.g., "en-GB", "fr-BE", "zh-Hant") are preserved as-is
+      // Unknown variants (e.g., "en-US") are mapped to their base language ("en")
+      let resolvedLocale =
+        rawLocale
+        ->LocaleStringHelper.mapLocalStringToTypeLocale
+        ->LocaleStringHelper.localeTypeToString
+      let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
       setConfig(_ => {
         config: {
           appearance,
-          locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
+          locale: resolvedLocale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
           pmClientSecret: config.pmClientSecret,
