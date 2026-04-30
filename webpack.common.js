@@ -168,7 +168,7 @@ const repoPublicPath =
 // Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
-  if (isEUStack && env === "prod") return "https://eu.hyperswitch.io";
+  if (isEUStack && env === "prod") return "https://eu.hyperswitch.io/sdk";
   const urls = {
     prod: "https://checkout.hyperswitch.io",
     sandbox: "https://beta.hyperswitch.io",
