@@ -250,7 +250,7 @@ let toValidationLocale = (webLocale: localeStrings): Validation.validationLocale
   inValidExpiryErrorText: webLocale.inValidExpiryErrorText,
   cvcNumberEmptyText: webLocale.cvcNumberEmptyText,
   inValidCVCErrorText: webLocale.inCompleteCVCErrorText,
-  unsupportedCardErrorText: webLocale.cardNotEligibleText,
+  unsupportedCardErrorText: webLocale.blockedCardText,
   emailEmptyText: webLocale.emailEmptyText,
   emailInvalidText: webLocale.emailInvalidText,
   cardHolderNameRequiredText: webLocale.cardHolderNameRequiredText,
