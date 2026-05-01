@@ -180,7 +180,20 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
 
   let sendLogsOverNetwork = async () => {
     try {
-      await sendCachedLogsFromIDB()
+      // Fire-and-forget: do NOT await sendCachedLogsFromIDB() before the beacon call.
+      // Priority events such as CONFIRM_CALL trigger sendLogsOverNetwork() immediately
+      // (via checkLogSizeAndSendData → sendLogs). Awaiting the IDB read/write here
+      // serialises the two operations, so if the merchant unmounts the SDK right after
+      // a payment response — which is the common case — the page context is destroyed
+      // before beaconApiCall ever executes. On Safari, whose IndexedDB implementation
+      // is significantly slower during page-lifecycle transitions, this race is
+      // deterministic: the beacon is never sent. On Chrome/Firefox it is intermittent.
+      //
+      // navigator.sendBeacon is specifically designed for reliable delivery during
+      // page unload. Running it first, without blocking on IDB, ensures CONFIRM_CALL
+      // (and every other priority event) is always dispatched regardless of IDB latency
+      // or how quickly the host page tears down the SDK's iframe context.
+      sendCachedLogsFromIDB()->ignore
       beaconApiCall(mainLogFile)
       clearLogFile(mainLogFile)
     } catch {
