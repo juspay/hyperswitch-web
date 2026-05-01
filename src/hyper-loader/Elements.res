@@ -1422,10 +1422,11 @@ let make = (
                   if samsungPayClicked && paymentDataRequest !== JSON.Encode.null {
                     samsungPayClient.loadPaymentSheet(payRequest, paymentDataRequest)
                     ->then(json => {
-                      let msg = [
-                        ("samsungPayResponse", json->anyTypeToJson),
-                        ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
-                      ]->Dict.fromArray
+                      let msg =
+                        [
+                          ("samsungPayResponse", json->anyTypeToJson),
+                          ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+                        ]->Dict.fromArray
                       event.source->Window.sendPostMessage(msg)
                       resolve()
                     })

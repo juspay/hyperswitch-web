@@ -299,7 +299,14 @@ let useHandleApplePayResponse = (
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
-  }, (isInvokeSDKFlow, processPayment, isManualRetryEnabled, isWallet, requiredFieldsBody, isSavedMethodsFlow))
+  }, (
+    isInvokeSDKFlow,
+    processPayment,
+    isManualRetryEnabled,
+    isWallet,
+    requiredFieldsBody,
+    isSavedMethodsFlow,
+  ))
 }
 
 let handleApplePayButtonClicked = (

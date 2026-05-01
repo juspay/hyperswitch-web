@@ -19,7 +19,13 @@ let getTransactionDetail = dict => {
   }
 }
 
-let handleSamsungPayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly, ~isSavedMethodsFlow=false) => {
+let handleSamsungPayClicked = (
+  ~sessionObj,
+  ~componentName,
+  ~iframeId,
+  ~readOnly,
+  ~isSavedMethodsFlow=false,
+) => {
   messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
     ("param", "paymentloader"->JSON.Encode.string),
