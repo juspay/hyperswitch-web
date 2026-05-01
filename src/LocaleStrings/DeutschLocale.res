@@ -237,6 +237,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Gespeichert`,
   giftCardSectionTitle: `Haben Sie eine Geschenkkarte?`,
   giftCardNumberLabel: `Geschenkkartennummer`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -251,5 +252,14 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Es ist kein Restbetrag zu zahlen. Bitte fahren Sie mit der Zahlung fort.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Bitte zahlen Sie den verbleibenden Betrag von ${amount} ${currency} mit einer anderen Zahlungsmethode unten.`,
+  installmentPayInInstallments: "In Raten zahlen",
+  installmentInterestFree: "Zinsfrei",
+  installmentWithInterest: "mit Zinsen",
+  installmentTotal: "Gesamt",
+  installmentSelectPlanError: "Bitte wählen Sie einen Ratenplan",
+  installmentSelectPlanPlaceholder: "Ratenplan auswählen",
+  showMore: "Mehr anzeigen",
+  showLess: "Weniger anzeigen",
+  refreshingText: "Aktualisierung...",
   mandatoryFieldText: "Dieses Feld ist obligatorisch",
 }

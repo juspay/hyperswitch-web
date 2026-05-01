@@ -239,6 +239,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `المحفوظة`,
   giftCardSectionTitle: `هل لديك بطاقة هدايا؟`,
   giftCardNumberLabel: `رقم بطاقة الهدايا`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -253,5 +254,14 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `لا يوجد مبلغ متبقٍ للدفع. يرجى المتابعة لإتمام عملية الدفع.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `يرجى دفع المبلغ المتبقي ${amount} ${currency} باستخدام وسيلة دفع أخرى أدناه.`,
+  installmentPayInInstallments: "الدفع على أقساط",
+  installmentInterestFree: "بدون فوائد",
+  installmentWithInterest: "مع فوائد",
+  installmentTotal: "المجموع",
+  installmentSelectPlanError: "يرجى اختيار خطة تقسيط",
+  installmentSelectPlanPlaceholder: "اختر خطة التقسيط",
+  showMore: "عرض المزيد",
+  showLess: "عرض أقل",
+  refreshingText: "جارٍ التحديث...",
   mandatoryFieldText: "هذا الحقل إلزامي.",
 }

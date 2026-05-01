@@ -238,6 +238,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Mètodes desats`,
   giftCardSectionTitle: `Tens una targeta regal?`,
   giftCardNumberLabel: `Número de targeta regal`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -252,5 +253,14 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `No queda cap import pendent de pagament. Si us plau, continueu amb el pagament.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Pagueu l'import restant de ${currency} ${amount} amb un altre mètode de pagament a continuació.`,
+  installmentPayInInstallments: "Pagar a terminis",
+  installmentInterestFree: "Sense interessos",
+  installmentWithInterest: "amb interessos",
+  installmentTotal: "Total",
+  installmentSelectPlanError: "Si us plau, seleccioneu un pla de terminis",
+  installmentSelectPlanPlaceholder: "Seleccioneu un pla de terminis",
+  showMore: "Mostra més",
+  showLess: "Mostra menys",
+  refreshingText: "Actualitzant...",
   mandatoryFieldText: "Aquest camp és obligatori",
 }

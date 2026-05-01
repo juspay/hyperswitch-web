@@ -236,6 +236,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Opgeslagen`,
   giftCardSectionTitle: `Heb je een cadeaukaart?`,
   giftCardNumberLabel: `Cadeaukaart nummer`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -250,5 +251,14 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Er staat geen resterend bedrag open. Ga verder met de betaling.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Betaal het resterende bedrag van ${amount} ${currency} met een andere betaalmethode hieronder.`,
+  installmentPayInInstallments: "Betaal in termijnen",
+  installmentInterestFree: "Rentevrij",
+  installmentWithInterest: "met rente",
+  installmentTotal: "Totaal",
+  installmentSelectPlanError: "Selecteer een aflossingsplan",
+  installmentSelectPlanPlaceholder: "Selecteer een aflossingsplan",
+  showMore: "Meer tonen",
+  showLess: "Minder tonen",
+  refreshingText: "Vernieuwen...",
   mandatoryFieldText: "This field is mandatory",
 }

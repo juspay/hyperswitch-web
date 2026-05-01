@@ -236,6 +236,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Sparade`,
   giftCardSectionTitle: `Har du ett presentkort?`,
   giftCardNumberLabel: `Presentkortsnummer`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -250,5 +251,14 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Ingen kvarvarande summa att betala. Vänligen fortsätt med betalningen.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Vänligen betala den kvarvarande summan ${amount} ${currency} med en annan betalningsmetod nedan.`,
+  installmentPayInInstallments: "Betala i avbetalningar",
+  installmentInterestFree: "Räntefritt",
+  installmentWithInterest: "med ränta",
+  installmentTotal: "Totalt",
+  installmentSelectPlanError: "Välj ett avbetalningsplan",
+  installmentSelectPlanPlaceholder: "Välj ett avbetalningsplan",
+  showMore: "Visa mer",
+  showLess: "Visa mindre",
+  refreshingText: "Uppdaterar...",
   mandatoryFieldText: "Detta fält är obligatoriskt",
 }

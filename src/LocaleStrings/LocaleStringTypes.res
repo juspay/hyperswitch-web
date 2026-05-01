@@ -225,6 +225,7 @@ type localeStrings = {
   payment_methods_upi_collect: string,
   payment_methods_eft: string,
   payment_methods_givex: string,
+  payment_methods_saved_methods: string,
   giftCardSectionTitle: string,
   giftCardNumberLabel: string,
   giftCardNumberPlaceholder: string,
@@ -238,6 +239,15 @@ type localeStrings = {
   giftCardAppliedText: string,
   giftCardPaymentCompleteMessage: string,
   giftCardPaymentRemainingMessage: (string, string) => string,
+  installmentPayInInstallments: string,
+  installmentInterestFree: string,
+  installmentWithInterest: string,
+  installmentTotal: string,
+  installmentSelectPlanError: string,
+  installmentSelectPlanPlaceholder: string,
+  showMore: string,
+  showLess: string,
+  refreshingText: string,
   mandatoryFieldText: string,
 }
 

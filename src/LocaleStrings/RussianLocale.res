@@ -245,6 +245,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `Сохранённые`,
   giftCardSectionTitle: `У вас есть подарочная карта?`,
   giftCardNumberLabel: `Номер подарочной карты`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -259,5 +260,14 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `Оставшаяся сумма к оплате отсутствует. Пожалуйста, продолжите оплату.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `Пожалуйста, оплатите оставшуюся сумму ${amount} ${currency} другим способом оплаты ниже.`,
+  installmentPayInInstallments: "Оплатить в рассрочку",
+  installmentInterestFree: "Без процентов",
+  installmentWithInterest: "с процентами",
+  installmentTotal: "Итого",
+  installmentSelectPlanError: "Пожалуйста, выберите план рассрочки",
+  installmentSelectPlanPlaceholder: "Выберите план рассрочки",
+  showMore: "Показать ещё",
+  showLess: "Показать меньше",
+  refreshingText: "Обновление...",
   mandatoryFieldText: "Это поле обязательно для заполнения.",
 }

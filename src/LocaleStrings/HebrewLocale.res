@@ -237,6 +237,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `שמורים`,
   giftCardSectionTitle: `יש לך כרטיס מתנה?`,
   giftCardNumberLabel: `מספר כרטיס מתנה`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -251,5 +252,14 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `לא נותר סכום לתשלום. אנא המשיכו לביצוע התשלום.`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `אנא שלמו את הסכום שנותר ${amount} ${currency} באמצעות אמצעי תשלום אחר למטה.`,
+  installmentPayInInstallments: "תשלום בתשלומים",
+  installmentInterestFree: "ללא ריבית",
+  installmentWithInterest: "עם ריבית",
+  installmentTotal: "סה"כ",
+  installmentSelectPlanError: "אנא בחר תוכנית תשלומים",
+  installmentSelectPlanPlaceholder: "בחר תוכנית תשלומים",
+  showMore: "הצג עוד",
+  showLess: "הצג פחות",
+  refreshingText: "מרענן...",
   mandatoryFieldText: "שדה זה הוא חובה",
 }

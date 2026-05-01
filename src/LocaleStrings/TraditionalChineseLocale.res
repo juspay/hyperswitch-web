@@ -236,6 +236,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `已儲存`,
   giftCardSectionTitle: `有禮品卡嗎？`,
   giftCardNumberLabel: `禮品卡號碼`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -250,5 +251,14 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `無需支付剩餘金額。請繼續完成付款。`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `請使用下方的其他付款方式支付剩餘金額 ${currency}${amount}。`,
+  installmentPayInInstallments: "分期付款",
+  installmentInterestFree: "免息",
+  installmentWithInterest: "有利息",
+  installmentTotal: "合計",
+  installmentSelectPlanError: "請選擇分期計劃",
+  installmentSelectPlanPlaceholder: "選擇分期計劃",
+  showMore: "顯示更多",
+  showLess: "收起",
+  refreshingText: "重新整理中...",
   mandatoryFieldText: "此欄位為必填項",
 }

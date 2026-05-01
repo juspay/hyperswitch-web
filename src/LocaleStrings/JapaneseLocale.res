@@ -237,6 +237,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_upi_collect: `UPI Collect`,
   payment_methods_eft: `EFT`,
   payment_methods_givex: `Givex`,
+  payment_methods_saved_methods: `保存済み`,
   giftCardSectionTitle: `ギフトカードをお持ちですか？`,
   giftCardNumberLabel: `ギフトカード番号`,
   giftCardNumberPlaceholder: `ABCD1234EFGH5678`,
@@ -251,5 +252,14 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   giftCardPaymentCompleteMessage: `残りの支払金額はありません。支払いを続行してください。`,
   giftCardPaymentRemainingMessage: (currency, amount) =>
     `残りの ${amount}${currency} は、以下の別の支払い方法でお支払いください。`,
+  installmentPayInInstallments: "分割払い",
+  installmentInterestFree: "無利息",
+  installmentWithInterest: "利息あり",
+  installmentTotal: "合計",
+  installmentSelectPlanError: "分割払いプランを選択してください",
+  installmentSelectPlanPlaceholder: "分割払いプランを選択",
+  showMore: "もっと見る",
+  showLess: "表示を減らす",
+  refreshingText: "更新中...",
   mandatoryFieldText: "このフィールドは必須です",
 }
