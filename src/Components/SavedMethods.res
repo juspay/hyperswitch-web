@@ -276,6 +276,7 @@ let make = (
               ~componentName,
               ~iframeId,
               ~readOnly,
+              ~isSavedMethodsFlow=true,
             )
           | _ =>
             // TODO - To be replaced with proper error message
@@ -293,6 +294,7 @@ let make = (
               ~sessionObj=optToken,
               ~componentName,
               ~paymentMethodListValue,
+              ~isSavedMethodsFlow=true,
             )
           | _ =>
             // TODO - To be replaced with proper error message
@@ -311,6 +313,7 @@ let make = (
               ~sessionObj=optToken->Option.getOr(JSON.Encode.null)->getDictFromJson,
               ~iframeId,
               ~readOnly,
+              ~isSavedMethodsFlow=true,
             )
           | _ =>
             // TODO - To be replaced with proper error message

@@ -86,6 +86,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
     let isTaxCalculationEnabled = dict->getBool("isTaxCalculationEnabled", false)
     let sdkSessionId = dict->getString("sdkSessionId", "")
     let analyticsMetadata = dict->getJsonFromDict("analyticsMetadata", JSON.Encode.null)
+    let isSavedMethodsFlow = dict->getBool("isSavedMethodsFlow", false)
 
     let logger = HyperLogger.make(
       ~sessionId=sdkSessionId,
@@ -102,6 +103,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
           ("applePayBillingContact", payment.billingContact),
           ("applePayShippingContact", payment.shippingContact),
           ("componentName", componentName->JSON.Encode.string),
+          ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
         ]
         ->Dict.fromArray
         ->JSON.Encode.object

@@ -1024,6 +1024,8 @@ let make = (
                         ~paymentMethod="APPLE_PAY",
                       )
 
+                      let isSavedMethodsFlow = dict->getBool("isSavedMethodsFlow", false)
+
                       let msg = [
                         ("hyperApplePayButtonClicked", true->JSON.Encode.bool),
                         ("paymentRequest", paymentRequest),
@@ -1035,6 +1037,7 @@ let make = (
                         ("sdkSessionId", sdkSessionId->JSON.Encode.string),
                         ("analyticsMetadata", analyticsMetadata),
                         ("componentName", componentName->JSON.Encode.string),
+                        ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                       ]
                       messageTopWindow(msg)
                     }
@@ -1048,12 +1051,14 @@ let make = (
                     dict->getJsonFromDict("applePayBillingContact", JSON.Encode.null)
                   let shippingContact =
                     dict->getJsonFromDict("applePayShippingContact", JSON.Encode.null)
+                  let isSavedMethodsFlow = dict->getBool("isSavedMethodsFlow", false)
 
                   let msg =
                     [
                       ("applePayPaymentToken", token),
                       ("applePayBillingContact", billingContact),
                       ("applePayShippingContact", shippingContact),
+                      ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                     ]->Dict.fromArray
 
                   handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
@@ -1262,13 +1267,22 @@ let make = (
                     ->getOptionalJsonFromJson("GpayPaymentDataRequest")
                     ->Option.getOr(JSON.Encode.null)
 
+                  let isSavedMethodsFlow =
+                    evJson
+                    ->getOptionalJsonFromJson("isSavedMethodsFlow")
+                    ->getBoolFromOptionalJson(false)
+
                   if gpayClicked && paymentDataRequest !== JSON.Encode.null {
                     switch gPayClient {
                     | Some(client) => setTimeout(() => {
                         client.loadPaymentData(paymentDataRequest)
                         ->then(
                           json => {
-                            let msg = [("gpayResponse", json->anyTypeToJson)]->Dict.fromArray
+                            let msg =
+                              [
+                                ("gpayResponse", json->anyTypeToJson),
+                                ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+                              ]->Dict.fromArray
                             event.source->Window.sendPostMessage(msg)
                             let value = "Payment Data Filled: New Payment Method"
                             logger.setLogInfo(
@@ -1400,10 +1414,19 @@ let make = (
                     ->getOptionalJsonFromJson("SPayPaymentDataRequest")
                     ->Option.getOr(JSON.Encode.null)
 
+                  let isSavedMethodsFlow =
+                    evJson
+                    ->getOptionalJsonFromJson("isSavedMethodsFlow")
+                    ->getBoolFromOptionalJson(false)
+
                   if samsungPayClicked && paymentDataRequest !== JSON.Encode.null {
                     samsungPayClient.loadPaymentSheet(payRequest, paymentDataRequest)
                     ->then(json => {
-                      let msg = [("samsungPayResponse", json->anyTypeToJson)]->Dict.fromArray
+                      let msg =
+                        [
+                          ("samsungPayResponse", json->anyTypeToJson),
+                          ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+                        ]->Dict.fromArray
                       event.source->Window.sendPostMessage(msg)
                       resolve()
                     })
