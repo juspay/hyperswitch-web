@@ -93,7 +93,11 @@ let useHandleGooglePayResponse = (
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
-      if dict->Dict.get("gpayResponse")->Option.isSome {
+
+      if (
+        dict->Dict.get("gpayResponse")->Option.isSome &&
+          dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
+      ) {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
         let body = getGooglePayBodyFromResponse(
           ~gPayResponse=metadata,
@@ -128,10 +132,16 @@ let useHandleGooglePayResponse = (
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  }, (paymentMethodTypes, isManualRetryEnabled, requiredFieldsBody, isWallet))
+  }, (paymentMethodTypes, isManualRetryEnabled, requiredFieldsBody, isWallet, isSavedMethodsFlow))
 }
 
-let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly) => {
+let handleGooglePayClicked = (
+  ~sessionObj,
+  ~componentName,
+  ~iframeId,
+  ~readOnly,
+  ~isSavedMethodsFlow=false,
+) => {
   let paymentDataRequest = GooglePayType.getPaymentDataFromSession(~sessionObj, ~componentName)
   messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
@@ -142,6 +152,7 @@ let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly)
     messageParentWindow([
       ("GpayClicked", true->JSON.Encode.bool),
       ("GpayPaymentDataRequest", paymentDataRequest->Identity.anyTypeToJson),
+      ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
     ])
   }
 }
