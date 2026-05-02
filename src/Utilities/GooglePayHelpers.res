@@ -75,6 +75,7 @@ let useHandleGooglePayResponse = (
   ~isSavedMethodsFlow=false,
   ~isWallet=true,
   ~requiredFieldsBody=Dict.make(),
+  ~sdkAuthorization,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -132,7 +133,14 @@ let useHandleGooglePayResponse = (
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  }, (paymentMethodTypes, isManualRetryEnabled, requiredFieldsBody, isWallet, isSavedMethodsFlow))
+  }, (
+    paymentMethodTypes,
+    isManualRetryEnabled,
+    requiredFieldsBody,
+    isWallet,
+    isSavedMethodsFlow,
+    sdkAuthorization,
+  ))
 }
 
 let handleGooglePayClicked = (

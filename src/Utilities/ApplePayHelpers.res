@@ -206,6 +206,7 @@ let useHandleApplePayResponse = (
   ~isSavedMethodsFlow=false,
   ~isWallet=true,
   ~requiredFieldsBody=Dict.make(),
+  ~sdkAuthorization,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -306,6 +307,7 @@ let useHandleApplePayResponse = (
     isWallet,
     requiredFieldsBody,
     isSavedMethodsFlow,
+    sdkAuthorization,
   ))
 }
 

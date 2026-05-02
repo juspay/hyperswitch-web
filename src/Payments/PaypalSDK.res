@@ -152,7 +152,7 @@ let make = (~sessionObj: SessionsType.token) => {
       )
     }
     None
-  }, [])
+  }, [sdkAuthorization])
 
   <div
     id="paypal-button"
