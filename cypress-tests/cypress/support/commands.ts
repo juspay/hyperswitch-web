@@ -201,7 +201,15 @@ Cypress.Commands.add("waitForSDKReady", () => {
     .should("be.visible")
     .its("0.contentDocument")
     .its("body")
-    .should("not.be.empty");
+    .should("not.be.empty")
+    .then(() => {
+      // Wait for the card number input to be rendered inside the iframe,
+      // ensuring React has fully mounted the card form and registered
+      // the submitCallback before any test interaction.
+      cy.iframe(iframeSelector)
+        .find('[data-testid="cardNoInput"]', { timeout: 15000 })
+        .should("be.visible");
+    });
 });
 
 Cypress.Commands.add("safeType", { prevSubject: "element" }, (subject, text, options = {}) => {

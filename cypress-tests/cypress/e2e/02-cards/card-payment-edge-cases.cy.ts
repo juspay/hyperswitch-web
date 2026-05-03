@@ -188,10 +188,16 @@ describe("Card Payment Edge Cases", () => {
 
   describe("Empty Form Submission", () => {
     it("should show error when submitting completely empty form", () => {
-      cy.get("#submit").should("be.visible").click();
+      // Explicitly confirm the card form is fully mounted before submitting,
+      // preventing a race where submitCallback is not yet registered.
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+        .should("be.visible");
+
+      cy.get("#submit").should("be.visible").should("not.be.disabled").click();
 
       getIframeBody()
-        .find(".Error.pt-1", { timeout: 5000 })
+        .find(".Error.pt-1", { timeout: 10000 })
         .should("be.visible");
     });
 
@@ -201,10 +207,10 @@ describe("Card Payment Edge Cases", () => {
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .safeType(stripeCards.successCard.cardNo);
 
-      cy.get("#submit").should("be.visible").click();
+      cy.get("#submit").should("be.visible").should("not.be.disabled").click();
 
       getIframeBody()
-        .find(".Error.pt-1", { timeout: 5000 })
+        .find(".Error.pt-1", { timeout: 10000 })
         .should("be.visible");
     });
   });
