@@ -8,12 +8,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
-  let setBlockedBins = Recoil.useSetRecoilState(blockedBins)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
   let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
-  let setPaymentMethodsListV2 = Recoil.useSetRecoilState(paymentMethodsListV2)
-  let setIntentList = Recoil.useSetRecoilState(intentList)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
@@ -22,6 +19,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
   let setUpdateSession = Recoil.useSetRecoilState(updateSession)
+  let setIsUpdateIntentLoading = Recoil.useSetRecoilState(isUpdateIntentLoading)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
@@ -238,6 +236,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       try {
         let dict = json->getDictFromJson
         if dict->getDictIsSome("paymentElementCreate") {
+          // Set iframeId for ALL elements including individual card elements (cardNumber, cardExpiry, cardCvc)
+          if dict->getDictIsSome("iframeId") {
+            setKeys(prev => {
+              ...prev,
+              iframeId: dict->getString("iframeId", "no-element"),
+            })
+          }
           if (
             dict
             ->Dict.get("paymentElementCreate")
@@ -414,25 +419,27 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
           | None => ()
           }
-          switch getThemePromise(optionsDict) {
-          | Some(promise) =>
-            promise
-            ->then(res => {
-              dict->setConfigs(res)
-            })
-            ->catch(_ => {
+          if optionsDict->Dict.keysToArray->Array.length > 0 {
+            switch getThemePromise(optionsDict) {
+            | Some(promise) =>
+              promise
+              ->then(res => {
+                dict->setConfigs(res)
+              })
+              ->catch(_ => {
+                dict->setConfigs({
+                  default: DefaultTheme.default,
+                  defaultRules: DefaultTheme.defaultRules,
+                })
+              })
+
+            | None =>
               dict->setConfigs({
                 default: DefaultTheme.default,
                 defaultRules: DefaultTheme.defaultRules,
               })
-            })
-
-          | None =>
-            dict->setConfigs({
-              default: DefaultTheme.default,
-              defaultRules: DefaultTheme.defaultRules,
-            })
-          }->ignore
+            }->ignore
+          }
         }
         if dict->Dict.get("isTestMode")->Option.isSome {
           let isTestMode = dict->Utils.getBool("isTestMode", false)
@@ -476,43 +483,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
             }
           }
-        }
-        if dict->getDictIsSome("getIntent") {
-          let getIntentDict = dict->getJsonObjectFromDict("getIntent")->getDictFromJson
-          let intentDetails = getIntentDict->UnifiedHelpersV2.createIntentDetails("response")
-          setIntentList(_ => intentDetails)
-        }
-        if dict->getDictIsSome("paymentsListV2") {
-          let paymentsListV2 = dict->getJsonObjectFromDict("paymentsListV2")
-          let listDict = paymentsListV2->getDictFromJson
-
-          let updatedState: UnifiedPaymentsTypesV2.loadstate =
-            paymentsListV2 == Dict.make()->JSON.Encode.object
-              ? LoadErrorV2(paymentsListV2)
-              : switch listDict->Dict.get("error") {
-                | Some(_) => LoadErrorV2(paymentsListV2)
-                | None =>
-                  let isNonEmptyPaymentMethodList = switch listDict->Dict.get("response") {
-                  | Some(val) =>
-                    val->getDictFromJson->getArray("payment_methods_enabled")->Array.length > 0
-                  | None => false
-                  }
-                  isNonEmptyPaymentMethodList
-                    ? listDict->UnifiedHelpersV2.createPaymentsObjArr("response")
-                    : LoadErrorV2(paymentsListV2)
-                }
-
-          let evalMethodsList = () =>
-            switch updatedState {
-            | LoadedV2(_) => Console.info("Loaded payment methods list v2")
-            | LoadErrorV2(x) =>
-              Console.error2("Error in loading payment methods list v2: ", x->JSON.stringify)
-            | _ => ()
-            }
-
-          evalMethodsList()
-
-          setPaymentMethodsListV2(_ => updatedState)
         }
         if dict->getDictIsSome("paymentMethodList") {
           let paymentMethodList = dict->getJsonObjectFromDict("paymentMethodList")
@@ -635,9 +605,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         if dict->Dict.get("applePaySessionObjNotPresent")->Option.isSome {
           setIsApplePayReady(prev => prev && false)
         }
-        if dict->getDictIsSome("blockedBins") {
-          let blockedBins = dict->getJsonObjectFromDict("blockedBins")
-          setBlockedBins(_ => Loaded(blockedBins))
+        if dict->Dict.get("updateIntentLoading")->Option.isSome {
+          setIsUpdateIntentLoading(_ => dict->getBool("updateIntentLoading", false))
         }
       } catch {
       | _ => setIntegrateErrorError(_ => true)
@@ -667,5 +636,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     None
   }, (divH, iframeId))
 
-  <div ref={divRef->ReactDOM.Ref.domRef}> children </div>
+  <div ref={divRef->ReactDOM.Ref.domRef} className="relative">
+    <UpdateIntentOverlay />
+    children
+  </div>
 }

@@ -74,10 +74,7 @@ let make = (~walletOptions) => {
       ->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
-          let body = switch GlobalVars.sdkVersion {
-          | V1 => PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)
-          | V2 => PaymentBodyV2.dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
-          }
+          let body = PaymentBody.dynamicPaymentBody(paymentMethod, paymentMethodType)
           let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
             ~isGuestCustomer,
             ~paymentType=paymentMethodListValue.payment_type,

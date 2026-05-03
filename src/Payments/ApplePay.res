@@ -9,7 +9,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
   )
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
@@ -295,6 +295,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~isInvokeSDKFlow,
     ~isWallet,
     ~requiredFieldsBody,
+    ~sdkAuthorization,
   )
 
   React.useEffect(() => {

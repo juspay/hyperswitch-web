@@ -106,7 +106,3 @@ type paymentListLookupNew = {
   walletsList: array<string>,
   otherPaymentList: array<string>,
 }
-
-type intentCall = {paymentType: PaymentMethodsRecord.payment_type, splitTxnsEnabled: string}
-
-type intentLoadState = LoadingIntent | LoadedIntent(intentCall) | Error(JSON.t)

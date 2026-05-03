@@ -1,5 +1,22 @@
 open Utils
 
+type installmentAmountDetails = {
+  amount_per_installment: float,
+  total_amount: float,
+}
+
+type installmentPlan = {
+  interest_rate: float,
+  number_of_installments: int,
+  billing_frequency: string,
+  amount_details: installmentAmountDetails,
+}
+
+type installmentOption = {
+  payment_method: string,
+  available_plans: array<installmentPlan>,
+}
+
 type paymentFlow = InvokeSDK | RedirectToURL | QrFlow
 
 type paymentFlowWithConnector = array<(paymentFlow, array<string>)>
@@ -410,7 +427,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
   },
   {
     paymentMethodName: "ideal",
-    icon: Some(icon("ideal", ~size=19, ~width=25)),
+    icon: Some(icon("ideal_wero", ~size=19, ~width=25)),
     displayName: localeString.payment_methods_ideal,
     fields: [InfoElement],
     miniIcon: None,
@@ -659,6 +676,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     displayName: localeString.payment_methods_pay_by_bank,
     fields: [InfoElement],
     miniIcon: Some(icon("bank", ~size=19)),
+  },
+  {
+    paymentMethodName: "saved_methods",
+    icon: Some(icon("default-card", ~size=19)),
+    fields: [],
+    displayName: localeString.payment_methods_saved_methods,
+    miniIcon: None,
   },
 ]
 
@@ -909,6 +933,10 @@ type mandate = {
 type payment_type = NORMAL | NEW_MANDATE | SETUP_MANDATE | NONE
 
 type capture_method = AUTOMATIC | MANUAL | MANUAL_MULTIPLE | SCHEDULED | SEQUENTIAL_AUTOMATIC
+type intentData = {
+  installment_options: option<array<installmentOption>>,
+  currency: string,
+}
 
 type paymentMethodList = {
   redirect_url: string,
@@ -921,6 +949,8 @@ type paymentMethodList = {
   is_tax_calculation_enabled: bool,
   isGuestCustomer: option<bool>,
   capture_method: option<capture_method>,
+  intent_data: intentData,
+  sdk_next_action: option<string>,
 }
 
 let defaultPaymentMethodType = {
@@ -935,6 +965,11 @@ let defaultPaymentMethodType = {
   pm_auth_connector: None,
 }
 
+let defaultIntentData = {
+  installment_options: None,
+  currency: "",
+}
+
 let defaultList = {
   redirect_url: "",
   currency: "",
@@ -946,6 +981,8 @@ let defaultList = {
   is_tax_calculation_enabled: false,
   isGuestCustomer: None,
   capture_method: None,
+  intent_data: defaultIntentData,
+  sdk_next_action: None,
 }
 
 let getPaymentExperienceType = str => {
@@ -1035,6 +1072,34 @@ let getAchConnectors = (dict, str) => {
   ->getStrArray("elligible_connectors")
 }
 
+let getAmountDetails = dict => {
+  amount_per_installment: getFloat(dict, "amount_per_installment", 0.0),
+  total_amount: getFloat(dict, "total_amount", 0.0),
+}
+
+let getInstallmentPlan = dict => {
+  interest_rate: getFloat(dict, "interest_rate", 0.0),
+  number_of_installments: getInt(dict, "number_of_installments", 0),
+  billing_frequency: getString(dict, "billing_frequency", ""),
+  amount_details: dict->getDictFromDict("amount_details")->getAmountDetails,
+}
+
+let getInstallmentOptions = dict => {
+  let installmentOptions = dict->getArray("installment_options")
+  installmentOptions->Array.length > 0
+    ? Some(
+        installmentOptions
+        ->Array.filterMap(JSON.Decode.object)
+        ->Array.map(json => {
+          payment_method: getString(json, "payment_method", ""),
+          available_plans: json
+          ->getArrayOfObjectsFromDict("available_plans")
+          ->Array.map(getInstallmentPlan),
+        }),
+      )
+    : None
+}
+
 let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
   let requiredFields =
     getJsonFromDict(dict, "required_fields", JSON.Encode.null)
@@ -1114,6 +1179,14 @@ let getMandate = (dict, str) => {
   })
 }
 
+let getIntentData = dict => {
+  let intentDataDict = dict->getDictFromDict("intent_data")
+  {
+    installment_options: intentDataDict->getInstallmentOptions,
+    currency: dict->getString("currency", ""),
+  }
+}
+
 let paymentTypeMapper = payment_type => {
   switch payment_type {
   | "normal" => NORMAL
@@ -1170,6 +1243,8 @@ let itemToObjMapper = dict => {
     is_tax_calculation_enabled: getBool(dict, "is_tax_calculation_enabled", false),
     isGuestCustomer: getOptionBool(dict, "is_guest_customer"),
     capture_method: getOptionString(dict, "capture_method")->Option.map(captureMethodMapper),
+    intent_data: dict->getIntentData,
+    sdk_next_action: dict->getDictFromDict("sdk_next_action")->getOptionString("next_action"),
   }
 }
 
@@ -1250,4 +1325,22 @@ let getPaymentExperienceTypeFromPML = (
     ->Some
   )
   ->Option.getOr([])
+}
+
+let parseEligibilityResponse = json => {
+  let dict = json->getDictFromJson
+  let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
+  let nextAction = sdkNextActionDict->Dict.get("next_action")
+  switch nextAction {
+  | Some(nextActionJson) =>
+    switch nextActionJson->JSON.Classify.classify {
+    | String(str) => str === "deny" ? Some("") : None
+    | Object(nextActionDict) =>
+      nextActionDict
+      ->Dict.get("deny")
+      ->Option.map(denyJson => denyJson->getDictFromJson->getString("message", ""))
+    | _ => None
+    }
+  | None => None
+  }
 }

@@ -50,14 +50,8 @@ let make = (~sessions, ~walletOptions) => {
   open PayPalHelpers
   let dict = sessions->Utils.getDictFromJson
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
-    RecoilAtomsV2.paymentMethodListValueV2,
-  )
 
   let sessionObj = React.useMemo(() => itemToObjMapper(dict, Others), [dict])
-
-  let paypalPaymentMethodDataV1 = usePaymentMethodData(~paymentMethodListValue, ~sessionObj)
-  let paypalPaymentMethodDataV2 = usePaymentMethodDataV2(~paymentMethodListValueV2, ~sessionObj)
 
   let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
@@ -68,10 +62,10 @@ let make = (~sessions, ~walletOptions) => {
     RecoilAtoms.isShowOrPayUsingWhileLoading,
   )
 
-  let {paypalToken, isPaypalSDKFlow, isPaypalRedirectFlow} = switch GlobalVars.sdkVersion {
-  | V1 => paypalPaymentMethodDataV1
-  | V2 => paypalPaymentMethodDataV2
-  }
+  let {paypalToken, isPaypalSDKFlow, isPaypalRedirectFlow} = usePaymentMethodData(
+    ~paymentMethodListValue,
+    ~sessionObj,
+  )
 
   let gPayToken = getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
   let applePaySessionObj = itemToObjMapper(dict, ApplePayObject)

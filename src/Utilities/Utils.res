@@ -185,6 +185,10 @@ let getDictFromObj = (dict, key) => {
   dict->Dict.get(key)->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
 }
 
+let getOptionalDict = (dict, key) => {
+  dict->Dict.get(key)->Option.flatMap(JSON.Decode.object)
+}
+
 let getJsonObjectFromDict = (dict, key) => {
   dict->Dict.get(key)->Option.getOr(JSON.Encode.object(Dict.make()))
 }
@@ -967,14 +971,8 @@ let getHeaders = (
   ~customPodUri=None,
   ~headers=Dict.make(),
   ~publishableKey=None,
-  ~clientSecret=None,
-  ~profileId=None,
   ~sdkAuthorization=None,
 ): Fetch.Headers.t => {
-  let publishableKeyVal = publishableKey->Option.map(key => key)->Option.getOr("invalid_key")
-  let profileIdVal = profileId->Option.getOr("invalid_key")
-  let clientSecretVal = clientSecret->Option.getOr("invalid_key")
-
   let defaultHeaders = [
     ("Content-Type", "application/json"),
     ("X-Client-Version", Window.version),
@@ -984,17 +982,9 @@ let getHeaders = (
     ("X-Client-Platform", "web"),
   ]
 
-  let v1Headers = switch sdkAuthorization->getNonEmptyOption {
+  let authorizationHeaders = switch sdkAuthorization->getNonEmptyOption {
   | Some(sdkAuth) => [("Authorization", sdkAuth)]
   | None => [("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key"))]
-  }
-
-  let authorizationHeaders = switch GlobalVars.sdkVersion {
-  | V2 => [
-      ("x-profile-id", profileIdVal),
-      ("Authorization", `publishable-key=${publishableKeyVal},client-secret=${clientSecretVal}`),
-    ]
-  | V1 => v1Headers
   }
 
   let authHeader = switch (token, uri) {
@@ -1052,6 +1042,7 @@ let fetchApi = (
   ~customPodUri=None,
   ~publishableKey=None,
   ~sdkAuthorization=None,
+  ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   open Promise
   let body = switch method {
@@ -1064,6 +1055,7 @@ let fetchApi = (
       {
         method,
         ?body,
+        ?signal,
         headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey, ~sdkAuthorization),
       },
     )
@@ -1089,21 +1081,18 @@ let fetchApiWithLogging = async (
   ~publishableKey=None,
   ~isPaymentSession=false,
   ~onCatchCallback=None,
-  ~clientSecret=None,
-  ~profileId=None,
   ~sdkAuthorization=None,
+  ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   open LoggerUtils
 
   // * Log request initiation
-  if GlobalVars.sdkVersion != V2 {
-    LogAPIResponse.logApiResponse(
-      ~logger,
-      ~uri,
-      ~eventName=apiEventInitMapper(eventName),
-      ~status=Request,
-    )
-  }
+  LogAPIResponse.logApiResponse(
+    ~logger,
+    ~uri,
+    ~eventName=apiEventInitMapper(eventName),
+    ~status=Request,
+  )
 
   try {
     let body = switch method {
@@ -1116,13 +1105,12 @@ let fetchApiWithLogging = async (
       {
         method,
         ?body,
+        ?signal,
         headers: getHeaders(
           ~headers=headers->Option.getOr(Dict.make()),
           ~uri,
           ~customPodUri,
           ~publishableKey,
-          ~clientSecret,
-          ~profileId,
           ~sdkAuthorization,
         ),
       },
@@ -1132,30 +1120,26 @@ let fetchApiWithLogging = async (
 
     if resp->Fetch.Response.ok {
       let data = await Fetch.Response.json(resp)
-      if GlobalVars.sdkVersion != V2 {
-        LogAPIResponse.logApiResponse(
-          ~logger,
-          ~uri,
-          ~eventName=Some(eventName),
-          ~status=Success,
-          ~statusCode,
-          ~isPaymentSession,
-        )
-      }
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=Some(eventName),
+        ~status=Success,
+        ~statusCode,
+        ~isPaymentSession,
+      )
       onSuccess(data)
     } else {
       let data = await resp->Fetch.Response.json
-      if GlobalVars.sdkVersion != V2 {
-        LogAPIResponse.logApiResponse(
-          ~logger,
-          ~uri,
-          ~eventName=Some(eventName),
-          ~status=Error,
-          ~statusCode,
-          ~data,
-          ~isPaymentSession,
-        )
-      }
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=Some(eventName),
+        ~status=Error,
+        ~statusCode,
+        ~data,
+        ~isPaymentSession,
+      )
       onFailure(data)
     }
   } catch {
@@ -1169,16 +1153,14 @@ let fetchApiWithLogging = async (
           "error": exceptionMessage,
         },
       )
-      if GlobalVars.sdkVersion != V2 {
-        LogAPIResponse.logApiResponse(
-          ~logger,
-          ~uri,
-          ~eventName=Some(eventName),
-          ~status=Exception,
-          ~data=exceptionMessage,
-          ~isPaymentSession,
-        )
-      }
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=Some(eventName),
+        ~status=Exception,
+        ~data=exceptionMessage,
+        ~isPaymentSession,
+      )
       switch onCatchCallback {
       | Some(fun) => fun(exceptionMessage)
       | None => onFailure(exceptionMessage)
@@ -1209,6 +1191,11 @@ let isOtherElements = componentType => {
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
   componentType == "cardCvc"
+}
+
+// Elements that can have multiple instances (for event listener naming)
+let canHaveMultipleInstances = componentType => {
+  componentType == "cardNumber" || componentType == "cardExpiry" || componentType == "cardCvc"
 }
 
 let nbsp = `\u00A0`
@@ -1499,6 +1486,17 @@ let makeIframe = (element, url) => {
     element->appendChild(iframe)
   })
 }
+let makeHiddenIframe = (element, ~src, ~id) => {
+  let iframe = Window.createElement("iframe")
+  iframe->Window.setAttribute("id", id)
+  iframe->Window.setAttribute("src", src)
+  iframe->Window.setAttribute(
+    "style",
+    "position: absolute; width: 1px; height: 1px; border: none; overflow: hidden; left: -9999px; top: -9999px;",
+  )
+  element->Window.appendChild(iframe)
+  iframe
+}
 let makeForm = (element, url, id) => {
   open Types
   let form = createElement("form")
@@ -1712,6 +1710,8 @@ let handleFailureResponse = (~message, ~errorType) =>
     ),
   ]->getJsonFromArrayOfJson
 
+let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+
 let getPaymentId = clientSecret =>
   String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
 
@@ -1741,6 +1741,21 @@ let isKeyPresentInDict = (dict, key) => dict->Dict.get(key)->Option.isSome
 
 let minorUnitToString = val => (val->Int.toFloat /. 100.)->Float.toString
 
+let formatAmountWithTwoDecimals = amount => {
+  let amountStr = amount->Float.toString
+  let parts = amountStr->String.split(".")
+  let wholePart = parts->Array.get(0)->Option.getOr("0")
+  let decimalPart = parts->Array.get(1)->Option.getOr("00")
+  let paddedDecimal = if decimalPart->String.length < 2 {
+    decimalPart ++ "0"
+  } else if decimalPart->String.length > 2 {
+    decimalPart->String.slice(~start=0, ~end=2)
+  } else {
+    decimalPart
+  }
+  `${wholePart}.${paddedDecimal}`
+}
+
 let mergeAndFlattenToTuples = (body, requiredFieldsBody) =>
   body
   ->getJsonFromArrayOfJson
@@ -1763,6 +1778,26 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
   if !isMessageSent.contents {
     mountedIframeRef->Window.iframePostMessage(msg)
   }
+}
+
+let getWidgetIframe = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {
+  if id === "" {
+    None
+  } else {
+    iframeRef.contents->Array.find(iframe => {
+      switch iframe->Nullable.toOption {
+      | Some(elem) =>
+        let iframeId = elem->Window.getAttribute("id")->Nullable.toOption->Option.getOr("")
+        let isConnected = elem->Window.Element.isConnected
+        isConnected && iframeId->String.endsWith(id)
+      | None => false
+      }
+    })
+  }
+}
+
+let isWidgetPresent = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {
+  getWidgetIframe(~iframeRef, ~id)->Option.isSome
 }
 
 let isDigitLimitExceeded = (val, ~digit) => {

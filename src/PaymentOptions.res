@@ -4,14 +4,16 @@ module TabLoader = {
   let make = (~cardShimmerCount) => {
     open PaymentType
     open PaymentElementShimmer
+    open PaymentTypeContext
 
     let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
     let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
     let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+    let contextPaymentType = usePaymentType()
 
-    switch (GlobalVars.sdkVersion, paymentMethodList, paymentManagementList) {
-    | (V1, SemiLoaded, _)
-    | (V2, _, SemiLoadedV2) =>
+    switch (contextPaymentType, paymentMethodList, paymentManagementList) {
+    | (PaymentMethodsManagement, _, SemiLoadedV2)
+    | (_, SemiLoaded, _) =>
       Array.make(~length=cardShimmerCount - 1, "")
       ->Array.mapWithIndex((_, i) => {
         <div
@@ -53,6 +55,7 @@ let make = (
   ~cardShimmerCount: int,
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -118,6 +121,7 @@ let make = (
     ~paymentMethods=paymentMethodListValue.payment_methods,
     ~cardProps,
     ~expiryProps,
+    ~cvcProps,
   )
 
   let displayIcon = ele => {

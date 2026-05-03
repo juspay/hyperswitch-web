@@ -17,8 +17,6 @@ let getPaymentType = paymentMethodType =>
   | _ => Other
   }
 
-let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-
 let retrievePaymentIntent = async (
   clientSecret,
   ~headers=?,
@@ -64,19 +62,21 @@ let retrievePaymentIntent = async (
   )
 }
 
-let fetchBlockedBins = async (
-  ~sdkAuthorization,
+let fetchPaymentMethodEligibility = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
   ~customPodUri,
+  ~bodyArr: array<(string, JSON.t)>,
+  ~sdkAuthorization=None,
   ~endpoint,
+  ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchBlockedBins,
+    ~apiCallType=FetchPaymentMethodEligibility,
     ~params={
       clientSecret: Some(clientSecret),
-      publishableKey: None,
+      publishableKey: Some(publishableKey),
       customBackendBaseUrl: Some(endpoint),
       forceSync: None,
       pollId: None,
@@ -85,20 +85,30 @@ let fetchBlockedBins = async (
     },
   )
 
+  let body = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => bodyArr->getJsonFromArrayOfJson
+  | _ =>
+    bodyArr
+    ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
+    ->getJsonFromArrayOfJson
+  }
+
   let onSuccess = data => data
 
   let onFailure = _ => JSON.Encode.null
 
   await fetchApiWithLogging(
     uri,
-    ~eventName=BLOCKED_BIN_CALL,
+    ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
     ~logger,
-    ~method=#GET,
+    ~bodyStr=body->JSON.stringify,
+    ~method=#POST,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
     ~sdkAuthorization,
+    ~signal?,
   )
 }
 
@@ -321,6 +331,7 @@ let rec intentCall = (
     ~customPodUri: option<string>=?,
     ~publishableKey: option<string>=?,
     ~sdkAuthorization: option<string>=?,
+    ~signal: Fetch.AbortSignal.t=?,
   ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,
@@ -341,6 +352,7 @@ let rec intentCall = (
   ~componentName="payment",
   ~redirectionFlags,
   ~sdkAuthorization=None,
+  ~mode: CardThemeType.mode=NONE,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -367,7 +379,7 @@ let rec intentCall = (
     ~isPaymentSession,
   )
   let handleOpenUrl = url => {
-    if isPaymentSession {
+    if isPaymentSession && mode != CardCVCElement {
       replaceRootHref(url, redirectionFlags)
     } else {
       openUrl(url)
@@ -537,11 +549,11 @@ let rec intentCall = (
             url.searchParams.set("status", intent.status)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
-              switch (paymentType, sdkHandleOneClickConfirmPayment) {
-              | (Card, _)
-              | (Gpay, false)
-              | (Applepay, false)
-              | (Paypal, false) =>
+              switch (paymentType, sdkHandleOneClickConfirmPayment, mode) {
+              | (Card, _, _)
+              | (Gpay, false, _)
+              | (Applepay, false, _)
+              | (Paypal, false, _) =>
                 if !isPaymentSession {
                   if isCallbackUsedVal->Option.getOr(false) {
                     handleOnCompleteDoThisMessage()
@@ -559,6 +571,13 @@ let rec intentCall = (
                 } else {
                   resolve(data)
                 }
+              | (_, _, CardCVCElement) =>
+                resolve(
+                  [
+                    ("data", data),
+                    ("returnUrl", url.href->JSON.Encode.string),
+                  ]->Utils.getJsonFromArrayOfJson,
+                )
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
                   closePaymentLoaderIfAny()
@@ -625,6 +644,7 @@ let rec intentCall = (
                 resolve(data)
               } else if intent.nextAction.type_ === "qr_code_information" {
                 let qrData = intent.nextAction.image_data_url->Option.getOr("")
+                let rawQrData = intent.nextAction.raw_qr_data->Option.getOr("")
                 let displayText = intent.nextAction.display_text->Option.getOr("")
                 let borderColor = intent.nextAction.border_color->Option.getOr("")
                 let expiryTime = intent.nextAction.display_to_timestamp->Option.getOr(0.0)
@@ -633,6 +653,7 @@ let rec intentCall = (
                 let metaData =
                   [
                     ("qrData", qrData->JSON.Encode.string),
+                    ("rawQrData", rawQrData->JSON.Encode.string),
                     ("paymentIntentId", clientSecret->JSON.Encode.string),
                     ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
                     ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
@@ -736,6 +757,16 @@ let rec intentCall = (
                   ("iframeId", iframeId->JSON.Encode.string),
                   ("metadata", metaData->JSON.Encode.object),
                 ])
+              } else if intent.nextAction.type_ === "invoke_ddc" {
+                NextActionHelpers.handleDDC(
+                  ~ddcData=intent.nextAction.ddc_data,
+                  ~iframeId,
+                  ~isPaymentSession,
+                  ~resolve,
+                  ~data,
+                  ~optLogger,
+                  ~paymentMethod,
+                )
               } else if intent.nextAction.type_ === "display_voucher_information" {
                 let voucherData = intent.nextAction.voucher_details->Option.getOr({
                   download_url: "",
@@ -1230,7 +1261,6 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let paymentMethodListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
@@ -1244,56 +1274,36 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry=false,
-    ~isExternalVaultFlow=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
-      let headers = switch GlobalVars.sdkVersion {
-      | V1 => {
-          let v1Headers = [
-            ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
-          ]
-          switch keys.sdkAuthorization->Utils.getNonEmptyOption {
-          | Some(sdkAuth) => v1Headers->Array.push(("Authorization", sdkAuth))
-          | _ => v1Headers->Array.push(("api-key", confirmParam.publishableKey))
-          }
+      let headers = {
+        let baseHeaders = [
+          ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+        ]
+        switch keys.sdkAuthorization->Utils.getNonEmptyOption {
+        | Some(sdkAuth) => baseHeaders->Array.push(("Authorization", sdkAuth))
+        | _ => baseHeaders->Array.push(("api-key", confirmParam.publishableKey))
+        }
 
-          v1Headers
-        }
-      | V2 => {
-          let authorizationHeader = (
-            "Authorization",
-            `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
-          )
-          [
-            authorizationHeader,
-            ("x-profile-id", keys.profileId),
-            ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
-          ]
-        }
+        baseHeaders
       }
+
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
       let clientSecretArr = switch keys.sdkAuthorization->Utils.getNonEmptyOption {
       | Some(_) => []
       | None => [("client_secret", clientSecret->JSON.Encode.string)]
       }
-      let body = switch GlobalVars.sdkVersion {
-      | V1 => clientSecretArr->Array.concatMany([returnUrlArr, manual_retry])
-      | V2 => []
-      }
+      let body = clientSecretArr->Array.concatMany([returnUrlArr, manual_retry])
 
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let path = switch GlobalVars.sdkVersion {
-      | V1 => `payments/${paymentIntentID}/confirm`
-      | V2 =>
-        let baseUrl = `v2/payments/${keys.paymentId}/confirm-intent`
-        isExternalVaultFlow ? `${baseUrl}/external-vault-proxy` : baseUrl
-      }
+      let path = `payments/${paymentIntentID}/confirm`
+
       let uri = `${endpoint}/${path}`
 
       let callIntent = body => {
@@ -1399,9 +1409,9 @@ let usePaymentIntent = (optLogger, paymentType) => {
         callIntent(bodyStr)
       }
 
-      switch (GlobalVars.sdkVersion, paymentMethodList, paymentMethodListV2) {
-      | (V1, LoadError(data), _)
-      | (V1, Loaded(data), _) =>
+      switch paymentMethodList {
+      | LoadError(data)
+      | Loaded(data) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
@@ -1427,19 +1437,8 @@ let usePaymentIntent = (optLogger, paymentType) => {
           )
           Console.warn("Please enable atleast one Payment method.")
         }
-      | (V2, _, LoadedV2(data)) =>
-        if data.paymentMethodsEnabled->Array.length > 0 {
-          intentWithoutMandate("")
-        } else {
-          postFailedSubmitResponse(
-            ~errortype="payment_methods_empty",
-            ~message="Payment Failed. Try again!",
-          )
-          Console.warn("Please enable atleast one Payment method.")
-        }
-      | (V1, SemiLoaded, _)
-      | (V2, _, SemiLoadedV2) =>
-        intentWithoutMandate("")
+
+      | SemiLoaded => intentWithoutMandate("")
       | _ =>
         postFailedSubmitResponse(
           ~errortype="payment_methods_loading",
@@ -1691,6 +1690,9 @@ let paymentIntentForPaymentSession = (
   ~logger,
   ~customPodUri,
   ~redirectionFlags,
+  ~isPaymentSession=true,
+  ~sdkAuthorization=None,
+  ~mode: CardThemeType.mode=NONE,
 ) => {
   let confirmParams =
     payload
@@ -1714,19 +1716,23 @@ let paymentIntentForPaymentSession = (
     ~isConfirmCall=true,
   )
   let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
-  let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
+  let headers = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(sdkAuth) => [("Authorization", sdkAuth)]
+  | None => [("api-key", confirmParam.publishableKey)]
+  }
 
   let broswerInfo = BrowserSpec.broswerInfo()
 
   let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
 
+  let clientSecretArr = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => []
+  | None => [("client_secret", clientSecret->JSON.Encode.string)]
+  }
+
   let bodyStr =
     body
-    ->Array.concatMany([
-      broswerInfo,
-      [("client_secret", clientSecret->JSON.Encode.string)],
-      returnUrlArr,
-    ])
+    ->Array.concatMany([broswerInfo, clientSecretArr, returnUrlArr])
     ->getJsonFromArrayOfJson
     ->JSON.stringify
 
@@ -1746,8 +1752,10 @@ let paymentIntentForPaymentSession = (
     ~customPodUri,
     ~sdkHandleOneClickConfirmPayment=false,
     ~counter=0,
-    ~isPaymentSession=true,
+    ~isPaymentSession,
     ~redirectionFlags,
+    ~sdkAuthorization,
+    ~mode,
   )
 }
 
@@ -1979,7 +1987,6 @@ let usePostSessionTokens = (
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry as _=false,
-    ~isExternalVaultFlow as _=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -2310,5 +2317,17 @@ let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
     }
   | "card" => "card"
   | _ => paymentMethodType
+  }
+}
+
+let getCardEligibilityErrorText = (
+  ~cardEligibilityError,
+  ~localeString: LocaleStringTypes.localeStrings,
+) => {
+  switch cardEligibilityError {
+  | Some("")
+  | None =>
+    localeString.cardNotEligibleText
+  | Some(eligibilityErrorText) => eligibilityErrorText
   }
 }

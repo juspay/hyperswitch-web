@@ -1,5 +1,4 @@
 open CardUtils
-open CardThemeType
 open LoggerUtils
 open RecoilAtoms
 
@@ -8,12 +7,11 @@ let useCardForm = (~logger, ~paymentType) => {
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
   let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(showPaymentMethodsScreen)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
-  let blockedBinsList = Recoil.useRecoilValueFromAtom(blockedBins)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
-    RecoilAtomsV2.paymentMethodListValueV2,
-  )
+  let {clientSecret, publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let (cardEligibilityError, setCardEligibilityError) = React.useState(_ => None)
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -31,6 +29,12 @@ let useCardForm = (~logger, ~paymentType) => {
   let zipRef = React.useRef(Nullable.null)
   let isCoBadgedCardDetectedOnce = React.useRef(false)
   let prevCardBrandRef = React.useRef("")
+  let eligibilityControllerRef = React.useRef(None)
+  let {
+    startDebounce: startEligibilityDebounce,
+    cancelDebounce: cancelEligibilityDebounce,
+  } = CommonHooks.useDebounce(~delayMs=300)
+  let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
   let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
@@ -46,11 +50,8 @@ let useCardForm = (~logger, ~paymentType) => {
 
   let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentMethodsScreen)
   let supportedCardBrands = React.useMemo(() => {
-    switch (paymentType, GlobalVars.sdkVersion) {
-    | (Payment, V2) => paymentMethodListValueV2->PaymentUtilsV2.getSupportedCardBrandsV2
-    | _ => paymentMethodListValue->PaymentUtils.getSupportedCardBrands
-    }
-  }, (paymentMethodListValue, paymentMethodListValueV2))
+    paymentMethodListValue->PaymentUtils.getSupportedCardBrands
+  }, [paymentMethodListValue])
 
   let maxCardLength = React.useMemo(() => {
     getMaxLength(cardBrand)
@@ -107,28 +108,66 @@ let useCardForm = (~logger, ~paymentType) => {
     None
   }, (paymentToken.paymentToken, showPaymentMethodsScreen))
 
+  React.useEffect0(() => {
+    Some(
+      () => {
+        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+      },
+    )
+  })
+
+  let checkCardEligibility = async (~cardNumber) => {
+    eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+
+    let controller = Fetch.AbortController.make()
+    eligibilityControllerRef.current = Some(controller)
+    let signal = Fetch.AbortController.signal(controller)
+
+    switch clientSecret {
+    | Some(clientSecret) =>
+      try {
+        let json = await PaymentHelpers.fetchPaymentMethodEligibility(
+          ~clientSecret,
+          ~publishableKey,
+          ~logger,
+          ~customPodUri,
+          ~bodyArr=PaymentBody.cardPaymentMethodEligibilityBody(~cardNumber),
+          ~sdkAuthorization,
+          ~endpoint,
+          ~signal,
+        )
+        let eligibilityError = PaymentMethodsRecord.parseEligibilityResponse(json)
+        setCardEligibilityError(_ => eligibilityError)
+      } catch {
+      | exn =>
+        logger.setLogError(
+          ~value={
+            "message": "Card payment eligibility check failed",
+            "error": exn->Identity.anyTypeToJson->JSON.stringify,
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
+        )
+        setCardEligibilityError(_ => None)
+      }
+    | None => ()
+    }
+  }
+
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
     let card = val->formatCardNumber(cardType)
     let clearValue = card->CardValidations.clearSpaces
-
-    // Check if card BIN is blocked
-    let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(clearValue, blockedBinsList)
-    if isCardBlocked {
-      setCardError(_ => localeString.blockedCardText)
-      setIsCardValid(_ => Some(false))
-    } else {
-      setCardValid(clearValue, cardBrand, setIsCardValid)
-    }
-
-    if (
-      focusCardValid(clearValue, cardBrand) &&
+    let isCardSupportedAndValid =
       PaymentUtils.checkIsCardSupported(clearValue, cardBrand, supportedCardBrands)->Option.getOr(
         false,
-      ) &&
-      !isCardBlocked
-    ) {
+      )
+
+    setCardValid(clearValue, cardBrand, setIsCardValid)
+
+    if focusCardValid(clearValue, cardBrand) && isCardSupportedAndValid {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
     if card->String.length > 6 && cardBrand->pincodeVisibility {
@@ -143,6 +182,19 @@ let useCardForm = (~logger, ~paymentType) => {
       setIsExpiryValid(_ => None)
       setIsCVCValid(_ => None)
       setIsCardValid(_ => Some(false))
+    }
+
+    if paymentMethodListValue.sdk_next_action === Some("eligibility_check") {
+      cancelEligibilityDebounce()
+      setCardEligibilityError(_ => None)
+      if !isCardSupportedAndValid {
+        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+        eligibilityControllerRef.current = None
+      } else {
+        startEligibilityDebounce(() => {
+          checkCardEligibility(~cardNumber=clearValue)->ignore
+        })
+      }
     }
   }
 
@@ -212,6 +264,7 @@ let useCardForm = (~logger, ~paymentType) => {
         setExpiryError(_ => "")
         setIsExpiryValid(_ => None)
         setIsCVCValid(_ => None)
+        setCardEligibilityError(_ => None)
       }
     }
     handleMessage(handleFun, "Error in parsing sent Data")
@@ -264,28 +317,23 @@ let useCardForm = (~logger, ~paymentType) => {
   }
 
   React.useEffect(() => {
-    // Check if card is blocked first
-    let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(
-      cardNumber->CardValidations.clearSpaces,
-      blockedBinsList,
-    )
-
     let cardError = switch (
       isCardSupported->Option.getOr(true),
       isCardValid->Option.getOr(true),
       cardNumber->String.length == 0,
-      isCardBlocked,
+      cardEligibilityError,
     ) {
-    | (_, _, _, true) => localeString.blockedCardText
-    | (_, _, true, _) => ""
-    | (true, true, _, _) => ""
-    | (true, _, _, _) => localeString.inValidCardErrorText
+    | (_, _, _, Some(msg)) =>
+      PaymentHelpers.getCardEligibilityErrorText(~cardEligibilityError=Some(msg), ~localeString)
+    | (_, _, true, None) => ""
+    | (true, true, _, None) => ""
+    | (true, _, _, None) => localeString.inValidCardErrorText
     | _ => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
     }
     let cardError = isCardValid->Option.isSome ? cardError : ""
     setCardError(_ => cardError)
     None
-  }, (isCardValid, isCardSupported, cardNumber, blockedBinsList))
+  }, (isCardValid, isCardSupported, cardNumber, cardEligibilityError))
 
   React.useEffect(() => {
     setCvcError(_ => isCVCValid->Option.getOr(true) ? "" : localeString.inCompleteCVCErrorText)
@@ -334,6 +382,7 @@ let useCardForm = (~logger, ~paymentType) => {
     setCardError,
     maxCardLength,
     cardBrand,
+    cardEligibilityError,
   }
 
   let expiryProps: CardUtils.expiryProps = {
