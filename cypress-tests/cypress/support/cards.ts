@@ -1,6 +1,6 @@
 export type cardDetails = {
   cardNo: string;
-  cardScheme: string;
+  cardScheme?: string;
   cvc: string;
   card_exp_month: string;
   card_exp_year: string;
