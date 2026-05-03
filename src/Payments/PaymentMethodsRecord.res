@@ -908,6 +908,8 @@ type mandate = {
 }
 type payment_type = NORMAL | NEW_MANDATE | SETUP_MANDATE | NONE
 
+type capture_method = AUTOMATIC | MANUAL | MANUAL_MULTIPLE | SCHEDULED | SEQUENTIAL_AUTOMATIC
+
 type paymentMethodList = {
   redirect_url: string,
   currency: string,
@@ -918,6 +920,7 @@ type paymentMethodList = {
   collect_billing_details_from_wallets: bool,
   is_tax_calculation_enabled: bool,
   isGuestCustomer: option<bool>,
+  capture_method: option<capture_method>,
 }
 
 let defaultPaymentMethodType = {
@@ -942,6 +945,7 @@ let defaultList = {
   collect_billing_details_from_wallets: true,
   is_tax_calculation_enabled: false,
   isGuestCustomer: None,
+  capture_method: None,
 }
 
 let getPaymentExperienceType = str => {
@@ -1119,6 +1123,28 @@ let paymentTypeMapper = payment_type => {
   }
 }
 
+let captureMethodMapper = capture_method => {
+  switch capture_method {
+  | "automatic" => AUTOMATIC
+  | "manual" => MANUAL
+  | "manual_multiple" => MANUAL_MULTIPLE
+  | "scheduled" => SCHEDULED
+  | "sequential_automatic" => SEQUENTIAL_AUTOMATIC
+  | _ => AUTOMATIC
+  }
+}
+
+let isManualCapture = capture_method => {
+  switch capture_method {
+  | Some(MANUAL)
+  | Some(MANUAL_MULTIPLE)
+  | Some(SCHEDULED) => true
+  | Some(AUTOMATIC)
+  | Some(SEQUENTIAL_AUTOMATIC)
+  | None => false
+  }
+}
+
 let paymentTypeToStringMapper = payment_type => {
   switch payment_type {
   | NORMAL => "normal"
@@ -1143,6 +1169,7 @@ let itemToObjMapper = dict => {
     ),
     is_tax_calculation_enabled: getBool(dict, "is_tax_calculation_enabled", false),
     isGuestCustomer: getOptionBool(dict, "is_guest_customer"),
+    capture_method: getOptionString(dict, "capture_method")->Option.map(captureMethodMapper),
   }
 }
 

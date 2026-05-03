@@ -1,5 +1,6 @@
 open PaypalSDKTypes
 open PaymentTypeContext
+open PaymentMethodsRecord
 
 @react.component
 let make = (~sessionObj: SessionsType.token) => {
@@ -23,6 +24,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
   let intent = PaymentHelpers.usePostSessionTokens(Some(loggerState), Paypal, Wallet)
+  Console.log2("PaypalSDK orderDetails", sessionObj)
   let confirm = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   let sessions = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
@@ -73,7 +75,10 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let mountPaypalSDK = () => {
     let clientId = sessionObj.token
-    let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields&currency=${paymentMethodListValue.currency}`
+    let paypalIntent = paymentMethodListValue.capture_method->PaymentMethodsRecord.isManualCapture
+      ? "authorize"
+      : "capture"
+    let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields&currency=${paymentMethodListValue.currency}&intent=${paypalIntent}`
     loggerState.setLogInfo(~value="PayPal SDK Script Loading", ~eventName=PAYPAL_SDK_FLOW)
     let paypalScript = Window.createElement("script")
     paypalScript->Window.elementSrc(paypalScriptURL)
