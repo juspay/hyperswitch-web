@@ -8,6 +8,7 @@ import {
   getClientURL,
   createPaymentBody,
   changeObjectKeyValue,
+  removeObjectKey,
 } from "../../support/utils";
 import { stripeCards } from "../../support/cards";
 
@@ -38,7 +39,7 @@ describe("PaymentElement customMessageForCardTerms Option", () => {
   });
 
   afterEach(() => {
-    delete (createPaymentBody as Record<string, unknown>)["setup_future_usage"];
+    removeObjectKey(createPaymentBody, "setup_future_usage");
   });
 
   describe("custom terms message", () => {

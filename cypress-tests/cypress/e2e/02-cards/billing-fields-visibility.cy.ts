@@ -40,7 +40,7 @@ describe("PaymentElement fields.billingDetails Option", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE) as string
+      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE)
     );
   });
 
@@ -51,7 +51,7 @@ describe("PaymentElement fields.billingDetails Option", () => {
         line1: "1467",
         line2: "Harrison Street",
         line3: "Harrison Street",
-        city: "San Fransico",
+        city: "San Francisco",
         state: "California",
         zip: "94122",
         country: "US",
@@ -63,7 +63,7 @@ describe("PaymentElement fields.billingDetails Option", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.STRIPE) as string
+      connectorProfileIdMapping.get(connectorEnum.STRIPE)
     );
   });
 

@@ -1,5 +1,7 @@
 export {}; // indicate that file is a module
 
+import { cardDetails } from "./cards";
+
 export type CustomerData = {
   cardNo: string;
   cardExpiry: string;
@@ -45,7 +47,7 @@ declare global {
       waitForSDKReady(): Chainable<JQuery<HTMLBodyElement>>;
       safeType(text: string, options?: Partial<Cypress.TypeOptions>): Chainable<JQuery<HTMLElement>>;
       safeClick(): Chainable<JQuery<HTMLElement>>;
-      enterCardDetails(cardDetails: any): Chainable<void>;
+      enterCardDetails(cardDetails: cardDetails): Chainable<void>;
     }
   }
 }

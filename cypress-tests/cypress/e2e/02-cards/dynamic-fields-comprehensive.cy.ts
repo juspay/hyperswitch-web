@@ -12,6 +12,7 @@ import {
   removeObjectKey,
   connectorEnum,
   connectorProfileIdMapping,
+  defaultBillingAddress,
 } from "../../support/utils";
 import { stripeCards, cybersourceCards } from "../../support/cards";
 
@@ -63,23 +64,7 @@ describe("Dynamic Billing Fields Comprehensive", () => {
     });
 
     it("should not render billing fields when billing is provided in payment body", () => {
-      changeObjectKeyValue(createPaymentBody, "billing", {
-        address: {
-          line1: "1467",
-          line2: "Harrison Street",
-          city: "San Francisco",
-          state: "California",
-          zip: "94122",
-          country: "US",
-          first_name: "joseph",
-          last_name: "Doe",
-        },
-        phone: {
-          number: "8056594427",
-          country_code: "+91",
-        },
-        email: "test@example.com",
-      });
+      changeObjectKeyValue(createPaymentBody, "billing", defaultBillingAddress);
 
       cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
         cy.getGlobalState("clientSecret").then((clientSecret) => {

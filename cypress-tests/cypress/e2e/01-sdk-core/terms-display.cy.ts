@@ -9,6 +9,7 @@ import {
   getClientURL,
   createPaymentBody,
   changeObjectKeyValue,
+  removeObjectKey,
 } from "../../support/utils";
 import { stripeCards } from "../../support/cards";
 
@@ -39,7 +40,7 @@ describe("PaymentElement terms Option", () => {
   });
 
   afterEach(() => {
-    delete (createPaymentBody as Record<string, unknown>)["setup_future_usage"];
+    removeObjectKey(createPaymentBody, "setup_future_usage");
   });
 
   describe('terms.card: "always" with mandate flow', () => {
@@ -116,9 +117,7 @@ describe("PaymentElement terms Option", () => {
 
   describe("terms.card: not applicable for non-mandate flow", () => {
     beforeEach(() => {
-      delete (createPaymentBody as Record<string, unknown>)[
-        "setup_future_usage"
-      ];
+      removeObjectKey(createPaymentBody, "setup_future_usage");
 
       cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
         cy.getGlobalState("clientSecret").then((clientSecret) => {

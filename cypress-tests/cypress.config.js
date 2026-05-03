@@ -27,11 +27,4 @@ module.exports = defineConfig({
   env: {
     HYPERSWITCH_API_URL: "https://sandbox.hyperswitch.io",
   },
-
-  // component: {
-  //   devServer: {
-  //     framework: "react",
-  //     bundler: "webpack",
-  //   },
-  // },
 });

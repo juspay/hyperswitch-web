@@ -1,23 +1,3 @@
-/**
- * Locale / i18n Tests
- * Tests for locale-specific rendering of the payment SDK.
- *
- * Covers:
- *  - Major LTR locales (English, French, German, Spanish, Japanese, Chinese)
- *  - RTL locales (Arabic, Hebrew)
- *  - Locale fallback behaviour (unsupported locale -> English)
- *  - Default "auto" locale behaviour
- *  - Translated card labels, error messages, billing field labels
- *  - Locale-specific expiry placeholder
- *  - Successful payment in non-English locale
- *
- * Prerequisites:
- *  - Demo app (localhost:9060) must accept `&locale=<code>` query parameter.
- *    This is wired via `Payment.js` reading `getQueryParam("locale")` and
- *    passing it into `hyperOptionsV1` / `hyperOptionsV2`.
- *  - `getClientURL` in `cypress/support/utils.ts` supports optional `locale`
- *    third argument.
- */
 import * as testIds from "../../../../src/Utilities/TestUtils.bs";
 import {
   getClientURL,
