@@ -75,9 +75,10 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let mountPaypalSDK = () => {
     let clientId = sessionObj.token
-    let paypalIntent = paymentMethodListValue.capture_method->PaymentMethodsRecord.isManualCapture
-      ? "authorize"
-      : "capture"
+    let paypalIntent =
+      paymentMethodListValue.capture_method->PaymentMethodsRecord.isManualCapture
+        ? "authorize"
+        : "capture"
     let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields&currency=${paymentMethodListValue.currency}&intent=${paypalIntent}`
     loggerState.setLogInfo(~value="PayPal SDK Script Loading", ~eventName=PAYPAL_SDK_FLOW)
     let paypalScript = Window.createElement("script")
