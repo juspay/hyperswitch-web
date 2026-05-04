@@ -936,6 +936,7 @@ type capture_method = AUTOMATIC | MANUAL | MANUAL_MULTIPLE | SCHEDULED | SEQUENT
 type intentData = {
   installment_options: option<array<installmentOption>>,
   currency: string,
+  capture_method: option<capture_method>,
 }
 
 type paymentMethodList = {
@@ -948,7 +949,6 @@ type paymentMethodList = {
   collect_billing_details_from_wallets: bool,
   is_tax_calculation_enabled: bool,
   isGuestCustomer: option<bool>,
-  capture_method: option<capture_method>,
   intent_data: intentData,
   sdk_next_action: option<string>,
 }
@@ -968,6 +968,7 @@ let defaultPaymentMethodType = {
 let defaultIntentData = {
   installment_options: None,
   currency: "",
+  capture_method: None,
 }
 
 let defaultList = {
@@ -980,7 +981,6 @@ let defaultList = {
   collect_billing_details_from_wallets: true,
   is_tax_calculation_enabled: false,
   isGuestCustomer: None,
-  capture_method: None,
   intent_data: defaultIntentData,
   sdk_next_action: None,
 }
@@ -1179,11 +1179,25 @@ let getMandate = (dict, str) => {
   })
 }
 
+let captureMethodMapper = capture_method => {
+  switch capture_method {
+  | "automatic" => AUTOMATIC
+  | "manual" => MANUAL
+  | "manual_multiple" => MANUAL_MULTIPLE
+  | "scheduled" => SCHEDULED
+  | "sequential_automatic" => SEQUENTIAL_AUTOMATIC
+  | _ => AUTOMATIC
+  }
+}
+
 let getIntentData = dict => {
   let intentDataDict = dict->getDictFromDict("intent_data")
   {
     installment_options: intentDataDict->getInstallmentOptions,
     currency: dict->getString("currency", ""),
+    capture_method: intentDataDict
+    ->getOptionString("capture_method")
+    ->Option.map(captureMethodMapper),
   }
 }
 
@@ -1193,17 +1207,6 @@ let paymentTypeMapper = payment_type => {
   | "new_mandate" => NEW_MANDATE
   | "setup_mandate" => SETUP_MANDATE
   | _ => NONE
-  }
-}
-
-let captureMethodMapper = capture_method => {
-  switch capture_method {
-  | "automatic" => AUTOMATIC
-  | "manual" => MANUAL
-  | "manual_multiple" => MANUAL_MULTIPLE
-  | "scheduled" => SCHEDULED
-  | "sequential_automatic" => SEQUENTIAL_AUTOMATIC
-  | _ => AUTOMATIC
   }
 }
 
@@ -1242,7 +1245,6 @@ let itemToObjMapper = dict => {
     ),
     is_tax_calculation_enabled: getBool(dict, "is_tax_calculation_enabled", false),
     isGuestCustomer: getOptionBool(dict, "is_guest_customer"),
-    capture_method: getOptionString(dict, "capture_method")->Option.map(captureMethodMapper),
     intent_data: dict->getIntentData,
     sdk_next_action: dict->getDictFromDict("sdk_next_action")->getOptionString("next_action"),
   }
