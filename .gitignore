@@ -26,3 +26,68 @@ user_data.sh
 *.pem
 # Sentry Auth Token
 .env.sentry-build-plugin
+
+# Sensitive credential files
+*.keystore
+*.p12
+*.pfx
+*.jks
+google-services.json
+GoogleService-Info.plist
+.env
+.env.*
+
+# IDE - VSCode
+.vscode/
+*.code-workspace
+
+# IDE - JetBrains (IntelliJ, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# IDE - Vim/Neovim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# IDE - Emacs
+\#*\#
+.\#*
+
+# IDE - Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# AI Agents - Cursor
+.cursor/
+.cursorignore
+.cursorindexingignore
+
+# AI Agents - OpenCode
+.opencode/
+
+# AI Agents - GitHub Copilot
+.github/copilot-instructions.md
+
+# AI Agents - Cline / Roo
+.cline/
+.roo/
+.clinerules
+
+# AI Agents - Windsurf
+.windsurfrules
+
+# AI Agents - Claude / Anthropic
+CLAUDE.md
+.claude/
+
+# AI Agents - Aider
+.aider*
+
+# AI Agents - General
+.ai/
+*.aigenerated
+
