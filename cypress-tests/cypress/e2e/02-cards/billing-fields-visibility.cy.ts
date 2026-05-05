@@ -15,6 +15,7 @@ import {
   removeObjectKey,
   connectorEnum,
   connectorProfileIdMapping,
+  defaultBillingAddress,
 } from "../../support/utils";
 
 describe("PaymentElement fields.billingDetails Option", () => {
@@ -47,17 +48,7 @@ describe("PaymentElement fields.billingDetails Option", () => {
   afterEach(() => {
     changeObjectKeyValue(createPaymentBody, "billing", {
       email: "hyperswitch_sdk_demo_id@gmail.com",
-      address: {
-        line1: "1467",
-        line2: "Harrison Street",
-        line3: "Harrison Street",
-        city: "San Francisco",
-        state: "California",
-        zip: "94122",
-        country: "US",
-        first_name: "joseph",
-        last_name: "Doe",
-      },
+      address: defaultBillingAddress,
       phone: { number: "8056594427", country_code: "+91" },
     });
     changeObjectKeyValue(
