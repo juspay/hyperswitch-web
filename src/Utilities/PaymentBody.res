@@ -739,22 +739,6 @@ let p24Body = (~email) => [
   ),
 ]
 
-let trustlyBody = (~country) => [
-  ("payment_method", "bank_redirect"->JSON.Encode.string),
-  ("payment_method_type", "trustly"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "bank_redirect",
-        [
-          ("trustly", [("country", country->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
-
 let polandOB = (~bank) => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "online_banking_poland"->JSON.Encode.string),
@@ -1050,7 +1034,6 @@ let getPaymentBody = (
       dynamicPaymentBody(paymentMethod, paymentMethodType)
     }
   | "giropay" => giroPayBody(~name=fullName)
-  | "trustly" => trustlyBody(~country)
   | "online_banking_poland" => polandOB(~bank)
   | "online_banking_czech_republic" => czechOB(~bank)
   | "online_banking_slovakia" => slovakiaOB(~bank)
