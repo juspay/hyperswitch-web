@@ -387,7 +387,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     paymentMethodName: "trustly",
     icon: Some(icon("trustly", ~size=19, ~width=25)),
     displayName: localeString.payment_methods_trustly,
-    fields: [Country, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
