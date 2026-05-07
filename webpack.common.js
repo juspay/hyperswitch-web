@@ -146,7 +146,7 @@ const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
   "SDK_TAG_VERSION",
-  require("./package.json").version
+  require("./package.json").version,
 );
 
 /*
@@ -163,7 +163,9 @@ const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
 // Repository info
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersionValue}`;
+  sdkEnv === "local"
+    ? ""
+    : `${isEUStack && sdkEnv === "prod" ? "/sdk" : ""}/web/${repoVersion}/${sdkVersionValue}`;
 
 // Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
@@ -276,14 +278,14 @@ module.exports = (publicPath = "auto") => {
             "Content-Security-Policy": {
               "http-equiv": "Content-Security-Policy",
               content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
+                " ",
               )};
                 style-src ${authorizedStyleSources.join(" ")};
                 frame-src ${authorizedFrameSources.join(" ")};
                 img-src ${authorizedImageSources.join(" ")};
                 font-src ${authorizedFontSources.join(" ")};
                 connect-src ${authorizedConnectSources.join(
-                  " "
+                  " ",
                 )} ${logEndpoint} ${backendEndPoint};
       `,
             },
@@ -301,14 +303,14 @@ module.exports = (publicPath = "auto") => {
             "Content-Security-Policy": {
               "http-equiv": "Content-Security-Policy",
               content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
+                " ",
               )};
           style-src ${authorizedStyleSources.join(" ")};
           frame-src ${authorizedFrameSources.join(" ")};
           img-src ${authorizedImageSources.join(" ")};
           font-src ${authorizedFontSources.join(" ")};
           connect-src ${authorizedConnectSources.join(
-            " "
+            " ",
           )} ${logEndpoint} ${backendEndPoint};
           `,
             },
@@ -331,7 +333,7 @@ module.exports = (publicPath = "auto") => {
         analyzerMode: "static",
         reportFilename: "bundle-report.html",
         openAnalyzer: false,
-      })
+      }),
     );
   }
 
@@ -351,7 +353,7 @@ module.exports = (publicPath = "auto") => {
             paths: ["dist"],
           },
         },
-      })
+      }),
     );
   }
 
@@ -365,7 +367,7 @@ module.exports = (publicPath = "auto") => {
             __dirname,
             "dist",
             isEUStack ? `${sdkEnv}_eu` : sdkEnv,
-            sdkVersionValue
+            sdkVersionValue,
           ),
       crossOriginLoading: "anonymous",
       clean: true,

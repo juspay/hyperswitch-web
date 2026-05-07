@@ -47,7 +47,7 @@ let make = (
   )
   let isGuestCustomer = useIsGuestCustomer()
 
-  let {iframeId, clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {iframeId, clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
@@ -174,9 +174,19 @@ let make = (
 
   useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType, ~savedMethod=true)
 
-  GooglePayHelpers.useHandleGooglePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
+  GooglePayHelpers.useHandleGooglePayResponse(
+    ~connectors=[],
+    ~intent,
+    ~isSavedMethodsFlow=true,
+    ~sdkAuthorization,
+  )
 
-  ApplePayHelpers.useHandleApplePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
+  ApplePayHelpers.useHandleApplePayResponse(
+    ~connectors=[],
+    ~intent,
+    ~isSavedMethodsFlow=true,
+    ~sdkAuthorization,
+  )
 
   SamsungPayHelpers.useHandleSamsungPayResponse(~intent, ~isSavedMethodsFlow=true)
 
@@ -276,6 +286,7 @@ let make = (
               ~componentName,
               ~iframeId,
               ~readOnly,
+              ~isSavedMethodsFlow=true,
             )
           | _ =>
             // TODO - To be replaced with proper error message
@@ -293,6 +304,7 @@ let make = (
               ~sessionObj=optToken,
               ~componentName,
               ~paymentMethodListValue,
+              ~isSavedMethodsFlow=true,
             )
           | _ =>
             // TODO - To be replaced with proper error message
@@ -311,6 +323,7 @@ let make = (
               ~sessionObj=optToken->Option.getOr(JSON.Encode.null)->getDictFromJson,
               ~iframeId,
               ~readOnly,
+              ~isSavedMethodsFlow=true,
             )
           | _ =>
             // TODO - To be replaced with proper error message
