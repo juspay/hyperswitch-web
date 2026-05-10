@@ -51,6 +51,21 @@ type elementRef
 @val @scope("document") external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
 @module("/package.json") @val external packageJson: packageJson = "default"
 @val @scope("document") external body: body = "body"
+@val @scope("document") external head: Dom.element = "head"
+@send external appendChildElement: (Dom.element, Dom.element) => unit = "appendChild"
+@send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
+
+let setColorSchemeMeta = () => {
+  let meta = switch querySelector(`meta[name="color-scheme"]`)->Nullable.toOption {
+  | Some(el) => el
+  | None =>
+    let el = createElement("meta")
+    el->setAttribute("name", "color-scheme")
+    head->appendChildElement(el)
+    el
+  }
+  meta->setAttribute("content", "light dark")
+}
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
 @send
@@ -81,7 +96,6 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @send external preventDefault: (event, unit) => unit = "preventDefault"
 @send external appendChild: (body, Dom.element) => unit = "appendChild"
 @send external remove: Dom.element => unit = "remove"
-@send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
 @send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
 @send external click: Dom.element => unit = "click"
 @set external innerHTML: (Dom.element, string) => unit = "innerHTML"
