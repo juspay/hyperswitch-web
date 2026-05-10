@@ -67,6 +67,8 @@ let make = () => {
         dict->Utils.getDictFromObj("paymentOptions")->Dict.get("appearance")
       } else if dict->Utils.getDictIsSome("fullScreenIframeMounted") {
         dict->Dict.get("appearance")
+      } else if dict->Utils.getDictIsSome("ElementsUpdate") {
+        dict->Utils.getDictFromObj("options")->Dict.get("appearance")
       } else {
         None
       }
