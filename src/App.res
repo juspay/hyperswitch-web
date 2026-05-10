@@ -62,6 +62,27 @@ let make = () => {
         | None => ()
         }
       }
+
+      let appearanceJson = if dict->Utils.getDictIsSome("paymentElementCreate") {
+        dict->Utils.getDictFromObj("paymentOptions")->Dict.get("appearance")
+      } else if dict->Utils.getDictIsSome("fullScreenIframeMounted") {
+        dict->Dict.get("appearance")
+      } else {
+        None
+      }
+
+      switch appearanceJson {
+      | Some(appearanceJson) =>
+        let colorScheme =
+          appearanceJson
+          ->Utils.getDictFromJson
+          ->Utils.getString("colorScheme", "default")
+          ->CardTheme.getColorScheme
+        if colorScheme == Auto {
+          Window.setColorSchemeMeta()
+        }
+      | None => ()
+      }
     }
     Window.addEventListener("message", handleMetaDataPostMessage)
     Some(() => Window.removeEventListener("message", handleMetaDataPostMessage))

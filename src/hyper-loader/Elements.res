@@ -1495,6 +1495,7 @@ let make = (
         setIframeRefForComponent,
         iframeRef,
         mountPostMessage,
+        ~appearance,
         ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
         ~logger=Some(logger),
       )

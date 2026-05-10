@@ -238,6 +238,7 @@ let make = (
         setElementIframeRef,
         iframeRef,
         mountPostMessage,
+        ~appearance,
         ~isPaymentManagementElement=true,
         ~redirectionFlags=RecoilAtoms.defaultRedirectionFlags,
         ~logger=Some(logger),
