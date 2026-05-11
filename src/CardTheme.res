@@ -2,7 +2,7 @@ open CardThemeType
 open Utils
 open ErrorUtils
 
-let getTheme = val => {
+let getTheme = (val): theme => {
   switch val->String.toLowerCase {
   | "default" => Default
   | "brutal" => Brutal
@@ -28,6 +28,13 @@ let getInnerLayout = str => {
   }
 }
 
+let getColorScheme = (str): colorScheme => {
+  switch str->String.toLowerCase {
+  | "auto" => Auto
+  | _ => Default
+  }
+}
+
 let getShowLoader = str => {
   switch str {
   | "auto" => Auto
@@ -47,6 +54,7 @@ let defaultAppearance = {
   labels: Above,
   rules: Dict.make()->JSON.Encode.object,
   innerLayout: Spaced,
+  colorScheme: Default,
 }
 let defaultFonts = {
   cssSrc: "",
@@ -353,7 +361,11 @@ let getAppearance = (
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    unknownKeysWarning(["theme", "variables", "rules", "labels", "innerLayout"], json, "appearance")
+    unknownKeysWarning(
+      ["theme", "variables", "rules", "labels", "innerLayout", "colorScheme"],
+      json,
+      "appearance",
+    )
 
     let rulesJson = defaultRules(getVariables("variables", json, default, logger))
 
@@ -372,6 +384,7 @@ let getAppearance = (
           Above
         }
       },
+      colorScheme: getWarningString(json, "colorScheme", "default", ~logger)->getColorScheme,
     }
   })
   ->Option.getOr(defaultAppearance)

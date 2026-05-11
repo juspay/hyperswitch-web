@@ -35,8 +35,9 @@ let waitForReady = () => {
 
 // --- Credential parsing ---
 
-let getNewCredentials = async (~callback, ~currentClientSecret) => {
-  let newSdkAuthorization = await callback()
+let getNewCredentials = async (~callback: unit => promise<JSON.t>, ~currentClientSecret) => {
+  let callbackResult = await callback()
+  let newSdkAuthorization = callbackResult->getDictFromJson->getString("sdkAuthorization", "")
   let sdkAuthorizationData = newSdkAuthorization->getSdkAuthorizationData
   let newClientSecret = switch sdkAuthorizationData.clientSecret->getNonEmptyOption {
   | Some(cs) => cs
@@ -273,7 +274,7 @@ let performUpdateIntent = async (
   ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
   ~iframes: array<Nullable.t<Dom.element>>,
-  ~callback: unit => promise<string>,
+  ~callback: unit => promise<JSON.t>,
   ~publishableKey,
   ~profileId,
   ~sdkSessionId,
