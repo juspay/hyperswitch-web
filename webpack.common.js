@@ -100,6 +100,7 @@ function extractBaseDSNUrl(dsn) {
 const authorizedConnectSources = [
   "'self'",
   "https://checkout.hyperswitch.io",
+  "https://eu.hyperswitch.io",
   "https://dev.hyperswitch.io",
   "https://beta.hyperswitch.io",
   "https://live.hyperswitch.io",
@@ -134,6 +135,8 @@ const getEnvVariable = (variable, defaultValue) => {
 };
 
 const sdkEnv = getEnvVariable("sdkEnv", "local");
+const hyperswitchStack = getEnvVariable("HYPERSWITCH_STACK", "");
+const isEUStack = hyperswitchStack === "eu";
 const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const DISABLE_CSP = getEnvVariable("DISABLE_CSP", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
@@ -143,7 +146,7 @@ const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
   "SDK_TAG_VERSION",
-  require("./package.json").version
+  require("./package.json").version,
 );
 
 /*
@@ -160,11 +163,14 @@ const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
 // Repository info
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersionValue}`;
+  sdkEnv === "local"
+    ? ""
+    : `${isEUStack && sdkEnv === "prod" ? "/sdk" : ""}/web/${repoVersion}/${sdkVersionValue}`;
 
 // Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
+  if (isEUStack && env === "prod") return "https://eu.hyperswitch.io";
   const urls = {
     prod: "https://checkout.hyperswitch.io",
     sandbox: "https://beta.hyperswitch.io",
@@ -195,10 +201,16 @@ const confirmDomain = getEnvironmentDomain("live", "integ", "app");
 
 // Backend and confirm endpoints
 const backendEndPoint =
-  envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
+  envBackendUrl ||
+  (isEUStack && sdkEnv === "prod"
+    ? "https://eu.hyperswitch.io/api"
+    : `https://${backendDomain}.hyperswitch.io/api`);
 
 const confirmEndPoint =
-  envBackendUrl || `https://${confirmDomain}.hyperswitch.io/api`;
+  envBackendUrl ||
+  (isEUStack && sdkEnv === "prod"
+    ? "https://eu.hyperswitch.io/api"
+    : `https://${confirmDomain}.hyperswitch.io/api`);
 
 const logEndpoint = envLoggingUrl;
 
@@ -266,14 +278,14 @@ module.exports = (publicPath = "auto") => {
             "Content-Security-Policy": {
               "http-equiv": "Content-Security-Policy",
               content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
+                " ",
               )};
                 style-src ${authorizedStyleSources.join(" ")};
                 frame-src ${authorizedFrameSources.join(" ")};
                 img-src ${authorizedImageSources.join(" ")};
                 font-src ${authorizedFontSources.join(" ")};
                 connect-src ${authorizedConnectSources.join(
-                  " "
+                  " ",
                 )} ${logEndpoint} ${backendEndPoint};
       `,
             },
@@ -291,14 +303,14 @@ module.exports = (publicPath = "auto") => {
             "Content-Security-Policy": {
               "http-equiv": "Content-Security-Policy",
               content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
+                " ",
               )};
           style-src ${authorizedStyleSources.join(" ")};
           frame-src ${authorizedFrameSources.join(" ")};
           img-src ${authorizedImageSources.join(" ")};
           font-src ${authorizedFontSources.join(" ")};
           connect-src ${authorizedConnectSources.join(
-            " "
+            " ",
           )} ${logEndpoint} ${backendEndPoint};
           `,
             },
@@ -321,7 +333,7 @@ module.exports = (publicPath = "auto") => {
         analyzerMode: "static",
         reportFilename: "bundle-report.html",
         openAnalyzer: false,
-      })
+      }),
     );
   }
 
@@ -341,7 +353,7 @@ module.exports = (publicPath = "auto") => {
             paths: ["dist"],
           },
         },
-      })
+      }),
     );
   }
 
@@ -351,7 +363,12 @@ module.exports = (publicPath = "auto") => {
     output: {
       path: isLocal
         ? path.resolve(__dirname, "dist")
-        : path.resolve(__dirname, "dist", sdkEnv, sdkVersionValue),
+        : path.resolve(
+            __dirname,
+            "dist",
+            isEUStack ? `${sdkEnv}_eu` : sdkEnv,
+            sdkVersionValue,
+          ),
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,

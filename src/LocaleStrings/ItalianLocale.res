@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Questa carta è scaduta`,
   cardHeader: `Informazioni sulla carta`,
   cardBrandConfiguredErrorText: str => `${str} non è supportato al momento.`,
-  blockedCardText: "Questa carta non è consentita per i pagamenti.",
+  cardNotEligibleText: "Questa carta non è accettata per questo pagamento",
   currencyNetwork: `Reti Valutarie`,
   expiryPlaceholder: `MM / AA`,
   dateOfBirth: `Data di nascita`,
@@ -259,4 +259,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "Seleziona un piano a rate",
   showMore: "Mostra di più",
   showLess: "Mostra meno",
+  refreshingText: "Aggiornamento...",
 }

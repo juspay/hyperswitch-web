@@ -206,6 +206,7 @@ let useHandleApplePayResponse = (
   ~isSavedMethodsFlow=false,
   ~isWallet=true,
   ~requiredFieldsBody=Dict.make(),
+  ~sdkAuthorization,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -227,7 +228,10 @@ let useHandleApplePayResponse = (
       let json = ev.data->safeParse
       try {
         let dict = json->getDictFromJson
-        if dict->Dict.get("applePayPaymentToken")->Option.isSome {
+        if (
+          dict->Dict.get("applePayPaymentToken")->Option.isSome &&
+            dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
+        ) {
           let token =
             dict->Dict.get("applePayPaymentToken")->Option.getOr(Dict.make()->JSON.Encode.object)
 
@@ -296,13 +300,22 @@ let useHandleApplePayResponse = (
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
-  }, (isInvokeSDKFlow, processPayment, isManualRetryEnabled, isWallet, requiredFieldsBody))
+  }, (
+    isInvokeSDKFlow,
+    processPayment,
+    isManualRetryEnabled,
+    isWallet,
+    requiredFieldsBody,
+    isSavedMethodsFlow,
+    sdkAuthorization,
+  ))
 }
 
 let handleApplePayButtonClicked = (
   ~sessionObj,
   ~componentName,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+  ~isSavedMethodsFlow=false,
 ) => {
   let paymentRequest = ApplePayTypes.getPaymentRequestFromSession(~sessionObj, ~componentName)
   let authToken =
@@ -323,6 +336,7 @@ let handleApplePayButtonClicked = (
     ("componentName", componentName->JSON.Encode.string),
     ("authToken", authToken->JSON.Encode.string),
     ("connector", connector->JSON.Encode.string),
+    ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
   ]
   messageParentWindow(message)
 }

@@ -14,6 +14,7 @@ let make = (
   setIframeRef,
   iframeRef,
   mountPostMessage,
+  ~appearance,
   ~isPaymentManagementElement=false,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
   ~logger: option<HyperLoggerTypes.loggerMake>,
@@ -336,6 +337,7 @@ let make = (
                             ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
                             ("options", options),
+                            ("appearance", appearance),
                           ]->Dict.fromArray,
                         )
                       }

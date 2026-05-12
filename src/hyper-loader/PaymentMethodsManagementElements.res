@@ -238,6 +238,7 @@ let make = (
         setElementIframeRef,
         iframeRef,
         mountPostMessage,
+        ~appearance,
         ~isPaymentManagementElement=true,
         ~redirectionFlags=RecoilAtoms.defaultRedirectionFlags,
         ~logger=Some(logger),
@@ -250,6 +251,7 @@ let make = (
       update,
       fetchUpdates,
       create,
+      updateIntent: _ => Promise.resolve(JSON.Encode.null),
     }
   } catch {
   | e => {

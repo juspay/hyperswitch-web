@@ -82,7 +82,7 @@ type localeStrings = {
   cardExpiredText: string,
   cardHeader: string,
   cardBrandConfiguredErrorText: string => string,
-  blockedCardText: string,
+  cardNotEligibleText: string,
   currencyNetwork: string,
   expiryPlaceholder: string,
   dateOfBirth: string,
@@ -245,6 +245,7 @@ type localeStrings = {
   installmentSelectPlanPlaceholder: string,
   showMore: string,
   showLess: string,
+  refreshingText: string,
 }
 
 type constantStrings = {

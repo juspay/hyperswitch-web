@@ -8,7 +8,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
-  let setBlockedBins = Recoil.useSetRecoilState(blockedBins)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
   let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
@@ -20,6 +19,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
   let setUpdateSession = Recoil.useSetRecoilState(updateSession)
+  let setIsUpdateIntentLoading = Recoil.useSetRecoilState(isUpdateIntentLoading)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
@@ -419,25 +419,27 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
           | None => ()
           }
-          switch getThemePromise(optionsDict) {
-          | Some(promise) =>
-            promise
-            ->then(res => {
-              dict->setConfigs(res)
-            })
-            ->catch(_ => {
+          if optionsDict->Dict.keysToArray->Array.length > 0 {
+            switch getThemePromise(optionsDict) {
+            | Some(promise) =>
+              promise
+              ->then(res => {
+                dict->setConfigs(res)
+              })
+              ->catch(_ => {
+                dict->setConfigs({
+                  default: DefaultTheme.default,
+                  defaultRules: DefaultTheme.defaultRules,
+                })
+              })
+
+            | None =>
               dict->setConfigs({
                 default: DefaultTheme.default,
                 defaultRules: DefaultTheme.defaultRules,
               })
-            })
-
-          | None =>
-            dict->setConfigs({
-              default: DefaultTheme.default,
-              defaultRules: DefaultTheme.defaultRules,
-            })
-          }->ignore
+            }->ignore
+          }
         }
         if dict->Dict.get("isTestMode")->Option.isSome {
           let isTestMode = dict->Utils.getBool("isTestMode", false)
@@ -603,9 +605,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         if dict->Dict.get("applePaySessionObjNotPresent")->Option.isSome {
           setIsApplePayReady(prev => prev && false)
         }
-        if dict->getDictIsSome("blockedBins") {
-          let blockedBins = dict->getJsonObjectFromDict("blockedBins")
-          setBlockedBins(_ => Loaded(blockedBins))
+        if dict->Dict.get("updateIntentLoading")->Option.isSome {
+          setIsUpdateIntentLoading(_ => dict->getBool("updateIntentLoading", false))
         }
       } catch {
       | _ => setIntegrateErrorError(_ => true)
@@ -635,5 +636,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     None
   }, (divH, iframeId))
 
-  <div ref={divRef->ReactDOM.Ref.domRef}> children </div>
+  <div ref={divRef->ReactDOM.Ref.domRef} className="relative">
+    <UpdateIntentOverlay />
+    children
+  </div>
 }

@@ -387,7 +387,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     paymentMethodName: "trustly",
     icon: Some(icon("trustly", ~size=19, ~width=25)),
     displayName: localeString.payment_methods_trustly,
-    fields: [Country, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -948,6 +948,7 @@ type paymentMethodList = {
   is_tax_calculation_enabled: bool,
   isGuestCustomer: option<bool>,
   intent_data: intentData,
+  sdk_next_action: option<string>,
 }
 
 let defaultPaymentMethodType = {
@@ -978,6 +979,7 @@ let defaultList = {
   is_tax_calculation_enabled: false,
   isGuestCustomer: None,
   intent_data: defaultIntentData,
+  sdk_next_action: None,
 }
 
 let getPaymentExperienceType = str => {
@@ -1216,6 +1218,7 @@ let itemToObjMapper = dict => {
     is_tax_calculation_enabled: getBool(dict, "is_tax_calculation_enabled", false),
     isGuestCustomer: getOptionBool(dict, "is_guest_customer"),
     intent_data: dict->getIntentData,
+    sdk_next_action: dict->getDictFromDict("sdk_next_action")->getOptionString("next_action"),
   }
 }
 
@@ -1296,4 +1299,22 @@ let getPaymentExperienceTypeFromPML = (
     ->Some
   )
   ->Option.getOr([])
+}
+
+let parseEligibilityResponse = json => {
+  let dict = json->getDictFromJson
+  let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
+  let nextAction = sdkNextActionDict->Dict.get("next_action")
+  switch nextAction {
+  | Some(nextActionJson) =>
+    switch nextActionJson->JSON.Classify.classify {
+    | String(str) => str === "deny" ? Some("") : None
+    | Object(nextActionDict) =>
+      nextActionDict
+      ->Dict.get("deny")
+      ->Option.map(denyJson => denyJson->getDictFromJson->getString("message", ""))
+    | _ => None
+    }
+  | None => None
+  }
 }

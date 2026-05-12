@@ -185,6 +185,10 @@ let getDictFromObj = (dict, key) => {
   dict->Dict.get(key)->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
 }
 
+let getOptionalDict = (dict, key) => {
+  dict->Dict.get(key)->Option.flatMap(JSON.Decode.object)
+}
+
 let getJsonObjectFromDict = (dict, key) => {
   dict->Dict.get(key)->Option.getOr(JSON.Encode.object(Dict.make()))
 }
@@ -1038,6 +1042,7 @@ let fetchApi = (
   ~customPodUri=None,
   ~publishableKey=None,
   ~sdkAuthorization=None,
+  ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   open Promise
   let body = switch method {
@@ -1050,6 +1055,7 @@ let fetchApi = (
       {
         method,
         ?body,
+        ?signal,
         headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey, ~sdkAuthorization),
       },
     )
@@ -1076,6 +1082,7 @@ let fetchApiWithLogging = async (
   ~isPaymentSession=false,
   ~onCatchCallback=None,
   ~sdkAuthorization=None,
+  ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   open LoggerUtils
 
@@ -1098,6 +1105,7 @@ let fetchApiWithLogging = async (
       {
         method,
         ?body,
+        ?signal,
         headers: getHeaders(
           ~headers=headers->Option.getOr(Dict.make()),
           ~uri,
@@ -1478,6 +1486,17 @@ let makeIframe = (element, url) => {
     element->appendChild(iframe)
   })
 }
+let makeHiddenIframe = (element, ~src, ~id) => {
+  let iframe = Window.createElement("iframe")
+  iframe->Window.setAttribute("id", id)
+  iframe->Window.setAttribute("src", src)
+  iframe->Window.setAttribute(
+    "style",
+    "position: absolute; width: 1px; height: 1px; border: none; overflow: hidden; left: -9999px; top: -9999px;",
+  )
+  element->Window.appendChild(iframe)
+  iframe
+}
 let makeForm = (element, url, id) => {
   open Types
   let form = createElement("form")
@@ -1691,6 +1710,8 @@ let handleFailureResponse = (~message, ~errorType) =>
     ),
   ]->getJsonFromArrayOfJson
 
+let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+
 let getPaymentId = clientSecret =>
   String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
 
@@ -1760,17 +1781,19 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
 }
 
 let getWidgetIframe = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {
-  let selector = `orca-payment-element-iframeRef-orca-elements-payment-element-${id}`
-  iframeRef.contents->Array.find(iframe => {
-    switch iframe->Nullable.toOption {
-    | Some(elem) =>
-      elem
-      ->Window.getAttribute("id")
-      ->Nullable.toOption
-      ->Option.getOr("") == selector
-    | None => false
-    }
-  })
+  if id === "" {
+    None
+  } else {
+    iframeRef.contents->Array.find(iframe => {
+      switch iframe->Nullable.toOption {
+      | Some(elem) =>
+        let iframeId = elem->Window.getAttribute("id")->Nullable.toOption->Option.getOr("")
+        let isConnected = elem->Window.Element.isConnected
+        isConnected && iframeId->String.endsWith(id)
+      | None => false
+      }
+    })
+  }
 }
 
 let isWidgetPresent = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => {

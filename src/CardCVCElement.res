@@ -20,7 +20,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
     cvcError,
     setCvcError,
   } = cvcProps
-
+  let isCvcEmpty = cvcNumber === ""
   let compressedLayoutStyleForCvcError =
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
 
@@ -62,6 +62,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
                   ~logger=loggerState,
                   ~customPodUri,
                   ~redirectionFlags,
+                  ~sdkAuthorization=keys.sdkAuthorization,
                   ~mode=CardCVCElement,
                 )
                 ->then(response => {
@@ -130,7 +131,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
         Window.removeEventListener("message", handleRequestCVCConfirm)
       },
     )
-  }, [cvcNumber])
+  }, (cvcNumber, keys, paymentType, loggerState, customPodUri, redirectionFlags, localeString))
 
   React.useEffect0(() => {
     messageParentWindow([
@@ -141,15 +142,10 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
   })
 
   React.useEffect(() => {
-    let isCvcEmpty = cvcNumber->String.length == 0
-    PaymentUtils.emitPaymentMethodInfo(
-      ~paymentMethod="card",
-      ~paymentMethodType="cvc",
-      ~isCVCCardElement=true,
-      ~isCvcEmpty,
-    )
+    let cvcInfoDict = [("isCvcEmpty", isCvcEmpty->JSON.Encode.bool)]->Dict.fromArray
+    Utils.messageParentWindow([("cvcInfo", cvcInfoDict->JSON.Encode.object)])
     None
-  }, [cvcNumber])
+  }, [isCvcEmpty])
 
   <PaymentInputField
     fieldName=localeString.cvcTextLabel

@@ -52,6 +52,7 @@ let make = (
     setCardError,
     maxCardLength,
     cardBrand,
+    cardEligibilityError,
   } = cardProps
 
   let {
@@ -85,7 +86,6 @@ let make = (
     RecoilAtoms.showPaymentMethodsScreen,
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
-  let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
   )
@@ -211,17 +211,11 @@ let make = (
 
       let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
 
-      // Check if card is blocked
-      let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(
-        cardNumber->CardValidations.clearSpaces,
-        blockedBinsList,
-      )
-
       let validFormat =
         (isBancontact || isCardDetailsValid) &&
         isNicknameValid &&
         areRequiredFieldsValid &&
-        !isCardBlocked &&
+        cardEligibilityError->Option.isNone &&
         isInstallmentValid
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
@@ -408,9 +402,10 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
-        } else if isCardBlocked {
-          setCardError(_ => localeString.blockedCardText)
-          setUserError(localeString.blockedCardText)
+        } else if cardEligibilityError->Option.isSome {
+          let msg = PaymentHelpers.getCardEligibilityErrorText(~cardEligibilityError, ~localeString)
+          setCardError(_ => msg)
+          setUserError(msg)
         } else if isCardSupported->Option.getOr(true)->not {
           if cardBrand == "" {
             setCardError(_ => localeString.enterValidCardNumberErrorText)
@@ -450,9 +445,9 @@ let make = (
     clickToPayConfig,
     clickToPayCardBrand,
     isClickToPayRememberMe,
-    blockedBinsList,
     selectedInstallmentPlan,
     showInstallments,
+    cardEligibilityError,
   ))
   useSubmitPaymentData(submitCallback)
 

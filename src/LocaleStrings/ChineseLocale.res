@@ -93,7 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `此卡已过期`,
   cardHeader: `卡片信息`,
   cardBrandConfiguredErrorText: str => `${str} 目前不支持。`,
-  blockedCardText: "此卡不允许用于付款。",
+  cardNotEligibleText: "此卡不被接受用于此付款",
   currencyNetwork: `货币网络`,
   expiryPlaceholder: `MM / YY`,
   dateOfBirth: `出生日期`,
@@ -257,4 +257,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "选择分期计划",
   showMore: "显示更多",
   showLess: "收起",
+  refreshingText: "刷新中...",
 }

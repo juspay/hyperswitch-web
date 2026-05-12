@@ -51,6 +51,10 @@ type elementRef
 @val @scope("document") external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
 @module("/package.json") @val external packageJson: packageJson = "default"
 @val @scope("document") external body: body = "body"
+@val @scope("document") external head: Dom.element = "head"
+@send external appendChildElement: (Dom.element, Dom.element) => unit = "appendChild"
+@send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
+
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
 @send
@@ -81,7 +85,6 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @send external preventDefault: (event, unit) => unit = "preventDefault"
 @send external appendChild: (body, Dom.element) => unit = "appendChild"
 @send external remove: Dom.element => unit = "remove"
-@send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
 @send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
 @send external click: Dom.element => unit = "click"
 @set external innerHTML: (Dom.element, string) => unit = "innerHTML"
@@ -172,6 +175,7 @@ module LocalStorage = {
 }
 
 module Element = {
+  @get external isConnected: Dom.element => bool = "isConnected"
   @get external clientWidth: Dom.element => int = "clientWidth"
   @get external nullableContentWindow: Dom.element => Nullable.t<Dom.element> = "contentWindow"
   @get external nullableContentDocument: Dom.element => Nullable.t<document> = "contentDocument"

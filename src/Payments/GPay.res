@@ -13,7 +13,7 @@ let make = (
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let isSDKHandleClick = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
@@ -70,7 +70,13 @@ let make = (
     ? paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Gpay(SDK)))
     : paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Gpay(Redirect)))
 
-  GooglePayHelpers.useHandleGooglePayResponse(~connectors, ~intent, ~isWallet, ~requiredFieldsBody)
+  GooglePayHelpers.useHandleGooglePayResponse(
+    ~connectors,
+    ~intent,
+    ~isWallet,
+    ~requiredFieldsBody,
+    ~sdkAuthorization,
+  )
 
   let (_, buttonType, _, _) = options.wallets.style.type_
   let (_, heightType, _, _, _) = options.wallets.style.height
