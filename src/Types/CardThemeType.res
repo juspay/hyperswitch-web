@@ -1,5 +1,7 @@
 type theme = Default | Brutal | Midnight | Soft | Charcoal | Bubblegum | NONE
 
+type colorScheme = Light | Auto | Dark
+
 type innerLayout = Spaced | Compressed
 
 type showLoader = Auto | Always | Never
@@ -79,6 +81,7 @@ type appearance = {
   rules: JSON.t,
   labels: label,
   innerLayout: innerLayout,
+  colorScheme: colorScheme,
 }
 type fonts = {
   cssSrc: string,
