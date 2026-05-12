@@ -114,18 +114,31 @@ let make = (~paymentMethodName: string) => {
   useSubmitPaymentData(submitCallback)
   let paymentMethod = paymentMethodDetails.methodType
 
-  <div
-    className="DynamicFields flex flex-col animate-slowShow"
-    style={gridGap: themeObj.spacingGridColumn}>
-    <DynamicFields paymentMethod paymentMethodType=paymentMethodName setRequiredFieldsBody />
-    <Terms
-      paymentMethodType={PaymentUtils.getPaymentMethodName(
-        ~paymentMethodType=paymentMethod,
-        ~paymentMethodName,
-      )}
-      paymentMethod
-    />
-  </div>
+  let {redirectionText} = Recoil.useRecoilValueFromAtom(optionAtom)
+
+  let hasVisibleFields = {
+    let fields = paymentMethodDetails.fields
+    if redirectionText.hide {
+      fields->Array.some(field => field !== PaymentMethodsRecord.InfoElement)
+    } else {
+      fields->Array.length > 0
+    }
+  }
+
+  <RenderIf condition=hasVisibleFields>
+    <div
+      className="DynamicFields flex flex-col animate-slowShow"
+      style={gridGap: themeObj.spacingGridColumn}>
+      <DynamicFields paymentMethod paymentMethodType=paymentMethodName setRequiredFieldsBody />
+      <Terms
+        paymentMethodType={PaymentUtils.getPaymentMethodName(
+          ~paymentMethodType=paymentMethod,
+          ~paymentMethodName,
+        )}
+        paymentMethod
+      />
+    </div>
+  </RenderIf>
 }
 
 let default = make

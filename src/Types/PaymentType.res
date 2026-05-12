@@ -113,6 +113,15 @@ type wallets = {
   style: style,
 }
 type business = {name: string}
+type logoShape = Default | Circle | Square | Rounded
+type logoContainerCustomization = {
+  shape: logoShape,
+  width: option<string>,
+  height: option<string>,
+  borderColor: option<string>,
+  borderWidth: option<string>,
+  backgroundColor: option<string>,
+}
 type layoutConfig = {
   defaultCollapsed: bool,
   radios: bool,
@@ -122,6 +131,8 @@ type layoutConfig = {
   savedMethodCustomization: savedMethodCustomization,
   paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabs,
   displayOneClickPaymentMethodsOnTop: bool,
+  showCheckedIconForSelection: bool,
+  logoContainerCustomization: logoContainerCustomization,
 }
 
 type layoutType =
@@ -208,6 +219,11 @@ type paymentMethodConfig = {
 
 type paymentMethodsConfig = array<paymentMethodConfig>
 
+type redirectionText = {
+  hide: bool,
+  text: option<string>,
+}
+
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
@@ -236,6 +252,7 @@ type options = {
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
   paymentMethodsConfig: paymentMethodsConfig,
+  redirectionText: redirectionText,
 }
 
 type payerDetails = {
@@ -293,6 +310,14 @@ let defaultSavedMethodCustomization = {
   maxItems: 4,
   hideCardExpiry: false,
 }
+let defaultLogoContainerCustomization = {
+  shape: Default,
+  width: None,
+  height: None,
+  borderColor: None,
+  borderWidth: None,
+  backgroundColor: None,
+}
 let defaultLayout = {
   defaultCollapsed: false,
   radios: false,
@@ -302,6 +327,8 @@ let defaultLayout = {
   savedMethodCustomization: defaultSavedMethodCustomization,
   paymentMethodsArrangementForTabs: Default,
   displayOneClickPaymentMethodsOnTop: true,
+  showCheckedIconForSelection: false,
+  logoContainerCustomization: defaultLogoContainerCustomization,
 }
 
 let defaultAddress: address = {
@@ -396,6 +423,11 @@ let defaultSdkHandleSavePayment = {
   confirmParams: ConfirmType.defaultConfirm,
 }
 
+let defaultRedirectionText = {
+  hide: false,
+  text: None,
+}
+
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
@@ -422,6 +454,7 @@ let defaultOptions = {
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
   paymentMethodsConfig: [],
+  redirectionText: defaultRedirectionText,
 }
 
 let getMessageDisplayMode = (str, key) => {
@@ -861,6 +894,60 @@ let getSavedMethodCustomization = (dict, str, logger) => {
   ->Option.getOr(defaultSavedMethodCustomization)
 }
 
+let getLogoShape = str => {
+  switch str {
+  | "circle" => Circle
+  | "square" => Square
+  | "rounded" => Rounded
+  | "default" => Default
+  | str => {
+      str->unknownPropValueWarning(
+        ["circle", "square", "rounded", "default"],
+        "options.layout.logoContainerCustomization.shape",
+      )
+      Default
+    }
+  }
+}
+
+let getDimensionValue = (dict, key) => {
+  dict
+  ->Dict.get(key)
+  ->Option.flatMap(val => {
+    switch val->JSON.Classify.classify {
+    | String(str) => Some(str)
+    | Number(num) => Some(Float.toString(num) ++ "px")
+    | _ => None
+    }
+  })
+}
+
+let getLogoContainerCustomization = (dict, str) => {
+  dict
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
+    unknownKeysWarning(
+      ["shape", "width", "height", "borderColor", "borderWidth", "backgroundColor"],
+      json,
+      "options.layout.logoContainerCustomization",
+    )
+    {
+      shape: json
+      ->Dict.get("shape")
+      ->Option.flatMap(JSON.Decode.string)
+      ->Option.map(getLogoShape)
+      ->Option.getOr(Default),
+      width: getDimensionValue(json, "width"),
+      height: getDimensionValue(json, "height"),
+      borderColor: getOptionString(json, "borderColor"),
+      borderWidth: getDimensionValue(json, "borderWidth"),
+      backgroundColor: getOptionString(json, "backgroundColor"),
+    }
+  })
+  ->Option.getOr(defaultLogoContainerCustomization)
+}
+
 let getLayoutValues = (val, logger) => {
   switch val->JSON.Classify.classify {
   | String(str) => StringLayout(str->getLayout)
@@ -883,6 +970,8 @@ let getLayoutValues = (val, logger) => {
           "savedMethodCustomization",
           "paymentMethodsArrangementForTabs",
           "displayOneClickPaymentMethodsOnTop",
+          "showCheckedIconForSelection",
+          "logoContainerCustomization",
         ],
         json,
         "options.layout",
@@ -904,6 +993,16 @@ let getLayoutValues = (val, logger) => {
           "displayOneClickPaymentMethodsOnTop",
           true,
           ~logger,
+        ),
+        showCheckedIconForSelection: getBoolWithWarning(
+          json,
+          "showCheckedIconForSelection",
+          false,
+          ~logger,
+        ),
+        logoContainerCustomization: getLogoContainerCustomization(
+          json,
+          "logoContainerCustomization",
         ),
       }
     })
@@ -1076,6 +1175,20 @@ let getWallets = (dict, str, logger) => {
     }
   })
   ->Option.getOr(defaultWallets)
+}
+
+let getRedirectionText = (dict, str, logger) => {
+  dict
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
+    unknownKeysWarning(["hide", "text"], json, "options.redirectionText")
+    {
+      hide: getBoolWithWarning(json, "hide", false, ~logger),
+      text: getOptionString(json, "text"),
+    }
+  })
+  ->Option.getOr(defaultRedirectionText)
 }
 
 let getLayout = (dict, str, logger) => {
@@ -1294,6 +1407,7 @@ let allowedPaymentElementOptions = [
   "customMessageForCardTerms",
   "showShortSurchargeMessage",
   "paymentMethodsConfig",
+  "redirectionText",
 ]
 
 let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
@@ -1388,6 +1502,7 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
     paymentMethodsConfig: getPaymentMethodsConfig(dict, "paymentMethodsConfig", logger),
+    redirectionText: getRedirectionText(dict, "redirectionText", logger),
   }
 }
 

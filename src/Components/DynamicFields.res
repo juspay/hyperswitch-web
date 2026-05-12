@@ -46,7 +46,7 @@ let make = (
     None
   }, [paymentMethodType])
 
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {billingAddress, redirectionText} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   //<...>//
   let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
@@ -318,13 +318,21 @@ let make = (
     }
   }
 
+  let filteredFieldsArr = React.useMemo(() => {
+    if redirectionText.hide {
+      fieldsArr->Array.filter(field => field !== InfoElement)
+    } else {
+      fieldsArr
+    }
+  }, (fieldsArr, redirectionText.hide))
+
   let dynamicFieldsToRenderOutsideBilling = React.useMemo(() => {
-    fieldsArr->Array.filter(isFieldTypeToRenderOutsideBilling)
-  }, [fieldsArr])
+    filteredFieldsArr->Array.filter(isFieldTypeToRenderOutsideBilling)
+  }, [filteredFieldsArr])
 
   let dynamicFieldsToRenderInsideBilling = React.useMemo(() => {
-    fieldsArr->Array.filter(field => !(field->isFieldTypeToRenderOutsideBilling))
-  }, [fieldsArr])
+    filteredFieldsArr->Array.filter(field => !(field->isFieldTypeToRenderOutsideBilling))
+  }, [filteredFieldsArr])
 
   let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
   let isRenderInfoElement = isInfoElementPresent && !isDisableInfoElement
@@ -333,7 +341,7 @@ let make = (
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
 
-  <RenderIf condition={!isSavedCardFlow && fieldsArr->Array.length > 0}>
+  <RenderIf condition={!isSavedCardFlow && filteredFieldsArr->Array.length > 0}>
     {<>
       {dynamicFieldsToRenderOutsideBilling
       ->Array.mapWithIndex((item, index) => {
