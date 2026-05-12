@@ -538,6 +538,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         | None => elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
         }
 
+        // Use explicit profileId if provided, otherwise extract from clientSecret
+        let profileIdFromClientSecret = clientSecretId->getProfileIdFromClientSecret
+        let resolvedProfileId = profileId->String.length > 0 ? profileId : profileIdFromClientSecret->Option.getOr("")
+
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         let preloadSDKWithParams =
           elementsOptions->getDictFromJson->getDictFromDict("preloadSDKWithParams")
@@ -561,7 +565,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
-          ~profileId,
+          ~profileId=resolvedProfileId,
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
@@ -744,6 +748,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           | None => paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
           }
 
+        // Use explicit profileId if provided, otherwise extract from clientSecret
+        let profileIdFromClientSecret = clientSecret.contents->getProfileIdFromClientSecret
+        let resolvedProfileId = profileId->String.length > 0 ? profileId : profileIdFromClientSecret->Option.getOr("")
+
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecret.contents)
           resolve(JSON.Encode.null)
@@ -758,7 +766,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         PaymentSession.make(
           paymentSessionOptions,
           ~publishableKey,
-          ~profileId,
+          ~profileId=resolvedProfileId,
           ~sdkSessionId=sessionID,
           ~logger=Some(logger),
           ~redirectionFlags,
