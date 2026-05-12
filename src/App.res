@@ -78,11 +78,9 @@ let make = () => {
         let colorScheme =
           appearanceJson
           ->Utils.getDictFromJson
-          ->Utils.getString("colorScheme", "default")
+          ->Utils.getString("colorScheme", "light")
           ->CardTheme.getColorScheme
-        if colorScheme == Auto {
-          Window.setColorSchemeMeta()
-        }
+        CardTheme.setColorSchemeMeta(colorScheme)
       | None => ()
       }
     }

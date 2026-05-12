@@ -1,6 +1,6 @@
 type theme = Default | Brutal | Midnight | Soft | Charcoal | Bubblegum | NONE
 
-type colorScheme = Default | Auto
+type colorScheme = Light | Auto | Dark
 
 type innerLayout = Spaced | Compressed
 
