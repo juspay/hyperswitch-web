@@ -293,24 +293,37 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, [selectedOption])
   useSubmitPaymentData(submitCallback)
   React.useEffect(() => {
-    setSelectedOption(prev =>
-      selectedOption !== "" && paymentOptions->Array.includes(selectedOption)
-        ? prev
-        : layoutClass.defaultCollapsed
-        ? ""
-        : switch paymentMethodList {
-          | SemiLoaded
-          | LoadError(_) =>
-            checkPriorityList(paymentMethodOrder) ? "card" : ""
-          | Loaded(_) =>
-            paymentOptions->Array.includes(selectedOption)
-              ? selectedOption
-              : paymentOptions->Array.get(0)->Option.getOr("")
-          | _ => paymentOptions->Array.get(0)->Option.getOr("")
-          }
-    )
+    let shouldAutoOpenSavedMethods =
+      !layoutClass.savedMethodCustomization.defaultCollapsed &&
+      groupSavedMethodsSeparately &&
+      paymentOptions->Array.includes("saved_methods")
+    setSelectedOption(prev => {
+      if prev !== "" && paymentOptions->Array.includes(prev) {
+        prev
+      } else if layoutClass.defaultCollapsed {
+        shouldAutoOpenSavedMethods ? "saved_methods" : ""
+      } else {
+        switch paymentMethodList {
+        | SemiLoaded
+        | LoadError(_) =>
+          checkPriorityList(paymentMethodOrder) ? "card" : ""
+        | Loaded(_) =>
+          paymentOptions->Array.includes(selectedOption)
+            ? selectedOption
+            : paymentOptions->Array.get(0)->Option.getOr("")
+        | _ => paymentOptions->Array.get(0)->Option.getOr("")
+        }
+      }
+    })
     None
-  }, (layoutClass.defaultCollapsed, paymentOptions, paymentMethodList, selectedOption))
+  }, (
+    layoutClass.defaultCollapsed,
+    layoutClass.savedMethodCustomization.defaultCollapsed,
+    groupSavedMethodsSeparately,
+    paymentOptions,
+    paymentMethodList,
+    selectedOption,
+  ))
 
   let paymentFormElement = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
@@ -586,7 +599,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           condition={paymentOptions->Array.length > 0 &&
           walletOptions->Array.length > 0 &&
           checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}>
-          <Or />
+          <Or orSeparatorText={layoutClass.orSeparatorText} />
         </RenderIf>
         {switch layoutClass.\"type" {
         | Tabs =>

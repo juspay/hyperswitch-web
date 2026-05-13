@@ -30,49 +30,21 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
       cursor: "pointer",
     }
     onClick>
-    {let logoCustomization = layoutClass.logoContainerCustomization
-    let logoContainerStyle: JsxDOMStyle.t = switch logoCustomization.shape {
-    | PaymentType.Default => {position: "relative"}
-    | shape => {
-        let borderRadius = switch shape {
-        | Circle => "50%"
-        | Square => "0px"
-        | Rounded => "4px"
-        | Default => ""
-        }
-        {
-          position: "relative",
-          width: logoCustomization.width->Option.getOr("40px"),
-          height: logoCustomization.height->Option.getOr("40px"),
-          borderRadius,
-          border: `${logoCustomization.borderWidth->Option.getOr("1px")} solid ${logoCustomization.borderColor->Option.getOr(themeObj.borderColor)}`,
-          backgroundColor: logoCustomization.backgroundColor->Option.getOr("transparent"),
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }
-      }
-    }
-    <div className={`TabIcon ${tabIconClass}`} style=logoContainerStyle>
+    <div className={`TabIcon ${tabIconClass}`} style={{position: "relative"}}>
       {switch icon {
       | Some(ele) => ele
       | None => <Icon name="default-card" size=19 />
       }}
       <RenderIf condition={layoutClass.showCheckedIconForSelection && isActive}>
-        {let offset = switch logoCustomization.shape {
-        | PaymentType.Default => "-6px"
-        | _ => "-3px"
-        }
         <div
+          className="TabSelectionIcon"
           style={
             position: "absolute",
-            bottom: offset,
-            right: offset,
           }>
           <Icon name="checked-selection" size=14 />
-        </div>}
+        </div>
       </RenderIf>
-    </div>}
+    </div>
     <div className={`TabLabel ${tabLabelClass}`}>
       {React.string(paymentOption.paymentMethodName === "card" ? localeString.card : displayName)}
     </div>

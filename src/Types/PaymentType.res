@@ -1,6 +1,7 @@
 type showTerms = Auto | Always | Never
 type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
+type redirectionInfo = ShowRedirectInfo | HideRedirectInfo
 type layout = Accordion | Tabs
 type groupingBehavior = {
   displayInSeparateScreen: bool,
@@ -10,6 +11,7 @@ type savedMethodCustomization = {
   groupingBehavior: groupingBehavior,
   maxItems: int,
   hideCardExpiry: bool,
+  defaultCollapsed: bool,
 }
 open Utils
 open ErrorUtils
@@ -113,15 +115,6 @@ type wallets = {
   style: style,
 }
 type business = {name: string}
-type logoShape = Default | Circle | Square | Rounded
-type logoContainerCustomization = {
-  shape: logoShape,
-  width: option<string>,
-  height: option<string>,
-  borderColor: option<string>,
-  borderWidth: option<string>,
-  backgroundColor: option<string>,
-}
 type layoutConfig = {
   defaultCollapsed: bool,
   radios: bool,
@@ -132,7 +125,7 @@ type layoutConfig = {
   paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabs,
   displayOneClickPaymentMethodsOnTop: bool,
   showCheckedIconForSelection: bool,
-  logoContainerCustomization: logoContainerCustomization,
+  orSeparatorText: option<string>,
 }
 
 type layoutType =
@@ -219,11 +212,6 @@ type paymentMethodConfig = {
 
 type paymentMethodsConfig = array<paymentMethodConfig>
 
-type redirectionText = {
-  hide: bool,
-  text: option<string>,
-}
-
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
@@ -252,7 +240,7 @@ type options = {
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
   paymentMethodsConfig: paymentMethodsConfig,
-  redirectionText: redirectionText,
+  redirectionInfo: redirectionInfo,
 }
 
 type payerDetails = {
@@ -309,15 +297,9 @@ let defaultSavedMethodCustomization = {
   groupingBehavior: defaultGroupingBehavior,
   maxItems: 4,
   hideCardExpiry: false,
+  defaultCollapsed: true,
 }
-let defaultLogoContainerCustomization = {
-  shape: Default,
-  width: None,
-  height: None,
-  borderColor: None,
-  borderWidth: None,
-  backgroundColor: None,
-}
+
 let defaultLayout = {
   defaultCollapsed: false,
   radios: false,
@@ -328,7 +310,7 @@ let defaultLayout = {
   paymentMethodsArrangementForTabs: Default,
   displayOneClickPaymentMethodsOnTop: true,
   showCheckedIconForSelection: false,
-  logoContainerCustomization: defaultLogoContainerCustomization,
+  orSeparatorText: None,
 }
 
 let defaultAddress: address = {
@@ -423,10 +405,7 @@ let defaultSdkHandleSavePayment = {
   confirmParams: ConfirmType.defaultConfirm,
 }
 
-let defaultRedirectionText = {
-  hide: false,
-  text: None,
-}
+let defaultRedirectionInfo = ShowRedirectInfo
 
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
@@ -454,7 +433,7 @@ let defaultOptions = {
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
   paymentMethodsConfig: [],
-  redirectionText: defaultRedirectionText,
+  redirectionInfo: defaultRedirectionInfo,
 }
 
 let getMessageDisplayMode = (str, key) => {
@@ -881,7 +860,7 @@ let getSavedMethodCustomization = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["groupingBehavior", "maxItems", "hideCardExpiry"],
+      ["groupingBehavior", "maxItems", "hideCardExpiry", "defaultCollapsed"],
       json,
       "options.layout.savedMethodCustomization",
     )
@@ -889,25 +868,10 @@ let getSavedMethodCustomization = (dict, str, logger) => {
       groupingBehavior: json->getGroupingBehavior(~logger),
       maxItems: getMaxItems(json, "maxItems", 4, ~logger),
       hideCardExpiry: getBool(json, "hideCardExpiry", false),
+      defaultCollapsed: getBoolWithWarning(json, "defaultCollapsed", true, ~logger),
     }
   })
   ->Option.getOr(defaultSavedMethodCustomization)
-}
-
-let getLogoShape = str => {
-  switch str {
-  | "circle" => Circle
-  | "square" => Square
-  | "rounded" => Rounded
-  | "default" => Default
-  | str => {
-      str->unknownPropValueWarning(
-        ["circle", "square", "rounded", "default"],
-        "options.layout.logoContainerCustomization.shape",
-      )
-      Default
-    }
-  }
 }
 
 let getDimensionValue = (dict, key) => {
@@ -920,32 +884,6 @@ let getDimensionValue = (dict, key) => {
     | _ => None
     }
   })
-}
-
-let getLogoContainerCustomization = (dict, str) => {
-  dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
-  ->Option.map(json => {
-    unknownKeysWarning(
-      ["shape", "width", "height", "borderColor", "borderWidth", "backgroundColor"],
-      json,
-      "options.layout.logoContainerCustomization",
-    )
-    {
-      shape: json
-      ->Dict.get("shape")
-      ->Option.flatMap(JSON.Decode.string)
-      ->Option.map(getLogoShape)
-      ->Option.getOr(Default),
-      width: getDimensionValue(json, "width"),
-      height: getDimensionValue(json, "height"),
-      borderColor: getOptionString(json, "borderColor"),
-      borderWidth: getDimensionValue(json, "borderWidth"),
-      backgroundColor: getOptionString(json, "backgroundColor"),
-    }
-  })
-  ->Option.getOr(defaultLogoContainerCustomization)
 }
 
 let getLayoutValues = (val, logger) => {
@@ -971,7 +909,7 @@ let getLayoutValues = (val, logger) => {
           "paymentMethodsArrangementForTabs",
           "displayOneClickPaymentMethodsOnTop",
           "showCheckedIconForSelection",
-          "logoContainerCustomization",
+          "orSeparatorText",
         ],
         json,
         "options.layout",
@@ -1000,10 +938,7 @@ let getLayoutValues = (val, logger) => {
           false,
           ~logger,
         ),
-        logoContainerCustomization: getLogoContainerCustomization(
-          json,
-          "logoContainerCustomization",
-        ),
+        orSeparatorText: getOptionString(json, "orSeparatorText"),
       }
     })
   | _ => StringLayout(Tabs)
@@ -1177,18 +1112,16 @@ let getWallets = (dict, str, logger) => {
   ->Option.getOr(defaultWallets)
 }
 
-let getRedirectionText = (dict, str, logger) => {
-  dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
-  ->Option.map(json => {
-    unknownKeysWarning(["hide", "text"], json, "options.redirectionText")
-    {
-      hide: getBoolWithWarning(json, "hide", false, ~logger),
-      text: getOptionString(json, "text"),
+let getRedirectionInfo = (dict, str, logger) => {
+  let value = getWarningString(dict, str, "show", ~logger)
+  switch value {
+  | "hidden" => HideRedirectInfo
+  | "show" => ShowRedirectInfo
+  | str => {
+      str->unknownPropValueWarning(["show", "hidden"], "options.redirectionInfo")
+      ShowRedirectInfo
     }
-  })
-  ->Option.getOr(defaultRedirectionText)
+  }
 }
 
 let getLayout = (dict, str, logger) => {
@@ -1407,7 +1340,7 @@ let allowedPaymentElementOptions = [
   "customMessageForCardTerms",
   "showShortSurchargeMessage",
   "paymentMethodsConfig",
-  "redirectionText",
+  "redirectionInfo",
 ]
 
 let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
@@ -1502,7 +1435,7 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
     paymentMethodsConfig: getPaymentMethodsConfig(dict, "paymentMethodsConfig", logger),
-    redirectionText: getRedirectionText(dict, "redirectionText", logger),
+    redirectionInfo: getRedirectionInfo(dict, "redirectionInfo", logger),
   }
 }
 

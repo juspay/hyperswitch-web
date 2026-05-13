@@ -114,11 +114,11 @@ let make = (~paymentMethodName: string) => {
   useSubmitPaymentData(submitCallback)
   let paymentMethod = paymentMethodDetails.methodType
 
-  let {redirectionText} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {redirectionInfo} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let hasVisibleFields = {
     let fields = paymentMethodDetails.fields
-    if redirectionText.hide {
+    if redirectionInfo === HideRedirectInfo {
       fields->Array.some(field => field !== PaymentMethodsRecord.InfoElement)
     } else {
       fields->Array.length > 0

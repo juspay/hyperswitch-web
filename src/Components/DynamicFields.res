@@ -46,7 +46,7 @@ let make = (
     None
   }, [paymentMethodType])
 
-  let {billingAddress, redirectionText} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {billingAddress, redirectionInfo} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   //<...>//
   let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
@@ -319,12 +319,12 @@ let make = (
   }
 
   let filteredFieldsArr = React.useMemo(() => {
-    if redirectionText.hide {
+    if redirectionInfo === HideRedirectInfo {
       fieldsArr->Array.filter(field => field !== InfoElement)
     } else {
       fieldsArr
     }
-  }, (fieldsArr, redirectionText.hide))
+  }, (fieldsArr, redirectionInfo))
 
   let dynamicFieldsToRenderOutsideBilling = React.useMemo(() => {
     filteredFieldsArr->Array.filter(isFieldTypeToRenderOutsideBilling)
