@@ -36,25 +36,73 @@ let make = (~sessionObj: SessionsType.token) => {
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let (_, _, buttonType, _) = options.wallets.style.type_
-  let (_, _, heightType, _, _) = options.wallets.style.height
-  let buttonStyle = {
-    layout: "vertical",
-    color: options.wallets.style.theme == Outline
-      ? "white"
-      : options.wallets.style.theme == Dark
-      ? "gold"
-      : "blue",
-    shape: "rect",
-    label: switch buttonType {
-    | Paypal(var) => var->getLabel
-    | _ => Paypal->getLabel
-    },
-    height: switch heightType {
+
+  let buttonStyle = switch options.wallets.payPal {
+  | PaypalConfigObj(cfg) =>
+    let (_, _, sharedButtonType, _) = options.wallets.style.type_
+    let (_, _, sharedHeightType, _, _) = options.wallets.style.height
+    let sharedHeight = switch sharedHeightType {
     | Paypal(val) => val
     | _ => 48
-    },
-    disableMaxWidth: true,
+    }
+    let sharedLabel = switch sharedButtonType {
+    | Paypal(var) => var->getLabel
+    | _ => Paypal->getLabel
+    }
+    let colorStr = switch cfg.color {
+    | PaypalGold => "gold"
+    | PaypalBlue => "blue"
+    | PaypalSilver => "silver"
+    | PaypalBlack => "black"
+    | PaypalWhite => "white"
+    }
+    let layoutStr = switch cfg.layout {
+    | PaypalVertical => "vertical"
+    | PaypalHorizontal => "horizontal"
+    }
+    let shapeStr = switch cfg.shape {
+    | PaypalRect => "rect"
+    | PaypalPill => "pill"
+    | PaypalSharp => "sharp"
+    }
+    let resolvedBorderRadius = cfg.borderRadius->Option.getOr(options.wallets.style.buttonRadius)
+    let resolvedHeight = cfg.height->Option.getOr(sharedHeight)
+
+    let style: PaypalSDKTypes.style = {
+      layout: layoutStr,
+      color: colorStr,
+      shape: shapeStr,
+      label: cfg.label->Option.map(getLabel)->Option.getOr(sharedLabel),
+      height: resolvedHeight,
+      borderRadius: resolvedBorderRadius,
+      disableMaxWidth: true,
+    }
+    style
+
+  | PaypalConfigString(_) =>
+    let (_, _, buttonType, _) = options.wallets.style.type_
+    let (_, _, heightType, _, _) = options.wallets.style.height
+    let height = switch heightType {
+    | Paypal(val) => val
+    | _ => 48
+    }
+    let style: PaypalSDKTypes.style = {
+      layout: "vertical",
+      color: options.wallets.style.theme == Outline
+        ? "white"
+        : options.wallets.style.theme == Dark
+        ? "gold"
+        : "blue",
+      shape: "rect",
+      label: switch buttonType {
+      | Paypal(var) => var->getLabel
+      | _ => Paypal->getLabel
+      },
+      height,
+      borderRadius: options.wallets.style.buttonRadius,
+      disableMaxWidth: true,
+    }
+    style
   }
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
@@ -159,8 +207,6 @@ let make = (~sessionObj: SessionsType.token) => {
     style={
       pointerEvents: updateSession ? "none" : "auto",
       opacity: updateSession ? "0.5" : "1.0",
-      borderRadius: `${options.wallets.style.buttonRadius->Int.toString}px`,
-      overflow: "hidden",
     }
     className="w-full flex flex-row justify-center h-auto"
   />

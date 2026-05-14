@@ -5,7 +5,7 @@ open TaxCalculation
 let loadPaypalSDK = (
   ~loggerState: HyperLoggerTypes.loggerMake,
   ~sdkHandleOneClickConfirmPayment as _,
-  ~buttonStyle,
+  ~buttonStyle: PaypalSDKTypes.style,
   ~iframeId,
   ~isManualRetryEnabled,
   ~paymentMethodListValue,
@@ -252,7 +252,7 @@ let loadBraintreePaypalSdk = (
   ~loggerState: HyperLoggerTypes.loggerMake,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
-  ~buttonStyle,
+  ~buttonStyle: PaypalSDKTypes.style,
   ~iframeId,
   ~paymentMethodListValue,
   ~isGuestCustomer,

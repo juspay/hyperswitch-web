@@ -26,18 +26,33 @@ let make = (~walletOptions) => {
   let paymentMethod = "wallet"
   let paymentMethodType = "paypal"
   let isWallet = walletOptions->Array.includes(paymentMethodType)
-  let (_, _, labelType, _) = options.wallets.style.type_
-  let _label = switch labelType {
-  | Paypal(val) => val->PaypalSDKTypes.getLabel
-  | _ => Paypal->PaypalSDKTypes.getLabel
+
+  // Resolve PayPal button style — per-wallet config takes precedence over shared style
+  let (height, buttonColor, textColor) = switch options.wallets.payPal {
+  | PaypalConfigObj(cfg) =>
+    let (_, _, sharedHeightType, _, _) = options.wallets.style.height
+    let sharedHeight = switch sharedHeightType {
+    | Paypal(val) => val
+    | _ => 48
+    }
+    let (resolvedBg, resolvedText) = switch cfg.color {
+    | PaypalGold => ("#ffc439", "#000000")
+    | PaypalBlue => ("#0070ba", "#ffffff")
+    | PaypalSilver => ("#eeeeee", "#000000")
+    | PaypalBlack => ("#000000", "#ffffff")
+    | PaypalWhite => ("#ffffff", "#000000")
+    }
+    (cfg.height->Option.getOr(sharedHeight), resolvedBg, resolvedText)
+  | PaypalConfigString(_) =>
+    let (_, _, heightType, _, _) = options.wallets.style.height
+    let height = switch heightType {
+    | Paypal(val) => val
+    | _ => 48
+    }
+    let (bg, text) =
+      options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
+    (height, bg, text)
   }
-  let (_, _, heightType, _, _) = options.wallets.style.height
-  let height = switch heightType {
-  | Paypal(val) => val
-  | _ => 48
-  }
-  let (buttonColor, textColor) =
-    options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
