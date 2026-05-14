@@ -153,13 +153,14 @@ let make = (
     ~isCvcValidValue,
   )
 
+  let isCustomerAcceptanceFromHook = useIsCustomerAcceptanceRequired(
+    ~displaySavedPaymentMethodsCheckbox,
+    ~isSaveCardsChecked,
+    ~isGuestCustomer,
+  )
+
   let isCustomerAcceptanceRequired =
-    (!isGuestCustomer && alwaysSendCustomerAcceptance) ||
-      useIsCustomerAcceptanceRequired(
-        ~displaySavedPaymentMethodsCheckbox,
-        ~isSaveCardsChecked,
-        ~isGuestCustomer,
-      )
+    (!isGuestCustomer && alwaysSendCustomerAcceptance) || isCustomerAcceptanceFromHook
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
