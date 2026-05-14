@@ -41,7 +41,7 @@ describe("PaymentElement fields.billingDetails Option", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE)
+      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE) ?? ""
     );
   });
 
@@ -54,7 +54,7 @@ describe("PaymentElement fields.billingDetails Option", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.STRIPE)
+      connectorProfileIdMapping.get(connectorEnum.STRIPE) ?? ""
     );
   });
 

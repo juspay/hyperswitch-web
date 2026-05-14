@@ -43,7 +43,7 @@ describe("Layout - Spaced Accordion", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.STRIPE),
+      connectorProfileIdMapping.get(connectorEnum.STRIPE) ?? "",
     );
     changeObjectKeyValue(createPaymentBody, "billing", defaultBillingAddress);
 

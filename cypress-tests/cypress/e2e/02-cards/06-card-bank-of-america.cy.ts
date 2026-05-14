@@ -17,7 +17,7 @@ describe("Bank of America Card Payment flow test", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.BANK_OF_AMERICA),
+      connectorProfileIdMapping.get(connectorEnum.BANK_OF_AMERICA) ?? "",
     );
   });
 

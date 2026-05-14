@@ -148,6 +148,28 @@ export const bankOfAmericaCards = {
   },
 };
 
+const adyenCardsDefaultData = {
+  cardScheme: "Visa",
+  cvc: "737",
+  card_exp_month: "03",
+  card_exp_year: "30",
+};
+
+export const adyenCards = {
+  successCard: {
+    cardNo: "4917610000000000",
+    ...adyenCardsDefaultData,
+  },
+  threeDSCard: {
+    cardNo: "4212345678901237",
+    ...adyenCardsDefaultData,
+  },
+  frictionlessCard: {
+    cardNo: "4871049999999910",
+    ...adyenCardsDefaultData,
+  },
+};
+
 // Cobadge card brands — these are the option values in the card scheme dropdown
 export const cobadgeCardBrands = {
   VISA: "Visa",

@@ -20,7 +20,7 @@ describe("cashtocode cash / voucher test ", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.CASHTOCODE),
+    connectorProfileIdMapping.get(connectorEnum.CASHTOCODE) ?? "",
   );
   changeObjectKeyValue(createPaymentBody, "currency", "EUR");
 

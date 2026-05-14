@@ -241,6 +241,7 @@ let make = (~setModalData) => {
         maxLength=17
         placeholder="eg: John Doe"
         onBlur={_ => setInputFocus(_ => NONE)}
+        testId={TestUtils.accountHolderNameInModalTestId}
       />
       <RenderIf condition={isSepaDebit}>
         <div
@@ -288,6 +289,7 @@ let make = (~setModalData) => {
               errorString=routingError
               onBlur=routingBlur
               onFocus={_ => setInputFocus(_ => Routing)}
+              testId={TestUtils.routingNumberInputTestId}
             />
           </div>
         </RenderIf>
@@ -313,6 +315,7 @@ let make = (~setModalData) => {
               placeholder="000123456789"
               onFocus={_ => setInputFocus(_ => Account)}
               onBlur={_ => setInputFocus(_ => NONE)}
+              testId={TestUtils.accountNumberInputTestId}
             />
           </div>
         </RenderIf>

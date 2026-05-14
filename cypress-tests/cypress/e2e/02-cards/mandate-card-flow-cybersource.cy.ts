@@ -38,7 +38,7 @@ describe("Mandate Card Flow - Cybersource", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE)
+      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE) ?? ""
     );
     changeObjectKeyValue(
       createPaymentBody,

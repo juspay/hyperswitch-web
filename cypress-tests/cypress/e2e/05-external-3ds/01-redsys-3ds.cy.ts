@@ -23,7 +23,7 @@ describe("External 3DS using Redsys flow test", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.REDSYS),
+    connectorProfileIdMapping.get(connectorEnum.REDSYS) ?? "",
   );
   changeObjectKeyValue(
     createPaymentBody,

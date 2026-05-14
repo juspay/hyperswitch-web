@@ -17,7 +17,7 @@ describe("Cybersource Card Payment flow test", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE),
+      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE) ?? "",
     );
   });
 

@@ -14,7 +14,7 @@ describe("GigaDat Interac Payment flow test", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.INTERAC),
+      connectorProfileIdMapping.get(connectorEnum.INTERAC) ?? "",
     );
 
    

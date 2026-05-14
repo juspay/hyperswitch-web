@@ -18,6 +18,7 @@ let make = (
   ~placeholder="",
   ~className="",
   ~inputRef,
+  ~testId="",
 ) => {
   let options = Recoil.useRecoilValueFromAtom(elementOptions)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -82,6 +83,7 @@ let make = (
         onChange
         onBlur=handleBlur
         onFocus=handleFocus
+        dataTestId={testId}
         ariaLabel={`Type to fill ${fieldName} input`}
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>

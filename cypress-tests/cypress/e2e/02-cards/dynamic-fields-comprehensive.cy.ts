@@ -33,7 +33,7 @@ describe("Dynamic Billing Fields Comprehensive", () => {
       changeObjectKeyValue(
         createPaymentBody,
         "profile_id",
-        connectorProfileIdMapping.get(connectorEnum.STRIPE),
+        connectorProfileIdMapping.get(connectorEnum.STRIPE) ?? "",
       );
       changeObjectKeyValue(
         createPaymentBody,
@@ -89,7 +89,7 @@ describe("Dynamic Billing Fields Comprehensive", () => {
       changeObjectKeyValue(
         createPaymentBody,
         "profile_id",
-        connectorProfileIdMapping.get(connectorEnum.BANK_OF_AMERICA),
+        connectorProfileIdMapping.get(connectorEnum.BANK_OF_AMERICA) ?? "",
       );
       changeObjectKeyValue(
         createPaymentBody,
@@ -122,7 +122,7 @@ describe("Dynamic Billing Fields Comprehensive", () => {
       changeObjectKeyValue(
         createPaymentBody,
         "profile_id",
-        connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE),
+        connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE) ?? "",
       );
       changeObjectKeyValue(
         createPaymentBody,
@@ -250,7 +250,7 @@ describe("Dynamic Billing Fields Comprehensive", () => {
       changeObjectKeyValue(
         createPaymentBody,
         "profile_id",
-        connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE),
+        connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE) ?? "",
       );
       changeObjectKeyValue(
         createPaymentBody,

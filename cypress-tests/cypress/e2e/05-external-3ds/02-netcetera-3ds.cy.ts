@@ -15,7 +15,7 @@ describe.skip("External 3DS using Netcetera Checks", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.NETCETERA),
+    connectorProfileIdMapping.get(connectorEnum.NETCETERA) ?? "",
   );
   changeObjectKeyValue(
     createPaymentBody,
