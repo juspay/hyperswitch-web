@@ -69,7 +69,7 @@ let make = () => {
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
         }>
         <RenderIf condition={layoutClass.\"type" === Accordion}>
-          <Space />
+          <Space height="0" />
         </RenderIf>
         <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
         <Surcharge paymentMethod paymentMethodType />

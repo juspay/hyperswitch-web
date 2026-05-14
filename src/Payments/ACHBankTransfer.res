@@ -53,7 +53,7 @@ let make = () => {
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <RenderIf condition={layoutClass.\"type" === Accordion}>
-      <Space />
+      <Space height="0" />
     </RenderIf>
     <DynamicFields paymentMethodType paymentMethod setRequiredFieldsBody />
     <Surcharge paymentMethodType paymentMethod />

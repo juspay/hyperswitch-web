@@ -114,7 +114,7 @@ let make = () => {
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
         <RenderIf condition={layoutClass.\"type" === Accordion}>
-          <Space />
+          <Space height="0" />
         </RenderIf>
         <FullNamePaymentInput />
         <EmailPaymentInput />

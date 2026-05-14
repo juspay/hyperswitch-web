@@ -120,7 +120,7 @@ let make = (~paymentMethodName: string) => {
     className="DynamicFields flex flex-col animate-slowShow"
     style={gridGap: themeObj.spacingGridColumn}>
     <RenderIf condition={layoutClass.\"type" === Accordion}>
-      <Space />
+      <Space height="0" />
     </RenderIf>
     <DynamicFields paymentMethod paymentMethodType=paymentMethodName setRequiredFieldsBody />
     <Terms
