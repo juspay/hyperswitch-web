@@ -79,6 +79,7 @@ let make = (
   let {
     displaySavedPaymentMethodsCheckbox,
     savedPaymentMethodsCheckboxCheckedByDefault,
+    alwaysSendCustomerAcceptance,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
@@ -152,11 +153,13 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
-    ~displaySavedPaymentMethodsCheckbox,
-    ~isSaveCardsChecked,
-    ~isGuestCustomer,
-  )
+  let isCustomerAcceptanceRequired =
+    (!isGuestCustomer && alwaysSendCustomerAcceptance) ||
+      useIsCustomerAcceptanceRequired(
+        ~displaySavedPaymentMethodsCheckbox,
+        ~isSaveCardsChecked,
+        ~isGuestCustomer,
+      )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -574,7 +577,8 @@ let make = (
             isBancontact
             isSaveDetailsWithClickToPay
           />
-          <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
+          <RenderIf
+            condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
             <div className="flex items-center justify-start">
               <SaveDetailsCheckbox
                 isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked

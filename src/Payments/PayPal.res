@@ -79,6 +79,7 @@ let make = (~walletOptions) => {
             ~isGuestCustomer,
             ~paymentType=paymentMethodListValue.payment_type,
             ~body,
+            ~alwaysSend=options.alwaysSendCustomerAcceptance,
           )
           let modifiedPaymentBody = if isWallet {
             basePaymentBody

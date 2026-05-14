@@ -86,6 +86,7 @@ let loadPaypalSDK = (
               ~isGuestCustomer,
               ~paymentType=paymentMethodListValue.payment_type,
               ~body,
+              ~alwaysSend=options.alwaysSendCustomerAcceptance,
             )
             make((resolve, _) => {
               if paypalNextAction == "post_session_tokens" {
@@ -192,6 +193,7 @@ let loadPaypalSDK = (
             ~isGuestCustomer,
             ~paymentType=paymentMethodListValue.payment_type,
             ~body,
+            ~alwaysSend=options.alwaysSendCustomerAcceptance,
           )
 
           let bodyArr =
@@ -323,6 +325,7 @@ let loadBraintreePaypalSdk = (
                               ~isGuestCustomer,
                               ~paymentType=paymentMethodListValue.payment_type,
                               ~body=paypalBody,
+                              ~alwaysSend=options.alwaysSendCustomerAcceptance,
                             )
 
                             intent(

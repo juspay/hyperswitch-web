@@ -203,6 +203,7 @@ type paymentMethodTypeConfig = {
 
 type paymentMethodConfig = {
   paymentMethod: string,
+  message: paymentMethodMessage,
   paymentMethodTypes: array<paymentMethodTypeConfig>,
 }
 
@@ -236,6 +237,7 @@ type options = {
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
   paymentMethodsConfig: paymentMethodsConfig,
+  alwaysSendCustomerAcceptance: bool,
 }
 
 type payerDetails = {
@@ -422,6 +424,7 @@ let defaultOptions = {
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
   paymentMethodsConfig: [],
+  alwaysSendCustomerAcceptance: false,
 }
 
 let getMessageDisplayMode = (str, key) => {
@@ -475,10 +478,19 @@ let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
 }
 
 let getPaymentMethodConfig = (json, logger) => {
-  unknownKeysWarning(["paymentMethod", "paymentMethodTypes"], json, "options.paymentMethodsConfig")
+  unknownKeysWarning(
+    ["paymentMethod", "message", "paymentMethodTypes"],
+    json,
+    "options.paymentMethodsConfig",
+  )
   let paymentMethod = json->getWarningString("paymentMethod", "", ~logger)
   {
     paymentMethod,
+    message: getPaymentMethodMessage(
+      json,
+      logger,
+      "options.paymentMethodsConfig." ++ paymentMethod,
+    ),
     paymentMethodTypes: json
     ->getArrayOfObjectsFromDict("paymentMethodTypes")
     ->Array.map(pmTypeJson => getPaymentMethodTypeConfig(pmTypeJson, logger, paymentMethod)),
@@ -1294,6 +1306,7 @@ let allowedPaymentElementOptions = [
   "customMessageForCardTerms",
   "showShortSurchargeMessage",
   "paymentMethodsConfig",
+  "alwaysSendCustomerAcceptance",
 ]
 
 let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
@@ -1388,6 +1401,7 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
     paymentMethodsConfig: getPaymentMethodsConfig(dict, "paymentMethodsConfig", logger),
+    alwaysSendCustomerAcceptance: getBool(dict, "alwaysSendCustomerAcceptance", false),
   }
 }
 

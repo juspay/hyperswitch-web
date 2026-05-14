@@ -96,6 +96,7 @@ let useHandleSamsungPayResponse = (
           ~isGuestCustomer,
           ~paymentType=paymentMethodListValue.payment_type,
           ~body,
+          ~alwaysSend=options.alwaysSendCustomerAcceptance,
         )
 
         intent(
