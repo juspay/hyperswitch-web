@@ -117,7 +117,7 @@ type applePayButtonStyle = ApplePayBlack | ApplePayWhite | ApplePayWhiteOutline
 type googlePayWalletConfig = {
   display: showType,
   buttonColor: googlePayButtonColor,
-  buttonType: googlePayStyleType,
+  buttonType: option<googlePayStyleType>,
   height: option<int>,
   buttonRadius: option<int>,
   buttonBorderType: googlePayButtonBorderType,
@@ -1143,8 +1143,7 @@ let getGooglePayWalletConfig = (json, logger) => {
       | GooglePay(v) => v
       | _ => Default
       }
-    )
-    ->Option.getOr(Default),
+    ),
     height: json->Dict.get("height")->Option.flatMap(JSON.Decode.float)->Option.map(Int.fromFloat),
     buttonRadius: json
     ->Dict.get("buttonRadius")

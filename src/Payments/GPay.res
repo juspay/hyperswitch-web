@@ -91,6 +91,11 @@ let make = (
     | GooglePay(val) => val
     | _ => 48
     }
+    let (_, sharedButtonType, _, _) = options.wallets.style.type_
+    let sharedGPayButtonType = switch sharedButtonType {
+    | GooglePay(v) => v
+    | _ => Default
+    }
     let colorStr = switch cfg.buttonColor {
     | GPayBlack => "black"
     | GPayWhite => "white"
@@ -103,7 +108,7 @@ let make = (
     (
       cfg.height->Option.getOr(sharedHeight),
       colorStr,
-      cfg.buttonType,
+      cfg.buttonType->Option.getOr(sharedGPayButtonType),
       cfg.buttonRadius->Option.getOr(options.wallets.style.buttonRadius),
       borderTypeStr,
     )
