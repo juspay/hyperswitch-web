@@ -43,7 +43,7 @@ let useIsCustomerAcceptanceRequired = (
     if displaySavedPaymentMethodsCheckbox {
       isSaveCardsChecked || paymentMethodListValue.payment_type === SETUP_MANDATE
     } else {
-      !isGuestCustomer && (isSaveCardsChecked || paymentMethodListValue.payment_type !== NORMAL)
+      !(isGuestCustomer || paymentMethodListValue.payment_type === NORMAL)
     }
   }, (
     isSaveCardsChecked,
