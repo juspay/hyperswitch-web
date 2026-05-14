@@ -23,6 +23,8 @@ let make = (~paymentMethodType) => {
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
   let (showLoader, setShowLoader) = React.useState(() => false)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let {layout} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
 
   let pmAuthConnectorsArr =
     PmAuthConnectorUtils.findPmAuthAllPMAuthConnectors(
@@ -95,6 +97,7 @@ let make = (~paymentMethodType) => {
     <button
       onClick={_ => onClickHandler()}
       disabled={showLoader}
+      className={layoutClass.\"type" == Accordion ? "mt-4" : ""}
       style={
         width: "100%",
         padding: "10px",
