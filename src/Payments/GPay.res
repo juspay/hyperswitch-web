@@ -101,7 +101,7 @@ let make = (
     | GPayDefaultBorder => None
     }
     (
-      sharedHeight,
+      cfg.height->Option.getOr(sharedHeight),
       colorStr,
       cfg.buttonType,
       cfg.buttonRadius->Option.getOr(options.wallets.style.buttonRadius),

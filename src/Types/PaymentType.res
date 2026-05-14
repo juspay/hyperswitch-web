@@ -117,6 +117,7 @@ type googlePayWalletConfig = {
   display: showType,
   buttonColor: googlePayButtonColor,
   buttonType: googlePayStyleType,
+  height: option<int>,
   buttonRadius: option<int>,
   buttonBorderType: googlePayButtonBorderType,
 }
@@ -1082,7 +1083,7 @@ let getStyle = (dict, str, logger) => {
 
 let getGooglePayWalletConfig = (json, logger) => {
   unknownKeysWarning(
-    ["display", "buttonColor", "buttonType", "buttonRadius", "buttonBorderType"],
+    ["display", "buttonColor", "buttonType", "height", "buttonRadius", "buttonBorderType"],
     json,
     "options.wallets.googlePay",
   )
@@ -1112,6 +1113,7 @@ let getGooglePayWalletConfig = (json, logger) => {
       }
     )
     ->Option.getOr(Default),
+    height: json->Dict.get("height")->Option.flatMap(JSON.Decode.float)->Option.map(Int.fromFloat),
     buttonRadius: json
     ->Dict.get("buttonRadius")
     ->Option.flatMap(JSON.Decode.float)

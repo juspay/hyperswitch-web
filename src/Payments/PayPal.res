@@ -28,7 +28,7 @@ let make = (~walletOptions) => {
   let isWallet = walletOptions->Array.includes(paymentMethodType)
 
   // Resolve PayPal button style — per-wallet config takes precedence over shared style
-  let (height, buttonColor, textColor) = switch options.wallets.payPal {
+  let (height, buttonColor, textColor, borderRadius) = switch options.wallets.payPal {
   | PaypalConfigObj(cfg) =>
     let (_, _, sharedHeightType, _, _) = options.wallets.style.height
     let sharedHeight = switch sharedHeightType {
@@ -42,7 +42,12 @@ let make = (~walletOptions) => {
     | PaypalBlack => ("#000000", "#ffffff")
     | PaypalWhite => ("#ffffff", "#000000")
     }
-    (cfg.height->Option.getOr(sharedHeight), resolvedBg, resolvedText)
+    (
+      cfg.height->Option.getOr(sharedHeight),
+      resolvedBg,
+      resolvedText,
+      cfg.borderRadius->Option.getOr(options.wallets.style.buttonRadius),
+    )
   | PaypalConfigString(_) =>
     let (_, _, heightType, _, _) = options.wallets.style.height
     let height = switch heightType {
@@ -51,7 +56,7 @@ let make = (~walletOptions) => {
     }
     let (bg, text) =
       options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
-    (height, bg, text)
+    (height, bg, text, options.wallets.style.buttonRadius)
   }
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
@@ -164,7 +169,7 @@ let make = (~walletOptions) => {
         display: "inline-block",
         color: textColor,
         height: `${height->Int.toString}px`,
-        borderRadius: `${options.wallets.style.buttonRadius->Int.toString}px`,
+        borderRadius: `${borderRadius->Int.toString}px`,
         width: "100%",
         backgroundColor: buttonColor,
         pointerEvents: updateSession ? "none" : "auto",

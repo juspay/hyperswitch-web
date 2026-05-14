@@ -1346,7 +1346,7 @@ let make = (
               }
             } else if (
               switch wallets.googlePay {
-              | GooglePayConfigString(Never) | GooglePayConfigObj({display: Auto}) => true
+              | GooglePayConfigString(Never) | GooglePayConfigObj({display: Never}) => true
               | _ => false
               }
             ) {
