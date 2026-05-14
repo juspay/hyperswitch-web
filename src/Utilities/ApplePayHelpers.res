@@ -17,6 +17,7 @@ let processPayment = (
     ~isGuestCustomer,
     ~paymentType=paymentMethodListValue.payment_type,
     ~body=bodyArr,
+    ~alwaysSend=options.alwaysSendCustomerAcceptance,
   )
 
   intent(

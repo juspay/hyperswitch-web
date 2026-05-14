@@ -79,6 +79,7 @@ let make = (
   let {
     displaySavedPaymentMethodsCheckbox,
     savedPaymentMethodsCheckboxCheckedByDefault,
+    alwaysSendCustomerAcceptance,
     layout,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
@@ -154,11 +155,14 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
+  let isCustomerAcceptanceFromHook = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
     ~isSaveCardsChecked,
     ~isGuestCustomer,
   )
+
+  let isCustomerAcceptanceRequired =
+    (!isGuestCustomer && alwaysSendCustomerAcceptance) || isCustomerAcceptanceFromHook
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -579,7 +583,8 @@ let make = (
             isBancontact
             isSaveDetailsWithClickToPay
           />
-          <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
+          <RenderIf
+            condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
             <div className="flex items-center justify-start">
               <SaveDetailsCheckbox
                 isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked
