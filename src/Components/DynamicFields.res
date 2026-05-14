@@ -46,7 +46,7 @@ let make = (
     None
   }, [paymentMethodType])
 
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {billingAddress, redirectionInfo} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   //<...>//
   let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
@@ -327,7 +327,8 @@ let make = (
   }, [fieldsArr])
 
   let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
-  let isRenderInfoElement = isInfoElementPresent && !isDisableInfoElement
+  let isRenderInfoElement =
+    isInfoElementPresent && !isDisableInfoElement && redirectionInfo === ShowRedirectionInfo
 
   let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 

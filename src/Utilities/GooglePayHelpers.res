@@ -8,12 +8,14 @@ let getGooglePayBodyFromResponse = (
   ~requiredFields=[],
   ~isPaymentSession=false,
   ~isSavedMethodsFlow=false,
+  ~alwaysSend=false,
 ) => {
   let obj = gPayResponse->getDictFromJson->GooglePayType.itemToObjMapper
   let gPayBody = PaymentUtils.appendedCustomerAcceptance(
     ~isGuestCustomer,
     ~paymentType=paymentMethodListValue.payment_type,
     ~body=PaymentBody.gpayBody(~payObj=obj, ~connectors),
+    ~alwaysSend,
   )
 
   let billingContact =
@@ -107,6 +109,7 @@ let useHandleGooglePayResponse = (
           ~connectors,
           ~requiredFields=paymentMethodTypes.required_fields,
           ~isSavedMethodsFlow,
+          ~alwaysSend=options.alwaysSendCustomerAcceptance,
         )
 
         let googlePayBody = if isWallet {

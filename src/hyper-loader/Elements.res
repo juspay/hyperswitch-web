@@ -1213,9 +1213,11 @@ let make = (
                 let gPayClient = try {
                   Some(GooglePayType.google(gpayClientRequest))
                 } catch {
-                | _ =>
+                | err =>
                   logger.setLogError(
-                    ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT - Client creation failed",
+                    ~value=`ERROR DURING LOADING GOOGLE PAY CLIENT - ${err
+                      ->formatException
+                      ->JSON.stringify}`,
                     ~eventName=GOOGLE_PAY_SCRIPT,
                     ~paymentMethod="GOOGLE_PAY",
                   )

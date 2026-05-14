@@ -3,16 +3,11 @@ let make = (~isChecked, ~setIsChecked) => {
   let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(RecoilAtoms.showPaymentMethodsScreen)
   let {business, customMessageForCardTerms} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let customCardPaymentConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
+  let customMessageConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
     ~paymentMethod="card",
     ~paymentMethodType="debit",
   )
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-
-  let customMessageConfig =
-    customCardPaymentConfig
-    ->Option.map(config => config.message)
-    ->Option.getOr(PaymentType.defaultPaymentMethodMessage)
 
   let handleChange = value => {
     LoggerUtils.logInputChangeInfo("saveDetails", loggerState)

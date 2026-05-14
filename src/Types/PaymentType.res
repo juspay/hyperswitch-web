@@ -1,6 +1,7 @@
 type showTerms = Auto | Always | Never
 type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
+type redirectionInfo = ShowRedirectionInfo | HideRedirectionInfo
 type layout = Accordion | Tabs
 type groupingBehavior = {
   displayInSeparateScreen: bool,
@@ -10,6 +11,7 @@ type savedMethodCustomization = {
   groupingBehavior: groupingBehavior,
   maxItems: int,
   hideCardExpiry: bool,
+  defaultCollapsed: bool,
 }
 open Utils
 open ErrorUtils
@@ -165,6 +167,8 @@ type layoutConfig = {
   savedMethodCustomization: savedMethodCustomization,
   paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabs,
   displayOneClickPaymentMethodsOnTop: bool,
+  showCheckedIconForSelection: bool,
+  separatorText: option<string>,
 }
 
 type layoutType =
@@ -246,6 +250,7 @@ type paymentMethodTypeConfig = {
 
 type paymentMethodConfig = {
   paymentMethod: string,
+  message: paymentMethodMessage,
   paymentMethodTypes: array<paymentMethodTypeConfig>,
 }
 
@@ -279,6 +284,8 @@ type options = {
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
   paymentMethodsConfig: paymentMethodsConfig,
+  alwaysSendCustomerAcceptance: bool,
+  redirectionInfo: redirectionInfo,
 }
 
 type payerDetails = {
@@ -335,7 +342,9 @@ let defaultSavedMethodCustomization = {
   groupingBehavior: defaultGroupingBehavior,
   maxItems: 4,
   hideCardExpiry: false,
+  defaultCollapsed: true,
 }
+
 let defaultLayout = {
   defaultCollapsed: false,
   radios: false,
@@ -345,6 +354,8 @@ let defaultLayout = {
   savedMethodCustomization: defaultSavedMethodCustomization,
   paymentMethodsArrangementForTabs: Default,
   displayOneClickPaymentMethodsOnTop: true,
+  showCheckedIconForSelection: false,
+  separatorText: None,
 }
 
 let defaultAddress: address = {
@@ -439,6 +450,8 @@ let defaultSdkHandleSavePayment = {
   confirmParams: ConfirmType.defaultConfirm,
 }
 
+let defaultRedirectionInfo = ShowRedirectionInfo
+
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
@@ -465,6 +478,8 @@ let defaultOptions = {
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
   paymentMethodsConfig: [],
+  alwaysSendCustomerAcceptance: false,
+  redirectionInfo: defaultRedirectionInfo,
 }
 
 let getMessageDisplayMode = (str, key) => {
@@ -518,10 +533,19 @@ let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
 }
 
 let getPaymentMethodConfig = (json, logger) => {
-  unknownKeysWarning(["paymentMethod", "paymentMethodTypes"], json, "options.paymentMethodsConfig")
+  unknownKeysWarning(
+    ["paymentMethod", "message", "paymentMethodTypes"],
+    json,
+    "options.paymentMethodsConfig",
+  )
   let paymentMethod = json->getWarningString("paymentMethod", "", ~logger)
   {
     paymentMethod,
+    message: getPaymentMethodMessage(
+      json,
+      logger,
+      "options.paymentMethodsConfig." ++ paymentMethod,
+    ),
     paymentMethodTypes: json
     ->getArrayOfObjectsFromDict("paymentMethodTypes")
     ->Array.map(pmTypeJson => getPaymentMethodTypeConfig(pmTypeJson, logger, paymentMethod)),
@@ -885,7 +909,7 @@ let getSavedMethodCustomization = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["groupingBehavior", "maxItems", "hideCardExpiry"],
+      ["groupingBehavior", "maxItems", "hideCardExpiry", "defaultCollapsed"],
       json,
       "options.layout.savedMethodCustomization",
     )
@@ -893,6 +917,7 @@ let getSavedMethodCustomization = (dict, str, logger) => {
       groupingBehavior: json->getGroupingBehavior(~logger),
       maxItems: getMaxItems(json, "maxItems", 4, ~logger),
       hideCardExpiry: getBool(json, "hideCardExpiry", false),
+      defaultCollapsed: getBoolWithWarning(json, "defaultCollapsed", true, ~logger),
     }
   })
   ->Option.getOr(defaultSavedMethodCustomization)
@@ -920,6 +945,8 @@ let getLayoutValues = (val, logger) => {
           "savedMethodCustomization",
           "paymentMethodsArrangementForTabs",
           "displayOneClickPaymentMethodsOnTop",
+          "showCheckedIconForSelection",
+          "separatorText",
         ],
         json,
         "options.layout",
@@ -942,6 +969,13 @@ let getLayoutValues = (val, logger) => {
           true,
           ~logger,
         ),
+        showCheckedIconForSelection: getBoolWithWarning(
+          json,
+          "showCheckedIconForSelection",
+          false,
+          ~logger,
+        ),
+        separatorText: getOptionString(json, "separatorText"),
       }
     })
   | _ => StringLayout(Tabs)
@@ -1315,6 +1349,18 @@ let getWallets = (dict, str, logger) => {
   ->Option.getOr(defaultWallets)
 }
 
+let getRedirectionInfo = (dict, str, logger) => {
+  let value = getWarningString(dict, str, "show", ~logger)
+  switch value {
+  | "hidden" => HideRedirectionInfo
+  | "show" => ShowRedirectionInfo
+  | str => {
+      str->unknownPropValueWarning(["show", "hidden"], "options.redirectionInfo")
+      ShowRedirectionInfo
+    }
+  }
+}
+
 let getLayout = (dict, str, logger) => {
   dict
   ->Dict.get(str)
@@ -1531,6 +1577,8 @@ let allowedPaymentElementOptions = [
   "customMessageForCardTerms",
   "showShortSurchargeMessage",
   "paymentMethodsConfig",
+  "alwaysSendCustomerAcceptance",
+  "redirectionInfo",
 ]
 
 let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
@@ -1625,6 +1673,8 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
     paymentMethodsConfig: getPaymentMethodsConfig(dict, "paymentMethodsConfig", logger),
+    alwaysSendCustomerAcceptance: getBool(dict, "alwaysSendCustomerAcceptance", false),
+    redirectionInfo: getRedirectionInfo(dict, "redirectionInfo", logger),
   }
 }
 

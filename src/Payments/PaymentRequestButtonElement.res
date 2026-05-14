@@ -28,18 +28,36 @@ module WalletsSaveDetailsText = {
     let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
     let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
     let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+    let {alwaysSendCustomerAcceptance} = Recoil.useRecoilValueFromAtom(optionAtom)
+    let walletMessageConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
+      ~paymentMethod="wallet",
+    )
 
-    <RenderIf
-      condition={PaymentUtils.isAppendingCustomerAcceptance(
+    let shouldRender =
+      PaymentUtils.isAppendingCustomerAcceptance(
         ~isGuestCustomer,
         ~paymentType=paymentMethodListValue.payment_type,
+        ~alwaysSend=alwaysSendCustomerAcceptance,
       ) &&
-      (isGooglePay || isApplePay || isPaypal || isSamsungPay)}>
-      <div
-        className="SaveWalletDetailsLabel flex items-center text-xs mt-2 text-left text-gray-400">
-        <Icon name="lock" size=10 className="mr-1" />
-        <em> {localeString.saveWalletDetails->React.string} </em>
-      </div>
+      (isGooglePay || isApplePay || isPaypal || isSamsungPay) &&
+      walletMessageConfig.displayMode !== Hidden
+
+    <RenderIf condition={shouldRender}>
+      {switch walletMessageConfig.displayMode {
+      | CustomMessage =>
+        let msg = walletMessageConfig.value->Option.getOr("")->String.trim
+        <RenderIf condition={msg->String.length > 0}>
+          <div className="SaveWalletDetailsLabel text-xs mt-2 text-left text-gray-400">
+            <em> {msg->React.string} </em>
+          </div>
+        </RenderIf>
+      | _ =>
+        <div
+          className="SaveWalletDetailsLabel flex items-center text-xs mt-2 text-left text-gray-400">
+          <Icon name="lock" size=10 className="mr-1" />
+          <em> {localeString.saveWalletDetails->React.string} </em>
+        </div>
+      }}
     </RenderIf>
   }
 }
