@@ -439,7 +439,10 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     let shouldDisplayApplePayInTabs =
       isApplePayReady && (showWalletsWithOtherPaymentMethods || requiresApplePayBillingDetails)
 
-    let isShowPaypal = optionAtomValue.wallets.payPal === Auto
+    let isShowPaypal = switch optionAtomValue.wallets.payPal {
+    | PaypalConfigString(Auto) | PaypalConfigObj({display: Auto}) => true
+    | _ => false
+    }
 
     let requiresPaypalBillingDetails =
       !paymentMethodListValue.collect_billing_details_from_wallets &&

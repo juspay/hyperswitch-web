@@ -79,18 +79,21 @@ type samsungPayStyleType = Buy
 type paypalStyleType = Paypal | Checkout | Buynow | Pay | Installment
 type applePayStyleType =
   | Default
+  | Plain
   | Buy
   | Donate
+  | SetUp
+  | Book
   | Checkout
   | Subscribe
-  | Reload
-  | Addmoney
-  | Topup
-  | Rent
+  | AddMoney
+  | Contribute
   | Order
+  | Reload
+  | Rent
   | Support
   | Tip
-  | Contribute
+  | TopUp
 type styleType =
   | ApplePay(applePayStyleType)
   | GooglePay(googlePayStyleType)
@@ -104,11 +107,49 @@ type style = {
   height: (heightType, heightType, heightType, heightType, heightType),
   buttonRadius: int,
 }
+
+type googlePayButtonColor = GPayDefault | GPayBlack | GPayWhite
+type googlePayButtonBorderType = GPayDefaultBorder | GPayNoBorder
+type paypalColor = PaypalGold | PaypalBlue | PaypalSilver | PaypalBlack | PaypalWhite
+type paypalShape = PaypalRect | PaypalPill | PaypalSharp
+type applePayButtonStyle = ApplePayBlack | ApplePayWhite | ApplePayWhiteOutline
+
+type googlePayWalletConfig = {
+  display: showType,
+  buttonColor: googlePayButtonColor,
+  buttonType: option<googlePayStyleType>,
+  height: option<int>,
+  buttonRadius: option<int>,
+  buttonBorderType: googlePayButtonBorderType,
+}
+
+type paypalWalletConfig = {
+  display: showType,
+  color: option<paypalColor>,
+  label: option<paypalStyleType>,
+  height: option<int>,
+  shape: paypalShape,
+  borderRadius: option<int>,
+}
+
+type applePayWalletConfig = {
+  display: showType,
+  buttonStyle: option<applePayButtonStyle>,
+  buttonType: applePayStyleType,
+  height: option<int>,
+  buttonRadius: option<int>,
+}
+
+type googlePayWalletField =
+  GooglePayConfigString(showType) | GooglePayConfigObj(googlePayWalletConfig)
+type paypalWalletField = PaypalConfigString(showType) | PaypalConfigObj(paypalWalletConfig)
+type applePayWalletField = ApplePayConfigString(showType) | ApplePayConfigObj(applePayWalletConfig)
+
 type wallets = {
   walletReturnUrl: string,
-  applePay: showType,
-  googlePay: showType,
-  payPal: showType,
+  applePay: applePayWalletField,
+  googlePay: googlePayWalletField,
+  payPal: paypalWalletField,
   klarna: showType,
   paze: showType,
   samsungPay: showType,
@@ -384,9 +425,9 @@ let defaultStyle = {
 }
 let defaultWallets = {
   walletReturnUrl: "",
-  applePay: Auto,
-  googlePay: Auto,
-  payPal: Auto,
+  applePay: ApplePayConfigString(Auto),
+  googlePay: GooglePayConfigString(Auto),
+  payPal: PaypalConfigString(Auto),
   klarna: Auto,
   paze: Auto,
   samsungPay: Auto,
@@ -625,29 +666,23 @@ let getShowType = (str, key) => {
 }
 let getApplePayType = str => {
   switch str {
-  | "buy"
-  | "buynow" =>
-    ApplePay(Buy)
+  | "default" => ApplePay(Default)
+  | "plain" => ApplePay(Plain)
+  | "buy" => ApplePay(Buy)
   | "donate" => ApplePay(Donate)
-  | "check-out"
-  | "checkout" =>
-    ApplePay(Checkout)
+  | "set-up" | "setup" => ApplePay(SetUp)
+  | "book" => ApplePay(Book)
+  | "check-out" | "checkout" => ApplePay(Checkout)
   | "subscribe" => ApplePay(Subscribe)
-  | "reload" => ApplePay(Reload)
-  | "add-money"
-  | "addmoney" =>
-    ApplePay(Addmoney)
-  | "top-up"
-  | "topup" =>
-    ApplePay(Topup)
-  | "rent" => ApplePay(Rent)
+  | "add-money" | "addmoney" => ApplePay(AddMoney)
+  | "contribute" => ApplePay(Contribute)
   | "order" => ApplePay(Order)
+  | "reload" => ApplePay(Reload)
+  | "rent" => ApplePay(Rent)
   | "support" => ApplePay(Support)
   | "tip" => ApplePay(Tip)
-  | "contribute" => ApplePay(Contribute)
-  | "default"
-  | _ =>
-    ApplePay(Default)
+  | "top-up" | "topup" => ApplePay(TopUp)
+  | _ => ApplePay(Plain)
   }
 }
 let getGooglePayType = str => {
@@ -1077,28 +1112,220 @@ let getStyle = (dict, str, logger) => {
   })
   ->Option.getOr(defaultStyle)
 }
+
+let getGooglePayWalletConfig = (json, logger) => {
+  unknownKeysWarning(
+    ["display", "buttonColor", "buttonType", "height", "buttonRadius", "buttonBorderType"],
+    json,
+    "options.wallets.googlePay",
+  )
+  {
+    display: getWarningString(json, "display", "auto", ~logger)->getShowType(
+      "options.wallets.googlePay.display",
+    ),
+    buttonColor: switch json->Dict.get("buttonColor")->Option.flatMap(JSON.Decode.string) {
+    | Some("black") => GPayBlack
+    | Some("white") => GPayWhite
+    | Some("default") | None => GPayDefault
+    | Some(v) =>
+      v->unknownPropValueWarning(
+        ["black", "white", "default"],
+        "options.wallets.googlePay.buttonColor",
+      )
+      GPayDefault
+    },
+    buttonType: json
+    ->Dict.get("buttonType")
+    ->Option.flatMap(JSON.Decode.string)
+    ->Option.map(getGooglePayType)
+    ->Option.map(t =>
+      switch t {
+      | GooglePay(v) => v
+      | _ => Default
+      }
+    ),
+    height: json->Dict.get("height")->Option.flatMap(JSON.Decode.float)->Option.map(Int.fromFloat),
+    buttonRadius: json
+    ->Dict.get("buttonRadius")
+    ->Option.flatMap(JSON.Decode.float)
+    ->Option.map(Int.fromFloat),
+    buttonBorderType: switch json
+    ->Dict.get("buttonBorderType")
+    ->Option.flatMap(JSON.Decode.string) {
+    | Some("no_border") => GPayNoBorder
+    | Some("default_border") | None => GPayDefaultBorder
+    | Some(v) =>
+      v->unknownPropValueWarning(
+        ["no_border", "default_border"],
+        "options.wallets.googlePay.buttonBorderType",
+      )
+      GPayDefaultBorder
+    },
+  }
+}
+
+let getPaypalWalletConfig = (json, logger) => {
+  unknownKeysWarning(
+    ["display", "color", "label", "height", "shape", "borderRadius"],
+    json,
+    "options.wallets.payPal",
+  )
+  {
+    display: getWarningString(json, "display", "auto", ~logger)->getShowType(
+      "options.wallets.payPal.display",
+    ),
+    color: switch json->Dict.get("color")->Option.flatMap(JSON.Decode.string) {
+    | Some("gold") => Some(PaypalGold)
+    | Some("blue") => Some(PaypalBlue)
+    | Some("silver") => Some(PaypalSilver)
+    | Some("black") => Some(PaypalBlack)
+    | Some("white") => Some(PaypalWhite)
+    | None => None
+    | Some(v) =>
+      v->unknownPropValueWarning(
+        ["gold", "blue", "silver", "black", "white"],
+        "options.wallets.payPal.color",
+      )
+      None
+    },
+    label: json
+    ->Dict.get("label")
+    ->Option.flatMap(JSON.Decode.string)
+    ->Option.map(getPayPalType)
+    ->Option.map(t =>
+      switch t {
+      | Paypal(v) => Some(v)
+      | _ => None
+      }
+    )
+    ->Option.getOr(None),
+    height: json->Dict.get("height")->Option.flatMap(JSON.Decode.float)->Option.map(Int.fromFloat),
+    shape: switch json->Dict.get("shape")->Option.flatMap(JSON.Decode.string) {
+    | Some("pill") => PaypalPill
+    | Some("sharp") => PaypalSharp
+    | Some("rect") | None => PaypalRect
+    | Some(v) =>
+      v->unknownPropValueWarning(["rect", "pill", "sharp"], "options.wallets.payPal.shape")
+      PaypalRect
+    },
+    borderRadius: json
+    ->Dict.get("borderRadius")
+    ->Option.flatMap(JSON.Decode.float)
+    ->Option.map(Int.fromFloat),
+  }
+}
+
+let getGooglePayWalletField = (dict, key, logger) => {
+  switch dict->Dict.get(key) {
+  | None => GooglePayConfigString(Auto)
+  | Some(json) =>
+    switch JSON.Decode.string(json) {
+    | Some(str) => GooglePayConfigString(str->getShowType(`options.wallets.${key}`))
+    | None =>
+      switch JSON.Decode.object(json) {
+      | Some(obj) => GooglePayConfigObj(getGooglePayWalletConfig(obj, logger))
+      | None => GooglePayConfigString(Auto)
+      }
+    }
+  }
+}
+
+let getPaypalWalletField = (dict, key, logger) => {
+  switch dict->Dict.get(key) {
+  | None => PaypalConfigString(Auto)
+  | Some(json) =>
+    switch JSON.Decode.string(json) {
+    | Some(str) => PaypalConfigString(str->getShowType(`options.wallets.${key}`))
+    | None =>
+      switch JSON.Decode.object(json) {
+      | Some(obj) => PaypalConfigObj(getPaypalWalletConfig(obj, logger))
+      | None => PaypalConfigString(Auto)
+      }
+    }
+  }
+}
+
+let getApplePayWalletConfig = (json, logger) => {
+  unknownKeysWarning(
+    ["display", "buttonStyle", "buttonType", "height", "buttonRadius"],
+    json,
+    "options.wallets.applePay",
+  )
+  {
+    display: getWarningString(json, "display", "auto", ~logger)->getShowType(
+      "options.wallets.applePay.display",
+    ),
+    buttonStyle: switch json->Dict.get("buttonStyle")->Option.flatMap(JSON.Decode.string) {
+    | Some("white") => Some(ApplePayWhite)
+    | Some("white-outline") => Some(ApplePayWhiteOutline)
+    | Some("black") => Some(ApplePayBlack)
+    | None => None
+    | Some(v) =>
+      v->unknownPropValueWarning(
+        ["black", "white", "white-outline"],
+        "options.wallets.applePay.buttonStyle",
+      )
+      None
+    },
+    buttonType: json
+    ->Dict.get("buttonType")
+    ->Option.flatMap(JSON.Decode.string)
+    ->Option.map(getApplePayType)
+    ->Option.map(t =>
+      switch t {
+      | ApplePay(v) => v
+      | _ => Plain
+      }
+    )
+    ->Option.getOr(Plain),
+    height: json->Dict.get("height")->Option.flatMap(JSON.Decode.float)->Option.map(Int.fromFloat),
+    buttonRadius: json
+    ->Dict.get("buttonRadius")
+    ->Option.flatMap(JSON.Decode.float)
+    ->Option.map(Int.fromFloat),
+  }
+}
+
+let getApplePayWalletField = (dict, key, logger) => {
+  switch dict->Dict.get(key) {
+  | None => ApplePayConfigString(Auto)
+  | Some(json) =>
+    switch JSON.Decode.string(json) {
+    | Some(str) => ApplePayConfigString(str->getShowType(`options.wallets.${key}`))
+    | None =>
+      switch JSON.Decode.object(json) {
+      | Some(obj) => ApplePayConfigObj(getApplePayWalletConfig(obj, logger))
+      | None => ApplePayConfigString(Auto)
+      }
+    }
+  }
+}
+
 let getWallets = (dict, str, logger) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna", "samsungPay"],
+      [
+        "applePay",
+        "googlePay",
+        "style",
+        "walletReturnUrl",
+        "payPal",
+        "klarna",
+        "samsungPay",
+        "paze",
+      ],
       json,
       "options.wallets",
     )
 
     {
       walletReturnUrl: getRequiredString(json, "walletReturnUrl", "", ~logger),
-      applePay: getWarningString(json, "applePay", "auto", ~logger)->getShowType(
-        "options.wallets.applePay",
-      ),
-      googlePay: getWarningString(json, "googlePay", "auto", ~logger)->getShowType(
-        "options.wallets.googlePay",
-      ),
-      payPal: getWarningString(json, "payPal", "auto", ~logger)->getShowType(
-        "options.wallets.payPal",
-      ),
+      applePay: getApplePayWalletField(json, "applePay", logger),
+      googlePay: getGooglePayWalletField(json, "googlePay", logger),
+      payPal: getPaypalWalletField(json, "payPal", logger),
       klarna: getWarningString(json, "klarna", "auto", ~logger)->getShowType(
         "options.wallets.klarna",
       ),

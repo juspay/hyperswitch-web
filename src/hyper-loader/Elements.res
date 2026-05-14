@@ -457,7 +457,12 @@ let make = (
           let componentName = getString(dict, "componentName", "payment")
 
           if dict->Dict.get("applePayMounted")->Option.isSome {
-            if wallets.applePay === Auto {
+            if (
+              switch wallets.applePay {
+              | ApplePayConfigString(Auto) | ApplePayConfigObj({display: Auto}) => true
+              | _ => false
+              }
+            ) {
               switch ApplePayTypes.sessionForApplePay->Nullable.toOption {
               | Some(session) =>
                 try {
@@ -1076,7 +1081,10 @@ let make = (
             if (
               componentType->getIsComponentTypeForPaymentElementCreate &&
               googlePayPresent->Option.isSome &&
-              wallets.googlePay === Auto
+              switch wallets.googlePay {
+              | GooglePayConfigString(Auto) | GooglePayConfigObj({display: Auto}) => true
+              | _ => false
+              }
             ) {
               let dict = json->getDictFromJson
               let sessionObj = SessionsType.itemToObjMapper(dict, Others)
@@ -1338,7 +1346,12 @@ let make = (
                   ~paymentMethod="GOOGLE_PAY",
                 )
               }
-            } else if wallets.googlePay === Never {
+            } else if (
+              switch wallets.googlePay {
+              | GooglePayConfigString(Never) | GooglePayConfigObj({display: Never}) => true
+              | _ => false
+              }
+            ) {
               logger.setLogInfo(
                 ~value="GooglePay is set as never by merchant",
                 ~eventName=GOOGLE_PAY_FLOW,
