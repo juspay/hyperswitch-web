@@ -125,7 +125,7 @@ type layoutConfig = {
   paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabs,
   displayOneClickPaymentMethodsOnTop: bool,
   showCheckedIconForSelection: bool,
-  orSeparatorText: option<string>,
+  separatorText: option<string>,
 }
 
 type layoutType =
@@ -310,7 +310,7 @@ let defaultLayout = {
   paymentMethodsArrangementForTabs: Default,
   displayOneClickPaymentMethodsOnTop: true,
   showCheckedIconForSelection: false,
-  orSeparatorText: None,
+  separatorText: None,
 }
 
 let defaultAddress: address = {
@@ -909,7 +909,7 @@ let getLayoutValues = (val, logger) => {
           "paymentMethodsArrangementForTabs",
           "displayOneClickPaymentMethodsOnTop",
           "showCheckedIconForSelection",
-          "orSeparatorText",
+          "separatorText",
         ],
         json,
         "options.layout",
@@ -938,7 +938,7 @@ let getLayoutValues = (val, logger) => {
           false,
           ~logger,
         ),
-        orSeparatorText: getOptionString(json, "orSeparatorText"),
+        separatorText: getOptionString(json, "separatorText"),
       }
     })
   | _ => StringLayout(Tabs)

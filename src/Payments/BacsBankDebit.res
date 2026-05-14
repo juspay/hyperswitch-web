@@ -25,7 +25,8 @@ let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {displaySavedPaymentMethods, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
@@ -141,6 +142,9 @@ let make = () => {
     </RenderIf>
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
+        <RenderIf condition={layoutClass.\"type" === Accordion}>
+          <Space />
+        </RenderIf>
         <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>
           <PaymentInputField
             fieldName=localeString.sortCodeText

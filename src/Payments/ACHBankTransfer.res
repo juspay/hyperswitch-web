@@ -6,6 +6,8 @@ let make = () => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
@@ -50,6 +52,9 @@ let make = () => {
   let paymentMethod = "bank_transfer"
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
+    <RenderIf condition={layoutClass.\"type" === Accordion}>
+      <Space />
+    </RenderIf>
     <DynamicFields paymentMethodType paymentMethod setRequiredFieldsBody />
     <Surcharge paymentMethodType paymentMethod />
     <InfoElement />

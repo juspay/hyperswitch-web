@@ -1,7 +1,7 @@
 @react.component
-let make = (~orSeparatorText) => {
+let make = (~separatorText) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let displayText = orSeparatorText->Option.getOr(localeString.orPayUsing)
+  let displayText = separatorText->Option.getOr(localeString.orPayUsing)
   <div className="w-full w-max-[750px] relative flex flex-row my-4 " ariaHidden=true>
     <div className="OrPayUsingLine relative top-[50%] h-[1px] bg-gray-400  w-full self-center" />
     <div

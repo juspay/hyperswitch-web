@@ -464,7 +464,7 @@ let make = (
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
   let vaultClass = switch isVault {
   | Some(_) => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
-  | None => ""
+  | None => "mt-4"
   }
   <div className="animate-slowShow">
     <RenderIf condition={showPaymentMethodsScreen || isBancontact}>

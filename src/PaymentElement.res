@@ -599,7 +599,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           condition={paymentOptions->Array.length > 0 &&
           walletOptions->Array.length > 0 &&
           checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}>
-          <Or orSeparatorText={layoutClass.orSeparatorText} />
+          <Or separatorText={layoutClass.separatorText} />
         </RenderIf>
         {switch layoutClass.\"type" {
         | Tabs =>

@@ -8,7 +8,7 @@ let make = (
   ~borderRadiusStyle,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {layout, customMethodNames, redirectionInfo} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {layout, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (
@@ -34,12 +34,6 @@ let make = (
     paymentOption.displayName,
     paymentOption.icon,
   )
-  let hasVisibleContent = if redirectionInfo === HideRedirectInfo {
-    paymentOption.fields->Array.length == 0 ||
-      paymentOption.fields->Array.some(field => field !== PaymentMethodsRecord.InfoElement)
-  } else {
-    true
-  }
   <div
     className={`AccordionItem flex flex-col`}
     style={
@@ -79,8 +73,8 @@ let make = (
         {React.string(paymentOption.paymentMethodName === "card" ? localeString.card : displayName)}
       </div>
     </div>
-    <RenderIf condition={selectedOption == paymentOption.paymentMethodName && hasVisibleContent}>
-      <div className="mt-4 w-full"> {checkoutEle} </div>
+    <RenderIf condition={selectedOption == paymentOption.paymentMethodName}>
+      <div className="w-full"> {checkoutEle} </div>
     </RenderIf>
   </div>
 }

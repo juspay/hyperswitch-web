@@ -318,30 +318,23 @@ let make = (
     }
   }
 
-  let filteredFieldsArr = React.useMemo(() => {
-    if redirectionInfo === HideRedirectInfo {
-      fieldsArr->Array.filter(field => field !== InfoElement)
-    } else {
-      fieldsArr
-    }
-  }, (fieldsArr, redirectionInfo))
-
   let dynamicFieldsToRenderOutsideBilling = React.useMemo(() => {
-    filteredFieldsArr->Array.filter(isFieldTypeToRenderOutsideBilling)
-  }, [filteredFieldsArr])
+    fieldsArr->Array.filter(isFieldTypeToRenderOutsideBilling)
+  }, [fieldsArr])
 
   let dynamicFieldsToRenderInsideBilling = React.useMemo(() => {
-    filteredFieldsArr->Array.filter(field => !(field->isFieldTypeToRenderOutsideBilling))
-  }, [filteredFieldsArr])
+    fieldsArr->Array.filter(field => !(field->isFieldTypeToRenderOutsideBilling))
+  }, [fieldsArr])
 
   let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
-  let isRenderInfoElement = isInfoElementPresent && !isDisableInfoElement
+  let isRenderInfoElement =
+    isInfoElementPresent && !isDisableInfoElement && redirectionInfo === ShowRedirectInfo
 
   let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
 
-  <RenderIf condition={!isSavedCardFlow && filteredFieldsArr->Array.length > 0}>
+  <RenderIf condition={!isSavedCardFlow && fieldsArr->Array.length > 0}>
     {<>
       {dynamicFieldsToRenderOutsideBilling
       ->Array.mapWithIndex((item, index) => {

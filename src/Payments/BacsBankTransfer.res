@@ -11,6 +11,8 @@ let default = () => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
+  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
@@ -51,6 +53,9 @@ let default = () => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
+    <RenderIf condition={layoutClass.\"type" === Accordion}>
+      <Space />
+    </RenderIf>
     <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
     <Surcharge paymentMethod paymentMethodType />
     <InfoElement />

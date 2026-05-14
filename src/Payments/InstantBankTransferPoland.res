@@ -6,6 +6,8 @@ let make = () => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
@@ -54,6 +56,9 @@ let make = () => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
+    <RenderIf condition={layoutClass.\"type" === Accordion}>
+      <Space />
+    </RenderIf>
     <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
     <Surcharge paymentMethod paymentMethodType />
     <InfoElement />

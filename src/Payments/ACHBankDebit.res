@@ -5,7 +5,8 @@ open PaymentModeType
 @react.component
 let make = () => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {displaySavedPaymentMethods, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -112,6 +113,9 @@ let make = () => {
     </RenderIf>
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
+        <RenderIf condition={layoutClass.\"type" === Accordion}>
+          <Space />
+        </RenderIf>
         <FullNamePaymentInput />
         <EmailPaymentInput />
         <div className="flex flex-col">
