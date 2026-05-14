@@ -62,10 +62,6 @@ let make = (~sessionObj: SessionsType.token) => {
         ? "gold"
         : "blue"
     }
-    let layoutStr = switch cfg.layout {
-    | PaypalVertical => "vertical"
-    | PaypalHorizontal => "horizontal"
-    }
     let shapeStr = switch cfg.shape {
     | PaypalRect => "rect"
     | PaypalPill => "pill"
@@ -75,7 +71,7 @@ let make = (~sessionObj: SessionsType.token) => {
     let resolvedHeight = cfg.height->Option.getOr(sharedHeight)
 
     let style: PaypalSDKTypes.style = {
-      layout: layoutStr,
+      layout: "vertical",
       color: colorStr,
       shape: shapeStr,
       label: cfg.label->Option.map(getLabel)->Option.getOr(sharedLabel),

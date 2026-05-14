@@ -111,7 +111,6 @@ type style = {
 type googlePayButtonColor = GPayDefault | GPayBlack | GPayWhite
 type googlePayButtonBorderType = GPayDefaultBorder | GPayNoBorder
 type paypalColor = PaypalGold | PaypalBlue | PaypalSilver | PaypalBlack | PaypalWhite
-type paypalLayout = PaypalVertical | PaypalHorizontal
 type paypalShape = PaypalRect | PaypalPill | PaypalSharp
 type applePayButtonStyle = ApplePayBlack | ApplePayWhite | ApplePayWhiteOutline
 
@@ -129,7 +128,6 @@ type paypalWalletConfig = {
   color: option<paypalColor>,
   label: option<paypalStyleType>,
   height: option<int>,
-  layout: paypalLayout,
   shape: paypalShape,
   borderRadius: option<int>,
 }
@@ -1169,7 +1167,7 @@ let getGooglePayWalletConfig = (json, logger) => {
 
 let getPaypalWalletConfig = (json, logger) => {
   unknownKeysWarning(
-    ["display", "color", "label", "height", "layout", "shape", "borderRadius"],
+    ["display", "color", "label", "height", "shape", "borderRadius"],
     json,
     "options.wallets.payPal",
   )
@@ -1203,13 +1201,6 @@ let getPaypalWalletConfig = (json, logger) => {
     )
     ->Option.getOr(None),
     height: json->Dict.get("height")->Option.flatMap(JSON.Decode.float)->Option.map(Int.fromFloat),
-    layout: switch json->Dict.get("layout")->Option.flatMap(JSON.Decode.string) {
-    | Some("horizontal") => PaypalHorizontal
-    | Some("vertical") | None => PaypalVertical
-    | Some(v) =>
-      v->unknownPropValueWarning(["vertical", "horizontal"], "options.wallets.payPal.layout")
-      PaypalVertical
-    },
     shape: switch json->Dict.get("shape")->Option.flatMap(JSON.Decode.string) {
     | Some("pill") => PaypalPill
     | Some("sharp") => PaypalSharp
