@@ -30,17 +30,13 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
       cursor: "pointer",
     }
     onClick>
-    <div className={`TabIcon ${tabIconClass}`} style={{position: "relative"}}>
+    <div className={`TabIcon ${tabIconClass} relative`}>
       {switch icon {
       | Some(ele) => ele
       | None => <Icon name="default-card" size=19 />
       }}
       <RenderIf condition={layoutClass.showCheckedIconForSelection && isActive}>
-        <div
-          className="TabSelectionIcon"
-          style={
-            position: "absolute",
-          }>
+        <div className="TabSelectionIcon absolute">
           <Icon name="checked-selection" size=14 />
         </div>
       </RenderIf>

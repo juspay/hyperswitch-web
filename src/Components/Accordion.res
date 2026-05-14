@@ -52,19 +52,13 @@ let make = (
       <RenderIf condition=layoutClass.radios>
         <Radio checked=radioClass />
       </RenderIf>
-      <div
-        className={`AccordionItemIcon ${accordionItemIconClass} flex items-center`}
-        style={{position: "relative"}}>
+      <div className={`AccordionItemIcon ${accordionItemIconClass} flex items-center relative`}>
         {switch icon {
         | Some(ele) => ele
         | None => React.string("<icon>")
         }}
         <RenderIf condition={layoutClass.showCheckedIconForSelection && isActive}>
-          <div
-            className="AccordionItemSelectionIcon"
-            style={
-              position: "absolute",
-            }>
+          <div className="AccordionItemSelectionIcon absolute">
             <Icon name="checked-selection" size=14 />
           </div>
         </RenderIf>

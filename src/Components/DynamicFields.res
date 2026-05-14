@@ -328,7 +328,7 @@ let make = (
 
   let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
   let isRenderInfoElement =
-    isInfoElementPresent && !isDisableInfoElement && redirectionInfo === ShowRedirectInfo
+    isInfoElementPresent && !isDisableInfoElement && redirectionInfo === ShowRedirectionInfo
 
   let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 

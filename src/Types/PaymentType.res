@@ -1,7 +1,7 @@
 type showTerms = Auto | Always | Never
 type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
-type redirectionInfo = ShowRedirectInfo | HideRedirectInfo
+type redirectionInfo = ShowRedirectionInfo | HideRedirectionInfo
 type layout = Accordion | Tabs
 type groupingBehavior = {
   displayInSeparateScreen: bool,
@@ -405,7 +405,7 @@ let defaultSdkHandleSavePayment = {
   confirmParams: ConfirmType.defaultConfirm,
 }
 
-let defaultRedirectionInfo = ShowRedirectInfo
+let defaultRedirectionInfo = ShowRedirectionInfo
 
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
@@ -874,18 +874,6 @@ let getSavedMethodCustomization = (dict, str, logger) => {
   ->Option.getOr(defaultSavedMethodCustomization)
 }
 
-let getDimensionValue = (dict, key) => {
-  dict
-  ->Dict.get(key)
-  ->Option.flatMap(val => {
-    switch val->JSON.Classify.classify {
-    | String(str) => Some(str)
-    | Number(num) => Some(Float.toString(num) ++ "px")
-    | _ => None
-    }
-  })
-}
-
 let getLayoutValues = (val, logger) => {
   switch val->JSON.Classify.classify {
   | String(str) => StringLayout(str->getLayout)
@@ -1115,11 +1103,11 @@ let getWallets = (dict, str, logger) => {
 let getRedirectionInfo = (dict, str, logger) => {
   let value = getWarningString(dict, str, "show", ~logger)
   switch value {
-  | "hidden" => HideRedirectInfo
-  | "show" => ShowRedirectInfo
+  | "hidden" => HideRedirectionInfo
+  | "show" => ShowRedirectionInfo
   | str => {
       str->unknownPropValueWarning(["show", "hidden"], "options.redirectionInfo")
-      ShowRedirectInfo
+      ShowRedirectionInfo
     }
   }
 }

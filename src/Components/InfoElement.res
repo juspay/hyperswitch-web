@@ -16,7 +16,7 @@ let make = () => {
     localeString.bankDetailsText
   | _ => localeString.redirectText
   }
-  <RenderIf condition={redirectionInfo === ShowRedirectInfo}>
+  <RenderIf condition={redirectionInfo === ShowRedirectionInfo}>
     <div
       className="InfoElement flex flex-row w-full pr-3 gap-3"
       style={
