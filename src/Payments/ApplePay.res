@@ -39,9 +39,14 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let (height, buttonColor, buttonType, buttonRadius) = switch options.wallets.applePay {
   | ApplePayConfigObj(cfg) =>
     let styleStr = switch cfg.buttonStyle {
-    | ApplePayBlack => "black"
-    | ApplePayWhite => "white"
-    | ApplePayWhiteOutline => "white-outline"
+    | Some(ApplePayBlack) => "black"
+    | Some(ApplePayWhite) => "white"
+    | Some(ApplePayWhiteOutline) => "white-outline"
+    | None =>
+      switch options.wallets.style.theme {
+      | Outline | Light => "white-outline"
+      | Dark => "black"
+      }
     }
     let typeStr = switch cfg.buttonType {
     | Default => "default"

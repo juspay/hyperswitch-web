@@ -36,11 +36,12 @@ let make = (~walletOptions) => {
     | _ => 48
     }
     let (resolvedBg, resolvedText) = switch cfg.color {
-    | PaypalGold => ("#ffc439", "#000000")
-    | PaypalBlue => ("#0070ba", "#ffffff")
-    | PaypalSilver => ("#eeeeee", "#000000")
-    | PaypalBlack => ("#000000", "#ffffff")
-    | PaypalWhite => ("#ffffff", "#000000")
+    | Some(PaypalGold) => ("#ffc439", "#000000")
+    | Some(PaypalBlue) => ("#0070ba", "#ffffff")
+    | Some(PaypalSilver) => ("#eeeeee", "#000000")
+    | Some(PaypalBlack) => ("#000000", "#ffffff")
+    | Some(PaypalWhite) => ("#ffffff", "#000000")
+    | None => options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
     }
     (
       cfg.height->Option.getOr(sharedHeight),

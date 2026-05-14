@@ -124,7 +124,7 @@ type googlePayWalletConfig = {
 
 type paypalWalletConfig = {
   display: showType,
-  color: paypalColor,
+  color: option<paypalColor>,
   label: option<paypalStyleType>,
   height: option<int>,
   layout: paypalLayout,
@@ -134,7 +134,7 @@ type paypalWalletConfig = {
 
 type applePayWalletConfig = {
   display: showType,
-  buttonStyle: applePayButtonStyle,
+  buttonStyle: option<applePayButtonStyle>,
   buttonType: applePayStyleType,
   height: option<int>,
   buttonRadius: option<int>,
@@ -1144,17 +1144,18 @@ let getPaypalWalletConfig = (json, logger) => {
       "options.wallets.payPal.display",
     ),
     color: switch json->Dict.get("color")->Option.flatMap(JSON.Decode.string) {
-    | Some("gold") => PaypalGold
-    | Some("blue") | None => PaypalBlue
-    | Some("silver") => PaypalSilver
-    | Some("black") => PaypalBlack
-    | Some("white") => PaypalWhite
+    | Some("gold") => Some(PaypalGold)
+    | Some("blue") => Some(PaypalBlue)
+    | Some("silver") => Some(PaypalSilver)
+    | Some("black") => Some(PaypalBlack)
+    | Some("white") => Some(PaypalWhite)
+    | None => None
     | Some(v) =>
       v->unknownPropValueWarning(
         ["gold", "blue", "silver", "black", "white"],
         "options.wallets.payPal.color",
       )
-      PaypalBlue
+      None
     },
     label: json
     ->Dict.get("label")
@@ -1231,15 +1232,16 @@ let getApplePayWalletConfig = (json, logger) => {
       "options.wallets.applePay.display",
     ),
     buttonStyle: switch json->Dict.get("buttonStyle")->Option.flatMap(JSON.Decode.string) {
-    | Some("white") => ApplePayWhite
-    | Some("white-outline") => ApplePayWhiteOutline
-    | Some("black") | None => ApplePayBlack
+    | Some("white") => Some(ApplePayWhite)
+    | Some("white-outline") => Some(ApplePayWhiteOutline)
+    | Some("black") => Some(ApplePayBlack)
+    | None => None
     | Some(v) =>
       v->unknownPropValueWarning(
         ["black", "white", "white-outline"],
         "options.wallets.applePay.buttonStyle",
       )
-      ApplePayBlack
+      None
     },
     buttonType: json
     ->Dict.get("buttonType")

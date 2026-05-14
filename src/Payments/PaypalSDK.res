@@ -50,11 +50,17 @@ let make = (~sessionObj: SessionsType.token) => {
     | _ => Paypal->getLabel
     }
     let colorStr = switch cfg.color {
-    | PaypalGold => "gold"
-    | PaypalBlue => "blue"
-    | PaypalSilver => "silver"
-    | PaypalBlack => "black"
-    | PaypalWhite => "white"
+    | Some(PaypalGold) => "gold"
+    | Some(PaypalBlue) => "blue"
+    | Some(PaypalSilver) => "silver"
+    | Some(PaypalBlack) => "black"
+    | Some(PaypalWhite) => "white"
+    | None =>
+      options.wallets.style.theme == Outline
+        ? "white"
+        : options.wallets.style.theme == Dark
+        ? "gold"
+        : "blue"
     }
     let layoutStr = switch cfg.layout {
     | PaypalVertical => "vertical"
