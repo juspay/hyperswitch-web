@@ -283,12 +283,13 @@ let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
 let isAppendingCustomerAcceptance = (
   ~isGuestCustomer,
   ~paymentType: PaymentMethodsRecord.payment_type,
+  ~alwaysSend=false,
 ) => {
-  !isGuestCustomer && (paymentType === NEW_MANDATE || paymentType === SETUP_MANDATE)
+  !isGuestCustomer && (alwaysSend || paymentType === NEW_MANDATE || paymentType === SETUP_MANDATE)
 }
 
-let appendedCustomerAcceptance = (~isGuestCustomer, ~paymentType, ~body) => {
-  isAppendingCustomerAcceptance(~isGuestCustomer, ~paymentType)
+let appendedCustomerAcceptance = (~isGuestCustomer, ~paymentType, ~body, ~alwaysSend=false) => {
+  isAppendingCustomerAcceptance(~isGuestCustomer, ~paymentType, ~alwaysSend)
     ? body->Array.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
     : body
 }
@@ -438,7 +439,10 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     let shouldDisplayApplePayInTabs =
       isApplePayReady && (showWalletsWithOtherPaymentMethods || requiresApplePayBillingDetails)
 
-    let isShowPaypal = optionAtomValue.wallets.payPal === Auto
+    let isShowPaypal = switch optionAtomValue.wallets.payPal {
+    | PaypalConfigString(Auto) | PaypalConfigObj({display: Auto}) => true
+    | _ => false
+    }
 
     let requiresPaypalBillingDetails =
       !paymentMethodListValue.collect_billing_details_from_wallets &&

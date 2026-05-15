@@ -224,7 +224,6 @@ let intentCall = (
                 ~paymentMethod,
               )
               url.searchParams.set("status", "succeeded")
-              handleOpenUrl(url.href)
             }
           },
         )->then(resolve)

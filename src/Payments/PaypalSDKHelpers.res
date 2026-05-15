@@ -5,7 +5,7 @@ open TaxCalculation
 let loadPaypalSDK = (
   ~loggerState: HyperLoggerTypes.loggerMake,
   ~sdkHandleOneClickConfirmPayment as _,
-  ~buttonStyle,
+  ~buttonStyle: PaypalSDKTypes.style,
   ~iframeId,
   ~isManualRetryEnabled,
   ~paymentMethodListValue,
@@ -86,6 +86,7 @@ let loadPaypalSDK = (
               ~isGuestCustomer,
               ~paymentType=paymentMethodListValue.payment_type,
               ~body,
+              ~alwaysSend=options.alwaysSendCustomerAcceptance,
             )
             make((resolve, _) => {
               if paypalNextAction == "post_session_tokens" {
@@ -192,6 +193,7 @@ let loadPaypalSDK = (
             ~isGuestCustomer,
             ~paymentType=paymentMethodListValue.payment_type,
             ~body,
+            ~alwaysSend=options.alwaysSendCustomerAcceptance,
           )
 
           let bodyArr =
@@ -252,7 +254,7 @@ let loadBraintreePaypalSdk = (
   ~loggerState: HyperLoggerTypes.loggerMake,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
-  ~buttonStyle,
+  ~buttonStyle: PaypalSDKTypes.style,
   ~iframeId,
   ~paymentMethodListValue,
   ~isGuestCustomer,
@@ -323,6 +325,7 @@ let loadBraintreePaypalSdk = (
                               ~isGuestCustomer,
                               ~paymentType=paymentMethodListValue.payment_type,
                               ~body=paypalBody,
+                              ~alwaysSend=options.alwaysSendCustomerAcceptance,
                             )
 
                             intent(
