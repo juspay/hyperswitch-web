@@ -145,6 +145,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     | Object(json) => json->getString("publishableKey", "")
     | _ => ""
     }
+    let profileId = switch keys->JSON.Classify.classify {
+    | String(_) => ""
+    | Object(json) => json->getString("profileId", "")
+    | _ => ""
+    }
     let isPreloadEnabled =
       options
       ->getOptionsDict
