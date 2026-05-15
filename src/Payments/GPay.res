@@ -13,7 +13,7 @@ let make = (
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let isSDKHandleClick = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
@@ -70,13 +70,65 @@ let make = (
     ? paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Gpay(SDK)))
     : paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Gpay(Redirect)))
 
-  GooglePayHelpers.useHandleGooglePayResponse(~connectors, ~intent, ~isWallet, ~requiredFieldsBody)
+  GooglePayHelpers.useHandleGooglePayResponse(
+    ~connectors,
+    ~intent,
+    ~isWallet,
+    ~requiredFieldsBody,
+    ~sdkAuthorization,
+  )
 
-  let (_, buttonType, _, _) = options.wallets.style.type_
-  let (_, heightType, _, _, _) = options.wallets.style.height
-  let height = switch heightType {
-  | GooglePay(val) => val
-  | _ => 48
+  let (
+    height,
+    resolvedButtonColor,
+    resolvedButtonType,
+    resolvedButtonRadius,
+    resolvedButtonBorderType,
+  ) = switch options.wallets.googlePay {
+  | GooglePayConfigObj(cfg) =>
+    let (_, heightType, _, _, _) = options.wallets.style.height
+    let sharedHeight = switch heightType {
+    | GooglePay(val) => val
+    | _ => 48
+    }
+    let (_, sharedButtonType, _, _) = options.wallets.style.type_
+    let sharedGPayButtonType = switch sharedButtonType {
+    | GooglePay(v) => v
+    | _ => Default
+    }
+    let colorStr = switch cfg.buttonColor {
+    | GPayBlack => "black"
+    | GPayWhite => "white"
+    | GPayDefault => options.wallets.style.theme == Dark ? "black" : "white"
+    }
+    let borderTypeStr = switch cfg.buttonBorderType {
+    | GPayNoBorder => Some("no_border")
+    | GPayDefaultBorder => None
+    }
+    (
+      cfg.height->Option.getOr(sharedHeight),
+      colorStr,
+      cfg.buttonType->Option.getOr(sharedGPayButtonType),
+      cfg.buttonRadius->Option.getOr(options.wallets.style.buttonRadius),
+      borderTypeStr,
+    )
+  | GooglePayConfigString(_) =>
+    let (_, buttonType, _, _) = options.wallets.style.type_
+    let (_, heightType, _, _, _) = options.wallets.style.height
+    let height = switch heightType {
+    | GooglePay(val) => val
+    | _ => 48
+    }
+    (
+      height,
+      options.wallets.style.theme == Dark ? "black" : "white",
+      switch buttonType {
+      | GooglePay(v) => v
+      | _ => Default
+      },
+      options.wallets.style.buttonRadius,
+      None,
+    )
   }
 
   let getGooglePaymentsClient = () => {
@@ -162,17 +214,26 @@ let make = (
   }
 
   let buttonStyle = {
-    let obj = {
+    let base = {
       "onClick": onGooglePaymentButtonClicked,
-      "buttonType": switch buttonType {
-      | GooglePay(var) => var->getLabel
-      | _ => Default->getLabel
-      },
+      "buttonType": resolvedButtonType->getLabel,
       "buttonSizeMode": "fill",
-      "buttonColor": options.wallets.style.theme == Dark ? "black" : "white",
-      "buttonRadius": options.wallets.style.buttonRadius,
+      "buttonColor": resolvedButtonColor,
+      "buttonRadius": resolvedButtonRadius,
     }
-    obj->Identity.anyTypeToJson
+    let obj = switch resolvedButtonBorderType {
+    | Some(borderType) =>
+      base
+      ->Identity.anyTypeToJson
+      ->JSON.Decode.object
+      ->Option.getOr(Dict.make())
+      ->Dict.toArray
+      ->Array.concat([("buttonBorderType", borderType->JSON.Encode.string)])
+      ->Dict.fromArray
+      ->JSON.Encode.object
+    | None => base->Identity.anyTypeToJson
+    }
+    obj
   }
   let addGooglePayButton = () => {
     let paymentClient = getGooglePaymentsClient()

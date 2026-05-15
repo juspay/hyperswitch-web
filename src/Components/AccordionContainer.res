@@ -71,6 +71,11 @@ let make = (
   let (showMore, setShowMore) = React.useState(_ => false)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let {
+    displayInSeparateScreen,
+    groupByPaymentMethods,
+  } = layoutClass.savedMethodCustomization.groupingBehavior
+  let groupSavedMethodsSeparately = !displayInSeparateScreen && !groupByPaymentMethods
 
   PaymentUtils.useEmitPaymentMethodInfo(
     ~paymentMethodName=selectedOption,
@@ -129,7 +134,15 @@ let make = (
   }
 
   React.useEffect0(() => {
-    layoutClass.defaultCollapsed ? setSelectedOption(_ => "") : ()
+    let shouldAutoOpenSavedMethods =
+      !layoutClass.savedMethodCustomization.defaultCollapsed &&
+      groupSavedMethodsSeparately &&
+      paymentOptions->Array.includes("saved_methods")
+    if layoutClass.defaultCollapsed {
+      setSelectedOption(_ => shouldAutoOpenSavedMethods ? "saved_methods" : "")
+    } else {
+      ()
+    }
     None
   })
   <div className="w-full">

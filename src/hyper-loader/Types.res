@@ -43,7 +43,7 @@ type element = {
   update: JSON.t => unit,
   fetchUpdates: unit => promise<JSON.t>,
   create: (string, JSON.t) => paymentElement,
-  updateIntent: (unit => promise<string>) => promise<JSON.t>,
+  updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
 }
 
 type getCustomerSavedPaymentMethods = {
@@ -55,7 +55,7 @@ type getCustomerSavedPaymentMethods = {
 
 type initPaymentSession = {
   getCustomerSavedPaymentMethods: unit => promise<JSON.t>,
-  updateIntent: (unit => promise<string>) => promise<JSON.t>,
+  updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
 }
 
 type isCustomerPresentInput = {email: string}
