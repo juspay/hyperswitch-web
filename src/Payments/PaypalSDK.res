@@ -209,8 +209,9 @@ let make = (~sessionObj: SessionsType.token) => {
     style={
       pointerEvents: updateSession ? "none" : "auto",
       opacity: updateSession ? "0.5" : "1.0",
+      borderRadius: `${buttonStyle.borderRadius->Int.toString}px`,
     }
-    className="w-full flex flex-row justify-center h-auto"
+    className="w-full flex flex-row justify-center h-auto overflow-hidden"
   />
 }
 
