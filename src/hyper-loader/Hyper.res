@@ -340,6 +340,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let paymentMethodsDataPromise = ref(emptyJsonPromise)
       let customerPaymentMethodsDataPromise = ref(emptyJsonPromise)
       let sessionTokensDataPromise = ref(emptyJsonPromise)
+      let sdkConfigsDataPromise = ref(emptyJsonPromise)
+      // TODO(sdk-configs): profileId is available here at init time for consumers who provide
+      // it at Hyper.init stage. sdk-configs could be prefetched early (before elements() is
+      // called) for a latency optimisation. Currently deferred to PreMountLoader for consistency.
 
       let retrievePaymentIntentFn = async clientSecretOrSdkAuth => {
         // Try to decode clientSecret as base64 — if decodable, it's an SDK authorization token.
@@ -581,6 +585,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~paymentMethodsDataPromise,
           ~customerPaymentMethodsDataPromise,
           ~sessionTokensDataPromise,
+          ~sdkConfigsDataPromise,
         )
       }
 
@@ -778,6 +783,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~paymentMethodsDataPromise,
           ~customerPaymentMethodsDataPromise,
           ~sessionTokensDataPromise,
+          ~sdkConfigsDataPromise,
         )
       }
 

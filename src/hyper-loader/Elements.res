@@ -28,6 +28,7 @@ let make = (
   ~paymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
+  ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
 ) => {
   try {
     let iframeRef = []
@@ -85,6 +86,10 @@ let make = (
       manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="clientSecret", ~logger)
     }
 
+    if !isTestMode && profileId === "" {
+      manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="profileId", ~logger)
+    }
+
     let clientSecretReMatch = RegExp.test(
       ".+_secret_[A-Za-z0-9]+"->RegExp.fromString,
       clientSecretRef.contents,
@@ -100,10 +105,15 @@ let make = (
     let isSdkParamsEnabled = preloadSDKWithParams->Dict.toArray->Array.length > 0
 
     // --- Initial preMountLoader setup ---
+    // TODO(sdk-configs): For consumers who provide profileId at Hyper.init time (before
+    // elements() is called), the sdk-configs API call could be prefetched early in Hyper.make()
+    // and the result passed in here, avoiding the round-trip through PreMountLoader.
+    // Currently deferred to PreMountLoader for consistency with the other 3 pre-mount calls.
     let (
       initialPaymentMethodsPromise,
       initialCustomerPaymentMethodsPromise,
       initialSessionTokensPromise,
+      initialSdkConfigsPromise,
     ) = UpdateIntentHelpersNew.setupPreMountLoaderPromises(
       ~publishableKey,
       ~profileId,
@@ -131,6 +141,7 @@ let make = (
     paymentMethodsDataPromise.contents = initialPaymentMethodsPromise
     customerPaymentMethodsDataPromise.contents = initialCustomerPaymentMethodsPromise
     sessionTokensDataPromise.contents = initialSessionTokensPromise
+    sdkConfigsDataPromise.contents = initialSdkConfigsPromise
 
     let onPlaidCallback = mountedIframeRef => {
       (ev: Types.event) => {
@@ -248,6 +259,15 @@ let make = (
         Promise.resolve()
       })
     }
+
+    let forwardSdkConfigsDataToIframe = mountedIframeRef => {
+      sdkConfigsDataPromise.contents->Promise.then(json => {
+        let msg = [("sdkConfigs", json)]->Dict.fromArray
+        mountedIframeRef->Window.iframePostMessage(msg)
+        Promise.resolve()
+      })
+    }
+    
     if !isTestMode && !clientSecretReMatch {
       manageErrorWarning(
         INVALID_FORMAT,
@@ -313,6 +333,7 @@ let make = (
           ~paymentMethodsDataPromise,
           ~customerPaymentMethodsDataPromise,
           ~sessionTokensDataPromise,
+          ~sdkConfigsDataPromise,
           ~iframes=iframeRef,
           ~callback,
           ~publishableKey,
@@ -347,6 +368,7 @@ let make = (
                 forwardPaymentMethodsToIframe(iframe),
                 forwardCustomerPaymentMethodsToIframe(iframe, false),
                 forwardSessionTokensDataToIframe(iframe),
+                forwardSdkConfigsDataToIframe(iframe),
               ])
             }),
           )
@@ -1485,6 +1507,7 @@ let make = (
         ->catch(_ => resolve())
         ->ignore
         forwardSessionTokensToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
+        forwardSdkConfigsDataToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
 
         mountedIframeRef->Window.iframePostMessage(message)
       }

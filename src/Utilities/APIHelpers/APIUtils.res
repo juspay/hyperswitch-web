@@ -14,6 +14,7 @@ type apiCallV1 =
   | FetchEligibilityCheck
   | FetchAuthenticationSync
   | FetchPaymentMethodEligibility
+  | FetchSdkConfigs
 
 type commonApiParams = {
   publishableKey: option<string>,
@@ -29,6 +30,7 @@ type apiParamsV1 = {
   sdkAuthorization: option<string>,
   authenticationId?: string,
   merchantId?: string,
+  profileId?: string,
 }
 
 module CommonUtils = {
@@ -98,7 +100,8 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchEnabledAuthnMethodsToken
   | FetchEligibilityCheck
   | FetchAuthenticationSync
-  | FetchPaymentMethodEligibility =>
+  | FetchPaymentMethodEligibility
+  | FetchSdkConfigs =>
     list{}
   }
 
@@ -119,6 +122,9 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchEligibilityCheck => `authentication/${authenticationIdVal}/eligibility-check`
   | FetchAuthenticationSync => `authentication/${merchantId}/${authenticationIdVal}/sync`
   | FetchPaymentMethodEligibility => `payments/${paymentIntentID}/eligibility`
+  | FetchSdkConfigs =>
+    let profileIdVal = params.profileId->Option.getOr("")
+    `v1/sdk/configs/${profileIdVal}/web/sdk_config.json`
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`
