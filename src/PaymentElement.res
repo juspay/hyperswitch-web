@@ -109,6 +109,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         let finalSavedPaymentMethods =
           savedPaymentMethods
           ->Array.copy
+          ->filterSavedMethodsByHiddenList(
+            ~hiddenPaymentMethods=layoutClass.savedMethodCustomization.hiddenPaymentMethods,
+          )
           ->filterSavedMethodsByWalletReadiness(~isApplePayReady, ~isGooglePayReady=isGPayReady)
         finalSavedPaymentMethods->Array.sort(sortSavedPaymentMethods)
 
@@ -146,6 +149,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     isGPayReady,
     clickToPayConfig.isReady,
     isShowPaymentMethodsDependingOnClickToPay,
+    layoutClass.savedMethodCustomization.hiddenPaymentMethods,
   ))
 
   React.useEffect(() => {

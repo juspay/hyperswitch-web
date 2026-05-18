@@ -12,6 +12,7 @@ type savedMethodCustomization = {
   maxItems: int,
   hideCardExpiry: bool,
   defaultCollapsed: bool,
+  hiddenPaymentMethods: array<string>,
 }
 open Utils
 open ErrorUtils
@@ -341,6 +342,7 @@ let defaultSavedMethodCustomization = {
   maxItems: 4,
   hideCardExpiry: false,
   defaultCollapsed: true,
+  hiddenPaymentMethods: [],
 }
 
 let defaultLayout = {
@@ -907,7 +909,13 @@ let getSavedMethodCustomization = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["groupingBehavior", "maxItems", "hideCardExpiry", "defaultCollapsed"],
+      [
+        "groupingBehavior",
+        "maxItems",
+        "hideCardExpiry",
+        "defaultCollapsed",
+        "hiddenPaymentMethods",
+      ],
       json,
       "options.layout.savedMethodCustomization",
     )
@@ -916,6 +924,7 @@ let getSavedMethodCustomization = (dict, str, logger) => {
       maxItems: getMaxItems(json, "maxItems", 4, ~logger),
       hideCardExpiry: getBool(json, "hideCardExpiry", false),
       defaultCollapsed: getBoolWithWarning(json, "defaultCollapsed", true, ~logger),
+      hiddenPaymentMethods: json->getStrArray("hiddenPaymentMethods"),
     }
   })
   ->Option.getOr(defaultSavedMethodCustomization)
