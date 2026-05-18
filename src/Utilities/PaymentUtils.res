@@ -362,6 +362,30 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
   (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist)
 }
 
+let filterSavedMethodsByHiddenList = (
+  savedMethods: array<PaymentType.customerMethods>,
+  ~hiddenPaymentMethods,
+) => {
+  if hiddenPaymentMethods->Array.length === 0 {
+    savedMethods
+  } else {
+    let lowerHidden =
+      hiddenPaymentMethods->Array.map(paymentMethod => paymentMethod->String.toLowerCase)
+    savedMethods->Array.filter(savedMethod => {
+      let paymentMethodTypeLower = switch savedMethod.paymentMethodType {
+      | Some(pmt) => pmt->String.toLowerCase
+      | None => ""
+      }
+      let paymentMethodLower = savedMethod.paymentMethod->String.toLowerCase
+      // Match against paymentMethodType (e.g. "apple_pay", "google_pay", "credit", "debit")
+      let hiddenByType = lowerHidden->Array.includes(paymentMethodTypeLower)
+      // Only allow paymentMethod-level matching for "card" — wallet-level ("wallet") is ignored
+      let hiddenByMethod = paymentMethodLower == "card" && lowerHidden->Array.includes("card")
+      !(hiddenByType || hiddenByMethod)
+    })
+  }
+}
+
 let filterSavedMethodsByWalletReadiness = (
   savedMethods: array<PaymentType.customerMethods>,
   ~isApplePayReady,
@@ -457,7 +481,11 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
 
     let filteredSaved = switch savedPaymentMethods {
     | Some(methods) =>
-      methods->filterSavedMethodsByWalletReadiness(~isApplePayReady, ~isGooglePayReady)
+      methods
+      ->filterSavedMethodsByHiddenList(
+        ~hiddenPaymentMethods=layoutClass.savedMethodCustomization.hiddenPaymentMethods,
+      )
+      ->filterSavedMethodsByWalletReadiness(~isApplePayReady, ~isGooglePayReady)
     | None => []
     }
 
@@ -539,6 +567,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     optionAtomValue.customerPaymentMethods,
     optionAtomValue.displaySavedPaymentMethods,
     displayGroupedSavedMethods,
+    layoutClass.savedMethodCustomization.hiddenPaymentMethods,
   ))
 }
 
