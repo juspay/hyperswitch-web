@@ -4,7 +4,7 @@ open Utils
 
 @react.component
 let make = (~paymentMethodName: string) => {
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
   let phoneNumber = Recoil.useRecoilValueFromAtom(userPhoneNumber)
@@ -112,6 +112,7 @@ let make = (~paymentMethodName: string) => {
     currency,
     requiredFieldsBody,
     areRequiredFieldsValid,
+    sdkAuthorization,
   ))
   useSubmitPaymentData(submitCallback)
   let paymentMethod = paymentMethodDetails.methodType

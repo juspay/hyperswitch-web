@@ -8,6 +8,7 @@ let make = () => {
   let {displaySavedPaymentMethods, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let {sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
@@ -101,7 +102,7 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, modalData, fullName, isManualRetryEnabled))
+  }, (email, modalData, fullName, isManualRetryEnabled, sdkAuthorization))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"
