@@ -86,6 +86,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
     let isTaxCalculationEnabled = dict->getBool("isTaxCalculationEnabled", false)
     let sdkSessionId = dict->getString("sdkSessionId", "")
     let analyticsMetadata = dict->getJsonFromDict("analyticsMetadata", JSON.Encode.null)
+    let isSavedMethodsFlow = dict->getBool("isSavedMethodsFlow", false)
 
     let logger = HyperLogger.make(
       ~sessionId=sdkSessionId,
@@ -102,6 +103,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
           ("applePayBillingContact", payment.billingContact),
           ("applePayShippingContact", payment.shippingContact),
           ("componentName", componentName->JSON.Encode.string),
+          ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
         ]
         ->Dict.fromArray
         ->JSON.Encode.object
@@ -327,7 +329,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let clientSecret = ref("")
       let sdkAuthorization = ref("")
       let pmSessionId = ref("")
-      let pmClientSecret = ref("")
       let setIframeRef = ref => {
         iframeRef.contents->Array.push(ref)->ignore
       }
@@ -559,7 +560,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
-          ~profileId,
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
@@ -584,14 +584,15 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         pmManagementOptionsDict
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
+        let sdkAuthorizationId = pmManagementOptionsDict->getStringFromDict("sdkAuthorization", "")
+        let sdkAuthorizationData = sdkAuthorizationId->Utils.getSdkAuthorizationData
 
-        let pmClientSecretId = pmManagementOptionsDict->getStringFromDict("pmClientSecret", "")
-        let pmSessionIdVal = pmManagementOptionsDict->getStringFromDict("pmSessionId", "")
+        sdkAuthorization := sdkAuthorizationId
+        let pmSessionIdVal = sdkAuthorizationData.pmSessionId->Option.getOr("")
 
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
         pmSessionId := pmSessionIdVal
-        pmClientSecret := pmClientSecretId
         Promise.make((resolve, _) => {
           resolve(JSON.Encode.null)
         })
@@ -610,9 +611,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
-          ~profileId,
-          ~pmClientSecret={pmClientSecretId},
           ~pmSessionId={pmSessionIdVal},
+          ~sdkAuthorization=sdkAuthorizationId,
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
@@ -756,7 +756,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         PaymentSession.make(
           paymentSessionOptions,
           ~publishableKey,
-          ~profileId,
           ~sdkSessionId=sessionID,
           ~logger=Some(logger),
           ~redirectionFlags,

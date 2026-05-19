@@ -27,7 +27,7 @@ type cardProps = {
   setCardError: (string => string) => unit,
   maxCardLength: int,
   cardBrand: string,
-  isCardEligible: bool,
+  cardEligibilityError: option<string>,
 }
 
 let useDefaultCardProps = () => {
@@ -45,7 +45,7 @@ let useDefaultCardProps = () => {
     setCardError: _ => (),
     maxCardLength: 0,
     cardBrand: "",
-    isCardEligible: true,
+    cardEligibilityError: None,
   }
 }
 

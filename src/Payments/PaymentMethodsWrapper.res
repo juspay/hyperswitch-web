@@ -11,6 +11,8 @@ let make = (~paymentMethodName: string) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let optionPaymentMethodDetails =
     paymentMethodListValue
@@ -115,6 +117,9 @@ let make = (~paymentMethodName: string) => {
   <div
     className="DynamicFields flex flex-col animate-slowShow"
     style={gridGap: themeObj.spacingGridColumn}>
+    <RenderIf condition={layoutClass.\"type" === Accordion}>
+      <Space height="0" />
+    </RenderIf>
     <DynamicFields paymentMethod paymentMethodType=paymentMethodName setRequiredFieldsBody />
     <Terms
       paymentMethodType={PaymentUtils.getPaymentMethodName(

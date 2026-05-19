@@ -131,6 +131,12 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
     ".TabIcon": {
       "transition": "color .1s ease",
     },
+    ".TabSelectionIcon": {
+      "bottom": "-6px",
+      "right": "-6px",
+      "border": `2px solid ${theme.colorBackground}`,
+      "borderRadius": "50%",
+    },
     ".Block": {
       "backgroundColor": theme.colorBackground,
       "borderRadius": theme.borderRadius,
@@ -166,6 +172,12 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
     },
     ".AccordionItemLabel--selected": {
       "color": theme.colorText,
+    },
+    ".AccordionItemSelectionIcon": {
+      "bottom": "-6px",
+      "right": "-6px",
+      "border": `2px solid ${theme.colorBackground}`,
+      "borderRadius": "50%",
     },
     ".PickerItem": {
       "border": `0.17em solid #000000`,

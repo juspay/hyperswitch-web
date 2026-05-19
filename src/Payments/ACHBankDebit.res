@@ -4,7 +4,8 @@ open Utils
 @react.component
 let make = () => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {displaySavedPaymentMethods, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
@@ -65,6 +66,9 @@ let make = () => {
     </RenderIf>
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
+        <RenderIf condition={layoutClass.\"type" === Accordion}>
+          <Space height="0" />
+        </RenderIf>
         <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
         <Surcharge paymentMethod paymentMethodType />
         <Terms paymentMethod paymentMethodType />

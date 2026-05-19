@@ -387,7 +387,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     paymentMethodName: "trustly",
     icon: Some(icon("trustly", ~size=19, ~width=25)),
     displayName: localeString.payment_methods_trustly,
-    fields: [Country, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -1301,17 +1301,20 @@ let getPaymentExperienceTypeFromPML = (
   ->Option.getOr([])
 }
 
-let parseEligibilityResponse = (json: JSON.t): bool => {
+let parseEligibilityResponse = json => {
   let dict = json->getDictFromJson
   let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
   let nextAction = sdkNextActionDict->Dict.get("next_action")
   switch nextAction {
   | Some(nextActionJson) =>
     switch nextActionJson->JSON.Classify.classify {
-    | String(str) => str !== "deny"
-    | Object(nextActionDict) => nextActionDict->Dict.get("deny")->Option.isNone
-    | _ => true
+    | String(str) => str === "deny" ? Some("") : None
+    | Object(nextActionDict) =>
+      nextActionDict
+      ->Dict.get("deny")
+      ->Option.map(denyJson => denyJson->getDictFromJson->getString("message", ""))
+    | _ => None
     }
-  | None => true
+  | None => None
   }
 }

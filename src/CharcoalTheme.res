@@ -133,6 +133,12 @@ let charcoalRules = theme =>
     ".TabIcon": {
       "transition": "color .1s ease",
     },
+    ".TabSelectionIcon": {
+      "bottom": "-6px",
+      "right": "-6px",
+      "border": `2px solid ${theme.colorBackground}`,
+      "borderRadius": "50%",
+    },
     ".Block": {
       "backgroundColor": theme.colorBackground,
       "borderRadius": theme.borderRadius,
@@ -169,6 +175,12 @@ let charcoalRules = theme =>
     },
     ".AccordionItemIcon--selected": {
       "color": theme.colorText,
+    },
+    ".AccordionItemSelectionIcon": {
+      "bottom": "-6px",
+      "right": "-6px",
+      "border": `2px solid ${theme.colorBackground}`,
+      "borderRadius": "50%",
     },
     ".PickerItem": {
       "backgroundColor": theme.colorBackground,
