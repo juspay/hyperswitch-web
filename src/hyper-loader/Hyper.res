@@ -138,6 +138,23 @@ let handleHyperApplePayMounted = (event: Types.event) => {
 
 addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMount")
 
+// Resolves the effective profileId:
+// 1. Explicit top-level profileId
+// 2. profileId from sdkAuthorization data
+// 3. profileId extracted from raw clientSecret string
+let resolveProfileId = (~profileId, ~sdkAuthorizationData, ~rawClientSecret) => {
+  let profileIdFromSdkAuth = sdkAuthorizationData.profileId->Option.getOr("")
+  let profileIdFromRawClientSecret =
+    rawClientSecret->getProfileIdFromClientSecret->Option.getOr("")
+  if profileId->String.length > 0 {
+    profileId
+  } else if profileIdFromSdkAuth->String.length > 0 {
+    profileIdFromSdkAuth
+  } else {
+    profileIdFromRawClientSecret
+  }
+}
+
 let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
     let publishableKey = switch keys->JSON.Classify.classify {
@@ -533,14 +550,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let sdkAuthorizationData = sdkAuthorizationId->Utils.getSdkAuthorizationData
 
+        let rawClientSecret = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
+
         let clientSecretId = switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
         | Some(cs) => cs
-        | None => elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
+        | None => rawClientSecret
         }
 
-        // Use explicit profileId if provided, otherwise extract from clientSecret
-        let profileIdFromClientSecret = clientSecretId->getProfileIdFromClientSecret
-        let resolvedProfileId = profileId->String.length > 0 ? profileId : profileIdFromClientSecret->Option.getOr("")
+        let resolvedProfileId = resolveProfileId(~profileId, ~sdkAuthorizationData, ~rawClientSecret)
 
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         let preloadSDKWithParams =
@@ -742,15 +759,15 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let sdkAuthorizationData = sdkAuthorization.contents->Utils.getSdkAuthorizationData
 
+        let rawClientSecret = paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
+
         clientSecret :=
           switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
           | Some(cs) => cs
-          | None => paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
+          | None => rawClientSecret
           }
 
-        // Use explicit profileId if provided, otherwise extract from clientSecret
-        let profileIdFromClientSecret = clientSecret.contents->getProfileIdFromClientSecret
-        let resolvedProfileId = profileId->String.length > 0 ? profileId : profileIdFromClientSecret->Option.getOr("")
+        let resolvedProfileId = resolveProfileId(~profileId, ~sdkAuthorizationData, ~rawClientSecret)
 
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecret.contents)
