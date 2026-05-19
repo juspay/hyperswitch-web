@@ -13,11 +13,10 @@ let make = (~sessionObj: SessionsType.token) => {
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
+  let {publishableKey, iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
@@ -151,7 +150,7 @@ let make = (~sessionObj: SessionsType.token) => {
       )
     }
     None
-  }, (status, paymentMethodTypes))
+  }, (status, paymentMethodTypes, sdkAuthorization))
 
   <div
     style={
