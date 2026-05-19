@@ -1175,7 +1175,7 @@ let fetchApiWithLogging = async (
 
 let arrayJsonToCamelCase = arr => {
   arr->Array.map(item => {
-    item->transformKeys(CamelCase)
+    item->transformKeysWithoutModifyingValue(CamelCase)
   })
 }
 
