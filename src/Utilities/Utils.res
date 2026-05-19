@@ -478,14 +478,14 @@ let rec transformKeysWithoutModifyingValue = (json: JSON.t, to: case) => {
   ->Dict.toArray
   ->Array.map(((key, value)) => {
     let x = switch JSON.Classify.classify(value) {
-    | Object(obj) => (key->toCase, obj->JSON.Encode.object->transformKeys(to))
+    | Object(obj) => (key->toCase, obj->JSON.Encode.object->transformKeysWithoutModifyingValue(to))
     | Array(arr) => (
         key->toCase,
         {
           arr
           ->Array.map(item =>
             if item->JSON.Decode.object->Option.isSome {
-              item->transformKeys(to)
+              item->transformKeysWithoutModifyingValue(to)
             } else {
               item
             }
