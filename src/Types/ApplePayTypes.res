@@ -163,7 +163,7 @@ let getPaymentRequestFromSession = (~sessionObj, ~componentName) => {
     ->Option.getOr(Dict.make())
     ->Dict.get("payment_request_data")
     ->Option.getOr(Dict.make()->JSON.Encode.object)
-    ->transformKeys(CamelCase)
+    ->transformKeysWithoutModifyingValue(CamelCase)
 
   let requiredShippingContactFields =
     paymentRequest
