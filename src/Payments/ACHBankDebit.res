@@ -1,6 +1,5 @@
 open RecoilAtoms
 open Utils
-open ACHTypes
 
 @react.component
 let make = () => {

@@ -274,73 +274,96 @@ let make = (
 
   let bottomElement = <InfoElement />
 
-  // State + City: both present → render as a side-by-side pair.
-  let cityOutputPath = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressCityInput)
-  }, [processedFieldConfigs])
+  let (
+    cityOutputPath,
+    stateOutputPath,
+    hasBothStateAndCity,
+    currencyOutputPath,
+    countryOutputPath,
+    postalOutputPath,
+    hasBothCountryAndPostal,
+    phoneNumberOutputPath,
+    countryCodeOutputPath,
+    documentNumberOutputPath,
+    hasBothPhoneAndCountryCode,
+    hasExpiryAndCvc,
+    fieldsOutsideBilling,
+    fieldsInsideBilling,
+  ) = React.useMemo(() => {
+    // State + City: both present → render as a side-by-side pair.
+    let cityOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
+      AddressCityInput,
+    )
 
-  let stateOutputPath = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressStateInput)
-  }, [processedFieldConfigs])
+    let stateOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
+      AddressStateInput,
+    )
 
-  let currencyOutputPath = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(CurrencySelect)
-  }, [processedFieldConfigs])
+    let currencyOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
+      CurrencySelect,
+    )
 
-  let hasBothStateAndCity = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(AddressCityInput, AddressStateInput)
-  }, [processedFieldConfigs])
+    let hasBothStateAndCity = processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
+      AddressCityInput,
+      AddressStateInput,
+    )
 
-  // Country + Postal: both present → render as a side-by-side pair.
-  let countryOutputPath = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressCountryInput)
-  }, [processedFieldConfigs])
-
-  let postalOutputPath = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressPostalCodeInput)
-  }, [processedFieldConfigs])
-
-  let hasBothCountryAndPostal = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
+    // Country + Postal: both present → render as a side-by-side pair.
+    let countryOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressCountryInput)
+    let postalOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressPostalCodeInput)
+    let hasBothCountryAndPostal = processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
       AddressCountryInput,
       AddressPostalCodeInput,
     )
-  }, [processedFieldConfigs])
 
-  // Phone + CountryCode: both present → render as a combined phone input.
-  let phoneNumberOutputPath = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(PhoneInput)
-  }, [processedFieldConfigs])
+    // Phone + CountryCode: both present → render as a combined phone input.
+    let phoneNumberOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
+      PhoneInput,
+    )
+    let countryCodeOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
+      CountryCodeSelect,
+    )
+    let documentNumberOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
+      DocumentNumberInput,
+    )
+    let hasBothPhoneAndCountryCode = processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
+      PhoneInput,
+      CountryCodeSelect,
+    )
 
-  let countryCodeOutputPath = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(CountryCodeSelect)
-  }, [processedFieldConfigs])
+    let hasBothMonthAndYear = processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
+      MonthSelect,
+      YearSelect,
+    )
+    // CvcPasswordInput alongside month+year:
+    // render expiry + CVC side-by-side.
+    let hasExpiryAndCvc =
+      hasBothMonthAndYear &&
+      processedFieldConfigs->DynamicFieldsUtils.hasFieldType(CvcPasswordInput)
 
-  let documentNumberOutputPath = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(DocumentNumberInput)
-  }, [processedFieldConfigs])
+    // Split fields into outside and inside billing sections
+    let fieldsOutsideBilling =
+      processedFieldConfigs->Array.filter(fc => fc->isFieldTypeToRenderOutsideBillingConfig)
 
-  let hasBothPhoneAndCountryCode = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(PhoneInput, CountryCodeSelect)
-  }, [processedFieldConfigs])
+    let fieldsInsideBilling =
+      processedFieldConfigs->Array.filter(fc => !(fc->isFieldTypeToRenderOutsideBillingConfig))
 
-  let hasBothMonthAndYear = React.useMemo(() => {
-    processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(MonthSelect, YearSelect)
-  }, [processedFieldConfigs])
-
-  // CvcPasswordInput alongside month+year:
-  // render expiry + CVC side-by-side.
-  let hasExpiryAndCvc = React.useMemo(() => {
-    hasBothMonthAndYear && processedFieldConfigs->DynamicFieldsUtils.hasFieldType(CvcPasswordInput)
-  }, [processedFieldConfigs])
-
-  // Split fields into outside and inside billing sections
-  let fieldsOutsideBilling = React.useMemo(() => {
-    processedFieldConfigs->Array.filter(fc => fc->isFieldTypeToRenderOutsideBillingConfig)
-  }, [processedFieldConfigs])
-
-  let fieldsInsideBilling = React.useMemo(() => {
-    processedFieldConfigs->Array.filter(fc => !(fc->isFieldTypeToRenderOutsideBillingConfig))
+    (
+      cityOutputPath,
+      stateOutputPath,
+      hasBothStateAndCity,
+      currencyOutputPath,
+      countryOutputPath,
+      postalOutputPath,
+      hasBothCountryAndPostal,
+      phoneNumberOutputPath,
+      countryCodeOutputPath,
+      documentNumberOutputPath,
+      hasBothPhoneAndCountryCode,
+      hasExpiryAndCvc,
+      fieldsOutsideBilling,
+      fieldsInsideBilling,
+    )
   }, [processedFieldConfigs])
 
   let isInfoElementPresent =
@@ -466,9 +489,7 @@ let make = (
                 }
               | YearSelect => React.null
               | CvcPasswordInput =>
-                if hasExpiryAndCvc {
-                  React.null
-                } else {
+                <RenderIf condition={!hasExpiryAndCvc}>
                   <PaymentInputField
                     fieldName=localeString.cvcTextLabel
                     isValid=isCVCValid
@@ -490,7 +511,7 @@ let make = (
                     placeholder="123"
                     autocomplete="cc-csc"
                   />
-                }
+                </RenderIf>
               | CurrencySelect =>
                 <CryptoCurrencySelect name={item.outputPath} options={item.options} />
               | DocumentTypeSelect => {
@@ -914,9 +935,7 @@ let make = (
                         />
                       }
                     | AddressStateInput =>
-                      if hasBothStateAndCity {
-                        React.null
-                      } else {
+                      <RenderIf condition={!hasBothStateAndCity}>
                         <ReactFinalFormField
                           name={item.outputPath}
                           validationRule={Validation.fieldTypeToValidationRule(AddressStateInput)}
@@ -969,7 +988,7 @@ let make = (
                             }
                           }}
                         />
-                      }
+                      </RenderIf>
                     | AddressCountryInput =>
                       if hasBothCountryAndPostal {
                         let updatedCountryArray =
@@ -1051,9 +1070,7 @@ let make = (
                         />
                       }
                     | AddressPostalCodeInput =>
-                      if hasBothCountryAndPostal {
-                        React.null
-                      } else {
+                      <RenderIf condition={!hasBothCountryAndPostal}>
                         <ReactFinalFormField
                           name={item.outputPath}
                           validationRule={Validation.fieldTypeToValidationRule(
@@ -1080,7 +1097,7 @@ let make = (
                             />
                           }}
                         />
-                      }
+                      </RenderIf>
                     | AddressLine1Input =>
                       <ReactFinalFormField
                         name={item.outputPath}
