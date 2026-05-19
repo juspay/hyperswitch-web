@@ -49,8 +49,9 @@ let make = (
   }
 
   let defaultInitPaymentSession = {
-    getCustomerSavedPaymentMethods: _ =>
+    getCustomerSavedPaymentMethods: options =>
       PaymentSessionMethods.getCustomerSavedPaymentMethods(
+        ~options,
         ~clientSecretRef,
         ~publishableKey,
         ~endpoint,
