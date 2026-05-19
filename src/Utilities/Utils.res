@@ -390,15 +390,13 @@ let getFailedSubmitResponse = (~errorType, ~message) => {
 let toCamelCase = str => {
   if str->String.includes(":") {
     str
-  } else if str->String.includes("_") {
+  } else {
     str
     ->String.toLowerCase
     ->Js.String2.unsafeReplaceBy0(%re(`/([-_][a-z])/g`), (letter, _, _) => {
       letter->String.toUpperCase
     })
     ->String.replaceRegExp(%re(`/[^a-zA-Z]/g`), "")
-  } else {
-    str->String.replaceRegExp(%re(`/[^a-zA-Z]/g`), "")
   }
 }
 

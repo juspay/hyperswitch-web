@@ -451,11 +451,8 @@ let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) 
     [
       ("type", paymentMethodData.\"type"->JSON.Encode.string),
       ("description", paymentMethodData.description->JSON.Encode.string),
-      ("info", paymentMethodData.info->transformKeysWithoutModifyingValue(SnakeCase)),
-      (
-        "tokenization_data",
-        paymentMethodData.tokenizationData->transformKeysWithoutModifyingValue(SnakeCase),
-      ),
+      ("info", paymentMethodData.info->transformKeys(SnakeCase)),
+      ("tokenization_data", paymentMethodData.tokenizationData->transformKeys(SnakeCase)),
     ]->getJsonFromArrayOfJson
   }
 
@@ -528,10 +525,7 @@ let applePayBody = (~token, ~connectors) => {
         (
           "wallet",
           [
-            (
-              "apple_pay",
-              dict->JSON.Encode.object->Utils.transformKeysWithoutModifyingValue(SnakeCase),
-            ),
+            ("apple_pay", dict->JSON.Encode.object->Utils.transformKeys(SnakeCase)),
           ]->Utils.getJsonFromArrayOfJson,
         ),
       ]
