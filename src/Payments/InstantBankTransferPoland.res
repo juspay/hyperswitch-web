@@ -3,7 +3,7 @@ open Utils
 
 @react.component
 let make = () => {
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -52,6 +52,7 @@ let make = () => {
     areRequiredFieldsEmpty,
     isManualRetryEnabled,
     iframeId,
+    sdkAuthorization,
   ))
   useSubmitPaymentData(submitCallback)
 
