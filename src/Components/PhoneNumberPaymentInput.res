@@ -71,8 +71,7 @@ let make = (~numberName: string, ~codeName: string) => {
   let getCountryCodeSplitValue = val => val->String.split("#")->Array.get(1)->Option.getOr("")
 
   let changePhone = ev => {
-    let val: string =
-      ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\D|\s/g"), "")
+    let val: string = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\D|\s/g"), "")
     numberField.input.onChange(val)
     codeField.input.onChange(valueDropDown->getCountryCodeSplitValue)
   }

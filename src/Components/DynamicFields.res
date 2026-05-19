@@ -291,50 +291,44 @@ let make = (
     fieldsInsideBilling,
   ) = React.useMemo(() => {
     // State + City: both present → render as a side-by-side pair.
-    let cityOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
-      AddressCityInput,
-    )
+    let cityOutputPath =
+      processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressCityInput)
 
-    let stateOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
-      AddressStateInput,
-    )
+    let stateOutputPath =
+      processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressStateInput)
 
-    let currencyOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
-      CurrencySelect,
-    )
+    let currencyOutputPath =
+      processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(CurrencySelect)
 
-    let hasBothStateAndCity = processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
-      AddressCityInput,
-      AddressStateInput,
-    )
+    let hasBothStateAndCity =
+      processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
+        AddressCityInput,
+        AddressStateInput,
+      )
 
     // Country + Postal: both present → render as a side-by-side pair.
-    let countryOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressCountryInput)
-    let postalOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressPostalCodeInput)
-    let hasBothCountryAndPostal = processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
-      AddressCountryInput,
-      AddressPostalCodeInput,
-    )
+    let countryOutputPath =
+      processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressCountryInput)
+    let postalOutputPath =
+      processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(AddressPostalCodeInput)
+    let hasBothCountryAndPostal =
+      processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
+        AddressCountryInput,
+        AddressPostalCodeInput,
+      )
 
     // Phone + CountryCode: both present → render as a combined phone input.
-    let phoneNumberOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
-      PhoneInput,
-    )
-    let countryCodeOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
-      CountryCodeSelect,
-    )
-    let documentNumberOutputPath = processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(
-      DocumentNumberInput,
-    )
-    let hasBothPhoneAndCountryCode = processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
-      PhoneInput,
-      CountryCodeSelect,
-    )
+    let phoneNumberOutputPath =
+      processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(PhoneInput)
+    let countryCodeOutputPath =
+      processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(CountryCodeSelect)
+    let documentNumberOutputPath =
+      processedFieldConfigs->DynamicFieldsUtils.getOutputPathForFieldType(DocumentNumberInput)
+    let hasBothPhoneAndCountryCode =
+      processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(PhoneInput, CountryCodeSelect)
 
-    let hasBothMonthAndYear = processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(
-      MonthSelect,
-      YearSelect,
-    )
+    let hasBothMonthAndYear =
+      processedFieldConfigs->DynamicFieldsUtils.hasBothFieldTypes(MonthSelect, YearSelect)
     // CvcPasswordInput alongside month+year:
     // render expiry + CVC side-by-side.
     let hasExpiryAndCvc =
