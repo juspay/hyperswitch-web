@@ -3,7 +3,7 @@ open Utils
 
 @react.component
 let make = () => {
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -45,7 +45,7 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, isManualRetryEnabled))
+  }, (email, isManualRetryEnabled, sdkAuthorization))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"

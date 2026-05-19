@@ -377,6 +377,7 @@ let make = (
     isManualRetryEnabled,
     selectedInstallmentPlan,
     showInstallments,
+    sdkAuthorization,
   ))
   useSubmitPaymentData(submitCallback)
 

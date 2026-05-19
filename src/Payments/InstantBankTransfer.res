@@ -3,7 +3,7 @@ open Utils
 
 @react.component
 let make = () => {
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
@@ -46,7 +46,13 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (requiredFieldsBody, areRequiredFieldsValid, areRequiredFieldsEmpty, isManualRetryEnabled))
+  }, (
+    requiredFieldsBody,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    isManualRetryEnabled,
+    sdkAuthorization,
+  ))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
