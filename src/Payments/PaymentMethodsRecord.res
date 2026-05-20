@@ -932,7 +932,6 @@ type mandate = {
 }
 type payment_type = NORMAL | NEW_MANDATE | SETUP_MANDATE | NONE
 
-type capture_method = AUTOMATIC | MANUAL | MANUAL_MULTIPLE | SCHEDULED | SEQUENTIAL_AUTOMATIC
 type intentData = {
   installment_options: option<array<installmentOption>>,
   currency: string,
@@ -1175,17 +1174,6 @@ let getMandate = (dict, str) => {
       multi_use: getOptionalMandateType(json, "multi_use"),
     }
   })
-}
-
-let captureMethodMapper = capture_method => {
-  switch capture_method {
-  | "automatic" => AUTOMATIC
-  | "manual" => MANUAL
-  | "manual_multiple" => MANUAL_MULTIPLE
-  | "scheduled" => SCHEDULED
-  | "sequential_automatic" => SEQUENTIAL_AUTOMATIC
-  | _ => AUTOMATIC
-  }
 }
 
 let getIntentData = dict => {
