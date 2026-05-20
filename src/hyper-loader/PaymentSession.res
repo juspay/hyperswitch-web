@@ -1,10 +1,9 @@
 open Types
-open Utils
 
 let make = (
   options,
   ~publishableKey,
-  ~profileId,  
+  ~profileId,
   ~sdkSessionId,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,

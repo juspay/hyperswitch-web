@@ -293,7 +293,7 @@ let performUpdateIntent = async (
   ~iframes: array<Nullable.t<Dom.element>>,
   ~callback: unit => promise<JSON.t>,
   ~publishableKey,
-  ~profileId,  
+  ~profileId,
   ~sdkSessionId,
   ~endpoint,
   ~customPodUri,

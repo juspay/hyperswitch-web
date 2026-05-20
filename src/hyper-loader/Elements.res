@@ -15,7 +15,7 @@ let make = (
   setIframeRef,
   ~sdkSessionId,
   ~publishableKey,
-  ~profileId,  
+  ~profileId,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
@@ -267,7 +267,7 @@ let make = (
         Promise.resolve()
       })
     }
-    
+
     if !isTestMode && !clientSecretReMatch {
       manageErrorWarning(
         INVALID_FORMAT,

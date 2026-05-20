@@ -2332,17 +2332,11 @@ let getCardEligibilityErrorText = (
   }
 }
 
-let fetchSdkConfigs = async (
-  ~profileId,
-  ~publishableKey,
-  ~logger,
-  ~customPodUri,
-  ~endpoint,
-) => {
+let fetchSdkConfigs = async (~profileId, ~publishableKey, ~logger, ~customPodUri, ~endpoint) => {
   let uri = APIUtils.generateApiUrlV1(
     ~apiCallType=FetchSdkConfigs,
     ~params={
-      profileId: profileId,
+      profileId,
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
       clientSecret: None,

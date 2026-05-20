@@ -6,7 +6,9 @@ let make = (~token: SessionsType.token) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
-  let {iframeId, publishableKey, clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, publishableKey, clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(
+    keys,
+  )
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
