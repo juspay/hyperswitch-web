@@ -1,6 +1,5 @@
 open PaypalSDKTypes
 open PaymentTypeContext
-open PaymentMethodsRecord
 
 @react.component
 let make = (~sessionObj: SessionsType.token) => {
@@ -74,11 +73,10 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let mountPaypalSDK = () => {
     let clientId = sessionObj.token
-    let paypalIntent =
-      paymentMethodListValue.intent_data.capture_method->PaymentMethodsRecord.isManualCapture
-        ? "authorize"
-        : "capture"
-    let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields&currency=${paymentMethodListValue.currency}&intent=${paypalIntent}`
+    let paypalIntent = sessionObj.paypal_capture_method
+    let currency = sessionObj.transaction_currency_code
+
+    let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields&currency=${currency}&intent=${paypalIntent}`
     loggerState.setLogInfo(~value="PayPal SDK Script Loading", ~eventName=PAYPAL_SDK_FLOW)
     let paypalScript = Window.createElement("script")
     paypalScript->Window.elementSrc(paypalScriptURL)

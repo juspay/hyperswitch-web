@@ -936,7 +936,6 @@ type capture_method = AUTOMATIC | MANUAL | MANUAL_MULTIPLE | SCHEDULED | SEQUENT
 type intentData = {
   installment_options: option<array<installmentOption>>,
   currency: string,
-  capture_method: option<capture_method>,
 }
 
 type paymentMethodList = {
@@ -968,7 +967,6 @@ let defaultPaymentMethodType = {
 let defaultIntentData = {
   installment_options: None,
   currency: "",
-  capture_method: None,
 }
 
 let defaultList = {
@@ -1195,9 +1193,6 @@ let getIntentData = dict => {
   {
     installment_options: intentDataDict->getInstallmentOptions,
     currency: dict->getString("currency", ""),
-    capture_method: intentDataDict
-    ->getOptionString("capture_method")
-    ->Option.map(captureMethodMapper),
   }
 }
 
@@ -1207,17 +1202,6 @@ let paymentTypeMapper = payment_type => {
   | "new_mandate" => NEW_MANDATE
   | "setup_mandate" => SETUP_MANDATE
   | _ => NONE
-  }
-}
-
-let isManualCapture = capture_method => {
-  switch capture_method {
-  | Some(MANUAL)
-  | Some(MANUAL_MULTIPLE)
-  | Some(SCHEDULED) => true
-  | Some(AUTOMATIC)
-  | Some(SEQUENTIAL_AUTOMATIC)
-  | None => false
   }
 }
 
