@@ -4,7 +4,7 @@ open Utils
 let make = (
   options,
   ~publishableKey,
-  ~profileId,
+  ~profileId,  
   ~sdkSessionId,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
@@ -53,8 +53,9 @@ let make = (
   }
 
   let defaultInitPaymentSession = {
-    getCustomerSavedPaymentMethods: _ =>
+    getCustomerSavedPaymentMethods: options =>
       PaymentSessionMethods.getCustomerSavedPaymentMethods(
+        ~options,
         ~clientSecretRef,
         ~publishableKey,
         ~endpoint,

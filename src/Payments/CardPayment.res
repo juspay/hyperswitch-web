@@ -30,7 +30,7 @@ let make = (
   let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
   let ctpCards = clickToPayConfig.clickToPayCards->Option.getOr([])
   let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
-  let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
@@ -79,7 +79,10 @@ let make = (
   let {
     displaySavedPaymentMethodsCheckbox,
     savedPaymentMethodsCheckboxCheckedByDefault,
+    alwaysSendCustomerAcceptance,
+    layout,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
@@ -152,11 +155,14 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
+  let isCustomerAcceptanceFromHook = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
     ~isSaveCardsChecked,
     ~isGuestCustomer,
   )
+
+  let isCustomerAcceptanceRequired =
+    (!isGuestCustomer && alwaysSendCustomerAcceptance) || isCustomerAcceptanceFromHook
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -448,6 +454,7 @@ let make = (
     selectedInstallmentPlan,
     showInstallments,
     cardEligibilityError,
+    sdkAuthorization,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -466,9 +473,12 @@ let make = (
   | Some(_) => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
   | None => ""
   }
+  let accordionMarginClass = layoutClass.\"type" === Accordion && isVault === None ? "mt-4" : ""
   <div className="animate-slowShow">
     <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
-      <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
+      <div
+        className={`flex flex-col ${vaultClass} ${accordionMarginClass}`}
+        style={gridGap: themeObj.spacingGridColumn}>
         <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
           <RenderIf condition={innerLayout === Compressed}>
             <div
@@ -574,7 +584,8 @@ let make = (
             isBancontact
             isSaveDetailsWithClickToPay
           />
-          <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
+          <RenderIf
+            condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
             <div className="flex items-center justify-start">
               <SaveDetailsCheckbox
                 isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked

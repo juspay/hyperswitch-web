@@ -21,6 +21,7 @@ let make = () => {
   let state = Recoil.useRecoilValueFromAtom(userAddressState)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let {sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
@@ -80,7 +81,7 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, modalData, isManualRetryEnabled))
+  }, (email, fullName, modalData, isManualRetryEnabled, sdkAuthorization))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethod = "bank_debit"
