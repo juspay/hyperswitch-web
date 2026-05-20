@@ -144,8 +144,7 @@ addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMou
 // 3. profileId extracted from raw clientSecret string
 let resolveProfileId = (~profileId, ~sdkAuthorizationData, ~rawClientSecret) => {
   let profileIdFromSdkAuth = sdkAuthorizationData.profileId->Option.getOr("")
-  let profileIdFromRawClientSecret =
-    rawClientSecret->getProfileIdFromClientSecret->Option.getOr("")
+  let profileIdFromRawClientSecret = rawClientSecret->getProfileIdFromClientSecret->Option.getOr("")
   if profileId->String.length > 0 {
     profileId
   } else if profileIdFromSdkAuth->String.length > 0 {
@@ -560,7 +559,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         | None => rawClientSecret
         }
 
-        let resolvedProfileId = resolveProfileId(~profileId, ~sdkAuthorizationData, ~rawClientSecret)
+        let resolvedProfileId = resolveProfileId(
+          ~profileId,
+          ~sdkAuthorizationData,
+          ~rawClientSecret,
+        )
 
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         let preloadSDKWithParams =
@@ -771,7 +774,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           | None => rawClientSecret
           }
 
-        let resolvedProfileId = resolveProfileId(~profileId, ~sdkAuthorizationData, ~rawClientSecret)
+        let resolvedProfileId = resolveProfileId(
+          ~profileId,
+          ~sdkAuthorizationData,
+          ~rawClientSecret,
+        )
 
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecret.contents)

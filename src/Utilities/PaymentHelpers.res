@@ -2338,7 +2338,7 @@ let fetchSdkConfigs = async (~profileId, ~publishableKey, ~logger, ~customPodUri
     ~params={
       profileId,
       customBackendBaseUrl: Some(endpoint),
-      publishableKey: None,
+      publishableKey: Some(publishableKey),
       clientSecret: None,
       forceSync: None,
       pollId: None,
