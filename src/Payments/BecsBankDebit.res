@@ -14,7 +14,7 @@ let make = () => {
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-
+  let {sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let complete =
@@ -78,7 +78,7 @@ let make = () => {
     }
   }, (
     modalData,
-    isManualRetryEnabled,
+    isManualRetryEnabled, sdkAuthorization,
     requiredFieldsBody,
     areRequiredFieldsValid,
     areRequiredFieldsEmpty,

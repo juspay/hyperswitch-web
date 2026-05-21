@@ -138,6 +138,22 @@ let handleHyperApplePayMounted = (event: Types.event) => {
 
 addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMount")
 
+// Resolves the effective profileId:
+// 1. Explicit top-level profileId
+// 2. profileId from sdkAuthorization data
+// 3. profileId extracted from raw clientSecret string
+let resolveProfileId = (~profileId, ~sdkAuthorizationData, ~rawClientSecret) => {
+  let profileIdFromSdkAuth = sdkAuthorizationData.profileId->Option.getOr("")
+  let profileIdFromRawClientSecret = rawClientSecret->getProfileIdFromClientSecret->Option.getOr("")
+  if profileId->String.length > 0 {
+    profileId
+  } else if profileIdFromSdkAuth->String.length > 0 {
+    profileIdFromSdkAuth
+  } else {
+    profileIdFromRawClientSecret
+  }
+}
+
 let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
     let publishableKey = switch keys->JSON.Classify.classify {
@@ -339,6 +355,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let paymentMethodsDataPromise = ref(emptyJsonPromise)
       let customerPaymentMethodsDataPromise = ref(emptyJsonPromise)
       let sessionTokensDataPromise = ref(emptyJsonPromise)
+      let sdkConfigsDataPromise = ref(emptyJsonPromise)
+      // TODO(sdk-configs): profileId is available here at init time for consumers who provide
+      // it at Hyper.init stage. sdk-configs could be prefetched early (before elements() is
+      // called) for a latency optimisation. Currently deferred to PreMountLoader for consistency.
 
       let retrievePaymentIntentFn = async clientSecretOrSdkAuth => {
         // Try to decode clientSecret as base64 — if decodable, it's an SDK authorization token.
@@ -532,10 +552,18 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let sdkAuthorizationData = sdkAuthorizationId->Utils.getSdkAuthorizationData
 
+        let rawClientSecret = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
+
         let clientSecretId = switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
         | Some(cs) => cs
-        | None => elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
+        | None => rawClientSecret
         }
+
+        let resolvedProfileId = resolveProfileId(
+          ~profileId,
+          ~sdkAuthorizationData,
+          ~rawClientSecret,
+        )
 
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         let preloadSDKWithParams =
@@ -560,6 +588,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
+          ~profileId=resolvedProfileId,
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
@@ -575,6 +604,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~paymentMethodsDataPromise,
           ~customerPaymentMethodsDataPromise,
           ~sessionTokensDataPromise,
+          ~sdkConfigsDataPromise,
         )
       }
 
@@ -736,11 +766,19 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let sdkAuthorizationData = sdkAuthorization.contents->Utils.getSdkAuthorizationData
 
+        let rawClientSecret = paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
+
         clientSecret :=
           switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
           | Some(cs) => cs
-          | None => paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
+          | None => rawClientSecret
           }
+
+        let resolvedProfileId = resolveProfileId(
+          ~profileId,
+          ~sdkAuthorizationData,
+          ~rawClientSecret,
+        )
 
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecret.contents)
@@ -756,6 +794,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         PaymentSession.make(
           paymentSessionOptions,
           ~publishableKey,
+          ~profileId=resolvedProfileId,
           ~sdkSessionId=sessionID,
           ~logger=Some(logger),
           ~redirectionFlags,
@@ -767,6 +806,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~paymentMethodsDataPromise,
           ~customerPaymentMethodsDataPromise,
           ~sessionTokensDataPromise,
+          ~sdkConfigsDataPromise,
         )
       }
 

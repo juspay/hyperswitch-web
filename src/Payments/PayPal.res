@@ -15,7 +15,7 @@ let make = (~walletOptions) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
+  let {publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -159,7 +159,7 @@ let make = (~walletOptions) => {
           )
         }
       }
-    }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, iframeId))
+    }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, iframeId, sdkAuthorization))
   }
 
   let submitCallback = useSubmitCallback(~isWallet)

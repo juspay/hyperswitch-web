@@ -2331,3 +2331,33 @@ let getCardEligibilityErrorText = (
   | Some(eligibilityErrorText) => eligibilityErrorText
   }
 }
+
+let fetchSdkConfigs = async (~profileId, ~publishableKey, ~logger, ~customPodUri, ~endpoint) => {
+  let uri = APIUtils.generateApiUrlV1(
+    ~apiCallType=FetchSdkConfigs,
+    ~params={
+      profileId,
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: Some(publishableKey),
+      clientSecret: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      sdkAuthorization: None,
+    },
+  )
+
+  let onSuccess = data => data
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=SDK_CONFIGS_CALL,
+    ~logger,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
+}

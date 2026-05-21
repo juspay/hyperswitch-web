@@ -403,13 +403,15 @@ let toCamelCase = str => {
 let toCamelCaseWithNumberSupport = str => {
   if str->String.includes(":") {
     str
-  } else {
+  } else if str->String.includes("_") {
     str
     ->String.toLowerCase
     ->Js.String2.unsafeReplaceBy0(%re(`/([-_][a-z])/g`), (letter, _, _) => {
       letter->String.toUpperCase
     })
     ->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+  } else {
+    str->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
   }
 }
 
@@ -474,14 +476,14 @@ let rec transformKeysWithoutModifyingValue = (json: JSON.t, to: case) => {
   ->Dict.toArray
   ->Array.map(((key, value)) => {
     let x = switch JSON.Classify.classify(value) {
-    | Object(obj) => (key->toCase, obj->JSON.Encode.object->transformKeys(to))
+    | Object(obj) => (key->toCase, obj->JSON.Encode.object->transformKeysWithoutModifyingValue(to))
     | Array(arr) => (
         key->toCase,
         {
           arr
           ->Array.map(item =>
             if item->JSON.Decode.object->Option.isSome {
-              item->transformKeys(to)
+              item->transformKeysWithoutModifyingValue(to)
             } else {
               item
             }
@@ -1154,7 +1156,7 @@ let fetchApiWithLogging = async (
 
 let arrayJsonToCamelCase = arr => {
   arr->Array.map(item => {
-    item->transformKeys(CamelCase)
+    item->transformKeysWithoutModifyingValue(CamelCase)
   })
 }
 
@@ -1960,4 +1962,10 @@ let getSdkAuthorizationData = sdkAuthorization => {
     profileId: getValueFromArrayOfKeys("profile_id"),
     pmSessionId: getValueFromArrayOfKeys("payment_method_session_id"),
   }
+}
+
+let getProfileIdFromClientSecret = clientSecret => {
+  let keyValuePairs = clientSecret->String.split(",")
+  let keyStr = keyValuePairs->Array.find(key => key->String.startsWith("profile"))
+  keyStr->Option.flatMap(key => key->String.split("=")->Array.get(1))
 }

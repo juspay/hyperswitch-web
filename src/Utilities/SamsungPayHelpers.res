@@ -72,7 +72,7 @@ let useHandleSamsungPayResponse = (
   ~isWallet=true,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -118,5 +118,5 @@ let useHandleSamsungPayResponse = (
     }
     Window.addEventListener("message", handleSamsung)
     Some(() => {Window.removeEventListener("message", handleSamsung)})
-  }, (isSavedMethodsFlow, isManualRetryEnabled, isWallet))
+  }, (isSavedMethodsFlow, isManualRetryEnabled, isWallet, sdkAuthorization))
 }

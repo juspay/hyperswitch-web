@@ -30,7 +30,7 @@ let make = (
   let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
   let ctpCards = clickToPayConfig.clickToPayCards->Option.getOr([])
   let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
-  let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
@@ -454,6 +454,7 @@ let make = (
     selectedInstallmentPlan,
     showInstallments,
     cardEligibilityError,
+    sdkAuthorization,
   ))
   useSubmitPaymentData(submitCallback)
 
