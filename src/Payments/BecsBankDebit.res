@@ -78,7 +78,8 @@ let make = () => {
     }
   }, (
     modalData,
-    isManualRetryEnabled, sdkAuthorization,
+    isManualRetryEnabled,
+    sdkAuthorization,
     requiredFieldsBody,
     areRequiredFieldsValid,
     areRequiredFieldsEmpty,

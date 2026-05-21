@@ -55,7 +55,13 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (isManualRetryEnabled, requiredFieldsBody, areRequiredFieldsValid, areRequiredFieldsEmpty, sdkAuthorization))
+  }, (
+    isManualRetryEnabled,
+    requiredFieldsBody,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    sdkAuthorization,
+  ))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"

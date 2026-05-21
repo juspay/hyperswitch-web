@@ -484,7 +484,7 @@ let make = (
                 }
               | YearSelect => React.null
               | CvcPasswordInput =>
-                <RenderIf condition={!hasExpiryAndCvc}>
+                if !hasExpiryAndCvc {
                   <PaymentInputField
                     fieldName=localeString.cvcTextLabel
                     isValid=isCVCValid
@@ -506,7 +506,9 @@ let make = (
                     placeholder="123"
                     autocomplete="cc-csc"
                   />
-                </RenderIf>
+                } else {
+                  React.null
+                }
               | CurrencySelect =>
                 <CryptoCurrencySelect name={item.outputPath} options={item.options} />
               | DocumentTypeSelect => {
@@ -930,7 +932,7 @@ let make = (
                         />
                       }
                     | AddressStateInput =>
-                      <RenderIf condition={!hasBothStateAndCity}>
+                      if !hasBothStateAndCity {
                         <ReactFinalFormField
                           name={item.outputPath}
                           validationRule={Validation.fieldTypeToValidationRule(AddressStateInput)}
@@ -983,7 +985,9 @@ let make = (
                             }
                           }}
                         />
-                      </RenderIf>
+                      } else {
+                        React.null
+                      }
                     | AddressCountryInput =>
                       if hasBothCountryAndPostal {
                         let updatedCountryArray =
@@ -1065,7 +1069,7 @@ let make = (
                         />
                       }
                     | AddressPostalCodeInput =>
-                      <RenderIf condition={!hasBothCountryAndPostal}>
+                      if !hasBothCountryAndPostal {
                         <ReactFinalFormField
                           name={item.outputPath}
                           validationRule={Validation.fieldTypeToValidationRule(
@@ -1092,7 +1096,9 @@ let make = (
                             />
                           }}
                         />
-                      </RenderIf>
+                      } else {
+                        React.null
+                      }
                     | AddressLine1Input =>
                       <ReactFinalFormField
                         name={item.outputPath}
