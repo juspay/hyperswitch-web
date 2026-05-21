@@ -235,6 +235,7 @@ let setupPreMountLoaderPromises = (
     ~listenerName="onPaymentMethodsData-shared",
     ~sendKey="sendPaymentMethodsResponse",
   )
+
   let customerPaymentMethodsData = createDataPromise(
     ~dataKey="customer_payment_methods",
     ~listenerName="onCustomerPaymentMethodsData-shared",
@@ -261,10 +262,10 @@ let setupPreMountLoaderPromises = (
     [("requestPreMountLoaderMountedCallback", true->JSON.Encode.bool)]->Dict.fromArray
   preMountLoaderIframeDiv->Window.iframePostMessage(requestMsg)
 
-  // Clean up preMountLoader iframe after the three mutable promises resolve.
+  // Clean up preMountLoader iframe after all four promises resolve.
   // sdk-configs is excluded here since it is either pre-resolved (updateIntent) or
   // resolved independently (init) and should not gate cleanup.
-  Promise.all([paymentMethodsData, customerPaymentMethodsData, sessionTokensData])
+  Promise.all([paymentMethodsData, customerPaymentMethodsData, sessionTokensData, sdkConfigsData])
   ->Promise.then(_ => {
     let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
     preMountLoaderIframeDiv->Window.iframePostMessage(msg)

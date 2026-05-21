@@ -63,6 +63,7 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
 
   let authenticationIdVal = params.authenticationId->Option.getOr("")
   let merchantId = params.merchantId->Option.getOr("")
+  let profileIdVal = params.profileId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -122,9 +123,7 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchEligibilityCheck => `authentication/${authenticationIdVal}/eligibility-check`
   | FetchAuthenticationSync => `authentication/${merchantId}/${authenticationIdVal}/sync`
   | FetchPaymentMethodEligibility => `payments/${paymentIntentID}/eligibility`
-  | FetchSdkConfigs =>
-    let profileIdVal = params.profileId->Option.getOr("")
-    `v1/sdk/configs/${profileIdVal}/web/sdk_config.json`
+  | FetchSdkConfigs => `v1/sdk/configs/${profileIdVal}/web/sdk_config.json`
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`
