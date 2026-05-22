@@ -31,9 +31,56 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   let (heightType, _, _, _, _) = options.wallets.style.height
-  let height = switch heightType {
+  let sharedHeight = switch heightType {
   | ApplePay(val) => val
   | _ => 48
+  }
+
+  let (height, buttonColor, buttonType, buttonRadius) = switch options.wallets.applePay {
+  | ApplePayConfigObj(cfg) =>
+    let styleStr = switch cfg.buttonStyle {
+    | Some(ApplePayBlack) => "black"
+    | Some(ApplePayWhite) => "white"
+    | Some(ApplePayWhiteOutline) => "white-outline"
+    | None =>
+      switch options.wallets.style.theme {
+      | Outline | Light => "white-outline"
+      | Dark => "black"
+      }
+    }
+    let typeStr = switch cfg.buttonType {
+    | Default => "default"
+    | Plain => "plain"
+    | Buy => "buy"
+    | Donate => "donate"
+    | SetUp => "set-up"
+    | Book => "book"
+    | Checkout => "check-out"
+    | Subscribe => "subscribe"
+    | AddMoney => "add-money"
+    | Contribute => "contribute"
+    | Order => "order"
+    | Reload => "reload"
+    | Rent => "rent"
+    | Support => "support"
+    | Tip => "tip"
+    | TopUp => "top-up"
+    }
+    (
+      cfg.height->Option.getOr(sharedHeight),
+      styleStr,
+      typeStr,
+      cfg.buttonRadius->Option.getOr(options.wallets.style.buttonRadius),
+    )
+  | ApplePayConfigString(_) => (
+      sharedHeight,
+      switch options.wallets.style.theme {
+      | Outline | Light => "white-outline"
+      | Dark => "black"
+      },
+      "plain",
+      options.wallets.style.buttonRadius,
+    )
   }
 
   UtilityHooks.useHandlePostMessages(
@@ -78,12 +125,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       },
       ~handleUserError=true,
     )
-  }
-
-  let buttonColor = switch options.wallets.style.theme {
-  | Outline
-  | Light => "white-outline"
-  | Dark => "black"
   }
 
   let loaderDivBackgroundColor = switch options.wallets.style.theme {
@@ -136,7 +177,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     .apple-pay-button-with-text {
         display: inline-block;
         -webkit-appearance: -apple-pay-button;
-        -apple-pay-button-type: plain;
+        -apple-pay-button-type: ${buttonType};
     }
     .apple-pay-button-with-text > * {
         display: none;
@@ -147,7 +188,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         height: ${height->Int.toString}px;
         display: flex;
         cursor: pointer;
-        border-radius: ${options.wallets.style.buttonRadius->Int.toString}px;
+        border-radius: ${buttonRadius->Int.toString}px;
     }
     .apple-pay-button-white-with-text {
         -apple-pay-button-style: white;
@@ -165,7 +206,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           display: inline-flex;
           justify-content: center;
           font-size: 12px;
-          border-radius: ${options.wallets.style.buttonRadius->Int.toString}px;
+          border-radius: ${buttonRadius->Int.toString}px;
           padding: 0px;
           box-sizing: border-box;
           min-width: 200px;

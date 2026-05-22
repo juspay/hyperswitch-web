@@ -55,17 +55,6 @@ type elementRef
 @send external appendChildElement: (Dom.element, Dom.element) => unit = "appendChild"
 @send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
 
-let setColorSchemeMeta = () => {
-  let meta = switch querySelector(`meta[name="color-scheme"]`)->Nullable.toOption {
-  | Some(el) => el
-  | None =>
-    let el = createElement("meta")
-    el->setAttribute("name", "color-scheme")
-    head->appendChildElement(el)
-    el
-  }
-  meta->setAttribute("content", "light dark")
-}
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
 @send

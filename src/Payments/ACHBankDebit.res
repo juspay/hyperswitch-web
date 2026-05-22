@@ -5,8 +5,10 @@ open PaymentModeType
 @react.component
 let make = () => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {displaySavedPaymentMethods, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let {sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
@@ -100,7 +102,7 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, modalData, fullName, isManualRetryEnabled))
+  }, (email, modalData, fullName, isManualRetryEnabled, sdkAuthorization))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"
@@ -112,6 +114,9 @@ let make = () => {
     </RenderIf>
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
+        <RenderIf condition={layoutClass.\"type" === Accordion}>
+          <Space height="0" />
+        </RenderIf>
         <FullNamePaymentInput />
         <EmailPaymentInput />
         <div className="flex flex-col">

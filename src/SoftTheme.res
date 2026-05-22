@@ -122,6 +122,12 @@ let softRules = theme =>
     ".TabIcon": {
       "transition": "color .1s ease",
     },
+    ".TabSelectionIcon": {
+      "bottom": "-6px",
+      "right": "-6px",
+      "border": `2px solid ${theme.colorBackground}`,
+      "borderRadius": "50%",
+    },
     ".Block": {
       "borderRadius": theme.borderRadius,
       "color": theme.colorTextSecondary,
@@ -170,6 +176,12 @@ let softRules = theme =>
     },
     ".AccordionItemIcon--selected": {
       "color": theme.colorPrimary,
+    },
+    ".AccordionItemSelectionIcon": {
+      "bottom": "-6px",
+      "right": "-6px",
+      "border": `2px solid ${theme.colorBackground}`,
+      "borderRadius": "50%",
     },
     ".PickerItem": {
       "borderRadius": theme.borderRadius,

@@ -1,6 +1,6 @@
 type theme = Default | Brutal | Midnight | Soft | Charcoal | Bubblegum | NONE
 
-type colorScheme = Default | Auto
+type colorScheme = Light | Auto | Dark
 
 type innerLayout = Spaced | Compressed
 
@@ -92,7 +92,6 @@ type fonts = {
 type configClass = {
   appearance: appearance,
   locale: string,
-  pmClientSecret: string,
   pmSessionId: string,
   clientSecret: string,
   fonts: array<fonts>,
