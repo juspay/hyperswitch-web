@@ -1,5 +1,5 @@
 open RecoilAtoms
-open Utils
+
 @react.component
 let make = (
   ~paymentType: CardThemeType.mode,

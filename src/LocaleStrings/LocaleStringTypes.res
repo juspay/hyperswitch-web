@@ -68,6 +68,8 @@ type localeStrings = {
   billingNameLabel: string,
   billingNamePlaceholder: string,
   cardHolderName: string,
+  cardHolderNameRequiredText: string,
+  lastNameRequiredText: string,
   on: string,
   \"and": string,
   nameEmptyText: string => string,
@@ -245,7 +247,35 @@ type localeStrings = {
   installmentSelectPlanPlaceholder: string,
   showMore: string,
   showLess: string,
+  mandatoryFieldText: string,
   refreshingText: string,
+}
+
+// NOTE: We can eleminate this transformation logic once web-sdk starts consuming the shared-code locales.
+let toValidationLocale = (webLocale: localeStrings): Validation.validationLocaleStrings => {
+  mandatoryFieldText: webLocale.mandatoryFieldText,
+  cardNumberEmptyText: webLocale.cardNumberEmptyText,
+  inValidCardErrorText: webLocale.inValidCardErrorText,
+  cardExpiryDateEmptyText: webLocale.cardExpiryDateEmptyText,
+  inValidExpiryErrorText: webLocale.inValidExpiryErrorText,
+  cvcNumberEmptyText: webLocale.cvcNumberEmptyText,
+  inValidCVCErrorText: webLocale.inCompleteCVCErrorText,
+  unsupportedCardErrorText: webLocale.cardNotEligibleText,
+  emailEmptyText: webLocale.emailEmptyText,
+  emailInvalidText: webLocale.emailInvalidText,
+  cardHolderNameRequiredText: webLocale.cardHolderNameRequiredText,
+  invalidDigitsCardHolderNameError: webLocale.invalidCardHolderNameError,
+  lastNameRequiredText: webLocale.lastNameRequiredText,
+  vpaIdEmptyText: webLocale.vpaIdEmptyText,
+  vpaIdInvalidText: webLocale.vpaIdInvalidText,
+  giftCardNumberEmptyText: webLocale.giftCardNumberEmptyText,
+  giftCardPinEmptyText: webLocale.giftCardPinEmptyText,
+  invalidNickNameError: webLocale.invalidNickNameError,
+  pixKeyEmptyText: webLocale.pixKeyEmptyText,
+  pixCPFEmptyText: webLocale.pixCPFEmptyText,
+  pixCPFInvalidText: webLocale.pixCPFInvalidText,
+  pixCNPJEmptyText: webLocale.pixCNPJEmptyText,
+  pixCNPJInvalidText: webLocale.pixCNPJInvalidText,
 }
 
 type constantStrings = {

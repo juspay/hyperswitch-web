@@ -1,13 +1,30 @@
 @react.component
-let make = () => {
+let make = (~numberName: string, ~codeName: string) => {
   open RecoilAtoms
   open PaymentType
   open Utils
 
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+
+  let createValidator = rule =>
+    Validation.createFieldValidator(
+      rule,
+      ~enabledCardSchemes=[],
+      ~localeObject=localeString->LocaleStringTypes.toValidationLocale,
+    )
+
+  let numberField = ReactFinalForm.useField(
+    numberName,
+    ~config={validate: createValidator(Validation.Phone)},
+  )
+  let codeField = ReactFinalForm.useField(codeName)
+
+  let numberVal = numberField.input.value->Option.getOr("")
+  let codeVal = codeField.input.value->Option.getOr("")
+
   let phoneRef = React.useRef(Nullable.null)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
-  let (phone, setPhone) = Recoil.useRecoilState(userPhoneNumber)
   let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = getClientCountry(clientTimeZone)
   let currentCountryCode = Utils.getCountryCode(clientCountry.countryName)
@@ -55,18 +72,12 @@ let make = () => {
 
   let changePhone = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\D|\s/g"), "")
-    setPhone(prev => {
-      ...prev,
-      countryCode: valueDropDown->getCountryCodeSplitValue,
-      value: val,
-    })
+    numberField.input.onChange(val)
+    codeField.input.onChange(valueDropDown->getCountryCodeSplitValue)
   }
 
   React.useEffect(() => {
-    setPhone(prev => {
-      ...prev,
-      countryCode: valueDropDown->getCountryCodeSplitValue,
-    })
+    codeField.input.onChange(valueDropDown->getCountryCodeSplitValue)
     None
   }, [valueDropDown])
 
@@ -86,7 +97,12 @@ let make = () => {
   <RenderIf condition={showDetails.phone == Auto}>
     <PaymentField
       fieldName="Phone Number"
-      value=phone
+      value={
+        RecoilAtomTypes.countryCode: codeVal,
+        value: numberVal,
+        isValid: Some(numberField.meta.valid),
+        errorString: numberField.meta.touched ? numberField.meta.error->Option.getOr("") : "",
+      }
       onChange=changePhone
       paymentType=Payment
       type_="tel"

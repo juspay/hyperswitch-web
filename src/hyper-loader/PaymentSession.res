@@ -1,9 +1,9 @@
 open Types
-open Utils
 
 let make = (
   options,
   ~publishableKey,
+  ~profileId,
   ~sdkSessionId,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
@@ -15,6 +15,7 @@ let make = (
   ~paymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
+  ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
 ) => {
   let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =
@@ -35,9 +36,11 @@ let make = (
       ~paymentMethodsDataPromise,
       ~customerPaymentMethodsDataPromise,
       ~sessionTokensDataPromise,
+      ~sdkConfigsDataPromise,
       ~iframes=iframeRef.contents,
       ~callback,
       ~publishableKey,
+      ~profileId,
       ~sdkSessionId,
       ~endpoint,
       ~customPodUri,

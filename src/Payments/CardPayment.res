@@ -583,6 +583,7 @@ let make = (
             cvcProps={Some(cvcProps)}
             isBancontact
             isSaveDetailsWithClickToPay
+            areCardFieldsRendered=true
           />
           <RenderIf
             condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>

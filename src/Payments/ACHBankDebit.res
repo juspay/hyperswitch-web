@@ -1,6 +1,5 @@
 open RecoilAtoms
 open Utils
-open PaymentModeType
 
 @react.component
 let make = () => {
@@ -9,29 +8,13 @@ let make = () => {
   let layoutClass = CardUtils.getLayoutClass(layout)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let {sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
 
-  let (bankError, setBankError) = React.useState(_ => "")
-
-  let (openToolTip, setOpenToolTip) = React.useState(_ => false)
-
-  let (modalData, setModalData) = React.useState(_ => None)
-
-  let toolTipRef = React.useRef(Nullable.null)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let country = Recoil.useRecoilValueFromAtom(userAddressCountry)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
-  let countryCode = Utils.getCountryCode(country.value).isoAlpha2
-  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let pmAuthMapper = React.useMemo1(
@@ -43,27 +26,10 @@ let make = () => {
   let isVerifyPMAuthConnectorConfigured =
     displaySavedPaymentMethods && pmAuthMapper->Dict.get("ach")->Option.isSome
 
-  OutsideClick.useOutsideClick(
-    ~refs=ArrayOfRef([toolTipRef]),
-    ~isActive=openToolTip,
-    ~callback=() => {
-      setOpenToolTip(_ => false)
-    },
-  )
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  React.useEffect(() => {
-    if modalData->Option.isSome {
-      setBankError(_ => "")
-    }
-    None
-  }, [modalData])
-
-  let complete =
-    email.value != "" &&
-    fullName.value != "" &&
-    email.isValid->Option.getOr(false) &&
-    modalData->Option.isSome
-  let empty = email.value == "" || fullName.value != ""
+  let complete = areRequiredFieldsValid && !areRequiredFieldsEmpty
+  let empty = areRequiredFieldsEmpty
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="ach_bank_debit")
 
@@ -72,37 +38,30 @@ let make = () => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      if modalData->Option.isNone {
-        setBankError(_ => "Enter bank details and then confirm payment")
-      }
       if complete {
-        switch modalData {
-        | Some(data) =>
-          let body = PaymentBody.achBankDebitBody(
-            ~email=email.value,
-            ~bank=data,
-            ~cardHolderName=fullName.value,
-            ~line1=line1.value,
-            ~line2=line2.value,
-            ~country=countryCode,
-            ~city=city.value,
-            ~postalCode=postalCode.value,
-            ~stateCode,
-          )
-          intent(
-            ~bodyArr=body,
-            ~confirmParam=confirm.confirmParams,
-            ~handleUserError=false,
-            ~manualRetry=isManualRetryEnabled,
-          )
-        | None => ()
-        }
-        ()
+        let body =
+          PaymentBody.dynamicPaymentBody("bank_debit", "ach")
+          ->getJsonFromArrayOfJson
+          ->flattenObject(true)
+          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->getArrayOfTupleFromDict
+        intent(
+          ~bodyArr=body,
+          ~confirmParam=confirm.confirmParams,
+          ~handleUserError=false,
+          ~manualRetry=isManualRetryEnabled,
+        )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, modalData, fullName, isManualRetryEnabled, sdkAuthorization))
+  }, (
+    isManualRetryEnabled,
+    requiredFieldsBody,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    sdkAuthorization,
+  ))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"
@@ -117,28 +76,9 @@ let make = () => {
         <RenderIf condition={layoutClass.\"type" === Accordion}>
           <Space height="0" />
         </RenderIf>
-        <FullNamePaymentInput />
-        <EmailPaymentInput />
-        <div className="flex flex-col">
-          <AddBankAccount modalData setModalData />
-          <RenderIf condition={bankError->String.length > 0}>
-            <div
-              className="Error pt-1"
-              style={
-                color: themeObj.colorDangerText,
-                fontSize: themeObj.fontSizeSm,
-                alignSelf: "start",
-                textAlign: "left",
-              }>
-              {React.string(bankError)}
-            </div>
-          </RenderIf>
-        </div>
+        <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
         <Surcharge paymentMethod paymentMethodType />
         <Terms paymentMethod paymentMethodType />
-        <FullScreenPortal>
-          <BankDebitModal setModalData />
-        </FullScreenPortal>
       </div>
     </RenderIf>
   </>

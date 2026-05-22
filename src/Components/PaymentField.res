@@ -4,8 +4,8 @@ open PaymentTypeContext
 
 @react.component
 let make = (
-  ~setValue=?,
   ~value: RecoilAtomTypes.field,
+  ~setValue=?,
   ~valueDropDown=?,
   ~setValueDropDown=?,
   ~dropDownFieldName=?,

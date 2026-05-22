@@ -52,6 +52,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   card: `Kort`,
   billingNameLabel: `Faktureringsnavn`,
   cardHolderName: `Naam van de kaarthouder`,
+  cardHolderNameRequiredText: `Naam van de kaarthouder vereist`,
+  lastNameRequiredText: `Achternaam vereist`,
   cardNickname: `Kaartbijnaam`,
   billingNamePlaceholder: `Voornaam en achternaam`,
   ibanEmptyText: `IBAN mag niet leeg zijn`,
@@ -257,5 +259,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   installmentSelectPlanPlaceholder: "Selecteer een aflossingsplan",
   showMore: "Meer tonen",
   showLess: "Minder tonen",
+  mandatoryFieldText: "This field is mandatory",
   refreshingText: "Vernieuwen...",
 }
