@@ -20,13 +20,13 @@ export default function CheckoutForm() {
   const elements = useWidgets();
 
   const [isSuccess, setIsSuccess] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const clientSecret = getClientSecretFromUrl();
 
   // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Prevent submission if Hyper isn't ready or already processing
@@ -52,8 +52,10 @@ export default function CheckoutForm() {
       if (status) {
         handlePaymentStatus(status, setMessage, setIsSuccess);
       }
-    } catch (err) {
-      setMessage(`Error confirming payment: ${err.message}`);
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
+      setMessage(`Error confirming payment: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
     }

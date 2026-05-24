@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { HyperElements } from "@juspay-tech/react-hyper-js";
+import type { HyperInstance } from "@juspay-tech/hyper-js";
 import CheckoutForm from "./CheckoutForm";
 import {
   getQueryParam,
@@ -11,10 +12,10 @@ import {
 } from "./utils";
 
 function Payment() {
-  const [hyperPromise, setHyperPromise] = useState(null);
+  const [hyperPromise, setHyperPromise] = useState<Promise<HyperInstance> | null>(null);
   const [clientSecret, setClientSecret] = useState("");
   const [paymentId, setPaymentId] = useState("");
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
   const isCypressTestMode = getQueryParam("isCypressTestMode") === "true";
@@ -55,7 +56,7 @@ function Payment() {
         if (isMounted) {
           setClientSecret(paymentIntentData.clientSecret);
           if (SDK_VERSION === "v2") {
-            setPaymentId(paymentIntentData.paymentId);
+            setPaymentId(paymentIntentData.paymentId ?? "");
           }
           setHyperPromise(Promise.resolve(hyper));
         }

@@ -13,7 +13,7 @@ function Completion() {
       <h2 className="ConfirmText">Thanks for your order!</h2>
 
       <p className="ConfirmDes">
-        Yayyy! You successfully made a payment with Hyperswitch. If it’s a real
+        Yayyy! You successfully made a payment with Hyperswitch. If it's a real
         store, your items would have been on their way.
       </p>
 

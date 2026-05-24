@@ -1,12 +1,24 @@
+import type { HyperInstance } from "@juspay-tech/hyper-js";
+import type React from "react";
+
+interface PaymentStatusMessages {
+  [key: string]: string;
+}
+
 export const getPaymentIntentData = async ({
   baseUrl,
   isCypressTestMode,
   clientSecretQueryParam,
   setError,
-}) => {
+}: {
+  baseUrl: string;
+  isCypressTestMode: boolean;
+  clientSecretQueryParam: string | null;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+}): Promise<{ clientSecret: string; paymentId?: string } | null> => {
   try {
     if (isCypressTestMode) {
-      return { clientSecret: clientSecretQueryParam };
+      return { clientSecret: clientSecretQueryParam ?? "" };
     }
 
     const res = await fetch(`${baseUrl}/create-intent`);
@@ -20,10 +32,12 @@ export const getPaymentIntentData = async ({
   }
 };
 
-export const getQueryParam = (param) =>
+export const getQueryParam = (param: string): string | null =>
   new URLSearchParams(window.location.search).get(param);
 
-export const fetchConfigAndUrls = async (baseUrl) => {
+export const fetchConfigAndUrls = async (
+  baseUrl: string
+): Promise<{ configData: any; urlsData: any }> => {
   const [configRes, urlsRes] = await Promise.all([
     fetch(`${baseUrl}/config`),
     fetch(`${baseUrl}/urls`),
@@ -39,6 +53,10 @@ export const fetchConfigAndUrls = async (baseUrl) => {
   return { configData, urlsData };
 };
 
+// Cached singleton — avoids creating multiple Hyper instances when the merchant
+// (or React strict-mode) triggers loadHyperScript more than once.
+let hyperInstance: HyperInstance | null = null;
+
 export const loadHyperScript = ({
   clientUrl,
   publishableKey,
@@ -46,9 +64,16 @@ export const loadHyperScript = ({
   profileId,
   isScriptLoaded,
   setIsScriptLoaded,
-}) => {
+}: {
+  clientUrl: string;
+  publishableKey: string;
+  customBackendUrl?: string;
+  profileId?: string;
+  isScriptLoaded: boolean;
+  setIsScriptLoaded: React.Dispatch<React.SetStateAction<boolean>>;
+}): Promise<HyperInstance> => {
   return new Promise((resolve, reject) => {
-    if (isScriptLoaded) return resolve(window.Hyper);
+    if (isScriptLoaded && hyperInstance) return resolve(hyperInstance);
 
     const script = document.createElement("script");
     script.src = `${clientUrl}/HyperLoader.js`;
@@ -56,14 +81,11 @@ export const loadHyperScript = ({
 
     script.onload = () => {
       setIsScriptLoaded(true);
-      resolve(
-        window.Hyper(
-          { publishableKey, profileId },
-          {
-            customBackendUrl,
-          }
-        )
+      hyperInstance = window.Hyper(
+        { publishableKey, profileId },
+        { customBackendUrl }
       );
+      resolve(hyperInstance);
     };
 
     script.onerror = () => {
@@ -74,13 +96,17 @@ export const loadHyperScript = ({
   });
 };
 
-export const getClientSecretFromUrl = () =>
+export const getClientSecretFromUrl = (): string | null =>
   new URLSearchParams(window.location.search).get(
     "payment_intent_client_secret"
   );
 
-export const handlePaymentStatus = (status, setMessage, setIsSuccess) => {
-  const statusMessages = {
+export const handlePaymentStatus = (
+  status: string,
+  setMessage: React.Dispatch<React.SetStateAction<string | null>>,
+  setIsSuccess: React.Dispatch<React.SetStateAction<boolean>>
+): void => {
+  const statusMessages: PaymentStatusMessages = {
     succeeded: "Payment successful.",
     processing: "Your payment is processing.",
     requires_payment_method:
@@ -110,7 +136,7 @@ export const paymentElementOptions = {
   },
 };
 
-export const hyperOptionsV1 = (clientSecret) => {
+export const hyperOptionsV1 = (clientSecret: string) => {
   return {
     clientSecret,
     appearance: {
@@ -119,7 +145,7 @@ export const hyperOptionsV1 = (clientSecret) => {
   };
 };
 
-export const hyperOptionsV2 = (clientSecret, paymentId) => {
+export const hyperOptionsV2 = (clientSecret: string, paymentId: string) => {
   return {
     clientSecret,
     paymentId,

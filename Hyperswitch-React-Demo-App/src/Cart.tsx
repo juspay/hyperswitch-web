@@ -3,7 +3,17 @@ import logo from "../public/assets/hyperswitchLogo.svg";
 import shirt from "../public/assets/shirt.png";
 import cap from "../public/assets/cap.png";
 
-const cartItems = [
+interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  image: string;
+  size: string;
+  qty: number;
+  color: string;
+}
+
+const cartItems: CartItem[] = [
   {
     id: 1,
     name: "HS Tshirt",
