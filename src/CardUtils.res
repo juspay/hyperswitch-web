@@ -665,7 +665,7 @@ let getCardBrandIconVisibility = (
   switch cardBrandIconSetting {
   | Standard | Animated => true // Animated is reserved for future use; behaves like Standard for now
   | Hidden => false
-  | HideDefault => cardType != NOTFOUND
+  | HideGeneric => cardType != NOTFOUND
   }
 }
 

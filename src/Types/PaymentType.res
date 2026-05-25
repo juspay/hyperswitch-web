@@ -1,5 +1,5 @@
 type cvcIconStyle = Default | Hidden
-type cardBrandIconStyle = Standard | Hidden | Animated | HideDefault
+type cardBrandIconStyle = Standard | Hidden | Animated | HideGeneric
 type showTerms = Auto | Always | Never
 type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
@@ -601,11 +601,11 @@ let getCardBrandIconStyle = (str): cardBrandIconStyle => {
   switch str {
   | "hidden" => Hidden
   | "animated" => Animated
-  | "hideDefault" => HideDefault
+  | "hideGeneric" => HideGeneric
   | "" | "standard" => Standard
   | str => {
       str->unknownPropValueWarning(
-        ["standard", "hidden", "animated", "hideDefault"],
+        ["standard", "hidden", "animated", "hideGeneric"],
         "options.layout.cardBrandIcon",
       )
       Standard
