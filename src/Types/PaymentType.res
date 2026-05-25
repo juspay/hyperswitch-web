@@ -1,3 +1,4 @@
+type cvcIconStyle = Default | Hidden
 type showTerms = Auto | Always | Never
 type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
@@ -279,6 +280,7 @@ type options = {
   hideExpiredPaymentMethods: bool,
   displayDefaultSavedPaymentIcon: bool,
   hideCardNicknameField: bool,
+  cvcIcon: cvcIconStyle,
   displayBillingDetails: bool,
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
@@ -474,6 +476,7 @@ let defaultOptions = {
   hideExpiredPaymentMethods: false,
   displayDefaultSavedPaymentIcon: true,
   hideCardNicknameField: false,
+  cvcIcon: Default,
   displayBillingDetails: false,
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
@@ -1572,6 +1575,7 @@ let allowedPaymentElementOptions = [
   "branding",
   "displayDefaultSavedPaymentIcon",
   "hideCardNicknameField",
+  "cvcIcon",
   "displayBillingDetails",
   "customMessageForCardTerms",
   "showShortSurchargeMessage",
@@ -1614,6 +1618,17 @@ let sanitizePreloadSdkParms = dict => {
   ->JSON.Encode.object
   ->(Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField=_ => true))
   ->getDictFromJson
+}
+
+let getCvcIconStyle = (str): cvcIconStyle => {
+  switch str {
+  | "hidden" => Hidden
+  | "" | "default" => Default
+  | str => {
+      str->unknownPropValueWarning(["hidden", "default"], "options.cvcIcon")
+      Default
+    }
+  }
 }
 
 let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
@@ -1668,6 +1683,7 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
     displayDefaultSavedPaymentIcon: getBool(dict, "displayDefaultSavedPaymentIcon", true),
     hideCardNicknameField: getBool(dict, "hideCardNicknameField", false),
+    cvcIcon: getWarningString(dict, "cvcIcon", "", ~logger)->getCvcIconStyle,
     displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
