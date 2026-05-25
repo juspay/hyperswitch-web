@@ -3,6 +3,7 @@ open ErrorUtils
 open Identity
 open Utils
 open EventListenerManager
+open URLModule
 
 type trustPayFunctions = {
   finishApplePaymentV2: (string, ApplePayTypes.paymentRequestData, string) => promise<JSON.t>,
@@ -809,7 +810,10 @@ let make = (
             let dict = json->getDictFromJson
             let status = dict->getString("status", "")
             let returnUrl = dict->getString("return_url", "")
-            let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecretRef.contents}&status=${status}`
+            let url = makeUrl(returnUrl)
+            url.searchParams.set("payment_intent_client_secret", clientSecretRef.contents)
+            url.searchParams.set("status", status)
+            let redirectUrl = url.href
             if redirect.contents === "always" {
               Utils.replaceRootHref(redirectUrl, redirectionFlags)
               resolve(JSON.Encode.null)
