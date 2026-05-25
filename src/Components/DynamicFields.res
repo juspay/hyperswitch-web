@@ -46,7 +46,9 @@ let make = (
     None
   }, [paymentMethodType])
 
-  let {billingAddress, redirectionInfo, cvcIcon} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {billingAddress, redirectionInfo, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
+  let cvcIcon = layoutClass.cvcIcon
 
   //<...>//
   let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(

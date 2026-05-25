@@ -658,6 +658,17 @@ let getLayoutClass = layout => {
   }
 }
 
+let getCardBrandIconVisibility = (
+  cardBrandIconSetting: PaymentType.cardBrandIconStyle,
+  cardType,
+) => {
+  switch cardBrandIconSetting {
+  | Standard | Animated => true // Animated is reserved for future use; behaves like Standard for now
+  | Hidden => false
+  | HideDefault => cardType != NOTFOUND
+  }
+}
+
 let getAllBanknames = obj => {
   obj->Array.reduce([], (acc, item) => {
     item->Array.map(val => acc->Array.push(val))->ignore

@@ -1,4 +1,5 @@
 type cvcIconStyle = Default | Hidden
+type cardBrandIconStyle = Standard | Hidden | Animated | HideDefault
 type showTerms = Auto | Always | Never
 type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
@@ -169,6 +170,8 @@ type layoutConfig = {
   displayOneClickPaymentMethodsOnTop: bool,
   showCheckedIconForSelection: bool,
   separatorText: option<string>,
+  cvcIcon: cvcIconStyle,
+  cardBrandIcon: cardBrandIconStyle,
 }
 
 type layoutType =
@@ -280,7 +283,6 @@ type options = {
   hideExpiredPaymentMethods: bool,
   displayDefaultSavedPaymentIcon: bool,
   hideCardNicknameField: bool,
-  cvcIcon: cvcIconStyle,
   displayBillingDetails: bool,
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
@@ -358,6 +360,8 @@ let defaultLayout = {
   displayOneClickPaymentMethodsOnTop: true,
   showCheckedIconForSelection: false,
   separatorText: None,
+  cvcIcon: Default,
+  cardBrandIcon: Standard,
 }
 
 let defaultAddress: address = {
@@ -476,7 +480,6 @@ let defaultOptions = {
   hideExpiredPaymentMethods: false,
   displayDefaultSavedPaymentIcon: true,
   hideCardNicknameField: false,
-  cvcIcon: Default,
   displayBillingDetails: false,
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
@@ -579,6 +582,33 @@ let getPaymentMethodsArrangementForTabs = str => {
   | str => {
       str->unknownPropValueWarning(["grid", "default"], "options.paymentMethodsArrangementForTabs")
       Default
+    }
+  }
+}
+
+let getCvcIconStyle = (str): cvcIconStyle => {
+  switch str {
+  | "hidden" => Hidden
+  | "" | "default" => Default
+  | str => {
+      str->unknownPropValueWarning(["hidden", "default"], "options.layout.cvcIcon")
+      Default
+    }
+  }
+}
+
+let getCardBrandIconStyle = (str): cardBrandIconStyle => {
+  switch str {
+  | "hidden" => Hidden
+  | "animated" => Animated
+  | "hideDefault" => HideDefault
+  | "" | "standard" => Standard
+  | str => {
+      str->unknownPropValueWarning(
+        ["standard", "hidden", "animated", "hideDefault"],
+        "options.layout.cardBrandIcon",
+      )
+      Standard
     }
   }
 }
@@ -957,6 +987,8 @@ let getLayoutValues = (val, logger) => {
           "displayOneClickPaymentMethodsOnTop",
           "showCheckedIconForSelection",
           "separatorText",
+          "cvcIcon",
+          "cardBrandIcon",
         ],
         json,
         "options.layout",
@@ -986,6 +1018,13 @@ let getLayoutValues = (val, logger) => {
           ~logger,
         ),
         separatorText: getOptionString(json, "separatorText"),
+        cvcIcon: getWarningString(json, "cvcIcon", "", ~logger)->getCvcIconStyle,
+        cardBrandIcon: getWarningString(
+          json,
+          "cardBrandIcon",
+          "standard",
+          ~logger,
+        )->getCardBrandIconStyle,
       }
     })
   | _ => StringLayout(Tabs)
@@ -1575,7 +1614,6 @@ let allowedPaymentElementOptions = [
   "branding",
   "displayDefaultSavedPaymentIcon",
   "hideCardNicknameField",
-  "cvcIcon",
   "displayBillingDetails",
   "customMessageForCardTerms",
   "showShortSurchargeMessage",
@@ -1618,17 +1656,6 @@ let sanitizePreloadSdkParms = dict => {
   ->JSON.Encode.object
   ->(Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField=_ => true))
   ->getDictFromJson
-}
-
-let getCvcIconStyle = (str): cvcIconStyle => {
-  switch str {
-  | "hidden" => Hidden
-  | "" | "default" => Default
-  | str => {
-      str->unknownPropValueWarning(["hidden", "default"], "options.cvcIcon")
-      Default
-    }
-  }
 }
 
 let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
@@ -1683,7 +1710,6 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
     displayDefaultSavedPaymentIcon: getBool(dict, "displayDefaultSavedPaymentIcon", true),
     hideCardNicknameField: getBool(dict, "hideCardNicknameField", false),
-    cvcIcon: getWarningString(dict, "cvcIcon", "", ~logger)->getCvcIconStyle,
     displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
