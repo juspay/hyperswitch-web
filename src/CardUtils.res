@@ -674,9 +674,17 @@ let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?) =
   countryPostal.regex
 }
 
-let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
+let setRightIconForCvc = (
+  ~cardEmpty,
+  ~cardInvalid,
+  ~color,
+  ~cardComplete,
+  ~cvcIcon: PaymentType.cvcIconStyle=Default,
+) => {
   open Utils
-  if cardEmpty {
+  if cvcIcon === Hidden {
+    React.null
+  } else if cardEmpty {
     <Icon size=brandIconSize name="cvc-empty" />
   } else if cardInvalid {
     <div style={color: color}>
