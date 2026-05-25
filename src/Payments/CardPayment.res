@@ -546,7 +546,7 @@ let make = (
                     ~cardEmpty,
                     ~cardInvalid,
                     ~color=themeObj.colorIconCardCvcError,
-                    ~cvcIcon=options.cvcIcon,
+                    ~cvcIcon=layoutClass.cvcIcon,
                   )}
                   type_="tel"
                   className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
