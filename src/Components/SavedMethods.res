@@ -41,6 +41,7 @@ let make = (
     readOnly,
     savedPaymentMethodsCheckboxCheckedByDefault,
     layout,
+    alwaysSendCustomerAcceptance,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
@@ -194,7 +195,8 @@ let make = (
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
-    let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not || isSaveCardsChecked
+    let isCustomerAcceptanceRequired =
+      alwaysSendCustomerAcceptance || customerMethod.recurringEnabled->not || isSaveCardsChecked
     let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
 
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
@@ -375,6 +377,7 @@ let make = (
     isManualRetryEnabled,
     selectedInstallmentPlan,
     showInstallments,
+    sdkAuthorization,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -404,14 +407,15 @@ let make = (
     } else {
       <RenderIf condition=showSavedCards> {bottomElement} </RenderIf>
     }}
-    <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
+    <RenderIf condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
       <div className="pt-4 pb-2 flex items-center justify-start">
         <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
       </div>
     </RenderIf>
     <RenderIf
-      condition={displaySavedPaymentMethodsCheckbox &&
-      paymentMethodListValue.payment_type === SETUP_MANDATE}>
+      condition={alwaysSendCustomerAcceptance ||
+      (displaySavedPaymentMethodsCheckbox &&
+      paymentMethodListValue.payment_type === SETUP_MANDATE)}>
       <Terms
         styles={
           marginTop: themeObj.spacingGridColumn,

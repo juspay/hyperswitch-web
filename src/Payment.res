@@ -12,7 +12,7 @@ let setUserError = message => {
 @react.component
 let make = (~paymentMode, ~integrateError, ~logger) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let (isFocus, setIsFocus) = React.useState(_ => false)
@@ -140,6 +140,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     isExpiryValid,
     isCardValid,
     cardEligibilityError,
+    sdkAuthorization,
   ))
 
   if integrateError {

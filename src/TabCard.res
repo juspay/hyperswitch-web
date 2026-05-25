@@ -2,7 +2,8 @@ open RecoilAtoms
 @react.component
 let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: bool) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {readOnly, customMethodNames, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let setSelectedOption = Recoil.useSetRecoilState(selectedOptionAtom)
   let (tabClass, tabLabelClass, tabIconClass) = React.useMemo(
     () => isActive ? ("Tab--selected", "TabLabel--selected", "TabIcon--selected") : ("", "", ""),
@@ -29,11 +30,16 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
       cursor: "pointer",
     }
     onClick>
-    <div className={`TabIcon ${tabIconClass}`}>
+    <div className={`TabIcon ${tabIconClass} relative`}>
       {switch icon {
       | Some(ele) => ele
       | None => <Icon name="default-card" size=19 />
       }}
+      <RenderIf condition={layoutClass.showCheckedIconForSelection && isActive}>
+        <div className="TabSelectionIcon absolute">
+          <Icon name="checked-selection" size=14 />
+        </div>
+      </RenderIf>
     </div>
     <div className={`TabLabel ${tabLabelClass}`}>
       {React.string(paymentOption.paymentMethodName === "card" ? localeString.card : displayName)}

@@ -17,6 +17,7 @@ let processPayment = (
     ~isGuestCustomer,
     ~paymentType=paymentMethodListValue.payment_type,
     ~body=bodyArr,
+    ~alwaysSend=options.alwaysSendCustomerAcceptance,
   )
 
   intent(
@@ -88,7 +89,7 @@ let startApplePaySession = (
       ->Option.getOr(Dict.make())
       ->Dict.get("session_token_data")
       ->Option.getOr(Dict.make()->JSON.Encode.object)
-      ->transformKeys(CamelCase)
+      ->transformKeysWithoutModifyingValue(CamelCase)
     ssn.completeMerchantValidation(merchantSession)
   }
 
