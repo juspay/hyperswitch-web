@@ -90,6 +90,7 @@ let toSnakeCaseWithSeparator = (str, separator) => {
 let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   sendLogs: () => (),
   setClientSecret: _x => (),
+  setSdkAuthorization: _x => (),
   setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
   setLogError: (
     ~value as _,

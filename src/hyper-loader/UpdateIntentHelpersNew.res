@@ -38,11 +38,11 @@ let waitForReady = () => {
 let getNewCredentials = async (~callback: unit => promise<JSON.t>, ~currentClientSecret) => {
   let callbackResult = await callback()
   let newSdkAuthorization = callbackResult->getDictFromJson->getString("sdkAuthorization", "")
-  let sdkAuthorizationData = newSdkAuthorization->getSdkAuthorizationData
-  let newClientSecret = switch sdkAuthorizationData.clientSecret->getNonEmptyOption {
-  | Some(cs) => cs
-  | None => currentClientSecret
-  }
+  // clientSecret is not embedded in the SDK auth token; keep the current one.
+  // The new payment_id (if any) lives inside newSdkAuthorization — callers must update
+  // sdkAuthorizationRef alongside clientSecretRef and then use
+  // getPaymentIdOrExtractFromSdkAuth to obtain the correct payment ID.
+  let newClientSecret = currentClientSecret
   (newSdkAuthorization, newClientSecret)
 }
 

@@ -55,7 +55,10 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
 
   let clientSecretVal = clientSecret->Option.getOr("")
   let publishableKeyVal = publishableKey->Option.getOr("")
-  let paymentIntentID = Utils.getPaymentId(clientSecretVal)
+  let paymentIntentID = Utils.getPaymentIdOrExtractFromSdkAuth(
+    ~clientSecret=clientSecretVal,
+    ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
+  )
   let pollIdVal = pollId->Option.getOr("")
   let payoutIdVal = payoutId->Option.getOr("")
 
