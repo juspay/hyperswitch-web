@@ -162,6 +162,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix-nyckel`,
   sourceBankAccountIdEmptyText: `Käll bankkonto-ID kan inte vara tomt`,
   invalidCardHolderNameError: `Kortinnehavarens namn får inte innehålla siffror`,
+  cardHolderNameRequiredText: `Naam van de kaarthouder vereist`,
+  lastNameRequiredText: `Efternamn krävs`,
   invalidNickNameError: `Smeknamnet får inte innehålla mer än 2 siffror`,
   expiry: `upphörande`,
   payment_methods_afterpay_clearpay: `After Pay`,

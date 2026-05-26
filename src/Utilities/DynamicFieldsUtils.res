@@ -288,7 +288,7 @@ let resolveValidator = (
   Validation.createFieldValidator(
     rules,
     ~enabledCardSchemes=[],
-    ~localeObject=localeObject->Obj.magic,
+    ~localeObject=localeObject->LocaleStringTypes.toValidationLocale,
   )
 }
 
