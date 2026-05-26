@@ -25,7 +25,7 @@ describe("Card payment flow test", () => {
       line1: "1467",
       line2: "Harrison Street",
       line3: "Harrison Street",
-      city: "San Fransico",
+      city: "San Francisco",
       state: "California",
       zip: "94122",
       country: "DE",

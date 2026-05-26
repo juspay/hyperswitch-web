@@ -1,3 +1,5 @@
+type cvcIconStyle = Default | Hidden
+type cardBrandIconStyle = Standard | Hidden | Animated | HideGeneric
 type showTerms = Auto | Always | Never
 type paymentMethodsArrangementForTabs = Default | Grid
 type showType = Auto | Never
@@ -168,6 +170,8 @@ type layoutConfig = {
   displayOneClickPaymentMethodsOnTop: bool,
   showCheckedIconForSelection: bool,
   separatorText: option<string>,
+  cvcIcon: cvcIconStyle,
+  cardBrandIcon: cardBrandIconStyle,
 }
 
 type layoutType =
@@ -356,6 +360,8 @@ let defaultLayout = {
   displayOneClickPaymentMethodsOnTop: true,
   showCheckedIconForSelection: false,
   separatorText: None,
+  cvcIcon: Default,
+  cardBrandIcon: Standard,
 }
 
 let defaultAddress: address = {
@@ -576,6 +582,33 @@ let getPaymentMethodsArrangementForTabs = str => {
   | str => {
       str->unknownPropValueWarning(["grid", "default"], "options.paymentMethodsArrangementForTabs")
       Default
+    }
+  }
+}
+
+let getCvcIconStyle = (str): cvcIconStyle => {
+  switch str {
+  | "hidden" => Hidden
+  | "" | "default" => Default
+  | str => {
+      str->unknownPropValueWarning(["hidden", "default"], "options.layout.cvcIcon")
+      Default
+    }
+  }
+}
+
+let getCardBrandIconStyle = (str): cardBrandIconStyle => {
+  switch str {
+  | "hidden" => Hidden
+  | "animated" => Animated
+  | "hideGeneric" => HideGeneric
+  | "" | "standard" => Standard
+  | str => {
+      str->unknownPropValueWarning(
+        ["standard", "hidden", "animated", "hideGeneric"],
+        "options.layout.cardBrandIcon",
+      )
+      Standard
     }
   }
 }
@@ -954,6 +987,8 @@ let getLayoutValues = (val, logger) => {
           "displayOneClickPaymentMethodsOnTop",
           "showCheckedIconForSelection",
           "separatorText",
+          "cvcIcon",
+          "cardBrandIcon",
         ],
         json,
         "options.layout",
@@ -983,6 +1018,13 @@ let getLayoutValues = (val, logger) => {
           ~logger,
         ),
         separatorText: getOptionString(json, "separatorText"),
+        cvcIcon: getWarningString(json, "cvcIcon", "", ~logger)->getCvcIconStyle,
+        cardBrandIcon: getWarningString(
+          json,
+          "cardBrandIcon",
+          "standard",
+          ~logger,
+        )->getCardBrandIconStyle,
       }
     })
   | _ => StringLayout(Tabs)

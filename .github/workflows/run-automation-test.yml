@@ -15,6 +15,11 @@ jobs:
   cypress:
     runs-on: ubuntu-latest
     environment: Testing
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        category: [01-sdk-core, 02-cards, 03-bank-transfers, 04-alternative-payments, 05-external-3ds]
 
     env:
       HS_Prof_Id: ${{ secrets.PROFILE_ID }}
@@ -60,10 +65,11 @@ jobs:
           echo "Demo App started"
         # Builds the project and starts both the Hyperswitch Web and Demo App servers in the background
 
-      - name: Run Cypress
+      - name: Run Cypress Tests (${{ matrix.category }})
         uses: cypress-io/github-action@v6
         with:
           working-directory: ./cypress-tests
+          spec: cypress/e2e/${{ matrix.category }}/**/*.cy.ts
         env:
           CYPRESS_HYPERSWITCH_PUBLISHABLE_KEY: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
           CYPRESS_HYPERSWITCH_SECRET_KEY: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
