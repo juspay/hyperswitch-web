@@ -5,7 +5,10 @@ let make = (~fieldConfig: fieldConfig) => {
   let fieldRef = React.useRef(Nullable.null)
   let path = fieldConfig.confirmRequestWritePath
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
+  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
+    ~field=fieldConfig,
+    ~localeObject=localeString,
+  )
   let maxLength = fieldConfig.maxInputLength
 
   let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
@@ -15,8 +18,16 @@ let make = (~fieldConfig: fieldConfig) => {
   let value = field.input.value->Option.getOr("")
   let touched = field.meta.touched
   let invalid = field.meta.invalid
-  let isValid = if touched { Some(!invalid) } else { None }
-  let errorString = if touched && invalid { field.meta.error->Option.getOr("") } else { "" }
+  let isValid = if touched {
+    Some(!invalid)
+  } else {
+    None
+  }
+  let errorString = if touched && invalid {
+    field.meta.error->Option.getOr("")
+  } else {
+    ""
+  }
 
   <PaymentInputField
     fieldName={label}

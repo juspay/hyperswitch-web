@@ -8,8 +8,7 @@ let make = (
 ) => {
   let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {label} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
-  let validate =
-    DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
+  let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
   let field = ReactFinalForm.useField(
     fieldConfig.confirmRequestWritePath,
     ~config={validate, initialValue: Some(initialValue)},

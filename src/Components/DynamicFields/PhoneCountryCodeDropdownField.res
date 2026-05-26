@@ -3,14 +3,11 @@ open SuperpositionTypes
 let getPhoneCode = val => val->String.split("#")->Array.get(1)->Option.getOr("")
 
 @react.component
-let make = (
-  ~fieldConfig: fieldConfig,
-) => {
+let make = (~fieldConfig: fieldConfig) => {
   open Utils
   let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {label} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
-  let validate =
-    DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
+  let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
   let countryAndCodeList =
     phoneNumberJson
@@ -18,8 +15,9 @@ let make = (
     ->Option.getOr(Dict.make())
     ->getArray("countries")
 
-  let phoneNumberCodeOptions: array<DropdownField.optionType> =
-    countryAndCodeList->Array.reduce([], (acc, countryObj) => {
+  let phoneNumberCodeOptions: array<DropdownField.optionType> = countryAndCodeList->Array.reduce(
+    [],
+    (acc, countryObj) => {
       let countryDict = countryObj->getDictFromJson
       let flag = countryDict->getString("country_flag", "")
       let code = countryDict->getString("phone_number_code", "")
@@ -31,7 +29,8 @@ let make = (
       }
       acc->Array.push(opt)
       acc
-    })
+    },
+  )
 
   let defaultCountry = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
   let firstOptionValue =
@@ -64,9 +63,7 @@ let make = (
       phoneNumberCodeOptions
       ->Array.find(ele => ele.value === valueDropDown)
       ->Option.getOr(DropdownField.defaultValue)
-    setDisplayValue(_ =>
-      found.displayValue->Option.getOr(found.label->Option.getOr(found.value))
-    )
+    setDisplayValue(_ => found.displayValue->Option.getOr(found.label->Option.getOr(found.value)))
     None
   }, [phoneNumberCodeOptions])
 

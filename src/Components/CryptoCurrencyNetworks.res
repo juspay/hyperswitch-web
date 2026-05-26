@@ -1,16 +1,18 @@
 open SuperpositionTypes
 
 @react.component
-let make = (
-  ~networkField: fieldConfig,
-  ~currencyField: fieldConfig,
-) => {
+let make = (~networkField: fieldConfig, ~currencyField: fieldConfig) => {
   let networkPath = networkField.confirmRequestWritePath
   let currencyFieldPath = currencyField.confirmRequestWritePath
   let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {label} = DynamicFieldsUtils.resolveFieldTexts(~field=networkField, ~localeObject=localeString)
-  let validate =
-    DynamicFieldsUtils.resolveValidator(~field=networkField, ~localeObject=localeString)
+  let {label} = DynamicFieldsUtils.resolveFieldTexts(
+    ~field=networkField,
+    ~localeObject=localeString,
+  )
+  let validate = DynamicFieldsUtils.resolveValidator(
+    ~field=networkField,
+    ~localeObject=localeString,
+  )
 
   let currencyFieldProps = ReactFinalForm.useField(currencyFieldPath)
   let currencyVal = currencyFieldProps.input.value->Option.getOr("")
