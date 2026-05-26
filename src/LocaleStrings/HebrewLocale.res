@@ -163,6 +163,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `מפתח Pix`,
   sourceBankAccountIdEmptyText: `מזהה חשבון בנק מקור לא יכול להיות ריק`,
   invalidCardHolderNameError: `שם בעל הכרטיס לא יכול לכלול ספרות`,
+  cardHolderNameRequiredText: `נדרש שם בעל הכרטיס`,
+  lastNameRequiredText: `שם משפחה נדרש`,
   invalidNickNameError: `הכינוי לא יכול לכלול יותר משתי ספרות`,
   expiry: `תְפוּגָה`,
   payment_methods_afterpay_clearpay: `אפטר פיי`,
