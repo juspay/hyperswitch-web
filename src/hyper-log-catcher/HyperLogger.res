@@ -159,7 +159,11 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
   let sdkAuthorization = ref(None)
 
   let setSdkAuthorization = (value: string) => {
-    sdkAuthorization := if value === "" {None} else {Some(value)}
+    sdkAuthorization := if value === "" {
+        None
+      } else {
+        Some(value)
+      }
   }
 
   let getPaymentIdForLog = () =>

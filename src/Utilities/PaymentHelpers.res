@@ -1170,7 +1170,10 @@ let useCompleteAuthorizeHandler = () => {
     switch clientSecret {
     | Some(cs) =>
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
-      let uri = `${endpoint}/payments/${Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret=cs, ~sdkAuthorization)}/complete_authorize`
+      let uri = `${endpoint}/payments/${Utils.getPaymentIdOrExtractFromSdkAuth(
+          ~clientSecret=cs,
+          ~sdkAuthorization,
+        )}/complete_authorize`
 
       let finalHeaders = switch headers {
       | Some(h) => h
@@ -1413,7 +1416,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~isCallbackUsedVal,
             ~componentName,
             ~redirectionFlags,
-        ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
+            ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
           )
           ->then(val => {
             intentCallback(val)

@@ -1963,7 +1963,7 @@ let getSdkAuthorizationData = sdkAuthorization => {
     ->Window.atob
     ->String.split(",")
 
-  let getValueFromArrayOfKeys = (~keyName) => {
+  let getValueFromArrayOfKeys = keyName => {
     let prefix = keyName ++ "="
     let keyStr = arrOfKeys->Array.find(key => key->String.startsWith(prefix))
     keyStr->Option.flatMap(key => {
@@ -1978,12 +1978,12 @@ let getSdkAuthorizationData = sdkAuthorization => {
   }
 
   {
-    publishableKey: getValueFromArrayOfKeys(~keyName="publishable_key"),
-    clientSecret: getValueFromArrayOfKeys(~keyName="client_secret"),
-    customerId: getValueFromArrayOfKeys(~keyName="customer_id"),
-    profileId: getValueFromArrayOfKeys(~keyName="profile_id"),
-    pmSessionId: getValueFromArrayOfKeys(~keyName="payment_method_session_id"),
-    paymentId: getValueFromArrayOfKeys(~keyName="payment_id"),
+    publishableKey: getValueFromArrayOfKeys("publishable_key"),
+    clientSecret: getValueFromArrayOfKeys("client_secret"),
+    customerId: getValueFromArrayOfKeys("customer_id"),
+    profileId: getValueFromArrayOfKeys("profile_id"),
+    pmSessionId: getValueFromArrayOfKeys("payment_method_session_id"),
+    paymentId: getValueFromArrayOfKeys("payment_id"),
   }
 }
 
