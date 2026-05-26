@@ -1,22 +1,25 @@
 open SuperpositionTypes
 
 @react.component
-let make = (
-  ~field: fieldConfig,
-  ~countryFieldPath: string,
-) => {
+let make = (~field: fieldConfig, ~countryFieldPath: string) => {
   let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {label} = DynamicFieldsUtils.resolveFieldTexts(~field, ~localeObject=localeString)
-  let validate =
-    DynamicFieldsUtils.resolveValidator(~field, ~localeObject=localeString)
+  let validate = DynamicFieldsUtils.resolveValidator(~field, ~localeObject=localeString)
   let defaultCountryIso = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
   let countryFieldProps = ReactFinalForm.useField(countryFieldPath)
   let rffCountryIso = countryFieldProps.input.value->Option.getOr("")
-  let countryIso = if rffCountryIso !== "" { rffCountryIso } else { defaultCountryIso }
+  let countryIso = if rffCountryIso !== "" {
+    rffCountryIso
+  } else {
+    defaultCountryIso
+  }
   let countryDisplayName = Utils.getCountryNameFromCode(countryIso)
 
-  let stateDisplayNames =
-    Utils.getStateNames({value: countryDisplayName, isValid: None, errorString: ""})
+  let stateDisplayNames = Utils.getStateNames({
+    value: countryDisplayName,
+    isValid: None,
+    errorString: "",
+  })
 
   let stateOptions = stateDisplayNames->DropdownField.updateArrayOfStringToOptionsTypeArray
   let field = ReactFinalForm.useField(field.confirmRequestWritePath, ~config={validate: validate})

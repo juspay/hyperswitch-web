@@ -23,7 +23,10 @@ let years = Array.fromInitializer(~length=currentYear - startYear, i => currentY
 let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
   let path = fieldConfig.confirmRequestWritePath
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
+  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
+    ~field=fieldConfig,
+    ~localeObject=localeString,
+  )
   let dateFormat = fieldConfig.inputFormatPattern->Option.getOr("dd-MM-yyyy")
   let (selectedDate, setSelectedDate) = React.useState(() => Nullable.null)
 
