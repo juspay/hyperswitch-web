@@ -808,6 +808,24 @@ let getCountryCode = country => {
   ->Option.getOr(Country.defaultTimeZone)
 }
 
+// Reverse of getCountryCode: given an ISO Alpha-2 code returns the country display name.
+// Falls back to the code itself if not found.
+let getCountryNameFromCode = (isoCode: string): string => {
+  CountryStateDataRefs.countryDataRef.contents
+  ->Array.find(item => item.isoAlpha2 == isoCode)
+  ->Option.map(item => item.countryName)
+  ->Option.getOr(isoCode)
+}
+
+// Given an array of ISO Alpha-2 codes, returns display names for codes that exist
+// in countryDataRef. Codes with no match are excluded (e.g. "AC").
+let isoOptionsToCountryNames = (isoOptions: array<string>): array<string> =>
+  isoOptions->Array.filterMap(iso =>
+    CountryStateDataRefs.countryDataRef.contents
+    ->Array.find(item => item.isoAlpha2 === iso)
+    ->Option.map(item => item.countryName)
+  )
+
 let getStateNames = (country: RecoilAtomTypes.field) => {
   let options =
     CountryStateDataRefs.stateDataRef.contents
@@ -1664,6 +1682,23 @@ let getStateCodeFromStateName = (stateName: string, countryCode: string): string
 
   stateCode->Option.getOr(stateName)
 }
+
+let getStateNameFromCode = (stateCode: string, countryIso: string): string => {
+  let countryStates =
+    CountryStateDataRefs.stateDataRef.contents
+    ->getDictFromJson
+    ->getOptionalArrayFromDict(countryIso)
+
+  countryStates
+  ->Option.flatMap(states =>
+    states->Array.find(item => {
+      item->getDictFromJson->getString("code", "") === stateCode
+    })
+  )
+  ->Option.map(item => item->getDictFromJson->getString("value", ""))
+  ->Option.getOr(stateCode)
+}
+
 let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")
 
 let compareLogic = (a, b) => {
