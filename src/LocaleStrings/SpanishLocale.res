@@ -163,6 +163,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Clave Pix`,
   sourceBankAccountIdEmptyText: `El ID de la cuenta bancaria de origen no puede estar vacío`,
   invalidCardHolderNameError: `El nombre del titular de la tarjeta no puede contener dígitos`,
+  cardHolderNameRequiredText: `Se requiere el nombre del titular de la tarjeta`,
+  lastNameRequiredText: `Apellido Necesario`,
   invalidNickNameError: `El apodo no puede contener más de 2 dígitos`,
   expiry: `expiración`,
   payment_methods_afterpay_clearpay: `After Pay`,

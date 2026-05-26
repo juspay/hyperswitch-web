@@ -162,6 +162,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix 密钥`,
   sourceBankAccountIdEmptyText: `源银行账户ID不能为空`,
   invalidCardHolderNameError: `持卡人姓名不能包含数字`,
+  cardHolderNameRequiredText: `持卡人姓名（必填）`,
+  lastNameRequiredText: `需要姓氏`,
   invalidNickNameError: `昵称不能包含超过2个数字`,
   expiry: `到期`,
   payment_methods_afterpay_clearpay: `After Pay`,
