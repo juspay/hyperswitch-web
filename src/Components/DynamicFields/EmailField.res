@@ -1,12 +1,12 @@
 open SuperpositionTypes
 
 @react.component
-let make = (
-  ~fieldConfig: fieldConfig,
-  ~paths: array<string>,
-) => {
+let make = (~fieldConfig: fieldConfig, ~paths: array<string>) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
+  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
+    ~field=fieldConfig,
+    ~localeObject=localeString,
+  )
   let autocomplete = fieldConfig.htmlAutocompleteAttribute->Option.getOr("email")
   let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
@@ -20,9 +20,16 @@ let make = (
     let value = primaryField.input.value->Option.getOr("")
     let touched = primaryField.meta.touched
     let invalid = primaryField.meta.invalid
-    let isValid = if touched { Some(!invalid) } else { None }
-    let errorString =
-      if touched && invalid { primaryField.meta.error->Option.getOr("") } else { "" }
+    let isValid = if touched {
+      Some(!invalid)
+    } else {
+      None
+    }
+    let errorString = if touched && invalid {
+      primaryField.meta.error->Option.getOr("")
+    } else {
+      ""
+    }
 
     <PaymentInputField
       fieldName={label}

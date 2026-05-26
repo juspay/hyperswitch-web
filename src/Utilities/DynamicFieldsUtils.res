@@ -171,8 +171,7 @@ let lookupLocaleKey = (key: string, locale: LocaleStringTypes.localeStrings): op
     Some(locale.payment_methods_online_banking_czech_republic)
   | "payment_methods_online_banking_slovakia" =>
     Some(locale.payment_methods_online_banking_slovakia)
-  | "payment_methods_online_banking_finland" =>
-    Some(locale.payment_methods_online_banking_finland)
+  | "payment_methods_online_banking_finland" => Some(locale.payment_methods_online_banking_finland)
   | "payment_methods_online_banking_poland" => Some(locale.payment_methods_online_banking_poland)
   | "payment_methods_ideal" => Some(locale.payment_methods_ideal)
   | "payment_methods_ban_connect" => Some(locale.payment_methods_ban_connect)
@@ -263,11 +262,9 @@ let resolveValidator = (
   let requiredRule = field.isRequired ? [Validation.Required] : []
 
   let semanticRule = switch field.validationRuleType {
-  | Some("email") => [Validation.Email]
   | Some("phone") => [Validation.Phone]
   | Some("iban") => [Validation.IBAN]
   | Some("routing_number") => [Validation.RoutingNumber]
-  | Some("vpa_id") => [Validation.VpaId]
   | Some("blik_code") => [Validation.BlikCode]
   | Some("gift_card_number") => [Validation.GiftCardNumber]
   | Some("gift_card_pin") => [Validation.GiftCardPin]
@@ -345,10 +342,9 @@ let buildSuperpositionBaseContext = (
   | NONE => "non_mandate"
   }
 
-  let collectBilling =
-    paymentMethodListValue.collect_billing_details_from_wallets
-      ? "true"
-      : "false"
+  let collectBilling = paymentMethodListValue.collect_billing_details_from_wallets
+    ? "true"
+    : "false"
   let collectShipping = "false"
 
   let context: SuperpositionTypes.superpositionBaseContext = {

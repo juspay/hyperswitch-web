@@ -59,9 +59,16 @@ let renderSingleField = (
           {(fieldProps: ReactFinalForm.Field.fieldProps) => {
             let {input, meta} = fieldProps
             let value = input.value->Option.getOr("")
-            let isValid = if meta.touched {Some(meta.valid)} else {None}
-            let errorString =
-              if meta.touched && meta.invalid {meta.error->Option.getOr("")} else {""}
+            let isValid = if meta.touched {
+              Some(meta.valid)
+            } else {
+              None
+            }
+            let errorString = if meta.touched && meta.invalid {
+              meta.error->Option.getOr("")
+            } else {
+              ""
+            }
             <PaymentInputField
               fieldName={label}
               value
@@ -91,12 +98,14 @@ let renderSingleField = (
       <EmailField fieldConfig=field paths=allEmailPaths />
     }
 
-  | Date =>
-    <DateOfBirth fieldConfig=field />
+  | Date => <DateOfBirth fieldConfig=field />
 
   | Generic =>
     let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-    let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(~field, ~localeObject=localeString)
+    let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
+      ~field,
+      ~localeObject=localeString,
+    )
     let autocomplete = field.htmlAutocompleteAttribute->Option.getOr("on")
     let validate = DynamicFieldsUtils.resolveValidator(~field, ~localeObject=localeString)
 
@@ -131,8 +140,7 @@ let renderSingleField = (
 
   | Dropdown =>
     if field.confirmRequestWritePath->String.endsWith(".state") {
-      let countryFieldPath =
-        field.confirmRequestWritePath->String.replace(".state", ".country")
+      let countryFieldPath = field.confirmRequestWritePath->String.replace(".state", ".country")
       <StateDropdownField field countryFieldPath />
     } else if field.confirmRequestWritePath->String.endsWith(".country") {
       let isoCodes = field.dropdownOptions->Option.getOr([])
@@ -154,8 +162,7 @@ let renderSingleField = (
         )
       switch currencyField {
       | None => React.null
-      | Some(currencyField) =>
-        <CryptoCurrencyNetworks networkField=field currencyField />
+      | Some(currencyField) => <CryptoCurrencyNetworks networkField=field currencyField />
       }
     } else {
       let options =
@@ -168,8 +175,7 @@ let renderSingleField = (
       }
     }
 
-  | Phone =>
-    <PhoneField fieldConfig=field />
+  | Phone => <PhoneField fieldConfig=field />
   }
 }
 
@@ -187,13 +193,7 @@ let makeRow = (
   | 1 =>
     switch fields->Array.get(0) {
     | None => React.null
-    | Some(field) =>
-      renderSingleField(
-        field,
-        ~allFields,
-        ~fieldRef,
-        ~globalEmailPaths?,
-      )
+    | Some(field) => renderSingleField(field, ~allFields, ~fieldRef, ~globalEmailPaths?)
     }
   | _ =>
     <div className="flex gap-4 w-full">
@@ -203,12 +203,7 @@ let makeRow = (
         <div
           key={field.confirmRequestWritePath ++ "-" ++ i->Int.toString}
           style={flexGrow: flex->Float.toString, flexShrink: "1", flexBasis: "0%"}>
-          {renderSingleField(
-            field,
-            ~allFields,
-            ~fieldRef,
-            ~globalEmailPaths?,
-          )}
+          {renderSingleField(field, ~allFields, ~fieldRef, ~globalEmailPaths?)}
         </div>
       })
       ->React.array}
