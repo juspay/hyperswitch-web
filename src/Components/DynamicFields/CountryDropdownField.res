@@ -1,14 +1,10 @@
 open SuperpositionTypes
 
 @react.component
-let make = (
-  ~fieldConfig: fieldConfig,
-  ~options: array<DropdownField.optionType>,
-) => {
+let make = (~fieldConfig: fieldConfig, ~options: array<DropdownField.optionType>) => {
   let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {label} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
-  let validate =
-    DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
+  let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
   let defaultCountry = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
   let firstOption = options->Array.get(0)->Option.map(opt => opt.value)->Option.getOr("")
   let initialCountry = defaultCountry !== "" ? defaultCountry : firstOption

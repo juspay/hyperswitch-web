@@ -1,10 +1,7 @@
 open SuperpositionTypes
 
 @react.component
-let make = (
-  ~firstNameField: fieldConfig,
-  ~lastNameField: fieldConfig,
-) => {
+let make = (~firstNameField: fieldConfig, ~lastNameField: fieldConfig) => {
   let fieldRef = React.useRef(Nullable.null)
   let firstNamePath = firstNameField.confirmRequestWritePath
   let lastNamePath = lastNameField.confirmRequestWritePath
@@ -23,14 +20,8 @@ let make = (
     ~localeObject=localeString,
   )
 
-  let firstField = ReactFinalForm.useField(
-    firstNamePath,
-    ~config={validate: firstValidator},
-  )
-  let lastField = ReactFinalForm.useField(
-    lastNamePath,
-    ~config={validate: lastValidator},
-  )
+  let firstField = ReactFinalForm.useField(firstNamePath, ~config={validate: firstValidator})
+  let lastField = ReactFinalForm.useField(lastNamePath, ~config={validate: lastValidator})
 
   let (inputValue, setInputValue) = React.useState(_ => "")
 
@@ -49,19 +40,18 @@ let make = (
     }
   }
 
-  let errorString =
-    if (
-      (firstField.meta.touched && !firstField.meta.active) ||
-        (lastField.meta.touched && !lastField.meta.active)
-    ) {
-      switch (firstField.meta.error, lastField.meta.error) {
-      | (Some(err), _) => err
-      | (_, Some(err)) => err
-      | _ => ""
-      }
-    } else {
-      ""
+  let errorString = if (
+    (firstField.meta.touched && !firstField.meta.active) ||
+      (lastField.meta.touched && !lastField.meta.active)
+  ) {
+    switch (firstField.meta.error, lastField.meta.error) {
+    | (Some(err), _) => err
+    | (_, Some(err)) => err
+    | _ => ""
     }
+  } else {
+    ""
+  }
 
   let isValid =
     firstField.meta.valid &&
