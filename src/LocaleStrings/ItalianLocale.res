@@ -260,5 +260,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showMore: "Mostra di più",
   showLess: "Mostra meno",
   refreshingText: "Aggiornamento...",
-  paymentDetailsBeingCheckedText: "Payment details are being checked. Please wait",
+  paymentDetailsBeingCheckedText: "I dettagli del pagamento sono in fase di verifica. Attendere prego",
 }
