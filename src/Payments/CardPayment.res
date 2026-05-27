@@ -412,7 +412,10 @@ let make = (
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         } else if cardEligibilityError->Option.isSome {
-          let msg = EligibilityHelpers.getCardEligibilityErrorText(~cardEligibilityError, ~localeString)
+          let msg = EligibilityHelpers.getCardEligibilityErrorText(
+            ~cardEligibilityError,
+            ~localeString,
+          )
           setCardError(_ => msg)
           setUserError(msg)
         } else if isCardSupported->Option.getOr(true)->not {
@@ -481,6 +484,12 @@ let make = (
   | None => ""
   }
   let accordionMarginClass = layoutClass.\"type" === Accordion && isVault === None ? "mt-4" : ""
+
+  let surchargeAmount =
+    eligibilitySurchargeDetails
+    ->Option.map(s => s.displayTotalSurchargeAmount->Float.toString)
+    ->Option.getOr("")
+
   <div className="animate-slowShow">
     <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <div
@@ -613,19 +622,15 @@ let make = (
             setErrorString=setInstallmentsError
           />
           <RenderIf condition={eligibilitySurchargeDetails->Option.isSome}>
-            {switch eligibilitySurchargeDetails {
-            | Some(surcharge) =>
-              <div className="flex items-baseline text-xs mt-2">
-                <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
-                <div className="text-left text-gray-400">
-                  {localeString.surchargeMsgAmountForCard(
-                    paymentMethodListValue.currency,
-                    surcharge.displayTotalSurchargeAmount->Float.toString,
-                  )}
-                </div>
+            <div className="flex items-baseline text-xs mt-2">
+              <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
+              <div className="text-left text-gray-400">
+                {localeString.surchargeMsgAmountForCard(
+                  paymentMethodListValue.currency,
+                  surchargeAmount,
+                )}
               </div>
-            | None => React.null
-            }}
+            </div>
           </RenderIf>
           <RenderIf condition={isEligibilityPending && paymentMethodListValue.should_block_confirm}>
             <div className="flex items-baseline text-xs mt-2">

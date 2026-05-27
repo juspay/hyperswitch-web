@@ -115,8 +115,16 @@ let performEligibilityCheck = async (
     setEligibilitySurchargeDetails(_ => surchargeDetails)
     setIsEligibilityPending(_ => false)
   } catch {
-  | _ =>
-    logger.setLogError(~value=errorLogMessage, ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL)
+  | exn =>
+    logger.setLogError(
+      ~value={
+        "message": errorLogMessage,
+        "error": exn->Identity.anyTypeToJson->JSON.stringify,
+      }
+      ->JSON.stringifyAny
+      ->Option.getOr(""),
+      ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
+    )
     setEligibilityError->Option.forEach(setter => setter(_ => None))
     setIsEligibilityPending(_ => false)
   }

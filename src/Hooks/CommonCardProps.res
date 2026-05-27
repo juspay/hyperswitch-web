@@ -133,8 +133,8 @@ let useCardForm = (~logger, ~paymentType) => {
       ~setEligibilitySurchargeDetails,
       ~setEligibilityError=Some(setCardEligibilityError),
       ~errorLogMessage="Card payment eligibility check failed",
-      ~fetchEligibility={(~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~bodyArr, ~sdkAuthorization, ~endpoint, ~signal) =>
-        PaymentHelpers.fetchPaymentMethodEligibility(
+      ~fetchEligibility={
+        (
           ~clientSecret,
           ~publishableKey,
           ~logger,
@@ -143,7 +143,17 @@ let useCardForm = (~logger, ~paymentType) => {
           ~sdkAuthorization,
           ~endpoint,
           ~signal,
-        )
+        ) =>
+          PaymentHelpers.fetchPaymentMethodEligibility(
+            ~clientSecret,
+            ~publishableKey,
+            ~logger,
+            ~customPodUri,
+            ~bodyArr,
+            ~sdkAuthorization,
+            ~endpoint,
+            ~signal,
+          )
       },
     )
   }

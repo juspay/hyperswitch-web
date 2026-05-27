@@ -198,8 +198,8 @@ let make = (
         ~setEligibilitySurchargeDetails,
         ~setEligibilityError=None,
         ~errorLogMessage="Saved card payment eligibility check failed",
-        ~fetchEligibility={(~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~bodyArr, ~sdkAuthorization, ~endpoint, ~signal) =>
-          PaymentHelpers.fetchPaymentMethodEligibility(
+        ~fetchEligibility={
+          (
             ~clientSecret,
             ~publishableKey,
             ~logger,
@@ -208,15 +208,39 @@ let make = (
             ~sdkAuthorization,
             ~endpoint,
             ~signal,
-          )
+          ) =>
+            PaymentHelpers.fetchPaymentMethodEligibility(
+              ~clientSecret,
+              ~publishableKey,
+              ~logger,
+              ~customPodUri,
+              ~bodyArr,
+              ~sdkAuthorization,
+              ~endpoint,
+              ~signal,
+            )
         },
       )->ignore
     } else if !isCardPaymentMethod || paymentTokenVal === "" {
       setEligibilitySurchargeDetails(_ => None)
       setIsEligibilityPending(_ => false)
     }
-    None
-  }, (paymentTokenVal, shouldDoEligibility, isCardPaymentMethod))
+    Some(
+      () => {
+        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+      },
+    )
+  }, (
+    paymentTokenVal,
+    shouldDoEligibility,
+    isCardPaymentMethod,
+    clientSecret,
+    publishableKey,
+    sdkAuthorization,
+    endpoint,
+    customPodUri,
+    paymentMethodListValue.should_block_confirm,
+  ))
 
   let complete =
     areRequiredFieldsValid &&
