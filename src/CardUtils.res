@@ -28,6 +28,8 @@ type cardProps = {
   maxCardLength: int,
   cardBrand: string,
   cardEligibilityError: option<string>,
+  eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  isEligibilityPending: bool,
 }
 
 let useDefaultCardProps = () => {
@@ -46,6 +48,8 @@ let useDefaultCardProps = () => {
     maxCardLength: 0,
     cardBrand: "",
     cardEligibilityError: None,
+    eligibilitySurchargeDetails: None,
+    isEligibilityPending: false,
   }
 }
 

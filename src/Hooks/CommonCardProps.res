@@ -12,6 +12,8 @@ let useCardForm = (~logger, ~paymentType) => {
   let {clientSecret, publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let (cardEligibilityError, setCardEligibilityError) = React.useState(_ => None)
+  let (eligibilitySurchargeDetails, setEligibilitySurchargeDetails) = React.useState(_ => None)
+  let (isEligibilityPending, setIsEligibilityPending) = React.useState(_ => false)
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -117,42 +119,21 @@ let useCardForm = (~logger, ~paymentType) => {
   })
 
   let checkCardEligibility = async (~cardNumber) => {
-    eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
-
-    let controller = Fetch.AbortController.make()
-    eligibilityControllerRef.current = Some(controller)
-    let signal = Fetch.AbortController.signal(controller)
-
-    switch clientSecret {
-    | Some(clientSecret) =>
-      try {
-        let json = await PaymentHelpers.fetchPaymentMethodEligibility(
-          ~clientSecret,
-          ~publishableKey,
-          ~logger,
-          ~customPodUri,
-          ~bodyArr=PaymentBody.cardPaymentMethodEligibilityBody(~cardNumber),
-          ~sdkAuthorization,
-          ~endpoint,
-          ~signal,
-        )
-        let eligibilityError = PaymentMethodsRecord.parseEligibilityResponse(json)
-        setCardEligibilityError(_ => eligibilityError)
-      } catch {
-      | exn =>
-        logger.setLogError(
-          ~value={
-            "message": "Card payment eligibility check failed",
-            "error": exn->Identity.anyTypeToJson->JSON.stringify,
-          }
-          ->JSON.stringifyAny
-          ->Option.getOr(""),
-          ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
-        )
-        setCardEligibilityError(_ => None)
-      }
-    | None => ()
-    }
+    await EligibilityHelpers.startEligibilityCheck(
+      ~controllerRef=eligibilityControllerRef,
+      ~clientSecret,
+      ~publishableKey,
+      ~logger,
+      ~customPodUri,
+      ~bodyArr=PaymentBody.cardPaymentMethodEligibilityBody(~cardNumber),
+      ~sdkAuthorization,
+      ~endpoint,
+      ~shouldBlockConfirm=paymentMethodListValue.should_block_confirm,
+      ~setIsEligibilityPending,
+      ~setEligibilitySurchargeDetails,
+      ~setEligibilityError=Some(setCardEligibilityError),
+      ~errorLogMessage="Card payment eligibility check failed",
+    )
   }
 
   let changeCardNumber = ev => {
@@ -187,9 +168,11 @@ let useCardForm = (~logger, ~paymentType) => {
     if paymentMethodListValue.sdk_next_action === Some("eligibility_check") {
       cancelEligibilityDebounce()
       setCardEligibilityError(_ => None)
+      setEligibilitySurchargeDetails(_ => None)
       if !isCardSupportedAndValid {
         eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
         eligibilityControllerRef.current = None
+        setIsEligibilityPending(_ => false)
       } else {
         startEligibilityDebounce(() => {
           checkCardEligibility(~cardNumber=clearValue)->ignore
@@ -265,6 +248,8 @@ let useCardForm = (~logger, ~paymentType) => {
         setIsExpiryValid(_ => None)
         setIsCVCValid(_ => None)
         setCardEligibilityError(_ => None)
+        setEligibilitySurchargeDetails(_ => None)
+        setIsEligibilityPending(_ => false)
       }
     }
     handleMessage(handleFun, "Error in parsing sent Data")
@@ -324,7 +309,7 @@ let useCardForm = (~logger, ~paymentType) => {
       cardEligibilityError,
     ) {
     | (_, _, _, Some(msg)) =>
-      PaymentHelpers.getCardEligibilityErrorText(~cardEligibilityError=Some(msg), ~localeString)
+      EligibilityHelpers.getCardEligibilityErrorText(~cardEligibilityError=Some(msg), ~localeString)
     | (_, _, true, None) => ""
     | (true, true, _, None) => ""
     | (true, _, _, None) => localeString.inValidCardErrorText
@@ -383,6 +368,8 @@ let useCardForm = (~logger, ~paymentType) => {
     maxCardLength,
     cardBrand,
     cardEligibilityError,
+    eligibilitySurchargeDetails,
+    isEligibilityPending,
   }
 
   let expiryProps: CardUtils.expiryProps = {

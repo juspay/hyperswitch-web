@@ -53,6 +53,8 @@ let make = (
     maxCardLength,
     cardBrand,
     cardEligibilityError,
+    eligibilitySurchargeDetails,
+    isEligibilityPending,
   } = cardProps
 
   let {
@@ -222,7 +224,8 @@ let make = (
         isNicknameValid &&
         areRequiredFieldsValid &&
         cardEligibilityError->Option.isNone &&
-        isInstallmentValid
+        isInstallmentValid &&
+        !isEligibilityPending
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
         let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
@@ -409,7 +412,7 @@ let make = (
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         } else if cardEligibilityError->Option.isSome {
-          let msg = PaymentHelpers.getCardEligibilityErrorText(~cardEligibilityError, ~localeString)
+          let msg = EligibilityHelpers.getCardEligibilityErrorText(~cardEligibilityError, ~localeString)
           setCardError(_ => msg)
           setUserError(msg)
         } else if isCardSupported->Option.getOr(true)->not {
@@ -433,7 +436,9 @@ let make = (
           setUserError(localeString.installmentSelectPlanError)
           setInstallmentsError(_ => localeString.installmentSelectPlanError)
         }
-        if !validFormat {
+        if isEligibilityPending && paymentMethodListValue.should_block_confirm {
+          setUserError(localeString.paymentDetailsBeingCheckedText)
+        } else if !validFormat {
           setUserError(localeString.enterValidDetailsText)
         }
       }
@@ -455,6 +460,8 @@ let make = (
     showInstallments,
     cardEligibilityError,
     sdkAuthorization,
+    isEligibilityPending,
+    eligibilitySurchargeDetails,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -605,6 +612,28 @@ let make = (
             errorString=installmentsError
             setErrorString=setInstallmentsError
           />
+          <RenderIf condition={eligibilitySurchargeDetails->Option.isSome}>
+            {switch eligibilitySurchargeDetails {
+            | Some(surcharge) =>
+              <div className="flex items-baseline text-xs mt-2">
+                <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
+                <div className="text-left text-gray-400">
+                  {localeString.surchargeMsgAmountForCard(
+                    paymentMethodListValue.currency,
+                    surcharge.displayTotalSurchargeAmount->Float.toString,
+                  )}
+                </div>
+              </div>
+            | None => React.null
+            }}
+          </RenderIf>
+          <RenderIf condition={isEligibilityPending && paymentMethodListValue.should_block_confirm}>
+            <div className="flex items-baseline text-xs mt-2">
+              <div className="text-left text-gray-400">
+                {localeString.paymentDetailsBeingCheckedText->React.string}
+              </div>
+            </div>
+          </RenderIf>
         </div>
       </div>
     </RenderIf>

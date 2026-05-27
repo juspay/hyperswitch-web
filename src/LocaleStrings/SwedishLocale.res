@@ -258,4 +258,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showMore: "Visa mer",
   showLess: "Visa mindre",
   refreshingText: "Uppdaterar...",
+  paymentDetailsBeingCheckedText: "Payment details are being checked. Please wait",
 }

@@ -61,6 +61,7 @@ let make = (
   ~setShowInstallments,
   ~installmentsError,
   ~setInstallmentsError,
+  ~eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {
@@ -353,6 +354,27 @@ let make = (
                   paymentMethodType
                   cardBrand={cardBrand->CardUtils.getCardType}
                 />
+                <RenderIf
+                  condition={eligibilitySurchargeDetails->Option.isSome &&
+                    paymentItem.paymentMethod === "card"}>
+                  {switch eligibilitySurchargeDetails {
+                  | Some(surcharge) =>
+                    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+                    let paymentMethodListValue = Recoil.useRecoilValueFromAtom(
+                      PaymentUtils.paymentMethodListValue,
+                    )
+                    <div className="flex items-baseline text-xs mt-2 ml-1">
+                      <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
+                      <div className="text-left text-gray-400">
+                        {localeString.surchargeMsgAmountForCard(
+                          paymentMethodListValue.currency,
+                          surcharge.displayTotalSurchargeAmount->Float.toString,
+                        )}
+                      </div>
+                    </div>
+                  | None => React.null
+                  }}
+                </RenderIf>
               </RenderIf>
             </div>
           </div>

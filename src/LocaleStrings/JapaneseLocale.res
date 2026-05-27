@@ -259,4 +259,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showMore: "もっと見る",
   showLess: "表示を減らす",
   refreshingText: "更新中...",
+  paymentDetailsBeingCheckedText: "Payment details are being checked. Please wait",
 }
