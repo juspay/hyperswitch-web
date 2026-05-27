@@ -6,6 +6,7 @@ let cvcWidgetNotFoundErrorType = "cvc_widget_not_found"
 let cvcValidationErrorType = "cvc_validation"
 
 let getCustomerSavedPaymentMethods = (
+  ~options: option<JSON.t>,
   ~clientSecretRef: ref<string>,
   ~publishableKey,
   ~endpoint,
@@ -19,6 +20,11 @@ let getCustomerSavedPaymentMethods = (
   open ApplePayTypes
   open GooglePayType
   let applePaySessionRef = ref(Nullable.null)
+  let hiddenPaymentMethods =
+    options
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.getOr(Dict.make())
+    ->getStrArray("hiddenPaymentMethods")
 
   PaymentHelpers.fetchCustomerPaymentMethodList(
     ~clientSecret=clientSecretRef.contents,
@@ -30,11 +36,25 @@ let getCustomerSavedPaymentMethods = (
     ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
   )
   ->then(customerDetails => {
-    let gPayClient = google(
-      {
-        "environment": publishableKey->String.startsWith("pk_prd_") ? "PRODUCTION" : "TEST",
-      }->Identity.anyTypeToJson,
-    )
+    let gPayClientOpt = try {
+      Some(
+        google(
+          {
+            "environment": publishableKey->String.startsWith("pk_prd_") ? "PRODUCTION" : "TEST",
+          }->Identity.anyTypeToJson,
+        ),
+      )
+    } catch {
+    | err =>
+      logger.setLogError(
+        ~value=`ERROR DURING LOADING GOOGLE PAY CLIENT - ${err
+          ->formatException
+          ->JSON.stringify}`,
+        ~eventName=GOOGLE_PAY_SCRIPT,
+        ~paymentMethod="GOOGLE_PAY",
+      )
+      None
+    }
 
     let customerDetailsDict = customerDetails->JSON.Decode.object->Option.getOr(Dict.make())
     let (customerPaymentMethods, isGuestCustomer) =
@@ -43,18 +63,23 @@ let getCustomerSavedPaymentMethods = (
     customerPaymentMethods->Array.sort((a, b) => compareLogic(a.lastUsedAt, b.lastUsedAt))
 
     let customerPaymentMethodsRef = ref(customerPaymentMethods)
+
+    customerPaymentMethodsRef :=
+      customerPaymentMethodsRef.contents->PaymentUtils.filterSavedMethodsByHiddenList(
+        ~hiddenPaymentMethods,
+      )
     let applePayTokenRef = ref(defaultHeadlessApplePayToken)
     let googlePayTokenRef = ref(JSON.Encode.null)
 
     let isApplePayPresent =
-      customerPaymentMethods
+      customerPaymentMethodsRef.contents
       ->Array.find(customerPaymentMethod =>
         customerPaymentMethod.paymentMethodType === Some("apple_pay")
       )
       ->Option.isSome
 
     let isGooglePayPresent =
-      customerPaymentMethods
+      customerPaymentMethodsRef.contents
       ->Array.find(customerPaymentMethod =>
         customerPaymentMethod.paymentMethodType === Some("google_pay")
       )
@@ -69,15 +94,16 @@ let getCustomerSavedPaymentMethods = (
     | _ => false
     }
 
-    let customerDefaultPaymentMethod =
-      customerPaymentMethods
+    let customerDefaultPaymentMethodRef = ref(
+      customerPaymentMethodsRef.contents
       ->Array.filter(customerPaymentMethod => {
         customerPaymentMethod.defaultPaymentMethodSet
       })
-      ->Array.get(0)
+      ->Array.get(0),
+    )
 
     let getCustomerDefaultSavedPaymentMethodData = () => {
-      switch customerDefaultPaymentMethod {
+      switch customerDefaultPaymentMethodRef.contents {
       | Some(defaultPaymentMethod) => defaultPaymentMethod->Identity.anyTypeToJson
       | None =>
         handleFailureResponse(
@@ -237,7 +263,7 @@ let getCustomerSavedPaymentMethods = (
       if isUpdateIntentInProgress.contents {
         UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
       } else {
-        switch customerDefaultPaymentMethod {
+        switch customerDefaultPaymentMethodRef.contents {
         | Some(defaultPaymentMethod) => {
             let paymentToken = defaultPaymentMethod.paymentToken
             let paymentMethod = defaultPaymentMethod.paymentMethod
@@ -335,54 +361,68 @@ let getCustomerSavedPaymentMethods = (
       lastUsedPaymentMethod: PaymentType.customerMethods,
       payload,
     ) => {
-      let paymentDataRequest = googlePayTokenRef.contents
+      switch gPayClientOpt {
+      | Some(client) =>
+        let paymentDataRequest = googlePayTokenRef.contents
 
-      gPayClient.loadPaymentData(paymentDataRequest)
-      ->then(json => {
-        let metadata = json->Identity.anyTypeToJson
+        client.loadPaymentData(paymentDataRequest)
+        ->then(json => {
+          let metadata = json->Identity.anyTypeToJson
 
-        let value = "Payment Data Filled: New Payment Method"
-        logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="GOOGLE_PAY")
+          let value = "Payment Data Filled: New Payment Method"
+          logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="GOOGLE_PAY")
 
-        let completeGooglePayPayment = () => {
-          let body = GooglePayHelpers.getGooglePayBodyFromResponse(
-            ~gPayResponse=metadata,
-            ~isGuestCustomer,
-            ~connectors=[],
-            ~isPaymentSession=true,
+          let completeGooglePayPayment = () => {
+            let body = GooglePayHelpers.getGooglePayBodyFromResponse(
+              ~gPayResponse=metadata,
+              ~isGuestCustomer,
+              ~connectors=[],
+              ~isPaymentSession=true,
+            )
+
+            let paymentMethodType = lastUsedPaymentMethod.paymentMethodType->Option.getOr("")
+            let paymentType = paymentMethodType->PaymentHelpers.getPaymentType
+
+            PaymentHelpers.paymentIntentForPaymentSession(
+              ~body,
+              ~paymentType,
+              ~payload,
+              ~publishableKey,
+              ~clientSecret=clientSecretRef.contents,
+              ~logger,
+              ~customPodUri,
+              ~redirectionFlags,
+              ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
+            )
+          }
+
+          completeGooglePayPayment()
+        })
+        ->catch(err => {
+          logger.setLogInfo(
+            ~value=err->Identity.anyTypeToJson->JSON.stringify,
+            ~eventName=GOOGLE_PAY_FLOW,
+            ~paymentMethod="GOOGLE_PAY",
+            ~logType=DEBUG,
           )
 
-          let paymentMethodType = lastUsedPaymentMethod.paymentMethodType->Option.getOr("")
-          let paymentType = paymentMethodType->PaymentHelpers.getPaymentType
-
-          PaymentHelpers.paymentIntentForPaymentSession(
-            ~body,
-            ~paymentType,
-            ~payload,
-            ~publishableKey,
-            ~clientSecret=clientSecretRef.contents,
-            ~logger,
-            ~customPodUri,
-            ~redirectionFlags,
-            ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
-          )
-        }
-
-        completeGooglePayPayment()
-      })
-      ->catch(err => {
+          handleFailureResponse(
+            ~message=err->Identity.anyTypeToJson->JSON.stringify,
+            ~errorType="google_pay",
+          )->resolve
+        })
+      | None =>
         logger.setLogInfo(
-          ~value=err->Identity.anyTypeToJson->JSON.stringify,
+          ~value="GooglePay client unavailable for loadPaymentData",
           ~eventName=GOOGLE_PAY_FLOW,
           ~paymentMethod="GOOGLE_PAY",
           ~logType=DEBUG,
         )
-
         handleFailureResponse(
-          ~message=err->Identity.anyTypeToJson->JSON.stringify,
+          ~message="Google Pay is not available",
           ~errorType="google_pay",
         )->resolve
-      })
+      }
     }
 
     let confirmWithLastUsedPaymentMethod = payload => {
@@ -451,9 +491,15 @@ let getCustomerSavedPaymentMethods = (
         })
 
       customerPaymentMethodsRef := updatedCustomerDetails
+      customerDefaultPaymentMethodRef :=
+        updatedCustomerDetails
+        ->Array.filter(m => m.defaultPaymentMethodSet)
+        ->Array.get(0)
     }
 
-    if (isApplePayPresent && canMakePayments) || isGooglePayPresent {
+    let isGooglePayUsable = isGooglePayPresent && gPayClientOpt->Option.isSome
+
+    if (isApplePayPresent && canMakePayments) || isGooglePayUsable {
       PaymentHelpers.fetchSessions(
         ~clientSecret=clientSecretRef.contents,
         ~publishableKey,
@@ -493,35 +539,39 @@ let getCustomerSavedPaymentMethods = (
           }->Identity.anyTypeToJson,
         )
 
-        let isGooglePayReadyPromise = try {
-          gPayClient.isReadyToPay(payRequest)
-          ->then(
-            res => {
-              let dict = res->getDictFromJson
-              getBool(dict, "result", false)->resolve
-            },
-          )
-          ->catch(
-            err => {
+        let isGooglePayReadyPromise = switch gPayClientOpt {
+        | Some(client) =>
+          try {
+            client.isReadyToPay(payRequest)
+            ->then(
+              res => {
+                let dict = res->getDictFromJson
+                getBool(dict, "result", false)->resolve
+              },
+            )
+            ->catch(
+              err => {
+                logger.setLogInfo(
+                  ~value=err->Identity.anyTypeToJson->JSON.stringify,
+                  ~eventName=GOOGLE_PAY_FLOW,
+                  ~paymentMethod="GOOGLE_PAY",
+                  ~logType=DEBUG,
+                )
+                false->resolve
+              },
+            )
+          } catch {
+          | exn => {
               logger.setLogInfo(
-                ~value=err->Identity.anyTypeToJson->JSON.stringify,
+                ~value=exn->Identity.anyTypeToJson->JSON.stringify,
                 ~eventName=GOOGLE_PAY_FLOW,
                 ~paymentMethod="GOOGLE_PAY",
                 ~logType=DEBUG,
               )
               false->resolve
-            },
-          )
-        } catch {
-        | exn => {
-            logger.setLogInfo(
-              ~value=exn->Identity.anyTypeToJson->JSON.stringify,
-              ~eventName=GOOGLE_PAY_FLOW,
-              ~paymentMethod="GOOGLE_PAY",
-              ~logType=DEBUG,
-            )
-            false->resolve
+            }
           }
+        | None => false->resolve
         }
 
         isGooglePayReadyPromise

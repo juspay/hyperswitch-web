@@ -39,6 +39,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "pay_safe_card",
   "interac",
   "open_banking",
+  "trustly",
   "givex",
 ]
 

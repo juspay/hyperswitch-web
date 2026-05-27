@@ -19,7 +19,13 @@ let getTransactionDetail = dict => {
   }
 }
 
-let handleSamsungPayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly) => {
+let handleSamsungPayClicked = (
+  ~sessionObj,
+  ~componentName,
+  ~iframeId,
+  ~readOnly,
+  ~isSavedMethodsFlow=false,
+) => {
   messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
     ("param", "paymentloader"->JSON.Encode.string),
@@ -31,6 +37,7 @@ let handleSamsungPayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly
     messageParentWindow([
       ("SamsungPayClicked", true->JSON.Encode.bool),
       ("SPayPaymentDataRequest", getTransactionDetail(sessionObj)->Identity.anyTypeToJson),
+      ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
     ])
   }
 }
@@ -65,17 +72,20 @@ let useHandleSamsungPayResponse = (
   ~isWallet=true,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     let handleSamsung = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
-      if dict->Dict.get("samsungPayResponse")->Option.isSome {
+      if (
+        dict->Dict.get("samsungPayResponse")->Option.isSome &&
+          dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
+      ) {
         let metadata = dict->getJsonObjectFromDict("samsungPayResponse")
         let getBody = getSamsungPayBodyFromResponse(~sPayResponse=metadata)
         let body = PaymentBody.samsungPayBody(
@@ -86,6 +96,7 @@ let useHandleSamsungPayResponse = (
           ~isGuestCustomer,
           ~paymentType=paymentMethodListValue.payment_type,
           ~body,
+          ~alwaysSend=options.alwaysSendCustomerAcceptance,
         )
 
         intent(
@@ -107,5 +118,5 @@ let useHandleSamsungPayResponse = (
     }
     Window.addEventListener("message", handleSamsung)
     Some(() => {Window.removeEventListener("message", handleSamsung)})
-  })
+  }, (isSavedMethodsFlow, isManualRetryEnabled, isWallet, sdkAuthorization))
 }

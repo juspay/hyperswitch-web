@@ -43,7 +43,7 @@ type element = {
   update: JSON.t => unit,
   fetchUpdates: unit => promise<JSON.t>,
   create: (string, JSON.t) => paymentElement,
-  updateIntent: (unit => promise<string>) => promise<JSON.t>,
+  updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
 }
 
 type getCustomerSavedPaymentMethods = {
@@ -54,8 +54,8 @@ type getCustomerSavedPaymentMethods = {
 }
 
 type initPaymentSession = {
-  getCustomerSavedPaymentMethods: unit => promise<JSON.t>,
-  updateIntent: (unit => promise<string>) => promise<JSON.t>,
+  getCustomerSavedPaymentMethods: option<JSON.t> => promise<JSON.t>,
+  updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
 }
 
 type isCustomerPresentInput = {email: string}
@@ -183,7 +183,7 @@ let confirmWithLastUsedPaymentMethod = _confirmParams => {
   Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 
-let defaultGetCustomerSavedPaymentMethods = () => {
+let defaultGetCustomerSavedPaymentMethods = (_options: option<JSON.t>) => {
   // TODO: After rescript migration to v11, add this without TAG using enums
   // Promise.resolve({
   //   getCustomerDefaultSavedPaymentMethodData,
@@ -283,4 +283,5 @@ type sdkAuthorizationData = {
   clientSecret: option<string>,
   customerId: option<string>,
   profileId: option<string>,
+  pmSessionId: option<string>,
 }

@@ -26,7 +26,7 @@ let formatSocialSecurityNumber = socialSecurityNumber => {
 let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
@@ -70,7 +70,7 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (socialSecurityNumber, isManualRetryEnabled))
+  }, (socialSecurityNumber, isManualRetryEnabled, sdkAuthorization))
   useSubmitPaymentData(submitCallback)
 
   let changeSocialSecurityNumber = ev => {

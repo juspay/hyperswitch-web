@@ -41,13 +41,14 @@ let make = (
     readOnly,
     savedPaymentMethodsCheckboxCheckedByDefault,
     layout,
+    alwaysSendCustomerAcceptance,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
   )
   let isGuestCustomer = useIsGuestCustomer()
 
-  let {iframeId, clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {iframeId, clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
@@ -174,9 +175,19 @@ let make = (
 
   useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType, ~savedMethod=true)
 
-  GooglePayHelpers.useHandleGooglePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
+  GooglePayHelpers.useHandleGooglePayResponse(
+    ~connectors=[],
+    ~intent,
+    ~isSavedMethodsFlow=true,
+    ~sdkAuthorization,
+  )
 
-  ApplePayHelpers.useHandleApplePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
+  ApplePayHelpers.useHandleApplePayResponse(
+    ~connectors=[],
+    ~intent,
+    ~isSavedMethodsFlow=true,
+    ~sdkAuthorization,
+  )
 
   SamsungPayHelpers.useHandleSamsungPayResponse(~intent, ~isSavedMethodsFlow=true)
 
@@ -184,7 +195,8 @@ let make = (
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
-    let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not || isSaveCardsChecked
+    let isCustomerAcceptanceRequired =
+      alwaysSendCustomerAcceptance || customerMethod.recurringEnabled->not || isSaveCardsChecked
     let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
 
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
@@ -276,6 +288,7 @@ let make = (
               ~componentName,
               ~iframeId,
               ~readOnly,
+              ~isSavedMethodsFlow=true,
             )
           | _ =>
             // TODO - To be replaced with proper error message
@@ -293,6 +306,7 @@ let make = (
               ~sessionObj=optToken,
               ~componentName,
               ~paymentMethodListValue,
+              ~isSavedMethodsFlow=true,
             )
           | _ =>
             // TODO - To be replaced with proper error message
@@ -311,6 +325,7 @@ let make = (
               ~sessionObj=optToken->Option.getOr(JSON.Encode.null)->getDictFromJson,
               ~iframeId,
               ~readOnly,
+              ~isSavedMethodsFlow=true,
             )
           | _ =>
             // TODO - To be replaced with proper error message
@@ -362,6 +377,7 @@ let make = (
     isManualRetryEnabled,
     selectedInstallmentPlan,
     showInstallments,
+    sdkAuthorization,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -391,14 +407,15 @@ let make = (
     } else {
       <RenderIf condition=showSavedCards> {bottomElement} </RenderIf>
     }}
-    <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
+    <RenderIf condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
       <div className="pt-4 pb-2 flex items-center justify-start">
         <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
       </div>
     </RenderIf>
     <RenderIf
-      condition={displaySavedPaymentMethodsCheckbox &&
-      paymentMethodListValue.payment_type === SETUP_MANDATE}>
+      condition={alwaysSendCustomerAcceptance ||
+      (displaySavedPaymentMethodsCheckbox &&
+      paymentMethodListValue.payment_type === SETUP_MANDATE)}>
       <Terms
         styles={
           marginTop: themeObj.spacingGridColumn,
