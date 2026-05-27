@@ -62,6 +62,27 @@ let make = () => {
         | None => ()
         }
       }
+
+      let appearanceJson = if dict->Utils.getDictIsSome("paymentElementCreate") {
+        dict->Utils.getDictFromObj("paymentOptions")->Dict.get("appearance")
+      } else if dict->Utils.getDictIsSome("fullScreenIframeMounted") {
+        dict->Dict.get("appearance")
+      } else if dict->Utils.getDictIsSome("ElementsUpdate") {
+        dict->Utils.getDictFromObj("options")->Dict.get("appearance")
+      } else {
+        None
+      }
+
+      switch appearanceJson {
+      | Some(appearanceJson) =>
+        let colorScheme =
+          appearanceJson
+          ->Utils.getDictFromJson
+          ->Utils.getString("colorScheme", "light")
+          ->CardTheme.getColorScheme
+        CardTheme.setColorSchemeMeta(colorScheme)
+      | None => ()
+      }
     }
     Window.addEventListener("message", handleMetaDataPostMessage)
     Some(() => Window.removeEventListener("message", handleMetaDataPostMessage))
@@ -93,9 +114,7 @@ let make = () => {
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
         let publishableKey = getQueryParamsDictforKey(url.search, "publishableKey")
-        let profileId = getQueryParamsDictforKey(url.search, "profileId")
         let endpoint = getQueryParamsDictforKey(url.search, "endpoint")
-        let pmClientSecret = getQueryParamsDictforKey(url.search, "pmClientSecret")
         let pmSessionId = getQueryParamsDictforKey(url.search, "pmSessionId")
         let hyperComponentName =
           getQueryParamsDictforKey(
@@ -110,13 +129,11 @@ let make = () => {
 
         <PreMountLoader
           publishableKey
-          profileId
           sessionId
           sdkAuthorization
           clientSecret
           endpoint
           pmSessionId
-          pmClientSecret
           hyperComponentName
           merchantHostname
           customPodUri

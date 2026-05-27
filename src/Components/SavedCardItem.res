@@ -169,21 +169,27 @@ let make = (
 
   let billingDetailsArrayLength = Array.length(billingDetailsArray)
 
-  let cvcInputElement =
+  let isFloating = config.appearance.labels == Floating
+  let cvcContainerClassName = isFloating ? "flex w-24" : "flex w-16 opacity-50"
+  let cvcHeight = isFloating ? "" : "1.8rem"
+  let cvcFieldName = isFloating ? localeString.cvcTextLabel : ""
+
+  let makeCvcInput = (~fieldName="", ~height="1.8rem", ~inputFieldClassName="flex justify-start") =>
     <PaymentInputField
+      fieldName
       isValid=isCVCValid
       setIsValid=setIsCVCValid
       value=cvcNumber
       onChange=changeCVCNumber
       onBlur=handleCVCBlur
       errorString=""
-      inputFieldClassName="flex justify-start"
+      inputFieldClassName
       type_="tel"
-      className={`tracking-widest justify-start w-full`}
+      className={`tracking-widest w-full`}
       maxLength=4
       inputRef=cvcRef
       placeholder="123"
-      height="1.8rem"
+      height
       name={TestUtils.cardCVVInputTestId}
       autocomplete="cc-csc"
     />
@@ -264,10 +270,18 @@ let make = (
             </RenderIf>
             <RenderIf condition={hideCardExpiry && isActive && isRenderCvv}>
               <div className="flex flex-row items-center gap-2 mr-2">
-                <div className="tracking-widest opacity-50">
-                  {React.string(`${localeString.cvcTextLabel}:`)}
+                <RenderIf condition={!isFloating}>
+                  <div className="tracking-widest opacity-50">
+                    {React.string(`${localeString.cvcTextLabel}:`)}
+                  </div>
+                </RenderIf>
+                <div className={cvcContainerClassName}>
+                  {makeCvcInput(
+                    ~fieldName=cvcFieldName,
+                    ~height=cvcHeight,
+                    ~inputFieldClassName="",
+                  )}
                 </div>
-                <div className="flex w-16 opacity-50"> cvcInputElement </div>
               </div>
             </RenderIf>
           </div>
@@ -284,7 +298,7 @@ let make = (
                     className={`flex h mx-4 justify-start w-16 ${isActive
                         ? "opacity-1 mt-4"
                         : "opacity-0"}`}>
-                    cvcInputElement
+                    {makeCvcInput()}
                   </div>
                 </div>
               </RenderIf>

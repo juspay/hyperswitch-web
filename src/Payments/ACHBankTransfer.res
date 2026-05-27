@@ -3,9 +3,11 @@ open Utils
 
 @react.component
 let make = () => {
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
@@ -43,13 +45,16 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, isManualRetryEnabled))
+  }, (email, isManualRetryEnabled, sdkAuthorization))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"
   let paymentMethod = "bank_transfer"
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
+    <RenderIf condition={layoutClass.\"type" === Accordion}>
+      <Space height="0" />
+    </RenderIf>
     <DynamicFields paymentMethodType paymentMethod setRequiredFieldsBody />
     <Surcharge paymentMethodType paymentMethod />
     <InfoElement />
