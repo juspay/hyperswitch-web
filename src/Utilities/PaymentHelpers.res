@@ -62,6 +62,56 @@ let retrievePaymentIntent = async (
   )
 }
 
+let fetchPaymentMethodEligibility = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~bodyArr,
+  ~sdkAuthorization=None,
+  ~endpoint,
+  ~signal: option<Fetch.AbortSignal.t>=?,
+) => {
+  let uri = APIUtils.generateApiUrlV1(
+    ~apiCallType=FetchPaymentMethodEligibility,
+    ~params={
+      clientSecret: Some(clientSecret),
+      publishableKey: Some(publishableKey),
+      customBackendBaseUrl: Some(endpoint),
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      sdkAuthorization,
+    },
+  )
+
+  let body = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | Some(_) => bodyArr->getJsonFromArrayOfJson
+  | _ =>
+    bodyArr
+    ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
+    ->getJsonFromArrayOfJson
+  }
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
+    ~logger,
+    ~bodyStr=body->JSON.stringify,
+    ~method=#POST,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+    ~sdkAuthorization,
+    ~signal?,
+  )
+}
+
 let threeDsAuth = async (
   ~clientSecret,
   ~logger,

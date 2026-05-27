@@ -77,60 +77,10 @@ let parseEligibilityResponse = json => {
   {eligibilityError, surchargeDetails}
 }
 
-let fetchPaymentMethodEligibility = async (
-  ~clientSecret,
-  ~publishableKey,
-  ~logger,
-  ~customPodUri,
-  ~bodyArr,
-  ~sdkAuthorization=None,
-  ~endpoint,
-  ~signal: option<Fetch.AbortSignal.t>=?,
-) => {
-  let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchPaymentMethodEligibility,
-    ~params={
-      clientSecret: Some(clientSecret),
-      publishableKey: Some(publishableKey),
-      customBackendBaseUrl: Some(endpoint),
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-      sdkAuthorization,
-    },
-  )
-
-  let body = switch sdkAuthorization->Utils.getNonEmptyOption {
-  | Some(_) => bodyArr->getJsonFromArrayOfJson
-  | _ =>
-    bodyArr
-    ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
-    ->getJsonFromArrayOfJson
-  }
-
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
-    ~logger,
-    ~bodyStr=body->JSON.stringify,
-    ~method=#POST,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(publishableKey),
-    ~onSuccess,
-    ~onFailure,
-    ~sdkAuthorization,
-    ~signal?,
-  )
-}
-
 let performEligibilityCheck = async (
   ~clientSecret: string,
   ~publishableKey: string,
-  ~logger,
+  ~logger: HyperLoggerTypes.loggerMake,
   ~customPodUri,
   ~bodyArr,
   ~sdkAuthorization,
@@ -143,13 +93,14 @@ let performEligibilityCheck = async (
   ) => unit,
   ~setEligibilityError: option<(option<string> => option<string>) => unit>,
   ~errorLogMessage: string,
+  ~fetchEligibility,
 ) => {
   setEligibilitySurchargeDetails(_ => None)
   if shouldBlockConfirm {
     setIsEligibilityPending(_ => true)
   }
   try {
-    let json = await fetchPaymentMethodEligibility(
+    let json = await fetchEligibility(
       ~clientSecret,
       ~publishableKey,
       ~logger,
@@ -185,6 +136,7 @@ let startEligibilityCheck = async (
   ~setEligibilitySurchargeDetails,
   ~setEligibilityError,
   ~errorLogMessage: string,
+  ~fetchEligibility,
 ) => {
   controllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
   let controller = Fetch.AbortController.make()
@@ -207,6 +159,7 @@ let startEligibilityCheck = async (
       ~setEligibilitySurchargeDetails,
       ~setEligibilityError,
       ~errorLogMessage,
+      ~fetchEligibility,
     )
   | None => ()
   }

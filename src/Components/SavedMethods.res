@@ -198,6 +198,18 @@ let make = (
         ~setEligibilitySurchargeDetails,
         ~setEligibilityError=None,
         ~errorLogMessage="Saved card payment eligibility check failed",
+        ~fetchEligibility={(~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~bodyArr, ~sdkAuthorization, ~endpoint, ~signal) =>
+          PaymentHelpers.fetchPaymentMethodEligibility(
+            ~clientSecret,
+            ~publishableKey,
+            ~logger,
+            ~customPodUri,
+            ~bodyArr,
+            ~sdkAuthorization,
+            ~endpoint,
+            ~signal,
+          )
+        },
       )->ignore
     } else if !isCardPaymentMethod || paymentTokenVal === "" {
       setEligibilitySurchargeDetails(_ => None)
