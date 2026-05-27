@@ -337,6 +337,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | AUTHENTICATED_SESSION_INITIATED
   | ONE_CLICK_HANDLER_CALLBACK
   | PAYMENT_ELEMENT_OPTIONS
-  | TEST_MODE =>
+  | TEST_MODE
+  | DDC_FLOW =>
     None
   }

@@ -232,6 +232,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       APPLE_PAY_FLOW,
       PLAID_SDK,
       NETWORK_STATE,
+      DDC_FLOW,
     ]
     arrayOfLogs
     ->Array.find(log => {

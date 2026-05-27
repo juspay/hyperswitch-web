@@ -228,7 +228,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_pay_by_bank: `Payer par banque`,
   payment_methods_open_banking_pis: `Bancaire ouvert`,
   payment_methods_evoucher: `E-Voucher`,
-  payment_methods_pix_transfer: `Pix`,
+  payment_methods_pix_emv_transfer: `PixEmv`,
   payment_methods_boleto: `Boleto`,
   payment_methods_paypal: `Paypal`,
   payment_methods_local_bank_transfer_transfer: `Union Pay`,
