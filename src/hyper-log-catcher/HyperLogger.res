@@ -166,7 +166,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       }
   }
 
-  let getPaymentIdForLog = () =>
+  let getPaymentID = () =>
     Utils.getPaymentIdOrExtractFromSdkAuth(
       ~clientSecret=clientSecret.contents,
       ~sdkAuthorization=sdkAuthorization.contents,
@@ -318,7 +318,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
             value: "",
             // internalMetadata: "",
             category: USER_EVENT,
-            paymentId: getPaymentIdForLog(),
+            paymentId: getPaymentID(),
             merchantId: merchantId.contents,
             browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
             browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -345,7 +345,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
             value: "",
             // internalMetadata: "",
             category: USER_EVENT,
-            paymentId: getPaymentIdForLog(),
+            paymentId: getPaymentID(),
             merchantId: merchantId.contents,
             browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
             browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -395,7 +395,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       value,
       // internalMetadata,
       category: logCategory,
-      paymentId: getPaymentIdForLog(),
+      paymentId: getPaymentID(),
       merchantId: merchantId.contents,
       browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -451,7 +451,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       // | StringValue(a) => a
       // },
       category: logCategory,
-      paymentId: getPaymentIdForLog(),
+      paymentId: getPaymentID(),
       merchantId: merchantId.contents,
       browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -497,7 +497,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       value,
       // internalMetadata,
       category: logCategory,
-      paymentId: getPaymentIdForLog(),
+      paymentId: getPaymentID(),
       merchantId: merchantId.contents,
       browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -531,7 +531,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       category: USER_EVENT,
       value: "log initiated",
       // internalMetadata: "",
-      paymentId: getPaymentIdForLog(),
+      paymentId: getPaymentID(),
       merchantId: merchantId.contents,
       browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),

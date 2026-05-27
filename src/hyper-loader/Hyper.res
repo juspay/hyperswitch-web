@@ -345,15 +345,15 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let (actualClientSecret, sdkAuthorizationValue) = try {
           let _check = clientSecretOrSdkAuth->Utils.getSdkAuthorizationData
           // Successfully decoded — treat as SDK auth; clientSecret is not embedded
-          (clientSecretOrSdkAuth, Some(clientSecretOrSdkAuth))
+          ((None: option<string>), Some(clientSecretOrSdkAuth))
         } catch {
-        | _ => (clientSecretOrSdkAuth, None)
+        | _ => (Some(clientSecretOrSdkAuth), None)
         }
 
         let uri = APIUtils.generateApiUrlV1(
           ~apiCallType=RetrievePaymentIntent,
           ~params={
-            clientSecret: Some(actualClientSecret),
+            clientSecret: actualClientSecret,
             publishableKey: Some(publishableKey),
             customBackendBaseUrl: None,
             forceSync: None,

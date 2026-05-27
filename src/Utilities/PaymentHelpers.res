@@ -1754,7 +1754,10 @@ let paymentIntentForPaymentSession = (
     redirect,
   }
 
-  let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
+  let paymentIntentID = Utils.getPaymentIdOrExtractFromSdkAuth(
+    ~clientSecret,
+    ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
+  )
 
   let endpoint = ApiEndpoint.getApiEndPoint(
     ~publishableKey=confirmParam.publishableKey,
