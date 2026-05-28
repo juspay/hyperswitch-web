@@ -138,6 +138,20 @@ let handleHyperApplePayMounted = (event: Types.event) => {
 
 addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMount")
 
+let isReadyResolved = ref(false)
+
+let isReadyPromise = Promise.make((resolve, _) => {
+  let handleOnReady = (event: Types.event) => {
+    let json = event.data->anyTypeToJson
+    let dict = json->getDictFromJson
+    if dict->getBool("ready", false) {
+      isReadyResolved := true
+      resolve(Date.now())
+    }
+  }
+  addSmartEventListener("message", handleOnReady, "handleOnReady")
+})
+
 let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
     let publishableKey = switch keys->JSON.Classify.classify {
@@ -203,16 +217,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       ~merchantId=publishableKey,
       ~metadata=analyticsMetadata,
     )
-    let isReadyPromise = Promise.make((resolve, _) => {
-      let handleOnReady = (event: Types.event) => {
-        let json = event.data->anyTypeToJson
-        let dict = json->getDictFromJson
-        if dict->getBool("ready", false) {
-          resolve(Date.now())
-        }
-      }
-      addSmartEventListener("message", handleOnReady, "handleOnReady")
-    })
 
     switch options {
     | Some(userOptions) =>
@@ -414,7 +418,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           Promise.resolve(errorResponse)
         } else {
           Promise.make((resolve1, _) => {
-            let isReadyPromise = isReadyPromise
+            logger.setLogInfo(
+              ~value="isReadyPromise status: " ++ (
+                isReadyResolved.contents ? "resolved" : "pending"
+              ),
+              ~eventName=IS_READY_STATUS_CHECK,
+            )
             isReadyPromise
             ->Promise.then(readyTimestamp => {
               let handleMessage = (event: Types.event) => {
