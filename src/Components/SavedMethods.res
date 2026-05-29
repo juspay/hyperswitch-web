@@ -221,7 +221,8 @@ let make = (
             )
         },
       )->ignore
-    } else if !isCardPaymentMethod || paymentTokenVal === "" {
+    } else {
+      eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
       setEligibilitySurchargeDetails(_ => None)
       setIsEligibilityPending(_ => false)
     }
