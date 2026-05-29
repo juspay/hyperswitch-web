@@ -46,7 +46,9 @@ let make = (
     None
   }, [paymentMethodType])
 
-  let {billingAddress, redirectionInfo} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {billingAddress, redirectionInfo, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
+  let cvcIcon = layoutClass.cvcIcon
 
   //<...>//
   let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
@@ -388,6 +390,7 @@ let make = (
                 ~cardInvalid,
                 ~color=themeObj.colorIconCardCvcError,
                 ~cardComplete,
+                ~cvcIcon,
               )}
               type_="tel"
               className="tracking-widest w-full"
@@ -427,6 +430,7 @@ let make = (
                   ~cardInvalid,
                   ~color=themeObj.colorIconCardCvcError,
                   ~cardComplete,
+                  ~cvcIcon,
                 )}
                 type_="tel"
                 className="tracking-widest w-full"
