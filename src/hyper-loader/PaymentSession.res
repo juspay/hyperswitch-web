@@ -4,7 +4,6 @@ open Utils
 let make = (
   options,
   ~publishableKey,
-  ~profileId,
   ~sdkSessionId,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
@@ -39,7 +38,6 @@ let make = (
       ~iframes=iframeRef.contents,
       ~callback,
       ~publishableKey,
-      ~profileId,
       ~sdkSessionId,
       ~endpoint,
       ~customPodUri,
@@ -51,8 +49,9 @@ let make = (
   }
 
   let defaultInitPaymentSession = {
-    getCustomerSavedPaymentMethods: _ =>
+    getCustomerSavedPaymentMethods: options =>
       PaymentSessionMethods.getCustomerSavedPaymentMethods(
+        ~options,
         ~clientSecretRef,
         ~publishableKey,
         ~endpoint,

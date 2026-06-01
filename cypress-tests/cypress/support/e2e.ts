@@ -16,5 +16,25 @@
 // Import commands.js using ES2015 syntax:
 import "./commands";
 
-// Alternatively you can use CommonJS syntax:
-// require('./commands')
+// Environment validation - fails fast if required vars missing
+const requiredEnvVars = [
+  "HYPERSWITCH_PUBLISHABLE_KEY",
+  "HYPERSWITCH_SECRET_KEY"
+];
+
+before(() => {
+  const missing = requiredEnvVars.filter(key => !Cypress.env(key));
+  if (missing.length > 0) {
+    throw new Error(
+      `❌ Missing required environment variables:\n${missing.map(v => `  - ${v}`).join('\n')}\n\n` +
+      `Please set them in cypress.env.json or as environment variables.`
+    );
+  }
+  cy.log("✅ All required environment variables are set");
+});
+
+// Global test cleanup
+afterEach(() => {
+  cy.clearCookies();
+  cy.clearLocalStorage();
+});

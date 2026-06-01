@@ -6,6 +6,7 @@ let cvcWidgetNotFoundErrorType = "cvc_widget_not_found"
 let cvcValidationErrorType = "cvc_validation"
 
 let getCustomerSavedPaymentMethods = (
+  ~options: option<JSON.t>,
   ~clientSecretRef: ref<string>,
   ~publishableKey,
   ~endpoint,
@@ -19,6 +20,11 @@ let getCustomerSavedPaymentMethods = (
   open ApplePayTypes
   open GooglePayType
   let applePaySessionRef = ref(Nullable.null)
+  let hiddenPaymentMethods =
+    options
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.getOr(Dict.make())
+    ->getStrArray("hiddenPaymentMethods")
 
   PaymentHelpers.fetchCustomerPaymentMethodList(
     ~clientSecret=clientSecretRef.contents,
@@ -39,9 +45,11 @@ let getCustomerSavedPaymentMethods = (
         ),
       )
     } catch {
-    | _ =>
+    | err =>
       logger.setLogError(
-        ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT - Client creation failed",
+        ~value=`ERROR DURING LOADING GOOGLE PAY CLIENT - ${err
+          ->formatException
+          ->JSON.stringify}`,
         ~eventName=GOOGLE_PAY_SCRIPT,
         ~paymentMethod="GOOGLE_PAY",
       )
@@ -55,18 +63,23 @@ let getCustomerSavedPaymentMethods = (
     customerPaymentMethods->Array.sort((a, b) => compareLogic(a.lastUsedAt, b.lastUsedAt))
 
     let customerPaymentMethodsRef = ref(customerPaymentMethods)
+
+    customerPaymentMethodsRef :=
+      customerPaymentMethodsRef.contents->PaymentUtils.filterSavedMethodsByHiddenList(
+        ~hiddenPaymentMethods,
+      )
     let applePayTokenRef = ref(defaultHeadlessApplePayToken)
     let googlePayTokenRef = ref(JSON.Encode.null)
 
     let isApplePayPresent =
-      customerPaymentMethods
+      customerPaymentMethodsRef.contents
       ->Array.find(customerPaymentMethod =>
         customerPaymentMethod.paymentMethodType === Some("apple_pay")
       )
       ->Option.isSome
 
     let isGooglePayPresent =
-      customerPaymentMethods
+      customerPaymentMethodsRef.contents
       ->Array.find(customerPaymentMethod =>
         customerPaymentMethod.paymentMethodType === Some("google_pay")
       )
@@ -82,7 +95,7 @@ let getCustomerSavedPaymentMethods = (
     }
 
     let customerDefaultPaymentMethodRef = ref(
-      customerPaymentMethods
+      customerPaymentMethodsRef.contents
       ->Array.filter(customerPaymentMethod => {
         customerPaymentMethod.defaultPaymentMethodSet
       })

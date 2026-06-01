@@ -53,8 +53,12 @@ let make = (
   let marginLeft = isCardCoBadged ? "-ml-2" : ""
 
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let {layout} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let cardBrandIconSetting = CardUtils.getLayoutClass(layout).cardBrandIcon
   let shouldShowCoBadgeCardSchemeDropDown =
     isCardCoBadged && cardNumber->CardValidations.clearSpaces->String.length >= 16
+
+  let showCardBrandIcon = CardUtils.getCardBrandIconVisibility(cardBrandIconSetting, cardType)
 
   React.useEffect1(() => {
     if shouldShowCoBadgeCardSchemeDropDown && !isCoBadgedCardDetectedOnce.current {
@@ -65,7 +69,7 @@ let make = (
   }, [shouldShowCoBadgeCardSchemeDropDown])
 
   <div className={`${animate} flex items-center ${marginLeft} hellow-rodl`}>
-    cardBrandIcon
+    <RenderIf condition={showCardBrandIcon}> cardBrandIcon </RenderIf>
     <RenderIf condition={shouldShowCoBadgeCardSchemeDropDown}>
       <CoBadgeCardSchemeDropDown eligibleCardSchemes setCardBrand />
     </RenderIf>

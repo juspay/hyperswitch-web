@@ -290,6 +290,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | CLEAR
   | CONFIRM_PAYMENT
   | CONFIRM_CARD_PAYMENT
+  | IS_READY_STATUS_CHECK
   | SDK_CRASH
   | INVALID_PK
   | DEPRECATED_LOADSTRIPE

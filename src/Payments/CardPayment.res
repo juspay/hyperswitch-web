@@ -30,7 +30,7 @@ let make = (
   let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
   let ctpCards = clickToPayConfig.clickToPayCards->Option.getOr([])
   let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
-  let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
@@ -53,6 +53,8 @@ let make = (
     maxCardLength,
     cardBrand,
     cardEligibilityError,
+    eligibilitySurchargeDetails,
+    isEligibilityPending,
   } = cardProps
 
   let {
@@ -79,7 +81,10 @@ let make = (
   let {
     displaySavedPaymentMethodsCheckbox,
     savedPaymentMethodsCheckboxCheckedByDefault,
+    alwaysSendCustomerAcceptance,
+    layout,
   } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
@@ -152,11 +157,14 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
+  let isCustomerAcceptanceFromHook = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
     ~isSaveCardsChecked,
     ~isGuestCustomer,
   )
+
+  let isCustomerAcceptanceRequired =
+    (!isGuestCustomer && alwaysSendCustomerAcceptance) || isCustomerAcceptanceFromHook
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -216,7 +224,8 @@ let make = (
         isNicknameValid &&
         areRequiredFieldsValid &&
         cardEligibilityError->Option.isNone &&
-        isInstallmentValid
+        isInstallmentValid &&
+        !isEligibilityPending
 
       if validFormat && (showPaymentMethodsScreen || isBancontact) {
         let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
@@ -403,7 +412,10 @@ let make = (
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         } else if cardEligibilityError->Option.isSome {
-          let msg = PaymentHelpers.getCardEligibilityErrorText(~cardEligibilityError, ~localeString)
+          let msg = EligibilityHelpers.getCardEligibilityErrorText(
+            ~cardEligibilityError,
+            ~localeString,
+          )
           setCardError(_ => msg)
           setUserError(msg)
         } else if isCardSupported->Option.getOr(true)->not {
@@ -427,7 +439,9 @@ let make = (
           setUserError(localeString.installmentSelectPlanError)
           setInstallmentsError(_ => localeString.installmentSelectPlanError)
         }
-        if !validFormat {
+        if isEligibilityPending && paymentMethodListValue.should_block_confirm {
+          setUserError(localeString.paymentDetailsBeingCheckedText)
+        } else if !validFormat {
           setUserError(localeString.enterValidDetailsText)
         }
       }
@@ -448,6 +462,9 @@ let make = (
     selectedInstallmentPlan,
     showInstallments,
     cardEligibilityError,
+    sdkAuthorization,
+    isEligibilityPending,
+    eligibilitySurchargeDetails,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -466,9 +483,18 @@ let make = (
   | Some(_) => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
   | None => ""
   }
+  let accordionMarginClass = layoutClass.\"type" === Accordion && isVault === None ? "mt-4" : ""
+
+  let surchargeAmount =
+    eligibilitySurchargeDetails
+    ->Option.map(s => s.displayTotalSurchargeAmount->Float.toString)
+    ->Option.getOr("")
+
   <div className="animate-slowShow">
     <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
-      <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
+      <div
+        className={`flex flex-col ${vaultClass} ${accordionMarginClass}`}
+        style={gridGap: themeObj.spacingGridColumn}>
         <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
           <RenderIf condition={innerLayout === Compressed}>
             <div
@@ -536,6 +562,7 @@ let make = (
                     ~cardEmpty,
                     ~cardInvalid,
                     ~color=themeObj.colorIconCardCvcError,
+                    ~cvcIcon=layoutClass.cvcIcon,
                   )}
                   type_="tel"
                   className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
@@ -574,7 +601,8 @@ let make = (
             isBancontact
             isSaveDetailsWithClickToPay
           />
-          <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
+          <RenderIf
+            condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
             <div className="flex items-center justify-start">
               <SaveDetailsCheckbox
                 isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked
@@ -594,6 +622,24 @@ let make = (
             errorString=installmentsError
             setErrorString=setInstallmentsError
           />
+          <RenderIf condition={eligibilitySurchargeDetails->Option.isSome}>
+            <div className="flex items-baseline text-xs mt-2">
+              <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
+              <div className="text-left text-gray-400">
+                {localeString.surchargeMsgAmountForCard(
+                  paymentMethodListValue.currency,
+                  surchargeAmount,
+                )}
+              </div>
+            </div>
+          </RenderIf>
+          <RenderIf condition={isEligibilityPending && paymentMethodListValue.should_block_confirm}>
+            <div className="flex items-baseline text-xs mt-2">
+              <div className="text-left text-gray-400">
+                {localeString.paymentDetailsBeingCheckedText->React.string}
+              </div>
+            </div>
+          </RenderIf>
         </div>
       </div>
     </RenderIf>

@@ -246,6 +246,7 @@ type localeStrings = {
   showMore: string,
   showLess: string,
   refreshingText: string,
+  paymentDetailsBeingCheckedText: string,
 }
 
 type constantStrings = {

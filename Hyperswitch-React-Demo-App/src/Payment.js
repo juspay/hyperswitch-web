@@ -20,6 +20,10 @@ function Payment() {
   const isCypressTestMode = getQueryParam("isCypressTestMode") === "true";
   const publishableKeyQueryParam = getQueryParam("publishableKey");
   const clientSecretQueryParam = getQueryParam("clientSecret");
+  const localeQueryParam = getQueryParam("locale");
+  const themeQueryParam = getQueryParam("theme");
+  const layoutQueryParam = getQueryParam("layout");
+  const optionsQueryParam = getQueryParam("options");
 
   const baseUrl = SELF_SERVER_URL || ENDPOINT;
 
@@ -74,9 +78,9 @@ function Payment() {
 
   let selectedOptions;
   if (SDK_VERSION === "v1") {
-    selectedOptions = hyperOptionsV1(clientSecret);
+    selectedOptions = hyperOptionsV1(clientSecret, localeQueryParam, themeQueryParam);
   } else {
-    selectedOptions = hyperOptionsV2(clientSecret, paymentId);
+    selectedOptions = hyperOptionsV2(clientSecret, paymentId, localeQueryParam, themeQueryParam);
   }
 
   return (
@@ -89,7 +93,7 @@ function Payment() {
 
       {clientSecret && hyperPromise && (
         <HyperElements hyper={hyperPromise} options={selectedOptions}>
-          <CheckoutForm />
+          <CheckoutForm layoutQueryParam={layoutQueryParam} optionsQueryParam={optionsQueryParam} />
         </HyperElements>
       )}
     </div>

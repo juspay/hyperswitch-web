@@ -233,6 +233,8 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       PLAID_SDK,
       NETWORK_STATE,
       DDC_FLOW,
+      GOOGLE_PAY_SCRIPT,
+      GOOGLE_PAY_FLOW,
     ]
     arrayOfLogs
     ->Array.find(log => {

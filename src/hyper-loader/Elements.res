@@ -15,7 +15,6 @@ let make = (
   setIframeRef,
   ~sdkSessionId,
   ~publishableKey,
-  ~profileId,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
@@ -106,7 +105,6 @@ let make = (
       initialSessionTokensPromise,
     ) = UpdateIntentHelpersNew.setupPreMountLoaderPromises(
       ~publishableKey,
-      ~profileId,
       ~sdkSessionId,
       ~endpoint,
       ~customPodUri,
@@ -316,7 +314,6 @@ let make = (
           ~iframes=iframeRef,
           ~callback,
           ~publishableKey,
-          ~profileId,
           ~sdkSessionId,
           ~endpoint,
           ~customPodUri,
@@ -425,7 +422,6 @@ let make = (
           ("paymentOptions", widgetOptions),
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
-          ("profileId", profileId->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
           ("blockConfirm", blockConfirm->JSON.Encode.bool),
@@ -457,7 +453,12 @@ let make = (
           let componentName = getString(dict, "componentName", "payment")
 
           if dict->Dict.get("applePayMounted")->Option.isSome {
-            if wallets.applePay === Auto {
+            if (
+              switch wallets.applePay {
+              | ApplePayConfigString(Auto) | ApplePayConfigObj({display: Auto}) => true
+              | _ => false
+              }
+            ) {
               switch ApplePayTypes.sessionForApplePay->Nullable.toOption {
               | Some(session) =>
                 try {
@@ -1076,7 +1077,10 @@ let make = (
             if (
               componentType->getIsComponentTypeForPaymentElementCreate &&
               googlePayPresent->Option.isSome &&
-              wallets.googlePay === Auto
+              switch wallets.googlePay {
+              | GooglePayConfigString(Auto) | GooglePayConfigObj({display: Auto}) => true
+              | _ => false
+              }
             ) {
               let dict = json->getDictFromJson
               let sessionObj = SessionsType.itemToObjMapper(dict, Others)
@@ -1205,9 +1209,11 @@ let make = (
                 let gPayClient = try {
                   Some(GooglePayType.google(gpayClientRequest))
                 } catch {
-                | _ =>
+                | err =>
                   logger.setLogError(
-                    ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT - Client creation failed",
+                    ~value=`ERROR DURING LOADING GOOGLE PAY CLIENT - ${err
+                      ->formatException
+                      ->JSON.stringify}`,
                     ~eventName=GOOGLE_PAY_SCRIPT,
                     ~paymentMethod="GOOGLE_PAY",
                   )
@@ -1336,7 +1342,12 @@ let make = (
                   ~paymentMethod="GOOGLE_PAY",
                 )
               }
-            } else if wallets.googlePay === Never {
+            } else if (
+              switch wallets.googlePay {
+              | GooglePayConfigString(Never) | GooglePayConfigObj({display: Never}) => true
+              | _ => false
+              }
+            ) {
               logger.setLogInfo(
                 ~value="GooglePay is set as never by merchant",
                 ~eventName=GOOGLE_PAY_FLOW,
@@ -1495,6 +1506,7 @@ let make = (
         setIframeRefForComponent,
         iframeRef,
         mountPostMessage,
+        ~appearance,
         ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
         ~logger=Some(logger),
       )
