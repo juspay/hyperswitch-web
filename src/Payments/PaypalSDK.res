@@ -126,7 +126,27 @@ let make = (~sessionObj: SessionsType.token) => {
     let paypalIntent = sessionObj.intent
     let currency = sessionObj.currency
 
-    let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields&currency=${currency}&intent=${paypalIntent}`
+    let intentParam = if paypalIntent !== "" {
+      `&intent=${paypalIntent}`
+    } else {
+      loggerState.setLogInfo(
+        ~value="PayPal SDK: intent is missing from session object, omitting intent param from SDK URL",
+        ~eventName=PAYPAL_SDK_FLOW,
+      )
+      ""
+    }
+
+    let currencyParam = if currency !== "" {
+      `&currency=${currency}`
+    } else {
+      loggerState.setLogInfo(
+        ~value="PayPal SDK: currency is missing from session object, omitting currency param from SDK URL",
+        ~eventName=PAYPAL_SDK_FLOW,
+      )
+      ""
+    }
+
+    let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields${currencyParam}${intentParam}`
     loggerState.setLogInfo(~value="PayPal SDK Script Loading", ~eventName=PAYPAL_SDK_FLOW)
     let paypalScript = Window.createElement("script")
     paypalScript->Window.elementSrc(paypalScriptURL)
