@@ -48,7 +48,11 @@ let make = (
   )
   let isGuestCustomer = useIsGuestCustomer()
 
-  let {iframeId, clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {iframeId, clientSecret, sdkAuthorization, publishableKey} = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.keys,
+  )
+  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
+  let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
@@ -66,6 +70,9 @@ let make = (
     SamsungPay,
   )
   let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
+  let (eligibilitySurchargeDetails, setEligibilitySurchargeDetails) = React.useState(_ => None)
+  let (isEligibilityPending, setIsEligibilityPending) = React.useState(_ => false)
+  let eligibilityControllerRef = React.useRef(None)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let savedCardlength = savedMethods->Array.length
@@ -119,6 +126,9 @@ let make = (
           setShowInstallments
           installmentsError
           setInstallmentsError
+          eligibilitySurchargeDetails={paymentTokenVal == obj.paymentToken
+            ? eligibilitySurchargeDetails
+            : None}
         />
       )
       ->React.array}
@@ -164,11 +174,81 @@ let make = (
   let isCardPaymentMethod = customerMethod.paymentMethod === "card"
   let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
   let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
+
+  let shouldDoEligibility = paymentMethodListValue.sdk_next_action === Some("eligibility_check")
+
+  React.useEffect(() => {
+    if shouldDoEligibility && isCardPaymentMethod && paymentTokenVal !== "" {
+      let eligibilityBody = [
+        ("payment_method_type", "card"->JSON.Encode.string),
+        ("payment_token", paymentTokenVal->JSON.Encode.string),
+      ]
+
+      EligibilityHelpers.startEligibilityCheck(
+        ~controllerRef=eligibilityControllerRef,
+        ~clientSecret,
+        ~publishableKey,
+        ~logger=loggerState,
+        ~customPodUri,
+        ~bodyArr=eligibilityBody,
+        ~sdkAuthorization,
+        ~endpoint,
+        ~shouldBlockConfirm=paymentMethodListValue.should_block_confirm,
+        ~setIsEligibilityPending,
+        ~setEligibilitySurchargeDetails,
+        ~setEligibilityError=None,
+        ~errorLogMessage="Saved card payment eligibility check failed",
+        ~fetchEligibility={
+          (
+            ~clientSecret,
+            ~publishableKey,
+            ~logger,
+            ~customPodUri,
+            ~bodyArr,
+            ~sdkAuthorization,
+            ~endpoint,
+            ~signal,
+          ) =>
+            PaymentHelpers.fetchPaymentMethodEligibility(
+              ~clientSecret,
+              ~publishableKey,
+              ~logger,
+              ~customPodUri,
+              ~bodyArr,
+              ~sdkAuthorization,
+              ~endpoint,
+              ~signal,
+            )
+        },
+      )->ignore
+    } else {
+      eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+      setEligibilitySurchargeDetails(_ => None)
+      setIsEligibilityPending(_ => false)
+    }
+    Some(
+      () => {
+        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+      },
+    )
+  }, (
+    paymentTokenVal,
+    shouldDoEligibility,
+    isCardPaymentMethod,
+    clientSecret,
+    publishableKey,
+    sdkAuthorization,
+    endpoint,
+    customPodUri,
+    paymentMethodListValue.should_block_confirm,
+  ))
+
   let complete =
     areRequiredFieldsValid &&
     !isUnknownPaymentMethod &&
     (!isCardPaymentMethod || isCardPaymentMethodValid) &&
-    isInstallmentValid
+    isInstallmentValid &&
+    !isEligibilityPending
 
   let paymentMethodType =
     customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
@@ -345,6 +425,9 @@ let make = (
           )
         }
       } else {
+        if isEligibilityPending && paymentMethodListValue.should_block_confirm {
+          setUserError(localeString.paymentDetailsBeingCheckedText)
+        }
         if isUnknownPaymentMethod || confirm.confirmTimestamp < confirm.readyTimestamp {
           setUserError(localeString.selectPaymentMethodText)
         }
@@ -378,6 +461,7 @@ let make = (
     selectedInstallmentPlan,
     showInstallments,
     sdkAuthorization,
+    isEligibilityPending,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -407,6 +491,13 @@ let make = (
     } else {
       <RenderIf condition=showSavedCards> {bottomElement} </RenderIf>
     }}
+    <RenderIf condition={isEligibilityPending && paymentMethodListValue.should_block_confirm}>
+      <div className="flex items-baseline text-xs mt-2">
+        <div className="text-left text-gray-400">
+          {localeString.paymentDetailsBeingCheckedText->React.string}
+        </div>
+      </div>
+    </RenderIf>
     <RenderIf condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
       <div className="pt-4 pb-2 flex items-center justify-start">
         <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
