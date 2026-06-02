@@ -347,7 +347,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let retrievePaymentIntentFn = async clientSecretOrSdkAuth => {
         // Try to decode as base64 — if decodable, it's an SDK authorization token.
         let (actualClientSecret, sdkAuthorizationValue) = try {
-          let _check = clientSecretOrSdkAuth->Utils.getSdkAuthorizationData
+          clientSecretOrSdkAuth->Utils.getSdkAuthorizationData->ignore
           // Successfully decoded — treat as SDK auth; clientSecret is not embedded
           ((None: option<string>), Some(clientSecretOrSdkAuth))
         } catch {

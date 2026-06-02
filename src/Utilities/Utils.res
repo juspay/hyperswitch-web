@@ -1967,13 +1967,8 @@ let getSdkAuthorizationData = sdkAuthorization => {
     let prefix = keyName ++ "="
     let keyStr = arrOfKeys->Array.find(key => key->String.startsWith(prefix))
     keyStr->Option.flatMap(key => {
-      let idx = key->String.indexOf("=")
-      if idx !== -1 {
-        let value = key->String.sliceToEnd(~start=idx + 1)
-        value->String.length > 0 ? Some(value) : None
-      } else {
-        None
-      }
+      let value = key->String.sliceToEnd(~start=prefix->String.length)
+      value->String.length > 0 ? Some(value) : None
     })
   }
 

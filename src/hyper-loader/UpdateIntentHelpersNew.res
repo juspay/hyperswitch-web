@@ -38,6 +38,8 @@ let waitForReady = () => {
 let getNewCredentials = async (~callback: unit => promise<JSON.t>, ~currentClientSecret) => {
   let callbackResult = await callback()
   let newSdkAuthorization = callbackResult->getDictFromJson->getString("sdkAuthorization", "")
+  // Note: under the new SDK auth contract, client_secret is no longer embedded in the token.
+  // We unconditionally return currentClientSecret so that callers continue using the original secret.
   (newSdkAuthorization, currentClientSecret)
 }
 

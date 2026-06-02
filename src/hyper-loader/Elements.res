@@ -80,9 +80,9 @@ let make = (
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
 
-    let isSdkAuthorization = sdkAuthorizationRef.contents !== ""
+    let hasSdkAuthorization = sdkAuthorizationRef.contents !== ""
 
-    if !isTestMode && !isSdkAuthorization && clientSecretRef.contents === "" {
+    if !isTestMode && !hasSdkAuthorization && clientSecretRef.contents === "" {
       manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="clientSecret", ~logger)
     }
 
@@ -248,7 +248,7 @@ let make = (
         Promise.resolve()
       })
     }
-    if !isTestMode && !isSdkAuthorization && !clientSecretReMatch {
+    if !isTestMode && !hasSdkAuthorization && !clientSecretReMatch {
       manageErrorWarning(
         INVALID_FORMAT,
         ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
