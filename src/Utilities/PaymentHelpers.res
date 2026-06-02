@@ -356,6 +356,7 @@ let rec intentCall = (
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
+  let isLegacyClientSecretFlow = sdkAuthorization->Utils.getNonEmptyOption->Option.isNone
 
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
   let isPostSessionTokens = uri->String.includes("/post_session_tokens")
@@ -395,9 +396,14 @@ let rec intentCall = (
   ->then(res => {
     let statusCode = res->Fetch.Response.status
     let url = makeUrl(confirmParam.return_url)
-    url.searchParams.set("payment_intent_client_secret", clientSecret)
+    if isLegacyClientSecretFlow {
+      url.searchParams.set("payment_intent_client_secret", clientSecret)
+    }
     url.searchParams.set("status", "failed")
-    url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
+    url.searchParams.set(
+      "payment_id",
+      Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
+    )
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
     if !(res->Fetch.Response.ok) {
@@ -485,12 +491,18 @@ let rec intentCall = (
                 resolve(failedSubmitResponse)
               }
             } else {
-              let paymentIntentID = clientSecret->Utils.getPaymentId
+              let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+                ~clientSecret,
+                ~sdkAuthorization,
+              )
               let endpoint = ApiEndpoint.getApiEndPoint(
                 ~publishableKey=confirmParam.publishableKey,
                 ~isConfirmCall=isConfirm,
               )
-              let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
+              let clientSecretParam = isLegacyClientSecretFlow
+                ? `?client_secret=${clientSecret}`
+                : ""
+              let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
               intentCall(
                 ~fetchApi,
                 ~uri=retrieveUri,
@@ -544,8 +556,13 @@ let rec intentCall = (
             }
 
             let url = makeUrl(confirmParam.return_url)
-            url.searchParams.set("payment_intent_client_secret", clientSecret)
-            url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
+            if isLegacyClientSecretFlow {
+              url.searchParams.set("payment_intent_client_secret", clientSecret)
+            }
+            url.searchParams.set(
+              "payment_id",
+              Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
+            )
             url.searchParams.set("status", intent.status)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
@@ -946,8 +963,13 @@ let rec intentCall = (
     Promise.make((resolve, _) => {
       try {
         let url = makeUrl(confirmParam.return_url)
-        url.searchParams.set("payment_intent_client_secret", clientSecret)
-        url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
+        if isLegacyClientSecretFlow {
+          url.searchParams.set("payment_intent_client_secret", clientSecret)
+        }
+        url.searchParams.set(
+          "payment_id",
+          Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
+        )
         url.searchParams.set("status", "failed")
         let exceptionMessage = err->formatException
         logApi(
@@ -975,12 +997,16 @@ let rec intentCall = (
             resolve(failedSubmitResponse)
           }
         } else {
-          let paymentIntentID = clientSecret->Utils.getPaymentId
+          let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+            ~clientSecret,
+            ~sdkAuthorization,
+          )
           let endpoint = ApiEndpoint.getApiEndPoint(
             ~publishableKey=confirmParam.publishableKey,
             ~isConfirmCall=isConfirm,
           )
-          let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
+          let clientSecretParam = isLegacyClientSecretFlow ? `?client_secret=${clientSecret}` : ""
+          let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
           intentCall(
             ~fetchApi,
             ~uri=retrieveUri,
@@ -1037,7 +1063,10 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="") => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = clientSecret->Utils.getPaymentId
+      let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+        ~clientSecret,
+        ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
+      )
       let headers = [("Content-Type", "application/json")]
 
       switch keys.sdkAuthorization->Utils.getNonEmptyOption {
@@ -1052,7 +1081,7 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
       | None => `&client_secret=${clientSecret}`
       }
 
-      let uri = `${endpoint}/payments/${paymentIntentID}?force_sync=true${clientSecretUriStr}`
+      let uri = `${endpoint}/payments/${paymentIntentId}?force_sync=true${clientSecretUriStr}`
 
       let paymentSync = () => {
         intentCall(
@@ -1135,7 +1164,11 @@ let useCompleteAuthorizeHandler = () => {
     switch clientSecret {
     | Some(cs) =>
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
-      let uri = `${endpoint}/payments/${cs->Utils.getPaymentId}/complete_authorize`
+      let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+        ~clientSecret=cs,
+        ~sdkAuthorization,
+      )
+      let uri = `${endpoint}/payments/${paymentIntentId}/complete_authorize`
 
       let finalHeaders = switch headers {
       | Some(h) => h
@@ -1222,6 +1255,7 @@ let useCompleteAuthorize = (optLogger, paymentType) => {
         ~paymentType,
         ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
         ~paymentMode=mode,
+        ~sdkAuthorization=?keys.sdkAuthorization->Utils.getNonEmptyOption,
       )
     | _ => ()
     }
@@ -1277,7 +1311,10 @@ let usePaymentIntent = (optLogger, paymentType) => {
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = clientSecret->Utils.getPaymentId
+      let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+        ~clientSecret,
+        ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
+      )
       let headers = {
         let baseHeaders = [
           ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
@@ -1302,7 +1339,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let path = `payments/${paymentIntentID}/confirm`
+      let path = `payments/${paymentIntentId}/confirm`
 
       let uri = `${endpoint}/${path}`
 
@@ -1374,7 +1411,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~isCallbackUsedVal,
             ~componentName,
             ~redirectionFlags,
-            ~sdkAuthorization=keys.sdkAuthorization,
+            ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
           )
           ->then(val => {
             intentCallback(val)
@@ -1467,10 +1504,13 @@ let fetchSessions = async (
   ~sdkAuthorization=None,
 ) => {
   let headers = [("X-Merchant-Domain", merchantHostname)]->Dict.fromArray
-  let paymentIntentID = clientSecret->Utils.getPaymentId
+  let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+    ~clientSecret,
+    ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
+  )
 
   let bodyArr = [
-    ("payment_id", paymentIntentID->JSON.Encode.string),
+    ("payment_id", paymentIntentId->JSON.Encode.string),
     ("wallets", wallets->JSON.Encode.array),
     ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
   ]
@@ -1709,13 +1749,16 @@ let paymentIntentForPaymentSession = (
     redirect,
   }
 
-  let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
+  let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+    ~clientSecret,
+    ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
+  )
 
   let endpoint = ApiEndpoint.getApiEndPoint(
     ~publishableKey=confirmParam.publishableKey,
     ~isConfirmCall=true,
   )
-  let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
+  let uri = `${endpoint}/payments/${paymentIntentId}/confirm`
   let headers = switch sdkAuthorization->Utils.getNonEmptyOption {
   | Some(sdkAuth) => [("Authorization", sdkAuth)]
   | None => [("api-key", confirmParam.publishableKey)]
@@ -1782,7 +1825,13 @@ let callAuthLink = async (
   )
 
   let bodyArr = [
-    ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
+    (
+      "payment_id",
+      Utils.getPaymentIdOrExtractFromSdkAuth(
+        ~clientSecret=clientSecret->Option.getOr(""),
+        ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
+      )->JSON.Encode.string,
+    ),
     ("payment_method", "bank_debit"->JSON.Encode.string),
     ("payment_method_type", paymentMethodType->JSON.Encode.string),
   ]
@@ -1854,8 +1903,13 @@ let callAuthExchange = async (
     },
   )
 
+  let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+    ~clientSecret=clientSecret->Option.getOr(""),
+    ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
+  )
+
   let bodyArr = [
-    ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
+    ("payment_id", paymentIntentId->JSON.Encode.string),
     ("payment_method", "bank_debit"->JSON.Encode.string),
     ("payment_method_type", paymentMethodType->JSON.Encode.string),
     ("public_token", publicToken->JSON.Encode.string),
@@ -1990,7 +2044,10 @@ let usePostSessionTokens = (
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = clientSecret->Utils.getPaymentId
+      let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+        ~clientSecret,
+        ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
+      )
 
       let headers = [
         ("Content-Type", "application/json"),
@@ -1998,7 +2055,7 @@ let usePostSessionTokens = (
       ]
 
       let body = [
-        ("payment_id", paymentIntentID->JSON.Encode.string),
+        ("payment_id", paymentIntentId->JSON.Encode.string),
         ("payment_method_type", (paymentType :> string)->JSON.Encode.string),
         ("payment_method", (paymentMethod :> string)->JSON.Encode.string),
       ]
@@ -2015,7 +2072,7 @@ let usePostSessionTokens = (
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let uri = `${endpoint}/payments/${paymentIntentID}/post_session_tokens`
+      let uri = `${endpoint}/payments/${paymentIntentId}/post_session_tokens`
 
       let callIntent = body => {
         let contentLength = body->String.length->Int.toString
@@ -2319,5 +2376,3 @@ let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
   | _ => paymentMethodType
   }
 }
-
-

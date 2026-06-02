@@ -37,6 +37,7 @@ let make = () => {
         let publishableKey = metaDataDict->getString("publishableKey", "")
         let sdkAuthorization = metaDataDict->getOptionString("sdkAuthorization")
         logger.setClientSecret(paymentIntentId)
+        logger.setSdkAuthorization(sdkAuthorization->Option.getOr(""))
         logger.setMerchantId(publishableKey)
         let headersDict =
           metaDataDict
