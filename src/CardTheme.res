@@ -31,8 +31,30 @@ let getInnerLayout = str => {
 let getColorScheme = (str): colorScheme => {
   switch str->String.toLowerCase {
   | "auto" => Auto
-  | _ => Default
+  | "dark" => Dark
+  | "light" => Light
+  | str =>
+    str->unknownPropValueWarning(["light", "dark", "auto"], "appearance.colorScheme")
+    Light
   }
+}
+
+let setColorSchemeMeta = (colorScheme: colorScheme) => {
+  open Window
+  let meta = switch querySelector(`meta[name="color-scheme"]`)->Nullable.toOption {
+  | Some(el) => el
+  | None =>
+    let el = createElement("meta")
+    el->setAttribute("name", "color-scheme")
+    head->appendChildElement(el)
+    el
+  }
+  let colorSchemeVal = switch colorScheme {
+  | Auto => "light dark"
+  | Dark => "dark"
+  | Light => "light"
+  }
+  meta->setAttribute("content", colorSchemeVal)
 }
 
 let getShowLoader = str => {
@@ -54,7 +76,7 @@ let defaultAppearance = {
   labels: Above,
   rules: Dict.make()->JSON.Encode.object,
   innerLayout: Spaced,
-  colorScheme: Default,
+  colorScheme: Light,
 }
 let defaultFonts = {
   cssSrc: "",
@@ -67,7 +89,6 @@ let defaultConfig = {
   locale: "auto",
   fonts: [],
   clientSecret: "",
-  pmClientSecret: "",
   pmSessionId: "",
   loader: Auto,
   sdkAuthorization: "",
@@ -384,7 +405,7 @@ let getAppearance = (
           Above
         }
       },
-      colorScheme: getWarningString(json, "colorScheme", "default", ~logger)->getColorScheme,
+      colorScheme: getWarningString(json, "colorScheme", "light", ~logger)->getColorScheme,
     }
   })
   ->Option.getOr(defaultAppearance)
@@ -412,16 +433,7 @@ let itemToObjMapper = (
   logger,
 ) => {
   unknownKeysWarning(
-    [
-      "appearance",
-      "fonts",
-      "locale",
-      "clientSecret",
-      "loader",
-      "pmClientSecret",
-      "pmSessionId",
-      "sdkAuthorization",
-    ],
+    ["appearance", "fonts", "locale", "clientSecret", "loader", "pmSessionId", "sdkAuthorization"],
     dict,
     "elements",
   )
@@ -431,7 +443,6 @@ let itemToObjMapper = (
     fonts: getFonts("fonts", dict, logger),
     clientSecret: getWarningString(dict, "clientSecret", "", ~logger),
     pmSessionId: getWarningString(dict, "pmSessionId", "", ~logger),
-    pmClientSecret: getWarningString(dict, "pmClientSecret", "", ~logger),
     loader: getWarningString(dict, "loader", "auto", ~logger)->getShowLoader,
     sdkAuthorization: getString(dict, "sdkAuthorization", ""),
   }

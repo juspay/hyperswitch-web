@@ -38,7 +38,7 @@ describe("Mandate Card Flow - Cybersource", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE) ?? ""
+      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE)
     );
     changeObjectKeyValue(
       createPaymentBody,
@@ -99,14 +99,21 @@ describe("Mandate Card Flow - Cybersource", () => {
       });
     });
 
-    cy.waitForSDKReady();
+    // The saved-card view does not render cardNoInput, so waitForSDKReady()
+    // (which waits for cardNoInput) cannot be used here. Wait for the iframe
+    // to be visible, then assert the saved card UI is present.
+    cy.get(iframeSelector, { timeout: 15000 }).should("be.visible");
 
+    // Verify the saved card from the first payment is present.
+    // addNewCardIcon appears when at least one saved card exists.
     getIframeBody()
       .find(`[data-testid=${testIds.addNewCardIcon}]`, { timeout: 20000 })
       .should("be.visible");
 
+    // Card ending in 4242 should be pre-selected
     getIframeBody().contains("4242").should("be.visible");
 
+    // off_session mandate — no CVV input required
     getIframeBody()
       .find("[data-testid=cvvInput]")
       .should("not.exist");

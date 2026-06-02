@@ -3,7 +3,7 @@ open Utils
 
 @react.component
 let make = () => {
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
@@ -11,6 +11,8 @@ let make = () => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
+  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
@@ -44,10 +46,19 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (requiredFieldsBody, areRequiredFieldsValid, areRequiredFieldsEmpty, isManualRetryEnabled))
+  }, (
+    requiredFieldsBody,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    isManualRetryEnabled,
+    sdkAuthorization,
+  ))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
+    <RenderIf condition={layoutClass.\"type" === Accordion}>
+      <Space height="0" />
+    </RenderIf>
     <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
     <Surcharge paymentMethod paymentMethodType />
     <InfoElement />

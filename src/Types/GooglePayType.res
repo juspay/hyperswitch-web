@@ -130,15 +130,15 @@ let jsonToPaymentRequestDataType: (paymentDataRequest, Dict.t<JSON.t>) => paymen
   paymentRequest.allowedPaymentMethods =
     jsonDict
     ->getArray("allowed_payment_methods")
-    ->Array.map(json => transformKeys(json, CamelCase))
+    ->Array.map(json => transformKeysWithoutModifyingValue(json, CamelCase))
   paymentRequest.transactionInfo =
     jsonDict
     ->getJsonFromDict("transaction_info", JSON.Encode.null)
-    ->transformKeys(CamelCase)
+    ->transformKeysWithoutModifyingValue(CamelCase)
   paymentRequest.merchantInfo =
     jsonDict
     ->getJsonFromDict("merchant_info", JSON.Encode.null)
-    ->transformKeys(CamelCase)
+    ->transformKeysWithoutModifyingValue(CamelCase)
 
   paymentRequest
 }
@@ -173,14 +173,16 @@ let getPaymentDataFromSession = (~sessionObj, ~componentName) => {
     baseRequest->Identity.anyTypeToJson,
   )
   paymentDataRequest.allowedPaymentMethods = gpayobj.allowed_payment_methods->arrayJsonToCamelCase
-  paymentDataRequest.transactionInfo = gpayobj.transaction_info->transformKeys(CamelCase)
-  paymentDataRequest.merchantInfo = gpayobj.merchant_info->transformKeys(CamelCase)
+  paymentDataRequest.transactionInfo =
+    gpayobj.transaction_info->transformKeysWithoutModifyingValue(CamelCase)
+  paymentDataRequest.merchantInfo =
+    gpayobj.merchant_info->transformKeysWithoutModifyingValue(CamelCase)
   paymentDataRequest.emailRequired = gpayobj.emailRequired
 
   if componentName->getIsExpressCheckoutComponent {
     paymentDataRequest.shippingAddressRequired = gpayobj.shippingAddressRequired
     paymentDataRequest.shippingAddressParameters =
-      gpayobj.shippingAddressParameters->transformKeys(CamelCase)
+      gpayobj.shippingAddressParameters->transformKeysWithoutModifyingValue(CamelCase)
     paymentDataRequest.callbackIntents = ["SHIPPING_ADDRESS"->JSON.Encode.string]
   }
 

@@ -2,7 +2,12 @@
 let make = (~styles: JsxDOMStyle.t={}, ~paymentMethod, ~paymentMethodType) => {
   open RecoilAtoms
   let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {customMessageForCardTerms, business, terms} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {
+    customMessageForCardTerms,
+    business,
+    terms,
+    alwaysSendCustomerAcceptance,
+  } = Recoil.useRecoilValueFromAtom(optionAtom)
   let {payment_type: paymentType} = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentMethodListValue,
   )
@@ -22,20 +27,15 @@ let make = (~styles: JsxDOMStyle.t={}, ~paymentMethod, ~paymentMethodType) => {
   | "card" =>
     switch paymentType {
     | NEW_MANDATE | SETUP_MANDATE => (cardTermsValue, terms.card)
-    | _ => ("", Never)
+    | _ => alwaysSendCustomerAcceptance ? (cardTermsValue, terms.card) : ("", Never)
     }
   | _ => ("", Never)
   }
 
-  let customConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
+  let customMessageConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
     ~paymentMethod,
     ~paymentMethodType,
   )
-
-  let customMessageConfig =
-    customConfig
-    ->Option.map(config => config.message)
-    ->Option.getOr(PaymentType.defaultPaymentMethodMessage)
 
   let (termsText, showTerm) = switch customMessageConfig.displayMode {
   | DefaultSdkMessage => paymentMethodTermsDefaults

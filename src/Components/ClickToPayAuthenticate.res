@@ -220,6 +220,7 @@ let make = (
           setShowInstallments
           installmentsError
           setInstallmentsError
+          eligibilitySurchargeDetails=None
         />
       })
       ->React.array}

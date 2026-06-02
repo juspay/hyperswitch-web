@@ -94,7 +94,8 @@ describe("Submit Button States", () => {
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 10000 })
-        .should("be.visible");
+        .should("be.visible")
+        .and("contain.text", "CVC Number cannot be empty");
 
       cy.get("#submit")
         .should("be.visible")
@@ -110,7 +111,8 @@ describe("Submit Button States", () => {
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 5000 })
-        .should("be.visible");
+        .should("be.visible")
+        .and("contain.text", "Card expiry date cannot be empty");
 
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
@@ -139,7 +141,8 @@ describe("Submit Button States", () => {
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 5000 })
-        .should("be.visible");
+        .should("be.visible")
+        .and("contain.text", "Card expiry date cannot be empty");
 
       cy.get("#submit")
         .should("be.visible");
@@ -161,7 +164,8 @@ describe("Submit Button States", () => {
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 5000 })
-        .should("be.visible");
+        .should("be.visible")
+        .and("contain.text", "CVC Number cannot be empty");
     });
 
     it("should not process payment when expiry is missing", () => {
@@ -177,7 +181,8 @@ describe("Submit Button States", () => {
 
       getIframeBody()
         .find(".Error.pt-1", { timeout: 5000 })
-        .should("be.visible");
+        .should("be.visible")
+        .and("contain.text", "Card expiry date cannot be empty");
     });
   });
 });

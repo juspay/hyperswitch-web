@@ -28,6 +28,8 @@ type cardProps = {
   maxCardLength: int,
   cardBrand: string,
   cardEligibilityError: option<string>,
+  eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  isEligibilityPending: bool,
 }
 
 let useDefaultCardProps = () => {
@@ -46,6 +48,8 @@ let useDefaultCardProps = () => {
     maxCardLength: 0,
     cardBrand: "",
     cardEligibilityError: None,
+    eligibilitySurchargeDetails: None,
+    isEligibilityPending: false,
   }
 }
 
@@ -658,6 +662,17 @@ let getLayoutClass = layout => {
   }
 }
 
+let getCardBrandIconVisibility = (
+  cardBrandIconSetting: PaymentType.cardBrandIconStyle,
+  cardType,
+) => {
+  switch cardBrandIconSetting {
+  | Standard | Animated => true // Animated is reserved for future use; behaves like Standard for now
+  | Hidden => false
+  | HideGeneric => cardType != NOTFOUND
+  }
+}
+
 let getAllBanknames = obj => {
   obj->Array.reduce([], (acc, item) => {
     item->Array.map(val => acc->Array.push(val))->ignore
@@ -674,9 +689,17 @@ let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?) =
   countryPostal.regex
 }
 
-let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
+let setRightIconForCvc = (
+  ~cardEmpty,
+  ~cardInvalid,
+  ~color,
+  ~cardComplete,
+  ~cvcIcon: PaymentType.cvcIconStyle=Default,
+) => {
   open Utils
-  if cardEmpty {
+  if cvcIcon === Hidden {
+    React.null
+  } else if cardEmpty {
     <Icon size=brandIconSize name="cvc-empty" />
   } else if cardInvalid {
     <div style={color: color}>

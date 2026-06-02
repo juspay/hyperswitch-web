@@ -143,7 +143,7 @@ describe("Locale / i18n Tests", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.STRIPE) ?? "",
+      connectorProfileIdMapping.get(connectorEnum.STRIPE),
     );
     changeObjectKeyValue(createPaymentBody, "billing", defaultBillingAddress);
   });
@@ -272,7 +272,7 @@ describe("Locale / i18n Tests", () => {
         changeObjectKeyValue(
           createPaymentBody,
           "profile_id",
-          connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE) ?? "",
+          connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE),
         );
         changeObjectKeyValue(
           createPaymentBody,

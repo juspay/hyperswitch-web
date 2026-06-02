@@ -7,9 +7,11 @@ let make = () => {
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let {sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
   let {config, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {displaySavedPaymentMethods, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
-  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
@@ -55,7 +57,13 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (isManualRetryEnabled, areRequiredFieldsValid, areRequiredFieldsEmpty, requiredFieldsBody))
+  }, (
+    isManualRetryEnabled,
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    requiredFieldsBody,
+    sdkAuthorization,
+  ))
 
   useSubmitPaymentData(submitCallback)
 
@@ -66,6 +74,9 @@ let make = () => {
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
         }>
+        <RenderIf condition={layoutClass.\"type" === Accordion}>
+          <Space height="0" />
+        </RenderIf>
         <DynamicFields paymentMethod paymentMethodType setRequiredFieldsBody />
         <Surcharge paymentMethod paymentMethodType />
         <Terms paymentMethod paymentMethodType />

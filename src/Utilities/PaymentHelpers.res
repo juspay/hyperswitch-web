@@ -67,7 +67,7 @@ let fetchPaymentMethodEligibility = async (
   ~publishableKey,
   ~logger,
   ~customPodUri,
-  ~bodyArr: array<(string, JSON.t)>,
+  ~bodyArr,
   ~sdkAuthorization=None,
   ~endpoint,
   ~signal: option<Fetch.AbortSignal.t>=?,
@@ -2320,14 +2320,4 @@ let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
   }
 }
 
-let getCardEligibilityErrorText = (
-  ~cardEligibilityError,
-  ~localeString: LocaleStringTypes.localeStrings,
-) => {
-  switch cardEligibilityError {
-  | Some("")
-  | None =>
-    localeString.cardNotEligibleText
-  | Some(eligibilityErrorText) => eligibilityErrorText
-  }
-}
+
