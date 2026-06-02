@@ -1164,10 +1164,11 @@ let useCompleteAuthorizeHandler = () => {
     switch clientSecret {
     | Some(cs) =>
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
-      let uri = `${endpoint}/payments/${Utils.getPaymentIdOrExtractFromSdkAuth(
-          ~clientSecret=cs,
-          ~sdkAuthorization,
-        )}/complete_authorize`
+      let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+        ~clientSecret=cs,
+        ~sdkAuthorization,
+      )
+      let uri = `${endpoint}/payments/${paymentIntentId}/complete_authorize`
 
       let finalHeaders = switch headers {
       | Some(h) => h
@@ -1902,14 +1903,13 @@ let callAuthExchange = async (
     },
   )
 
+  let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+    ~clientSecret=clientSecret->Option.getOr(""),
+    ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
+  )
+
   let bodyArr = [
-    (
-      "payment_id",
-      Utils.getPaymentIdOrExtractFromSdkAuth(
-        ~clientSecret=clientSecret->Option.getOr(""),
-        ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
-      )->JSON.Encode.string,
-    ),
+    ("payment_id", paymentIntentId->JSON.Encode.string),
     ("payment_method", "bank_debit"->JSON.Encode.string),
     ("payment_method_type", paymentMethodType->JSON.Encode.string),
     ("public_token", publicToken->JSON.Encode.string),
@@ -2376,5 +2376,3 @@ let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
   | _ => paymentMethodType
   }
 }
-
-
