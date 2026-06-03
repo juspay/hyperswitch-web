@@ -1,6 +1,6 @@
 export type cardDetails = {
   cardNo: string;
-  cardScheme: string;
+  cardScheme?: string;
   cvc: string;
   card_exp_month: string;
   card_exp_year: string;
@@ -146,4 +146,21 @@ export const bankOfAmericaCards = {
     cardNo: "400000000000000",
     ...bankOfAmericaCardsDefaultData,
   },
+};
+
+// Cobadge card brands — these are the option values in the card scheme dropdown
+export const cobadgeCardBrands = {
+  VISA: "Visa",
+  CARTES_BANCAIRES: "CartesBancaires",
+} as const;
+
+// Cobadge test cards — cards that match multiple card brand BIN patterns
+export const cobadgeCards = {
+  visaCartesBancaires: {
+    cardNo: "4010061700000021",
+    cardScheme: "Visa",
+    cvc: "123",
+    card_exp_month: "04",
+    card_exp_year: "44",
+  } as cardDetails,
 };

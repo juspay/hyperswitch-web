@@ -38,12 +38,9 @@ let waitForReady = () => {
 let getNewCredentials = async (~callback: unit => promise<JSON.t>, ~currentClientSecret) => {
   let callbackResult = await callback()
   let newSdkAuthorization = callbackResult->getDictFromJson->getString("sdkAuthorization", "")
-  let sdkAuthorizationData = newSdkAuthorization->getSdkAuthorizationData
-  let newClientSecret = switch sdkAuthorizationData.clientSecret->getNonEmptyOption {
-  | Some(cs) => cs
-  | None => currentClientSecret
-  }
-  (newSdkAuthorization, newClientSecret)
+  // Note: under the new SDK auth contract, client_secret is no longer embedded in the token.
+  // We unconditionally return currentClientSecret so that callers continue using the original secret.
+  (newSdkAuthorization, currentClientSecret)
 }
 
 // --- Send credentials update to iframes ---
@@ -288,10 +285,8 @@ let performUpdateIntent = async (
 
     let response = try {
       // Get new credentials from merchant callback
-      let (newSdkAuthorization, newClientSecret) = await getNewCredentials(
-        ~callback,
-        ~currentClientSecret=clientSecretRef.contents,
-      )
+      let callbackResult = await callback()
+      let newSdkAuthorization = callbackResult->getDictFromJson->getString("sdkAuthorization", "")
 
       // Mount new preMountLoader with new credentials (refs NOT updated yet —
       // we validate all API responses before committing any state changes)
@@ -307,7 +302,7 @@ let performUpdateIntent = async (
         ~isTestMode,
         ~isSdkParamsEnabled,
         ~selectorString,
-        ~currentClientSecret=newClientSecret,
+        ~currentClientSecret=clientSecretRef.contents,
         ~currentSdkAuthorization=newSdkAuthorization,
       )
 
@@ -334,7 +329,7 @@ let performUpdateIntent = async (
 
       | None =>
         // All API calls succeeded — now commit state changes
-        clientSecretRef.contents = newClientSecret
+
         sdkAuthorizationRef.contents = newSdkAuthorization
 
         paymentMethodsDataPromise.contents = newPaymentMethodsPromise
@@ -342,7 +337,11 @@ let performUpdateIntent = async (
         sessionTokensDataPromise.contents = newSessionTokensPromise
 
         // Send ElementsUpdate to all inner iframes with new credentials
-        sendElementsUpdateToIframes(iframes, ~newSdkAuthorization, ~newClientSecret)
+        sendElementsUpdateToIframes(
+          iframes,
+          ~newSdkAuthorization,
+          ~newClientSecret=clientSecretRef.contents,
+        )
 
         // Wait for the payment element to signal ready (only if a payment element is mounted)
         let readyPromise = if shouldWaitForReady {
