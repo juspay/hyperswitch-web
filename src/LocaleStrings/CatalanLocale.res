@@ -260,4 +260,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showMore: "Mostra més",
   showLess: "Mostra menys",
   refreshingText: "Actualitzant...",
+  paymentDetailsBeingCheckedText: "S'estan comprovant els detalls del pagament. Si us plau, espereu",
 }

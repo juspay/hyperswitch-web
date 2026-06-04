@@ -258,4 +258,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showMore: "顯示更多",
   showLess: "收起",
   refreshingText: "重新整理中...",
+  paymentDetailsBeingCheckedText: "正在檢查付款詳情，請稍候",
 }
