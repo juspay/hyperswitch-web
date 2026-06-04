@@ -29,6 +29,7 @@ type voucherDetails = {
   reference: string,
 }
 
+type pollConfig = {delay_in_secs: int}
 type ddcData = {
   iframeUrl: string,
   timeoutMs: int,
@@ -57,6 +58,7 @@ type nextAction = {
   display_text: option<string>,
   border_color: option<string>,
   iframe_data: option<JSON.t>,
+  poll_config: option<pollConfig>,
   ddc_data: option<ddcData>,
 }
 type intent = {
@@ -70,6 +72,10 @@ type intent = {
   connectorTransactionId: string,
 }
 open Utils
+
+let defaultPollConfig = {
+  delay_in_secs: 2,
+}
 
 let defaultNextAction = {
   redirectToUrl: "",
@@ -89,6 +95,7 @@ let defaultNextAction = {
   display_text: None,
   border_color: None,
   iframe_data: None,
+  poll_config: None,
   ddc_data: None,
 }
 let defaultIntent = {
@@ -147,6 +154,12 @@ let getVoucherDetails = json => {
   }
 }
 
+let getPollConfig = json => {
+  {
+    delay_in_secs: json->getInt("delay_in_secs", 2),
+  }
+}
+
 let getDdcData = json => {
   json
   ->getOptionalDict("ddc_data")
@@ -185,12 +198,9 @@ let getNextAction = (dict, str) => {
         ->Dict.get("three_ds_data")
         ->Option.getOr(Dict.make()->JSON.Encode.object),
       ),
-      display_to_timestamp: Some(
-        json
-        ->Dict.get("display_to_timestamp")
-        ->Option.flatMap(JSON.Decode.float)
-        ->Option.getOr(0.0),
-      ),
+      display_to_timestamp: json
+      ->Dict.get("display_to_timestamp")
+      ->Option.flatMap(JSON.Decode.float),
       voucher_details: {
         json
         ->Dict.get("voucher_details")
@@ -201,6 +211,11 @@ let getNextAction = (dict, str) => {
       display_text: json->getOptionString("display_text"),
       border_color: json->getOptionString("border_color"),
       iframe_data: Some(json->Utils.getJsonObjectFromDict("iframe_data")),
+      poll_config: {
+        json
+        ->getOptionalDict("poll_config")
+        ->Option.map(json => json->getPollConfig)
+      },
       ddc_data: json->getDdcData,
     }
   })

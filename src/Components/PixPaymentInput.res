@@ -7,10 +7,20 @@ let make = (~fieldType="") => {
   let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
+  let (pixAccountNumber, setPixAccountNumber) = Recoil.useRecoilState(userPixAccountNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let (branchCode, setBranchCode) = Recoil.useRecoilState(userBranchCode)
+  let (bankIdentifier, setBankIdentifier) = Recoil.useRecoilState(userBankIdentifier)
   let inputRef = React.useRef(Nullable.null)
 
   let validatePixKey = (val): RecoilAtomTypes.field =>
+    if val->String.length > 0 {
+      {value: val, isValid: Some(true), errorString: ""}
+    } else {
+      {value: val, isValid: None, errorString: ""}
+    }
+
+  let validatePixAccountNumber = (val): RecoilAtomTypes.field =>
     if val->String.length > 0 {
       {value: val, isValid: Some(true), errorString: ""}
     } else {
@@ -72,6 +82,14 @@ let make = (~fieldType="") => {
       Some(14),
       validatePixCNPJ,
     )
+  | "pixAccountNumber" => (
+      localeString.pixAccountNumberLabel,
+      setPixAccountNumber,
+      pixAccountNumber,
+      localeString.pixAccountNumberPlaceholder,
+      None,
+      validatePixAccountNumber,
+    )
   | _ => (
       "",
       _ => (),
@@ -123,14 +141,40 @@ let make = (~fieldType="") => {
           errorString: localeString.pixCPFEmptyText,
         })
       }
+      if pixAccountNumber.value == "" {
+        setPixAccountNumber(prev => {
+          ...prev,
+          errorString: localeString.pixAccountNumberEmptyText,
+        })
+      }
       if sourceBankAccountId.value == "" {
         setSourceBankAccountId(prev => {
           ...prev,
           errorString: localeString.sourceBankAccountIdEmptyText,
         })
       }
+      if branchCode.value == "" {
+        setBranchCode(prev => {
+          ...prev,
+          errorString: localeString.branchCodeEmptyText,
+        })
+      }
+      if bankIdentifier.value == "" {
+        setBankIdentifier(prev => {
+          ...prev,
+          errorString: localeString.bankIdentifierEmptyText,
+        })
+      }
     }
-  }, [pixCNPJ.value, pixKey.value, pixCPF.value])
+  }, (
+    pixCNPJ.value,
+    pixKey.value,
+    pixCPF.value,
+    pixAccountNumber.value,
+    sourceBankAccountId.value,
+    branchCode.value,
+    bankIdentifier.value,
+  ))
 
   useSubmitPaymentData(submitCallback)
 
