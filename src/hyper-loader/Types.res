@@ -73,13 +73,15 @@ type checkoutWithCardInput = {
 }
 
 type clickToPaySession = {
-  isCustomerPresent: option<isCustomerPresentInput> => promise<JSON.t>,
   getUserType: unit => promise<JSON.t>, // getUserType
   getRecognizedCards: unit => promise<JSON.t>,
   validateCustomerAuthentication: validateCustomerAuthenticationInput => promise<JSON.t>,
   checkoutWithCard: checkoutWithCardInput => promise<JSON.t>,
   signOut: unit => promise<JSON.t>,
+  token: JSON.t,
 }
+
+type clickToPayDCTPSession = {isCustomerPresent: option<isCustomerPresentInput> => promise<JSON.t>}
 
 type clickToPayObj = {session: Nullable.t<clickToPaySession>}
 
@@ -88,6 +90,7 @@ type initClickToPaySessionInput = {request3DSAuthentication: option<bool>}
 type initAuthenticationSession = {
   initClickToPaySession: initClickToPaySessionInput => promise<JSON.t>,
   getActiveClickToPaySession: unit => promise<JSON.t>,
+  initClickToPayDCTPSession: JSON.t => promise<JSON.t>,
 }
 
 type confirmParams = {return_url: string}
@@ -215,6 +218,7 @@ let defaultInitPaymentSession: initPaymentSession = {
 let defaultInitAuthenticationSession: initAuthenticationSession = {
   initClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
   getActiveClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
+  initClickToPayDCTPSession: _ => Promise.resolve(JSON.Encode.null),
 }
 
 let defaultHyperInstance = {

@@ -313,6 +313,27 @@ let clickToPayTokenItemToObjMapper = (json: JSON.t) => {
   }
 }
 
+// For tokens serialized via Identity.anyTypeToJson (camelCase keys matching ReScript record fields)
+let clickToPayTokenFromCamelCaseMapper = (json: JSON.t) => {
+  let dict = json->Utils.getDictFromJson
+  {
+    dpaId: dict->Utils.getString("dpaId", ""),
+    dpaName: dict->Utils.getString("dpaName", ""),
+    locale: dict->Utils.getString("locale", ""),
+    transactionAmount: dict->Utils.getFloat("transactionAmount", 0.0),
+    transactionCurrencyCode: dict->Utils.getString("transactionCurrencyCode", ""),
+    acquirerBIN: dict->Utils.getString("acquirerBIN", ""),
+    acquirerMerchantId: dict->Utils.getString("acquirerMerchantId", ""),
+    merchantCategoryCode: dict->Utils.getString("merchantCategoryCode", ""),
+    merchantCountryCode: dict->Utils.getString("merchantCountryCode", ""),
+    cardBrands: dict
+    ->Utils.getArray("cardBrands")
+    ->Array.map(item => item->JSON.Decode.string->Option.getOr("")),
+    email: dict->Utils.getString("email", ""),
+    provider: dict->Utils.getString("provider", "mastercard"),
+  }
+}
+
 // Update the previously defined mastercardCheckoutServices type
 @send
 external getCards: (mastercardCheckoutServices, unit) => promise<array<clickToPayCard>> = "getCards"
@@ -1233,51 +1254,36 @@ let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorC
   body->Window.appendChild(script)
 }
 
-let loadVisaUnifiedClickToPayScriptAndDirectSdkScripts = (
+let loadDirectSdkScripts = (
   logger: HyperLoggerTypes.loggerMake,
-  clickToPayToken: clickToPayToken,
-  onLoadCallback,
-  onErrorCallback,
+  onLoadCallback: directSdkLoadStatus => unit,
+  onErrorCallback: unit => unit,
 ) => {
-  let cardBrands = clickToPayToken.cardBrands->Array.join(",")
-
-  let (visaDirectSrc, mastercardDirectSrc, mainScriptSrc) = GlobalVars.isProd
+  let (visaDirectSrc, mastercardDirectSrc) = GlobalVars.isProd
     ? (
-        `https://secure.checkout.visa.com/checkout-widget/resources/js/src-i-adapter/visaSdk.js?v2&vsb`,
+        `https://secure.checkout.visa.com/checkout-widget/resources/js/src-i-adapter/visaSdk.js?v2`,
         `https://src.mastercard.com/sdk/srcsdk.mastercard.js`,
-        `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`,
       )
     : (
-        `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/src-i-adapter/visaSdk.js?v2&vsb`,
+        `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/src-i-adapter/visaSdk.js?v2`,
         `https://sandbox.src.mastercard.com/sdk/srcsdk.mastercard.js`,
-        `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`,
       )
 
-  // Mutable state to track each script's resolution
-  let mainLoaded = ref(false)
-  let mainFailed = ref(false)
   let visaDirectLoaded = ref(false)
   let mastercardDirectLoaded = ref(false)
   let visaDirectFailed = ref(false)
   let mastercardDirectFailed = ref(false)
-
-  // Called after every script settles to check if we can resolve
   let callbackFired = ref(false)
 
   let evaluate = () => {
-    // Guard: only fire the final callback once
     if !callbackFired.contents {
       let allSettled =
-        (mainLoaded.contents || mainFailed.contents) &&
         (visaDirectLoaded.contents || visaDirectFailed.contents) &&
-        (mastercardDirectLoaded.contents || mastercardDirectFailed.contents)
+          (mastercardDirectLoaded.contents || mastercardDirectFailed.contents)
 
-      // Wait for ALL scripts to settle before deciding.
-      // If main loaded: fire onLoadCallback with direct SDK load status (even if direct scripts failed).
-      // If main failed: fire onErrorCallback — main UCTP script is required.
       if allSettled {
         callbackFired := true
-        if mainLoaded.contents {
+        if visaDirectLoaded.contents || mastercardDirectLoaded.contents {
           onLoadCallback({
             visaDirectLoaded: visaDirectLoaded.contents,
             mastercardDirectLoaded: mastercardDirectLoaded.contents,
@@ -1298,77 +1304,75 @@ let loadVisaUnifiedClickToPayScriptAndDirectSdkScripts = (
     body->Window.appendChild(script)
   }
 
-  logger.setLogDebug(
-    ~value="Loading Visa Unified Click to Pay script",
-    ~eventName=VISA_UCTP_LOAD_SCRIPT_INIT,
-  )
-  appendScript(
-    mainScriptSrc,
-    () => {
-      logger.setLogDebug(
-        ~value="Successfully loaded Visa Unified Click to Pay script",
-        ~eventName=VISA_UCTP_LOAD_SCRIPT_RETURNED,
-      )
-      mainLoaded := true
-      evaluate()
-    },
-    () => {
-      logger.setLogError(
-        ~value="Failed to load Visa Unified Click to Pay script",
-        ~eventName=VISA_UCTP_LOAD_SCRIPT_RETURNED,
-      )
-      mainFailed := true
-      evaluate()
-    },
-  )
-
+  // Visa Direct script — skip if already in DOM
   logger.setLogDebug(
     ~value="Loading Visa Direct Click to Pay script",
     ~eventName=VISA_DCTP_LOAD_SCRIPT_INIT,
   )
-  appendScript(
-    visaDirectSrc,
-    () => {
+  switch querySelector(`script[src*="visaSdk.js"]`)->Nullable.toOption {
+  | Some(_) => {
       logger.setLogDebug(
-        ~value="Successfully loaded Visa Direct Click to Pay script",
+        ~value="Visa Direct Click to Pay script already in DOM, skipping load",
         ~eventName=VISA_DCTP_LOAD_SCRIPT_RETURNED,
       )
       visaDirectLoaded := true
       evaluate()
-    },
-    () => {
-      logger.setLogError(
-        ~value="Failed to load Visa Direct Click to Pay script",
-        ~eventName=VISA_DCTP_LOAD_SCRIPT_RETURNED,
-      )
-      visaDirectFailed := true
-      evaluate()
-    },
-  )
+    }
+  | None => appendScript(
+      visaDirectSrc,
+      () => {
+        logger.setLogDebug(
+          ~value="Successfully loaded Visa Direct Click to Pay script",
+          ~eventName=VISA_DCTP_LOAD_SCRIPT_RETURNED,
+        )
+        visaDirectLoaded := true
+        evaluate()
+      },
+      () => {
+        logger.setLogError(
+          ~value="Failed to load Visa Direct Click to Pay script",
+          ~eventName=VISA_DCTP_LOAD_SCRIPT_RETURNED,
+        )
+        visaDirectFailed := true
+        evaluate()
+      },
+    )
+  }
 
+  // Mastercard Direct script — skip if already in DOM
   logger.setLogDebug(
     ~value="Loading Mastercard Direct Click to Pay script",
     ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_INIT,
   )
-  appendScript(
-    mastercardDirectSrc,
-    () => {
+  switch querySelector(`script[src*="srcsdk.mastercard.js"]`)->Nullable.toOption {
+  | Some(_) => {
       logger.setLogDebug(
-        ~value="Successfully loaded Mastercard Direct Click to Pay script",
+        ~value="Mastercard Direct Click to Pay script already in DOM, skipping load",
         ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_RETURNED,
       )
       mastercardDirectLoaded := true
       evaluate()
-    },
-    () => {
-      logger.setLogError(
-        ~value="Failed to load Mastercard Direct Click to Pay script",
-        ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_RETURNED,
-      )
-      mastercardDirectFailed := true
-      evaluate()
-    },
-  )
+    }
+  | None => appendScript(
+      mastercardDirectSrc,
+      () => {
+        logger.setLogDebug(
+          ~value="Successfully loaded Mastercard Direct Click to Pay script",
+          ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_RETURNED,
+        )
+        mastercardDirectLoaded := true
+        evaluate()
+      },
+      () => {
+        logger.setLogError(
+          ~value="Failed to load Mastercard Direct Click to Pay script",
+          ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_RETURNED,
+        )
+        mastercardDirectFailed := true
+        evaluate()
+      },
+    )
+  }
 }
 
 let loadClickToPayUIScripts = (

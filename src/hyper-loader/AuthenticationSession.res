@@ -46,6 +46,17 @@ let make = (
         ~merchantId,
         ~initClickToPaySessionInput=initClickToPaySessionRef.contents,
       ),
+    initClickToPayDCTPSession: params =>
+      AuthenticationSessionMethods.initClickToPayDCTPSession(
+        ~params,
+        ~logger,
+        ~clientSecret,
+        ~publishableKey,
+        ~customPodUri,
+        ~endpoint,
+        ~profileId,
+        ~authenticationId,
+      ),
   }
 
   let clientSecretReMatch = switch GlobalVars.sdkVersion {
