@@ -38,7 +38,7 @@ let make = (
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {billingAddress, redirectionInfo} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {billingAddress, redirectionInfo, defaultValues} = Recoil.useRecoilValueFromAtom(optionAtom)
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
 
@@ -57,9 +57,23 @@ let make = (
 
   let getSuperpositionFinalFields = ConfigurationService.useConfigurationService(~rawConfigs)
 
-  let requiredFieldsFromPMLFlat = React.useMemo(() => {
-    extractValuesFromPMLRequiredFields(paymentMethodTypes.required_fields)
-  }, [paymentMethodTypes.required_fields])
+  let flatIntentData = React.useMemo(() => {
+    let flattenWithPrefix = (jsonOpt, prefix) =>
+      jsonOpt->Option.mapOr([], json =>
+        json
+        ->Utils.flattenObject(true)
+        ->Dict.toArray
+        ->Array.filterMap(((k, v)) =>
+            v->JSON.Decode.string->Option.map(s => (prefix ++ k, s))
+          )
+      )
+    [
+      flattenWithPrefix(paymentMethodListValue.intent_data.billing, "billing."),
+      flattenWithPrefix(paymentMethodListValue.intent_data.shipping, "shipping."),
+    ]
+    ->Array.flat
+    ->Dict.fromArray
+  }, [paymentMethodListValue.intent_data])
 
   let eligibleConnectors = React.useMemo(() => {
     SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
@@ -82,13 +96,13 @@ let make = (
     getSuperpositionFinalFields(
       eligibleConnectors,
       superpositionBaseContext,
-      requiredFieldsFromPMLFlat,
+      flatIntentData,
     )
   }, (
     getSuperpositionFinalFields,
     eligibleConnectors,
     superpositionBaseContext,
-    requiredFieldsFromPMLFlat,
+    flatIntentData,
   ))
 
   let missingRequiredFieldsFiltered = React.useMemo(() => {
@@ -125,6 +139,10 @@ let make = (
       }
     })
   }, (missingRequiredFields, billingAddress.isUseBillingAddress))
+
+  let finalInitialValues = React.useMemo(() => {
+    DynamicFieldsUtils.applyBillingDetailsOverride(initialValues, defaultValues.billingDetails)
+  }, (initialValues, defaultValues.billingDetails))
 
   let billingPrefix = "payment_method_data.billing."
 
@@ -183,7 +201,7 @@ let make = (
   <>
     <RenderIf condition={!isSavedCardFlow && hasAnyField}>
       <ReactFinalForm.Form
-        initialValues={Some(initialValues)}
+        initialValues={Some(finalInitialValues)}
         onSubmit={_values => ()}
         render={formProps => {
           formRef.current = Some(formProps.form)
