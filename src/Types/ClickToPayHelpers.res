@@ -1261,11 +1261,11 @@ let loadDirectSdkScripts = (
 ) => {
   let (visaDirectSrc, mastercardDirectSrc) = GlobalVars.isProd
     ? (
-        `https://secure.checkout.visa.com/checkout-widget/resources/js/src-i-adapter/visaSdk.js?v2`,
+        `https://assets.secure.checkout.visa.com/checkout-widget/resources/js/src-i-adapter/visaSdk.js?v2`,
         `https://src.mastercard.com/sdk/srcsdk.mastercard.js`,
       )
     : (
-        `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/src-i-adapter/visaSdk.js?v2`,
+        `https://sandbox-assets.secure.checkout.visa.com/checkout-widget/resources/js/src-i-adapter/visaSdk.js?v2`,
         `https://sandbox.src.mastercard.com/sdk/srcsdk.mastercard.js`,
       )
 
@@ -1318,7 +1318,8 @@ let loadDirectSdkScripts = (
       visaDirectLoaded := true
       evaluate()
     }
-  | None => appendScript(
+  | None =>
+    appendScript(
       visaDirectSrc,
       () => {
         logger.setLogDebug(
@@ -1353,7 +1354,8 @@ let loadDirectSdkScripts = (
       mastercardDirectLoaded := true
       evaluate()
     }
-  | None => appendScript(
+  | None =>
+    appendScript(
       mastercardDirectSrc,
       () => {
         logger.setLogDebug(
