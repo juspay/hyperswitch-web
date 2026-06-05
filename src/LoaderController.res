@@ -293,6 +293,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   pmSessionId,
                 })
                 logger.setClientSecret(clientSecret)
+                logger.setSdkAuthorization(sdkAuthorization)
 
                 // Update top redirection atom
                 updateRedirectionFlags(paymentOptions)
@@ -354,6 +355,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               pmSessionId,
             })
             logger.setClientSecret(clientSecret)
+            logger.setSdkAuthorization(sdkAuthorization)
 
             // Update top redirection atom
             updateRedirectionFlags(paymentOptions)

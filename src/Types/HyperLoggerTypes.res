@@ -48,6 +48,7 @@ type eventName =
   | CLEAR
   | CONFIRM_PAYMENT
   | CONFIRM_CARD_PAYMENT
+  | IS_READY_STATUS_CHECK
   | SDK_CRASH
   | INVALID_PK
   | DEPRECATED_LOADSTRIPE
@@ -167,6 +168,7 @@ type loggerMake = {
   sendLogs: unit => unit,
   setSessionId: string => unit,
   setClientSecret: string => unit,
+  setSdkAuthorization: string => unit,
   setMerchantId: string => unit,
   setMetadata: JSON.t => unit,
   setSource: string => unit,

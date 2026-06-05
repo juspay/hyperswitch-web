@@ -106,7 +106,7 @@ describe("Element Lifecycle Tests", () => {
 
     getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`, { timeout: 10000 }).should("exist");
 
-    cy.get("#submit").click();
+    cy.get("#submit").should("be.visible").click();
 
     getIframeBody().find(".Error").should("be.visible");
   });

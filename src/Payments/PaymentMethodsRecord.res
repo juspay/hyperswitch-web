@@ -949,6 +949,7 @@ type paymentMethodList = {
   isGuestCustomer: option<bool>,
   intent_data: intentData,
   sdk_next_action: option<string>,
+  should_block_confirm: bool,
 }
 
 let defaultPaymentMethodType = {
@@ -980,6 +981,7 @@ let defaultList = {
   isGuestCustomer: None,
   intent_data: defaultIntentData,
   sdk_next_action: None,
+  should_block_confirm: false,
 }
 
 let getPaymentExperienceType = str => {
@@ -1219,6 +1221,9 @@ let itemToObjMapper = dict => {
     isGuestCustomer: getOptionBool(dict, "is_guest_customer"),
     intent_data: dict->getIntentData,
     sdk_next_action: dict->getDictFromDict("sdk_next_action")->getOptionString("next_action"),
+    should_block_confirm: dict
+    ->getDictFromDict("sdk_next_action")
+    ->getBool("should_block_confirm", false),
   }
 }
 
@@ -1299,22 +1304,4 @@ let getPaymentExperienceTypeFromPML = (
     ->Some
   )
   ->Option.getOr([])
-}
-
-let parseEligibilityResponse = json => {
-  let dict = json->getDictFromJson
-  let sdkNextActionDict = dict->getDictFromDict("sdk_next_action")
-  let nextAction = sdkNextActionDict->Dict.get("next_action")
-  switch nextAction {
-  | Some(nextActionJson) =>
-    switch nextActionJson->JSON.Classify.classify {
-    | String(str) => str === "deny" ? Some("") : None
-    | Object(nextActionDict) =>
-      nextActionDict
-      ->Dict.get("deny")
-      ->Option.map(denyJson => denyJson->getDictFromJson->getString("message", ""))
-    | _ => None
-    }
-  | None => None
-  }
 }

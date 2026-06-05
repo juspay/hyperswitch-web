@@ -74,9 +74,6 @@ let handleLogging = (
 
 let eventNameToStrMapper = (eventName: HyperLoggerTypes.eventName) => (eventName :> string)
 
-let getPaymentId = clientSecret =>
-  String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-
 let convertToScreamingSnakeCase = text => {
   text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
 }
@@ -90,6 +87,7 @@ let toSnakeCaseWithSeparator = (str, separator) => {
 let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   sendLogs: () => (),
   setClientSecret: _x => (),
+  setSdkAuthorization: _x => (),
   setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
   setLogError: (
     ~value as _,
@@ -291,6 +289,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | CLEAR
   | CONFIRM_PAYMENT
   | CONFIRM_CARD_PAYMENT
+  | IS_READY_STATUS_CHECK
   | SDK_CRASH
   | INVALID_PK
   | DEPRECATED_LOADSTRIPE
