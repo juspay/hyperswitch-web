@@ -57,9 +57,9 @@ let initClickToPaySession = async (
   ~authenticationId,
   ~merchantId,
   ~initClickToPaySessionInput: Types.initClickToPaySessionInput,
-  ~shouldLoadScripts=true,
+  ~isGetActiveSession=false,
 ) => {
-  if shouldLoadScripts {
+  if !isGetActiveSession {
     logger.setLogInfo(
       ~value="Initializing Click to Pay Session",
       ~eventName=INIT_CLICK_TO_PAY_SESSION,
@@ -86,20 +86,18 @@ let initClickToPaySession = async (
     )
 
   let data = await (
-    if shouldLoadScripts {
-      handleApi()
-    } else {
-      logger.setLogDebug(
-        ~value="Fetching existing click to pay token without loading scripts",
-        ~eventName=GET_EXISTING_CLICK_TO_PAY_TOKEN,
-      )
-      switch clickToPayTokenCache->Dict.get(key) {
-      | Some(promise) => promise
-      | None =>
-        let promise = handleApi()
-        setClickToPayTokenWithDebounce(key, promise)
+    switch clickToPayTokenCache->Dict.get(key) {
+    | Some(promise) => {
+        logger.setLogDebug(
+          ~value="Fetching existing click to pay token without loading scripts",
+          ~eventName=GET_EXISTING_CLICK_TO_PAY_TOKEN,
+        )
         promise
       }
+    | None =>
+      let promise = handleApi()
+      setClickToPayTokenWithDebounce(key, promise)
+      promise
     }
   )
 
@@ -709,131 +707,147 @@ let initClickToPaySession = async (
           }->Identity.anyTypeToJson
         }
 
-        switch shouldLoadScripts {
-        | false =>
-          switch ClickToPayHelpers.initializedVSDK->Nullable.toOption {
-          | Some(true) => {
-              logger.setLogDebug(
-                ~value="Active Click to Pay session found",
-                ~eventName=GET_ACTIVE_CLICK_TO_PAY_SESSION_RETURNED,
-              )
-              resolve(getSessionObject())
-            }
-          | _ => {
-              logger.setLogError(
-                ~value="No active Click to Pay session found",
-                ~eventName=GET_ACTIVE_CLICK_TO_PAY_SESSION_RETURNED,
-              )
-              let failedErrorResponse = getFailedSubmitResponse(
-                ~errorType="SESSION_NOT_FOUND",
-                ~message="No Active Click to Pay session found.",
-              )
-              resolve(failedErrorResponse)
-            }
-          }
-        | true =>
-          logger.setLogDebug(
-            ~value="Loading Visa Unified Click to Pay script",
-            ~eventName=VISA_UCTP_LOAD_SCRIPT_INIT,
-          )
-          ClickToPayHelpers.loadVisaScript(
-            token,
-            () => {
-              // Wrap the entire callback in try/catch to prevent unresolved Promise.make
-              logger.setLogDebug(
-                ~value="Successfully loaded Visa Unified Click to Pay script",
-                ~eventName=VISA_UCTP_LOAD_SCRIPT_RETURNED,
-              )
-              try {
-                let initConfig = ClickToPayHelpers.getVisaInitConfig(token, Some(clientSecret))
+        logger.setLogDebug(
+          ~value="Loading Visa Unified Click to Pay script",
+          ~eventName=VISA_UCTP_LOAD_SCRIPT_INIT,
+        )
+        ClickToPayHelpers.loadVisaScript(
+          token,
+          () => {
+            // Wrap the entire callback in try/catch to prevent unresolved Promise.make
+            logger.setLogDebug(
+              ~value="Successfully loaded Visa Unified Click to Pay script",
+              ~eventName=VISA_UCTP_LOAD_SCRIPT_RETURNED,
+            )
+            try {
+              let initConfig = ClickToPayHelpers.getVisaInitConfig(token, Some(clientSecret))
 
+              logger.setLogDebug(
+                ~value="Initializing Visa Unified Click to Pay",
+                ~eventName=VISA_UCTP_INIT,
+              )
+              ClickToPayHelpers.vsdk.initialize(initConfig)
+              ->then(async _ => {
                 logger.setLogDebug(
-                  ~value="Initializing Visa Unified Click to Pay",
-                  ~eventName=VISA_UCTP_INIT,
+                  ~value="Successfully initialized Visa Unified Click to Pay",
+                  ~eventName=VISA_UCTP_RETURNED,
                 )
-                ClickToPayHelpers.vsdk.initialize(initConfig)
-                ->then(async _ => {
-                  logger.setLogDebug(
-                    ~value="Successfully initialized Visa Unified Click to Pay",
-                    ~eventName=VISA_UCTP_RETURNED,
-                  )
 
+                if isGetActiveSession {
+                  logger.setLogDebug(
+                    ~value="Successfully completed Click to Pay session initialization",
+                    ~eventName=GET_ACTIVE_CLICK_TO_PAY_SESSION_RETURNED,
+                  )
+                } else {
                   logger.setLogDebug(
                     ~value="Successfully completed Click to Pay session initialization",
                     ~eventName=INIT_CLICK_TO_PAY_SESSION_RETURNED,
                   )
-                  Types.window["initializedVSDK"] = true
-                  resolve(getSessionObject())
-                  JSON.Encode.null
-                })
-                ->catch(err => {
+                }
+                // Diagnostic marker for merchant-side debugging; not used for internal control flow
+                Types.window["initializedVSDK"] = true
+                resolve(getSessionObject())
+                JSON.Encode.null
+              })
+              ->catch(err => {
+                logger.setLogError(
+                  ~value=`Failed to initialize Visa Unified Click to Pay: ${err
+                    ->Utils.formatException
+                    ->JSON.stringify}`,
+                  ~eventName=VISA_UCTP_RETURNED,
+                )
+                if isGetActiveSession {
                   logger.setLogError(
                     ~value=`Failed to initialize Visa Unified Click to Pay: ${err
                       ->Utils.formatException
                       ->JSON.stringify}`,
-                    ~eventName=VISA_UCTP_RETURNED,
+                    ~eventName=GET_ACTIVE_CLICK_TO_PAY_SESSION_RETURNED,
                   )
+                } else {
                   logger.setLogError(
                     ~value=`Failed to initialize Visa Unified Click to Pay: ${err
                       ->Utils.formatException
                       ->JSON.stringify}`,
                     ~eventName=INIT_CLICK_TO_PAY_SESSION_RETURNED,
                   )
-                  // Reset UCTP session global
-                  Types.window["initializedVSDK"] = false
-                  let failedErrorResponse = getFailedSubmitResponse(
-                    ~errorType="ERROR",
-                    ~message="An unknown error occurred while initializing Click to Pay session.",
-                  )
-                  resolve(failedErrorResponse)
+                }
+                // Diagnostic marker for merchant-side debugging; not used for internal control flow
+                Types.window["initializedVSDK"] = false
+                let failedErrorResponse = getFailedSubmitResponse(
+                  ~errorType="ERROR",
+                  ~message="An unknown error occurred while initializing Click to Pay session.",
+                )
+                resolve(failedErrorResponse)
 
-                  Promise.resolve(JSON.Encode.null)
-                })
-                ->ignore
-              } catch {
-              | err => {
+                Promise.resolve(JSON.Encode.null)
+              })
+              ->ignore
+            } catch {
+            | err => {
+                if isGetActiveSession {
+                  logger.setLogError(
+                    ~value=`Unexpected error during Click to Pay session initialization: ${err
+                      ->Utils.formatException
+                      ->JSON.stringify}`,
+                    ~eventName=GET_ACTIVE_CLICK_TO_PAY_SESSION_RETURNED,
+                  )
+                } else {
                   logger.setLogError(
                     ~value=`Unexpected error during Click to Pay session initialization: ${err
                       ->Utils.formatException
                       ->JSON.stringify}`,
                     ~eventName=INIT_CLICK_TO_PAY_SESSION_RETURNED,
                   )
-                  // Reset UCTP session global
-                  Types.window["initializedVSDK"] = false
-                  let failedErrorResponse = getFailedSubmitResponse(
-                    ~errorType="ERROR",
-                    ~message="An unexpected error occurred while initializing Click to Pay session.",
-                  )
-                  resolve(failedErrorResponse)
                 }
+                // Diagnostic marker for merchant-side debugging; not used for internal control flow
+                Types.window["initializedVSDK"] = false
+                let failedErrorResponse = getFailedSubmitResponse(
+                  ~errorType="ERROR",
+                  ~message="An unexpected error occurred while initializing Click to Pay session.",
+                )
+                resolve(failedErrorResponse)
               }
-            },
-            () => {
+            }
+          },
+          () => {
+            logger.setLogError(
+              ~value="Failed to load Visa Unified Click to Pay Script",
+              ~eventName=VISA_UCTP_LOAD_SCRIPT_RETURNED,
+            )
+            if isGetActiveSession {
               logger.setLogError(
                 ~value="Failed to load Visa Unified Click to Pay Script",
-                ~eventName=VISA_UCTP_LOAD_SCRIPT_RETURNED,
+                ~eventName=GET_ACTIVE_CLICK_TO_PAY_SESSION_RETURNED,
               )
+            } else {
               logger.setLogError(
                 ~value="Failed to load Visa Unified Click to Pay Script",
                 ~eventName=INIT_CLICK_TO_PAY_SESSION_RETURNED,
               )
-              // Reset UCTP session global
-              Types.window["initializedVSDK"] = false
-              let failedErrorResponse = getFailedSubmitResponse(
-                ~errorType="ERROR",
-                ~message="Failed to load Click to Pay script.",
-              )
+            }
+            // Diagnostic marker for merchant-side debugging; not used for internal control flow
+            Types.window["initializedVSDK"] = false
+            let failedErrorResponse = getFailedSubmitResponse(
+              ~errorType="ERROR",
+              ~message="Failed to load Click to Pay script.",
+            )
 
-              resolve(failedErrorResponse)
-            },
-          )
-        }
+            resolve(failedErrorResponse)
+          },
+        )
       }
     | None => {
-        logger.setLogError(
-          ~value="An error occured while trying to fetch Click to Pay Details",
-          ~eventName=INIT_CLICK_TO_PAY_SESSION_RETURNED,
-        )
+        if isGetActiveSession {
+          logger.setLogError(
+            ~value="An error occured while trying to fetch Click to Pay Details",
+            ~eventName=GET_ACTIVE_CLICK_TO_PAY_SESSION_RETURNED,
+          )
+        } else {
+          logger.setLogError(
+            ~value="An error occured while trying to fetch Click to Pay Details",
+            ~eventName=INIT_CLICK_TO_PAY_SESSION_RETURNED,
+          )
+        }
         let failedErrorResponse = getFailedSubmitResponse(
           ~errorType="ERROR",
           ~message="An error occured while trying to fetch Click to Pay Details",
@@ -876,7 +890,7 @@ let getActiveClickToPaySession = async (
     ~authenticationId,
     ~merchantId,
     ~initClickToPaySessionInput,
-    ~shouldLoadScripts=false,
+    ~isGetActiveSession=true,
   )
 }
 

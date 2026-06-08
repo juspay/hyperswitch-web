@@ -1229,7 +1229,6 @@ type visaEncryptCardPayload = {
 }
 
 @val external vsdk: vsdk = "window.VSDK"
-@val @scope("window") external initializedVSDK: Nullable.t<bool> = "initializedVSDK"
 @val @scope("window") external windowVisaDirectSdk: Nullable.t<visaDirect> = "visaDirectSdk"
 
 // Tracks which direct SDK scripts loaded successfully, set in onLoadCallback
@@ -1246,12 +1245,17 @@ let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorC
   let scriptSrc = GlobalVars.isProd
     ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
     : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
-  let script = createElement("script")
-  script->setType("text/javascript")
-  script->setSrc(scriptSrc)
-  script->setOnload(onLoadCallback)
-  script->setOnError(onErrorCallback)
-  body->Window.appendChild(script)
+  switch querySelector(`script[src*="secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js"]`)->Nullable.toOption {
+  | Some(_) => onLoadCallback()
+  | None => {
+      let script = createElement("script")
+      script->setType("text/javascript")
+      script->setSrc(scriptSrc)
+      script->setOnload(onLoadCallback)
+      script->setOnError(onErrorCallback)
+      body->Window.appendChild(script)
+    }
+  }
 }
 
 let loadDirectSdkScripts = (
