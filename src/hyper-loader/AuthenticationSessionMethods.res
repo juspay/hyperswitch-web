@@ -82,6 +82,7 @@ let initClickToPaySession = async (
       ~isPaymentSession=false,
       ~profileId,
       ~authenticationId,
+      ~maxRetry=Some(3),
     )
 
   let data = await (
@@ -547,6 +548,7 @@ let initClickToPaySession = async (
                 ~authenticationId,
                 ~merchantId,
                 ~bodyArr=visaClickToPayBodyArr,
+                ~maxRetry=Some(3),
               )
               Types.window["initializedVSDK"] = false
               logger.setLogDebug(
@@ -1011,6 +1013,7 @@ let initClickToPayDCTPSession = async (
           ~profileId,
           ~authenticationId,
           ~bodyArr=eligibilityCheckBodyArr,
+          ~maxRetry=Some(3),
         )
 
         [("customerPresent", false->JSON.Encode.bool)]->getJsonFromArrayOfJson
@@ -1128,6 +1131,7 @@ let initClickToPayDCTPSession = async (
           ~profileId,
           ~authenticationId,
           ~bodyArr=eligibilityCheckBodyArr,
+          ~maxRetry=Some(3),
         )
 
         let isC2pProfilePresent = if hadIdentityLookupError.contents {

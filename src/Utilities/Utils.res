@@ -994,6 +994,11 @@ let fetchApi = (
   })
 }
 
+type fetchOutcome =
+  | FetchSuccess(JSON.t, int)
+  | FetchHttpError(JSON.t, int)
+  | FetchException(exn)
+
 let fetchApiWithLogging = async (
   uri,
   ~eventName,
@@ -1007,10 +1012,49 @@ let fetchApiWithLogging = async (
   ~publishableKey=None,
   ~isPaymentSession=false,
   ~onCatchCallback=None,
+  ~maxRetry=Some(1),
 ) => {
   open LoggerUtils
 
-  // * Log request initiation
+  let rec attemptFetch = async (~retriesLeft) => {
+    let body = switch method {
+    | #GET => None
+    | _ => Some(Fetch.Body.string(bodyStr))
+    }
+
+    try {
+      let resp = await Fetch.fetch(
+        uri,
+        {
+          method,
+          ?body,
+          headers: getHeaders(
+            ~headers=headers->Option.getOr(Dict.make()),
+            ~uri,
+            ~customPodUri,
+            ~publishableKey,
+          ),
+        },
+      )
+      let statusCode = resp->Fetch.Response.status
+      if resp->Fetch.Response.ok {
+        let data = await Fetch.Response.json(resp)
+        FetchSuccess(data, statusCode)
+      } else {
+        let data = await resp->Fetch.Response.json
+        FetchHttpError(data, statusCode)
+      }
+    } catch {
+    | err =>
+      if retriesLeft <= 1 {
+        FetchException(err)
+      } else {
+        let _ = await delay(500)
+        await attemptFetch(~retriesLeft=retriesLeft - 1)
+      }
+    }
+  }
+
   LogAPIResponse.logApiResponse(
     ~logger,
     ~uri,
@@ -1018,30 +1062,8 @@ let fetchApiWithLogging = async (
     ~status=Request,
   )
 
-  try {
-    let body = switch method {
-    | #GET => None
-    | _ => Some(Fetch.Body.string(bodyStr))
-    }
-
-    let resp = await Fetch.fetch(
-      uri,
-      {
-        method,
-        ?body,
-        headers: getHeaders(
-          ~headers=headers->Option.getOr(Dict.make()),
-          ~uri,
-          ~customPodUri,
-          ~publishableKey,
-        ),
-      },
-    )
-
-    let statusCode = resp->Fetch.Response.status
-
-    if resp->Fetch.Response.ok {
-      let data = await Fetch.Response.json(resp)
+  switch await attemptFetch(~retriesLeft=maxRetry->Option.getOr(1)) {
+  | FetchSuccess(data, statusCode) => {
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
@@ -1051,8 +1073,8 @@ let fetchApiWithLogging = async (
         ~isPaymentSession,
       )
       onSuccess(data)
-    } else {
-      let data = await resp->Fetch.Response.json
+    }
+  | FetchHttpError(data, statusCode) => {
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
@@ -1064,8 +1086,7 @@ let fetchApiWithLogging = async (
       )
       onFailure(data)
     }
-  } catch {
-  | err => {
+  | FetchException(err) => {
       let exceptionMessage = err->formatException
       Console.error2(
         "Unexpected error while making request:",

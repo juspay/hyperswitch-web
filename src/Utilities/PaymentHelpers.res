@@ -2102,6 +2102,7 @@ let fetchEnabledAuthnMethodsToken = async (
   ~isPaymentSession=false,
   ~profileId,
   ~authenticationId,
+  ~maxRetry=Some(3),
 ) => {
   let uri = APIUtils.generateApiUrl(
     V1(FetchEnabledAuthnMethodsToken),
@@ -2137,6 +2138,7 @@ let fetchEnabledAuthnMethodsToken = async (
     ~onSuccess,
     ~onFailure,
     ~isPaymentSession,
+    ~maxRetry
   )
 }
 
@@ -2150,6 +2152,7 @@ let fetchEligibilityCheck = async (
   ~profileId,
   ~authenticationId,
   ~bodyArr: array<(string, Core__JSON.t)>,
+  ~maxRetry
 ) => {
   let uri = APIUtils.generateApiUrl(
     V1(FetchEligibilityCheck),
@@ -2188,6 +2191,7 @@ let fetchEligibilityCheck = async (
     ~onSuccess,
     ~onFailure,
     ~isPaymentSession,
+    ~maxRetry
   )
 }
 
@@ -2202,6 +2206,7 @@ let fetchAuthenticationSync = async (
   ~authenticationId,
   ~merchantId,
   ~bodyArr: array<(string, Core__JSON.t)>,
+  ~maxRetry
 ) => {
   let uri = APIUtils.generateApiUrl(
     V1(FetchAuthenticationSync),
@@ -2241,5 +2246,6 @@ let fetchAuthenticationSync = async (
     ~onSuccess,
     ~onFailure,
     ~isPaymentSession,
+    ~maxRetry
   )
 }
