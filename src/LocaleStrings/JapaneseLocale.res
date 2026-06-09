@@ -227,6 +227,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_pay_by_bank: `銀行で支払う`,
   payment_methods_open_banking_pis: `オープンバンキング`,
   payment_methods_evoucher: `電子バウチャー`,
+  payment_methods_pix_transfer: `Pix`,
   payment_methods_pix_emv_transfer: `PixEmv`,
   payment_methods_boleto: `Boleto`,
   payment_methods_paypal: `Paypal`,
