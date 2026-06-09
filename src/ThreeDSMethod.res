@@ -232,8 +232,10 @@ let make = () => {
 
           let paymentIntentId = metaDataDict->Utils.getString("paymentIntentId", "")
           let publishableKey = metaDataDict->Utils.getString("publishableKey", "")
+          let sdkAuthorization = metaDataDict->Utils.getString("sdkAuthorization", "")
 
           logger.setClientSecret(paymentIntentId)
+          logger.setSdkAuthorization(sdkAuthorization)
           logger.setMerchantId(publishableKey)
 
           let ele = Window.querySelector("#threeDsInvisibleDiv")

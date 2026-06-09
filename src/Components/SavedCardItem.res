@@ -61,6 +61,7 @@ let make = (
   ~setShowInstallments,
   ~installmentsError,
   ~setInstallmentsError,
+  ~eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {
@@ -202,6 +203,11 @@ let make = (
     installmentOptions
     ->PaymentUtils.filterInstallmentPlansByPaymentMethod(paymentItem.paymentMethod)
     ->Array.length > 0
+
+  let surchargeAmount =
+    eligibilitySurchargeDetails
+    ->Option.map(s => s.displayTotalSurchargeAmount->Float.toString)
+    ->Option.getOr("")
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
@@ -367,6 +373,17 @@ let make = (
                   paymentMethodType
                   cardBrand={cardBrand->CardUtils.getCardType}
                 />
+                <RenderIf condition={eligibilitySurchargeDetails->Option.isSome && isCard}>
+                  <div className="flex items-baseline text-xs mt-2 ml-1">
+                    <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
+                    <div className="text-left text-gray-400">
+                      {localeString.surchargeMsgAmountForCard(
+                        paymentMethodListValue.currency,
+                        surchargeAmount,
+                      )}
+                    </div>
+                  </div>
+                </RenderIf>
               </RenderIf>
             </div>
           </div>
