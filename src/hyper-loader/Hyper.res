@@ -345,22 +345,19 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let sessionTokensDataPromise = ref(emptyJsonPromise)
 
       let retrievePaymentIntentFn = async clientSecretOrSdkAuth => {
-        // Try to decode clientSecret as base64 — if decodable, it's an SDK authorization token.
+        // Try to decode as base64 — if decodable, it's an SDK authorization token.
         let (actualClientSecret, sdkAuthorizationValue) = try {
-          let sdkAuthorizationData = clientSecretOrSdkAuth->Utils.getSdkAuthorizationData
-          let extractedClientSecret = switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
-          | Some(cs) => cs
-          | None => clientSecretOrSdkAuth
-          }
-          (extractedClientSecret, Some(clientSecretOrSdkAuth))
+          clientSecretOrSdkAuth->Utils.getSdkAuthorizationData->ignore
+          // Successfully decoded — treat as SDK auth; clientSecret is not embedded
+          ((None: option<string>), Some(clientSecretOrSdkAuth))
         } catch {
-        | _ => (clientSecretOrSdkAuth, None)
+        | _ => (Some(clientSecretOrSdkAuth), None)
         }
 
         let uri = APIUtils.generateApiUrlV1(
           ~apiCallType=RetrievePaymentIntent,
           ~params={
-            clientSecret: Some(actualClientSecret),
+            clientSecret: actualClientSecret,
             publishableKey: Some(publishableKey),
             customBackendBaseUrl: None,
             forceSync: None,
@@ -539,12 +536,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let sdkAuthorizationId = elementsOptionsDict->getStringFromDict("sdkAuthorization", "")
 
-        let sdkAuthorizationData = sdkAuthorizationId->Utils.getSdkAuthorizationData
-
-        let clientSecretId = switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
-        | Some(cs) => cs
-        | None => elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
-        }
+        let clientSecretId = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
 
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         let preloadSDKWithParams =
@@ -555,6 +547,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
+          logger.setSdkAuthorization(sdkAuthorizationId)
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
@@ -743,16 +736,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         sdkAuthorization := paymentSessionOptionsDict->getStringFromDict("sdkAuthorization", "")
 
-        let sdkAuthorizationData = sdkAuthorization.contents->Utils.getSdkAuthorizationData
-
-        clientSecret :=
-          switch sdkAuthorizationData.clientSecret->Utils.getNonEmptyOption {
-          | Some(cs) => cs
-          | None => paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
-          }
+        clientSecret := paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
 
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecret.contents)
+          logger.setSdkAuthorization(sdkAuthorization.contents)
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
