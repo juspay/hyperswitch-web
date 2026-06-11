@@ -1,4 +1,5 @@
 let paymentMethodListValue = Recoil.atom("paymentMethodListValue", PaymentMethodsRecord.defaultList)
+let sdkConfigsValue = Recoil.atom("sdkConfigsValue", SdkConfigTypes.defaultSdkConfigValue)
 let paymentManagementListValue = Recoil.atom(
   "paymentManagementListValue",
   UnifiedHelpersV2.defaultPaymentsList,

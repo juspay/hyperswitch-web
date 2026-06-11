@@ -40,7 +40,7 @@ let make = (
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {billingAddress, redirectionInfo} = Recoil.useRecoilValueFromAtom(optionAtom)
   let country = Recoil.useRecoilValueFromAtom(userCountry)
-  let sdkConfigs = Recoil.useRecoilValueFromAtom(sdkConfigs)
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
 
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
@@ -53,24 +53,21 @@ let make = (
     ~paymentMethodType,
   )
 
-  let rawConfigs = React.useMemo(() => {
-    switch sdkConfigs {
-    | Loaded(json) => json->getDictFromJson->Dict.get("raw_configs")
-    | _ => None
-    }
-  }, [sdkConfigs])
+  let rawConfigs = sdkConfigsValue.raw_configs
 
-  let getSuperpositionFinalFields = ConfigurationService.useConfigurationService(
-    ~rawConfigs
-  )
+  let getSuperpositionFinalFields = ConfigurationService.useConfigurationService(~rawConfigs)
 
   let requiredFieldsFromPMLFlat = React.useMemo(() => {
     extractValuesFromPMLRequiredFields(paymentMethodTypes.required_fields)
   }, [paymentMethodTypes.required_fields])
 
   let eligibleConnectors = React.useMemo(() => {
-    getEligibleConnectors(paymentMethodTypes, paymentMethod)
-  }, (paymentMethodTypes, paymentMethod))
+    SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+      sdkConfigsValue.payment_methods,
+      paymentMethod,
+      paymentMethodType,
+    )->Array.map(item => item->JSON.Encode.string)
+  }, (sdkConfigsValue.payment_methods, paymentMethod, paymentMethodType))
 
   let superpositionBaseContext = React.useMemo(() => {
     buildSuperpositionBaseContext(
