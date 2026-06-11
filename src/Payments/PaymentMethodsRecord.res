@@ -1228,7 +1228,9 @@ let itemToObjMapper = dict => {
     isGuestCustomer: getOptionBool(dict, "is_guest_customer"),
     intent_data: dict->getIntentData,
     sdk_next_action: dict->getDictFromDict("sdk_next_action")->getOptionString("next_action"),
-    should_block_confirm: dict->getDictFromDict("sdk_next_action")->getBool("should_block_confirm", false),
+    should_block_confirm: dict
+    ->getDictFromDict("sdk_next_action")
+    ->getBool("should_block_confirm", false),
   }
 }
 

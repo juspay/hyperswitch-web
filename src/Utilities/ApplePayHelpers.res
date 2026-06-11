@@ -12,6 +12,7 @@ let processPayment = (
   ~options: PaymentType.options,
   ~publishableKey,
   ~isManualRetryEnabled,
+  ~isTrustpayInterceptorConfirm=false,
 ) => {
   let requestBody = PaymentUtils.appendedCustomerAcceptance(
     ~isGuestCustomer,
@@ -29,6 +30,7 @@ let processPayment = (
     ~handleUserError=true,
     ~isThirdPartyFlow,
     ~manualRetry=isManualRetryEnabled,
+    ~isTrustpayInterceptorConfirm,
   )
 }
 
@@ -276,6 +278,29 @@ let useHandleApplePayResponse = (
           processPayment(
             ~bodyArr=PaymentBody.applePayThirdPartySdkBody(~connectors, ~token),
             ~isThirdPartyFlow=true,
+            ~isGuestCustomer,
+            ~paymentMethodListValue,
+            ~intent,
+            ~options,
+            ~publishableKey,
+            ~isManualRetryEnabled,
+          )
+        } else if dict->Dict.get("applePayConfirmRequest")->Option.isSome {
+          // The interceptor in the parent window is asking us to call /confirm and
+          // return the TrustPay secrets so it can swap them into TrustPay's
+          // merchant-validation FormData. Reuse processPayment so the confirm goes
+          // through PaymentHelpers; intentCall posts "applePayConfirmSecrets" back to
+          // the parent for the interceptor flow (~isTrustpayInterceptorConfirm=true).
+          logger.setLogInfo(
+            ~value="[ApplePayInterceptor] applePayConfirmRequest received — calling /confirm",
+            ~eventName=APPLE_PAY_FLOW,
+            ~paymentMethod="APPLE_PAY",
+          )
+
+          processPayment(
+            ~bodyArr=PaymentBody.applePayThirdPartySdkBody(~connectors),
+            ~isThirdPartyFlow=true,
+            ~isTrustpayInterceptorConfirm=true,
             ~isGuestCustomer,
             ~paymentMethodListValue,
             ~intent,
