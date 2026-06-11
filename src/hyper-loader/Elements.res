@@ -15,7 +15,6 @@ let make = (
   setIframeRef,
   ~sdkSessionId,
   ~publishableKey,
-  ~profileId,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
@@ -88,10 +87,6 @@ let make = (
       manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="clientSecret", ~logger)
     }
 
-    if !isTestMode && profileId === "" {
-      manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="profileId", ~logger)
-    }
-
     let clientSecretReMatch = RegExp.test(
       ".+_secret_[A-Za-z0-9]+"->RegExp.fromString,
       clientSecretRef.contents,
@@ -118,7 +113,6 @@ let make = (
       initialSdkConfigsPromise,
     ) = UpdateIntentHelpersNew.setupPreMountLoaderPromises(
       ~publishableKey,
-      ~profileId,
       ~sdkSessionId,
       ~endpoint,
       ~customPodUri,
@@ -339,7 +333,6 @@ let make = (
           ~iframes=iframeRef,
           ~callback,
           ~publishableKey,
-          ~profileId,
           ~sdkSessionId,
           ~endpoint,
           ~customPodUri,

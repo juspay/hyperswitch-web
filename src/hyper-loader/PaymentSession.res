@@ -3,7 +3,6 @@ open Types
 let make = (
   options,
   ~publishableKey,
-  ~profileId,
   ~sdkSessionId,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
@@ -40,7 +39,6 @@ let make = (
       ~iframes=iframeRef.contents,
       ~callback,
       ~publishableKey,
-      ~profileId,
       ~sdkSessionId,
       ~endpoint,
       ~customPodUri,

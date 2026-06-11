@@ -138,22 +138,6 @@ let handleHyperApplePayMounted = (event: Types.event) => {
 
 addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMount")
 
-// Resolves the effective profileId:
-// 1. Explicit top-level profileId
-// 2. profileId from sdkAuthorization data
-// 3. profileId extracted from raw clientSecret string
-let resolveProfileId = (~profileId, ~sdkAuthorizationData, ~rawClientSecret) => {
-  let profileIdFromSdkAuth = sdkAuthorizationData.profileId->Option.getOr("")
-  let profileIdFromRawClientSecret = rawClientSecret->getProfileIdFromClientSecret->Option.getOr("")
-  if profileId->String.length > 0 {
-    profileId
-  } else if profileIdFromSdkAuth->String.length > 0 {
-    profileIdFromSdkAuth
-  } else {
-    profileIdFromRawClientSecret
-  }
-}
-
 let isReadyResolved = ref(false)
 
 let isReadyPromise = Promise.make((resolve, _) => {
@@ -556,15 +540,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let sdkAuthorizationId = elementsOptionsDict->getStringFromDict("sdkAuthorization", "")
 
-        let sdkAuthorizationData = sdkAuthorizationId->Utils.getSdkAuthorizationData
-
         let clientSecretId = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
-
-        let resolvedProfileId = resolveProfileId(
-          ~profileId,
-          ~sdkAuthorizationData,
-          ~rawClientSecret=clientSecretId,
-        )
 
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         let preloadSDKWithParams =
@@ -590,7 +566,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
-          ~profileId=resolvedProfileId,
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
@@ -766,15 +741,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         sdkAuthorization := paymentSessionOptionsDict->getStringFromDict("sdkAuthorization", "")
 
-        let sdkAuthorizationData = sdkAuthorization.contents->Utils.getSdkAuthorizationData
-
         clientSecret := paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
-
-        let resolvedProfileId = resolveProfileId(
-          ~profileId,
-          ~sdkAuthorizationData,
-          ~rawClientSecret=clientSecret.contents,
-        )
 
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecret.contents)
@@ -791,7 +758,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         PaymentSession.make(
           paymentSessionOptions,
           ~publishableKey,
-          ~profileId=resolvedProfileId,
           ~sdkSessionId=sessionID,
           ~logger=Some(logger),
           ~redirectionFlags,

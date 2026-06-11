@@ -59,7 +59,6 @@ let getMessageHandlerV1Elements = (
   ~sdkAuthorization,
   ~clientSecret,
   ~publishableKey,
-  ~profileId,
   ~logger,
   ~customPodUri,
   ~endpoint,
@@ -109,11 +108,12 @@ let getMessageHandlerV1Elements = (
         ~sdkAuthorization=Some(sdkAuthorization),
       ),
       PaymentHelpers.fetchSdkConfigs(
-        ~profileId,
+        ~clientSecret,
         ~publishableKey,
         ~logger,
         ~customPodUri,
         ~endpoint,
+        ~sdkAuthorization=Some(sdkAuthorization),
       ),
     )
   }
@@ -162,7 +162,6 @@ module PreMountLoaderForElements = {
   let make = (
     ~logger,
     ~publishableKey,
-    ~profileId,
     ~sdkAuthorization,
     ~clientSecret,
     ~endpoint,
@@ -176,7 +175,6 @@ module PreMountLoaderForElements = {
         ~sdkAuthorization,
         ~clientSecret,
         ~publishableKey,
-        ~profileId,
         ~logger,
         ~customPodUri,
         ~endpoint,
@@ -205,7 +203,6 @@ module PreMountLoaderForPMMElements = {
 let make = (
   ~sessionId,
   ~publishableKey,
-  ~profileId,
   ~sdkAuthorization,
   ~clientSecret,
   ~endpoint,
@@ -228,7 +225,6 @@ let make = (
     <PreMountLoaderForElements
       logger
       publishableKey
-      profileId
       sdkAuthorization
       clientSecret
       endpoint

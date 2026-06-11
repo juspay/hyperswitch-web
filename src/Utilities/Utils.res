@@ -1995,9 +1995,3 @@ let getPaymentIdOrExtractFromSdkAuth = (~clientSecret, ~sdkAuthorization) => {
   | None => clientSecret->getPaymentId
   }
 }
-
-let getProfileIdFromClientSecret = clientSecret => {
-  let keyValuePairs = clientSecret->String.split(",")
-  let keyStr = keyValuePairs->Array.find(key => key->String.startsWith("profile"))
-  keyStr->Option.flatMap(key => key->String.split("=")->Array.get(1))
-}

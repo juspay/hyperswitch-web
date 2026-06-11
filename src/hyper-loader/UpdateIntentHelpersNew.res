@@ -107,7 +107,6 @@ let forwardPromiseToIframes = (iframes, promise, key) => {
 // Removes any existing preMountLoader with the same selectorString before creating a new one.
 let mountPreMountLoaderIframe = (
   ~publishableKey,
-  ~profileId,
   ~sdkSessionId,
   ~endpoint,
   ~customPodUri,
@@ -140,7 +139,7 @@ let mountPreMountLoaderIframe = (
           id="orca-payment-element-iframeRef-${selectorString}"
           name="orca-payment-element-iframeRef-${selectorString}"
           title="Orca Payment Element Frame"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${currentClientSecret}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabledValue}&sdkAuthorization=${currentSdkAuthorization}"
+          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${currentClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabledValue}&sdkAuthorization=${currentSdkAuthorization}"
           allow="*"
           name="orca-payment"
           style="outline: none;"
@@ -171,7 +170,6 @@ let unMountPreMountLoaderIframe = (selectorString: string) => {
 // constant for a session, so the initial sdk-configs response is valid for its lifetime.
 let setupPreMountLoaderPromises = (
   ~publishableKey,
-  ~profileId,
   ~sdkSessionId,
   ~endpoint,
   ~customPodUri,
@@ -184,7 +182,6 @@ let setupPreMountLoaderPromises = (
 ) => {
   let preMountLoaderIframeDiv = mountPreMountLoaderIframe(
     ~publishableKey,
-    ~profileId,
     ~sdkSessionId,
     ~endpoint,
     ~customPodUri,
@@ -291,7 +288,6 @@ let performUpdateIntent = async (
   ~iframes: array<Nullable.t<Dom.element>>,
   ~callback: unit => promise<JSON.t>,
   ~publishableKey,
-  ~profileId,
   ~sdkSessionId,
   ~endpoint,
   ~customPodUri,
@@ -322,7 +318,6 @@ let performUpdateIntent = async (
         _newSdkConfigsPromise,
       ) = setupPreMountLoaderPromises(
         ~publishableKey,
-        ~profileId,
         ~sdkSessionId,
         ~endpoint,
         ~customPodUri,
