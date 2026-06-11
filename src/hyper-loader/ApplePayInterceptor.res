@@ -116,20 +116,44 @@ let waitForConfirmResponse = (): promise<JSON.t> => {
   })
 }
 
-// Temporarily patches window.fetch to swap TrustPay's Secret.* fields in the
-// merchant-validation FormData with the new secrets received from /confirm.
-// Self-destructs after the first matching intercept.
-//
-// H-7 fix: also strips the plain "Secret" key (without a dot suffix).
+// Temporarily patches window.fetch to replace TrustPay's "Secret" field in BOTH
+// FormData POSTs TrustPay makes during the Apple Pay flow:
+//   1. onvalidatemerchant  → FormData { Secret, ValidationUrl, InitiativeContext }
+//   2. onpaymentauthorized → FormData { Secret, ApplePaymentToken }
+// In each, it strips any existing "Secret" / "Secret.*" entries and appends a
+// single "Secret" field set to newSecret.payment (TrustPay does not accept the
+// dot-notation Secret.display / Secret.payment form here, and reuses its original
+// placeholder secret on payment submit unless we swap it too).
+// Self-destructs after the payment-submit swap (the last request).
 // Implementation injected by AppleHacks.js
 let enableFetchInterception: JSON.t => unit = %raw(`
 function enableFetchInterception(newSecret) {
   var origFetch = window.fetch;
-  var fetchPatched = false;
+  var validateMerchantPatched = false;
+  var submitPaymentPatched = false;
+
+  function rebuildBodyWithSecret(body) {
+    var newBody = new FormData();
+    for (var _i = 0, _entries = body.entries(); ; ) {
+      var _ref = _entries.next();
+      if (_ref.done) break;
+      var entry = _ref.value;
+      if (entry[0] !== "Secret" && !entry[0].startsWith("Secret.")) {
+        newBody.append(entry[0], entry[1]);
+      }
+    }
+    // TrustPay expects a single "Secret" field whose value is the payment token
+    // (NOT separate Secret.display / Secret.payment fields).
+    if (typeof newSecret === "object" && newSecret !== null) {
+      newBody.append("Secret", newSecret.payment);
+    } else {
+      newBody.append("Secret", String(newSecret));
+    }
+    return newBody;
+  }
 
   window.fetch = function(url, options) {
     if (
-      !fetchPatched &&
       newSecret &&
       options &&
       options.method === "POST" &&
@@ -140,31 +164,21 @@ function enableFetchInterception(newSecret) {
         return k === "Secret" || k.startsWith("Secret.");
       });
 
-      if (hasSecretKey && keys.includes("ValidationUrl")) {
-        fetchPatched = true;
-        window.fetch = origFetch; // self-destruct
-
-        var newBody = new FormData();
-        for (var _i = 0, _entries = options.body.entries(); ; ) {
-          var _ref = _entries.next();
-          if (_ref.done) break;
-          var entry = _ref.value;
-          if (entry[0] !== "Secret" && !entry[0].startsWith("Secret.")) {
-            newBody.append(entry[0], entry[1]);
-          }
+      if (hasSecretKey) {
+        // 1) Merchant-validation request (Secret + ValidationUrl)
+        if (!validateMerchantPatched && keys.includes("ValidationUrl")) {
+          validateMerchantPatched = true;
+          var newValidationBody = rebuildBodyWithSecret(options.body);
+          return origFetch.call(this, url, Object.assign({}, options, { body: newValidationBody }));
         }
 
-        if (typeof newSecret === "object" && newSecret !== null) {
-          for (var subKey in newSecret) {
-            if (Object.prototype.hasOwnProperty.call(newSecret, subKey)) {
-              newBody.append("Secret." + subKey, newSecret[subKey]);
-            }
-          }
-        } else {
-          newBody.append("Secret", String(newSecret));
+        // 2) Payment-submit request (Secret + ApplePaymentToken)
+        if (!submitPaymentPatched && keys.includes("ApplePaymentToken")) {
+          submitPaymentPatched = true;
+          window.fetch = origFetch; // self-destruct after the final swap
+          var newSubmitBody = rebuildBodyWithSecret(options.body);
+          return origFetch.call(this, url, Object.assign({}, options, { body: newSubmitBody }));
         }
-
-        return origFetch.call(this, url, Object.assign({}, options, { body: newBody }));
       }
     }
     return origFetch.apply(this, arguments);
