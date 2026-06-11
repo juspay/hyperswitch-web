@@ -353,6 +353,7 @@ let rec intentCall = (
   ~redirectionFlags,
   ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
+  ~isTrustpayInterceptorConfirm=false,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -820,11 +821,21 @@ let rec intentCall = (
                 let walletName = session_token->getString("wallet_name", "")
 
                 let message = switch walletName {
-                | "apple_pay" => [
-                    ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->anyTypeToJson),
-                    ("componentName", componentName->JSON.Encode.string),
-                  ]
+                | "apple_pay" =>
+                  if isTrustpayInterceptorConfirm {
+                    let secrets =
+                      session_token
+                      ->getDictFromDict("session_token_data")
+                      ->Dict.get("secrets")
+                      ->Option.getOr(JSON.Encode.null)
+                    [("applePayConfirmSecrets", secrets)]
+                  } else {
+                    [
+                      ("applePayButtonClicked", true->JSON.Encode.bool),
+                      ("applePayPresent", session_token->anyTypeToJson),
+                      ("componentName", componentName->JSON.Encode.string),
+                    ]
+                  }
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | "open_banking" => {
                     let metaData = [
@@ -907,10 +918,20 @@ let rec intentCall = (
                 }
                 let walletName = session_token->getString("wallet_name", "")
                 let message = switch walletName {
-                | "apple_pay" => [
-                    ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->anyTypeToJson),
-                  ]
+                | "apple_pay" =>
+                  if isTrustpayInterceptorConfirm {
+                    let secrets =
+                      session_token
+                      ->getDictFromDict("session_token_data")
+                      ->Dict.get("secrets")
+                      ->Option.getOr(JSON.Encode.null)
+                    [("applePayConfirmSecrets", secrets)]
+                  } else {
+                    [
+                      ("applePayButtonClicked", true->JSON.Encode.bool),
+                      ("applePayPresent", session_token->anyTypeToJson),
+                    ]
+                  }
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
@@ -1308,6 +1329,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry=false,
+    ~isTrustpayInterceptorConfirm=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -1412,6 +1434,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~componentName,
             ~redirectionFlags,
             ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
+            ~isTrustpayInterceptorConfirm,
           )
           ->then(val => {
             intentCallback(val)
@@ -2041,6 +2064,7 @@ let usePostSessionTokens = (
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry as _=false,
+    ~isTrustpayInterceptorConfirm as _=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
