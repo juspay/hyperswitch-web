@@ -6,10 +6,16 @@ let make = (~firstNameField: fieldConfig, ~lastNameField: fieldConfig) => {
   let firstNamePath = firstNameField.confirmRequestWritePath
   let lastNamePath = lastNameField.confirmRequestWritePath
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
-    ~field=firstNameField,
-    ~localeObject=localeString,
-  )
+
+  let label = switch firstNameField.merchantProvidedDisplayName {
+  | Some(name) => name
+  | None => localeString.fullNameLabel
+  }
+  let placeholder = switch firstNameField.merchantProvidedPlaceholderText {
+  | Some(text) => text
+  | None => localeString.fullNamePlaceholder
+  }
+  let autocomplete = firstNameField.htmlAutocompleteAttribute
 
   let firstValidator = DynamicFieldsUtils.resolveValidator(
     ~field=firstNameField,
@@ -23,7 +29,11 @@ let make = (~firstNameField: fieldConfig, ~lastNameField: fieldConfig) => {
   let firstField = ReactFinalForm.useField(firstNamePath, ~config={validate: firstValidator})
   let lastField = ReactFinalForm.useField(lastNamePath, ~config={validate: lastValidator})
 
-  let (inputValue, setInputValue) = React.useState(_ => "")
+  let (inputValue, setInputValue) = React.useState(() => {
+    let first = firstField.input.value->Option.getOr("")
+    let last = lastField.input.value->Option.getOr("")
+    [first, last]->Array.filter(part => part !== "")->Array.join(" ")
+  })
 
   let handleChange = ev => {
     let value: string = ReactEvent.Form.target(ev)["value"]
@@ -69,6 +79,6 @@ let make = (~firstNameField: fieldConfig, ~lastNameField: fieldConfig) => {
     errorString
     placeholder
     inputRef={fieldRef}
-    autocomplete="cc-name"
+    ?autocomplete
   />
 }
