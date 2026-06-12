@@ -605,11 +605,23 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let updatedState: PaymentType.loadType = isSdkConfigsError
             ? LoadError(sdkConfigsJson)
             : Loaded(sdkConfigsJson)
+          let finalLoadLatency = if launchTime <= 0.0 {
+            0.0
+          } else {
+            Date.now() -. launchTime
+          }
           switch updatedState {
+          | Loaded(_) =>
+            logger.setLogInfo(
+              ~value="Loaded",
+              ~eventName=SDK_CONFIGS_CALL,
+              ~latency=finalLoadLatency,
+            )
           | LoadError(x) =>
             logger.setLogError(
               ~value="LoadError: " ++ x->JSON.stringify,
               ~eventName=SDK_CONFIGS_CALL,
+              ~latency=finalLoadLatency,
             )
           | _ => ()
           }
