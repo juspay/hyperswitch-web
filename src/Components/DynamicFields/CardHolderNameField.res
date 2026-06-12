@@ -7,14 +7,10 @@ let make = (~firstNameField: fieldConfig, ~lastNameField: fieldConfig) => {
   let lastNamePath = lastNameField.confirmRequestWritePath
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
-  let label = switch firstNameField.merchantProvidedDisplayName {
-  | Some(name) => name
-  | None => localeString.fullNameLabel
-  }
-  let placeholder = switch firstNameField.merchantProvidedPlaceholderText {
-  | Some(text) => text
-  | None => localeString.fullNamePlaceholder
-  }
+  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
+    ~field=firstNameField,
+    ~localeObject=localeString,
+  )
   let autocomplete = firstNameField.htmlAutocompleteAttribute
 
   let firstValidator = DynamicFieldsUtils.resolveValidator(

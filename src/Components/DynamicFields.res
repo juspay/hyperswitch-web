@@ -125,14 +125,14 @@ let make = (
   let dynamicFieldsOutsideBilling = React.useMemo(() => {
     missingRequiredFieldsFiltered->Array.filter(field =>
       !(field.confirmRequestWritePath->String.startsWith(billingPrefix)) ||
-      field.fieldRenderType === CardHolderName
+      (paymentMethod == "card" && (field.fieldRenderType === FirstName || field.fieldRenderType === LastName))
     )
   }, [missingRequiredFieldsFiltered])
 
   let dynamicFieldsInsideBilling = React.useMemo(() => {
     missingRequiredFieldsFiltered->Array.filter(field =>
       field.confirmRequestWritePath->String.startsWith(billingPrefix) &&
-        field.fieldRenderType !== CardHolderName
+        !(paymentMethod == "card" && (field.fieldRenderType === FirstName || field.fieldRenderType === LastName))
     )
   }, [missingRequiredFieldsFiltered])
 
