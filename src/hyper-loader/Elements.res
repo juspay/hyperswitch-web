@@ -258,7 +258,8 @@ let make = (
 
     let forwardSdkConfigsDataToIframe = mountedIframeRef => {
       sdkConfigsDataPromise.contents->Promise.then(json => {
-        let msg = [("sdkConfigs", json)]->Dict.fromArray
+        let sdkConfigs = preloadSDKWithParams->getJsonFromDict("sdkConfigs", json)
+        let msg = [("sdkConfigs", sdkConfigs)]->Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
         Promise.resolve()
       })
