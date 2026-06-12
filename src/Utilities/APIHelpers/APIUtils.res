@@ -30,7 +30,6 @@ type apiParamsV1 = {
   sdkAuthorization: option<string>,
   authenticationId?: string,
   merchantId?: string,
-  profileId?: string,
 }
 
 module CommonUtils = {
@@ -66,7 +65,6 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
 
   let authenticationIdVal = params.authenticationId->Option.getOr("")
   let merchantId = params.merchantId->Option.getOr("")
-  let profileIdVal = params.profileId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
