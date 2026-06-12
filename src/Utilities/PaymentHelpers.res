@@ -2400,3 +2400,46 @@ let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
   | _ => paymentMethodType
   }
 }
+
+let fetchSdkConfigs = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~endpoint,
+  ~sdkAuthorization=None,
+) => {
+  let uri = APIUtils.generateApiUrlV1(
+    ~apiCallType=FetchSdkConfigs,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: Some(publishableKey),
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      sdkAuthorization,
+    },
+  )
+
+  let headers = switch sdkAuthorization->Utils.getNonEmptyOption {
+  | None => [("client-secret", clientSecret)]->Dict.fromArray
+  | Some(_) => Dict.make()
+  }
+
+  let onSuccess = data => data
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=SDK_CONFIGS_CALL,
+    ~headers,
+    ~logger,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+    ~sdkAuthorization,
+  )
+}

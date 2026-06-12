@@ -103,7 +103,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
         setCardError(_ => localeString.cardNumberEmptyText)
         setUserError(localeString.enterFieldsText)
       } else if cardEligibilityError->Option.isSome {
-        let msg = EligibilityHelpers.getCardEligibilityErrorText(~cardEligibilityError, ~localeString)
+        let msg = EligibilityHelpers.getCardEligibilityErrorText(
+          ~cardEligibilityError,
+          ~localeString,
+        )
         setCardError(_ => msg)
         setUserError(msg)
       }

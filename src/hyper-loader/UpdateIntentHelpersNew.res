@@ -162,8 +162,8 @@ let unMountPreMountLoaderIframe = (selectorString: string) => {
   }
 }
 
-// Sets up the preMountLoader iframe and creates promises for all 4 API responses.
-// Returns a tuple of (paymentMethodsData, customerPaymentMethodsData, sessionTokensData).
+// Sets up the preMountLoader iframe and creates promises for all API responses.
+// Returns a tuple of (paymentMethodsData, customerPaymentMethodsData, sessionTokensData, sdkConfigsData).
 // Can be called during init and during updateIntent.
 let setupPreMountLoaderPromises = (
   ~publishableKey,
@@ -225,6 +225,7 @@ let setupPreMountLoaderPromises = (
     ~listenerName="onPaymentMethodsData-shared",
     ~sendKey="sendPaymentMethodsResponse",
   )
+
   let customerPaymentMethodsData = createDataPromise(
     ~dataKey="customer_payment_methods",
     ~listenerName="onCustomerPaymentMethodsData-shared",
@@ -237,12 +238,17 @@ let setupPreMountLoaderPromises = (
     ~sendKey="sendSessionTokensResponse",
   )
 
+  let sdkConfigsData = createDataPromise(
+    ~dataKey="sdk_configs",
+    ~listenerName="onSdkConfigsData-shared",
+    ~sendKey="sendSdkConfigsResponse",
+  )
+
   let requestMsg =
     [("requestPreMountLoaderMountedCallback", true->JSON.Encode.bool)]->Dict.fromArray
   preMountLoaderIframeDiv->Window.iframePostMessage(requestMsg)
 
-  // Clean up preMountLoader iframe after all promises resolve
-  Promise.all([paymentMethodsData, customerPaymentMethodsData, sessionTokensData])
+  Promise.all([paymentMethodsData, customerPaymentMethodsData, sessionTokensData, sdkConfigsData])
   ->Promise.then(_ => {
     let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
     preMountLoaderIframeDiv->Window.iframePostMessage(msg)
@@ -251,7 +257,7 @@ let setupPreMountLoaderPromises = (
   ->Promise.catch(_ => Promise.resolve())
   ->ignore
 
-  (paymentMethodsData, customerPaymentMethodsData, sessionTokensData)
+  (paymentMethodsData, customerPaymentMethodsData, sessionTokensData, sdkConfigsData)
 }
 
 // --- Core performUpdateIntent ---
@@ -267,6 +273,7 @@ let performUpdateIntent = async (
   ~paymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
+  ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~iframes: array<Nullable.t<Dom.element>>,
   ~callback: unit => promise<JSON.t>,
   ~publishableKey,
@@ -289,11 +296,12 @@ let performUpdateIntent = async (
       let newSdkAuthorization = callbackResult->getDictFromJson->getString("sdkAuthorization", "")
 
       // Mount new preMountLoader with new credentials (refs NOT updated yet —
-      // we validate all API responses before committing any state changes)
+      // we validate all API responses before committing any state changes).
       let (
         newPaymentMethodsPromise,
         newCustomerPaymentMethodsPromise,
         newSessionTokensPromise,
+        newSdkConfigsDataPromise,
       ) = setupPreMountLoaderPromises(
         ~publishableKey,
         ~sdkSessionId,
@@ -306,11 +314,12 @@ let performUpdateIntent = async (
         ~currentSdkAuthorization=newSdkAuthorization,
       )
 
-      // Wait for ALL API responses before updating anything
+      // Wait for ALL API responses before updating anything.
       let results = await Promise.all([
         newPaymentMethodsPromise,
         newCustomerPaymentMethodsPromise,
         newSessionTokensPromise,
+        newSdkConfigsDataPromise,
       ])
 
       // Check if any API response indicates an error
@@ -335,6 +344,7 @@ let performUpdateIntent = async (
         paymentMethodsDataPromise.contents = newPaymentMethodsPromise
         customerPaymentMethodsDataPromise.contents = newCustomerPaymentMethodsPromise
         sessionTokensDataPromise.contents = newSessionTokensPromise
+        sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
 
         // Send ElementsUpdate to all inner iframes with new credentials
         sendElementsUpdateToIframes(
@@ -359,6 +369,7 @@ let performUpdateIntent = async (
             "customerPaymentMethods",
           ),
           forwardPromiseToIframes(iframes, newSessionTokensPromise, "sessions"),
+          forwardPromiseToIframes(iframes, newSdkConfigsDataPromise, "sdkConfigs"),
         ])
 
         switch readyPromise {

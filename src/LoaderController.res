@@ -7,6 +7,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
+  let setSdkConfigs = Recoil.useSetRecoilState(sdkConfigs)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
@@ -594,6 +595,37 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let paymentManagementMethods =
             dict->UnifiedHelpersV2.createPaymentsObjArr("paymentManagementMethods")
           setPaymentManagementList(_ => paymentManagementMethods)
+        }
+        if dict->getDictIsSome("sdkConfigs") {
+          let sdkConfigsJson = dict->getJsonObjectFromDict("sdkConfigs")
+          let sdkConfigsDict = sdkConfigsJson->getDictFromJson
+          let isSdkConfigsError =
+            sdkConfigsJson == Dict.make()->JSON.Encode.object ||
+              sdkConfigsDict->Dict.get("error")->Option.isSome
+          let updatedState: PaymentType.loadType = isSdkConfigsError
+            ? LoadError(sdkConfigsJson)
+            : Loaded(sdkConfigsJson)
+          let finalLoadLatency = if launchTime <= 0.0 {
+            0.0
+          } else {
+            Date.now() -. launchTime
+          }
+          switch updatedState {
+          | Loaded(_) =>
+            logger.setLogInfo(
+              ~value="Loaded",
+              ~eventName=SDK_CONFIGS_CALL,
+              ~latency=finalLoadLatency,
+            )
+          | LoadError(x) =>
+            logger.setLogError(
+              ~value="LoadError: " ++ x->JSON.stringify,
+              ~eventName=SDK_CONFIGS_CALL,
+              ~latency=finalLoadLatency,
+            )
+          | _ => ()
+          }
+          setSdkConfigs(_ => updatedState)
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
           setIsApplePayReady(_ => true)
