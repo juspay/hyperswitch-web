@@ -286,17 +286,15 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           if isInvokeSDKFlow {
             if isApplePayDelayedSessionFlow {
               setShowApplePayLoader(_ => true)
-              let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
-              ApplePayHelpers.processPayment(
-                ~bodyArr=bodyDict,
-                ~isThirdPartyFlow=true,
-                ~isGuestCustomer,
-                ~paymentMethodListValue,
-                ~intent,
-                ~options,
-                ~publishableKey,
-                ~isManualRetryEnabled,
-              )
+              // New flow: send the initial session token directly to Elements (parent).
+              // Do NOT call /confirm here — the ApplePayInterceptor will trigger the
+              // confirm call from inside the iframe during onvalidatemerchant.
+              let sessionData = sessionObj->getOptionsDict->JSON.Encode.object
+              messageParentWindow([
+                ("applePayButtonClicked", true->JSON.Encode.bool),
+                ("applePayPresent", sessionData),
+                ("componentName", componentName->JSON.Encode.string),
+              ])
             } else {
               ApplePayHelpers.handleApplePayButtonClicked(
                 ~sessionObj,

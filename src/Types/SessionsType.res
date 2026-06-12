@@ -30,6 +30,8 @@ type token = {
   email_address: string,
   transaction_amount: string,
   transaction_currency_code: string,
+  currency: string,
+  intent: string,
 }
 
 type tokenType =
@@ -71,6 +73,8 @@ let defaultToken = {
   email_address: "",
   transaction_amount: "",
   transaction_currency_code: "",
+  intent: "",
+  currency: "",
 }
 let getWallet = str => {
   switch str {
@@ -110,6 +114,8 @@ let getSessionsToken = (dict, str) =>
         email_address: getString(dict, "email_address", ""),
         transaction_amount: getString(dict, "transaction_amount", ""),
         transaction_currency_code: getString(dict, "transaction_currency_code", ""),
+        intent: getString(dict, "intent", ""),
+        currency: getString(dict, "currency", ""),
       }
     })
   })
