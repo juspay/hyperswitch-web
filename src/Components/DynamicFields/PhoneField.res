@@ -10,6 +10,7 @@ let make = (~fieldConfig: fieldConfig) => {
     ~localeObject=localeString,
   )
   let maxLength = fieldConfig.maxInputLength
+  let autocomplete = fieldConfig.htmlAutocompleteAttribute->Option.getOr("tel-national")
 
   let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
@@ -41,7 +42,7 @@ let make = (~fieldConfig: fieldConfig) => {
     errorString
     placeholder
     inputRef={fieldRef}
-    autocomplete="tel-national"
+    autocomplete
     ?maxLength
   />
 }

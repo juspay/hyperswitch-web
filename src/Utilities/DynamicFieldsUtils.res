@@ -290,6 +290,10 @@ let resolveValidator = (
   )
 }
 
+let findCryptoCurrencyField = (~allFields: array<SuperpositionTypes.fieldConfig>): option<
+  SuperpositionTypes.fieldConfig,
+> => allFields->Array.find(f => f.fieldRenderType === SuperpositionTypes.CryptoCurrency)
+
 let extractValuesFromPMLRequiredFields = (
   requiredFields: array<PaymentMethodsRecord.required_fields>,
 ) => {
@@ -311,21 +315,6 @@ let removeBillingDetailsIfUseBillingAddress = (
     })
   } else {
     missingRequiredFields
-  }
-}
-
-let getEligibleConnectors = (
-  paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
-  paymentMethod: string,
-) => {
-  if paymentMethod === "card" {
-    paymentMethodTypes.card_networks->Array.flatMap(network =>
-      network.eligible_connectors->Array.map(item => item->JSON.Encode.string)
-    )
-  } else {
-    paymentMethodTypes.payment_experience->Array.flatMap(exp =>
-      exp.eligible_connectors->Array.map(item => item->JSON.Encode.string)
-    )
   }
 }
 

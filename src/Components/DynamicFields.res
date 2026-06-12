@@ -105,21 +105,17 @@ let make = (
       ->Option.map(fieldConfig => fieldConfig.confirmRequestWritePath)
 
     // remove fields that would render as React.null:
-    //   - CardNumber and Cvc (rendered separately via cardProps/cvcProps)
     //   - Any card-data fields (card_exp_month, card_exp_year, card_network, etc.)
-    //     that live under payment_method_data.card.* — handled by card iframe widgets
     //   - Duplicate Email fields (only the first path is rendered)
-    //   - CardHolderName last_name (rendered inside the first_name field)
     //   - Dropdown fields with no options (would render React.null anyway)
     afterBillingFilter->Array.filter(field => {
       switch field.fieldRenderType {
-      | CardNumber | Cvc => false
+      | CardNumber | Cvc | CardExpiryMonth | CardExpiryYear | CardNetwork => false
       | Dropdown =>
         let options = field.dropdownOptions->Option.getOr([])
         options->Array.length > 0
       | Email => firstEmailPath === Some(field.confirmRequestWritePath)
-      | CardHolderName => !(field.confirmRequestWritePath->String.endsWith(".last_name"))
-      | _ => !(field.confirmRequestWritePath->String.startsWith("payment_method_data.card."))
+      | _ => true
       }
     })
   }, (missingRequiredFields, billingAddress.isUseBillingAddress))
@@ -198,12 +194,14 @@ let make = (
           )
 
           <>
-            {DynamicFieldInput.groupFieldsByRow(dynamicFieldsOutsideBilling)
+            {dynamicFieldsOutsideBilling
+            ->DynamicFieldInput.toFieldItems
+            ->DynamicFieldInput.groupItemsByRow
             ->Array.mapWithIndex((row, rowIdx) => {
               <DynamicFieldsToRenderWrapper
                 key={`outside-row-${rowIdx->Int.toString}`} index={rowIdx} isInside={false}>
                 <DynamicFieldInput.makeRow
-                  fields={row}
+                  items={row}
                   allFields={dynamicFieldsOutsideBilling}
                   globalEmailPaths={allEmailPaths}
                 />
@@ -231,12 +229,14 @@ let make = (
                   style={
                     gap: isSpacedInnerLayout ? themeObj.spacingGridRow : "",
                   }>
-                  {DynamicFieldInput.groupFieldsByRow(dynamicFieldsInsideBilling)
+                  {dynamicFieldsInsideBilling
+                  ->DynamicFieldInput.toFieldItems
+                  ->DynamicFieldInput.groupItemsByRow
                   ->Array.mapWithIndex((row, rowIdx) => {
                     <DynamicFieldsToRenderWrapper
                       key={`inside-row-${rowIdx->Int.toString}`} index={rowIdx}>
                       <DynamicFieldInput.makeRow
-                        fields={row}
+                        items={row}
                         allFields={dynamicFieldsInsideBilling}
                         globalEmailPaths={allEmailPaths}
                       />
