@@ -1,59 +1,19 @@
 open SuperpositionTypes
 
-type fieldItem =
-  | SingleField(fieldConfig)
-  | CombinedName(fieldConfig, fieldConfig)
+// Groups fields by layoutRowId.
+// Fields with no layoutRowId each form their own singleton row.
+let groupFieldsByRow = (fields: array<fieldConfig>): array<array<fieldConfig>> => {
+  let rows: array<array<fieldConfig>> = []
+  let rowMap: Dict.t<array<fieldConfig>> = Dict.make()
 
-let toFieldItems = (fields: array<fieldConfig>): array<fieldItem> => {
-  let firstNameField = fields->Array.find(f => f.fieldRenderType === FirstName)
-  let lastNameField = fields->Array.find(f => f.fieldRenderType === LastName)
-  switch (firstNameField, lastNameField) {
-  | (Some(first), Some(last)) =>
-    fields->Array.filterMap(field =>
-      if field === first {
-        Some(CombinedName(first, last))
-      } else if field === last {
-        None
-      } else {
-        Some(SingleField(field))
-      }
-    )
-  | _ => fields->Array.map(field => SingleField(field))
-  }
-}
-
-let itemLayoutRowId = (item: fieldItem): option<string> =>
-  switch item {
-  | SingleField(field) => field.layoutRowId
-  | CombinedName(firstNameField, _) => firstNameField.layoutRowId
-  }
-
-let itemKey = (item: fieldItem): string =>
-  switch item {
-  | SingleField(field) => field.confirmRequestWritePath
-  | CombinedName(firstNameField, _) => firstNameField.confirmRequestWritePath
-  }
-
-let itemWidthRatio = (item: fieldItem): float =>
-  switch item {
-  | SingleField(field) => field.layoutWidthRatio->Option.getOr(1.0)
-  | CombinedName(firstNameField, _) => firstNameField.layoutWidthRatio->Option.getOr(1.0)
-  }
-
-// Groups items by layoutRowId.
-// Items with no layoutRowId each form their own singleton row.
-let groupItemsByRow = (items: array<fieldItem>): array<array<fieldItem>> => {
-  let rows: array<array<fieldItem>> = []
-  let rowMap: Dict.t<array<fieldItem>> = Dict.make()
-
-  items->Array.forEach(item => {
-    switch itemLayoutRowId(item) {
-    | None => rows->Array.push([item])
+  fields->Array.forEach(field => {
+    switch field.layoutRowId {
+    | None => rows->Array.push([field])
     | Some(rowId) =>
       switch rowMap->Dict.get(rowId) {
-      | Some(row) => row->Array.push(item)
+      | Some(row) => row->Array.push(field)
       | None =>
-        let row = [item]
+        let row = [field]
         rowMap->Dict.set(rowId, row)
         rows->Array.push(row)
       }
@@ -67,7 +27,8 @@ let groupItemsByRow = (items: array<fieldItem>): array<array<fieldItem>> => {
 let renderSingleField = (
   field: fieldConfig,
   ~allFields: array<fieldConfig>,
-  ~globalEmailPaths: option<array<string>>=?,
+  ~globalEmailFields: option<array<fieldConfig>>=?,
+  ~globalCardHolderNameFields: option<array<fieldConfig>>=?,
 ) => {
   switch field.fieldRenderType {
   | CardNumber
@@ -77,13 +38,21 @@ let renderSingleField = (
   | CardNetwork => React.null
 
   | Email =>
-    let allEmailPaths = switch globalEmailPaths {
-    | Some(paths) => paths
+    let allEmailFields = globalEmailFields->Option.getOr([])
+    let firstEmailPath = allEmailFields->Array.get(0)->Option.map(f => f.confirmRequestWritePath)
+    <RenderIf condition={firstEmailPath === Some(field.confirmRequestWritePath)}>
+      <EmailField fields=allEmailFields />
+    </RenderIf>
+
+  | CardHolderName =>
+    let allCardHolderNameFields = switch globalCardHolderNameFields {
+    | Some(nameFields) => nameFields
     | None => []
     }
-    let firstEmailPath = allEmailPaths->Array.get(0)
-    <RenderIf condition={firstEmailPath === Some(field.confirmRequestWritePath)}>
-      <EmailField fieldConfig=field paths=allEmailPaths />
+    let firstCardHolderNamePath =
+      allCardHolderNameFields->Array.get(0)->Option.map(field => field.confirmRequestWritePath)
+    <RenderIf condition={firstCardHolderNamePath === Some(field.confirmRequestWritePath)}>
+      <CardHolderNameField fields=allCardHolderNameFields />
     </RenderIf>
 
   | Date
@@ -120,7 +89,6 @@ let renderSingleField = (
       <GenericDropdownField fieldConfig=field options />
     </RenderIf>
 
-  | CardHolderName
   | FirstName
   | LastName
   | Generic =>
@@ -128,42 +96,31 @@ let renderSingleField = (
   }
 }
 
-// Renders a single derived item: a combined full-name input, or a plain single field.
-let renderItem = (
-  item: fieldItem,
-  ~allFields: array<fieldConfig>,
-  ~globalEmailPaths: option<array<string>>=?,
-) => {
-  switch item {
-  | CombinedName(firstNameField, lastNameField) =>
-    <CardHolderNameField firstNameField lastNameField />
-  | SingleField(field) => renderSingleField(field, ~allFields, ~globalEmailPaths?)
-  }
-}
-
-// Renders a row of items side-by-side using flex layout.
+// Renders a row of fields side-by-side using flex layout.
 @react.component
 let makeRow = (
-  ~items: array<fieldItem>,
+  ~items: array<fieldConfig>,
   ~allFields: array<fieldConfig>,
-  ~globalEmailPaths: option<array<string>>=?,
+  ~globalEmailFields: option<array<fieldConfig>>=?,
+  ~globalCardHolderNameFields: option<array<fieldConfig>>=?,
 ) => {
   switch items->Array.length {
   | 0 => React.null
   | 1 =>
     switch items->Array.get(0) {
     | None => React.null
-    | Some(item) => renderItem(item, ~allFields, ~globalEmailPaths?)
+    | Some(field) =>
+      renderSingleField(field, ~allFields, ~globalEmailFields?, ~globalCardHolderNameFields?)
     }
   | _ =>
     <div className="flex gap-4 w-full">
       {items
-      ->Array.mapWithIndex((item, i) => {
-        let flex = itemWidthRatio(item)
+      ->Array.mapWithIndex((field, i) => {
+        let flex = field.layoutWidthRatio->Option.getOr(1.0)
         <div
-          key={itemKey(item) ++ "-" ++ i->Int.toString}
+          key={field.confirmRequestWritePath ++ "-" ++ i->Int.toString}
           style={flexGrow: flex->Float.toString, flexShrink: "1", flexBasis: "0%"}>
-          {renderItem(item, ~allFields, ~globalEmailPaths?)}
+          {renderSingleField(field, ~allFields, ~globalEmailFields?, ~globalCardHolderNameFields?)}
         </div>
       })
       ->React.array}

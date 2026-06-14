@@ -100,13 +100,18 @@ let make = (
     let firstEmailPath =
       afterBillingFilter
       ->Array.filter(fieldConfig => fieldConfig.fieldRenderType === Email)
-      ->Array.toSorted((a, b) => (a.fieldDisplayOrder - b.fieldDisplayOrder)->Int.toFloat)
+      ->Array.get(0)
+      ->Option.map(fieldConfig => fieldConfig.confirmRequestWritePath)
+
+    let firstCardHolderNamePath =
+      afterBillingFilter
+      ->Array.filter(fieldConfig => fieldConfig.fieldRenderType === CardHolderName)
       ->Array.get(0)
       ->Option.map(fieldConfig => fieldConfig.confirmRequestWritePath)
 
     // remove fields that would render as React.null:
     //   - Any card-data fields (card_exp_month, card_exp_year, card_network, etc.)
-    //   - Duplicate Email fields (only the first path is rendered)
+    //   - Duplicate Email / CardHolderName fields (only the first path is rendered)
     //   - Dropdown fields with no options (would render React.null anyway)
     afterBillingFilter->Array.filter(field => {
       switch field.fieldRenderType {
@@ -115,6 +120,7 @@ let make = (
         let options = field.dropdownOptions->Option.getOr([])
         options->Array.length > 0
       | Email => firstEmailPath === Some(field.confirmRequestWritePath)
+      | CardHolderName => firstCardHolderNamePath === Some(field.confirmRequestWritePath)
       | _ => true
       }
     })
@@ -125,24 +131,25 @@ let make = (
   let dynamicFieldsOutsideBilling = React.useMemo(() => {
     missingRequiredFieldsFiltered->Array.filter(field =>
       !(field.confirmRequestWritePath->String.startsWith(billingPrefix)) ||
-      (paymentMethod == "card" && (field.fieldRenderType === FirstName || field.fieldRenderType === LastName))
+      (paymentMethod == "card" && field.fieldRenderType === CardHolderName)
     )
   }, [missingRequiredFieldsFiltered])
 
   let dynamicFieldsInsideBilling = React.useMemo(() => {
     missingRequiredFieldsFiltered->Array.filter(field =>
       field.confirmRequestWritePath->String.startsWith(billingPrefix) &&
-        !(paymentMethod == "card" && (field.fieldRenderType === FirstName || field.fieldRenderType === LastName))
+        !(paymentMethod == "card" && field.fieldRenderType === CardHolderName)
     )
   }, [missingRequiredFieldsFiltered])
 
-  // Collect all Email-type paths globally (sorted by fieldDisplayOrder) so that
-  // a single Email widget writes to all output paths.
-  // Sourced from missingRequiredFields (before dedup filtering) to preserve all write targets.
-  let allEmailPaths = React.useMemo(() => {
-    missingRequiredFields
-    ->Array.filter(fieldConfig => fieldConfig.fieldRenderType === Email)
-    ->Array.map(fieldConfig => fieldConfig.confirmRequestWritePath)
+  let allEmailFields = React.useMemo(() => {
+    missingRequiredFields->Array.filter(fieldConfig => fieldConfig.fieldRenderType === Email)
+  }, [missingRequiredFields])
+
+  let allCardHolderNameFields = React.useMemo(() => {
+    missingRequiredFields->Array.filter(fieldConfig =>
+      fieldConfig.fieldRenderType === CardHolderName
+    )
   }, [missingRequiredFields])
 
   let formRef: React.ref<option<ReactFinalForm.Form.formMethods>> = React.useRef(None)
@@ -195,15 +202,15 @@ let make = (
 
           <>
             {dynamicFieldsOutsideBilling
-            ->DynamicFieldInput.toFieldItems
-            ->DynamicFieldInput.groupItemsByRow
+            ->DynamicFieldInput.groupFieldsByRow
             ->Array.mapWithIndex((row, rowIdx) => {
               <DynamicFieldsToRenderWrapper
                 key={`outside-row-${rowIdx->Int.toString}`} index={rowIdx} isInside={false}>
                 <DynamicFieldInput.makeRow
                   items={row}
                   allFields={dynamicFieldsOutsideBilling}
-                  globalEmailPaths={allEmailPaths}
+                  globalEmailFields={allEmailFields}
+                  globalCardHolderNameFields={allCardHolderNameFields}
                 />
               </DynamicFieldsToRenderWrapper>
             })
@@ -230,15 +237,15 @@ let make = (
                     gap: isSpacedInnerLayout ? themeObj.spacingGridRow : "",
                   }>
                   {dynamicFieldsInsideBilling
-                  ->DynamicFieldInput.toFieldItems
-                  ->DynamicFieldInput.groupItemsByRow
+                  ->DynamicFieldInput.groupFieldsByRow
                   ->Array.mapWithIndex((row, rowIdx) => {
                     <DynamicFieldsToRenderWrapper
                       key={`inside-row-${rowIdx->Int.toString}`} index={rowIdx}>
                       <DynamicFieldInput.makeRow
                         items={row}
                         allFields={dynamicFieldsInsideBilling}
-                        globalEmailPaths={allEmailPaths}
+                        globalEmailFields={allEmailFields}
+                        globalCardHolderNameFields={allCardHolderNameFields}
                       />
                     </DynamicFieldsToRenderWrapper>
                   })
