@@ -1,80 +1,97 @@
 open SuperpositionTypes
 
+// "John Doe" -> ("John", "Doe")   "John" -> ("John", "")
+let splitName = (value: string): (string, string) =>
+  switch value->String.indexOf(" ") {
+  | -1 => (value, "")
+  | i => (value->String.substring(~start=0, ~end=i), value->String.substringToEnd(~start=i + 1))
+  }
+
+module FullNameFieldInput = {
+  @react.component
+  let make = (~firstNameFieldConfig: fieldConfig, ~lastNameFieldConfig: fieldConfig) => {
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+
+    let firstValidator = DynamicFieldsUtils.resolveValidator(
+      ~field=firstNameFieldConfig,
+      ~localeObject=localeString,
+    )
+    let lastValidator = DynamicFieldsUtils.resolveValidator(
+      ~field=lastNameFieldConfig,
+      ~localeObject=localeString,
+    )
+
+    let firstProps = ReactFinalForm.useField(
+      firstNameFieldConfig.confirmRequestWritePath,
+      ~config={validate: firstValidator},
+    )
+    let lastProps = ReactFinalForm.useField(
+      lastNameFieldConfig.confirmRequestWritePath,
+      ~config={validate: lastValidator},
+    )
+
+    let inputRef = React.useRef(Nullable.null)
+    let (name, setName) = React.useState(() => {
+      let first = firstProps.input.value->Option.getOr("")
+      let last = lastProps.input.value->Option.getOr("")
+      [first, last]->Array.filter(val => val !== "")->Array.join(" ")
+    })
+
+    let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
+      ~field=firstNameFieldConfig,
+      ~localeObject=localeString,
+    )
+    let autocomplete = firstNameFieldConfig.htmlAutocompleteAttribute
+
+    let handleChange = event => {
+      let value: string = ReactEvent.Form.target(event)["value"]
+      setName(_ => value)
+      let (firstName, lastName) = splitName(value)
+      firstProps.input.onChange(firstName)
+      lastProps.input.onChange(lastName)
+    }
+
+    let handleBlur = _event => {
+      firstProps.input.onBlur()
+      lastProps.input.onBlur()
+    }
+
+    let showError =
+      firstProps.meta.touched ||
+      firstProps.meta.submitFailed ||
+      lastProps.meta.touched ||
+      lastProps.meta.submitFailed
+    let allValid = firstProps.meta.valid && lastProps.meta.valid
+    let isValid = showError ? Some(allValid) : None
+    let errorString =
+      showError && !allValid
+        ? firstProps.meta.error->Option.getOr(lastProps.meta.error->Option.getOr(""))
+        : ""
+
+    <PaymentInputField
+      fieldName={label}
+      value={name}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      isValid
+      errorString
+      placeholder
+      inputRef
+      ?autocomplete
+    />
+  }
+}
+
 @react.component
-let make = (~firstNameField: fieldConfig, ~lastNameField: fieldConfig) => {
-  let fieldRef = React.useRef(Nullable.null)
-  let firstNamePath = firstNameField.confirmRequestWritePath
-  let lastNamePath = lastNameField.confirmRequestWritePath
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+let make = (~fields: array<fieldConfig>) => {
+  let firstNameField = fields->Array.get(0)
+  let lastNameField = fields->Array.get(1)
 
-  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
-    ~field=firstNameField,
-    ~localeObject=localeString,
-  )
-  let autocomplete = firstNameField.htmlAutocompleteAttribute
-
-  let firstValidator = DynamicFieldsUtils.resolveValidator(
-    ~field=firstNameField,
-    ~localeObject=localeString,
-  )
-  let lastValidator = DynamicFieldsUtils.resolveValidator(
-    ~field=lastNameField,
-    ~localeObject=localeString,
-  )
-
-  let firstField = ReactFinalForm.useField(firstNamePath, ~config={validate: firstValidator})
-  let lastField = ReactFinalForm.useField(lastNamePath, ~config={validate: lastValidator})
-
-  let (inputValue, setInputValue) = React.useState(() => {
-    let first = firstField.input.value->Option.getOr("")
-    let last = lastField.input.value->Option.getOr("")
-    [first, last]->Array.filter(part => part !== "")->Array.join(" ")
-  })
-
-  let handleChange = ev => {
-    let value: string = ReactEvent.Form.target(ev)["value"]
-    setInputValue(_ => value)
-    let spaceIndex = value->String.indexOf(" ")
-    if spaceIndex === -1 {
-      firstField.input.onChange(value)
-      lastField.input.onChange("")
-    } else {
-      let firstName = value->String.substring(~start=0, ~end=spaceIndex)
-      let lastName = value->String.substringToEnd(~start=spaceIndex + 1)
-      firstField.input.onChange(firstName)
-      lastField.input.onChange(lastName)
-    }
+  switch (firstNameField, lastNameField) {
+  | (Some(firstNameFieldConfig), None) => <GenericInputField fieldConfig=firstNameFieldConfig />
+  | (None, Some(lastNameFieldConfig)) => <GenericInputField fieldConfig=lastNameFieldConfig />
+  | (Some(firstNameFieldConfig), Some(lastNameFieldConfig)) =>
+    <FullNameFieldInput firstNameFieldConfig lastNameFieldConfig />
+  | (_, _) => React.null
   }
-
-  let errorString = if (
-    (firstField.meta.touched && !firstField.meta.active) ||
-      (lastField.meta.touched && !lastField.meta.active)
-  ) {
-    switch (firstField.meta.error, lastField.meta.error) {
-    | (Some(err), _) => err
-    | (_, Some(err)) => err
-    | _ => ""
-    }
-  } else {
-    ""
-  }
-
-  let isValid =
-    firstField.meta.valid &&
-    (lastField.meta.valid || !lastField.meta.touched || lastField.meta.active)
-
-  <PaymentInputField
-    fieldName={label}
-    value={inputValue}
-    onChange={handleChange}
-    onBlur={_ev => {
-      firstField.input.onBlur()
-      lastField.input.onBlur()
-    }}
-    isValid={Some(isValid)}
-    errorString
-    placeholder
-    inputRef={fieldRef}
-    ?autocomplete
-  />
 }
