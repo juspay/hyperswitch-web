@@ -1,42 +1,41 @@
 open SuperpositionTypes
 
 @react.component
-let make = (~fieldConfig: fieldConfig, ~paths: array<string>) => {
+let make = (~fields: array<fieldConfig>) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
-    ~field=fieldConfig,
-    ~localeObject=localeString,
-  )
-  let autocomplete = fieldConfig.htmlAutocompleteAttribute->Option.getOr("email")
-  let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
-  switch paths->Array.get(0) {
+  switch fields->Array.get(0) {
   | None => React.null
-  | Some(primaryPath) =>
+  | Some(primaryFieldConfig) =>
+    let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
+      ~field=primaryFieldConfig,
+      ~localeObject=localeString,
+    )
+    let autocomplete = primaryFieldConfig.htmlAutocompleteAttribute->Option.getOr("email")
+    let validate = DynamicFieldsUtils.resolveValidator(
+      ~field=primaryFieldConfig,
+      ~localeObject=localeString,
+    )
+
     let form = ReactFinalForm.useForm()
-    let primaryField = ReactFinalForm.useField(primaryPath, ~config={validate: validate})
+    let primaryField = ReactFinalForm.useField(
+      primaryFieldConfig.confirmRequestWritePath,
+      ~config={validate: validate},
+    )
     let fieldRef = React.useRef(Nullable.null)
 
     let value = primaryField.input.value->Option.getOr("")
     let touched = primaryField.meta.touched
     let invalid = primaryField.meta.invalid
-    let isValid = if touched {
-      Some(!invalid)
-    } else {
-      None
-    }
-    let errorString = if touched && invalid {
-      primaryField.meta.error->Option.getOr("")
-    } else {
-      ""
-    }
+    let isValid = touched ? Some(!invalid) : None
+    let errorString = touched && invalid ? primaryField.meta.error->Option.getOr("") : ""
 
     <PaymentInputField
       fieldName={label}
       value
       onChange={ev => {
         let val = ReactEvent.Form.target(ev)["value"]
-        paths->Array.forEach(path => form.change(path, val))
+        fields->Array.forEach(field => form.change(field.confirmRequestWritePath, val))
       }}
       onBlur={_ev => primaryField.input.onBlur()}
       isValid
