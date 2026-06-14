@@ -17,14 +17,9 @@ let make = (~fieldConfig: fieldConfig) => {
   let field = ReactFinalForm.useField(path, ~config={validate: validate})
 
   let value = field.input.value->Option.getOr("")
-  let touched = field.meta.touched
   let invalid = field.meta.invalid
-  let showError = touched && !field.meta.active
-  let isValid = if showError {
-    Some(!invalid)
-  } else {
-    None
-  }
+  let showError = field.meta.touched && !field.meta.active
+  let isValid = showError ? Some(!invalid) : None
   let errorString = if showError && invalid {
     field.meta.error->Option.getOr("")
   } else {
