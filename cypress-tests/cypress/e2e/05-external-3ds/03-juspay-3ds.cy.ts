@@ -15,7 +15,7 @@ describe.skip("External 3DS using Juspay Checks", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.JUSPAY),
+    connectorProfileIdMapping.get(connectorEnum.JUSPAY) ?? "",
   );
   changeObjectKeyValue(
     createPaymentBody,

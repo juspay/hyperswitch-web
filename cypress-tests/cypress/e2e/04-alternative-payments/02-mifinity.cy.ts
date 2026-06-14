@@ -17,7 +17,7 @@ describe("Card payment flow test", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.MIFINITY),
+    connectorProfileIdMapping.get(connectorEnum.MIFINITY) ?? "",
   );
   changeObjectKeyValue(createPaymentBody, "currency", "EUR");
   changeObjectKeyValue(createPaymentBody, "billing", {

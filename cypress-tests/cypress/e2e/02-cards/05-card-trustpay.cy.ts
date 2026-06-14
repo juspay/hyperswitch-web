@@ -17,7 +17,7 @@ describe("Trustpay Card Payment flow test", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.TRUSTPAY),
+      connectorProfileIdMapping.get(connectorEnum.TRUSTPAY) ?? "",
     );
   });
 

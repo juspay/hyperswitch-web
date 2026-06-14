@@ -17,7 +17,7 @@ describe("Card payment flow test", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.CRYPTOPAY),
+    connectorProfileIdMapping.get(connectorEnum.CRYPTOPAY) ?? "",
   );
 
   beforeEach(() => {

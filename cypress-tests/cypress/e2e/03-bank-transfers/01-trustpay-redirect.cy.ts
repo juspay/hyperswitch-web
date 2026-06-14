@@ -20,7 +20,7 @@ describe("TrustPay iDEAL Bank Redirect Payment flow test", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.TRUSTPAY),
+      connectorProfileIdMapping.get(connectorEnum.TRUSTPAY) ?? "",
     );
     changeObjectKeyValue(createPaymentBody, "currency", "EUR");
 
@@ -74,7 +74,7 @@ describe("TrustPay Blik Bank Redirect Payment flow test", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.TRUSTPAY),
+      connectorProfileIdMapping.get(connectorEnum.TRUSTPAY) ?? "",
     );
     changeObjectKeyValue(createPaymentBody, "currency", "PLN");
 
@@ -126,7 +126,7 @@ describe("TrustPay EPS Bank Redirect Payment flow test", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.TRUSTPAY),
+      connectorProfileIdMapping.get(connectorEnum.TRUSTPAY) ?? "",
     );
     changeObjectKeyValue(createPaymentBody, "currency", "EUR");
 

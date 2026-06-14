@@ -165,6 +165,7 @@ let make = (
             ref={inputRef->ReactDOM.Ref.domRef}
             type_
             name
+            dataTestId={name}
             ?maxLength
             ?pattern
             className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}

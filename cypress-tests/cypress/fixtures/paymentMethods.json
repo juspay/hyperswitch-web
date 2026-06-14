@@ -3,7 +3,9 @@
     "klarna":"Klarna",
     "affirm":"Affirm",
     "aliPay":"Ali Pay",
-    "weChatPay":"WeChat"
-
+    "weChatPay":"WeChat",
+    "afterpay_clearpay":"After Pay",
+    "ach_bank_debit":"ACH Direct Debit",
+    "sepa_debit":"SEPA Debit"
   }
   
