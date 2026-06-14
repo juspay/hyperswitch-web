@@ -34,9 +34,8 @@ let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
 
   <ReactFinalForm.Field name={path} validate={Some(validate)}>
     {(field: ReactFinalForm.Field.fieldProps) => {
-      let touched = field.meta.touched
       let invalid = field.meta.invalid
-      let showError = touched || field.meta.submitFailed
+      let showError = field.meta.touched || field.meta.submitFailed
       <div className="flex flex-col gap-1">
         <div
           className={`Label`}

@@ -25,9 +25,8 @@ let make = (~fields: array<fieldConfig>) => {
     let fieldRef = React.useRef(Nullable.null)
 
     let value = primaryField.input.value->Option.getOr("")
-    let touched = primaryField.meta.touched
     let invalid = primaryField.meta.invalid
-    let showError = touched && !primaryField.meta.active
+    let showError = primaryField.meta.touched && !primaryField.meta.active
     let isValid = showError ? Some(!invalid) : None
     let errorString = showError && invalid ? primaryField.meta.error->Option.getOr("") : ""
 
