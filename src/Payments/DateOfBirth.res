@@ -36,6 +36,7 @@ let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
     {(field: ReactFinalForm.Field.fieldProps) => {
       let touched = field.meta.touched
       let invalid = field.meta.invalid
+      let showError = touched || field.meta.submitFailed
       <div className="flex flex-col gap-1">
         <div
           className={`Label`}
@@ -51,6 +52,7 @@ let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
           icon={<Icon name="calander" size=13 className="!px-[6px] !py-[10px]" />}
           className="w-full border border-gray-300 rounded p-2"
           selected={selectedDate}
+          onBlur={_ => field.input.onBlur()}
           onChange={date => {
             setSelectedDate(_ => date)
             let strVal =
@@ -97,7 +99,7 @@ let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
             </div>
           }}
         />
-        <RenderIf condition={touched && invalid}>
+        <RenderIf condition={showError && invalid}>
           <div
             className="Error pt-1"
             style={

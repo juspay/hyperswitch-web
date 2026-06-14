@@ -56,11 +56,17 @@ module FullNameFieldInput = {
       lastProps.input.onBlur()
     }
 
+    let handleFocus = _event => {
+      firstProps.input.onFocus()
+      lastProps.input.onFocus()
+    }
+
+    let active = firstProps.meta.active || lastProps.meta.active
     let showError =
-      firstProps.meta.touched ||
+      (firstProps.meta.touched ||
       firstProps.meta.submitFailed ||
       lastProps.meta.touched ||
-      lastProps.meta.submitFailed
+      lastProps.meta.submitFailed) && !active
     let allValid = firstProps.meta.valid && lastProps.meta.valid
     let isValid = showError ? Some(allValid) : None
     let errorString =
@@ -73,6 +79,7 @@ module FullNameFieldInput = {
       value={name}
       onChange={handleChange}
       onBlur={handleBlur}
+      onFocus={handleFocus}
       isValid
       errorString
       placeholder

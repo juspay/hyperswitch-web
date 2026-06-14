@@ -20,6 +20,7 @@ type customHeaderProps = {
 external make: (
   ~selected: Nullable.t<Date.t>,
   ~onChange: Nullable.t<Date.t> => unit,
+  ~onBlur: ReactEvent.Focus.t => unit=?,
   ~showIcon: bool=?,
   ~icon: React.element=?,
   ~dateFormat: string=?,
