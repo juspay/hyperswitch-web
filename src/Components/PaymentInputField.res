@@ -13,6 +13,7 @@ let make = (
   ~onBlur=?,
   ~rightIcon=React.null,
   ~errorString=?,
+  ~onFocus=?,
   ~fieldName="",
   ~name="",
   ~type_="text",
@@ -34,10 +35,14 @@ let make = (
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
-  let handleFocus = _ => {
+  let handleFocus = ev => {
     setInputFocused(_ => true)
     switch setIsValid {
     | Some(fn) => fn(_ => None)
+    | None => ()
+    }
+    switch onFocus {
+    | Some(fn) => fn(ev)
     | None => ()
     }
     Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)

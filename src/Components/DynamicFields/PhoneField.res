@@ -19,12 +19,13 @@ let make = (~fieldConfig: fieldConfig) => {
   let value = field.input.value->Option.getOr("")
   let touched = field.meta.touched
   let invalid = field.meta.invalid
-  let isValid = if touched {
+  let showError = touched && !field.meta.active
+  let isValid = if showError {
     Some(!invalid)
   } else {
     None
   }
-  let errorString = if touched && invalid {
+  let errorString = if showError && invalid {
     field.meta.error->Option.getOr("")
   } else {
     ""
@@ -38,6 +39,7 @@ let make = (~fieldConfig: fieldConfig) => {
       field.input.onChange(val)
     }}
     onBlur={_ev => field.input.onBlur()}
+    onFocus={_ev => field.input.onFocus()}
     isValid
     errorString
     placeholder
