@@ -1,12 +1,5 @@
 open SuperpositionTypes
 
-// "John Doe" -> ("John", "Doe")   "John" -> ("John", "")
-let splitName = (value: string): (string, string) =>
-  switch value->String.indexOf(" ") {
-  | -1 => (value, "")
-  | i => (value->String.substring(~start=0, ~end=i), value->String.substringToEnd(~start=i + 1))
-  }
-
 module FullNameFieldInput = {
   @react.component
   let make = (~firstNameFieldConfig: fieldConfig, ~lastNameFieldConfig: fieldConfig) => {
@@ -46,7 +39,7 @@ module FullNameFieldInput = {
     let handleChange = event => {
       let value: string = ReactEvent.Form.target(event)["value"]
       setName(_ => value)
-      let (firstName, lastName) = splitName(value)
+      let (firstName, lastName) = Utils.splitFullName(value)
       firstProps.input.onChange(firstName)
       lastProps.input.onChange(lastName)
     }

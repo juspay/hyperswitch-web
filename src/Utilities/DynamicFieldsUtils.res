@@ -3,6 +3,8 @@ type fieldTexts = {
   placeholder: string,
 }
 
+let billingPrefix = "payment_method_data.billing."
+
 let lookupLocaleKey = (key: string, locale: LocaleStringTypes.localeStrings): option<string> =>
   switch key {
   | "cardNumberLabel" => Some(locale.cardNumberLabel)
@@ -259,7 +261,7 @@ let resolveValidator = (
   ~field: SuperpositionTypes.fieldConfig,
   ~localeObject: LocaleStringTypes.localeStrings,
 ) => {
-  let requiredRule = field.isRequired ? [Validation.Required] : []
+  let requiredRule = field.isRequired ? [Validation.Required(None)] : []
 
   let semanticRule = switch field.validationRuleType {
   | Some("phone") => [Validation.Phone]
@@ -281,7 +283,7 @@ let resolveValidator = (
 
   let maxLengthRule = [Validation.MaxLength(field.maxInputLength->Option.getOr(255))]
 
-  let rules = Array.concat(Array.concat(requiredRule, semanticRule), maxLengthRule)
+  let rules = [...requiredRule, ...semanticRule, ...maxLengthRule]
 
   Validation.createFieldValidator(
     rules,
@@ -311,7 +313,7 @@ let removeBillingDetailsIfUseBillingAddress = (
 ) => {
   if billingAddress.isUseBillingAddress {
     missingRequiredFields->Array.filter(requiredField => {
-      !(requiredField.confirmRequestWritePath->String.startsWith("payment_method_data.billing."))
+      !(requiredField.confirmRequestWritePath->String.startsWith(billingPrefix))
     })
   } else {
     missingRequiredFields

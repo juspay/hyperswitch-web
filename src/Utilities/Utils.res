@@ -1761,17 +1761,19 @@ let checkIs18OrAbove = dateOfBirth => {
   dateOfBirth <= compareDate
 }
 
-let getFirstAndLastNameFromFullName = fullName => {
+let splitFullName = fullName => {
   let nameStrings = fullName->String.split(" ")
-  let firstName =
-    nameStrings
-    ->Array.get(0)
-    ->Option.flatMap(x => Some(x->JSON.Encode.string))
-    ->Option.getOr(JSON.Encode.null)
-  let lastNameStr = nameStrings->Array.sliceToEnd(~start=1)->Array.join(" ")->String.trim
+  let firstName = nameStrings->Array.get(0)->Option.getOr("")
+  let lastName = nameStrings->Array.sliceToEnd(~start=1)->Array.join(" ")->String.trim
+  (firstName, lastName)
+}
+
+let getFirstAndLastNameFromFullName = fullName => {
+  let (firstNameStr, lastNameStr) = fullName->splitFullName
+  let firstNameJson = firstNameStr->JSON.Encode.string
   let lastNameJson = lastNameStr === "" ? JSON.Encode.null : lastNameStr->JSON.Encode.string
 
-  (firstName, lastNameJson)
+  (firstNameJson, lastNameJson)
 }
 
 let isKeyPresentInDict = (dict, key) => dict->Dict.get(key)->Option.isSome

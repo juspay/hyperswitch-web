@@ -9,15 +9,14 @@ let make = (~fieldConfig: fieldConfig) => {
   let {label} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
   let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
-  let countryAndCodeList =
+  let countryAndCodeList = React.useMemo0(() =>
     phoneNumberJson
-    ->JSON.Decode.object
-    ->Option.getOr(Dict.make())
+    ->getDictFromJson
     ->getArray("countries")
+  )
 
-  let phoneNumberCodeOptions: array<DropdownField.optionType> = countryAndCodeList->Array.reduce(
-    [],
-    (acc, countryObj) => {
+  let phoneNumberCodeOptions: array<DropdownField.optionType> = React.useMemo0(() =>
+    countryAndCodeList->Array.reduce([], (acc, countryObj) => {
       let countryDict = countryObj->getDictFromJson
       let flag = countryDict->getString("country_flag", "")
       let code = countryDict->getString("phone_number_code", "")
@@ -29,7 +28,7 @@ let make = (~fieldConfig: fieldConfig) => {
       }
       acc->Array.push(opt)
       acc
-    },
+    })
   )
 
   let defaultCountry = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)

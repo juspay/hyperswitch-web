@@ -10,10 +10,11 @@ let make = (~fieldConfig: fieldConfig, ~options: array<DropdownField.optionType>
   let firstCountryName = options->Array.get(0)->Option.map(opt => opt.value)->Option.getOr("")
   let defaultCountryName = countryName !== "" ? countryName : firstCountryName
   let defaultIso = Utils.getCountryCode(defaultCountryName).isoAlpha2
+  let defaultIsoRef = React.useRef(defaultIso)
 
   let field = ReactFinalForm.useField(
     fieldConfig.confirmRequestWritePath,
-    ~config={validate, defaultValue: Some(defaultIso)},
+    ~config={validate, defaultValue: Some(defaultIsoRef.current)},
   )
 
   let storedIso = field.input.value->Option.getOr("")
