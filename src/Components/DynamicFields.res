@@ -78,7 +78,7 @@ let make = (
     )
   }, (paymentMethod, paymentMethodType, country, paymentMethodListValue))
 
-  let (_requiredFields, missingRequiredFields, initialValues) = React.useMemo(() => {
+  let (_requiredFields, missingRequiredFields, superpositionInitialValues) = React.useMemo(() => {
     getSuperpositionFinalFields(
       eligibleConnectors,
       superpositionBaseContext,
@@ -90,6 +90,7 @@ let make = (
     superpositionBaseContext,
     requiredFieldsFromPMLFlat,
   ))
+  let initialValues = React.useMemo(() => superpositionInitialValues, [requiredFieldsFromPMLFlat])
 
   let missingRequiredFieldsFiltered = React.useMemo(() => {
     let afterBillingFilter = removeBillingDetailsIfUseBillingAddress(
@@ -125,8 +126,6 @@ let make = (
       }
     })
   }, (missingRequiredFields, billingAddress.isUseBillingAddress))
-
-  let billingPrefix = "payment_method_data.billing."
 
   let dynamicFieldsOutsideBilling = React.useMemo(() => {
     missingRequiredFieldsFiltered->Array.filter(field =>
@@ -190,7 +189,7 @@ let make = (
 
           ReactFinalForm.useFormStateHandler(
             ~onFormChange=values => {
-              // Flatten the nested form values so keys align correctly during merge using `mergeAndFlattenToTuples`.
+              // RFF stores values as nested objects; flatten to dot-notation keys so they align with the confirm-payload merge.
               let flatValues = values->JSON.Encode.object->Utils.flattenObject(false)
               setRequiredFieldsBody(_ => flatValues)
             },

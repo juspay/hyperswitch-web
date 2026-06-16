@@ -32,7 +32,7 @@ let make = (~fieldConfig: fieldConfig) => {
       stateField.input.onChange(effectiveCode)
     }
     None
-  }, [effectiveCode])
+  }, (hasStates, storedCode, effectiveCode))
 
   <RenderIf condition={hasStates}>
     <DropdownField
