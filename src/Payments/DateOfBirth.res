@@ -33,9 +33,8 @@ let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
   let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
   let field = ReactFinalForm.useField(path, ~config={validate: validate})
-  let touched = field.meta.touched
   let invalid = field.meta.invalid
-  let showError = touched || field.meta.submitFailed
+  let showError = field.meta.touched || field.meta.submitFailed
 
   <div className="flex flex-col gap-1">
     <div
