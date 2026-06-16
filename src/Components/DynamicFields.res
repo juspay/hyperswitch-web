@@ -178,6 +178,15 @@ let make = (
   let spacedStylesForBillingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
   let hasAnyField = missingRequiredFieldsFiltered->Array.length > 0
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
+  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
+
+  React.useEffect(() => {
+    if isSavedCardFlow || !hasAnyField {
+      setAreRequiredFieldsValid(_ => true)
+      setAreRequiredFieldsEmpty(_ => false)
+    }
+    None
+  }, (isSavedCardFlow, hasAnyField))
 
   <>
     <RenderIf condition={!isSavedCardFlow && hasAnyField}>
@@ -192,6 +201,15 @@ let make = (
               // RFF stores values as nested objects; flatten to dot-notation keys so they align with the confirm-payload merge.
               let flatValues = values->JSON.Encode.object->Utils.flattenObject(false)
               setRequiredFieldsBody(_ => flatValues)
+
+              let isEmpty = missingRequiredFieldsFiltered->Array.some(field => {
+                switch flatValues->Dict.get(field.confirmRequestWritePath) {
+                | None | Some(JSON.Null) => true
+                | Some(JSON.String(str)) => str->String.trim === ""
+                | Some(_) => false
+                }
+              })
+              setAreRequiredFieldsEmpty(_ => isEmpty)
             },
             ~onValidationChange=isValid => {
               setAreRequiredFieldsValid(_ => isValid)
