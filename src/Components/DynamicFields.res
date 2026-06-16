@@ -47,33 +47,11 @@ let make = (
     None
   }, [paymentMethodType])
 
-  let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod,
-    ~paymentMethodType,
-  )
-
   let rawConfigs = sdkConfigsValue.raw_configs
 
   let getSuperpositionFinalFields = ConfigurationService.useConfigurationService(~rawConfigs)
 
-  let flatIntentData = React.useMemo(() => {
-    let flattenWithPrefix = (jsonOpt, prefix) =>
-      jsonOpt->Option.mapOr([], json =>
-        json
-        ->Utils.flattenObject(true)
-        ->Dict.toArray
-        ->Array.filterMap(((k, v)) =>
-            v->JSON.Decode.string->Option.map(s => (prefix ++ k, s))
-          )
-      )
-    [
-      flattenWithPrefix(paymentMethodListValue.intent_data.billing, "billing."),
-      flattenWithPrefix(paymentMethodListValue.intent_data.shipping, "shipping."),
-    ]
-    ->Array.flat
-    ->Dict.fromArray
-  }, [paymentMethodListValue.intent_data])
+  let intentData = paymentMethodListValue.intent_data.intentDataObject
 
   let eligibleConnectors = React.useMemo(() => {
     SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
@@ -96,15 +74,15 @@ let make = (
     getSuperpositionFinalFields(
       eligibleConnectors,
       superpositionBaseContext,
-      flatIntentData,
+      intentData,
     )
   }, (
     getSuperpositionFinalFields,
     eligibleConnectors,
     superpositionBaseContext,
-    flatIntentData,
+    intentData,
   ))
-  let initialValues = React.useMemo(() => superpositionInitialValues, [flatIntentData])
+  let initialValues = React.useMemo(() => superpositionInitialValues, [intentData])
 
   let missingRequiredFieldsFiltered = React.useMemo(() => {
     let afterBillingFilter = removeBillingDetailsIfUseBillingAddress(
