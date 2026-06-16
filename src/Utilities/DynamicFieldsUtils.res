@@ -449,9 +449,7 @@ let applyBillingDetailsOverride = (
 
   let name = billingDetails.name
   if name !== "" {
-    let nameArr = name->String.split(" ")
-    let firstName = nameArr->Array.get(0)->Option.getOr("")
-    let lastName = nameArr->Array.sliceToEnd(~start=1)->Array.join(" ")
+    let (firstName, lastName) = name->Utils.splitFullName
     set("payment_method_data.billing.address.first_name", firstName)
     set("payment_method_data.billing.address.last_name", lastName)
   }
