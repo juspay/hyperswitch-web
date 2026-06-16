@@ -23,8 +23,9 @@ let make = (~fieldConfig: fieldConfig) => {
   )
   let storedCode = stateField.input.value->Option.getOr("")
   let storedDisplayName = Utils.getStateNameFromCode(storedCode, countryIso)
+  let isStoredCodeValidForCountry = stateDisplayNames->Array.includes(storedDisplayName)
   let firstStateName = stateDisplayNames->Array.get(0)->Option.getOr("")
-  let effectiveDisplayName = storedDisplayName !== "" ? storedDisplayName : firstStateName
+  let effectiveDisplayName = isStoredCodeValidForCountry ? storedDisplayName : firstStateName
   let effectiveCode = Utils.getStateCodeFromStateName(effectiveDisplayName, countryIso)
 
   React.useEffect(() => {
