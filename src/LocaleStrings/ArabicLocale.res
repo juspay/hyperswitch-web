@@ -231,6 +231,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_evoucher: `قسيمة إلكترونية`,
   payment_methods_pix_transfer: `Pix`,
   payment_methods_pix_emv_transfer: `PixEmv`,
+  payment_methods_pix_qr_transfer: `PixQr`,
   payment_methods_boleto: `Boleto`,
   payment_methods_paypal: `باي بال`,
   payment_methods_local_bank_transfer_transfer: `Union Pay`,
