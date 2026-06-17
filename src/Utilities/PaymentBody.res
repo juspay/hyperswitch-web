@@ -915,7 +915,7 @@ let vaultCardBody = (~token, ~last4Digits, ~binNumber) => {
 
   [
     ("payment_method", "card"->JSON.Encode.string),
-    ("payment_method_type", "credit"->JSON.Encode.string),
+    ("payment_method_type", "debit"->JSON.Encode.string),
     ("payment_method_data", [("vault_data_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson),
   ]
 }

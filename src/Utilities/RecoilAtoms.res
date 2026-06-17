@@ -17,7 +17,6 @@ let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
 let paymentTokenAtom = Recoil.atom("paymentToken", RecoilAtomTypes.defaultPaymentToken)
 let showPaymentMethodsScreen = Recoil.atom("showPaymentMethodsScreen", false)
-let vaultMode = Recoil.atom("vaultMode", VaultHelpers.None)
 // Typed vault credentials decoded from the vaultConfig blob in fullScreenIframeMounted.
 // Set by PaymentMethodsSDK; read by CardsSDK / vault-specific card components.
 let vaultCredentials = Recoil.atom("vaultCredentials", VaultHelpers.defaultVaultCredentials)

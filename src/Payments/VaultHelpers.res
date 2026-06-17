@@ -43,11 +43,6 @@ type hyperswitchVaultType = {
   pmSessionId: string,
 }
 
-let defaultHyperswitchVault: hyperswitchVaultType = {
-  sdkAuthorization: "",
-  pmSessionId: "",
-}
-
 type vgsVaultType = {
   vaultId: string,
   environment: string,
@@ -69,14 +64,6 @@ let getVaultModeFromName = val => {
   | "vgs" => VeryGoodSecurity
   | "hyperswitch" => Hyperswitch
   | _ => None
-  }
-}
-
-let getVaultNameFromMode = val => {
-  switch val {
-  | VeryGoodSecurity => "vgs"
-  | Hyperswitch => "hyperswitch"
-  | None => ""
   }
 }
 
@@ -190,12 +177,6 @@ type vaultTokenData = {
   token: string,
   last4Digits: string,
   binNumber: string,
-}
-
-let defaultVaultTokenData: vaultTokenData = {
-  token: "",
-  last4Digits: "",
-  binNumber: "",
 }
 
 // Decodes the vault API response JSON into a vaultTokenData record.

@@ -212,6 +212,7 @@ let make = (
     } catch {
     | err =>
       let exceptionMessage = err->formatException->JSON.stringify
+      messageParentWindow([("cardTokenFail", true->JSON.Encode.bool)])
       Console.error2("Unable to Save Card ", exceptionMessage)
     }
   }
@@ -497,7 +498,6 @@ let make = (
         } else {
           // Card field errors (also checked via shared reportCardFieldErrors above
           // but the standard path has additional eligibility / installment checks).
-          // reportCardFieldErrors()
           if cardNumber === "" {
             setCardError(_ => localeString.cardNumberEmptyText)
             setUserError(localeString.enterFieldsText)
@@ -573,10 +573,6 @@ let make = (
 
   let compressedLayoutStyleForCvcError =
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
-  // let vaultClass = switch isInsideCardSDK {
-  // | true => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
-  // | false => ""
-  // }
   let accordionMarginClass = layoutClass.\"type" === Accordion && !isInsideCardSDK ? "mt-4" : ""
   let surchargeAmount =
     eligibilitySurchargeDetails
@@ -738,7 +734,6 @@ let make = (
               </div>
             </div>
           </RenderIf>
-          // </RenderIf>
         </div>
       </div>
     </RenderIf>

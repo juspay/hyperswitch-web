@@ -44,8 +44,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     paymentMethodListValue,
   )
 
-  let setVaultMode = Recoil.useSetRecoilState(RecoilAtoms.vaultMode)
-
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
@@ -182,12 +180,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, [savedMethods])
 
   React.useEffect(() => {
-    let vaultName = VaultHelpers.getVaultName(sessionToken)
-    setVaultMode(_ => vaultName->VaultHelpers.getVaultModeFromName)
     let isTokenize = switch sdkConfigsValue.account_config {
     | Some(val) =>
       switch val.profile {
-      | Some(val) => val.vaulting_action === Tokenize
+      | Some(vault) => vault.vaulting_action === Tokenize
       | None => false
       }
     | None => false

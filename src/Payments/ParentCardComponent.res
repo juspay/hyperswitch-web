@@ -197,6 +197,8 @@ let make = () => {
             } else {
               Console.error("ParentCardComponent: payment token not found in vaultResponse")
             }
+          } else if dict->Dict.get("cardTokenFail")->Option.isSome {
+            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
           }
 
           // Validation / tokenization error from inner iframe — forward to Hyper.res
