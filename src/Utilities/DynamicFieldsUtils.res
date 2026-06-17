@@ -474,3 +474,33 @@ let applyBillingDetailsOverride = (
 
   initialValues
 }
+
+// TODO: refactor event emitters to use react-final-forms
+let useSyncEmitAddressAtoms = () => {
+  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let setUserAddressState = Recoil.useSetRecoilState(RecoilAtoms.userAddressState)
+  let setUserAddressPincode = Recoil.useSetRecoilState(RecoilAtoms.userAddressPincode)
+
+  (flatValues: Dict.t<JSON.t>) => {
+    let readBillingValue = path =>
+      flatValues->Dict.get(path)->Option.map(json => json->JSON.Decode.string->Option.getOr(""))
+
+    let countryFromForm =
+      readBillingValue("payment_method_data.billing.address.country")->Option.getOr("")
+    let countryIso =
+      countryFromForm !== "" ? countryFromForm : Utils.getCountryCode(country).isoAlpha2
+
+    switch readBillingValue("payment_method_data.billing.address.state") {
+    | Some(stateCode) =>
+      let stateName =
+        stateCode->String.trim === "" ? "" : Utils.getStateNameFromCode(stateCode, countryIso)
+      setUserAddressState(prev => prev.value === stateName ? prev : {...prev, value: stateName})
+    | None => ()
+    }
+
+    switch readBillingValue("payment_method_data.billing.address.zip") {
+    | Some(zip) => setUserAddressPincode(prev => prev.value === zip ? prev : {...prev, value: zip})
+    | None => ()
+    }
+  }
+}

@@ -41,6 +41,7 @@ let make = (
   let {billingAddress, redirectionInfo, defaultValues} = Recoil.useRecoilValueFromAtom(optionAtom)
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
+  let syncEmitAddressAtoms = DynamicFieldsUtils.useSyncEmitAddressAtoms()
 
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
@@ -210,6 +211,7 @@ let make = (
               )
 
               setRequiredFieldsBody(_ => flatValues)
+              syncEmitAddressAtoms(flatValues)
 
               let isEmpty = missingRequiredFieldsFiltered->Array.some(field => {
                 switch flatValues->Dict.get(field.confirmRequestWritePath) {

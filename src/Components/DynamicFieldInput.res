@@ -91,7 +91,14 @@ let renderSingleField = (
       <GenericDropdownField fieldConfig=field options />
     </RenderIf>
 
-  | BankNamesSelect => <BankNamesSelectField fieldConfig=field paymentMethodType />
+  | BankNamesSelect =>
+    let options = Bank.getBanks(paymentMethodType)->Array.map(bank => {
+      DropdownField.value: bank.value,
+      label: bank.displayName,
+    })
+    <RenderIf condition={options->Array.length > 0}>
+      <BankNamesSelectField fieldConfig=field options />
+    </RenderIf>
 
   | FirstName
   | LastName
