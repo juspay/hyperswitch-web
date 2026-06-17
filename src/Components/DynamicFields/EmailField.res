@@ -1,0 +1,48 @@
+open SuperpositionTypes
+
+@react.component
+let make = (~fields: array<fieldConfig>) => {
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+
+  switch fields->Array.get(0) {
+  | None => React.null
+  | Some(primaryFieldConfig) =>
+    let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
+      ~field=primaryFieldConfig,
+      ~localeObject=localeString,
+    )
+    let autocomplete = primaryFieldConfig.htmlAutocompleteAttribute->Option.getOr("email")
+    let validate = DynamicFieldsUtils.resolveValidator(
+      ~field=primaryFieldConfig,
+      ~localeObject=localeString,
+    )
+
+    let form = ReactFinalForm.useForm()
+    let primaryField = ReactFinalForm.useField(
+      primaryFieldConfig.confirmRequestWritePath,
+      ~config={validate: validate},
+    )
+    let fieldRef = React.useRef(Nullable.null)
+
+    let value = primaryField.input.value->Option.getOr("")
+    let touched = primaryField.meta.touched
+    let invalid = primaryField.meta.invalid
+    let isValid = touched ? Some(!invalid) : None
+    let errorString = touched && invalid ? primaryField.meta.error->Option.getOr("") : ""
+
+    <PaymentInputField
+      fieldName={label}
+      value
+      onChange={ev => {
+        let val = ReactEvent.Form.target(ev)["value"]
+        fields->Array.forEach(field => form.change(field.confirmRequestWritePath, val))
+      }}
+      onBlur={_ev => primaryField.input.onBlur()}
+      isValid
+      errorString
+      placeholder
+      inputRef={fieldRef}
+      autocomplete
+    />
+  }
+}
