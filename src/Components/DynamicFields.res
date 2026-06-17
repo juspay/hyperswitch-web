@@ -71,17 +71,8 @@ let make = (
   }, (paymentMethod, paymentMethodType, country, paymentMethodListValue))
 
   let (requiredFields, missingRequiredFields, superpositionInitialValues) = React.useMemo(() => {
-    getSuperpositionFinalFields(
-      eligibleConnectors,
-      superpositionBaseContext,
-      intentData,
-    )
-  }, (
-    getSuperpositionFinalFields,
-    eligibleConnectors,
-    superpositionBaseContext,
-    intentData,
-  ))
+    getSuperpositionFinalFields(eligibleConnectors, superpositionBaseContext, intentData)
+  }, (getSuperpositionFinalFields, eligibleConnectors, superpositionBaseContext, intentData))
   let initialValues = React.useMemo(() => superpositionInitialValues, [intentData])
 
   let missingRequiredFieldsFiltered = React.useMemo(() => {
@@ -128,18 +119,17 @@ let make = (
     DynamicFieldsUtils.applyBillingDetailsOverride(initialValues, defaultValues.billingDetails)
   }, (initialValues, defaultValues.billingDetails))
 
-  let dynamicFieldsOutsideBilling = React.useMemo(() => {
-    missingRequiredFieldsFiltered->Array.filter(field =>
-      !(field.confirmRequestWritePath->String.startsWith(billingPrefix)) ||
-      (paymentMethod == "card" && field.fieldRenderType === CardHolderName)
-    )
-  }, [missingRequiredFieldsFiltered])
+  let isInsideBillingField = (field: fieldConfig) =>
+    field.fieldRenderType === Email ||
+      (field.confirmRequestWritePath->String.startsWith(billingPrefix) &&
+        !(paymentMethod == "card" && field.fieldRenderType === CardHolderName))
 
   let dynamicFieldsInsideBilling = React.useMemo(() => {
-    missingRequiredFieldsFiltered->Array.filter(field =>
-      field.confirmRequestWritePath->String.startsWith(billingPrefix) &&
-        !(paymentMethod == "card" && field.fieldRenderType === CardHolderName)
-    )
+    missingRequiredFieldsFiltered->Array.filter(field => isInsideBillingField(field))
+  }, [missingRequiredFieldsFiltered])
+
+  let dynamicFieldsOutsideBilling = React.useMemo(() => {
+    missingRequiredFieldsFiltered->Array.filter(field => !isInsideBillingField(field))
   }, [missingRequiredFieldsFiltered])
 
   let allEmailFields = React.useMemo(() => {
