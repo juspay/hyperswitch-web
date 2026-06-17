@@ -25,10 +25,10 @@ let make = (~fields: array<fieldConfig>) => {
     let fieldRef = React.useRef(Nullable.null)
 
     let value = primaryField.input.value->Option.getOr("")
-    let touched = primaryField.meta.touched
     let invalid = primaryField.meta.invalid
-    let isValid = touched ? Some(!invalid) : None
-    let errorString = touched && invalid ? primaryField.meta.error->Option.getOr("") : ""
+    let showError = primaryField.meta.touched && !primaryField.meta.active
+    let isValid = showError ? Some(!invalid) : None
+    let errorString = showError && invalid ? primaryField.meta.error->Option.getOr("") : ""
 
     <PaymentInputField
       fieldName={label}
@@ -38,6 +38,7 @@ let make = (~fields: array<fieldConfig>) => {
         fields->Array.forEach(field => form.change(field.confirmRequestWritePath, val))
       }}
       onBlur={_ev => primaryField.input.onBlur()}
+      onFocus={_ev => primaryField.input.onFocus()}
       isValid
       errorString
       placeholder
