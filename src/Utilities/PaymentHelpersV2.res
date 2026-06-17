@@ -480,3 +480,33 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
     }
   }
 }
+
+let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization, ~logger as _) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let headers = [("Authorization", sdkAuthorization)]
+  let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/confirm`
+
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri=""),
+  )
+  ->then(resp => {
+    if !(resp->Fetch.Response.ok) {
+      resp
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      Fetch.Response.json(resp)
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.error2("Error ", exceptionMessage)
+    JSON.Encode.null->resolve
+  })
+}

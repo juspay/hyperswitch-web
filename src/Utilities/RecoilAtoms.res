@@ -7,6 +7,7 @@ let elementOptions = Recoil.atom("elementOptions", ElementType.defaultOptions)
 let optionAtom = Recoil.atom("options", PaymentType.defaultOptions)
 let sessions = Recoil.atom("sessions", PaymentType.Loading)
 let updateSession = Recoil.atom("updateSession", false)
+let isTokenize = Recoil.atom("isTokenize", false)
 let paymentMethodList = Recoil.atom("paymentMethodList", PaymentType.Loading)
 let sdkConfigs = Recoil.atom("sdkConfigs", PaymentType.Loading)
 let loggerAtom = Recoil.atom("component", LoggerUtils.defaultLoggerConfig)
@@ -16,6 +17,9 @@ let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
 let paymentTokenAtom = Recoil.atom("paymentToken", RecoilAtomTypes.defaultPaymentToken)
 let showPaymentMethodsScreen = Recoil.atom("showPaymentMethodsScreen", false)
+// Typed vault credentials decoded from the vaultConfig blob in fullScreenIframeMounted.
+// Set by PaymentMethodsSDK; read by CardsSDK / vault-specific card components.
+let vaultCredentials = Recoil.atom("vaultCredentials", VaultHelpers.defaultVaultCredentials)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")
 let paymentMethodCollectOptionAtom = Recoil.atom(
