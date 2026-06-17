@@ -249,6 +249,7 @@ let make = (
                 <DynamicFieldInput.makeRow
                   items={row}
                   allFields={dynamicFieldsOutsideBilling}
+                  paymentMethodType
                   globalEmailFields={allEmailFields}
                   globalCardHolderNameFields={allCardHolderNameFields}
                 />
@@ -284,6 +285,7 @@ let make = (
                       <DynamicFieldInput.makeRow
                         items={row}
                         allFields={dynamicFieldsInsideBilling}
+                        paymentMethodType
                         globalEmailFields={allEmailFields}
                         globalCardHolderNameFields={allCardHolderNameFields}
                       />
