@@ -17,10 +17,8 @@ let make = () => {
   )
 
   switch vaultCredentials {
-  | HyperswitchVault(_) =>
-    <CardPayment cardProps expiryProps cvcProps isInsideCardSDK=true />
-  | VGS(_) =>
-    // TODO: render VGSCardPayment when VGS iframe integration is implemented
+  | HyperswitchVault(_) => <CardPayment cardProps expiryProps cvcProps isInsideCardSDK=true />
+  | VGS(_) => // TODO: render VGSCardPayment when VGS iframe integration is implemented
     React.null
   | NoVault =>
     // Fallback: vault details not yet loaded — render form so UI is visible

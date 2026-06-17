@@ -236,6 +236,7 @@ let make = () => {
     style={gridGap: themeObj.spacingGridColumn}>
     // Inner iframe container — LoaderPaymentElement.mount injects the iframe here
     // and manages its height automatically via { iframeHeight, iframeId } messages.
+
     <div
       id=innerIframeContainerDivId
       style={

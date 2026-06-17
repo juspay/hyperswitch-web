@@ -917,14 +917,12 @@ let vaultCardBody = (~token, ~last4Digits, ~binNumber) => {
   [
     ("payment_method", "card"->JSON.Encode.string),
     ("payment_method_type", "credit"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [("vault_data_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson,
-    ),
+    ("payment_method_data", [("vault_data_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson),
   ]
 }
 
-let cardTokenizationBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {  let cardBody = [
+let cardTokenizationBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {
+  let cardBody = [
     ("card_number", cardNumber->CardValidations.clearSpaces->JSON.Encode.string),
     ("card_exp_month", month->JSON.Encode.string),
     ("card_exp_year", year->JSON.Encode.string),
