@@ -98,6 +98,11 @@ let findCryptoCurrencyField = (~allFields: array<SuperpositionTypes.fieldConfig>
   SuperpositionTypes.fieldConfig,
 > => allFields->Array.find(f => f.fieldRenderType === SuperpositionTypes.CryptoCurrency)
 
+let getComputedLanguagePreferenceValue = (~locale: string, ~options: array<string>): string =>
+  options->Array.includes(locale->String.toUpperCase->String.split("-")->Array.join("_"))
+    ? locale
+    : "en"
+
 let extractValuesFromPMLRequiredFields = (
   requiredFields: array<PaymentMethodsRecord.required_fields>,
 ) => {

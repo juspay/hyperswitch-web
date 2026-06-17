@@ -78,7 +78,7 @@ let make = (
     )
   }, (paymentMethod, paymentMethodType, country, paymentMethodListValue))
 
-  let (_requiredFields, missingRequiredFields, superpositionInitialValues) = React.useMemo(() => {
+  let (requiredFields, missingRequiredFields, superpositionInitialValues) = React.useMemo(() => {
     getSuperpositionFinalFields(
       eligibleConnectors,
       superpositionBaseContext,
@@ -116,7 +116,12 @@ let make = (
     //   - Dropdown fields with no options (would render React.null anyway)
     afterBillingFilter->Array.filter(field => {
       switch field.fieldRenderType {
-      | CardNumber | Cvc | CardExpiryMonth | CardExpiryYear | CardNetwork => false
+      | CardNumber
+      | Cvc
+      | CardExpiryMonth
+      | CardExpiryYear
+      | CardNetwork
+      | LanguagePreference => false
       | Dropdown =>
         let options = field.dropdownOptions->Option.getOr([])
         options->Array.length > 0
@@ -150,6 +155,10 @@ let make = (
       fieldConfig.fieldRenderType === CardHolderName
     )
   }, [missingRequiredFields])
+
+  let languagePreferenceFields = React.useMemo(() => {
+    requiredFields->Array.filter(fieldConfig => fieldConfig.fieldRenderType === LanguagePreference)
+  }, [requiredFields])
 
   let formRef: React.ref<option<ReactFinalForm.Form.formMethods>> = React.useRef(None)
 
@@ -200,6 +209,17 @@ let make = (
             ~onFormChange=values => {
               // RFF stores values as nested objects; flatten to dot-notation keys so they align with the confirm-payload merge.
               let flatValues = values->JSON.Encode.object->Utils.flattenObject(false)
+
+              languagePreferenceFields->Array.forEach(field =>
+                flatValues->Dict.set(
+                  field.confirmRequestWritePath,
+                  getComputedLanguagePreferenceValue(
+                    ~locale=config.locale,
+                    ~options=field.dropdownOptions->Option.getOr([]),
+                  )->JSON.Encode.string,
+                )
+              )
+
               setRequiredFieldsBody(_ => flatValues)
 
               let isEmpty = missingRequiredFieldsFiltered->Array.some(field => {
