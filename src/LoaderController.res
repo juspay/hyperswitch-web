@@ -8,6 +8,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
   let setSdkConfigs = Recoil.useSetRecoilState(sdkConfigs)
+  let setCombinePML = Recoil.useSetRecoilState(combinePML)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
@@ -626,6 +627,38 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           | _ => ()
           }
           setSdkConfigs(_ => updatedState)
+        }
+        if dict->getDictIsSome("combinePML") {
+          let combinePMLJson = dict->getJsonObjectFromDict("combinePML")
+          let combinePMLDict = combinePMLJson->getDictFromJson
+          let isCombinePMLError =
+            combinePMLJson == Dict.make()->JSON.Encode.object ||
+              combinePMLDict->Dict.get("error")->Option.isSome
+          let updatedState: PaymentType.loadType = isCombinePMLError
+            ? LoadError(combinePMLJson)
+            : Loaded(combinePMLJson)
+          let finalLoadLatency = if launchTime <= 0.0 {
+            0.0
+          } else {
+            Date.now() -. launchTime
+          }
+          switch updatedState {
+          | Loaded(_) =>
+            logger.setLogInfo(
+              ~value="Loaded",
+              ~eventName=COMBINE_PML_CALL,
+              ~latency=finalLoadLatency,
+            )
+          | LoadError(x) =>
+            logger.setLogError(
+              ~value="LoadError: " ++ x->JSON.stringify,
+              ~eventName=COMBINE_PML_CALL,
+              ~latency=finalLoadLatency,
+            )
+          | _ => ()
+          }
+          Console.log2("the combine pML=>", updatedState)
+          setCombinePML(_ => updatedState)
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
           setIsApplePayReady(_ => true)

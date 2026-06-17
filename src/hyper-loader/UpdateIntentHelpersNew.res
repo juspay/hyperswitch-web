@@ -244,11 +244,23 @@ let setupPreMountLoaderPromises = (
     ~sendKey="sendSdkConfigsResponse",
   )
 
+  let combinePMLData = createDataPromise(
+    ~dataKey="combine_pml",
+    ~listenerName="onCombinePMLData-shared",
+    ~sendKey="sendCombinePMLResponse",
+  )
+
   let requestMsg =
     [("requestPreMountLoaderMountedCallback", true->JSON.Encode.bool)]->Dict.fromArray
   preMountLoaderIframeDiv->Window.iframePostMessage(requestMsg)
 
-  Promise.all([paymentMethodsData, customerPaymentMethodsData, sessionTokensData, sdkConfigsData])
+  Promise.all([
+    paymentMethodsData,
+    customerPaymentMethodsData,
+    sessionTokensData,
+    sdkConfigsData,
+    combinePMLData,
+  ])
   ->Promise.then(_ => {
     let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
     preMountLoaderIframeDiv->Window.iframePostMessage(msg)
@@ -257,7 +269,13 @@ let setupPreMountLoaderPromises = (
   ->Promise.catch(_ => Promise.resolve())
   ->ignore
 
-  (paymentMethodsData, customerPaymentMethodsData, sessionTokensData, sdkConfigsData)
+  (
+    paymentMethodsData,
+    customerPaymentMethodsData,
+    sessionTokensData,
+    sdkConfigsData,
+    combinePMLData,
+  )
 }
 
 // --- Core performUpdateIntent ---
@@ -274,6 +292,7 @@ let performUpdateIntent = async (
   ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
+  ~combinePMLDataPromise: ref<promise<JSON.t>>,
   ~iframes: array<Nullable.t<Dom.element>>,
   ~callback: unit => promise<JSON.t>,
   ~publishableKey,
@@ -302,6 +321,7 @@ let performUpdateIntent = async (
         newCustomerPaymentMethodsPromise,
         newSessionTokensPromise,
         newSdkConfigsDataPromise,
+        newCombinePMLDataPromise,
       ) = setupPreMountLoaderPromises(
         ~publishableKey,
         ~sdkSessionId,
@@ -320,6 +340,7 @@ let performUpdateIntent = async (
         newCustomerPaymentMethodsPromise,
         newSessionTokensPromise,
         newSdkConfigsDataPromise,
+        newCombinePMLDataPromise,
       ])
 
       // Check if any API response indicates an error
@@ -345,6 +366,7 @@ let performUpdateIntent = async (
         customerPaymentMethodsDataPromise.contents = newCustomerPaymentMethodsPromise
         sessionTokensDataPromise.contents = newSessionTokensPromise
         sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
+        combinePMLDataPromise.contents = newCombinePMLDataPromise
 
         // Send ElementsUpdate to all inner iframes with new credentials
         sendElementsUpdateToIframes(
@@ -370,6 +392,7 @@ let performUpdateIntent = async (
           ),
           forwardPromiseToIframes(iframes, newSessionTokensPromise, "sessions"),
           forwardPromiseToIframes(iframes, newSdkConfigsDataPromise, "sdkConfigs"),
+          forwardPromiseToIframes(iframes, newCombinePMLDataPromise, "combinePML"),
         ])
 
         switch readyPromise {

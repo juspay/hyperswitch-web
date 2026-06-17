@@ -71,10 +71,12 @@ let getMessageHandlerV1Elements = (
     customerPaymentMethodsPromise,
     sessionTokensPromise,
     sdkConfigsPromise,
+    combinePMLPromise,
   ) = if isTestMode || isSdkParamsEnabled {
     let mockResponse = Dict.make()->JSON.Encode.object
 
     (
+      Promise.resolve(mockResponse),
       Promise.resolve(mockResponse),
       Promise.resolve(mockResponse),
       Promise.resolve(mockResponse),
@@ -115,6 +117,14 @@ let getMessageHandlerV1Elements = (
         ~endpoint,
         ~sdkAuthorization=Some(sdkAuthorization),
       ),
+      PaymentHelpers.fetchCombinePML(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+        ~sdkAuthorization=Some(sdkAuthorization),
+      ),
     )
   }
 
@@ -129,6 +139,8 @@ let getMessageHandlerV1Elements = (
       sessionTokensPromise->sendPromiseData("session_tokens")
     } else if dict->isKeyPresentInDict("sendSdkConfigsResponse") {
       sdkConfigsPromise->sendPromiseData("sdk_configs")
+    } else if dict->isKeyPresentInDict("sendCombinePMLResponse") {
+      combinePMLPromise->sendPromiseData("combine_pml")
     }
   }
 }
