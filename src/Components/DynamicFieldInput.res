@@ -27,6 +27,7 @@ let groupFieldsByRow = (fields: array<fieldConfig>): array<array<fieldConfig>> =
 let renderSingleField = (
   field: fieldConfig,
   ~allFields: array<fieldConfig>,
+  ~paymentMethodType: string,
   ~globalEmailFields: option<array<fieldConfig>>=?,
   ~globalCardHolderNameFields: option<array<fieldConfig>>=?,
 ) => {
@@ -90,6 +91,8 @@ let renderSingleField = (
       <GenericDropdownField fieldConfig=field options />
     </RenderIf>
 
+  | BankNamesSelect => <BankNamesSelectField fieldConfig=field paymentMethodType />
+
   | FirstName
   | LastName
   | Generic =>
@@ -102,6 +105,7 @@ let renderSingleField = (
 let makeRow = (
   ~items: array<fieldConfig>,
   ~allFields: array<fieldConfig>,
+  ~paymentMethodType: string,
   ~globalEmailFields: option<array<fieldConfig>>=?,
   ~globalCardHolderNameFields: option<array<fieldConfig>>=?,
 ) => {
@@ -111,7 +115,13 @@ let makeRow = (
     switch items->Array.get(0) {
     | None => React.null
     | Some(field) =>
-      renderSingleField(field, ~allFields, ~globalEmailFields?, ~globalCardHolderNameFields?)
+      renderSingleField(
+        field,
+        ~allFields,
+        ~paymentMethodType,
+        ~globalEmailFields?,
+        ~globalCardHolderNameFields?,
+      )
     }
   | _ =>
     <div className="flex gap-4 w-full [&_.Label]:truncate">
@@ -126,7 +136,13 @@ let makeRow = (
             flexBasis: "0%",
             minWidth: "auto",
           }>
-          {renderSingleField(field, ~allFields, ~globalEmailFields?, ~globalCardHolderNameFields?)}
+          {renderSingleField(
+            field,
+            ~allFields,
+            ~paymentMethodType,
+            ~globalEmailFields?,
+            ~globalCardHolderNameFields?,
+          )}
         </div>
       })
       ->React.array}
