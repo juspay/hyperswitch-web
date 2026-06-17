@@ -182,7 +182,10 @@ let make = (
     ->Option.getOr(false)
   }, [paymentMethodType])
   let isRenderInfoElement =
-    isInfoElementPresent && !isDisableInfoElement && redirectionInfo === ShowRedirectionInfo
+    !isSavedCardFlow &&
+    isInfoElementPresent &&
+    !isDisableInfoElement &&
+    redirectionInfo === ShowRedirectionInfo
 
   let spacedStylesForBillingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
   let hasAnyField = missingRequiredFieldsFiltered->Array.length > 0
@@ -290,10 +293,12 @@ let make = (
                 </div>
               </div>
             </RenderIf>
-            <Surcharge paymentMethod paymentMethodType />
           </>
         }}
       />
+    </RenderIf>
+    <RenderIf condition={!isSavedCardFlow && (hasAnyField || isInfoElementPresent)}>
+      <Surcharge paymentMethod paymentMethodType />
     </RenderIf>
     <RenderIf condition={isRenderInfoElement}>
       {if missingRequiredFieldsFiltered->Array.length >= 1 {
