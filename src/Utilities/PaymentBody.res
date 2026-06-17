@@ -899,6 +899,47 @@ let eftBody = () => {
   ]
 }
 
+// Vault card body used when card fields are tokenised via the Cards SDK iframe.
+// Each card field is replaced by the same vault token; last4Digits and binNumber
+// are decoded from the vault API response.
+let vaultCardBody = (~token, ~last4Digits, ~binNumber) => {
+  let vaultDataCard =
+    [
+      ("card_holder_name", "John Doe"->JSON.Encode.string),
+      ("card_cvc", token->JSON.Encode.string),
+      ("card_number", token->JSON.Encode.string),
+      ("card_exp_month", token->JSON.Encode.string),
+      ("card_exp_year", token->JSON.Encode.string),
+      ("last_four", last4Digits->JSON.Encode.string),
+      ("bin_number", binNumber->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_method_type", "credit"->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [("vault_data_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]
+}
+
+let cardTokenizationBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {  let cardBody = [
+    ("card_number", cardNumber->CardValidations.clearSpaces->JSON.Encode.string),
+    ("card_exp_month", month->JSON.Encode.string),
+    ("card_exp_year", year->JSON.Encode.string),
+    ("card_cvc", cvcNumber->JSON.Encode.string),
+  ]
+
+  [
+    ("payment_method_type", "card"->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [("card", cardBody->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]
+}
+
 let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")

@@ -29,7 +29,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let isShowOrPayUsingWhileLoading = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.isShowOrPayUsingWhileLoading,
   )
+  let (isTokenize, setIsTokenize) = Recoil.useRecoilState(RecoilAtoms.isTokenize)
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
 
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(RecoilAtoms.selectedOptionAtom)
@@ -40,6 +43,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     paymentMethodListValue,
   )
+
+  let setVaultMode = Recoil.useSetRecoilState(RecoilAtoms.vaultMode)
 
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
@@ -175,6 +180,21 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
     None
   }, [savedMethods])
+
+  React.useEffect(() => {
+    let vaultName = VaultHelpers.getVaultName(sessionToken)
+    setVaultMode(_ => vaultName->VaultHelpers.getVaultModeFromName)
+    let isTokenize = switch sdkConfigsValue.account_config {
+    | Some(val) =>
+      switch val.profile {
+      | Some(val) => val.vaulting_action === Tokenize
+      | None => false
+      }
+    | None => false
+    }
+    setIsTokenize(_ => isTokenize)
+    None
+  }, (sessionToken, sdkConfigsValue))
 
   let (walletList, paymentOptionsList, actualList) = useGetPaymentMethodList(
     ~paymentType,
@@ -345,7 +365,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           getVisaCards
           closeComponentIfSavedMethodsAreEmpty
         />
-      | Card => <CardPayment cardProps expiryProps cvcProps />
+      | Card =>
+        isTokenize ? <ParentCardComponent /> : <CardPayment cardProps expiryProps cvcProps />
       | ACHTransfer =>
         <ReusableReactSuspense
           loaderComponent={<LoaderPaymentShimmer />} componentName="ACHBankTransferLazy">
