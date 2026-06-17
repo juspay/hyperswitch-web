@@ -78,6 +78,7 @@ let make = (~fieldConfig: fieldConfig) => {
     setValue={setter => setValueDropDown(prev => setter(prev))}
     disabled=false
     options=phoneNumberCodeOptions
+    width="w-full min-w-40"
     displayValue
     setDisplayValue
     isDisplayValueVisible=true

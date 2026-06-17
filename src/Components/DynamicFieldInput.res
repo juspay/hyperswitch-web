@@ -35,7 +35,8 @@ let renderSingleField = (
   | Cvc
   | CardExpiryMonth
   | CardExpiryYear
-  | CardNetwork => React.null
+  | CardNetwork
+  | LanguagePreference => React.null
 
   | Email =>
     let allEmailFields = globalEmailFields->Option.getOr([])
@@ -113,13 +114,18 @@ let makeRow = (
       renderSingleField(field, ~allFields, ~globalEmailFields?, ~globalCardHolderNameFields?)
     }
   | _ =>
-    <div className="flex gap-4 w-full">
+    <div className="flex gap-4 w-full [&_.Label]:truncate">
       {items
       ->Array.mapWithIndex((field, i) => {
         let flex = field.layoutWidthRatio->Option.getOr(1.0)
         <div
           key={field.confirmRequestWritePath ++ "-" ++ i->Int.toString}
-          style={flexGrow: flex->Float.toString, flexShrink: "1", flexBasis: "0%"}>
+          style={
+            flexGrow: flex->Float.toString,
+            flexShrink: "1",
+            flexBasis: "0%",
+            minWidth: "auto",
+          }>
           {renderSingleField(field, ~allFields, ~globalEmailFields?, ~globalCardHolderNameFields?)}
         </div>
       })
