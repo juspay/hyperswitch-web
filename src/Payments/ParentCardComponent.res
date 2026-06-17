@@ -114,7 +114,12 @@ let make = () => {
       ~logger=Some(loggerState),
     )
     element.mount(`#${innerIframeContainerDivId}`)
-    None
+    Some(
+      () => {
+        element.unmount()
+        setIframeMounted(_ => false)
+      },
+    )
   })
 
   // ── Step 2: Forward sessions to the inner iframe (reactive) ─────────────────
@@ -154,8 +159,6 @@ let make = () => {
       innerMessage->Dict.set("isOuterValid", outerValid->JSON.Encode.bool)
       iframeRef.current->Window.iframePostMessage(innerMessage)
       if !outerValid {
-        iframeRef.current->Window.iframePostMessage(json->getDictFromJson)
-        iframeRef.current->Window.iframePostMessage(json->getDictFromJson)
         // Report the error back to Hyper.res immediately — do not forward to inner iframe.
         let setUserError = message =>
           postFailedSubmitResponse(~errortype="validation_error", ~message)
@@ -170,7 +173,7 @@ let make = () => {
         // Forward the full doSubmit message (including confirmParams) to the inner iframe.
         // iframeRef.current->Window.iframePostMessage(json->getDictFromJson)
 
-        let handle = (ev: Window.event) => {
+        let handle = (ev: Types.event) => {
           let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
 
           if dict->Dict.get("cardTokenEvent")->Option.isSome {
@@ -207,7 +210,7 @@ let make = () => {
             messageParentWindow(dict->Dict.toArray)
           }
         }
-        Window.addEventListener("message", handle)
+        EventListenerManager.addSmartEventListener("message", handle, "onParentCardTokenResponse")
       }
     }
   }, (
