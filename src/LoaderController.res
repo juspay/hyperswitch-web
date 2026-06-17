@@ -9,6 +9,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
   let setSdkConfigs = Recoil.useSetRecoilState(sdkConfigs)
   let setCombinePML = Recoil.useSetRecoilState(combinePML)
+  let setSdkConfigsValue = Recoil.useSetRecoilState(PaymentUtils.sdkConfigsValue)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
@@ -627,6 +628,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           | _ => ()
           }
           setSdkConfigs(_ => updatedState)
+          if !isSdkConfigsError {
+            setSdkConfigsValue(_ => sdkConfigsJson->SdkConfigParser.itemToObjMapper)
+          }
         }
         if dict->getDictIsSome("combinePML") {
           let combinePMLJson = dict->getJsonObjectFromDict("combinePML")
@@ -659,6 +663,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
           setCombinePML(_ => updatedState)
         }
+
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
           setIsApplePayReady(_ => true)
         }
