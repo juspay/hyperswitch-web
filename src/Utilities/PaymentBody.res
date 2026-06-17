@@ -905,7 +905,6 @@ let eftBody = () => {
 let vaultCardBody = (~token, ~last4Digits, ~binNumber) => {
   let vaultDataCard =
     [
-      ("card_holder_name", "John Doe"->JSON.Encode.string),
       ("card_cvc", token->JSON.Encode.string),
       ("card_number", token->JSON.Encode.string),
       ("card_exp_month", token->JSON.Encode.string),
