@@ -15,6 +15,7 @@ let make = (
   ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
+  ~combinePMLDataPromise: ref<promise<JSON.t>>,
 ) => {
   let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =
@@ -36,6 +37,7 @@ let make = (
       ~customerPaymentMethodsDataPromise,
       ~sessionTokensDataPromise,
       ~sdkConfigsDataPromise,
+      ~combinePMLDataPromise,
       ~iframes=iframeRef.contents,
       ~callback,
       ~publishableKey,

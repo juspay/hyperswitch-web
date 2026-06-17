@@ -8,6 +8,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
   let setSdkConfigs = Recoil.useSetRecoilState(sdkConfigs)
+  let setCombinePML = Recoil.useSetRecoilState(combinePML)
   let setSdkConfigsValue = Recoil.useSetRecoilState(PaymentUtils.sdkConfigsValue)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
@@ -630,6 +631,37 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           if !isSdkConfigsError {
             setSdkConfigsValue(_ => sdkConfigsJson->SdkConfigParser.itemToObjMapper)
           }
+        }
+        if dict->getDictIsSome("combinePML") {
+          let combinePMLJson = dict->getJsonObjectFromDict("combinePML")
+          let combinePMLDict = combinePMLJson->getDictFromJson
+          let isCombinePMLError =
+            combinePMLJson == Dict.make()->JSON.Encode.object ||
+              combinePMLDict->Dict.get("error")->Option.isSome
+          let updatedState: PaymentType.loadType = isCombinePMLError
+            ? LoadError(combinePMLJson)
+            : Loaded(combinePMLJson)
+          let finalLoadLatency = if launchTime <= 0.0 {
+            0.0
+          } else {
+            Date.now() -. launchTime
+          }
+          switch updatedState {
+          | Loaded(_) =>
+            logger.setLogInfo(
+              ~value="Loaded",
+              ~eventName=COMBINE_PML_CALL,
+              ~latency=finalLoadLatency,
+            )
+          | LoadError(x) =>
+            logger.setLogError(
+              ~value="LoadError: " ++ x->JSON.stringify,
+              ~eventName=COMBINE_PML_CALL,
+              ~latency=finalLoadLatency,
+            )
+          | _ => ()
+          }
+          setCombinePML(_ => updatedState)
         }
 
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {

@@ -15,6 +15,7 @@ type apiCallV1 =
   | FetchAuthenticationSync
   | FetchPaymentMethodEligibility
   | FetchSdkConfigs
+  | FetchCombinePML
 
 type commonApiParams = {
   publishableKey: option<string>,
@@ -103,7 +104,8 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchEligibilityCheck
   | FetchAuthenticationSync
   | FetchPaymentMethodEligibility
-  | FetchSdkConfigs =>
+  | FetchSdkConfigs
+  | FetchCombinePML =>
     list{}
   }
 
@@ -125,6 +127,7 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchAuthenticationSync => `authentication/${merchantId}/${authenticationIdVal}/sync`
   | FetchPaymentMethodEligibility => `payments/${paymentIntentId}/eligibility`
   | FetchSdkConfigs => "v1/sdk/configs/web/sdk_config.json"
+  | FetchCombinePML => `payments/${paymentIntentId}/client`
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`

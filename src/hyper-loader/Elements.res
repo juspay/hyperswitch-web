@@ -28,6 +28,7 @@ let make = (
   ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
+  ~combinePMLDataPromise: ref<promise<JSON.t>>,
 ) => {
   try {
     let iframeRef = []
@@ -111,6 +112,7 @@ let make = (
       initialCustomerPaymentMethodsPromise,
       initialSessionTokensPromise,
       initialSdkConfigsPromise,
+      initialCombinePMLPromise,
     ) = UpdateIntentHelpersNew.setupPreMountLoaderPromises(
       ~publishableKey,
       ~sdkSessionId,
@@ -138,6 +140,7 @@ let make = (
     customerPaymentMethodsDataPromise.contents = initialCustomerPaymentMethodsPromise
     sessionTokensDataPromise.contents = initialSessionTokensPromise
     sdkConfigsDataPromise.contents = initialSdkConfigsPromise
+    combinePMLDataPromise.contents = initialCombinePMLPromise
 
     let onPlaidCallback = mountedIframeRef => {
       (ev: Types.event) => {
@@ -269,6 +272,15 @@ let make = (
       })
     }
 
+    let forwardCombinePMLDataToIframe = mountedIframeRef => {
+      combinePMLDataPromise.contents->Promise.then(json => {
+        let combinePML = preloadSDKWithParams->getJsonFromDict("combinePML", json)
+        let msg = [("combinePML", combinePML)]->Dict.fromArray
+        mountedIframeRef->Window.iframePostMessage(msg)
+        Promise.resolve()
+      })
+    }
+
     if !isTestMode && !hasSdkAuthorization && !clientSecretReMatch {
       manageErrorWarning(
         INVALID_FORMAT,
@@ -335,6 +347,7 @@ let make = (
           ~customerPaymentMethodsDataPromise,
           ~sessionTokensDataPromise,
           ~sdkConfigsDataPromise,
+          ~combinePMLDataPromise,
           ~iframes=iframeRef,
           ~callback,
           ~publishableKey,
@@ -369,6 +382,7 @@ let make = (
                 forwardCustomerPaymentMethodsToIframe(iframe, false),
                 forwardSessionTokensDataToIframe(iframe),
                 forwardSdkConfigsDataToIframe(iframe),
+                forwardCombinePMLDataToIframe(iframe),
               ])
             }),
           )
@@ -1548,6 +1562,7 @@ let make = (
         ->ignore
         forwardSessionTokensToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
         forwardSdkConfigsDataToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
+        forwardCombinePMLDataToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
 
         mountedIframeRef->Window.iframePostMessage(message)
       }
