@@ -49,7 +49,7 @@ let default = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (isManualRetryEnabled, email, fullName, sdkAuthorization))
+  }, (isManualRetryEnabled, email, fullName, sdkAuthorization, requiredFieldsBody))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
