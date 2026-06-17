@@ -140,7 +140,7 @@ let make = (
     customerPaymentMethodsDataPromise.contents = initialCustomerPaymentMethodsPromise
     sessionTokensDataPromise.contents = initialSessionTokensPromise
     sdkConfigsDataPromise.contents = initialSdkConfigsPromise
-    combinePMLDataPromise.contents = initialSdkConfigsPromise
+    combinePMLDataPromise.contents = initialCombinePMLPromise
 
     let onPlaidCallback = mountedIframeRef => {
       (ev: Types.event) => {
