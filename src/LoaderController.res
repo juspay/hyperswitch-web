@@ -657,7 +657,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             )
           | _ => ()
           }
-          Console.log2("the combine pML=>", updatedState)
           setCombinePML(_ => updatedState)
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
