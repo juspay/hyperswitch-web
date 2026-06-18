@@ -658,7 +658,7 @@ let sofortBody = (~country, ~name, ~email) => [
   ),
 ]
 
-let iDealBody = (~name, ~bankName) => [
+let iDealBody = () => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "ideal"->JSON.Encode.string),
   (
@@ -666,44 +666,19 @@ let iDealBody = (~name, ~bankName) => [
     [
       (
         "bank_redirect",
-        [
-          (
-            "ideal",
-            [
-              (
-                "billing_details",
-                [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-              ),
-              ("bank_name", (bankName == "" ? "american_express" : bankName)->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
+        [("ideal", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
       ),
     ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
-let epsBody = (~name, ~bankName) => [
+let epsBody = () => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "eps"->JSON.Encode.string),
   (
     "payment_method_data",
     [
-      (
-        "bank_redirect",
-        [
-          (
-            "eps",
-            [
-              (
-                "billing_details",
-                [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-              ),
-              ("bank_name", (bankName === "" ? "american_express" : bankName)->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
+      ("bank_redirect", [("eps", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson),
     ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
@@ -821,23 +796,9 @@ let rewardBody = (~paymentMethodType) => [
   ("payment_method_data", "reward"->JSON.Encode.string),
 ]
 
-let fpxOBBody = (~bank) => [
+let fpxOBBody = () => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "online_banking_fpx"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "bank_redirect",
-        [
-          (
-            "online_banking_fpx",
-            [("issuer", bank->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
 ]
 let thailandOBBody = (~bank) => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
@@ -1046,8 +1007,8 @@ let getPaymentBody = (
   | "afterpay_clearpay" => afterpayRedirectionBody()
   | "crypto_currency" => cryptoBody()
   | "sofort" => sofortBody(~country, ~name=fullName, ~email)
-  | "ideal" => iDealBody(~name=fullName, ~bankName=bank)
-  | "eps" => epsBody(~name=fullName, ~bankName=bank)
+  | "ideal" => iDealBody()
+  | "eps" => epsBody()
   | "blik" => blikBody(~blikCode)
   | "ali_pay"
   | "ali_pay_hk" =>
@@ -1077,7 +1038,7 @@ let getPaymentBody = (
   | "online_banking_slovakia" => slovakiaOB(~bank)
   | "mb_way" => mbWayBody(~phoneNumber)
   | "przelewy24" => p24Body(~email)
-  | "online_banking_fpx" => fpxOBBody(~bank)
+  | "online_banking_fpx" => fpxOBBody()
   | "online_banking_thailand" => thailandOBBody(~bank)
   | "revolut_pay" => revolutPayBody()
   | "classic"

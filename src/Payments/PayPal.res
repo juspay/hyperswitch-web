@@ -159,7 +159,14 @@ let make = (~walletOptions) => {
           )
         }
       }
-    }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, iframeId, sdkAuthorization))
+    }, (
+      areRequiredFieldsValid,
+      areRequiredFieldsEmpty,
+      isWallet,
+      iframeId,
+      sdkAuthorization,
+      requiredFieldsBody,
+    ))
   }
 
   let submitCallback = useSubmitCallback(~isWallet)

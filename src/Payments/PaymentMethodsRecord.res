@@ -942,6 +942,7 @@ type payment_type = NORMAL | NEW_MANDATE | SETUP_MANDATE | NONE
 type intentData = {
   installment_options: option<array<installmentOption>>,
   currency: string,
+  intentDataObject: JSON.t,
 }
 
 type paymentMethodList = {
@@ -974,6 +975,7 @@ let defaultPaymentMethodType = {
 let defaultIntentData = {
   installment_options: None,
   currency: "",
+  intentDataObject: JSON.Encode.null,
 }
 
 let defaultList = {
@@ -1190,6 +1192,7 @@ let getIntentData = dict => {
   {
     installment_options: intentDataDict->getInstallmentOptions,
     currency: dict->getString("currency", ""),
+    intentDataObject: intentDataDict->JSON.Encode.object,
   }
 }
 
