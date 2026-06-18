@@ -1,12 +1,13 @@
 open SuperpositionTypes
 
-@react.component
-let make = (~fields: array<fieldConfig>) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
-  switch fields->Array.get(0) {
-  | None => React.null
-  | Some(primaryFieldConfig) =>
+module EmailInput = {
+  @react.component
+  let make = (~primaryFieldConfig, ~fields) => {
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let fieldRef = React.useRef(Nullable.null)
+    let form = ReactFinalForm.useForm()
+
     let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
       ~field=primaryFieldConfig,
       ~localeObject=localeString,
@@ -17,12 +18,10 @@ let make = (~fields: array<fieldConfig>) => {
       ~localeObject=localeString,
     )
 
-    let form = ReactFinalForm.useForm()
     let primaryField = ReactFinalForm.useField(
       primaryFieldConfig.confirmRequestWritePath,
       ~config={validate: validate},
     )
-    let fieldRef = React.useRef(Nullable.null)
 
     let value = primaryField.input.value->Option.getOr("")
     let invalid = primaryField.meta.invalid
@@ -45,5 +44,13 @@ let make = (~fields: array<fieldConfig>) => {
       inputRef={fieldRef}
       autocomplete
     />
+  }
+}
+
+@react.component
+let make = (~fields: array<fieldConfig>) => {
+  switch fields->Array.get(0) {
+  | None => React.null
+  | Some(primaryFieldConfig) => <EmailInput primaryFieldConfig fields/>
   }
 }
