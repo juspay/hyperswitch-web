@@ -1,6 +1,5 @@
 open SuperpositionTypes
 
-
 module EmailInput = {
   @react.component
   let make = (~primaryFieldConfig, ~fields) => {
@@ -51,6 +50,6 @@ module EmailInput = {
 let make = (~fields: array<fieldConfig>) => {
   switch fields->Array.get(0) {
   | None => React.null
-  | Some(primaryFieldConfig) => <EmailInput primaryFieldConfig fields/>
+  | Some(primaryFieldConfig) => <EmailInput primaryFieldConfig fields />
   }
 }
