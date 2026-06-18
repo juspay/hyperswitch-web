@@ -163,7 +163,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Klucz Pix`,
   sourceBankAccountIdEmptyText: `Identyfikator źródłowego konta bankowego nie może być pusty`,
   invalidCardHolderNameError: `Imię posiadacza karty nie może zawierać cyfr`,
-  cardHolderNameRequiredText: `wymagane nazwisko właściciela karty`,
+  cardHolderNameRequiredText: `Wymagane nazwisko właściciela karty`,
   lastNameRequiredText: `Wymagane nazwisko`,
   mandatoryFieldText: `To pole jest wymagane`,
   phoneInvalidText: `Wprowadź prawidłowy numer telefonu`,

@@ -166,7 +166,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   sourceBankAccountIdEmptyText: `لا يمكن أن يكون معرف الحساب المصرفي المصدر فارغاً`,
   invalidCardHolderNameError: `اسم حامل البطاقة لا يمكن أن يحتوي على أرقام`,
   cardHolderNameRequiredText: `اسم حامل البطاقة مطلوب`,
-  lastNameRequiredText: `نشاط اسم مطلوب`,
+  lastNameRequiredText: `الاسم الأخير مطلوب`,
   mandatoryFieldText: `هذا الحقل إلزامي`,
   phoneInvalidText: `أدخل رقم هاتف صالح`,
   blikCodeInvalidText: `أدخل رمز Blik صالحًا مكونًا من 6 أرقام`,
