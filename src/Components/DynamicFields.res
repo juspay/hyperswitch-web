@@ -16,6 +16,128 @@ module DynamicFieldsToRenderWrapper = {
   }
 }
 
+module FormBody = {
+  open SuperpositionTypes
+
+  @react.component
+  let make = (
+    ~formProps: ReactFinalForm.Form.formProps,
+    ~formRef: React.ref<option<ReactFinalForm.Form.formMethods>>,
+    ~languagePreferenceFields: array<fieldConfig>,
+    ~missingRequiredFieldsFiltered: array<fieldConfig>,
+    ~dynamicFieldsOutsideBilling: array<fieldConfig>,
+    ~dynamicFieldsInsideBilling: array<fieldConfig>,
+    ~allEmailFields: array<fieldConfig>,
+    ~allCardHolderNameFields: array<fieldConfig>,
+    ~paymentMethodType,
+    ~setRequiredFieldsBody,
+    ~syncEmitAddressAtoms,
+  ) => {
+    open DynamicFieldsUtils
+    open RecoilAtoms
+
+    let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+    let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
+    let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
+
+    let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
+    let isRenderDynamicFieldsInsideBilling = dynamicFieldsInsideBilling->Array.length > 0
+    let spacedStylesForBillingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
+
+    formRef.current = Some(formProps.form)
+
+    ReactFinalForm.useFormStateHandler(
+      ~onFormChange=values => {
+        // RFF stores values as nested objects; flatten to dot-notation keys so they align with the confirm-payload merge.
+        let flatValues = values->JSON.Encode.object->Utils.flattenObject(false)
+
+        languagePreferenceFields->Array.forEach(field =>
+          flatValues->Dict.set(
+            field.confirmRequestWritePath,
+            getComputedLanguagePreferenceValue(
+              ~locale=config.locale,
+              ~options=field.dropdownOptions->Option.getOr([]),
+            )->JSON.Encode.string,
+          )
+        )
+
+        setRequiredFieldsBody(_ => flatValues)
+        syncEmitAddressAtoms(flatValues)
+
+        let isEmpty = missingRequiredFieldsFiltered->Array.some(field => {
+          switch flatValues->Dict.get(field.confirmRequestWritePath) {
+          | None | Some(JSON.Null) => true
+          | Some(JSON.String(str)) => str->String.trim === ""
+          | Some(_) => false
+          }
+        })
+        setAreRequiredFieldsEmpty(_ => isEmpty)
+      },
+      ~onValidationChange=isValid => {
+        setAreRequiredFieldsValid(_ => isValid)
+      },
+      ~formProps,
+    )
+
+    <>
+      {dynamicFieldsOutsideBilling
+      ->DynamicFieldInput.groupFieldsByRow
+      ->Array.mapWithIndex((row, rowIdx) => {
+        <DynamicFieldsToRenderWrapper
+          key={`outside-row-${rowIdx->Int.toString}`} index={rowIdx} isInside={false}>
+          <DynamicFieldInput.makeRow
+            items={row}
+            allFields={dynamicFieldsOutsideBilling}
+            paymentMethodType
+            globalEmailFields={allEmailFields}
+            globalCardHolderNameFields={allCardHolderNameFields}
+          />
+        </DynamicFieldsToRenderWrapper>
+      })
+      ->React.array}
+      <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
+        <div
+          className={`billing-section ${spacedStylesForBillingDetails} w-full text-left`}
+          style={
+            border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
+            borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
+          }>
+          <div
+            className="billing-details-text"
+            style={
+              marginBottom: "5px",
+              fontSize: themeObj.fontSizeLg,
+              opacity: "0.6",
+            }>
+            {React.string(localeString.billingDetailsText)}
+          </div>
+          <div
+            className="flex flex-col"
+            style={
+              gap: isSpacedInnerLayout ? themeObj.spacingGridRow : "",
+            }>
+            {dynamicFieldsInsideBilling
+            ->DynamicFieldInput.groupFieldsByRow
+            ->Array.mapWithIndex((row, rowIdx) => {
+              <DynamicFieldsToRenderWrapper
+                key={`inside-row-${rowIdx->Int.toString}`} index={rowIdx}>
+                <DynamicFieldInput.makeRow
+                  items={row}
+                  allFields={dynamicFieldsInsideBilling}
+                  paymentMethodType
+                  globalEmailFields={allEmailFields}
+                  globalCardHolderNameFields={allCardHolderNameFields}
+                />
+              </DynamicFieldsToRenderWrapper>
+            })
+            ->React.array}
+          </div>
+        </div>
+      </RenderIf>
+    </>
+  }
+}
+
 @react.component
 let make = (
   ~paymentMethod,
@@ -37,7 +159,7 @@ let make = (
   open SuperpositionTypes
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {billingAddress, redirectionInfo, defaultValues} = Recoil.useRecoilValueFromAtom(optionAtom)
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
@@ -160,8 +282,6 @@ let make = (
   useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
-  let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
-  let isRenderDynamicFieldsInsideBilling = dynamicFieldsInsideBilling->Array.length > 0
   let isInfoElementPresent = React.useMemo(() => {
     PaymentMethodsRecord.getPaymentMethodsFields(~localeString)
     ->Array.find(pm => pm.paymentMethodName === paymentMethodType)
@@ -174,7 +294,6 @@ let make = (
     !isDisableInfoElement &&
     redirectionInfo === ShowRedirectionInfo
 
-  let spacedStylesForBillingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
   let hasAnyField = missingRequiredFieldsFiltered->Array.length > 0
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
@@ -192,99 +311,20 @@ let make = (
       <ReactFinalForm.Form
         initialValues={Some(finalInitialValues)}
         onSubmit={_values => ()}
-        render={formProps => {
-          formRef.current = Some(formProps.form)
-
-          ReactFinalForm.useFormStateHandler(
-            ~onFormChange=values => {
-              // RFF stores values as nested objects; flatten to dot-notation keys so they align with the confirm-payload merge.
-              let flatValues = values->JSON.Encode.object->Utils.flattenObject(false)
-
-              languagePreferenceFields->Array.forEach(field =>
-                flatValues->Dict.set(
-                  field.confirmRequestWritePath,
-                  getComputedLanguagePreferenceValue(
-                    ~locale=config.locale,
-                    ~options=field.dropdownOptions->Option.getOr([]),
-                  )->JSON.Encode.string,
-                )
-              )
-
-              setRequiredFieldsBody(_ => flatValues)
-              syncEmitAddressAtoms(flatValues)
-
-              let isEmpty = missingRequiredFieldsFiltered->Array.some(field => {
-                switch flatValues->Dict.get(field.confirmRequestWritePath) {
-                | None | Some(JSON.Null) => true
-                | Some(JSON.String(str)) => str->String.trim === ""
-                | Some(_) => false
-                }
-              })
-              setAreRequiredFieldsEmpty(_ => isEmpty)
-            },
-            ~onValidationChange=isValid => {
-              setAreRequiredFieldsValid(_ => isValid)
-            },
-            ~formProps,
-          )
-
-          <>
-            {dynamicFieldsOutsideBilling
-            ->DynamicFieldInput.groupFieldsByRow
-            ->Array.mapWithIndex((row, rowIdx) => {
-              <DynamicFieldsToRenderWrapper
-                key={`outside-row-${rowIdx->Int.toString}`} index={rowIdx} isInside={false}>
-                <DynamicFieldInput.makeRow
-                  items={row}
-                  allFields={dynamicFieldsOutsideBilling}
-                  paymentMethodType
-                  globalEmailFields={allEmailFields}
-                  globalCardHolderNameFields={allCardHolderNameFields}
-                />
-              </DynamicFieldsToRenderWrapper>
-            })
-            ->React.array}
-            <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
-              <div
-                className={`billing-section ${spacedStylesForBillingDetails} w-full text-left`}
-                style={
-                  border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
-                  borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
-                }>
-                <div
-                  className="billing-details-text"
-                  style={
-                    marginBottom: "5px",
-                    fontSize: themeObj.fontSizeLg,
-                    opacity: "0.6",
-                  }>
-                  {React.string(localeString.billingDetailsText)}
-                </div>
-                <div
-                  className="flex flex-col"
-                  style={
-                    gap: isSpacedInnerLayout ? themeObj.spacingGridRow : "",
-                  }>
-                  {dynamicFieldsInsideBilling
-                  ->DynamicFieldInput.groupFieldsByRow
-                  ->Array.mapWithIndex((row, rowIdx) => {
-                    <DynamicFieldsToRenderWrapper
-                      key={`inside-row-${rowIdx->Int.toString}`} index={rowIdx}>
-                      <DynamicFieldInput.makeRow
-                        items={row}
-                        allFields={dynamicFieldsInsideBilling}
-                        paymentMethodType
-                        globalEmailFields={allEmailFields}
-                        globalCardHolderNameFields={allCardHolderNameFields}
-                      />
-                    </DynamicFieldsToRenderWrapper>
-                  })
-                  ->React.array}
-                </div>
-              </div>
-            </RenderIf>
-          </>
-        }}
+        render={formProps =>
+          <FormBody
+            formProps
+            formRef
+            languagePreferenceFields
+            missingRequiredFieldsFiltered
+            dynamicFieldsOutsideBilling
+            dynamicFieldsInsideBilling
+            allEmailFields
+            allCardHolderNameFields
+            paymentMethodType
+            setRequiredFieldsBody
+            syncEmitAddressAtoms
+          />}
       />
     </RenderIf>
     <RenderIf condition={!isSavedCardFlow && (hasAnyField || isInfoElementPresent)}>

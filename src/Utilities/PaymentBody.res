@@ -666,12 +666,7 @@ let iDealBody = () => [
     [
       (
         "bank_redirect",
-        [
-          (
-            "ideal",
-            []->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
+        [("ideal", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
       ),
     ]->Utils.getJsonFromArrayOfJson,
   ),
