@@ -64,7 +64,7 @@ let make = (~fieldConfig: fieldConfig) => {
       ->Option.getOr(DropdownField.defaultValue)
     setDisplayValue(_ => found.displayValue->Option.getOr(found.label->Option.getOr(found.value)))
     None
-  }, [phoneNumberCodeOptions])
+  }, (phoneNumberCodeOptions, valueDropDown))
 
   React.useEffect(() => {
     field.input.onChange(valueDropDown->getPhoneCode)

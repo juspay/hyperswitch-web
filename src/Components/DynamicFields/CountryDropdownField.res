@@ -26,7 +26,7 @@ let make = (~fieldConfig: fieldConfig, ~options: array<DropdownField.optionType>
       setCountryName(_ => effectiveCountryName)
     }
     None
-  }, [effectiveCountryName])
+  }, [effectiveCountryName, countryName])
 
   <DropdownField
     appearance={config.appearance}

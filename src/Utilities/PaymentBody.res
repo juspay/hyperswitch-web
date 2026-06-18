@@ -689,16 +689,7 @@ let epsBody = () => [
   (
     "payment_method_data",
     [
-      (
-        "bank_redirect",
-        [
-          (
-            "eps",
-            [
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
+      ("bank_redirect", [("eps", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson),
     ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
@@ -816,23 +807,9 @@ let rewardBody = (~paymentMethodType) => [
   ("payment_method_data", "reward"->JSON.Encode.string),
 ]
 
-let fpxOBBody = (~bank) => [
+let fpxOBBody = () => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "online_banking_fpx"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "bank_redirect",
-        [
-          (
-            "online_banking_fpx",
-            [("issuer", bank->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
 ]
 let thailandOBBody = (~bank) => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
@@ -1072,7 +1049,7 @@ let getPaymentBody = (
   | "online_banking_slovakia" => slovakiaOB(~bank)
   | "mb_way" => mbWayBody(~phoneNumber)
   | "przelewy24" => p24Body(~email)
-  | "online_banking_fpx" => fpxOBBody(~bank)
+  | "online_banking_fpx" => fpxOBBody()
   | "online_banking_thailand" => thailandOBBody(~bank)
   | "revolut_pay" => revolutPayBody()
   | "classic"
