@@ -14,6 +14,7 @@ let paymentListLookupNew = (
   ~isKlarnaSDKFlow,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ~areAllGooglePayRequiredFieldsPrefilled,
+  ~collectBillingDetailsFromWalletConnector,
   ~isGooglePayReady,
   ~shouldDisplayApplePayInTabs,
   ~shouldDisplayPayPalInTabs,
@@ -53,8 +54,7 @@ let paymentListLookupNew = (
   }
 
   let requiresGooglePayBillingDetails =
-    !paymentMethodListValue.collect_billing_details_from_wallets &&
-    !areAllGooglePayRequiredFieldsPrefilled
+    !collectBillingDetailsFromWalletConnector && !areAllGooglePayRequiredFieldsPrefilled
 
   let shouldDisplayGooglePayInTabs =
     isGooglePayReady && (showWalletsWithOtherPaymentMethods || requiresGooglePayBillingDetails)
@@ -415,6 +415,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
   let isKlarnaSDKFlow = getIsKlarnaSDKFlow(sessions)
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(paymentMethodListValue)
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(sdkConfigsValue)
 
   let areAllApplePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
     ~paymentMethodListValue,
@@ -456,10 +457,12 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     ~savedPaymentMethods: option<array<PaymentType.customerMethods>>,
   ) => {
     let paymentOrder = paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
-    let pList = paymentList->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+    let pList = paymentList->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
 
     let requiresApplePayBillingDetails =
-      !paymentMethodListValue.collect_billing_details_from_wallets &&
+      !SdkConfigParser.getCollectBillingDetailsFromWalletConnector(
+        sdkConfigsValue.account_config->Option.flatMap(ac => ac.profile),
+      ) &&
       !areAllApplePayRequiredFieldsPrefilled
 
     let shouldDisplayApplePayInTabs =
@@ -471,7 +474,9 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     }
 
     let requiresPaypalBillingDetails =
-      !paymentMethodListValue.collect_billing_details_from_wallets &&
+      !SdkConfigParser.getCollectBillingDetailsFromWalletConnector(
+        sdkConfigsValue.account_config->Option.flatMap(ac => ac.profile),
+      ) &&
       !areAllPaypalRequiredFieldsPreFilled
 
     let isPaypalEligibleInRedirectFlow =
@@ -504,6 +509,9 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
         ~isKlarnaSDKFlow,
         ~paymentMethodListValue=pList,
         ~areAllGooglePayRequiredFieldsPrefilled,
+        ~collectBillingDetailsFromWalletConnector=SdkConfigParser.getCollectBillingDetailsFromWalletConnector(
+          sdkConfigsValue.account_config->Option.flatMap(ac => ac.profile),
+        ),
         ~isGooglePayReady,
         ~shouldDisplayApplePayInTabs,
         ~shouldDisplayPayPalInTabs,

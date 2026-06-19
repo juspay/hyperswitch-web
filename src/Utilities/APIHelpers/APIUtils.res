@@ -1,6 +1,4 @@
 type apiCallV1 =
-  | FetchPaymentMethodList
-  | FetchCustomerPaymentMethodList
   | FetchSessions
   | FetchThreeDsAuth
   | CalculateTax
@@ -15,7 +13,7 @@ type apiCallV1 =
   | FetchAuthenticationSync
   | FetchPaymentMethodEligibility
   | FetchSdkConfigs
-  | FetchCombinePML
+  | FetchClientList
 
 type commonApiParams = {
   publishableKey: option<string>,
@@ -89,9 +87,8 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   }->List.filterMap(x => x)
 
   let queryParams = switch apiCallType {
-  | FetchPaymentMethodList
-  | FetchCustomerPaymentMethodList
-  | RetrievePaymentIntent => defaultParams
+  | RetrievePaymentIntent
+  | FetchClientList => defaultParams
   | FetchSessions
   | FetchThreeDsAuth
   | CalculateTax
@@ -104,16 +101,13 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchEligibilityCheck
   | FetchAuthenticationSync
   | FetchPaymentMethodEligibility
-  | FetchSdkConfigs
-  | FetchCombinePML =>
+  | FetchSdkConfigs =>
     list{}
   }
 
   let path = switch apiCallType {
-  | FetchPaymentMethodList => "account/payment_methods"
   | FetchSessions => "payments/session_tokens"
   | FetchThreeDsAuth => `payments/${paymentIntentId}/3ds/authentication`
-  | FetchCustomerPaymentMethodList => "customers/payment_methods"
   | CalculateTax => `payments/${paymentIntentId}/calculate_tax`
   | CreatePaymentMethod => "payment_methods"
   | RetrievePaymentIntent => `payments/${paymentIntentId}`
@@ -127,7 +121,7 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchAuthenticationSync => `authentication/${merchantId}/${authenticationIdVal}/sync`
   | FetchPaymentMethodEligibility => `payments/${paymentIntentId}/eligibility`
   | FetchSdkConfigs => "v1/sdk/configs/web/sdk_config.json"
-  | FetchCombinePML => `payments/${paymentIntentId}/client`
+  | FetchClientList => `payments/${paymentIntentId}/client`
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`

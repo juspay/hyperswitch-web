@@ -1411,23 +1411,30 @@ let getLayout = (dict, str, logger) => {
   ->Option.getOr(ObjectLayout(defaultLayout))
 }
 
+// Single shared mapper for the customerCard field shape, called both by the
+// old `getCardDetails` (unwrapping a sibling `card` key) and the new
+// clientList path (unwrapping `payment_method_data.card`) — so there is
+// exactly one place that knows the customerCard field mapping.
+let cardJsonToCustomerCard: JSON.t => customerCard = json => {
+  let json = json->getDictFromJson
+  {
+    scheme: Some(getString(json, "scheme", "")),
+    last4Digits: getString(json, "last4_digits", ""),
+    expiryMonth: getString(json, "expiry_month", ""),
+    expiryYear: getString(json, "expiry_year", ""),
+    cardToken: getString(json, "card_token", ""),
+    cardHolderName: getOptionString(json, "card_holder_name"),
+    nickname: getString(json, "nick_name", ""),
+    isClickToPayCard: false,
+    cardBin: getString(json, "card_isin", ""),
+  }
+}
+
 let getCardDetails = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
-  ->Option.map(json => {
-    {
-      scheme: Some(getString(json, "scheme", "")),
-      last4Digits: getString(json, "last4_digits", ""),
-      expiryMonth: getString(json, "expiry_month", ""),
-      expiryYear: getString(json, "expiry_year", ""),
-      cardToken: getString(json, "card_token", ""),
-      cardHolderName: getOptionString(json, "card_holder_name"),
-      nickname: getString(json, "nick_name", ""),
-      isClickToPayCard: false,
-      cardBin: getString(json, "card_isin", ""),
-    }
-  })
+  ->Option.map(json => json->JSON.Encode.object->cardJsonToCustomerCard)
   ->Option.getOr(defaultCardDetails)
 }
 
@@ -1466,10 +1473,26 @@ let getBank = dict => {
   }
 }
 
-let itemToCustomerObjMapper = customerDict => {
-  let customerArr = customerDict->getArray("customer_payment_methods")
+// --- clientList (`fetchClientList`) customer_payment_methods decoder ---
+//
+// clientList's customer_payment_methods entries nest card details under
+// `payment_method_data.card` (not a sibling `card` key), and lack
+// `payment_method_id`/`customer_id`/`payment_method_issuer`/`bank`/`billing`
+// entirely — known, accepted gaps (see migration plan), all defaulted the
+// same way the old decoder already defaults them when the key is absent.
+let getCustomerCardDetailsFromPaymentMethodData = dict => {
+  dict
+  ->getDictFromDict("payment_method_data")
+  ->getDictFromDict("card")
+  ->JSON.Encode.object
+  ->cardJsonToCustomerCard
+}
 
-  let isGuestCustomer = customerDict->getBool("is_guest_customer", false)
+let itemToCustomerObjMapperFromClientList = clientListDict => {
+  let customerArr = clientListDict->getArray("customer_payment_methods")
+
+  let isGuestCustomer =
+    clientListDict->getDictFromDict("intent_data")->getBool("is_guest_customer", false)
 
   let customerPaymentMethods =
     customerArr
@@ -1477,31 +1500,32 @@ let itemToCustomerObjMapper = customerDict => {
     ->Array.map(dict => {
       {
         paymentToken: getString(dict, "payment_token", ""),
-        customerId: getString(dict, "customer_id", ""),
+        customerId: "",
         paymentMethod: getString(dict, "payment_method", ""),
-        paymentMethodId: getString(dict, "payment_method_id", ""),
-        paymentMethodIssuer: getOptionString(dict, "payment_method_issuer"),
-        card: getCardDetails(dict, "card"),
+        paymentMethodId: "",
+        paymentMethodIssuer: None,
+        card: getCustomerCardDetailsFromPaymentMethodData(dict),
         paymentMethodType: getPaymentMethodType(dict),
         defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
         requiresCvv: getBool(dict, "requires_cvv", true),
         lastUsedAt: getString(dict, "last_used_at", ""),
-        bank: dict->getBank,
+        bank: {mask: ""},
         recurringEnabled: getBool(dict, "recurring_enabled", false),
-        billing: getBillingAddressPaymentMethod(dict, "billing"),
+        billing: defaultDisplayBillingDetails,
       }
     })
 
   (customerPaymentMethods, isGuestCustomer)
 }
 
-let createCustomerObjArr = (dict, key) => {
-  let customerDict =
+let createCustomerObjArrFromClientList = (dict, key) => {
+  let clientListDict =
     dict
     ->Dict.get(key)
     ->Option.flatMap(JSON.Decode.object)
     ->Option.getOr(Dict.make())
-  let (customerPaymentMethods, isGuestCustomer) = customerDict->itemToCustomerObjMapper
+  let (customerPaymentMethods, isGuestCustomer) =
+    clientListDict->itemToCustomerObjMapperFromClientList
   LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
 }
 

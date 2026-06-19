@@ -66,40 +66,14 @@ let getMessageHandlerV1Elements = (
   ~isTestMode=false,
   ~isSdkParamsEnabled=false,
 ) => {
-  let (
-    paymentMethodsPromise,
-    customerPaymentMethodsPromise,
-    sessionTokensPromise,
-    sdkConfigsPromise,
-    combinePMLPromise,
-  ) = if isTestMode || isSdkParamsEnabled {
+  let (sessionTokensPromise, sdkConfigsPromise, clientListPromise) = if (
+    isTestMode || isSdkParamsEnabled
+  ) {
     let mockResponse = Dict.make()->JSON.Encode.object
 
-    (
-      Promise.resolve(mockResponse),
-      Promise.resolve(mockResponse),
-      Promise.resolve(mockResponse),
-      Promise.resolve(mockResponse),
-      Promise.resolve(mockResponse),
-    )
+    (Promise.resolve(mockResponse), Promise.resolve(mockResponse), Promise.resolve(mockResponse))
   } else {
     (
-      PaymentHelpers.fetchPaymentMethodList(
-        ~clientSecret,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-        ~endpoint,
-        ~sdkAuthorization=Some(sdkAuthorization),
-      ),
-      PaymentHelpers.fetchCustomerPaymentMethodList(
-        ~clientSecret,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-        ~endpoint,
-        ~sdkAuthorization=Some(sdkAuthorization),
-      ),
       PaymentHelpers.fetchSessions(
         ~clientSecret,
         ~publishableKey,
@@ -117,7 +91,7 @@ let getMessageHandlerV1Elements = (
         ~endpoint,
         ~sdkAuthorization=Some(sdkAuthorization),
       ),
-      PaymentHelpers.fetchCombinePML(
+      PaymentHelpers.fetchClientList(
         ~clientSecret,
         ~publishableKey,
         ~logger,
@@ -131,16 +105,12 @@ let getMessageHandlerV1Elements = (
   ev => {
     open Utils
     let dict = ev.data->safeParse->getDictFromJson
-    if dict->isKeyPresentInDict("sendPaymentMethodsResponse") {
-      paymentMethodsPromise->sendPromiseData("payment_methods")
-    } else if dict->isKeyPresentInDict("sendCustomerPaymentMethodsResponse") {
-      customerPaymentMethodsPromise->sendPromiseData("customer_payment_methods")
-    } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
+    if dict->isKeyPresentInDict("sendSessionTokensResponse") {
       sessionTokensPromise->sendPromiseData("session_tokens")
     } else if dict->isKeyPresentInDict("sendSdkConfigsResponse") {
       sdkConfigsPromise->sendPromiseData("sdk_configs")
-    } else if dict->isKeyPresentInDict("sendCombinePMLResponse") {
-      combinePMLPromise->sendPromiseData("combine_pml")
+    } else if dict->isKeyPresentInDict("sendClientListResponse") {
+      clientListPromise->sendPromiseData("client_list")
     }
   }
 }

@@ -132,6 +132,7 @@ let buildSuperpositionBaseContext = (
   ~paymentMethodType: string,
   ~country: string,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+  ~accountConfig: option<SdkConfigTypes.accountConfig>,
 ) => {
   let mandateType = switch paymentMethodListValue.payment_type {
   | NEW_MANDATE => "new_mandate"
@@ -140,10 +141,13 @@ let buildSuperpositionBaseContext = (
   | NONE => "non_mandate"
   }
 
-  let collectBilling = paymentMethodListValue.collect_billing_details_from_wallets
+  let profile = accountConfig->Option.flatMap(ac => ac.profile)
+  let collectBilling = SdkConfigParser.getCollectBillingDetailsFromWalletConnector(profile)
     ? "true"
     : "false"
-  let collectShipping = "false"
+  let collectShipping = SdkConfigParser.getCollectShippingDetailsFromWalletConnector(profile)
+    ? "true"
+    : "false"
 
   let context: SuperpositionTypes.superpositionBaseContext = {
     payment_method: paymentMethod,
