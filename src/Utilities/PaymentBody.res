@@ -881,6 +881,28 @@ let vaultCardBody = (~token, ~last4Digits, ~binNumber) => {
   ]
 }
 
+// VGS vault confirm body. Unlike the Hyperswitch vault (single token reused for
+// every field), VGS returns a distinct alias per field, so card_number / exp /
+// cvc are sent separately. last4Digits / binNumber are derived from the (format-
+// preserving) card_number alias by the caller. Mirrors vaultCardBody's shape.
+let vgsVaultCardBody = (~cardNumber, ~month, ~year, ~cvcNumber, ~last4Digits, ~binNumber) => {
+  let vaultDataCard =
+    [
+      ("card_number", cardNumber->JSON.Encode.string),
+      ("card_exp_month", month->JSON.Encode.string),
+      ("card_exp_year", year->JSON.Encode.string),
+      ("card_cvc", cvcNumber->JSON.Encode.string),
+      ("last_four", last4Digits->JSON.Encode.string),
+      ("bin_number", binNumber->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_method_type", "debit"->JSON.Encode.string),
+    ("payment_method_data", [("vault_data_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson),
+  ]
+}
+
 let cardTokenizationBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {
   let cardBody = [
     ("card_number", cardNumber->CardValidations.clearSpaces->JSON.Encode.string),

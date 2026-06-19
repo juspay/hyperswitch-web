@@ -11,6 +11,11 @@ let make = () => {
   let setVaultCredentials = Recoil.useSetRecoilState(RecoilAtoms.vaultCredentials)
 
   React.useEffect(() => {
+    Console.log3(
+      "PaymentMethodsSDK: deriving vault credentials from sessions",
+      VaultHelpers.getVaultCredentialsFromSessions(sessions),
+      sessions,
+    )
     setVaultCredentials(_ => VaultHelpers.getVaultCredentialsFromSessions(sessions))
     None
   }, [sessions])
