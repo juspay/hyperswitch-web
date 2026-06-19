@@ -217,7 +217,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   React.useEffect(() => {
     switch paymentMethodList {
     | Loaded(paymentlist) =>
-      let pList = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let pList = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
 
       setPaymentOptions(_ =>
         [

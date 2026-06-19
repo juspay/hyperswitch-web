@@ -5,7 +5,7 @@ let useIsGuestCustomer = () => {
   React.useMemo(() => {
     switch paymentMethodList {
     | Loaded(val) =>
-      let pList = val->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let pList = val->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
       let guestCustomerValue = pList.isGuestCustomer
       if guestCustomerValue->Option.isNone {
         switch customerPaymentMethods {

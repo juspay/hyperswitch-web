@@ -11,11 +11,9 @@ let make = (
   ~isUpdateIntentInProgress: ref<bool>,
   ~clientSecretRef: ref<string>,
   ~sdkAuthorizationRef: ref<string>,
-  ~paymentMethodsDataPromise: ref<promise<JSON.t>>,
-  ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
-  ~combinePMLDataPromise: ref<promise<JSON.t>>,
+  ~clientListDataPromise: ref<promise<JSON.t>>,
 ) => {
   let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =
@@ -33,11 +31,9 @@ let make = (
       ~isUpdateIntentInProgress,
       ~clientSecretRef,
       ~sdkAuthorizationRef,
-      ~paymentMethodsDataPromise,
-      ~customerPaymentMethodsDataPromise,
       ~sessionTokensDataPromise,
       ~sdkConfigsDataPromise,
-      ~combinePMLDataPromise,
+      ~clientListDataPromise,
       ~iframes=iframeRef.contents,
       ~callback,
       ~publishableKey,

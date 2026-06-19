@@ -163,7 +163,10 @@ let unMountPreMountLoaderIframe = (selectorString: string) => {
 }
 
 // Sets up the preMountLoader iframe and creates promises for all API responses.
-// Returns a tuple of (paymentMethodsData, customerPaymentMethodsData, sessionTokensData, sdkConfigsData).
+// Returns a tuple of (sessionTokensData, sdkConfigsData, clientListData).
+// clientListData is the single source for both payment_methods and
+// customer_payment_methods data (replaces the old paymentMethodsData/
+// customerPaymentMethodsData pair).
 // Can be called during init and during updateIntent.
 let setupPreMountLoaderPromises = (
   ~publishableKey,
@@ -220,18 +223,6 @@ let setupPreMountLoaderPromises = (
     })
   }
 
-  let paymentMethodsData = createDataPromise(
-    ~dataKey="payment_methods",
-    ~listenerName="onPaymentMethodsData-shared",
-    ~sendKey="sendPaymentMethodsResponse",
-  )
-
-  let customerPaymentMethodsData = createDataPromise(
-    ~dataKey="customer_payment_methods",
-    ~listenerName="onCustomerPaymentMethodsData-shared",
-    ~sendKey="sendCustomerPaymentMethodsResponse",
-  )
-
   let sessionTokensData = createDataPromise(
     ~dataKey="session_tokens",
     ~listenerName="onSessionTokensData-shared",
@@ -244,23 +235,17 @@ let setupPreMountLoaderPromises = (
     ~sendKey="sendSdkConfigsResponse",
   )
 
-  let combinePMLData = createDataPromise(
-    ~dataKey="combine_pml",
-    ~listenerName="onCombinePMLData-shared",
-    ~sendKey="sendCombinePMLResponse",
+  let clientListData = createDataPromise(
+    ~dataKey="client_list",
+    ~listenerName="onClientListData-shared",
+    ~sendKey="sendClientListResponse",
   )
 
   let requestMsg =
     [("requestPreMountLoaderMountedCallback", true->JSON.Encode.bool)]->Dict.fromArray
   preMountLoaderIframeDiv->Window.iframePostMessage(requestMsg)
 
-  Promise.all([
-    paymentMethodsData,
-    customerPaymentMethodsData,
-    sessionTokensData,
-    sdkConfigsData,
-    combinePMLData,
-  ])
+  Promise.all([sessionTokensData, sdkConfigsData, clientListData])
   ->Promise.then(_ => {
     let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
     preMountLoaderIframeDiv->Window.iframePostMessage(msg)
@@ -269,13 +254,7 @@ let setupPreMountLoaderPromises = (
   ->Promise.catch(_ => Promise.resolve())
   ->ignore
 
-  (
-    paymentMethodsData,
-    customerPaymentMethodsData,
-    sessionTokensData,
-    sdkConfigsData,
-    combinePMLData,
-  )
+  (sessionTokensData, sdkConfigsData, clientListData)
 }
 
 // --- Core performUpdateIntent ---
@@ -288,11 +267,9 @@ let performUpdateIntent = async (
   ~isUpdateIntentInProgress: ref<bool>,
   ~clientSecretRef: ref<string>,
   ~sdkAuthorizationRef: ref<string>,
-  ~paymentMethodsDataPromise: ref<promise<JSON.t>>,
-  ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
-  ~combinePMLDataPromise: ref<promise<JSON.t>>,
+  ~clientListDataPromise: ref<promise<JSON.t>>,
   ~iframes: array<Nullable.t<Dom.element>>,
   ~callback: unit => promise<JSON.t>,
   ~publishableKey,
@@ -317,11 +294,9 @@ let performUpdateIntent = async (
       // Mount new preMountLoader with new credentials (refs NOT updated yet —
       // we validate all API responses before committing any state changes).
       let (
-        newPaymentMethodsPromise,
-        newCustomerPaymentMethodsPromise,
         newSessionTokensPromise,
         newSdkConfigsDataPromise,
-        newCombinePMLDataPromise,
+        newClientListDataPromise,
       ) = setupPreMountLoaderPromises(
         ~publishableKey,
         ~sdkSessionId,
@@ -336,11 +311,9 @@ let performUpdateIntent = async (
 
       // Wait for ALL API responses before updating anything.
       let results = await Promise.all([
-        newPaymentMethodsPromise,
-        newCustomerPaymentMethodsPromise,
         newSessionTokensPromise,
         newSdkConfigsDataPromise,
-        newCombinePMLDataPromise,
+        newClientListDataPromise,
       ])
 
       // Check if any API response indicates an error
@@ -362,11 +335,9 @@ let performUpdateIntent = async (
 
         sdkAuthorizationRef.contents = newSdkAuthorization
 
-        paymentMethodsDataPromise.contents = newPaymentMethodsPromise
-        customerPaymentMethodsDataPromise.contents = newCustomerPaymentMethodsPromise
         sessionTokensDataPromise.contents = newSessionTokensPromise
         sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
-        combinePMLDataPromise.contents = newCombinePMLDataPromise
+        clientListDataPromise.contents = newClientListDataPromise
 
         // Send ElementsUpdate to all inner iframes with new credentials
         sendElementsUpdateToIframes(
@@ -382,17 +353,14 @@ let performUpdateIntent = async (
           None
         }
 
-        // Forward fresh data to all mounted iframes
+        // Forward fresh data to all mounted iframes. clientList is the single
+        // source for both payment_methods and customer_payment_methods data,
+        // forwarded once under the "clientList" key (retired the separate
+        // "paymentMethodList"/"customerPaymentMethods" keys).
         let _ = await Promise.all([
-          forwardPromiseToIframes(iframes, newPaymentMethodsPromise, "paymentMethodList"),
-          forwardPromiseToIframes(
-            iframes,
-            newCustomerPaymentMethodsPromise,
-            "customerPaymentMethods",
-          ),
           forwardPromiseToIframes(iframes, newSessionTokensPromise, "sessions"),
           forwardPromiseToIframes(iframes, newSdkConfigsDataPromise, "sdkConfigs"),
-          forwardPromiseToIframes(iframes, newCombinePMLDataPromise, "combinePML"),
+          forwardPromiseToIframes(iframes, newClientListDataPromise, "clientList"),
         ])
 
         switch readyPromise {
