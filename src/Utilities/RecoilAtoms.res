@@ -55,6 +55,10 @@ let isGooglePayReady = Recoil.atom("isGooglePayReady", false)
 let trustPayScriptStatus = Recoil.atom("trustPayScriptStatus", NotLoaded)
 let isApplePayReady = Recoil.atom("isApplePayReady", false)
 let isSamsungPayReady = Recoil.atom("isSamsungPayReady", false)
+// Card payments via the VGS vault need the VGS Collect.js script. Ready by
+// default; set false when the script fails to load so the card method can be
+// removed from the list (a card form without VGS cannot tokenise).
+let isVgsScriptReady = Recoil.atom("isVgsScriptReady", true)
 let userCountry = Recoil.atom("userCountry", "")
 let userBank = Recoil.atom("userBank", "")
 let userAddressline1 = Recoil.atom("userAddressline1", defaultFieldValues)

@@ -46,9 +46,22 @@ let make = () => {
   // with and swallow the first submit's errors.
   let formStateRef = React.useRef(Dict.make())
 
-  handleVGSField(cardField, setIsCardFocused, setVgsCardError)
-  handleVGSField(expiryField, setIsExpiryFocused, setVgsExpiryError)
-  handleVGSField(cvcField, setIsCVCFocused, setVgsCVCError)
+  // Register each field's focus/blur listeners exactly once — when that field is
+  // first created (None → Some) — rather than on every render, which would stack
+  // duplicate `on` listeners. One effect per field so each registers exactly once
+  // regardless of how the field state updates are batched.
+  React.useEffect(() => {
+    handleVGSField(cardField, setIsCardFocused, setVgsCardError)
+    None
+  }, [cardField])
+  React.useEffect(() => {
+    handleVGSField(expiryField, setIsExpiryFocused, setVgsExpiryError)
+    None
+  }, [expiryField])
+  React.useEffect(() => {
+    handleVGSField(cvcField, setIsCVCFocused, setVgsCVCError)
+    None
+  }, [cvcField])
 
   let initializeVGSFields = (vault: returnValue) => {
     setCardField(_ => Some(vault.field("#vgs-cc-number", cardNumberOptions)))
@@ -86,6 +99,9 @@ let make = () => {
 
     scriptEl->Window.elementOnerror(exn => {
       Console.error2("Error loading VGS script", exn)
+      // Card payment can't work without VGS — tell the outer iframe so it can drop
+      // the card method from the payment methods list.
+      messageParentWindow([("vgsScriptLoadFailed", true->JSON.Encode.bool)])
     })
 
     scriptEl->Window.elementOnload(_ => {
@@ -124,29 +140,32 @@ let make = () => {
         setVgsExpiryError(_ => expiryErr)
         setVgsCVCError(_ => cvcErr)
 
-        if cardErr == "" && expiryErr == "" && cvcErr == "" {
+        let cardFieldsValid = cardErr == "" && expiryErr == "" && cvcErr == ""
+
+        if cardFieldsValid && isOuterValid {
+          // Card fields AND outer required fields are valid → tokenise with VGS.
+          // Gating on isOuterValid here (rather than inside onSuccess) means we
+          // never send card data to VGS when the outer fields are invalid:
+          // ParentCardComponent has already reported that error and isn't
+          // listening for the token. Mirrors CardPayment's submit gate.
           let emptyPayload = JSON.Encode.object(Dict.make())
 
           // Tokenisation succeeded — forward the aliases to ParentCardComponent so
-          // it can build the confirm body and call intent. Only when the outer
-          // (required) fields are valid; otherwise ParentCardComponent already
-          // reported the outer error and is not listening for the token.
+          // it can build the confirm body and call intent.
           let onSuccess = (_, data) => {
-            if isOuterValid {
-              let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
-              messageParentWindow([
-                ("vgsTokenEvent", true->JSON.Encode.bool),
-                (
-                  "vgsCardData",
-                  [
-                    ("cardNumber", cardNumber->JSON.Encode.string),
-                    ("month", month->JSON.Encode.string),
-                    ("year", year->JSON.Encode.string),
-                    ("cvcNumber", cvcNumber->JSON.Encode.string),
-                  ]->getJsonFromArrayOfJson,
-                ),
-              ])
-            }
+            let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
+            messageParentWindow([
+              ("vgsTokenEvent", true->JSON.Encode.bool),
+              (
+                "vgsCardData",
+                [
+                  ("cardNumber", cardNumber->JSON.Encode.string),
+                  ("month", month->JSON.Encode.string),
+                  ("year", year->JSON.Encode.string),
+                  ("cvcNumber", cvcNumber->JSON.Encode.string),
+                ]->getJsonFromArrayOfJson,
+              ),
+            ])
           }
 
           // Fields are valid, so onError here is a genuine tokenisation/network
@@ -155,9 +174,11 @@ let make = () => {
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
 
           vault.submit("/post", emptyPayload, onSuccess, onError)
-        } else {
-          // Reject the merchant's confirm promise once, with the message that
-          // matches the failure (missing field vs. invalid details).
+        } else if !cardFieldsValid {
+          // Card fields invalid → reject the merchant's confirm promise once, with
+          // the message that matches the failure (missing field vs. invalid
+          // details). When only the outer fields are invalid, ParentCardComponent
+          // has already reported it, so there is nothing to do here.
           let anyEmpty =
             isFieldEmpty(stateDict, "card_number") ||
             isFieldEmpty(stateDict, "card_exp") ||

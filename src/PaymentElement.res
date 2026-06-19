@@ -24,6 +24,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let isVgsScriptReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isVgsScriptReady)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
   let isShowOrPayUsingWhileLoading = Recoil.useRecoilValueFromAtom(
@@ -664,7 +665,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         condition={!displaySavedPaymentMethods &&
         paymentOptions->Array.length == 0 &&
         walletOptions->Array.length == 0}>
-        <PaymentElementShimmer />
+        {if isVgsScriptReady {
+          <PaymentElementShimmer />
+        } else {
+          // VGS vault script failed → card was removed and no other method
+          // remains. Surface the standard top-level error instead of an
+          // indefinite shimmer.
+          <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+        }}
       </RenderIf>
     }}
     <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>

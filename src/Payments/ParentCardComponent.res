@@ -40,6 +40,7 @@ let make = () => {
   let iframeRef = React.useRef(Nullable.null)
   let (iframeMounted, setIframeMounted) = React.useState(_ => false)
   let (cardBrand, setCardBrand) = React.useState(_ => "")
+  let setIsVgsScriptReady = Recoil.useSetRecoilState(RecoilAtoms.isVgsScriptReady)
 
   // mountPostMessage is captured once (in useEffect0) and fires later when the
   // inner iframe signals readiness, so it must read the LATEST config values
@@ -163,6 +164,17 @@ let make = () => {
 
       if dict->Dict.get("cardBrandUpdate")->Option.isSome {
         setCardBrand(_ => dict->getString("cardBrandUpdate", ""))
+      }
+
+      // The VGS Collect.js script failed to load in the inner iframe — card
+      // payment is impossible, so mark the vault script as unavailable. The
+      // payment methods list filters out "card" when this is false.
+      if dict->Dict.get("vgsScriptLoadFailed")->Option.isSome {
+        loggerState.setLogError(
+          ~value=`Error during loading VGS script`->Identity.anyTypeToJson->JSON.stringify,
+          ~eventName=VGS_VAULT_FLOW,
+        )
+        setIsVgsScriptReady(_ => false)
       }
     }
     Window.addEventListener("message", handleMessage)
