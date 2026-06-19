@@ -13,7 +13,8 @@ let make = (~paymentType) => {
   React.useEffect(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
-      let pList = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let pList =
+        paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
       setWalletOptions(_ => walletList)
       setPaymentMethodListValue(_ => pList)
     | _ => ()

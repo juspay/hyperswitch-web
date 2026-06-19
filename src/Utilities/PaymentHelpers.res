@@ -1472,7 +1472,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
       switch paymentMethodList {
       | LoadError(data)
       | Loaded(data) =>
-        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
         if paymentList.payment_methods->Array.length > 0 {
@@ -1666,45 +1666,7 @@ let createPaymentMethod = async (
   )
 }
 
-let fetchPaymentMethodList = async (
-  ~sdkAuthorization=None,
-  ~clientSecret,
-  ~publishableKey,
-  ~logger,
-  ~customPodUri,
-  ~endpoint,
-) => {
-  let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchPaymentMethodList,
-    ~params={
-      clientSecret: Some(clientSecret),
-      customBackendBaseUrl: Some(endpoint),
-      publishableKey: None,
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-      sdkAuthorization,
-    },
-  )
-
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=PAYMENT_METHODS_CALL,
-    ~logger,
-    ~method=#GET,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(publishableKey),
-    ~onSuccess,
-    ~onFailure,
-    ~sdkAuthorization,
-  )
-}
-
-let fetchCustomerPaymentMethodList = async (
+let fetchClientList = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
@@ -1714,11 +1676,11 @@ let fetchCustomerPaymentMethodList = async (
   ~sdkAuthorization=None,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchCustomerPaymentMethodList,
+    ~apiCallType=FetchClientList,
     ~params={
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
-      publishableKey: None,
+      publishableKey: Some(publishableKey),
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1727,12 +1689,11 @@ let fetchCustomerPaymentMethodList = async (
   )
 
   let onSuccess = data => data
-
   let onFailure = _ => JSON.Encode.null
 
   await fetchApiWithLogging(
     uri,
-    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+    ~eventName=CLIENT_LIST_CALL,
     ~logger,
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
@@ -1948,7 +1909,7 @@ let callAuthExchange = async (
 
   let onSuccess = _ => {
     let endpoint = ApiEndpoint.getApiEndPoint()
-    fetchCustomerPaymentMethodList(
+    fetchClientList(
       ~clientSecret=clientSecret->Option.getOr(""),
       ~publishableKey,
       ~logger,
@@ -1956,12 +1917,12 @@ let callAuthExchange = async (
       ~endpoint,
       ~sdkAuthorization,
     )
-    ->then(customerListResponse => {
-      let customerListResponse = [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
+    ->then(clientListResponse => {
+      let clientListResponse = [("clientList", clientListResponse)]->Dict.fromArray
       setOptionValue(prev => {
         ...prev,
-        customerPaymentMethods: customerListResponse->createCustomerObjArr(
-          "customerPaymentMethods",
+        customerPaymentMethods: clientListResponse->createCustomerObjArrFromClientList(
+          "clientList",
         ),
       })
       resolve(JSON.Encode.null)
@@ -2195,7 +2156,7 @@ let usePostSessionTokens = (
       switch paymentMethodList {
       | LoadError(data)
       | Loaded(data) =>
-        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
         if paymentList.payment_methods->Array.length > 0 {
@@ -2434,43 +2395,6 @@ let fetchSdkConfigs = async (
     uri,
     ~eventName=SDK_CONFIGS_CALL,
     ~headers,
-    ~logger,
-    ~method=#GET,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(publishableKey),
-    ~onSuccess,
-    ~onFailure,
-    ~sdkAuthorization,
-  )
-}
-
-let fetchCombinePML = async (
-  ~clientSecret,
-  ~publishableKey,
-  ~logger,
-  ~customPodUri,
-  ~endpoint,
-  ~sdkAuthorization=None,
-) => {
-  let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchCombinePML,
-    ~params={
-      clientSecret: Some(clientSecret),
-      customBackendBaseUrl: Some(endpoint),
-      publishableKey: Some(publishableKey),
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-      sdkAuthorization,
-    },
-  )
-
-  let onSuccess = data => data
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=COMBINE_PML_CALL,
     ~logger,
     ~method=#GET,
     ~customPodUri=Some(customPodUri),

@@ -190,8 +190,15 @@ let make = (
       ~paymentMethodType,
       ~country,
       ~paymentMethodListValue,
+      ~accountConfig=sdkConfigsValue.account_config,
     )
-  }, (paymentMethod, paymentMethodType, country, paymentMethodListValue))
+  }, (
+    paymentMethod,
+    paymentMethodType,
+    country,
+    paymentMethodListValue,
+    sdkConfigsValue.account_config,
+  ))
 
   let (requiredFields, missingRequiredFields, superpositionInitialValues) = React.useMemo(() => {
     getSuperpositionFinalFields(eligibleConnectors, superpositionBaseContext, intentData)

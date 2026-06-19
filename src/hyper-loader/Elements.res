@@ -24,11 +24,9 @@ let make = (
   ~isUpdateIntentInProgress: ref<bool>,
   ~clientSecretRef: ref<string>,
   ~sdkAuthorizationRef: ref<string>,
-  ~paymentMethodsDataPromise: ref<promise<JSON.t>>,
-  ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
-  ~combinePMLDataPromise: ref<promise<JSON.t>>,
+  ~clientListDataPromise: ref<promise<JSON.t>>,
 ) => {
   try {
     let iframeRef = []
@@ -108,11 +106,9 @@ let make = (
     // and the result passed in here, avoiding the round-trip through PreMountLoader.
     // Currently deferred to PreMountLoader for consistency with the other 3 pre-mount calls.
     let (
-      initialPaymentMethodsPromise,
-      initialCustomerPaymentMethodsPromise,
       initialSessionTokensPromise,
       initialSdkConfigsPromise,
-      initialCombinePMLPromise,
+      initialClientListPromise,
     ) = UpdateIntentHelpersNew.setupPreMountLoaderPromises(
       ~publishableKey,
       ~sdkSessionId,
@@ -125,22 +121,25 @@ let make = (
       ~currentSdkAuthorization=sdkAuthorizationRef.contents,
     )
 
-    // Extract isTaxCalculationEnabled from the paymentMethods response (Elements-specific)
-    initialPaymentMethodsPromise
+    // Extract isTaxCalculationEnabled from the clientList response
+    // (Elements-specific). clientList nests this under intent_data, unlike
+    // the old paymentMethods response which had it at the top level.
+    initialClientListPromise
     ->Promise.then(json => {
       isTaxCalculationEnabled.contents =
-        json->getDictFromJson->getBool("is_tax_calculation_enabled", false)
+        json
+        ->getDictFromJson
+        ->getDictFromDict("intent_data")
+        ->getBool("is_tax_calculation_enabled", false)
       Promise.resolve(json)
     })
     ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
     ->ignore
 
     // Store initial data promises in shared refs so they're accessible during updateIntent
-    paymentMethodsDataPromise.contents = initialPaymentMethodsPromise
-    customerPaymentMethodsDataPromise.contents = initialCustomerPaymentMethodsPromise
     sessionTokensDataPromise.contents = initialSessionTokensPromise
     sdkConfigsDataPromise.contents = initialSdkConfigsPromise
-    combinePMLDataPromise.contents = initialCombinePMLPromise
+    clientListDataPromise.contents = initialClientListPromise
 
     let onPlaidCallback = mountedIframeRef => {
       (ev: Types.event) => {
@@ -167,15 +166,15 @@ let make = (
       }
     }
 
-    let forwardPaymentMethodsToIframe = mountedIframeRef => {
-      paymentMethodsDataPromise.contents->Promise.then(json => {
+    let forwardPaymentMethodsToIframe = (mountedIframeRef, ~disableSavedPaymentMethods) => {
+      clientListDataPromise.contents->Promise.then(json => {
         addSmartEventListener("message", onPlaidCallback(mountedIframeRef), "onPlaidCallback")
         addSmartEventListener("message", onPazeCallback(mountedIframeRef), "onPazeCallback")
 
         let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
           ~paymentMethodListValue=json
           ->getDictFromJson
-          ->PaymentMethodsRecord.itemToObjMapper,
+          ->PaymentMethodsRecord.itemToObjMapperFromClientList,
           ~paymentMethod="wallet",
           ~paymentMethodType="apple_pay",
         )->Option.isSome
@@ -183,7 +182,7 @@ let make = (
         let isGooglePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
           ~paymentMethodListValue=json
           ->getDictFromJson
-          ->PaymentMethodsRecord.itemToObjMapper,
+          ->PaymentMethodsRecord.itemToObjMapperFromClientList,
           ~paymentMethod="wallet",
           ~paymentMethodType="google_pay",
         )->Option.isSome
@@ -231,25 +230,26 @@ let make = (
           }
         }
 
+        // Dev/test preload override — reads against the clientList-shaped
+        // JSON now, keeping its own existing key name unchanged.
         let paymentMethodList = preloadSDKWithParams->getJsonFromDict("paymentMethodsList", json)
-        let msg = [("paymentMethodList", paymentMethodList)]->Dict.fromArray
+        // When the merchant has disabled saved payment methods, strip
+        // customer_payment_methods from the outgoing payload before it ever
+        // reaches the iframe's JS runtime, so saved-card data is never sent
+        // at all in that case. A single "clientList" message is always sent
+        // (never a second, duplicate one) so the receiving handler only ever
+        // runs once per update.
+        let outgoingPaymentMethodList = if disableSavedPaymentMethods {
+          let strippedDict = paymentMethodList->getDictFromJson->Dict.copy
+          strippedDict->Dict.set("customer_payment_methods", []->JSON.Encode.array)
+          strippedDict->JSON.Encode.object
+        } else {
+          paymentMethodList
+        }
+        let msg = [("clientList", outgoingPaymentMethodList)]->Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
         Promise.resolve()
       })
-    }
-
-    let forwardCustomerPaymentMethodsToIframe = (mountedIframeRef, disableSavedPaymentMethods) => {
-      if !disableSavedPaymentMethods {
-        customerPaymentMethodsDataPromise.contents->Promise.then(json => {
-          let customerMethodsList =
-            preloadSDKWithParams->getJsonFromDict("customerMethodsList", json)
-          let msg = [("customerPaymentMethods", customerMethodsList)]->Dict.fromArray
-          mountedIframeRef->Window.iframePostMessage(msg)
-          Promise.resolve()
-        })
-      } else {
-        Promise.resolve()
-      }
     }
 
     // Top-level session tokens forwarder for updateIntent use.
@@ -267,15 +267,6 @@ let make = (
       sdkConfigsDataPromise.contents->Promise.then(json => {
         let sdkConfigs = preloadSDKWithParams->getJsonFromDict("sdkConfigs", json)
         let msg = [("sdkConfigs", sdkConfigs)]->Dict.fromArray
-        mountedIframeRef->Window.iframePostMessage(msg)
-        Promise.resolve()
-      })
-    }
-
-    let forwardCombinePMLDataToIframe = mountedIframeRef => {
-      combinePMLDataPromise.contents->Promise.then(json => {
-        let combinePML = preloadSDKWithParams->getJsonFromDict("combinePML", json)
-        let msg = [("combinePML", combinePML)]->Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
         Promise.resolve()
       })
@@ -343,11 +334,9 @@ let make = (
           ~isUpdateIntentInProgress,
           ~clientSecretRef,
           ~sdkAuthorizationRef,
-          ~paymentMethodsDataPromise,
-          ~customerPaymentMethodsDataPromise,
           ~sessionTokensDataPromise,
           ~sdkConfigsDataPromise,
-          ~combinePMLDataPromise,
+          ~clientListDataPromise,
           ~iframes=iframeRef,
           ~callback,
           ~publishableKey,
@@ -364,11 +353,15 @@ let make = (
         let isSuccess = response->getDictFromJson->getString("status", "") === "succeeded"
 
         if isSuccess {
-          // Extract isTaxCalculationEnabled from latest paymentMethods response
-          paymentMethodsDataPromise.contents
+          // Extract isTaxCalculationEnabled from latest clientList response.
+          // clientList nests this under intent_data.
+          clientListDataPromise.contents
           ->Promise.then(json => {
             isTaxCalculationEnabled.contents =
-              json->getDictFromJson->getBool("is_tax_calculation_enabled", false)
+              json
+              ->getDictFromJson
+              ->getDictFromDict("intent_data")
+              ->getBool("is_tax_calculation_enabled", false)
             Promise.resolve(json)
           })
           ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
@@ -378,11 +371,9 @@ let make = (
           let _ = await Promise.all(
             iframeRef->Array.map(iframe => {
               Promise.all([
-                forwardPaymentMethodsToIframe(iframe),
-                forwardCustomerPaymentMethodsToIframe(iframe, false),
+                forwardPaymentMethodsToIframe(iframe, ~disableSavedPaymentMethods=false),
                 forwardSessionTokensDataToIframe(iframe),
                 forwardSdkConfigsDataToIframe(iframe),
-                forwardCombinePMLDataToIframe(iframe),
               ])
             }),
           )
@@ -756,7 +747,7 @@ let make = (
                     ->JSON.Decode.string
                     ->Option.getOr("")
 
-                  paymentMethodsDataPromise.contents
+                  clientListDataPromise.contents
                   ->then(paymentMethodsJson => {
                     let pmDict = paymentMethodsJson->getDictFromJson
                     let currencyCode =
@@ -1556,13 +1547,11 @@ let make = (
           ->getDictFromJson
           ->getBool("displaySavedPaymentMethods", true) &&
             !(spmComponents->Array.includes(componentType))->not
-        forwardPaymentMethodsToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
-        forwardCustomerPaymentMethodsToIframe(mountedIframeRef, disableSavedPaymentMethods)
+        forwardPaymentMethodsToIframe(mountedIframeRef, ~disableSavedPaymentMethods)
         ->catch(_ => resolve())
         ->ignore
         forwardSessionTokensToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
         forwardSdkConfigsDataToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
-        forwardCombinePMLDataToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
 
         mountedIframeRef->Window.iframePostMessage(message)
       }

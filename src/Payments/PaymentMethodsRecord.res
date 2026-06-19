@@ -952,7 +952,6 @@ type paymentMethodList = {
   mandate_payment: option<mandate>,
   payment_type: payment_type,
   merchant_name: string,
-  collect_billing_details_from_wallets: bool,
   is_tax_calculation_enabled: bool,
   isGuestCustomer: option<bool>,
   intent_data: intentData,
@@ -985,7 +984,6 @@ let defaultList = {
   mandate_payment: None,
   payment_type: NONE,
   merchant_name: "",
-  collect_billing_details_from_wallets: true,
   is_tax_calculation_enabled: false,
   isGuestCustomer: None,
   intent_data: defaultIntentData,
@@ -1000,24 +998,6 @@ let getPaymentExperienceType = str => {
   | "display_qr_code" => QrFlow
   | _ => RedirectToURL
   }
-}
-
-let getPaymentExperience = (dict, str) => {
-  dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.array)
-  ->Option.getOr([])
-  ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Array.map(json => {
-    {
-      payment_experience_type: getString(
-        json,
-        "payment_experience_type",
-        "",
-      )->getPaymentExperienceType,
-      eligible_connectors: getStrArray(json, "eligible_connectors"),
-    }
-  })
 }
 
 let getSurchargeDetails = dict => {
@@ -1040,44 +1020,6 @@ let getSurchargeDetails = dict => {
   } else {
     None
   }
-}
-
-let getCardNetworks = (dict, str) => {
-  dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.array)
-  ->Option.getOr([])
-  ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Array.map(json => {
-    {
-      card_network: getString(json, "card_network", "")->CardUtils.getCardType,
-      eligible_connectors: getStrArray(json, "eligible_connectors"),
-      surcharge_details: json->getSurchargeDetails,
-    }
-  })
-}
-
-let getBankNames = (dict, str) => {
-  dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.array)
-  ->Option.getOr([])
-  ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Array.map(json => {
-    getStrArray(json, "bank_name")
-  })
-  ->Array.reduce([], (acc, item) => {
-    item->Array.forEach(obj => acc->Array.push(obj)->ignore)
-    acc
-  })
-}
-
-let getAchConnectors = (dict, str) => {
-  dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
-  ->Option.getOr(Dict.make())
-  ->getStrArray("elligible_connectors")
 }
 
 let getAmountDetails = dict => {
@@ -1108,61 +1050,6 @@ let getInstallmentOptions = dict => {
     : None
 }
 
-let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
-  let requiredFields =
-    getJsonFromDict(dict, "required_fields", JSON.Encode.null)
-    ->getDictFromJson
-    ->Dict.valuesToArray
-
-  requiredFields->Array.map(requiredField => {
-    let requiredFieldsDict = requiredField->getDictFromJson
-    {
-      required_field: requiredFieldsDict->getString("required_field", ""),
-      display_name: requiredFieldsDict->getString("display_name", ""),
-      field_type: requiredFieldsDict->getFieldType(isBancontact),
-      value: requiredFieldsDict->getString("value", ""),
-    }
-  })
-}
-
-let getPaymentMethodTypes = (dict, str) => {
-  dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.array)
-  ->Option.getOr([])
-  ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Array.map(jsonDict => {
-    let paymentMethodType = getString(jsonDict, "payment_method_type", "")
-    {
-      payment_method_type: paymentMethodType,
-      payment_experience: getPaymentExperience(jsonDict, "payment_experience"),
-      card_networks: getCardNetworks(jsonDict, "card_networks"),
-      bank_names: getBankNames(jsonDict, "bank_names"),
-      bank_debits_connectors: getAchConnectors(jsonDict, "bank_debit"),
-      bank_transfers_connectors: getAchConnectors(jsonDict, "bank_transfer"),
-      required_fields: jsonDict->getDynamicFieldsFromJsonDict(
-        paymentMethodType === "bancontact_card",
-      ),
-      surcharge_details: jsonDict->getSurchargeDetails,
-      pm_auth_connector: getOptionString(jsonDict, "pm_auth_connector"),
-    }
-  })
-}
-
-let getMethodsArr = (dict, str) => {
-  dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.array)
-  ->Option.getOr([])
-  ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Array.map(json => {
-    {
-      payment_method: getString(json, "payment_method", ""),
-      payment_method_types: getPaymentMethodTypes(json, "payment_method_types"),
-    }
-  })
-}
-
 let getOptionalMandateType = (dict, str) => {
   dict
   ->Dict.get(str)
@@ -1191,7 +1078,7 @@ let getIntentData = dict => {
   let intentDataDict = dict->getDictFromDict("intent_data")
   {
     installment_options: intentDataDict->getInstallmentOptions,
-    currency: dict->getString("currency", ""),
+    currency: intentDataDict->getString("currency", ""),
     intentDataObject: intentDataDict->JSON.Encode.object,
   }
 }
@@ -1214,21 +1101,101 @@ let paymentTypeToStringMapper = payment_type => {
   }
 }
 
-let itemToObjMapper = dict => {
+// --- clientList (`fetchClientList`, `payments/{id}/client`) decoder ---
+//
+// clientList returns a *flat* `payment_methods_enabled` array (one entry per
+// `(payment_method, payment_method_type)` combo), unlike the old nested
+// `payment_methods` tree. This section groups the flat list back into the
+// existing `methods`/`paymentMethodTypes` shape so the rest of the SDK keeps
+// reading the same `paymentMethodList` type unchanged.
+let getCardNetworksFromFlatList = (jsonDict, str) => {
+  jsonDict
+  ->getStrArray(str)
+  ->Array.map(cardNetworkStr => {
+    {
+      card_network: cardNetworkStr->CardUtils.getCardType,
+      eligible_connectors: [],
+      // clientList's card_networks[i] is a plain string, not a dict — there is
+      // no per-network object to decode a surcharge from at this granularity.
+      surcharge_details: None,
+    }
+  })
+}
+
+let getPaymentExperienceFromFlatList = (jsonDict, str) => {
+  jsonDict
+  ->getStrArray(str)
+  ->Array.map(experienceStr => {
+    {
+      payment_experience_type: experienceStr->getPaymentExperienceType,
+      // clientList's flat payment_experience is array<string>, with no
+      // per-experience eligible_connectors — known, accepted gap (wallet/
+      // PayLater connector-restricted routing), see migration plan.
+      eligible_connectors: [],
+    }
+  })
+}
+
+let getPaymentMethodTypesFromFlatList = (paymentMethodsEnabled: array<JSON.t>) => {
+  let methodsDict = Dict.make()
+
+  paymentMethodsEnabled
+  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.forEach(jsonDict => {
+    let paymentMethod = getString(jsonDict, "payment_method", "")
+    let paymentMethodType = getString(jsonDict, "payment_method_type", "")
+
+    let paymentMethodTypeRecord: paymentMethodTypes = {
+      payment_method_type: paymentMethodType,
+      payment_experience: getPaymentExperienceFromFlatList(jsonDict, "payment_experience"),
+      card_networks: getCardNetworksFromFlatList(jsonDict, "card_networks"),
+      bank_names: [],
+      bank_debits_connectors: [],
+      bank_transfers_connectors: [],
+      required_fields: [],
+      // Forward-compatible: clientList doesn't send `surcharge_details` today
+      // (confirmed via full-file grep), but this is a real, callable decode
+      // path against a real dict — it will activate automatically the day the
+      // backend adds the key, with no further SDK changes.
+      surcharge_details: jsonDict->getSurchargeDetails,
+      // Forward-compatible, same dormant-decode-on-arrival treatment as
+      // surcharge_details above (per explicit codebase-owner decision): always
+      // None today since clientList doesn't send pm_auth_connector, but will
+      // "just work" if/when it does. Known, accepted gap until then (Plaid
+      // bank-debit auth eligibility unavailable from clientList).
+      pm_auth_connector: getOptionString(jsonDict, "pm_auth_connector"),
+    }
+
+    switch methodsDict->Dict.get(paymentMethod) {
+    | Some(existingTypes: array<paymentMethodTypes>) =>
+      methodsDict->Dict.set(paymentMethod, existingTypes->Array.concat([paymentMethodTypeRecord]))
+    | None => methodsDict->Dict.set(paymentMethod, [paymentMethodTypeRecord])
+    }
+  })
+
+  methodsDict
+  ->Dict.toArray
+  ->Array.map(((paymentMethod, paymentMethodTypesArr)) => {
+    payment_method: paymentMethod,
+    payment_method_types: paymentMethodTypesArr,
+  })
+}
+
+let itemToObjMapperFromClientList = dict => {
+  let intentDataDict = dict->getDictFromDict("intent_data")
   {
-    redirect_url: getString(dict, "redirect_url", ""),
-    currency: getString(dict, "currency", ""),
-    payment_methods: getMethodsArr(dict, "payment_methods"),
-    mandate_payment: getMandate(dict, "mandate_payment"),
-    payment_type: getString(dict, "payment_type", "")->paymentTypeMapper,
-    merchant_name: getString(dict, "merchant_name", ""),
-    collect_billing_details_from_wallets: getBool(
-      dict,
-      "collect_billing_details_from_wallets",
-      true,
-    ),
-    is_tax_calculation_enabled: getBool(dict, "is_tax_calculation_enabled", false),
-    isGuestCustomer: getOptionBool(dict, "is_guest_customer"),
+    redirect_url: "",
+    // clientList has no top-level `currency` key, only `intent_data.currency`
+    // — read it from intentDataDict here, and getIntentData below does the
+    // same for its own `currency` sub-field (it has exactly one caller, this
+    // one, so it was fixed in place rather than duplicated).
+    currency: intentDataDict->getString("currency", ""),
+    payment_methods: getPaymentMethodTypesFromFlatList(dict->getArray("payment_methods_enabled")),
+    mandate_payment: intentDataDict->getMandate("mandate_payment"),
+    payment_type: intentDataDict->getString("payment_type", "")->paymentTypeMapper,
+    merchant_name: intentDataDict->getString("merchant_name", ""),
+    is_tax_calculation_enabled: intentDataDict->getBool("is_tax_calculation_enabled", false),
+    isGuestCustomer: intentDataDict->getOptionBool("is_guest_customer"),
     intent_data: dict->getIntentData,
     sdk_next_action: dict->getDictFromDict("sdk_next_action")->getOptionString("next_action"),
     should_block_confirm: dict
