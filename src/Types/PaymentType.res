@@ -207,8 +207,6 @@ type customerMethods = {
   paymentToken: string,
   customerId: string,
   paymentMethod: string,
-  paymentMethodId: string,
-  paymentMethodIssuer: option<string>,
   card: customerCard,
   paymentMethodType: option<string>,
   defaultPaymentMethodSet: bool,
@@ -326,8 +324,6 @@ let defaultCustomerMethods = {
   paymentToken: "",
   customerId: "",
   paymentMethod: "",
-  paymentMethodId: "",
-  paymentMethodIssuer: None,
   card: defaultCardDetails,
   paymentMethodType: None,
   defaultPaymentMethodSet: false,
@@ -1488,9 +1484,10 @@ let getCustomerCardDetailsFromPaymentMethodData = dict => {
 
 let itemToCustomerObjMapperFromClientList = clientListDict => {
   let customerArr = clientListDict->getArray("customer_payment_methods")
+  let intentDataDict = clientListDict->getDictFromDict("intent_data")
 
-  let isGuestCustomer =
-    clientListDict->getDictFromDict("intent_data")->getBool("is_guest_customer", false)
+  let isGuestCustomer = intentDataDict->getBool("is_guest_customer", false)
+  let customerId = intentDataDict->getString("customer_id", "")
 
   let customerPaymentMethods =
     customerArr
@@ -1498,10 +1495,8 @@ let itemToCustomerObjMapperFromClientList = clientListDict => {
     ->Array.map(dict => {
       {
         paymentToken: getString(dict, "payment_token", ""),
-        customerId: "",
+        customerId,
         paymentMethod: getString(dict, "payment_method", ""),
-        paymentMethodId: "",
-        paymentMethodIssuer: None,
         card: getCustomerCardDetailsFromPaymentMethodData(dict),
         paymentMethodType: getPaymentMethodType(dict),
         defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
@@ -1539,8 +1534,6 @@ let getCustomerMethods = (dict, str) => {
           paymentToken: getString(json, "payment_token", ""),
           customerId: getString(json, "customer_id", ""),
           paymentMethod: getString(json, "payment_method", ""),
-          paymentMethodId: getString(json, "payment_method_id", ""),
-          paymentMethodIssuer: Some(getString(json, "payment_method_issuer", "")),
           card: getCardDetails(json, "card"),
           paymentMethodType: getPaymentMethodType(dict),
           defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
@@ -1791,8 +1784,6 @@ let convertClickToPayCardToCustomerMethod = (
     paymentToken: clickToPayCard.srcDigitalCardId,
     customerId: "", // Empty as Click to Pay doesn't provide this
     paymentMethod: "card",
-    paymentMethodId: clickToPayCard.srcDigitalCardId,
-    paymentMethodIssuer: None,
     card: {
       scheme: cardScheme,
       last4Digits: clickToPayCard.panLastFour,
