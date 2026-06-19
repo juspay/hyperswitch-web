@@ -459,11 +459,12 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     let paymentOrder = paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
     let pList = paymentList->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
 
+    let collectBillingDetailsFromWalletConnector = SdkConfigParser.getCollectBillingDetailsFromWalletConnector(
+      sdkConfigsValue.account_config->Option.flatMap(ac => ac.profile),
+    )
+
     let requiresApplePayBillingDetails =
-      !SdkConfigParser.getCollectBillingDetailsFromWalletConnector(
-        sdkConfigsValue.account_config->Option.flatMap(ac => ac.profile),
-      ) &&
-      !areAllApplePayRequiredFieldsPrefilled
+      !collectBillingDetailsFromWalletConnector && !areAllApplePayRequiredFieldsPrefilled
 
     let shouldDisplayApplePayInTabs =
       isApplePayReady && (showWalletsWithOtherPaymentMethods || requiresApplePayBillingDetails)
@@ -474,10 +475,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     }
 
     let requiresPaypalBillingDetails =
-      !SdkConfigParser.getCollectBillingDetailsFromWalletConnector(
-        sdkConfigsValue.account_config->Option.flatMap(ac => ac.profile),
-      ) &&
-      !areAllPaypalRequiredFieldsPreFilled
+      !collectBillingDetailsFromWalletConnector && !areAllPaypalRequiredFieldsPreFilled
 
     let isPaypalEligibleInRedirectFlow =
       isShowPaypal && isPaypalRedirectFlow && (!isPaypalSDKFlow || !isPaypalTokenExist)
@@ -509,9 +507,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
         ~isKlarnaSDKFlow,
         ~paymentMethodListValue=pList,
         ~areAllGooglePayRequiredFieldsPrefilled,
-        ~collectBillingDetailsFromWalletConnector=SdkConfigParser.getCollectBillingDetailsFromWalletConnector(
-          sdkConfigsValue.account_config->Option.flatMap(ac => ac.profile),
-        ),
+        ~collectBillingDetailsFromWalletConnector,
         ~isGooglePayReady,
         ~shouldDisplayApplePayInTabs,
         ~shouldDisplayPayPalInTabs,
@@ -578,6 +574,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     optionAtomValue.displaySavedPaymentMethods,
     displayGroupedSavedMethods,
     layoutClass.savedMethodCustomization.hiddenPaymentMethods,
+    sdkConfigsValue.account_config,
   ))
 }
 

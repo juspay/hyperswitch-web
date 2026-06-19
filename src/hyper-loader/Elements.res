@@ -235,11 +235,10 @@ let make = (
         let paymentMethodList = preloadSDKWithParams->getJsonFromDict("paymentMethodsList", json)
         // When the merchant has disabled saved payment methods, strip
         // customer_payment_methods from the outgoing payload before it ever
-        // reaches the iframe's JS runtime — same data-minimization behavior
-        // as the old, separate fetchCustomerPaymentMethodList call simply
-        // never being made. A single "clientList" message is always sent
-        // (never a second, duplicate one) so the receiving handler only
-        // ever runs once per update.
+        // reaches the iframe's JS runtime, so saved-card data is never sent
+        // at all in that case. A single "clientList" message is always sent
+        // (never a second, duplicate one) so the receiving handler only ever
+        // runs once per update.
         let outgoingPaymentMethodList = if disableSavedPaymentMethods {
           let strippedDict = paymentMethodList->getDictFromJson->Dict.copy
           strippedDict->Dict.set("customer_payment_methods", []->JSON.Encode.array)

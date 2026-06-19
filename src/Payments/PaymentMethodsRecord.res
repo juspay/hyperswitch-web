@@ -1078,7 +1078,7 @@ let getIntentData = dict => {
   let intentDataDict = dict->getDictFromDict("intent_data")
   {
     installment_options: intentDataDict->getInstallmentOptions,
-    currency: dict->getString("currency", ""),
+    currency: intentDataDict->getString("currency", ""),
     intentDataObject: intentDataDict->JSON.Encode.object,
   }
 }
@@ -1185,10 +1185,10 @@ let itemToObjMapperFromClientList = dict => {
   let intentDataDict = dict->getDictFromDict("intent_data")
   {
     redirect_url: "",
-    // Bug fix (do NOT reuse getIntentData's currency, which reads from the
-    // outer/top-level dict — correct for the old shape's top-level `currency`
-    // key, but clientList has no top-level `currency`, only
-    // `intent_data.currency`).
+    // clientList has no top-level `currency` key, only `intent_data.currency`
+    // — read it from intentDataDict here, and getIntentData below does the
+    // same for its own `currency` sub-field (it has exactly one caller, this
+    // one, so it was fixed in place rather than duplicated).
     currency: intentDataDict->getString("currency", ""),
     payment_methods: getPaymentMethodTypesFromFlatList(dict->getArray("payment_methods_enabled")),
     mandate_payment: intentDataDict->getMandate("mandate_payment"),
@@ -1196,13 +1196,6 @@ let itemToObjMapperFromClientList = dict => {
     merchant_name: intentDataDict->getString("merchant_name", ""),
     is_tax_calculation_enabled: intentDataDict->getBool("is_tax_calculation_enabled", false),
     isGuestCustomer: intentDataDict->getOptionBool("is_guest_customer"),
-    // intent_data is reused as-is for installment_options/intentDataObject only
-    // (both already read dict->getDictFromDict("intent_data") internally and
-    // are correct for clientList). NOTE: getIntentData's own `currency`
-    // sub-field will be "" here (same root cause as above) — no live reader
-    // currently reads `paymentMethodListValue.intent_data.currency` directly
-    // (all live readers use the top-level `currency` field set above), but
-    // flagging this loudly so a future caller doesn't get bitten.
     intent_data: dict->getIntentData,
     sdk_next_action: dict->getDictFromDict("sdk_next_action")->getOptionString("next_action"),
     should_block_confirm: dict

@@ -1415,8 +1415,7 @@ let getLayout = (dict, str, logger) => {
 // old `getCardDetails` (unwrapping a sibling `card` key) and the new
 // clientList path (unwrapping `payment_method_data.card`) — so there is
 // exactly one place that knows the customerCard field mapping.
-let cardJsonToCustomerCard: JSON.t => customerCard = json => {
-  let json = json->getDictFromJson
+let cardJsonToCustomerCard: Dict.t<JSON.t> => customerCard = json => {
   {
     scheme: Some(getString(json, "scheme", "")),
     last4Digits: getString(json, "last4_digits", ""),
@@ -1434,7 +1433,7 @@ let getCardDetails = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
-  ->Option.map(json => json->JSON.Encode.object->cardJsonToCustomerCard)
+  ->Option.map(cardJsonToCustomerCard)
   ->Option.getOr(defaultCardDetails)
 }
 
@@ -1484,7 +1483,6 @@ let getCustomerCardDetailsFromPaymentMethodData = dict => {
   dict
   ->getDictFromDict("payment_method_data")
   ->getDictFromDict("card")
-  ->JSON.Encode.object
   ->cardJsonToCustomerCard
 }
 
