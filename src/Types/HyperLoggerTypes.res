@@ -105,6 +105,7 @@ type eventName =
   | PAYMENT_METHOD_ELIGIBILITY_CALL
   | PAYMENT_METHOD_ELIGIBILITY_CALL_INIT
   | DDC_FLOW
+  | VGS_VAULT_FLOW
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

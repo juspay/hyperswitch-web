@@ -4,7 +4,6 @@ let paymentManagementListValue = Recoil.atom(
   "paymentManagementListValue",
   UnifiedHelpersV2.defaultPaymentsList,
 )
-let sdkConfigsValue = Recoil.atom("sdkConfigsValue", SdkConfigTypes.defaultSdkConfigValue)
 
 let paymentListLookupNew = (
   list: PaymentMethodsRecord.paymentMethodList,
@@ -437,6 +436,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
 
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let isVgsScriptReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isVgsScriptReady)
 
   let (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist) = usePaypalFlowStatus(
     ~sessions,
@@ -530,6 +530,8 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
         | "klarna" => !(isKlarnaSDKFlow && isKlarnaInvokeSDKExperience)
         | "apple_pay" => shouldDisplayApplePayInTabs
         | "paypal" => shouldDisplayPayPalInTabs
+        // Drop card when the VGS vault script failed to load (card cannot tokenise).
+        | "card" => isVgsScriptReady
         | _ => true
         }
       })
@@ -570,6 +572,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     isPaypalTokenExist,
     isApplePayReady,
     isGooglePayReady,
+    isVgsScriptReady,
     optionAtomValue.customerPaymentMethods,
     optionAtomValue.displaySavedPaymentMethods,
     displayGroupedSavedMethods,

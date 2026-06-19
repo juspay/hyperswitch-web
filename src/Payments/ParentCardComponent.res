@@ -40,6 +40,7 @@ let make = () => {
   let iframeRef = React.useRef(Nullable.null)
   let (iframeMounted, setIframeMounted) = React.useState(_ => false)
   let (cardBrand, setCardBrand) = React.useState(_ => "")
+  let setIsVgsScriptReady = Recoil.useSetRecoilState(RecoilAtoms.isVgsScriptReady)
 
   // mountPostMessage is captured once (in useEffect0) and fires later when the
   // inner iframe signals readiness, so it must read the LATEST config values
@@ -136,12 +137,44 @@ let make = () => {
     None
   }, (iframeMounted, sessionToken))
 
+  // ── Step 3: Re-forward config (appearance) to the inner iframe (reactive) ────
+  // mountPostMessage forwards paymentOptions exactly once — when the inner iframe
+  // first signals readiness. If the merchant's custom appearance only resolves
+  // into sdkConfig AFTER that first send (a mount-time race), the inner iframe
+  // keeps the default appearance until a remount (e.g. switching payment-method
+  // tabs and back). Re-posting the latest config whenever sdkConfig changes applies
+  // the appearance immediately on first render. paymentElementCreate=false takes
+  // LoaderController's lightweight path: it re-runs setConfigs (theme/appearance)
+  // without re-initialising sessionId / options / render logs.
+  React.useEffect(() => {
+    if iframeMounted {
+      iframeRef.current->Window.iframePostMessage(
+        [
+          ("paymentElementCreate", false->JSON.Encode.bool),
+          ("paymentOptions", sdkConfig.config->Identity.anyTypeToJson),
+        ]->Dict.fromArray,
+      )
+    }
+    None
+  }, (iframeMounted, sdkConfig))
+
   React.useEffect(() => {
     let handleMessage = (ev: Window.event) => {
       let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
 
       if dict->Dict.get("cardBrandUpdate")->Option.isSome {
         setCardBrand(_ => dict->getString("cardBrandUpdate", ""))
+      }
+
+      // The VGS Collect.js script failed to load in the inner iframe — card
+      // payment is impossible, so mark the vault script as unavailable. The
+      // payment methods list filters out "card" when this is false.
+      if dict->Dict.get("vgsScriptLoadFailed")->Option.isSome {
+        loggerState.setLogError(
+          ~value=`Error during loading VGS script`->Identity.anyTypeToJson->JSON.stringify,
+          ~eventName=VGS_VAULT_FLOW,
+        )
+        setIsVgsScriptReady(_ => false)
       }
     }
     Window.addEventListener("message", handleMessage)
@@ -176,30 +209,58 @@ let make = () => {
         let handle = (ev: Types.event) => {
           let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
 
+          // Vault-agnostic confirm: takes the per-vault card body and merges the
+          // outer business-logic (customer-acceptance, installments, required
+          // fields) before calling intent. Shared by every vault token path.
+          let confirmWithVaultBody = baseBody => {
+            let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
+            let cardBody = isCustomerAcceptanceRequired
+              ? baseBody->Array.concat(onSessionBody)
+              : baseBody
+            let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
+            let finalBody =
+              cardBody->Array.concat(installmentBody)->mergeAndFlattenToTuples(requiredFieldsBody)
+            intent(
+              ~bodyArr=finalBody,
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+            )
+          }
+
           if dict->Dict.get("cardTokenEvent")->Option.isSome {
-            // Inner iframe sends the full vault API response.
+            // Hyperswitch vault: inner iframe sends the full vault API response.
             // Decode it into a typed record; ParentCardComponent (or the merchant
             // in a future direct-SDK flow) can then act on the structured fields.
             let vaultResponse = dict->getJsonObjectFromDict("vaultResponse")
             let {token, last4Digits, binNumber} = VaultHelpers.decodeVaultTokenData(vaultResponse)
             if token !== "" {
-              let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
-              let baseBody = PaymentBody.vaultCardBody(~token, ~last4Digits, ~binNumber)
-              let cardBody = isCustomerAcceptanceRequired
-                ? baseBody->Array.concat(onSessionBody)
-                : baseBody
-              let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
-              let finalBody =
-                cardBody->Array.concat(installmentBody)->mergeAndFlattenToTuples(requiredFieldsBody)
-              intent(
-                ~bodyArr=finalBody,
-                ~confirmParam=confirm.confirmParams,
-                ~handleUserError=false,
-                ~manualRetry=isManualRetryEnabled,
-              )
+              confirmWithVaultBody(PaymentBody.vaultCardBody(~token, ~last4Digits, ~binNumber))
             } else {
               Console.error("ParentCardComponent: payment token not found in vaultResponse")
             }
+          } else if dict->Dict.get("vgsTokenEvent")->Option.isSome {
+            // VGS vault: inner iframe sends the aliased card fields (a distinct
+            // alias per field) after VGS tokenisation.
+            let vgsCardData = dict->getJsonObjectFromDict("vgsCardData")->getDictFromJson
+            let cardNumber = vgsCardData->getString("cardNumber", "")
+            let month = vgsCardData->getString("month", "")
+            let year = vgsCardData->getString("year", "")
+            let cvcNumber = vgsCardData->getString("cvcNumber", "")
+            // VGS returns a format-preserving card_number alias, so bin / last4 are
+            // derived from it the same way a real PAN would be (mirrors vaultCardBody).
+            let last4Digits = cardNumber->CardUtils.getCardLast4
+            let binNumber = cardNumber->CardUtils.getCardBin
+            confirmWithVaultBody(
+              PaymentBody.vgsVaultCardBody(
+                ~cardNumber,
+                ~month,
+                ~year,
+                ~cvcNumber,
+                ~last4Digits,
+                ~binNumber,
+              ),
+            )
           } else if dict->Dict.get("cardTokenFail")->Option.isSome {
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
           }
