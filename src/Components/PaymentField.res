@@ -24,6 +24,7 @@ let make = (
   ~inputRef,
   ~displayValue=?,
   ~setDisplayValue=?,
+  ~isRequired=true,
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -104,6 +105,10 @@ let make = (
     onChange(ev)
   }
 
+  let {inputId, errorId, hasError} = AccessibilityHooks.useFieldAccessibility(
+    ~errorString=value.errorString,
+  )
+
   <div className="flex flex-col w-full">
     <RenderIf
       condition={name === "phone" &&
@@ -177,6 +182,10 @@ let make = (
             onBlur=handleBlur
             onFocus=handleFocus
             ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
+            id={inputId}
+            ariaInvalid={hasError ? #"true" : #"false"}
+            ariaDescribedby=?{hasError ? Some(errorId) : None}
+            ariaRequired=?{isRequired ? Some(true) : None}
           />
           <RenderIf condition={config.appearance.labels == Floating}>
             <div
@@ -201,14 +210,15 @@ let make = (
       </div>
       <RenderIf condition={value.errorString->String.length > 0}>
         <div
+          id={errorId}
+          role="alert"
           className="Error pt-1"
           style={
             color: themeObj.colorDangerText,
             fontSize: themeObj.fontSizeSm,
             alignSelf: "start",
             textAlign: "left",
-          }
-          ariaHidden=true>
+          }>
           {React.string(value.errorString)}
         </div>
       </RenderIf>

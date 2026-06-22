@@ -21,5 +21,6 @@ let make = (~fieldConfig: fieldConfig, ~options: array<DropdownField.optionType>
     setValue={fn => field.input.onChange(fn(value))}
     disabled=false
     options
+    isRequired={fieldConfig.isRequired}
   />
 }

@@ -7,6 +7,7 @@ let make = (
   ~options,
   ~disabled=false,
   ~className="",
+  ~isRequired=true,
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -71,6 +72,11 @@ let make = (
     themeObj.colorBackground
   }, [themeObj])
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
+
+  let {inputId, errorId, hasError} = AccessibilityHooks.useFieldAccessibility(
+    ~errorString=value.errorString,
+  )
+
   <RenderIf condition={options->Array.length > 0}>
     <div className="flex flex-col w-full" style={color: themeObj.colorText}>
       <RenderIf
@@ -104,7 +110,11 @@ let make = (
           onFocus={handleFocus}
           onChange=handleChange
           className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
-          ariaLabel={`${fieldName} option tab`}>
+          ariaLabel={`${fieldName} option tab`}
+          id={inputId}
+          ariaInvalid={hasError ? #"true" : #"false"}
+          ariaDescribedby=?{hasError ? Some(errorId) : None}
+          ariaRequired=?{isRequired ? Some(true) : None}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>
@@ -140,6 +150,8 @@ let make = (
         </div>
         <RenderIf condition={value.errorString->String.length > 0}>
           <div
+            id={errorId}
+            role="alert"
             className="Error pt-1"
             style={
               color: themeObj.colorDangerText,

@@ -18,6 +18,7 @@ let make = (
   ~placeholder="",
   ~className="",
   ~inputRef,
+  ~isRequired=true,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(elementOptions)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -58,13 +59,18 @@ let make = (
     ""
   }
 
+  let {inputId, errorId, hasError} = AccessibilityHooks.useFieldAccessibility(
+    ~id,
+    ~errorString=errorString->Option.getOr(""),
+  )
+
   <div className={` flex flex-col w-full`} style={color: themeObj.colorText}>
     <RenderIf condition={fieldName->String.length > 0}>
       <div> {React.string(fieldName)} </div>
     </RenderIf>
     <div className="flex flex-row " style={direction: direction}>
       <input
-        id
+        id={inputId}
         style={
           background: themeObj.colorBackground,
           padding: themeObj.spacingUnit,
@@ -83,6 +89,9 @@ let make = (
         onBlur=handleBlur
         onFocus=handleFocus
         ariaLabel={`Type to fill ${fieldName} input`}
+        ariaInvalid={hasError ? #"true" : #"false"}
+        ariaDescribedby=?{hasError ? Some(errorId) : None}
+        ariaRequired=?{isRequired ? Some(true) : None}
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>
     </div>
@@ -90,6 +99,8 @@ let make = (
     | Some(val) =>
       <RenderIf condition={val->String.length > 0}>
         <div
+          id={errorId}
+          role="alert"
           className="py-1 text-xs text-red-600 transition-colors transition-border ease-out duration-200">
           {React.string(val)}
         </div>

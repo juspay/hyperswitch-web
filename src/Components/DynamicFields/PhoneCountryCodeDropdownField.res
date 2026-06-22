@@ -82,5 +82,6 @@ let make = (~fieldConfig: fieldConfig) => {
     displayValue
     setDisplayValue
     isDisplayValueVisible=true
+    isRequired={fieldConfig.isRequired}
   />
 }

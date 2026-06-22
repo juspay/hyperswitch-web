@@ -33,6 +33,7 @@ let make = (
   ~disabled=false,
   ~className="",
   ~width="w-full",
+  ~isRequired=true,
 ) => {
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -142,7 +143,8 @@ let make = (
           onChange=handleChange
           onFocus=handleFocus
           className={`${inputClassStyles} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
-          ariaLabel={`${fieldName} option tab`}>
+          ariaLabel={`${fieldName} option tab`}
+          ariaRequired=?{isRequired ? Some(true) : None}>
           {options
           ->Array.mapWithIndex((item, index) => {
             <option key={Int.toString(index)} value=item.value>

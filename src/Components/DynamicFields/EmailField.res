@@ -41,6 +41,7 @@ module EmailInput = {
       errorString
       placeholder
       inputRef={fieldRef}
+      isRequired={primaryFieldConfig.isRequired}
       autocomplete
     />
   }

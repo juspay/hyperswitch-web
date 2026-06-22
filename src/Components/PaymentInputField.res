@@ -25,6 +25,7 @@ let make = (
   ~paymentType=?,
   ~isDisabled=false,
   ~autocomplete="on",
+  ~isRequired=true,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
@@ -90,6 +91,10 @@ let make = (
   let inputLogoClass = getClassName("InputLogo")
   let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
 
+  let {inputId, errorId, hasError} = AccessibilityHooks.useFieldAccessibility(
+    ~errorString=errorString->Option.getOr(""),
+  )
+
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
     <RenderIf
       condition={fieldName->String.length > 0 &&
@@ -131,6 +136,10 @@ let make = (
           onBlur=handleBlur
           onFocus=handleFocus
           ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
+          id={inputId}
+          ariaInvalid={hasError ? #"true" : #"false"}
+          ariaDescribedby=?{hasError ? Some(errorId) : None}
+          ariaRequired=?{isRequired ? Some(true) : None}
         />
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
@@ -156,6 +165,8 @@ let make = (
       | Some(val) =>
         <RenderIf condition={val->String.length > 0}>
           <div
+            id={errorId}
+            role="alert"
             className="Error pt-1"
             style={
               color: themeObj.colorDangerText,

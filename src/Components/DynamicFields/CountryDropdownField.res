@@ -40,5 +40,6 @@ let make = (~fieldConfig: fieldConfig, ~options: array<DropdownField.optionType>
     }}
     disabled=false
     options
+    isRequired={fieldConfig.isRequired}
   />
 }

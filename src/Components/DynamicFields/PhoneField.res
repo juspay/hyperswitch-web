@@ -39,6 +39,7 @@ let make = (~fieldConfig: fieldConfig) => {
     errorString
     placeholder
     inputRef={fieldRef}
+    isRequired={fieldConfig.isRequired}
     autocomplete
     ?maxLength
   />

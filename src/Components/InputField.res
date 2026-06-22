@@ -25,6 +25,7 @@ let make = (
   ~labelClassName="",
   ~paymentType: option<CardThemeType.mode>=?,
   ~autocomplete="on",
+  ~isRequired=true,
 ) => {
   open ElementType
   let (eleClassName, setEleClassName) = React.useState(_ => "input-base")
@@ -122,13 +123,18 @@ let make = (
     None
   }, (isValid, setIsValid, value, onChange, onBlur))
 
+  let {inputId, errorId, hasError} = AccessibilityHooks.useFieldAccessibility(
+    ~id,
+    ~errorString=errorString->Option.getOr(""),
+  )
+
   <div className={` flex flex-col w-full`}>
     <RenderIf condition={fieldName->String.length > 0}>
       <div className={`${labelClassName}`}> {React.string(fieldName)} </div>
     </RenderIf>
     <div className="flex flex-row " style={direction: direction}>
       <input
-        id
+        id={inputId}
         style={
           background: "transparent",
           width: "-webkit-fill-available",
@@ -148,6 +154,9 @@ let make = (
         onFocus=handleFocus
         autoComplete={autocomplete}
         ariaLabel={`Type to fill ${fieldName} input`}
+        ariaInvalid={hasError ? #"true" : #"false"}
+        ariaDescribedby=?{hasError ? Some(errorId) : None}
+        ariaRequired=?{isRequired ? Some(true) : None}
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>
     </div>
@@ -156,7 +165,9 @@ let make = (
       switch errorString {
       | Some(val) =>
         <RenderIf condition={val->String.length > 0}>
-          <div className={`py-1 ${errorClases}`}> {React.string(val)} </div>
+          <div id={errorId} role="alert" className={`py-1 ${errorClases}`}>
+            {React.string(val)}
+          </div>
         </RenderIf>
       | None => React.null
       }

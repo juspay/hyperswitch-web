@@ -77,6 +77,7 @@ module FullNameFieldInput = {
       errorString
       placeholder
       inputRef
+      isRequired={firstNameFieldConfig.isRequired || lastNameFieldConfig.isRequired}
       ?autocomplete
     />
   }

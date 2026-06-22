@@ -47,6 +47,7 @@ let make = (~fieldConfig: fieldConfig) => {
       }}
       disabled=false
       options={stateOptions}
+      isRequired={fieldConfig.isRequired}
     />
   </RenderIf>
 }

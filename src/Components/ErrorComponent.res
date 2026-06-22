@@ -23,13 +23,15 @@ let make = (~errorStr=None, ~cardError="", ~expiryError="", ~cvcError="") => {
   switch innerLayout {
   | Spaced =>
     <RenderIf condition=isSpacedErrorShown>
-      <div className="Error pt-1" style=errorTextStyle>
+      <div role="alert" className="Error pt-1" style=errorTextStyle>
         {React.string(errorStr->Belt.Option.getWithDefault(""))}
       </div>
     </RenderIf>
   | Compressed =>
     <RenderIf condition=isCompressedErrorShown>
-      <div className="Error pt-1" style=errorTextStyle> {React.string("Invalid input")} </div>
+      <div role="alert" className="Error pt-1" style=errorTextStyle>
+        {React.string("Invalid input")}
+      </div>
     </RenderIf>
   }
 }
