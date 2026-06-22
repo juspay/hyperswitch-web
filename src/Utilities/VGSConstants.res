@@ -28,3 +28,26 @@ let cardCvcOptions = {
   validations: ["required", "validCardSecurityCode"],
   showCardIcon: true,
 }
+
+// CSS for the secure CVC field in the saved-card (return user) flow. Keeps the
+// VGS input compact (≈ the native 1.8rem cvc input) so it matches the non-vault
+// saved-card cvc field rather than the taller new-card field.
+let savedCardCvcCss =
+  [
+    ("padding", "0px"),
+    ("margin", "0px"),
+    ("line-height", "1.8rem"),
+    ("height", "1.8rem"),
+    ("box-sizing", "border-box"),
+  ]
+  ->Array.map(((key, value)) => (key, value->JSON.Encode.string))
+  ->Dict.fromArray
+  ->JSON.Encode.object
+
+// Saved-card cvc field options: like cardCvcOptions but without the card icon and
+// with the compact sizing above, to match the non-vault saved-card cvc input.
+let savedCardCvcOptions = {
+  ...cardCvcOptions,
+  showCardIcon: false,
+  css: savedCardCvcCss,
+}

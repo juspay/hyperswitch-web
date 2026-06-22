@@ -1552,7 +1552,6 @@ let make = (
         ->ignore
         forwardSessionTokensToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
         forwardSdkConfigsDataToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
-
         mountedIframeRef->Window.iframePostMessage(message)
       }
 

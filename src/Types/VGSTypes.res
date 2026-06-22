@@ -3,7 +3,9 @@
 // VGS renders each card field inside its own secure iframe; `create` returns a
 // form handle exposing `field` (mount a secure field) and `submit` (tokenise).
 
-type vgsFieldCss
+// CSS-in-JS style object applied to the input inside a VGS secure field iframe.
+// VGS expects standard (kebab-case) CSS property names, so this is a JSON object.
+type vgsFieldCss = JSON.t
 
 type fieldOptions = {
   \"type": string,

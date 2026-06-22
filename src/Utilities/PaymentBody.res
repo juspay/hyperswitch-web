@@ -150,6 +150,39 @@ let savedCardBody = (
   savedCardBody
 }
 
+// Saved-card confirm body for the third-party-vault (e.g. VGS) return-user flow.
+// Identical to `savedCardBody` except the plain `card_cvc` is replaced by the
+// VGS-tokenised CVC alias nested under `payment_method_data.vault_card_token_data`.
+// The CVC iframe only renders for cards that require CVV, so the token is always
+// present here.
+let savedCardVaultCvcBody = (
+  ~paymentToken,
+  ~customerId,
+  ~cvcToken,
+  ~isCustomerAcceptanceRequired,
+) => {
+  let body = [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_token", paymentToken->JSON.Encode.string),
+    ("customer_id", customerId->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [
+        (
+          "vault_card_token_data",
+          [("card_cvc", cvcToken->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
+        ),
+      ]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]
+
+  if isCustomerAcceptanceRequired {
+    body->Array.push(("customer_acceptance", customerAcceptanceBody))->ignore
+  }
+
+  body
+}
+
 let mastercardClickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
   let clickToPayServiceDetails =
     [

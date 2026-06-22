@@ -1215,7 +1215,13 @@ let isOtherElements = componentType => {
 
 // Elements that can have multiple instances (for event listener naming)
 let canHaveMultipleInstances = componentType => {
-  componentType == "cardNumber" || componentType == "cardExpiry" || componentType == "cardCvc"
+  // paymentMethodsSDK is included so the new-card and saved-card-CVC inner iframes
+  // (distinct container ids) get distinct onMount listener names and never clobber
+  // each other's handshake/height handling when both exist (grouped layouts).
+  componentType == "cardNumber" ||
+  componentType == "cardExpiry" ||
+  componentType == "cardCvc" ||
+  componentType == "paymentMethodsSDK"
 }
 
 let nbsp = `\u00A0`

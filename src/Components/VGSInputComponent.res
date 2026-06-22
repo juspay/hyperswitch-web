@@ -4,8 +4,11 @@ open RecoilAtoms
 // `id` div; this wrapper provides the label + border/background/focus styling via
 // the same theme classes (`Input` / `Input-Compressed` / `VGSField--focused`) that
 // a native Hyperswitch <PaymentInputField /> uses, so the two look identical.
+// `compact` + `height` are used by the saved-card (return user) cvc field so the
+// secure field box matches the small native cvc input (≈ 1.8rem tall, no extra
+// vertical padding) instead of the taller new-card field.
 @react.component
-let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?) => {
+let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?, ~compact=false, ~height="") => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
 
@@ -43,8 +46,13 @@ let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?) => {
               id
               style={
                 background: themeObj.colorBackground,
-                padding: themeObj.spacingUnit,
+                // Compact (saved-card cvc): horizontal padding only + fixed height
+                // so the box matches the native cvc input; otherwise the standard
+                // all-around padding used by the new-card fields.
+                padding: compact ? `0px ${themeObj.spacingUnit}` : themeObj.spacingUnit,
                 width: "100%",
+                height,
+                boxSizing: "border-box",
               }
               className={`${inputClassStyles} Input--empty focus:outline-none transition-shadow ease-out duration-200 ${focusClass}`}
             />
