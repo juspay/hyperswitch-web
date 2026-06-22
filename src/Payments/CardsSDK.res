@@ -23,7 +23,9 @@ let make = (~cvcOnly=false) => {
   | HyperswitchVault(_) =>
     // TODO: render a Hyperswitch-vault CVC-only component for the saved-card flow.
     // Until then, don't fall back to a full card form in the CVC-only slot.
-    cvcOnly ? React.null : <CardPayment cardProps expiryProps cvcProps isInsideCardSDK=true />
+    <RenderIf condition={!cvcOnly}>
+      <CardPayment cardProps expiryProps cvcProps isInsideCardSDK=true />
+    </RenderIf>
   | VGS(_) => <VGSVault cvcOnly />
   | NoVault =>
     // Vault details not yet loaded. For the new-card flow render the form so the

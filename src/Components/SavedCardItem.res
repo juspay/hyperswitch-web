@@ -150,9 +150,8 @@ let make = (
   }, (isActive, paymentItem, country, state, pinCode))
 
   React.useEffect(() => {
-    // VGS validates the CVC inside the iframe, so the plain isCVCValid is always
-    // None here — report ready and let the iframe gate the CVC on submit.
-    CardUtils.emitIsFormReadyForSubmission(isVgsCvcFlow ? true : isCVCValid->Option.getOr(false))
+    // TODO - Handle Events for VGS/Vault case
+    CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
     None
   }, [isCVCValid])
 
