@@ -50,6 +50,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     isPaymentButtonHandlerProvidedAtom,
   )
   let setIsTestMode = Recoil.useSetRecoilState(RecoilAtoms.isTestMode)
+  let setIsSavedCardCvcFlow = Recoil.useSetRecoilState(RecoilAtoms.isSavedCardCvcFlow)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -442,6 +443,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         if dict->Dict.get("isTestMode")->Option.isSome {
           let isTestMode = dict->Utils.getBool("isTestMode", false)
           setIsTestMode(_ => isTestMode)
+        }
+
+        // Saved-card (return user) CVC iframe is mounted by ParentCardComponent
+        // with isSavedCardCvcFlow=true in its paymentElementCreate mount message;
+        // PaymentMethodsSDK reads this atom to render only the vault CVC field.
+        if dict->Dict.get("isSavedCardCvcFlow")->Option.isSome {
+          setIsSavedCardCvcFlow(_ => dict->Utils.getBool("isSavedCardCvcFlow", false))
         }
         if dict->getDictIsSome("sessions") {
           setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))

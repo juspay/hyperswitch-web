@@ -4,8 +4,17 @@ open PaymentType
 
 let innerIframeContainerDivId = "parent-card-inner-iframe-container"
 
+// `isSavedCardFlow` reuses this component as the inner-iframe host for the
+// saved-card (return user) CVC flow. In that mode it only mounts + renders the
+// CVC iframe (no DynamicFields / checkbox / installments / terms — those belong
+// to SavedCardItem) and does NOT own submit: SavedMethods forwards the doSubmit
+// message to the iframe (via `setExternalIframeRef`) and confirms the payment.
 @react.component
-let make = () => {
+let make = (
+  ~isSavedCardFlow=false,
+  ~containerId=innerIframeContainerDivId,
+  ~setExternalIframeRef: option<Nullable.t<Dom.element> => unit>=?,
+) => {
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
@@ -86,13 +95,15 @@ let make = () => {
       // sdkConfig.config is the resolved config blob; LoaderController.setConfigs
       // re-parses it via CardTheme.itemToObjMapper (it already carries
       // clientSecret / sdkAuthorization / pmSessionId / loader).
-      let message =
-        [
-          ("paymentElementCreate", true->JSON.Encode.bool),
-          ("paymentOptions", sdkConfig.config->Identity.anyTypeToJson),
-          ("iframeId", selectorString->JSON.Encode.string),
-          ("publishableKey", publishableKey->JSON.Encode.string),
-        ]->Dict.fromArray
+      let message = [
+        ("paymentElementCreate", true->JSON.Encode.bool),
+        ("paymentOptions", sdkConfig.config->Identity.anyTypeToJson),
+        ("iframeId", selectorString->JSON.Encode.string),
+        ("publishableKey", publishableKey->JSON.Encode.string),
+        // Tells the inner iframe (PaymentMethodsSDK) to render only the vault
+        // CVC field for the saved-card flow. Always false for the new-card flow.
+        ("isSavedCardCvcFlow", isSavedCardFlow->JSON.Encode.bool),
+      ]->Dict.fromArray
 
       mountedIframeRef->Window.iframePostMessage(message)
       setIframeMounted(_ => true)
@@ -103,6 +114,12 @@ let make = () => {
   React.useEffect0(() => {
     let setIframeRefFn = ref => {
       iframeRef.current = ref
+      // Saved-card flow: hand the iframe ref up to SavedMethods, which forwards
+      // the doSubmit message to this CVC iframe and confirms the payment.
+      switch setExternalIframeRef {
+      | Some(fn) => fn(ref)
+      | None => ()
+      }
     }
     let element = LoaderPaymentElement.make(
       "paymentMethodsSDK",
@@ -114,7 +131,7 @@ let make = () => {
       ~redirectionFlags,
       ~logger=Some(loggerState),
     )
-    element.mount(`#${innerIframeContainerDivId}`)
+    element.mount(`#${containerId}`)
     Some(
       () => {
         element.unmount()
@@ -182,96 +199,100 @@ let make = () => {
   }, [iframeMounted])
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
-      let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
-      let outerValid = areRequiredFieldsValid && isNicknameValid && isInstallmentValid
-      let innerMessage = json->getDictFromJson
-      innerMessage->Dict.set("isOuterValid", outerValid->JSON.Encode.bool)
-      iframeRef.current->Window.iframePostMessage(innerMessage)
-      if !outerValid {
-        // Report the error back to Hyper.res immediately — do not forward to inner iframe.
-        let setUserError = message =>
-          postFailedSubmitResponse(~errortype="validation_error", ~message)
-        if !areRequiredFieldsValid {
-          setUserError(localeString.enterValidDetailsText)
-        } else if !isNicknameValid {
-          setUserError(localeString.enterValidDetailsText)
-        } else if !isInstallmentValid {
-          setUserError(localeString.installmentSelectPlanError)
-        }
-      } else {
-        // Forward the full doSubmit message (including confirmParams) to the inner iframe.
-        // iframeRef.current->Window.iframePostMessage(json->getDictFromJson)
-
-        let handle = (ev: Types.event) => {
-          let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
-
-          // Vault-agnostic confirm: takes the per-vault card body and merges the
-          // outer business-logic (customer-acceptance, installments, required
-          // fields) before calling intent. Shared by every vault token path.
-          let confirmWithVaultBody = baseBody => {
-            let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
-            let cardBody = isCustomerAcceptanceRequired
-              ? baseBody->Array.concat(onSessionBody)
-              : baseBody
-            let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
-            let finalBody =
-              cardBody->Array.concat(installmentBody)->mergeAndFlattenToTuples(requiredFieldsBody)
-            intent(
-              ~bodyArr=finalBody,
-              ~confirmParam=confirm.confirmParams,
-              ~handleUserError=false,
-              ~manualRetry=isManualRetryEnabled,
-            )
+    // Saved-card flow: SavedMethods owns submit/confirm; this CVC-iframe host
+    // ignores the doSubmit message entirely.
+    if !isSavedCardFlow {
+      let json = ev.data->safeParse
+      let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+      if confirm.doSubmit {
+        let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
+        let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
+        let outerValid = areRequiredFieldsValid && isNicknameValid && isInstallmentValid
+        let innerMessage = json->getDictFromJson
+        innerMessage->Dict.set("isOuterValid", outerValid->JSON.Encode.bool)
+        iframeRef.current->Window.iframePostMessage(innerMessage)
+        if !outerValid {
+          // Report the error back to Hyper.res immediately — do not forward to inner iframe.
+          let setUserError = message =>
+            postFailedSubmitResponse(~errortype="validation_error", ~message)
+          if !areRequiredFieldsValid {
+            setUserError(localeString.enterValidDetailsText)
+          } else if !isNicknameValid {
+            setUserError(localeString.enterValidDetailsText)
+          } else if !isInstallmentValid {
+            setUserError(localeString.installmentSelectPlanError)
           }
+        } else {
+          // Forward the full doSubmit message (including confirmParams) to the inner iframe.
+          // iframeRef.current->Window.iframePostMessage(json->getDictFromJson)
 
-          if dict->Dict.get("cardTokenEvent")->Option.isSome {
-            // Hyperswitch vault: inner iframe sends the full vault API response.
-            // Decode it into a typed record; ParentCardComponent (or the merchant
-            // in a future direct-SDK flow) can then act on the structured fields.
-            let vaultResponse = dict->getJsonObjectFromDict("vaultResponse")
-            let {token, last4Digits, binNumber} = VaultHelpers.decodeVaultTokenData(vaultResponse)
-            if token !== "" {
-              confirmWithVaultBody(PaymentBody.vaultCardBody(~token, ~last4Digits, ~binNumber))
-            } else {
-              Console.error("ParentCardComponent: payment token not found in vaultResponse")
+          let handle = (ev: Types.event) => {
+            let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
+
+            // Vault-agnostic confirm: takes the per-vault card body and merges the
+            // outer business-logic (customer-acceptance, installments, required
+            // fields) before calling intent. Shared by every vault token path.
+            let confirmWithVaultBody = baseBody => {
+              let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
+              let cardBody = isCustomerAcceptanceRequired
+                ? baseBody->Array.concat(onSessionBody)
+                : baseBody
+              let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
+              let finalBody =
+                cardBody->Array.concat(installmentBody)->mergeAndFlattenToTuples(requiredFieldsBody)
+              intent(
+                ~bodyArr=finalBody,
+                ~confirmParam=confirm.confirmParams,
+                ~handleUserError=false,
+                ~manualRetry=isManualRetryEnabled,
+              )
             }
-          } else if dict->Dict.get("vgsTokenEvent")->Option.isSome {
-            // VGS vault: inner iframe sends the aliased card fields (a distinct
-            // alias per field) after VGS tokenisation.
-            let vgsCardData = dict->getJsonObjectFromDict("vgsCardData")->getDictFromJson
-            let cardNumber = vgsCardData->getString("cardNumber", "")
-            let month = vgsCardData->getString("month", "")
-            let year = vgsCardData->getString("year", "")
-            let cvcNumber = vgsCardData->getString("cvcNumber", "")
-            // VGS returns a format-preserving card_number alias, so bin / last4 are
-            // derived from it the same way a real PAN would be (mirrors vaultCardBody).
-            let last4Digits = cardNumber->CardUtils.getCardLast4
-            let binNumber = cardNumber->CardUtils.getCardBin
-            confirmWithVaultBody(
-              PaymentBody.vgsVaultCardBody(
-                ~cardNumber,
-                ~month,
-                ~year,
-                ~cvcNumber,
-                ~last4Digits,
-                ~binNumber,
-              ),
-            )
-          } else if dict->Dict.get("cardTokenFail")->Option.isSome {
-            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-          }
 
-          // Validation / tokenization error from inner iframe — forward to Hyper.res
-          // so it can reject the merchant's confirmPayment() promise.
-          if dict->Dict.get("submitSuccessful")->Option.isSome {
-            messageParentWindow(dict->Dict.toArray)
+            if dict->Dict.get("cardTokenEvent")->Option.isSome {
+              // Hyperswitch vault: inner iframe sends the full vault API response.
+              // Decode it into a typed record; ParentCardComponent (or the merchant
+              // in a future direct-SDK flow) can then act on the structured fields.
+              let vaultResponse = dict->getJsonObjectFromDict("vaultResponse")
+              let {token, last4Digits, binNumber} = VaultHelpers.decodeVaultTokenData(vaultResponse)
+              if token !== "" {
+                confirmWithVaultBody(PaymentBody.vaultCardBody(~token, ~last4Digits, ~binNumber))
+              } else {
+                Console.error("ParentCardComponent: payment token not found in vaultResponse")
+              }
+            } else if dict->Dict.get("vgsTokenEvent")->Option.isSome {
+              // VGS vault: inner iframe sends the aliased card fields (a distinct
+              // alias per field) after VGS tokenisation.
+              let vgsCardData = dict->getJsonObjectFromDict("vgsCardData")->getDictFromJson
+              let cardNumber = vgsCardData->getString("cardNumber", "")
+              let month = vgsCardData->getString("month", "")
+              let year = vgsCardData->getString("year", "")
+              let cvcNumber = vgsCardData->getString("cvcNumber", "")
+              // VGS returns a format-preserving card_number alias, so bin / last4 are
+              // derived from it the same way a real PAN would be (mirrors vaultCardBody).
+              let last4Digits = cardNumber->CardUtils.getCardLast4
+              let binNumber = cardNumber->CardUtils.getCardBin
+              confirmWithVaultBody(
+                PaymentBody.vgsVaultCardBody(
+                  ~cardNumber,
+                  ~month,
+                  ~year,
+                  ~cvcNumber,
+                  ~last4Digits,
+                  ~binNumber,
+                ),
+              )
+            } else if dict->Dict.get("cardTokenFail")->Option.isSome {
+              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            }
+
+            // Validation / tokenization error from inner iframe — forward to Hyper.res
+            // so it can reject the merchant's confirmPayment() promise.
+            if dict->Dict.get("submitSuccessful")->Option.isSome {
+              messageParentWindow(dict->Dict.toArray)
+            }
           }
+          EventListenerManager.addSmartEventListener("message", handle, "onParentCardTokenResponse")
         }
-        EventListenerManager.addSmartEventListener("message", handle, "onParentCardTokenResponse")
       }
     }
   }, (
@@ -285,6 +306,7 @@ let make = () => {
     isManualRetryEnabled,
     localeString,
     intent,
+    isSavedCardFlow,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -297,44 +319,48 @@ let make = () => {
   // Mirror the flex-col + gridGap layout that CardPayment used when everything
   // was in a single component, so the iframe (card fields) and the outer
   // business-logic elements (DynamicFields, checkbox, etc.) stay evenly spaced.
-  <div
-    className={`ParentCardComponent flex flex-col w-full ${accordionMarginClass}`}
-    style={gridGap: themeObj.spacingGridColumn}>
-    // Inner iframe container — LoaderPaymentElement.mount injects the iframe here
-    // and manages its height automatically via { iframeHeight, iframeId } messages.
+  isSavedCardFlow
+    ? // Saved-card (return user) flow: render only the CVC iframe container; the
+      // surrounding business-logic UI is owned by SavedCardItem / SavedMethods.
+      <div id=containerId style={position: "relative"} />
+    : <div
+        className={`ParentCardComponent flex flex-col w-full ${accordionMarginClass}`}
+        style={gridGap: themeObj.spacingGridColumn}>
+        // Inner iframe container — LoaderPaymentElement.mount injects the iframe here
+        // and manages its height automatically via { iframeHeight, iframeId } messages.
 
-    <div
-      id=innerIframeContainerDivId
-      style={
-        position: "relative",
-      }
-    />
-    <DynamicFields
-      paymentMethod="card"
-      paymentMethodType="debit"
-      setRequiredFieldsBody
-      isBancontact=false
-      isSaveDetailsWithClickToPay=false
-    />
-    <RenderIf condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
-      <div className="flex items-center justify-start">
-        <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
+        <div
+          id=containerId
+          style={
+            position: "relative",
+          }
+        />
+        <DynamicFields
+          paymentMethod="card"
+          paymentMethodType="debit"
+          setRequiredFieldsBody
+          isBancontact=false
+          isSaveDetailsWithClickToPay=false
+        />
+        <RenderIf condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
+          <div className="flex items-center justify-start">
+            <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
+          </div>
+        </RenderIf>
+        <RenderIf condition={!hideCardNicknameField && isCustomerAcceptanceRequired}>
+          <NicknamePaymentInput />
+        </RenderIf>
+        <InstallmentOptions
+          setSelectedInstallmentPlan
+          showInstallments
+          setShowInstallments
+          paymentMethod="card"
+          errorString=installmentsError
+          setErrorString=setInstallmentsError
+        />
+        <RenderIf condition={cardBrand !== ""}>
+          <Surcharge paymentMethod="card" paymentMethodType="debit" cardBrand=cardType />
+        </RenderIf>
+        <Terms paymentMethod="card" paymentMethodType="debit" />
       </div>
-    </RenderIf>
-    <RenderIf condition={!hideCardNicknameField && isCustomerAcceptanceRequired}>
-      <NicknamePaymentInput />
-    </RenderIf>
-    <InstallmentOptions
-      setSelectedInstallmentPlan
-      showInstallments
-      setShowInstallments
-      paymentMethod="card"
-      errorString=installmentsError
-      setErrorString=setInstallmentsError
-    />
-    <RenderIf condition={cardBrand !== ""}>
-      <Surcharge paymentMethod="card" paymentMethodType="debit" cardBrand=cardType />
-    </RenderIf>
-    <Terms paymentMethod="card" paymentMethodType="debit" />
-  </div>
 }

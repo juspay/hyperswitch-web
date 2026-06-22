@@ -6,8 +6,11 @@
 //   1. Add the vault component (e.g., VGSCardPayment)
 //   2. Add a branch here — no other files need to change
 
+// `cvcOnly` is set for the saved-card (return user) flow: the card is already
+// saved, so the inner iframe only needs to collect + tokenise the CVC. It is
+// always false for the new-card flow (full card fields).
 @react.component
-let make = () => {
+let make = (~cvcOnly=false) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let vaultCredentials = Recoil.useRecoilValueFromAtom(RecoilAtoms.vaultCredentials)
 
@@ -17,13 +20,15 @@ let make = () => {
   )
 
   switch vaultCredentials {
-  | HyperswitchVault(_) => <CardPayment cardProps expiryProps cvcProps isInsideCardSDK=true />
-  | VGS(_) =>
-    // TODO: render VGSCardPayment when VGS iframe integration is implemented
-    // React.null
-    <VGSVault />
+  | HyperswitchVault(_) =>
+    // TODO: render a Hyperswitch-vault CVC-only component for the saved-card flow.
+    // Until then, don't fall back to a full card form in the CVC-only slot.
+    cvcOnly ? React.null : <CardPayment cardProps expiryProps cvcProps isInsideCardSDK=true />
+  | VGS(_) => <VGSVault cvcOnly />
   | NoVault =>
-    // Fallback: vault details not yet loaded — render form so UI is visible
-    <CardPayment cardProps expiryProps cvcProps isInsideCardSDK=true />
+    // Vault details not yet loaded. For the new-card flow render the form so the
+    // UI is visible; for the saved-card CVC-only flow render nothing until the
+    // vault resolves, so the tiny CVC slot never briefly shows a full card form.
+    cvcOnly ? React.null : <CardPayment cardProps expiryProps cvcProps isInsideCardSDK=true />
   }
 }

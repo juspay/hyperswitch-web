@@ -58,6 +58,11 @@ let isSamsungPayReady = Recoil.atom("isSamsungPayReady", false)
 // default; set false when the script fails to load so the card method can be
 // removed from the list (a card form without VGS cannot tokenise).
 let isVgsScriptReady = Recoil.atom("isVgsScriptReady", true)
+// True inside the inner Cards SDK iframe when it was mounted for the saved-card
+// (return user) CVC flow rather than the new-card flow. Set by LoaderController
+// from the `isSavedCardCvcFlow` field of the paymentElementCreate mount message;
+// read by PaymentMethodsSDK / CardsSDK to render only the vault CVC field.
+let isSavedCardCvcFlow = Recoil.atom("isSavedCardCvcFlow", false)
 let userCountry = Recoil.atom("userCountry", "")
 let userBank = Recoil.atom("userBank", "")
 let userAddressline1 = Recoil.atom("userAddressline1", defaultFieldValues)
