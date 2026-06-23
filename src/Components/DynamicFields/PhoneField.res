@@ -1,7 +1,7 @@
 open SuperpositionTypes
 
 @react.component
-let make = (~fieldConfig: fieldConfig) => {
+let make = (~fieldConfig: fieldConfig, ~hideLabel=false) => {
   let fieldRef = React.useRef(Nullable.null)
   let path = fieldConfig.confirmRequestWritePath
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
@@ -27,7 +27,7 @@ let make = (~fieldConfig: fieldConfig) => {
   }
 
   <PaymentInputField
-    fieldName={label}
+    fieldName={hideLabel ? "" : label}
     value
     onChange={ev => {
       let val = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\D|\s/g"), "")

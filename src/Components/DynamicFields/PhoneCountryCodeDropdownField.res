@@ -3,7 +3,7 @@ open SuperpositionTypes
 let getPhoneCode = val => val->String.split("#")->Array.get(1)->Option.getOr("")
 
 @react.component
-let make = (~fieldConfig: fieldConfig) => {
+let make = (~fieldConfig: fieldConfig, ~hideLabel=false) => {
   open Utils
   let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {label} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
@@ -73,12 +73,12 @@ let make = (~fieldConfig: fieldConfig) => {
 
   <DropdownField
     appearance={config.appearance}
-    fieldName={label}
+    fieldName={hideLabel ? "" : label}
     value=valueDropDown
     setValue={setter => setValueDropDown(prev => setter(prev))}
     disabled=false
     options=phoneNumberCodeOptions
-    width="w-full min-w-40"
+    width="w-full min-w-24"
     displayValue
     setDisplayValue
     isDisplayValueVisible=true

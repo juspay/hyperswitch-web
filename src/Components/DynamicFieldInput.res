@@ -28,6 +28,7 @@ let renderSingleField = (
   field: fieldConfig,
   ~allFields: array<fieldConfig>,
   ~paymentMethodType: string,
+  ~hideLabel=false,
   ~globalEmailFields: option<array<fieldConfig>>=?,
   ~globalCardHolderNameFields: option<array<fieldConfig>>=?,
 ) => {
@@ -61,9 +62,9 @@ let renderSingleField = (
   | DateOfBirth =>
     <DateOfBirth fieldConfig=field />
 
-  | Phone => <PhoneField fieldConfig=field />
+  | Phone => <PhoneField fieldConfig=field hideLabel />
 
-  | PhoneCountryCode => <PhoneCountryCodeDropdownField fieldConfig=field />
+  | PhoneCountryCode => <PhoneCountryCodeDropdownField fieldConfig=field hideLabel />
 
   | State => <StateDropdownField fieldConfig=field />
 
@@ -107,6 +108,20 @@ let renderSingleField = (
   }
 }
 
+// Renders a single shared label above a combined row of fields.
+let renderRowLabel = (~label: string, ~themeObj: CardThemeType.themeClass) =>
+  <div
+    className="Label"
+    style={
+      fontWeight: themeObj.fontWeightNormal,
+      fontSize: themeObj.fontSizeLg,
+      marginBottom: "5px",
+      opacity: "0.6",
+    }
+    ariaHidden=true>
+    {React.string(label)}
+  </div>
+
 // Renders a row of fields side-by-side using flex layout.
 @react.component
 let makeRow = (
@@ -116,6 +131,7 @@ let makeRow = (
   ~globalEmailFields: option<array<fieldConfig>>=?,
   ~globalCardHolderNameFields: option<array<fieldConfig>>=?,
 ) => {
+  let {config, localeString, themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   switch items->Array.length {
   | 0 => React.null
   | 1 =>
@@ -131,28 +147,43 @@ let makeRow = (
       )
     }
   | _ =>
-    <div className="flex gap-4 w-full [&_.Label]:truncate">
-      {items
-      ->Array.mapWithIndex((field, i) => {
-        let flex = field.layoutWidthRatio->Option.getOr(1.0)
-        <div
-          key={field.confirmRequestWritePath ++ "-" ++ i->Int.toString}
-          style={
-            flexGrow: flex->Float.toString,
-            flexShrink: "1",
-            flexBasis: "0%",
-            minWidth: "auto",
-          }>
-          {renderSingleField(
-            field,
-            ~allFields,
-            ~paymentMethodType,
-            ~globalEmailFields?,
-            ~globalCardHolderNameFields?,
-          )}
-        </div>
-      })
-      ->React.array}
-    </div>
+    let isCombinedPhoneRow = DynamicFieldsUtils.isCombinedPhoneRow(~items)
+
+    let rowLabel = isCombinedPhoneRow
+      ? DynamicFieldsUtils.getCombinedPhoneRowLabel(~items, ~localeObject=localeString)
+      : ""
+
+    let showRowLabel =
+      isCombinedPhoneRow &&
+      rowLabel->String.length > 0 &&
+      config.appearance.labels === Above &&
+      config.appearance.innerLayout === Spaced
+
+    <>
+      <RenderIf condition={showRowLabel}> {renderRowLabel(~label=rowLabel, ~themeObj)} </RenderIf>
+      <div className="flex gap-4 w-full">
+        {items
+        ->Array.mapWithIndex((field, i) =>
+          <div
+            key={field.confirmRequestWritePath ++ "-" ++ i->Int.toString}
+            style={
+              flexGrow: field.layoutWidthRatio->Option.getOr(1.0)->Float.toString,
+              flexShrink: "1",
+              flexBasis: "0",
+              minWidth: "0",
+            }>
+            {renderSingleField(
+              field,
+              ~allFields,
+              ~paymentMethodType,
+              ~hideLabel=showRowLabel,
+              ~globalEmailFields?,
+              ~globalCardHolderNameFields?,
+            )}
+          </div>
+        )
+        ->React.array}
+      </div>
+    </>
   }
 }
