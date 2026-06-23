@@ -4,6 +4,8 @@ open Utils
 @react.component
 let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => {
   let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {emitCvcInfo} = SubscriptionEventHooks.useLegacyEvents()
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let {innerLayout} = config.appearance
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
@@ -21,6 +23,7 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
     setCvcError,
   } = cvcProps
   let isCvcEmpty = cvcNumber === ""
+  let isCvcComplete = cvcNumber->String.length >= 3
   let compressedLayoutStyleForCvcError =
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
 
@@ -134,18 +137,18 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
   }, (cvcNumber, keys, paymentType, loggerState, customPodUri, redirectionFlags, localeString))
 
   React.useEffect0(() => {
-    messageParentWindow([
-      ("ready", true->JSON.Encode.bool),
-      ("elementType", CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string),
-    ])
+    SubscriptionEventHooks.emitReady(
+      ~iframeId=keys.iframeId,
+      ~elementType=CardThemeType.getPaymentModeToString(paymentType),
+    )
     None
   })
 
   React.useEffect(() => {
-    let cvcInfoDict = [("isCvcEmpty", isCvcEmpty->JSON.Encode.bool)]->Dict.fromArray
-    Utils.messageParentWindow([("cvcInfo", cvcInfoDict->JSON.Encode.object)])
+    emitCvcInfo(~isCvcEmpty)
+    emitter.emitCvcStatus(~iframeId=keys.iframeId, ~isCvcEmpty, ~isCvcComplete)
     None
-  }, [isCvcEmpty])
+  }, (isCvcEmpty, isCvcComplete, keys.iframeId))
 
   <PaymentInputField
     fieldName=localeString.cvcTextLabel

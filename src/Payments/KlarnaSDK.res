@@ -45,6 +45,8 @@ let make = (~sessionObj: SessionsType.token) => {
     ~empty=!isCompleted,
     ~paymentType="klarna",
   )
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  let {isLegacy, emitPaymentMethodInfo} = SubscriptionEventHooks.useLegacyEvents()
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   React.useEffect(() => {
@@ -75,13 +77,22 @@ let make = (~sessionObj: SessionsType.token) => {
                 ~eventName=KLARNA_SDK_FLOW,
                 ~paymentMethod="KLARNA",
               )
-              PaymentUtils.emitPaymentMethodInfo(
+              if isLegacy {
+                emitPaymentMethodInfo(
+                  ~paymentMethod="wallet",
+                  ~paymentMethodType="klarna",
+                  ~country,
+                  ~state,
+                  ~pinCode,
+                )
+              }
+              emitter.emitPaymentMethodStatus(
                 ~paymentMethod="wallet",
                 ~paymentMethodType="klarna",
-                ~country,
-                ~state,
-                ~pinCode,
+                ~isSavedPaymentMethod=false,
+                ~isOneClickWallet=true,
               )
+              emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
               makeOneClickHandlerPromise(sdkHandleIsThere)->then(
                 result => {
                   let result = result->JSON.Decode.bool->Option.getOr(false)

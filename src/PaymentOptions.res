@@ -59,6 +59,7 @@ let make = (
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {isLegacy} = SubscriptionEventHooks.useLegacyEvents()
   let layoutClass = CardUtils.getLayoutClass(layout)
   let payOptionsRef = React.useRef(Nullable.null)
   let selectRef = React.useRef(Nullable.null)
@@ -122,7 +123,15 @@ let make = (
     ~cardProps,
     ~expiryProps,
     ~cvcProps,
+    ~isLegacy,
   )
+  SubscriptionEventHooks.usePaymentMethodStatus(
+    ~paymentMethodName=selectedPaymentOption.paymentMethodName,
+    ~paymentMethods=paymentMethodListValue.payment_methods,
+    ~isSavedPaymentMethod=false,
+    ~isOneClickWallet=false,
+  )
+  SubscriptionEventHooks.useBillingAddress()
 
   let displayIcon = ele => {
     <span className={`scale-90 animate-slowShow ${toggleIconElement ? "hidden" : ""}`}> ele </span>

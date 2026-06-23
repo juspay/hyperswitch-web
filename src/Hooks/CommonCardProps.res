@@ -4,6 +4,7 @@ open RecoilAtoms
 
 let useCardForm = (~logger, ~paymentType) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {emitExpiryDate, isLegacy} = SubscriptionEventHooks.useLegacyEvents()
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
   let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(showPaymentMethodsScreen)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
@@ -209,7 +210,9 @@ let useCardForm = (~logger, ~paymentType) => {
     let formattedExpiry = val->CardValidations.formatCardExpiryNumber
     if isExipryValid(formattedExpiry) {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
-      emitExpiryDate(formattedExpiry)
+      if isLegacy {
+        emitExpiryDate(formattedExpiry)
+      }
     }
     setExpiryValid(formattedExpiry, setIsExpiryValid)
     setCardExpiry(_ => formattedExpiry)

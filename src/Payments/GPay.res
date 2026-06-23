@@ -47,6 +47,13 @@ let make = (
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="google_pay",
   )
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  let {isLegacy, emitPaymentMethodInfo} = SubscriptionEventHooks.useLegacyEvents()
+  SubscriptionEventHooks.useFormStatus(
+    ~empty=areRequiredFieldsEmpty,
+    ~complete=areRequiredFieldsValid,
+    ~isOneClickWallet=isWallet,
+  )
 
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
     ~paymentMethodListValue,
@@ -160,13 +167,22 @@ let make = (
         ~eventName=GOOGLE_PAY_FLOW,
         ~paymentMethod="GOOGLE_PAY",
       )
-      PaymentUtils.emitPaymentMethodInfo(
+      if isLegacy {
+        emitPaymentMethodInfo(
+          ~paymentMethod="wallet",
+          ~paymentMethodType="google_pay",
+          ~country,
+          ~state,
+          ~pinCode,
+        )
+      }
+      emitter.emitPaymentMethodStatus(
         ~paymentMethod="wallet",
         ~paymentMethodType="google_pay",
-        ~country,
-        ~state,
-        ~pinCode,
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=isWallet,
       )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
       makeOneClickHandlerPromise(isSDKHandleClick)
       ->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)

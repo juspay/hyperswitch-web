@@ -28,6 +28,8 @@ let loadPaypalSDK = (
   ~isTestMode=false,
   ~nonPiiAdderessData: PaymentUtils.nonPiiAdderessData,
   ~sdkAuthorization,
+  ~emitter: SubscriptionEventHooks.emitter,
+  ~isLegacy: bool,
 ) => {
   open Promise
 
@@ -64,13 +66,22 @@ let loadPaypalSDK = (
         resolve("")
       } else {
         let {country, state, pinCode} = nonPiiAdderessData
-        PaymentUtils.emitPaymentMethodInfo(
+        if isLegacy {
+          PaymentUtils.emitPaymentMethodInfo(
+            ~paymentMethod="wallet",
+            ~paymentMethodType="paypal",
+            ~country,
+            ~state,
+            ~pinCode,
+          )
+        }
+        emitter.emitPaymentMethodStatus(
           ~paymentMethod="wallet",
           ~paymentMethodType="paypal",
-          ~country,
-          ~state,
-          ~pinCode,
+          ~isSavedPaymentMethod=false,
+          ~isOneClickWallet=true,
         )
+        emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
         makeOneClickHandlerPromise(sdkHandleIsThere)->then(result => {
           let result = result->JSON.Decode.bool->Option.getOr(false)
           if result {

@@ -109,6 +109,13 @@ let make = (
   | None => "debit"
   }
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  let {
+    emitIsFormReadyForSubmission,
+    emitExpiryDate,
+    isLegacy,
+    emitPaymentMethodInfo,
+  } = SubscriptionEventHooks.useLegacyEvents()
 
   React.useEffect(() => {
     setSelectedInstallmentPlan(_ => None)
@@ -116,35 +123,48 @@ let make = (
     None
   }, [paymentItem])
 
+  let isOneClickWallet = paymentItem.paymentMethod === "wallet"
+
   React.useEffect(() => {
     if isActive {
-      PaymentUtils.emitPaymentMethodInfo(
+      if isLegacy {
+        emitPaymentMethodInfo(
+          ~paymentMethod=paymentItem.paymentMethod,
+          ~paymentMethodType,
+          ~cardBrand=paymentItem.card.scheme->Option.getOr("")->CardUtils.getCardType,
+          ~country,
+          ~state,
+          ~pinCode,
+          ~cardExpiryMonth=expiryMonth,
+          ~cardExpiryYear=expiryYear,
+          ~cardLast4,
+          ~cardBin,
+          ~isSavedPaymentMethod=true,
+          ~isCvcEmpty,
+        )
+      }
+      emitter.emitPaymentMethodStatus(
         ~paymentMethod=paymentItem.paymentMethod,
         ~paymentMethodType,
-        ~cardBrand=paymentItem.card.scheme->Option.getOr("")->CardUtils.getCardType,
-        ~country,
-        ~state,
-        ~pinCode,
-        ~cardExpiryMonth=expiryMonth,
-        ~cardExpiryYear=expiryYear,
-        ~cardLast4,
-        ~cardBin,
         ~isSavedPaymentMethod=true,
-        ~isCvcEmpty,
+        ~isOneClickWallet,
       )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
     }
     None
   }, (isActive, paymentItem, country, state, pinCode, isCvcEmpty))
 
   React.useEffect(() => {
-    open CardUtils
     if isActive {
       // * Focus CVC
       focusCVC()
+
       // * Sending card expiry to handle cases where the card expires before the use date.
-      `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
-      ->CardValidations.formatCardExpiryNumber
-      ->emitExpiryDate
+      if isLegacy {
+        `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
+        ->CardValidations.formatCardExpiryNumber
+        ->emitExpiryDate
+      }
     }
     None
   }, (isActive, paymentItem, country, state, pinCode))
@@ -152,6 +172,7 @@ let make = (
   React.useEffect(() => {
     // TODO - Handle Events for VGS/Vault case
     CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
+    emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
     None
   }, [isCVCValid])
 

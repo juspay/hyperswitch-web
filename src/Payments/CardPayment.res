@@ -152,6 +152,19 @@ let make = (
     isInstallmentValid
 
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  SubscriptionEventHooks.useFormStatus(~empty, ~complete=complete && areRequiredFieldsValid)
+  SubscriptionEventHooks.useSurcharge(~surchargeDetails=eligibilitySurchargeDetails)
+  React.useEffect(() => {
+    let cardInfo = PaymentEventData.buildCardInfo(
+      ~cardNumber,
+      ~expiry=cardExpiry,
+      ~cvc=cvcNumber,
+      ~brand=cardBrand,
+    )
+    emitter.emitCardInfo(~cardInfo)
+    None
+  }, (cardNumber, cardExpiry, cvcNumber, cardBrand))
   React.useEffect(() => {
     setComplete(_ => complete)
     setShowPaymentMethodsScreen(_ => true)

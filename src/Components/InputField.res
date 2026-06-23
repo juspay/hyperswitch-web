@@ -32,6 +32,7 @@ let make = (
   let options = Recoil.useRecoilValueFromAtom(elementOptions)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
+  let elementType = contextPaymentType->CardThemeType.getPaymentModeToString
 
   let setFocus = (val: bool) => {
     switch onFocus {
@@ -69,7 +70,7 @@ let make = (
     }
     setFocus(true)
     setIsValid(_ => None)
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
+    Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
 
   let handleBlur = ev => {
@@ -80,7 +81,7 @@ let make = (
     }
     setFocus(false)
     onBlur(ev)
-    Utils.handleOnBlurPostMessage(~targetOrigin=parentURL)
+    Utils.handleOnBlurPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
   React.useEffect(() => {
     if value->String.length > 0 {

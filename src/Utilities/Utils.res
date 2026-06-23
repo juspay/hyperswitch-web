@@ -43,16 +43,30 @@ let messageCurrentWindow = (~targetOrigin="*", messageArr) => {
   window->messageWindow(~targetOrigin, messageArr)
 }
 
-let handleOnFocusPostMessage = (~targetOrigin="*") => {
-  messageParentWindow([("focus", true->JSON.Encode.bool)], ~targetOrigin)
+let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
+  messageParentWindow(
+    [
+      ("focus", true->JSON.Encode.bool),
+      ("elementType", elementType->JSON.Encode.string),
+      ("iframeId", iframeId->JSON.Encode.string),
+    ],
+    ~targetOrigin,
+  )
 }
 
 let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
   messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
-let handleOnBlurPostMessage = (~targetOrigin="*") => {
-  messageParentWindow([("blur", true->JSON.Encode.bool)], ~targetOrigin)
+let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
+  messageParentWindow(
+    [
+      ("blur", true->JSON.Encode.bool),
+      ("elementType", elementType->JSON.Encode.string),
+      ("iframeId", iframeId->JSON.Encode.string),
+    ],
+    ~targetOrigin,
+  )
 }
 
 let handleOnClickPostMessage = (~targetOrigin="*", ev) => {
@@ -780,6 +794,7 @@ let validateRountingNumber = str => {
 }
 
 let handlePostMessageEvents = (
+  ~iframeId,
   ~complete,
   ~empty,
   ~paymentType,
@@ -794,6 +809,7 @@ let handlePostMessageEvents = (
   }
   messageParentWindow([
     ("elementType", "payment"->JSON.Encode.string),
+    ("iframeId", iframeId->JSON.Encode.string),
     ("complete", complete->JSON.Encode.bool),
     ("empty", empty->JSON.Encode.bool),
     ("value", [("type", paymentType->JSON.Encode.string)]->getJsonFromArrayOfJson),
@@ -1470,6 +1486,19 @@ let rec flatten = (obj, addIndicatorForObject) => {
   newDict
 }
 
+external eventDataFromJson: JSON.t => Types.eventData = "%identity"
+
+let sanitizeEventData = (data: Types.eventData): Types.eventData => {
+  let dict = data->anyTypeToJson->getDictFromJson
+  let isCompleteEvent = dict->Dict.get("complete")->Option.isSome
+  dict
+  ->Dict.toArray
+  ->Array.filter(((key, _)) => key !== "iframeId" && (isCompleteEvent || key !== "elementType"))
+  ->Dict.fromArray
+  ->JSON.Encode.object
+  ->eventDataFromJson
+}
+
 let eventHandlerFunc = (
   condition: Types.event => bool,
   eventHandler,
@@ -1488,7 +1517,7 @@ let eventHandlerFunc = (
       | OneClickConfirmPayment
       | Blur =>
         switch eventHandler {
-        | Some(eH) => eH(Some(ev.data))
+        | Some(eH) => eH(Some(sanitizeEventData(ev.data)))
         | None => ()
         }
       | _ => ()

@@ -769,6 +769,7 @@ let useEmitPaymentMethodInfo = (
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
   ~cvcProps: CardUtils.cvcProps,
+  ~isLegacy: bool,
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {country, state, pinCode} = useNonPiiAddressData()
@@ -784,22 +785,24 @@ let useEmitPaymentMethodInfo = (
   let shouldEmitCardInfo = isCardValid && isExpiryValid && paymentMethodName == "card"
 
   let emitPaymentMethodInfoWrapper = (~paymentMethod, ~paymentMethodType) => {
-    if shouldEmitCardInfo {
-      emitPaymentMethodInfo(
-        ~paymentMethod=paymentMethodName,
-        ~paymentMethodType,
-        ~cardBrand=cardBrand->CardUtils.getCardType,
-        ~cardLast4,
-        ~cardBin,
-        ~cardExpiryMonth,
-        ~cardExpiryYear,
-        ~country,
-        ~state,
-        ~pinCode,
-        ~isCvcEmpty,
-      )
-    } else {
-      emitPaymentMethodInfo(~paymentMethod, ~paymentMethodType, ~country, ~state, ~pinCode)
+    if isLegacy {
+      if shouldEmitCardInfo {
+        emitPaymentMethodInfo(
+          ~paymentMethod=paymentMethodName,
+          ~paymentMethodType,
+          ~cardBrand=cardBrand->CardUtils.getCardType,
+          ~cardLast4,
+          ~cardBin,
+          ~cardExpiryMonth,
+          ~cardExpiryYear,
+          ~country,
+          ~state,
+          ~pinCode,
+          ~isCvcEmpty,
+        )
+      } else {
+        emitPaymentMethodInfo(~paymentMethod, ~paymentMethodType, ~country, ~state, ~pinCode)
+      }
     }
   }
 
@@ -853,6 +856,7 @@ let useEmitPaymentMethodInfo = (
     country,
     state,
     pinCode,
+    isLegacy,
   ))
 }
 

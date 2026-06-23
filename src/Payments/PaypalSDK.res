@@ -36,6 +36,8 @@ let make = (~sessionObj: SessionsType.token) => {
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  let {isLegacy} = SubscriptionEventHooks.useLegacyEvents()
 
   let buttonStyle = switch options.wallets.payPal {
   | PaypalConfigObj(cfg) =>
@@ -183,6 +185,8 @@ let make = (~sessionObj: SessionsType.token) => {
         ~isTestMode,
         ~nonPiiAdderessData,
         ~sdkAuthorization,
+        ~emitter,
+        ~isLegacy,
       )
     })
     Window.body->Window.appendChild(paypalScript)
