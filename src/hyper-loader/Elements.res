@@ -473,6 +473,7 @@ let make = (
             ->Option.isSome
             ->JSON.Encode.bool,
           ),
+          ("mountElement", true->JSON.Encode.bool),
         ]->Dict.fromArray
 
         let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)
