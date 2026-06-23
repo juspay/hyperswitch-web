@@ -10,8 +10,8 @@ import {
 } from "../../support/utils";
 describe.skip("External 3DS using Juspay Checks", () => {
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
@@ -27,6 +27,8 @@ describe.skip("External 3DS using Juspay Checks", () => {
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {

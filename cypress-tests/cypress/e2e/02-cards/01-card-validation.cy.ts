@@ -3,8 +3,8 @@ import { getClientURL, createPaymentBody, changeObjectKeyValue } from "../../sup
 import { stripeCards } from "../../support/cards";
 
 describe("Card Number Validation", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
@@ -12,6 +12,8 @@ describe("Card Number Validation", () => {
   changeObjectKeyValue(createPaymentBody, "customer_id", "card_validation_test_user");
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {

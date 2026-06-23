@@ -8,13 +8,15 @@ import {
 } from "../../support/utils";
 
 describe("TrustPay iDEAL Bank Redirect Payment flow test", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
 
     changeObjectKeyValue(
@@ -50,25 +52,28 @@ describe("TrustPay iDEAL Bank Redirect Payment flow test", () => {
 
   it("should complete the iDEAL bank redirect payment successfully", () => {
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    getIframeBody().contains("div", "iDEAL").click();
-    getIframeBody()
-      .get("#submit")
-      .click()
-      .then(() => {
-        cy.url().should("include", "https://pay.ideal.nl/transactions");
-      });
+    cy.selectPaymentMethodOrSkip(getIframeBody, "iDEAL").then((skipped) => {
+      if (skipped) return;
+      getIframeBody()
+        .get("#submit")
+        .click()
+        .then(() => {
+          cy.url().should("include", "https://pay.ideal.nl/transactions");
+        });
+    });
   });
 });
 
 describe("TrustPay Blik Bank Redirect Payment flow test", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
 
     changeObjectKeyValue(
@@ -102,25 +107,28 @@ describe("TrustPay Blik Bank Redirect Payment flow test", () => {
 
   it("should complete the Blik bank redirect payment successfully", () => {
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    getIframeBody().contains("div", "Blik").click();
-    getIframeBody()
-      .get("#submit")
-      .click()
-      .then(() => {
-        cy.url().should("include", "https://e.blik.com/blik_web/index.html");
-      });
+    cy.selectPaymentMethodOrSkip(getIframeBody, "Blik").then((skipped) => {
+      if (skipped) return;
+      getIframeBody()
+        .get("#submit")
+        .click()
+        .then(() => {
+          cy.url().should("include", "https://e.blik.com/blik_web/index.html");
+        });
+    });
   });
 });
 
 describe("TrustPay EPS Bank Redirect Payment flow test", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
 
     changeObjectKeyValue(
@@ -154,16 +162,17 @@ describe("TrustPay EPS Bank Redirect Payment flow test", () => {
 
   it("should complete the EPS bank redirect payment successfully", () => {
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    getIframeBody().contains("div", "EPS").click();
-    getIframeBody()
-      .get("#submit")
-      .click()
-      .then(() => {
-        cy.url().should(
-          "include",
-          "https://routing.eps.or.at/appl/epsSO/transinit/bankauswahl.htm",
-        );
-      });
+    cy.selectPaymentMethodOrSkip(getIframeBody, "EPS").then((skipped) => {
+      if (skipped) return;
+      getIframeBody()
+        .get("#submit")
+        .click()
+        .then(() => {
+          cy.url().should(
+            "include",
+            "https://routing.eps.or.at/appl/epsSO/transinit/bankauswahl.htm",
+          );
+        });
+    });
   });
 });

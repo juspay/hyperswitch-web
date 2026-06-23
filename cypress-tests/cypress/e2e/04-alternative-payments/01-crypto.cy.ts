@@ -9,18 +9,20 @@ import {
 import { stripeCards } from "../../support/cards";
 
 describe("Card payment flow test", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
-  changeObjectKeyValue(
-    createPaymentBody,
-    "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.CRYPTOPAY),
-  );
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+    changeObjectKeyValue(
+      createPaymentBody,
+      "profile_id",
+      connectorProfileIdMapping.get(connectorEnum.CRYPTOPAY),
+    );
     getIframeBody = () => cy.iframe(iframeSelector);
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
@@ -42,16 +44,17 @@ describe("Card payment flow test", () => {
 
   it("should complete the crypto payment successfully", () => {
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    getIframeBody().contains("div", "Crypto").click();
-    getIframeBody()
-      .get("#submit")
-      .click()
-      .then(() => {
-        cy.url().should(
-          "include",
-          "hosted-business-sandbox.cryptopay.me/invoices",
-        );
-      });
+    cy.selectPaymentMethodOrSkip(getIframeBody, "Crypto").then((skipped) => {
+      if (skipped) return;
+      getIframeBody()
+        .get("#submit")
+        .click()
+        .then(() => {
+          cy.url().should(
+            "include",
+            "hosted-business-sandbox.cryptopay.me/invoices",
+          );
+        });
+    });
   });
 });

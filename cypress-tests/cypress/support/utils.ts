@@ -1,4 +1,49 @@
+// ---------------------------------------------------------------------------
+// Explicit numeric-value → creds.json key name mapping for connectorEnum.
+//
+// TypeScript `const enum` values are inlined at compile time (no runtime
+// reverse-mapping object is generated), so we maintain an explicit array
+// ordered to match the connectorEnum declaration below.
+//
+// Rules:
+//   - Index corresponds to the numeric value of the enum member.
+//   - Value must exactly match the top-level key used in creds.json
+//     (lowercase, underscores for spaces — e.g. "bank_of_america").
+// ---------------------------------------------------------------------------
+const CONNECTOR_ENUM_NAMES: string[] = [
+  "trustpay",       // 0  TRUSTPAY
+  "adyen",          // 1  ADYEN
+  "stripe",         // 2  STRIPE
+  "netcetera",      // 3  NETCETERA
+  "redsys",         // 4  REDSYS
+  "mifinity",       // 5  MIFINITY
+  "cryptopay",      // 6  CRYPTOPAY
+  "bankofamerica",  // 7  BANK_OF_AMERICA
+  "cybersource",    // 8  CYBERSOURCE
+  "cashtocode",     // 9  CASHTOCODE
+  "juspay",         // 10 JUSPAY
+  "interac",        // 11 INTERAC
+  "paypal",         // 12 PAYPAL
+];
+
+// ---------------------------------------------------------------------------
+// Demo-app base URL
+// ---------------------------------------------------------------------------
+
+/** Default demo-app port when running locally. Overridable via Cypress.env. */
 export const CLIENT_BASE_URL = "http://localhost:9060";
+
+/**
+ * Returns the actual demo-app base URL at runtime.
+ * Reads CLIENT_BASE_URL from Cypress.env() so that CI / different
+ * environments can override it without code changes.
+ */
+const getClientBaseUrl = (): string =>
+  (Cypress.env("CLIENT_BASE_URL") as string | undefined) || CLIENT_BASE_URL;
+
+// ---------------------------------------------------------------------------
+// URL builder
+// ---------------------------------------------------------------------------
 
 export const getClientURL = (
   clientSecret: string,
@@ -8,7 +53,8 @@ export const getClientURL = (
   layout?: string | Record<string, unknown>,
   options?: Record<string, unknown>,
 ) => {
-  let url = `${CLIENT_BASE_URL}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
+  const baseUrl = getClientBaseUrl();
+  let url = `${baseUrl}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
   if (locale) {
     url += `&locale=${locale}`;
   }
@@ -26,36 +72,61 @@ export const getClientURL = (
   return url;
 };
 
+// ---------------------------------------------------------------------------
+// Connector enum
+// Keep the member order in sync with CONNECTOR_ENUM_NAMES above.
+// ---------------------------------------------------------------------------
+
 export const enum connectorEnum {
-  TRUSTPAY,
-  ADYEN,
-  STRIPE,
-  NETCETERA,
-  REDSYS,
-  MIFINITY,
-  CRYPTOPAY,
-  BANK_OF_AMERICA,
-  CYBERSOURCE,
-  CASHTOCODE,
-  JUSPAY,
-  INTERAC,
-  PAYPAL
+  TRUSTPAY,        // 0
+  ADYEN,           // 1
+  STRIPE,          // 2
+  NETCETERA,       // 3
+  REDSYS,          // 4
+  MIFINITY,        // 5
+  CRYPTOPAY,       // 6
+  BANK_OF_AMERICA, // 7
+  CYBERSOURCE,     // 8
+  CASHTOCODE,      // 9
+  JUSPAY,          // 10
+  INTERAC,         // 11
+  PAYPAL,          // 12
 }
-export const connectorProfileIdMapping = new Map<connectorEnum, string>([
-  [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
-  [connectorEnum.ADYEN, "pro_Kvqzu8WqBZsT1OjHlCj4"],
-  [connectorEnum.STRIPE, "pro_5fVcCxU8MFTYozgtf0P8"],
-  [connectorEnum.NETCETERA, "pro_h9VHXnJx8s6W4KSZfSUL"],
-  [connectorEnum.REDSYS, "pro_6BcODfWXoRbntNHkNV1J"],
-  [connectorEnum.MIFINITY, "pro_reQgggKZjGvnmnJ7O10c"],
-  [connectorEnum.CRYPTOPAY, "pro_cy1AdBRB5jfCuiWgJUZM"],
-  [connectorEnum.BANK_OF_AMERICA, "pro_Y90w9nPTg5eBOblKa2L9"],
-  [connectorEnum.CYBERSOURCE, "pro_h9VHXnJx8s6W4KSZfSUL"],
-  [connectorEnum.CASHTOCODE, "pro_JRdEyK7YyQaDAAzvJuMJ"],
-  [connectorEnum.JUSPAY, "pro_TD0ZZ3cwf87wpPoZroSE"],
-  [connectorEnum.INTERAC, "pro_TD0ZZ3cwf87wpPoZroSE"],
-  [connectorEnum.PAYPAL, "pro_JTM1xVeUrEJImozvBnxv"],
-]);
+
+// ---------------------------------------------------------------------------
+// Profile ID lookup — reads from Cypress.env("CONNECTOR_PROFILE_IDS")
+//
+// CONNECTOR_PROFILE_IDS is populated by the global before() hook in e2e.ts
+// after cy.task("setupCredentials") resolves.  It has the shape:
+//   { stripe: "pro_...", adyen: "pro_...", ... }
+// ---------------------------------------------------------------------------
+
+/**
+ * Env-aware profile ID lookup.
+ * Preserves the same `.get()` API used across all test files so no caller
+ * changes are required when switching from static maps to dynamic lookup.
+ */
+export const connectorProfileIdMapping = {
+  get: (connector: connectorEnum): string | undefined => {
+    const name = CONNECTOR_ENUM_NAMES[connector as number];
+    if (!name) return undefined;
+    const ids = Cypress.env("CONNECTOR_PROFILE_IDS") as Record<string, string> | undefined;
+    return ids?.[name];
+  },
+};
+
+/**
+ * Returns the Stripe profile ID for the current run.
+ * Used to initialise createPaymentBody.profile_id in the global before() hook.
+ */
+export const getDefaultProfileId = (): string => {
+  const ids = Cypress.env("CONNECTOR_PROFILE_IDS") as Record<string, string> | undefined;
+  return ids?.["stripe"] ?? "";
+};
+
+// ---------------------------------------------------------------------------
+// Shared payment body (mutated per-test via changeObjectKeyValue)
+// ---------------------------------------------------------------------------
 
 export const createPaymentBody = {
   currency: "USD",
@@ -96,7 +167,8 @@ export const createPaymentBody = {
     new_customer: "true",
     login_date: "2019-09-10T10:11:12Z",
   },
-  profile_id: "pro_5fVcCxU8MFTYozgtf0P8",
+  // Resolved at runtime in e2e.ts before() hook after setupCredentials resolves.
+  profile_id: "",
   billing: {
     email: "hyperswitch_sdk_demo_id@gmail.com",
     address: {
@@ -185,12 +257,13 @@ export const confirmBody = {
     java_script_enabled: true,
   },
 };
-export const stripeTestCard = "4000000000003220";
-export const adyenTestCard = "4917610000000000";
-export const bluesnapTestCard = "4000000000001091";
-export const amexTestCard = "378282246310005";
-export const visaTestCard = "4242424242424242";
-export const netceteraChallengeTestCard = "348638267931507";
+
+export const stripeTestCard           = "4000000000003220";
+export const adyenTestCard            = "4917610000000000";
+export const bluesnapTestCard         = "4000000000001091";
+export const amexTestCard             = "378282246310005";
+export const visaTestCard             = "4242424242424242";
+export const netceteraChallengeTestCard    = "348638267931507";
 export const netceteraFrictionlessTestCard = "4929251897047956";
-export const juspayChallengeTestCard = "5306889942833340";
-export const juspayFrictionlessTestCard = "4929251897047956";
+export const juspayChallengeTestCard       = "5306889942833340";
+export const juspayFrictionlessTestCard    = "4929251897047956";

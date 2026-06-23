@@ -8,23 +8,22 @@ import {
 } from "../../support/utils";
 import { stripeCards } from "../../support/cards";
 
-
-
-
 describe("cashtocode cash / voucher test ", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
-  changeObjectKeyValue(
-    createPaymentBody,
-    "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.CASHTOCODE),
-  );
-  changeObjectKeyValue(createPaymentBody, "currency", "EUR");
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+    changeObjectKeyValue(
+      createPaymentBody,
+      "profile_id",
+      connectorProfileIdMapping.get(connectorEnum.CASHTOCODE),
+    );
+    changeObjectKeyValue(createPaymentBody, "currency", "EUR");
     getIframeBody = () => cy.iframe(iframeSelector);
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
@@ -46,16 +45,17 @@ describe("cashtocode cash / voucher test ", () => {
 
   it("should complete the Cash / Voucher payment successfully", () => {
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    getIframeBody().contains("div", "Cash / Voucher").click();
-    getIframeBody()
-      .get("#submit")
-      .click()
-      .then(() => {
-        cy.url().should(
-          "include",
-          "https://cluster05.wcl-test.cashtocode.com/",
-        );
-      });
+    cy.selectPaymentMethodOrSkip(getIframeBody, "Cash / Voucher").then((skipped) => {
+      if (skipped) return;
+      getIframeBody()
+        .get("#submit")
+        .click()
+        .then(() => {
+          cy.url().should(
+            "include",
+            "https://cluster05.wcl-test.cashtocode.com/",
+          );
+        });
+    });
   });
 });

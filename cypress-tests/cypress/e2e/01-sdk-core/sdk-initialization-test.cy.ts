@@ -5,10 +5,12 @@ import {
 } from "../../support/utils";
 
 describe("SDK Initialization Tests", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     changeObjectKeyValue(createPaymentBody, "customer_id", "sdk_init_test_user");
   });
 

@@ -4,8 +4,8 @@ import { createPaymentBody } from "../../support/utils";
 import { changeObjectKeyValue } from "../../support/utils";
 
 describe("Card payment flow test", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
@@ -16,6 +16,8 @@ describe("Card payment flow test", () => {
   );
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
@@ -38,18 +40,16 @@ describe("Card payment flow test", () => {
   });
 
   it("should check if cards are saved", () => {
-    getIframeBody()
-      .find(`[data-testid=${testIds.addNewCardIcon}]`)
-      .then(($element) => {
-        if ($element.length > 0) {
-          getIframeBody().contains("4 digit").click();
-          getIframeBody().find("[data-testid=cvvInput]").type("1234");
-          getIframeBody().get("#submit").click();
-          cy.wait(2000);
-          cy.contains("Thanks for your order!").should("be.visible");
-        } else {
-          cy.log(" new card card flow");
-        }
-      });
+    getIframeBody().then(($body) => {
+      if ($body.find(`[data-testid=${testIds.addNewCardIcon}]`).length > 0) {
+        getIframeBody().contains("4 digit").click();
+        getIframeBody().find("[data-testid=cvvInput]").type("1234");
+        getIframeBody().get("#submit").click();
+        cy.wait(2000);
+        cy.contains("Thanks for your order!").should("be.visible");
+      } else {
+        cy.log("new card flow — no saved cards on fresh merchant");
+      }
+    });
   });
 });

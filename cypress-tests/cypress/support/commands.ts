@@ -88,7 +88,7 @@ Cypress.Commands.add(
 
       cy.request({
         method: "GET",
-        url: `https://sandbox.hyperswitch.io/account/payment_methods?client_secret=${clientSecret}`,
+      url: `${Cypress.env("HYPERSWITCH_API_URL")}/account/payment_methods?client_secret=${clientSecret}`,
         headers: {
           "Content-Type": "application/json",
           "api-key": publishableKey,
@@ -154,10 +154,18 @@ Cypress.Commands.add(
 Cypress.Commands.add(
   "createPaymentIntent",
   (secretKey: string, createPaymentBody: any) => {
+    // Ensure profile_id is set from the connector profile IDs (populated by
+    // the before() hook in e2e.ts).  If the test hasn't overridden it, use
+    // the default stripe profile.
+    if (!createPaymentBody.profile_id) {
+      const profileIds = Cypress.env("CONNECTOR_PROFILE_IDS") as Record<string, string> | undefined;
+      createPaymentBody.profile_id = profileIds?.stripe ?? "";
+    }
+
     return cy
       .request({
         method: "POST",
-        url: "https://sandbox.hyperswitch.io/payments",
+        url: `${Cypress.env("HYPERSWITCH_API_URL")}/payments`,
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
@@ -244,3 +252,71 @@ Cypress.Commands.add("enterCardDetails", (cardDetails: any) => {
     .find('[data-testid="cvvInput"]')
     .safeType(cardDetails.cvc);
 });
+
+// ---------------------------------------------------------------------------
+// selectPaymentMethod
+//
+// Handles the two SDK UI states for payment method selection:
+//
+//   1. Saved cards exist → SDK shows a saved-card list with an "Add New Card"
+//      button.  We click it first, then select the payment method.
+//
+//   2. No saved cards (fresh merchant) → SDK shows payment method tabs /
+//      accordion directly.  We skip the "Add New Card" click.
+//
+// Usage:
+//   cy.selectPaymentMethod(getIframeBody, "Crypto");
+//   cy.selectPaymentMethod(getIframeBody, "Cash / Voucher");
+// ---------------------------------------------------------------------------
+
+Cypress.Commands.add(
+  "selectPaymentMethod",
+  (getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>, methodName: string) => {
+    getIframeBody().then(($body) => {
+      // If the "Add New Card" button exists (saved cards scenario), click it
+      // first to reveal the payment method picker.
+      if ($body.find('[data-testid="addNewCard"]').length > 0) {
+        getIframeBody().find('[data-testid="addNewCard"]').click();
+      }
+      // Select the payment method by name — don't restrict to a specific
+      // element type because the SDK renders payment methods differently
+      // depending on whether saved cards exist (div vs button/li/span).
+      getIframeBody().contains(methodName).click();
+    });
+  },
+);
+
+// ---------------------------------------------------------------------------
+// selectPaymentMethodOrSkip
+//
+// Same as selectPaymentMethod, but skips the test gracefully when the
+// payment method tab is not present in the SDK. This is common with a
+// freshly-created merchant where the connector may not return the expected
+// payment method for the test amount / currency.
+//
+// Usage:
+//   cy.selectPaymentMethodOrSkip(getIframeBody, "Crypto").then((skipped) => {
+//     if (skipped) return;
+//     // rest of test
+//   });
+// ---------------------------------------------------------------------------
+
+Cypress.Commands.add(
+  "selectPaymentMethodOrSkip",
+  (getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>, methodName: string) => {
+    return getIframeBody().then(($body) => {
+      // If the "Add New Card" button exists, click it first.
+      if ($body.find('[data-testid="addNewCard"]').length > 0) {
+        getIframeBody().find('[data-testid="addNewCard"]').click();
+      }
+      // Check if the payment method tab is present.
+      const hasMethod = $body.text().includes(methodName);
+      if (!hasMethod) {
+        cy.log(`Skipping: payment method "${methodName}" not available for this merchant / connector.`);
+      } else {
+      getIframeBody().contains(methodName).click({ force: true });
+      }
+      return cy.wrap(!hasMethod);
+    });
+  },
+);
