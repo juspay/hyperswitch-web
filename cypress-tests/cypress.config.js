@@ -1,5 +1,7 @@
 const { defineConfig } = require("cypress");
 const { setupAllCredentials } = require("./setup");
+const fs = require("fs");
+const path = require("path");
 
 // Determine the target environment from the TEST_ENV env var.
 // Supported values: "sandbox" (default) | "integ" | "local"
@@ -13,6 +15,28 @@ const apiUrlMap = {
 };
 
 const apiUrl = apiUrlMap[testEnv] || apiUrlMap.sandbox;
+
+// ── Pre-existing credentials check ──────────────────────────────────────────
+// In CI, the "setup" job creates a merchant + MCAs once and writes the result
+// to test-credentials.json.  The parallel Cypress jobs download that file and
+// pass the path via CREDENTIALS_OUTPUT_PATH.  When found, the credentials are
+// injected here so e2e.ts can skip the cy.task("setupCredentials") call.
+//
+// Locally (no test-credentials.json), e2e.ts falls back to the dynamic setup
+// task as before.
+let presetupCredentials = null;
+const presetupPath = process.env.CREDENTIALS_OUTPUT_PATH
+  || path.join(__dirname, "test-credentials.json");
+
+if (fs.existsSync(presetupPath)) {
+  try {
+    presetupCredentials = JSON.parse(fs.readFileSync(presetupPath, "utf-8"));
+    console.log(`[cypress.config] Found pre-existing credentials at ${presetupPath}`);
+    console.log(`[cypress.config] Merchant: ${presetupCredentials.merchantId}`);
+  } catch (err) {
+    console.warn(`[cypress.config] Failed to parse ${presetupPath}: ${err.message}`);
+  }
+}
 
 module.exports = defineConfig({
   projectId: "6r9ayw",
@@ -38,6 +62,8 @@ module.exports = defineConfig({
       // Called once from the global before() hook in cypress/support/e2e.ts.
       // Creates a fresh merchant, per-connector business profiles, and MCAs
       // using the admin API key + the creds.json connector credential file.
+      //
+      // Skipped when pre-existing credentials are found (CI parallel jobs).
       on("task", {
         setupCredentials(params) {
           return setupAllCredentials(params);
@@ -72,5 +98,19 @@ module.exports = defineConfig({
     // Demo app base URL (where the webpack-dev-server for the React app runs).
     // Override via CYPRESS_CLIENT_BASE_URL if the port differs.
     CLIENT_BASE_URL: process.env.CLIENT_BASE_URL || "http://localhost:9060",
+
+    // ── Pre-existing credentials (CI parallel jobs) ───────────────────────
+    // When the "setup" job runs first, it writes test-credentials.json with
+    // { publishableKey, secretKey, merchantId, connectorProfileIds }.
+    // We inject those here and set PRESETUP_CREDENTIALS=true so e2e.ts knows
+    // to skip cy.task("setupCredentials").
+    ...(presetupCredentials
+      ? {
+          PRESETUP_CREDENTIALS: true,
+          HYPERSWITCH_PUBLISHABLE_KEY: presetupCredentials.publishableKey,
+          HYPERSWITCH_SECRET_KEY: presetupCredentials.secretKey,
+          CONNECTOR_PROFILE_IDS: presetupCredentials.connectorProfileIds,
+        }
+      : {}),
   },
 });

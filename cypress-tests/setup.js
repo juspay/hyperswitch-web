@@ -56,6 +56,27 @@ const CONNECTOR_TYPE_MAP = {
 };
 
 // ---------------------------------------------------------------------------
+// Whitelist of connectors actually used by Cypress web tests.
+//
+// The shared backend creds.json may contain 60+ connectors, but the web SDK
+// Cypress suite only exercises the ones listed below.  Filtering here avoids
+// creating unnecessary business profiles and MCAs on every test run.
+// ---------------------------------------------------------------------------
+const REQUIRED_CONNECTORS = [
+  "stripe",
+  "cybersource",
+  "trustpay",
+  "bankofamerica",
+  "netcetera",
+  "redsys",
+  "juspay",
+  "mifinity",
+  "cryptopay",
+  "cashtocode",
+  "interac",
+];
+
+// ---------------------------------------------------------------------------
 // Payment methods enabled per connector.
 //
 // "default" applies to every card-based processor not listed explicitly below.
@@ -570,6 +591,13 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
       continue;
     }
 
+    // Skip connectors not used by any Cypress web test to avoid
+    // provisioning unnecessary business profiles and MCAs.
+    if (!REQUIRED_CONNECTORS.includes(connectorName)) {
+      console.log(`[setup] Skipping "${connectorName}" — not required by Cypress web tests.`);
+      continue;
+    }
+
     const accountDetails = extractConnectorAccountDetails(connectorCreds);
     if (!accountDetails) {
       console.warn(
@@ -621,3 +649,50 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
 }
 
 module.exports = { setupAllCredentials };
+
+// ---------------------------------------------------------------------------
+// Standalone CLI entry point — used by the CI "setup" job.
+//
+//   node setup.js
+//
+// Reads env vars:
+//   ADMIN_API_KEY             — Hyperswitch admin key
+//   HYPERSWITCH_API_URL       — target API base URL (sandbox / integ / local)
+//   CONNECTOR_AUTH_FILE_PATH  — path to creds.json
+//   CREDENTIALS_OUTPUT_PATH   — where to write test-credentials.json
+//
+// Writes a JSON file with:
+//   { publishableKey, secretKey, merchantId, connectorProfileIds }
+//
+// The parallel Cypress jobs download this file and skip the setup task.
+// ---------------------------------------------------------------------------
+if (require.main === module) {
+  (async () => {
+    const adminApiKey = process.env.ADMIN_API_KEY;
+    const apiBaseUrl = process.env.HYPERSWITCH_API_URL;
+    const credsFilePath = process.env.CONNECTOR_AUTH_FILE_PATH;
+    const outputPath = process.env.CREDENTIALS_OUTPUT_PATH || "./test-credentials.json";
+
+    if (!adminApiKey) {
+      console.error("[setup] Missing ADMIN_API_KEY env var.");
+      process.exit(1);
+    }
+    if (!apiBaseUrl) {
+      console.error("[setup] Missing HYPERSWITCH_API_URL env var.");
+      process.exit(1);
+    }
+    if (!credsFilePath) {
+      console.error("[setup] Missing CONNECTOR_AUTH_FILE_PATH env var.");
+      process.exit(1);
+    }
+
+    try {
+      const creds = await setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath });
+      fs.writeFileSync(outputPath, JSON.stringify(creds, null, 2));
+      console.log(`[setup] Credentials written to ${outputPath}`);
+    } catch (err) {
+      console.error("[setup] Fatal error:", err.message);
+      process.exit(1);
+    }
+  })();
+}

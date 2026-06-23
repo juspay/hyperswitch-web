@@ -17,7 +17,22 @@ import "./commands";
 import { createPaymentBody } from "./utils";
 
 before(() => {
-  // ── Bootstrap validation ──────────────────────────────────────────────────
+  // ── Pre-existing credentials (CI parallel jobs) ──────────────────────────
+  // When the CI "setup" job runs first, it writes test-credentials.json which
+  // cypress.config.js reads and injects into Cypress.env() with
+  // PRESETUP_CREDENTIALS=true.  In that case we skip the dynamic setup task
+  // and use the shared merchant account.
+  if (Cypress.env("PRESETUP_CREDENTIALS")) {
+    const profileIds = Cypress.env("CONNECTOR_PROFILE_IDS") as Record<string, string> | undefined;
+    createPaymentBody.profile_id = profileIds?.stripe ?? "";
+
+    cy.log(`[setup] Using pre-existing credentials (shared merchant).`);
+    cy.log(`[setup] Publishable key: ${Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY")}`);
+    cy.log(`[setup] Default profile: ${createPaymentBody.profile_id} (stripe)`);
+    return;
+  }
+
+  // ── Bootstrap validation (local dev — no pre-existing credentials) ────────
   const adminApiKey = Cypress.env("ADMIN_API_KEY") as string | undefined;
   const credsFilePath = Cypress.env("CONNECTOR_AUTH_FILE_PATH") as string | undefined;
 
@@ -43,7 +58,7 @@ before(() => {
 
   // ── Credential generation (Node.js task) ─────────────────────────────────
   // Creates a fresh merchant + per-connector profiles + MCAs.
-  // Allow up to 2 minutes — 13 connectors × 2 API calls each = ~26 calls.
+  // Allow up to 2 minutes — 11 connectors × 2 API calls each = ~22 calls.
   cy.task(
     "setupCredentials",
     { adminApiKey, apiBaseUrl, credsFilePath },
@@ -52,7 +67,7 @@ before(() => {
     // Inject into Cypress.env() so every test can read these at runtime.
     Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY", creds.publishableKey);
     Cypress.env("HYPERSWITCH_SECRET_KEY",      creds.secretKey);
-    // connectorProfileIds: { stripe: "pro_...", adyen: "pro_...", ... }
+    // connectorProfileIds: { stripe: "pro_...", cybersource: "pro_...", ... }
     Cypress.env("CONNECTOR_PROFILE_IDS",       creds.connectorProfileIds);
 
     // Set the default profile_id (Stripe) on the shared payment body so that

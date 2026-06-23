@@ -12,16 +12,72 @@ permissions:
   contents: read
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Setup job — runs once, creates a shared merchant + connector profiles.
+  # The parallel Cypress jobs download the credentials artifact and reuse
+  # the same merchant account instead of each creating their own.
+  # ─────────────────────────────────────────────────────────────────────────
+  setup:
+    runs-on: ubuntu-latest
+    environment: Testing
+
+    env:
+      HS_Server_Url: "https://sandbox.hyperswitch.io"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # Download the GPG-encrypted connector credentials from S3 and decrypt.
+      - name: Download encrypted creds from S3 and decrypt
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONNECTOR_CREDS_AWS_ACCESS_KEY_ID }}
+          AWS_REGION: ${{ secrets.CONNECTOR_CREDS_AWS_REGION }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONNECTOR_CREDS_AWS_SECRET_ACCESS_KEY }}
+          CONNECTOR_AUTH_PASSPHRASE: ${{ secrets.CONNECTOR_AUTH_PASSPHRASE }}
+          CONNECTOR_CREDS_S3_BUCKET_URI: ${{ secrets.CONNECTOR_CREDS_S3_BUCKET_URI }}
+          S3_SOURCE_FILE_NAME: "68bba6ea-3c75-440f-9c4b-00a30ecbb79d.json.gpg"
+        run: |
+          mkdir -p cypress-tests
+          aws s3 cp "${CONNECTOR_CREDS_S3_BUCKET_URI}/${S3_SOURCE_FILE_NAME}" cypress-tests/creds.json.gpg
+          gpg --quiet --batch --yes --decrypt \
+              --passphrase="${CONNECTOR_AUTH_PASSPHRASE}" \
+              --output cypress-tests/creds.json cypress-tests/creds.json.gpg
+          rm cypress-tests/creds.json.gpg
+
+      - name: Create merchant, profiles, and MCAs
+        env:
+          ADMIN_API_KEY: ${{ secrets.CYPRESS_ADMIN_KEY }}
+          HYPERSWITCH_API_URL: ${{ env.HS_Server_Url }}
+          CONNECTOR_AUTH_FILE_PATH: "./cypress-tests/creds.json"
+          CREDENTIALS_OUTPUT_PATH: "./cypress-tests/test-credentials.json"
+        run: node cypress-tests/setup.js
+
+      - name: Upload credentials artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-credentials
+          path: cypress-tests/test-credentials.json
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Cypress test jobs — 5 parallel jobs sharing the same merchant account.
+  # ─────────────────────────────────────────────────────────────────────────
   cypress:
     runs-on: ubuntu-latest
     environment: Testing
+    needs: [setup]
 
     strategy:
       fail-fast: false
       matrix:
         category: [01-sdk-core, 02-cards, 03-bank-transfers, 04-alternative-payments, 05-external-3ds]
-        # To also run against integ, add: test_env: [sandbox, integ]
-        # and pass matrix.test_env as TEST_ENV below.
 
     env:
       HS_Server_Url: "https://sandbox.hyperswitch.io"
@@ -43,6 +99,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Download credentials artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: test-credentials
+          path: cypress-tests/
+
       # Demo app only needs server/client URLs — Cypress injects keys via URL
       # params when isCypressTestMode=true, so no API credentials are needed here.
       - name: Create demo app .env file
@@ -51,27 +113,7 @@ jobs:
           touch .env
           echo "STATIC_DIR=./dist"                        >> .env
           echo "HYPERSWITCH_SERVER_URL=$HS_Server_Url"    >> .env
-          echo "HYPERSWITCH_CLIENT_URL=$HS_Client_Url"    >> .env
-
-      # Download the GPG-encrypted connector credentials from S3 and decrypt.
-      # The encrypted file is stored in an S3 bucket (not as a GitHub Secret)
-      # so that credentials remain encrypted at rest and aren't visible in the
-      # GitHub Secrets UI. This mirrors the pattern used by the backend repo.
-      - name: Download encrypted creds from S3 and decrypt
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.CONNECTOR_CREDS_AWS_ACCESS_KEY_ID }}
-          AWS_REGION: ${{ secrets.CONNECTOR_CREDS_AWS_REGION }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONNECTOR_CREDS_AWS_SECRET_ACCESS_KEY }}
-          CONNECTOR_AUTH_PASSPHRASE: ${{ secrets.CONNECTOR_AUTH_PASSPHRASE }}
-          CONNECTOR_CREDS_S3_BUCKET_URI: ${{ secrets.CONNECTOR_CREDS_S3_BUCKET_URI }}
-          S3_SOURCE_FILE_NAME: "68bba6ea-3c75-440f-9c4b-00a30ecbb79d.json.gpg"
-        run: |
-          mkdir -p cypress-tests
-          aws s3 cp "${CONNECTOR_CREDS_S3_BUCKET_URI}/${S3_SOURCE_FILE_NAME}" cypress-tests/creds.json.gpg
-          gpg --quiet --batch --yes --decrypt \
-              --passphrase="${CONNECTOR_AUTH_PASSPHRASE}" \
-              --output cypress-tests/creds.json cypress-tests/creds.json.gpg
-          rm cypress-tests/creds.json.gpg
+          echo "HYPERSWITCH_CLIENT_URL=$HS_Client_Url"     >> .env
 
       - name: Build and start local server
         run: |
@@ -86,12 +128,10 @@ jobs:
           working-directory: ./cypress-tests
           spec: cypress/e2e/${{ matrix.category }}/**/*.cy.ts
         env:
-          # Admin API key — used by the before() hook to create a fresh merchant
-          # account + connector profiles before each test run.
-          CYPRESS_ADMIN_API_KEY: ${{ secrets.CYPRESS_ADMIN_KEY }}
-
-          # Path to the connector credentials file written above.
-          CYPRESS_CONNECTOR_AUTH_FILE_PATH: "./creds.json"
+          # Path to the pre-existing credentials file (downloaded from artifact).
+          # cypress.config.js reads this and injects the keys into Cypress.env()
+          # with PRESETUP_CREDENTIALS=true so e2e.ts skips the setup task.
+          CREDENTIALS_OUTPUT_PATH: "./test-credentials.json"
 
           # Target environment (controls which API URL is used).
           TEST_ENV: sandbox
