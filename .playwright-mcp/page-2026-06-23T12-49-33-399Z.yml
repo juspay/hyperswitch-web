@@ -1,0 +1,91 @@
+- generic [ref=e3]:
+  - heading "Hyperswitch Unified Checkout" [level=2] [ref=e5]
+  - generic [ref=e6]:
+    - generic [ref=e12]:
+      - generic [ref=e13]: ℹ
+      - generic [ref=e14]: http://localhost:9060
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - img "Hyperswitch logo" [ref=e19]
+            - text: Hyperswitch Playground App
+          - generic [ref=e20]: Test Mode
+        - heading "Order Summary (2)" [level=2] [ref=e21]
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]:
+              - img "HS Tshirt" [ref=e26]
+              - generic [ref=e27]:
+                - generic [ref=e28]: HS Tshirt
+                - generic [ref=e29]:
+                  - text: "Size:"
+                  - generic [ref=e30]: "37"
+                  - text: "Qty:"
+                  - generic [ref=e31]: "1"
+                - generic [ref=e32]:
+                  - text: "Color:"
+                  - generic [ref=e33]: Black
+            - generic [ref=e34]: ₹100.00
+          - generic [ref=e35]:
+            - generic [ref=e36]:
+              - img "HS Cap" [ref=e38]
+              - generic [ref=e39]:
+                - generic [ref=e40]: HS Cap
+                - generic [ref=e41]:
+                  - text: "Size:"
+                  - generic [ref=e42]: "2"
+                  - text: "Qty:"
+                  - generic [ref=e43]: "1"
+                - generic [ref=e44]:
+                  - text: "Color:"
+                  - generic [ref=e45]: Black
+            - generic [ref=e46]: ₹100.00
+          - generic [ref=e47]:
+            - generic [ref=e48]: Total Amount
+            - generic [ref=e49]: ₹200.00
+      - generic [ref=e51]:
+        - iframe [active] [ref=e55]:
+          - generic [ref=f5e1]:
+            - img [ref=f5e2]
+            - generic [ref=f5e9]:
+              - region "Payment Section" [ref=f5e92]:
+                - region "Wallet Section"
+                - generic [ref=f5e93]:
+                  - button "Card" [ref=f5e95] [cursor=pointer]:
+                    - img [ref=f5e97]
+                    - generic [ref=f5e99]: Card
+                  - generic [ref=f5e102]:
+                    - generic [ref=f5e104]:
+                      - generic [ref=f5e105]:
+                        - textbox "Type to fill Card Number input" [ref=f5e106]:
+                          - /placeholder: ""
+                          - text: 4242 4242 4242 4242
+                        - generic: Card Number
+                      - img [ref=f5e109]
+                    - generic [ref=f5e111]:
+                      - generic [ref=f5e115]:
+                        - textbox "Type to fill Expiry input" [active] [ref=f5e116]:
+                          - /placeholder: ""
+                        - generic: Expiry
+                      - generic [ref=f5e119]:
+                        - generic [ref=f5e120]:
+                          - textbox "Type to fill CVC input" [ref=f5e121]:
+                            - /placeholder: ""
+                          - generic: CVC
+                        - img [ref=f5e123]
+                    - checkbox "Select to save card details" [ref=f5e126]:
+                      - generic [ref=f5e127] [cursor=pointer]:
+                        - checkbox "Save card details"
+                        - generic [ref=f5e129]: Save card details
+                    - generic [ref=f5e133]:
+                      - img [ref=f5e134]
+                      - generic [ref=f5e136]:
+                        - text: A surcharge amount of upto
+                        - strong [ref=f5e137]: USD 0.89
+                        - text: will be applied for this transaction
+              - button "Click to use existing payment methods" [ref=f5e130] [cursor=pointer]:
+                - img [ref=f5e131]
+                - text: Use saved payment methods
+              - img [ref=f5e84]
+        - button "Pay now" [ref=e56] [cursor=pointer]

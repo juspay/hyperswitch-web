@@ -1,0 +1,124 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Surcharge UX" [level=1] [ref=e4]
+    - paragraph [ref=e5]: 12 variants for the surcharge block — loading (eligibility check) & resolved message. Card-form + saved-card.
+    - navigation [ref=e6]:
+      - button "01 Skeleton inline experiment" [ref=e7] [cursor=pointer]:
+        - generic [ref=e8]: "01"
+        - generic [ref=e9]: Skeleton inline
+        - generic [ref=e10]: experiment
+      - button "02 Label + amount badge experiment" [ref=e11] [cursor=pointer]:
+        - generic [ref=e12]: "02"
+        - generic [ref=e13]: Label + amount badge
+        - generic [ref=e14]: experiment
+      - button "03 Soft tinted callout current copy" [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: "03"
+        - generic [ref=e17]: Soft tinted callout
+        - generic [ref=e18]: current copy
+      - button "04 Left-accent notice experiment" [ref=e19] [cursor=pointer]:
+        - generic [ref=e20]: "04"
+        - generic [ref=e21]: Left-accent notice
+        - generic [ref=e22]: experiment
+      - button "05 Fee divider row experiment" [ref=e23] [cursor=pointer]:
+        - generic [ref=e24]: "05"
+        - generic [ref=e25]: Fee divider row
+        - generic [ref=e26]: experiment
+      - button "06 Itemised breakdown experiment" [ref=e27] [cursor=pointer]:
+        - generic [ref=e28]: "06"
+        - generic [ref=e29]: Itemised breakdown
+        - generic [ref=e30]: experiment
+      - button "07 Compact pill / chip experiment" [ref=e31] [cursor=pointer]:
+        - generic [ref=e32]: "07"
+        - generic [ref=e33]: Compact pill / chip
+        - generic [ref=e34]: experiment
+      - button "08 Spinner status line experiment" [ref=e35] [cursor=pointer]:
+        - generic [ref=e36]: "08"
+        - generic [ref=e37]: Spinner status line
+        - generic [ref=e38]: experiment
+      - button "09 Animated dots (current copy) current copy" [ref=e39] [cursor=pointer]:
+        - generic [ref=e40]: "09"
+        - generic [ref=e41]: Animated dots (current copy)
+        - generic [ref=e42]: current copy
+      - button "10 Indeterminate progress experiment" [ref=e43] [cursor=pointer]:
+        - generic [ref=e44]: "10"
+        - generic [ref=e45]: Indeterminate progress
+        - generic [ref=e46]: experiment
+      - button "11 Two-line callout experiment" [ref=e47] [cursor=pointer]:
+        - generic [ref=e48]: "11"
+        - generic [ref=e49]: Two-line callout
+        - generic [ref=e50]: experiment
+      - button "12 Polished current current copy" [ref=e51] [cursor=pointer]:
+        - generic [ref=e52]: "12"
+        - generic [ref=e53]: Polished current
+        - generic [ref=e54]: current copy
+  - main [ref=e55]:
+    - generic [ref=e56]: Variant 11 of 12
+    - heading "Two-line callout experiment" [level=2] [ref=e57]:
+      - text: Two-line callout
+      - generic [ref=e58]: experiment
+    - paragraph [ref=e59]: "The most prominent: a callout with a tag icon, a bold title and a supporting line spelling out the impact. Loading pulses the icon and shimmers the subline under a “Checking eligibility…” title."
+    - paragraph [ref=e60]: Highest clarity and visibility. Biggest footprint — best when surcharge transparency is a priority or amounts are large.
+    - generic [ref=e61]:
+      - generic [ref=e62]: State
+      - generic [ref=e63]:
+        - button "Fetching" [ref=e64] [cursor=pointer]
+        - button "Resolved" [ref=e65] [cursor=pointer]
+      - button "▶ Replay transition" [ref=e66] [cursor=pointer]
+      - 'button "Annotations: off" [ref=e67] [cursor=pointer]'
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - generic [ref=e70]: Card form
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - img [ref=e74]
+            - generic [ref=e76]: Card
+          - generic [ref=e77]:
+            - generic [ref=e78]: Card Number
+            - generic [ref=e79]:
+              - text: 4242 4242 4242 4242
+              - generic [ref=e80]: VISA
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - generic [ref=e83]: Expiry
+              - generic [ref=e85]: MM / YY
+            - generic [ref=e86]:
+              - generic [ref=e87]: CVC
+              - generic [ref=e89]: CVC
+          - generic [ref=e90]: Save card details
+          - generic [ref=e94]:
+            - img [ref=e96]
+            - generic [ref=e99]:
+              - generic [ref=e100]: Surcharge applies
+              - generic [ref=e101]: USD 0.89 will be added to your total
+          - generic [ref=e102]:
+            - generic [ref=e103]: 💬
+            - text: Use saved payment methods
+          - generic [ref=e104]: powered by hyperswitch
+          - button "Pay now" [ref=e105]
+      - generic [ref=e106]:
+        - generic [ref=e107]: Saved card
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - generic [ref=e112]: VISA
+            - generic [ref=e113]: xyz**** 4242
+            - generic [ref=e114]: 04 / 29
+            - generic [ref=e115]:
+              - generic [ref=e116]: "CVC:"
+              - generic [ref=e120]:
+                - img [ref=e122]
+                - generic [ref=e125]:
+                  - generic [ref=e126]: Surcharge applies
+                  - generic [ref=e127]: USD 4.99 will be added to your total
+          - generic [ref=e128]:
+            - generic [ref=e130]: VISA
+            - generic [ref=e131]: kanikatest**** 1111
+            - generic [ref=e132]: 02 / 33
+          - generic [ref=e133]:
+            - generic [ref=e135]: VISA
+            - generic [ref=e136]: kanika2**** 1091
+            - generic [ref=e137]: 02 / 29
+          - generic [ref=e138]:
+            - generic [ref=e139]: +
+            - text: New payment methods
+          - generic [ref=e140]: powered by hyperswitch
+          - button "Pay now" [ref=e141]

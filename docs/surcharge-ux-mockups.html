@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Surcharge UX — Variant Mockups</title>
+<style>
+  :root{
+    --primary:#006df9;
+    --danger:#fd1717;
+    --text:#545454;
+    --text2:#999999;
+    --border:#e6e6e6;
+    --bg:#ffffff;
+    --tint:rgba(0,109,249,.06);
+    --tint2:rgba(0,109,249,.10);
+    --shim1:#ececec;
+    --shim2:#f6f6f6;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text);
+    background:#f3f4f6;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* ---------- App shell ---------- */
+  .app{display:flex;min-height:100vh}
+  .side{
+    width:248px;flex:0 0 248px;background:#fff;border-right:1px solid var(--border);
+    padding:18px 0;position:sticky;top:0;height:100vh;overflow:auto;
+  }
+  .side h1{font-size:14px;margin:0 18px 2px;color:var(--text)}
+  .side p{font-size:11px;margin:0 18px 16px;color:var(--text2);line-height:1.5}
+  .navbtn{
+    display:flex;align-items:center;gap:9px;width:100%;text-align:left;cursor:pointer;
+    border:0;background:none;padding:9px 18px;font-size:12.5px;color:var(--text);border-left:3px solid transparent;
+  }
+  .navbtn:hover{background:#fafafa}
+  .navbtn.active{background:var(--tint);border-left-color:var(--primary);color:var(--primary);font-weight:600}
+  .navbtn .num{font-size:11px;color:var(--text2);width:18px;flex:0 0 18px}
+  .navbtn.active .num{color:var(--primary)}
+  .navbtn .tag{margin-left:auto;font-size:9px;padding:2px 6px;border-radius:10px;font-weight:600;letter-spacing:.02em}
+  .tag.exp{background:var(--tint2);color:var(--primary)}
+  .tag.cur{background:#f0f0f0;color:var(--text2)}
+
+  /* ---------- Main ---------- */
+  .main{flex:1;padding:26px 34px 70px;max-width:1180px}
+  .crumb{font-size:11px;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+  .vtitle{font-size:21px;margin:0 0 8px;color:#333;display:flex;align-items:center;gap:10px}
+  .vtitle .tag{font-size:10px;padding:3px 8px;border-radius:10px}
+  .vdesc{font-size:13.5px;color:var(--text);line-height:1.6;max-width:760px;margin:0 0 4px}
+  .vtrade{font-size:12.5px;color:var(--text2);line-height:1.6;max-width:760px;margin:8px 0 0}
+  .vtrade b{color:var(--text)}
+
+  /* ---------- Control bar ---------- */
+  .controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:20px 0 22px}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+  .seg button{border:0;background:#fff;color:var(--text);font-size:12px;padding:7px 14px;cursor:pointer}
+  .seg button.on{background:var(--primary);color:#fff;font-weight:600}
+  .seg button + button{border-left:1px solid var(--border)}
+  .ctlbtn{border:1px solid var(--border);background:#fff;color:var(--text);font-size:12px;padding:7px 14px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .ctlbtn:hover{border-color:var(--primary);color:var(--primary)}
+  .ctlbtn.active{border-color:var(--primary);color:var(--primary);background:var(--tint)}
+  .ctllabel{font-size:11px;color:var(--text2);margin-right:-6px}
+
+  /* ---------- Stage with the two SDK widgets ---------- */
+  .stage{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start}
+  .ctx{flex:1;min-width:320px;max-width:420px}
+  .ctx > .ctxlabel{font-size:11px;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin:0 0 10px;display:flex;align-items:center;gap:7px}
+  .ctx > .ctxlabel::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--primary)}
+
+  /* ---------- SDK widget (kept identical across variants) ---------- */
+  .sdk{background:#fff;border-radius:10px;padding:18px 16px 16px;box-shadow:0 6px 24px rgba(20,30,60,.08);border:1px solid #f0f0f0}
+  .pm-tab{display:flex;flex-direction:column;gap:6px;border:1px solid var(--primary);border-radius:4px;padding:12px 14px;color:var(--primary);font-size:13px;font-weight:600;margin-bottom:12px}
+  .pm-tab svg{display:block}
+  .field{margin-bottom:10px}
+  .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:4px}
+  .input{border:1px solid var(--border);border-radius:4px;padding:11px 12px;font-size:13px;color:var(--text);display:flex;align-items:center;justify-content:space-between;min-height:42px}
+  .input.focus{border-color:var(--primary)}
+  .input .ph{color:var(--text2)}
+  .row2{display:flex;gap:10px}
+  .row2 .field{flex:1}
+  .visa{background:var(--primary);color:#fff;font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 5px;border-radius:3px}
+  .cardicon{color:var(--text2)}
+  .cbrow{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);padding:6px 0 2px}
+  .cb{width:16px;height:16px;border:1px solid var(--border);border-radius:4px;display:inline-block;flex:0 0 16px}
+  .link{color:var(--primary);font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px;margin:14px 0 6px}
+  .link .plus{width:16px;height:16px;border-radius:50%;border:1.4px solid var(--primary);display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1}
+  .powered{text-align:center;font-size:10px;color:var(--text2);margin:12px 0}
+  .powered b{color:#8a8a8a}
+  .pay{width:100%;background:var(--primary);color:#fff;border:0;border-radius:4px;padding:13px;font-size:14px;font-weight:700;cursor:default}
+
+  /* saved cards */
+  .saved{border-bottom:1px solid var(--border);padding:14px 4px;display:grid;grid-template-columns:18px 34px 1fr auto;align-items:center;gap:10px;font-size:13px;color:var(--text)}
+  .saved.sel{align-items:start}
+  .radio{width:16px;height:16px;border-radius:50%;border:1.6px solid var(--border);display:inline-block}
+  .radio.on{border-color:var(--primary);position:relative}
+  .radio.on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--primary)}
+  .cardname b{font-weight:600}
+  .cardname .mask{color:var(--text2);letter-spacing:.04em;margin-left:4px}
+  .exp{font-size:12px;color:var(--text2);white-space:nowrap}
+  .sel .selbody{grid-column:2 / -1;margin-top:10px}
+  .cvc-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
+  .cvc-box{width:66px;height:30px;border:1px solid var(--primary);border-radius:4px}
+
+  .slot{position:relative}
+
+  /* ---------- surcharge primitives ---------- */
+  .sc-msg{font-size:12px;color:var(--text2);line-height:1.45;text-align:left}
+  .sc-strong{color:var(--text);font-weight:700}
+  .sc-strong.p{color:var(--primary)}
+  .reveal{animation:fadeInUp .34s ease both}
+  .ic{display:inline-flex;align-items:center;justify-content:center}
+
+  .shim{background:linear-gradient(90deg,var(--shim1) 25%,var(--shim2) 37%,var(--shim1) 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;border-radius:3px}
+  .spin{animation:spin .8s linear infinite;transform-origin:center}
+  .pulse{animation:pulse 1.3s ease-in-out infinite}
+
+  .dots{display:inline-flex;gap:3px;margin-left:2px}
+  .dots i{width:3px;height:3px;border-radius:50%;background:var(--text2);display:inline-block;animation:blink 1.2s infinite both}
+  .dots i:nth-child(2){animation-delay:.2s}
+  .dots i:nth-child(3){animation-delay:.4s}
+
+  .track{height:2px;background:var(--border);border-radius:2px;overflow:hidden;width:100%}
+  .track .bar{height:100%;width:38%;background:var(--primary);border-radius:2px;animation:indet 1.15s ease-in-out infinite}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--tint2);color:var(--primary);font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:999px}
+  .pill.muted{background:#f1f1f1;color:var(--text2)}
+
+  .callout{border-radius:4px;padding:10px 12px;display:flex;gap:9px;align-items:flex-start}
+  .callout.tint{background:var(--tint)}
+  .callout.accent{background:#fff;border:1px solid var(--border);border-left:3px solid var(--primary)}
+  .callout .ic{color:var(--primary);margin-top:1px;flex:0 0 auto}
+
+  @keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.42}}
+  @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+  @keyframes indet{0%{margin-left:-38%}100%{margin-left:100%}}
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+  @media(max-width:980px){
+    .app{flex-direction:column}
+    .side{width:100%;flex:none;height:auto;position:static;border-right:0;border-bottom:1px solid var(--border)}
+    .stage{flex-direction:column}.ctx{max-width:420px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <h1>Surcharge UX</h1>
+    <p>15 variants for the surcharge block — loading (eligibility check) &amp; resolved message. Card-form + saved-card.</p>
+    <nav id="nav"></nav>
+  </aside>
+  <main class="main">
+    <div class="crumb" id="crumb">Variant</div>
+    <h2 class="vtitle" id="vtitle"></h2>
+    <p class="vdesc" id="vdesc"></p>
+    <p class="vtrade" id="vtrade"></p>
+
+    <div class="controls">
+      <span class="ctllabel">State</span>
+      <div class="seg" id="stateSeg">
+        <button data-mode="loading" class="on">Fetching</button>
+        <button data-mode="resolved">Resolved</button>
+      </div>
+      <button class="ctlbtn" id="replay">▶ Replay transition</button>
+    </div>
+
+    <div class="stage">
+      <div class="ctx">
+        <div class="ctxlabel">Card form</div>
+        <div id="ctxCard"></div>
+      </div>
+      <div class="ctx">
+        <div class="ctxlabel">Saved card</div>
+        <div id="ctxSaved"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============ icons ============ */
+const I = {
+  card:'<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="4.5" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 8h16" stroke="currentColor" stroke-width="1.5"/></svg>',
+  info:(s=14)=>`<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="4.7" r=".95" fill="currentColor"/><rect x="7.2" y="6.9" width="1.6" height="5" rx=".8" fill="currentColor"/></svg>`,
+  spinner:(s=15)=>`<svg class="spin" width="${s}" height="${s}" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.3" stroke="#e6e6e6" stroke-width="1.7"/><path d="M8 1.7A6.3 6.3 0 0 1 14.3 8" stroke="#006df9" stroke-width="1.7" stroke-linecap="round"/></svg>`,
+  check:(s=14)=>`<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#006df9" stroke-width="1.3"/><path d="M5 8.3l2 2 4-4.4" stroke="#006df9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  tag:(s=15)=>`<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none"><path d="M8.2 2.2H3.2A1 1 0 0 0 2.2 3.2v5l5.6 5.6a1 1 0 0 0 1.4 0l4.2-4.2a1 1 0 0 0 0-1.4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="5.2" cy="5.2" r="1" fill="currentColor"/></svg>`,
+  receipt:(s=15)=>`<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none"><path d="M3.5 2.2h9v11.6l-1.5-1-1.5 1-1.5-1-1.5 1-1.5-1V2.2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.6 5.4h4.8M5.6 8h4.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+};
+
+/* ============ context amount data ============ */
+const card  = {cur:'USD', amt:'0.89', order:'200.00', total:'200.89'};
+const saved = {cur:'USD', amt:'4.99', order:'200.00', total:'204.99'};
+
+/* small helpers */
+const money = d => `${d.cur} ${d.amt}`;
+const wrap  = (inner, extra='') => `<div class="reveal" style="margin-top:8px;${extra}">${inner}</div>`;
+
+/* ============ the 12 variants ============ */
+/* each: build(mode, d) -> html string for the surcharge block only */
+const VARIANTS = [
+  {
+    name:'Skeleton inline', tag:'exp',
+    desc:'A refined version of today’s single line. While checking, a skeleton placeholder occupies the exact line the message will fill — so nothing jumps when it resolves. Info icon replaces the asterisk; the amount is emphasised.',
+    trade:'<b>Lowest footprint, closest to current.</b> Skeleton reads as “loading” without words, so it leans on motion rather than an explicit eligibility message.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div style="display:flex;align-items:center;gap:8px"><div class="shim" style="width:14px;height:14px;border-radius:50%"></div><div class="shim" style="height:9px;width:64%"></div></div>`)
+      : wrap(`<div style="display:flex;align-items:center;gap:7px;color:var(--primary)"><span class="ic">${I.info(13)}</span><span class="sc-msg">Includes a <span class="sc-strong">${money(d)}</span> surcharge</span></div>`)
+  },
+  {
+    name:'Label + amount badge', tag:'exp',
+    desc:'Two-column treatment: a quiet label on the left, the fee as a tinted badge pinned right so it’s instantly scannable. Loading shows the label with a shimmering badge in place.',
+    trade:'<b>Amount is the most scannable here.</b> Needs the full width of the block; the right-aligned badge is a small departure from the current left-aligned line.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span class="sc-msg">Checking for fees…</span><div class="shim" style="height:20px;width:64px;border-radius:999px"></div></div>`)
+      : wrap(`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span class="sc-msg">Surcharge applied</span><span class="pill">${money(d)}</span></div>`)
+  },
+  {
+    name:'Soft tinted callout', tag:'cur',
+    desc:'The message sits in a soft primary-tinted notice with an info icon — more visible and “official”, while keeping the current sentence. Loading uses two shimmer lines inside the same box, so the container never resizes.',
+    trade:'<b>Noticeable and transparent; keeps current copy.</b> Adds a filled block to an otherwise flat form — the heaviest of the inline options.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div class="callout tint"><span class="ic pulse">${I.info(14)}</span><div style="flex:1;display:flex;flex-direction:column;gap:6px;padding-top:1px"><div class="shim" style="height:8px;width:90%"></div><div class="shim" style="height:8px;width:55%"></div></div></div>`)
+      : wrap(`<div class="callout tint"><span class="ic">${I.info(14)}</span><div class="sc-msg" style="color:var(--text)">A surcharge amount of upto <span class="sc-strong">${money(d)}</span> will be applied for this transaction</div></div>`)
+  },
+  {
+    name:'Left-accent notice', tag:'exp',
+    desc:'A bordered notice with a 3px primary accent bar — structured and on-brand. The loading state swaps the message for an inline spinner and an explicit “verifying eligibility” line.',
+    trade:'<b>Clear hierarchy, ties loading to the eligibility check.</b> Slightly heavier than a plain line; the border competes a little with the input borders above.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div class="callout accent"><span class="ic">${I.spinner(15)}</span><div class="sc-msg" style="color:var(--text);padding-top:1px">Verifying card eligibility…</div></div>`)
+      : wrap(`<div class="callout accent"><span class="ic">${I.info(14)}</span><div class="sc-msg" style="color:var(--text);padding-top:1px">A <span class="sc-strong">${money(d)}</span> surcharge will be added at checkout</div></div>`)
+  },
+  {
+    name:'Fee divider row', tag:'exp',
+    desc:'Receipt-style: a hairline divider, then a “Surcharge” label with the amount aligned right. Loading keeps the label and shimmers only the value, so the row is stable.',
+    trade:'<b>Clean and familiar (reads like a line item).</b> Minimal explanation — relies on the user understanding “Surcharge” without a sentence.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div style="border-top:1px solid var(--border);padding-top:9px;display:flex;align-items:center;justify-content:space-between"><span class="sc-msg">Surcharge</span><div class="shim" style="height:11px;width:72px"></div></div>`)
+      : wrap(`<div style="border-top:1px solid var(--border);padding-top:9px;display:flex;align-items:center;justify-content:space-between"><span class="sc-msg" style="color:var(--text)">Surcharge</span><span class="sc-strong">${money(d)}</span></div>`)
+  },
+  {
+    name:'Itemised breakdown', tag:'exp',
+    desc:'A tiny breakdown — order amount, surcharge, and the new total payable — so the customer sees exactly what they’ll pay. Loading shimmers the surcharge and total values while labels stay put.',
+    trade:'<b>Maximum transparency (shows the new total).</b> Largest footprint and the only one that restates the order amount — needs accurate numbers and may echo the merchant’s own summary.',
+    build:(m,d)=>{
+      const row=(l,v,strong=false,p=false)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0"><span class="sc-msg"${strong?' style="color:var(--text)"':''}>${l}</span>${v}</div>`;
+      const val=t=>`<span class="${'sc-strong'+(t.p?' p':'')}" style="${t.strong?'font-size:13px':'font-weight:700'}">${t.txt}</span>`;
+      if(m==='loading'){
+        return wrap(`<div style="border-top:1px solid var(--border);padding-top:9px">
+          ${row('Order amount', `<span class="sc-msg" style="color:var(--text)">${d.cur} ${d.order}</span>`)}
+          ${row('Surcharge', `<div class="shim" style="height:10px;width:60px"></div>`)}
+          <div style="border-top:1px dashed var(--border);margin:5px 0"></div>
+          ${row('Total payable', `<div class="shim" style="height:12px;width:78px"></div>`, true)}
+        </div>`);
+      }
+      return wrap(`<div style="border-top:1px solid var(--border);padding-top:9px">
+        ${row('Order amount', `<span class="sc-msg" style="color:var(--text)">${d.cur} ${d.order}</span>`)}
+        ${row('Surcharge', `<span class="sc-strong">+ ${money(d)}</span>`)}
+        <div style="border-top:1px dashed var(--border);margin:5px 0"></div>
+        ${row('Total payable', `<span class="sc-strong p" style="font-size:13px">${d.cur} ${d.total}</span>`, true)}
+      </div>`);
+    }
+  },
+  {
+    name:'Compact pill / chip', tag:'exp',
+    desc:'The most minimal: a single rounded chip with the fee. During the check the chip shows a shimmer with “Checking fees…”, then morphs into the fee chip.',
+    trade:'<b>Tiny and elegant, almost zero layout cost.</b> Very little room to explain what the fee is or why — best when surcharge is expected.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<span class="pill muted"><span class="ic pulse" style="color:var(--text2)">${I.spinner(12)}</span>Checking fees…</span>`)
+      : wrap(`<span class="pill"><span class="ic">${I.tag(13)}</span>+ ${money(d)} fee</span>`)
+  },
+  {
+    name:'Spinner status line', tag:'exp',
+    desc:'Leans into the eligibility call: a spinner with “Checking for additional fees…”, resolving to a small confirmation tick and a card-specific sentence.',
+    trade:'<b>Most explicit about the live check.</b> A spinner draws the eye to a sub-second step; on fast networks it may flash briefly.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div style="display:flex;align-items:center;gap:8px"><span class="ic">${I.spinner(14)}</span><span class="sc-msg">Checking for additional fees…</span></div>`)
+      : wrap(`<div style="display:flex;align-items:center;gap:7px"><span class="ic">${I.check(14)}</span><span class="sc-msg">A <span class="sc-strong">${money(d)}</span> surcharge applies to this card</span></div>`)
+  },
+  {
+    name:'Animated dots (current copy)', tag:'cur',
+    desc:'Keeps the existing loading sentence but animates it — “Payment details are being checked” with live dots, so it no longer looks frozen. The resolved message keeps the current wording and fades in.',
+    trade:'<b>Smallest possible copy change; smooth transition.</b> Loading stays text-only (no progress affordance beyond the dots).',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div class="sc-msg" style="display:flex;align-items:center">Payment details are being checked<span class="dots"><i></i><i></i><i></i></span></div>`)
+      : wrap(`<div style="display:flex;align-items:flex-start;gap:6px;color:var(--primary)"><span class="ic" style="margin-top:1px">${I.info(12)}</span><span class="sc-msg">A surcharge amount of upto <span class="sc-strong">${money(d)}</span> will be applied for this transaction</span></div>`)
+  },
+  {
+    name:'Indeterminate progress', tag:'exp',
+    desc:'A thin indeterminate progress bar with “Verifying payment details…” gives a strong “system is working” signal, then collapses into the surcharge line.',
+    trade:'<b>Strongest sense of progress.</b> A moving bar can feel weighty for a sub-second check on a small fee.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div><div class="track"><div class="bar"></div></div><div class="sc-msg" style="margin-top:7px">Verifying payment details…</div></div>`)
+      : wrap(`<div style="display:flex;align-items:center;gap:7px"><span class="ic" style="color:var(--primary)">${I.info(13)}</span><span class="sc-msg"><span class="sc-strong">${money(d)}</span> surcharge included in your total</span></div>`)
+  },
+  {
+    name:'Two-line callout', tag:'exp',
+    desc:'The most prominent: a callout with a tag icon, a bold title and a supporting line spelling out the impact. Loading pulses the icon and shimmers the subline under a “Checking eligibility…” title.',
+    trade:'<b>Highest clarity and visibility.</b> Biggest footprint — best when surcharge transparency is a priority or amounts are large.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div class="callout tint"><span class="ic pulse">${I.tag(15)}</span><div style="flex:1"><div class="sc-strong" style="font-size:12.5px;color:var(--text)">Checking eligibility…</div><div class="shim" style="height:8px;width:70%;margin-top:6px"></div></div></div>`)
+      : wrap(`<div class="callout tint"><span class="ic">${I.tag(15)}</span><div style="flex:1"><div class="sc-strong" style="font-size:12.5px;color:var(--text)">Surcharge applies</div><div class="sc-msg" style="margin-top:2px"><span class="sc-strong">${money(d)}</span> will be added to your total</div></div></div>`)
+  },
+  {
+    name:'Polished current', tag:'cur',
+    desc:'The lowest-risk ship: identical copy and the red asterisk you have today, but with better contrast, the amount bolded, and a gentle fade-in. Loading keeps the exact current sentence, lightly pulsing instead of sitting static.',
+    trade:'<b>Zero copy change — pure visual polish.</b> Useful as the control/baseline to compare the experiments against. Least differentiated.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div class="sc-msg pulse">Payment details are being checked. Please wait</div>`)
+      : wrap(`<div style="display:flex;align-items:flex-start;gap:6px"><span class="ic" style="color:var(--danger);font-size:11px;margin-top:1px;font-weight:700">✱</span><span class="sc-msg" style="color:var(--text)">A surcharge amount of upto <span class="sc-strong">${money(d)}</span> will be applied for this transaction</span></div>`)
+  },
+  {
+    name:'Current — as-is (baseline)', tag:'cur',
+    desc:'Today’s implementation, unchanged — included as the control to compare the others against. A static gray line during the check, then the red asterisk with the existing sentence.',
+    trade:'<b>The current experience.</b> Loading has no motion (can look frozen) and the message is low-contrast and easy to miss — exactly what the other variants set out to fix.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div class="sc-msg">Payment details are being checked. Please wait</div>`)
+      : wrap(`<div style="display:flex;align-items:flex-start;gap:5px"><span style="color:var(--danger);font-size:10px;line-height:1.45;margin-top:1px">✱</span><span class="sc-msg">A surcharge amount of upto <strong style="color:inherit">${money(d)}</strong> will be applied for this transaction</span></div>`)
+  },
+  {
+    name:'Current + spinner', tag:'cur',
+    desc:'Identical to today’s message and red asterisk — the only change is the loading line gains a small spinner, so it no longer looks frozen while eligibility is checked.',
+    trade:'<b>Lowest-risk improvement.</b> Touches only the loading state; the resolved message stays exactly as it is today.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div style="display:flex;align-items:center;gap:8px"><span class="ic">${I.spinner(14)}</span><span class="sc-msg">Payment details are being checked. Please wait</span></div>`)
+      : wrap(`<div style="display:flex;align-items:flex-start;gap:5px"><span style="color:var(--danger);font-size:10px;line-height:1.45;margin-top:1px">✱</span><span class="sc-msg">A surcharge amount of upto <strong style="color:inherit">${money(d)}</strong> will be applied for this transaction</span></div>`)
+  },
+  {
+    name:'Current + skeleton', tag:'cur',
+    desc:'Keeps the current message and asterisk; the loading line is swapped for a shimmer skeleton, giving clear motion with no text that can appear stuck.',
+    trade:'<b>Loading-only change, no copy.</b> The skeleton implies loading without words; the resolved state is exactly today’s.',
+    build:(m,d)=> m==='loading'
+      ? wrap(`<div class="shim" style="height:10px;width:72%"></div>`)
+      : wrap(`<div style="display:flex;align-items:flex-start;gap:5px"><span style="color:var(--danger);font-size:10px;line-height:1.45;margin-top:1px">✱</span><span class="sc-msg">A surcharge amount of upto <strong style="color:inherit">${money(d)}</strong> will be applied for this transaction</span></div>`)
+  },
+];
+
+/* ============ SDK context templates (unchanged across variants) ============ */
+function cardForm(slotHTML){
+  return `<div class="sdk">
+    <div class="pm-tab">${I.card}<span>Card</span></div>
+    <div class="field"><label>Card Number</label><div class="input">4242 4242 4242 4242 <span class="visa">VISA</span></div></div>
+    <div class="row2">
+      <div class="field"><label>Expiry</label><div class="input focus"><span class="ph">MM / YY</span></div></div>
+      <div class="field"><label>CVC</label><div class="input"><span class="ph">CVC</span></div></div>
+    </div>
+    <div class="cbrow"><span class="cb"></span> Save card details</div>
+    <div class="slot">${slotHTML}</div>
+    <div class="link"><span style="font-size:15px">💬</span> Use saved payment methods</div>
+    <div class="powered">powered by <b>hyperswitch</b></div>
+    <button class="pay">Pay now</button>
+  </div>`;
+}
+function savedCard(slotHTML){
+  return `<div class="sdk">
+    <div class="saved sel">
+      <span class="radio on"></span>
+      <span class="visa">VISA</span>
+      <span class="cardname"><b>xyz</b><span class="mask">**** 4242</span></span>
+      <span class="exp">04 / 29</span>
+      <div class="selbody">
+        <div class="cvc-row">CVC: <span class="cvc-box"></span></div>
+        <div class="slot" style="margin-top:6px">${slotHTML}</div>
+      </div>
+    </div>
+    <div class="saved"><span class="radio"></span><span class="visa">VISA</span><span class="cardname"><b>kanikatest</b><span class="mask">**** 1111</span></span><span class="exp">02 / 33</span></div>
+    <div class="saved"><span class="radio"></span><span class="visa">VISA</span><span class="cardname"><b>kanika2</b><span class="mask">**** 1091</span></span><span class="exp">02 / 29</span></div>
+    <div class="link"><span class="plus">+</span> New payment methods</div>
+    <div class="powered">powered by <b>hyperswitch</b></div>
+    <button class="pay">Pay now</button>
+  </div>`;
+}
+
+/* ============ state + rendering ============ */
+const qp = new URLSearchParams(location.search);
+let state = {
+  idx: Math.max(0, Math.min(VARIANTS.length-1, (parseInt(qp.get('v'))||1)-1)),
+  mode: qp.get('mode')==='resolved' ? 'resolved' : 'loading',
+};
+
+function buildNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = VARIANTS.map((v,i)=>`
+    <button class="navbtn ${i===state.idx?'active':''}" data-i="${i}">
+      <span class="num">${String(i+1).padStart(2,'0')}</span>
+      <span>${v.name}</span>
+      <span class="tag ${v.tag}">${v.tag==='exp'?'experiment':'current copy'}</span>
+    </button>`).join('');
+  nav.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{state.idx=+b.dataset.i; render();});
+}
+
+function render(){
+  const v = VARIANTS[state.idx];
+  document.getElementById('crumb').textContent = `Variant ${state.idx+1} of ${VARIANTS.length}`;
+  document.getElementById('vtitle').innerHTML = `${v.name} <span class="tag ${v.tag}">${v.tag==='exp'?'experiment':'current copy'}</span>`;
+  document.getElementById('vdesc').innerHTML = v.desc;
+  document.getElementById('vtrade').innerHTML = v.trade;
+
+  document.getElementById('ctxCard').innerHTML  = cardForm(v.build(state.mode, card));
+  document.getElementById('ctxSaved').innerHTML = savedCard(v.build(state.mode, saved));
+
+  document.querySelectorAll('#stateSeg button').forEach(b=>b.classList.toggle('on', b.dataset.mode===state.mode));
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', +b.dataset.i===state.idx));
+}
+
+/* controls */
+document.querySelectorAll('#stateSeg button').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;render();});
+document.getElementById('replay').onclick = ()=>{
+  state.mode='loading'; render();
+  setTimeout(()=>{state.mode='resolved'; render();}, 1600);
+};
+
+buildNav();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Surcharge UX" [level=1] [ref=e4]
+    - paragraph [ref=e5]: 12 variants for the surcharge block — loading (eligibility check) & resolved message. Card-form + saved-card.
+    - navigation [ref=e6]:
+      - button "01 Skeleton inline experiment" [ref=e7] [cursor=pointer]:
+        - generic [ref=e8]: "01"
+        - generic [ref=e9]: Skeleton inline
+        - generic [ref=e10]: experiment
+      - button "02 Label + amount badge experiment" [ref=e11] [cursor=pointer]:
+        - generic [ref=e12]: "02"
+        - generic [ref=e13]: Label + amount badge
+        - generic [ref=e14]: experiment
+      - button "03 Soft tinted callout current copy" [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: "03"
+        - generic [ref=e17]: Soft tinted callout
+        - generic [ref=e18]: current copy
+      - button "04 Left-accent notice experiment" [ref=e19] [cursor=pointer]:
+        - generic [ref=e20]: "04"
+        - generic [ref=e21]: Left-accent notice
+        - generic [ref=e22]: experiment
+      - button "05 Fee divider row experiment" [ref=e23] [cursor=pointer]:
+        - generic [ref=e24]: "05"
+        - generic [ref=e25]: Fee divider row
+        - generic [ref=e26]: experiment
+      - button "06 Itemised breakdown experiment" [ref=e27] [cursor=pointer]:
+        - generic [ref=e28]: "06"
+        - generic [ref=e29]: Itemised breakdown
+        - generic [ref=e30]: experiment
+      - button "07 Compact pill / chip experiment" [ref=e31] [cursor=pointer]:
+        - generic [ref=e32]: "07"
+        - generic [ref=e33]: Compact pill / chip
+        - generic [ref=e34]: experiment
+      - button "08 Spinner status line experiment" [ref=e35] [cursor=pointer]:
+        - generic [ref=e36]: "08"
+        - generic [ref=e37]: Spinner status line
+        - generic [ref=e38]: experiment
+      - button "09 Animated dots (current copy) current copy" [ref=e39] [cursor=pointer]:
+        - generic [ref=e40]: "09"
+        - generic [ref=e41]: Animated dots (current copy)
+        - generic [ref=e42]: current copy
+      - button "10 Indeterminate progress experiment" [ref=e43] [cursor=pointer]:
+        - generic [ref=e44]: "10"
+        - generic [ref=e45]: Indeterminate progress
+        - generic [ref=e46]: experiment
+      - button "11 Two-line callout experiment" [ref=e47] [cursor=pointer]:
+        - generic [ref=e48]: "11"
+        - generic [ref=e49]: Two-line callout
+        - generic [ref=e50]: experiment
+      - button "12 Polished current current copy" [ref=e51] [cursor=pointer]:
+        - generic [ref=e52]: "12"
+        - generic [ref=e53]: Polished current
+        - generic [ref=e54]: current copy
+  - main [ref=e55]:
+    - generic [ref=e56]: Variant 6 of 12
+    - heading "Itemised breakdown experiment" [level=2] [ref=e57]:
+      - text: Itemised breakdown
+      - generic [ref=e58]: experiment
+    - paragraph [ref=e59]: A tiny breakdown — order amount, surcharge, and the new total payable — so the customer sees exactly what they’ll pay. Loading shimmers the surcharge and total values while labels stay put.
+    - paragraph [ref=e60]: Maximum transparency (shows the new total). Largest footprint and the only one that restates the order amount — needs accurate numbers and may echo the merchant’s own summary.
+    - generic [ref=e61]:
+      - generic [ref=e62]: State
+      - generic [ref=e63]:
+        - button "Fetching" [ref=e64] [cursor=pointer]
+        - button "Resolved" [ref=e65] [cursor=pointer]
+      - button "▶ Replay transition" [ref=e66] [cursor=pointer]
+      - 'button "Annotations: off" [ref=e67] [cursor=pointer]'
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - generic [ref=e70]: Card form
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - img [ref=e74]
+            - generic [ref=e76]: Card
+          - generic [ref=e77]:
+            - generic [ref=e78]: Card Number
+            - generic [ref=e79]:
+              - text: 4242 4242 4242 4242
+              - generic [ref=e80]: VISA
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - generic [ref=e83]: Expiry
+              - generic [ref=e85]: MM / YY
+            - generic [ref=e86]:
+              - generic [ref=e87]: CVC
+              - generic [ref=e89]: CVC
+          - generic [ref=e90]: Save card details
+          - generic [ref=e94]:
+            - generic [ref=e95]:
+              - generic [ref=e96]: Order amount
+              - generic [ref=e97]: USD 200.00
+            - generic [ref=e98]:
+              - generic [ref=e99]: Surcharge
+              - generic [ref=e100]: + USD 0.89
+            - generic [ref=e102]:
+              - generic [ref=e103]: Total payable
+              - generic [ref=e104]: USD 200.89
+          - generic [ref=e105]:
+            - generic [ref=e106]: 💬
+            - text: Use saved payment methods
+          - generic [ref=e107]: powered by hyperswitch
+          - button "Pay now" [ref=e108]
+      - generic [ref=e109]:
+        - generic [ref=e110]: Saved card
+        - generic [ref=e112]:
+          - generic [ref=e113]:
+            - generic [ref=e115]: VISA
+            - generic [ref=e116]: xyz**** 4242
+            - generic [ref=e117]: 04 / 29
+            - generic [ref=e118]:
+              - generic [ref=e119]: "CVC:"
+              - generic [ref=e123]:
+                - generic [ref=e124]:
+                  - generic [ref=e125]: Order amount
+                  - generic [ref=e126]: USD 200.00
+                - generic [ref=e127]:
+                  - generic [ref=e128]: Surcharge
+                  - generic [ref=e129]: + USD 4.99
+                - generic [ref=e131]:
+                  - generic [ref=e132]: Total payable
+                  - generic [ref=e133]: USD 204.99
+          - generic [ref=e134]:
+            - generic [ref=e136]: VISA
+            - generic [ref=e137]: kanikatest**** 1111
+            - generic [ref=e138]: 02 / 33
+          - generic [ref=e139]:
+            - generic [ref=e141]: VISA
+            - generic [ref=e142]: kanika2**** 1091
+            - generic [ref=e143]: 02 / 29
+          - generic [ref=e144]:
+            - generic [ref=e145]: +
+            - text: New payment methods
+          - generic [ref=e146]: powered by hyperswitch
+          - button "Pay now" [ref=e147]
