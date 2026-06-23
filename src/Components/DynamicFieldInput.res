@@ -28,7 +28,7 @@ let renderSingleField = (
   field: fieldConfig,
   ~allFields: array<fieldConfig>,
   ~paymentMethodType: string,
-  ~hideLabel=false,
+  ~isLabelHidden=false,
   ~globalEmailFields: option<array<fieldConfig>>=?,
   ~globalCardHolderNameFields: option<array<fieldConfig>>=?,
 ) => {
@@ -62,9 +62,9 @@ let renderSingleField = (
   | DateOfBirth =>
     <DateOfBirth fieldConfig=field />
 
-  | Phone => <PhoneField fieldConfig=field hideLabel />
+  | Phone => <PhoneField fieldConfig=field isLabelHidden />
 
-  | PhoneCountryCode => <PhoneCountryCodeDropdownField fieldConfig=field hideLabel />
+  | PhoneCountryCode => <PhoneCountryCodeDropdownField fieldConfig=field isLabelHidden />
 
   | State => <StateDropdownField fieldConfig=field />
 
@@ -166,17 +166,13 @@ let makeRow = (
         ->Array.mapWithIndex((field, i) =>
           <div
             key={field.confirmRequestWritePath ++ "-" ++ i->Int.toString}
-            style={
-              flexGrow: field.layoutWidthRatio->Option.getOr(1.0)->Float.toString,
-              flexShrink: "1",
-              flexBasis: "0",
-              minWidth: "0",
-            }>
+            className="flex-1 min-w-0"
+            style={flexGrow: field.layoutWidthRatio->Option.getOr(1.0)->Float.toString}>
             {renderSingleField(
               field,
               ~allFields,
               ~paymentMethodType,
-              ~hideLabel=showRowLabel,
+              ~isLabelHidden=showRowLabel,
               ~globalEmailFields?,
               ~globalCardHolderNameFields?,
             )}
