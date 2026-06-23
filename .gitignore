@@ -26,3 +26,7 @@ user_data.sh
 *.pem
 # Sentry Auth Token
 .env.sentry-build-plugin
+
+# testing
+coverage/
+test-report.xml
