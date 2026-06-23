@@ -2,6 +2,7 @@
 %%raw("import './index.css'")
 
 Sentry.initiateSentry(~dsn=GlobalVars.sentryDSN)
+ServiceWorkerHelpers.registerSW()->ignore
 
 let app = switch ReactDOM.querySelector("#app") {
 | Some(container) =>

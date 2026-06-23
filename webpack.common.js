@@ -237,6 +237,7 @@ module.exports = (publicPath = "auto") => {
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
     ClickToPayAuthenticationSession:
       "./src/hyper-loader/AuthenticationSessionMethods.bs.js",
+    "hs-sdk-sw": "./src/service-worker/ServiceWorker.bs.js",
   };
 
   const definePluginValues = {
