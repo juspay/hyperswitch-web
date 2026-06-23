@@ -136,13 +136,13 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
     )
   }, (cvcNumber, keys, paymentType, loggerState, customPodUri, redirectionFlags, localeString))
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     SubscriptionEventHooks.emitReady(
       ~iframeId=keys.iframeId,
       ~elementType=CardThemeType.getPaymentModeToString(paymentType),
     )
     None
-  })
+  }, (keys.iframeId, paymentType))
 
   React.useEffect(() => {
     emitCvcInfo(~isCvcEmpty)
