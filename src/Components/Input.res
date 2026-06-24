@@ -22,7 +22,8 @@ let make = (
   let options = Recoil.useRecoilValueFromAtom(elementOptions)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let (_inputFocused, setInputFocused) = React.useState(_ => false)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
 
   let setFocus = (val: bool) => {
     switch onFocus {
@@ -41,7 +42,7 @@ let make = (
     setFocus(true)
     setValid(None)
     setInputFocused(_ => true)
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
+    Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
 
   let handleBlur = ev => {

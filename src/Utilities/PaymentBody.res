@@ -169,7 +169,7 @@ let savedCardVaultCvcBody = (
       "payment_method_data",
       [
         (
-          "vault_card_token_data",
+          "vault_card_token",
           [("card_cvc", cvcToken->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
         ),
       ]->Utils.getJsonFromArrayOfJson,
@@ -910,7 +910,7 @@ let vaultCardBody = (~token, ~last4Digits, ~binNumber) => {
   [
     ("payment_method", "card"->JSON.Encode.string),
     ("payment_method_type", "debit"->JSON.Encode.string),
-    ("payment_method_data", [("vault_data_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson),
+    ("payment_method_data", [("vault_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson),
   ]
 }
 
@@ -932,7 +932,7 @@ let vgsVaultCardBody = (~cardNumber, ~month, ~year, ~cvcNumber, ~last4Digits, ~b
   [
     ("payment_method", "card"->JSON.Encode.string),
     ("payment_method_type", "debit"->JSON.Encode.string),
-    ("payment_method_data", [("vault_data_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson),
+    ("payment_method_data", [("vault_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson),
   ]
 }
 

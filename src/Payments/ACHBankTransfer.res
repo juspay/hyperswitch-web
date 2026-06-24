@@ -15,11 +15,11 @@ let make = () => {
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  UtilityHooks.useHandlePostMessages(
-    ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
-    ~empty=areRequiredFieldsEmpty,
-    ~paymentType="bank_transfer",
-  )
+  let complete = areRequiredFieldsValid && !areRequiredFieldsEmpty
+  let empty = areRequiredFieldsEmpty
+
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
+  SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse

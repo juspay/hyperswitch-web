@@ -87,7 +87,7 @@ let resolveValidator = (
 
   let maxLengthRule = [Validation.MaxLength(field.maxInputLength->Option.getOr(255))]
 
-  let rules = [...requiredRule, ...semanticRule, ...maxLengthRule]
+  let rules = [...semanticRule, ...requiredRule, ...maxLengthRule]
 
   Validation.createFieldValidator(
     rules,

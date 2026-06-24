@@ -109,12 +109,15 @@ let make = (
   | None => "debit"
   }
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   React.useEffect(() => {
     setSelectedInstallmentPlan(_ => None)
     setShowInstallments(_ => false)
     None
   }, [paymentItem])
+
+  let isOneClickWallet = paymentItem.paymentMethod === "wallet"
 
   React.useEffect(() => {
     if isActive {
@@ -132,19 +135,26 @@ let make = (
         ~isSavedPaymentMethod=true,
         ~isCvcEmpty,
       )
+      emitter.emitPaymentMethodStatus(
+        ~paymentMethod=paymentItem.paymentMethod,
+        ~paymentMethodType,
+        ~isSavedPaymentMethod=true,
+        ~isOneClickWallet,
+      )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
     }
     None
   }, (isActive, paymentItem, country, state, pinCode, isCvcEmpty))
 
   React.useEffect(() => {
-    open CardUtils
     if isActive {
       // * Focus CVC
       focusCVC()
+
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->CardValidations.formatCardExpiryNumber
-      ->emitExpiryDate
+      ->CardUtils.emitExpiryDate
     }
     None
   }, (isActive, paymentItem, country, state, pinCode))
