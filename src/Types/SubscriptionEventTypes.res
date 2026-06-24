@@ -1,23 +1,11 @@
 open ErrorUtils
 open PaymentEventTypes
 
-let validSubscriptionEvents = [
-  "PAYMENT_METHOD_INFO_CARD",
-  "PAYMENT_METHOD_STATUS",
-  "FORM_STATUS",
-  "PAYMENT_METHOD_INFO_BILLING_ADDRESS",
-  "CVC_STATUS",
-  "SURCHARGE",
-]
+let validSubscriptionEvents = ["surchargeInfo"]
 
 let stringToEvent = (str, key) =>
   switch str {
-  | "PAYMENT_METHOD_INFO_CARD" => PaymentMethodInfoCard
-  | "PAYMENT_METHOD_STATUS" => PaymentMethodStatus
-  | "FORM_STATUS" => FormStatus
-  | "PAYMENT_METHOD_INFO_BILLING_ADDRESS" => PaymentMethodInfoBillingAddress
-  | "CVC_STATUS" => CvcStatus
-  | "SURCHARGE" => Surcharge
+  | "surchargeInfo" => Surcharge
   | _ => {
       str->unknownPropValueWarning(validSubscriptionEvents, key)
       UnknownEvent
@@ -143,7 +131,7 @@ let createSurchargePayload = (
   let payload = PaymentEventData.surchargeEventToJson(event)
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", Surcharge->eventToString->JSON.Encode.string),
+    ("eventName", "surchargeInfo"->JSON.Encode.string),
     ("payload", payload),
   ]
 }

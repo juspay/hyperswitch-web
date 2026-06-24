@@ -286,7 +286,7 @@ let make = (
 
   useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType, ~savedMethod=true)
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
-  SubscriptionEventHooks.useEmitSurcharge(~surchargeDetails=eligibilitySurchargeDetails)
+  SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   React.useEffect(() => {

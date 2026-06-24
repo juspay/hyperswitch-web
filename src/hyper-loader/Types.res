@@ -248,12 +248,7 @@ let eventTypeMapper = event => {
   | "blur" => Blur
   | "confirmTriggered" => ConfirmPayment
   | "oneClickConfirmTriggered" => OneClickConfirmPayment
-  | "CVC_STATUS" => CvcStatus
-  | "FORM_STATUS" => FormStatus
-  | "PAYMENT_METHOD_INFO_CARD" => PaymentMethodInfoCard
-  | "PAYMENT_METHOD_STATUS" => PaymentMethodStatus
-  | "PAYMENT_METHOD_INFO_BILLING_ADDRESS" => BillingAddress
-  | "SURCHARGE" => Surcharge
+  | "surchargeInfo" => Surcharge
   | _ => None
   }
 }

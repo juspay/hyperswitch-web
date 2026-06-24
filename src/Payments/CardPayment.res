@@ -154,7 +154,7 @@ let make = (
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete=complete && areRequiredFieldsValid)
-  SubscriptionEventHooks.useEmitSurcharge(~surchargeDetails=eligibilitySurchargeDetails)
+  SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
   React.useEffect(() => {
     let cardInfo = PaymentEventData.buildCardInfo(
       ~cardNumber,

@@ -37,7 +37,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   React.useEffect(() => {
     switch (isCardValid, isExpiryValid, isCVCValid) {
     | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
-      CardUtils.emitIsFormReadyForSubmission(cardValid && expiryValid && cvcValid && areRequiredFieldsValid)
+      CardUtils.emitIsFormReadyForSubmission(
+        cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+      )
     | _ => ()
     }
     None

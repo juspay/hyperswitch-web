@@ -254,8 +254,8 @@ let make = (
         )
       | Surcharge =>
         addSubscriptionEventListener(
-          "SURCHARGE",
-          `onSURCHARGE-${componentType}-${elementInstanceId}`,
+          "surchargeInfo",
+          `onSurchargeInfo-${componentType}-${elementInstanceId}`,
         )
       | _ => ()
       }
