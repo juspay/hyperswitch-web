@@ -47,6 +47,12 @@ let make = (
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="google_pay",
   )
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  SubscriptionEventHooks.useEmitFormStatus(
+    ~empty=areRequiredFieldsEmpty,
+    ~complete=areRequiredFieldsValid,
+    ~isOneClickWallet=isWallet,
+  )
 
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
     ~paymentMethodListValue,
@@ -167,6 +173,13 @@ let make = (
         ~state,
         ~pinCode,
       )
+      emitter.emitPaymentMethodStatus(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="google_pay",
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=isWallet,
+      )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
       makeOneClickHandlerPromise(isSDKHandleClick)
       ->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)

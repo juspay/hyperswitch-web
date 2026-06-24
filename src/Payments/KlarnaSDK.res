@@ -45,6 +45,7 @@ let make = (~sessionObj: SessionsType.token) => {
     ~empty=!isCompleted,
     ~paymentType="klarna",
   )
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   React.useEffect(() => {
@@ -82,6 +83,13 @@ let make = (~sessionObj: SessionsType.token) => {
                 ~state,
                 ~pinCode,
               )
+              emitter.emitPaymentMethodStatus(
+                ~paymentMethod="wallet",
+                ~paymentMethodType="klarna",
+                ~isSavedPaymentMethod=false,
+                ~isOneClickWallet=true,
+              )
+              emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
               makeOneClickHandlerPromise(sdkHandleIsThere)->then(
                 result => {
                   let result = result->JSON.Decode.bool->Option.getOr(false)
