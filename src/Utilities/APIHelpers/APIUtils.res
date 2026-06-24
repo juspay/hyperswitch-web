@@ -88,7 +88,8 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
 
   let queryParams = switch apiCallType {
   | RetrievePaymentIntent
-  | FetchClientList => defaultParams
+  | FetchClientList
+  | FetchSdkConfigs => defaultParams
   | FetchSessions
   | FetchThreeDsAuth
   | CalculateTax
@@ -100,8 +101,7 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchEnabledAuthnMethodsToken
   | FetchEligibilityCheck
   | FetchAuthenticationSync
-  | FetchPaymentMethodEligibility
-  | FetchSdkConfigs =>
+  | FetchPaymentMethodEligibility =>
     list{}
   }
 
