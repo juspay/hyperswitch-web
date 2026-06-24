@@ -2383,18 +2383,12 @@ let fetchSdkConfigs = async (
     },
   )
 
-  let headers = switch sdkAuthorization->Utils.getNonEmptyOption {
-  | None => [("client-secret", clientSecret)]->Dict.fromArray
-  | Some(_) => Dict.make()
-  }
-
   let onSuccess = data => data
   let onFailure = _ => JSON.Encode.null
 
   await fetchApiWithLogging(
     uri,
     ~eventName=SDK_CONFIGS_CALL,
-    ~headers,
     ~logger,
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
