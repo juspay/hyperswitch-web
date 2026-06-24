@@ -32,7 +32,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   )
   let (isTokenize, setIsTokenize) = Recoil.useRecoilState(RecoilAtoms.isTokenize)
   let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {publishableKey, iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
 
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
@@ -510,10 +510,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let evalMethodsList = () =>
       switch paymentMethodList {
       | SemiLoaded | LoadError(_) | Loaded(_) =>
-        messageParentWindow([
-          ("ready", true->JSON.Encode.bool),
-          ("elementType", CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string),
-        ])
+        SubscriptionEventHooks.emitReady(
+          ~iframeId,
+          ~elementType=CardThemeType.getPaymentModeToString(paymentType),
+        )
       | _ => ()
       }
     if !displaySavedPaymentMethods {
@@ -523,13 +523,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | LoadingSavedCards => ()
       | LoadedSavedCards(list, _) =>
         list->Array.length > 0
-          ? messageParentWindow([
-              ("ready", true->JSON.Encode.bool),
-              (
-                "elementType",
-                CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string,
-              ),
-            ])
+          ? SubscriptionEventHooks.emitReady(
+              ~iframeId,
+              ~elementType=CardThemeType.getPaymentModeToString(paymentType),
+            )
           : evalMethodsList()
       | NoResult(_) => evalMethodsList()
       }

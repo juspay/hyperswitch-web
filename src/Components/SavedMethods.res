@@ -285,6 +285,25 @@ let make = (
     customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
 
   useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType, ~savedMethod=true)
+  SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
+  SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+
+  React.useEffect(() => {
+    if isCardPaymentMethod {
+      let card = customerMethod.card
+      let cardInfo = PaymentEventData.buildCardInfoFromSavedCard(
+        ~bin=card.cardBin,
+        ~last4=card.last4Digits,
+        ~brand=card.scheme->Option.getOr(""),
+        ~expiryMonth=card.expiryMonth,
+        ~expiryYear=card.expiryYear,
+        ~isCvcComplete=complete,
+      )
+      emitter.emitCardInfo(~cardInfo)
+    }
+    None
+  }, (customerMethod, isCardPaymentMethod, complete))
 
   GooglePayHelpers.useHandleGooglePayResponse(
     ~connectors=[],
