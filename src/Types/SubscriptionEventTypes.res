@@ -37,7 +37,10 @@ let getSubscriptionEvents = (dict, key) => {
     ->Array.map(item =>
       switch JSON.Decode.string(item) {
       | Some(str) => stringToEvent(str, context)
-      | None => UnknownEvent
+      | None => {
+          item->JSON.stringify->unknownPropValueWarning(validSubscriptionEvents, context)
+          UnknownEvent
+        }
       }
     )
     ->Array.filter(opt => opt != UnknownEvent)

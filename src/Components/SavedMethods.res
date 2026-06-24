@@ -285,8 +285,8 @@ let make = (
     customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
 
   useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType, ~savedMethod=true)
-  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
-  SubscriptionEventHooks.useSurcharge(~surchargeDetails=eligibilitySurchargeDetails)
+  SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
+  SubscriptionEventHooks.useEmitSurcharge(~surchargeDetails=eligibilitySurchargeDetails)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   React.useEffect(() => {

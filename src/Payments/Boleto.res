@@ -44,7 +44,7 @@ let make = () => {
   }, [socialSecurityNumber])
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="boleto")
-  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
+  SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
   React.useEffect(() => {
     setComplete(_ => complete)

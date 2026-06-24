@@ -79,7 +79,7 @@ let make = () => {
     state.value == ""
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bacs_bank_debit")
-  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
+  SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
   React.useEffect(() => {
     setComplete(_ => complete)

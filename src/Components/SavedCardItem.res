@@ -113,7 +113,6 @@ let make = (
   let {
     emitIsFormReadyForSubmission,
     emitExpiryDate,
-    isLegacy,
     emitPaymentMethodInfo,
   } = SubscriptionEventHooks.useLegacyEvents()
 
@@ -127,22 +126,20 @@ let make = (
 
   React.useEffect(() => {
     if isActive {
-      if isLegacy {
-        emitPaymentMethodInfo(
-          ~paymentMethod=paymentItem.paymentMethod,
-          ~paymentMethodType,
-          ~cardBrand=paymentItem.card.scheme->Option.getOr("")->CardUtils.getCardType,
-          ~country,
-          ~state,
-          ~pinCode,
-          ~cardExpiryMonth=expiryMonth,
-          ~cardExpiryYear=expiryYear,
-          ~cardLast4,
-          ~cardBin,
-          ~isSavedPaymentMethod=true,
-          ~isCvcEmpty,
-        )
-      }
+      emitPaymentMethodInfo(
+        ~paymentMethod=paymentItem.paymentMethod,
+        ~paymentMethodType,
+        ~cardBrand=paymentItem.card.scheme->Option.getOr("")->CardUtils.getCardType,
+        ~country,
+        ~state,
+        ~pinCode,
+        ~cardExpiryMonth=expiryMonth,
+        ~cardExpiryYear=expiryYear,
+        ~cardLast4,
+        ~cardBin,
+        ~isSavedPaymentMethod=true,
+        ~isCvcEmpty,
+      )
       emitter.emitPaymentMethodStatus(
         ~paymentMethod=paymentItem.paymentMethod,
         ~paymentMethodType,
@@ -160,11 +157,9 @@ let make = (
       focusCVC()
 
       // * Sending card expiry to handle cases where the card expires before the use date.
-      if isLegacy {
-        `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
-        ->CardValidations.formatCardExpiryNumber
-        ->emitExpiryDate
-      }
+      `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
+      ->CardValidations.formatCardExpiryNumber
+      ->emitExpiryDate
     }
     None
   }, (isActive, paymentItem, country, state, pinCode))

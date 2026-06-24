@@ -226,10 +226,10 @@ let useLegacyEvents = (): legacyEvents => {
 }
 
 // ---------------------------------------------------------------------------
-// useFormStatus
+// useEmitFormStatus
 // ---------------------------------------------------------------------------
 // Effect hook: emits FORM_STATUS whenever empty/complete/isOneClickWallet changes.
-let useFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=false) => {
+let useEmitFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=false) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
@@ -245,10 +245,10 @@ let useFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=fals
 }
 
 // ---------------------------------------------------------------------------
-// useBillingAddress
+// useEmitBillingAddress
 // ---------------------------------------------------------------------------
 // Effect hook: emits PAYMENT_METHOD_INFO_BILLING_ADDRESS whenever address atoms change.
-let useBillingAddress = () => {
+let useEmitBillingAddress = () => {
   let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
   let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState).value
   let pinCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode).value
@@ -299,10 +299,10 @@ let getPaymentMethodAndType = (
 }
 
 // ---------------------------------------------------------------------------
-// usePaymentMethodStatus
+// useEmitPaymentMethodStatus
 // ---------------------------------------------------------------------------
 // Effect hook: emits PAYMENT_METHOD_STATUS when the selected payment method changes.
-let usePaymentMethodStatus = (
+let useEmitPaymentMethodStatus = (
   ~paymentMethodName: string,
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
   ~isSavedPaymentMethod: bool,
@@ -332,11 +332,13 @@ let usePaymentMethodStatus = (
 }
 
 // ---------------------------------------------------------------------------
-// useSurcharge
+// useEmitSurcharge
 // ---------------------------------------------------------------------------
 // Effect hook: emits SURCHARGE when the eligibility surcharge details change.
 // Pass the surcharge details option from the component's React state.
-let useSurcharge = (~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>) => {
+let useEmitSurcharge = (
+  ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 

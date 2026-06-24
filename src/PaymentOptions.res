@@ -125,13 +125,13 @@ let make = (
     ~cvcProps,
     ~isLegacy,
   )
-  SubscriptionEventHooks.usePaymentMethodStatus(
+  SubscriptionEventHooks.useEmitPaymentMethodStatus(
     ~paymentMethodName=selectedPaymentOption.paymentMethodName,
     ~paymentMethods=paymentMethodListValue.payment_methods,
     ~isSavedPaymentMethod=false,
     ~isOneClickWallet=false,
   )
-  SubscriptionEventHooks.useBillingAddress()
+  SubscriptionEventHooks.useEmitBillingAddress()
 
   let displayIcon = ele => {
     <span className={`scale-90 animate-slowShow ${toggleIconElement ? "hidden" : ""}`}> ele </span>

@@ -49,7 +49,7 @@ let make = (
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let {isLegacy, emitPaymentMethodInfo} = SubscriptionEventHooks.useLegacyEvents()
-  SubscriptionEventHooks.useFormStatus(
+  SubscriptionEventHooks.useEmitFormStatus(
     ~empty=areRequiredFieldsEmpty,
     ~complete=areRequiredFieldsValid,
     ~isOneClickWallet=isWallet,

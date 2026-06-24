@@ -809,7 +809,6 @@ let handlePostMessageEvents = (
   }
   messageParentWindow([
     ("elementType", "payment"->JSON.Encode.string),
-    ("iframeId", iframeId->JSON.Encode.string),
     ("complete", complete->JSON.Encode.bool),
     ("empty", empty->JSON.Encode.bool),
     ("value", [("type", paymentType->JSON.Encode.string)]->getJsonFromArrayOfJson),

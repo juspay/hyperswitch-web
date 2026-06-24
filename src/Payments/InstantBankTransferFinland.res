@@ -24,7 +24,7 @@ let make = () => {
     ~empty=areRequiredFieldsEmpty,
     ~paymentType=paymentMethod,
   )
-  SubscriptionEventHooks.useFormStatus(
+  SubscriptionEventHooks.useEmitFormStatus(
     ~empty=areRequiredFieldsEmpty,
     ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
   )

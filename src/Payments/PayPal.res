@@ -70,7 +70,7 @@ let make = (~walletOptions) => {
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let {isLegacy, emitPaymentMethodInfo} = SubscriptionEventHooks.useLegacyEvents()
-  SubscriptionEventHooks.useFormStatus(
+  SubscriptionEventHooks.useEmitFormStatus(
     ~empty=!paypalClicked,
     ~complete=paypalClicked,
     ~isOneClickWallet=isWallet,

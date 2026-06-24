@@ -86,13 +86,13 @@ let make = (
     ~cvcProps,
     ~isLegacy,
   )
-  SubscriptionEventHooks.usePaymentMethodStatus(
+  SubscriptionEventHooks.useEmitPaymentMethodStatus(
     ~paymentMethodName=selectedOption,
     ~paymentMethods=paymentMethodListValue.payment_methods,
     ~isSavedPaymentMethod=false,
     ~isOneClickWallet=false,
   )
-  SubscriptionEventHooks.useBillingAddress()
+  SubscriptionEventHooks.useEmitBillingAddress()
 
   let cardOptionDetails =
     paymentOptions

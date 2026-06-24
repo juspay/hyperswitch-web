@@ -19,7 +19,7 @@ let make = () => {
   let empty = areRequiredFieldsEmpty
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
-  SubscriptionEventHooks.useFormStatus(~empty, ~complete)
+  SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
