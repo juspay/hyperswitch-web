@@ -66,6 +66,7 @@ let make = () => {
   let empty = email.value == "" || fullName.value != ""
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="ach_bank_debit")
+  SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse

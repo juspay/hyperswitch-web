@@ -68,6 +68,12 @@ let make = (~walletOptions) => {
     ~empty=!paypalClicked,
     ~paymentType=paymentMethodType,
   )
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  SubscriptionEventHooks.useEmitFormStatus(
+    ~empty=!paypalClicked,
+    ~complete=paypalClicked,
+    ~isOneClickWallet=isWallet,
+  )
   let onPaypalClick = _ev => {
     if isTestMode {
       Console.warn("PayPal button clicked in test mode - interaction disabled")
@@ -89,6 +95,13 @@ let make = (~walletOptions) => {
         ~state,
         ~pinCode,
       )
+      emitter.emitPaymentMethodStatus(
+        ~paymentMethod,
+        ~paymentMethodType,
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=isWallet,
+      )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
       setPaypalClicked(_ => true)
       open Promise
       Utils.makeOneClickHandlerPromise(sdkHandleIsThere)

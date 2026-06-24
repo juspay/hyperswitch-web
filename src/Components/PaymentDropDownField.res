@@ -14,8 +14,9 @@ let make = (
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
+  let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
 
   let getClassName = initialLabel => {
     if value.value->String.length == 0 {
@@ -40,7 +41,7 @@ let make = (
   }, [options])
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
+    Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
   let focusClass = if inputFocused || value.value->String.length > 0 {
     `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`

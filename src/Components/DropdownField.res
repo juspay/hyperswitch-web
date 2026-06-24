@@ -39,12 +39,13 @@ let make = (
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
+  let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
 
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
+    Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
 
   let handleChange = ev => {

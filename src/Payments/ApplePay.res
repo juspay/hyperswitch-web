@@ -88,6 +88,12 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="apple_pay",
   )
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  SubscriptionEventHooks.useEmitFormStatus(
+    ~empty=areRequiredFieldsEmpty,
+    ~complete=areRequiredFieldsValid,
+    ~isOneClickWallet=isWallet,
+  )
 
   let applePayPaymentMethodType = React.useMemo(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -278,6 +284,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~state,
         ~pinCode,
       )
+      emitter.emitPaymentMethodStatus(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="apple_pay",
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=isWallet,
+      )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
       setApplePayClicked(_ => true)
       makeOneClickHandlerPromise(sdkHandleIsThere)
       ->then(result => {
