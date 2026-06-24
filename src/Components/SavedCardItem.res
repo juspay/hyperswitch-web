@@ -171,7 +171,6 @@ let make = (
 
   React.useEffect(() => {
     // TODO - Handle Events for VGS/Vault case
-    CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
     emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
     None
   }, [isCVCValid])
