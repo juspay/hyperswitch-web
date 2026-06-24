@@ -94,8 +94,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
-    | Card =>
-      setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+    | Card => {
+        setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+        let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(
+          optionsDict,
+          "subscriptionEvents",
+        )
+        setOptionsPayment(prev => {...prev, subscriptionEvents})
+      }
     | PaymentMethodCollectElement => {
         let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
