@@ -16,7 +16,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let (isFocus, setIsFocus) = React.useState(_ => false)
-  let {emitIsFormReadyForSubmission} = SubscriptionEventHooks.useLegacyEvents()
 
   let intent = PaymentHelpers.usePaymentIntent(Some(logger), Card)
 
@@ -38,7 +37,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   React.useEffect(() => {
     switch (isCardValid, isExpiryValid, isCVCValid) {
     | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
-      emitIsFormReadyForSubmission(cardValid && expiryValid && cvcValid && areRequiredFieldsValid)
+      CardUtils.emitIsFormReadyForSubmission(cardValid && expiryValid && cvcValid && areRequiredFieldsValid)
     | _ => ()
     }
     None

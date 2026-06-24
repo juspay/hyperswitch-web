@@ -8,7 +8,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
-  let {isLegacy, emitPaymentMethodInfo} = SubscriptionEventHooks.useLegacyEvents()
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
@@ -47,15 +46,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~eventName=SAMSUNG_PAY,
         ~paymentMethod="SAMSUNG_PAY",
       )
-      if isLegacy {
-        emitPaymentMethodInfo(
-          ~paymentMethod="wallet",
-          ~paymentMethodType="samsung_pay",
-          ~country,
-          ~state,
-          ~pinCode,
-        )
-      }
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="samsung_pay",
+        ~country,
+        ~state,
+        ~pinCode,
+      )
       emitter.emitPaymentMethodStatus(
         ~paymentMethod="wallet",
         ~paymentMethodType="samsung_pay",

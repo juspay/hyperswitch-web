@@ -4,7 +4,6 @@ open Utils
 @react.component
 let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => {
   let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {emitCvcInfo} = SubscriptionEventHooks.useLegacyEvents()
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let {innerLayout} = config.appearance
   let keys = Recoil.useRecoilValueFromAtom(keys)
@@ -145,7 +144,12 @@ let make = (~cvcProps: CardUtils.cvcProps, ~paymentType: CardThemeType.mode) => 
   }, (keys.iframeId, paymentType))
 
   React.useEffect(() => {
-    emitCvcInfo(~isCvcEmpty)
+    let cvcInfoDict = [("isCvcEmpty", isCvcEmpty->JSON.Encode.bool)]->Dict.fromArray
+    Utils.messageParentWindow([("cvcInfo", cvcInfoDict->JSON.Encode.object)])
+    None
+  }, [isCvcEmpty])
+
+  React.useEffect(() => {
     emitter.emitCvcStatus(~iframeId=keys.iframeId, ~isCvcEmpty, ~isCvcComplete)
     None
   }, (isCvcEmpty, isCvcComplete, keys.iframeId))

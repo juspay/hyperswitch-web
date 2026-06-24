@@ -71,7 +71,6 @@ let make = (
   let (showMore, setShowMore) = React.useState(_ => false)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {isLegacy} = SubscriptionEventHooks.useLegacyEvents()
   let {
     displayInSeparateScreen,
     groupByPaymentMethods,
@@ -84,7 +83,6 @@ let make = (
     ~cardProps,
     ~expiryProps,
     ~cvcProps,
-    ~isLegacy,
   )
   SubscriptionEventHooks.useEmitPaymentMethodStatus(
     ~paymentMethodName=selectedOption,

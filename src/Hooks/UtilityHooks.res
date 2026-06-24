@@ -26,21 +26,18 @@ let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
-  let {isLegacy, handlePostMessageEvents} = SubscriptionEventHooks.useLegacyEvents()
 
   React.useEffect(() => {
-    if isLegacy {
-      handlePostMessageEvents(
-        ~iframeId,
-        ~complete,
-        ~empty,
-        ~paymentType,
-        ~loggerState,
-        ~savedMethod,
-      )
-    }
+    Utils.handlePostMessageEvents(
+      ~iframeId,
+      ~complete,
+      ~empty,
+      ~paymentType,
+      ~loggerState,
+      ~savedMethod,
+    )
     None
-  }, (complete, empty, paymentType, isLegacy))
+  }, (complete, empty, paymentType, savedMethod))
 }
 
 let useIsCustomerAcceptanceRequired = (

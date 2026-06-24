@@ -2,17 +2,6 @@ open SubscriptionEventTypes
 open PaymentEventData
 open PaymentEventTypes
 
-// Internal helper: returns true if the event should be emitted.
-// None  → all events emitted (backward compat — merchant did not configure subscriptionEvents)
-// Some([]) → no events (empty list is normalised to None in getSubscriptionEvents, but guard here anyway)
-// Some([...]) → only listed events
-let shouldEmit = (subscribedEvents: option<array<PaymentEventTypes.events>>, eventType) =>
-  subscribedEvents->Option.isNone ||
-    PaymentEventData.shouldEmitEvent(
-      ~subscribedEvents=subscribedEvents->Option.getOr([]),
-      ~eventType,
-    )
-
 // ---------------------------------------------------------------------------
 // useSubscriptionEventEmitter
 // ---------------------------------------------------------------------------
@@ -40,7 +29,12 @@ let useSubscriptionEventEmitter = (): emitter => {
   let subscribedEvents = options.subscriptionEvents
 
   let emitCardInfo = (~cardInfo: PaymentEventData.cardInfo) => {
-    if shouldEmit(subscribedEvents, PaymentMethodInfoCard) {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=PaymentMethodInfoCard,
+      )
+    ) {
       Utils.messageParentWindow(createCardInfoPayload(cardInfo))
     }
   }
@@ -51,7 +45,12 @@ let useSubscriptionEventEmitter = (): emitter => {
     ~isSavedPaymentMethod,
     ~isOneClickWallet=false,
   ) => {
-    if shouldEmit(subscribedEvents, PaymentMethodStatus) {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=PaymentMethodStatus,
+      )
+    ) {
       Utils.messageParentWindow(
         createPaymentMethodStatusPayload(
           ~paymentMethod,
@@ -64,19 +63,35 @@ let useSubscriptionEventEmitter = (): emitter => {
   }
 
   let emitBillingAddress = (~country, ~state, ~postalCode) => {
-    if shouldEmit(subscribedEvents, PaymentMethodInfoBillingAddress) {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=PaymentMethodInfoBillingAddress,
+      )
+    ) {
       Utils.messageParentWindow(createBillingAddressPayload(~country, ~state, ~postalCode))
     }
   }
 
   let emitCvcStatus = (~iframeId, ~isCvcEmpty, ~isCvcComplete) => {
-    if shouldEmit(subscribedEvents, CvcStatus) {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=CvcStatus,
+      )
+    ) {
       Utils.messageParentWindow(createCvcStatusPayload(~iframeId, ~isCvcEmpty, ~isCvcComplete))
     }
   }
 
   let emitSurcharge = (~surchargeDetails) => {
-    if shouldEmit(subscribedEvents, Surcharge) {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=Surcharge,
+      ) &&
+      surchargeDetails->Option.isSome
+    ) {
       Utils.messageParentWindow(createSurchargePayload(~surchargeDetails))
     }
   }
@@ -85,145 +100,16 @@ let useSubscriptionEventEmitter = (): emitter => {
 }
 
 // ---------------------------------------------------------------------------
-// useIsLegacyEventMode
-// ---------------------------------------------------------------------------
-// Returns true when the merchant has NOT configured subscriptionEvents,
-// meaning old-style unconditional events should still fire for backward compat.
-let useIsLegacyEventMode = (): bool => {
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  options.subscriptionEvents->Option.isNone
-}
-
-// ---------------------------------------------------------------------------
-// useLegacyEvents
-// ---------------------------------------------------------------------------
-// Single hook that wraps ALL old-style event functions with the legacy gate.
-// When subscriptionEvents is not set (None) → fires as before (backward compat).
-// When subscriptionEvents is explicitly set → all legacy events are suppressed.
-//
-// Use this hook instead of calling CardUtils / PaymentUtils / Utils event
-// functions directly, so the gate lives in exactly one place.
-type legacyEvents = {
-  isLegacy: bool,
-  emitIsFormReadyForSubmission: bool => unit,
-  emitExpiryDate: string => unit,
-  handlePostMessageEvents: (
-    ~iframeId: string,
-    ~complete: bool,
-    ~empty: bool,
-    ~paymentType: string,
-    ~loggerState: HyperLoggerTypes.loggerMake,
-    ~savedMethod: bool=?,
-  ) => unit,
-  emitCvcInfo: (~isCvcEmpty: bool) => unit,
-  emitPaymentMethodInfo: (
-    ~paymentMethod: string,
-    ~paymentMethodType: string,
-    ~cardBrand: CardUtils.cardIssuer=?,
-    ~cardLast4: string=?,
-    ~cardBin: string=?,
-    ~cardExpiryMonth: string=?,
-    ~cardExpiryYear: string=?,
-    ~country: string=?,
-    ~state: string=?,
-    ~pinCode: string=?,
-    ~isSavedPaymentMethod: bool=?,
-    ~isCvcEmpty: bool=?,
-  ) => unit,
-}
-
-// ---------------------------------------------------------------------------
 // emitReady
 // ---------------------------------------------------------------------------
-// NOT a legacy event — fires unconditionally so every merchant receives the
-// ready lifecycle event regardless of whether subscriptionEvents is configured.
-// elementType is informational only; LoaderPaymentElement does not filter
-// ready/focus/blur by elementType (only Change is filtered that way).
+// Fires unconditionally so every merchant receives the ready lifecycle event
+// regardless of whether subscriptionEvents is configured.
 let emitReady = (~iframeId, ~elementType) =>
   Utils.messageParentWindow([
     ("ready", true->JSON.Encode.bool),
     ("elementType", elementType->JSON.Encode.string),
     ("iframeId", iframeId->JSON.Encode.string),
   ])
-
-let useLegacyEvents = (): legacyEvents => {
-  let isLegacy = useIsLegacyEventMode()
-
-  let emitIsFormReadyForSubmission = isReady =>
-    if isLegacy {
-      CardUtils.emitIsFormReadyForSubmission(isReady)
-    }
-
-  let emitExpiryDate = expiry =>
-    if isLegacy {
-      CardUtils.emitExpiryDate(expiry)
-    }
-
-  let handlePostMessageEvents = (
-    ~iframeId,
-    ~complete,
-    ~empty,
-    ~paymentType,
-    ~loggerState,
-    ~savedMethod=false,
-  ) =>
-    if isLegacy {
-      Utils.handlePostMessageEvents(
-        ~iframeId,
-        ~complete,
-        ~empty,
-        ~paymentType,
-        ~loggerState,
-        ~savedMethod,
-      )
-    }
-
-  let emitCvcInfo = (~isCvcEmpty) =>
-    if isLegacy {
-      let cvcInfoDict = [("isCvcEmpty", isCvcEmpty->JSON.Encode.bool)]->Dict.fromArray
-      Utils.messageParentWindow([("cvcInfo", cvcInfoDict->JSON.Encode.object)])
-    }
-
-  let emitPaymentMethodInfo = (
-    ~paymentMethod,
-    ~paymentMethodType,
-    ~cardBrand=CardUtils.NOTFOUND,
-    ~cardLast4="",
-    ~cardBin="",
-    ~cardExpiryMonth="",
-    ~cardExpiryYear="",
-    ~country="",
-    ~state="",
-    ~pinCode="",
-    ~isSavedPaymentMethod=false,
-    ~isCvcEmpty=true,
-  ) =>
-    if isLegacy {
-      PaymentUtils.emitPaymentMethodInfo(
-        ~paymentMethod,
-        ~paymentMethodType,
-        ~cardBrand,
-        ~cardLast4,
-        ~cardBin,
-        ~cardExpiryMonth,
-        ~cardExpiryYear,
-        ~country,
-        ~state,
-        ~pinCode,
-        ~isSavedPaymentMethod,
-        ~isCvcEmpty,
-      )
-    }
-
-  {
-    isLegacy,
-    emitIsFormReadyForSubmission,
-    emitExpiryDate,
-    handlePostMessageEvents,
-    emitCvcInfo,
-    emitPaymentMethodInfo,
-  }
-}
 
 // ---------------------------------------------------------------------------
 // useEmitFormStatus
@@ -236,7 +122,12 @@ let useEmitFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=
   React.useEffect(() => {
     if !isOneClickWallet {
       let formStatusValue = PaymentEventData.computeFormStatus(~isComplete=complete, ~isEmpty=empty)
-      if shouldEmit(subscribedEvents, FormStatus) {
+      if (
+        PaymentEventData.shouldEmitEvent(
+          ~subscribedEvents=subscribedEvents->Option.getOr([]),
+          ~eventType=FormStatus,
+        )
+      ) {
         Utils.messageParentWindow(createFormStatusPayload(~status=formStatusValue))
       }
     }
@@ -256,7 +147,12 @@ let useEmitBillingAddress = () => {
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
-    if shouldEmit(subscribedEvents, PaymentMethodInfoBillingAddress) {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=PaymentMethodInfoBillingAddress,
+      )
+    ) {
       Utils.messageParentWindow(createBillingAddressPayload(~country, ~state, ~postalCode=pinCode))
     }
     None
@@ -313,7 +209,12 @@ let useEmitPaymentMethodStatus = (
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
-    if shouldEmit(subscribedEvents, PaymentMethodStatus) {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=PaymentMethodStatus,
+      )
+    ) {
       switch getPaymentMethodAndType(~paymentMethodName, ~paymentMethods, ~logger=loggerState) {
       | Some((paymentMethod, paymentMethodType)) =>
         Utils.messageParentWindow(
@@ -343,7 +244,13 @@ let useEmitSurcharge = (
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
-    if shouldEmit(subscribedEvents, Surcharge) {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=Surcharge,
+      ) &&
+      surchargeDetails->Option.isSome
+    ) {
       Utils.messageParentWindow(createSurchargePayload(~surchargeDetails))
     }
     None

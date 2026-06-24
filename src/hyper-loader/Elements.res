@@ -431,6 +431,12 @@ let make = (
             ),
           ]->Dict.fromArray
 
+        let subscriptionEventsVal =
+          newOptions
+          ->getDictFromJson
+          ->Dict.get("subscriptionEvents")
+          ->Option.getOr(JSON.Encode.null)
+
         let widgetOptions = [
           ("clientSecret", clientSecretRef.contents->JSON.Encode.string),
           ("sdkAuthorization", sdkAuthorizationRef.contents->JSON.Encode.string),
@@ -439,13 +445,7 @@ let make = (
           ("loader", loader),
           ("fonts", fonts),
           ("redirectionFlags", redirectionFlagsDict->JSON.Encode.object),
-          (
-            "subscriptionEvents",
-            newOptions
-            ->getDictFromJson
-            ->Dict.get("subscriptionEvents")
-            ->Option.getOr(JSON.Encode.null),
-          ),
+          ("subscriptionEvents", subscriptionEventsVal),
         ]->getJsonFromArrayOfJson
         let message = [
           (

@@ -48,7 +48,6 @@ let make = (
     ~paymentType="google_pay",
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
-  let {isLegacy, emitPaymentMethodInfo} = SubscriptionEventHooks.useLegacyEvents()
   SubscriptionEventHooks.useEmitFormStatus(
     ~empty=areRequiredFieldsEmpty,
     ~complete=areRequiredFieldsValid,
@@ -167,15 +166,13 @@ let make = (
         ~eventName=GOOGLE_PAY_FLOW,
         ~paymentMethod="GOOGLE_PAY",
       )
-      if isLegacy {
-        emitPaymentMethodInfo(
-          ~paymentMethod="wallet",
-          ~paymentMethodType="google_pay",
-          ~country,
-          ~state,
-          ~pinCode,
-        )
-      }
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="google_pay",
+        ~country,
+        ~state,
+        ~pinCode,
+      )
       emitter.emitPaymentMethodStatus(
         ~paymentMethod="wallet",
         ~paymentMethodType="google_pay",

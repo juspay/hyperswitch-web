@@ -59,7 +59,6 @@ let make = (
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let {isLegacy} = SubscriptionEventHooks.useLegacyEvents()
   let layoutClass = CardUtils.getLayoutClass(layout)
   let payOptionsRef = React.useRef(Nullable.null)
   let selectRef = React.useRef(Nullable.null)
@@ -123,7 +122,6 @@ let make = (
     ~cardProps,
     ~expiryProps,
     ~cvcProps,
-    ~isLegacy,
   )
   SubscriptionEventHooks.useEmitPaymentMethodStatus(
     ~paymentMethodName=selectedPaymentOption.paymentMethodName,

@@ -29,7 +29,6 @@ let loadPaypalSDK = (
   ~nonPiiAdderessData: PaymentUtils.nonPiiAdderessData,
   ~sdkAuthorization,
   ~emitter: SubscriptionEventHooks.emitter,
-  ~isLegacy: bool,
 ) => {
   open Promise
 
@@ -66,15 +65,13 @@ let loadPaypalSDK = (
         resolve("")
       } else {
         let {country, state, pinCode} = nonPiiAdderessData
-        if isLegacy {
-          PaymentUtils.emitPaymentMethodInfo(
-            ~paymentMethod="wallet",
-            ~paymentMethodType="paypal",
-            ~country,
-            ~state,
-            ~pinCode,
-          )
-        }
+        PaymentUtils.emitPaymentMethodInfo(
+          ~paymentMethod="wallet",
+          ~paymentMethodType="paypal",
+          ~country,
+          ~state,
+          ~pinCode,
+        )
         emitter.emitPaymentMethodStatus(
           ~paymentMethod="wallet",
           ~paymentMethodType="paypal",

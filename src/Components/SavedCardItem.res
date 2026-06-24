@@ -110,11 +110,6 @@ let make = (
   }
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
-  let {
-    emitIsFormReadyForSubmission,
-    emitExpiryDate,
-    emitPaymentMethodInfo,
-  } = SubscriptionEventHooks.useLegacyEvents()
 
   React.useEffect(() => {
     setSelectedInstallmentPlan(_ => None)
@@ -126,7 +121,7 @@ let make = (
 
   React.useEffect(() => {
     if isActive {
-      emitPaymentMethodInfo(
+      PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod=paymentItem.paymentMethod,
         ~paymentMethodType,
         ~cardBrand=paymentItem.card.scheme->Option.getOr("")->CardUtils.getCardType,
@@ -159,14 +154,14 @@ let make = (
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->CardValidations.formatCardExpiryNumber
-      ->emitExpiryDate
+      ->CardUtils.emitExpiryDate
     }
     None
   }, (isActive, paymentItem, country, state, pinCode))
 
   React.useEffect(() => {
     // TODO - Handle Events for VGS/Vault case
-    emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
+    CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
     None
   }, [isCVCValid])
 

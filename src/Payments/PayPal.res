@@ -69,7 +69,6 @@ let make = (~walletOptions) => {
     ~paymentType=paymentMethodType,
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
-  let {isLegacy, emitPaymentMethodInfo} = SubscriptionEventHooks.useLegacyEvents()
   SubscriptionEventHooks.useEmitFormStatus(
     ~empty=!paypalClicked,
     ~complete=paypalClicked,
@@ -89,9 +88,13 @@ let make = (~walletOptions) => {
         ~eventName=PAYPAL_FLOW,
         ~paymentMethod="PAYPAL",
       )
-      if isLegacy {
-        emitPaymentMethodInfo(~paymentMethod, ~paymentMethodType, ~country, ~state, ~pinCode)
-      }
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod,
+        ~paymentMethodType,
+        ~country,
+        ~state,
+        ~pinCode,
+      )
       emitter.emitPaymentMethodStatus(
         ~paymentMethod,
         ~paymentMethodType,

@@ -89,7 +89,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~paymentType="apple_pay",
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
-  let {isLegacy, emitPaymentMethodInfo} = SubscriptionEventHooks.useLegacyEvents()
   SubscriptionEventHooks.useEmitFormStatus(
     ~empty=areRequiredFieldsEmpty,
     ~complete=areRequiredFieldsValid,
@@ -278,15 +277,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~eventName=APPLE_PAY_FLOW,
         ~paymentMethod="APPLE_PAY",
       )
-      if isLegacy {
-        emitPaymentMethodInfo(
-          ~paymentMethod="wallet",
-          ~paymentMethodType="apple_pay",
-          ~country,
-          ~state,
-          ~pinCode,
-        )
-      }
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="apple_pay",
+        ~country,
+        ~state,
+        ~pinCode,
+      )
       emitter.emitPaymentMethodStatus(
         ~paymentMethod="wallet",
         ~paymentMethodType="apple_pay",
