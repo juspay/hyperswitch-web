@@ -75,12 +75,9 @@ describe("SDK Initialization Tests", () => {
   });
 
   it("should initialize SDK with profile ID", () => {
-    const profileId = Cypress.env("HYPERSWITCH_PROFILE_ID");
-    
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
-        const url = `${getClientURL(clientSecret, publishableKey)}&profileId=${profileId}`;
-        cy.visit(url);
+        cy.visit(getClientURL(clientSecret, publishableKey));
       });
     });
 

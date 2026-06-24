@@ -55,6 +55,9 @@ export const getClientURL = (
 ) => {
   const baseUrl = getClientBaseUrl();
   let url = `${baseUrl}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
+  if (createPaymentBody.profile_id) {
+    url += `&profileId=${encodeURIComponent(createPaymentBody.profile_id)}`;
+  }
   if (locale) {
     url += `&locale=${locale}`;
   }

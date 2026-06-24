@@ -309,14 +309,52 @@ Cypress.Commands.add(
       if ($body.find('[data-testid="addNewCard"]').length > 0) {
         getIframeBody().find('[data-testid="addNewCard"]').click();
       }
-      // Check if the payment method tab is present.
+      // Check if the payment method text is present anywhere.
       const hasMethod = $body.text().includes(methodName);
       if (!hasMethod) {
-        cy.log(`Skipping: payment method "${methodName}" not available for this merchant / connector.`);
-      } else {
-      getIframeBody().contains(methodName).click({ force: true });
+        throw new Error(
+          `Payment method "${methodName}" is not available. ` +
+          `This usually means the connector credentials are missing in creds.json ` +
+          `or the MCA was not created during setup. ` +
+          `Check that creds.json has a valid entry for this connector.`
+        );
       }
-      return cy.wrap(!hasMethod);
+
+      // The SDK renders payment methods in two ways:
+      // 1. As tabs (<button class="Tab">) — clickable via .click()
+      // 2. As a dropdown (<select data-testid="paymentMethodsSelect">) — needs .select()
+      //    When there are many payment methods, some overflow into the dropdown.
+      //    Clicking an <option> element doesn't trigger the onChange handler,
+      //    so we must use cy.select() for dropdown options.
+
+      const $tab = $body.find("button.Tab").filter((_, el) =>
+        Cypress.$(el).text().includes(methodName)
+      );
+
+      if ($tab.length > 0) {
+        // Payment method is rendered as a clickable tab.
+        getIframeBody().contains(methodName).click({ force: true });
+      } else {
+        // Payment method is in the dropdown <select>.
+        // Map display names to the paymentMethodName values used in <option value="...">.
+        const displayNameToValue: Record<string, string> = {
+          "iDEAL": "ideal",
+          "EPS": "eps",
+          "Blik": "blik",
+          "Interac": "interac",
+          "Mifinity": "mifinity",
+          "Crypto": "crypto_currency",
+          "Cash / Voucher": "classic",
+          "E-Voucher": "evoucher",
+          "Card": "card",
+        };
+        const selectValue = displayNameToValue[methodName] || methodName.toLowerCase();
+        getIframeBody()
+          .find('[data-testid="paymentMethodsSelect"]')
+          .should("exist")
+          .select(selectValue, { force: true });
+      }
+      return cy.wrap(false);
     });
   },
 );

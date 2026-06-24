@@ -56,6 +56,20 @@ const CONNECTOR_TYPE_MAP = {
 };
 
 // ---------------------------------------------------------------------------
+// Maps a connector name to the key used in connectorProfileIds.
+//
+// Most connectors use their own name as the key, but some payment methods
+// (like Interac) are provided by multiple sub-connectors (loonie, gigadat)
+// that share a single business profile.  The test looks up the profile via
+// connectorEnum.INTERAC which maps to the key "interac", so both sub-connectors
+// must store their shared profile_id under "interac".
+// ---------------------------------------------------------------------------
+const PROFILE_KEY_MAP = {
+  loonio: "interac",
+  gigadat: "interac",
+};
+
+// ---------------------------------------------------------------------------
 // Whitelist of connectors actually used by Cypress web tests.
 //
 // The shared backend creds.json may contain 60+ connectors, but the web SDK
@@ -73,7 +87,8 @@ const REQUIRED_CONNECTORS = [
   "mifinity",
   "cryptopay",
   "cashtocode",
-  "interac",
+  "loonio",
+  "gigadat",
 ];
 
 // ---------------------------------------------------------------------------
@@ -190,6 +205,20 @@ const CONNECTOR_PAYMENT_METHODS = {
           recurring_enabled: false,
           installment_payment_enabled: false,
         },
+        {
+          payment_method_type: "ideal",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+        {
+          payment_method_type: "blik",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
       ],
     },
   ],
@@ -271,10 +300,27 @@ const CONNECTOR_PAYMENT_METHODS = {
     },
   ],
 
-  // ── Interac ──────────────────────────────────────────────────────────────
-  // Uses CAD currency. Two sub-connectors: gigadat and loonio — chosen per
-  // test via the `connector` field on the payment body (not the MCA).
-  interac: [
+  // ── Loonie / GigaDat (Interac) ───────────────────────────────────────────
+  // Both are sub-connectors for the Interac bank_redirect payment method.
+  // They share a single business profile (keyed as "interac" in
+  // connectorProfileIds) so the test can use the same profile_id for both.
+  // Uses CAD currency. The sub-connector is chosen per test via the `connector`
+  // field on the payment body.
+  loonio: [
+    {
+      payment_method: "bank_redirect",
+      payment_method_types: [
+        {
+          payment_method_type: "interac",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+  gigadat: [
     {
       payment_method: "bank_redirect",
       payment_method_types: [
@@ -609,13 +655,21 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
     const metadata = extractMetadata(connectorCreds);
 
     try {
-      // a) Dedicated business profile for this connector
-      const profileId = await createBusinessProfile(
-        secretKey,
-        merchantId,
-        apiBaseUrl,
-        connectorName
-      );
+      // Determine the profile key — most connectors use their own name,
+      // but sub-connectors like loonie/gigadat share a profile keyed as "interac".
+      const profileKey = PROFILE_KEY_MAP[connectorName] || connectorName;
+
+      // a) Create a new business profile, or reuse an existing one if a
+      //    sub-connector already created it (e.g. gigadat reuses loonie's profile).
+      let profileId = connectorProfileIds[profileKey];
+      if (!profileId) {
+        profileId = await createBusinessProfile(
+          secretKey,
+          merchantId,
+          apiBaseUrl,
+          connectorName
+        );
+      }
 
       // b) MCA on that profile
       await createMerchantConnectorAccount(
@@ -628,9 +682,10 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
         apiBaseUrl
       );
 
-      connectorProfileIds[connectorName] = profileId;
+      connectorProfileIds[profileKey] = profileId;
       console.log(
-        `[setup] ${connectorName.padEnd(20)} → profile_id: ${profileId}`
+        `[setup] ${connectorName.padEnd(20)} → profile_id: ${profileId}` +
+        (profileKey !== connectorName ? ` (shared as "${profileKey}")` : "")
       );
     } catch (err) {
       // Log the error but continue with remaining connectors.
