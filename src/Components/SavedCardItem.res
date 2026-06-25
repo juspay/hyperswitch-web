@@ -341,14 +341,14 @@ let make = (
               </RenderIf>
               <RenderIf
                 condition={hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
-                <div
+                <LiveError
+                  text={cvcError}
                   className="Error pt-1 mt-1 ml-3"
-                  style={
+                  style={{
                     color: themeObj.colorDangerText,
                     fontSize: themeObj.fontSizeSm,
-                  }>
-                  {React.string(cvcError)}
-                </div>
+                  }}
+                />
               </RenderIf>
               <RenderIf
                 condition={isActive && displayBillingDetails && billingDetailsArrayLength > 0}>
@@ -361,14 +361,14 @@ let make = (
               </RenderIf>
               <RenderIf
                 condition={!hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
-                <div
+                <LiveError
+                  text={cvcError}
                   className="Error pt-1 mt-1 ml-1"
-                  style={
+                  style={{
                     color: themeObj.colorDangerText,
                     fontSize: themeObj.fontSizeSm,
-                  }>
-                  {React.string(cvcError)}
-                </div>
+                  }}
+                />
               </RenderIf>
               <RenderIf condition={isCardExpired}>
                 <div className="italic mt-3 ml-1" style={fontSize: "14px", opacity: "0.7"}>

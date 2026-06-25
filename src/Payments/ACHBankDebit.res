@@ -123,16 +123,16 @@ let make = () => {
         <div className="flex flex-col">
           <AddBankAccount modalData setModalData />
           <RenderIf condition={bankError->String.length > 0}>
-            <div
+            <LiveError
+              text={bankError}
               className="Error pt-1"
-              style={
+              style={{
                 color: themeObj.colorDangerText,
                 fontSize: themeObj.fontSizeSm,
                 alignSelf: "start",
                 textAlign: "left",
-              }>
-              {React.string(bankError)}
-            </div>
+              }}
+            />
           </RenderIf>
         </div>
         <Surcharge paymentMethod paymentMethodType />

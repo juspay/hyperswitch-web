@@ -16,6 +16,7 @@ let make = (~onClickHandler=?, ~label=?) => {
   open PaymentTypeContext
   let (showLoader, setShowLoader) = React.useState(() => false)
   let (isPayNowButtonDisable, setIsPayNowButtonDisable) = React.useState(() => false)
+  let announce = AccessibilityAnnouncer.useAnnounce()
   let {themeObj, localeString} = configAtom->Recoil.useRecoilValueFromAtom
   let {sdkHandleConfirmPayment} = optionAtom->Recoil.useRecoilValueFromAtom
 
@@ -40,6 +41,7 @@ let make = (~onClickHandler=?, ~label=?) => {
       if !(submitSuccessfulVal->JSON.Decode.bool->Option.getOr(false)) {
         setIsPayNowButtonDisable(_ => false)
         setShowLoader(_ => false)
+        announce(~assertive=true, localeString.paymentFailedText)
       }
     | None => ()
     }
@@ -55,6 +57,7 @@ let make = (~onClickHandler=?, ~label=?) => {
   let handleOnClick = _ => {
     setIsPayNowButtonDisable(_ => true)
     setShowLoader(_ => true)
+    announce(localeString.processingPaymentText)
     EventListenerManager.addSmartEventListener("message", handleMessage, "onSubmitSuccessful")
     messageParentWindow([("handleSdkConfirm", confirmPayload)])
   }
@@ -62,6 +65,7 @@ let make = (~onClickHandler=?, ~label=?) => {
   <div className="flex flex-col gap-1 h-auto w-full items-center">
     <button
       disabled=isPayNowButtonDisable
+      ariaBusy={showLoader}
       onClick={onClickHandler->Option.isNone ? handleOnClick : onClickHandlerFunc}
       className={`w-full flex flex-row justify-center items-center`}
       style={
