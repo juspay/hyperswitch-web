@@ -78,6 +78,7 @@ module FullNameFieldInput = {
       placeholder
       inputRef
       ?autocomplete
+      ariaRequired={firstNameFieldConfig.isRequired}
     />
   }
 }

@@ -265,4 +265,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Minder tonen",
   refreshingText: "Vernieuwen...",
   paymentDetailsBeingCheckedText: "Betalingsgegevens worden gecontroleerd. Een moment geduld",
+  // --- accessibility labels ---
+  cardNetworkLabel: "Kaartnetwerk",
+  morePaymentMethodsLabel: "Meer betaalmethoden",
+  yearLabel: "Jaar",
+  monthLabel: "Maand",
+  optionTabLabel: fieldName => `${fieldName} optietabblad`,
 }

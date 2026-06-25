@@ -246,28 +246,42 @@ let make = (
       // Called by both the inner-SDK path and the standard path when card
       // fields are incomplete or invalid.
       let reportCardFieldErrors = () => {
-        if cardNumber === "" {
+        let hasEmptyCardField = cardNumber === "" || cardExpiry === "" || cvcNumber === ""
+        let (cardSpecificError, hasInvalidCardField) = if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
-          setUserError(localeString.enterFieldsText)
+          (None, false)
         } else if isCardSupported->Option.getOr(true)->not {
           if cardBrand == "" {
             setCardError(_ => localeString.enterValidCardNumberErrorText)
-            setUserError(localeString.enterValidDetailsText)
+            (None, true)
           } else {
-            setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
-            setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+            let msg = localeString.cardBrandConfiguredErrorText(cardBrand)
+            setCardError(_ => msg)
+            (Some(msg), true)
           }
+        } else {
+          (None, false)
+        }
+
+        if cardNumber === "" {
+          setCardError(_ => localeString.cardNumberEmptyText)
         }
         if cardExpiry === "" {
           setExpiryError(_ => localeString.cardExpiryDateEmptyText)
-          setUserError(localeString.enterFieldsText)
         }
         if cvcNumber === "" {
           setCvcError(_ => localeString.cvcNumberEmptyText)
-          setUserError(localeString.enterFieldsText)
         }
-        if !isCardDetailsValid {
-          setUserError(localeString.enterValidDetailsText)
+
+        let summaryMessage = switch cardSpecificError {
+        | Some(msg) => msg
+        | None if hasEmptyCardField => localeString.enterFieldsText
+        | None if hasInvalidCardField || !isCardDetailsValid => localeString.enterValidDetailsText
+        | None => ""
+        }
+
+        if summaryMessage !== "" {
+          setUserError(summaryMessage)
         }
       }
 
@@ -511,41 +525,55 @@ let make = (
         } else {
           // Card field errors (also checked via shared reportCardFieldErrors above
           // but the standard path has additional eligibility / installment checks).
-          if cardNumber === "" {
+          let hasEmptyCardField =
+            cardNumber === "" || cardExpiry === "" || (!isBancontact && cvcNumber === "")
+          let cardSpecificError = if cardNumber === "" {
             setCardError(_ => localeString.cardNumberEmptyText)
-            setUserError(localeString.enterFieldsText)
+            None
           } else if cardEligibilityError->Option.isSome {
             let msg = EligibilityHelpers.getCardEligibilityErrorText(
               ~cardEligibilityError,
               ~localeString,
             )
             setCardError(_ => msg)
-            setUserError(msg)
+            Some(msg)
           } else if isCardSupported->Option.getOr(true)->not {
             if cardBrand == "" {
               setCardError(_ => localeString.enterValidCardNumberErrorText)
-              setUserError(localeString.enterValidDetailsText)
+              None
             } else {
-              setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
-              setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+              let msg = localeString.cardBrandConfiguredErrorText(cardBrand)
+              setCardError(_ => msg)
+              Some(msg)
             }
+          } else {
+            None
           }
           if cardExpiry === "" {
             setExpiryError(_ => localeString.cardExpiryDateEmptyText)
-            setUserError(localeString.enterFieldsText)
           }
           if !isBancontact && cvcNumber === "" {
             setCvcError(_ => localeString.cvcNumberEmptyText)
-            setUserError(localeString.enterFieldsText)
           }
           if !isInstallmentValid {
-            setUserError(localeString.installmentSelectPlanError)
             setInstallmentsError(_ => localeString.installmentSelectPlanError)
           }
-          if isEligibilityPending && paymentMethodListValue.should_block_confirm {
-            setUserError(localeString.paymentDetailsBeingCheckedText)
-          } else if !validFormat {
-            setUserError(localeString.enterValidDetailsText)
+
+          let summaryMessage = if !isInstallmentValid {
+            localeString.installmentSelectPlanError
+          } else if isEligibilityPending && paymentMethodListValue.should_block_confirm {
+            localeString.paymentDetailsBeingCheckedText
+          } else {
+            switch cardSpecificError {
+            | Some(msg) => msg
+            | None if hasEmptyCardField => localeString.enterFieldsText
+            | None if !validFormat => localeString.enterValidDetailsText
+            | None => ""
+            }
+          }
+
+          if summaryMessage !== "" {
+            setUserError(summaryMessage)
           }
         }
       }
@@ -626,6 +654,7 @@ let make = (
                 : ""}
               name=TestUtils.cardNoInputTestId
               autocomplete="cc-number"
+              ariaRequired=true
             />
             <div
               className="flex flex-row w-full place-content-between"
@@ -647,6 +676,7 @@ let make = (
                   placeholder=localeString.expiryPlaceholder
                   name=TestUtils.expiryInputTestId
                   autocomplete="cc-exp"
+                  ariaRequired=true
                 />
               </div>
               <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
@@ -672,6 +702,7 @@ let make = (
                   placeholder="123"
                   name=TestUtils.cardCVVInputTestId
                   autocomplete="cc-csc"
+                  ariaRequired=true
                 />
               </div>
             </div>
@@ -680,16 +711,16 @@ let make = (
                 (cardError->String.length > 0 ||
                 cvcError->String.length > 0 ||
                 expiryError->String.length > 0)}>
-              <div
+              <LiveError
+                text="Invalid input"
                 className="Error pt-1"
-                style={
+                style={{
                   color: themeObj.colorDangerText,
                   fontSize: themeObj.fontSizeSm,
                   alignSelf: "start",
                   textAlign: "left",
-                }>
-                {React.string("Invalid input")}
-              </div>
+                }}
+              />
             </RenderIf>
           </RenderIf>
           // Business-logic UI is hidden inside the Cards SDK iframe (those features

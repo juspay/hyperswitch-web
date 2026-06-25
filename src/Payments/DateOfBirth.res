@@ -68,6 +68,9 @@ let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
       renderCustomHeader={val => {
         <div className="flex gap-4 items-center justify-center m-2">
           <select
+            id="dob-year"
+            ariaLabel={localeString.yearLabel}
+            ariaRequired={fieldConfig.isRequired}
             className="p-1"
             value={val.date->Date.getFullYear->Int.toString}
             onChange={ev => {
@@ -83,6 +86,9 @@ let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
             ->React.array}
           </select>
           <select
+            id="dob-month"
+            ariaLabel={localeString.monthLabel}
+            ariaRequired={fieldConfig.isRequired}
             className="p-1"
             value={months[val.date->Date.getMonth]->Option.getOr("January")}
             onChange={ev => {
@@ -99,16 +105,16 @@ let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
       }}
     />
     <RenderIf condition={showError && invalid}>
-      <div
+      <LiveError
+        text={field.meta.error->Option.getOr("")}
         className="Error pt-1"
-        style={
+        style={{
           color: themeObj.colorDangerText,
           fontSize: themeObj.fontSizeSm,
           alignSelf: "start",
           textAlign: "left",
-        }>
-        {field.meta.error->Option.getOr("")->React.string}
-      </div>
+        }}
+      />
     </RenderIf>
   </div>
 }

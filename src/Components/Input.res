@@ -18,6 +18,8 @@ let make = (
   ~placeholder="",
   ~className="",
   ~inputRef,
+  ~ariaRequired=false,
+  ~fieldId=?,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(elementOptions)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -59,13 +61,23 @@ let make = (
     ""
   }
 
+  let inputId = fieldId->Option.getOr(id->String.length > 0 ? id : fieldName)
+  let accessibleLabel = AccessibilityUtils.getAccessibleLabel(
+    ~fieldName,
+    ~placeholder,
+    ~fallback=inputId,
+  )
+  let hasError = errorString->AccessibilityUtils.hasOptionalText
+  let describedById = hasError ? Some(inputId ++ "-error") : None
+  let ariaInvalid = AccessibilityUtils.ariaInvalid(~hasError, ~isValid)
+
   <div className={` flex flex-col w-full`} style={color: themeObj.colorText}>
     <RenderIf condition={fieldName->String.length > 0}>
-      <div> {React.string(fieldName)} </div>
+      <label htmlFor={inputId}> {React.string(fieldName)} </label>
     </RenderIf>
     <div className="flex flex-row " style={direction: direction}>
       <input
-        id
+        id={inputId}
         style={
           background: themeObj.colorBackground,
           padding: themeObj.spacingUnit,
@@ -83,17 +95,21 @@ let make = (
         onChange
         onBlur=handleBlur
         onFocus=handleFocus
-        ariaLabel={`Type to fill ${fieldName} input`}
+        ariaLabel={accessibleLabel}
+        ariaInvalid
+        ariaRequired
+        ariaDescribedby=?describedById
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>
     </div>
     {switch errorString {
     | Some(val) =>
       <RenderIf condition={val->String.length > 0}>
-        <div
-          className="py-1 text-xs text-red-600 transition-colors transition-border ease-out duration-200">
-          {React.string(val)}
-        </div>
+        <LiveError
+          text={val}
+          className="py-1 text-xs text-red-600 transition-colors transition-border ease-out duration-200"
+          id={inputId ++ "-error"}
+        />
       </RenderIf>
     | None => React.null
     }}

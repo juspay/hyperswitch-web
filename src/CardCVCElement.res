@@ -249,5 +249,6 @@ let make = (
     height={isVaultCvcFlow ? "1.8rem" : ""}
     name=TestUtils.cardCVVInputTestId
     autocomplete="cc-csc"
+    ariaRequired=true
   />
 }

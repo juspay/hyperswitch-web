@@ -25,6 +25,8 @@ let make = (
   ~labelClassName="",
   ~paymentType: option<CardThemeType.mode>=?,
   ~autocomplete="on",
+  ~ariaRequired=false,
+  ~fieldId=?,
 ) => {
   open ElementType
   let (eleClassName, setEleClassName) = React.useState(_ => "input-base")
@@ -96,6 +98,16 @@ let make = (
     ""
   }
 
+  let inputId = fieldId->Option.getOr(id->String.length > 0 ? id : fieldName)
+  let accessibleLabel = AccessibilityUtils.getAccessibleLabel(
+    ~fieldName,
+    ~placeholder,
+    ~fallback=inputId,
+  )
+  let hasError = errorString->AccessibilityUtils.hasOptionalText
+  let describedById = hasError ? Some(inputId ++ "-error") : None
+  let ariaInvalid = AccessibilityUtils.ariaInvalid(~hasError, ~isValid)
+
   let isValidValue = CardUtils.getBoolOptionVal(isValid)
 
   let (cardEmpty, cardComplete, cardInvalid, cardFocused) = React.useMemo(() => {
@@ -125,11 +137,11 @@ let make = (
 
   <div className={` flex flex-col w-full`}>
     <RenderIf condition={fieldName->String.length > 0}>
-      <div className={`${labelClassName}`}> {React.string(fieldName)} </div>
+      <label htmlFor={inputId} className={`${labelClassName}`}> {React.string(fieldName)} </label>
     </RenderIf>
     <div className="flex flex-row " style={direction: direction}>
       <input
-        id
+        id={inputId}
         style={
           background: "transparent",
           width: "-webkit-fill-available",
@@ -148,7 +160,10 @@ let make = (
         onBlur=handleBlur
         onFocus=handleFocus
         autoComplete={autocomplete}
-        ariaLabel={`Type to fill ${fieldName} input`}
+        ariaLabel={accessibleLabel}
+        ariaInvalid
+        ariaRequired
+        ariaDescribedby=?describedById
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>
     </div>
@@ -157,7 +172,7 @@ let make = (
       switch errorString {
       | Some(val) =>
         <RenderIf condition={val->String.length > 0}>
-          <div className={`py-1 ${errorClases}`}> {React.string(val)} </div>
+          <LiveError text={val} className={`py-1 ${errorClases}`} id={inputId ++ "-error"} />
         </RenderIf>
       | None => React.null
       }
