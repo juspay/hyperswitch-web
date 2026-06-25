@@ -358,6 +358,7 @@ let mergeJsons = (json1, json2) => {
 }
 
 let postFailedSubmitResponse = (~errortype, ~message) => {
+  AccessibilityUtils.announceFailedSubmit(message)
   let errorDict =
     [
       ("type", errortype->JSON.Encode.string),
@@ -1533,6 +1534,7 @@ let makeIframe = (element, url) => {
     iframe.id = "orca-fullscreen"
     iframe.src = url
     iframe.name = "fullscreen"
+    iframe.title = "Secure payment dialog"
     iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
     iframe.onload = () => {
       resolve(Dict.make())
@@ -1544,6 +1546,7 @@ let makeHiddenIframe = (element, ~src, ~id) => {
   let iframe = Window.createElement("iframe")
   iframe->Window.setAttribute("id", id)
   iframe->Window.setAttribute("src", src)
+  iframe->Window.setAttribute("title", "Secure payment processing")
   iframe->Window.setAttribute(
     "style",
     "position: absolute; width: 1px; height: 1px; border: none; overflow: hidden; left: -9999px; top: -9999px;",

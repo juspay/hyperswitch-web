@@ -44,6 +44,7 @@ let make = (
       if !isClickToPayAuthenticateError && email !== "" {
         let iframe = CommonHooks.createElement("iframe")
         iframe.id = "mastercard-account-verification-iframe"
+        iframe.title = "Click to Pay Authentication"
         iframe.width = "100%"
         iframe.height = "410px"
         let element = ClickToPayHelpers.getElementById(

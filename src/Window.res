@@ -29,6 +29,7 @@ type element = {
   mutable crossorigin: string,
   mutable \"type": string,
   mutable id: string,
+  mutable title: string,
   mutable width: string,
   mutable height: string,
   remove: unit => unit,

@@ -57,6 +57,7 @@ let make = (
           src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&pmSessionId=${pmSessionId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}&sdkAuthorization=${sdkAuthorization}"
           allow="*"
           name="orca-payment"
+          title="Payment Methods Management"
           style="outline: none;"
         ></iframe>
         </div>`
