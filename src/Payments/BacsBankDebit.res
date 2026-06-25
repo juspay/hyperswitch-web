@@ -158,6 +158,7 @@ let make = () => {
             onBlur=sortcodeBlur
             inputRef=sortCodeRef
             placeholder="10-80-00"
+            ariaRequired=true
           />
           <PaymentInputField
             fieldName=localeString.accountNumberText
@@ -166,6 +167,7 @@ let make = () => {
             type_="text"
             inputRef=accNumRef
             placeholder="00012345"
+            ariaRequired=true
           />
         </div>
         <EmailPaymentInput />

@@ -101,6 +101,7 @@ let make = () => {
       onBlur=socialSecurityNumberBlur
       inputRef=socialSecurityNumberRef
       placeholder="000.000.000-00"
+      ariaRequired=true
     />
     <Surcharge paymentMethod paymentMethodType />
     <InfoElement />

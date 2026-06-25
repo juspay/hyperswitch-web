@@ -43,6 +43,7 @@ module EmailInput = {
       placeholder
       inputRef={fieldRef}
       autocomplete
+      ariaRequired={primaryFieldConfig.isRequired}
     />
   }
 }

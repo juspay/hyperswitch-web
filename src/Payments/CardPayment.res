@@ -622,6 +622,7 @@ let make = (
                 : ""}
               name=TestUtils.cardNoInputTestId
               autocomplete="cc-number"
+              ariaRequired=true
             />
             <div
               className="flex flex-row w-full place-content-between"
@@ -643,6 +644,7 @@ let make = (
                   placeholder=localeString.expiryPlaceholder
                   name=TestUtils.expiryInputTestId
                   autocomplete="cc-exp"
+                  ariaRequired=true
                 />
               </div>
               <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
@@ -668,6 +670,7 @@ let make = (
                   placeholder="123"
                   name=TestUtils.cardCVVInputTestId
                   autocomplete="cc-csc"
+                  ariaRequired=true
                 />
               </div>
             </div>
@@ -676,16 +679,16 @@ let make = (
                 (cardError->String.length > 0 ||
                 cvcError->String.length > 0 ||
                 expiryError->String.length > 0)}>
-              <div
+              <LiveError
+                text={localeString.enterValidDetailsText}
                 className="Error pt-1"
-                style={
+                style={{
                   color: themeObj.colorDangerText,
                   fontSize: themeObj.fontSizeSm,
                   alignSelf: "start",
                   textAlign: "left",
-                }>
-                {React.string("Invalid input")}
-              </div>
+                }}
+              />
             </RenderIf>
           </RenderIf>
           // Business-logic UI is hidden inside the Cards SDK iframe (those features

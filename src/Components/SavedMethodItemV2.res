@@ -209,6 +209,8 @@ let make = (
                         height="1.8rem"
                         name={TestUtils.cardCVVInputTestId}
                         autocomplete="cc-csc"
+                        ariaLabel={localeString.cvcTextLabel}
+                        ariaRequired=true
                       />
                     </div>
                   </div>

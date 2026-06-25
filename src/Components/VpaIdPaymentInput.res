@@ -55,5 +55,6 @@ let make = () => {
     name="vpaId"
     inputRef=vpaIdRef
     placeholder="Eg: johndoe@upi"
+    ariaRequired=true
   />
 }
