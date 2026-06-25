@@ -1,4 +1,5 @@
 let paymentMethodListValue = Recoil.atom("paymentMethodListValue", PaymentMethodsRecord.defaultList)
+let sdkConfigsValue = Recoil.atom("sdkConfigsValue", SdkConfigTypes.defaultSdkConfigValue)
 let paymentManagementListValue = Recoil.atom(
   "paymentManagementListValue",
   UnifiedHelpersV2.defaultPaymentsList,
@@ -12,6 +13,7 @@ let paymentListLookupNew = (
   ~isKlarnaSDKFlow,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ~areAllGooglePayRequiredFieldsPrefilled,
+  ~collectBillingDetailsFromWalletConnector,
   ~isGooglePayReady,
   ~shouldDisplayApplePayInTabs,
   ~shouldDisplayPayPalInTabs,
@@ -51,8 +53,7 @@ let paymentListLookupNew = (
   }
 
   let requiresGooglePayBillingDetails =
-    !paymentMethodListValue.collect_billing_details_from_wallets &&
-    !areAllGooglePayRequiredFieldsPrefilled
+    !collectBillingDetailsFromWalletConnector && !areAllGooglePayRequiredFieldsPrefilled
 
   let shouldDisplayGooglePayInTabs =
     isGooglePayReady && (showWalletsWithOtherPaymentMethods || requiresGooglePayBillingDetails)
@@ -413,6 +414,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
   let isKlarnaSDKFlow = getIsKlarnaSDKFlow(sessions)
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(paymentMethodListValue)
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(sdkConfigsValue)
 
   let areAllApplePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
     ~paymentMethodListValue,
@@ -434,6 +436,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
 
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let isVgsScriptReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isVgsScriptReady)
 
   let (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist) = usePaypalFlowStatus(
     ~sessions,
@@ -454,11 +457,14 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     ~savedPaymentMethods: option<array<PaymentType.customerMethods>>,
   ) => {
     let paymentOrder = paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
-    let pList = paymentList->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+    let pList = paymentList->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
+
+    let collectBillingDetailsFromWalletConnector = SdkConfigParser.getCollectBillingDetailsFromWalletConnector(
+      sdkConfigsValue.account_config->Option.flatMap(ac => ac.profile),
+    )
 
     let requiresApplePayBillingDetails =
-      !paymentMethodListValue.collect_billing_details_from_wallets &&
-      !areAllApplePayRequiredFieldsPrefilled
+      !collectBillingDetailsFromWalletConnector && !areAllApplePayRequiredFieldsPrefilled
 
     let shouldDisplayApplePayInTabs =
       isApplePayReady && (showWalletsWithOtherPaymentMethods || requiresApplePayBillingDetails)
@@ -469,8 +475,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     }
 
     let requiresPaypalBillingDetails =
-      !paymentMethodListValue.collect_billing_details_from_wallets &&
-      !areAllPaypalRequiredFieldsPreFilled
+      !collectBillingDetailsFromWalletConnector && !areAllPaypalRequiredFieldsPreFilled
 
     let isPaypalEligibleInRedirectFlow =
       isShowPaypal && isPaypalRedirectFlow && (!isPaypalSDKFlow || !isPaypalTokenExist)
@@ -502,6 +507,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
         ~isKlarnaSDKFlow,
         ~paymentMethodListValue=pList,
         ~areAllGooglePayRequiredFieldsPrefilled,
+        ~collectBillingDetailsFromWalletConnector,
         ~isGooglePayReady,
         ~shouldDisplayApplePayInTabs,
         ~shouldDisplayPayPalInTabs,
@@ -524,6 +530,8 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
         | "klarna" => !(isKlarnaSDKFlow && isKlarnaInvokeSDKExperience)
         | "apple_pay" => shouldDisplayApplePayInTabs
         | "paypal" => shouldDisplayPayPalInTabs
+        // Drop card when the VGS vault script failed to load (card cannot tokenise).
+        | "card" => isVgsScriptReady
         | _ => true
         }
       })
@@ -564,10 +572,12 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     isPaypalTokenExist,
     isApplePayReady,
     isGooglePayReady,
+    isVgsScriptReady,
     optionAtomValue.customerPaymentMethods,
     optionAtomValue.displaySavedPaymentMethods,
     displayGroupedSavedMethods,
     layoutClass.savedMethodCustomization.hiddenPaymentMethods,
+    sdkConfigsValue.account_config,
   ))
 }
 

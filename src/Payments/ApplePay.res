@@ -88,6 +88,12 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="apple_pay",
   )
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  SubscriptionEventHooks.useEmitFormStatus(
+    ~empty=areRequiredFieldsEmpty,
+    ~complete=areRequiredFieldsValid,
+    ~isOneClickWallet=isWallet,
+  )
 
   let applePayPaymentMethodType = React.useMemo(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -278,6 +284,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~state,
         ~pinCode,
       )
+      emitter.emitPaymentMethodStatus(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="apple_pay",
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=isWallet,
+      )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
       setApplePayClicked(_ => true)
       makeOneClickHandlerPromise(sdkHandleIsThere)
       ->then(result => {
@@ -286,17 +299,15 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           if isInvokeSDKFlow {
             if isApplePayDelayedSessionFlow {
               setShowApplePayLoader(_ => true)
-              let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
-              ApplePayHelpers.processPayment(
-                ~bodyArr=bodyDict,
-                ~isThirdPartyFlow=true,
-                ~isGuestCustomer,
-                ~paymentMethodListValue,
-                ~intent,
-                ~options,
-                ~publishableKey,
-                ~isManualRetryEnabled,
-              )
+              // New flow: send the initial session token directly to Elements (parent).
+              // Do NOT call /confirm here — the ApplePayInterceptor will trigger the
+              // confirm call from inside the iframe during onvalidatemerchant.
+              let sessionData = sessionObj->getOptionsDict->JSON.Encode.object
+              messageParentWindow([
+                ("applePayButtonClicked", true->JSON.Encode.bool),
+                ("applePayPresent", sessionData),
+                ("componentName", componentName->JSON.Encode.string),
+              ])
             } else {
               ApplePayHelpers.handleApplePayButtonClicked(
                 ~sessionObj,

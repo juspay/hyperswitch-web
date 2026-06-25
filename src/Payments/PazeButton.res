@@ -12,6 +12,7 @@ let make = (~token: SessionsType.token) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
@@ -45,6 +46,13 @@ let make = (~token: SessionsType.token) => {
         ~state,
         ~pinCode,
       )
+      emitter.emitPaymentMethodStatus(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="paze",
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=true,
+      )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
       setShowLoader(_ => true)
       let metadata =
         [

@@ -7,7 +7,9 @@ let elementOptions = Recoil.atom("elementOptions", ElementType.defaultOptions)
 let optionAtom = Recoil.atom("options", PaymentType.defaultOptions)
 let sessions = Recoil.atom("sessions", PaymentType.Loading)
 let updateSession = Recoil.atom("updateSession", false)
+let isTokenize = Recoil.atom("isTokenize", false)
 let paymentMethodList = Recoil.atom("paymentMethodList", PaymentType.Loading)
+let sdkConfigs = Recoil.atom("sdkConfigs", PaymentType.Loading)
 let loggerAtom = Recoil.atom("component", LoggerUtils.defaultLoggerConfig)
 let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
@@ -15,6 +17,9 @@ let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
 let paymentTokenAtom = Recoil.atom("paymentToken", RecoilAtomTypes.defaultPaymentToken)
 let showPaymentMethodsScreen = Recoil.atom("showPaymentMethodsScreen", false)
+// Typed vault credentials decoded from the vaultConfig blob in fullScreenIframeMounted.
+// Set by PaymentMethodsSDK; read by CardsSDK / vault-specific card components.
+let vaultCredentials = Recoil.atom("vaultCredentials", VaultHelpers.defaultVaultCredentials)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")
 let paymentMethodCollectOptionAtom = Recoil.atom(
@@ -49,6 +54,15 @@ let isGooglePayReady = Recoil.atom("isGooglePayReady", false)
 let trustPayScriptStatus = Recoil.atom("trustPayScriptStatus", NotLoaded)
 let isApplePayReady = Recoil.atom("isApplePayReady", false)
 let isSamsungPayReady = Recoil.atom("isSamsungPayReady", false)
+// Card payments via the VGS vault need the VGS Collect.js script. Ready by
+// default; set false when the script fails to load so the card method can be
+// removed from the list (a card form without VGS cannot tokenise).
+let isVgsScriptReady = Recoil.atom("isVgsScriptReady", true)
+// True inside the inner Cards SDK iframe when it was mounted for the saved-card
+// (return user) CVC flow rather than the new-card flow. Set by LoaderController
+// from the `isSavedCardCvcFlow` field of the paymentElementCreate mount message;
+// read by PaymentMethodsSDK / CardsSDK to render only the vault CVC field.
+let isSavedCardCvcFlow = Recoil.atom("isSavedCardCvcFlow", false)
 let userCountry = Recoil.atom("userCountry", "")
 let userBank = Recoil.atom("userBank", "")
 let userAddressline1 = Recoil.atom("userAddressline1", defaultFieldValues)

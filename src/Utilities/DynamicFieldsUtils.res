@@ -1,166 +1,163 @@
-open RecoilAtoms
-
-let dynamicFieldsEnabledPaymentMethods = [
-  "crypto_currency",
-  "debit",
-  "credit",
-  "blik",
-  "google_pay",
-  "apple_pay",
-  "bancontact_card",
-  "open_banking_uk",
-  "eps",
-  "ideal",
-  "sofort",
-  "pix_transfer",
-  "pix_emv_transfer",
-  "giropay",
-  "local_bank_transfer_transfer",
-  "afterpay_clearpay",
-  "mifinity",
-  "bluecode",
-  "upi_collect",
-  "upi_intent",
-  "sepa",
-  "sepa_bank_transfer",
-  "instant_bank_transfer",
-  "affirm",
-  "walley",
-  "ach",
-  "bacs",
-  "pay_bright",
-  "multibanco_transfer",
-  "paypal",
-  "instant_bank_transfer_finland",
-  "instant_bank_transfer_poland",
-  "klarna",
-  "skrill",
-  "flexiti",
-  "breadpay",
-  "pay_safe_card",
-  "interac",
-  "open_banking",
-  "trustly",
-  "givex",
-]
-
-let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
-  let fieldNameArr = field.value->String.split(" ")
-  let requiredFieldsArr = item.required_field->String.split(".")
-  switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
-  | "first_name" => fieldNameArr->Array.get(0)->Option.getOr(field.value)
-  | "last_name" =>
-    fieldNameArr
-    ->Array.sliceToEnd(~start=1)
-    ->Array.reduce("", (acc, item) => acc === "" ? item : `${acc} ${item}`)
-  | _ => field.value
-  }
+type fieldTexts = {
+  label: string,
+  placeholder: string,
 }
 
-let countryList = CountryStateDataRefs.countryDataRef.contents
-let countryNames = Utils.getCountryNames(countryList)
+let billingPrefix = "payment_method_data.billing."
 
-let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
-  BillingName,
-  AddressLine1,
-  AddressLine2,
-  AddressCity,
-  AddressState,
-  AddressCountry(countryNames),
-  AddressPincode,
-]
+let lookupLocaleKey = (key: string, locale: LocaleStringTypes.localeStrings): option<string> =>
+  locale
+  ->Identity.anyTypeToJson
+  ->JSON.Decode.object
+  ->Option.flatMap(dict => dict->Dict.get(key))
+  ->Option.flatMap(JSON.Decode.string)
 
-let isBillingAddressFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
-  switch fieldType {
-  | BillingName
-  | AddressLine1
-  | AddressLine2
-  | AddressCity
-  | AddressState
-  | AddressCountry(_)
-  | AddressPincode => true
-  | _ => false
+let resolveFieldTexts = (
+  ~field: SuperpositionTypes.fieldConfig,
+  ~localeObject: LocaleStringTypes.localeStrings,
+): fieldTexts => {
+  let label = switch field.merchantProvidedDisplayName {
+  | Some(name) => name
+  | None =>
+    field.labelLocalizationKey
+    ->Option.flatMap(key => lookupLocaleKey(key, localeObject))
+    ->Option.getOr(field.defaultLabelText)
   }
+
+  let placeholder = switch field.merchantProvidedPlaceholderText {
+  | Some(text) => text
+  | None =>
+    field.placeholderLocalizationKey
+    ->Option.flatMap(key => lookupLocaleKey(key, localeObject))
+    ->Option.getOr(label)
+  }
+
+  {label, placeholder}
 }
 
-let getBillingAddressPathFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
-  switch fieldType {
-  | AddressLine1 => "payment_method_data.billing.address.line1"
-  | AddressLine2 => "payment_method_data.billing.address.line2"
-  | AddressCity => "payment_method_data.billing.address.city"
-  | AddressState => "payment_method_data.billing.address.state"
-  | AddressCountry(_) => "payment_method_data.billing.address.country"
-  | AddressPincode => "payment_method_data.billing.address.zip"
-  | _ => ""
+let emptyMessageForField = (
+  ~field: SuperpositionTypes.fieldConfig,
+  ~localeObject: LocaleStringTypes.localeStrings,
+): option<string> =>
+  switch field.labelLocalizationKey {
+  | Some("line1Label") => Some(localeObject.line1EmptyText)
+  | Some("line2Label") => Some(localeObject.line2EmptyText)
+  | Some("cityLabel") => Some(localeObject.cityEmptyText)
+  | Some("stateLabel") => Some(localeObject.stateEmptyText)
+  | Some("postalCodeLabel") => Some(localeObject.postalCodeEmptyText)
+  | Some("sourceBankAccountIdLabel") => Some(localeObject.sourceBankAccountIdEmptyText)
+  | Some("vpaIdLabel") => Some(localeObject.vpaIdEmptyText)
+  | Some("emailLabel") => Some(localeObject.emailEmptyText)
+  | _ => None
   }
+
+let resolveValidator = (
+  ~field: SuperpositionTypes.fieldConfig,
+  ~localeObject: LocaleStringTypes.localeStrings,
+) => {
+  let requiredRule = field.isRequired
+    ? [Validation.Required(emptyMessageForField(~field, ~localeObject))]
+    : []
+
+  let semanticRule = switch field.validationRuleType {
+  | Some("phone") => [Validation.Phone]
+  | Some("iban") => [Validation.IBAN]
+  | Some("routing_number") => [Validation.RoutingNumber]
+  | Some("blik_code") => [Validation.BlikCode]
+  | Some("gift_card_number") => [Validation.GiftCardNumber]
+  | Some("gift_card_pin") => [Validation.GiftCardPin]
+  | Some("pix_key") => [Validation.PixKey]
+  | Some("pix_cpf") => [Validation.PixCPF]
+  | Some("pix_cnpj") => [Validation.PixCNPJ]
+  | Some("email") => [Validation.Email]
+  | Some("first_name") => [Validation.FirstName]
+  | Some("last_name") => [Validation.LastName]
+  | Some("bank_account_number") => [Validation.BankAccountNumber]
+  | Some("date_of_birth") => [Validation.DateOfBirth]
+  | Some("regex") =>
+    switch field.validationRegexPattern {
+    | Some(pattern) => Array.concat(requiredRule, [Validation.Generic(pattern)])
+    | None => requiredRule
+    }
+  | None => requiredRule
+  | Some(_) => []
+  }
+
+  let maxLengthRule = [Validation.MaxLength(field.maxInputLength->Option.getOr(255))]
+
+  let rules = [...semanticRule, ...requiredRule, ...maxLengthRule]
+
+  Validation.createFieldValidator(
+    rules,
+    ~enabledCardSchemes=[],
+    ~localeObject=localeObject->LocaleStringTypes.toValidationLocale,
+  )
+}
+
+let findCryptoCurrencyField = (~allFields: array<SuperpositionTypes.fieldConfig>): option<
+  SuperpositionTypes.fieldConfig,
+> => allFields->Array.find(f => f.fieldRenderType === SuperpositionTypes.CryptoCurrency)
+
+let getComputedLanguagePreferenceValue = (~locale: string, ~options: array<string>): string =>
+  options->Array.includes(locale->String.toUpperCase->String.split("-")->Array.join("_"))
+    ? locale
+    : "en"
+
+let extractValuesFromPMLRequiredFields = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+) => {
+  requiredFields->Array.reduce(Dict.make(), (acc, field) => {
+    if field.required_field !== "" {
+      acc->Dict.set(field.required_field, field.value)
+    }
+    acc
+  })
 }
 
 let removeBillingDetailsIfUseBillingAddress = (
-  requiredFields: array<PaymentMethodsRecord.required_fields>,
+  missingRequiredFields: array<SuperpositionTypes.fieldConfig>,
   billingAddress: PaymentType.billingAddress,
 ) => {
   if billingAddress.isUseBillingAddress {
-    requiredFields->Array.filter(requiredField => {
-      !(requiredField.field_type->isBillingAddressFieldType)
+    missingRequiredFields->Array.filter(requiredField => {
+      !(requiredField.confirmRequestWritePath->String.startsWith(billingPrefix))
     })
   } else {
-    requiredFields
+    missingRequiredFields
   }
 }
 
-let addBillingAddressIfUseBillingAddress = (
-  fieldsArr,
-  billingAddress: PaymentType.billingAddress,
+let buildSuperpositionBaseContext = (
+  ~paymentMethod: string,
+  ~paymentMethodType: string,
+  ~country: string,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+  ~accountConfig: option<SdkConfigTypes.accountConfig>,
 ) => {
-  if billingAddress.isUseBillingAddress {
-    fieldsArr->Array.concat(billingAddressFields)
-  } else {
-    fieldsArr
+  let mandateType = switch paymentMethodListValue.payment_type {
+  | NEW_MANDATE => "new_mandate"
+  | SETUP_MANDATE => "setup_mandate"
+  | NORMAL => "non_mandate"
+  | NONE => "non_mandate"
   }
-}
 
-let isClickToPayFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
-  switch fieldType {
-  | Email
-  | PhoneNumber => true
-  | _ => false
-  }
-}
+  let profile = accountConfig->Option.flatMap(ac => ac.profile)
+  let collectBilling = SdkConfigParser.getCollectBillingDetailsFromWalletConnector(profile)
+    ? "true"
+    : "false"
+  let collectShipping = SdkConfigParser.getCollectShippingDetailsFromWalletConnector(profile)
+    ? "true"
+    : "false"
 
-let removeClickToPayFieldsIfSaveDetailsWithClickToPay = (
-  requiredFields: array<PaymentMethodsRecord.required_fields>,
-  isSaveDetailsWithClickToPay,
-) => {
-  if isSaveDetailsWithClickToPay {
-    requiredFields->Array.filter(requiredField => {
-      !(requiredField.field_type->isClickToPayFieldType)
-    })
-  } else {
-    requiredFields
+  let context: SuperpositionTypes.superpositionBaseContext = {
+    payment_method: paymentMethod,
+    payment_method_type: paymentMethodType,
+    country,
+    mandate_type: mandateType,
+    collect_shipping_details_from_wallet_connector: collectShipping,
+    collect_billing_details_from_wallet_connector: collectBilling,
   }
-}
-
-let addClickToPayFieldsIfSaveDetailsWithClickToPay = (
-  fieldsArr,
-  isSaveDetailsWithClickToPay,
-  clickToPayConfig,
-) => {
-  open ClickToPayHelpers
-  open PaymentMethodsRecord
-  let isRecognizedClickToPayPayment =
-    clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length != 0
-  let defaultCtpFields = [...fieldsArr, Email, PhoneNumber]
-  switch (
-    isSaveDetailsWithClickToPay,
-    clickToPayConfig.clickToPayProvider,
-    isRecognizedClickToPayPayment,
-  ) {
-  | (true, MASTERCARD, _) => defaultCtpFields
-  | (true, VISA, _)
-  | (false, VISA, true) =>
-    [...defaultCtpFields, FullName]
-  | _ => fieldsArr
-  }
+  context
 }
 
 let checkIfNameIsValid = (
@@ -184,815 +181,6 @@ let checkIfNameIsValid = (
   })
 }
 
-let useRequiredFieldsEmptyAndValid = (
-  ~requiredFields,
-  ~fieldsArr: array<PaymentMethodsRecord.paymentMethodsFields>,
-  ~countryNames,
-  ~bankNames,
-  ~isCardValid,
-  ~isExpiryValid,
-  ~isCVCValid,
-  ~cardNumber,
-  ~cardExpiry,
-  ~cvcNumber,
-  ~isSavedCardFlow,
-) => {
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
-  let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
-  let pixCPF = Recoil.useRecoilValueFromAtom(userPixCPF)
-  let pixKey = Recoil.useRecoilValueFromAtom(userPixKey)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let phone = Recoil.useRecoilValueFromAtom(userPhoneNumber)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
-  let country = Recoil.useRecoilValueFromAtom(userCountry)
-  let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
-  let currency = Recoil.useRecoilValueFromAtom(userCurrency)
-  let documentType = Recoil.useRecoilValueFromAtom(userDocumentType)
-  let documentNumber = Recoil.useRecoilValueFromAtom(userDocumentNumber)
-
-  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
-    areRequiredFieldsValid,
-  )
-  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
-  let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
-  let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
-  let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
-  let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
-  let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardPin)
-
-  let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
-
-  React.useEffect(() => {
-    let areRequiredFieldsValid = fieldsArr->Array.reduce(true, (acc, paymentMethodFields) => {
-      acc &&
-      switch paymentMethodFields {
-      | Email => email.isValid->Option.getOr(false)
-      | FullName =>
-        checkIfNameIsValid(requiredFields, paymentMethodFields, fullName) &&
-        fullName.isValid->Option.getOr(false)
-      | Country => country !== "" || countryNames->Array.length === 0
-      | AddressCountry(countryArr) => country !== "" || countryArr->Array.length === 0
-      | BillingName => checkIfNameIsValid(requiredFields, paymentMethodFields, billingName)
-      | AddressLine1 => line1.value !== ""
-      | AddressLine2 => billingAddress.isUseBillingAddress || line2.value !== ""
-      | Bank => selectedBank !== "" || bankNames->Array.length === 0
-      | PhoneNumberAndCountryCode => phone.value !== ""
-      | StateAndCity => state.value !== "" && city.value !== ""
-      | CountryAndPincode(countryArr) =>
-        (country !== "" || countryArr->Array.length === 0) && postalCode.value !== ""
-
-      | AddressCity => city.value !== ""
-      | AddressPincode => postalCode.value !== ""
-      | AddressState => state.value !== ""
-      | BlikCode => blikCode.value !== ""
-      | CryptoCurrencyNetworks => cryptoCurrencyNetworks !== ""
-      | Currency(currencyArr) => currency !== "" || currencyArr->Array.length === 0
-      | DocumentType(optArr) => documentType !== "" || optArr->Array.length === 0
-      | DocumentNumber => documentNumber.isValid->Option.getOr(false)
-      | CardNumber => isCardValid->Option.getOr(false)
-      | CardExpiryMonth
-      | CardExpiryYear
-      | CardExpiryMonthAndYear =>
-        isExpiryValid->Option.getOr(false)
-      | CardCvc => isCVCValid->Option.getOr(false)
-      | CardExpiryAndCvc => isExpiryValid->Option.getOr(false) && isCVCValid->Option.getOr(false)
-      | DateOfBirth =>
-        switch dateOfBirth->Nullable.toOption {
-        | Some(val) => val->Utils.checkIs18OrAbove
-        | None => false
-        }
-      | VpaId => vpaId.isValid->Option.getOr(false)
-      | PixCNPJ => pixCNPJ.isValid->Option.getOr(false)
-      | PixCPF => pixCPF.isValid->Option.getOr(false)
-      | PixKey => pixKey.isValid->Option.getOr(false)
-      | BankAccountNumber
-      | IBAN =>
-        bankAccountNumber.value !== ""
-      | GiftCardNumber => giftCardNumber.value !== ""
-      | GiftCardPin => giftCardPin.value !== ""
-      | SourceBankAccountId => sourceBankAccountId.value !== ""
-      | _ => true
-      }
-    })
-    setAreRequiredFieldsValid(_ => isSavedCardFlow || areRequiredFieldsValid)
-
-    let areRequiredFieldsEmpty = fieldsArrWithBillingAddress->Array.reduce(false, (
-      acc,
-      paymentMethodFields: PaymentMethodsRecord.paymentMethodsFields,
-    ) => {
-      open CardUtils
-      acc ||
-      switch paymentMethodFields {
-      | Email => email.value === ""
-      | FullName => fullName.value === ""
-      | Country => country === "" && countryNames->Array.length > 0
-      | AddressCountry(countryArr) => country === "" && countryArr->Array.length > 0
-      | BillingName => billingName.value === ""
-      | AddressLine1 => line1.value === ""
-      | AddressLine2 => !billingAddress.isUseBillingAddress && line2.value === ""
-      | Bank => selectedBank === "" && bankNames->Array.length > 0
-      | StateAndCity => city.value === "" || state.value === ""
-      | CountryAndPincode(countryArr) =>
-        (country === "" && countryArr->Array.length > 0) || postalCode.value === ""
-      | PhoneNumberAndCountryCode => phone.value === ""
-      | AddressCity => city.value === ""
-      | AddressPincode => postalCode.value === ""
-      | AddressState => state.value === ""
-      | BlikCode => blikCode.value === ""
-      | PixCNPJ => pixCNPJ.value === ""
-      | PixCPF => pixCPF.value === ""
-      | PixKey => pixKey.value === ""
-      | CryptoCurrencyNetworks => cryptoCurrencyNetworks === ""
-      | Currency(currencyArr) => currency === "" && currencyArr->Array.length > 0
-      | DocumentType(optArr) => documentType === "" && optArr->Array.length > 0
-      | DocumentNumber => documentNumber.value === ""
-      | CardNumber => cardNumber === ""
-      | CardExpiryMonth =>
-        let (month, _) = getExpiryDates(cardExpiry)
-        month === ""
-      | CardExpiryYear =>
-        let (_, year) = getExpiryDates(cardExpiry)
-        year === ""
-      | CardExpiryMonthAndYear =>
-        let (month, year) = getExpiryDates(cardExpiry)
-        month === "" || year === ""
-      | CardCvc => cvcNumber === ""
-      | CardExpiryAndCvc =>
-        let (month, year) = getExpiryDates(cardExpiry)
-        month === "" || year === "" || cvcNumber === ""
-      | DateOfBirth => dateOfBirth->Js.Nullable.isNullable
-      | BankAccountNumber
-      | IBAN =>
-        bankAccountNumber.value === ""
-      | GiftCardNumber => giftCardNumber.value === ""
-      | GiftCardPin => giftCardPin.value === ""
-      | SourceBankAccountId => sourceBankAccountId.value === ""
-      | _ => false
-      }
-    })
-    setAreRequiredFieldsEmpty(_ => areRequiredFieldsEmpty)
-    None
-  }, (
-    fieldsArr,
-    currency,
-    fullName.value,
-    country,
-    billingName.value,
-    line1.value,
-    dateOfBirth,
-    email,
-    vpaId,
-    line2.value,
-    selectedBank,
-    phone.value,
-    city.value,
-    postalCode,
-    state.value,
-    blikCode.value,
-    pixCNPJ.value,
-    pixKey.value,
-    pixCPF.value,
-    giftCardPin.value,
-    giftCardNumber.value,
-    isCardValid,
-    isExpiryValid,
-    isCVCValid,
-    cardNumber,
-    cardExpiry,
-    cvcNumber,
-    bankAccountNumber,
-    sourceBankAccountId.value,
-    cryptoCurrencyNetworks,
-    documentType,
-    documentNumber.value,
-  ))
-
-  React.useEffect(() => {
-    switch (isCardValid, isExpiryValid, isCVCValid) {
-    | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
-      CardUtils.emitIsFormReadyForSubmission(
-        cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
-      )
-    | _ => ()
-    }
-    None
-  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid))
-}
-
-let useSetInitialRequiredFields = (
-  ~requiredFields: array<PaymentMethodsRecord.required_fields>,
-  ~paymentMethodType,
-) => {
-  let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
-  let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
-  let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
-  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
-  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
-  let (phone, setPhone) = Recoil.useRecoilState(userPhoneNumber)
-  let (state, setState) = Recoil.useRecoilState(userAddressState)
-  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
-  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
-  let (blikCode, setBlikCode) = Recoil.useRecoilState(userBlikCode)
-  let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
-  let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
-  let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
-
-  let (country, setCountry) = Recoil.useRecoilState(userCountry)
-  let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
-  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
-  let (documentType, setDocumentType) = Recoil.useRecoilState(userDocumentType)
-  let (documentNumber, setDocumentNumber) = Recoil.useRecoilState(userDocumentNumber)
-  let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
-    cryptoCurrencyNetworks,
-  )
-  let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
-  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
-  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
-
-  React.useEffect(() => {
-    let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
-      requiredFields
-      ->Array.filter(requiredFields => requiredFields.field_type === item.field_type)
-      ->Array.reduce("", (acc, item) => {
-        let requiredFieldsArr = item.required_field->String.split(".")
-        switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
-        | "first_name" => item.value->String.concat(acc)
-        | "last_name" => acc->String.concatMany([" ", item.value])
-        | _ => acc
-        }
-      })
-      ->String.trim
-    }
-
-    let setFields = (
-      setMethod: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
-      field: RecoilAtomTypes.field,
-      item: PaymentMethodsRecord.required_fields,
-      isNameField,
-      ~isCountryCodeAvailable=?,
-    ) => {
-      if isNameField && field.value === "" {
-        setMethod(prev => {
-          ...prev,
-          value: getNameValue(item),
-        })
-        if isCountryCodeAvailable->Option.isSome {
-          setMethod(prev => {
-            ...prev,
-            countryCode: getNameValue(item),
-          })
-        }
-      } else if field.value === "" {
-        if isCountryCodeAvailable->Option.isSome {
-          setMethod(prev => {
-            ...prev,
-            countryCode: item.value,
-          })
-        } else {
-          setMethod(prev => {
-            ...prev,
-            value: item.value,
-          })
-        }
-      }
-    }
-
-    requiredFields->Array.forEach(requiredField => {
-      let value = requiredField.value
-      switch requiredField.field_type {
-      | Email => {
-          let emailValue = email.value
-          setFields(setEmail, email, requiredField, false)
-          if emailValue === "" {
-            let newEmail: RecoilAtomTypes.field = {
-              value,
-              isValid: None,
-              errorString: "",
-            }
-            Utils.checkEmailValid(newEmail, setEmail)
-          }
-        }
-      | FullName => setFields(setFullName, fullName, requiredField, true)
-      | AddressLine1 => setFields(setLine1, line1, requiredField, false)
-      | AddressLine2 => setFields(setLine2, line2, requiredField, false)
-      | StateAndCity => {
-          setFields(setState, state, requiredField, false)
-          setFields(setCity, city, requiredField, false)
-        }
-      | CountryAndPincode(_) => {
-          setFields(setPostalCode, postalCode, requiredField, false)
-          if value !== "" && country === "" {
-            let countryCode =
-              Country.getCountry(paymentMethodType, countryList)
-              ->Array.filter(item => item.isoAlpha2 === value)
-              ->Array.get(0)
-              ->Option.getOr(Country.defaultTimeZone)
-            setCountry(_ => countryCode.countryName)
-          }
-        }
-      | AddressState => setFields(setState, state, requiredField, false)
-      | GiftCardNumber => setFields(setGiftCardNumber, giftCardNumber, requiredField, false)
-      | GiftCardPin => setFields(setGiftCardPin, giftCardPin, requiredField, false)
-      | AddressCity => setFields(setCity, city, requiredField, false)
-      | PhoneCountryCode =>
-        setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
-      | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
-      | PhoneNumber => setFields(setPhone, phone, requiredField, false)
-      | PhoneNumberAndCountryCode =>
-        setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
-      | BlikCode => setFields(setBlikCode, blikCode, requiredField, false)
-      | PixKey => setFields(setPixKey, pixKey, requiredField, false)
-      | PixCNPJ => setFields(setPixCNPJ, pixCNPJ, requiredField, false)
-      | PixCPF => setFields(setPixCPF, pixCPF, requiredField, false)
-      | BillingName => setFields(setBillingName, billingName, requiredField, true)
-      | Country
-      | AddressCountry(_) =>
-        if value !== "" {
-          let defaultCountry =
-            Country.getCountry(paymentMethodType, countryList)
-            ->Array.filter(item => item.isoAlpha2 === value)
-            ->Array.get(0)
-            ->Option.getOr(Country.defaultTimeZone)
-          setCountry(_ => defaultCountry.countryName)
-        }
-      | Currency(_) =>
-        if value !== "" && currency === "" {
-          setCurrency(_ => value)
-        }
-      | Bank =>
-        if value !== "" && selectedBank === "" {
-          setSelectedBank(_ => value)
-        }
-      | CryptoCurrencyNetworks =>
-        if value !== "" && cryptoCurrencyNetworks === "" {
-          setCryptoCurrencyNetworks(_ => value)
-        }
-      | DateOfBirth =>
-        switch dateOfBirth->Nullable.toOption {
-        | Some(x) =>
-          if value !== "" && x->Date.toDateString === "" {
-            setDateOfBirth(_ => Nullable.make(x))
-          }
-        | None => ()
-        }
-      | IBAN
-      | BankAccountNumber =>
-        setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
-      | SourceBankAccountId =>
-        setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
-      | DocumentType(_) =>
-        if value !== "" && documentType === "" {
-          setDocumentType(_ => value)
-        }
-      | DocumentNumber => setFields(setDocumentNumber, documentNumber, requiredField, false)
-      | LanguagePreference(_)
-      | SpecialField(_)
-      | InfoElement
-      | CardNumber
-      | CardExpiryMonth
-      | CardExpiryYear
-      | CardExpiryMonthAndYear
-      | CardCvc
-      | CardExpiryAndCvc
-      | ShippingName // Shipping Details are currently supported by only one click widgets
-      | ShippingAddressLine1
-      | ShippingAddressLine2
-      | ShippingAddressCity
-      | ShippingAddressPincode
-      | ShippingAddressState
-      | ShippingAddressCountry(_)
-      | BankList(_)
-      | VpaId
-      | None => ()
-      }
-    })
-    None
-  }, [requiredFields])
-}
-
-let useRequiredFieldsBody = (
-  ~requiredFields: array<PaymentMethodsRecord.required_fields>,
-  ~paymentMethodType,
-  ~cardNumber,
-  ~cardExpiry,
-  ~cvcNumber,
-  ~isSavedCardFlow,
-  ~isAllStoredCardsHaveName,
-  ~setRequiredFieldsBody,
-) => {
-  let configValue = Recoil.useRecoilValueFromAtom(configAtom)
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
-  let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
-  let pixCPF = Recoil.useRecoilValueFromAtom(userPixCPF)
-  let pixKey = Recoil.useRecoilValueFromAtom(userPixKey)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let phone = Recoil.useRecoilValueFromAtom(userPhoneNumber)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
-  let country = Recoil.useRecoilValueFromAtom(userCountry)
-  let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
-  let currency = Recoil.useRecoilValueFromAtom(userCurrency)
-  let documentType = Recoil.useRecoilValueFromAtom(userDocumentType)
-  let documentNumber = Recoil.useRecoilValueFromAtom(userDocumentNumber)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
-  let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
-  let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
-  let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
-  let countryCode = Utils.getCountryCode(country).isoAlpha2
-  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
-  let giftCardNumber = Recoil.useRecoilValueFromAtom(userGiftCardNumber)
-  let giftCardPin = Recoil.useRecoilValueFromAtom(userGiftCardPin)
-
-  let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
-    switch fieldType {
-    | Email => email.value
-    | AddressLine1 => line1.value
-    | AddressLine2 => line2.value
-    | AddressCity => city.value
-    | AddressPincode => postalCode.value
-    | AddressState => stateCode
-    | BlikCode => blikCode.value->Utils.removeHyphen
-    | PhoneNumber => phone.value
-    | PhoneCountryCode => phone.countryCode->Option.getOr("")
-    | Currency(_) => currency
-    | DocumentType(_) => documentType
-    | DocumentNumber => documentNumber.value
-    | Country => country
-    | LanguagePreference(languageOptions) =>
-      languageOptions->Array.includes(
-        configValue.config.locale->String.toUpperCase->String.split("-")->Array.join("_"),
-      )
-        ? configValue.config.locale
-        : "en"
-    | Bank =>
-      (
-        Bank.getBanks(paymentMethodType)
-        ->Array.find(item => item.displayName == selectedBank)
-        ->Option.getOr(Bank.defaultBank)
-      ).value
-    | AddressCountry(_) => {
-        let countryCode =
-          Country.getCountry(paymentMethodType, countryList)
-          ->Array.filter(item => item.countryName === country)
-          ->Array.get(0)
-          ->Option.getOr(Country.defaultTimeZone)
-        countryCode.isoAlpha2
-      }
-    | BillingName => billingName.value
-    | CardNumber => cardNumber->CardValidations.clearSpaces
-    | GiftCardNumber => giftCardNumber.value
-    | GiftCardPin => giftCardPin.value
-    | CardExpiryMonth =>
-      let (month, _) = CardUtils.getExpiryDates(cardExpiry)
-      month
-    | CardExpiryYear =>
-      let (_, year) = CardUtils.getExpiryDates(cardExpiry)
-      year
-    | CryptoCurrencyNetworks => cryptoCurrencyNetworks
-    | DateOfBirth =>
-      switch dateOfBirth->Nullable.toOption {
-      | Some(x) => x->Date.toISOString->String.slice(~start=0, ~end=10)
-      | None => ""
-      }
-    | CardCvc => cvcNumber
-    | VpaId => vpaId.value
-    | PixCNPJ => pixCNPJ.value
-    | PixCPF => pixCPF.value
-    | PixKey => pixKey.value
-    | IBAN
-    | BankAccountNumber =>
-      bankAccountNumber.value
-    | SourceBankAccountId => sourceBankAccountId.value
-    | StateAndCity
-    | PhoneNumberAndCountryCode
-    | CountryAndPincode(_)
-    | SpecialField(_)
-    | InfoElement
-    | CardExpiryMonthAndYear
-    | CardExpiryAndCvc
-    | FullName
-    | ShippingName // Shipping Details are currently supported by only one click widgets
-    | ShippingAddressLine1
-    | ShippingAddressLine2
-    | ShippingAddressCity
-    | ShippingAddressPincode
-    | ShippingAddressState
-    | ShippingAddressCountry(_)
-    | BankList(_)
-    | None => ""
-    }
-  }
-
-  let addBillingDetailsIfUseBillingAddress = requiredFieldsBody => {
-    if billingAddress.isUseBillingAddress {
-      billingAddressFields->Array.reduce(requiredFieldsBody, (acc, item) => {
-        let value = item->getFieldValueFromFieldType
-        if item === BillingName {
-          let arr = value->String.split(" ")
-          acc->Dict.set(
-            "payment_method_data.billing.address.first_name",
-            arr->Array.get(0)->Option.getOr("")->JSON.Encode.string,
-          )
-          acc->Dict.set(
-            "payment_method_data.billing.address.last_name",
-            arr->Array.get(1)->Option.getOr("")->JSON.Encode.string,
-          )
-        } else {
-          let path = item->getBillingAddressPathFromFieldType
-          acc->Dict.set(path, value->JSON.Encode.string)
-        }
-        acc
-      })
-    } else {
-      requiredFieldsBody
-    }
-  }
-
-  React.useEffect(() => {
-    let requiredFieldsBody =
-      requiredFields
-      ->Array.filter(item => item.field_type !== None)
-      ->Array.reduce(Dict.make(), (acc, item) => {
-        let value = switch item.field_type {
-        | BillingName => getName(item, billingName)
-        | FullName => getName(item, fullName)
-        | _ => item.field_type->getFieldValueFromFieldType
-        }
-        if value != "" {
-          if (
-            isSavedCardFlow &&
-            (item.field_type === BillingName || item.field_type === FullName) &&
-            item.display_name === "card_holder_name" &&
-            item.required_field === "payment_method_data.card.card_holder_name"
-          ) {
-            if !isAllStoredCardsHaveName {
-              acc->Dict.set(
-                "payment_method_data.card_token.card_holder_name",
-                value->JSON.Encode.string,
-              )
-            }
-          } else {
-            acc->Dict.set(item.required_field, value->JSON.Encode.string)
-          }
-        }
-        acc
-      })
-      ->addBillingDetailsIfUseBillingAddress
-
-    setRequiredFieldsBody(_ => requiredFieldsBody)
-    None
-  }, (
-    fullName.value,
-    email.value,
-    vpaId.value,
-    line1.value,
-    line2.value,
-    pixCNPJ.value,
-    pixCPF.value,
-    pixKey.value,
-    documentType,
-    documentNumber.value,
-    city.value,
-    postalCode.value,
-    state.value,
-    blikCode.value,
-    phone.value,
-    phone.countryCode,
-    currency,
-    billingName.value,
-    giftCardPin.value,
-    giftCardNumber.value,
-    country,
-    cardNumber,
-    cardExpiry,
-    cvcNumber,
-    selectedBank,
-    cryptoCurrencyNetworks,
-    dateOfBirth,
-    bankAccountNumber,
-    sourceBankAccountId,
-  ))
-}
-
-let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
-  switch fieldType {
-  | FullName
-  | CardNumber
-  | GiftCardNumber
-  | CardExpiryMonth
-  | CardExpiryYear
-  | CardExpiryMonthAndYear
-  | CardCvc
-  | GiftCardPin
-  | CardExpiryAndCvc
-  | CryptoCurrencyNetworks
-  | PixKey
-  | PixCPF
-  | PixCNPJ
-  | DateOfBirth
-  | Currency(_)
-  | DocumentType(_)
-  | DocumentNumber
-  | VpaId
-  | IBAN
-  | SourceBankAccountId
-  | BankAccountNumber
-  | InfoElement => true
-  | _ => false
-  }
-}
-
-let combineStateAndCity = arr => {
-  open PaymentMethodsRecord
-  let hasStateAndCity = arr->Array.includes(AddressState) && arr->Array.includes(AddressCity)
-  if hasStateAndCity {
-    arr->Array.push(StateAndCity)->ignore
-    arr->Array.filter(item =>
-      switch item {
-      | AddressCity
-      | AddressState => false
-      | _ => true
-      }
-    )
-  } else {
-    arr
-  }
-}
-
-let combineCountryAndPostal = arr => {
-  open PaymentMethodsRecord
-  let hasCountryAndPostal =
-    arr
-    ->Array.filter(item =>
-      switch item {
-      | AddressCountry(_) => true
-      | AddressPincode => true
-      | _ => false
-      }
-    )
-    ->Array.length == 2
-
-  let options = arr->Array.reduce([], (acc, item) => {
-    acc->Array.concat(
-      switch item {
-      | AddressCountry(val) => val
-      | _ => []
-      },
-    )
-  })
-
-  if hasCountryAndPostal {
-    arr->Array.push(CountryAndPincode(options))->ignore
-    arr->Array.filter(item =>
-      switch item {
-      | AddressPincode
-      | AddressCountry(_) => false
-      | _ => true
-      }
-    )
-  } else {
-    arr
-  }
-}
-
-let combineCardExpiryMonthAndYear = arr => {
-  open PaymentMethodsRecord
-  let hasCardExpiryMonthAndYear =
-    arr->Array.includes(CardExpiryMonth) && arr->Array.includes(CardExpiryYear)
-  if hasCardExpiryMonthAndYear {
-    arr->Array.push(CardExpiryMonthAndYear)->ignore
-    arr->Array.filter(item =>
-      switch item {
-      | CardExpiryMonth
-      | CardExpiryYear => false
-      | _ => true
-      }
-    )
-  } else {
-    arr
-  }
-}
-
-let combineCardExpiryAndCvc = arr => {
-  open PaymentMethodsRecord
-  let hasCardExpiryAndCvc =
-    arr->Array.includes(CardExpiryMonthAndYear) && arr->Array.includes(CardCvc)
-  if hasCardExpiryAndCvc {
-    arr->Array.push(CardExpiryAndCvc)->ignore
-    arr->Array.filter(item =>
-      switch item {
-      | CardExpiryMonthAndYear
-      | CardCvc => false
-      | _ => true
-      }
-    )
-  } else {
-    arr
-  }
-}
-
-let combinePhoneNumberAndCountryCode = arr => {
-  open PaymentMethodsRecord
-  let hasPhoneNumberOrCountryCodeField =
-    arr->Array.includes(PhoneCountryCode) || arr->Array.includes(PhoneNumber)
-  if hasPhoneNumberOrCountryCodeField {
-    arr->Array.push(PhoneNumberAndCountryCode)->ignore
-    arr->Array.filter(item =>
-      switch item {
-      | PhoneCountryCode
-      | PhoneNumber => false
-      | _ => true
-      }
-    )
-  } else {
-    arr
-  }
-}
-
-let updateDynamicFields = (
-  arr: array<PaymentMethodsRecord.paymentMethodsFields>,
-  billingAddress,
-  isSaveDetailsWithClickToPay,
-  clickToPayConfig,
-) => {
-  arr
-  ->Utils.removeDuplicate
-  ->Array.filter(item => item !== None)
-  ->addBillingAddressIfUseBillingAddress(billingAddress)
-  ->addClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay, clickToPayConfig)
-  ->combineStateAndCity
-  ->combineCountryAndPostal
-  ->combineCardExpiryMonthAndYear
-  ->combineCardExpiryAndCvc
-  ->combinePhoneNumberAndCountryCode
-}
-
-let useSubmitCallback = () => {
-  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
-  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
-  let (state, setState) = Recoil.useRecoilState(userAddressState)
-  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
-  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
-
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-
-  React.useCallback((ev: Window.event) => {
-    let json = ev.data->Utils.safeParse
-    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if line1.value == "" {
-        setLine1(prev => {
-          ...prev,
-          errorString: localeString.line1EmptyText,
-        })
-      }
-      if line2.value == "" {
-        setLine2(prev => {
-          ...prev,
-          errorString: billingAddress.isUseBillingAddress ? "" : localeString.line2EmptyText,
-        })
-      }
-      if state.value == "" {
-        setState(prev => {
-          ...prev,
-          errorString: localeString.stateEmptyText,
-        })
-      }
-      if postalCode.value == "" {
-        setPostalCode(prev => {
-          ...prev,
-          errorString: localeString.postalCodeEmptyText,
-        })
-      }
-      if city.value == "" {
-        setCity(prev => {
-          ...prev,
-          errorString: localeString.cityEmptyText,
-        })
-      }
-    }
-  }, (line1, line2, state, city, postalCode))
-}
-
 let usePaymentMethodTypeFromList = (
   ~paymentMethodListValue,
   ~paymentMethod,
@@ -1008,26 +196,6 @@ let usePaymentMethodTypeFromList = (
       ),
     )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
   }, (paymentMethodListValue, paymentMethod, paymentMethodType))
-}
-
-let removeRequiredFieldsDuplicates = (
-  requiredFields: array<PaymentMethodsRecord.required_fields>,
-) => {
-  let (_, requiredFields) = requiredFields->Array.reduce(([], []), (
-    (requiredFieldKeys, uniqueRequiredFields),
-    item,
-  ) => {
-    let requiredField = item.required_field
-
-    if requiredFieldKeys->Array.includes(requiredField)->not {
-      requiredFieldKeys->Array.push(requiredField)
-      uniqueRequiredFields->Array.push(item)
-    }
-
-    (requiredFieldKeys, uniqueRequiredFields)
-  })
-
-  requiredFields
 }
 
 let getNameFromString = (name, requiredFieldsArr) => {
@@ -1156,7 +324,6 @@ let getApplePayRequiredFields = (
     | ShippingAddressLine2 => shippingContact.addressLines->getAddressLine(1)
     | ShippingAddressCity => shippingContact.locality
     | ShippingAddressState => shippingContact.administrativeArea
-
     | ShippingAddressCountry(_) => shippingCountryCode
     | ShippingAddressPincode => shippingContact.postalCode
     | _ => ""
@@ -1278,4 +445,66 @@ let getKlarnaRequiredFields = (
 
     acc
   })
+}
+
+let applyBillingDetailsOverride = (
+  initialValues: Dict.t<JSON.t>,
+  billingDetails: PaymentType.billingDetails,
+) => {
+  let set = (path, value) =>
+    if value !== "" {
+      SuperpositionHelper.setValueAtNestedPath(
+        initialValues,
+        path->String.split("."),
+        value,
+      )->ignore
+    }
+
+  let name = billingDetails.name
+  if name !== "" {
+    let (firstName, lastName) = name->Utils.splitFullName
+    set("payment_method_data.billing.address.first_name", firstName)
+    set("payment_method_data.billing.address.last_name", lastName)
+  }
+
+  set("payment_method_data.billing.email", billingDetails.email)
+  set("payment_method_data.billing.phone.number", billingDetails.phone)
+  set("payment_method_data.billing.address.line1", billingDetails.address.line1)
+  set("payment_method_data.billing.address.line2", billingDetails.address.line2)
+  set("payment_method_data.billing.address.city", billingDetails.address.city)
+  set("payment_method_data.billing.address.state", billingDetails.address.state)
+  set("payment_method_data.billing.address.country", billingDetails.address.country)
+  set("payment_method_data.billing.address.zip", billingDetails.address.postal_code)
+
+  initialValues
+}
+
+// TODO: refactor event emitters to use react-final-forms
+let useSyncEmitAddressAtoms = () => {
+  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let setUserAddressState = Recoil.useSetRecoilState(RecoilAtoms.userAddressState)
+  let setUserAddressPincode = Recoil.useSetRecoilState(RecoilAtoms.userAddressPincode)
+
+  (flatValues: Dict.t<JSON.t>) => {
+    let readBillingValue = path =>
+      flatValues->Dict.get(path)->Option.map(json => json->JSON.Decode.string->Option.getOr(""))
+
+    let countryFromForm =
+      readBillingValue("payment_method_data.billing.address.country")->Option.getOr("")
+    let countryIso =
+      countryFromForm !== "" ? countryFromForm : Utils.getCountryCode(country).isoAlpha2
+
+    switch readBillingValue("payment_method_data.billing.address.state") {
+    | Some(stateCode) =>
+      let stateName =
+        stateCode->String.trim === "" ? "" : Utils.getStateNameFromCode(stateCode, countryIso)
+      setUserAddressState(prev => prev.value === stateName ? prev : {...prev, value: stateName})
+    | None => ()
+    }
+
+    switch readBillingValue("payment_method_data.billing.address.zip") {
+    | Some(zip) => setUserAddressPincode(prev => prev.value === zip ? prev : {...prev, value: zip})
+    | None => ()
+    }
+  }
 }

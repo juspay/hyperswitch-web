@@ -62,6 +62,12 @@ let make = (
   ~installmentsError,
   ~setInstallmentsError,
   ~eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  // VGS saved-card (return user) flow: when true, this card's CVC is collected
+  // inside the nested iframe (ParentCardComponent saved-card mode) instead of the
+  // plain input. `setCvcIframeRef` lifts the iframe ref to SavedMethods, which
+  // owns submit. Defaults keep other call sites (e.g. ClickToPayAuthenticate) intact.
+  ~isVgsCvcFlow=false,
+  ~setCvcIframeRef=_ => (),
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {
@@ -103,12 +109,15 @@ let make = (
   | None => "debit"
   }
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   React.useEffect(() => {
     setSelectedInstallmentPlan(_ => None)
     setShowInstallments(_ => false)
     None
   }, [paymentItem])
+
+  let isOneClickWallet = paymentItem.paymentMethod === "wallet"
 
   React.useEffect(() => {
     if isActive {
@@ -126,24 +135,32 @@ let make = (
         ~isSavedPaymentMethod=true,
         ~isCvcEmpty,
       )
+      emitter.emitPaymentMethodStatus(
+        ~paymentMethod=paymentItem.paymentMethod,
+        ~paymentMethodType,
+        ~isSavedPaymentMethod=true,
+        ~isOneClickWallet,
+      )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
     }
     None
   }, (isActive, paymentItem, country, state, pinCode, isCvcEmpty))
 
   React.useEffect(() => {
-    open CardUtils
     if isActive {
       // * Focus CVC
       focusCVC()
+
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->CardValidations.formatCardExpiryNumber
-      ->emitExpiryDate
+      ->CardUtils.emitExpiryDate
     }
     None
   }, (isActive, paymentItem, country, state, pinCode))
 
   React.useEffect(() => {
+    // TODO - Handle Events for VGS/Vault case
     CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
     None
   }, [isCVCValid])
@@ -194,6 +211,19 @@ let make = (
       name={TestUtils.cardCVVInputTestId}
       autocomplete="cc-csc"
     />
+
+  // Inner-iframe container id for the VGS saved-card CVC. Only the active card
+  // mounts this iframe (the CVC slots below are gated on isActive), so a single
+  // constant id is unique at any time.
+  let cvcIframeContainerId = "saved-card-cvc-inner-iframe-container"
+  // VGS saved-card flow renders the secure CVC iframe in place of the plain input;
+  // ParentCardComponent (saved-card mode) hosts it and lifts its ref to SavedMethods.
+  let makeCvcField = (~fieldName="", ~height="1.8rem", ~inputFieldClassName="flex justify-start") =>
+    isVgsCvcFlow
+      ? <ParentCardComponent
+          isSavedCardFlow=true containerId=cvcIframeContainerId setExternalIframeRef=setCvcIframeRef
+        />
+      : makeCvcInput(~fieldName, ~height, ~inputFieldClassName)
 
   let {innerLayout} = config.appearance
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -282,7 +312,7 @@ let make = (
                   </div>
                 </RenderIf>
                 <div className={cvcContainerClassName}>
-                  {makeCvcInput(
+                  {makeCvcField(
                     ~fieldName=cvcFieldName,
                     ~height=cvcHeight,
                     ~inputFieldClassName="",
@@ -304,7 +334,7 @@ let make = (
                     className={`flex h mx-4 justify-start w-16 ${isActive
                         ? "opacity-1 mt-4"
                         : "opacity-0"}`}>
-                    {makeCvcInput()}
+                    {makeCvcField()}
                   </div>
                 </div>
               </RenderIf>

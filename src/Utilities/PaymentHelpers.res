@@ -353,6 +353,7 @@ let rec intentCall = (
   ~redirectionFlags,
   ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
+  ~isTrustpayInterceptorConfirm=false,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -820,11 +821,21 @@ let rec intentCall = (
                 let walletName = session_token->getString("wallet_name", "")
 
                 let message = switch walletName {
-                | "apple_pay" => [
-                    ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->anyTypeToJson),
-                    ("componentName", componentName->JSON.Encode.string),
-                  ]
+                | "apple_pay" =>
+                  if isTrustpayInterceptorConfirm {
+                    let secrets =
+                      session_token
+                      ->getDictFromDict("session_token_data")
+                      ->Dict.get("secrets")
+                      ->Option.getOr(JSON.Encode.null)
+                    [("applePayConfirmSecrets", secrets)]
+                  } else {
+                    [
+                      ("applePayButtonClicked", true->JSON.Encode.bool),
+                      ("applePayPresent", session_token->anyTypeToJson),
+                      ("componentName", componentName->JSON.Encode.string),
+                    ]
+                  }
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | "open_banking" => {
                     let metaData = [
@@ -907,10 +918,20 @@ let rec intentCall = (
                 }
                 let walletName = session_token->getString("wallet_name", "")
                 let message = switch walletName {
-                | "apple_pay" => [
-                    ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->anyTypeToJson),
-                  ]
+                | "apple_pay" =>
+                  if isTrustpayInterceptorConfirm {
+                    let secrets =
+                      session_token
+                      ->getDictFromDict("session_token_data")
+                      ->Dict.get("secrets")
+                      ->Option.getOr(JSON.Encode.null)
+                    [("applePayConfirmSecrets", secrets)]
+                  } else {
+                    [
+                      ("applePayButtonClicked", true->JSON.Encode.bool),
+                      ("applePayPresent", session_token->anyTypeToJson),
+                    ]
+                  }
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
@@ -1308,6 +1329,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry=false,
+    ~isTrustpayInterceptorConfirm=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -1412,6 +1434,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~componentName,
             ~redirectionFlags,
             ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
+            ~isTrustpayInterceptorConfirm,
           )
           ->then(val => {
             intentCallback(val)
@@ -1449,7 +1472,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
       switch paymentMethodList {
       | LoadError(data)
       | Loaded(data) =>
-        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
         if paymentList.payment_methods->Array.length > 0 {
@@ -1643,45 +1666,7 @@ let createPaymentMethod = async (
   )
 }
 
-let fetchPaymentMethodList = async (
-  ~sdkAuthorization=None,
-  ~clientSecret,
-  ~publishableKey,
-  ~logger,
-  ~customPodUri,
-  ~endpoint,
-) => {
-  let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchPaymentMethodList,
-    ~params={
-      clientSecret: Some(clientSecret),
-      customBackendBaseUrl: Some(endpoint),
-      publishableKey: None,
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-      sdkAuthorization,
-    },
-  )
-
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=PAYMENT_METHODS_CALL,
-    ~logger,
-    ~method=#GET,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(publishableKey),
-    ~onSuccess,
-    ~onFailure,
-    ~sdkAuthorization,
-  )
-}
-
-let fetchCustomerPaymentMethodList = async (
+let fetchClientList = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
@@ -1691,11 +1676,11 @@ let fetchCustomerPaymentMethodList = async (
   ~sdkAuthorization=None,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchCustomerPaymentMethodList,
+    ~apiCallType=FetchClientList,
     ~params={
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
-      publishableKey: None,
+      publishableKey: Some(publishableKey),
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1704,12 +1689,11 @@ let fetchCustomerPaymentMethodList = async (
   )
 
   let onSuccess = data => data
-
   let onFailure = _ => JSON.Encode.null
 
   await fetchApiWithLogging(
     uri,
-    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+    ~eventName=CLIENT_LIST_CALL,
     ~logger,
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
@@ -1925,7 +1909,7 @@ let callAuthExchange = async (
 
   let onSuccess = _ => {
     let endpoint = ApiEndpoint.getApiEndPoint()
-    fetchCustomerPaymentMethodList(
+    fetchClientList(
       ~clientSecret=clientSecret->Option.getOr(""),
       ~publishableKey,
       ~logger,
@@ -1933,12 +1917,12 @@ let callAuthExchange = async (
       ~endpoint,
       ~sdkAuthorization,
     )
-    ->then(customerListResponse => {
-      let customerListResponse = [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
+    ->then(clientListResponse => {
+      let clientListResponse = [("clientList", clientListResponse)]->Dict.fromArray
       setOptionValue(prev => {
         ...prev,
-        customerPaymentMethods: customerListResponse->createCustomerObjArr(
-          "customerPaymentMethods",
+        customerPaymentMethods: clientListResponse->createCustomerObjArrFromClientList(
+          "clientList",
         ),
       })
       resolve(JSON.Encode.null)
@@ -2041,6 +2025,7 @@ let usePostSessionTokens = (
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry as _=false,
+    ~isTrustpayInterceptorConfirm as _=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -2171,7 +2156,7 @@ let usePostSessionTokens = (
       switch paymentMethodList {
       | LoadError(data)
       | Loaded(data) =>
-        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
         if paymentList.payment_methods->Array.length > 0 {
@@ -2375,4 +2360,41 @@ let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
   | "card" => "card"
   | _ => paymentMethodType
   }
+}
+
+let fetchSdkConfigs = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~endpoint,
+  ~sdkAuthorization=None,
+) => {
+  let uri = APIUtils.generateApiUrlV1(
+    ~apiCallType=FetchSdkConfigs,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: Some(publishableKey),
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      sdkAuthorization,
+    },
+  )
+
+  let onSuccess = data => data
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=SDK_CONFIGS_CALL,
+    ~logger,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+    ~sdkAuthorization,
+  )
 }

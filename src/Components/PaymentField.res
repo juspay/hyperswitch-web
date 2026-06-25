@@ -28,11 +28,12 @@ let make = (
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
+  let elementType = contextPaymentType->CardThemeType.getPaymentModeToString
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
@@ -47,7 +48,7 @@ let make = (
       })
     | None => ()
     }
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
+    Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
 
   let handleBlur = ev => {
@@ -57,7 +58,7 @@ let make = (
     | Some(fn) => fn(ev)
     | None => ()
     }
-    Utils.handleOnBlurPostMessage(~targetOrigin=parentURL)
+    Utils.handleOnBlurPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
 
   let backgroundClass = switch paymentType {
