@@ -272,4 +272,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   yearLabel: "שנה",
   monthLabel: "חודש",
   optionTabLabel: fieldName => `${fieldName} לשונית אפשרות`,
+  closeLabel: "סגור",
+  dialogLabel: "תיבת דו-שיח",
+  paymentMethodsGroupLabel: "אמצעי תשלום",
 }

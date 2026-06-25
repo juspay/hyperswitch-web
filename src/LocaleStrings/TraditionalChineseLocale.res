@@ -271,4 +271,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   yearLabel: "年",
   monthLabel: "月",
   optionTabLabel: fieldName => `${fieldName} 選項標籤`,
+  closeLabel: "關閉",
+  dialogLabel: "對話框",
+  paymentMethodsGroupLabel: "付款方式",
 }

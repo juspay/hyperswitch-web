@@ -1,4 +1,5 @@
 open RecoilAtoms
+
 module Loader = {
   @react.component
   let make = (~cardShimmerCount) => {
@@ -70,6 +71,16 @@ let make = (
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (showMore, setShowMore) = React.useState(_ => false)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
+
+  // Roving-tabindex focus management for the radiogroup. The primary list and the
+  // "more" dropdown list are each treated as their own roving group: arrow keys move
+  // DOM focus within the rendered list and wrap at its ends. `-1` means "nothing has
+  // been focused yet", in which case the roving-tabbable item falls back to the
+  // selected item (else the first item).
+  let (cardFocusedIndex, setCardFocusedIndex) = React.useState(_ => -1)
+  let (dropDownFocusedIndex, setDropDownFocusedIndex) = React.useState(_ => -1)
+  let cardItemRefs = React.useRef([])
+  let dropDownItemRefs = React.useRef([])
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {
     displayInSeparateScreen,
@@ -140,6 +151,44 @@ let make = (
     }
   }
 
+  // Store/clear an item's DOM element in a list's ref registry at its index.
+  let registerItemRef = (refs: React.ref<array<Nullable.t<Dom.element>>>, index, el) => {
+    while refs.current->Array.length <= index {
+      refs.current->Array.push(Nullable.null)->ignore
+    }
+    refs.current[index] = el
+  }
+
+  // The roving-tabbable index for a list: the explicitly-focused item if any,
+  // otherwise the selected item, otherwise the first item.
+  let getRovingIndex = (focusedIndex, list: array<PaymentMethodsRecord.paymentFieldsInfo>) =>
+    if focusedIndex >= 0 {
+      focusedIndex
+    } else {
+      switch list->Array.findIndex(o => o.paymentMethodName == selectedOption) {
+      | -1 => 0
+      | selectedIndex => selectedIndex
+      }
+    }
+
+  // Move DOM focus within a single list (wrapping at the ends) and update its
+  // focused-index state so the roving tabindex follows.
+  let moveFocus = (
+    refs: React.ref<array<Nullable.t<Dom.element>>>,
+    setFocusedIndex,
+    length,
+    index,
+    delta,
+  ) =>
+    if length > 0 {
+      let nextIndex = mod(mod(index + delta, length) + length, length)
+      setFocusedIndex(_ => nextIndex)
+      refs.current
+      ->Array.get(nextIndex)
+      ->Option.flatMap(Nullable.toOption)
+      ->Option.forEach(el => el->AccessibilityUtils.focus)
+    }
+
   React.useEffect0(() => {
     let shouldAutoOpenSavedMethods =
       !layoutClass.savedMethodCustomization.defaultCollapsed &&
@@ -155,6 +204,8 @@ let make = (
   <div className="w-full">
     <div
       className="AccordionContainer flex flex-col overflow-auto no-scrollbar"
+      role="radiogroup"
+      ariaLabel={localeString.paymentMethodsGroupLabel}
       style={
         marginTop: themeObj.spacingAccordionItem,
         width: "-webkit-fill-available",
@@ -173,6 +224,17 @@ let make = (
           borderBottom={(!showMore &&
           i == cardOptionDetails->Array.length - 1 &&
           !layoutClass.spacedAccordionItems) || layoutClass.spacedAccordionItems}
+          index=i
+          isFocused={i == getRovingIndex(cardFocusedIndex, cardOptionDetails)}
+          registerItemRef={registerItemRef(cardItemRefs, ...)}
+          onArrowNav={(index, delta) =>
+            moveFocus(
+              cardItemRefs,
+              setCardFocusedIndex,
+              cardOptionDetails->Array.length,
+              index,
+              delta,
+            )}
         />
       })
       ->React.array}
@@ -190,6 +252,17 @@ let make = (
             borderRadiusStyle={borderRadiusStyle}
             borderBottom={(i == dropDownOptionsDetails->Array.length - 1 &&
               !layoutClass.spacedAccordionItems) || layoutClass.spacedAccordionItems}
+            index=i
+            isFocused={i == getRovingIndex(dropDownFocusedIndex, dropDownOptionsDetails)}
+            registerItemRef={registerItemRef(dropDownItemRefs, ...)}
+            onArrowNav={(index, delta) =>
+              moveFocus(
+                dropDownItemRefs,
+                setDropDownFocusedIndex,
+                dropDownOptionsDetails->Array.length,
+                index,
+                delta,
+              )}
           />
         })
         ->React.array}
@@ -198,6 +271,9 @@ let make = (
     <RenderIf condition={!showMore && dropDownOptionsDetails->Array.length > 0}>
       <button
         className="AccordionMore flex overflow-auto no-scrollbar"
+        type_="button"
+        ariaExpanded=false
+        ariaLabel={localeString.morePaymentMethodsLabel}
         onClick={_ => setShowMore(_ => !showMore)}
         style={
           borderRadius: themeObj.borderRadius,
