@@ -108,7 +108,9 @@ module FormBody = {
               marginBottom: "5px",
               fontSize: themeObj.fontSizeLg,
               opacity: "0.6",
-            }>
+            }
+            role="heading"
+            ariaLevel={2}>
             {React.string(localeString.billingDetailsText)}
           </div>
           <div

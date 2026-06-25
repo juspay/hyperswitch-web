@@ -78,6 +78,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let addSamsungPayButton = _ => {
     let paymentClient = getSamsungPaymentsClient()
     let button = paymentClient.createButton(buttonStyle)
+    button->AccessibilityUtils.setAccessibleLabelAndTitle("Samsung Pay")
     let spayWrapper = GooglePayType.getElementById(GooglePayType.document, "samsungpay-container")
     spayWrapper.innerHTML = ""
     spayWrapper.appendChild(button)
@@ -108,6 +109,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         opacity: updateSession ? "0.5" : "1.0",
       }
       id="samsungpay-container"
+      ariaLabel="Samsung Pay"
       className={`w-full flex flex-row justify-center rounded-md  [&>*]:w-full [&>button]:!bg-contain`}
     />
   </RenderIf>

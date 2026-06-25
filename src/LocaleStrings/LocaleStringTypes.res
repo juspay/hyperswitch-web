@@ -262,8 +262,21 @@ type localeStrings = {
   closeLabel: string,
   dialogLabel: string,
   paymentMethodsGroupLabel: string,
+  selectNamedPaymentMethodLabel: string => string,
   processingPaymentText: string,
   paymentFailedText: string,
+  paymentDetailsFormLabel: string,
+  goBackLabel: string,
+  openBankAccountOptionsLabel: string,
+  addBankAccountLabel: string,
+  toggleInstallmentOptionsLabel: string,
+  savePaymentMethodLabel: string,
+  deletePaymentMethodLabel: string,
+  managePaymentMethodsLabel: string,
+  selectPaymentMethodLabel: string,
+  doneLabel: string,
+  selectCardLabel: (string, string) => string,
+  selectInstallmentPlanLabel: string => string,
 }
 
 type constantStrings = {

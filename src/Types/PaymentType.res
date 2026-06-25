@@ -1463,10 +1463,14 @@ let getPaymentMethodType = dict => {
 }
 
 let getBank = dict => {
-  {
-    mask: dict
+  let directMask = dict->getDictFromDict("bank")->getString("mask", "")
+  let paymentMethodDataMask =
+    dict
+    ->getDictFromDict("payment_method_data")
     ->getDictFromDict("bank")
-    ->getString("mask", ""),
+    ->getString("mask", directMask)
+  {
+    mask: paymentMethodDataMask,
   }
 }
 
@@ -1504,7 +1508,7 @@ let itemToCustomerObjMapperFromClientList = clientListDict => {
         defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
         requiresCvv: getBool(dict, "requires_cvv", true),
         lastUsedAt: getString(dict, "last_used_at", ""),
-        bank: {mask: ""},
+        bank: dict->getBank,
         recurringEnabled: getBool(dict, "recurring_enabled", false),
         billing: defaultDisplayBillingDetails,
       }

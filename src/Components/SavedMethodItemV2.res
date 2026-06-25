@@ -76,9 +76,8 @@ let make = (
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div className={`flex flex-col`}>
-      <button
+      <div
         className={`PickerItem ${pickerItemClass} flex flex-row items-stretch`}
-        type_="button"
         style={
           minWidth: "150px",
           width: "100%",
@@ -92,12 +91,15 @@ let make = (
           color: themeObj.colorTextSecondary,
           boxShadow: "none",
           opacity: {isCardExpired ? "0.7" : "1"},
-        }
-        onClick=handleOnClick>
+        }>
         <div className="w-full">
           <div>
             <div className="flex flex-row justify-between items-center">
-              <div className="flex grow justify-between">
+              <button
+                type_="button"
+                ariaLabel={localeString.selectCardLabel(nickname->Option.getOr(""), last4Digits)}
+                className="flex grow justify-between bg-transparent border-none p-0 [font:inherit] text-inherit text-left cursor-pointer"
+                onClick=handleOnClick>
                 <div
                   className={`flex flex-row justify-center items-center`}
                   style={columnGap: themeObj.spacingUnit}>
@@ -145,39 +147,41 @@ let make = (
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
               <RenderIf condition={isManageModeActive && isActive}>
-                <div
-                  className="cursor-pointer ml-4 mb-[6px]"
+                <button
+                  type_="button"
+                  ariaLabel={localeString.savePaymentMethodLabel}
+                  className="cursor-pointer ml-4 mb-[6px] bg-transparent border-none p-0 [font:inherit]"
                   style={color: themeObj.colorPrimary}
                   onClick={event => {
                     ReactEvent.Mouse.stopPropagation(event)
                     handleUpdate(paymentItem)->ignore
                   }}>
                   {React.string("Save")}
-                </div>
-                <Icon
-                  size=18
-                  name="delete-hollow"
-                  style={color: themeObj.colorDanger}
-                  className="cursor-pointer ml-4 mb-[6px]"
+                </button>
+                <button
+                  type_="button"
+                  ariaLabel={localeString.deletePaymentMethodLabel}
+                  className="cursor-pointer ml-4 mb-[6px] bg-transparent border-none p-0 inline-flex"
                   onClick={event => {
                     ReactEvent.Mouse.stopPropagation(event)
                     handleDeleteV2(paymentItem)->ignore
-                  }}
-                />
+                  }}>
+                  <Icon size=18 name="delete-hollow" style={color: themeObj.colorDanger} />
+                </button>
               </RenderIf>
               <RenderIf condition={!isManageModeActive}>
-                <Icon
-                  size=18
-                  name="manage"
-                  style={color: themeObj.colorPrimary}
-                  className="cursor-pointer ml-4 mb-[6px]"
+                <button
+                  type_="button"
+                  ariaLabel={localeString.managePaymentMethodsLabel}
+                  className="cursor-pointer ml-4 mb-[6px] bg-transparent border-none p-0 inline-flex"
                   onClick={event => {
                     ReactEvent.Mouse.stopPropagation(event)
                     handleManage()
-                  }}
-                />
+                  }}>
+                  <Icon size=18 name="manage" style={color: themeObj.colorPrimary} />
+                </button>
               </RenderIf>
             </div>
             <div className="w-full">
@@ -214,14 +218,14 @@ let make = (
                   </div>
                 </RenderIf>
                 <RenderIf condition=showCVCError>
-                  <div
+                  <LiveError
+                    text={cvcError}
                     className="Error pt-1 mt-1 ml-2"
-                    style={
+                    style={{
                       color: themeObj.colorDangerText,
                       fontSize: themeObj.fontSizeSm,
-                    }>
-                    {React.string(cvcError)}
-                  </div>
+                    }}
+                  />
                 </RenderIf>
                 <RenderIf condition={isCardExpired}>
                   <div className="italic mt-3 ml-1" style={fontSize: "14px", opacity: "0.7"}>
@@ -232,7 +236,7 @@ let make = (
             </div>
           </div>
         </div>
-      </button>
+      </div>
       <RenderIf condition={isManageModeActive && isActive}>
         <ManageSavedItem paymentItem managePaymentMethod isCardExpired expiryMonth expiryYear />
       </RenderIf>

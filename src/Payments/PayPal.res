@@ -187,6 +187,7 @@ let make = (~walletOptions) => {
 
   if isWallet {
     <button
+      ariaLabel="PayPal"
       style={
         display: "inline-block",
         color: textColor,

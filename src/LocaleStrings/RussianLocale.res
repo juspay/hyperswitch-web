@@ -283,6 +283,21 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   closeLabel: "Закрыть",
   dialogLabel: "Диалог",
   paymentMethodsGroupLabel: "Способы оплаты",
+  selectNamedPaymentMethodLabel: name => `Выбрать способ оплаты ${name}`,
   processingPaymentText: "Обработка платежа",
   paymentFailedText: "Платёж не выполнен. Проверьте ваши данные и попробуйте снова.",
+  paymentDetailsFormLabel: "Форма платёжных реквизитов",
+  goBackLabel: "Назад",
+  openBankAccountOptionsLabel: "Открыть параметры банковского счёта",
+  addBankAccountLabel: "Нажмите, чтобы добавить банковский счёт",
+  toggleInstallmentOptionsLabel: "Переключить параметры плана рассрочки",
+  savePaymentMethodLabel: "Сохранить способ оплаты",
+  deletePaymentMethodLabel: "Удалить способ оплаты",
+  managePaymentMethodsLabel: "Управление способами оплаты",
+  selectPaymentMethodLabel: "Выбрать способ оплаты",
+  doneLabel: "Готово",
+  selectCardLabel: (nickname, last4) =>
+    `Выбрать карту ${nickname} с последними цифрами ${last4}`,
+  selectInstallmentPlanLabel: count =>
+    `Выбрать план рассрочки на ${count} платежей`,
 }

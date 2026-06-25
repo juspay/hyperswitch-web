@@ -133,7 +133,13 @@ let make = (
         items->Array.push(
           <div
             key={i->Int.toString}
+            role="button"
+            tabIndex=0
+            ariaLabel={localeString.selectNamedPaymentMethodLabel(key)}
             onClick={_ => handleTabSelection(key)}
+            onKeyDown={AccessibilityUtils.onActivateKeyDown(~onActivate=() =>
+              handleTabSelection(key)
+            )}
             className="flex w-full items-center rounded border-0 px-2.5 py-1.5 mr-2.5 cursor-pointer hover:bg-jp-gray-50"
             style={key === activePmt->getPaymentMethodTypeLabel ? activeStyles : defaultStyles}>
             {pmt->getPaymentMethodTypeIcon}
@@ -154,6 +160,7 @@ let make = (
           />
           <select
             value=key
+            ariaLabel={localeString.selectPaymentMethodLabel}
             onChange={ev => handleTabSelection(ReactEvent.Form.target(ev)["value"])}
             className="h-full relative rounded border border-solid border-jp-gray-700 py-1.5 cursor-pointer bg-white text-transparent w-8 hover:bg-jp-gray-50">
             {<option key value=key disabled={true}> {React.string(key)} </option>}

@@ -83,11 +83,13 @@ let make = (
         Pay for faster checkouts.`,
           )}
           {React.string(" ")}
-          <span
-            className="underline decoration-1 underline-offset-2 cursor-pointer"
+          <button
+            type_="button"
+            ariaLabel="Learn more about Click to Pay"
+            className="underline decoration-1 underline-offset-2 cursor-pointer bg-transparent border-none p-0 [font:inherit] text-inherit"
             onClick={handleLearnMore}>
             {React.string("Learn more")}
-          </span>
+          </button>
         </div>
       : <>
           <style> {React.string(css)} </style>
@@ -96,7 +98,10 @@ let make = (
               className={`container CheckboxInput ${isSaveDetailsCheckedState}`}
               style={width: "fit-content"}>
               <input
-                type_={`checkbox`} onChange={e => setIsSaveDetailsWithClickToPay(e->getIsChecked)}
+                type_={`checkbox`}
+                id="ctp-save-details"
+                ariaLabel="Save my information with Click to Pay"
+                onChange={e => setIsSaveDetailsWithClickToPay(e->getIsChecked)}
               />
               <div className={`checkmark CheckboxInput ${isSaveDetailsCheckedState}`} />
             </label>
@@ -105,11 +110,13 @@ let make = (
               style={color: "#a9a9a9"}>
               <div>
                 {React.string(`Save my information with ${formattedCardBrand} `)}
-                <span
-                  className="underline decoration-1 underline-offset-2 cursor-pointer"
+                <button
+                  type_="button"
+                  ariaLabel="Learn more about Click to Pay"
+                  className="underline decoration-1 underline-offset-2 cursor-pointer bg-transparent border-none p-0 [font:inherit] text-inherit"
                   onClick={handleLearnMore}>
                   {React.string("Click to Pay")}
-                </span>
+                </button>
                 {React.string(" ")}
                 {React.string("for a faster and secure checkout")}
               </div>
@@ -124,7 +131,10 @@ let make = (
               className={`container CheckboxInput ${isRememberMeCheckedState}`}
               style={width: "fit-content"}>
               <input
-                type_={`checkbox`} onChange={e => setIsClickToPayRememberMe(e->getIsChecked)}
+                type_={`checkbox`}
+                id="ctp-remember-me"
+                ariaLabel="Remember me on this browser"
+                onChange={e => setIsClickToPayRememberMe(e->getIsChecked)}
               />
               <div className={`checkmark CheckboxInput ${isRememberMeCheckedState}`} />
             </label>
@@ -160,18 +170,22 @@ let make = (
               </div>
               <div>
                 {React.string(`By continuing, you agree to ${formattedCardBrand}'s `)}
-                <span
-                  className="underline decoration-1 underline-offset-2 cursor-pointer"
+                <button
+                  type_="button"
+                  ariaLabel="Open Terms of Use"
+                  className="underline decoration-1 underline-offset-2 cursor-pointer bg-transparent border-none p-0 [font:inherit] text-inherit"
                   onClick={ev => handleOpenUrl(ev, getTermsUrl())}>
                   {React.string("Terms")}
-                </span>
+                </button>
                 {React.string(" ")}
                 {React.string("and understand your data will be processed according to the ")}
-                <span
-                  className="underline decoration-1 underline-offset-2 cursor-pointer"
+                <button
+                  type_="button"
+                  ariaLabel="Open Privacy Notice"
+                  className="underline decoration-1 underline-offset-2 cursor-pointer bg-transparent border-none p-0 [font:inherit] text-inherit"
                   onClick={ev => handleOpenUrl(ev, getPrivacyNoticeUrl())}>
                   {React.string("Privacy Notice")}
-                </span>
+                </button>
                 {React.string(".")}
               </div>
             </div>

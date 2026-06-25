@@ -23,10 +23,12 @@ module RenderSavedPaymentMethodItem = {
       </div>
 
     | "bank_debit" =>
-      <div
-        className="flex flex-col items-start"
-        role="group"
-        ariaLabel={`${paymentMethodType->String.toUpperCase} bank debit account ending in ${paymentItem.bank.mask}`}>
+      let bankMask = paymentItem.bank.mask
+      let accountLabel = AccessibilityUtils.getBankDebitAccountLabel(
+        ~paymentMethodType,
+        ~mask=bankMask,
+      )
+      <div className="flex flex-col items-start" role="group" ariaLabel={accountLabel}>
         <div>
           {React.string(
             `${paymentMethodType->String.toUpperCase} ${paymentItem.paymentMethod->Utils.snakeToTitleCase}`,
@@ -34,7 +36,7 @@ module RenderSavedPaymentMethodItem = {
         </div>
         <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
           <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
-          <div ariaHidden=true> {React.string(paymentItem.bank.mask)} </div>
+          <div ariaHidden=true> {React.string(bankMask)} </div>
         </div>
       </div>
 
@@ -201,7 +203,7 @@ let make = (
       value=cvcNumber
       onChange=changeCVCNumber
       onBlur=handleCVCBlur
-      errorString=""
+      errorString=?{cvcError->String.length > 0 ? Some(cvcError) : None}
       inputFieldClassName
       type_="tel"
       className={`tracking-widest w-full`}
@@ -210,6 +212,8 @@ let make = (
       placeholder="123"
       height
       name={TestUtils.cardCVVInputTestId}
+      fieldId={TestUtils.cardCVVInputTestId}
+      ariaLabel=localeString.cvcTextLabel
       autocomplete="cc-csc"
     />
 
@@ -226,7 +230,6 @@ let make = (
         />
       : makeCvcInput(~fieldName, ~height, ~inputFieldClassName)
 
-  let {innerLayout} = config.appearance
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
 
@@ -240,71 +243,94 @@ let make = (
     ->Option.map(s => s.displayTotalSurchargeAmount->Float.toString)
     ->Option.getOr("")
 
+  let bankAccountLabel = AccessibilityUtils.getBankDebitAccountLabel(
+    ~paymentMethodType,
+    ~mask=paymentItem.bank.mask,
+  )
+
+  let selectSavedPaymentMethodLabel = switch paymentItem.paymentMethod {
+  | "card" => localeString.selectCardLabel(paymentItem.card.nickname, paymentItem.card.last4Digits)
+  | "bank_debit" => `Select ${bankAccountLabel}`
+  | _ => localeString.selectNamedPaymentMethodLabel(paymentMethodType->Utils.snakeToTitleCase)
+  }
+
+  let pickerItemStyle: JsxDOM.style = {
+    minWidth: "150px",
+    width: "100%",
+    padding: "1rem 0 1rem 0",
+    cursor: "pointer",
+    borderBottom: index == savedCardlength - 1 ? "0px" : `1px solid ${themeObj.borderColor}`,
+    borderTop: "none",
+    borderLeft: "none",
+    borderRight: "none",
+    borderRadius: "0px",
+    background: "transparent",
+    color: themeObj.colorTextSecondary,
+    boxShadow: "none",
+    opacity: isCardExpired ? "0.7" : "1",
+  }
+
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
-    <button
-      className={`PickerItem ${pickerItemClass} flex flex-row items-stretch`}
-      type_="button"
-      style={
-        minWidth: "150px",
-        width: "100%",
-        padding: "1rem 0 1rem 0",
-        cursor: "pointer",
-        borderBottom: index == savedCardlength - 1 ? "0px" : `1px solid ${themeObj.borderColor}`,
-        borderTop: "none",
-        borderLeft: "none",
-        borderRight: "none",
-        borderRadius: "0px",
-        background: "transparent",
-        color: themeObj.colorTextSecondary,
-        boxShadow: "none",
-        opacity: {isCardExpired ? "0.7" : "1"},
-      }
-      onClick={_ => {
-        open RecoilAtomTypes
-        setPaymentToken(_ => {
-          paymentToken: paymentItem.paymentToken,
-          customerId: paymentItem.customerId,
-        })
-      }}>
+    <div
+      className={`PickerItem ${pickerItemClass} flex flex-col items-stretch`} style=pickerItemStyle>
       <div className="w-full">
         <div>
           <div className="flex flex-row justify-between items-center">
-            <div
-              className={`flex flex-row justify-center items-center`}
-              style={columnGap: themeObj.spacingUnit}>
-              <div style={color: isActive ? themeObj.colorPrimary : ""}>
-                <Radio
-                  checked=isActive
-                  height="18px"
-                  className="savedcard"
-                  marginTop="-2px"
-                  opacity="20%"
-                  padding="46%"
-                  border="1px solid currentColor"
-                />
-              </div>
-              <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-4">
-                  <RenderSavedPaymentMethodItem paymentItem={paymentItem} paymentMethodType />
-                  <RenderIf
-                    condition={displayDefaultSavedPaymentIcon &&
-                    paymentItem.defaultPaymentMethodSet}>
-                    <Icon size=16 name="checkmark" style={color: themeObj.colorPrimary} />
-                  </RenderIf>
-                </div>
-              </div>
-            </div>
-            <RenderIf condition={isCard && !hideCardExpiry}>
+            <button
+              className="flex flex-row justify-between items-center flex-1 bg-transparent border-none p-0 text-left"
+              type_="button"
+              ariaLabel={selectSavedPaymentMethodLabel}
+              style={
+                color: "inherit",
+                cursor: "pointer",
+                minWidth: "0",
+              }
+              onClick={_ => {
+                open RecoilAtomTypes
+                setPaymentToken(_ => {
+                  paymentToken: paymentItem.paymentToken,
+                  customerId: paymentItem.customerId,
+                })
+              }}>
               <div
-                className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                style={fontSize: "14px", opacity: "0.5"}
-                ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
-                <div className="flex" ariaHidden=true>
-                  {React.string(`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
+                className={`flex flex-row justify-center items-center`}
+                style={columnGap: themeObj.spacingUnit}>
+                <div style={color: isActive ? themeObj.colorPrimary : ""}>
+                  <Radio
+                    checked=isActive
+                    height="18px"
+                    className="savedcard"
+                    marginTop="-2px"
+                    opacity="20%"
+                    padding="46%"
+                    border="1px solid currentColor"
+                  />
+                </div>
+                <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-4">
+                    <RenderSavedPaymentMethodItem paymentItem={paymentItem} paymentMethodType />
+                    <RenderIf
+                      condition={displayDefaultSavedPaymentIcon &&
+                      paymentItem.defaultPaymentMethodSet}>
+                      <Icon size=16 name="checkmark" style={color: themeObj.colorPrimary} />
+                    </RenderIf>
+                  </div>
                 </div>
               </div>
-            </RenderIf>
+              <RenderIf condition={isCard && !hideCardExpiry}>
+                <div
+                  className={`flex flex-row items-center justify-end gap-3 -mt-1`}
+                  style={fontSize: "14px", opacity: "0.5"}
+                  ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
+                  <div className="flex" ariaHidden=true>
+                    {React.string(
+                      `${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`,
+                    )}
+                  </div>
+                </div>
+              </RenderIf>
+            </button>
             <RenderIf condition={hideCardExpiry && isActive && isRenderCvv}>
               <div className="flex flex-row items-center gap-2 mr-2">
                 <RenderIf condition={!isFloating}>
@@ -340,17 +366,6 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf
-                condition={hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
-                <LiveError
-                  text={cvcError}
-                  className="Error pt-1 mt-1 ml-3"
-                  style={{
-                    color: themeObj.colorDangerText,
-                    fontSize: themeObj.fontSizeSm,
-                  }}
-                />
-              </RenderIf>
-              <RenderIf
                 condition={isActive && displayBillingDetails && billingDetailsArrayLength > 0}>
                 <div className="tracking-wide text-sm text-left gap-2 mt-4 ml-2">
                   <div className="font-semibold"> {React.string(billingDetailsText)} </div>
@@ -358,17 +373,6 @@ let make = (
                     {React.string(Array.join(billingDetailsArray, ", "))}
                   </div>
                 </div>
-              </RenderIf>
-              <RenderIf
-                condition={!hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
-                <LiveError
-                  text={cvcError}
-                  className="Error pt-1 mt-1 ml-1"
-                  style={{
-                    color: themeObj.colorDangerText,
-                    fontSize: themeObj.fontSizeSm,
-                  }}
-                />
               </RenderIf>
               <RenderIf condition={isCardExpired}>
                 <div className="italic mt-3 ml-1" style={fontSize: "14px", opacity: "0.7"}>
@@ -420,6 +424,6 @@ let make = (
           </div>
         </div>
       </div>
-    </button>
+    </div>
   </RenderIf>
 }

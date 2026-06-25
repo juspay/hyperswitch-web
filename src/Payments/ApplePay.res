@@ -399,6 +399,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           } else {
             <button
               disabled=applePayClicked
+              ariaLabel="Apple Pay"
               style={
                 opacity: updateSession ? "0.5" : "1.0",
                 pointerEvents: updateSession ? "none" : "auto",

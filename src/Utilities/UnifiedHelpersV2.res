@@ -23,6 +23,7 @@ let itemToCustomerMapper = customerArray => {
     ->Belt.Array.keepMap(JSON.Decode.object)
     ->Array.map(dict => {
       let cardDict = dict->getDictFromDict("payment_method_data")->getDictFromDict("card")
+      let bankDict = dict->getDictFromDict("payment_method_data")->getDictFromDict("bank")
       {
         paymentToken: getString(dict, "payment_method_token", ""),
         customerId: getString(dict, "customer_id", ""),
@@ -36,7 +37,7 @@ let itemToCustomerMapper = customerArray => {
         requiresCvv: getBool(dict, "requires_cvv", false),
         created: getString(dict, "created", ""),
         lastUsedAt: getString(dict, "last_used_at", ""),
-        bank: {mask: ""},
+        bank: {mask: bankDict->getString("mask", "")},
       }
     })
   customerMethods
