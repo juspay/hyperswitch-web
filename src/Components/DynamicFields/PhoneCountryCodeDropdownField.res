@@ -73,7 +73,8 @@ let make = (~fieldConfig: fieldConfig, ~isLabelHidden=false) => {
 
   <DropdownField
     appearance={config.appearance}
-    fieldName={isLabelHidden ? "" : label}
+    fieldName={label}
+    isLabelHidden
     value=valueDropDown
     setValue={setter => setValueDropDown(prev => setter(prev))}
     disabled=false

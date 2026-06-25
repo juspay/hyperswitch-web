@@ -27,7 +27,8 @@ let make = (~fieldConfig: fieldConfig, ~isLabelHidden=false) => {
   }
 
   <PaymentInputField
-    fieldName={isLabelHidden ? "" : label}
+    fieldName={label}
+    isLabelHidden
     value
     onChange={ev => {
       let val = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\D|\s/g"), "")
