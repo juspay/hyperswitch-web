@@ -122,6 +122,11 @@ let make = (
     | VGS(_) | HyperswitchVault(_) => true
     | NoVault => false
     }
+
+  let isHyperswitchVault = switch vaultCredentials {
+  | HyperswitchVault(_) => true
+  | _ => false
+  }
   let cvcIframeRef = React.useRef(Nullable.null)
   let setCvcIframeRef = React.useCallback(ref => {
     cvcIframeRef.current = ref
@@ -491,19 +496,20 @@ let make = (
               let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
               if dict->Dict.get("savedCardCvcTokenEvent")->Option.isSome {
                 let cvcToken = dict->getString("cvcToken", "")
-                let cvcConfirmBody = GlobalVars.isPciCompliant
-                  ? PaymentBody.savedCardVaultCvcBody(
-                      ~paymentToken=paymentTokenVal,
-                      ~customerId,
-                      ~cvcToken,
-                      ~isCustomerAcceptanceRequired,
-                    )
-                  : PaymentBody.externalSavedCardVaultCvcBody(
-                      ~paymentToken=paymentTokenVal,
-                      ~customerId,
-                      ~cvcToken,
-                      ~isCustomerAcceptanceRequired,
-                    )
+                let cvcConfirmBody =
+                  isHyperswitchVault && GlobalVars.isPciCompliant
+                    ? PaymentBody.savedCardVaultCvcBody(
+                        ~paymentToken=paymentTokenVal,
+                        ~customerId,
+                        ~cvcToken,
+                        ~isCustomerAcceptanceRequired,
+                      )
+                    : PaymentBody.externalSavedCardVaultCvcBody(
+                        ~paymentToken=paymentTokenVal,
+                        ~customerId,
+                        ~cvcToken,
+                        ~isCustomerAcceptanceRequired,
+                      )
                 let vaultBody = cvcConfirmBody->Array.concat(installmentBody)
                 intent(
                   ~bodyArr=vaultBody->mergeAndFlattenToTuples(requiredFieldsBody),
@@ -571,6 +577,7 @@ let make = (
     showInstallments,
     sdkAuthorization,
     isEligibilityPending,
+    isHyperswitchVault,
     isVaultCvcFlow,
     paymentTokenVal,
     customerId,
