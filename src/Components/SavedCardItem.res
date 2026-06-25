@@ -62,11 +62,12 @@ let make = (
   ~installmentsError,
   ~setInstallmentsError,
   ~eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
-  // VGS saved-card (return user) flow: when true, this card's CVC is collected
-  // inside the nested iframe (ParentCardComponent saved-card mode) instead of the
-  // plain input. `setCvcIframeRef` lifts the iframe ref to SavedMethods, which
-  // owns submit. Defaults keep other call sites (e.g. ClickToPayAuthenticate) intact.
-  ~isVgsCvcFlow=false,
+  // Vault saved-card (return user) flow (VGS or Hyperswitch): when true, this card's
+  // CVC is collected inside the nested iframe (ParentCardComponent saved-card mode)
+  // instead of the plain input. `setCvcIframeRef` lifts the iframe ref to
+  // SavedMethods, which owns submit. Defaults keep other call sites
+  // (e.g. ClickToPayAuthenticate) intact.
+  ~isVaultCvcFlow=false,
   ~setCvcIframeRef=_ => (),
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
@@ -147,14 +148,14 @@ let make = (
   }, (isActive, paymentItem, country, state, pinCode, isCvcEmpty))
 
   React.useEffect(() => {
+    open CardUtils
     if isActive {
       // * Focus CVC
       focusCVC()
-
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->CardValidations.formatCardExpiryNumber
-      ->CardUtils.emitExpiryDate
+      ->emitExpiryDate
     }
     None
   }, (isActive, paymentItem, country, state, pinCode))
@@ -219,7 +220,7 @@ let make = (
   // VGS saved-card flow renders the secure CVC iframe in place of the plain input;
   // ParentCardComponent (saved-card mode) hosts it and lifts its ref to SavedMethods.
   let makeCvcField = (~fieldName="", ~height="1.8rem", ~inputFieldClassName="flex justify-start") =>
-    isVgsCvcFlow
+    isVaultCvcFlow
       ? <ParentCardComponent
           isSavedCardFlow=true containerId=cvcIframeContainerId setExternalIframeRef=setCvcIframeRef
         />

@@ -149,7 +149,7 @@ let make = (~cvcOnly=false) => {
             let onSuccess = (_, data) => {
               let cvcToken = data->getDictFromJson->getString("card_cvc", "")
               messageParentWindow([
-                ("vgsSavedCardCvcTokenEvent", true->JSON.Encode.bool),
+                ("savedCardCvcTokenEvent", true->JSON.Encode.bool),
                 ("cvcToken", cvcToken->JSON.Encode.string),
               ])
             }
