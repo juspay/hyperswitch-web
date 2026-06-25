@@ -262,7 +262,7 @@ let make = (
                 last4Digits,
                 binNumber,
                 expiryMonth,
-                expiryyear,
+                expiryYear,
               } = VaultHelpers.decodeVaultTokenData(vaultResponse)
               if token !== "" {
                 let vaultBody = GlobalVars.isPciCompliant
@@ -272,7 +272,7 @@ let make = (
                       ~last4Digits,
                       ~binNumber,
                       ~expiryMonth,
-                      ~expiryyear,
+                      ~expiryYear,
                     )
                 confirmWithVaultBody(vaultBody)
               } else {

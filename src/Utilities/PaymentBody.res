@@ -926,20 +926,20 @@ let eftBody = () => {
 // Vault card body used when card fields are tokenised via the Cards SDK iframe.
 // Each card field is replaced by the same vault token; last4Digits and binNumber
 // are decoded from the vault API response.
-let vaultCardBody = (~token, ~last4Digits, ~binNumber) => {
+let vaultCardBody = (~token) => {
   [
     ("payment_method", "card"->JSON.Encode.string),
     ("payment_method_type", "debit"->JSON.Encode.string),
     ("payment_token", token->JSON.Encode.string),
   ]
 }
-let vaultExternalCardBody = (~token, ~last4Digits, ~binNumber, ~expiryMonth, ~expiryyear) => {
+let vaultExternalCardBody = (~token, ~last4Digits, ~binNumber, ~expiryMonth, ~expiryYear) => {
   let vaultDataCard =
     [
       ("card_cvc", token->JSON.Encode.string),
       ("card_number", token->JSON.Encode.string),
       ("card_exp_month", expiryMonth->JSON.Encode.string),
-      ("card_exp_year", expiryyear->JSON.Encode.string),
+      ("card_exp_year", expiryYear->JSON.Encode.string),
       ("last_four", last4Digits->JSON.Encode.string),
       ("bin_number", binNumber->JSON.Encode.string),
     ]->Utils.getJsonFromArrayOfJson

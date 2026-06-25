@@ -178,7 +178,7 @@ type vaultTokenData = {
   last4Digits: string,
   binNumber: string,
   expiryMonth: string,
-  expiryyear: string,
+  expiryYear: string,
 }
 
 // Decodes the vault API response JSON into a vaultTokenData record.
@@ -206,7 +206,7 @@ let decodeVaultTokenData = (vaultResponse: JSON.t): vaultTokenData => {
   let last4Digits = cardDict->getString("last4_digits", "")
   let binNumber = cardDict->getString("card_isin", "")
   let expiryMonth = cardDict->getString("expiry_month", "")
-  let expiryyear = cardDict->getString("expiry_year", "")
+  let expiryYear = cardDict->getString("expiry_year", "")
 
-  {token, last4Digits, binNumber, expiryMonth, expiryyear}
+  {token, last4Digits, binNumber, expiryMonth, expiryYear}
 }
