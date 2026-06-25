@@ -21,12 +21,16 @@ let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false) => {
 // Canonical Hyperswitch-hosted backend by env, independent of any self-hosted
 // ENV_BACKEND_URL. Mirrors the sdkUrl / backendEndPoint host family that the vault iframe
 // is served from and calls (prod → checkout, sandbox / local → beta, integ → dev).
-let hyperswitchVaultEndPoint = if GlobalVars.isProd {
-  "https://checkout.hyperswitch.io/api"
-} else if GlobalVars.isSandbox {
-  "https://beta.hyperswitch.io/api"
-} else {
-  "https://dev.hyperswitch.io/api"
+let hyperswitchVaultEndPoint = (~publishableKey="") => {
+  let testMode = publishableKey->String.startsWith("pk_snd_")
+
+  if GlobalVars.isProd && !testMode {
+    "https://checkout.hyperswitch.io/api"
+  } else if GlobalVars.isInteg {
+    "https://dev.hyperswitch.io/api"
+  } else {
+    "https://beta.hyperswitch.io/api"
+  }
 }
 
 // Endpoint for vault operations: card tokenisation inside the nested iframe and the
@@ -38,7 +42,7 @@ let hyperswitchVaultEndPoint = if GlobalVars.isProd {
 let getVaultEndPoint = (~publishableKey="") =>
   GlobalVars.isPciCompliant || GlobalVars.isLocal
     ? getApiEndPoint(~publishableKey)
-    : hyperswitchVaultEndPoint
+    : hyperswitchVaultEndPoint(~publishableKey)
 
 // Hyperswitch-hosted SDK origin by env (mirrors webpack getSdkUrl: prod → checkout,
 // sandbox / local → beta, integ → dev).
