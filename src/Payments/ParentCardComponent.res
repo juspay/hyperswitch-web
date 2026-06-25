@@ -266,7 +266,7 @@ let make = (
               } = VaultHelpers.decodeVaultTokenData(vaultResponse)
               if token !== "" {
                 let vaultBody = GlobalVars.isPciCompliant
-                  ? PaymentBody.vaultCardBody(~token, ~last4Digits, ~binNumber)
+                  ? PaymentBody.vaultCardBody(~token)
                   : PaymentBody.vaultExternalCardBody(
                       ~token,
                       ~last4Digits,
