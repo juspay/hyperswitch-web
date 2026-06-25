@@ -92,6 +92,8 @@ let make = (
       let sdkConfig = sdkConfigRef.current
       let publishableKey = publishableKeyRef.current
 
+      let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey)
+
       // sdkConfig.config is the resolved config blob; LoaderController.setConfigs
       // re-parses it via CardTheme.itemToObjMapper (it already carries
       // clientSecret / sdkAuthorization / pmSessionId / loader).
@@ -100,6 +102,7 @@ let make = (
         ("paymentOptions", sdkConfig.config->Identity.anyTypeToJson),
         ("iframeId", selectorString->JSON.Encode.string),
         ("publishableKey", publishableKey->JSON.Encode.string),
+        ("endpoint", endpoint->JSON.Encode.string),
         // Tells the inner iframe (PaymentMethodsSDK) to render only the vault
         // CVC field for the saved-card flow. Always false for the new-card flow.
         ("isSavedCardCvcFlow", isSavedCardFlow->JSON.Encode.bool),
@@ -129,6 +132,7 @@ let make = (
       mountPostMessage,
       ~appearance=Dict.make()->JSON.Encode.object,
       ~redirectionFlags,
+      ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
       ~logger=Some(loggerState),
     )
     element.mount(`#${containerId}`)
@@ -253,9 +257,24 @@ let make = (
               // Decode it into a typed record; ParentCardComponent (or the merchant
               // in a future direct-SDK flow) can then act on the structured fields.
               let vaultResponse = dict->getJsonObjectFromDict("vaultResponse")
-              let {token, last4Digits, binNumber} = VaultHelpers.decodeVaultTokenData(vaultResponse)
+              let {
+                token,
+                last4Digits,
+                binNumber,
+                expiryMonth,
+                expiryYear,
+              } = VaultHelpers.decodeVaultTokenData(vaultResponse)
               if token !== "" {
-                confirmWithVaultBody(PaymentBody.vaultCardBody(~token, ~last4Digits, ~binNumber))
+                let vaultBody = GlobalVars.isPciCompliant
+                  ? PaymentBody.vaultCardBody(~token)
+                  : PaymentBody.vaultExternalCardBody(
+                      ~token,
+                      ~last4Digits,
+                      ~binNumber,
+                      ~expiryMonth,
+                      ~expiryYear,
+                    )
+                confirmWithVaultBody(vaultBody)
               } else {
                 Console.error("ParentCardComponent: payment token not found in vaultResponse")
               }

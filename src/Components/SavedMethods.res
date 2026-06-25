@@ -111,12 +111,22 @@ let make = (
     () => VaultHelpers.getVaultCredentialsFromSessions(sessionToken),
     [sessionToken],
   )
-  let isVgsCvcFlow =
+  // Either vault (VGS or Hyperswitch) collects + tokenises the saved-card CVC inside
+  // the nested iframe (ParentCardComponent saved-card mode); SavedMethods stays the
+  // submit owner. The vault provider only changes what renders inside that iframe —
+  // SavedMethods' forward-doSubmit / await-token / confirm logic is identical — so a
+  // single flag covers both.
+  let isVaultCvcFlow =
     isTokenize &&
     switch vaultCredentials {
-    | VGS(_) => true
-    | _ => false
+    | VGS(_) | HyperswitchVault(_) => true
+    | NoVault => false
     }
+
+  let isHyperswitchVault = switch vaultCredentials {
+  | HyperswitchVault(_) => true
+  | _ => false
+  }
   let cvcIframeRef = React.useRef(Nullable.null)
   let setCvcIframeRef = React.useCallback(ref => {
     cvcIframeRef.current = ref
@@ -152,7 +162,7 @@ let make = (
           eligibilitySurchargeDetails={paymentTokenVal == obj.paymentToken
             ? eligibilitySurchargeDetails
             : None}
-          isVgsCvcFlow
+          isVaultCvcFlow
           setCvcIframeRef
         />
       )
@@ -189,7 +199,7 @@ let make = (
   }
   // VGS collects + validates the CVC inside the iframe, so the outer plain-CVC
   // "empty" signal is not meaningful — treat it as filled.
-  let empty = isVgsCvcFlow ? false : cvcNumber == ""
+  let empty = isVaultCvcFlow ? false : cvcNumber == ""
   let customerMethod = React.useMemo(_ =>
     savedMethods
     ->Array.concat(customerMethods)
@@ -203,7 +213,9 @@ let make = (
   // submit), so outer validity does not depend on the plain CVC field — mirroring
   // how the new-card flow lets the inner iframe gate the card fields.
   let isCardPaymentMethodValid =
-    isVgsCvcFlow && isCardPaymentMethod ? true : !customerMethod.requiresCvv || (complete && !empty)
+    isVaultCvcFlow && isCardPaymentMethod
+      ? true
+      : !customerMethod.requiresCvv || (complete && !empty)
   let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
 
   let shouldDoEligibility = paymentMethodListValue.sdk_next_action === Some("eligibility_check")
@@ -467,25 +479,38 @@ let make = (
             )
           }
         | _ =>
-          if isVgsCvcFlow && customerMethod.paymentMethod === "card" && customerMethod.requiresCvv {
-            // VGS saved-card flow: forward the validated doSubmit to the CVC iframe.
-            // It tokenises the CVC and posts `vgsSavedCardCvcTokenEvent` back; we
-            // then confirm with the vault_card_token_data body (otherwise identical
-            // to the plain saved-card confirm — same business-logic merge).
+          if (
+            isVaultCvcFlow && customerMethod.paymentMethod === "card" && customerMethod.requiresCvv
+          ) {
+            // Vault saved-card flow (VGS or Hyperswitch): forward the validated
+            // doSubmit to the CVC iframe. It tokenises the CVC and posts
+            // `savedCardCvcTokenEvent` back; we then confirm with the
+            // vault_card_token_data body (otherwise identical to the plain saved-card
+            // confirm — same business-logic merge). The Hyperswitch tokeniser needs
+            // the selected card's payment_token, so forward it in the message.
             let innerMsg = json->getDictFromJson
             innerMsg->Dict.set("isOuterValid", true->JSON.Encode.bool)
+            innerMsg->Dict.set("paymentToken", paymentTokenVal->JSON.Encode.string)
             cvcIframeRef.current->Window.iframePostMessage(innerMsg)
             let handle = (ev: Types.event) => {
               let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
-              if dict->Dict.get("vgsSavedCardCvcTokenEvent")->Option.isSome {
+              if dict->Dict.get("savedCardCvcTokenEvent")->Option.isSome {
                 let cvcToken = dict->getString("cvcToken", "")
-                let vaultBody =
-                  PaymentBody.savedCardVaultCvcBody(
-                    ~paymentToken=paymentTokenVal,
-                    ~customerId,
-                    ~cvcToken,
-                    ~isCustomerAcceptanceRequired,
-                  )->Array.concat(installmentBody)
+                let cvcConfirmBody =
+                  isHyperswitchVault && GlobalVars.isPciCompliant
+                    ? PaymentBody.savedCardVaultCvcBody(
+                        ~paymentToken=paymentTokenVal,
+                        ~customerId,
+                        ~cvcToken,
+                        ~isCustomerAcceptanceRequired,
+                      )
+                    : PaymentBody.externalSavedCardVaultCvcBody(
+                        ~paymentToken=paymentTokenVal,
+                        ~customerId,
+                        ~cvcToken,
+                        ~isCustomerAcceptanceRequired,
+                      )
+                let vaultBody = cvcConfirmBody->Array.concat(installmentBody)
                 intent(
                   ~bodyArr=vaultBody->mergeAndFlattenToTuples(requiredFieldsBody),
                   ~confirmParam=confirm.confirmParams,
@@ -552,7 +577,8 @@ let make = (
     showInstallments,
     sdkAuthorization,
     isEligibilityPending,
-    isVgsCvcFlow,
+    isHyperswitchVault,
+    isVaultCvcFlow,
     paymentTokenVal,
     customerId,
   ))

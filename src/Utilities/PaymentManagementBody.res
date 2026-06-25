@@ -22,6 +22,13 @@ let updateCVVBody = (~paymentMethodToken, ~cvcNumber) => {
   ]
 }
 
+let vaultUpdateCVVBody = (~cvcNumber) => {
+  let cardDetails = [("card_cvc", cvcNumber->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
+  let paymentMethodData = [("card", cardDetails)]->Utils.getJsonFromArrayOfJson
+
+  [("payment_method_data", paymentMethodData)]
+}
+
 let saveCardBody = (
   ~cardNumber,
   ~month,

@@ -35,6 +35,7 @@ let make = (
   ~appearance,
   ~isPaymentManagementElement=false,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~logger: option<HyperLoggerTypes.loggerMake>,
 ) => {
   try {
@@ -527,7 +528,7 @@ let make = (
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
           ${buildIframeHtmlString(
               ~iframeId=iframeElementId,
-              ~iframeSrc=`${ApiEndpoint.sdkDomainUrl}/index.html?componentName=${componentType}`,
+              ~iframeSrc=`${sdkDomainUrl}/index.html?componentName=${componentType}`,
               ~additionalStyle=additionalIframeStyle,
             )}
           </div>`
