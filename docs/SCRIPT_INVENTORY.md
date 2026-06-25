@@ -8,8 +8,9 @@ This document provides an inventory of all third-party scripts used in Hyperswit
 
 #### Scripts:
 
-- `https://js.braintreegateway.com/web/3.88.4/js/paypal-checkout.min.js`
-- `https://js.braintreegateway.com/web/3.88.4/js/client.min.js`
+- `https://js.braintreegateway.com/web/3.92.1/js/paypal-checkout.min.js`
+- `https://js.braintreegateway.com/web/3.92.1/js/client.min.js`
+- `https://js.braintreegateway.com/web/3.92.1/js/apple-pay.min.js`
 
 #### Justification:
 
@@ -17,6 +18,7 @@ Braintree scripts are necessary to process payments through the Braintree paymen
 
 - Secure credit card processing capabilities
 - PayPal checkout integration
+- Apple Pay via Braintree integration
 - Client-side validation and tokenization of payment information
 - Enhanced security through direct communication with Braintree's servers
 
@@ -43,6 +45,8 @@ PayPal is one of the most widely used digital payment platforms globally. Integr
 #### Scripts:
 
 - `https://x.klarnacdn.net/kp/lib/v1/api.js`
+- `https://js.playground.klarna.com` (sandbox/testing only)
+- `https://eu.playground.klarnaevt.com` (sandbox/testing only )
 
 #### Justification:
 
