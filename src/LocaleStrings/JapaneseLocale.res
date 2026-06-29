@@ -272,4 +272,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   yearLabel: "年",
   monthLabel: "月",
   optionTabLabel: fieldName => `${fieldName} オプションタブ`,
+  closeLabel: "閉じる",
+  dialogLabel: "ダイアログ",
+  paymentMethodsGroupLabel: "支払い方法",
 }

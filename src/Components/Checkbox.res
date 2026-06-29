@@ -62,6 +62,10 @@ let make = (~isChecked, ~onChange, ~label, ~ariaLabelChecked="", ~ariaLabelUnche
       let keyCode = JsxEvent.Keyboard.keyCode(event)
       if key == "Enter" || keyCode == 13 {
         onChange(!isChecked)
+      } else if key == " " {
+        // WAI-ARIA checkbox idiom: Space toggles. preventDefault stops page scroll.
+        event->JsxEvent.Keyboard.preventDefault
+        onChange(!isChecked)
       }
     }}
     role="checkbox"

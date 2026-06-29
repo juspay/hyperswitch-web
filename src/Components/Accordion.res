@@ -6,6 +6,10 @@ let make = (
   ~checkoutEle: React.element,
   ~borderBottom: bool,
   ~borderRadiusStyle,
+  ~index: int=0,
+  ~isFocused: bool=true,
+  ~registerItemRef: (int, Nullable.t<Dom.element>) => unit=(_, _) => (),
+  ~onArrowNav: (int, int) => unit=(_, _) => (),
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {layout, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -34,21 +38,40 @@ let make = (
     paymentOption.displayName,
     paymentOption.icon,
   )
+  let selected = selectedOption == paymentOption.paymentMethodName
   <div
     className={`AccordionItem flex flex-col`}
     style={
       minHeight: "60px",
       width: "-webkit-fill-available",
-      cursor: "pointer",
       marginBottom: layoutClass.spacedAccordionItems ? themeObj.spacingAccordionItem : "",
       border: `1px solid ${themeObj.borderColor}`,
       borderRadius: {borderRadiusStyle},
       borderBottomStyle: borderBottom ? "solid" : "hidden",
-    }
-    onClick={_ => setSelectedOption(_ => paymentOption.paymentMethodName)}>
+    }>
     <div
       className={`flex flex-row items-center ${accordionClass}`}
-      style={columnGap: themeObj.spacingUnit}>
+      role="radio"
+      ariaChecked={selected ? #"true" : #"false"}
+      tabIndex={isFocused ? 0 : -1}
+      ref={ReactDOM.Ref.callbackDomRef(el => registerItemRef(index, el))}
+      onKeyDown={event => {
+        let key = JsxEvent.Keyboard.key(event)
+        switch key {
+        | "ArrowDown" | "ArrowRight" =>
+          event->JsxEvent.Keyboard.preventDefault
+          onArrowNav(index, 1)
+        | "ArrowUp" | "ArrowLeft" =>
+          event->JsxEvent.Keyboard.preventDefault
+          onArrowNav(index, -1)
+        | "Enter" | " " =>
+          event->JsxEvent.Keyboard.preventDefault
+          setSelectedOption(_ => paymentOption.paymentMethodName)
+        | _ => ()
+        }
+      }}
+      style={columnGap: themeObj.spacingUnit, minHeight: "60px", cursor: "pointer"}
+      onClick={_ => setSelectedOption(_ => paymentOption.paymentMethodName)}>
       <RenderIf condition=layoutClass.radios>
         <Radio checked=radioClass />
       </RenderIf>

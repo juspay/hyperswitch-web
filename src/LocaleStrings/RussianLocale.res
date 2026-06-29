@@ -280,4 +280,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   yearLabel: "Год",
   monthLabel: "Месяц",
   optionTabLabel: fieldName => `${fieldName} вкладка параметров`,
+  closeLabel: "Закрыть",
+  dialogLabel: "Диалог",
+  paymentMethodsGroupLabel: "Способы оплаты",
 }

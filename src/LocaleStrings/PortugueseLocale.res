@@ -272,4 +272,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   yearLabel: "Ano",
   monthLabel: "Mês",
   optionTabLabel: fieldName => `Aba de opção ${fieldName}`,
+  closeLabel: "Fechar",
+  dialogLabel: "Diálogo",
+  paymentMethodsGroupLabel: "Métodos de pagamento",
 }

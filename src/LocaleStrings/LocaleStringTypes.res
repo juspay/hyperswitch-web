@@ -259,6 +259,9 @@ type localeStrings = {
   yearLabel: string,
   monthLabel: string,
   optionTabLabel: string => string,
+  closeLabel: string,
+  dialogLabel: string,
+  paymentMethodsGroupLabel: string,
 }
 
 type constantStrings = {

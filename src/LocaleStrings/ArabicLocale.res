@@ -274,4 +274,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   yearLabel: "السنة",
   monthLabel: "الشهر",
   optionTabLabel: fieldName => `${fieldName} تبويب الخيار`,
+  closeLabel: "إغلاق",
+  dialogLabel: "مربع حوار",
+  paymentMethodsGroupLabel: "طرق الدفع",
 }

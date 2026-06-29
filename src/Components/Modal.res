@@ -12,10 +12,12 @@ let make = (
   ~loader=false,
   ~showClose=true,
   ~testMode=true,
+  ~ariaLabel=?,
   ~setOpenModal,
   ~openModal,
 ) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let modalAriaLabel = ariaLabel->Option.getOr(localeString.dialogLabel)
   let closeModal = () => {
     setOpenModal(_ => false)
     switch closeCallback {
@@ -30,6 +32,27 @@ let make = (
     loader ? setOpenModal(_ => false) : setOpenModal(_ => true)
     None
   }, [loader])
+
+  // Ref on the modal content container, used for focus management (focus trap +
+  // moving focus into the dialog on open).
+  let containerRef = React.useRef(Nullable.null)
+
+  // Accessibility: return focus to the trigger on close, trap focus while open,
+  // and close on Escape — preserving all existing close behaviour.
+  AccessibilityHooks.useReturnFocus(~active=openModal, ~containerRef)
+  AccessibilityHooks.useFocusTrap(~active=openModal, ~containerRef)
+  AccessibilityHooks.useEscapeKey(~enabled=openModal, ~onEscape=closeModal, ~containerRef)
+
+  // On open, move focus to the first focusable element inside the dialog.
+  React.useEffect(() => {
+    if openModal {
+      switch AccessibilityHooks.getFocusableElements(containerRef)->Array.get(0) {
+      | Some(el) => el->AccessibilityUtils.focus
+      | None => ()
+      }
+    }
+    None
+  }, [openModal])
 
   let loaderVisibility = loader ? "visible" : "hidden"
   let contentVisibility = React.useMemo(() => {
@@ -51,6 +74,10 @@ let make = (
     }>
     {loaderUI}
     {<div
+      ref={ReactDOM.Ref.domRef(containerRef)}
+      role="dialog"
+      ariaModal=true
+      ariaLabel={modalAriaLabel}
       className={`w-full h-full sm:h-auto sm:w-[55%] md:w-[45%] lg:w-[35%] xl:w-[32%] 2xl:w-[27%]  m-auto bg-white flex flex-col justify-start sm:justify-center px-5 pb-5 md:pb-6 pt-4 md:pt-7 rounded-none sm:rounded-md relative overflow-scroll ${animate}`}
       style={
         transition: "opacity .35s ease .1s,transform .35s ease .1s,-webkit-transform .35s ease .1s",
@@ -69,11 +96,13 @@ let make = (
           </div>
         </RenderIf>
         <RenderIf condition=showClose>
-          <div
+          <button
+            type_="button"
             className="p-4 flex justify-end self-end mb-4 cursor-pointer"
-            onClick={_ => closeModal()}>
+            onClick={_ => closeModal()}
+            ariaLabel={localeString.closeLabel}>
             <Icon name="cross" size=23 />
-          </div>
+          </button>
         </RenderIf>
       </div>
       <div className={`mt-12 sm:${marginTop}`}> children </div>

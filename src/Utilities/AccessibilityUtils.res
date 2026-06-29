@@ -19,3 +19,20 @@ let ariaInvalid = (~hasError, ~isValid) =>
   } else {
     #"false"
   }
+
+@send external focus: Dom.element => unit = "focus"
+
+@send
+external querySelectorAllWithin: (Dom.element, string) => array<Dom.element> = "querySelectorAll"
+
+@val @scope("document") external activeElement: Nullable.t<Dom.element> = "activeElement"
+
+let focusableSelector = "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
+
+let onActivateKeyDown = (~onActivate: unit => unit) => (event: JsxEvent.Keyboard.t) => {
+  let key = JsxEvent.Keyboard.key(event)
+  if key == "Enter" || JsxEvent.Keyboard.keyCode(event) == 13 || key == " " {
+    event->JsxEvent.Keyboard.preventDefault
+    onActivate()
+  }
+}
