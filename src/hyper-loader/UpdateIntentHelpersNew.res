@@ -138,7 +138,7 @@ let mountPreMountLoaderIframe = (
         <iframe
           id="orca-payment-element-iframeRef-${selectorString}"
           name="orca-payment-element-iframeRef-${selectorString}"
-          title="Orca Payment Element Frame"
+          title="Hyperswitch payment setup frame"
           src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${currentClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabledValue}&sdkAuthorization=${currentSdkAuthorization}"
           allow="*"
           name="orca-payment"

@@ -996,10 +996,29 @@ let make = (
           }
         }
 
+        // Accessibility: when a keyboard user tabs past the iframe's last focusable
+        // element (or shift-tabs past its first), the iframe posts a `focusDelegation`
+        // message asking us to move focus to the next/previous focusable element
+        // around the SDK iframe in this (parent) document. Defensive: a missing
+        // iframe or boundary is a silent no-op.
+        let handleFocusDelegation = (ev: Types.event) => {
+          let dict = ev.data->anyTypeToJson->getDictFromJson
+          switch dict->Dict.get("focusDelegation") {
+          | Some(direction) =>
+            let direction = direction->JSON.Decode.string->Option.getOr("")
+            if direction === "next" || direction === "previous" {
+              let iframeId = dict->getString("iframeId", "")
+              FocusDelegation.handleParentFocusDelegation(~direction, ~iframeId)
+            }
+          | None => ()
+          }
+        }
+
         addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
         addSmartEventListener("message", handlePollStatusMessage, "onPollStatusMsg")
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
         addSmartEventListener("message", handleApplePayThirdPartyFlow, "onApplePayThirdParty")
+        addSmartEventListener("message", handleFocusDelegation, "onFocusDelegation")
 
         let forwardSessionTokensToIframe = mountedIframeRef => {
           sessionTokensDataPromise.contents

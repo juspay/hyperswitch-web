@@ -55,7 +55,7 @@ let make = () => {
   })
   <Modal loader openModal setOpenModal closeCallback=handleOnClose>
     <div className="w-full h-[500px] bg-white">
-      <iframe className="w-full h-full" src={popupUrl} />
+      <iframe className="w-full h-full" src={popupUrl} title="3D Secure Authentication" />
     </div>
   </Modal>
 }

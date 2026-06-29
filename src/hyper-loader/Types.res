@@ -256,6 +256,7 @@ type rec ele = {
   mutable id: string,
   mutable src: string,
   mutable name: string,
+  mutable title: string,
   mutable style: string,
   mutable onload: unit => unit,
   mutable action: string,

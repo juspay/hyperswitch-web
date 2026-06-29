@@ -17,11 +17,12 @@ let buildIframeHtmlString = (~iframeId: string, ~iframeSrc: string, ~additionalS
    name="${iframeId}"
    src="${iframeSrc}"
    allow="payment *"
-   title="Orca Payment Element Frame"
+   title="Hyperswitch payment element"
    sandbox="allow-scripts allow-popups allow-same-origin allow-forms"
    style="border: 0px; ${additionalStyle} outline: none;"
    width="100%"
-></iframe>`
+	></iframe>`
+
 // Multi-instance support: tracks unmounted element refs so sibling mount() calls can
 // adopt handler-only instances (e.g. React wrapper) that never mount themselves.
 let unclaimedSelectorRefsByType: Dict.t<array<ref<string>>> = Dict.make()
@@ -353,6 +354,7 @@ let make = (
       let optionsDict = options->getDictFromJson
       let handle = (ev: Types.event) => {
         let eventDataObject = ev.data->anyTypeToJson
+        AccessibilityUtils.ensureKnownIframeTitles()
 
         let iframeHeight = eventDataObject->getOptionalJsonFromJson("iframeHeight")
         if iframeHeight->Option.isSome {
@@ -534,6 +536,7 @@ let make = (
           </div>`
           elem->Window.innerHTML(iframeDiv)
           setPaymentIframeRef(Window.querySelector(`#${iframeElementId}`))
+          AccessibilityUtils.scheduleKnownIframeTitleRepair()
 
           let elem = Window.querySelector(`#${iframeElementId}`)
           switch elem->Nullable.toOption {
