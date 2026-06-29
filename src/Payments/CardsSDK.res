@@ -21,11 +21,12 @@ let make = (~cvcOnly=false) => {
 
   switch vaultCredentials {
   | HyperswitchVault(_) =>
-    // TODO: render a Hyperswitch-vault CVC-only component for the saved-card flow.
-    // Until then, don't fall back to a full card form in the CVC-only slot.
-    <RenderIf condition={!cvcOnly}>
-      <CardPayment cardProps expiryProps cvcProps isInsideCardSDK=true />
-    </RenderIf>
+    // Saved-card (return user) flow renders the CVC-only widget, which tokenises the
+    // CVC via the payment-method-session update call; the new-card flow renders the
+    // full card form. CardCVCElement is reused here in its vault-tokenise mode.
+    cvcOnly
+      ? <CardCVCElement cvcProps paymentType=CardThemeType.CardCVCElement isVaultCvcFlow=true />
+      : <CardPayment cardProps expiryProps cvcProps isInsideCardSDK=true />
   | VGS(_) => <VGSVault cvcOnly />
   | NoVault =>
     // Vault details not yet loaded. For the new-card flow render the form so the
