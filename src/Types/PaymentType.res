@@ -492,7 +492,11 @@ let getMessageDisplayMode = (str, key, ~logger=None) => {
   | "custom_message" => CustomMessage
   | "hidden" => Hidden
   | str => {
-      str->unknownPropValueWarning(["default_sdk_message", "custom_message", "hidden"], key, ~logger)
+      str->unknownPropValueWarning(
+        ["default_sdk_message", "custom_message", "hidden"],
+        key,
+        ~logger,
+      )
       DefaultSdkMessage
     }
   }
@@ -506,7 +510,12 @@ let defaultPaymentMethodMessage = {
 let getPaymentMethodMessage = (dict, logger, context) => {
   let messageDict = dict->getDictFromDict("message")
   if messageDict->Dict.toArray->Array.length > 0 {
-    unknownKeysWarning(["value", "displayMode"], messageDict, context ++ ".message", ~logger=Some(logger))
+    unknownKeysWarning(
+      ["value", "displayMode"],
+      messageDict,
+      context ++ ".message",
+      ~logger=Some(logger),
+    )
     let value = messageDict->getOptionString("value")
     let displayMode = if messageDict->Dict.get("displayMode")->Option.isSome {
       messageDict
@@ -1179,7 +1188,12 @@ let getStyle = (dict, str, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    unknownKeysWarning(["type", "theme", "height"], json, "options.wallets.style", ~logger=Some(logger))
+    unknownKeysWarning(
+      ["type", "theme", "height"],
+      json,
+      "options.wallets.style",
+      ~logger=Some(logger),
+    )
     let style = {
       type_: getWarningString(json, "type", "", ~logger)->getTypeArray(~logger=Some(logger)),
       theme: getWarningString(json, "theme", "", ~logger)->getTheme(~logger=Some(logger)),

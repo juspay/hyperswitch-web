@@ -122,7 +122,9 @@ let make = () => {
           if errorName === "SecurityError" {
             handleIframeContentLoaded()
           } else {
-            handleOnError(`ThreeDS method iframe load failed: ${err->Utils.formatException->JSON.stringify}`)
+            handleOnError(
+              `ThreeDS method iframe load failed: ${err->Utils.formatException->JSON.stringify}`,
+            )
           }
         }
       }
@@ -161,7 +163,9 @@ let make = () => {
           setIsClearInterval(_ => true)
           handleIframeContentLoaded()
         } else {
-          handleOnError(`ThreeDS method polling failed: ${err->Utils.formatException->JSON.stringify}`)
+          handleOnError(
+            `ThreeDS method polling failed: ${err->Utils.formatException->JSON.stringify}`,
+          )
         }
       }
     } else {
@@ -278,7 +282,10 @@ let make = () => {
           }
         }
       } catch {
-      | err => handleOnError(`ThreeDS method message parsing failed: ${err->Utils.formatException->JSON.stringify}`)
+      | err =>
+        handleOnError(
+          `ThreeDS method message parsing failed: ${err->Utils.formatException->JSON.stringify}`,
+        )
       }
 
       if consumePostMessageForThreeDsMethodCompletionRef.current && threeDsUrlRef.current !== "" {

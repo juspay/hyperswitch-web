@@ -510,28 +510,28 @@ let make = (
                       ("hyperApplePayCanMakePayments", true->JSON.Encode.bool),
                       ("componentName", componentName->JSON.Encode.string),
                     ]
-	                    messageTopWindow(msg)
-		                  } else {
-		                    logger.setLogInfo(
-		                      ~value="CANNOT MAKE PAYMENT USING APPLE PAY",
-	                      ~eventName=APPLE_PAY_FLOW,
-	                      ~paymentMethod="APPLE_PAY",
-	                      ~logType=WARNING,
-	                      ~logCategory=MERCHANT_EVENT,
-	                    )
-	                  }
-	                } catch {
-	                | exn => {
-	                    let exnString = exn->anyTypeToJson->JSON.stringify
-	                    Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
-	                    logger.setLogError(
-	                      ~value=exnString,
-	                      ~eventName=APPLE_PAY_FLOW,
-	                      ~paymentMethod="APPLE_PAY",
-	                      ~logType=ERROR,
-	                      ~logCategory=USER_ERROR,
-	                    )
-	                  }
+                    messageTopWindow(msg)
+                  } else {
+                    logger.setLogInfo(
+                      ~value="CANNOT MAKE PAYMENT USING APPLE PAY",
+                      ~eventName=APPLE_PAY_FLOW,
+                      ~paymentMethod="APPLE_PAY",
+                      ~logType=WARNING,
+                      ~logCategory=MERCHANT_EVENT,
+                    )
+                  }
+                } catch {
+                | exn => {
+                    let exnString = exn->anyTypeToJson->JSON.stringify
+                    Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
+                    logger.setLogError(
+                      ~value=exnString,
+                      ~eventName=APPLE_PAY_FLOW,
+                      ~paymentMethod="APPLE_PAY",
+                      ~logType=ERROR,
+                      ~logCategory=USER_ERROR,
+                    )
+                  }
                 }
               | None => ()
               }
@@ -551,18 +551,18 @@ let make = (
                 let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
 
                 handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
-	              } catch {
-	              | exn => {
-	                  let exnString = exn->anyTypeToJson->JSON.stringify
-	                  Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
-	                  logger.setLogError(
-	                    ~value=exnString,
-	                    ~eventName=APPLE_PAY_FLOW,
-	                    ~paymentMethod="APPLE_PAY",
-	                    ~logType=ERROR,
-	                    ~logCategory=USER_ERROR,
-	                  )
-	                }
+              } catch {
+              | exn => {
+                  let exnString = exn->anyTypeToJson->JSON.stringify
+                  Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
+                  logger.setLogError(
+                    ~value=exnString,
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                    ~logType=ERROR,
+                    ~logCategory=USER_ERROR,
+                  )
+                }
               }
             }
           }
@@ -805,10 +805,14 @@ let make = (
                           ~logType=ERROR,
                           ~logCategory=API,
                         )
-                        let msg = [
-                          ("applePaySyncPayment", false->JSON.Encode.bool),
-                          ("applePayError", "TrustPay Apple Pay finish failed"->JSON.Encode.string),
-                        ]->Dict.fromArray
+                        let msg =
+                          [
+                            ("applePaySyncPayment", false->JSON.Encode.bool),
+                            (
+                              "applePayError",
+                              "TrustPay Apple Pay finish failed"->JSON.Encode.string,
+                            ),
+                          ]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg)
                         ApplePayInterceptor.clearPostToIframe()
                         resolve()
@@ -823,10 +827,14 @@ let make = (
                           ~logType=ERROR,
                           ~logCategory=API,
                         )
-                        let msg = [
-                          ("applePaySyncPayment", false->JSON.Encode.bool),
-                          ("applePayError", "TrustPay Apple Pay finish exception"->JSON.Encode.string),
-                        ]->Dict.fromArray
+                        let msg =
+                          [
+                            ("applePaySyncPayment", false->JSON.Encode.bool),
+                            (
+                              "applePayError",
+                              "TrustPay Apple Pay finish exception"->JSON.Encode.string,
+                            ),
+                          ]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg)
                         ApplePayInterceptor.clearPostToIframe()
                         resolve()
@@ -1315,14 +1323,14 @@ let make = (
                       mountedIframeRef->Window.iframePostMessage(msg)
                       resolve()
                     })
-	                    ->catch(err => {
-	                      logger.setLogInfo(
-	                        ~value=err->anyTypeToJson->JSON.stringify,
-	                        ~eventName=GOOGLE_PAY_FLOW,
-	                        ~paymentMethod="GOOGLE_PAY",
-	                        ~logType=WARNING,
-	                        ~logCategory=MERCHANT_EVENT,
-	                      )
+                    ->catch(err => {
+                      logger.setLogInfo(
+                        ~value=err->anyTypeToJson->JSON.stringify,
+                        ~eventName=GOOGLE_PAY_FLOW,
+                        ~paymentMethod="GOOGLE_PAY",
+                        ~logType=WARNING,
+                        ~logCategory=MERCHANT_EVENT,
+                      )
                       let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
                       mountedIframeRef->Window.iframePostMessage(msg)
                       resolve()
@@ -1330,13 +1338,13 @@ let make = (
                     ->ignore
                   } catch {
                   | exn =>
-	                    logger.setLogInfo(
-	                      ~value=exn->Identity.anyTypeToJson->JSON.stringify,
-	                      ~eventName=GOOGLE_PAY_FLOW,
-	                      ~paymentMethod="GOOGLE_PAY",
-	                      ~logType=WARNING,
-	                      ~logCategory=MERCHANT_EVENT,
-	                    )
+                    logger.setLogInfo(
+                      ~value=exn->Identity.anyTypeToJson->JSON.stringify,
+                      ~eventName=GOOGLE_PAY_FLOW,
+                      ~paymentMethod="GOOGLE_PAY",
+                      ~logType=WARNING,
+                      ~logCategory=MERCHANT_EVENT,
+                    )
                     let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
                     mountedIframeRef->Window.iframePostMessage(msg)
                     Promise.resolve()->catch(_ => resolve())->ignore
@@ -1385,13 +1393,13 @@ let make = (
                         )
                         ->catch(
                           err => {
-	                            logger.setLogError(
-	                              ~value=err->anyTypeToJson->JSON.stringify,
-	                              ~eventName=GOOGLE_PAY_FLOW,
-	                              ~paymentMethod="GOOGLE_PAY",
-	                              ~logType=ERROR,
-	                              ~logCategory=API,
-	                            )
+                            logger.setLogError(
+                              ~value=err->anyTypeToJson->JSON.stringify,
+                              ~eventName=GOOGLE_PAY_FLOW,
+                              ~paymentMethod="GOOGLE_PAY",
+                              ~logType=ERROR,
+                              ~logCategory=API,
+                            )
 
                             let msg = [("gpayError", err->anyTypeToJson)]->Dict.fromArray
                             event.source->Window.sendPostMessage(msg)
@@ -1401,13 +1409,13 @@ let make = (
                         ->ignore
                       }, 0)->ignore
                     | None =>
-	                      logger.setLogInfo(
-	                        ~value="GooglePay client unavailable for loadPaymentData",
-	                        ~eventName=GOOGLE_PAY_FLOW,
-	                        ~paymentMethod="GOOGLE_PAY",
-	                        ~logType=WARNING,
-	                        ~logCategory=MERCHANT_EVENT,
-	                      )
+                      logger.setLogInfo(
+                        ~value="GooglePay client unavailable for loadPaymentData",
+                        ~eventName=GOOGLE_PAY_FLOW,
+                        ~paymentMethod="GOOGLE_PAY",
+                        ~logType=WARNING,
+                        ~logCategory=MERCHANT_EVENT,
+                      )
                       let msg =
                         [
                           ("gpayError", "GooglePay client unavailable"->JSON.Encode.string),
@@ -1549,12 +1557,12 @@ let make = (
               | err =>
                 logger.setLogError(
                   ~value=`SAMSUNG PAY Not Ready - ${err->formatException->JSON.stringify}`,
-	                  ~eventName=SAMSUNG_PAY,
-	                  ~paymentMethod="SAMSUNG_PAY",
-	                  ~logType=ERROR,
-	                )
-	                Console.error("Error loading Samsung Pay")
-	              }
+                  ~eventName=SAMSUNG_PAY,
+                  ~paymentMethod="SAMSUNG_PAY",
+                  ~logType=ERROR,
+                )
+                Console.error("Error loading Samsung Pay")
+              }
             } else if wallets.samsungPay === Never {
               logger.setLogInfo(
                 ~value="SAMSUNG PAY is set as never by merchant",

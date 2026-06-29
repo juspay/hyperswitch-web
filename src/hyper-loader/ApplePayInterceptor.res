@@ -56,12 +56,7 @@ let logTrustPayFetchEvent = event => {
 
     switch eventStatus {
     | "request" =>
-      LogAPIResponse.logApiResponse(
-        ~logger,
-        ~uri,
-        ~eventName=Some(APPLE_PAY_FLOW),
-        ~status=Request,
-      )
+      LogAPIResponse.logApiResponse(~logger, ~uri, ~eventName=Some(APPLE_PAY_FLOW), ~status=Request)
     | "success" =>
       LogAPIResponse.logApiResponse(
         ~logger,

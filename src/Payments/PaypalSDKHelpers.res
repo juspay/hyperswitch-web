@@ -318,11 +318,11 @@ let loadBraintreePaypalSdk = (
         }
         braintree.paypalCheckout.create(
           {client: clientInstance},
-	          (paypalCheckoutErr, paypalCheckoutInstance) => {
-	            switch paypalCheckoutErr->Nullable.toOption {
-	            | Some(val) =>
-	              loggerState.setLogInfo(
-	                ~value=`INTEGRATION ERROR: ${val.message}`,
+          (paypalCheckoutErr, paypalCheckoutInstance) => {
+            switch paypalCheckoutErr->Nullable.toOption {
+            | Some(val) =>
+              loggerState.setLogInfo(
+                ~value=`INTEGRATION ERROR: ${val.message}`,
                 ~eventName=PAYPAL_SDK_FLOW,
                 ~logType=WARNING,
                 ~logCategory=MERCHANT_EVENT,
@@ -408,7 +408,9 @@ let loadBraintreePaypalSdk = (
                   },
                   onError: err => {
                     loggerState.setLogError(
-                      ~value=`PayPal SDK popup failed: ${err->Identity.anyTypeToJson->JSON.stringify}`,
+                      ~value=`PayPal SDK popup failed: ${err
+                        ->Identity.anyTypeToJson
+                        ->JSON.stringify}`,
                       ~eventName=PAYPAL_SDK_FLOW,
                       ~paymentMethod="PAYPAL",
                       ~logType=ERROR,

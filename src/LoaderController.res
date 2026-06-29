@@ -335,7 +335,10 @@ let make = (
                     dict->setConfigs(res)
                   })
                   ->catch(err => {
-                    logThemeFallbackWarning("Falling back to default theme after paymentOptions theme import failed", err)
+                    logThemeFallbackWarning(
+                      "Falling back to default theme after paymentOptions theme import failed",
+                      err,
+                    )
                     dict->setConfigs({
                       default: DefaultTheme.default,
                       defaultRules: DefaultTheme.defaultRules,
@@ -398,7 +401,10 @@ let make = (
                 dict->setConfigs(res)
               })
               ->catch(err => {
-                logThemeFallbackWarning("Falling back to default theme after paymentOptions theme import failed", err)
+                logThemeFallbackWarning(
+                  "Falling back to default theme after paymentOptions theme import failed",
+                  err,
+                )
                 dict->setConfigs({
                   default: DefaultTheme.default,
                   defaultRules: DefaultTheme.defaultRules,
@@ -456,7 +462,10 @@ let make = (
                 dict->setConfigs(res)
               })
               ->catch(err => {
-                logThemeFallbackWarning("Falling back to default theme after ElementsUpdate theme import failed", err)
+                logThemeFallbackWarning(
+                  "Falling back to default theme after ElementsUpdate theme import failed",
+                  err,
+                )
                 dict->setConfigs({
                   default: DefaultTheme.default,
                   defaultRules: DefaultTheme.defaultRules,

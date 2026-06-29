@@ -1207,13 +1207,16 @@ let fetchApiWithLogging = async (
     }
   } catch {
   | err => {
-	      let apiLatency = Date.now() -. apiRequestStartTime
-	      let exceptionMessage = err->formatException
-	      Console.error2("Unexpected error while making request:", {
-	        "uri": uri->LoggerUtils.sanitizeApiLogUrl,
-	        "event": eventName,
-	        "error": exceptionMessage->JSON.stringify->LoggerUtils.sanitizeApiLogString,
-	      })
+      let apiLatency = Date.now() -. apiRequestStartTime
+      let exceptionMessage = err->formatException
+      Console.error2(
+        "Unexpected error while making request:",
+        {
+          "uri": uri->LoggerUtils.sanitizeApiLogUrl,
+          "event": eventName,
+          "error": exceptionMessage->JSON.stringify->LoggerUtils.sanitizeApiLogString,
+        },
+      )
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,

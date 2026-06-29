@@ -969,10 +969,10 @@ let rec intentCall = (
                     ~errortype="confirm_payment_failed",
                     ~message="Payment failed. Try again!",
                   )
-	                }
-	                if uri->String.includes("force_sync=true") {
-	                  handleOpenUrl(url.href)
-	                } else {
+                }
+                if uri->String.includes("force_sync=true") {
+                  handleOpenUrl(url.href)
+                } else {
                   let failedSubmitResponse = getFailedSubmitResponse(
                     ~errorType="confirm_payment_failed",
                     ~message="Payment failed. Try again!",
@@ -1665,34 +1665,34 @@ let usePaymentIntent = (optLogger, paymentType) => {
 
       | SemiLoaded => intentWithoutMandate("")
       | _ => {
-        handleLogging(
-          ~optLogger,
-          ~value="payment_methods_loading: payment methods are not ready for confirm",
-          ~eventName=PAYMENT_METHODS_RESPONSE,
-          ~paymentMethod="",
-          ~logType=WARNING,
-          ~logCategory=MERCHANT_EVENT,
-        )
-        postFailedSubmitResponse(
-          ~errortype="payment_methods_loading",
-          ~message="Please wait. Try again!",
-        )
-      }
+          handleLogging(
+            ~optLogger,
+            ~value="payment_methods_loading: payment methods are not ready for confirm",
+            ~eventName=PAYMENT_METHODS_RESPONSE,
+            ~paymentMethod="",
+            ~logType=WARNING,
+            ~logCategory=MERCHANT_EVENT,
+          )
+          postFailedSubmitResponse(
+            ~errortype="payment_methods_loading",
+            ~message="Please wait. Try again!",
+          )
+        }
       }
     | None => {
-      handleLogging(
-        ~optLogger,
-        ~value="client secret missing while retrieving payment for confirm",
-        ~eventName=RETRIEVE_CALL,
-        ~paymentMethod="",
-        ~logType=ERROR,
-        ~logCategory=USER_ERROR,
-      )
-      postFailedSubmitResponse(
-        ~errortype="confirm_payment_failed",
-        ~message="Payment failed. Try again!",
-      )
-    }
+        handleLogging(
+          ~optLogger,
+          ~value="client secret missing while retrieving payment for confirm",
+          ~eventName=RETRIEVE_CALL,
+          ~paymentMethod="",
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+        postFailedSubmitResponse(
+          ~errortype="confirm_payment_failed",
+          ~message="Payment failed. Try again!",
+        )
+      }
     }
   }
 }
@@ -2379,34 +2379,34 @@ let usePostSessionTokens = (
         }
       | SemiLoaded => intentWithoutMandate("")
       | _ => {
-        handleLogging(
-          ~optLogger,
-          ~value="payment_methods_loading: payment methods are not ready for post session tokens",
-          ~eventName=PAYMENT_METHODS_RESPONSE,
-          ~paymentMethod="",
-          ~logType=WARNING,
-          ~logCategory=MERCHANT_EVENT,
-        )
-        postFailedSubmitResponse(
-          ~errortype="payment_methods_loading",
-          ~message="Please wait. Try again!",
-        )
-      }
+          handleLogging(
+            ~optLogger,
+            ~value="payment_methods_loading: payment methods are not ready for post session tokens",
+            ~eventName=PAYMENT_METHODS_RESPONSE,
+            ~paymentMethod="",
+            ~logType=WARNING,
+            ~logCategory=MERCHANT_EVENT,
+          )
+          postFailedSubmitResponse(
+            ~errortype="payment_methods_loading",
+            ~message="Please wait. Try again!",
+          )
+        }
       }
     | None => {
-      handleLogging(
-        ~optLogger,
-        ~value="client secret missing while retrieving payment for post session tokens",
-        ~eventName=RETRIEVE_CALL,
-        ~paymentMethod="",
-        ~logType=ERROR,
-        ~logCategory=USER_ERROR,
-      )
-      postFailedSubmitResponse(
-        ~errortype="post_session_tokens_failed",
-        ~message="Post Session Tokens failed. Try again!",
-      )
-    }
+        handleLogging(
+          ~optLogger,
+          ~value="client secret missing while retrieving payment for post session tokens",
+          ~eventName=RETRIEVE_CALL,
+          ~paymentMethod="",
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+        postFailedSubmitResponse(
+          ~errortype="post_session_tokens_failed",
+          ~message="Post Session Tokens failed. Try again!",
+        )
+      }
     }
   }
 }

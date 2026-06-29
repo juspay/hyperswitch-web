@@ -5,7 +5,9 @@ let apiSlowResponseThresholdMs = GlobalVars.slowApiThresholdMs
 let sanitizeApiLogUrl = url =>
   url
   ->String.replaceRegExp(
-    %re("/([?&][^=]*(client_secret|sdk_authorization|authorization|token|secret|api_key|key)=)[^&]*/gi"),
+    %re(
+      "/([?&][^=]*(client_secret|sdk_authorization|authorization|token|secret|api_key|key)=)[^&]*/gi"
+    ),
     "$1[REDACTED]",
   )
   ->String.replaceRegExp(%re("/(\/payments\/)[^\/?#]+/gi"), "$1[REDACTED]")
@@ -26,10 +28,7 @@ let sanitizeApiLogString = value =>
     %re(`/\b(pk|sk|snd|dev|pay|payout|cus|pm|pms|sess|tok|pi|seti|cs|pro)_[A-Za-z0-9_-]+\b/g`),
     "[REDACTED]",
   )
-  ->String.replaceRegExp(
-    %re(`/\b[A-Za-z0-9_-]{32,}\b/g`),
-    "[REDACTED]",
-  )
+  ->String.replaceRegExp(%re(`/\b[A-Za-z0-9_-]{32,}\b/g`), "[REDACTED]")
 
 let summarizeApiLogData = data => {
   let safeKeys = [
@@ -43,8 +42,7 @@ let summarizeApiLogData = data => {
     "status_code",
   ]
   let collectStringFields = dict =>
-    safeKeys
-    ->Belt.Array.keepMap(key =>
+    safeKeys->Belt.Array.keepMap(key =>
       dict
       ->Dict.get(key)
       ->Option.flatMap(JSON.Decode.string)
@@ -118,7 +116,10 @@ let logApi = (
       ],
       [("response", data->summarizeApiLogData)],
     )
-  | Method => ([("method", paymentMethod->JSON.Encode.string)], [("result", result->summarizeApiLogData)])
+  | Method => (
+      [("method", paymentMethod->JSON.Encode.string)],
+      [("result", result->summarizeApiLogData)],
+    )
   }
   switch optLogger {
   | Some(logger) =>

@@ -154,7 +154,9 @@ let make = () => {
           | error =>
             Console.error2("Error while polling payment intent:", error)
             logger.setLogError(
-              ~value=`Error while polling payment intent: ${error->formatException->JSON.stringify}`,
+              ~value=`Error while polling payment intent: ${error
+                ->formatException
+                ->JSON.stringify}`,
               ~eventName=POLL_STATUS_CALL,
               ~logType=ERROR,
               ~logCategory=API,

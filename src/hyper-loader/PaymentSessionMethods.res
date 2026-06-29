@@ -553,25 +553,25 @@ let getCustomerSavedPaymentMethods = (
             )
             ->catch(
               err => {
-	                logger.setLogInfo(
-	                  ~value=err->Identity.anyTypeToJson->JSON.stringify,
-	                  ~eventName=GOOGLE_PAY_FLOW,
-	                  ~paymentMethod="GOOGLE_PAY",
-	                  ~logType=WARNING,
-	                  ~logCategory=MERCHANT_EVENT,
-	                )
+                logger.setLogInfo(
+                  ~value=err->Identity.anyTypeToJson->JSON.stringify,
+                  ~eventName=GOOGLE_PAY_FLOW,
+                  ~paymentMethod="GOOGLE_PAY",
+                  ~logType=WARNING,
+                  ~logCategory=MERCHANT_EVENT,
+                )
                 false->resolve
               },
             )
           } catch {
           | exn => {
-	              logger.setLogInfo(
-	                ~value=exn->Identity.anyTypeToJson->JSON.stringify,
-	                ~eventName=GOOGLE_PAY_FLOW,
-	                ~paymentMethod="GOOGLE_PAY",
-	                ~logType=WARNING,
-	                ~logCategory=MERCHANT_EVENT,
-	              )
+              logger.setLogInfo(
+                ~value=exn->Identity.anyTypeToJson->JSON.stringify,
+                ~eventName=GOOGLE_PAY_FLOW,
+                ~paymentMethod="GOOGLE_PAY",
+                ~logType=WARNING,
+                ~logCategory=MERCHANT_EVENT,
+              )
               false->resolve
             }
           }
@@ -595,13 +595,13 @@ let getCustomerSavedPaymentMethods = (
         )
         ->catch(
           err => {
-	            logger.setLogInfo(
-	              ~value=err->Identity.anyTypeToJson->JSON.stringify,
-	              ~eventName=GOOGLE_PAY_FLOW,
-	              ~paymentMethod="GOOGLE_PAY",
-	              ~logType=WARNING,
-	              ~logCategory=MERCHANT_EVENT,
-	            )
+            logger.setLogInfo(
+              ~value=err->Identity.anyTypeToJson->JSON.stringify,
+              ~eventName=GOOGLE_PAY_FLOW,
+              ~paymentMethod="GOOGLE_PAY",
+              ~logType=WARNING,
+              ~logCategory=MERCHANT_EVENT,
+            )
             resolve()
           },
         )

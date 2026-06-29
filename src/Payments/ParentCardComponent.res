@@ -273,7 +273,7 @@ let make = (
                       ~binNumber,
                       ~expiryMonth,
                       ~expiryYear,
-                )
+                    )
                 confirmWithVaultBody(vaultBody)
               } else {
                 Console.error("ParentCardComponent: payment token not found in vaultResponse")

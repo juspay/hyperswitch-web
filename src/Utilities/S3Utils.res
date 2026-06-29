@@ -109,7 +109,7 @@ let getCountryStateData = async (
               ~eventName=S3_API,
               ~logType=WARNING,
               ~logCategory=API,
-            );
+            )
             {
               countries: fallbackCountries,
               states: JSON.Encode.null,
@@ -140,7 +140,7 @@ let initializeCountryData = async (
       ~eventName=S3_API,
       ~logType=WARNING,
       ~logCategory=API,
-    );
+    )
     {countries: country, states: JSON.Encode.null}
   }
 }

@@ -49,22 +49,22 @@ let make = (~paymentMethodType) => {
             ~logger,
             ~sdkAuthorization,
           )
-	          ->then(_ => {
-	            messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-	            setShowPaymentMethodsScreen(_ => false)
-	            JSON.Encode.null->resolve
-	          })
-	          ->catch(_ => {
-	            logger.setLogError(
-	              ~value="Bank redirect auth exchange failed",
-	              ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
-	              ~logType=ERROR,
-	              ~logCategory=API,
-	            )
-	            JSON.Encode.null->resolve
-	          })
-	          ->ignore
-	        }
+          ->then(_ => {
+            messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+            setShowPaymentMethodsScreen(_ => false)
+            JSON.Encode.null->resolve
+          })
+          ->catch(_ => {
+            logger.setLogError(
+              ~value="Bank redirect auth exchange failed",
+              ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
+              ~logType=ERROR,
+              ~logCategory=API,
+            )
+            JSON.Encode.null->resolve
+          })
+          ->ignore
+        }
       }
     }
 

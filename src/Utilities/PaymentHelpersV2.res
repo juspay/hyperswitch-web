@@ -31,9 +31,10 @@ let intentCall = (
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
-  let eventName: HyperLoggerTypes.eventName = uri->String.includes("update-saved-payment-method")
-    ? PAYMENT_MANAGEMENT_UPDATE_CALL
-    : PAYMENT_MANAGEMENT_CONFIRM_CALL
+  let eventName: HyperLoggerTypes.eventName =
+    uri->String.includes("update-saved-payment-method")
+      ? PAYMENT_MANAGEMENT_UPDATE_CALL
+      : PAYMENT_MANAGEMENT_CONFIRM_CALL
   let handleOpenUrl = url => {
     if isPaymentSession {
       Utils.replaceRootHref(url, redirectionFlags)
@@ -137,24 +138,24 @@ let intentCall = (
             ~paymentMethod,
           )
           handleOpenUrl(intent.nextAction.redirectToUrl)
-	        } else {
-	          handleLogging(
-	            ~optLogger,
-	            ~value=`Unsupported next action for payment management confirm: ${intent.nextAction.type_}`,
-	            ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
-	            ~paymentMethod,
-	            ~logType=ERROR,
-	            ~logCategory=USER_ERROR,
-	          )
-	          if !isPaymentSession {
-	            postFailedSubmitResponse(
-	              ~errortype="confirm_payment_failed",
+        } else {
+          handleLogging(
+            ~optLogger,
+            ~value=`Unsupported next action for payment management confirm: ${intent.nextAction.type_}`,
+            ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+            ~paymentMethod,
+            ~logType=ERROR,
+            ~logCategory=USER_ERROR,
+          )
+          if !isPaymentSession {
+            postFailedSubmitResponse(
+              ~errortype="confirm_payment_failed",
               ~message="Payment failed. Try again!",
             )
-	          }
-	          if uri->String.includes("force_sync=true") {
-	            handleOpenUrl(url.href)
-	          } else {
+          }
+          if uri->String.includes("force_sync=true") {
+            handleOpenUrl(url.href)
+          } else {
             let failedSubmitResponse = getFailedSubmitResponse(
               ~errorType="confirm_payment_failed",
               ~message="Payment failed. Try again!",
@@ -181,12 +182,7 @@ let intentCall = (
         handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
       } else {
         handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-        handleLogging(
-          ~optLogger,
-          ~value="succeeded",
-          ~eventName=PAYMENT_SUCCESS,
-          ~paymentMethod,
-        )
+        handleLogging(~optLogger, ~value="succeeded", ~eventName=PAYMENT_SUCCESS, ~paymentMethod)
         url.searchParams.set("status", "succeeded")
       }
     })
@@ -210,19 +206,19 @@ let intentCall = (
           )
           resolve(failedSubmitResponse)
         }
-	      } catch {
-	      | _ =>
-	        handleLogging(
-	          ~optLogger,
-	          ~value="Failed to build payment management confirm failure response",
-	          ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
-	          ~paymentMethod="CARD",
-	          ~logType=ERROR,
-	          ~logCategory=USER_ERROR,
-	        )
-	        if !isPaymentSession {
-	          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
-	        }
+      } catch {
+      | _ =>
+        handleLogging(
+          ~optLogger,
+          ~value="Failed to build payment management confirm failure response",
+          ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+          ~paymentMethod="CARD",
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+        if !isPaymentSession {
+          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
+        }
         let failedSubmitResponse = getFailedSubmitResponse(
           ~errorType="server_error",
           ~message="Something went wrong",
@@ -334,7 +330,8 @@ let deletePaymentMethodV2 = (
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
-  let bodyStr = [("payment_method_token", paymentMethodToken->JSON.Encode.string)]
+  let bodyStr =
+    [("payment_method_token", paymentMethodToken->JSON.Encode.string)]
     ->getJsonFromArrayOfJson
     ->JSON.stringify
   let onSuccess = data => data
@@ -357,13 +354,7 @@ let deletePaymentMethodV2 = (
   )
 }
 
-let updatePaymentMethod = (
-  ~bodyArr,
-  ~pmSessionId,
-  ~logger,
-  ~customPodUri,
-  ~sdkAuthorization,
-) => {
+let updatePaymentMethod = (~bodyArr, ~pmSessionId, ~logger, ~customPodUri, ~sdkAuthorization) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
@@ -438,19 +429,19 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
       | _ => ()
       }
     | None => {
-      handleLogging(
-        ~optLogger,
-        ~value="pmSessionId missing for save card",
-        ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
-        ~paymentMethod="CARD",
-        ~logType=ERROR,
-        ~logCategory=USER_ERROR,
-      )
-      postFailedSubmitResponse(
-        ~errortype="confirm_payment_failed",
-        ~message="Payment failed. Try again!",
-      )
-    }
+        handleLogging(
+          ~optLogger,
+          ~value="pmSessionId missing for save card",
+          ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+          ~paymentMethod="CARD",
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+        postFailedSubmitResponse(
+          ~errortype="confirm_payment_failed",
+          ~message="Payment failed. Try again!",
+        )
+      }
     }
   }
 }
@@ -505,19 +496,19 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
       | _ => ()
       }
     | None => {
-      handleLogging(
-        ~optLogger,
-        ~value="pmSessionId missing for update card",
-        ~eventName=PAYMENT_MANAGEMENT_UPDATE_CALL,
-        ~paymentMethod="CARD",
-        ~logType=ERROR,
-        ~logCategory=USER_ERROR,
-      )
-      postFailedSubmitResponse(
-        ~errortype="confirm_payment_failed",
-        ~message="Payment failed. Try again!",
-      )
-    }
+        handleLogging(
+          ~optLogger,
+          ~value="pmSessionId missing for update card",
+          ~eventName=PAYMENT_MANAGEMENT_UPDATE_CALL,
+          ~paymentMethod="CARD",
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+        postFailedSubmitResponse(
+          ~errortype="confirm_payment_failed",
+          ~message="Payment failed. Try again!",
+        )
+      }
     }
   }
 }

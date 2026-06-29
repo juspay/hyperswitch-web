@@ -444,10 +444,10 @@ let make = (
 
                 (
                   async () => {
-	                    let encryptedCard =
-	                      await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard(
-	                        ~logger=Some(loggerState),
-	                      )
+                    let encryptedCard =
+                      await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard(
+                        ~logger=Some(loggerState),
+                      )
 
                     try {
                       let res = await ClickToPayHelpers.handleProceedToPay(
