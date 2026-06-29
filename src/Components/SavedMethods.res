@@ -128,6 +128,7 @@ let make = (
   | _ => false
   }
   let cvcIframeRef = React.useRef(Nullable.null)
+  let savedMethodsRef = React.useRef(Nullable.null)
   let setCvcIframeRef = React.useCallback(ref => {
     cvcIframeRef.current = ref
   }, [])
@@ -141,7 +142,17 @@ let make = (
 
   let bottomElement = {
     <div
-      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
+      ref={savedMethodsRef->ReactDOM.Ref.domRef}
+      className="PickerItemContainer"
+      tabIndex={0}
+      role="region"
+      ariaLabel="Saved payment methods"
+      onKeyDown={event =>
+        FocusDelegation.handleBoundaryKeyDown(
+          event,
+          ~container=savedMethodsRef.current,
+          ~iframeId,
+        )}>
       {visibleSavedMethods
       ->Array.mapWithIndex((obj, i) =>
         <SavedCardItem
@@ -636,18 +647,11 @@ let make = (
     </RenderIf>
     <RenderIf condition={!enableSavedPaymentShimmer && !groupSavedMethodsSeparately}>
       <SwitchViewButton
-        onClick={_ => setShowPaymentMethodsScreen(_ => true)}
+        onActivate={() => setShowPaymentMethodsScreen(_ => true)}
         icon={<Icon name="circle-plus" size=22 />}
         title={localeString.newPaymentMethods}
-        ariaLabel="Click to use new payment methods"
+        ariaLabel={localeString.newPaymentMethods}
         dataTestId={TestUtils.addNewCardIcon}
-        onKeyDown={event => {
-          let key = JsxEvent.Keyboard.key(event)
-          let keyCode = JsxEvent.Keyboard.keyCode(event)
-          if key == "Enter" || keyCode == 13 {
-            setShowPaymentMethodsScreen(_ => true)
-          }
-        }}
       />
     </RenderIf>
   </div>

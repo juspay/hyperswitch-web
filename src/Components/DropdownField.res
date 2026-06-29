@@ -96,13 +96,14 @@ let make = (
   let inputClassStyles = isSpacedInnerLayout ? "Input" : "Input-Compressed"
 
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
+  let selectId = `dropdown-${fieldName->String.trim->String.replaceRegExp(%re("/\s+/g"), "-")}`
   <RenderIf condition={options->Array.length > 0}>
     <div className={`flex flex-col ${width}`}>
       <RenderIf
         condition={fieldName->String.length > 0 &&
         appearance.labels == Above &&
         isSpacedInnerLayout}>
-        <div
+        <label
           className={`Label `}
           style={
             fontWeight: themeObj.fontWeightNormal,
@@ -110,9 +111,9 @@ let make = (
             marginBottom: "5px",
             opacity: "0.6",
           }
-          ariaHidden=true>
+          htmlFor={selectId}>
           {React.string(fieldName)}
-        </div>
+        </label>
       </RenderIf>
       <div className="relative">
         <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
@@ -130,6 +131,7 @@ let make = (
         </RenderIf>
         <select
           ref={dropdownRef->ReactDOM.Ref.domRef}
+          id={selectId}
           style={
             background: disabled ? disbaledBG : themeObj.colorBackground,
             opacity: disabled ? "35%" : "",
@@ -143,7 +145,7 @@ let make = (
           onChange=handleChange
           onFocus=handleFocus
           className={`${inputClassStyles} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
-          ariaLabel={`${fieldName} option tab`}>
+          ariaLabel={localeString.optionTabLabel(fieldName)}>
           {options
           ->Array.mapWithIndex((item, index) => {
             <option key={Int.toString(index)} value=item.value>

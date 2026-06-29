@@ -109,6 +109,7 @@ let make = (~token: SessionsType.token) => {
   }, [sdkAuthorization])
   <button
     disabled={showLoader}
+    ariaLabel="Paze"
     onClick
     className="w-full flex flex-row justify-center items-center"
     style={

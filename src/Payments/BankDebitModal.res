@@ -6,13 +6,17 @@ type focus = Routing | Account | NONE
 module Button = {
   @react.component
   let make = (~active=true, ~onclick) => {
-    <div
-      onClick={ev => active ? onclick(ev) : ()}
-      className={`p-2 mt-10 rounded-md w-full flex justify-center items-center text-white text-sm bg-[#006DF9] ${active
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    <button
+      type_="button"
+      ariaLabel={localeString.doneLabel}
+      disabled={!active}
+      onClick=onclick
+      className={`border-none [font:inherit] p-2 mt-10 rounded-md w-full flex justify-center items-center text-white text-sm bg-[#006DF9] ${active
           ? "cursor-pointer"
           : "opacity-50 cursor-not-allowed"}`}>
       {React.string("Done")}
-    </div>
+    </button>
   }
 }
 
@@ -381,7 +385,7 @@ let make = (~setModalData) => {
       />
     </>
 
-  <Modal loader=false testMode=true openModal setOpenModal>
+  <Modal loader=false testMode=true openModal setOpenModal ariaLabel=localeString.addBankAccount>
     <div className="flex flex-col w-full h-auto overflow-scroll">
       <div className={`flex flex-col`}>
         {isSepaDebit ? dynamicFieldsModalBody : nonDynamicFieldsModalBody}

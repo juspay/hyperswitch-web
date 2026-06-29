@@ -31,6 +31,16 @@ external querySelectorAllWithin: (Dom.element, string) => array<Dom.element> = "
 
 let focusableSelector = "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
 
+let setAccessibleLabelAndTitle = (element, label) => {
+  element->Window.setAttribute("aria-label", label)
+  element->Window.setAttribute("title", label)
+}
+
+let getBankDebitAccountLabel = (~paymentMethodType, ~mask) =>
+  `${paymentMethodType->String.toUpperCase} bank debit account${mask->hasText
+      ? ` ending in ${mask}`
+      : ""}`
+
 let announceFailedSubmit = message => {
   switch Window.querySelector("#hyperswitch-sdk-live-alert")->Nullable.toOption {
   | Some(alert) =>

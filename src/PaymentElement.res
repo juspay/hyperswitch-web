@@ -11,6 +11,9 @@ let cardsToRender = (width: int) => {
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
+  // Container ref for the payment form root, used for iframe focus delegation
+  // (tab/shift-tab at the form boundary hands focus to the parent page).
+  let formRef = React.useRef(Nullable.null)
 
   let {
     paymentMethodOrder,
@@ -82,6 +85,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~savedMethods,
     ~loadSavedCards,
   )
+
+  React.useEffect0(() => {
+    AccessibilityUtils.scheduleKnownIframeTitleRepair()
+    None
+  })
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
@@ -570,6 +578,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     clickToPayConfig.isReady->Option.isSome
 
   <>
+    <Announcer />
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div
         className="PaymentLabel text-2xl font-semibold text-[#151619] mb-6"
@@ -603,11 +612,20 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </RenderIf>
     }}
     <RenderIf condition=shouldRenderPaymentSection>
+      // Form landmark via role="form" (not a native <form>): the SDK submits via
+      // postMessage / the PayNow button, never native submission. Using role="form"
+      // gives screen readers the same labeled form landmark while avoiding implicit
+      // submission — a native <form> would make descendant wallet/More <button>s
+      // (which lack type="button") default to type="submit", so Enter in a card field
+      // would fire a wallet button. role="form" preserves the landmark with no such risk.
       <div
+        ref={formRef->ReactDOM.Ref.domRef}
         className="flex flex-col place-items-center"
-        role="region"
-        ariaLabel="Payment Section"
-        tabIndex={0}>
+        role="form"
+        ariaLabel={localeString.paymentDetailsFormLabel}
+        tabIndex={0}
+        onKeyDown={event =>
+          FocusDelegation.handleBoundaryKeyDown(event, ~container=formRef.current, ~iframeId)}>
         <ErrorBoundary
           key="payment_request_buttons_all"
           level={ErrorBoundary.RequestButton}
@@ -641,15 +659,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       <SwitchViewButton
         icon={<Icon name="circle_dots" size=20 width=19 />}
         title={localeString.useExistingPaymentMethods}
-        onClick={_ => setShowPaymentMethodsScreen(_ => false)}
-        ariaLabel="Click to use existing payment methods"
-        onKeyDown={event => {
-          let key = JsxEvent.Keyboard.key(event)
-          let keyCode = JsxEvent.Keyboard.keyCode(event)
-          if key == "Enter" || keyCode == 13 {
-            setShowPaymentMethodsScreen(_ => false)
-          }
-        }}
+        onActivate={() => setShowPaymentMethodsScreen(_ => false)}
+        ariaLabel={localeString.useExistingPaymentMethods}
       />
     </RenderIf>
     {switch paymentMethodList {

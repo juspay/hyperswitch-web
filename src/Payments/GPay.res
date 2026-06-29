@@ -252,6 +252,7 @@ let make = (
     let paymentClient = getGooglePaymentsClient()
 
     let button = paymentClient.createButton(buttonStyle)
+    button->AccessibilityUtils.setAccessibleLabelAndTitle("Google Pay")
     let gpayWrapper = getElementById(Utils.document, "google-pay-button")
     gpayWrapper.innerHTML = ""
     gpayWrapper.appendChild(button)
@@ -338,6 +339,7 @@ let make = (
             opacity: updateSession ? "0.5" : "1.0",
           }
           id="google-pay-button"
+          ariaLabel="Google Pay"
           className={`w-full flex flex-row justify-center rounded-md`}
         />
       </RenderIf>

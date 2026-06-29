@@ -34,6 +34,7 @@ let make = (~modalData, ~setModalData) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let (openToolTip, setOpenToolTip) = React.useState(_ => false)
   let toolTipRef = React.useRef(Nullable.null)
+  let triggerRef = React.useRef(Nullable.null)
 
   let openModal = () => {
     let metaData = [("config", config->Identity.anyTypeToJson)]->getJsonFromArrayOfJson
@@ -44,7 +45,28 @@ let make = (~modalData, ~setModalData) => {
       ("metadata", metaData),
     ])
   }
+
+  React.useEffect(() => {
+    let handle = (ev: Window.event) => {
+      try {
+        let dict = ev.data->safeParse->getDictFromJson
+        switch dict->Dict.get("fullScreenIframeMounted")->Option.flatMap(JSON.Decode.bool) {
+        | Some(false) =>
+          triggerRef.current->Nullable.toOption->Option.forEach(el => el->AccessibilityUtils.focus)
+        | _ => ()
+        }
+      } catch {
+      | _ => ()
+      }
+    }
+    Window.addEventListener("message", handle)
+    Some(() => Window.removeEventListener("message", handle))
+  }, [])
+
+  let triggerTabIndex = isDataAvailable ? -1 : 0
+
   <div
+    ref={triggerRef->ReactDOM.Ref.domRef}
     className={`PickerItem flex flex-row justify-between items-center ${isDataAvailable
         ? ""
         : "cursor-pointer"}`}
@@ -55,9 +77,13 @@ let make = (~modalData, ~setModalData) => {
         isDataAvailable ? themeObj.colorTextSecondary : themeObj.colorPrimary
       },
     }
-    tabIndex={0}
-    ariaLabel="Click to Add bank account"
-    onClick={_ => isDataAvailable ? () : openModal()}>
+    tabIndex=triggerTabIndex
+    role=?{isDataAvailable ? None : Some("button")}
+    ariaLabel=?{isDataAvailable ? None : Some(localeString.addBankAccount)}
+    onClick=?{isDataAvailable ? None : Some(_ => openModal())}
+    onKeyDown=?{isDataAvailable
+      ? None
+      : Some(AccessibilityUtils.onActivateKeyDown(~onActivate=() => openModal()))}>
     {switch modalData {
     | Some(data: ACHTypes.data) =>
       let last4digts =
@@ -75,11 +101,16 @@ let make = (~modalData, ~setModalData) => {
         <ToolTip
           openTip=openToolTip forwardRef=toolTipRef onclick={_ => {setModalData(_ => None)}}
         />
-        <div
-          className="PickerAction self-center w-auto cursor-pointer"
-          onClick={_ => setOpenToolTip(_ => true)}>
+        <button
+          type_="button"
+          ariaLabel={localeString.openBankAccountOptionsLabel}
+          className="PickerAction self-center w-auto cursor-pointer bg-transparent border-none p-0 inline-flex"
+          onClick={event => {
+            ReactEvent.Mouse.stopPropagation(event)
+            setOpenToolTip(_ => true)
+          }}>
           <Icon size=22 name="three-dots" />
-        </div>
+        </button>
       </div>
     | None =>
       <>

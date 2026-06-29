@@ -181,13 +181,16 @@ let make = (
             borderRadius: themeObj.borderRadius,
           }
           className="overflow-hidden">
-          <div
+          <button
+            type_="button"
+            ariaLabel={localeString.toggleInstallmentOptionsLabel}
+            ariaExpanded={isDropdownOpen}
             onClick=toggleDropdown
             style={
               padding: `calc(${themeObj.spacingUnit} * 0.8) ${themeObj.spacingUnit}`,
               backgroundColor: themeObj.colorBackground,
             }
-            className="flex items-center gap-2 cursor-pointer w-full">
+            className="flex items-center gap-2 cursor-pointer w-full border-none rounded-none [font:inherit] text-inherit text-left">
             {renderDropdownTrigger()}
             <div
               style={
@@ -198,7 +201,7 @@ let make = (
                   : "rotate-0"}`}>
               <Icon name="arrow-down" size=12 />
             </div>
-          </div>
+          </button>
           <RenderIf condition=isDropdownOpen>
             <div
               style={
@@ -257,16 +260,16 @@ let make = (
         </div>
       </RenderIf>
       <RenderIf condition={errorString != ""}>
-        <div
+        <LiveError
+          text={errorString}
           className="Error pt-1"
-          style={
+          style={{
             color: themeObj.colorDangerText,
             fontSize: themeObj.fontSizeSm,
             alignSelf: "start",
             textAlign: "left",
-          }>
-          {React.string(errorString)}
-        </div>
+          }}
+        />
       </RenderIf>
     </div>
   </RenderIf>

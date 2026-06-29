@@ -6,10 +6,14 @@ let make = (
   ~onSelect,
   ~isLastItem,
 ) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   <div
     onClick={_ => onSelect()}
+    role="button"
+    tabIndex=0
+    ariaLabel={localeString.selectInstallmentPlanLabel(plan.number_of_installments->Int.toString)}
+    onKeyDown={AccessibilityUtils.onActivateKeyDown(~onActivate=() => onSelect())}
     style={
       padding: `calc(${themeObj.spacingUnit} * 0.8) ${themeObj.spacingUnit}`,
       borderColor: themeObj.borderColor,

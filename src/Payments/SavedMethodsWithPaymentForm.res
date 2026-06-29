@@ -69,17 +69,10 @@ let make = (
           children
           <RenderIf condition={shouldRenderAddMethodsButton}>
             <SwitchViewButton
-              onClick={_ => setShowPaymentMethodsScreen(_ => false)}
+              onActivate={() => setShowPaymentMethodsScreen(_ => false)}
               icon={<Icon name="circle_dots" size=20 width=19 />}
               title={localeString.useExistingPaymentMethods}
-              ariaLabel="Click to use existing payment methods"
-              onKeyDown={event => {
-                let key = JsxEvent.Keyboard.key(event)
-                let keyCode = JsxEvent.Keyboard.keyCode(event)
-                if key == "Enter" || keyCode == 13 {
-                  setShowPaymentMethodsScreen(_ => false)
-                }
-              }}
+              ariaLabel={localeString.useExistingPaymentMethods}
             />
           </RenderIf>
         </>

@@ -276,6 +276,21 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   closeLabel: "Fermer",
   dialogLabel: "Dialogue",
   paymentMethodsGroupLabel: "Méthodes de paiement",
+  selectNamedPaymentMethodLabel: name => `Sélectionner la méthode de paiement ${name}`,
   processingPaymentText: "Traitement du paiement",
   paymentFailedText: "Paiement échoué. Veuillez vérifier vos informations et réessayer.",
+  paymentDetailsFormLabel: "Formulaire de détails de paiement",
+  goBackLabel: "Retour",
+  openBankAccountOptionsLabel: "Ouvrir les options de compte bancaire",
+  addBankAccountLabel: "Cliquez pour ajouter un compte bancaire",
+  toggleInstallmentOptionsLabel: "Activer/désactiver les options de plan de versements",
+  savePaymentMethodLabel: "Enregistrer la méthode de paiement",
+  deletePaymentMethodLabel: "Supprimer la méthode de paiement",
+  managePaymentMethodsLabel: "Gérer les méthodes de paiement",
+  selectPaymentMethodLabel: "Sélectionner la méthode de paiement",
+  doneLabel: "Terminé",
+  selectCardLabel: (nickname, last4) =>
+    `Sélectionner la carte ${nickname} se terminant par ${last4}`,
+  selectInstallmentPlanLabel: count =>
+    `Sélectionner le plan de versements avec ${count} versements`,
 }
