@@ -132,6 +132,14 @@ let make = (~logger: HyperLoggerTypes.loggerMake) => {
           ]->Array.every(x => x != "")
         ) {
           mountPazeSDK()
+        } else {
+          logger.setLogError(
+            ~value="Paze SDK metadata missing",
+            ~eventName=PAZE_SDK_FLOW,
+            ~paymentMethod="PAZE",
+            ~logType=ERROR,
+            ~logCategory=USER_ERROR,
+          )
         }
       }
     }

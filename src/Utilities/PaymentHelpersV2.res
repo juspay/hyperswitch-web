@@ -31,6 +31,9 @@ let intentCall = (
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
+  let eventName: HyperLoggerTypes.eventName = uri->String.includes("update-saved-payment-method")
+    ? PAYMENT_MANAGEMENT_UPDATE_CALL
+    : PAYMENT_MANAGEMENT_CONFIRM_CALL
   let handleOpenUrl = url => {
     if isPaymentSession {
       Utils.replaceRootHref(url, redirectionFlags)
@@ -38,201 +41,161 @@ let intentCall = (
       openUrl(url)
     }
   }
-  fetchApi(
-    uri,
-    ~method=fetchMethod,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-    ~bodyStr,
-  )
-  ->then(res => {
+  let handleFailedResponse = data => {
     let url = makeUrl(confirmParam.return_url)
     url.searchParams.set("status", "failed")
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        Promise.make(
-          (resolve, _) => {
-            if isConfirm {
-              let paymentMethod = switch paymentType {
-              | Card => "CARD"
-              | _ =>
-                bodyStr
-                ->safeParse
-                ->getDictFromJson
-                ->getString("payment_method_type", "")
-              }
-              handleLogging(
-                ~optLogger,
-                ~value=data->JSON.stringify,
-                ~eventName=PAYMENT_FAILED,
-                ~paymentMethod,
-              )
-            }
-            let dict = data->getDictFromJson
-            let errorObj = PaymentError.itemToObjMapper(dict)
-            if !isPaymentSession {
+    Promise.make((resolve, _) => {
+      let dict = data->getDictFromJson
+      let errorObj = PaymentError.itemToObjMapper(dict)
+      if isConfirm {
+        let paymentMethod = switch paymentType {
+        | Card => "CARD"
+        | _ =>
+          bodyStr
+          ->safeParse
+          ->getDictFromJson
+          ->getString("payment_method_type", "")
+        }
+        handleLogging(
+          ~optLogger,
+          ~value=`Payment failed: ${errorObj.error.type_}`,
+          ~eventName=PAYMENT_FAILED,
+          ~paymentMethod,
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+      }
+      if !isPaymentSession {
+        closePaymentLoaderIfAny()
+        postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
+      }
+      if handleUserError {
+        handleOpenUrl(url.href)
+      } else {
+        let failedSubmitResponse = getFailedSubmitResponse(
+          ~errorType=errorObj.error.type_,
+          ~message=errorObj.error.message,
+        )
+        resolve(failedSubmitResponse)
+      }
+    })
+  }
+
+  let handleSuccessResponse = data =>
+    Promise.make((resolve, _) => {
+      let intent = PaymentConfirmTypesV2.itemToPMMConfirmMapper(data->getDictFromJson)
+      let paymentMethod = switch paymentType {
+      | Card => "CARD"
+      | _ => "CARD"
+      }
+
+      let url = makeUrl(confirmParam.return_url)
+      url.searchParams.set("status", intent.authenticationDetails.status)
+
+      let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
+        switch (paymentType, sdkHandleOneClickConfirmPayment) {
+        | (Card, _)
+        | (Gpay, false)
+        | (Applepay, false)
+        | (Paypal, false) =>
+          if !isPaymentSession {
+            if isCallbackUsedVal->Option.getOr(false) {
+              handleOnCompleteDoThisMessage()
+            } else {
               closePaymentLoaderIfAny()
-              postFailedSubmitResponse(
-                ~errortype=errorObj.error.type_,
-                ~message=errorObj.error.message,
-              )
             }
-            if handleUserError {
+
+            postSubmitResponse(~jsonData=data, ~url=url.href)
+          } else if confirmParam.redirect === Some("always") {
+            if isCallbackUsedVal->Option.getOr(false) {
+              handleOnCompleteDoThisMessage()
+            } else {
               handleOpenUrl(url.href)
-            } else {
-              let failedSubmitResponse = getFailedSubmitResponse(
-                ~errorType=errorObj.error.type_,
-                ~message=errorObj.error.message,
-              )
-              resolve(failedSubmitResponse)
             }
-          },
-        )->then(resolve)
-      })
-      ->catch(err => {
-        Promise.make(
-          (resolve, _) => {
-            let _exceptionMessage = err->formatException
-            if !isPaymentSession {
-              closePaymentLoaderIfAny()
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-            }
-            if handleUserError {
-              handleOpenUrl(url.href)
-            } else {
-              let failedSubmitResponse = getFailedSubmitResponse(
-                ~errorType="server_error",
-                ~message="Something went wrong",
-              )
-              resolve(failedSubmitResponse)
-            }
-          },
-        )->then(resolve)
-      })
-    } else {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        Promise.make(
-          (resolve, _) => {
-            let intent = PaymentConfirmTypesV2.itemToPMMConfirmMapper(data->getDictFromJson)
-            let paymentMethod = switch paymentType {
-            | Card => "CARD"
-            | _ => "CARD"
-            }
+          } else {
+            resolve(data)
+          }
+        | _ =>
+          if isCallbackUsedVal->Option.getOr(false) {
+            closePaymentLoaderIfAny()
+            handleOnCompleteDoThisMessage()
+          } else {
+            handleOpenUrl(url.href)
+          }
+        }
+      }
 
-            let url = makeUrl(confirmParam.return_url)
-            url.searchParams.set("status", intent.authenticationDetails.status)
+      if intent.authenticationDetails.status == "requires_customer_action" {
+        if intent.nextAction.type_ == "redirect_to_url" {
+          handleLogging(
+            ~optLogger,
+            ~value="",
+            // ~internalMetadata=intent.nextAction.redirectToUrl,
+            ~eventName=REDIRECTING_USER,
+            ~paymentMethod,
+          )
+          handleOpenUrl(intent.nextAction.redirectToUrl)
+	        } else {
+	          handleLogging(
+	            ~optLogger,
+	            ~value=`Unsupported next action for payment management confirm: ${intent.nextAction.type_}`,
+	            ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+	            ~paymentMethod,
+	            ~logType=ERROR,
+	            ~logCategory=USER_ERROR,
+	          )
+	          if !isPaymentSession {
+	            postFailedSubmitResponse(
+	              ~errortype="confirm_payment_failed",
+              ~message="Payment failed. Try again!",
+            )
+	          }
+	          if uri->String.includes("force_sync=true") {
+	            handleOpenUrl(url.href)
+	          } else {
+            let failedSubmitResponse = getFailedSubmitResponse(
+              ~errorType="confirm_payment_failed",
+              ~message="Payment failed. Try again!",
+            )
+            resolve(failedSubmitResponse)
+          }
+        }
+      } else if intent.authenticationDetails.status != "" {
+        if intent.authenticationDetails.status === "succeeded" {
+          handleLogging(
+            ~optLogger,
+            ~value=intent.authenticationDetails.status,
+            ~eventName=PAYMENT_SUCCESS,
+            ~paymentMethod,
+          )
+        } else if intent.authenticationDetails.status === "failed" {
+          handleLogging(
+            ~optLogger,
+            ~value=intent.authenticationDetails.status,
+            ~eventName=PAYMENT_FAILED,
+            ~paymentMethod,
+          )
+        }
+        handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
+      } else {
+        handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
+        handleLogging(
+          ~optLogger,
+          ~value="succeeded",
+          ~eventName=PAYMENT_SUCCESS,
+          ~paymentMethod,
+        )
+        url.searchParams.set("status", "succeeded")
+      }
+    })
 
-            let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
-              switch (paymentType, sdkHandleOneClickConfirmPayment) {
-              | (Card, _)
-              | (Gpay, false)
-              | (Applepay, false)
-              | (Paypal, false) =>
-                if !isPaymentSession {
-                  if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnCompleteDoThisMessage()
-                  } else {
-                    closePaymentLoaderIfAny()
-                  }
-
-                  postSubmitResponse(~jsonData=data, ~url=url.href)
-                } else if confirmParam.redirect === Some("always") {
-                  if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnCompleteDoThisMessage()
-                  } else {
-                    handleOpenUrl(url.href)
-                  }
-                } else {
-                  resolve(data)
-                }
-              | _ =>
-                if isCallbackUsedVal->Option.getOr(false) {
-                  closePaymentLoaderIfAny()
-                  handleOnCompleteDoThisMessage()
-                } else {
-                  handleOpenUrl(url.href)
-                }
-              }
-            }
-
-            if intent.authenticationDetails.status == "requires_customer_action" {
-              if intent.nextAction.type_ == "redirect_to_url" {
-                handleLogging(
-                  ~optLogger,
-                  ~value="",
-                  // ~internalMetadata=intent.nextAction.redirectToUrl,
-                  ~eventName=REDIRECTING_USER,
-                  ~paymentMethod,
-                )
-                handleOpenUrl(intent.nextAction.redirectToUrl)
-              } else {
-                if !isPaymentSession {
-                  postFailedSubmitResponse(
-                    ~errortype="confirm_payment_failed",
-                    ~message="Payment failed. Try again!",
-                  )
-                }
-                if uri->String.includes("force_sync=true") {
-                  handleLogging(
-                    ~optLogger,
-                    ~value=intent.nextAction.type_,
-                    // ~internalMetadata=intent.nextAction.type_,
-                    ~eventName=REDIRECTING_USER,
-                    ~paymentMethod,
-                    ~logType=ERROR,
-                  )
-                  handleOpenUrl(url.href)
-                } else {
-                  let failedSubmitResponse = getFailedSubmitResponse(
-                    ~errorType="confirm_payment_failed",
-                    ~message="Payment failed. Try again!",
-                  )
-                  resolve(failedSubmitResponse)
-                }
-              }
-            } else if intent.authenticationDetails.status != "" {
-              if intent.authenticationDetails.status === "succeeded" {
-                handleLogging(
-                  ~optLogger,
-                  ~value=intent.authenticationDetails.status,
-                  ~eventName=PAYMENT_SUCCESS,
-                  ~paymentMethod,
-                )
-              } else if intent.authenticationDetails.status === "failed" {
-                handleLogging(
-                  ~optLogger,
-                  ~value=intent.authenticationDetails.status,
-                  ~eventName=PAYMENT_FAILED,
-                  ~paymentMethod,
-                )
-              }
-              handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-            } else {
-              handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-              handleLogging(
-                ~optLogger,
-                ~value="succeeded",
-                ~eventName=PAYMENT_SUCCESS,
-                ~paymentMethod,
-              )
-              url.searchParams.set("status", "succeeded")
-            }
-          },
-        )->then(resolve)
-      })
-    }
-  })
-  ->catch(err => {
+  let handleException = _err =>
     Promise.make((resolve, _) => {
       try {
         let url = makeUrl(confirmParam.return_url)
         url.searchParams.set("status", "failed")
-        let _exceptionMessage = err->formatException
 
         if !isPaymentSession {
           closePaymentLoaderIfAny()
@@ -247,25 +210,73 @@ let intentCall = (
           )
           resolve(failedSubmitResponse)
         }
-      } catch {
-      | _ =>
-        if !isPaymentSession {
-          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
-        }
+	      } catch {
+	      | _ =>
+	        handleLogging(
+	          ~optLogger,
+	          ~value="Failed to build payment management confirm failure response",
+	          ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+	          ~paymentMethod="CARD",
+	          ~logType=ERROR,
+	          ~logCategory=USER_ERROR,
+	        )
+	        if !isPaymentSession {
+	          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
+	        }
         let failedSubmitResponse = getFailedSubmitResponse(
           ~errorType="server_error",
           ~message="Something went wrong",
         )
         resolve(failedSubmitResponse)
       }
-    })->then(resolve)
-  })
+    })
+
+  switch optLogger {
+  | Some(logger) =>
+    fetchApiWithLogging(
+      uri,
+      ~eventName,
+      ~logger,
+      ~onSuccess=handleSuccessResponse,
+      ~onFailure=handleFailedResponse,
+      ~onCatchCallback=Some(handleException),
+      ~method=fetchMethod,
+      ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+      ~bodyStr,
+      ~customPodUri=Some(customPodUri),
+      ~isPaymentSession,
+    )->then(result => result)
+  | None =>
+    fetchApi(
+      uri,
+      ~method=fetchMethod,
+      ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+      ~bodyStr,
+    )
+    ->then(res => {
+      if !(res->Fetch.Response.ok) {
+        res
+        ->Fetch.Response.json
+        ->then(handleFailedResponse)
+        ->catch(err => {
+          let exceptionMessage = err->formatException
+          handleException(exceptionMessage)
+        })
+      } else {
+        res->Fetch.Response.json->then(handleSuccessResponse)
+      }
+    })
+    ->catch(err => {
+      let exceptionMessage = err->formatException
+      handleException(exceptionMessage)
+    })
+  }
 }
 
 let fetchPaymentManagementList = (
   ~pmSessionId,
   ~endpoint,
-  ~optLogger as _,
+  ~optLogger,
   ~customPodUri,
   ~sdkAuthorization,
 ) => {
@@ -273,96 +284,108 @@ let fetchPaymentManagementList = (
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/list-payment-methods`
 
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(res => {
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
+  let onSuccess = data => data
+  let onFailure = _err => {
+    Console.error("Payment management list failed")
+    JSON.Encode.null
+  }
+
+  switch optLogger {
+  | Some(logger) =>
+    fetchApiWithLogging(
+      uri,
+      ~eventName=PAYMENT_MANAGEMENT_LIST_CALL,
+      ~logger,
+      ~onSuccess,
+      ~onFailure,
+      ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+      ~method=#GET,
+      ~customPodUri=Some(customPodUri),
+      ~isPaymentSession=true,
+    )
+  | None =>
+    fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
+    ->then(res => {
+      if !(res->Fetch.Response.ok) {
+        res
+        ->Fetch.Response.json
+        ->then(_ => {
+          JSON.Encode.null->resolve
+        })
+      } else {
+        res->Fetch.Response.json
+      }
+    })
+    ->catch(err => {
+      let _exceptionMessage = err->formatException
+      Console.error("Payment management list request failed")
+      JSON.Encode.null->resolve
+    })
+  }
 }
 
 let deletePaymentMethodV2 = (
   ~paymentMethodToken,
   ~pmSessionId,
-  ~logger as _,
+  ~logger,
   ~customPodUri,
   ~sdkAuthorization,
 ) => {
-  open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
-  fetchApi(
+  let bodyStr = [("payment_method_token", paymentMethodToken->JSON.Encode.string)]
+    ->getJsonFromArrayOfJson
+    ->JSON.stringify
+  let onSuccess = data => data
+  let onFailure = _err => {
+    Console.error("Payment management delete failed")
+    JSON.Encode.null
+  }
+
+  fetchApiWithLogging(
     uri,
+    ~eventName=PAYMENT_MANAGEMENT_DELETE_CALL,
+    ~logger,
+    ~onSuccess,
+    ~onFailure,
     ~method=#DELETE,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-    ~bodyStr=[("payment_method_token", paymentMethodToken->JSON.Encode.string)]
-    ->getJsonFromArrayOfJson
-    ->JSON.stringify,
+    ~bodyStr,
+    ~customPodUri=Some(customPodUri),
+    ~isPaymentSession=true,
   )
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
 }
 
 let updatePaymentMethod = (
   ~bodyArr,
   ~pmSessionId,
-  ~logger as _,
+  ~logger,
   ~customPodUri,
   ~sdkAuthorization,
 ) => {
-  open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
+  let bodyStr = bodyArr->getJsonFromArrayOfJson->JSON.stringify
+  let onSuccess = data => data
+  let onFailure = _err => {
+    Console.error("Payment management update failed")
+    JSON.Encode.null
+  }
 
-  fetchApi(
+  fetchApiWithLogging(
     uri,
+    ~eventName=PAYMENT_MANAGEMENT_UPDATE_CALL,
+    ~logger,
+    ~onSuccess,
+    ~onFailure,
     ~method=#PUT,
-    ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
+    ~bodyStr,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~customPodUri=Some(customPodUri),
+    ~isPaymentSession=true,
   )
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
 }
 
 let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
@@ -414,11 +437,20 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
       | LoadedV2(_) => saveCard()
       | _ => ()
       }
-    | None =>
+    | None => {
+      handleLogging(
+        ~optLogger,
+        ~value="pmSessionId missing for save card",
+        ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+        ~paymentMethod="CARD",
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
       postFailedSubmitResponse(
         ~errortype="confirm_payment_failed",
         ~message="Payment failed. Try again!",
       )
+    }
     }
   }
 }
@@ -472,41 +504,45 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
       | LoadedV2(_) => updateCard()
       | _ => ()
       }
-    | None =>
+    | None => {
+      handleLogging(
+        ~optLogger,
+        ~value="pmSessionId missing for update card",
+        ~eventName=PAYMENT_MANAGEMENT_UPDATE_CALL,
+        ~paymentMethod="CARD",
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
       postFailedSubmitResponse(
         ~errortype="confirm_payment_failed",
         ~message="Payment failed. Try again!",
       )
     }
+    }
   }
 }
 
-let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization, ~logger as _) => {
-  open Promise
+let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization, ~logger) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/confirm`
+  let bodyStr = bodyArr->getJsonFromArrayOfJson->JSON.stringify
+  let onSuccess = data => data
+  let onFailure = _err => {
+    Console.error("Payment management confirm failed")
+    JSON.Encode.null
+  }
 
-  fetchApi(
+  fetchApiWithLogging(
     uri,
+    ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+    ~logger,
+    ~onSuccess,
+    ~onFailure,
     ~method=#POST,
-    ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
+    ~bodyStr,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri=""),
+    ~customPodUri=Some(""),
+    ~isPaymentSession=true,
   )
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
 }

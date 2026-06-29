@@ -1,7 +1,7 @@
 open HyperLoggerTypes
 open LoggerUtils
 
-type responseStatus = Success | Error | Exception | Request
+type responseStatus = Success | Error | Exception | Request | Slow
 
 let logApiResponse = (
   ~logger,
@@ -11,6 +11,7 @@ let logApiResponse = (
   ~statusCode=?,
   ~data=?,
   ~isPaymentSession=?,
+  ~latency=?,
 ) => {
   switch eventName {
   | Some(actualEventName) =>
@@ -19,6 +20,7 @@ let logApiResponse = (
     | Error => (Err, ERROR)
     | Exception => (NoResponse, ERROR)
     | Request => (Request, INFO)
+    | Slow => (Response, WARNING)
     }
     logApi(
       ~optLogger=Some(logger),
@@ -30,6 +32,7 @@ let logApiResponse = (
       ~statusCode?,
       ~data?,
       ~isPaymentSession?,
+      ~latency?,
     )
 
   | None => ()

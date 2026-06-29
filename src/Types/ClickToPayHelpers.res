@@ -651,7 +651,7 @@ let encryptCardForClickToPay = async (
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        logger.setLogError(
+        logger.setLogInfo(
           ~value={
             "message": "Encrypting card for Click to Pay",
             "scheme": "MASTERCARD",
@@ -875,8 +875,10 @@ let loadMastercardScript = (clickToPayToken, logger: HyperLoggerTypes.loggerMake
         // Set onerror handler
         script->setOnError(() => {
           logger.setLogError(
-            ~value="Error loading Mastercard script",
+            ~value="Click to Pay Mastercard script failed to load",
             ~eventName=CLICK_TO_PAY_SCRIPT,
+            ~logType=ERROR,
+            ~logCategory=USER_ERROR,
           )
           let exn = Exn.anyToExnInternal("Failed to load Mastercard script")
           exn->reject
@@ -953,7 +955,21 @@ let urlToParamUrlItemToObjMapper = url => {
 external signOutMastercard: mastercardCheckoutServices => promise<JSON.t> = "signOut"
 
 // Then add the signOut function implementation
-let signOut = async () => {
+let signOut = async (~logger: option<HyperLoggerTypes.loggerMake>=None) => {
+  let logSignOutError = value => {
+    Console.error(value)
+    switch logger {
+    | Some(logger) =>
+      logger.setLogError(
+        ~value,
+        ~eventName=CLICK_TO_PAY_FLOW,
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
+    | None => ()
+    }
+  }
+
   try {
     deleteLocalStorage(~key=recognitionTokenCookieName)
 
@@ -963,13 +979,25 @@ let signOut = async () => {
         Ok(signOutResp)
       }
     | None => {
-        Console.error("Mastercard Checkout Service not initialized")
+        logSignOutError("Mastercard Checkout Service not initialized")
         Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
   | error => {
-      Console.error2("Error during signOut:", error)
+      Console.error("Error during Mastercard Click to Pay signOut")
+      switch logger {
+      | Some(logger) =>
+        logger.setLogError(
+          ~value=`Error during Mastercard Click to Pay signOut: ${error
+            ->Utils.formatException
+            ->JSON.stringify}`,
+          ~eventName=CLICK_TO_PAY_FLOW,
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+      | None => ()
+      }
       Error(error)
     }
   }

@@ -151,7 +151,14 @@ let make = () => {
             Modal.close(setOpenModal)
             postSubmitResponse(~jsonData=res, ~url=return_url)
           } catch {
-          | error => Console.error2("Error while polling payment intent:", error)
+          | error =>
+            Console.error2("Error while polling payment intent:", error)
+            logger.setLogError(
+              ~value=`Error while polling payment intent: ${error->formatException->JSON.stringify}`,
+              ~eventName=POLL_STATUS_CALL,
+              ~logType=ERROR,
+              ~logCategory=API,
+            )
           }
         }
       }
@@ -176,7 +183,14 @@ let make = () => {
       postSubmitResponse(~jsonData=json, ~url=return_url)
       Modal.close(setOpenModal)
     } catch {
-    | e => Console.error2("Retrieve Failed", e)
+    | e =>
+      Console.error2("Retrieve Failed", e)
+      logger.setLogError(
+        ~value=`Retrieve failed while closing QR modal: ${e->formatException->JSON.stringify}`,
+        ~eventName=RETRIEVE_CALL,
+        ~logType=ERROR,
+        ~logCategory=API,
+      )
     }
   }
 

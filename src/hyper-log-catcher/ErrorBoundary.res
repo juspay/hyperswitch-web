@@ -139,7 +139,7 @@ module ErrorCard = {
     React.useEffect0(() => {
       let loggingLevel = GlobalVars.loggingLevelStr
       let enableLogging = GlobalVars.enableLogging
-      if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Array.includes(loggingLevel) {
+      if enableLogging && ["DEBUG", "INFO", "WARNING", "ERROR"]->Array.includes(loggingLevel) {
         let errorDict =
           error
           ->Identity.anyTypeToJson

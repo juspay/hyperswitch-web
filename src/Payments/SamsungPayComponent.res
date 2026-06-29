@@ -34,11 +34,12 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
 
   let onSamsungPaymentButtonClick = _ => {
     if isTestMode {
-      Console.warn("Samsung Pay button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
         ~value="Samsung Pay button clicked in test mode - interaction disabled",
         ~eventName=SAMSUNG_PAY,
         ~paymentMethod="SAMSUNG_PAY",
+        ~logType=WARNING,
+        ~logCategory=MERCHANT_EVENT,
       )
     } else {
       loggerState.setLogInfo(

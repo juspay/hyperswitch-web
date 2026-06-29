@@ -1,4 +1,82 @@
 open IndexedDB
+
+let apiSlowResponseThresholdMs = GlobalVars.slowApiThresholdMs
+
+let sanitizeApiLogUrl = url =>
+  url
+  ->String.replaceRegExp(
+    %re("/([?&][^=]*(client_secret|sdk_authorization|authorization|token|secret|api_key|key)=)[^&]*/gi"),
+    "$1[REDACTED]",
+  )
+  ->String.replaceRegExp(%re("/(\/payments\/)[^\/?#]+/gi"), "$1[REDACTED]")
+  ->String.replaceRegExp(%re("/(\/payment-method-sessions\/)[^\/?#]+/gi"), "$1[REDACTED]")
+  ->String.replaceRegExp(%re("/(\/customers\/)[^\/?#]+/gi"), "$1[REDACTED]")
+  ->String.replaceRegExp(%re("/(\/payouts\/)[^\/?#]+/gi"), "$1[REDACTED]")
+
+let sanitizeApiLogString = value =>
+  value
+  ->sanitizeApiLogUrl
+  ->String.replaceRegExp(
+    %re(`/((client_secret|sdk_authorization|authorization|token|payment_method_token|card_number|card|pan|card_cvc|cvc|cvv|security_code|session_id|payment_id|payout_id|customer_id|pm_session_id|payment_method_session_id|secret|api_key|key)["']?\s*[:=]\s*["']?)[^"'\s,}&]+/gi`),
+    "$1[REDACTED]",
+  )
+  ->String.replaceRegExp(%re(`/\b(Bearer\s+)[A-Za-z0-9._-]+/gi`), "$1[REDACTED]")
+  ->String.replaceRegExp(%re(`/\b\d{12,19}\b/g`), "[REDACTED]")
+  ->String.replaceRegExp(
+    %re(`/\b(pk|sk|snd|dev|pay|payout|cus|pm|pms|sess|tok|pi|seti|cs|pro)_[A-Za-z0-9_-]+\b/g`),
+    "[REDACTED]",
+  )
+  ->String.replaceRegExp(
+    %re(`/\b[A-Za-z0-9_-]{32,}\b/g`),
+    "[REDACTED]",
+  )
+
+let summarizeApiLogData = data => {
+  let safeKeys = [
+    "type",
+    "code",
+    "error_code",
+    "message",
+    "error_message",
+    "reason",
+    "status",
+    "status_code",
+  ]
+  let collectStringFields = dict =>
+    safeKeys
+    ->Belt.Array.keepMap(key =>
+      dict
+      ->Dict.get(key)
+      ->Option.flatMap(JSON.Decode.string)
+      ->Option.map(value => (key, value->sanitizeApiLogString->JSON.Encode.string))
+    )
+
+  switch data->JSON.Decode.object {
+  | Some(dict) => {
+      let topLevelFields = dict->collectStringFields
+      let errorFields =
+        dict
+        ->Dict.get("error")
+        ->Option.flatMap(JSON.Decode.object)
+        ->Option.map(collectStringFields)
+        ->Option.getOr([])
+      let fields = topLevelFields->Array.concat(errorFields)
+
+      if fields->Array.length > 0 {
+        fields->Dict.fromArray->JSON.Encode.object
+      } else {
+        [("summary", "response omitted from logs"->JSON.Encode.string)]
+        ->Dict.fromArray
+        ->JSON.Encode.object
+      }
+    }
+  | None =>
+    [("summary", "non-object response omitted from logs"->JSON.Encode.string)]
+    ->Dict.fromArray
+    ->JSON.Encode.object
+  }
+}
+
 let logApi = (
   ~eventName,
   ~statusCode=0,
@@ -11,26 +89,36 @@ let logApi = (
   ~logType: HyperLoggerTypes.logType=INFO,
   ~logCategory: HyperLoggerTypes.logCategory=API,
   ~isPaymentSession: bool=false,
+  ~latency=?,
 ) => {
+  let url = sanitizeApiLogUrl(url)
   let (value, _) = switch apiLogType {
   | Request => ([("url", url->JSON.Encode.string)], [])
   | Response => (
-      [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)],
-      [("response", data)],
+      [
+        ("url", url->JSON.Encode.string),
+        ("statusCode", statusCode->JSON.Encode.int),
+        ("response", data->summarizeApiLogData),
+      ],
+      [("response", data->summarizeApiLogData)],
     )
   | NoResponse => (
-      [("url", url->JSON.Encode.string), ("statusCode", 504->JSON.Encode.int), ("response", data)],
-      [("response", data)],
+      [
+        ("url", url->JSON.Encode.string),
+        ("statusCode", 504->JSON.Encode.int),
+        ("response", data->summarizeApiLogData),
+      ],
+      [("response", data->summarizeApiLogData)],
     )
   | Err => (
       [
         ("url", url->JSON.Encode.string),
         ("statusCode", statusCode->JSON.Encode.int),
-        ("response", data),
+        ("response", data->summarizeApiLogData),
       ],
-      [("response", data)],
+      [("response", data->summarizeApiLogData)],
     )
-  | Method => ([("method", paymentMethod->JSON.Encode.string)], [("result", result)])
+  | Method => ([("method", paymentMethod->JSON.Encode.string)], [("result", result->summarizeApiLogData)])
   }
   switch optLogger {
   | Some(logger) =>
@@ -42,6 +130,7 @@ let logApi = (
       ~logCategory,
       ~apiLogType,
       ~isPaymentSession,
+      ~latency?,
     )
   | None => ()
   }
@@ -58,6 +147,7 @@ let handleLogging = (
   ~eventName,
   ~paymentMethod,
   ~logType: HyperLoggerTypes.logType=INFO,
+  ~logCategory: HyperLoggerTypes.logCategory=USER_EVENT,
 ) => {
   switch optLogger {
   | Some(logger) =>
@@ -67,6 +157,7 @@ let handleLogging = (
       ~eventName,
       ~paymentMethod,
       ~logType,
+      ~logCategory,
     )
   | _ => ()
   }
@@ -109,6 +200,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
     ~paymentMethod as _=?,
     ~apiLogType as _=?,
     ~isPaymentSession as _=?,
+    ~latency as _=?,
   ) => (),
   setLogInfo: (
     ~value as _,
@@ -250,9 +342,15 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | PAYMENT_METHOD_ELIGIBILITY_CALL => Some(PAYMENT_METHOD_ELIGIBILITY_CALL_INIT)
   | SDK_CONFIGS_CALL => Some(SDK_CONFIGS_CALL_INIT)
   | CLIENT_LIST_CALL => Some(CLIENT_LIST_CALL_INIT)
-  | ENABLED_AUTHN_METHODS_TOKEN_CALL => Some(ENABLED_AUTHN_METHODS_TOKEN_CALL)
-  | ELIGIBILITY_CHECK_CALL => Some(ELIGIBILITY_CHECK_CALL)
-  | AUTHENTICATION_SYNC_CALL => Some(AUTHENTICATION_SYNC_CALL)
+  | EXTERNAL_TAX_CALCULATION => Some(EXTERNAL_TAX_CALCULATION_INIT)
+  | S3_API => Some(S3_API_INIT)
+  | ENABLED_AUTHN_METHODS_TOKEN_CALL => Some(ENABLED_AUTHN_METHODS_TOKEN_CALL_INIT)
+  | ELIGIBILITY_CHECK_CALL => Some(ELIGIBILITY_CHECK_CALL_INIT)
+  | AUTHENTICATION_SYNC_CALL => Some(AUTHENTICATION_SYNC_CALL_INIT)
+  | PAYMENT_MANAGEMENT_LIST_CALL => Some(PAYMENT_MANAGEMENT_LIST_CALL_INIT)
+  | PAYMENT_MANAGEMENT_UPDATE_CALL => Some(PAYMENT_MANAGEMENT_UPDATE_CALL_INIT)
+  | PAYMENT_MANAGEMENT_DELETE_CALL => Some(PAYMENT_MANAGEMENT_DELETE_CALL_INIT)
+  | PAYMENT_MANAGEMENT_CONFIRM_CALL => Some(PAYMENT_MANAGEMENT_CONFIRM_CALL_INIT)
   | APP_RENDERED
   | PAYMENT_METHOD_CHANGED
   | PAYMENT_DATA_FILLED
@@ -316,7 +414,6 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT
   | PAYMENT_METHODS_AUTH_LINK_CALL_INIT
   | PAYMENT_MANAGEMENT_ELEMENTS_CALLED
-  | EXTERNAL_TAX_CALCULATION
   | POST_SESSION_TOKENS_CALL_INIT
   | PAZE_SDK_FLOW
   | SAMSUNG_PAY_SCRIPT
@@ -327,8 +424,16 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | THREE_DS_POPUP_REDIRECTION
   | NETWORK_STATE
   | CARD_SCHEME_SELECTION
-  | S3_API
   | PAYMENT_METHOD_ELIGIBILITY_CALL_INIT
+  | EXTERNAL_TAX_CALCULATION_INIT
+  | S3_API_INIT
+  | ENABLED_AUTHN_METHODS_TOKEN_CALL_INIT
+  | ELIGIBILITY_CHECK_CALL_INIT
+  | AUTHENTICATION_SYNC_CALL_INIT
+  | PAYMENT_MANAGEMENT_LIST_CALL_INIT
+  | PAYMENT_MANAGEMENT_UPDATE_CALL_INIT
+  | PAYMENT_MANAGEMENT_DELETE_CALL_INIT
+  | PAYMENT_MANAGEMENT_CONFIRM_CALL_INIT
   | PRELOAD_SDK_WITH_PARAMS
   | APPLE_PAY_BRAINTREE_SCRIPT
   | BRAINTREE_CLIENT_SCRIPT

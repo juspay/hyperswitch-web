@@ -1121,6 +1121,8 @@ let fetchApiWithLogging = async (
 ) => {
   open LoggerUtils
 
+  let apiRequestStartTime = Date.now()
+
   // * Log request initiation
   LogAPIResponse.logApiResponse(
     ~logger,
@@ -1155,6 +1157,7 @@ let fetchApiWithLogging = async (
 
     if resp->Fetch.Response.ok {
       let data = await Fetch.Response.json(resp)
+      let apiLatency = Date.now() -. apiRequestStartTime
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
@@ -1162,10 +1165,23 @@ let fetchApiWithLogging = async (
         ~status=Success,
         ~statusCode,
         ~isPaymentSession,
+        ~latency=apiLatency,
       )
+      if apiLatency > apiSlowResponseThresholdMs {
+        LogAPIResponse.logApiResponse(
+          ~logger,
+          ~uri,
+          ~eventName=Some(eventName),
+          ~status=Slow,
+          ~statusCode,
+          ~isPaymentSession,
+          ~latency=apiLatency,
+        )
+      }
       onSuccess(data)
     } else {
       let data = await resp->Fetch.Response.json
+      let apiLatency = Date.now() -. apiRequestStartTime
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
@@ -1174,20 +1190,30 @@ let fetchApiWithLogging = async (
         ~statusCode,
         ~data,
         ~isPaymentSession,
+        ~latency=apiLatency,
       )
+      if apiLatency > apiSlowResponseThresholdMs {
+        LogAPIResponse.logApiResponse(
+          ~logger,
+          ~uri,
+          ~eventName=Some(eventName),
+          ~status=Slow,
+          ~statusCode,
+          ~isPaymentSession,
+          ~latency=apiLatency,
+        )
+      }
       onFailure(data)
     }
   } catch {
   | err => {
-      let exceptionMessage = err->formatException
-      Console.error2(
-        "Unexpected error while making request:",
-        {
-          "uri": uri,
-          "event": eventName,
-          "error": exceptionMessage,
-        },
-      )
+	      let apiLatency = Date.now() -. apiRequestStartTime
+	      let exceptionMessage = err->formatException
+	      Console.error2("Unexpected error while making request:", {
+	        "uri": uri->LoggerUtils.sanitizeApiLogUrl,
+	        "event": eventName,
+	        "error": exceptionMessage->JSON.stringify->LoggerUtils.sanitizeApiLogString,
+	      })
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
@@ -1195,7 +1221,18 @@ let fetchApiWithLogging = async (
         ~status=Exception,
         ~data=exceptionMessage,
         ~isPaymentSession,
+        ~latency=apiLatency,
       )
+      if apiLatency > apiSlowResponseThresholdMs {
+        LogAPIResponse.logApiResponse(
+          ~logger,
+          ~uri,
+          ~eventName=Some(eventName),
+          ~status=Slow,
+          ~latency=apiLatency,
+          ~isPaymentSession,
+        )
+      }
       switch onCatchCallback {
       | Some(fun) => fun(exceptionMessage)
       | None => onFailure(exceptionMessage)

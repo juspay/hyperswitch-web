@@ -310,6 +310,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
       postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
+      loggerState.setLogError(
+        ~value="Select a payment method",
+        ~eventName=INVALID_FORMAT,
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
     }
   }, [selectedOption])
   useSubmitPaymentData(submitCallback)

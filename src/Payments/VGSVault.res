@@ -17,6 +17,7 @@ let vgsScriptIntegrity = "sha384-ddxU1XAc77oB4EIpKOgJQ3FN2a6STYPK0JipRqg1x/eW+n5
 @react.component
 let make = (~cvcOnly=false) => {
   let vaultCredentials = Recoil.useRecoilValueFromAtom(RecoilAtoms.vaultCredentials)
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {innerLayout} = config.appearance
 
@@ -153,8 +154,15 @@ let make = (~cvcOnly=false) => {
                 ("cvcToken", cvcToken->JSON.Encode.string),
               ])
             }
-            let onError = _ =>
+            let onError = _ => {
+              logger.setLogError(
+                ~value="VGS tokenization failed for saved-card CVC",
+                ~eventName=VGS_VAULT_FLOW,
+                ~logType=ERROR,
+                ~logCategory=API,
+              )
               postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            }
             vault.submit("/post", emptyPayload, onSuccess, onError)
           } else if cvcErr != "" {
             submitUserError(
@@ -201,8 +209,15 @@ let make = (~cvcOnly=false) => {
 
             // Fields are valid, so onError here is a genuine tokenisation/network
             // failure (not a validation error) — reject the merchant promise.
-            let onError = _ =>
+            let onError = _ => {
+              logger.setLogError(
+                ~value="VGS tokenization failed",
+                ~eventName=VGS_VAULT_FLOW,
+                ~logType=ERROR,
+                ~logCategory=API,
+              )
               postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            }
 
             vault.submit("/post", emptyPayload, onSuccess, onError)
           } else if !cardFieldsValid {
@@ -220,7 +235,14 @@ let make = (~cvcOnly=false) => {
           }
         }
 
-      | None => Console.error("VGS Vault not initialized for submission")
+      | None =>
+        Console.error("VGS Vault not initialized for submission")
+        logger.setLogError(
+          ~value="VGS Vault not initialized for submission",
+          ~eventName=VGS_VAULT_FLOW,
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
       }
     }
   }, (form, localeString, cvcOnly))

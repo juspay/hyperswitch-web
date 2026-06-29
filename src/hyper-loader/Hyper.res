@@ -285,6 +285,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             script->Window.elementSrc(scriptURL)
             script->Window.elementOnerror(err => {
               Console.error2("ERROR DURING LOADING APPLE PAY", err)
+              logger.setLogError(
+                ~value=`ERROR DURING LOADING APPLE PAY: ${err->formatException->JSON.stringify}`,
+                ~eventName=APPLE_PAY_FLOW,
+                ~paymentMethod="APPLE_PAY",
+              )
             })
             Window.body->Window.appendChild(script)
           }
@@ -522,11 +527,17 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       addSmartEventListener("message", handleSdkConfirm, "handleSdkConfirm")
 
       if isTestMode {
-        Console.warn(
-          "The SDK is running in test mode. API calls are bypassed and wallet interactions are disabled.",
+        logger.setLogInfo(
+          ~value="The SDK is running in test mode. API calls are bypassed and wallet interactions are disabled.",
+          ~eventName=TEST_MODE,
+          ~logType=WARNING,
+          ~logCategory=MERCHANT_EVENT,
         )
-        Console.warn(
-          "This is a non-transactional simulation environment for UI configuration and testing purposes only.",
+        logger.setLogInfo(
+          ~value="This is a non-transactional simulation environment for UI configuration and testing purposes only.",
+          ~eventName=TEST_MODE,
+          ~logType=WARNING,
+          ~logCategory=MERCHANT_EVENT,
         )
       }
 
@@ -677,6 +688,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let addAmountToDict = (dict, currency) => {
         if dict->Dict.get("amount")->Option.isNone {
           Console.error("Amount is not specified, please input an amount")
+          logger.setLogError(
+            ~value="Amount is not specified, please input an amount",
+            ~eventName=REQUIRED_PARAMETER,
+            ~logType=ERROR,
+            ~logCategory=USER_ERROR,
+          )
         }
         let amount = dict->Dict.get("amount")->Option.getOr(0.0->JSON.Encode.float)
         dict->Dict.set(

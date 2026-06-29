@@ -105,6 +105,13 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     updatedCounter
   }
 
+  let mirrorWarningToConsole = (log: logFile) => {
+    switch log.logType {
+    | WARNING => Console.warn(log.value)
+    | _ => ()
+    }
+  }
+
   let conditionalLogPush = (log: logFile) => {
     let maxLogsPushedPerEventName = GlobalVars.maxLogsPushedPerEventName
     let conditionalEventName = switch log.eventName {
@@ -115,19 +122,16 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
 
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
-      switch loggingLevel {
-      | DEBUG => log->(Array.push(mainLogFile, _))->ignore
-      | INFO =>
-        [INFO, WARNING, ERROR]->Array.includes(log.logType)
-          ? log->(Array.push(mainLogFile, _))->ignore
-          : ()
-      | WARNING =>
-        [WARNING, ERROR]->Array.includes(log.logType)
-          ? log->(Array.push(mainLogFile, _))->ignore
-          : ()
-      | ERROR =>
-        [ERROR]->Array.includes(log.logType) ? log->(Array.push(mainLogFile, _))->ignore : ()
-      | SILENT => ()
+      let shouldPush = switch loggingLevel {
+      | DEBUG => true
+      | INFO => [INFO, WARNING, ERROR]->Array.includes(log.logType)
+      | WARNING => [WARNING, ERROR]->Array.includes(log.logType)
+      | ERROR => [ERROR]->Array.includes(log.logType)
+      | SILENT => false
+      }
+      if shouldPush {
+        log->mirrorWarningToConsole
+        log->(Array.push(mainLogFile, _))->ignore
       }
     }
   }
@@ -429,10 +433,14 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     ~paymentMethod="",
     ~apiLogType=Request,
     ~isPaymentSession=false,
+    ~latency=?,
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
-    let latency = calculateLatencyHook(~eventName, ~apiLogType)
+    let latency = switch latency {
+    | Some(lat) => lat->Float.toString
+    | None => calculateLatencyHook(~eventName, ~apiLogType)
+    }
     let localTimestamp = timestamp->Option.getOr(Date.now()->Float.toString)
     let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
     {

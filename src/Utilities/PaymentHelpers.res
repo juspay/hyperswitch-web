@@ -216,6 +216,18 @@ let rec pollRetrievePaymentIntent = (
   })
   ->catch(e => {
     Console.error2("Unable to retrieve payment due to following error", e)
+    logger.setLogError(
+      ~value=e->formatException->JSON.stringify,
+      ~eventName=RETRIEVE_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+    )
+    logger.setLogInfo(
+      ~value="Retrying retrieve payment intent after polling error",
+      ~eventName=RETRIEVE_CALL,
+      ~logType=WARNING,
+      ~logCategory=API,
+    )
     pollRetrievePaymentIntent(
       clientSecret,
       ~headers,
@@ -309,6 +321,18 @@ let rec pollStatus = (
   })
   ->catch(e => {
     Console.error2("Unable to retrieve payment due to following error", e)
+    logger.setLogError(
+      ~value=e->formatException->JSON.stringify,
+      ~eventName=POLL_STATUS_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+    )
+    logger.setLogInfo(
+      ~value="Retrying poll status after polling error",
+      ~eventName=POLL_STATUS_CALL,
+      ~logType=WARNING,
+      ~logCategory=API,
+    )
     pollStatus(
       ~publishableKey,
       ~customPodUri,
@@ -356,6 +380,7 @@ let rec intentCall = (
   ~isTrustpayInterceptorConfirm=false,
 ) => {
   open Promise
+  let apiRequestStartTime = Date.now()
   let isConfirm = uri->String.includes("/confirm")
   let isLegacyClientSecretFlow = sdkAuthorization->Utils.getNonEmptyOption->Option.isNone
 
@@ -413,6 +438,8 @@ let rec intentCall = (
       ->then(data => {
         Promise.make(
           (resolve, _) => {
+            let dict = data->getDictFromJson
+            let errorObj = PaymentError.itemToObjMapper(dict)
             if isConfirm {
               let paymentMethod = switch paymentType {
               | Card => "CARD"
@@ -424,11 +451,14 @@ let rec intentCall = (
               }
               handleLogging(
                 ~optLogger,
-                ~value=data->JSON.stringify,
+                ~value=`Payment failed: ${errorObj.error.type_}`,
                 ~eventName=PAYMENT_FAILED,
                 ~paymentMethod,
+                ~logType=ERROR,
+                ~logCategory=USER_ERROR,
               )
             }
+            let apiLatency = Date.now() -. apiRequestStartTime
             logApi(
               ~optLogger,
               ~url=uri,
@@ -439,10 +469,22 @@ let rec intentCall = (
               ~logType=ERROR,
               ~logCategory=API,
               ~isPaymentSession,
+              ~latency=apiLatency,
             )
+            if apiLatency > apiSlowResponseThresholdMs {
+              logApi(
+                ~optLogger,
+                ~url=uri,
+                ~statusCode,
+                ~apiLogType=Response,
+                ~eventName,
+                ~logType=WARNING,
+                ~logCategory=API,
+                ~isPaymentSession,
+                ~latency=apiLatency,
+              )
+            }
 
-            let dict = data->getDictFromJson
-            let errorObj = PaymentError.itemToObjMapper(dict)
             if !isPaymentSession {
               closePaymentLoaderIfAny()
               postFailedSubmitResponse(
@@ -465,6 +507,7 @@ let rec intentCall = (
       ->catch(err => {
         Promise.make(
           (resolve, _) => {
+            let apiLatency = Date.now() -. apiRequestStartTime
             let exceptionMessage = err->formatException
             logApi(
               ~optLogger,
@@ -476,7 +519,21 @@ let rec intentCall = (
               ~logType=ERROR,
               ~logCategory=API,
               ~isPaymentSession,
+              ~latency=apiLatency,
             )
+            if apiLatency > apiSlowResponseThresholdMs {
+              logApi(
+                ~optLogger,
+                ~url=uri,
+                ~apiLogType=NoResponse,
+                ~data=exceptionMessage,
+                ~eventName,
+                ~logType=WARNING,
+                ~logCategory=API,
+                ~isPaymentSession,
+                ~latency=apiLatency,
+              )
+            }
             if counter >= 5 {
               if !isPaymentSession {
                 closePaymentLoaderIfAny()
@@ -504,6 +561,14 @@ let rec intentCall = (
                 ? `?client_secret=${clientSecret}`
                 : ""
               let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
+              handleLogging(
+                ~optLogger,
+                ~value="Retrying retrieve payment intent after confirm response handling error",
+                ~eventName=RETRIEVE_CALL,
+                ~paymentMethod="",
+                ~logType=WARNING,
+                ~logCategory=API,
+              )
               intentCall(
                 ~fetchApi,
                 ~uri=retrieveUri,
@@ -542,14 +607,30 @@ let rec intentCall = (
       ->then(data => {
         Promise.make(
           (resolve, _) => {
+            let apiLatency = Date.now() -. apiRequestStartTime
             logApi(
               ~optLogger,
               ~url=uri,
               ~statusCode,
               ~apiLogType=Response,
               ~eventName,
+              ~logType=INFO,
               ~isPaymentSession,
+              ~latency=apiLatency,
             )
+            if apiLatency > apiSlowResponseThresholdMs {
+              logApi(
+                ~optLogger,
+                ~url=uri,
+                ~statusCode,
+                ~apiLogType=Response,
+                ~eventName,
+                ~logType=WARNING,
+                ~logCategory=API,
+                ~isPaymentSession,
+                ~latency=apiLatency,
+              )
+            }
             let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
             let paymentMethod = switch paymentType {
             | Card => "CARD"
@@ -875,23 +956,23 @@ let rec intentCall = (
                   ]->getJsonFromArrayOfJson
                 resolve(response)
               } else {
+                handleLogging(
+                  ~optLogger,
+                  ~value=`Unsupported next action for confirm: ${intent.nextAction.type_}`,
+                  ~eventName=PAYMENT_FAILED,
+                  ~paymentMethod,
+                  ~logType=ERROR,
+                  ~logCategory=USER_ERROR,
+                )
                 if !isPaymentSession {
                   postFailedSubmitResponse(
                     ~errortype="confirm_payment_failed",
                     ~message="Payment failed. Try again!",
                   )
-                }
-                if uri->String.includes("force_sync=true") {
-                  handleLogging(
-                    ~optLogger,
-                    ~value=intent.nextAction.type_,
-                    // ~internalMetadata=intent.nextAction.type_,
-                    ~eventName=REDIRECTING_USER,
-                    ~paymentMethod,
-                    ~logType=ERROR,
-                  )
-                  handleOpenUrl(url.href)
-                } else {
+	                }
+	                if uri->String.includes("force_sync=true") {
+	                  handleOpenUrl(url.href)
+	                } else {
                   let failedSubmitResponse = getFailedSubmitResponse(
                     ~errorType="confirm_payment_failed",
                     ~message="Payment failed. Try again!",
@@ -964,11 +1045,27 @@ let rec intentCall = (
               }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else if !isPaymentSession {
+              handleLogging(
+                ~optLogger,
+                ~value="Payment confirm response missing status",
+                ~eventName=PAYMENT_FAILED,
+                ~paymentMethod,
+                ~logType=ERROR,
+                ~logCategory=USER_ERROR,
+              )
               postFailedSubmitResponse(
                 ~errortype="confirm_payment_failed",
                 ~message="Payment failed. Try again!",
               )
             } else {
+              handleLogging(
+                ~optLogger,
+                ~value="Payment confirm response missing status",
+                ~eventName=PAYMENT_FAILED,
+                ~paymentMethod,
+                ~logType=ERROR,
+                ~logCategory=USER_ERROR,
+              )
               let failedSubmitResponse = getFailedSubmitResponse(
                 ~errorType="confirm_payment_failed",
                 ~message="Payment failed. Try again!",
@@ -982,6 +1079,32 @@ let rec intentCall = (
   })
   ->catch(err => {
     Promise.make((resolve, _) => {
+      let exceptionMessage = err->formatException
+      let apiLatency = Date.now() -. apiRequestStartTime
+      logApi(
+        ~optLogger,
+        ~url=uri,
+        ~eventName,
+        ~apiLogType=NoResponse,
+        ~data=exceptionMessage,
+        ~logType=ERROR,
+        ~logCategory=API,
+        ~isPaymentSession,
+        ~latency=apiLatency,
+      )
+      if apiLatency > apiSlowResponseThresholdMs {
+        logApi(
+          ~optLogger,
+          ~url=uri,
+          ~eventName,
+          ~apiLogType=NoResponse,
+          ~data=exceptionMessage,
+          ~logType=WARNING,
+          ~logCategory=API,
+          ~isPaymentSession,
+          ~latency=apiLatency,
+        )
+      }
       try {
         let url = makeUrl(confirmParam.return_url)
         if isLegacyClientSecretFlow {
@@ -992,17 +1115,6 @@ let rec intentCall = (
           Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
         )
         url.searchParams.set("status", "failed")
-        let exceptionMessage = err->formatException
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~eventName,
-          ~apiLogType=NoResponse,
-          ~data=exceptionMessage,
-          ~logType=ERROR,
-          ~logCategory=API,
-          ~isPaymentSession,
-        )
         if counter >= 5 {
           if !isPaymentSession {
             closePaymentLoaderIfAny()
@@ -1028,6 +1140,14 @@ let rec intentCall = (
           )
           let clientSecretParam = isLegacyClientSecretFlow ? `?client_secret=${clientSecret}` : ""
           let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
+          handleLogging(
+            ~optLogger,
+            ~value="Retrying retrieve payment intent after confirm request error",
+            ~eventName=RETRIEVE_CALL,
+            ~paymentMethod="",
+            ~logType=WARNING,
+            ~logCategory=API,
+          )
           intentCall(
             ~fetchApi,
             ~uri=retrieveUri,
@@ -1060,6 +1180,14 @@ let rec intentCall = (
         }
       } catch {
       | _ =>
+        handleLogging(
+          ~optLogger,
+          ~value="Failed to build confirm failure response",
+          ~eventName=CONFIRM_CALL,
+          ~paymentMethod="",
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
         if !isPaymentSession {
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
         }
@@ -1131,6 +1259,14 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
       | _ => ()
       }
     | None =>
+      handleLogging(
+        ~optLogger,
+        ~value="client secret missing while syncing payment",
+        ~eventName=RETRIEVE_CALL,
+        ~paymentMethod="",
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
       postFailedSubmitResponse(
         ~errortype="sync_payment_failed",
         ~message="Sync Payment Failed. Try Again!",
@@ -1246,6 +1382,14 @@ let useCompleteAuthorizeHandler = () => {
         ~sdkAuthorization=sdkAuth,
       )->ignore
     | None =>
+      handleLogging(
+        ~optLogger,
+        ~value="client secret missing while completing authorization",
+        ~eventName=COMPLETE_AUTHORIZE_CALL,
+        ~paymentMethod="",
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
       postFailedSubmitResponse(
         ~errortype="complete_authorize_failed",
         ~message="Complete Authorize Failed. Try Again!",
@@ -1408,10 +1552,24 @@ let usePaymentIntent = (optLogger, paymentType) => {
           })
         }
         if blockConfirm && GlobalVars.isInteg {
-          Console.warn2("CONFIRM IS BLOCKED - Body", body)
-          Console.warn2(
-            "CONFIRM IS BLOCKED - Headers",
-            headers->Dict.fromArray->Identity.anyTypeToJson->JSON.stringify,
+          handleLogging(
+            ~optLogger,
+            ~value="Confirm blocked while update intent is in progress",
+            ~eventName=CONFIRM_PAYMENT,
+            ~paymentMethod=switch paymentType {
+            | Card => "CARD"
+            | BankTransfer => "BANK_TRANSFER"
+            | BankDebits => "BANK_DEBIT"
+            | KlarnaRedirect => "KLARNA"
+            | Gpay => "GOOGLE_PAY"
+            | Applepay => "APPLE_PAY"
+            | Paypal => "PAYPAL"
+            | Samsungpay => "SAMSUNG_PAY"
+            | Paze => "PAZE"
+            | Other => "OTHER"
+            },
+            ~logType=WARNING,
+            ~logCategory=MERCHANT_EVENT,
           )
         } else {
           intentCall(
@@ -1495,21 +1653,46 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~errortype="payment_methods_empty",
             ~message="Payment Failed. Try again!",
           )
-          Console.warn("Please enable atleast one Payment method.")
+          handleLogging(
+            ~optLogger,
+            ~value="Please enable at least one payment method.",
+            ~eventName=PAYMENT_METHODS_RESPONSE,
+            ~paymentMethod="",
+            ~logType=WARNING,
+            ~logCategory=MERCHANT_EVENT,
+          )
         }
 
       | SemiLoaded => intentWithoutMandate("")
-      | _ =>
+      | _ => {
+        handleLogging(
+          ~optLogger,
+          ~value="payment_methods_loading: payment methods are not ready for confirm",
+          ~eventName=PAYMENT_METHODS_RESPONSE,
+          ~paymentMethod="",
+          ~logType=WARNING,
+          ~logCategory=MERCHANT_EVENT,
+        )
         postFailedSubmitResponse(
           ~errortype="payment_methods_loading",
           ~message="Please wait. Try again!",
         )
       }
-    | None =>
+      }
+    | None => {
+      handleLogging(
+        ~optLogger,
+        ~value="client secret missing while retrieving payment for confirm",
+        ~eventName=RETRIEVE_CALL,
+        ~paymentMethod="",
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
       postFailedSubmitResponse(
         ~errortype="confirm_payment_failed",
         ~message="Payment failed. Try again!",
       )
+    }
     }
   }
 }
@@ -1932,6 +2115,12 @@ let callAuthExchange = async (
         "Unable to retrieve customer/payment_methods after auth/exchange because of ",
         e,
       )
+      logger.setLogError(
+        ~value=e->formatException->JSON.stringify,
+        ~eventName=CLIENT_LIST_CALL,
+        ~logType=ERROR,
+        ~logCategory=API,
+      )
       Promise.resolve(JSON.Encode.null)
     })
     ->ignore
@@ -2179,20 +2368,45 @@ let usePostSessionTokens = (
             ~errortype="payment_methods_empty",
             ~message="Payment Failed. Try again!",
           )
-          Console.warn("Please enable atleast one Payment method.")
+          handleLogging(
+            ~optLogger,
+            ~value="Please enable at least one payment method.",
+            ~eventName=PAYMENT_METHODS_RESPONSE,
+            ~paymentMethod="",
+            ~logType=WARNING,
+            ~logCategory=MERCHANT_EVENT,
+          )
         }
       | SemiLoaded => intentWithoutMandate("")
-      | _ =>
+      | _ => {
+        handleLogging(
+          ~optLogger,
+          ~value="payment_methods_loading: payment methods are not ready for post session tokens",
+          ~eventName=PAYMENT_METHODS_RESPONSE,
+          ~paymentMethod="",
+          ~logType=WARNING,
+          ~logCategory=MERCHANT_EVENT,
+        )
         postFailedSubmitResponse(
           ~errortype="payment_methods_loading",
           ~message="Please wait. Try again!",
         )
       }
-    | None =>
+      }
+    | None => {
+      handleLogging(
+        ~optLogger,
+        ~value="client secret missing while retrieving payment for post session tokens",
+        ~eventName=RETRIEVE_CALL,
+        ~paymentMethod="",
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
       postFailedSubmitResponse(
         ~errortype="post_session_tokens_failed",
         ~message="Post Session Tokens failed. Try again!",
       )
+    }
     }
   }
 }

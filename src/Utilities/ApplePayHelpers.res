@@ -77,7 +77,15 @@ let startApplePaySession = (
     try {
       session.abort()
     } catch {
-    | error => Console.error2("Abort fail", error)
+    | error =>
+      Console.error2("Abort fail", error)
+      logger.setLogInfo(
+        ~value=`Apple Pay session abort failed: ${error->formatException->JSON.stringify}`,
+        ~eventName=APPLE_PAY_FLOW,
+        ~logType=WARNING,
+        ~logCategory=MERCHANT_EVENT,
+        ~paymentMethod="APPLE_PAY",
+      )
     }
   | None => ()
   }
@@ -269,6 +277,13 @@ let useHandleApplePayResponse = (
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
           if isSavedMethodsFlow || !isWallet {
+            logger.setLogError(
+              ~value="showApplePayButton failed",
+              ~eventName=APPLE_PAY_FLOW,
+              ~paymentMethod="APPLE_PAY",
+              ~logType=ERROR,
+              ~logCategory=USER_ERROR,
+            )
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
           }
         } else if dict->Dict.get("applePaySyncPayment")->Option.isSome {
@@ -373,6 +388,7 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   React.useCallback((ev: Window.event) => {
     if !isWallet {
@@ -383,18 +399,32 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
           handleApplePayButtonClicked(~sessionObj, ~componentName, ~paymentMethodListValue)
         }
       } else if areRequiredFieldsEmpty {
+        logger.setLogError(
+          ~value="Apple Pay required field validation failed: required fields empty",
+          ~eventName=APPLE_PAY_FLOW,
+          ~paymentMethod="APPLE_PAY",
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterFieldsText,
         )
       } else if !areRequiredFieldsValid {
+        logger.setLogError(
+          ~value="Apple Pay required field validation failed: invalid required fields",
+          ~eventName=APPLE_PAY_FLOW,
+          ~paymentMethod="APPLE_PAY",
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterValidDetailsText,
         )
       }
     }
-  }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, sessionObj, componentName))
+  }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, sessionObj, componentName, logger))
 }
 
 let createApplePayTransactionInfo = jsonDict =>

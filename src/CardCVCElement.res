@@ -75,21 +75,33 @@ let make = (
             ~sdkAuthorization,
           )
           ->then(res => {
-            let vaultTokenData = VaultHelpers.decodeVaultTokenData(res)
-            if vaultTokenData.token !== "" {
-              messageParentWindow([
-                ("savedCardCvcTokenEvent", true->JSON.Encode.bool),
-                ("cvcToken", vaultTokenData.token->JSON.Encode.string),
-              ])
-            } else {
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-            }
-            resolve()
-          })
-          ->catch(_ => {
-            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-            resolve()
-          })
+	            let vaultTokenData = VaultHelpers.decodeVaultTokenData(res)
+	            if vaultTokenData.token !== "" {
+	              messageParentWindow([
+	                ("savedCardCvcTokenEvent", true->JSON.Encode.bool),
+	                ("cvcToken", vaultTokenData.token->JSON.Encode.string),
+	              ])
+	            } else {
+	              loggerState.setLogError(
+	                ~value="CVC widget tokenization response missing vault token",
+	                ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+	                ~logType=ERROR,
+	                ~logCategory=USER_ERROR,
+	              )
+	              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+	            }
+	            resolve()
+	          })
+	          ->catch(err => {
+	            loggerState.setLogError(
+	              ~value=`CVC widget tokenization failed: ${err->formatException->JSON.stringify}`,
+	              ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+	              ~logType=ERROR,
+	              ~logCategory=API,
+	            )
+	            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+	            resolve()
+	          })
           ->ignore
         } else if isOuterValid {
           // Only the CVC is invalid/empty (outer fields are validated upstream).
@@ -144,10 +156,16 @@ let make = (
                   messageParentWindow([("cvcWidgetConfirmResponse", response)])
                   resolve()
                 })
-                ->catch(err => {
-                  messageParentWindow([
-                    (
-                      "cvcWidgetConfirmErrorResponse",
+	                ->catch(err => {
+	                  loggerState.setLogError(
+	                    ~value=`CVC widget confirm failed: ${err->formatException->JSON.stringify}`,
+	                    ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+	                    ~logType=ERROR,
+	                    ~logCategory=API,
+	                  )
+	                  messageParentWindow([
+	                    (
+	                      "cvcWidgetConfirmErrorResponse",
                       err->formatException->JSON.stringify->JSON.Encode.string,
                     ),
                   ])
@@ -164,16 +182,28 @@ let make = (
                   localeString.inCompleteCVCErrorText
                 }
 
-                setCvcError(_ => errorMsg)
+	                setCvcError(_ => errorMsg)
+	                loggerState.setLogError(
+	                  ~value="CVC widget validation failed",
+	                  ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+	                  ~logType=ERROR,
+	                  ~logCategory=USER_ERROR,
+	                )
 
-                messageParentWindow([
+	                messageParentWindow([
                   (
                     "cvcWidgetConfirmErrorResponse",
                     handleFailureResponse(~message=errorMsg, ~errorType="cvc_validation_failed"),
                   ),
                 ])
-              } else {
-                messageParentWindow([
+	              } else {
+	                loggerState.setLogError(
+	                  ~value="CVC widget confirm failed because CVC is required",
+	                  ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+	                  ~logType=ERROR,
+	                  ~logCategory=USER_ERROR,
+	                )
+	                messageParentWindow([
                   (
                     "cvcWidgetConfirmErrorResponse",
                     handleFailureResponse(
@@ -188,8 +218,14 @@ let make = (
         | None => ()
         }
       } catch {
-      | _ =>
-        messageParentWindow([
+	      | err =>
+	        loggerState.setLogError(
+	          ~value=`CVC widget confirm parser failed: ${err->formatException->JSON.stringify}`,
+	          ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+	          ~logType=ERROR,
+	          ~logCategory=USER_ERROR,
+	        )
+	        messageParentWindow([
           (
             "cvcWidgetConfirmErrorResponse",
             handleFailureResponse(

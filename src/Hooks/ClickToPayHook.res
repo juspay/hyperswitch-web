@@ -337,6 +337,12 @@ let useClickToPay = (
       })
       ->catch(_ => {
         setClickToPayNotReady()
+        loggerState.setLogError(
+          ~value="Click to Pay Mastercard script load failed",
+          ~eventName=CLICK_TO_PAY_SCRIPT,
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
         resolve()
       })
       ->ignore

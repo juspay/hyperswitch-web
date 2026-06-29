@@ -101,7 +101,7 @@ type recoilConfig = {
   showLoader: bool,
 }
 
-let getLocaleObject = async string => {
+let getLocaleObject = async (string, ~logger: option<HyperLoggerTypes.loggerMake>=None) => {
   try {
     let locale = if string == "auto" {
       Window.Navigator.language
@@ -133,16 +133,42 @@ let getLocaleObject = async string => {
     let awaitedLocaleValue = await promiseLocale
     awaitedLocaleValue
   } catch {
-  | _ => EnglishLocale.localeStrings
+  | err =>
+    switch logger {
+    | Some(logger) =>
+      logger.setLogInfo(
+        ~value=`Falling back to English locale strings after locale import failed: ${err
+          ->formatException
+          ->JSON.stringify}`,
+        ~eventName=PAYMENT_ELEMENT_OPTIONS,
+        ~logType=WARNING,
+        ~logCategory=MERCHANT_EVENT,
+      )
+    | None => ()
+    }
+    EnglishLocale.localeStrings
   }
 }
 
-let getConstantStringsObject = async () => {
+let getConstantStringsObject = async (~logger: option<HyperLoggerTypes.loggerMake>=None) => {
   try {
     let promiseConstantStrings = Js.import(ConstantStrings.constantStrings)
     await promiseConstantStrings
   } catch {
-  | _ => ConstantStrings.constantStrings
+  | err =>
+    switch logger {
+    | Some(logger) =>
+      logger.setLogInfo(
+        ~value=`Falling back to bundled constant strings after import failed: ${err
+          ->formatException
+          ->JSON.stringify}`,
+        ~eventName=PAYMENT_ELEMENT_OPTIONS,
+        ~logType=WARNING,
+        ~logCategory=MERCHANT_EVENT,
+      )
+    | None => ()
+    }
+    ConstantStrings.constantStrings
   }
 }
 

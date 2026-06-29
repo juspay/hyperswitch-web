@@ -63,11 +63,12 @@ let make = (~sessionObj: SessionsType.token) => {
           shape: "default",
           on_click: authorize => {
             if isTestMode {
-              Console.warn("Klarna SDK button clicked in test mode - interaction disabled")
               loggerState.setLogInfo(
                 ~value="Klarna SDK button clicked in test mode - interaction disabled",
                 ~eventName=KLARNA_SDK_FLOW,
                 ~paymentMethod="KLARNA",
+                ~logType=WARNING,
+                ~logCategory=MERCHANT_EVENT,
               )
               resolve()
             } else {

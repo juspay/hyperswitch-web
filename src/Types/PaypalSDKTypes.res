@@ -51,7 +51,7 @@ let defaultOrderDetails = {
 type paypalCheckoutInstance = {
   loadPayPalSDK: (vault, unit => unit) => unit,
   createPayment: orderDetails => unit,
-  tokenizePayment: (data, (err, payload) => unit) => unit,
+  tokenizePayment: (data, (Nullable.t<err>, payload) => unit) => unit,
 }
 type authType = {authorization: string}
 type checkoutClient = {client: clientInstance}

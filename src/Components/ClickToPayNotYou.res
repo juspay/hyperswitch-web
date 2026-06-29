@@ -4,6 +4,7 @@ open Utils
 @react.component
 let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVisaCards) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
 
   let (identifier, setIdentifier) = React.useState(_ => "")
@@ -26,11 +27,19 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
     open Promise
     switch clickToPayConfig.clickToPayProvider {
     | MASTERCARD =>
-      ClickToPayHelpers.signOut()
+      ClickToPayHelpers.signOut(~logger=Some(loggerState))
       ->finally(() => {
         updateCtpNotYouState(consumerIdentity)
       })
-      ->catch(err => resolve(Error(err)))
+      ->catch(err => {
+        loggerState.setLogError(
+          ~value="Mastercard Click to Pay signOut rejected",
+          ~eventName=CLICK_TO_PAY_FLOW,
+          ~logType=ERROR,
+          ~logCategory=MERCHANT_EVENT,
+        )
+        resolve(Error(err))
+      })
       ->ignore
     | VISA =>
       updateCtpNotYouState(consumerIdentity)

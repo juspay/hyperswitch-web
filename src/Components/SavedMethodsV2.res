@@ -78,12 +78,24 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
           prev->updateSavedMethodV2(paymentMethodToken, paymentMethodDetails)
         )
       } else {
-        Console.error2("Payment Id Empty ", res->JSON.stringify)
+        Console.error("Payment method token missing in update response")
+        logger.setLogError(
+          ~value="Payment method token missing in update response",
+          ~eventName=PAYMENT_MANAGEMENT_UPDATE_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
       }
     } catch {
     | err =>
       let exceptionMessage = err->formatException->JSON.stringify
       Console.error2("Unable to Update Card ", exceptionMessage)
+      logger.setLogError(
+        ~value=`Unable to update saved card: ${exceptionMessage}`,
+        ~eventName=PAYMENT_MANAGEMENT_UPDATE_CALL,
+        ~logType=ERROR,
+        ~logCategory=API,
+      )
     }
     messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }
@@ -110,12 +122,24 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
       if paymentMethodToken != "" {
         setSavedMethodsV2(prev => prev->removeSavedMethodV2(paymentMethodToken))
       } else {
-        Console.error2("Payment Id Empty ", res->JSON.stringify)
+        Console.error("Payment method token missing in delete response")
+        logger.setLogError(
+          ~value="Payment method token missing in delete response",
+          ~eventName=PAYMENT_MANAGEMENT_DELETE_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
       }
     } catch {
     | err =>
       let exceptionMessage = err->formatException->JSON.stringify
       Console.error2("Unable to Delete Card ", exceptionMessage)
+      logger.setLogError(
+        ~value=`Unable to delete saved card: ${exceptionMessage}`,
+        ~eventName=PAYMENT_MANAGEMENT_DELETE_CALL,
+        ~logType=ERROR,
+        ~logCategory=API,
+      )
     }
     messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }

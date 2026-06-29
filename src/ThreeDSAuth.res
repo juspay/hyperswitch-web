@@ -100,7 +100,15 @@ let make = () => {
               } else {
                 handleFrictionLess()
               }
-            | None => ()
+            | None =>
+              LoggerUtils.handleLogging(
+                ~optLogger=Some(logger),
+                ~eventName=DISPLAY_THREE_DS_SDK,
+                ~value="ThreeDS auth target element missing",
+                ~paymentMethod="CARD",
+                ~logType=ERROR,
+                ~logCategory=USER_ERROR,
+              )
             }
             resolve(json)
           }

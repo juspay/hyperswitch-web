@@ -13,9 +13,11 @@ open Identity
 //   WindowProxy throws a SecurityError in browsers.  Storing a pre-bound closure
 //   that uses `mountedIframeRef->Window.iframePostMessage(...)` is the safe alternative.
 let postToIframeRef: ref<option<Dict.t<JSON.t> => unit>> = ref(None)
+let activeLoggerRef: ref<option<HyperLoggerTypes.loggerMake>> = ref(None)
 
-let setPostToIframe = (fn: Dict.t<JSON.t> => unit) => {
+let setPostToIframe = (fn: Dict.t<JSON.t> => unit, ~logger: HyperLoggerTypes.loggerMake) => {
   postToIframeRef := Some(fn)
+  activeLoggerRef := Some(logger)
 }
 
 // Clears the stored iframe-post callback.
@@ -26,6 +28,88 @@ let setPostToIframe = (fn: Dict.t<JSON.t> => unit) => {
 // intercepted, have the confirm request time out (8 s), and abort.
 let clearPostToIframe = () => {
   postToIframeRef := None
+  activeLoggerRef := None
+}
+
+let logTrustPayFetchEvent = event => {
+  switch activeLoggerRef.contents {
+  | Some(logger) =>
+    let dict = event->getDictFromJson
+    let eventStatus = dict->getString("status", "")
+    let uri = dict->getString("url", "")
+    let statusCode = dict->getInt("statusCode", 0)
+    let latency = dict->getFloat("latency", 0.0)
+    let message = dict->getString("message", "")
+    let data = message === "" ? JSON.Encode.null : message->JSON.Encode.string
+    let logSlowResponse = () => {
+      if latency > LoggerUtils.apiSlowResponseThresholdMs {
+        LogAPIResponse.logApiResponse(
+          ~logger,
+          ~uri,
+          ~eventName=Some(APPLE_PAY_FLOW),
+          ~status=Slow,
+          ~statusCode,
+          ~latency,
+        )
+      }
+    }
+
+    switch eventStatus {
+    | "request" =>
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=Some(APPLE_PAY_FLOW),
+        ~status=Request,
+      )
+    | "success" =>
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=Some(APPLE_PAY_FLOW),
+        ~status=Success,
+        ~statusCode,
+        ~latency,
+      )
+      logSlowResponse()
+    | "error" =>
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=Some(APPLE_PAY_FLOW),
+        ~status=Error,
+        ~statusCode,
+        ~latency,
+      )
+      logSlowResponse()
+    | "exception" =>
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=Some(APPLE_PAY_FLOW),
+        ~status=Exception,
+        ~data,
+        ~latency,
+      )
+      logSlowResponse()
+    | _ => ()
+    }
+  | None => ()
+  }
+}
+
+let logTrustPayProxyError = message => {
+  switch activeLoggerRef.contents {
+  | Some(logger) =>
+    logger.setLogError(
+      ~value=`Apple Pay TrustPay interceptor failed: ${message}`,
+      ~eventName=APPLE_PAY_FLOW,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~paymentMethod="APPLE_PAY",
+    )
+  | None => ()
+  }
 }
 
 // Guards against two concurrent waitForConfirmResponse() invocations.
@@ -126,11 +210,57 @@ let waitForConfirmResponse = (): promise<JSON.t> => {
 // placeholder secret on payment submit unless we swap it too).
 // Self-destructs after the payment-submit swap (the last request).
 // Implementation injected by AppleHacks.js
-let enableFetchInterception: JSON.t => unit = %raw(`
-function enableFetchInterception(newSecret) {
+let enableFetchInterception: (JSON.t, JSON.t => unit) => unit = %raw(`
+function enableFetchInterception(newSecret, logFetchEvent) {
   var origFetch = window.fetch;
   var validateMerchantPatched = false;
   var submitPaymentPatched = false;
+
+  function urlToString(url) {
+    try {
+      if (typeof url === "string") return url;
+      if (url && typeof url.url === "string") return url.url;
+      return String(url);
+    } catch (_e) {
+      return "";
+    }
+  }
+
+  function emitLog(payload) {
+    try {
+      if (typeof logFetchEvent === "function") {
+        logFetchEvent(payload);
+      }
+    } catch (_e) {}
+  }
+
+  function fetchWithApiLogging(ctx, url, patchedOptions) {
+    var requestStartedAt = Date.now();
+    emitLog({ status: "request", url: urlToString(url) });
+    return origFetch.call(ctx, url, patchedOptions).then(
+      function(response) {
+        var latency = Date.now() - requestStartedAt;
+        var statusCode = response && typeof response.status === "number" ? response.status : 0;
+        emitLog({
+          status: response && response.ok ? "success" : "error",
+          url: urlToString(url),
+          statusCode: statusCode,
+          latency: latency
+        });
+        return response;
+      },
+      function(err) {
+        var latency = Date.now() - requestStartedAt;
+        emitLog({
+          status: "exception",
+          url: urlToString(url),
+          latency: latency,
+          message: err && err.message ? err.message : String(err)
+        });
+        throw err;
+      }
+    );
+  }
 
   function rebuildBodyWithSecret(body) {
     var newBody = new FormData();
@@ -169,7 +299,7 @@ function enableFetchInterception(newSecret) {
         if (!validateMerchantPatched && keys.includes("ValidationUrl")) {
           validateMerchantPatched = true;
           var newValidationBody = rebuildBodyWithSecret(options.body);
-          return origFetch.call(this, url, Object.assign({}, options, { body: newValidationBody }));
+          return fetchWithApiLogging(this, url, Object.assign({}, options, { body: newValidationBody }));
         }
 
         // 2) Payment-submit request (Secret + ApplePaymentToken)
@@ -177,7 +307,7 @@ function enableFetchInterception(newSecret) {
           submitPaymentPatched = true;
           window.fetch = origFetch; // self-destruct after the final swap
           var newSubmitBody = rebuildBodyWithSecret(options.body);
-          return origFetch.call(this, url, Object.assign({}, options, { body: newSubmitBody }));
+          return fetchWithApiLogging(this, url, Object.assign({}, options, { body: newSubmitBody }));
         }
       }
     }
@@ -196,7 +326,7 @@ function enableFetchInterception(newSecret) {
 // Implementation injected by AppleHacks.js
 let initApplePaySessionProxy: (
   unit => promise<JSON.t>,
-  JSON.t => unit,
+  (JSON.t, JSON.t => unit) => unit,
   unit => bool,
   unit => unit,
 ) => unit = %raw(`
@@ -228,10 +358,11 @@ function initApplePaySessionProxy(waitForConfirmResponse, enableFetchInterceptio
                 }
                 try {
                   var secrets = await waitForConfirmResponse();
-                  enableFetchInterception(secrets);
+                  enableFetchInterception(secrets, logTrustPayFetchEvent);
                   return originalHandler.call(obj, event);
                 } catch (err) {
                   console.error("[TP-AP] proxy: intercept FAILED —", err.message);
+                  logTrustPayProxyError(err && err.message ? err.message : String(err));
                   try { obj.abort(); } catch (e) {}
                   onInterceptFailure();
                   window.dispatchEvent(new CustomEvent("applePayInterceptFailure", { detail: err }));

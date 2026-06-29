@@ -154,11 +154,12 @@ let make = (
 
   let onGooglePaymentButtonClicked = () => {
     if isTestMode {
-      Console.warn("Google Pay button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
         ~value="Google Pay button clicked in test mode - interaction disabled",
         ~eventName=GOOGLE_PAY_FLOW,
         ~paymentMethod="GOOGLE_PAY",
+        ~logType=WARNING,
+        ~logCategory=MERCHANT_EVENT,
       )
     } else {
       loggerState.setLogInfo(
@@ -221,7 +222,16 @@ let make = (
         }
         resolve()
       })
-      ->catch(_ => resolve())
+      ->catch(_ => {
+        loggerState.setLogError(
+          ~value="Google Pay button callback failed",
+          ~eventName=GOOGLE_PAY_FLOW,
+          ~paymentMethod="GOOGLE_PAY",
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+        resolve()
+      })
       ->ignore
     }
   }

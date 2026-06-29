@@ -227,6 +227,12 @@ let make = (
       let exceptionMessage = err->formatException->JSON.stringify
       messageParentWindow([("cardTokenFail", true->JSON.Encode.bool)])
       Console.error2("Unable to Save Card ", exceptionMessage)
+      loggerState.setLogError(
+        ~value=`Unable to save card: ${exceptionMessage}`,
+        ~eventName=PAYMENT_MANAGEMENT_CONFIRM_CALL,
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
     }
   }
 
@@ -438,8 +444,10 @@ let make = (
 
                 (
                   async () => {
-                    let encryptedCard =
-                      await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard
+	                    let encryptedCard =
+	                      await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard(
+	                        ~logger=Some(loggerState),
+	                      )
 
                     try {
                       let res = await ClickToPayHelpers.handleProceedToPay(

@@ -68,6 +68,34 @@ let make = () => {
     }
   }
 
+  let handleOnError = value => {
+    LoggerUtils.handleLogging(
+      ~optLogger=Some(logger),
+      ~eventName=THREE_DS_METHOD_RESULT,
+      ~value,
+      ~paymentMethod="CARD",
+      ~logType=ERROR,
+      ~logCategory=USER_ERROR,
+    )
+    stateMetadataRef.current
+    ->Utils.getDictFromJson
+    ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
+
+    let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
+    let iframeId = metadataDict->getString("iframeId", "")
+
+    if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
+      isThreeDSMethodCompletionFired.current = true
+
+      messageParentWindow([
+        ("fullscreen", true->JSON.Encode.bool),
+        ("param", `3dsAuth`->JSON.Encode.string),
+        ("iframeId", iframeId->JSON.Encode.string),
+        ("metadata", stateMetadataRef.current),
+      ])
+    }
+  }
+
   let handleOnLoad = _ => {
     if !consumePostMessageForThreeDsMethodCompletionRef.current {
       try {
@@ -93,36 +121,11 @@ let make = () => {
 
           if errorName === "SecurityError" {
             handleIframeContentLoaded()
+          } else {
+            handleOnError(`ThreeDS method iframe load failed: ${err->Utils.formatException->JSON.stringify}`)
           }
         }
       }
-    }
-  }
-
-  let handleOnError = value => {
-    LoggerUtils.handleLogging(
-      ~optLogger=Some(logger),
-      ~eventName=THREE_DS_METHOD_RESULT,
-      ~value,
-      ~paymentMethod="CARD",
-      ~logType=ERROR,
-    )
-    stateMetadataRef.current
-    ->Utils.getDictFromJson
-    ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
-
-    let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
-    let iframeId = metadataDict->getString("iframeId", "")
-
-    if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
-      isThreeDSMethodCompletionFired.current = true
-
-      messageParentWindow([
-        ("fullscreen", true->JSON.Encode.bool),
-        ("param", `3dsAuth`->JSON.Encode.string),
-        ("iframeId", iframeId->JSON.Encode.string),
-        ("metadata", stateMetadataRef.current),
-      ])
     }
   }
 
@@ -157,6 +160,8 @@ let make = () => {
         if errorName === "SecurityError" {
           setIsClearInterval(_ => true)
           handleIframeContentLoaded()
+        } else {
+          handleOnError(`ThreeDS method polling failed: ${err->Utils.formatException->JSON.stringify}`)
         }
       }
     } else {
@@ -273,7 +278,7 @@ let make = () => {
           }
         }
       } catch {
-      | _err => ()
+      | err => handleOnError(`ThreeDS method message parsing failed: ${err->Utils.formatException->JSON.stringify}`)
       }
 
       if consumePostMessageForThreeDsMethodCompletionRef.current && threeDsUrlRef.current !== "" {

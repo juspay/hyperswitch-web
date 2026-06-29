@@ -84,6 +84,13 @@ let make = () => {
           timeoutRef.current->Option.forEach(clearTimeout)
 
           timeoutRef.current = Some(setTimeout(() => {
+              logger.setLogInfo(
+                ~value="threeDsMethodComp = \"N\" after Redsys 3DS method timeout",
+                ~eventName=COMPLETE_AUTHORIZE_CALL,
+                ~logType=WARNING,
+                ~logCategory=API,
+                ~paymentMethod="CARD",
+              )
               handleCompleteAuthorizeCall(
                 "N",
                 clientSecret,
@@ -113,7 +120,14 @@ let make = () => {
           }
         }
       } catch {
-      | _ =>
+      | err =>
+        logger.setLogError(
+          ~value=`Redsys complete authorize flow failed: ${err->formatException->JSON.stringify}`,
+          ~eventName=COMPLETE_AUTHORIZE_CALL,
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+          ~paymentMethod="CARD",
+        )
         postFailedSubmitResponse(
           ~errortype="complete_authorize_failed",
           ~message="Something went wrong.",

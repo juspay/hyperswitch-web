@@ -109,7 +109,7 @@ let manageErrorWarning = (
       logger.setLogError(~value, ~eventName, ~logType, ~logCategory=USER_ERROR)
 
       switch type_ {
-      | Warning => Console.warn(value)
+      | Warning => ()
       | Error =>
         Console.error(value)
         Exn.raiseError(value)
@@ -119,31 +119,56 @@ let manageErrorWarning = (
   }
 }
 
-let unknownKeysWarning = (validKeysArr, dict: Dict.t<JSON.t>, dictType: string) => {
+let warnMerchantOption = (~logger=None, value) => {
+  switch logger {
+  | Some(logger) =>
+    logger.setLogInfo(
+      ~value,
+      ~eventName=PAYMENT_ELEMENT_OPTIONS,
+      ~logType=WARNING,
+      ~logCategory=MERCHANT_EVENT,
+    )
+  | None => Console.warn(value)
+  }
+}
+
+let unknownKeysWarning = (
+  validKeysArr,
+  dict: Dict.t<JSON.t>,
+  dictType: string,
+  ~logger: option<HyperLoggerTypes.loggerMake>=None,
+) => {
   dict
   ->Dict.toArray
   ->Array.forEach(((key, _)) => {
     if validKeysArr->Array.includes(key) {
       ()
     } else {
-      Console.warn(`Unknown Key: '${key}' key in ${dictType}`)
+      warnMerchantOption(~logger, `Unknown Key: '${key}' key in ${dictType}`)
     }
   })
 }
 
-let unknownPropValueWarning = (inValidValue, validValueArr, dictType) => {
+let unknownPropValueWarning = (
+  inValidValue,
+  validValueArr,
+  dictType,
+  ~logger: option<HyperLoggerTypes.loggerMake>=None,
+) => {
   let expectedValues =
     validValueArr
     ->Array.map(item => {
       `'${item}'`
     })
     ->Array.join(", ")
-  Console.warn(`Unknown Value: '${inValidValue}' value in ${dictType}, Expected ${expectedValues}`)
+  warnMerchantOption(
+    ~logger,
+    `Unknown Value: '${inValidValue}' value in ${dictType}, Expected ${expectedValues}`,
+  )
 }
 let valueOutRangeWarning = (num: int, dictType, range, ~logger: HyperLoggerTypes.loggerMake) => {
-  manageErrorWarning(
-    VALUE_OUT_OF_RANGE,
-    ~dynamicStr=`${num->Int.toString} value in ${dictType} Expected value between ${range}`,
-    ~logger: HyperLoggerTypes.loggerMake,
+  warnMerchantOption(
+    ~logger=Some(logger),
+    `Value out of range: '${num->Int.toString} value in ${dictType} Expected value between ${range}'. Please provide a value inside the range`,
   )
 }

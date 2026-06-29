@@ -65,13 +65,32 @@ let make = () => {
 
       switch status {
       | "succeeded" | "requires_customer_action" | "processing" =>
+        logger.setLogInfo(
+          ~value="Plaid flow completed successfully",
+          ~eventName=PLAID_SDK,
+          ~paymentMethod="PLAID",
+        )
         postSubmitResponse(~jsonData=json, ~url=return_url)
       | "failed" =>
+        logger.setLogError(
+          ~value="Plaid payment failed",
+          ~eventName=PLAID_SDK,
+          ~paymentMethod="PLAID",
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
         postFailedSubmitResponse(
           ~errortype="confirm_payment_failed",
           ~message="Payment failed. Try again!",
         )
       | _ =>
+        logger.setLogError(
+          ~value="Plaid payment sync failed",
+          ~eventName=PLAID_SDK,
+          ~paymentMethod="PLAID",
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
         postFailedSubmitResponse(
           ~errortype="sync_payment_failed",
           ~message="Payment is processing. Try again later!",

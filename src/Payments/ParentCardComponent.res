@@ -273,10 +273,16 @@ let make = (
                       ~binNumber,
                       ~expiryMonth,
                       ~expiryYear,
-                    )
+                )
                 confirmWithVaultBody(vaultBody)
               } else {
                 Console.error("ParentCardComponent: payment token not found in vaultResponse")
+                loggerState.setLogError(
+                  ~value="ParentCardComponent: payment token not found in vaultResponse",
+                  ~eventName=VGS_VAULT_FLOW,
+                  ~logType=ERROR,
+                  ~logCategory=API,
+                )
               }
             } else if dict->Dict.get("vgsTokenEvent")->Option.isSome {
               // VGS vault: inner iframe sends the aliased card fields (a distinct

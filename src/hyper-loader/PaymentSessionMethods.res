@@ -399,11 +399,12 @@ let getCustomerSavedPaymentMethods = (
           completeGooglePayPayment()
         })
         ->catch(err => {
-          logger.setLogInfo(
+          logger.setLogError(
             ~value=err->Identity.anyTypeToJson->JSON.stringify,
             ~eventName=GOOGLE_PAY_FLOW,
             ~paymentMethod="GOOGLE_PAY",
-            ~logType=DEBUG,
+            ~logType=ERROR,
+            ~logCategory=API,
           )
 
           handleFailureResponse(
@@ -416,7 +417,8 @@ let getCustomerSavedPaymentMethods = (
           ~value="GooglePay client unavailable for loadPaymentData",
           ~eventName=GOOGLE_PAY_FLOW,
           ~paymentMethod="GOOGLE_PAY",
-          ~logType=DEBUG,
+          ~logType=WARNING,
+          ~logCategory=MERCHANT_EVENT,
         )
         handleFailureResponse(
           ~message="Google Pay is not available",
@@ -551,23 +553,25 @@ let getCustomerSavedPaymentMethods = (
             )
             ->catch(
               err => {
-                logger.setLogInfo(
-                  ~value=err->Identity.anyTypeToJson->JSON.stringify,
-                  ~eventName=GOOGLE_PAY_FLOW,
-                  ~paymentMethod="GOOGLE_PAY",
-                  ~logType=DEBUG,
-                )
+	                logger.setLogInfo(
+	                  ~value=err->Identity.anyTypeToJson->JSON.stringify,
+	                  ~eventName=GOOGLE_PAY_FLOW,
+	                  ~paymentMethod="GOOGLE_PAY",
+	                  ~logType=WARNING,
+	                  ~logCategory=MERCHANT_EVENT,
+	                )
                 false->resolve
               },
             )
           } catch {
           | exn => {
-              logger.setLogInfo(
-                ~value=exn->Identity.anyTypeToJson->JSON.stringify,
-                ~eventName=GOOGLE_PAY_FLOW,
-                ~paymentMethod="GOOGLE_PAY",
-                ~logType=DEBUG,
-              )
+	              logger.setLogInfo(
+	                ~value=exn->Identity.anyTypeToJson->JSON.stringify,
+	                ~eventName=GOOGLE_PAY_FLOW,
+	                ~paymentMethod="GOOGLE_PAY",
+	                ~logType=WARNING,
+	                ~logCategory=MERCHANT_EVENT,
+	              )
               false->resolve
             }
           }
@@ -591,12 +595,13 @@ let getCustomerSavedPaymentMethods = (
         )
         ->catch(
           err => {
-            logger.setLogInfo(
-              ~value=err->Identity.anyTypeToJson->JSON.stringify,
-              ~eventName=GOOGLE_PAY_FLOW,
-              ~paymentMethod="GOOGLE_PAY",
-              ~logType=DEBUG,
-            )
+	            logger.setLogInfo(
+	              ~value=err->Identity.anyTypeToJson->JSON.stringify,
+	              ~eventName=GOOGLE_PAY_FLOW,
+	              ~paymentMethod="GOOGLE_PAY",
+	              ~logType=WARNING,
+	              ~logCategory=MERCHANT_EVENT,
+	            )
             resolve()
           },
         )

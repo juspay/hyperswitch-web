@@ -170,7 +170,13 @@ let make = (
       let otherElements = componentType->isOtherElements
       switch componentType {
       | "paymentMethodsManagement" => ()
-      | str => Console.warn(`Unknown Key: ${str} type in create`)
+      | str =>
+        logger.setLogError(
+          ~value=`Unknown Key: ${str} type in create`,
+          ~eventName=SDK_CONNECTOR_WARNING,
+          ~logType=WARNING,
+          ~logCategory=MERCHANT_EVENT,
+        )
       }
 
       let mountPostMessage = (

@@ -131,8 +131,10 @@ let make = (~sessionObj: SessionsType.token) => {
       `&intent=${paypalIntent}`
     } else {
       loggerState.setLogInfo(
-        ~value="PayPal SDK: intent is missing from session object, omitting intent param from SDK URL",
+        ~value="Missing PayPal SDK intent, omitting intent param from SDK URL",
         ~eventName=PAYPAL_SDK_FLOW,
+        ~logType=WARNING,
+        ~logCategory=MERCHANT_EVENT,
       )
       ""
     }
@@ -141,8 +143,10 @@ let make = (~sessionObj: SessionsType.token) => {
       `&currency=${currency}`
     } else {
       loggerState.setLogInfo(
-        ~value="PayPal SDK: currency is missing from session object, omitting currency param from SDK URL",
+        ~value="Missing PayPal SDK currency, omitting currency param from SDK URL",
         ~eventName=PAYPAL_SDK_FLOW,
+        ~logType=WARNING,
+        ~logCategory=MERCHANT_EVENT,
       )
       ""
     }

@@ -25,11 +25,12 @@ let make = () => {
   let onKlarnaClick = async _ev => {
     try {
       if isTestMode {
-        Console.warn("Klarna checkout button clicked in test mode - interaction disabled")
         loggerState.setLogInfo(
           ~value="Klarna checkout button clicked in test mode - interaction disabled",
           ~eventName=KLARNA_CHECKOUT_FLOW,
           ~paymentMethod="KLARNA",
+          ~logType=WARNING,
+          ~logCategory=MERCHANT_EVENT,
         )
         resolve()
       } else {
@@ -64,7 +65,15 @@ let make = () => {
         resolve()
       }
     } catch {
-    | _ => resolve()
+    | _ =>
+      loggerState.setLogError(
+        ~value="Klarna checkout button callback failed",
+        ~eventName=KLARNA_CHECKOUT_FLOW,
+        ~paymentMethod="KLARNA",
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
+      resolve()
     }
   }
 

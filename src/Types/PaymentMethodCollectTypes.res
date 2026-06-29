@@ -504,7 +504,22 @@ let decodePaymentMethodTypeWithRequiredFields = (
     )
   })
 
-let decodePayoutConfirmResponse = (json: JSON.t): option<payoutConfirmResponse> => {
+let logPayoutConfirmDecodeError = (~logger: option<HyperLoggerTypes.loggerMake>, ~value) =>
+  switch logger {
+  | Some(logger) =>
+    logger.setLogError(
+      ~value,
+      ~eventName=HyperLoggerTypes.CONFIRM_PAYOUT_CALL,
+      ~logType=HyperLoggerTypes.ERROR,
+      ~logCategory=HyperLoggerTypes.API,
+    )
+  | None => ()
+  }
+
+let decodePayoutConfirmResponse = (
+  json: JSON.t,
+  ~logger: option<HyperLoggerTypes.loggerMake>=None,
+): option<payoutConfirmResponse> => {
   switch json->JSON.Decode.object {
   | Some(obj) => {
       let status = switch obj->Dict.get("status")->Option.flatMap(JSON.Decode.string) {
@@ -542,7 +557,14 @@ let decodePayoutConfirmResponse = (json: JSON.t): option<payoutConfirmResponse> 
             }
             Some(ErrorResponse(payoutFailureResponse))
           }
-        | _ => None
+        | _ => {
+            Console.error("Unknown payout status or malformed payout error response")
+            logPayoutConfirmDecodeError(
+              ~logger,
+              ~value="Unknown payout status or malformed payout error response",
+            )
+            None
+          }
         }
       | Some(status) =>
         switch (
@@ -584,7 +606,11 @@ let decodePayoutConfirmResponse = (json: JSON.t): option<payoutConfirmResponse> 
             }
             Some(SuccessResponse(payoutSuccessResponse))
           }
-        | _ => None
+        | _ => {
+            Console.error("Malformed payout confirm response")
+            logPayoutConfirmDecodeError(~logger, ~value="Malformed payout confirm response")
+            None
+          }
         }
       }
     }

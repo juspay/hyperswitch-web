@@ -1,6 +1,12 @@
 open Utils
 @react.component
-let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
+let make = (
+  ~children,
+  ~paymentMode,
+  ~setIntegrateErrorError,
+  ~logger: HyperLoggerTypes.loggerMake,
+  ~initTimestamp,
+) => {
   open RecoilAtoms
   open RecoilAtomsV2
 
@@ -88,6 +94,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
+  let logThemeFallbackWarning = (reason, err) => {
+    logger.setLogInfo(
+      ~value=`${reason}: ${err->formatException->JSON.stringify}`,
+      ~eventName=PAYMENT_ELEMENT_OPTIONS,
+      ~logType=WARNING,
+      ~logCategory=MERCHANT_EVENT,
+    )
+  }
+
   let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
     switch paymentMode->CardThemeType.getPaymentMode {
@@ -141,8 +156,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
       let localeString = await CardTheme.getLocaleObject(
         optionsLocaleString == "" ? config.locale : optionsLocaleString,
+        ~logger=Some(logger),
       )
-      let constantString = await CardTheme.getConstantStringsObject()
+      let constantString = await CardTheme.getConstantStringsObject(~logger=Some(logger))
       let _ = await S3Utils.initializeCountryData(~locale=config.locale, ~logger)
       setConfig(_ => {
         config: {
@@ -160,7 +176,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         showLoader: config.loader == Auto || config.loader == Always,
       })
     } catch {
-    | _ => ()
+    | err =>
+      logger.setLogError(
+        ~value=`Failed to apply loader configuration: ${err->formatException->JSON.stringify}`,
+        ~eventName=SDK_CRASH,
+        ~logType=ERROR,
+        ~logCategory=USER_ERROR,
+      )
     }
   }
 
@@ -312,7 +334,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   ->then(res => {
                     dict->setConfigs(res)
                   })
-                  ->catch(_ => {
+                  ->catch(err => {
+                    logThemeFallbackWarning("Falling back to default theme after paymentOptions theme import failed", err)
                     dict->setConfigs({
                       default: DefaultTheme.default,
                       defaultRules: DefaultTheme.defaultRules,
@@ -374,7 +397,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               ->then(res => {
                 dict->setConfigs(res)
               })
-              ->catch(_ => {
+              ->catch(err => {
+                logThemeFallbackWarning("Falling back to default theme after paymentOptions theme import failed", err)
                 dict->setConfigs({
                   default: DefaultTheme.default,
                   defaultRules: DefaultTheme.defaultRules,
@@ -431,7 +455,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               ->then(res => {
                 dict->setConfigs(res)
               })
-              ->catch(_ => {
+              ->catch(err => {
+                logThemeFallbackWarning("Falling back to default theme after ElementsUpdate theme import failed", err)
                 dict->setConfigs({
                   default: DefaultTheme.default,
                   defaultRules: DefaultTheme.defaultRules,
@@ -635,7 +660,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           setIsUpdateIntentLoading(_ => dict->getBool("updateIntentLoading", false))
         }
       } catch {
-      | _ => setIntegrateErrorError(_ => true)
+      | err =>
+        logger.setLogError(
+          ~value=`Failed to handle loader message: ${err->formatException->JSON.stringify}`,
+          ~eventName=SDK_CRASH,
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+        setIntegrateErrorError(_ => true)
       }
     }
     handleMessage(handleFun, "Error in parsing sent Data")

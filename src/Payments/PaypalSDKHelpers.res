@@ -58,9 +58,11 @@ let loadPaypalSDK = (
     createOrder: () => {
       if isTestMode {
         loggerState.setLogInfo(
-          ~value="Paypal SDK createOrder called in test mode - interaction disabled",
+          ~value="PayPal SDK createOrder called in test mode - interaction disabled",
           ~eventName=PAYPAL_SDK_FLOW,
           ~paymentMethod="PAYPAL",
+          ~logType=WARNING,
+          ~logCategory=MERCHANT_EVENT,
         )
         resolve("")
       } else {
@@ -234,14 +236,35 @@ let loadPaypalSDK = (
             }
           })
         })
-        ->catch(_ => resolve())
+        ->catch(err => {
+          loggerState.setLogError(
+            ~value=`PayPal SDK create order failed: ${err->formatException->JSON.stringify}`,
+            ~eventName=PAYPAL_SDK_FLOW,
+            ~paymentMethod="PAYPAL",
+            ~logType=ERROR,
+            ~logCategory=API,
+          )
+          resolve()
+        })
         ->ignore
       }
     },
     onCancel: _data => {
+      loggerState.setLogInfo(
+        ~value="PayPal SDK popup cancelled by user",
+        ~eventName=PAYPAL_SDK_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
       handleCloseLoader()
     },
-    onError: _err => {
+    onError: err => {
+      loggerState.setLogError(
+        ~value=`PayPal SDK popup failed: ${err->Identity.anyTypeToJson->JSON.stringify}`,
+        ~eventName=PAYPAL_SDK_FLOW,
+        ~paymentMethod="PAYPAL",
+        ~logType=ERROR,
+        ~logCategory=API,
+      )
       handleCloseLoader()
     },
     onClick: () => {
@@ -285,12 +308,26 @@ let loadBraintreePaypalSdk = (
       braintree.client.create({authorization: token}, (clientErr, clientInstance) => {
         if clientErr {
           Console.error2("Error creating client", clientErr)
+          loggerState.setLogError(
+            ~value=`Error creating Braintree PayPal client: ${clientErr ? "true" : "false"}`,
+            ~eventName=PAYPAL_SDK_FLOW,
+            ~logType=ERROR,
+            ~logCategory=API,
+            ~paymentMethod="PAYPAL",
+          )
         }
         braintree.paypalCheckout.create(
           {client: clientInstance},
-          (paypalCheckoutErr, paypalCheckoutInstance) => {
-            switch paypalCheckoutErr->Nullable.toOption {
-            | Some(val) => Console.warn(`INTEGRATION ERROR: ${val.message}`)
+	          (paypalCheckoutErr, paypalCheckoutInstance) => {
+	            switch paypalCheckoutErr->Nullable.toOption {
+	            | Some(val) =>
+	              loggerState.setLogInfo(
+	                ~value=`INTEGRATION ERROR: ${val.message}`,
+                ~eventName=PAYPAL_SDK_FLOW,
+                ~logType=WARNING,
+                ~logCategory=MERCHANT_EVENT,
+                ~paymentMethod="PAYPAL",
+              )
             | None => ()
             }
             paypalCheckoutInstance.loadPayPalSDK(
@@ -315,7 +352,20 @@ let loadBraintreePaypalSdk = (
                       ? ()
                       : paypalCheckoutInstance.tokenizePayment(
                           data,
-                          (_err, payload) => {
+                          (err, payload) => {
+                            switch err->Nullable.toOption {
+                            | Some(err) =>
+                              loggerState.setLogError(
+                                ~value=`PayPal SDK tokenize payment failed: ${err
+                                  ->Identity.anyTypeToJson
+                                  ->JSON.stringify}`,
+                                ~eventName=PAYPAL_SDK_FLOW,
+                                ~paymentMethod="PAYPAL",
+                                ~logType=ERROR,
+                                ~logCategory=API,
+                              )
+                            | None => ()
+                            }
                             let (connectors, _) =
                               paymentMethodListValue->PaymentUtils.getConnectors(
                                 Wallets(Paypal(SDK)),
@@ -349,9 +399,21 @@ let loadBraintreePaypalSdk = (
                         )
                   },
                   onCancel: _data => {
+                    loggerState.setLogInfo(
+                      ~value="PayPal SDK popup cancelled by user",
+                      ~eventName=PAYPAL_SDK_FLOW,
+                      ~paymentMethod="PAYPAL",
+                    )
                     handleCloseLoader()
                   },
-                  onError: _err => {
+                  onError: err => {
+                    loggerState.setLogError(
+                      ~value=`PayPal SDK popup failed: ${err->Identity.anyTypeToJson->JSON.stringify}`,
+                      ~eventName=PAYPAL_SDK_FLOW,
+                      ~paymentMethod="PAYPAL",
+                      ~logType=ERROR,
+                      ~logCategory=API,
+                    )
                     handleCloseLoader()
                   },
                   onClick: () => {
@@ -376,6 +438,15 @@ let loadBraintreePaypalSdk = (
     }
     resolve()
   })
-  ->catch(_ => resolve())
+  ->catch(err => {
+    loggerState.setLogError(
+      ~value=`PayPal SDK render failed: ${err->formatException->JSON.stringify}`,
+      ~eventName=PAYPAL_SDK_FLOW,
+      ~paymentMethod="PAYPAL",
+      ~logType=ERROR,
+      ~logCategory=API,
+    )
+    resolve()
+  })
   ->ignore
 }

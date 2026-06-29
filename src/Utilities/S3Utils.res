@@ -37,21 +37,26 @@ let getNormalizedLocale = locale => {
   }
 }
 
-let fetchCountryStateFromS3 = endpoint => {
-  open Promise
-
+let fetchCountryStateFromS3 = async (endpoint, ~logger) => {
   let headers = [("Accept-Encoding", "br, gzip")]->Dict.fromArray
 
-  Utils.fetchApi(endpoint, ~method=#GET, ~headers)
-  ->Promise.then(resp => resp->Fetch.Response.json)
-  ->then(data => {
-    let val = decodeJsonTocountryStateData(data)
-    switch val {
-    | Some(res) => resolve(res)
-    | None => reject(Exn.anyToExnInternal("Failed to decode country state data"))
+  let onSuccess = data => {
+    switch decodeJsonTocountryStateData(data) {
+    | Some(res) => res
+    | None => Exn.raiseError("Failed to decode country state data")
     }
-  })
-  ->catch(_ => reject(Exn.anyToExnInternal("Failed to fetch country state data")))
+  }
+  let onFailure = _ => Exn.raiseError("Failed to fetch country state data")
+
+  await Utils.fetchApiWithLogging(
+    endpoint,
+    ~eventName=S3_API,
+    ~logger,
+    ~headers,
+    ~method=#GET,
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let getBaseUrl = GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
@@ -65,18 +70,27 @@ let getCountryStateData = async (
   let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
 
   try {
-    await fetchCountryStateFromS3(endpoint)
+    await fetchCountryStateFromS3(endpoint, ~logger)
   } catch {
   | _ =>
+    logger.setLogInfo(
+      ~value="Falling back to default country state data locale",
+      ~eventName=S3_API,
+      ~logType=WARNING,
+      ~logCategory=API,
+    )
     try {
-      await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
+      await fetchCountryStateFromS3(
+        `${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`,
+        ~logger,
+      )
     } catch {
     | _ => {
         logger.setLogError(
           ~value="Failed to fetch country state data",
           ~eventName=S3_API,
           ~logType=ERROR,
-          ~logCategory=USER_ERROR,
+          ~logCategory=API,
         )
 
         let fallbackCountries = country
@@ -87,9 +101,19 @@ let getCountryStateData = async (
             states: fallbackStates.states,
           }
         } catch {
-        | _ => {
-            countries: fallbackCountries,
-            states: JSON.Encode.null,
+        | err => {
+            logger.setLogInfo(
+              ~value=`Falling back to countries-only country state data after bundled states import failed: ${err
+                ->Utils.formatException
+                ->JSON.stringify}`,
+              ~eventName=S3_API,
+              ~logType=WARNING,
+              ~logCategory=API,
+            );
+            {
+              countries: fallbackCountries,
+              states: JSON.Encode.null,
+            }
           }
         }
       }
@@ -108,6 +132,15 @@ let initializeCountryData = async (
     stateDataRef.contents = data.states
     data
   } catch {
-  | _ => {countries: country, states: JSON.Encode.null}
+  | err =>
+    logger.setLogInfo(
+      ~value=`Falling back to countries-only country state data after initialization failed: ${err
+        ->Utils.formatException
+        ->JSON.stringify}`,
+      ~eventName=S3_API,
+      ~logType=WARNING,
+      ~logCategory=API,
+    );
+    {countries: country, states: JSON.Encode.null}
   }
 }

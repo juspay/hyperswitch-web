@@ -3,7 +3,7 @@ open PaymentMethodCollectUtils
 open RecoilAtoms
 
 @react.component
-let make = (~integrateError, ~logger) => {
+let make = (~integrateError, ~logger: HyperLoggerTypes.loggerMake) => {
   open Promise
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -93,10 +93,21 @@ let make = (~integrateError, ~logger) => {
     None
   }, [showStatus])
 
+  let paymentMethodCollectFlowToString = flow =>
+    switch flow {
+    | PayoutLinkInitiate => "PAYOUT_LINK_INITIATE"
+    | PayoutMethodCollect => "PAYOUT_METHOD_COLLECT"
+    }
+
   let handleSubmit = pmd => {
     setLoader(_ => true)
     let flow = options.flow
     let pmdBody = flow->formBody(pmd)
+    logger.setLogInfo(
+      ~value=`Payment method collect submitted for ${flow->paymentMethodCollectFlowToString}`,
+      ~eventName=PAYMENT_ATTEMPT,
+      ~paymentMethod=flow->paymentMethodCollectFlowToString,
+    )
 
     let createPaymentMethodPromiseWrapped = () => {
       PaymentHelpers.createPaymentMethod(
@@ -108,11 +119,24 @@ let make = (~integrateError, ~logger) => {
         ~body=pmdBody,
       )
       ->then(res => {
-        Console.warn2("DEBUGG RES", res)
+        let createPaymentMethodDebugSummary = "Create customer payment method completed"
+        Console.debug2("DEBUGG RES", createPaymentMethodDebugSummary)
+        logger.setLogInfo(
+          ~value=createPaymentMethodDebugSummary,
+          ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
+          ~logType=DEBUG,
+          ~logCategory=API,
+        )
         resolve()
       })
       ->catch(err => {
-        Console.error2("DEBUGG ERR", err)
+        Console.error("Create customer payment method failed")
+        logger.setLogError(
+          ~value=err->Utils.formatException->JSON.stringify,
+          ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
         resolve()
       })
       ->finally(() => {
@@ -132,7 +156,7 @@ let make = (~integrateError, ~logger) => {
         ~payoutId=options.payoutId,
       )
       ->then(res => {
-        let data = res->decodePayoutConfirmResponse
+        let data = res->decodePayoutConfirmResponse(~logger=Some(logger))
         switch data {
         | Some(SuccessResponse(res)) => {
             let updatedStatusInfo = {
@@ -146,6 +170,12 @@ let make = (~integrateError, ~logger) => {
             setStatusInfo(_ => updatedStatusInfo)
           }
         | Some(ErrorResponse(err)) => {
+            logger.setLogError(
+              ~value=`Payout confirm returned error response: ${err.errorType}`,
+              ~eventName=CONFIRM_PAYOUT_CALL,
+              ~logType=ERROR,
+              ~logCategory=API,
+            )
             let updatedStatusInfo = {
               payoutId: options.payoutId,
               status: Failed,
@@ -171,7 +201,13 @@ let make = (~integrateError, ~logger) => {
         resolve()
       })
       ->catch(err => {
-        Console.error2("CRITICAL - Payouts confirm failed with unknown error", err)
+        Console.error("CRITICAL - Payouts confirm failed with unknown error")
+        logger.setLogError(
+          ~value=err->Utils.formatException->JSON.stringify,
+          ~eventName=CONFIRM_PAYOUT_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
         let updatedStatusInfo = {
           payoutId: options.payoutId,
           status: Failed,
@@ -191,6 +227,11 @@ let make = (~integrateError, ~logger) => {
 
     switch flow {
     | PayoutLinkInitiate =>
+      logger.setLogInfo(
+        ~value="Redirecting user after payout confirm flow",
+        ~eventName=REDIRECTING_USER,
+        ~paymentMethod=flow->paymentMethodCollectFlowToString,
+      )
       confirmPayoutPromiseWrapper()->then(_ => resolve())->catch(_ => resolve())->ignore
     | PayoutMethodCollect =>
       pmdBody->Array.push(("customer_id", options.customerId->JSON.Encode.string))

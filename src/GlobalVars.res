@@ -10,6 +10,7 @@
 @val external enableLogging: bool = "enableLogging"
 @val external loggingLevelStr: string = "loggingLevel"
 @val external maxLogsPushedPerEventName: int = "maxLogsPushedPerEventName"
+@val external slowApiThresholdMs: float = "slowApiThresholdMs"
 let targetOrigin: string = "*"
 @val external isInteg: bool = "isIntegrationEnv"
 @val external isSandbox: bool = "isSandboxEnv"

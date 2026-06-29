@@ -76,11 +76,12 @@ let make = (~walletOptions) => {
   )
   let onPaypalClick = _ev => {
     if isTestMode {
-      Console.warn("PayPal button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
         ~value="PayPal button clicked in test mode - interaction disabled",
         ~eventName=PAYPAL_FLOW,
         ~paymentMethod="PAYPAL",
+        ~logType=WARNING,
+        ~logCategory=MERCHANT_EVENT,
       )
     } else {
       loggerState.setLogInfo(
@@ -135,7 +136,16 @@ let make = (~walletOptions) => {
         }
         resolve()
       })
-      ->catch(_ => resolve())
+      ->catch(_ => {
+        loggerState.setLogError(
+          ~value="PayPal button callback failed",
+          ~eventName=PAYPAL_FLOW,
+          ~paymentMethod="PAYPAL",
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+        resolve()
+      })
       ->ignore
     }
   }

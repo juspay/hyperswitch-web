@@ -290,8 +290,11 @@ let make = (
       switch oElement->Nullable.toOption {
       | Some(elem) => elem->Window.innerHTML("")
       | None =>
-        Console.warn(
-          "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
+        logger.setLogError(
+          ~value="INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
+          ~eventName=SDK_CONNECTOR_WARNING,
+          ~logType=WARNING,
+          ~logCategory=MERCHANT_EVENT,
         )
       }
     }
