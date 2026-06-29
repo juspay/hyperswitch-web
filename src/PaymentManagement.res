@@ -93,6 +93,7 @@ let make = (
   }, (isExpiryValid, CardUtils.isExpiryComplete(cardExpiry)))
 
   <>
+    <Announcer />
     <RenderIf
       condition={showAddScreen &&
       paymentManagementListValue.paymentMethodsEnabled->Array.length != 0}>

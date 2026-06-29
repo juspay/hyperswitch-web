@@ -274,4 +274,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   closeLabel: "關閉",
   dialogLabel: "對話框",
   paymentMethodsGroupLabel: "付款方式",
+  processingPaymentText: "正在處理付款",
+  paymentFailedText: "付款失敗。請檢查您的詳細信息並重試。",
 }

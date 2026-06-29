@@ -275,4 +275,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   closeLabel: "Cerrar",
   dialogLabel: "Diálogo",
   paymentMethodsGroupLabel: "Métodos de pago",
+  processingPaymentText: "Procesando pago",
+  paymentFailedText: "Pago fallido. Por favor, revise sus datos e intente de nuevo.",
 }

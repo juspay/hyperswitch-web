@@ -275,4 +275,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   closeLabel: "閉じる",
   dialogLabel: "ダイアログ",
   paymentMethodsGroupLabel: "支払い方法",
+  processingPaymentText: "決済処理中",
+  paymentFailedText: "決済に失敗しました。内容をご確認の上、もう一度お試しください。",
 }

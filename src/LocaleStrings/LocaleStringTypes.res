@@ -262,6 +262,8 @@ type localeStrings = {
   closeLabel: string,
   dialogLabel: string,
   paymentMethodsGroupLabel: string,
+  processingPaymentText: string,
+  paymentFailedText: string,
 }
 
 type constantStrings = {

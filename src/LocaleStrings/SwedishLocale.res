@@ -274,4 +274,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   closeLabel: "Stäng",
   dialogLabel: "Dialog",
   paymentMethodsGroupLabel: "Betalningsmetoder",
+  processingPaymentText: "Bearbetar betalning",
+  paymentFailedText: "Betalningen misslyckades. Granska dina uppgifter och försök igen.",
 }

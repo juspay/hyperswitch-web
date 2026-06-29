@@ -33,8 +33,7 @@ let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?, ~compact=false
           fontSize: themeObj.fontSizeLg,
           marginBottom: "5px",
           opacity: "0.6",
-        }
-        ariaHidden=true>
+        }>
         {React.string(fieldName)}
       </div>
     </RenderIf>
@@ -44,6 +43,7 @@ let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?, ~compact=false
           <div className="flex flex-row">
             <div
               id
+              title=fieldName
               style={
                 background: themeObj.colorBackground,
                 // Compact (saved-card cvc): horizontal padding only + fixed height
