@@ -265,4 +265,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "收起",
   refreshingText: "刷新中...",
   paymentDetailsBeingCheckedText: "正在检查付款详情，请稍候",
+  // --- accessibility labels ---
+  cardNetworkLabel: "卡组织",
+  morePaymentMethodsLabel: "更多支付方式",
+  yearLabel: "年",
+  monthLabel: "月",
+  optionTabLabel: fieldName => `${fieldName} 选项标签`,
 }

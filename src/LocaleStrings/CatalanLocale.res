@@ -267,4 +267,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Mostra menys",
   refreshingText: "Actualitzant...",
   paymentDetailsBeingCheckedText: "S'estan comprovant els detalls del pagament. Si us plau, espereu",
+  // --- accessibility labels ---
+  cardNetworkLabel: "Xarxa de targeta",
+  morePaymentMethodsLabel: "Més mètodes de pagament",
+  yearLabel: "Any",
+  monthLabel: "Mes",
+  optionTabLabel: fieldName => `Pestanya d'opció ${fieldName}`,
 }

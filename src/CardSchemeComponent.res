@@ -2,8 +2,10 @@ module CoBadgeCardSchemeDropDown = {
   @react.component
   let make = (~eligibleCardSchemes, ~setCardBrand) => {
     let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     <select
       className="w-4"
+      ariaLabel={localeString.cardNetworkLabel}
       onClick={_ =>
         loggerState.setLogInfo(~value="CardSchemeMenu expanded", ~eventName=CARD_SCHEME_SELECTION)}
       onChange={ev => {

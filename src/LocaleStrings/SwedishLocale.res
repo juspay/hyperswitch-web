@@ -265,4 +265,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Visa mindre",
   refreshingText: "Uppdaterar...",
   paymentDetailsBeingCheckedText: "Betalningsinformation kontrolleras. Vänligen vänta",
+  // --- accessibility labels ---
+  cardNetworkLabel: "Kortnätverk",
+  morePaymentMethodsLabel: "Fler betalningsmetoder",
+  yearLabel: "År",
+  monthLabel: "Månad",
+  optionTabLabel: fieldName => `${fieldName} alternativflik`,
 }
