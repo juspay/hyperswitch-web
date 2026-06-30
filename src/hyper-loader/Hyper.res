@@ -132,6 +132,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
       ~isTaxCalculationEnabled,
       ~resolvePromise,
       ~sdkAuthorization=Some(sdkAuthorization),
+      ~sdkHandleIsThere=LoaderPaymentElement.isPaymentButtonHandlerProvided.contents,
     )
   }
 }

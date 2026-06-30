@@ -69,6 +69,7 @@ let startApplePaySession = (
   ~publishableKey,
   ~isTaxCalculationEnabled=false,
   ~sdkAuthorization=None,
+  ~sdkHandleIsThere=false,
 ) => {
   open Promise
   let ssn = applePaySession(3, paymentRequest)
@@ -197,13 +198,34 @@ let startApplePaySession = (
       ~errorType="apple_pay",
     )->resolvePromise
   }
-  ssn.begin()
+  makeOneClickHandlerPromise(sdkHandleIsThere)
+  ->then(result => {
+    let result = result->JSON.Decode.bool->Option.getOr(false)
+    if result {
+      ssn.begin()
+    } else {
+      handleFailureResponse(
+        ~message="ApplePay Session Cancelled",
+        ~errorType="apple_pay",
+      )->resolvePromise
+    }
+    resolve()
+  })
+  ->catch(_ => {
+    handleFailureResponse(
+      ~message="ApplePay Session Cancelled",
+      ~errorType="apple_pay",
+    )->resolvePromise
+    resolve()
+  })
+  ->ignore
 }
 
 let useHandleApplePayResponse = (
   ~connectors,
   ~intent,
   ~setApplePayClicked=_ => (),
+  ~setShowApplePayLoader=_ => (),
   ~syncPayment=() => (),
   ~isInvokeSDKFlow=true,
   ~isSavedMethodsFlow=false,
@@ -268,6 +290,7 @@ let useHandleApplePayResponse = (
           )
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
+          setShowApplePayLoader(_ => false)
           if isSavedMethodsFlow || !isWallet {
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
           }
