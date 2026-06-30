@@ -27,9 +27,11 @@ let resolveFieldTexts = (
   let placeholder = switch field.merchantProvidedPlaceholderText {
   | Some(text) => text
   | None =>
+    let defaultPlaceholder =
+      field.defaultPlaceholderText->String.length > 0 ? field.defaultPlaceholderText : label
     field.placeholderLocalizationKey
     ->Option.flatMap(key => lookupLocaleKey(key, localeObject))
-    ->Option.getOr(label)
+    ->Option.getOr(defaultPlaceholder)
   }
 
   {label, placeholder}
@@ -94,9 +96,21 @@ let resolveValidator = (
   )
 }
 
-let findCryptoCurrencyField = (~allFields: array<SuperpositionTypes.fieldConfig>): option<
-  SuperpositionTypes.fieldConfig,
-> => allFields->Array.find(f => f.fieldRenderType === SuperpositionTypes.CryptoCurrency)
+let findCryptoCurrencyField = (~allFields: array<SuperpositionTypes.fieldConfig>) =>
+  allFields->Array.find(field => field.fieldRenderType === SuperpositionTypes.CryptoCurrency)
+
+let isCombinedPhoneRow = (~items: array<SuperpositionTypes.fieldConfig>) =>
+  items->Array.some(field => field.fieldRenderType === SuperpositionTypes.Phone) &&
+    items->Array.some(field => field.fieldRenderType === SuperpositionTypes.PhoneCountryCode)
+
+let getCombinedPhoneRowLabel = (
+  ~items: array<SuperpositionTypes.fieldConfig>,
+  ~localeObject: LocaleStringTypes.localeStrings,
+) =>
+  items
+  ->Array.find(field => field.fieldRenderType === SuperpositionTypes.Phone)
+  ->Option.map(phoneField => resolveFieldTexts(~field=phoneField, ~localeObject).label)
+  ->Option.getOr("")
 
 let getComputedLanguagePreferenceValue = (~locale: string, ~options: array<string>): string =>
   options->Array.includes(locale->String.toUpperCase->String.split("-")->Array.join("_"))
