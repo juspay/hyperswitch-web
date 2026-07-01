@@ -44,6 +44,7 @@ let make = (
       ~isSdkParamsEnabled=false,
       ~selectorString=localSelectorString,
       ~shouldWaitForReady=false,
+      ~logger,
     )
   }
 
