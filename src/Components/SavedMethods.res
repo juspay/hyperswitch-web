@@ -143,11 +143,18 @@ let make = (
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
       {visibleSavedMethods
-      ->Array.mapWithIndex((obj, i) =>
+      ->Array.mapWithIndex((obj, i) => {
+        let isActive = paymentTokenVal == obj.paymentToken
+        let (eligibilitySurchargeDetails, isEligibilityPending) = isActive
+          ? (
+              eligibilitySurchargeDetails,
+              isEligibilityPending && paymentMethodListValue.should_block_confirm,
+            )
+          : (None, false)
         <SavedCardItem
           key={i->Int.toString}
           setPaymentToken
-          isActive={paymentTokenVal == obj.paymentToken}
+          isActive
           paymentItem=obj
           brandIcon={obj->getPaymentMethodBrand}
           index=i
@@ -159,13 +166,12 @@ let make = (
           setShowInstallments
           installmentsError
           setInstallmentsError
-          eligibilitySurchargeDetails={paymentTokenVal == obj.paymentToken
-            ? eligibilitySurchargeDetails
-            : None}
+          eligibilitySurchargeDetails
+          isEligibilityPending
           isVaultCvcFlow
           setCvcIframeRef
         />
-      )
+      })
       ->React.array}
       <RenderIf condition={hasMoreSavedMethods}>
         <ShowMoreToggle isCollapsed setIsCollapsed />
@@ -610,13 +616,6 @@ let make = (
     } else {
       <RenderIf condition=showSavedCards> {bottomElement} </RenderIf>
     }}
-    <RenderIf condition={isEligibilityPending && paymentMethodListValue.should_block_confirm}>
-      <div className="flex items-baseline text-xs mt-2">
-        <div className="text-left text-gray-400">
-          {localeString.paymentDetailsBeingCheckedText->React.string}
-        </div>
-      </div>
-    </RenderIf>
     <RenderIf condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
       <div className="pt-4 pb-2 flex items-center justify-start">
         <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />

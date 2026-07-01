@@ -62,6 +62,7 @@ let make = (
   ~installmentsError,
   ~setInstallmentsError,
   ~eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  ~isEligibilityPending=false,
   // Vault saved-card (return user) flow (VGS or Hyperswitch): when true, this card's
   // CVC is collected inside the nested iframe (ParentCardComponent saved-card mode)
   // instead of the plain input. `setCvcIframeRef` lifts the iframe ref to
@@ -235,11 +236,6 @@ let make = (
     ->PaymentUtils.filterInstallmentPlansByPaymentMethod(paymentItem.paymentMethod)
     ->Array.length > 0
 
-  let surchargeAmount =
-    eligibilitySurchargeDetails
-    ->Option.map(s => s.displayTotalSurchargeAmount->Float.toString)
-    ->Option.getOr("")
-
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
       className={`PickerItem ${pickerItemClass} flex flex-row items-stretch`}
@@ -404,16 +400,10 @@ let make = (
                   paymentMethodType
                   cardBrand={cardBrand->CardUtils.getCardType}
                 />
-                <RenderIf condition={eligibilitySurchargeDetails->Option.isSome && isCard}>
-                  <div className="flex items-baseline text-xs mt-2 ml-1">
-                    <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
-                    <div className="text-left text-gray-400">
-                      {localeString.surchargeMsgAmountForCard(
-                        paymentMethodListValue.currency,
-                        surchargeAmount,
-                      )}
-                    </div>
-                  </div>
+                <RenderIf condition={isCard}>
+                  <SurchargeEligibilityNotice
+                    eligibilitySurchargeDetails isEligibilityPending className="mt-3 ml-1.5"
+                  />
                 </RenderIf>
               </RenderIf>
             </div>
