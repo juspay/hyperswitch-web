@@ -9,7 +9,7 @@ const testEnv = process.env.TEST_ENV || "sandbox";
 
 const apiUrlMap = {
   sandbox: "https://sandbox.hyperswitch.io",
-  integ: "https://integ-api.hyperswitch.io",
+  integ:   "https://integ.hyperswitch.io/api",
   // For local: set LOCAL_API_URL env var (e.g. http://localhost:8080)
   local: process.env.LOCAL_API_URL || "http://localhost:8080",
 };
