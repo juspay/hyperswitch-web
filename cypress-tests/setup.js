@@ -351,42 +351,52 @@ const CONNECTOR_PAYMENT_METHODS = {
  */
 async function createMerchant(adminApiKey, apiBaseUrl) {
   const merchantId = `test_merchant_${Date.now()}`;
+  const maxRetries = 3;
+  const retryDelayMs = 5000;
 
-  const response = await fetch(`${apiBaseUrl}/accounts`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "api-key": adminApiKey,
-    },
-    body: JSON.stringify({
-      merchant_id: merchantId,
-      merchant_name: merchantId,
-      locker_id: "m0010",
-      merchant_details: {
-        primary_contact_person: "Test User",
-        primary_email: "test@hyperswitch.io",
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const response = await fetch(`${apiBaseUrl}/accounts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": adminApiKey,
       },
-      primary_business_details: [
-        {
-          country: "US",
-          business: "default",
+      body: JSON.stringify({
+        merchant_id: attempt > 1 ? `test_merchant_${Date.now()}_${attempt}` : merchantId,
+        merchant_name: merchantId,
+        locker_id: "m0010",
+        merchant_details: {
+          primary_contact_person: "Test User",
+          primary_email: "test@hyperswitch.io",
         },
-      ],
-    }),
-  });
+        primary_business_details: [
+          {
+            country: "US",
+            business: "default",
+          },
+        ],
+      }),
+    });
 
-  if (!response.ok) {
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        merchantId: data.merchant_id,
+        publishableKey: data.publishable_key,
+      };
+    }
+
     const errorText = await response.text();
+    if (attempt < maxRetries && response.status >= 500) {
+      console.log(`[setup] Merchant creation attempt ${attempt}/${maxRetries} failed (HTTP ${response.status}), retrying in ${retryDelayMs / 1000}s...`);
+      await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+      continue;
+    }
+
     throw new Error(
       `[setup] Failed to create merchant: HTTP ${response.status} ${response.statusText}\n${errorText}`
     );
   }
-
-  const data = await response.json();
-  return {
-    merchantId: data.merchant_id,
-    publishableKey: data.publishable_key,
-  };
 }
 
 /**
@@ -700,6 +710,15 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
   );
 
   _credentialsCache = { publishableKey, secretKey, merchantId, connectorProfileIds };
+
+  const cachePath = path.join(__dirname, "test-credentials.json");
+  try {
+    fs.writeFileSync(cachePath, JSON.stringify(_credentialsCache, null, 2));
+    console.log(`[setup] Credentials cached to ${cachePath} for reuse by subsequent runs.`);
+  } catch (err) {
+    console.warn(`[setup] Could not cache credentials: ${err.message}`);
+  }
+
   return _credentialsCache;
 }
 

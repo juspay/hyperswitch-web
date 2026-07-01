@@ -7,7 +7,7 @@ const rateLimit = require("express-rate-limit");
 dotenv.config({ path: "./.env" });
 
 const app = express();
-const PORT = 5252;
+const PORT = process.env.DEMO_APP_SERVER_PORT || 5252;
 
 app.use(express.json());
 

@@ -21,11 +21,7 @@ describe("SDK Initialization Tests", () => {
       });
     });
 
-    cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
-      .should("be.visible")
-      .its("0.contentDocument")
-      .its("body")
-      .should("not.be.empty");
+    cy.waitForSDKReady();
   });
 
   it("should fail initialization with invalid publishable key format", () => {
@@ -33,19 +29,24 @@ describe("SDK Initialization Tests", () => {
     
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
-        cy.visit(getClientURL(clientSecret, invalidKey));
+        // Install the console.error stub via onBeforeLoad so it is registered
+        // BEFORE the SDK's JS runs — registering cy.on() after cy.visit() is
+        // too late and the stub never captures init-time errors.
+        cy.visit(getClientURL(clientSecret, invalidKey), {
+          onBeforeLoad(win) {
+            cy.stub(win.console, "error").as("consoleError");
+          },
+        });
       });
-    });
-
-    cy.on("window:before:load", (win) => {
-      cy.stub(win.console, "error").as("consoleError");
     });
 
     cy.get("@consoleError").should("have.been.called");
   });
 
   it("should initialize with custom backend URL", () => {
-    const customBackendUrl = Cypress.env("HYPERSWITCH_CUSTOM_BACKEND_URL");
+    const customBackendUrl =
+      Cypress.env("HYPERSWITCH_CUSTOM_BACKEND_URL") ||
+      Cypress.env("HYPERSWITCH_API_URL");
     
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
@@ -54,8 +55,7 @@ describe("SDK Initialization Tests", () => {
       });
     });
 
-    cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
-      .should("be.visible");
+    cy.waitForSDKReady();
   });
 
   it("should reinitialize SDK when isForceInit is true", () => {
@@ -66,8 +66,7 @@ describe("SDK Initialization Tests", () => {
       });
     });
 
-    cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
-      .should("be.visible");
+    cy.waitForSDKReady();
     
     cy.window().then((win: any) => {
       expect(win.Hyper).to.exist;
@@ -81,7 +80,6 @@ describe("SDK Initialization Tests", () => {
       });
     });
 
-    cy.get("#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element")
-      .should("be.visible");
+    cy.waitForSDKReady();
   });
 });

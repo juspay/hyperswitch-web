@@ -69,6 +69,7 @@ module FullNameFieldInput = {
 
     <PaymentInputField
       fieldName={label}
+      name={DynamicFieldsUtils.getFieldTestId(firstNameFieldConfig.confirmRequestWritePath)}
       value={name}
       onChange={handleChange}
       onBlur={handleBlur}

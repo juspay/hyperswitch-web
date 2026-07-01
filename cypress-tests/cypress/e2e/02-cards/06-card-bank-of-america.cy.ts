@@ -44,6 +44,16 @@ describe("Bank of America Card Payment flow test", () => {
     getIframeBody().find("[data-testid=expiryInput]").type(card_exp_year);
     getIframeBody().find("[data-testid=cvvInput]").type(cvc);
 
+    // Bank of America requires billing details; fill whichever dynamic billing
+    // fields the SDK renders before submitting (commonly just the email field).
+    getIframeBody().then(($body) => {
+      if ($body.find('[data-testid="email"]').length > 0) {
+        getIframeBody()
+          .find('[data-testid="email"]')
+          .type("hyperswitch_sdk_demo_id@gmail.com");
+      }
+    });
+
     getIframeBody().get("#submit").click();
 
     cy.wait(3000);

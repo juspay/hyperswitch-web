@@ -127,6 +127,8 @@ jobs:
         with:
           working-directory: ./cypress-tests
           spec: cypress/e2e/${{ matrix.category }}/**/*.cy.ts
+          wait-on: http://localhost:9050/HyperLoader.js,http://localhost:9060
+          wait-on-timeout: 120
         env:
           # Path to the pre-existing credentials file (downloaded from artifact).
           # cypress.config.js reads this and injects the keys into Cypress.env()

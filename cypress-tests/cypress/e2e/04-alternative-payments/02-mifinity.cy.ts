@@ -60,10 +60,12 @@ describe("Card payment flow test", () => {
       .its("body");
   });
 
-  it("should fail if age is less than 18", () => {
+  it("should fail if age is less than 18", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "Mifinity").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       const today = new Date();
       const formattedDate = `${String(today.getDate()).padStart(2, "0")}-${String(
         today.getMonth() + 1,
@@ -80,10 +82,12 @@ describe("Card payment flow test", () => {
     });
   });
 
-  it("should complete the mifinity payment successfully", () => {
+  it("should complete the mifinity payment successfully", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "Mifinity").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       getIframeBody()
         .find(`input[placeholder="${testIds.datePickerPlaceHolderText}"]`)
         .type("30-04-2000");

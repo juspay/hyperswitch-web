@@ -42,10 +42,12 @@ describe("Card payment flow test", () => {
       .its("body");
   });
 
-  it("should complete the crypto payment successfully", () => {
+  it("should complete the crypto payment successfully", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "Crypto").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       getIframeBody()
         .get("#submit")
         .click()

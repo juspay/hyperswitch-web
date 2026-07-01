@@ -77,10 +77,12 @@ describe("External 3DS using Redsys flow test", () => {
       .its("body");
   });
 
-  it("3ds invoke: challenge test", () => {
+  it("3ds invoke: challenge test", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       enterCardDetails(redsysCards.threedsInvokeChallengeTestCard);
       getIframeBody().get("#submit").click();
 
@@ -89,10 +91,12 @@ describe("External 3DS using Redsys flow test", () => {
     });
   });
 
-  it("3ds invoke: frictionless flow", () => {
+  it("3ds invoke: frictionless flow", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       enterCardDetails(redsysCards.threedsInvokeFrictionlessTestCard);
       getIframeBody().get("#submit").click();
       cy.contains("Thanks for your order!", { timeout: 16000 }).should(
@@ -101,10 +105,12 @@ describe("External 3DS using Redsys flow test", () => {
     });
   });
 
-  it("No 3ds invoke: challenge flow", () => {
+  it("No 3ds invoke: challenge flow", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       enterCardDetails(redsysCards.challengeTestCard);
       handleRedsysIframeError();
       getIframeBody().get("#submit").click();
@@ -112,10 +118,12 @@ describe("External 3DS using Redsys flow test", () => {
     });
   });
 
-  it("No 3ds invoke: frictionless flow", () => {
+  it("No 3ds invoke: frictionless flow", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       enterCardDetails(redsysCards.frictionlessTestCard);
       getIframeBody().get("#submit").click();
       cy.contains("Thanks for your order!", { timeout: 10000 }).should(

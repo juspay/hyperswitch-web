@@ -129,23 +129,15 @@ describe("Card Number Validation", () => {
     });
 
     it("should auto-format 19-digit UnionPay card", () => {
-      const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.unionPay19;
+      const { cardNo } = stripeCards.unionPay19;
 
+      // This is a brand-detection / formatting test: assert the 19-digit
+      // UnionPay number is accepted (not truncated) and grouped 4-4-4-4-3,
+      // rather than completing a payment (UnionPay doesn't settle on Stripe).
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
-        .type(cardNo);
-      getIframeBody()
-        .find(`[data-testid=${testIds.expiryInputTestId}]`)
-        .type(card_exp_month);
-      getIframeBody()
-        .find(`[data-testid=${testIds.expiryInputTestId}]`)
-        .type(card_exp_year);
-      getIframeBody()
-        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
-        .type(cvc);
-
-      getIframeBody().get("#submit").click();
-      cy.contains("Thanks for your order!").should("be.visible");
+        .type(cardNo)
+        .should("have.value", "6205 5000 0000 0000 004");
     });
 
     it("should auto-format 16-digit MasterCard", () => {

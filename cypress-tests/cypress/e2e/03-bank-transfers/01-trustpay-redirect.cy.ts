@@ -50,10 +50,12 @@ describe("TrustPay iDEAL Bank Redirect Payment flow test", () => {
       .its("body");
   });
 
-  it("should complete the iDEAL bank redirect payment successfully", () => {
+  it("should complete the iDEAL bank redirect payment successfully", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "iDEAL").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       getIframeBody()
         .get("#submit")
         .click()
@@ -105,10 +107,12 @@ describe("TrustPay Blik Bank Redirect Payment flow test", () => {
       .its("body");
   });
 
-  it("should complete the Blik bank redirect payment successfully", () => {
+  it("should complete the Blik bank redirect payment successfully", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "Blik").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       getIframeBody()
         .get("#submit")
         .click()
@@ -160,10 +164,12 @@ describe("TrustPay EPS Bank Redirect Payment flow test", () => {
       .its("body");
   });
 
-  it("should complete the EPS bank redirect payment successfully", () => {
+  it("should complete the EPS bank redirect payment successfully", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "EPS").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       getIframeBody()
         .get("#submit")
         .click()

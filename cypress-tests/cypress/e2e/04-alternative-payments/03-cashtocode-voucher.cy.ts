@@ -43,10 +43,12 @@ describe("cashtocode cash / voucher test ", () => {
       .its("body");
   });
 
-  it("should complete the Cash / Voucher payment successfully", () => {
+  it("should complete the Cash / Voucher payment successfully", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "Cash / Voucher").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       getIframeBody()
         .get("#submit")
         .click()

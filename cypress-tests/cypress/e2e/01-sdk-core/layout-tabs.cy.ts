@@ -129,13 +129,13 @@ describe("Layout - Tabs (Default)", () => {
     });
 
     it("should apply box-shadow to the selected tab", () => {
+      // Retrying assertion: the selected tab applies its box-shadow via the
+      // `animate-slowShow` enter-animation, so a one-shot read inside `.then()`
+      // can capture the pre-animation `none`.
       getIframeBody()
         .find(".Tab--selected")
         .first()
-        .then(($el) => {
-          const boxShadow = $el.css("box-shadow");
-          expect(boxShadow).to.not.equal("none");
-        });
+        .should("not.have.css", "box-shadow", "none");
     });
   });
 

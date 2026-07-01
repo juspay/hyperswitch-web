@@ -43,10 +43,12 @@ describe("cashtocode E-voucher test ", () => {
       .its("body");
   });
 
-  it("should complete the E-voucher payment successfully", () => {
+  it("should complete the E-voucher payment successfully", function () {
     cy.wait(2000);
     cy.selectPaymentMethodOrSkip(getIframeBody, "E-Voucher").then((skipped) => {
-      if (skipped) return;
+      if (skipped) {
+        this.skip();
+      }
       getIframeBody()
         .get("#submit")
         .click()
