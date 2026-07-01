@@ -99,7 +99,7 @@ let startApplePaySession = (
           ->transformKeysWithoutModifyingValue(CamelCase)
         ssn.completeMerchantValidation(merchantSession)
       } else {
-        ssn.abort()
+        ssn.completeMerchantValidation(Dict.make()->JSON.Encode.object)
         handleFailureResponse(
           ~message="ApplePay Merchant Validation Cancelled",
           ~errorType="apple_pay",
@@ -108,7 +108,7 @@ let startApplePaySession = (
       resolve()
     })
     ->catch(_ => {
-      ssn.abort()
+      ssn.completeMerchantValidation(Dict.make()->JSON.Encode.object)
       handleFailureResponse(
         ~message="ApplePay Merchant Validation Cancelled",
         ~errorType="apple_pay",
