@@ -185,7 +185,8 @@ let getPaymentMethodDataFieldKey = (key): string =>
   | BillingAddress(b) =>
     switch b {
     | Email => "billing.address.email"
-    | FullName(_) => "billing.address.fullName"
+    | FullName(FirstName) => "billing.address.firstName"
+    | FullName(LastName) => "billing.address.lastName"
     | CountryCode => "billing.address.countryCode"
     | PhoneNumber => "billing.address.phoneNumber"
     | PhoneCountryCode => "billing.address.phoneCountryCode"
@@ -425,6 +426,12 @@ let getPaymentMethodDataErrorString = (
   | (PayoutMethodData(CardExpDate(_)), false) => localeString.inCompleteExpiryErrorText
   | (PayoutMethodData(CardExpDate(_)), true) => localeString.pastExpiryErrorText
   | (PayoutMethodData(ACHRoutingNumber), false) => localeString.formFieldInvalidRoutingNumber
+  | (PayoutMethodData(ACHAccountNumber), _) =>
+    if value->String.trim->String.length === 0 {
+      localeString.accountNumberText->localeString.nameEmptyText
+    } else {
+      localeString.accountNumberInvalidText
+    }
   | (PayoutMethodData(BacsSortCode), _) =>
     if value->String.trim->String.length === 0 {
       localeString.sortCodeText->localeString.nameEmptyText
@@ -922,33 +929,17 @@ let processAddressFields = (
         (dataArr, keys)
       }
     | FullName(LastName) => {
-        let key = BillingAddress(FullName(FirstName))
+        let lastNameKey = BillingAddress(FullName(LastName))
         let info: dynamicFieldInfo = BillingAddress(dynamicFieldInfo)
-        let fieldKey = key->getPaymentMethodDataFieldKey
-        paymentMethodDataDict
-        ->Dict.get(fieldKey)
-        ->Option.map(value => {
-          let nameSplits = value->String.split(" ")
-          let lastName =
-            nameSplits
-            ->Array.slice(~start=1, ~end=nameSplits->Array.length)
-            ->Array.join(" ")
-          if lastName->String.length > 0 {
-            dataArr->Array.push((info, lastName))
-            // Use first name as last name ?
-          } else {
-            nameSplits
-            ->Array.get(0)
-            ->Option.map(
-              firstName => {
-                dataArr->Array.push((info, firstName))
-              },
-            )
-            ->ignore
-          }
-        })
-        ->ignore
-        keys->Array.push(fieldKey)
+        let lastNameFieldKey = lastNameKey->getPaymentMethodDataFieldKey
+
+        // First try to get lastName from direct lastName field
+        let lastNameValue =
+          paymentMethodDataDict->Dict.get(lastNameFieldKey)->Option.getOr("")->String.trim
+        if lastNameValue->String.length > 0 {
+          dataArr->Array.push((info, lastNameValue))
+        }
+        keys->Array.push(lastNameFieldKey)
         (dataArr, keys)
       }
     | _ => {
@@ -1090,6 +1081,116 @@ let getPayoutDynamicFields = (
     | Wallet(_, payoutDynamicFields) => payoutDynamicFields
     }
   })
+
+let getErrorStringAndClasses = (
+  field: dynamicFieldType,
+  formData: Dict.t<string>,
+  validityDict: Dict.t<option<bool>>,
+  localeString: LocaleStringTypes.localeStrings,
+) => {
+  let key = field->getPaymentMethodDataFieldKey
+  let value = formData->Dict.get(key)->Option.getOr("")
+  let isValid = validityDict->Dict.get(key)->Option.flatMap(key => key)
+
+  switch field {
+  | BillingAddress(FullName(FirstName)) => {
+      // Check both FirstName and LastName validity and merge error messages
+      let firstNameKey = BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey
+      let lastNameKey = BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey
+      let firstNameValid = validityDict->Dict.get(firstNameKey)->Option.flatMap(key => key)
+      let lastNameValid = validityDict->Dict.get(lastNameKey)->Option.flatMap(key => key)
+
+      // since error message for both first name and last name is the same, we can just use one of them
+      let fullNameError = switch (
+        firstNameValid->Option.getOr(true),
+        lastNameValid->Option.getOr(true),
+      ) {
+      | (true, true) => ""
+      | _ => BillingAddress(FullName(FirstName))->getPaymentMethodDataErrorString("", localeString)
+      }
+
+      let fullNameErrorClass = fullNameError !== "" ? "text-xs text-red-950" : ""
+      (fullNameError, fullNameErrorClass)
+    }
+  | _ =>
+    // Default behavior for other fields
+    switch isValid {
+    | Some(false) => (
+        field->getPaymentMethodDataErrorString(value, localeString),
+        "text-xs text-red-950",
+      )
+    | _ => ("", "")
+    }
+  }
+}
+
+let handleNameFieldNormalization = (values: Dict.t<string>, validity: Dict.t<option<bool>>) => {
+  let firstNameKey = BillingAddress(FullName(FirstName))->getPaymentMethodDataFieldKey
+  let lastNameKey = BillingAddress(FullName(LastName))->getPaymentMethodDataFieldKey
+
+  let first_name = values->Dict.get(firstNameKey)->Option.getOr("")
+  let last_name = values->Dict.get(lastNameKey)->Option.getOr("")
+
+  let firstNameSplits = first_name->String.split(" ")
+  let lastNameSplits = last_name->String.split(" ")
+
+  // Handle name field logic using pattern matching
+  switch (
+    first_name->String.length,
+    last_name->String.length,
+    firstNameSplits->Array.length,
+    lastNameSplits->Array.length,
+  ) {
+  // Case 1: first_name is empty, use last_name as first_name and split remainder
+  | (0, _, _, lastNamePartsCount) => {
+      values->Dict.set(firstNameKey, last_name)
+
+      if lastNameSplits->Array.get(0)->Option.getOr("")->String.length > 0 {
+        validity->Dict.set(firstNameKey, Some(true))
+      }
+
+      let remainingLastName =
+        lastNameSplits
+        ->Array.slice(~start=1, ~end=lastNamePartsCount)
+        ->Array.join(" ")
+      values->Dict.set(lastNameKey, remainingLastName)
+
+      if lastNamePartsCount > 1 {
+        validity->Dict.set(lastNameKey, Some(true))
+      }
+    }
+
+  // Case 2: last_name is empty, split first_name into parts
+  | (_, 0, firstNamePartsCount, _) => {
+      let remainingFirstName =
+        firstNameSplits
+        ->Array.slice(~start=1, ~end=firstNamePartsCount)
+        ->Array.join(" ")
+      values->Dict.set(lastNameKey, remainingFirstName)
+
+      if firstNamePartsCount > 1 {
+        validity->Dict.set(lastNameKey, Some(true))
+      }
+    }
+
+  // Case 3: Both exist, but first_name has multiple parts - normalize it
+  | (_, _, firstNamePartsCount, _) if firstNamePartsCount > 1 => {
+      let normalizedFirstName = firstNameSplits->Array.get(0)->Option.getOr("")
+      values->Dict.set(firstNameKey, normalizedFirstName)
+
+      let combinedLastName =
+        firstNameSplits
+        ->Array.slice(~start=1, ~end=firstNamePartsCount)
+        ->Array.join(" ") ++
+        " " ++
+        last_name
+      values->Dict.set(lastNameKey, combinedLastName)
+    }
+
+  // Case 4: Default - both names exist and are properly formatted, no changes needed
+  | _ => ()
+  }
+}
 
 let getDefaultsAndValidity = (payoutDynamicFields, supportedCardBrands) => {
   payoutDynamicFields.address
