@@ -86,14 +86,36 @@ let startApplePaySession = (
   applePaySessionRef := ssn->Js.Nullable.return
 
   ssn.onvalidatemerchant = _event => {
-    let merchantSession =
-      applePayPresent
-      ->Belt.Option.flatMap(JSON.Decode.object)
-      ->Option.getOr(Dict.make())
-      ->Dict.get("session_token_data")
-      ->Option.getOr(Dict.make()->JSON.Encode.object)
-      ->transformKeysWithoutModifyingValue(CamelCase)
-    ssn.completeMerchantValidation(merchantSession)
+    makeOneClickHandlerPromise(sdkHandleIsThere)
+    ->then(result => {
+      let result = result->JSON.Decode.bool->Option.getOr(false)
+      if result {
+        let merchantSession =
+          applePayPresent
+          ->Belt.Option.flatMap(JSON.Decode.object)
+          ->Option.getOr(Dict.make())
+          ->Dict.get("session_token_data")
+          ->Option.getOr(Dict.make()->JSON.Encode.object)
+          ->transformKeysWithoutModifyingValue(CamelCase)
+        ssn.completeMerchantValidation(merchantSession)
+      } else {
+        ssn.abort()
+        handleFailureResponse(
+          ~message="ApplePay Merchant Validation Cancelled",
+          ~errorType="apple_pay",
+        )->resolvePromise
+      }
+      resolve()
+    })
+    ->catch(_ => {
+      ssn.abort()
+      handleFailureResponse(
+        ~message="ApplePay Merchant Validation Cancelled",
+        ~errorType="apple_pay",
+      )->resolvePromise
+      resolve()
+    })
+    ->ignore
   }
 
   ssn.onshippingcontactselected = shippingAddressChangeEvent => {
@@ -198,27 +220,8 @@ let startApplePaySession = (
       ~errorType="apple_pay",
     )->resolvePromise
   }
-  makeOneClickHandlerPromise(sdkHandleIsThere)
-  ->then(result => {
-    let result = result->JSON.Decode.bool->Option.getOr(false)
-    if result {
-      ssn.begin()
-    } else {
-      handleFailureResponse(
-        ~message="ApplePay Session Cancelled",
-        ~errorType="apple_pay",
-      )->resolvePromise
-    }
-    resolve()
-  })
-  ->catch(_ => {
-    handleFailureResponse(
-      ~message="ApplePay Session Cancelled",
-      ~errorType="apple_pay",
-    )->resolvePromise
-    resolve()
-  })
-  ->ignore
+
+  ssn.begin()
 }
 
 let useHandleApplePayResponse = (
