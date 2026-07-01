@@ -69,9 +69,9 @@ let startApplePaySession = (
   ~publishableKey,
   ~isTaxCalculationEnabled=false,
   ~sdkAuthorization=None,
-  ~sdkHandleIsThere=false,
 ) => {
   open Promise
+  let sdkHandleIsThere = LoaderPaymentElement.isPaymentButtonHandlerProvided.contents
   let ssn = applePaySession(3, paymentRequest)
   switch applePaySessionRef.contents->Nullable.toOption {
   | Some(session) =>
