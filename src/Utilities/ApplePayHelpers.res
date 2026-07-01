@@ -110,7 +110,7 @@ let startApplePaySession = (
     ->catch(_ => {
       ssn.completeMerchantValidation(Dict.make()->JSON.Encode.object)
       handleFailureResponse(
-        ~message="ApplePay Merchant Validation Cancelled",
+        ~message="ApplePay Merchant Validation failed",
         ~errorType="apple_pay",
       )->resolvePromise
       resolve()
