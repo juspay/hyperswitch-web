@@ -94,8 +94,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
-    | Card =>
-      setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+    | Card => {
+        setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+        let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(
+          optionsDict,
+          "subscriptionEvents",
+        )
+        setOptionsPayment(prev => {...prev, subscriptionEvents})
+      }
     | PaymentMethodCollectElement => {
         let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
@@ -450,6 +456,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         // PaymentMethodsSDK reads this atom to render only the vault CVC field.
         if dict->Dict.get("isSavedCardCvcFlow")->Option.isSome {
           setIsSavedCardCvcFlow(_ => dict->Utils.getBool("isSavedCardCvcFlow", false))
+          switch dict->getString("endpoint", "") {
+          | "" => ()
+          | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+          }
         }
         if dict->getDictIsSome("sessions") {
           setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))

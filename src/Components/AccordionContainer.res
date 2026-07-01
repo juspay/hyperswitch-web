@@ -84,6 +84,13 @@ let make = (
     ~expiryProps,
     ~cvcProps,
   )
+  SubscriptionEventHooks.useEmitPaymentMethodStatus(
+    ~paymentMethodName=selectedOption,
+    ~paymentMethods=paymentMethodListValue.payment_methods,
+    ~isSavedPaymentMethod=false,
+    ~isOneClickWallet=false,
+  )
+  SubscriptionEventHooks.useEmitBillingAddress()
 
   let cardOptionDetails =
     paymentOptions

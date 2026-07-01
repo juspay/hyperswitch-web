@@ -15,6 +15,7 @@ let make = (
   ~errorString=?,
   ~onFocus=?,
   ~fieldName="",
+  ~isLabelHidden=false,
   ~name="",
   ~type_="text",
   ~maxLength=?,
@@ -29,9 +30,10 @@ let make = (
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
+  let elementType = contextPaymentType->CardThemeType.getPaymentModeToString
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
@@ -45,7 +47,8 @@ let make = (
     | Some(fn) => fn(ev)
     | None => ()
     }
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
+
+    Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
 
   let handleBlur = ev => {
@@ -55,7 +58,7 @@ let make = (
     | Some(fn) => fn(ev)
     | None => ()
     }
-    Utils.handleOnBlurPostMessage(~targetOrigin=parentURL)
+    Utils.handleOnBlurPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
 
   let backgroundClass = switch paymentType {
@@ -92,7 +95,8 @@ let make = (
 
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
     <RenderIf
-      condition={fieldName->String.length > 0 &&
+      condition={!isLabelHidden &&
+      fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
       innerLayout === Spaced}>
       <div
@@ -132,7 +136,7 @@ let make = (
           onFocus=handleFocus
           ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
         />
-        <RenderIf condition={config.appearance.labels == Floating}>
+        <RenderIf condition={!isLabelHidden && config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} pointer-events-none`}
             style={

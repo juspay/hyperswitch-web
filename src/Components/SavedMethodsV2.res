@@ -15,6 +15,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let updateCard = PaymentHelpersV2.useUpdateCard(Some(loggerState), Card)
   let {iframeId, sdkAuthorization} = keys
+  let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
   let {isCVCValid, cvcNumber, setCvcError} = cvcProps
   let complete = isCVCValid->Option.getOr(false) && paymentTokenAtom.paymentToken !== ""
   let isEmpty = cvcNumber == ""
@@ -120,7 +121,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   }
 
   React.useEffect(() => {
-    messageParentWindow([("ready", true->JSON.Encode.bool)])
+    SubscriptionEventHooks.emitReady(~iframeId, ~elementType)
     None
   }, [])
 

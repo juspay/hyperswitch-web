@@ -22,7 +22,7 @@ let getTokenizedData = data => {
   let cardNumber = dict->getString("card_number", "")
   let cardExp = dict->getString("card_exp", "")
   let cardCvc = dict->getString("card_cvc", "")
-  let (month, year) = CardValidations.splitExpiryDates(cardExp)
+  let (month, year) = CardUtils.getExpiryDates(cardExp)
   (cardNumber, month, year, cardCvc)
 }
 

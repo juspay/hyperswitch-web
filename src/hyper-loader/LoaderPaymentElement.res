@@ -22,6 +22,9 @@ let buildIframeHtmlString = (~iframeId: string, ~iframeSrc: string, ~additionalS
    style="border: 0px; ${additionalStyle} outline: none;"
    width="100%"
 ></iframe>`
+// Multi-instance support: tracks unmounted element refs so sibling mount() calls can
+// adopt handler-only instances (e.g. React wrapper) that never mount themselves.
+let unclaimedSelectorRefsByType: Dict.t<array<ref<string>>> = Dict.make()
 
 let make = (
   componentType,
@@ -32,11 +35,22 @@ let make = (
   ~appearance,
   ~isPaymentManagementElement=false,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~logger: option<HyperLoggerTypes.loggerMake>,
 ) => {
   try {
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let mountId = ref("")
+    let localSelectorRef = ref("")
+    // Unique per-instance ID to scope event listener names and prevent collisions.
+    let elementInstanceId = generateRandomString(8)
+
+    // Register for sibling adoption — see unclaimedSelectorRefsByType.
+    if componentType->Utils.canHaveMultipleInstances {
+      let refs = unclaimedSelectorRefsByType->Dict.get(componentType)->Option.getOr([])
+      refs->Array.push(localSelectorRef)->ignore
+      unclaimedSelectorRefsByType->Dict.set(componentType, refs)
+    }
     let setPaymentIframeRef = ref => {
       setIframeRef(ref)
     }
@@ -110,6 +124,32 @@ let make = (
     }
 
     let on = (eventType, eventHandler) => {
+      let matchesInstance = (ev: Types.event) => {
+        // Multi-instance: match by elementType + iframeId so events route to the correct instance.
+        if componentType->Utils.canHaveMultipleInstances {
+          ev.data.elementType === componentType && ev.data.iframeId === localSelectorRef.contents
+        } else {
+          ev.data.elementType === componentType
+        }
+      }
+
+      // Subscription event helper: checks eventName in payload, then applies matchesInstance.
+      let addSubscriptionEventListener = (subscriptionEventName, activity) => {
+        addSmartEventListener(
+          "message",
+          (ev: Types.event) => {
+            let json = ev.data->anyTypeToJson
+            let name = json->getOptionalJsonFromJson("eventName")->getStringFromOptionalJson("")
+            if name === subscriptionEventName && matchesInstance(ev) {
+              switch eventHandler {
+              | Some(eH) => eH(Some(sanitizeEventData(ev.data)))
+              | None => ()
+              }
+            }
+          },
+          activity,
+        )
+      }
       switch eventType->eventTypeMapper {
       | Escape =>
         addSmartEventListener(
@@ -117,12 +157,12 @@ let make = (
           (ev: Types.event) => {
             if ev.key === "Escape" {
               switch eventHandler {
-              | Some(eH) => eH(Some(ev.data))
+              | Some(eH) => eH(Some(sanitizeEventData(ev.data)))
               | None => ()
               }
             }
           },
-          "onEscape",
+          `onEscape-${componentType}-${elementInstanceId}`,
         )
       | CompleteDoThis =>
         if eventHandler->Option.isSome {
@@ -130,33 +170,93 @@ let make = (
             ev => ev.data.completeDoThis,
             eventHandler,
             CompleteDoThis,
-            "onCompleteDoThis",
+            `onCompleteDoThis-${componentType}-${elementInstanceId}`,
           )
         }
       | Change =>
         eventHandlerFunc(
-          ev => ev.data.elementType === componentType,
+          ev =>
+            !ev.data.focus &&
+            !ev.data.blur &&
+            !ev.data.ready &&
+            !ev.data.confirmTriggered &&
+            !ev.data.oneClickConfirmTriggered &&
+            matchesInstance(ev),
           eventHandler,
           Change,
-          "onChange",
+          `onChange-${componentType}-${elementInstanceId}`,
         )
-      | Click => eventHandlerFunc(ev => ev.data.clickTriggered, eventHandler, Click, "onClick")
-      | Ready => eventHandlerFunc(ev => ev.data.ready, eventHandler, Ready, "onReady")
-      | Focus => eventHandlerFunc(ev => ev.data.focus, eventHandler, Focus, "onFocus")
-      | Blur => eventHandlerFunc(ev => ev.data.blur, eventHandler, Blur, "onBlur")
+      | Click =>
+        eventHandlerFunc(
+          ev => ev.data.clickTriggered,
+          eventHandler,
+          Click,
+          `onClick-${componentType}-${elementInstanceId}`,
+        )
+      | Ready =>
+        eventHandlerFunc(
+          ev => ev.data.ready && matchesInstance(ev),
+          eventHandler,
+          Ready,
+          `onReady-${componentType}-${elementInstanceId}`,
+        )
+      | Focus =>
+        eventHandlerFunc(
+          ev => ev.data.focus && matchesInstance(ev),
+          eventHandler,
+          Focus,
+          `onFocus-${componentType}-${elementInstanceId}`,
+        )
+      | Blur =>
+        eventHandlerFunc(
+          ev => ev.data.blur && matchesInstance(ev),
+          eventHandler,
+          Blur,
+          `onBlur-${componentType}-${elementInstanceId}`,
+        )
       | ConfirmPayment =>
         eventHandlerFunc(
           ev => ev.data.confirmTriggered,
           eventHandler,
           ConfirmPayment,
-          "onHelpConfirmPayment",
+          `onHelpConfirmPayment-${componentType}-${elementInstanceId}`,
         )
       | OneClickConfirmPayment =>
         eventHandlerFunc(
           ev => ev.data.oneClickConfirmTriggered,
           eventHandler,
           OneClickConfirmPayment,
-          "onHelpOneClickConfirmPayment",
+          `onHelpOneClickConfirmPayment-${componentType}-${elementInstanceId}`,
+        )
+      | CvcStatus =>
+        addSubscriptionEventListener(
+          "CVC_STATUS",
+          `onCVC_STATUS-${componentType}-${elementInstanceId}`,
+        )
+      | FormStatus =>
+        addSubscriptionEventListener(
+          "FORM_STATUS",
+          `onFORM_STATUS-${componentType}-${elementInstanceId}`,
+        )
+      | PaymentMethodInfoCard =>
+        addSubscriptionEventListener(
+          "PAYMENT_METHOD_INFO_CARD",
+          `onPAYMENT_METHOD_INFO_CARD-${componentType}-${elementInstanceId}`,
+        )
+      | PaymentMethodStatus =>
+        addSubscriptionEventListener(
+          "PAYMENT_METHOD_STATUS",
+          `onPAYMENT_METHOD_STATUS-${componentType}-${elementInstanceId}`,
+        )
+      | BillingAddress =>
+        addSubscriptionEventListener(
+          "PAYMENT_METHOD_INFO_BILLING_ADDRESS",
+          `onPAYMENT_METHOD_INFO_BILLING_ADDRESS-${componentType}-${elementInstanceId}`,
+        )
+      | Surcharge =>
+        addSubscriptionEventListener(
+          "surchargeInfo",
+          `onSurchargeInfo-${componentType}-${elementInstanceId}`,
         )
       | _ => ()
       }
@@ -235,6 +335,16 @@ let make = (
       mountId := selector
       let localSelectorArr = selector->String.split("#")
       let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
+      localSelectorRef := localSelectorString
+
+      // Adopt oldest unmounted sibling so its .on() handlers can resolve this iframeId.
+      if componentType->Utils.canHaveMultipleInstances {
+        let refs = unclaimedSelectorRefsByType->Dict.get(componentType)->Option.getOr([])
+        switch refs->Array.find(r => r.contents === "") {
+        | Some(siblingRef) => siblingRef := localSelectorString
+        | None => ()
+        }
+      }
       let iframeHeightRef = ref(25.0)
       let currentClass = ref("base")
       let fullscreen = ref(false)
@@ -399,7 +509,7 @@ let make = (
           )
         }
       }
-      // Elements that can have multiple instances need unique event listener names per instance
+      // Multi-instance elements need unique listener names per instance.
       let eventListenerActivityName = if componentType->Utils.canHaveMultipleInstances {
         `onMount-${componentType}-${localSelectorString}`
       } else {
@@ -418,7 +528,7 @@ let make = (
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
           ${buildIframeHtmlString(
               ~iframeId=iframeElementId,
-              ~iframeSrc=`${ApiEndpoint.sdkDomainUrl}/index.html?componentName=${componentType}`,
+              ~iframeSrc=`${sdkDomainUrl}/index.html?componentName=${componentType}`,
               ~additionalStyle=additionalIframeStyle,
             )}
           </div>`

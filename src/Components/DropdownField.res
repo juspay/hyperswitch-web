@@ -29,6 +29,7 @@ let make = (
   ~displayValue=?,
   ~setDisplayValue=?,
   ~fieldName,
+  ~isLabelHidden=false,
   ~options: array<optionType>,
   ~disabled=false,
   ~className="",
@@ -39,12 +40,13 @@ let make = (
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
+  let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
 
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
+    Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
 
   let handleChange = ev => {
@@ -98,7 +100,8 @@ let make = (
   <RenderIf condition={options->Array.length > 0}>
     <div className={`flex flex-col ${width}`}>
       <RenderIf
-        condition={fieldName->String.length > 0 &&
+        condition={!isLabelHidden &&
+        fieldName->String.length > 0 &&
         appearance.labels == Above &&
         isSpacedInnerLayout}>
         <div
@@ -151,7 +154,7 @@ let make = (
           })
           ->React.array}
         </select>
-        <RenderIf condition={config.appearance.labels == Floating}>
+        <RenderIf condition={!isLabelHidden && config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass} pointer-events-none`}
             style={
