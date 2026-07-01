@@ -193,6 +193,7 @@ let make = (
     buildSuperpositionBaseContext(
       ~paymentMethod,
       ~paymentMethodType=configPaymentMethodType,
+      ~platform="web",
       ~country,
       ~paymentMethodListValue,
       ~accountConfig=sdkConfigsValue.account_config,

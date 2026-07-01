@@ -144,6 +144,7 @@ let removeBillingDetailsIfUseBillingAddress = (
 let buildSuperpositionBaseContext = (
   ~paymentMethod: string,
   ~paymentMethodType: string,
+  ~platform: string,
   ~country: string,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ~accountConfig: option<SdkConfigTypes.accountConfig>,
@@ -177,6 +178,7 @@ let buildSuperpositionBaseContext = (
     profile_id: ?profileId,
     processor_merchant_id: ?processorMerchantId,
     organization_id: ?organizationId,
+    platform,
   }
   context
 }
