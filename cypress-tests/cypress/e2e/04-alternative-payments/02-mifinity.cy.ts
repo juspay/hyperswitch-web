@@ -18,11 +18,15 @@ describe("Card payment flow test", () => {
   beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
-    changeObjectKeyValue(
-      createPaymentBody,
-      "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.MIFINITY),
+    const mifinityProfileId = connectorProfileIdMapping.get(
+      connectorEnum.MIFINITY,
     );
+    assert.ok(
+      mifinityProfileId,
+      "Mifinity connector credentials are missing from creds.json — " +
+        "connector was not provisioned. Add mifinity to creds.json to run these tests.",
+    );
+    changeObjectKeyValue(createPaymentBody, "profile_id", mifinityProfileId);
     changeObjectKeyValue(createPaymentBody, "currency", "EUR");
     changeObjectKeyValue(createPaymentBody, "billing", {
       address: {

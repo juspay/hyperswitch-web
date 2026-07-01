@@ -88,7 +88,7 @@ Cypress.Commands.add(
 
       cy.request({
         method: "GET",
-      url: `${Cypress.env("HYPERSWITCH_API_URL")}/account/payment_methods?client_secret=${clientSecret}`,
+        url: `${Cypress.env("HYPERSWITCH_API_URL")}/account/payment_methods?client_secret=${clientSecret}`,
         headers: {
           "Content-Type": "application/json",
           "api-key": publishableKey,
@@ -158,7 +158,9 @@ Cypress.Commands.add(
     // the before() hook in e2e.ts).  If the test hasn't overridden it, use
     // the default stripe profile.
     if (!createPaymentBody.profile_id) {
-      const profileIds = Cypress.env("CONNECTOR_PROFILE_IDS") as Record<string, string> | undefined;
+      const profileIds = Cypress.env("CONNECTOR_PROFILE_IDS") as
+        | Record<string, string>
+        | undefined;
       createPaymentBody.profile_id = profileIds?.stripe ?? "";
     }
 
@@ -220,14 +222,18 @@ Cypress.Commands.add("waitForSDKReady", () => {
     });
 });
 
-Cypress.Commands.add("safeType", { prevSubject: "element" }, (subject, text, options = {}) => {
-  cy.wrap(subject)
-    .should("not.be.disabled")
-    .should("be.visible")
-    .clear({ force: true })
-    .type(text, { delay: 50, ...options });
-  return cy.wrap(subject);
-});
+Cypress.Commands.add(
+  "safeType",
+  { prevSubject: "element" },
+  (subject, text, options = {}) => {
+    cy.wrap(subject)
+      .should("not.be.disabled")
+      .should("be.visible")
+      .clear({ force: true })
+      .type(text, { delay: 50, ...options });
+    return cy.wrap(subject);
+  },
+);
 
 Cypress.Commands.add("safeClick", { prevSubject: "element" }, (subject) => {
   cy.wrap(subject)
@@ -239,18 +245,14 @@ Cypress.Commands.add("safeClick", { prevSubject: "element" }, (subject) => {
 
 Cypress.Commands.add("enterCardDetails", (cardDetails: any) => {
   const iframeBody = () => cy.iframe(iframeSelector);
-  
-  iframeBody()
-    .find('[data-testid="cardNoInput"]')
-    .safeType(cardDetails.cardNo);
-  
+
+  iframeBody().find('[data-testid="cardNoInput"]').safeType(cardDetails.cardNo);
+
   iframeBody()
     .find('[data-testid="expiryInput"]')
     .safeType(cardDetails.card_exp_month + cardDetails.card_exp_year);
-  
-  iframeBody()
-    .find('[data-testid="cvvInput"]')
-    .safeType(cardDetails.cvc);
+
+  iframeBody().find('[data-testid="cvvInput"]').safeType(cardDetails.cvc);
 });
 
 // ---------------------------------------------------------------------------
@@ -271,7 +273,10 @@ Cypress.Commands.add("enterCardDetails", (cardDetails: any) => {
 
 Cypress.Commands.add(
   "selectPaymentMethod",
-  (getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>, methodName: string) => {
+  (
+    getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>,
+    methodName: string,
+  ) => {
     getIframeBody().then(($body) => {
       // If the "Add New Card" button exists (saved cards scenario), click it
       // first to reveal the payment method picker.
@@ -319,57 +324,116 @@ function waitForPaymentMethod(
       return cy.wrap(false);
     }
     if (elapsed >= PAYMENT_METHOD_WAIT_MS) {
-      const visibleText = $body.text().replace(/\s+/g, " ").trim().slice(0, 300);
-      cy.log(`Skipping: "${methodName}" not found after ${PAYMENT_METHOD_WAIT_MS}ms. SDK rendered: "${visibleText}"`);
+      const visibleText = $body
+        .text()
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 300);
+      cy.log(
+        `Skipping: "${methodName}" not found after ${PAYMENT_METHOD_WAIT_MS}ms. SDK rendered: "${visibleText}"`,
+      );
+      cy.task(
+        "log",
+        `[skip] "${methodName}" not found after ${PAYMENT_METHOD_WAIT_MS}ms. SDK iframe text: "${visibleText}"`,
+      );
+
+      // Capture and log the payment methods API response for debugging.
+      // This shows what the server actually returned as available payment
+      // methods, helping diagnose why a tab doesn't render in the SDK.
+      const clientSecret = globalState["clientSecret"];
+      const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+      const apiUrl = Cypress.env("HYPERSWITCH_API_URL");
+      if (clientSecret && publishableKey && apiUrl) {
+        return cy
+          .request({
+            method: "GET",
+            url: `${apiUrl}/account/payment_methods?client_secret=${clientSecret}`,
+            headers: {
+              "Content-Type": "application/json",
+              "api-key": publishableKey,
+            },
+          })
+          .then((response) => {
+            const paymentMethods = response.body.payment_methods || [];
+            const pmSummary = paymentMethods
+              .map(
+                (pm: any) =>
+                  `${pm.payment_method}:[${(pm.payment_method_types || [])
+                    .map((t: any) => t.payment_method_type)
+                    .join(",")}]`,
+              )
+              .join(" | ");
+            cy.task(
+              "log",
+              `[debug] Available payment methods from API: ${pmSummary}`,
+            );
+            cy.log(`Available payment methods from API: ${pmSummary}`);
+            return cy.wrap(true);
+          });
+      }
       return cy.wrap(true);
     }
-    return cy.wait(PAYMENT_METHOD_POLL_INTERVAL).then(() =>
-      waitForPaymentMethod(getIframeBody, methodName, elapsed + PAYMENT_METHOD_POLL_INTERVAL),
-    );
+    return cy
+      .wait(PAYMENT_METHOD_POLL_INTERVAL)
+      .then(() =>
+        waitForPaymentMethod(
+          getIframeBody,
+          methodName,
+          elapsed + PAYMENT_METHOD_POLL_INTERVAL,
+        ),
+      );
   });
 }
 
 Cypress.Commands.add(
   "selectPaymentMethodOrSkip",
-  (getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>, methodName: string) => {
-    return getIframeBody().then(($body) => {
-      if ($body.find('[data-testid="addNewCard"]').length > 0) {
-        getIframeBody().find('[data-testid="addNewCard"]').click();
-      }
-    }).then(() => {
-      return waitForPaymentMethod(getIframeBody, methodName, 0).then((skipped) => {
-        if (skipped) {
-          return cy.wrap(true);
+  (
+    getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>,
+    methodName: string,
+  ) => {
+    return getIframeBody()
+      .then(($body) => {
+        if ($body.find('[data-testid="addNewCard"]').length > 0) {
+          getIframeBody().find('[data-testid="addNewCard"]').click();
         }
+      })
+      .then(() => {
+        return waitForPaymentMethod(getIframeBody, methodName, 0).then(
+          (skipped) => {
+            if (skipped) {
+              return cy.wrap(true);
+            }
 
-        return getIframeBody().then(($body) => {
-          const $tab = $body.find("button.Tab").filter((_, el) =>
-            Cypress.$(el).text().includes(methodName),
-          );
+            return getIframeBody().then(($body) => {
+              const $tab = $body
+                .find("button.Tab")
+                .filter((_, el) => Cypress.$(el).text().includes(methodName));
 
-          if ($tab.length > 0) {
-            getIframeBody().contains(methodName).click({ force: true });
-          } else {
-            const displayNameToValue: Record<string, string> = {
-              "iDEAL": "ideal",
-              "EPS": "eps",
-              "Blik": "blik",
-              "Interac": "interac",
-              "Mifinity": "mifinity",
-              "Crypto": "crypto_currency",
-              "Cash / Voucher": "classic",
-              "E-Voucher": "evoucher",
-              "Card": "card",
-            };
-            const selectValue = displayNameToValue[methodName] || methodName.toLowerCase();
-            getIframeBody()
-              .find('[data-testid="paymentMethodsSelect"]')
-              .should("exist")
-              .select(selectValue, { force: true });
-          }
-          return cy.wrap(false);
-        });
+              if ($tab.length > 0) {
+                getIframeBody().contains(methodName).click({ force: true });
+              } else {
+                const displayNameToValue: Record<string, string> = {
+                  iDEAL: "ideal",
+                  EPS: "eps",
+                  Blik: "blik",
+                  Interac: "interac",
+                  Mifinity: "mifinity",
+                  Crypto: "crypto_currency",
+                  "Cash / Voucher": "classic",
+                  "E-Voucher": "evoucher",
+                  Card: "card",
+                };
+                const selectValue =
+                  displayNameToValue[methodName] || methodName.toLowerCase();
+                getIframeBody()
+                  .find('[data-testid="paymentMethodsSelect"]')
+                  .should("exist")
+                  .select(selectValue, { force: true });
+              }
+              return cy.wrap(false);
+            });
+          },
+        );
       });
-    });
   },
 );

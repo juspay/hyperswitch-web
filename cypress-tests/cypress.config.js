@@ -9,9 +9,9 @@ const testEnv = process.env.TEST_ENV || "sandbox";
 
 const apiUrlMap = {
   sandbox: "https://sandbox.hyperswitch.io",
-  integ:   "https://integ-api.hyperswitch.io",
+  integ: "https://integ-api.hyperswitch.io",
   // For local: set LOCAL_API_URL env var (e.g. http://localhost:8080)
-  local:   process.env.LOCAL_API_URL || "http://localhost:8080",
+  local: process.env.LOCAL_API_URL || "http://localhost:8080",
 };
 
 const apiUrl = apiUrlMap[testEnv] || apiUrlMap.sandbox;
@@ -25,16 +25,21 @@ const apiUrl = apiUrlMap[testEnv] || apiUrlMap.sandbox;
 // Locally (no test-credentials.json), e2e.ts falls back to the dynamic setup
 // task as before.
 let presetupCredentials = null;
-const presetupPath = process.env.CREDENTIALS_OUTPUT_PATH
-  || path.join(__dirname, "test-credentials.json");
+const presetupPath =
+  process.env.CREDENTIALS_OUTPUT_PATH ||
+  path.join(__dirname, "test-credentials.json");
 
 if (fs.existsSync(presetupPath)) {
   try {
     presetupCredentials = JSON.parse(fs.readFileSync(presetupPath, "utf-8"));
-    console.log(`[cypress.config] Found pre-existing credentials at ${presetupPath}`);
+    console.log(
+      `[cypress.config] Found pre-existing credentials at ${presetupPath}`,
+    );
     console.log(`[cypress.config] Merchant: ${presetupCredentials.merchantId}`);
   } catch (err) {
-    console.warn(`[cypress.config] Failed to parse ${presetupPath}: ${err.message}`);
+    console.warn(
+      `[cypress.config] Failed to parse ${presetupPath}: ${err.message}`,
+    );
   }
 }
 
@@ -68,13 +73,25 @@ module.exports = defineConfig({
         setupCredentials(params) {
           return setupAllCredentials(params);
         },
+
+        // ── Logging task ──────────────────────────────────────────────────
+        // cy.log output does NOT appear in CI stdout (Cypress suppresses it
+        // in run mode).  This task bridges the gap by writing to console.log
+        // in the Node process, which IS forwarded to CI logs.
+        //
+        // Usage in tests:
+        //   cy.task("log", `[debug] SDK rendered text: ${text}`);
+        log(message) {
+          console.log(message);
+          return null;
+        },
       });
     },
   },
 
   retries: {
-    runMode: 2,   // Retry twice in CI for flaky tests
-    openMode: 0,  // No retry in interactive mode
+    runMode: 2, // Retry twice in CI for flaky tests
+    openMode: 0, // No retry in interactive mode
   },
 
   env: {
