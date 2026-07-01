@@ -117,7 +117,7 @@ jobs:
 
       - name: Build and start local server
         run: |
-          npm run re:build && npm run start &
+          npm run re:build && npx cross-env sdkEnv=local npx webpack serve --config webpack.dev.js &
           echo "Hyperswitch Web started"
           cd Hyperswitch-React-Demo-App && npm run start &
           echo "Demo App started"
