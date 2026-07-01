@@ -196,6 +196,7 @@ let make = (
       ~country,
       ~paymentMethodListValue,
       ~accountConfig=sdkConfigsValue.account_config,
+      ~contextUsed=sdkConfigsValue.context_used,
     )
   }, (
     paymentMethod,
@@ -203,6 +204,7 @@ let make = (
     country,
     paymentMethodListValue,
     sdkConfigsValue.account_config,
+    sdkConfigsValue.context_used,
   ))
 
   let (requiredFields, missingRequiredFields, superpositionInitialValues) = React.useMemo(() => {
