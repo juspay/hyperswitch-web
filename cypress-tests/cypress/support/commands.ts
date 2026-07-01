@@ -294,6 +294,10 @@ Cypress.Commands.add(
 // freshly-created merchant where the connector may not return the expected
 // payment method for the test amount / currency.
 //
+// Unlike a fixed cy.wait(), this polls the iframe every 500ms for up to 15s
+// so that payment method tabs that take longer to render in CI (higher
+// network latency to sandbox) are not incorrectly skipped.
+//
 // Usage:
 //   cy.selectPaymentMethodOrSkip(getIframeBody, "Crypto").then((skipped) => {
 //     if (skipped) return;
@@ -301,56 +305,71 @@ Cypress.Commands.add(
 //   });
 // ---------------------------------------------------------------------------
 
+const PAYMENT_METHOD_WAIT_MS = 15000;
+const PAYMENT_METHOD_POLL_INTERVAL = 500;
+
+function waitForPaymentMethod(
+  getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>,
+  methodName: string,
+  elapsed: number,
+): Cypress.Chainable<boolean> {
+  return getIframeBody().then(($body) => {
+    const hasMethod = $body.text().includes(methodName);
+    if (hasMethod) {
+      return cy.wrap(false);
+    }
+    if (elapsed >= PAYMENT_METHOD_WAIT_MS) {
+      const visibleText = $body.text().replace(/\s+/g, " ").trim().slice(0, 300);
+      cy.log(`Skipping: "${methodName}" not found after ${PAYMENT_METHOD_WAIT_MS}ms. SDK rendered: "${visibleText}"`);
+      return cy.wrap(true);
+    }
+    return cy.wait(PAYMENT_METHOD_POLL_INTERVAL).then(() =>
+      waitForPaymentMethod(getIframeBody, methodName, elapsed + PAYMENT_METHOD_POLL_INTERVAL),
+    );
+  });
+}
+
 Cypress.Commands.add(
   "selectPaymentMethodOrSkip",
   (getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>, methodName: string) => {
     return getIframeBody().then(($body) => {
-      // If the "Add New Card" button exists, click it first.
       if ($body.find('[data-testid="addNewCard"]').length > 0) {
         getIframeBody().find('[data-testid="addNewCard"]').click();
       }
-      // Check if the payment method tab is present.
-      const hasMethod = $body.text().includes(methodName);
-      if (!hasMethod) {
-        cy.log(`Skipping: payment method "${methodName}" not available for this merchant / connector.`);
-        return cy.wrap(true);
-      }
+    }).then(() => {
+      return waitForPaymentMethod(getIframeBody, methodName, 0).then((skipped) => {
+        if (skipped) {
+          return cy.wrap(true);
+        }
 
-      // The SDK renders payment methods in two ways:
-      // 1. As tabs (<button class="Tab">) — clickable via .click()
-      // 2. As a dropdown (<select data-testid="paymentMethodsSelect">) — needs .select()
-      //    When there are many payment methods, some overflow into the dropdown.
-      //    Clicking an <option> element doesn't trigger the onChange handler,
-      //    so we must use cy.select() for dropdown options.
+        return getIframeBody().then(($body) => {
+          const $tab = $body.find("button.Tab").filter((_, el) =>
+            Cypress.$(el).text().includes(methodName),
+          );
 
-      const $tab = $body.find("button.Tab").filter((_, el) =>
-        Cypress.$(el).text().includes(methodName)
-      );
-
-      if ($tab.length > 0) {
-        // Payment method is rendered as a clickable tab.
-        getIframeBody().contains(methodName).click({ force: true });
-      } else {
-        // Payment method is in the dropdown <select>.
-        // Map display names to the paymentMethodName values used in <option value="...">.
-        const displayNameToValue: Record<string, string> = {
-          "iDEAL": "ideal",
-          "EPS": "eps",
-          "Blik": "blik",
-          "Interac": "interac",
-          "Mifinity": "mifinity",
-          "Crypto": "crypto_currency",
-          "Cash / Voucher": "classic",
-          "E-Voucher": "evoucher",
-          "Card": "card",
-        };
-        const selectValue = displayNameToValue[methodName] || methodName.toLowerCase();
-        getIframeBody()
-          .find('[data-testid="paymentMethodsSelect"]')
-          .should("exist")
-          .select(selectValue, { force: true });
-      }
-      return cy.wrap(false);
+          if ($tab.length > 0) {
+            getIframeBody().contains(methodName).click({ force: true });
+          } else {
+            const displayNameToValue: Record<string, string> = {
+              "iDEAL": "ideal",
+              "EPS": "eps",
+              "Blik": "blik",
+              "Interac": "interac",
+              "Mifinity": "mifinity",
+              "Crypto": "crypto_currency",
+              "Cash / Voucher": "classic",
+              "E-Voucher": "evoucher",
+              "Card": "card",
+            };
+            const selectValue = displayNameToValue[methodName] || methodName.toLowerCase();
+            getIframeBody()
+              .find('[data-testid="paymentMethodsSelect"]')
+              .should("exist")
+              .select(selectValue, { force: true });
+          }
+          return cy.wrap(false);
+        });
+      });
     });
   },
 );
