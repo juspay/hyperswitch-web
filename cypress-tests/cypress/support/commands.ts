@@ -183,6 +183,7 @@ Cypress.Commands.add(
         cy.log(response.toString());
 
         globalState["clientSecret"] = clientSecret;
+        globalState["paymentId"] = response.body.payment_id;
       });
   },
 );
@@ -338,36 +339,37 @@ function waitForPaymentMethod(
       );
 
       // Capture and log the payment methods API response for debugging.
-      // This shows what the server actually returned as available payment
-      // methods, helping diagnose why a tab doesn't render in the SDK.
+      // The SDK calls /payments/{paymentId}/client (not /account/payment_methods)
+      // and the response uses `payment_methods_enabled` (not `payment_methods`).
       const clientSecret = globalState["clientSecret"];
+      const paymentId = globalState["paymentId"];
       const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
       const apiUrl = Cypress.env("HYPERSWITCH_API_URL");
-      if (clientSecret && publishableKey && apiUrl) {
+      if (clientSecret && paymentId && publishableKey && apiUrl) {
         return cy
           .request({
             method: "GET",
-            url: `${apiUrl}/account/payment_methods?client_secret=${clientSecret}`,
+            url: `${apiUrl}/payments/${paymentId}/client?client_secret=${clientSecret}`,
             headers: {
               "Content-Type": "application/json",
               "api-key": publishableKey,
             },
           })
           .then((response) => {
-            const paymentMethods = response.body.payment_methods || [];
+            const paymentMethods = response.body.payment_methods_enabled || [];
             const pmSummary = paymentMethods
               .map(
-                (pm: any) =>
-                  `${pm.payment_method}:[${(pm.payment_method_types || [])
-                    .map((t: any) => t.payment_method_type)
-                    .join(",")}]`,
+                (pm: any) => `${pm.payment_method}/${pm.payment_method_type}`,
               )
               .join(" | ");
             cy.task(
               "log",
-              `[debug] Available payment methods from API: ${pmSummary}`,
+              `[debug] SDK payment_methods_enabled: ${pmSummary || "(empty)"}`,
             );
-            cy.log(`Available payment methods from API: ${pmSummary}`);
+            cy.task(
+              "log",
+              `[debug] API status: ${response.status}, body: ${JSON.stringify(response.body).slice(0, 500)}`,
+            );
             return cy.wrap(true);
           });
       }

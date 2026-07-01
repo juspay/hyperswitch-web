@@ -116,7 +116,13 @@ const CONNECTOR_PAYMENT_METHODS = {
       payment_method_types: [
         {
           payment_method_type: "credit",
-          card_networks: ["Visa", "Mastercard", "AmericanExpress", "UnionPay", "DinersClub"],
+          card_networks: [
+            "Visa",
+            "Mastercard",
+            "AmericanExpress",
+            "UnionPay",
+            "DinersClub",
+          ],
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: true,
@@ -145,7 +151,14 @@ const CONNECTOR_PAYMENT_METHODS = {
       payment_method_types: [
         {
           payment_method_type: "credit",
-          card_networks: ["Visa", "Mastercard", "AmericanExpress", "CartesBancaires", "UnionPay", "DinersClub"],
+          card_networks: [
+            "Visa",
+            "Mastercard",
+            "AmericanExpress",
+            "CartesBancaires",
+            "UnionPay",
+            "DinersClub",
+          ],
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: true,
@@ -276,11 +289,12 @@ const CONNECTOR_PAYMENT_METHODS = {
   // ── CashToCode ───────────────────────────────────────────────────────────
   // Two tests: voucher (EUR, cashtocode.com) and e-voucher (USD, evoucher.cashtocode.com).
   // Both use the same connector profile — currency is set per payment body.
-  // The API accepts "classic" and "evoucher" as payment_method_type values
-  // (not "cashtocode").
+  // The TOML config uses "reward" as the payment_method category (not "voucher"),
+  // which maps to PaymentMethod::Reward in the backend. The payment method types
+  // are "classic" (ClassicReward) and "evoucher" (Evoucher).
   cashtocode: [
     {
-      payment_method: "voucher",
+      payment_method: "reward",
       payment_method_types: [
         {
           payment_method_type: "classic",
@@ -362,7 +376,8 @@ async function createMerchant(adminApiKey, apiBaseUrl) {
         "api-key": adminApiKey,
       },
       body: JSON.stringify({
-        merchant_id: attempt > 1 ? `test_merchant_${Date.now()}_${attempt}` : merchantId,
+        merchant_id:
+          attempt > 1 ? `test_merchant_${Date.now()}_${attempt}` : merchantId,
         merchant_name: merchantId,
         locker_id: "m0010",
         merchant_details: {
@@ -388,13 +403,15 @@ async function createMerchant(adminApiKey, apiBaseUrl) {
 
     const errorText = await response.text();
     if (attempt < maxRetries && response.status >= 500) {
-      console.log(`[setup] Merchant creation attempt ${attempt}/${maxRetries} failed (HTTP ${response.status}), retrying in ${retryDelayMs / 1000}s...`);
-      await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+      console.log(
+        `[setup] Merchant creation attempt ${attempt}/${maxRetries} failed (HTTP ${response.status}), retrying in ${retryDelayMs / 1000}s...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
       continue;
     }
 
     throw new Error(
-      `[setup] Failed to create merchant: HTTP ${response.status} ${response.statusText}\n${errorText}`
+      `[setup] Failed to create merchant: HTTP ${response.status} ${response.statusText}\n${errorText}`,
     );
   }
 }
@@ -426,7 +443,7 @@ async function createApiKey(adminApiKey, merchantId, apiBaseUrl) {
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `[setup] Failed to create API key: HTTP ${response.status} ${response.statusText}\n${errorText}`
+      `[setup] Failed to create API key: HTTP ${response.status} ${response.statusText}\n${errorText}`,
     );
   }
 
@@ -442,7 +459,12 @@ async function createApiKey(adminApiKey, merchantId, apiBaseUrl) {
  * @param {string} connectorName  Used only to generate a meaningful profile name.
  * @returns {Promise<string>}     The new profile_id.
  */
-async function createBusinessProfile(secretKey, merchantId, apiBaseUrl, connectorName) {
+async function createBusinessProfile(
+  secretKey,
+  merchantId,
+  apiBaseUrl,
+  connectorName,
+) {
   // Append a timestamp to ensure the label is unique across parallel runs.
   const profileName = `${connectorName}_profile_${Date.now()}`;
 
@@ -458,13 +480,13 @@ async function createBusinessProfile(secretKey, merchantId, apiBaseUrl, connecto
         profile_name: profileName,
         return_url: "http://localhost:9060/completion",
       }),
-    }
+    },
   );
 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `[setup] Failed to create business profile for "${connectorName}": HTTP ${response.status} ${response.statusText}\n${errorText}`
+      `[setup] Failed to create business profile for "${connectorName}": HTTP ${response.status} ${response.statusText}\n${errorText}`,
     );
   }
 
@@ -489,10 +511,11 @@ async function createMerchantConnectorAccount(
   connectorName,
   connectorAccountDetails,
   metadata,
-  apiBaseUrl
+  apiBaseUrl,
 ) {
   const paymentMethodsEnabled =
-    CONNECTOR_PAYMENT_METHODS[connectorName] || CONNECTOR_PAYMENT_METHODS.default;
+    CONNECTOR_PAYMENT_METHODS[connectorName] ||
+    CONNECTOR_PAYMENT_METHODS.default;
   const connectorType =
     CONNECTOR_TYPE_MAP[connectorName] || "payment_processor";
 
@@ -522,13 +545,13 @@ async function createMerchantConnectorAccount(
         "api-key": secretKey,
       },
       body: JSON.stringify(requestBody),
-    }
+    },
   );
 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `[setup] Failed to create MCA for "${connectorName}": HTTP ${response.status} ${response.statusText}\n${errorText}`
+      `[setup] Failed to create MCA for "${connectorName}": HTTP ${response.status} ${response.statusText}\n${errorText}`,
     );
   }
 }
@@ -571,10 +594,7 @@ function extractMetadata(connectorCreds) {
   if (connectorCreds.metadata) {
     return connectorCreds.metadata;
   }
-  if (
-    connectorCreds.connector_1 &&
-    connectorCreds.connector_1.metadata
-  ) {
+  if (connectorCreds.connector_1 && connectorCreds.connector_1.metadata) {
     return connectorCreds.connector_1.metadata;
   }
   return undefined;
@@ -602,7 +622,9 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
   // is shared across all spec files.  Only the first spec triggers real API
   // calls; every subsequent spec gets an instant cache hit.
   if (_credentialsCache) {
-    console.log("[setup] Returning cached credentials (merchant already created for this run).");
+    console.log(
+      "[setup] Returning cached credentials (merchant already created for this run).",
+    );
     return _credentialsCache;
   }
 
@@ -614,21 +636,23 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
   if (!fs.existsSync(absoluteCredsPath)) {
     throw new Error(
       `[setup] creds.json not found at: ${absoluteCredsPath}\n` +
-      `Set CONNECTOR_AUTH_FILE_PATH (or CYPRESS_CONNECTOR_AUTH_FILE_PATH) ` +
-      `to the path of your creds.json file.`
+        `Set CONNECTOR_AUTH_FILE_PATH (or CYPRESS_CONNECTOR_AUTH_FILE_PATH) ` +
+        `to the path of your creds.json file.`,
     );
   }
 
   const credsJson = JSON.parse(fs.readFileSync(absoluteCredsPath, "utf-8"));
   console.log(
-    `[setup] Loaded creds.json with connectors: ${Object.keys(credsJson).filter(k => k !== "Configs").join(", ")}`
+    `[setup] Loaded creds.json with connectors: ${Object.keys(credsJson)
+      .filter((k) => k !== "Configs")
+      .join(", ")}`,
   );
 
   // ── 2. Create merchant ───────────────────────────────────────────────────
   console.log(`[setup] Creating merchant on ${apiBaseUrl} ...`);
   const { merchantId, publishableKey } = await createMerchant(
     adminApiKey,
-    apiBaseUrl
+    apiBaseUrl,
   );
   console.log(`[setup] Merchant created → merchant_id: ${merchantId}`);
 
@@ -650,14 +674,16 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
     // Skip connectors not used by any Cypress web test to avoid
     // provisioning unnecessary business profiles and MCAs.
     if (!REQUIRED_CONNECTORS.includes(connectorName)) {
-      console.log(`[setup] Skipping "${connectorName}" — not required by Cypress web tests.`);
+      console.log(
+        `[setup] Skipping "${connectorName}" — not required by Cypress web tests.`,
+      );
       continue;
     }
 
     const accountDetails = extractConnectorAccountDetails(connectorCreds);
     if (!accountDetails) {
       console.warn(
-        `[setup] Skipping "${connectorName}": no connector_account_details found.`
+        `[setup] Skipping "${connectorName}": no connector_account_details found.`,
       );
       continue;
     }
@@ -677,7 +703,7 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
           secretKey,
           merchantId,
           apiBaseUrl,
-          connectorName
+          connectorName,
         );
       }
 
@@ -689,32 +715,42 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
         connectorName,
         accountDetails,
         metadata,
-        apiBaseUrl
+        apiBaseUrl,
       );
 
       connectorProfileIds[profileKey] = profileId;
       console.log(
         `[setup] ${connectorName.padEnd(20)} → profile_id: ${profileId}` +
-        (profileKey !== connectorName ? ` (shared as "${profileKey}")` : "")
+          (profileKey !== connectorName ? ` (shared as "${profileKey}")` : ""),
       );
     } catch (err) {
       // Log the error but continue with remaining connectors.
       // Individual tests for the failed connector will fail at runtime
       // when they can't find a profile_id — which is the desired behavior.
-      console.error(`[setup] Error setting up "${connectorName}":`, err.message);
+      console.error(
+        `[setup] Error setting up "${connectorName}":`,
+        err.message,
+      );
     }
   }
 
   console.log(
-    `[setup] Done. ${Object.keys(connectorProfileIds).length} connector(s) configured.`
+    `[setup] Done. ${Object.keys(connectorProfileIds).length} connector(s) configured.`,
   );
 
-  _credentialsCache = { publishableKey, secretKey, merchantId, connectorProfileIds };
+  _credentialsCache = {
+    publishableKey,
+    secretKey,
+    merchantId,
+    connectorProfileIds,
+  };
 
   const cachePath = path.join(__dirname, "test-credentials.json");
   try {
     fs.writeFileSync(cachePath, JSON.stringify(_credentialsCache, null, 2));
-    console.log(`[setup] Credentials cached to ${cachePath} for reuse by subsequent runs.`);
+    console.log(
+      `[setup] Credentials cached to ${cachePath} for reuse by subsequent runs.`,
+    );
   } catch (err) {
     console.warn(`[setup] Could not cache credentials: ${err.message}`);
   }
@@ -745,7 +781,8 @@ if (require.main === module) {
     const adminApiKey = process.env.ADMIN_API_KEY;
     const apiBaseUrl = process.env.HYPERSWITCH_API_URL;
     const credsFilePath = process.env.CONNECTOR_AUTH_FILE_PATH;
-    const outputPath = process.env.CREDENTIALS_OUTPUT_PATH || "./test-credentials.json";
+    const outputPath =
+      process.env.CREDENTIALS_OUTPUT_PATH || "./test-credentials.json";
 
     if (!adminApiKey) {
       console.error("[setup] Missing ADMIN_API_KEY env var.");
@@ -761,7 +798,11 @@ if (require.main === module) {
     }
 
     try {
-      const creds = await setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath });
+      const creds = await setupAllCredentials({
+        adminApiKey,
+        apiBaseUrl,
+        credsFilePath,
+      });
       fs.writeFileSync(outputPath, JSON.stringify(creds, null, 2));
       console.log(`[setup] Credentials written to ${outputPath}`);
     } catch (err) {
