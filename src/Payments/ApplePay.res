@@ -292,30 +292,27 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       )
       emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
       setApplePayClicked(_ => true)
-      makeOneClickHandlerPromise(sdkHandleIsThere)
-      ->then(result => {
-        let result = result->JSON.Decode.bool->Option.getOr(false)
-        if result {
-          if isInvokeSDKFlow {
-            if isApplePayDelayedSessionFlow {
-              setShowApplePayLoader(_ => true)
-              // New flow: send the initial session token directly to Elements (parent).
-              // Do NOT call /confirm here — the ApplePayInterceptor will trigger the
-              // confirm call from inside the iframe during onvalidatemerchant.
-              let sessionData = sessionObj->getOptionsDict->JSON.Encode.object
-              messageParentWindow([
-                ("applePayButtonClicked", true->JSON.Encode.bool),
-                ("applePayPresent", sessionData),
-                ("componentName", componentName->JSON.Encode.string),
-              ])
-            } else {
-              ApplePayHelpers.handleApplePayButtonClicked(
-                ~sessionObj,
-                ~componentName,
-                ~paymentMethodListValue,
-              )
-            }
-          } else {
+      if isInvokeSDKFlow {
+        if isApplePayDelayedSessionFlow {
+          setShowApplePayLoader(_ => true)
+          let sessionData = sessionObj->getOptionsDict->JSON.Encode.object
+          messageParentWindow([
+            ("applePayButtonClicked", true->JSON.Encode.bool),
+            ("applePayPresent", sessionData),
+            ("componentName", componentName->JSON.Encode.string),
+          ])
+        } else {
+          ApplePayHelpers.handleApplePayButtonClicked(
+            ~sessionObj,
+            ~componentName,
+            ~paymentMethodListValue,
+          )
+        }
+      } else {
+        makeOneClickHandlerPromise(sdkHandleIsThere)
+        ->then(result => {
+          let result = result->JSON.Decode.bool->Option.getOr(false)
+          if result {
             let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
             ApplePayHelpers.processPayment(
               ~bodyArr=bodyDict,
@@ -326,16 +323,16 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
               ~publishableKey,
               ~isManualRetryEnabled,
             )
+          } else {
+            setApplePayClicked(_ => false)
           }
-        } else {
-          setApplePayClicked(_ => false)
-        }
-        resolve()
-      })
-      ->catch(_ => {
-        resolve()
-      })
-      ->ignore
+          resolve()
+        })
+        ->catch(_ => {
+          resolve()
+        })
+        ->ignore
+      }
     }
   }
 
@@ -343,6 +340,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~connectors,
     ~intent,
     ~setApplePayClicked,
+    ~setShowApplePayLoader,
     ~syncPayment,
     ~isInvokeSDKFlow,
     ~isWallet,
