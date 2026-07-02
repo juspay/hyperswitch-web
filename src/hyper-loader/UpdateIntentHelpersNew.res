@@ -4,6 +4,7 @@
 open Utils
 open Identity
 open EventListenerManager
+open HyperLoggerTypes
 
 // --- Iframe messaging helpers ---
 
@@ -280,11 +281,14 @@ let performUpdateIntent = async (
   ~isSdkParamsEnabled,
   ~selectorString,
   ~shouldWaitForReady,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   if isUpdateIntentInProgress.contents {
     updateIntentInProgressResponse()
   } else {
     isUpdateIntentInProgress.contents = true
+
+    logger.setLogInfo(~value="Update Intent Initiated", ~eventName=UPDATE_INTENT)
 
     let response = try {
       // Get new credentials from merchant callback
@@ -328,6 +332,7 @@ let performUpdateIntent = async (
           ->getDictFromJson
           ->getDictFromDict("error")
           ->getString("message", "An API call failed during updateIntent.")
+        logger.setLogError(~value=errorMessage, ~eventName=UPDATE_INTENT)
         getFailedSubmitResponse(~message=errorMessage, ~errorType="update_intent_error")
 
       | None =>
@@ -340,6 +345,7 @@ let performUpdateIntent = async (
         clientListDataPromise.contents = newClientListDataPromise
 
         // Send ElementsUpdate to all inner iframes with new credentials
+        logger.setLogInfo(~value="Update SDK Sent to Iframes", ~eventName=UPDATE_SDK)
         sendElementsUpdateToIframes(
           iframes,
           ~newSdkAuthorization,
@@ -368,19 +374,18 @@ let performUpdateIntent = async (
         | None => ()
         }
 
+        logger.setLogInfo(~value="Update Intent Completed Successfully", ~eventName=UPDATE_INTENT)
         [("status", "succeeded"->JSON.Encode.string)]->getJsonFromArrayOfJson
       }
     } catch {
     | Exn.Error(e) =>
-      getFailedSubmitResponse(
-        ~message=Exn.message(e)->Option.getOr("Something went wrong during updateIntent!"),
-        ~errorType="update_intent_error",
-      )
+      let msg = Exn.message(e)->Option.getOr("Something went wrong during updateIntent!")
+      logger.setLogError(~value=msg, ~eventName=UPDATE_INTENT)
+      getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
     | _ =>
-      getFailedSubmitResponse(
-        ~message="An unexpected error occurred during updateIntent.",
-        ~errorType="update_intent_error",
-      )
+      let msg = "An unexpected error occurred during updateIntent."
+      logger.setLogError(~value=msg, ~eventName=UPDATE_INTENT)
+      getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
     }
     isUpdateIntentInProgress.contents = false
     response
