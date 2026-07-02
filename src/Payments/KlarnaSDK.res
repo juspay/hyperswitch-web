@@ -7,6 +7,8 @@ open KlarnaSDKTypes
 
 @react.component
 let make = (~sessionObj: SessionsType.token) => {
+  let paymentMethod = "pay_later"
+  let paymentMethodType = "klarna"
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -19,6 +21,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
@@ -36,14 +39,20 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
     ~paymentMethodListValue,
-    ~paymentMethod="pay_later",
-    ~paymentMethodType="klarna",
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
+  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~includeShipping=true,
   )
 
   UtilityHooks.useHandlePostMessages(
     ~complete=isCompleted,
     ~empty=!isCompleted,
-    ~paymentType="klarna",
+    ~paymentType=paymentMethodType,
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
@@ -78,14 +87,14 @@ let make = (~sessionObj: SessionsType.token) => {
               )
               PaymentUtils.emitPaymentMethodInfo(
                 ~paymentMethod="wallet",
-                ~paymentMethodType="klarna",
+                ~paymentMethodType,
                 ~country,
                 ~state,
                 ~pinCode,
               )
               emitter.emitPaymentMethodStatus(
                 ~paymentMethod="wallet",
-                ~paymentMethodType="klarna",
+                ~paymentMethodType,
                 ~isSavedPaymentMethod=false,
                 ~isOneClickWallet=true,
               )
@@ -104,8 +113,11 @@ let make = (~sessionObj: SessionsType.token) => {
                       {collect_shipping_address: componentName->getIsExpressCheckoutComponent},
                       Dict.make()->JSON.Encode.object,
                       (res: res) => {
-                        let (connectors, _) =
-                          paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(SDK)))
+                        let connectors = SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+                          sdkConfigsValue.payment_methods,
+                          paymentMethod,
+                          paymentMethodType,
+                        )
 
                         let shippingContact =
                           res.collected_shipping_address->Option.getOr(
@@ -114,7 +126,7 @@ let make = (~sessionObj: SessionsType.token) => {
 
                         let requiredFieldsBody = DynamicFieldsUtils.getKlarnaRequiredFields(
                           ~shippingContact,
-                          ~paymentMethodTypes,
+                          ~requiredFields,
                         )
 
                         let klarnaSDKBody = PaymentBody.klarnaSDKbody(

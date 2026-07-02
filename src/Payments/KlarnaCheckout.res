@@ -11,7 +11,7 @@ let make = () => {
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
   let (klarnaClicked, setKlarnaClicked) = React.useState(_ => false)
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
   let (_, _, _, heightType, _) = options.wallets.style.height
@@ -45,8 +45,11 @@ let make = () => {
         let decodedResult = result->JSON.Decode.bool->Option.getOr(false)
 
         if decodedResult {
-          let (connectors, _) =
-            paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
+          let connectors = SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+            sdkConfigsValue.payment_methods,
+            "pay_later",
+            "klarna",
+          )
           let body = PaymentBody.klarnaCheckoutBody(~connectors)
 
           intent(
