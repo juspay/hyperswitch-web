@@ -15,6 +15,7 @@ let make = (
   ~errorString=?,
   ~onFocus=?,
   ~fieldName="",
+  ~isLabelHidden=false,
   ~name="",
   ~type_="text",
   ~maxLength=?,
@@ -94,7 +95,8 @@ let make = (
 
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
     <RenderIf
-      condition={fieldName->String.length > 0 &&
+      condition={!isLabelHidden &&
+      fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
       innerLayout === Spaced}>
       <div
@@ -134,7 +136,7 @@ let make = (
           onFocus=handleFocus
           ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
         />
-        <RenderIf condition={config.appearance.labels == Floating}>
+        <RenderIf condition={!isLabelHidden && config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} pointer-events-none`}
             style={

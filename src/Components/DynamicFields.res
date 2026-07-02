@@ -176,28 +176,36 @@ let make = (
 
   let intentData = paymentMethodListValue.intent_data.intentDataObject
 
+  let configPaymentMethodType = PaymentUtils.getPaymentMethodName(
+    ~paymentMethodType=paymentMethod,
+    ~paymentMethodName=paymentMethodType,
+  )
+
   let eligibleConnectors = React.useMemo(() => {
     SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
       sdkConfigsValue.payment_methods,
       paymentMethod,
-      paymentMethodType,
+      configPaymentMethodType,
     )->Array.map(item => item->JSON.Encode.string)
-  }, (sdkConfigsValue.payment_methods, paymentMethod, paymentMethodType))
+  }, (sdkConfigsValue.payment_methods, paymentMethod, configPaymentMethodType))
 
   let superpositionBaseContext = React.useMemo(() => {
     buildSuperpositionBaseContext(
       ~paymentMethod,
-      ~paymentMethodType,
+      ~paymentMethodType=configPaymentMethodType,
+      ~platform="web",
       ~country,
       ~paymentMethodListValue,
       ~accountConfig=sdkConfigsValue.account_config,
+      ~contextUsed=sdkConfigsValue.context_used,
     )
   }, (
     paymentMethod,
-    paymentMethodType,
+    configPaymentMethodType,
     country,
     paymentMethodListValue,
     sdkConfigsValue.account_config,
+    sdkConfigsValue.context_used,
   ))
 
   let (requiredFields, missingRequiredFields, superpositionInitialValues) = React.useMemo(() => {
