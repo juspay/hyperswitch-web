@@ -144,9 +144,11 @@ let removeBillingDetailsIfUseBillingAddress = (
 let buildSuperpositionBaseContext = (
   ~paymentMethod: string,
   ~paymentMethodType: string,
+  ~platform: string,
   ~country: string,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ~accountConfig: option<SdkConfigTypes.accountConfig>,
+  ~contextUsed: option<SdkConfigTypes.contextUsed>,
 ) => {
   let mandateType = switch paymentMethodListValue.payment_type {
   | NEW_MANDATE => "new_mandate"
@@ -162,6 +164,9 @@ let buildSuperpositionBaseContext = (
   let collectShipping = SdkConfigParser.getCollectShippingDetailsFromWalletConnector(profile)
     ? "true"
     : "false"
+  let (profileId, processorMerchantId, organizationId) = SdkConfigParser.getProfileContext(
+    contextUsed,
+  )
 
   let context: SuperpositionTypes.superpositionBaseContext = {
     payment_method: paymentMethod,
@@ -170,6 +175,10 @@ let buildSuperpositionBaseContext = (
     mandate_type: mandateType,
     collect_shipping_details_from_wallet_connector: collectShipping,
     collect_billing_details_from_wallet_connector: collectBilling,
+    profile_id: ?profileId,
+    processor_merchant_id: ?processorMerchantId,
+    organization_id: ?organizationId,
+    platform,
   }
   context
 }
