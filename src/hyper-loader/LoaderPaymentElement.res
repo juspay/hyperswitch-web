@@ -9,6 +9,62 @@ external writeText: string => promise<'a> = "writeText"
 let onCompleteDoThisUsed = ref(false)
 let isPaymentButtonHandlerProvided = ref(false)
 
+let currentOneClickHandler = ref((None: option<unit => Promise.t<unit>>))
+
+let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Types.event) => {
+  open Promise
+  let json = try {
+    event.data->anyTypeToJson
+  } catch {
+  | _ => JSON.Encode.null
+  }
+
+  let dict = json->getDictFromJson
+  if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
+    switch currentOneClickHandler.contents {
+    | Some(eH) => {
+        logger.setLogInfo(
+          ~value=`One click handler callback execution initiated`,
+          ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+          ~logType=INFO,
+        )
+        eH()
+        ->then(_ => {
+          logger.setLogInfo(
+            ~value=`One click handler callback executed successfully`,
+            ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+            ~logType=INFO,
+          )
+          let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
+          event.source->Window.sendPostMessage(msg)
+          resolve()
+        })
+        ->catch(_ => {
+          logger.setLogError(
+            ~value=`Error in one click handler callback`,
+            ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+            ~logType=ERROR,
+          )
+          let msg = [("walletClickEvent", false->JSON.Encode.bool)]->Dict.fromArray
+          event.source->Window.sendPostMessage(msg)
+          resolve()
+        })
+        ->ignore
+      }
+
+    | None => ()
+    }
+  }
+}
+
+let ensureWalletOneClickListener = logger => {
+  addSmartEventListener(
+    "message",
+    event => walletOneClickEventHandler(logger, event),
+    "walletOneClickHandler",
+  )
+}
+
 // ─── Shared iframe HTML builder ────────────────────────────────────────────────
 // Produces the raw <iframe> HTML fragment used by the `mount` function.
 let buildIframeHtmlString = (~iframeId: string, ~iframeSrc: string, ~additionalStyle: string) =>
@@ -67,58 +123,11 @@ let make = (
         true,
       )
 
-    let currEventHandler = ref(Some(() => Promise.make((_, _) => {()})))
-    let walletOneClickEventHandler = (event: Types.event) => {
-      open Promise
-      let json = try {
-        event.data->anyTypeToJson
-      } catch {
-      | _ => JSON.Encode.null
-      }
+    ensureWalletOneClickListener(logger)
 
-      let dict = json->getDictFromJson
-      if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
-        switch currEventHandler.contents {
-        | Some(eH) => {
-            logger.setLogInfo(
-              ~value=`One click handler callback execution initiated`,
-              ~eventName=ONE_CLICK_HANDLER_CALLBACK,
-              ~logType=INFO,
-            )
-            eH()
-            ->then(_ => {
-              logger.setLogInfo(
-                ~value=`One click handler callback executed successfully`,
-                ~eventName=ONE_CLICK_HANDLER_CALLBACK,
-                ~logType=INFO,
-              )
-              let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
-              event.source->Window.sendPostMessage(msg)
-              resolve()
-            })
-            ->catch(_ => {
-              logger.setLogError(
-                ~value=`Error in one click handler callback`,
-                ~eventName=ONE_CLICK_HANDLER_CALLBACK,
-                ~logType=ERROR,
-              )
-              let msg = [("walletClickEvent", false->JSON.Encode.bool)]->Dict.fromArray
-              event.source->Window.sendPostMessage(msg)
-              resolve()
-            })
-            ->ignore
-          }
-
-        | None => ()
-        }
-      }
-    }
-
-    Window.addEventListener("message", walletOneClickEventHandler)
-
-    let onSDKHandleClick = (eventHandler: option<unit => Promise.t<'a>>) => {
-      currEventHandler := eventHandler
+    let onSDKHandleClick = eventHandler => {
       if eventHandler->Option.isSome {
+        currentOneClickHandler := eventHandler
         isPaymentButtonHandlerProvided := true
       }
     }
