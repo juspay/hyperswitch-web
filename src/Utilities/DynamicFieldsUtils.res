@@ -502,6 +502,64 @@ let applyBillingDetailsOverride = (
   initialValues
 }
 
+let useLogDynamicFieldsRendered = (
+  ~missingRequiredFieldsFiltered: array<SuperpositionTypes.fieldConfig>,
+  ~paymentMethod: string,
+  ~configPaymentMethodType: string,
+  ~rawConfigs: option<JSON.t>,
+  ~isSavedCardFlow: bool,
+) => {
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let lastLoggedKey = React.useRef("")
+
+  // Log which dynamic fields are being rendered for the current payment method.
+  // Fires once per (paymentMethod, configPaymentMethodType) combination; the
+  // dedupeKey guard prevents re-logging when unrelated state (e.g. billingAddress
+  // toggle) causes missingRequiredFieldsFiltered to change identity.
+  React.useEffect(() => {
+    if !isSavedCardFlow && rawConfigs->Option.isSome {
+      let dedupeKey = paymentMethod ++ "|" ++ configPaymentMethodType
+      if lastLoggedKey.current !== dedupeKey {
+        lastLoggedKey.current = dedupeKey
+        let fieldsJson =
+          missingRequiredFieldsFiltered
+          ->Array.map(field =>
+            [
+              ("field_type", (field.fieldRenderType :> string)->JSON.Encode.string),
+              ("write_path", field.confirmRequestWritePath->JSON.Encode.string),
+            ]
+            ->Dict.fromArray
+            ->JSON.Encode.object
+          )
+          ->JSON.Encode.array
+        let payload =
+          [
+            ("payment_method", paymentMethod->JSON.Encode.string),
+            ("payment_method_type", configPaymentMethodType->JSON.Encode.string),
+            ("field_count", missingRequiredFieldsFiltered->Array.length->JSON.Encode.int),
+            ("fields", fieldsJson),
+          ]
+          ->Dict.fromArray
+          ->JSON.Encode.object
+          ->JSON.stringify
+        loggerState.setLogInfo(
+          ~value=payload,
+          ~eventName=HyperLoggerTypes.DYNAMIC_FIELDS_RENDERED,
+          ~paymentMethod,
+        )
+      }
+    }
+    None
+  }, (
+    missingRequiredFieldsFiltered,
+    paymentMethod,
+    configPaymentMethodType,
+    rawConfigs,
+    isSavedCardFlow,
+    loggerState,
+  ))
+}
+
 // TODO: refactor event emitters to use react-final-forms
 let useSyncEmitAddressAtoms = () => {
   let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)

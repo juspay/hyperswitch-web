@@ -108,6 +108,7 @@ type eventName =
   | VGS_VAULT_FLOW
   | UPDATE_INTENT
   | UPDATE_SDK
+  | DYNAMIC_FIELDS_RENDERED
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

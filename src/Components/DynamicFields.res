@@ -321,6 +321,15 @@ let make = (
     None
   }, (isSavedCardFlow, hasAnyField))
 
+  // Log which dynamic fields are being rendered for the current payment method.
+  DynamicFieldsUtils.useLogDynamicFieldsRendered(
+    ~missingRequiredFieldsFiltered,
+    ~paymentMethod,
+    ~configPaymentMethodType,
+    ~rawConfigs,
+    ~isSavedCardFlow,
+  )
+
   <>
     <RenderIf condition={!isSavedCardFlow && hasAnyField}>
       <ReactFinalForm.Form
