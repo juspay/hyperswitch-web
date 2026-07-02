@@ -178,7 +178,6 @@ let buildSuperpositionBaseContext = (
   let context: SuperpositionTypes.superpositionBaseContext = {
     payment_method: paymentMethod,
     payment_method_type: paymentMethodType,
-    platform: "web",
     country,
     mandate_type: mandateType,
     collect_shipping_details_from_wallet_connector: collectShipping,
