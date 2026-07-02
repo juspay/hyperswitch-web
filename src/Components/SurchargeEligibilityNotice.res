@@ -14,11 +14,7 @@ let make = (
   <RenderIf condition={isEligibilityPending || eligibilitySurchargeDetails->Option.isSome}>
     <div className={`w-full ${className}`}>
       {if isEligibilityPending {
-        <div
-          className="w-full"
-          role="status"
-          ariaLive=#polite
-          ariaAtomic=true>
+        <div className="w-full" role="status" ariaLive=#polite ariaAtomic=true>
           <span className="sr-only">
             {localeString.paymentDetailsBeingCheckedText->React.string}
           </span>
