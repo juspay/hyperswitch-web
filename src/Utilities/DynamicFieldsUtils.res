@@ -508,6 +508,8 @@ let useLogDynamicFieldsRendered = (
   ~configPaymentMethodType: string,
   ~rawConfigs: option<JSON.t>,
   ~isSavedCardFlow: bool,
+  ~eligibleConnectors,
+  ~superpositionBaseContext: SuperpositionTypes.superpositionBaseContext,
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let lastLoggedKey = React.useRef("")
@@ -527,6 +529,23 @@ let useLogDynamicFieldsRendered = (
             [
               ("field_type", (field.fieldRenderType :> string)->JSON.Encode.string),
               ("write_path", field.confirmRequestWritePath->JSON.Encode.string),
+              (
+                "intent_data_read_path",
+                field.intentDataReadPath
+                ->Option.map(JSON.Encode.string)
+                ->Option.getOr(JSON.Null),
+              ),
+              ("is_required", field.isRequired->JSON.Encode.bool),
+              (
+                "validation_rule_type",
+                field.validationRuleType->Option.map(JSON.Encode.string)->Option.getOr(JSON.Null),
+              ),
+              (
+                "validation_regex_pattern",
+                field.validationRegexPattern
+                ->Option.map(JSON.Encode.string)
+                ->Option.getOr(JSON.Null),
+              ),
             ]
             ->Dict.fromArray
             ->JSON.Encode.object
@@ -534,8 +553,8 @@ let useLogDynamicFieldsRendered = (
           ->JSON.Encode.array
         let payload =
           [
-            ("payment_method", paymentMethod->JSON.Encode.string),
-            ("payment_method_type", configPaymentMethodType->JSON.Encode.string),
+            ("superposition_base_context", superpositionBaseContext->Identity.anyTypeToJson),
+            ("eligible_connectors", eligibleConnectors->JSON.Encode.array),
             ("field_count", missingRequiredFieldsFiltered->Array.length->JSON.Encode.int),
             ("fields", fieldsJson),
           ]
@@ -556,6 +575,8 @@ let useLogDynamicFieldsRendered = (
     configPaymentMethodType,
     rawConfigs,
     isSavedCardFlow,
+    eligibleConnectors,
+    superpositionBaseContext,
     loggerState,
   ))
 }

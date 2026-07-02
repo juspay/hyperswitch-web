@@ -328,6 +328,8 @@ let make = (
     ~configPaymentMethodType,
     ~rawConfigs,
     ~isSavedCardFlow,
+    ~eligibleConnectors,
+    ~superpositionBaseContext,
   )
 
   <>
