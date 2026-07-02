@@ -391,6 +391,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         } else if dict->getDictIsSome("paymentElementsUpdate") {
           updateOptions(dict)
         } else if dict->getDictIsSome("ElementsUpdate") {
+          logger.setLogInfo(~value="SDK Credentials Received from Loader", ~eventName=UPDATE_SDK)
           let optionsDict = dict->getDictFromObj("options")
           let clientSecret = dict->Dict.get("clientSecret")
           switch clientSecret {
@@ -632,7 +633,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           setIsApplePayReady(prev => prev && false)
         }
         if dict->Dict.get("updateIntentLoading")->Option.isSome {
-          setIsUpdateIntentLoading(_ => dict->getBool("updateIntentLoading", false))
+          let isLoading = dict->getBool("updateIntentLoading", false)
+          setIsUpdateIntentLoading(_ => isLoading)
+          if isLoading {
+            logger.setLogInfo(~value="Update Intent Loading Started", ~eventName=UPDATE_INTENT)
+          } else {
+            logger.setLogInfo(~value="Update Intent Loading Completed", ~eventName=UPDATE_INTENT)
+          }
         }
       } catch {
       | _ => setIntegrateErrorError(_ => true)

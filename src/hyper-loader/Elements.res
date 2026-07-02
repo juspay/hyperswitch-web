@@ -347,6 +347,7 @@ let make = (
           ~isSdkParamsEnabled,
           ~selectorString=localSelectorString,
           ~shouldWaitForReady=paymentElementIframeRef->Array.length > 0,
+          ~logger,
         )
 
         // Only forward data and update tax calculation if updateIntent succeeded
