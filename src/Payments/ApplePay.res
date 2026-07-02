@@ -2,6 +2,8 @@ open Utils
 open Promise
 @react.component
 let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
+  let paymentMethod = "wallet"
+  let paymentMethodType = "apple_pay"
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
@@ -22,12 +24,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isApplePaySDKFlow = sessionObj->Option.isSome
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
   let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
   let isApplePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsApplePayDelayedSessionFlow()
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let isWallet = walletOptions->Array.includes("apple_pay")
+  let isWallet = walletOptions->Array.includes(paymentMethodType)
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   let (heightType, _, _, _, _) = options.wallets.style.height
@@ -86,7 +89,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
-    ~paymentType="apple_pay",
+    ~paymentType=paymentMethodType,
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   SubscriptionEventHooks.useEmitFormStatus(
@@ -98,8 +101,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let applePayPaymentMethodType = React.useMemo(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~paymentMethodListValue,
-      ~paymentMethod="wallet",
-      ~paymentMethodType="apple_pay",
+      ~paymentMethod,
+      ~paymentMethodType,
     ) {
     | Some(paymentMethodType) => paymentMethodType
     | None => PaymentMethodsRecord.defaultPaymentMethodType
@@ -117,9 +120,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     paymentExperience == PaymentMethodsRecord.InvokeSDK && isApplePaySDKFlow
   }, [sessionObj])
 
-  let (connectors, _) = isInvokeSDKFlow
-    ? paymentMethodListValue->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
-    : paymentMethodListValue->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
+  let connectors = SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+    sdkConfigsValue.payment_methods,
+    paymentMethod,
+    paymentMethodType,
+  )
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
@@ -278,15 +283,15 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~paymentMethod="APPLE_PAY",
       )
       PaymentUtils.emitPaymentMethodInfo(
-        ~paymentMethod="wallet",
-        ~paymentMethodType="apple_pay",
+        ~paymentMethod,
+        ~paymentMethodType,
         ~country,
         ~state,
         ~pinCode,
       )
       emitter.emitPaymentMethodStatus(
-        ~paymentMethod="wallet",
-        ~paymentMethodType="apple_pay",
+        ~paymentMethod,
+        ~paymentMethodType,
         ~isSavedPaymentMethod=false,
         ~isOneClickWallet=isWallet,
       )
@@ -339,6 +344,12 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     }
   }
 
+  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~includeShipping=true,
+  )
+
   ApplePayHelpers.useHandleApplePayResponse(
     ~connectors,
     ~intent,
@@ -347,6 +358,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~isInvokeSDKFlow,
     ~isWallet,
     ~requiredFieldsBody,
+    ~requiredFields,
     ~sdkAuthorization,
   )
 
@@ -379,8 +391,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
   useSubmitPaymentData(submitCallback)
 
-  let paymentMethod = "wallet"
-  let paymentMethodType = "apple_pay"
   let shouldShowWalletShimmer =
     isApplePayDelayedSessionFlow && isApplePayReady && trustPayScriptStatus === Loading
 

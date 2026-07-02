@@ -161,8 +161,6 @@ let make = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {billingAddress, redirectionInfo, defaultValues} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let country = Recoil.useRecoilValueFromAtom(userCountry)
-  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
   let syncEmitAddressAtoms = DynamicFieldsUtils.useSyncEmitAddressAtoms()
 
   React.useEffect(() => {
@@ -170,47 +168,13 @@ let make = (
     None
   }, [paymentMethodType])
 
-  let rawConfigs = sdkConfigsValue.raw_configs
-
-  let getSuperpositionFinalFields = ConfigurationService.useConfigurationService(~rawConfigs)
-
   let intentData = paymentMethodListValue.intent_data.intentDataObject
 
-  let configPaymentMethodType = PaymentUtils.getPaymentMethodName(
-    ~paymentMethodType=paymentMethod,
-    ~paymentMethodName=paymentMethodType,
-  )
-
-  let eligibleConnectors = React.useMemo(() => {
-    SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
-      sdkConfigsValue.payment_methods,
-      paymentMethod,
-      configPaymentMethodType,
-    )->Array.map(item => item->JSON.Encode.string)
-  }, (sdkConfigsValue.payment_methods, paymentMethod, configPaymentMethodType))
-
-  let superpositionBaseContext = React.useMemo(() => {
-    buildSuperpositionBaseContext(
-      ~paymentMethod,
-      ~paymentMethodType=configPaymentMethodType,
-      ~platform="web",
-      ~country,
-      ~paymentMethodListValue,
-      ~accountConfig=sdkConfigsValue.account_config,
-      ~contextUsed=sdkConfigsValue.context_used,
-    )
-  }, (
-    paymentMethod,
-    configPaymentMethodType,
-    country,
-    paymentMethodListValue,
-    sdkConfigsValue.account_config,
-    sdkConfigsValue.context_used,
-  ))
-
-  let (requiredFields, missingRequiredFields, superpositionInitialValues) = React.useMemo(() => {
-    getSuperpositionFinalFields(eligibleConnectors, superpositionBaseContext, intentData)
-  }, (getSuperpositionFinalFields, eligibleConnectors, superpositionBaseContext, intentData))
+  let (
+    requiredFields,
+    missingRequiredFields,
+    superpositionInitialValues,
+  ) = DynamicFieldsUtils.useSuperpositionRequiredFields(~paymentMethod, ~paymentMethodType)
   let initialValues = React.useMemo(() => superpositionInitialValues, [intentData])
 
   let missingRequiredFieldsFiltered = React.useMemo(() => {

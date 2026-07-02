@@ -38,7 +38,7 @@ let getApplePayFromResponse = (
   ~token,
   ~billingContactDict,
   ~shippingContactDict,
-  ~requiredFields=[],
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>=[],
   ~connectors,
   ~isPaymentSession=false,
   ~isSavedMethodsFlow=false,
@@ -50,7 +50,13 @@ let getApplePayFromResponse = (
   let requiredFieldsBody = if isPaymentSession || isSavedMethodsFlow {
     DynamicFieldsUtils.getApplePayRequiredFields(~billingContact, ~shippingContact)
   } else {
-    DynamicFieldsUtils.getApplePayRequiredFields(~billingContact, ~shippingContact, ~requiredFields)
+    DynamicFieldsUtils.getApplePayRequiredFields(
+      ~billingContact,
+      ~shippingContact,
+      ~requiredFieldPaths=requiredFields->Array.map(fieldConfig =>
+        fieldConfig.confirmRequestWritePath
+      ),
+    )
   }
 
   let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
@@ -209,6 +215,7 @@ let useHandleApplePayResponse = (
   ~isSavedMethodsFlow=false,
   ~isWallet=true,
   ~requiredFieldsBody=Dict.make(),
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>=[],
   ~sdkAuthorization,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -217,12 +224,6 @@ let useHandleApplePayResponse = (
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
-
-  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="apple_pay",
-  )
 
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
@@ -245,7 +246,7 @@ let useHandleApplePayResponse = (
             ~token,
             ~billingContactDict,
             ~shippingContactDict,
-            ~requiredFields=paymentMethodTypes.required_fields,
+            ~requiredFields,
             ~connectors,
             ~isSavedMethodsFlow,
           )
@@ -332,6 +333,7 @@ let useHandleApplePayResponse = (
     isManualRetryEnabled,
     isWallet,
     requiredFieldsBody,
+    requiredFields,
     isSavedMethodsFlow,
     sdkAuthorization,
   ))

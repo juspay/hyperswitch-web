@@ -3,6 +3,8 @@ open PaymentTypeContext
 
 @react.component
 let make = (~sessionObj: SessionsType.token) => {
+  let paymentMethod = "wallet"
+  let paymentMethodType = "paypal"
   let {
     iframeId,
     publishableKey,
@@ -33,6 +35,12 @@ let make = (~sessionObj: SessionsType.token) => {
   let clientScript =
     Window.document(Window.window)->Window.getElementById("braintree-client")->Nullable.toOption
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
+  let connectors = SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+    sdkConfigsValue.payment_methods,
+    paymentMethod,
+    paymentMethodType,
+  )
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -110,16 +118,16 @@ let make = (~sessionObj: SessionsType.token) => {
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="paypal",
+  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~includeShipping=true,
   )
 
   UtilityHooks.useHandlePostMessages(
     ~complete=isCompleted,
     ~empty=!isCompleted,
-    ~paymentType="paypal",
+    ~paymentType=paymentMethodType,
   )
 
   let mountPaypalSDK = () => {
@@ -166,12 +174,13 @@ let make = (~sessionObj: SessionsType.token) => {
         ~buttonStyle,
         ~iframeId,
         ~paymentMethodListValue,
+        ~connectors,
         ~isGuestCustomer,
         ~postSessionTokens=intent,
         ~isManualRetryEnabled,
         ~options,
         ~publishableKey,
-        ~paymentMethodTypes,
+        ~requiredFields,
         ~confirm,
         ~completeAuthorize,
         ~handleCloseLoader,
@@ -204,12 +213,13 @@ let make = (~sessionObj: SessionsType.token) => {
             ~buttonStyle,
             ~iframeId,
             ~paymentMethodListValue,
+            ~connectors,
             ~isGuestCustomer,
             ~intent,
             ~options,
             ~orderDetails,
             ~publishableKey,
-            ~paymentMethodTypes,
+            ~requiredFields,
             ~handleCloseLoader,
             ~areOneClickWalletsRendered,
             ~isManualRetryEnabled,
