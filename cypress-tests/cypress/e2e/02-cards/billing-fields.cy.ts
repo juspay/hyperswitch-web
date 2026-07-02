@@ -27,13 +27,15 @@ import {
 import { cybersourceCards } from "../../support/cards";
 
 describe("Billing Fields", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
   });
 
@@ -113,7 +115,7 @@ describe("Billing Fields", () => {
 
         getIframeBody().then(($body) => {
           const hasBillingSection =
-            $body.find('.billing-section, input[name="line1"]').length > 0;
+            $body.find('.billing-section, [data-testid="line1"]').length > 0;
           if (!hasBillingSection) {
             expect(hasBillingSection).to.be.false;
           }
@@ -149,7 +151,7 @@ describe("Billing Fields", () => {
         cy.waitForSDKReady();
 
         getIframeBody()
-          .find('input[name="line1"]')
+          .find('[data-testid="line1"]')
           .should("be.visible");
       });
     });
@@ -200,8 +202,8 @@ describe("Billing Fields", () => {
           .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
           .safeType(cvc);
 
-        getIframeBody().find('input[name="city"]').type("San Francisco");
-        getIframeBody().find('input[name="postal"]').type("94122");
+        getIframeBody().find('[data-testid="city"]').type("San Francisco");
+        getIframeBody().find('[data-testid="zip"]').type("94122");
 
         cy.get("#submit").should("be.visible").click();
         cy.get("#submit").should("be.visible");
@@ -222,7 +224,7 @@ describe("Billing Fields", () => {
           .safeType(cvc);
 
         getIframeBody()
-          .find(`input[name="${testIds.fullNameInputTestId}"]`)
+          .find(`[data-testid="first_name"]`)
           .type("Joseph Doe");
 
         getIframeBody()
@@ -230,15 +232,18 @@ describe("Billing Fields", () => {
           .select("United States");
 
         getIframeBody()
-          .find('input[name="line1"]')
+          .find('[data-testid="line1"]')
           .type("1467 Harrison Street");
-        getIframeBody().find('input[name="city"]').type("San Francisco");
+        getIframeBody().find('[data-testid="city"]').type("San Francisco");
 
         getIframeBody()
           .find('select[aria-label="State option tab"]')
           .select("California");
 
-        getIframeBody().find('input[name="postal"]').type("94122");
+        getIframeBody().find('[data-testid="zip"]').type("94122");
+        getIframeBody()
+          .find('[data-testid="email"]')
+          .type("hyperswitch_sdk_demo_id@gmail.com");
 
         cy.get("#submit").should("be.visible").click();
         cy.get("#submit").should("be.disabled");
@@ -250,27 +255,27 @@ describe("Billing Fields", () => {
 
       it("should allow typing in address line1 field", () => {
         getIframeBody()
-          .find('input[name="line1"]')
+          .find('[data-testid="line1"]')
           .type("1467 Harrison Street");
 
         getIframeBody()
-          .find('input[name="line1"]')
+          .find('[data-testid="line1"]')
           .should("have.value", "1467 Harrison Street");
       });
 
       it("should allow typing in city field", () => {
-        getIframeBody().find('input[name="city"]').type("San Francisco");
+        getIframeBody().find('[data-testid="city"]').type("San Francisco");
 
         getIframeBody()
-          .find('input[name="city"]')
+          .find('[data-testid="city"]')
           .should("have.value", "San Francisco");
       });
 
       it("should allow typing in postal code field", () => {
-        getIframeBody().find('input[name="postal"]').type("94122");
+        getIframeBody().find('[data-testid="zip"]').type("94122");
 
         getIframeBody()
-          .find('input[name="postal"]')
+          .find('[data-testid="zip"]')
           .should("have.value", "94122");
       });
     });
@@ -311,11 +316,11 @@ describe("Billing Fields", () => {
         cy.waitForSDKReady();
 
         getIframeBody()
-          .find('input[name="BillingName"]')
+          .find('[data-testid="first_name"]')
           .should("not.exist");
 
         getIframeBody()
-          .find('input[name="line1"]', { timeout: 10000 })
+          .find('[data-testid="line1"]', { timeout: 10000 })
           .should("be.visible");
       });
 
@@ -334,11 +339,11 @@ describe("Billing Fields", () => {
         cy.waitForSDKReady();
 
         getIframeBody()
-          .find('input[name="email"]')
+          .find('[data-testid="email"]')
           .should("not.exist");
 
         getIframeBody()
-          .find('input[name="line1"]', { timeout: 10000 })
+          .find('[data-testid="line1"]', { timeout: 10000 })
           .should("be.visible");
       });
     });
@@ -456,23 +461,23 @@ describe("Billing Fields", () => {
       });
 
       it("should hide the billing name field", () => {
-        getIframeBody().find('input[name="BillingName"]').should("not.exist");
+        getIframeBody().find('[data-testid="first_name"]').should("not.exist");
       });
 
       it("should hide the email field", () => {
-        getIframeBody().find('input[name="email"]').should("not.exist");
+        getIframeBody().find('[data-testid="email"]').should("not.exist");
       });
 
       it("should hide the address line1 field", () => {
-        getIframeBody().find('input[name="line1"]').should("not.exist");
+        getIframeBody().find('[data-testid="line1"]').should("not.exist");
       });
 
       it("should hide the city field", () => {
-        getIframeBody().find('input[name="city"]').should("not.exist");
+        getIframeBody().find('[data-testid="city"]').should("not.exist");
       });
 
       it("should hide the postal code field", () => {
-        getIframeBody().find('input[name="postal"]').should("not.exist");
+        getIframeBody().find('[data-testid="zip"]').should("not.exist");
       });
     });
 
@@ -514,24 +519,24 @@ describe("Billing Fields", () => {
       });
 
       it("should hide the billing name field when set to never", () => {
-        getIframeBody().find('input[name="BillingName"]').should("not.exist");
+        getIframeBody().find('[data-testid="first_name"]').should("not.exist");
       });
 
       it("should show address line1 field when set to auto", () => {
         getIframeBody()
-          .find('input[name="line1"]', { timeout: 10000 })
+          .find('[data-testid="line1"]', { timeout: 10000 })
           .should("be.visible");
       });
 
       it("should show city field when set to auto", () => {
         getIframeBody()
-          .find('input[name="city"]', { timeout: 10000 })
+          .find('[data-testid="city"]', { timeout: 10000 })
           .should("be.visible");
       });
 
       it("should show postal code field when set to auto", () => {
         getIframeBody()
-          .find('input[name="postal"]', { timeout: 10000 })
+          .find('[data-testid="zip"]', { timeout: 10000 })
           .should("be.visible");
       });
     });

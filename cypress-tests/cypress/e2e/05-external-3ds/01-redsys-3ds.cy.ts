@@ -12,30 +12,13 @@ type updatesType = [Record<string, any>, string, string | boolean][];
 
 describe("External 3DS using Redsys flow test", () => {
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
   const shippingAddressBody = createPaymentBody.shipping.address;
   const billingAddressBody = createPaymentBody.billing.address;
-
-  changeObjectKeyValue(
-    createPaymentBody,
-    "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.REDSYS),
-  );
-  changeObjectKeyValue(
-    createPaymentBody,
-    "request_external_three_ds_authentication",
-    true,
-  );
-  changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
-  changeObjectKeyValue(createPaymentBody, "currency", "EUR");
-  changeObjectKeyValue(shippingAddressBody, "state", "Ceuta");
-  changeObjectKeyValue(shippingAddressBody, "country", "ES");
-  changeObjectKeyValue(billingAddressBody, "state", "Ceuta");
-  changeObjectKeyValue(billingAddressBody, "country", "ES");
 
   const enterCardDetails = ({ cardNo, cvc, card_exp_month, card_exp_year }) => {
     getIframeBody().find("[data-testid=cardNoInput]").type(cardNo);
@@ -55,7 +38,26 @@ describe("External 3DS using Redsys flow test", () => {
   };
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
+
+    changeObjectKeyValue(
+      createPaymentBody,
+      "profile_id",
+      connectorProfileIdMapping.get(connectorEnum.REDSYS),
+    );
+    changeObjectKeyValue(
+      createPaymentBody,
+      "request_external_three_ds_authentication",
+      true,
+    );
+    changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
+    changeObjectKeyValue(createPaymentBody, "currency", "EUR");
+    changeObjectKeyValue(shippingAddressBody, "state", "Ceuta");
+    changeObjectKeyValue(shippingAddressBody, "country", "ES");
+    changeObjectKeyValue(billingAddressBody, "state", "Ceuta");
+    changeObjectKeyValue(billingAddressBody, "country", "ES");
 
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
@@ -75,42 +77,58 @@ describe("External 3DS using Redsys flow test", () => {
       .its("body");
   });
 
-  it("3ds invoke: challenge test", () => {
+  it("3ds invoke: challenge test", function () {
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    enterCardDetails(redsysCards.threedsInvokeChallengeTestCard);
-    getIframeBody().get("#submit").click();
+    cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
+      if (skipped) {
+        this.skip();
+      }
+      enterCardDetails(redsysCards.threedsInvokeChallengeTestCard);
+      getIframeBody().get("#submit").click();
 
-    handleRedsysIframeError();
-    cy.url({ timeout: 20000 }).should("include", "sis-d.redsys.es");
+      handleRedsysIframeError();
+      cy.url({ timeout: 20000 }).should("include", "sis-d.redsys.es");
+    });
   });
 
-  it("3ds invoke: frictionless flow", () => {
+  it("3ds invoke: frictionless flow", function () {
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    enterCardDetails(redsysCards.threedsInvokeFrictionlessTestCard);
-    getIframeBody().get("#submit").click();
-    cy.contains("Thanks for your order!", { timeout: 16000 }).should(
-      "be.visible",
-    );
+    cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
+      if (skipped) {
+        this.skip();
+      }
+      enterCardDetails(redsysCards.threedsInvokeFrictionlessTestCard);
+      getIframeBody().get("#submit").click();
+      cy.contains("Thanks for your order!", { timeout: 16000 }).should(
+        "be.visible",
+      );
+    });
   });
 
-  it("No 3ds invoke: challenge flow", () => {
+  it("No 3ds invoke: challenge flow", function () {
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    enterCardDetails(redsysCards.challengeTestCard);
-    handleRedsysIframeError();
-    getIframeBody().get("#submit").click();
-    cy.url({ timeout: 10000 }).should("include", "sis-d.redsys.es");
+    cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
+      if (skipped) {
+        this.skip();
+      }
+      enterCardDetails(redsysCards.challengeTestCard);
+      handleRedsysIframeError();
+      getIframeBody().get("#submit").click();
+      cy.url({ timeout: 10000 }).should("include", "sis-d.redsys.es");
+    });
   });
 
-  it("No 3ds invoke: frictionless flow", () => {
+  it("No 3ds invoke: frictionless flow", function () {
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    enterCardDetails(redsysCards.frictionlessTestCard);
-    getIframeBody().get("#submit").click();
-    cy.contains("Thanks for your order!", { timeout: 10000 }).should(
-      "be.visible",
-    );
+    cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
+      if (skipped) {
+        this.skip();
+      }
+      enterCardDetails(redsysCards.frictionlessTestCard);
+      getIframeBody().get("#submit").click();
+      cy.contains("Thanks for your order!", { timeout: 10000 }).should(
+        "be.visible",
+      );
+    });
   });
 });

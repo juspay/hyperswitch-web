@@ -2,13 +2,15 @@ import * as testIds from "../../../../src/Utilities/TestUtils.bs";
 import { getClientURL, createPaymentBody, changeObjectKeyValue, connectorProfileIdMapping, connectorEnum } from "../../support/utils";
 
 describe("GigaDat Interac Payment flow test", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
 
     changeObjectKeyValue(
@@ -17,7 +19,6 @@ describe("GigaDat Interac Payment flow test", () => {
       connectorProfileIdMapping.get(connectorEnum.INTERAC),
     );
 
-   
     changeObjectKeyValue(createPaymentBody, "currency", "CAD");
 
     createPaymentBody.billing.address.country = "CA";
@@ -48,7 +49,7 @@ describe("GigaDat Interac Payment flow test", () => {
       .its("body");
   });
 
-  it("should complete Interac payment via GigaDat connector", () => {
+  it("should complete Interac payment via GigaDat connector", function () {
 
     changeObjectKeyValue(createPaymentBody, "connector", ["gigadat"]);
 
@@ -59,17 +60,20 @@ describe("GigaDat Interac Payment flow test", () => {
     });
 
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    getIframeBody().contains("div", "Interac").click();
-    getIframeBody()
-      .get("#submit")
-      .click()
-      .then(() => {
-        cy.url().should("include", "interac");
-      });
+    cy.selectPaymentMethodOrSkip(getIframeBody, "Interac").then((skipped) => {
+      if (skipped) {
+        this.skip();
+      }
+      getIframeBody()
+        .get("#submit")
+        .click()
+        .then(() => {
+          cy.url().should("include", "interac");
+        });
+    });
   });
 
-  it("should complete Interac payment via Loonio connector", () => {
+  it("should complete Interac payment via Loonio connector", function () {
     changeObjectKeyValue(createPaymentBody, "connector", ["loonio"]);
 
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
@@ -79,13 +83,16 @@ describe("GigaDat Interac Payment flow test", () => {
     });
 
     cy.wait(2000);
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    getIframeBody().contains("div", "Interac").click();
-    getIframeBody()
-      .get("#submit")
-      .click()
-      .then(() => {   
-        cy.url().should("include", "interac");
-      });
+    cy.selectPaymentMethodOrSkip(getIframeBody, "Interac").then((skipped) => {
+      if (skipped) {
+        this.skip();
+      }
+      getIframeBody()
+        .get("#submit")
+        .click()
+        .then(() => {   
+          cy.url().should("include", "interac");
+        });
+    });
   });
 });

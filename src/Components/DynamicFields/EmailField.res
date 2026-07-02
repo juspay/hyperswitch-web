@@ -30,6 +30,7 @@ module EmailInput = {
 
     <PaymentInputField
       fieldName={label}
+      name={DynamicFieldsUtils.getFieldTestId(primaryFieldConfig.confirmRequestWritePath)}
       value
       onChange={ev => {
         let val = ReactEvent.Form.target(ev)["value"]

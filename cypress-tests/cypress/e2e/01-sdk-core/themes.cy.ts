@@ -36,8 +36,8 @@ const themeBorderRadius: Record<string, string> = {
 };
 
 describe("Themes / Appearance", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
@@ -59,6 +59,7 @@ describe("Themes / Appearance", () => {
       "profile_id",
       connectorProfileIdMapping.get(connectorEnum.STRIPE),
     );
+    changeObjectKeyValue(createPaymentBody, "currency", "USD");
     changeObjectKeyValue(createPaymentBody, "billing", defaultBillingAddress);
 
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
@@ -71,7 +72,42 @@ describe("Themes / Appearance", () => {
     });
   };
 
+  // TrustPay (EUR + NL) exposes card + bank_redirect, so the SDK renders
+  // multiple payment-method tabs (Card selected by default). Used by the
+  // non-selected-tab assertions, which need at least one non-selected tab to
+  // exist — stripe/USD only ever surfaces a single "card" tab on integ.
+  const setupMultiTabAndVisit = (theme?: string) => {
+    changeObjectKeyValue(createPaymentBody, "customer_id", "theme_multitab_user");
+    changeObjectKeyValue(createPaymentBody, "authentication_type", "no_three_ds");
+    changeObjectKeyValue(createPaymentBody, "capture_method", "automatic");
+    changeObjectKeyValue(
+      createPaymentBody,
+      "profile_id",
+      connectorProfileIdMapping.get(connectorEnum.TRUSTPAY),
+    );
+    changeObjectKeyValue(createPaymentBody, "currency", "EUR");
+    changeObjectKeyValue(createPaymentBody, "billing", {
+      email: "theme_test@example.com",
+      address: {
+        ...defaultBillingAddress,
+        city: "Amsterdam",
+        state: "Noord-Holland",
+        zip: "1011",
+        country: "NL",
+      },
+    });
+
+    cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
+      cy.getGlobalState("clientSecret").then((clientSecret) => {
+        cy.visit(getClientURL(clientSecret, publishableKey, undefined, theme));
+        cy.waitForSDKReady();
+      });
+    });
+  };
+
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
   });
 
@@ -99,6 +135,7 @@ describe("Themes / Appearance", () => {
     });
 
     it("should apply border to non-selected tab elements", () => {
+      setupMultiTabAndVisit();
       getIframeBody()
         .find(".Tab")
         .not(".Tab--selected")
@@ -133,6 +170,7 @@ describe("Themes / Appearance", () => {
     });
 
     it("should apply midnight dark background to non-selected tabs", () => {
+      setupMultiTabAndVisit("midnight");
       getIframeBody()
         .find(".Tab")
         .not(".Tab--selected")
@@ -178,6 +216,7 @@ describe("Themes / Appearance", () => {
     });
 
     it("should apply charcoal light-gray background to non-selected tabs", () => {
+      setupMultiTabAndVisit("charcoal");
       getIframeBody()
         .find(".Tab")
         .not(".Tab--selected")
@@ -284,7 +323,7 @@ describe("Themes / Appearance", () => {
     });
 
     it("should render midnight theme with different styling from default", () => {
-      setupAndVisit("midnight");
+      setupMultiTabAndVisit("midnight");
       getIframeBody()
         .find(".Tab")
         .not(".Tab--selected")

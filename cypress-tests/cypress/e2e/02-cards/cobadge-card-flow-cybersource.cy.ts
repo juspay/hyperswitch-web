@@ -25,8 +25,8 @@ import {
 import { cobadgeCards, cobadgeCardBrands } from "../../support/cards";
 
 describe("Cobadge Card Flow - Cybersource", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
@@ -35,6 +35,8 @@ describe("Cobadge Card Flow - Cybersource", () => {
     cobadgeCards.visaCartesBancaires;
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
 
     changeObjectKeyValue(

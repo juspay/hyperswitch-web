@@ -22,6 +22,7 @@ let make = (~fieldConfig: fieldConfig) => {
 
   <PaymentInputField
     fieldName={label}
+    name={DynamicFieldsUtils.getFieldTestId(fieldConfig.confirmRequestWritePath)}
     value
     onChange={ev => input.onChange(ReactEvent.Form.target(ev)["value"])}
     onBlur={_ev => input.onBlur()}

@@ -8,26 +8,35 @@ import {
   connectorProfileIdMapping,
   connectorEnum,
 } from "../../support/utils";
-describe.skip("External 3DS using Juspay Checks", () => {
+describe("External 3DS using Juspay Checks", () => {
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
-  changeObjectKeyValue(
-    createPaymentBody,
-    "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.JUSPAY),
-  );
-  changeObjectKeyValue(
-    createPaymentBody,
-    "request_external_three_ds_authentication",
-    true,
-  );
-  changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
+  let publishableKey: string;
+  let secretKey: string;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  beforeEach(() => {
+  beforeEach(function () {
+    // Run only when the Juspay connector is configured for this merchant;
+    // otherwise report the suite as pending (visible skip) instead of failing.
+    if (!connectorProfileIdMapping.get(connectorEnum.JUSPAY)) {
+      this.skip();
+    }
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
+    // Mutate the shared payment body here (not at describe-load time) so this
+    // suite's 3DS settings don't leak into other specs.
+    changeObjectKeyValue(
+      createPaymentBody,
+      "profile_id",
+      connectorProfileIdMapping.get(connectorEnum.JUSPAY),
+    );
+    changeObjectKeyValue(
+      createPaymentBody,
+      "request_external_three_ds_authentication",
+      true,
+    );
+    changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
         cy.visit(getClientURL(clientSecret, publishableKey));
