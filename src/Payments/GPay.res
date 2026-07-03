@@ -75,11 +75,13 @@ let make = (
     (isGooglePaySDKFlow || isGooglePayThirdPartyFlow) &&
       paymentExperience == PaymentMethodsRecord.InvokeSDK
   }, [sessionObj])
-  let connectors = SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
-    sdkConfigsValue.payment_methods,
-    paymentMethod,
-    paymentMethodType,
-  )
+  let connectors = React.useMemo(() => {
+    SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+      sdkConfigsValue.payment_methods,
+      paymentMethod,
+      paymentMethodType,
+    )
+  }, [sdkConfigsValue.payment_methods])
 
   let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,

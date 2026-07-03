@@ -120,11 +120,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     paymentExperience == PaymentMethodsRecord.InvokeSDK && isApplePaySDKFlow
   }, [sessionObj])
 
-  let connectors = SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
-    sdkConfigsValue.payment_methods,
-    paymentMethod,
-    paymentMethodType,
-  )
+  let connectors = React.useMemo(() => {
+    SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+      sdkConfigsValue.payment_methods,
+      paymentMethod,
+      paymentMethodType,
+    )
+  }, [sdkConfigsValue.payment_methods])
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 

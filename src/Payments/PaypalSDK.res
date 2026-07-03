@@ -36,11 +36,13 @@ let make = (~sessionObj: SessionsType.token) => {
     Window.document(Window.window)->Window.getElementById("braintree-client")->Nullable.toOption
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
-  let connectors = SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
-    sdkConfigsValue.payment_methods,
-    paymentMethod,
-    paymentMethodType,
-  )
+  let connectors = React.useMemo(() => {
+    SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+      sdkConfigsValue.payment_methods,
+      paymentMethod,
+      paymentMethodType,
+    )
+  }, [sdkConfigsValue.payment_methods])
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
