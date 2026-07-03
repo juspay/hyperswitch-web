@@ -3,6 +3,13 @@ type fieldTexts = {
   placeholder: string,
 }
 
+type superpositionResolutionContext = {
+  rawConfigs: option<JSON.t>,
+  configPaymentMethodType: string,
+  eligibleConnectors: array<JSON.t>,
+  superpositionBaseContext: SuperpositionTypes.superpositionBaseContext,
+}
+
 let billingPrefix = "payment_method_data.billing."
 
 let lookupLocaleKey = (key: string, locale: LocaleStringTypes.localeStrings): option<string> =>
@@ -221,139 +228,131 @@ let usePaymentMethodTypeFromList = (
   }, (paymentMethodListValue, paymentMethod, paymentMethodType))
 }
 
-let getNameFromString = (name, requiredFieldsArr) => {
-  let nameArr = name->String.split(" ")
-  let nameArrLength = nameArr->Array.length
-  switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
-  | "first_name" => {
-      let end = nameArrLength === 1 ? nameArrLength : nameArrLength - 1
-      nameArr
-      ->Array.slice(~start=0, ~end)
-      ->Array.reduce("", (acc, item) => {
-        acc ++ " " ++ item
-      })
+let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+
+  let rawConfigs = sdkConfigsValue.raw_configs
+  let getSuperpositionFinalFields = ConfigurationService.useConfigurationService(~rawConfigs)
+
+  let configPaymentMethodType = PaymentUtils.getPaymentMethodName(
+    ~paymentMethodType=paymentMethod,
+    ~paymentMethodName=paymentMethodType,
+  )
+
+  let eligibleConnectors = React.useMemo(() => {
+    SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+      sdkConfigsValue.payment_methods,
+      paymentMethod,
+      configPaymentMethodType,
+    )->Array.map(JSON.Encode.string)
+  }, (sdkConfigsValue.payment_methods, paymentMethod, configPaymentMethodType))
+
+  let intentData = paymentMethodListValue.intent_data.intentDataObject
+
+  let superpositionBaseContext = React.useMemo(() => {
+    buildSuperpositionBaseContext(
+      ~paymentMethod,
+      ~paymentMethodType=configPaymentMethodType,
+      ~platform="web",
+      ~country,
+      ~paymentMethodListValue,
+      ~accountConfig=sdkConfigsValue.account_config,
+      ~contextUsed=sdkConfigsValue.context_used,
+    )
+  }, (
+    paymentMethod,
+    configPaymentMethodType,
+    country,
+    paymentMethodListValue,
+    sdkConfigsValue.account_config,
+    sdkConfigsValue.context_used,
+  ))
+
+  let (requiredFields, missingRequiredFields, initialValues) = React.useMemo(() => {
+    getSuperpositionFinalFields(eligibleConnectors, superpositionBaseContext, intentData)
+  }, (getSuperpositionFinalFields, eligibleConnectors, superpositionBaseContext, intentData))
+
+  let resolutionContext = React.useMemo(() => {
+    {
+      rawConfigs,
+      configPaymentMethodType,
+      eligibleConnectors,
+      superpositionBaseContext,
     }
-  | "last_name" =>
-    if nameArrLength === 1 {
-      ""
+  }, (rawConfigs, configPaymentMethodType, eligibleConnectors, superpositionBaseContext))
+
+  (requiredFields, missingRequiredFields, initialValues, resolutionContext)
+}
+
+let splitName = (str: option<string>) => {
+  switch str {
+  | None => ("", "")
+  | Some(s) =>
+    if s == "" {
+      ("", "")
     } else {
-      nameArr->Array.get(nameArrLength - 1)->Option.getOr(name)
+      let lastSpaceIndex = String.lastIndexOf(s, " ")
+      if lastSpaceIndex === -1 {
+        (s, "")
+      } else {
+        let first = String.slice(s, ~start=0, ~end=lastSpaceIndex)
+        let last = String.slice(s, ~start=lastSpaceIndex + 1, ~end=s->String.length)
+        (first, last)
+      }
     }
-  | _ => name
-  }->String.trim
+  }
 }
 
-let getNameFromFirstAndLastName = (~firstName, ~lastName, ~requiredFieldsArr) => {
-  switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
-  | "first_name" => firstName
-  | "last_name" => lastName
-  | _ => firstName->String.concatMany([" ", lastName])
-  }->String.trim
-}
-
-let defaultRequiredFieldsArray: array<PaymentMethodsRecord.required_fields> = [
-  {
-    required_field: "email",
-    display_name: "email",
-    field_type: Email,
-    value: "",
-  },
-  {
-    required_field: "payment_method_data.billing.address.state",
-    display_name: "state",
-    field_type: AddressState,
-    value: "",
-  },
-  {
-    required_field: "payment_method_data.billing.address.first_name",
-    display_name: "billing_first_name",
-    field_type: BillingName,
-    value: "",
-  },
-  {
-    required_field: "payment_method_data.billing.address.city",
-    display_name: "city",
-    field_type: AddressCity,
-    value: "",
-  },
-  {
-    required_field: "payment_method_data.billing.address.country",
-    display_name: "country",
-    field_type: AddressCountry(["ALL"]),
-    value: "",
-  },
-  {
-    required_field: "payment_method_data.billing.address.line1",
-    display_name: "line",
-    field_type: AddressLine1,
-    value: "",
-  },
-  {
-    required_field: "payment_method_data.billing.address.zip",
-    display_name: "zip",
-    field_type: AddressPincode,
-    value: "",
-  },
-  {
-    required_field: "payment_method_data.billing.address.last_name",
-    display_name: "billing_last_name",
-    field_type: BillingName,
-    value: "",
-  },
+let defaultWalletRequiredFieldPaths: array<string> = [
+  "email",
+  "payment_method_data.billing.address.first_name",
+  "payment_method_data.billing.address.last_name",
+  "payment_method_data.billing.address.city",
+  "payment_method_data.billing.address.state",
+  "payment_method_data.billing.address.country",
+  "payment_method_data.billing.address.line1",
+  "payment_method_data.billing.address.zip",
 ]
 
 let getApplePayRequiredFields = (
   ~billingContact: ApplePayTypes.billingContact,
   ~shippingContact: ApplePayTypes.shippingContact,
-  ~requiredFields=defaultRequiredFieldsArray,
+  ~requiredFieldPaths=defaultWalletRequiredFieldPaths,
 ) => {
-  requiredFields->Array.reduce(Dict.make(), (acc, item) => {
-    let requiredFieldsArr = item.required_field->String.split(".")
-
-    let getName = (firstName, lastName) => {
-      switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
-      | "first_name" => firstName
-      | "last_name" => lastName
-      | _ => firstName->String.concatMany([" ", lastName])
-      }->String.trim
-    }
-
-    let getAddressLine = (addressLines, index) => {
-      addressLines->Array.get(index)->Option.getOr("")
-    }
-
-    let billingCountryCode = billingContact.countryCode->String.toUpperCase
-    let shippingCountryCode = shippingContact.countryCode->String.toUpperCase
-
-    let fieldVal = switch item.field_type {
-    | FullName
-    | BillingName =>
-      getNameFromFirstAndLastName(
-        ~firstName=billingContact.givenName,
-        ~lastName=billingContact.familyName,
-        ~requiredFieldsArr,
-      )
-    | AddressLine1 => billingContact.addressLines->getAddressLine(0)
-    | AddressLine2 => billingContact.addressLines->getAddressLine(1)
-    | AddressCity => billingContact.locality
-    | AddressState => billingContact.administrativeArea
-    | Country
-    | AddressCountry(_) => billingCountryCode
-    | AddressPincode => billingContact.postalCode
-    | Email => shippingContact.emailAddress
-    | PhoneNumber => shippingContact.phoneNumber
-    | ShippingName => getName(shippingContact.givenName, shippingContact.familyName)
-    | ShippingAddressLine1 => shippingContact.addressLines->getAddressLine(0)
-    | ShippingAddressLine2 => shippingContact.addressLines->getAddressLine(1)
-    | ShippingAddressCity => shippingContact.locality
-    | ShippingAddressState => shippingContact.administrativeArea
-    | ShippingAddressCountry(_) => shippingCountryCode
-    | ShippingAddressPincode => shippingContact.postalCode
+  let billingCountryCode = billingContact.countryCode->String.toUpperCase
+  let shippingCountryCode = shippingContact.countryCode->String.toUpperCase
+  requiredFieldPaths->Array.reduce(Dict.make(), (acc, path) => {
+    let fieldVal = switch path {
+    | "payment_method_data.billing.address.first_name" => billingContact.givenName
+    | "payment_method_data.billing.address.last_name" => billingContact.familyName
+    | "payment_method_data.billing.address.line1" =>
+      billingContact.addressLines->Array.get(0)->Option.getOr("")
+    | "payment_method_data.billing.address.line2" =>
+      billingContact.addressLines->Array.get(1)->Option.getOr("")
+    | "payment_method_data.billing.address.city" => billingContact.locality
+    | "payment_method_data.billing.address.state" => billingContact.administrativeArea
+    | "payment_method_data.billing.address.country" => billingCountryCode
+    | "payment_method_data.billing.address.zip" => billingContact.postalCode
+    | "email"
+    | "payment_method_data.email"
+    | "payment_method_data.billing.email" =>
+      shippingContact.emailAddress
+    | "payment_method_data.billing.phone.number" => shippingContact.phoneNumber
+    | "shipping.address.first_name" => shippingContact.givenName
+    | "shipping.address.last_name" => shippingContact.familyName
+    | "shipping.address.line1" => shippingContact.addressLines->Array.get(0)->Option.getOr("")
+    | "shipping.address.line2" => shippingContact.addressLines->Array.get(1)->Option.getOr("")
+    | "shipping.address.city" => shippingContact.locality
+    | "shipping.address.state" => shippingContact.administrativeArea
+    | "shipping.address.country" => shippingCountryCode
+    | "shipping.address.zip" => shippingContact.postalCode
     | _ => ""
     }
 
     if fieldVal !== "" {
-      acc->Dict.set(item.required_field, fieldVal->JSON.Encode.string)
+      acc->Dict.set(path, fieldVal->JSON.Encode.string)
     }
 
     acc
@@ -363,38 +362,39 @@ let getApplePayRequiredFields = (
 let getGooglePayRequiredFields = (
   ~billingContact: GooglePayType.billingContact,
   ~shippingContact: GooglePayType.billingContact,
-  ~requiredFields=defaultRequiredFieldsArray,
+  ~requiredFieldPaths=defaultWalletRequiredFieldPaths,
   ~email,
 ) => {
-  requiredFields->Array.reduce(Dict.make(), (acc, item) => {
-    let requiredFieldsArr = item.required_field->String.split(".")
-
-    let fieldVal = switch item.field_type {
-    | FullName => billingContact.name->getNameFromString(requiredFieldsArr)
-    | BillingName => billingContact.name->getNameFromString(requiredFieldsArr)
-    | AddressLine1 => billingContact.address1
-    | AddressLine2 => billingContact.address2
-    | AddressCity => billingContact.locality
-    | AddressState => billingContact.administrativeArea
-    | Country
-    | AddressCountry(_) =>
-      billingContact.countryCode
-    | AddressPincode => billingContact.postalCode
-    | Email => email
-    | PhoneNumber =>
+  let (billingFirstName, billingLastName) = splitName(Some(billingContact.name))
+  let (shippingFirstName, shippingLastName) = splitName(Some(shippingContact.name))
+  requiredFieldPaths->Array.reduce(Dict.make(), (acc, path) => {
+    let fieldVal = switch path {
+    | "payment_method_data.billing.address.first_name" => billingFirstName
+    | "payment_method_data.billing.address.last_name" => billingLastName
+    | "payment_method_data.billing.address.line1" => billingContact.address1
+    | "payment_method_data.billing.address.line2" => billingContact.address2
+    | "payment_method_data.billing.address.city" => billingContact.locality
+    | "payment_method_data.billing.address.state" => billingContact.administrativeArea
+    | "payment_method_data.billing.address.country" => billingContact.countryCode
+    | "payment_method_data.billing.address.zip" => billingContact.postalCode
+    | "email"
+    | "payment_method_data.email"
+    | "payment_method_data.billing.email" => email
+    | "payment_method_data.billing.phone.number" =>
       shippingContact.phoneNumber->String.replaceAll(" ", "")->String.replaceAll("-", "")
-    | ShippingName => shippingContact.name->getNameFromString(requiredFieldsArr)
-    | ShippingAddressLine1 => shippingContact.address1
-    | ShippingAddressLine2 => shippingContact.address2
-    | ShippingAddressCity => shippingContact.locality
-    | ShippingAddressState => shippingContact.administrativeArea
-    | ShippingAddressCountry(_) => shippingContact.countryCode
-    | ShippingAddressPincode => shippingContact.postalCode
+    | "shipping.address.first_name" => shippingFirstName
+    | "shipping.address.last_name" => shippingLastName
+    | "shipping.address.line1" => shippingContact.address1
+    | "shipping.address.line2" => shippingContact.address2
+    | "shipping.address.city" => shippingContact.locality
+    | "shipping.address.state" => shippingContact.administrativeArea
+    | "shipping.address.country" => shippingContact.countryCode
+    | "shipping.address.zip" => shippingContact.postalCode
     | _ => ""
     }
 
     if fieldVal !== "" {
-      acc->Dict.set(item.required_field, fieldVal->JSON.Encode.string)
+      acc->Dict.set(path, fieldVal->JSON.Encode.string)
     }
 
     acc
@@ -403,32 +403,31 @@ let getGooglePayRequiredFields = (
 
 let getPaypalRequiredFields = (
   ~details: PaypalSDKTypes.details,
-  ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>,
 ) => {
-  paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
-    let requiredFieldsArr = item.required_field->String.split(".")
-
-    let fieldVal = switch item.field_type {
-    | ShippingName => {
-        let name = details.shippingAddress.recipientName
-        name->Option.map(getNameFromString(_, requiredFieldsArr))
-      }
-    | ShippingAddressLine1 => details.shippingAddress.line1
-    | ShippingAddressLine2 => details.shippingAddress.line2
-    | ShippingAddressCity => details.shippingAddress.city
-    | ShippingAddressState => {
-        let administrativeArea = details.shippingAddress.state->Option.getOr("")
-        administrativeArea->Some
-      }
-    | ShippingAddressCountry(_) => details.shippingAddress.countryCode
-    | ShippingAddressPincode => details.shippingAddress.postalCode
-    | Email => details.email->Some
-    | PhoneNumber => details.phone
+  let (shippingFirstName, shippingLastName) = splitName(details.shippingAddress.recipientName)
+  requiredFields->Array.reduce(Dict.make(), (acc, fieldConfig) => {
+    let fieldVal = switch fieldConfig.confirmRequestWritePath {
+    | "shipping.address.first_name" => Some(shippingFirstName)
+    | "shipping.address.last_name" => Some(shippingLastName)
+    | "shipping.address.line1" => details.shippingAddress.line1
+    | "shipping.address.line2" => details.shippingAddress.line2
+    | "shipping.address.city" => details.shippingAddress.city
+    | "shipping.address.state" => details.shippingAddress.state->Option.getOr("")->Some
+    | "shipping.address.country" => details.shippingAddress.countryCode
+    | "shipping.address.zip" => details.shippingAddress.postalCode
+    | "payment_method_data.email"
+    | "payment_method_data.billing.email"
+    | "shipping.email" =>
+      details.email->Some
+    | "payment_method_data.billing.phone.number"
+    | "shipping.phone.number" =>
+      details.phone
     | _ => None
     }
 
     fieldVal->Option.mapOr((), fieldVal =>
-      acc->Dict.set(item.required_field, fieldVal->JSON.Encode.string)
+      acc->Dict.set(fieldConfig.confirmRequestWritePath, fieldVal->JSON.Encode.string)
     )
 
     acc
@@ -437,33 +436,29 @@ let getPaypalRequiredFields = (
 
 let getKlarnaRequiredFields = (
   ~shippingContact: KlarnaSDKTypes.collected_shipping_address,
-  ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>,
 ) => {
-  paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
-    let requiredFieldsArr = item.required_field->String.split(".")
-
-    let fieldVal = switch item.field_type {
-    | ShippingName =>
-      getNameFromFirstAndLastName(
-        ~firstName=shippingContact.given_name,
-        ~lastName=shippingContact.family_name,
-        ~requiredFieldsArr,
-      )
-    | ShippingAddressLine1 => shippingContact.street_address
-    | ShippingAddressCity => shippingContact.city
-    | ShippingAddressState => {
-        let administrativeArea = shippingContact.region
-        administrativeArea
-      }
-    | ShippingAddressCountry(_) => shippingContact.country
-    | ShippingAddressPincode => shippingContact.postal_code
-    | Email => shippingContact.email
-    | PhoneNumber => shippingContact.phone
+  requiredFields->Array.reduce(Dict.make(), (acc, fieldConfig) => {
+    let fieldVal = switch fieldConfig.confirmRequestWritePath {
+    | "shipping.address.first_name" => shippingContact.given_name
+    | "shipping.address.last_name" => shippingContact.family_name
+    | "shipping.address.line1" => shippingContact.street_address
+    | "shipping.address.city" => shippingContact.city
+    | "shipping.address.state" => shippingContact.region
+    | "shipping.address.country" => shippingContact.country
+    | "shipping.address.zip" => shippingContact.postal_code
+    | "payment_method_data.email"
+    | "payment_method_data.billing.email"
+    | "shipping.email" =>
+      shippingContact.email
+    | "payment_method_data.billing.phone.number"
+    | "shipping.phone.number" =>
+      shippingContact.phone
     | _ => ""
     }
 
     if fieldVal !== "" {
-      acc->Dict.set(item.required_field, fieldVal->JSON.Encode.string)
+      acc->Dict.set(fieldConfig.confirmRequestWritePath, fieldVal->JSON.Encode.string)
     }
 
     acc
@@ -503,28 +498,31 @@ let applyBillingDetailsOverride = (
 }
 
 let useLogDynamicFieldsRendered = (
-  ~missingRequiredFieldsFiltered: array<SuperpositionTypes.fieldConfig>,
+  ~fields: array<SuperpositionTypes.fieldConfig>,
   ~paymentMethod: string,
-  ~configPaymentMethodType: string,
-  ~rawConfigs: option<JSON.t>,
-  ~isSavedCardFlow: bool,
-  ~eligibleConnectors,
-  ~superpositionBaseContext: SuperpositionTypes.superpositionBaseContext,
+  ~resolutionContext,
+  ~isSavedCardFlow=false,
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let lastLoggedKey = React.useRef("")
+  let {
+    rawConfigs,
+    configPaymentMethodType,
+    eligibleConnectors,
+    superpositionBaseContext,
+  } = resolutionContext
 
   // Log which dynamic fields are being rendered for the current payment method.
   // Fires once per (paymentMethod, configPaymentMethodType) combination; the
   // dedupeKey guard prevents re-logging when unrelated state (e.g. billingAddress
-  // toggle) causes missingRequiredFieldsFiltered to change identity.
+  // toggle) causes the fields array to change identity.
   React.useEffect(() => {
     if !isSavedCardFlow && rawConfigs->Option.isSome {
       let dedupeKey = paymentMethod ++ "|" ++ configPaymentMethodType
       if lastLoggedKey.current !== dedupeKey {
         lastLoggedKey.current = dedupeKey
         let fieldsJson =
-          missingRequiredFieldsFiltered
+          fields
           ->Array.map(field =>
             [
               ("field_type", (field.fieldRenderType :> string)->JSON.Encode.string),
@@ -555,7 +553,7 @@ let useLogDynamicFieldsRendered = (
           [
             ("superposition_base_context", superpositionBaseContext->Identity.anyTypeToJson),
             ("eligible_connectors", eligibleConnectors->JSON.Encode.array),
-            ("field_count", missingRequiredFieldsFiltered->Array.length->JSON.Encode.int),
+            ("field_count", fields->Array.length->JSON.Encode.int),
             ("fields", fieldsJson),
           ]
           ->Dict.fromArray
@@ -570,7 +568,7 @@ let useLogDynamicFieldsRendered = (
     }
     None
   }, (
-    missingRequiredFieldsFiltered,
+    fields,
     paymentMethod,
     configPaymentMethodType,
     rawConfigs,
