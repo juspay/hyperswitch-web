@@ -56,6 +56,29 @@ if ! echo "$commit_msg" | grep -Ei "$commit_regex" ; then
     exit 1
 fi
 
+# Gitleaks Secret Scan
+echo
+echo "${YELLOW}*****~~~~~ Scanning for secrets with Gitleaks ~~~~~~*****${NC}"
+echo
+
+if ! command -v gitleaks &> /dev/null; then
+  echo "${YELLOW}gitleaks not found. Installing via Homebrew...${NC}"
+  if command -v brew &> /dev/null; then
+    brew install gitleaks
+  else
+    echo "${RED}Homebrew not found. Please install gitleaks manually: https://github.com/gitleaks/gitleaks${NC}"
+    exit 1
+  fi
+fi
+
+if ! gitleaks protect --staged --redact --verbose; then
+  echo "${RED}Gitleaks detected secrets in staged changes. Aborting commit.${NC}"
+  echo "${YELLOW}Please remove the secrets before committing.${NC}"
+  exit 1
+fi
+
+echo "${GREEN}*****~~~~~ No secrets detected ~~~~~~*****${NC}"
+
 echo
 echo "${GREEN}*****~~~~~ Commit hook completed ~~~~~~*****${NC}"
 echo
