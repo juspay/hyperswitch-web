@@ -286,6 +286,15 @@ let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
   (requiredFields, missingRequiredFields, initialValues, resolutionContext)
 }
 
+let useAreWalletRequiredFieldsPrefilled = (~paymentMethodType) => {
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let (_, missingRequiredFields, _, _) = useSuperpositionRequiredFields(
+    ~paymentMethod="wallet",
+    ~paymentMethodType,
+  )
+  removeBillingDetailsIfUseBillingAddress(missingRequiredFields, billingAddress)->Array.length == 0
+}
+
 let splitName = (str: option<string>) => {
   switch str {
   | None => ("", "")
