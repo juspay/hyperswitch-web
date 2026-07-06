@@ -587,10 +587,6 @@ let make = (
   let compressedLayoutStyleForCvcError =
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
   let accordionMarginClass = layoutClass.\"type" === Accordion && !isInsideCardSDK ? "mt-4" : ""
-  let surchargeAmount =
-    eligibilitySurchargeDetails
-    ->Option.map(s => s.displayTotalSurchargeAmount->Float.toString)
-    ->Option.getOr("")
   <div className="animate-slowShow">
     <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <div
@@ -729,24 +725,11 @@ let make = (
               />
             </>}
           </RenderIf>
-          <RenderIf condition={eligibilitySurchargeDetails->Option.isSome}>
-            <div className="flex items-baseline text-xs mt-2">
-              <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
-              <div className="text-left text-gray-400">
-                {localeString.surchargeMsgAmountForCard(
-                  paymentMethodListValue.currency,
-                  surchargeAmount,
-                )}
-              </div>
-            </div>
-          </RenderIf>
-          <RenderIf condition={isEligibilityPending && paymentMethodListValue.should_block_confirm}>
-            <div className="flex items-baseline text-xs mt-2">
-              <div className="text-left text-gray-400">
-                {localeString.paymentDetailsBeingCheckedText->React.string}
-              </div>
-            </div>
-          </RenderIf>
+          <SurchargeEligibilityNotice
+            eligibilitySurchargeDetails
+            isEligibilityPending={isEligibilityPending &&
+            paymentMethodListValue.should_block_confirm}
+          />
         </div>
       </div>
     </RenderIf>

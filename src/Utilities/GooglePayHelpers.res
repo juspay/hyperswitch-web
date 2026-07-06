@@ -5,7 +5,7 @@ let getGooglePayBodyFromResponse = (
   ~isGuestCustomer,
   ~paymentMethodListValue=PaymentMethodsRecord.defaultList,
   ~connectors,
-  ~requiredFields=[],
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>=[],
   ~isPaymentSession=false,
   ~isSavedMethodsFlow=false,
   ~alwaysSend=false,
@@ -43,7 +43,9 @@ let getGooglePayBodyFromResponse = (
     DynamicFieldsUtils.getGooglePayRequiredFields(
       ~billingContact,
       ~shippingContact,
-      ~requiredFields,
+      ~requiredFieldPaths=requiredFields->Array.map(fieldConfig =>
+        fieldConfig.confirmRequestWritePath
+      ),
       ~email,
     )
   }
@@ -77,6 +79,7 @@ let useHandleGooglePayResponse = (
   ~isSavedMethodsFlow=false,
   ~isWallet=true,
   ~requiredFieldsBody=Dict.make(),
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>=[],
   ~sdkAuthorization,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -85,12 +88,6 @@ let useHandleGooglePayResponse = (
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
-
-  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="google_pay",
-  )
 
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
@@ -107,7 +104,7 @@ let useHandleGooglePayResponse = (
           ~isGuestCustomer,
           ~paymentMethodListValue,
           ~connectors,
-          ~requiredFields=paymentMethodTypes.required_fields,
+          ~requiredFields,
           ~isSavedMethodsFlow,
           ~alwaysSend=options.alwaysSendCustomerAcceptance,
         )
@@ -137,7 +134,7 @@ let useHandleGooglePayResponse = (
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
   }, (
-    paymentMethodTypes,
+    requiredFields,
     isManualRetryEnabled,
     requiredFieldsBody,
     isWallet,
