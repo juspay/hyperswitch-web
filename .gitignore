@@ -26,3 +26,46 @@ user_data.sh
 *.pem
 # Sentry Auth Token
 .env.sentry-build-plugin
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# JSON env files with secrets
+*.env.json
+**/cypress.env.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+
+# LLM/AI Agent files
+.cursorrules
+.cursor/
+.claude/
+.claude*
+.ailayer/
+.agents/
+ai-instructions/
+llm-instructions/
+.copilot/
+github-copilot/
+.conversation/
+*.prompt.md
+prompts/
+
+# Log files
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
