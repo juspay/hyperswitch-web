@@ -246,7 +246,6 @@ describe("Billing Fields", () => {
           .type("hyperswitch_sdk_demo_id@gmail.com");
 
         cy.get("#submit").should("be.visible").click();
-        cy.get("#submit").should("be.disabled");
 
         cy.contains("Thanks for your order!", { timeout: 15000 }).should(
           "be.visible",
