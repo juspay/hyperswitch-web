@@ -44,7 +44,7 @@ describe("cashtocode E-voucher test ", () => {
   });
 
   it("should complete the E-voucher payment successfully", function () {
-    cy.wait(2000);
+    cy.iframe(iframeSelector).should("exist");
     cy.selectPaymentMethodOrSkip(getIframeBody, "E-Voucher").then((skipped) => {
       if (skipped) {
         this.skip();

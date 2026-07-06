@@ -46,8 +46,7 @@ describe("Trustpay Card Payment flow test", () => {
 
     getIframeBody().get("#submit").click();
 
-    cy.wait(3000);
-    cy.contains("Thanks for your order!").should("be.visible");
+    cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
   });
 
   it("should show the 3DS challenge page", () => {
@@ -67,7 +66,6 @@ describe("Trustpay Card Payment flow test", () => {
     getIframeBody().find("[data-testid=cvvInput]").type(cvc);
 
     getIframeBody().get("#submit").click();
-    cy.wait(3000);
 
     cy.get("body").then(($body) => {
       if ($body.find("#tp-iframe").length > 0) {
@@ -98,7 +96,6 @@ describe("Trustpay Card Payment flow test", () => {
 
     getIframeBody().get("#submit").click();
 
-    cy.wait(3000);
-    cy.contains("Please enter valid details").should("be.visible");
+    cy.contains("Please enter valid details", { timeout: 10000 }).should("be.visible");
   });
 });

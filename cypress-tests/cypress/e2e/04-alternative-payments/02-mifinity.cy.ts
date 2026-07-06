@@ -65,7 +65,7 @@ describe("Card payment flow test", () => {
   });
 
   it("should fail if age is less than 18", function () {
-    cy.wait(2000);
+    cy.iframe(iframeSelector).should("exist");
     cy.selectPaymentMethodOrSkip(getIframeBody, "Mifinity").then((skipped) => {
       if (skipped) {
         this.skip();
@@ -87,7 +87,7 @@ describe("Card payment flow test", () => {
   });
 
   it("should complete the mifinity payment successfully", function () {
-    cy.wait(2000);
+    cy.iframe(iframeSelector).should("exist");
     cy.selectPaymentMethodOrSkip(getIframeBody, "Mifinity").then((skipped) => {
       if (skipped) {
         this.skip();
@@ -100,8 +100,7 @@ describe("Card payment flow test", () => {
         .click()
         .then(() => {
           cy.url().should("include", "api/payments/redirect");
-          cy.wait(4000);
-          cy.get("iframe")
+          cy.get("iframe", { timeout: 10000 })
             .should("have.attr", "src")
             .and("match", /^https:\/\/demo\.mifinity\.com\/iframe2\//);
         });

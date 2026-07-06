@@ -46,8 +46,7 @@ describe("Cybersource Card Payment flow test", () => {
 
     getIframeBody().get("#submit").click();
 
-    cy.wait(3000);
-    cy.contains("Thanks for your order!").should("be.visible");
+    cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
   });
 
   it("should fail with an invalid card number", () => {
@@ -72,7 +71,6 @@ describe("Cybersource Card Payment flow test", () => {
 
     getIframeBody().get("#submit").click();
 
-    cy.wait(3000);
-    cy.contains("Please enter valid details").should("be.visible");
+    cy.contains("Please enter valid details", { timeout: 10000 }).should("be.visible");
   });
 });

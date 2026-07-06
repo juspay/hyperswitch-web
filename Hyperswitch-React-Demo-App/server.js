@@ -7,14 +7,13 @@ const rateLimit = require("express-rate-limit");
 dotenv.config({ path: "./.env" });
 
 const app = express();
-const PORT = process.env.DEMO_APP_SERVER_PORT || 5252;
+const PORT = 5252;
 
 app.use(express.json());
 
-// ✅ Simple rate limiter: 60 requests per minute per IP
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 300, // limit each IP to 300 requests per windowMs
+  windowMs: 1 * 60 * 1000,
+  max: 300,
 });
 
 // Helper: get URL from env or fallback
@@ -26,10 +25,7 @@ const SERVER_URL = getUrl("HYPERSWITCH_SERVER_URL", "SELF_HOSTED_SERVER_URL");
 const CLIENT_URL = getUrl("HYPERSWITCH_CLIENT_URL", "SELF_HOSTED_CLIENT_URL");
 const SDK_VERSION = process.env.SDK_VERSION || "v1";
 
-// ✅ Serve static files automatically (index.html, assets)
 app.use(express.static("./dist"));
-
-// ✅ Dynamic routes are rate-limited for safety
 
 app.get("/config", limiter, (req, res) => {
   res.send({

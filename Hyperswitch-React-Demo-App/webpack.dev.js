@@ -13,7 +13,7 @@ const devServer = {
   proxy: [
     {
       context: ["/payments"],
-      target: process.env.DEMO_SERVER_URL || "http://localhost:5252",
+      target: "http://localhost:5252",
       changeOrigin: true,
       secure: true,
       pathRewrite: { "^/payments": "" },

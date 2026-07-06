@@ -44,7 +44,7 @@ describe("cashtocode cash / voucher test ", () => {
   });
 
   it("should complete the Cash / Voucher payment successfully", function () {
-    cy.wait(2000);
+    cy.iframe(iframeSelector).should("exist");
     cy.selectPaymentMethodOrSkip(getIframeBody, "Cash / Voucher").then((skipped) => {
       if (skipped) {
         this.skip();

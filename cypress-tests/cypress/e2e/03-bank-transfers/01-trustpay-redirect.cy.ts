@@ -51,7 +51,7 @@ describe("TrustPay iDEAL Bank Redirect Payment flow test", () => {
   });
 
   it("should complete the iDEAL bank redirect payment successfully", function () {
-    cy.wait(2000);
+    cy.iframe(iframeSelector).should("exist");
     cy.selectPaymentMethodOrSkip(getIframeBody, "iDEAL").then((skipped) => {
       if (skipped) {
         this.skip();
@@ -108,7 +108,7 @@ describe("TrustPay Blik Bank Redirect Payment flow test", () => {
   });
 
   it("should complete the Blik bank redirect payment successfully", function () {
-    cy.wait(2000);
+    cy.iframe(iframeSelector).should("exist");
     cy.selectPaymentMethodOrSkip(getIframeBody, "Blik").then((skipped) => {
       if (skipped) {
         this.skip();
@@ -165,7 +165,7 @@ describe("TrustPay EPS Bank Redirect Payment flow test", () => {
   });
 
   it("should complete the EPS bank redirect payment successfully", function () {
-    cy.wait(2000);
+    cy.iframe(iframeSelector).should("exist");
     cy.selectPaymentMethodOrSkip(getIframeBody, "EPS").then((skipped) => {
       if (skipped) {
         this.skip();

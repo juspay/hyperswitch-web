@@ -78,7 +78,7 @@ describe("External 3DS using Redsys flow test", () => {
   });
 
   it("3ds invoke: challenge test", function () {
-    cy.wait(2000);
+    cy.waitForSDKReady();
     cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
       if (skipped) {
         this.skip();
@@ -92,7 +92,7 @@ describe("External 3DS using Redsys flow test", () => {
   });
 
   it("3ds invoke: frictionless flow", function () {
-    cy.wait(2000);
+    cy.waitForSDKReady();
     cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
       if (skipped) {
         this.skip();
@@ -106,7 +106,7 @@ describe("External 3DS using Redsys flow test", () => {
   });
 
   it("No 3ds invoke: challenge flow", function () {
-    cy.wait(2000);
+    cy.waitForSDKReady();
     cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
       if (skipped) {
         this.skip();
@@ -119,7 +119,7 @@ describe("External 3DS using Redsys flow test", () => {
   });
 
   it("No 3ds invoke: frictionless flow", function () {
-    cy.wait(2000);
+    cy.waitForSDKReady();
     cy.selectPaymentMethodOrSkip(getIframeBody, "Card").then((skipped) => {
       if (skipped) {
         this.skip();

@@ -194,7 +194,7 @@ Cypress.Commands.add("getGlobalState", (key: any) => {
 
 Cypress.Commands.add("nestedIFrame", (selector, callback) => {
   cy.iframe("#orca-fullscreen")
-    .find(selector)
+    .find(selector, { timeout: 15000 })
     .should("exist")
     .should("be.visible")
     .then(($ele) => {

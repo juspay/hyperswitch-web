@@ -45,8 +45,7 @@ describe("Card payment flow test", () => {
         getIframeBody().contains("4 digit").click();
         getIframeBody().find("[data-testid=cvvInput]").type("1234");
         getIframeBody().get("#submit").click();
-        cy.wait(2000);
-        cy.contains("Thanks for your order!").should("be.visible");
+        cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
       } else {
         cy.log("new card flow — no saved cards on fresh merchant");
       }

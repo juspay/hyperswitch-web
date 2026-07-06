@@ -43,7 +43,7 @@ describe("Card payment flow test", () => {
   });
 
   it("should complete the crypto payment successfully", function () {
-    cy.wait(2000);
+    cy.iframe(iframeSelector).should("exist");
     cy.selectPaymentMethodOrSkip(getIframeBody, "Crypto").then((skipped) => {
       if (skipped) {
         this.skip();

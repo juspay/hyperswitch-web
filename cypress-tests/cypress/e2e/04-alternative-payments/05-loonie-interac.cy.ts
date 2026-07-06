@@ -59,7 +59,7 @@ describe("GigaDat Interac Payment flow test", () => {
       });
     });
 
-    cy.wait(2000);
+    cy.iframe(iframeSelector).should("exist");
     cy.selectPaymentMethodOrSkip(getIframeBody, "Interac").then((skipped) => {
       if (skipped) {
         this.skip();
@@ -82,7 +82,7 @@ describe("GigaDat Interac Payment flow test", () => {
       });
     });
 
-    cy.wait(2000);
+    cy.iframe(iframeSelector).should("exist");
     cy.selectPaymentMethodOrSkip(getIframeBody, "Interac").then((skipped) => {
       if (skipped) {
         this.skip();

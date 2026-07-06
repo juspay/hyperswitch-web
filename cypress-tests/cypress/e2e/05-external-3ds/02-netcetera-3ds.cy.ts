@@ -63,7 +63,7 @@ describe.skip("External 3DS using Netcetera Checks", () => {
   });
 
   it("If the user completes the challenge, the payment should be successful.", () => {
-    cy.wait(2000);
+    cy.waitForSDKReady();
     // Click "Add New Card" only when saved cards are present; a fresh customer
     // has none, so the card form is shown directly.
     getIframeBody().then(($body) => {
@@ -77,24 +77,21 @@ describe.skip("External 3DS using Netcetera Checks", () => {
     getIframeBody()
       .find(`[data-testid=${testIds.expiryInputTestId}]`)
       .type("0444");
-    cy.wait(1000);
     getIframeBody()
       .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+      .should("be.visible")
       .type("1234");
     getIframeBody().get("#submit").click();
-    cy.wait(4000);
 
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
-      cy.wait(2000);
-      cy.wrap($body).find("#otp").type("1234");
-
+      cy.wrap($body).find("#otp", { timeout: 10000 }).should("be.visible").type("1234");
       cy.wrap($body).find("#sendOtp").click();
-      cy.contains("Thanks for your order!").should("be.visible");
+      cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
     });
   });
 
   it("If the user closes the challenge, the payment should fail.", () => {
-    cy.wait(2000);
+    cy.waitForSDKReady();
     // Click "Add New Card" only when saved cards are present; a fresh customer
     // has none, so the card form is shown directly.
     getIframeBody().then(($body) => {
@@ -108,24 +105,22 @@ describe.skip("External 3DS using Netcetera Checks", () => {
     getIframeBody()
       .find(`[data-testid=${testIds.expiryInputTestId}]`)
       .type("0444");
-    cy.wait(1000);
     getIframeBody()
       .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+      .should("be.visible")
       .type("1234");
     getIframeBody().get("#submit").click();
-    cy.wait(4000);
 
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
-      cy.wait(2000);
-      cy.wrap($body).find("#cancel").click();
-      cy.contains("Payment failed. Please check your payment method.").should(
+      cy.wrap($body).find("#cancel", { timeout: 10000 }).should("be.visible").click();
+      cy.contains("Payment failed. Please check your payment method.", { timeout: 10000 }).should(
         "be.visible",
       );
     });
   });
 
   it("If the user enters a frictionless card, the payment should be successful without a challenge.", () => {
-    cy.wait(2000);
+    cy.waitForSDKReady();
     // Click "Add New Card" only when saved cards are present; a fresh customer
     // has none, so the card form is shown directly.
     getIframeBody().then(($body) => {
@@ -139,12 +134,11 @@ describe.skip("External 3DS using Netcetera Checks", () => {
     getIframeBody()
       .find(`[data-testid=${testIds.expiryInputTestId}]`)
       .type("0444");
-    cy.wait(1000);
     getIframeBody()
       .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+      .should("be.visible")
       .type("1234");
     getIframeBody().get("#submit").click();
-    cy.wait(4000);
-    cy.contains("Thanks for your order!").should("be.visible");
+    cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
   });
 });

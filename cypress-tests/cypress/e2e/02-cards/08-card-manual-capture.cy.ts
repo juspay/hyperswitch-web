@@ -36,8 +36,7 @@ describe("Card payment flow test", () => {
 
     getIframeBody().get("#submit").click();
 
-    cy.wait(3000);
-    cy.contains("Payment is authorized and requires manual capture.").should(
+    cy.contains("Payment is authorized and requires manual capture.", { timeout: 10000 }).should(
       "be.visible",
     );
   });
