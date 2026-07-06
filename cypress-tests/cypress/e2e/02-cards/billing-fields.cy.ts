@@ -42,6 +42,11 @@ describe("Billing Fields", () => {
   afterEach(() => {
     // Restore createPaymentBody to its default state after every test so that
     // mutations in one describe block cannot bleed into the next.
+    changeObjectKeyValue(
+      createPaymentBody,
+      "email",
+      "hyperswitch_sdk_demo_id@gmail.com",
+    );
     changeObjectKeyValue(createPaymentBody, "billing", {
       email: "hyperswitch_sdk_demo_id@gmail.com",
       address: defaultBillingAddress,
@@ -174,6 +179,9 @@ describe("Billing Fields", () => {
           "no_three_ds",
         );
         removeObjectKey(createPaymentBody, "billing");
+        // Remove top-level email so the backend includes it in required_fields
+        // and the SDK renders the email input for this connector.
+        removeObjectKey(createPaymentBody, "email");
 
         cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
           cy.getGlobalState("clientSecret").then((clientSecret) => {
