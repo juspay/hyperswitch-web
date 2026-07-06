@@ -12,6 +12,13 @@ type superpositionResolutionContext = {
 
 let billingPrefix = "payment_method_data.billing."
 
+// Derive a stable, locale-independent test id from a field's write path,
+// e.g. "payment_method_data.billing.address.line1" -> "line1".
+let getFieldTestId = (path: string): string => {
+  let parts = path->String.split(".")
+  parts->Array.get(parts->Array.length - 1)->Option.getOr(path)
+}
+
 let lookupLocaleKey = (key: string, locale: LocaleStringTypes.localeStrings): option<string> =>
   locale
   ->Identity.anyTypeToJson
