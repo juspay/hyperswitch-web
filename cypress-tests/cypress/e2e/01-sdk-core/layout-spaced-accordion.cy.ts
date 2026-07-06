@@ -16,8 +16,8 @@ import {
 import { stripeCards } from "../../support/cards";
 
 describe("Layout - Spaced Accordion", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
@@ -28,6 +28,8 @@ describe("Layout - Spaced Accordion", () => {
   };
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
     changeObjectKeyValue(
       createPaymentBody,

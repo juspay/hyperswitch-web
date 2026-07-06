@@ -8,26 +8,35 @@ import {
   connectorProfileIdMapping,
   connectorEnum,
 } from "../../support/utils";
-describe.skip("External 3DS using Juspay Checks", () => {
+describe("External 3DS using Juspay Checks", () => {
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
-  changeObjectKeyValue(
-    createPaymentBody,
-    "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.JUSPAY),
-  );
-  changeObjectKeyValue(
-    createPaymentBody,
-    "request_external_three_ds_authentication",
-    true,
-  );
-  changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
+  let publishableKey: string;
+  let secretKey: string;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  beforeEach(() => {
+  beforeEach(function () {
+    // Run only when the Juspay connector is configured for this merchant;
+    // otherwise report the suite as pending (visible skip) instead of failing.
+    if (!connectorProfileIdMapping.get(connectorEnum.JUSPAY)) {
+      this.skip();
+    }
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
+    // Mutate the shared payment body here (not at describe-load time) so this
+    // suite's 3DS settings don't leak into other specs.
+    changeObjectKeyValue(
+      createPaymentBody,
+      "profile_id",
+      connectorProfileIdMapping.get(connectorEnum.JUSPAY),
+    );
+    changeObjectKeyValue(
+      createPaymentBody,
+      "request_external_three_ds_authentication",
+      true,
+    );
+    changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
         cy.visit(getClientURL(clientSecret, publishableKey));
@@ -47,7 +56,7 @@ describe.skip("External 3DS using Juspay Checks", () => {
   });
 
   it("If the user completes the challenge, the payment should be successful.", () => {
-    cy.wait(2000);
+    cy.waitForSDKReady();
     getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
     getIframeBody()
       .find(`[data-testid=${testIds.cardNoInputTestId}]`)
@@ -55,25 +64,22 @@ describe.skip("External 3DS using Juspay Checks", () => {
     getIframeBody()
       .find(`[data-testid=${testIds.expiryInputTestId}]`)
       .type("0444");
-    cy.wait(1000);
     getIframeBody()
       .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+      .should("be.visible")
       .type("1234");
     getIframeBody().get("#submit").click();
-    cy.wait(4000);
 
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
-      cy.wait(2000);
-      cy.wrap($body).find("#otp").type("1234");
+      cy.wrap($body).find("#otp", { timeout: 10000 }).should("be.visible").type("1234");
 
       cy.wrap($body).contains("button", "Pay").click();
-      cy.wait(5000); // Allow time for Juspay to complete the payment flow
-      cy.contains("Thanks for your order!").should("be.visible");
+      cy.contains("Thanks for your order!", { timeout: 15000 }).should("be.visible");
     });
   });
 
   it("If the user closes the challenge, the payment should fail.", () => {
-    cy.wait(2000);
+    cy.waitForSDKReady();
     getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
     getIframeBody()
       .find(`[data-testid=${testIds.cardNoInputTestId}]`)
@@ -81,24 +87,22 @@ describe.skip("External 3DS using Juspay Checks", () => {
     getIframeBody()
       .find(`[data-testid=${testIds.expiryInputTestId}]`)
       .type("0444");
-    cy.wait(1000);
     getIframeBody()
       .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+      .should("be.visible")
       .type("1234");
     getIframeBody().get("#submit").click();
-    cy.wait(4000);
 
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
-      cy.wait(2000);
-      cy.wrap($body).contains("button", "Cancel").click();
-      cy.contains("Payment failed. Please check your payment method.").should(
+      cy.wrap($body).contains("button", "Cancel", { timeout: 10000 }).click();
+      cy.contains("Payment failed. Please check your payment method.", { timeout: 10000 }).should(
         "be.visible",
       );
     });
   });
 
   it("If the user enters a frictionless card, the payment should be successful without a challenge.", () => {
-    cy.wait(2000);
+    cy.waitForSDKReady();
     getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
     getIframeBody()
       .find(`[data-testid=${testIds.cardNoInputTestId}]`)
@@ -106,12 +110,11 @@ describe.skip("External 3DS using Juspay Checks", () => {
     getIframeBody()
       .find(`[data-testid=${testIds.expiryInputTestId}]`)
       .type("0444");
-    cy.wait(1000);
     getIframeBody()
       .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+      .should("be.visible")
       .type("1234");
     getIframeBody().get("#submit").click();
-    cy.wait(4000);
-    cy.contains("Thanks for your order!").should("be.visible");
+    cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
   });
 });

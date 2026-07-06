@@ -1,4 +1,22 @@
+
+// ---------------------------------------------------------------------------
+// Demo-app base URL
+// ---------------------------------------------------------------------------
+
+/** Default demo-app port when running locally. Overridable via Cypress.env. */
 export const CLIENT_BASE_URL = "http://localhost:9060";
+
+/**
+ * Returns the actual demo-app base URL at runtime.
+ * Reads CLIENT_BASE_URL from Cypress.env() so that CI / different
+ * environments can override it without code changes.
+ */
+const getClientBaseUrl = (): string =>
+  (Cypress.env("CLIENT_BASE_URL") as string | undefined) || CLIENT_BASE_URL;
+
+// ---------------------------------------------------------------------------
+// URL builder
+// ---------------------------------------------------------------------------
 
 export const getClientURL = (
   clientSecret: string,
@@ -8,7 +26,11 @@ export const getClientURL = (
   layout?: string | Record<string, unknown>,
   options?: Record<string, unknown>,
 ) => {
-  let url = `${CLIENT_BASE_URL}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
+  const baseUrl = getClientBaseUrl();
+  let url = `${baseUrl}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
+  if (createPaymentBody.profile_id) {
+    url += `&profileId=${encodeURIComponent(createPaymentBody.profile_id)}`;
+  }
   if (locale) {
     url += `&locale=${locale}`;
   }
@@ -26,36 +48,58 @@ export const getClientURL = (
   return url;
 };
 
-export const enum connectorEnum {
-  TRUSTPAY,
-  ADYEN,
-  STRIPE,
-  NETCETERA,
-  REDSYS,
-  MIFINITY,
-  CRYPTOPAY,
-  BANK_OF_AMERICA,
-  CYBERSOURCE,
-  CASHTOCODE,
-  JUSPAY,
-  INTERAC,
-  PAYPAL
+// ---------------------------------------------------------------------------
+// Connector enum — value is the creds.json top-level key for that connector.
+// ---------------------------------------------------------------------------
+
+export enum connectorEnum {
+  TRUSTPAY = "trustpay",
+  ADYEN = "adyen",
+  STRIPE = "stripe",
+  NETCETERA = "netcetera",
+  REDSYS = "redsys",
+  MIFINITY = "mifinity",
+  CRYPTOPAY = "cryptopay",
+  BANK_OF_AMERICA = "bankofamerica",
+  CYBERSOURCE = "cybersource",
+  CASHTOCODE = "cashtocode",
+  JUSPAY = "juspay",
+  INTERAC = "interac",
+  PAYPAL = "paypal",
 }
-export const connectorProfileIdMapping = new Map<connectorEnum, string>([
-  [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
-  [connectorEnum.ADYEN, "pro_Kvqzu8WqBZsT1OjHlCj4"],
-  [connectorEnum.STRIPE, "pro_5fVcCxU8MFTYozgtf0P8"],
-  [connectorEnum.NETCETERA, "pro_h9VHXnJx8s6W4KSZfSUL"],
-  [connectorEnum.REDSYS, "pro_6BcODfWXoRbntNHkNV1J"],
-  [connectorEnum.MIFINITY, "pro_reQgggKZjGvnmnJ7O10c"],
-  [connectorEnum.CRYPTOPAY, "pro_cy1AdBRB5jfCuiWgJUZM"],
-  [connectorEnum.BANK_OF_AMERICA, "pro_Y90w9nPTg5eBOblKa2L9"],
-  [connectorEnum.CYBERSOURCE, "pro_h9VHXnJx8s6W4KSZfSUL"],
-  [connectorEnum.CASHTOCODE, "pro_JRdEyK7YyQaDAAzvJuMJ"],
-  [connectorEnum.JUSPAY, "pro_TD0ZZ3cwf87wpPoZroSE"],
-  [connectorEnum.INTERAC, "pro_TD0ZZ3cwf87wpPoZroSE"],
-  [connectorEnum.PAYPAL, "pro_JTM1xVeUrEJImozvBnxv"],
-]);
+
+// ---------------------------------------------------------------------------
+// Profile ID lookup — reads from Cypress.env("CONNECTOR_PROFILE_IDS")
+//
+// CONNECTOR_PROFILE_IDS is populated by the global before() hook in e2e.ts
+// after cy.task("setupCredentials") resolves.  It has the shape:
+//   { stripe: "pro_...", adyen: "pro_...", ... }
+// ---------------------------------------------------------------------------
+
+/**
+ * Env-aware profile ID lookup.
+ * Preserves the same `.get()` API used across all test files so no caller
+ * changes are required when switching from static maps to dynamic lookup.
+ */
+export const connectorProfileIdMapping = {
+  get: (connector: connectorEnum): string | undefined => {
+    const ids = Cypress.env("CONNECTOR_PROFILE_IDS") as Record<string, string> | undefined;
+    return ids?.[connector];
+  },
+};
+
+/**
+ * Returns the Stripe profile ID for the current run.
+ * Used to initialise createPaymentBody.profile_id in the global before() hook.
+ */
+export const getDefaultProfileId = (): string => {
+  const ids = Cypress.env("CONNECTOR_PROFILE_IDS") as Record<string, string> | undefined;
+  return ids?.[connectorEnum.STRIPE] ?? "";
+};
+
+// ---------------------------------------------------------------------------
+// Shared payment body (mutated per-test via changeObjectKeyValue)
+// ---------------------------------------------------------------------------
 
 export const createPaymentBody = {
   currency: "USD",
@@ -96,7 +140,8 @@ export const createPaymentBody = {
     new_customer: "true",
     login_date: "2019-09-10T10:11:12Z",
   },
-  profile_id: "pro_5fVcCxU8MFTYozgtf0P8",
+  // Resolved at runtime in e2e.ts before() hook after setupCredentials resolves.
+  profile_id: "",
   billing: {
     email: "hyperswitch_sdk_demo_id@gmail.com",
     address: {
@@ -185,6 +230,7 @@ export const confirmBody = {
     java_script_enabled: true,
   },
 };
+
 export const stripeTestCard = "4000000000003220";
 export const adyenTestCard = "4917610000000000";
 export const bluesnapTestCard = "4000000000001091";

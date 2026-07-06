@@ -40,9 +40,13 @@
     "re:format": "rescript format -all",
     "re:start": "rescript -w",
     "start": "npm run update:submodules && cross-env sdkEnv=local webpack serve --config webpack.dev.js",
+    "start:integ": "npm run update:submodules && cross-env sdkEnv=integ webpack serve --config webpack.dev.js",
     "start:playground": "npm run setup:playground && npm run start",
-    "test": "cd cypress-tests && npm run cypress:run",
-    "test:hooks": "eslint src/"
+    "test":          "cd cypress-tests && npm run test",
+    "test:sandbox":  "cd cypress-tests && npm run test:sandbox",
+    "test:integ":    "cd cypress-tests && npm run test:integ",
+    "test:local":    "cd cypress-tests && npm run test:local",
+    "test:hooks":    "eslint src/"
   },
   "husky": {
     "hooks": {
