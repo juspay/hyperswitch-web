@@ -238,7 +238,8 @@ let usePaymentMethodTypeFromList = (
 let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
   let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let userCountryName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let country = Utils.getCountryCode(userCountryName).isoAlpha2
 
   let rawConfigs = sdkConfigsValue.raw_configs
   let getSuperpositionFinalFields = ConfigurationService.useConfigurationService(~rawConfigs)
