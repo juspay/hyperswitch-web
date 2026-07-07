@@ -42,11 +42,14 @@
     "start": "npm run update:submodules && cross-env sdkEnv=local webpack serve --config webpack.dev.js",
     "start:integ": "npm run update:submodules && cross-env sdkEnv=integ webpack serve --config webpack.dev.js",
     "start:playground": "npm run setup:playground && npm run start",
-    "test":          "cd cypress-tests && npm run test",
-    "test:sandbox":  "cd cypress-tests && npm run test:sandbox",
-    "test:integ":    "cd cypress-tests && npm run test:integ",
-    "test:local":    "cd cypress-tests && npm run test:local",
-    "test:hooks":    "eslint src/"
+    "test": "cd cypress-tests && npm run test",
+    "test:sandbox": "cd cypress-tests && npm run test:sandbox",
+    "test:integ": "cd cypress-tests && npm run test:integ",
+    "test:local": "cd cypress-tests && npm run test:local",
+    "test:hooks": "eslint src/",
+    "gpay:copy-profile": "rm -rf ~/puppeteer-chrome-profile && mkdir -p ~/puppeteer-chrome-profile/Default && rsync -a --exclude='Cache/' --exclude='Code Cache/' --exclude='GPUCache/' --exclude='Service Worker/' --exclude='ShaderCache/' --exclude='GrShaderCache/' --exclude='GraphiteDawnCache/' \"$HOME/Library/Application Support/Google/Chrome/Default/\" ~/puppeteer-chrome-profile/Default/ && cp \"$HOME/Library/Application Support/Google/Chrome/Local State\" ~/puppeteer-chrome-profile/ && echo 'Profile copied to ~/puppeteer-chrome-profile'",
+    "gpay:refresh": "rsync -a --delete --exclude='Cache/' --exclude='Code Cache/' --exclude='GPUCache/' --exclude='Service Worker/' --exclude='ShaderCache/' --exclude='GrShaderCache/' --exclude='GraphiteDawnCache/' \"$HOME/Library/Application Support/Google/Chrome/Default/\" ~/puppeteer-chrome-profile/Default/ && cp \"$HOME/Library/Application Support/Google/Chrome/Local State\" ~/puppeteer-chrome-profile/ && echo 'Profile refreshed'",
+    "gpay:test": "npm run gpay:refresh && node cypress-tests/cypress/e2e/06-wallets/gpay-test.js"
   },
   "husky": {
     "hooks": {
@@ -90,6 +93,7 @@
     "mini-css-extract-plugin": "^2.9.2",
     "postcss": "^8.4.16",
     "postcss-loader": "^8.1.1",
+    "puppeteer-core": "^25.3.0",
     "rescript": "^11.1.0",
     "tailwindcss": "^3.1.8",
     "terser-webpack-plugin": "^5.3.10",
