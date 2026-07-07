@@ -339,7 +339,9 @@ let make = (
 
   React.useEffect(() => {
     loggerState.setLogInfo(
-      ~value=fieldsArr->Identity.anyTypeToJson->JSON.stringify,
+      ~value=fieldsArr
+      ->Array.map(PaymentMethodsRecord.paymentMethodsFieldToString)
+      ->Array.join(", "),
       ~eventName=HyperLoggerTypes.PAYMENT_METHOD_INPUTS_RENDERED,
       ~paymentMethod=paymentMethod->String.toUpperCase,
     )

@@ -71,6 +71,60 @@ type paymentMethodsFields =
   | GiftCardNumber
   | GiftCardPin
 
+let paymentMethodsFieldToString = field => {
+  switch field {
+  | Email => "Email"
+  | FullName => "FullName"
+  | InfoElement => "InfoElement"
+  | Country => "Country"
+  | Bank => "Bank"
+  | BankList(_) => "BankList"
+  | SpecialField(_) => "SpecialField"
+  | None => "None"
+  | BillingName => "BillingName"
+  | PhoneNumber => "PhoneNumber"
+  | PhoneCountryCode => "PhoneCountryCode"
+  | PhoneNumberAndCountryCode => "PhoneNumberAndCountryCode"
+  | AddressLine1 => "AddressLine1"
+  | AddressLine2 => "AddressLine2"
+  | AddressCity => "AddressCity"
+  | StateAndCity => "StateAndCity"
+  | CountryAndPincode(_) => "CountryAndPincode"
+  | AddressPincode => "AddressPincode"
+  | AddressState => "AddressState"
+  | AddressCountry(_) => "AddressCountry"
+  | BlikCode => "BlikCode"
+  | Currency(_) => "Currency"
+  | CardNumber => "CardNumber"
+  | CardExpiryMonth => "CardExpiryMonth"
+  | CardExpiryYear => "CardExpiryYear"
+  | CardExpiryMonthAndYear => "CardExpiryMonthAndYear"
+  | CardCvc => "CardCvc"
+  | CardExpiryAndCvc => "CardExpiryAndCvc"
+  | ShippingName => "ShippingName"
+  | ShippingAddressLine1 => "ShippingAddressLine1"
+  | ShippingAddressLine2 => "ShippingAddressLine2"
+  | ShippingAddressCity => "ShippingAddressCity"
+  | ShippingAddressPincode => "ShippingAddressPincode"
+  | ShippingAddressState => "ShippingAddressState"
+  | ShippingAddressCountry(_) => "ShippingAddressCountry"
+  | CryptoCurrencyNetworks => "CryptoCurrencyNetworks"
+  | DateOfBirth => "DateOfBirth"
+  | VpaId => "VpaId"
+  | PixKey => "PixKey"
+  | PixCPF => "PixCPF"
+  | PixCNPJ => "PixCNPJ"
+  | DocumentType(_) => "DocumentType"
+  | DocumentNumber => "DocumentNumber"
+  | LanguagePreference(_) => "LanguagePreference"
+  | BankAccountNumber => "BankAccountNumber"
+  | IBAN => "IBAN"
+  | SourceBankAccountId => "SourceBankAccountId"
+  | GiftCardNumber => "GiftCardNumber"
+  | GiftCardPin => "GiftCardPin"
+  }
+}
+
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
   | CardNumber => 0
