@@ -17,11 +17,10 @@ let paymentListLookupNew = (
   ~isGooglePayReady,
   ~shouldDisplayApplePayInTabs,
   ~shouldDisplayPayPalInTabs,
-  ~localeString,
   ~showWalletsWithOtherPaymentMethods,
   ~showGroupedSavedPaymentMethods,
 ) => {
-  let pmList = list->PaymentMethodsRecord.buildFromPaymentList(~localeString)
+  let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
   let walletToBeDisplayedInTabs = [
     "mb_way",
@@ -173,39 +172,6 @@ let appendedCustomerAcceptance = (~isGuestCustomer, ~paymentType, ~body, ~always
     : body
 }
 
-let usePaymentMethodTypeFromList = (
-  ~paymentMethodListValue,
-  ~paymentMethod,
-  ~paymentMethodType,
-) => {
-  React.useMemo(() => {
-    PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~paymentMethodListValue,
-      ~paymentMethod,
-      ~paymentMethodType=getPaymentMethodName(
-        ~paymentMethodType=paymentMethod,
-        ~paymentMethodName=paymentMethodType,
-      ),
-    )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
-  }, (paymentMethodListValue, paymentMethod, paymentMethodType))
-}
-
-let useAreAllRequiredFieldsPrefilled = (
-  ~paymentMethodListValue,
-  ~paymentMethod,
-  ~paymentMethodType,
-) => {
-  let paymentMethodTypes = usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod,
-    ~paymentMethodType,
-  )
-
-  paymentMethodTypes.required_fields->Array.reduce(true, (acc, requiredField) => {
-    acc && requiredField.value != ""
-  })
-}
-
 let getIsKlarnaSDKFlow = sessions => {
   let dict = sessions->Utils.getDictFromJson
   let sessionObj = SessionsType.itemToObjMapper(dict, Others)
@@ -279,10 +245,15 @@ let filterSavedMethodsByWalletReadiness = (
   )
 }
 
-let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
+let useGetPaymentMethodList = (
+  ~paymentType: CardThemeType.mode,
+  ~sessions,
+  ~areAllApplePayRequiredFieldsPrefilled,
+  ~areAllGooglePayRequiredFieldsPrefilled,
+  ~areAllPaypalRequiredFieldsPrefilled,
+) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   let {paymentMethodOrder} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -293,24 +264,6 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(paymentMethodListValue)
   let sdkConfigsValue = Recoil.useRecoilValueFromAtom(sdkConfigsValue)
-
-  let areAllApplePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="apple_pay",
-  )
-
-  let areAllGooglePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="google_pay",
-  )
-
-  let areAllPaypalRequiredFieldsPreFilled = useAreAllRequiredFieldsPrefilled(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="paypal",
-  )
 
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
@@ -353,7 +306,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     }
 
     let requiresPaypalBillingDetails =
-      !collectBillingDetailsFromWalletConnector && !areAllPaypalRequiredFieldsPreFilled
+      !collectBillingDetailsFromWalletConnector && !areAllPaypalRequiredFieldsPrefilled
 
     let isPaypalEligibleInRedirectFlow =
       isShowPaypal && isPaypalRedirectFlow && (!isPaypalSDKFlow || !isPaypalTokenExist)
@@ -389,7 +342,6 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
         ~isGooglePayReady,
         ~shouldDisplayApplePayInTabs,
         ~shouldDisplayPayPalInTabs,
-        ~localeString,
         ~showWalletsWithOtherPaymentMethods,
         ~showGroupedSavedPaymentMethods,
       )
@@ -444,7 +396,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     isKlarnaSDKFlow,
     areAllApplePayRequiredFieldsPrefilled,
     areAllGooglePayRequiredFieldsPrefilled,
-    areAllPaypalRequiredFieldsPreFilled,
+    areAllPaypalRequiredFieldsPrefilled,
     isPaypalSDKFlow,
     isPaypalRedirectFlow,
     isPaypalTokenExist,
