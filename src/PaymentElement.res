@@ -193,9 +193,21 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (sessionToken, sdkConfigsValue))
 
+  let areAllApplePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreWalletRequiredFieldsPrefilled(
+    ~paymentMethodType="apple_pay",
+  )
+  let areAllGooglePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreWalletRequiredFieldsPrefilled(
+    ~paymentMethodType="google_pay",
+  )
+  let areAllPaypalRequiredFieldsPrefilled = DynamicFieldsUtils.useAreWalletRequiredFieldsPrefilled(
+    ~paymentMethodType="paypal",
+  )
   let (walletList, paymentOptionsList, actualList) = useGetPaymentMethodList(
     ~paymentType,
     ~sessions,
+    ~areAllApplePayRequiredFieldsPrefilled,
+    ~areAllGooglePayRequiredFieldsPrefilled,
+    ~areAllPaypalRequiredFieldsPrefilled,
   )
 
   let dict = sessions->getDictFromJson
