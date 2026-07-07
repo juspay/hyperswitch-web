@@ -241,6 +241,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       LOADER_CHANGED,
       PAYMENT_METHODS_CALL,
       PAYMENT_METHOD_CHANGED,
+      PAYMENT_METHOD_INPUTS_RENDERED,
       SESSIONS_CALL,
       CUSTOMER_PAYMENT_METHODS_CALL,
       RETRIEVE_CALL,

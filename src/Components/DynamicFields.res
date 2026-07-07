@@ -171,6 +171,7 @@ let make = (
     isValid: None,
     errorString: "",
   })
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
 
@@ -335,6 +336,15 @@ let make = (
   let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
+
+  React.useEffect(() => {
+    loggerState.setLogInfo(
+      ~value=fieldsArr->Identity.anyTypeToJson->JSON.stringify,
+      ~eventName=HyperLoggerTypes.PAYMENT_METHOD_INPUTS_RENDERED,
+      ~paymentMethod=paymentMethod->String.toUpperCase,
+    )
+    None
+  }, (paymentMethod, fieldsArr))
 
   <RenderIf condition={!isSavedCardFlow && fieldsArr->Array.length > 0}>
     {<>
