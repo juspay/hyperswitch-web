@@ -46,10 +46,7 @@
     "test:sandbox": "cd cypress-tests && npm run test:sandbox",
     "test:integ": "cd cypress-tests && npm run test:integ",
     "test:local": "cd cypress-tests && npm run test:local",
-    "test:hooks": "eslint src/",
-    "gpay:copy-profile": "rm -rf ~/puppeteer-chrome-profile && mkdir -p ~/puppeteer-chrome-profile/Default && rsync -a --exclude='Cache/' --exclude='Code Cache/' --exclude='GPUCache/' --exclude='Service Worker/' --exclude='ShaderCache/' --exclude='GrShaderCache/' --exclude='GraphiteDawnCache/' \"$HOME/Library/Application Support/Google/Chrome/Default/\" ~/puppeteer-chrome-profile/Default/ && cp \"$HOME/Library/Application Support/Google/Chrome/Local State\" ~/puppeteer-chrome-profile/ && echo 'Profile copied to ~/puppeteer-chrome-profile'",
-    "gpay:refresh": "rsync -a --delete --exclude='Cache/' --exclude='Code Cache/' --exclude='GPUCache/' --exclude='Service Worker/' --exclude='ShaderCache/' --exclude='GrShaderCache/' --exclude='GraphiteDawnCache/' \"$HOME/Library/Application Support/Google/Chrome/Default/\" ~/puppeteer-chrome-profile/Default/ && cp \"$HOME/Library/Application Support/Google/Chrome/Local State\" ~/puppeteer-chrome-profile/ && echo 'Profile refreshed'",
-    "gpay:test": "npm run gpay:refresh && node cypress-tests/cypress/e2e/06-wallets/gpay-test.js"
+    "test:hooks": "eslint src/"
   },
   "husky": {
     "hooks": {

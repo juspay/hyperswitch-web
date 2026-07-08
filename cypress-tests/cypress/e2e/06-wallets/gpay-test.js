@@ -1,11 +1,24 @@
 const puppeteer = require('puppeteer-core');
 const { spawn } = require('child_process');
+const os = require('os');
+const path = require('path');
+
+const getDefaultChromePath = () => {
+    switch (process.platform) {
+        case 'darwin':
+            return '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+        case 'win32':
+            return path.join(process.env.ProgramFiles || process.env.PROGRAMFILES || 'C:\\Program Files', 'Google\\Chrome\\Application\\chrome.exe');
+        default:
+            return '/usr/bin/google-chrome';
+    }
+};
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 (async () => {
-    const PROFILE_DIR = `${process.env.HOME}/puppeteer-chrome-profile`;
-    const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    const PROFILE_DIR = process.env.GPAY_PROFILE_DIR || path.join(os.homedir(), 'puppeteer-chrome-profile');
+    const CHROME_PATH = process.env.CHROME_PATH || getDefaultChromePath();
     const DEMO_URL = 'https://hyperswitch-demo-store.netlify.app';
 
     const chrome = spawn(
