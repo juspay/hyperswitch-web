@@ -172,6 +172,13 @@ let make = (
     resolutionContext,
   ) = DynamicFieldsUtils.useSuperpositionRequiredFields(~paymentMethod, ~paymentMethodType)
   let initialValues = React.useMemo(() => superpositionInitialValues, (intentData, paymentMethodType))
+  let setFilteredRequiredFieldsBody = setter =>
+    setRequiredFieldsBody(prev => setter(prev)->filterByActiveFields(requiredFields))
+
+  React.useEffect(() => {
+    setFilteredRequiredFieldsBody(prev => prev)
+    None
+  }, [requiredFields])
 
   let missingRequiredFieldsFiltered = React.useMemo(() => {
     let afterBillingFilter = removeBillingDetailsIfUseBillingAddress(
@@ -316,7 +323,7 @@ let make = (
             allEmailFields
             allCardHolderNameFields
             paymentMethodType
-            setRequiredFieldsBody
+            setRequiredFieldsBody=setFilteredRequiredFieldsBody
             syncEmitAddressAtoms
           />}
       />
