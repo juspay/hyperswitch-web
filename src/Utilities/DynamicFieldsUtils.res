@@ -153,19 +153,6 @@ let extractValuesFromPMLRequiredFields = (
   })
 }
 
-let removeBillingDetailsIfUseBillingAddress = (
-  missingRequiredFields: array<SuperpositionTypes.fieldConfig>,
-  billingAddress: PaymentType.billingAddress,
-) => {
-  if billingAddress.isUseBillingAddress {
-    missingRequiredFields->Array.filter(requiredField => {
-      !(requiredField.confirmRequestWritePath->String.startsWith(billingPrefix))
-    })
-  } else {
-    missingRequiredFields
-  }
-}
-
 let buildSuperpositionBaseContext = (
   ~paymentMethod: string,
   ~paymentMethodType: string,
@@ -248,6 +235,15 @@ let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
   let userCountryName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
   let country = Utils.getCountryCode(userCountryName).isoAlpha2
 
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  // isUseBillingAddress force-includes the billing.address.* set into the required/render sets whenever
+  // the merchant opts in.
+  let isUseBillingAddress = billingAddress.isUseBillingAddress
+  let suppressBillingPrefill = switch billingAddress.usePrefilledValues {
+  | Never => isUseBillingAddress
+  | Auto => false
+  }
+
   let rawConfigs = sdkConfigsValue.raw_configs
   let getSuperpositionFinalFields = ConfigurationService.useConfigurationService(~rawConfigs)
 
@@ -286,8 +282,21 @@ let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
   ))
 
   let (requiredFields, missingRequiredFields, initialValues) = React.useMemo(() => {
-    getSuperpositionFinalFields(eligibleConnectors, superpositionBaseContext, intentData)
-  }, (getSuperpositionFinalFields, eligibleConnectors, superpositionBaseContext, intentData))
+    getSuperpositionFinalFields(
+      eligibleConnectors,
+      superpositionBaseContext,
+      intentData,
+      ~isUseBillingAddress,
+      ~suppressBillingPrefill,
+    )
+  }, (
+    getSuperpositionFinalFields,
+    eligibleConnectors,
+    superpositionBaseContext,
+    intentData,
+    isUseBillingAddress,
+    suppressBillingPrefill,
+  ))
 
   let resolutionContext = React.useMemo(() => {
     {
@@ -307,7 +316,14 @@ let useAreWalletRequiredFieldsPrefilled = (~paymentMethodType) => {
     ~paymentMethod="wallet",
     ~paymentMethodType,
   )
-  removeBillingDetailsIfUseBillingAddress(missingRequiredFields, billingAddress)->Array.length == 0
+  // Billing is collected via the wallet sheet, so it must not block the wallet prefilled-gate
+  // when isUseBillingAddress is set.
+  let relevant = billingAddress.isUseBillingAddress
+    ? missingRequiredFields->Array.filter(field =>
+        !(field.confirmRequestWritePath->String.startsWith(billingPrefix))
+      )
+    : missingRequiredFields
+  relevant->Array.length == 0
 }
 
 let splitName = (str: option<string>) => {
