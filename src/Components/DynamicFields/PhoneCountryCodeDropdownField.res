@@ -31,15 +31,11 @@ let make = (~fieldConfig: fieldConfig, ~isLabelHidden=false) => {
     })
   )
 
-  let defaultCountry = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
   let firstOptionValue =
     phoneNumberCodeOptions->Array.get(0)->Option.map(o => o.value)->Option.getOr("")
-  let seedCountry = defaultCountry !== "" ? defaultCountry : firstOptionValue
-  let seedIso = getCountryCode(seedCountry).isoAlpha2
-
   let defaultDropdownValue =
     countryAndCodeList
-    ->Array.find(c => c->getDictFromJson->getString("country_code", "") === seedIso)
+    ->Array.find(c => c->getDictFromJson->getString("country_code", "") === defaultCountryCode)
     ->Option.map(c => {
       let countryDict = c->getDictFromJson
       let flag = countryDict->getString("country_flag", "")
