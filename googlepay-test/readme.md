@@ -3,7 +3,7 @@
 This folder contains a standalone Puppeteer automation script for the Google Pay wallet flow:
 
 ```sh
-node cypress-tests/cypress/e2e/06-wallets/gpay-test.js
+node googlepay-test/gpay-test.js
 ```
 
 The script is not part of the standard Cypress run. It launches Google Chrome with a copied Chrome user profile, opens the Hyperswitch demo store, enters the payment element iframe, clicks Google Pay, confirms the Google Pay sheet, and verifies that the demo page shows `Payment succeeded`.
@@ -38,7 +38,7 @@ Refresh the profile and run the test:
 ```sh
 rsync -a --delete --exclude='Cache/' --exclude='Code Cache/' --exclude='GPUCache/' --exclude='Service Worker/' --exclude='ShaderCache/' --exclude='GrShaderCache/' --exclude='GraphiteDawnCache/' "$HOME/Library/Application Support/Google/Chrome/Default/" "$HOME/puppeteer-chrome-profile/Default/"
 cp "$HOME/Library/Application Support/Google/Chrome/Local State" "$HOME/puppeteer-chrome-profile/"
-node cypress-tests/cypress/e2e/06-wallets/gpay-test.js
+node googlepay-test/gpay-test.js
 ```
 
 ## Linux
@@ -57,7 +57,7 @@ Refresh the profile and run the test:
 ```sh
 rsync -a --delete --exclude='Cache/' --exclude='Code Cache/' --exclude='GPUCache/' --exclude='Service Worker/' --exclude='ShaderCache/' --exclude='GrShaderCache/' --exclude='GraphiteDawnCache/' "$HOME/.config/google-chrome/Default/" "$HOME/puppeteer-chrome-profile/Default/"
 cp "$HOME/.config/google-chrome/Local State" "$HOME/puppeteer-chrome-profile/"
-CHROME_PATH="/usr/bin/google-chrome" node cypress-tests/cypress/e2e/06-wallets/gpay-test.js
+CHROME_PATH="/usr/bin/google-chrome" node googlepay-test/gpay-test.js
 ```
 
 If Chrome is installed somewhere else, update `CHROME_PATH`.
@@ -84,7 +84,7 @@ robocopy "$Source\Default" "$Target\Default" /MIR /XD "Cache" "Code Cache" "GPUC
 Copy-Item "$Source\Local State" "$Target\" -Force
 $env:GPAY_PROFILE_DIR = $Target
 $env:CHROME_PATH = "$env:ProgramFiles\Google\Chrome\Application\chrome.exe"
-node cypress-tests/cypress/e2e/06-wallets/gpay-test.js
+node googlepay-test/gpay-test.js
 ```
 
 `robocopy` may return exit code `1` even when files were copied successfully. If Chrome is installed under `Program Files (x86)`, set `CHROME_PATH` to that `chrome.exe` path before running the script.
