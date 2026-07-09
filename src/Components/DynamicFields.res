@@ -172,6 +172,10 @@ let make = (
     resolutionContext,
   ) = DynamicFieldsUtils.useSuperpositionRequiredFields(~paymentMethod, ~paymentMethodType)
   let initialValues = React.useMemo(() => superpositionInitialValues, (intentData, paymentMethodType))
+  React.useEffect(() => {
+    setRequiredFieldsBody(prev => prev->filterByActiveFields(requiredFields))
+    None
+  }, [requiredFields])
 
   let missingRequiredFieldsFiltered = React.useMemo(() => {
     let afterBillingFilter = removeBillingDetailsIfUseBillingAddress(
@@ -213,7 +217,7 @@ let make = (
     })
   }, (missingRequiredFields, billingAddress.isUseBillingAddress))
 
-  let finalInitialValues = React.useMemo(() => {
+  let initialValuesWithBillingDataOverride = React.useMemo(() => {
     DynamicFieldsUtils.applyBillingDetailsOverride(initialValues, defaultValues.billingDetails)
   }, (initialValues, defaultValues.billingDetails))
 
@@ -270,7 +274,7 @@ let make = (
     redirectionInfo === ShowRedirectionInfo
 
   let hasAnyField = missingRequiredFieldsFiltered->Array.length > 0
-  let shouldRenderForm = hasAnyField || finalInitialValues->Dict.keysToArray->Array.length > 0
+  let shouldRenderForm = hasAnyField || initialValuesWithBillingDataOverride->Dict.keysToArray->Array.length > 0
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
 
@@ -303,7 +307,7 @@ let make = (
   <>
     <RenderIf condition={!isSavedCardFlow && shouldRenderForm}>
       <ReactFinalForm.Form
-        initialValues={Some(finalInitialValues)}
+        initialValues={Some(initialValuesWithBillingDataOverride)}
         onSubmit={_values => ()}
         render={formProps =>
           <FormBody
