@@ -88,6 +88,23 @@ let make = (~cvcOnly=false) => {
       vault.field("#vgs-cc-cvc", cvcOnly ? savedCardCvcOptions : cardCvcOptions),
     ))
     setForm(_ => Some(vault))
+    DemoTelemetry.emit(
+      ~flow=cvcOnly ? "saved_card" : "card",
+      ~eventName="vgs_form_rendered",
+      ~payload=[
+        ("vaultProvider", "vgs"->JSON.Encode.string),
+        ("cvcOnly", cvcOnly->JSON.Encode.bool),
+        ("vaultId", vaultId->JSON.Encode.string),
+        ("environment", environment->JSON.Encode.string),
+        (
+          "fields",
+          (cvcOnly ? ["card_cvc"] : ["card_number", "card_exp", "card_cvc"])
+          ->Array.map(JSON.Encode.string)
+          ->JSON.Encode.array,
+        ),
+      ]->getJsonFromArrayOfJson,
+      (),
+    )
   }
 
   // Live form-state callback — keeps the inline field errors in sync as the user
@@ -98,6 +115,16 @@ let make = (~cvcOnly=false) => {
   let handleVGSErrors = vgsState => {
     let dict = vgsState->getDictFromJson
     formStateRef.current = dict
+    DemoTelemetry.emit(
+      ~flow=cvcOnly ? "saved_card" : "card",
+      ~eventName="vgs_field_state_changed",
+      ~payload=[
+        ("vaultProvider", "vgs"->JSON.Encode.string),
+        ("cvcOnly", cvcOnly->JSON.Encode.bool),
+        ("state", vgsState),
+      ]->getJsonFromArrayOfJson,
+      (),
+    )
     let setIfPresent = (setError, errStr) =>
       if errStr != "" {
         setError(_ => errStr)
@@ -112,6 +139,17 @@ let make = (~cvcOnly=false) => {
     | "ready" =>
       if vaultId != "" && environment != "" && !vaultInitializedRef.current {
         vaultInitializedRef.current = true
+        DemoTelemetry.emit(
+          ~flow=cvcOnly ? "saved_card" : "card",
+          ~eventName="vgs_script_ready",
+          ~payload=[
+            ("vaultProvider", "vgs"->JSON.Encode.string),
+            ("cvcOnly", cvcOnly->JSON.Encode.bool),
+            ("vaultId", vaultId->JSON.Encode.string),
+            ("environment", environment->JSON.Encode.string),
+          ]->getJsonFromArrayOfJson,
+          (),
+        )
         let vault = create(vaultId, environment, handleVGSErrors)
         initializeVGSFields(vault)
       }
@@ -131,6 +169,18 @@ let make = (~cvcOnly=false) => {
     let isOuterValid = confirmDict->getBool("isOuterValid", true)
 
     if confirm.doSubmit {
+      DemoTelemetry.emit(
+        ~flow=cvcOnly ? "saved_card" : "card",
+        ~eventName="vgs_form_submitted",
+        ~payload=[
+          ("vaultProvider", "vgs"->JSON.Encode.string),
+          ("cvcOnly", cvcOnly->JSON.Encode.bool),
+          ("isOuterValid", isOuterValid->JSON.Encode.bool),
+          ("confirm", json),
+          ("fieldState", formStateRef.current->JSON.Encode.object),
+        ]->getJsonFromArrayOfJson,
+        (),
+      )
       switch form {
       | Some(vault) =>
         // Validate synchronously from the latest tracked field state (mirroring
@@ -148,13 +198,34 @@ let make = (~cvcOnly=false) => {
             let emptyPayload = JSON.Encode.object(Dict.make())
             let onSuccess = (_, data) => {
               let cvcToken = data->getDictFromJson->getString("card_cvc", "")
+              DemoTelemetry.emit(
+                ~flow="saved_card",
+                ~eventName="saved_card_cvc_token_received",
+                ~payload=[
+                  ("vaultProvider", "vgs"->JSON.Encode.string),
+                  ("cvcOnly", true->JSON.Encode.bool),
+                  ("response", data),
+                ]->getJsonFromArrayOfJson,
+                (),
+              )
               messageParentWindow([
                 ("savedCardCvcTokenEvent", true->JSON.Encode.bool),
                 ("cvcToken", cvcToken->JSON.Encode.string),
               ])
             }
-            let onError = _ =>
+            let onError = err => {
+              DemoTelemetry.emit(
+                ~flow="saved_card",
+                ~eventName="vgs_token_failed",
+                ~payload=[
+                  ("vaultProvider", "vgs"->JSON.Encode.string),
+                  ("cvcOnly", true->JSON.Encode.bool),
+                  ("error", err->Identity.anyTypeToJson),
+                ]->getJsonFromArrayOfJson,
+                (),
+              )
               postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            }
             vault.submit("/post", emptyPayload, onSuccess, onError)
           } else if cvcErr != "" {
             submitUserError(
@@ -185,6 +256,16 @@ let make = (~cvcOnly=false) => {
             // it can build the confirm body and call intent.
             let onSuccess = (_, data) => {
               let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
+              DemoTelemetry.emit(
+                ~flow="card",
+                ~eventName="vgs_token_received",
+                ~payload=[
+                  ("vaultProvider", "vgs"->JSON.Encode.string),
+                  ("cvcOnly", false->JSON.Encode.bool),
+                  ("response", data),
+                ]->getJsonFromArrayOfJson,
+                (),
+              )
               messageParentWindow([
                 ("vgsTokenEvent", true->JSON.Encode.bool),
                 (
@@ -201,8 +282,19 @@ let make = (~cvcOnly=false) => {
 
             // Fields are valid, so onError here is a genuine tokenisation/network
             // failure (not a validation error) — reject the merchant promise.
-            let onError = _ =>
+            let onError = err => {
+              DemoTelemetry.emit(
+                ~flow="card",
+                ~eventName="vgs_token_failed",
+                ~payload=[
+                  ("vaultProvider", "vgs"->JSON.Encode.string),
+                  ("cvcOnly", false->JSON.Encode.bool),
+                  ("error", err->Identity.anyTypeToJson),
+                ]->getJsonFromArrayOfJson,
+                (),
+              )
               postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            }
 
             vault.submit("/post", emptyPayload, onSuccess, onError)
           } else if !cardFieldsValid {

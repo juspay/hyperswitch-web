@@ -212,10 +212,31 @@ let startApplePaySession = (
     logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="APPLE_PAY")
 
     let payment = event.payment
+    DemoTelemetry.emit(
+      ~flow="apple_pay",
+      ~eventName="apple_pay_payment_authorized",
+      ~payload=[
+        ("payment", payment->Identity.anyTypeToJson),
+        ("clientSecret", clientSecret->JSON.Encode.string),
+        ("publishableKey", publishableKey->JSON.Encode.string),
+        ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson,
+      (),
+    )
     payment->callBackFunc
   }
   ssn.oncancel = _ => {
     applePaySessionRef := Nullable.null
+    DemoTelemetry.emit(
+      ~flow="apple_pay",
+      ~eventName="apple_pay_sheet_cancelled",
+      ~payload=[
+        ("clientSecret", clientSecret->JSON.Encode.string),
+        ("publishableKey", publishableKey->JSON.Encode.string),
+        ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson,
+      (),
+    )
     logger.setLogError(
       ~value="Apple Pay Payment Cancelled",
       ~eventName=APPLE_PAY_FLOW,
@@ -227,6 +248,18 @@ let startApplePaySession = (
     )->resolvePromise
   }
 
+  DemoTelemetry.emit(
+    ~flow="apple_pay",
+    ~eventName="apple_pay_sheet_opened",
+    ~payload=[
+      ("paymentRequest", paymentRequest),
+      ("applePayPresent", applePayPresent->Option.getOr(JSON.Encode.null)),
+      ("clientSecret", clientSecret->JSON.Encode.string),
+      ("publishableKey", publishableKey->JSON.Encode.string),
+      ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+    ]->getJsonFromArrayOfJson,
+    (),
+  )
   ssn.begin()
 }
 
@@ -266,6 +299,18 @@ let useHandleApplePayResponse = (
 
           let billingContactDict = dict->getDictFromDict("applePayBillingContact")
           let shippingContactDict = dict->getDictFromDict("applePayShippingContact")
+          DemoTelemetry.emit(
+            ~flow="apple_pay",
+            ~eventName="apple_pay_response_received",
+            ~payload=[
+              ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+              ("isWallet", isWallet->JSON.Encode.bool),
+              ("token", token),
+              ("billingContact", billingContactDict->JSON.Encode.object),
+              ("shippingContact", shippingContactDict->JSON.Encode.object),
+            ]->getJsonFromArrayOfJson,
+            (),
+          )
 
           let applePayBody = getApplePayFromResponse(
             ~token,

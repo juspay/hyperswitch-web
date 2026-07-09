@@ -10,8 +10,21 @@ let handleDDC = (
   ~paymentMethod,
 ) => {
   let {iframeUrl, timeoutMs} = ddcData->Option.getOr(PaymentConfirmTypes.defaultDdcData)
+  let emitCardDdcDemoEvent = (~eventName, ~extra=[]) => {
+    if paymentMethod === "CARD" {
+      let payload = [
+        ("iframeId", iframeId->JSON.Encode.string),
+        ("iframeUrl", iframeUrl->JSON.Encode.string),
+        ("timeoutMs", timeoutMs->JSON.Encode.int),
+        ("response", data),
+      ]
+      extra->Array.forEach(item => payload->Array.push(item))
+      DemoTelemetry.emit(~flow="card", ~eventName, ~payload=payload->getJsonFromArrayOfJson, ())
+    }
+  }
 
   LoggerUtils.handleLogging(~optLogger, ~eventName=DDC_FLOW, ~value="DDC initiated", ~paymentMethod)
+  emitCardDdcDemoEvent(~eventName="ddc_collection_started")
 
   messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
@@ -38,6 +51,10 @@ let handleDDC = (
       ~value="DDC failed: empty iframe URL",
       ~paymentMethod,
       ~logType=ERROR,
+    )
+    emitCardDdcDemoEvent(
+      ~eventName="ddc_collection_failed",
+      ~extra=[("reason", "empty iframe URL"->JSON.Encode.string)],
     )
     handleFailure()
   } else {
@@ -94,6 +111,10 @@ let handleDDC = (
               ~value="DDC completed successfully",
               ~paymentMethod,
             )
+            emitCardDdcDemoEvent(
+              ~eventName="ddc_collection_completed",
+              ~extra=[("nextAction", dict->getJsonObjectFromDict("next_action"))],
+            )
             handleRedirectToUrl(redirectUrl, redirectMode)
           } else {
             LoggerUtils.handleLogging(
@@ -102,6 +123,13 @@ let handleDDC = (
               ~value=`DDC failed: invalid next action type - ${nextActionType}`,
               ~paymentMethod,
               ~logType=ERROR,
+            )
+            emitCardDdcDemoEvent(
+              ~eventName="ddc_collection_failed",
+              ~extra=[
+                ("nextAction", dict->getJsonObjectFromDict("next_action")),
+                ("reason", `invalid next action type - ${nextActionType}`->JSON.Encode.string),
+              ],
             )
             handleFailure()
           }
@@ -115,6 +143,10 @@ let handleDDC = (
           ~value=`DDC failed: message parse error - ${err}`,
           ~paymentMethod,
           ~logType=ERROR,
+        )
+        emitCardDdcDemoEvent(
+          ~eventName="ddc_collection_failed",
+          ~extra=[("reason", `message parse error - ${err}`->JSON.Encode.string)],
         )
         cleanup()
         handleFailure()
@@ -134,6 +166,10 @@ let handleDDC = (
             ~value="DDC timed out",
             ~paymentMethod,
             ~logType=ERROR,
+          )
+          emitCardDdcDemoEvent(
+            ~eventName="ddc_collection_failed",
+            ~extra=[("reason", "timeout"->JSON.Encode.string)],
           )
           cleanup()
           handleFailure()

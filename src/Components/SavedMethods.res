@@ -517,6 +517,21 @@ let make = (
                         ~isCustomerAcceptanceRequired,
                       )
                 let vaultBody = cvcConfirmBody->Array.concat(installmentBody)
+                if !isHyperswitchVault {
+                  let finalBody = vaultBody->mergeAndFlattenToTuples(requiredFieldsBody)
+                  DemoTelemetry.emit(
+                    ~flow="saved_card",
+                    ~eventName="vgs_confirm_body_built",
+                    ~payload=[
+                      ("vaultProvider", "vgs"->JSON.Encode.string),
+                      ("source", "SavedMethods"->JSON.Encode.string),
+                      ("finalBody", finalBody->getJsonFromArrayOfJson),
+                      ("confirmParams", confirm.confirmParams->Identity.anyTypeToJson),
+                    ]->getJsonFromArrayOfJson,
+                    (),
+                  )
+                  DemoTelemetry.markNextCardFlow("saved_card")
+                }
                 intent(
                   ~bodyArr=vaultBody->mergeAndFlattenToTuples(requiredFieldsBody),
                   ~confirmParam=confirm.confirmParams,

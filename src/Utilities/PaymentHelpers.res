@@ -118,6 +118,7 @@ let threeDsAuth = async (
   ~threeDsMethodComp,
   ~headers,
   ~sdkAuthorization=None,
+  ~demoFlow="card",
 ) => {
   let url = APIUtils.generateApiUrlV1(
     ~apiCallType=FetchThreeDsAuth,
@@ -144,9 +145,42 @@ let threeDsAuth = async (
     ->Array.concatMany([broswerInfo(), clientSecretArr])
     ->getJsonFromArrayOfJson
 
-  let onSuccess = data => data
+  let demoThreeDsAuthPayload = extra => {
+    let payloadArr = [
+      ("apiKind", "three_ds_auth"->JSON.Encode.string),
+      ("url", url->JSON.Encode.string),
+      ("body", body->JSON.stringify->JSON.Encode.string),
+      ("clientSecret", clientSecret->JSON.Encode.string),
+      ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+    ]
+    extra->Array.forEach(item => payloadArr->Array.push(item))
+    payloadArr->getJsonFromArrayOfJson
+  }
+
+  DemoTelemetry.emit(
+    ~flow=demoFlow,
+    ~eventName="api_request",
+    ~payload=demoThreeDsAuthPayload([]),
+    (),
+  )
+
+  let onSuccess = data => {
+    DemoTelemetry.emit(
+      ~flow=demoFlow,
+      ~eventName="api_response",
+      ~payload=demoThreeDsAuthPayload([("response", data)]),
+      (),
+    )
+    data
+  }
 
   let onFailure = data => {
+    DemoTelemetry.emit(
+      ~flow=demoFlow,
+      ~eventName="api_error_response",
+      ~payload=demoThreeDsAuthPayload([("response", data)]),
+      (),
+    )
     let dict = data->getDictFromJson
     let errorObj = PaymentError.itemToObjMapper(dict)
     closePaymentLoaderIfAny()
@@ -155,6 +189,12 @@ let threeDsAuth = async (
   }
 
   let onCatchCallback = err => {
+    DemoTelemetry.emit(
+      ~flow=demoFlow,
+      ~eventName="api_exception",
+      ~payload=demoThreeDsAuthPayload([("error", err)]),
+      (),
+    )
     closePaymentLoaderIfAny()
     Js.Exn.raiseError(err->JSON.stringify)
   }
@@ -322,6 +362,14 @@ let rec pollStatus = (
   })
 }
 
+let headersToDemoJson = headers =>
+  headers
+  ->Array.map(header => {
+    let (key, value) = header
+    (key, value->JSON.Encode.string)
+  })
+  ->getJsonFromArrayOfJson
+
 let rec intentCall = (
   ~fetchApi: (
     string,
@@ -354,6 +402,7 @@ let rec intentCall = (
   ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
   ~isTrustpayInterceptorConfirm=false,
+  ~demoFlow=None,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -370,6 +419,47 @@ let rec intentCall = (
   | (_, true, _) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
   | (_, _, true) => (POST_SESSION_TOKENS_CALL, POST_SESSION_TOKENS_CALL_INIT)
   | _ => (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
+  }
+  let apiKind = switch (isConfirm, isCompleteAuthorize, isPostSessionTokens) {
+  | (true, _, _) => "confirm"
+  | (_, true, _) => "complete_authorize"
+  | (_, _, true) => "post_session_tokens"
+  | _ => "retrieve"
+  }
+  let activeDemoFlow = switch demoFlow {
+  | Some(_) => demoFlow
+  | None => DemoTelemetry.takeFlowOverride(~paymentType)
+  }
+  let demoIntentPayload = extra => {
+    let payloadArr = [
+      ("apiKind", apiKind->JSON.Encode.string),
+      ("url", uri->JSON.Encode.string),
+      ("headers", headers->headersToDemoJson),
+      ("body", bodyStr->JSON.Encode.string),
+      ("confirmParams", confirmParam->anyTypeToJson),
+      ("clientSecret", clientSecret->JSON.Encode.string),
+      ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+      ("isPaymentSession", isPaymentSession->JSON.Encode.bool),
+      ("componentName", componentName->JSON.Encode.string),
+    ]
+    extra->Array.forEach(item => payloadArr->Array.push(item))
+    payloadArr->getJsonFromArrayOfJson
+  }
+  DemoTelemetry.emitForPaymentType(
+    ~paymentType,
+    ~eventName="api_request",
+    ~payload=demoIntentPayload([]),
+    ~flowOverride=activeDemoFlow,
+    (),
+  )
+  if isConfirm {
+    DemoTelemetry.emitForPaymentType(
+      ~paymentType,
+      ~eventName="confirm_object",
+      ~payload=demoIntentPayload([]),
+      ~flowOverride=activeDemoFlow,
+      (),
+    )
   }
   logApi(
     ~optLogger,
@@ -413,6 +503,16 @@ let rec intentCall = (
       ->then(data => {
         Promise.make(
           (resolve, _) => {
+            DemoTelemetry.emitForPaymentType(
+              ~paymentType,
+              ~eventName="api_error_response",
+              ~payload=demoIntentPayload([
+                ("statusCode", statusCode->Int.toFloat->JSON.Encode.float),
+                ("response", data),
+              ]),
+              ~flowOverride=activeDemoFlow,
+              (),
+            )
             if isConfirm {
               let paymentMethod = switch paymentType {
               | Card => "CARD"
@@ -427,6 +527,16 @@ let rec intentCall = (
                 ~value=data->JSON.stringify,
                 ~eventName=PAYMENT_FAILED,
                 ~paymentMethod,
+              )
+              DemoTelemetry.emitForPaymentType(
+                ~paymentType,
+                ~eventName="payment_failed",
+                ~payload=demoIntentPayload([
+                  ("statusCode", statusCode->Int.toFloat->JSON.Encode.float),
+                  ("response", data),
+                ]),
+                ~flowOverride=activeDemoFlow,
+                (),
               )
             }
             logApi(
@@ -466,6 +576,16 @@ let rec intentCall = (
         Promise.make(
           (resolve, _) => {
             let exceptionMessage = err->formatException
+            DemoTelemetry.emitForPaymentType(
+              ~paymentType,
+              ~eventName="api_exception",
+              ~payload=demoIntentPayload([
+                ("statusCode", statusCode->Int.toFloat->JSON.Encode.float),
+                ("error", exceptionMessage),
+              ]),
+              ~flowOverride=activeDemoFlow,
+              (),
+            )
             logApi(
               ~optLogger,
               ~url=uri,
@@ -523,6 +643,7 @@ let rec intentCall = (
                 ~componentName,
                 ~redirectionFlags,
                 ~sdkAuthorization,
+                ~demoFlow=activeDemoFlow,
               )
               ->then(
                 res => {
@@ -542,6 +663,28 @@ let rec intentCall = (
       ->then(data => {
         Promise.make(
           (resolve, _) => {
+            DemoTelemetry.emitForPaymentType(
+              ~paymentType,
+              ~eventName="api_response",
+              ~payload=demoIntentPayload([
+                ("statusCode", statusCode->Int.toFloat->JSON.Encode.float),
+                ("response", data),
+              ]),
+              ~flowOverride=activeDemoFlow,
+              (),
+            )
+            if isCompleteAuthorize {
+              DemoTelemetry.emitForPaymentType(
+                ~paymentType,
+                ~eventName="challenge_completed",
+                ~payload=demoIntentPayload([
+                  ("statusCode", statusCode->Int.toFloat->JSON.Encode.float),
+                  ("response", data),
+                ]),
+                ~flowOverride=activeDemoFlow,
+                (),
+              )
+            }
             logApi(
               ~optLogger,
               ~url=uri,
@@ -725,12 +868,27 @@ let rec intentCall = (
                     ("url", url.href->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
                   ]->Dict.fromArray
+                let demoFlowFor3ds =
+                  activeDemoFlow->Option.getOr(
+                    paymentType->DemoTelemetry.paymentTypeToFlow->Option.getOr("card"),
+                  )
+                metaData->Dict.set("demoFlow", demoFlowFor3ds->JSON.Encode.string)
 
                 handleLogging(
                   ~optLogger,
                   ~value=do3dsMethodCall ? "Y" : "N",
                   ~eventName=THREE_DS_METHOD,
                   ~paymentMethod,
+                )
+                DemoTelemetry.emitForPaymentType(
+                  ~paymentType,
+                  ~eventName="netcetera_flow_initiated",
+                  ~payload=demoIntentPayload([
+                    ("metadata", metaData->JSON.Encode.object),
+                    ("response", data),
+                  ]),
+                  ~flowOverride=activeDemoFlow,
+                  (),
                 )
 
                 if do3dsMethodCall {
@@ -951,12 +1109,32 @@ let rec intentCall = (
                   ~eventName=PAYMENT_SUCCESS,
                   ~paymentMethod,
                 )
+                DemoTelemetry.emitForPaymentType(
+                  ~paymentType,
+                  ~eventName="payment_success",
+                  ~payload=demoIntentPayload([
+                    ("response", data),
+                    ("returnUrl", url.href->JSON.Encode.string),
+                  ]),
+                  ~flowOverride=activeDemoFlow,
+                  (),
+                )
               } else if intent.status === "failed" {
                 handleLogging(
                   ~optLogger,
                   ~value=intent.status,
                   ~eventName=PAYMENT_FAILED,
                   ~paymentMethod,
+                )
+                DemoTelemetry.emitForPaymentType(
+                  ~paymentType,
+                  ~eventName="payment_failed",
+                  ~payload=demoIntentPayload([
+                    ("response", data),
+                    ("returnUrl", url.href->JSON.Encode.string),
+                  ]),
+                  ~flowOverride=activeDemoFlow,
+                  (),
                 )
               }
               if intent.status === "failed" {
@@ -993,6 +1171,13 @@ let rec intentCall = (
         )
         url.searchParams.set("status", "failed")
         let exceptionMessage = err->formatException
+        DemoTelemetry.emitForPaymentType(
+          ~paymentType,
+          ~eventName="api_exception",
+          ~payload=demoIntentPayload([("error", exceptionMessage)]),
+          ~flowOverride=activeDemoFlow,
+          (),
+        )
         logApi(
           ~optLogger,
           ~url=uri,
@@ -1048,6 +1233,7 @@ let rec intentCall = (
             ~componentName,
             ~redirectionFlags,
             ~sdkAuthorization,
+            ~demoFlow=activeDemoFlow,
           )
           ->then(
             res => {
@@ -1407,6 +1593,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ()
           })
         }
+        let demoFlow = DemoTelemetry.takeFlowOverride(~paymentType)
         if blockConfirm && GlobalVars.isInteg {
           Console.warn2("CONFIRM IS BLOCKED - Body", body)
           Console.warn2(
@@ -1435,6 +1622,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~redirectionFlags,
             ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
             ~isTrustpayInterceptorConfirm,
+            ~demoFlow,
           )
           ->then(val => {
             intentCallback(val)

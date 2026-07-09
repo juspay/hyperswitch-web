@@ -109,6 +109,20 @@ let make = (
       ]->Dict.fromArray
 
       mountedIframeRef->Window.iframePostMessage(message)
+      DemoTelemetry.emit(
+        ~flow=isSavedCardFlow ? "saved_card" : "card",
+        ~eventName="sdk_mounted",
+        ~payload=[
+          ("sdk", "paymentMethodsSDK"->JSON.Encode.string),
+          ("vaultProvider", "vgs"->JSON.Encode.string),
+          ("isSavedCardFlow", isSavedCardFlow->JSON.Encode.bool),
+          ("iframeId", selectorString->JSON.Encode.string),
+          ("publishableKey", publishableKey->JSON.Encode.string),
+          ("endpoint", endpoint->JSON.Encode.string),
+          ("paymentOptions", sdkConfig.config->Identity.anyTypeToJson),
+        ]->getJsonFromArrayOfJson,
+        (),
+      )
       setIframeMounted(_ => true)
     },
     [],
@@ -290,15 +304,37 @@ let make = (
               // derived from it the same way a real PAN would be (mirrors vaultCardBody).
               let last4Digits = cardNumber->CardUtils.getCardLast4
               let binNumber = cardNumber->CardUtils.getCardBin
-              confirmWithVaultBody(
-                PaymentBody.vgsVaultCardBody(
-                  ~cardNumber,
-                  ~month,
-                  ~year,
-                  ~cvcNumber,
-                  ~last4Digits,
-                  ~binNumber,
-                ),
+              let baseBody = PaymentBody.vgsVaultCardBody(
+                ~cardNumber,
+                ~month,
+                ~year,
+                ~cvcNumber,
+                ~last4Digits,
+                ~binNumber,
+              )
+              let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
+              let cardBody = isCustomerAcceptanceRequired
+                ? baseBody->Array.concat(onSessionBody)
+                : baseBody
+              let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
+              let finalBody =
+                cardBody->Array.concat(installmentBody)->mergeAndFlattenToTuples(requiredFieldsBody)
+              DemoTelemetry.emit(
+                ~flow="card",
+                ~eventName="vgs_confirm_body_built",
+                ~payload=[
+                  ("vaultProvider", "vgs"->JSON.Encode.string),
+                  ("source", "ParentCardComponent"->JSON.Encode.string),
+                  ("finalBody", finalBody->getJsonFromArrayOfJson),
+                  ("confirmParams", confirm.confirmParams->Identity.anyTypeToJson),
+                ]->getJsonFromArrayOfJson,
+                (),
+              )
+              intent(
+                ~bodyArr=finalBody,
+                ~confirmParam=confirm.confirmParams,
+                ~handleUserError=false,
+                ~manualRetry=isManualRetryEnabled,
               )
             } else if dict->Dict.get("cardTokenFail")->Option.isSome {
               postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")

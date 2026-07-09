@@ -70,6 +70,11 @@ let make = (
   | Some(paymentExperience) => paymentExperience.payment_experience_type
   | None => PaymentMethodsRecord.RedirectToURL
   }
+  let paymentExperienceStr = switch paymentExperience {
+  | PaymentMethodsRecord.InvokeSDK => "invoke_sdk_client"
+  | PaymentMethodsRecord.RedirectToURL => "redirect_to_url"
+  | PaymentMethodsRecord.QrFlow => "qr_flow"
+  }
 
   let isInvokeSDKFlow = React.useMemo(() => {
     (isGooglePaySDKFlow || isGooglePayThirdPartyFlow) &&
@@ -184,6 +189,19 @@ let make = (
         ~value="GooglePay Button Clicked",
         ~eventName=GOOGLE_PAY_FLOW,
         ~paymentMethod="GOOGLE_PAY",
+      )
+      DemoTelemetry.emit(
+        ~flow="google_pay",
+        ~eventName="google_pay_button_clicked",
+        ~payload=[
+          ("componentName", componentName->JSON.Encode.string),
+          ("isWallet", isWallet->JSON.Encode.bool),
+          ("isInvokeSDKFlow", isInvokeSDKFlow->JSON.Encode.bool),
+          ("isDelayedSessionFlow", isGooglePayDelayedSessionFlow->JSON.Encode.bool),
+          ("paymentExperience", paymentExperienceStr->JSON.Encode.string),
+          ("connectors", connectors->Array.map(JSON.Encode.string)->JSON.Encode.array),
+        ]->getJsonFromArrayOfJson,
+        (),
       )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,

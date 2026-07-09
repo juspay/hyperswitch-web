@@ -53,6 +53,13 @@ let make = () => {
         let headers = headersDict->convertDictToArrayOfKeyStringTuples
 
         let threeDsMethodComp = metaDataDict->getString("3dsMethodComp", "U")
+        let demoFlow = metaDataDict->getString("demoFlow", "card")
+        DemoTelemetry.emit(
+          ~flow=demoFlow,
+          ~eventName="three_ds_authentication_started",
+          ~payload=[("metadata", metadata)]->getJsonFromArrayOfJson,
+          (),
+        )
         open Promise
         PaymentHelpers.threeDsAuth(
           ~logger,
@@ -60,11 +67,18 @@ let make = () => {
           ~threeDsMethodComp,
           ~headers=headers->Dict.fromArray,
           ~sdkAuthorization,
+          ~demoFlow,
         )
         ->then(json => {
           let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
+            DemoTelemetry.emit(
+              ~flow=demoFlow,
+              ~eventName="three_ds_authentication_response",
+              ~payload=[("metadata", metadata), ("response", json)]->getJsonFromArrayOfJson,
+              (),
+            )
             messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
             postFailedSubmitResponse(
               ~errortype=errorObj.error.type_,
@@ -76,6 +90,12 @@ let make = () => {
             let challengeRequestKey = dict->getString("challenge_request_key", "creq")
             let transStatus = dict->getString("trans_status", "Y")
             let acsUrl = dict->getString("acs_url", "")
+            DemoTelemetry.emit(
+              ~flow=demoFlow,
+              ~eventName="three_ds_authentication_response",
+              ~payload=[("metadata", metadata), ("response", json)]->getJsonFromArrayOfJson,
+              (),
+            )
 
             let ele = Window.querySelector("#threeDsAuthDiv")
 
@@ -90,6 +110,17 @@ let make = () => {
             | Some(elem) =>
               if transStatus === "C" {
                 setloader(_ => false)
+                DemoTelemetry.emit(
+                  ~flow=demoFlow,
+                  ~eventName="three_ds_challenge_presented",
+                  ~payload=[
+                    ("metadata", metadata),
+                    ("acsUrl", acsUrl->JSON.Encode.string),
+                    ("challengeRequestKey", challengeRequestKey->JSON.Encode.string),
+                    ("challengeRequest", creq->JSON.Encode.string),
+                  ]->getJsonFromArrayOfJson,
+                  (),
+                )
                 let form = elem->makeForm(acsUrl, "3dsChallenge")
                 let input = Types.createElement("input")
                 input.name = challengeRequestKey

@@ -24,6 +24,7 @@ let make = () => {
 
     let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
     let iframeId = metadataDict->getString("iframeId", "")
+    let demoFlow = metadataDict->getString("demoFlow", "card")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
       LoggerUtils.handleLogging(
@@ -31,6 +32,12 @@ let make = () => {
         ~eventName=THREE_DS_METHOD_RESULT,
         ~value="Y",
         ~paymentMethod="CARD",
+      )
+      DemoTelemetry.emit(
+        ~flow=demoFlow,
+        ~eventName="ddc_collection_completed",
+        ~payload=[("metadata", stateMetadataRef.current)]->getJsonFromArrayOfJson,
+        (),
       )
 
       isThreeDSMethodCompletionFired.current = true
@@ -100,6 +107,11 @@ let make = () => {
   }
 
   let handleOnError = value => {
+    let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
+    let demoFlow = metadataDict->getString("demoFlow", "card")
+    stateMetadataRef.current
+    ->Utils.getDictFromJson
+    ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
     LoggerUtils.handleLogging(
       ~optLogger=Some(logger),
       ~eventName=THREE_DS_METHOD_RESULT,
@@ -107,11 +119,16 @@ let make = () => {
       ~paymentMethod="CARD",
       ~logType=ERROR,
     )
-    stateMetadataRef.current
-    ->Utils.getDictFromJson
-    ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
+    DemoTelemetry.emit(
+      ~flow=demoFlow,
+      ~eventName="ddc_collection_failed",
+      ~payload=[
+        ("error", value->JSON.Encode.string),
+        ("metadata", stateMetadataRef.current),
+      ]->getJsonFromArrayOfJson,
+      (),
+    )
 
-    let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
     let iframeId = metadataDict->getString("iframeId", "")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
@@ -233,10 +250,17 @@ let make = () => {
           let paymentIntentId = metaDataDict->Utils.getString("paymentIntentId", "")
           let publishableKey = metaDataDict->Utils.getString("publishableKey", "")
           let sdkAuthorization = metaDataDict->Utils.getString("sdkAuthorization", "")
+          let demoFlow = metaDataDict->Utils.getString("demoFlow", "card")
 
           logger.setClientSecret(paymentIntentId)
           logger.setSdkAuthorization(sdkAuthorization)
           logger.setMerchantId(publishableKey)
+          DemoTelemetry.emit(
+            ~flow=demoFlow,
+            ~eventName="ddc_collection_started",
+            ~payload=[("metadata", metadata)]->getJsonFromArrayOfJson,
+            (),
+          )
 
           let ele = Window.querySelector("#threeDsInvisibleDiv")
 

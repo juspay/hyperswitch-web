@@ -115,6 +115,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     | None => PaymentMethodsRecord.RedirectToURL
     }
   }, [applePayPaymentMethodType])
+  let paymentExperienceStr = switch paymentExperience {
+  | PaymentMethodsRecord.InvokeSDK => "invoke_sdk_client"
+  | PaymentMethodsRecord.RedirectToURL => "redirect_to_url"
+  | PaymentMethodsRecord.QrFlow => "qr_flow"
+  }
 
   let isInvokeSDKFlow = React.useMemo(() => {
     paymentExperience == PaymentMethodsRecord.InvokeSDK && isApplePaySDKFlow
@@ -283,6 +288,19 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~value="Apple Pay Button Clicked",
         ~eventName=APPLE_PAY_FLOW,
         ~paymentMethod="APPLE_PAY",
+      )
+      DemoTelemetry.emit(
+        ~flow="apple_pay",
+        ~eventName="apple_pay_button_clicked",
+        ~payload=[
+          ("componentName", componentName->JSON.Encode.string),
+          ("isWallet", isWallet->JSON.Encode.bool),
+          ("isInvokeSDKFlow", isInvokeSDKFlow->JSON.Encode.bool),
+          ("isDelayedSessionFlow", isApplePayDelayedSessionFlow->JSON.Encode.bool),
+          ("paymentExperience", paymentExperienceStr->JSON.Encode.string),
+          ("connectors", connectors->Array.map(JSON.Encode.string)->JSON.Encode.array),
+        ]->getJsonFromArrayOfJson,
+        (),
       )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,

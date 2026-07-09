@@ -99,6 +99,16 @@ let useHandleGooglePayResponse = (
           dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
       ) {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
+        DemoTelemetry.emit(
+          ~flow="google_pay",
+          ~eventName="google_pay_response_received",
+          ~payload=[
+            ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+            ("isWallet", isWallet->JSON.Encode.bool),
+            ("response", metadata),
+          ]->getJsonFromArrayOfJson,
+          (),
+        )
         let body = getGooglePayBodyFromResponse(
           ~gPayResponse=metadata,
           ~isGuestCustomer,
@@ -125,6 +135,16 @@ let useHandleGooglePayResponse = (
         )
       }
       if dict->Dict.get("gpayError")->Option.isSome {
+        DemoTelemetry.emit(
+          ~flow="google_pay",
+          ~eventName="google_pay_error_received",
+          ~payload=[
+            ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+            ("isWallet", isWallet->JSON.Encode.bool),
+            ("error", dict->Dict.get("gpayError")->Option.getOr(JSON.Encode.null)),
+          ]->getJsonFromArrayOfJson,
+          (),
+        )
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         if isSavedMethodsFlow || !isWallet {
           postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
@@ -157,6 +177,17 @@ let handleGooglePayClicked = (
     ("iframeId", iframeId->JSON.Encode.string),
   ])
   if !readOnly {
+    DemoTelemetry.emit(
+      ~flow="google_pay",
+      ~eventName="google_pay_sheet_requested",
+      ~payload=[
+        ("componentName", componentName->JSON.Encode.string),
+        ("iframeId", iframeId->JSON.Encode.string),
+        ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+        ("paymentDataRequest", paymentDataRequest->Identity.anyTypeToJson),
+      ]->getJsonFromArrayOfJson,
+      (),
+    )
     messageParentWindow([
       ("GpayClicked", true->JSON.Encode.bool),
       ("GpayPaymentDataRequest", paymentDataRequest->Identity.anyTypeToJson),

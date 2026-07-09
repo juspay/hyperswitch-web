@@ -1345,9 +1345,27 @@ let make = (
                   if gpayClicked && paymentDataRequest !== JSON.Encode.null {
                     switch gPayClient {
                     | Some(client) => setTimeout(() => {
+                        DemoTelemetry.emit(
+                          ~flow="google_pay",
+                          ~eventName="google_pay_sheet_opened",
+                          ~payload=[
+                            ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+                            ("paymentDataRequest", paymentDataRequest),
+                          ]->getJsonFromArrayOfJson,
+                          (),
+                        )
                         client.loadPaymentData(paymentDataRequest)
                         ->then(
                           json => {
+                            DemoTelemetry.emit(
+                              ~flow="google_pay",
+                              ~eventName="google_pay_sheet_authorized",
+                              ~payload=[
+                                ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+                                ("response", json->anyTypeToJson),
+                              ]->getJsonFromArrayOfJson,
+                              (),
+                            )
                             let msg =
                               [
                                 ("gpayResponse", json->anyTypeToJson),
@@ -1365,6 +1383,15 @@ let make = (
                         )
                         ->catch(
                           err => {
+                            DemoTelemetry.emit(
+                              ~flow="google_pay",
+                              ~eventName="google_pay_sheet_cancelled",
+                              ~payload=[
+                                ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+                                ("error", err->anyTypeToJson),
+                              ]->getJsonFromArrayOfJson,
+                              (),
+                            )
                             logger.setLogInfo(
                               ~value=err->anyTypeToJson->JSON.stringify,
                               ~eventName=GOOGLE_PAY_FLOW,
