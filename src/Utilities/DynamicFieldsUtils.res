@@ -238,7 +238,8 @@ let usePaymentMethodTypeFromList = (
 let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
   let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let userCountryName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let country = Utils.getCountryCode(userCountryName).isoAlpha2
 
   let rawConfigs = sdkConfigsValue.raw_configs
   let getSuperpositionFinalFields = ConfigurationService.useConfigurationService(~rawConfigs)
@@ -291,6 +292,15 @@ let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
   }, (rawConfigs, configPaymentMethodType, eligibleConnectors, superpositionBaseContext))
 
   (requiredFields, missingRequiredFields, initialValues, resolutionContext)
+}
+
+let useAreWalletRequiredFieldsPrefilled = (~paymentMethodType) => {
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let (_, missingRequiredFields, _, _) = useSuperpositionRequiredFields(
+    ~paymentMethod="wallet",
+    ~paymentMethodType,
+  )
+  removeBillingDetailsIfUseBillingAddress(missingRequiredFields, billingAddress)->Array.length == 0
 }
 
 let splitName = (str: option<string>) => {
