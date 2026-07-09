@@ -176,19 +176,15 @@ let buildSuperpositionBaseContext = (
   ~contextUsed: option<SdkConfigTypes.contextUsed>,
 ) => {
   let mandateType = switch paymentMethodListValue.payment_type {
-  | NEW_MANDATE => "new_mandate"
-  | SETUP_MANDATE => "setup_mandate"
+  | NEW_MANDATE => "mandate"
+  | SETUP_MANDATE => "mandate"
   | NORMAL => "non_mandate"
   | NONE => "non_mandate"
   }
 
   let profile = accountConfig->Option.flatMap(ac => ac.profile)
   let collectBilling = SdkConfigParser.getCollectBillingDetailsFromWalletConnector(profile)
-    ? "true"
-    : "false"
   let collectShipping = SdkConfigParser.getCollectShippingDetailsFromWalletConnector(profile)
-    ? "true"
-    : "false"
   let (profileId, processorMerchantId, organizationId) = SdkConfigParser.getProfileContext(
     contextUsed,
   )
@@ -198,8 +194,8 @@ let buildSuperpositionBaseContext = (
     payment_method_type: paymentMethodType,
     country,
     mandate_type: mandateType,
-    collect_shipping_details_from_wallet_connector: collectShipping,
-    collect_billing_details_from_wallet_connector: collectBilling,
+    always_collect_shipping_details_from_wallet_connector: collectShipping,
+    always_collect_billing_details_from_wallet_connector: collectBilling,
     profile_id: ?profileId,
     processor_merchant_id: ?processorMerchantId,
     organization_id: ?organizationId,
