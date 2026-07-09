@@ -12,6 +12,17 @@ type superpositionResolutionContext = {
 
 let billingPrefix = "payment_method_data.billing."
 
+let filterByActiveFields = (
+  flatValues: Dict.t<JSON.t>,
+  activeFields: array<SuperpositionTypes.fieldConfig>,
+): Dict.t<JSON.t> =>
+  activeFields
+  ->Array.filterMap(field => {
+    let path = field.confirmRequestWritePath
+    flatValues->Dict.get(path)->Option.map(value => (path, value))
+  })
+  ->Dict.fromArray
+
 // Derive a stable, locale-independent test id from a field's write path,
 // e.g. "payment_method_data.billing.address.line1" -> "line1".
 let getFieldTestId = (path: string): string => {
