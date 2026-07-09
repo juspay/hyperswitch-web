@@ -11,25 +11,8 @@ let checkAndAppend = (selector, child) => {
   }
 }
 
-if (
-  Window.querySelectorAll(`script[src="${GlobalVars.sentryScriptUrl}"]`)->Array.length === 0 &&
-    GlobalVars.sentryScriptUrl->typeof !== #undefined
-) {
-  try {
-    let script = Window.createElement("script")
-    script->Window.elementSrc(GlobalVars.sentryScriptUrl)
-    script->Window.elementOnerror(err => {
-      Console.error2("ERROR DURING LOADING Sentry on HyperLoader", err)
-    })
-    script->Window.elementOnload(() => {
-      Sentry.initiateSentryJs(~dsn=GlobalVars.sentryDSN)
-    })
-    Window.window->Window.windowOnload(_ => {
-      Window.body->Window.appendChild(script)
-    })
-  } catch {
-  | e => Console.error2("Sentry load exited", e)
-  }
+if GlobalVars.sentryDSN->typeof !== #undefined {
+  Sentry.initiateSentryJs(~dsn=GlobalVars.sentryDSN)
 }
 
 let preloadFile = (~type_, ~href=``) => {
