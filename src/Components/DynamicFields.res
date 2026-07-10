@@ -163,11 +163,6 @@ let make = (
   let {billingAddress, redirectionInfo, defaultValues} = Recoil.useRecoilValueFromAtom(optionAtom)
   let syncEmitAddressAtoms = DynamicFieldsUtils.useSyncEmitAddressAtoms()
 
-  React.useEffect(() => {
-    setRequiredFieldsBody(_ => Dict.make())
-    None
-  }, [paymentMethodType])
-
   let intentData = paymentMethodListValue.intent_data.intentDataObject
 
   let (
@@ -176,7 +171,11 @@ let make = (
     superpositionInitialValues,
     resolutionContext,
   ) = DynamicFieldsUtils.useSuperpositionRequiredFields(~paymentMethod, ~paymentMethodType)
-  let initialValues = React.useMemo(() => superpositionInitialValues, [intentData])
+  let initialValues = React.useMemo(() => superpositionInitialValues, (intentData, paymentMethodType))
+  React.useEffect(() => {
+    setRequiredFieldsBody(prev => prev->filterByActiveFields(requiredFields))
+    None
+  }, [requiredFields])
 
   let missingRequiredFieldsFiltered = React.useMemo(() => {
     let afterBillingFilter = removeBillingDetailsIfUseBillingAddress(
@@ -218,7 +217,7 @@ let make = (
     })
   }, (missingRequiredFields, billingAddress.isUseBillingAddress))
 
-  let finalInitialValues = React.useMemo(() => {
+  let initialValuesWithBillingDataOverride = React.useMemo(() => {
     DynamicFieldsUtils.applyBillingDetailsOverride(initialValues, defaultValues.billingDetails)
   }, (initialValues, defaultValues.billingDetails))
 
@@ -275,6 +274,7 @@ let make = (
     redirectionInfo === ShowRedirectionInfo
 
   let hasAnyField = missingRequiredFieldsFiltered->Array.length > 0
+  let shouldRenderForm = hasAnyField || initialValuesWithBillingDataOverride->Dict.keysToArray->Array.length > 0
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
 
@@ -286,6 +286,16 @@ let make = (
     None
   }, (isSavedCardFlow, hasAnyField))
 
+  // When a form renders, FormBody's onFormChange fully replaces requiredFieldsBody, so switching
+  // methods is handled automatically. When no form renders, FormBody is unmounted and nothing
+  // overwrites the body, so we clear it here to avoid leaking the previous method's values.
+  React.useEffect(() => {
+    if !shouldRenderForm {
+      setRequiredFieldsBody(_ => Dict.make())
+    }
+    None
+  }, (paymentMethodType, shouldRenderForm))
+
   // Log which dynamic fields are being rendered for the current payment method.
   DynamicFieldsUtils.useLogDynamicFieldsRendered(
     ~fields=missingRequiredFieldsFiltered,
@@ -295,9 +305,9 @@ let make = (
   )
 
   <>
-    <RenderIf condition={!isSavedCardFlow && hasAnyField}>
+    <RenderIf condition={!isSavedCardFlow && shouldRenderForm}>
       <ReactFinalForm.Form
-        initialValues={Some(finalInitialValues)}
+        initialValues={Some(initialValuesWithBillingDataOverride)}
         onSubmit={_values => ()}
         render={formProps =>
           <FormBody
