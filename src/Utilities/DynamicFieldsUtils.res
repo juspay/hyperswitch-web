@@ -318,11 +318,13 @@ let useAreWalletRequiredFieldsPrefilled = (~paymentMethodType) => {
   )
   // Billing is collected via the wallet sheet, so it must not block the wallet prefilled-gate
   // when isUseBillingAddress is set.
-  let relevant = billingAddress.isUseBillingAddress
-    ? missingRequiredFields->Array.filter(field =>
-        !(field.confirmRequestWritePath->String.startsWith(billingPrefix))
-      )
-    : missingRequiredFields
+  let relevant = if billingAddress.isUseBillingAddress {
+    missingRequiredFields->Array.filter(field =>
+      !(field.confirmRequestWritePath->String.startsWith(billingPrefix))
+    )
+  } else {
+    missingRequiredFields
+  }
   relevant->Array.length == 0
 }
 

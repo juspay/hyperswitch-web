@@ -180,8 +180,6 @@ let make = (
       billingAddress.usePrefilledValues,
     ),
   )
-  let setFilteredRequiredFieldsBody = setter =>
-    setRequiredFieldsBody(prev => setter(prev)->filterByActiveFields(requiredFields))
 
   React.useEffect(() => {
     setRequiredFieldsBody(prev => prev->filterByActiveFields(requiredFields))
@@ -280,7 +278,8 @@ let make = (
     redirectionInfo === ShowRedirectionInfo
 
   let hasAnyField = missingRequiredFieldsFiltered->Array.length > 0
-  let shouldRenderForm = hasAnyField || initialValuesWithBillingDataOverride->Dict.keysToArray->Array.length > 0
+  let shouldRenderForm =
+    hasAnyField || initialValuesWithBillingDataOverride->Dict.keysToArray->Array.length > 0
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
 
