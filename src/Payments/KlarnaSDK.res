@@ -49,7 +49,8 @@ let make = (~sessionObj: SessionsType.token) => {
   )
 
   DynamicFieldsUtils.useLogDynamicFieldsRendered(
-    ~fields=requiredFields,
+    ~renderedFields=requiredFields,
+    ~requiredFields,
     ~paymentMethod,
     ~resolutionContext,
   )

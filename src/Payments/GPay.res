@@ -89,7 +89,8 @@ let make = (
   )
 
   DynamicFieldsUtils.useLogDynamicFieldsRendered(
-    ~fields=requiredFields,
+    ~renderedFields=requiredFields,
+    ~requiredFields,
     ~paymentMethod,
     ~resolutionContext,
   )

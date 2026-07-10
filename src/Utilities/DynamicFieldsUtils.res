@@ -539,8 +539,30 @@ let applyBillingDetailsOverride = (
   initialValues
 }
 
+let fieldConfigToJson = (field: SuperpositionTypes.fieldConfig) =>
+  [
+    ("field_type", (field.fieldRenderType :> string)->JSON.Encode.string),
+    ("write_path", field.confirmRequestWritePath->JSON.Encode.string),
+    (
+      "intent_data_read_path",
+      field.intentDataReadPath->Option.map(JSON.Encode.string)->Option.getOr(JSON.Null),
+    ),
+    ("is_required", field.isRequired->JSON.Encode.bool),
+    (
+      "validation_rule_type",
+      field.validationRuleType->Option.map(JSON.Encode.string)->Option.getOr(JSON.Null),
+    ),
+    (
+      "validation_regex_pattern",
+      field.validationRegexPattern->Option.map(JSON.Encode.string)->Option.getOr(JSON.Null),
+    ),
+  ]
+  ->Dict.fromArray
+  ->JSON.Encode.object
+
 let useLogDynamicFieldsRendered = (
-  ~fields: array<SuperpositionTypes.fieldConfig>,
+  ~renderedFields: array<SuperpositionTypes.fieldConfig>,
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>,
   ~paymentMethod: string,
   ~resolutionContext,
   ~isSavedCardFlow=false,
@@ -563,40 +585,15 @@ let useLogDynamicFieldsRendered = (
       let dedupeKey = paymentMethod ++ "|" ++ configPaymentMethodType
       if lastLoggedKey.current !== dedupeKey {
         lastLoggedKey.current = dedupeKey
-        let fieldsJson =
-          fields
-          ->Array.map(field =>
-            [
-              ("field_type", (field.fieldRenderType :> string)->JSON.Encode.string),
-              ("write_path", field.confirmRequestWritePath->JSON.Encode.string),
-              (
-                "intent_data_read_path",
-                field.intentDataReadPath
-                ->Option.map(JSON.Encode.string)
-                ->Option.getOr(JSON.Null),
-              ),
-              ("is_required", field.isRequired->JSON.Encode.bool),
-              (
-                "validation_rule_type",
-                field.validationRuleType->Option.map(JSON.Encode.string)->Option.getOr(JSON.Null),
-              ),
-              (
-                "validation_regex_pattern",
-                field.validationRegexPattern
-                ->Option.map(JSON.Encode.string)
-                ->Option.getOr(JSON.Null),
-              ),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object
-          )
-          ->JSON.Encode.array
+        let renderedFieldsJson = renderedFields->Array.map(fieldConfigToJson)->JSON.Encode.array
+        let requiredFieldsJson = requiredFields->Array.map(fieldConfigToJson)->JSON.Encode.array
         let payload =
           [
             ("superposition_base_context", superpositionBaseContext->Identity.anyTypeToJson),
             ("eligible_connectors", eligibleConnectors->JSON.Encode.array),
-            ("field_count", fields->Array.length->JSON.Encode.int),
-            ("fields", fieldsJson),
+            ("field_count", renderedFields->Array.length->JSON.Encode.int),
+            ("rendered_fields", renderedFieldsJson),
+            ("superposition_required_fields", requiredFieldsJson),
           ]
           ->Dict.fromArray
           ->JSON.Encode.object
@@ -610,7 +607,8 @@ let useLogDynamicFieldsRendered = (
     }
     None
   }, (
-    fields,
+    renderedFields,
+    requiredFields,
     paymentMethod,
     configPaymentMethodType,
     rawConfigs,

@@ -349,7 +349,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   )
 
   DynamicFieldsUtils.useLogDynamicFieldsRendered(
-    ~fields=requiredFields,
+    ~renderedFields=requiredFields,
+    ~requiredFields,
     ~paymentMethod,
     ~resolutionContext,
   )

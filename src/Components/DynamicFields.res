@@ -303,7 +303,8 @@ let make = (
 
   // Log which dynamic fields are being rendered for the current payment method.
   DynamicFieldsUtils.useLogDynamicFieldsRendered(
-    ~fields=missingRequiredFieldsFiltered,
+    ~renderedFields=missingRequiredFieldsFiltered,
+    ~requiredFields,
     ~paymentMethod,
     ~resolutionContext,
     ~isSavedCardFlow,
