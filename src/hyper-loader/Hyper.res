@@ -230,6 +230,55 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     | None => ()
     }
 
+    // Parse customConfig fields from first arg (HyperswitchConfiguration /
+    // HyperswitchPlatformConfiguration). Applied after customBackendUrl so they take precedence.
+    let customConfigDict = switch keys->JSON.Classify.classify {
+    | Object(json) => json->Dict.get("customConfig")->Option.flatMap(JSON.Decode.object)
+    | _ => None
+    }
+
+    switch customConfigDict {
+    | Some(config) =>
+      let getFieldStr = key =>
+        config->Dict.get(key)->Option.flatMap(JSON.Decode.string)->Option.getOr("")
+      let customEndpoint = getFieldStr("customEndpoint")
+      let overrideCustomBackendEndpoint = getFieldStr("overrideCustomBackendEndpoint")
+      let overrideCustomAssetsEndpoint = getFieldStr("overrideCustomAssetsEndpoint")
+      let overrideCustomSDKConfigEndpoint = getFieldStr("overrideCustomSDKConfigEndpoint")
+      let overrideCustomConfirmEndpoint = getFieldStr("overrideCustomConfirmEndpoint")
+      let overrideCustomAirborneEndpoint = getFieldStr("overrideCustomAirborneEndpoint")
+      let overrideCustomLoggingEndpoint = getFieldStr("overrideCustomLoggingEndpoint")
+      customEndpoint === "" ? () : ApiEndpoint.setApiEndPoint(customEndpoint)
+      overrideCustomBackendEndpoint === ""
+        ? ()
+        : ApiEndpoint.setBackendOverrideEndPoint(overrideCustomBackendEndpoint)
+      overrideCustomAssetsEndpoint === ""
+        ? ()
+        : ApiEndpoint.setAssetsEndPoint(overrideCustomAssetsEndpoint)
+      overrideCustomSDKConfigEndpoint === ""
+        ? ()
+        : ApiEndpoint.setSdkConfigEndPoint(overrideCustomSDKConfigEndpoint)
+      overrideCustomConfirmEndpoint === ""
+        ? ()
+        : ApiEndpoint.setConfirmOverrideEndPoint(overrideCustomConfirmEndpoint)
+      overrideCustomAirborneEndpoint === ""
+        ? ()
+        : ApiEndpoint.setAirborneEndPoint(overrideCustomAirborneEndpoint)
+      overrideCustomLoggingEndpoint === ""
+        ? ()
+        : ApiEndpoint.setLoggingOverrideEndPoint(overrideCustomLoggingEndpoint)
+    | None => ()
+    }
+
+    // Parse platformPublishableKey (HyperswitchPlatformConfiguration)
+    let platformPublishableKeyVal = switch keys->JSON.Classify.classify {
+    | Object(json) => json->getString("platformPublishableKey", "")
+    | _ => ""
+    }
+    platformPublishableKeyVal === ""
+      ? ()
+      : ApiEndpoint.setPlatformPublishableKey(platformPublishableKeyVal)
+
     {
       () => {
         logger.setMerchantId(publishableKey)
@@ -571,6 +620,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.getOr(JSON.Encode.null)
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
+          ~platformPublishableKey=platformPublishableKeyVal,
           ~redirectionFlags,
           ~isTestMode,
           ~preloadSDKWithParams,
@@ -624,6 +674,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.getOr(JSON.Encode.null)
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
+          ~platformPublishableKey=platformPublishableKeyVal,
         )
       }
 

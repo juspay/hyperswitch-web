@@ -65,10 +65,13 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   let authenticationIdVal = params.authenticationId->Option.getOr("")
   let merchantId = params.merchantId->Option.getOr("")
 
-  let baseUrl =
+  let baseUrl = switch apiCallType {
+  | FetchSdkConfigs => ApiEndpoint.getSdkConfigEndPoint(~publishableKey=publishableKeyVal)
+  | _ =>
     customBackendBaseUrl->Option.getOr(
       ApiEndpoint.getApiEndPoint(~publishableKey=publishableKeyVal),
     )
+  }
 
   let isRetrieveIntent = switch apiCallType {
   | RetrievePaymentIntent => true

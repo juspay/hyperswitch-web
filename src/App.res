@@ -130,6 +130,8 @@ let make = () => {
         let isTestMode = getQueryParamsDictforKey(url.search, "isTestMode") === "true"
         let isSdkParamsEnabled =
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
+        let platformPublishableKey =
+          getQueryParamsDictforKey(url.search, "platformPublishableKey")
 
         <PreMountLoader
           publishableKey
@@ -143,6 +145,7 @@ let make = () => {
           customPodUri
           isTestMode
           isSdkParamsEnabled
+          platformPublishableKey
         />
       }
     | "achBankTransfer"

@@ -151,7 +151,14 @@ module PreMountLoaderForElements = {
     ~customPodUri,
     ~isTestMode=false,
     ~isSdkParamsEnabled=false,
+    ~platformPublishableKey="",
   ) => {
+    // Set the platform key immediately, before the eager API calls inside
+    // getMessageHandlerV1Elements fire, so that getHeaders() can include it.
+    if platformPublishableKey !== "" {
+      ApiEndpoint.setPlatformPublishableKey(platformPublishableKey)
+    }
+
     useMessageHandler(() =>
       getMessageHandlerV1Elements(
         ~sdkAuthorization,
@@ -194,6 +201,7 @@ let make = (
   ~customPodUri,
   ~isTestMode=false,
   ~isSdkParamsEnabled=false,
+  ~platformPublishableKey="",
 ) => {
   let logger = HyperLogger.make(
     ~sessionId,
@@ -214,6 +222,7 @@ let make = (
       customPodUri
       isTestMode
       isSdkParamsEnabled
+      platformPublishableKey
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements logger endpoint customPodUri pmSessionId sdkAuthorization />
