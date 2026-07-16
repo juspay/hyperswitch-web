@@ -171,26 +171,30 @@ let make = (
     superpositionInitialValues,
     resolutionContext,
   ) = DynamicFieldsUtils.useSuperpositionRequiredFields(~paymentMethod, ~paymentMethodType)
-  let initialValues = React.useMemo(() => superpositionInitialValues, (intentData, paymentMethodType))
+  let initialValues = React.useMemo(
+    () => superpositionInitialValues,
+    (
+      intentData,
+      paymentMethodType,
+      billingAddress.isUseBillingAddress,
+      billingAddress.usePrefilledValues,
+    ),
+  )
+
   React.useEffect(() => {
     setRequiredFieldsBody(prev => prev->filterByActiveFields(requiredFields))
     None
   }, [requiredFields])
 
   let missingRequiredFieldsFiltered = React.useMemo(() => {
-    let afterBillingFilter = removeBillingDetailsIfUseBillingAddress(
-      missingRequiredFields,
-      billingAddress,
-    )
-
     let firstEmailPath =
-      afterBillingFilter
+      missingRequiredFields
       ->Array.filter(fieldConfig => fieldConfig.fieldRenderType === Email)
       ->Array.get(0)
       ->Option.map(fieldConfig => fieldConfig.confirmRequestWritePath)
 
     let firstCardHolderNamePath =
-      afterBillingFilter
+      missingRequiredFields
       ->Array.filter(fieldConfig => fieldConfig.fieldRenderType === CardHolderName)
       ->Array.get(0)
       ->Option.map(fieldConfig => fieldConfig.confirmRequestWritePath)
@@ -199,7 +203,7 @@ let make = (
     //   - Any card-data fields (card_exp_month, card_exp_year, card_network, etc.)
     //   - Duplicate Email / CardHolderName fields (only the first path is rendered)
     //   - Dropdown fields with no options (would render React.null anyway)
-    afterBillingFilter->Array.filter(field => {
+    missingRequiredFields->Array.filter(field => {
       switch field.fieldRenderType {
       | CardNumber
       | Cvc
@@ -215,7 +219,7 @@ let make = (
       | _ => true
       }
     })
-  }, (missingRequiredFields, billingAddress.isUseBillingAddress))
+  }, [missingRequiredFields])
 
   let initialValuesWithBillingDataOverride = React.useMemo(() => {
     DynamicFieldsUtils.applyBillingDetailsOverride(initialValues, defaultValues.billingDetails)
@@ -274,7 +278,8 @@ let make = (
     redirectionInfo === ShowRedirectionInfo
 
   let hasAnyField = missingRequiredFieldsFiltered->Array.length > 0
-  let shouldRenderForm = hasAnyField || initialValuesWithBillingDataOverride->Dict.keysToArray->Array.length > 0
+  let shouldRenderForm =
+    hasAnyField || initialValuesWithBillingDataOverride->Dict.keysToArray->Array.length > 0
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
 
