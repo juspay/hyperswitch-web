@@ -37,7 +37,7 @@ const copyChromeProfile = async () => {
     const profileName = process.env.GPAY_SOURCE_PROFILE || 'Default';
     const sourceProfile = path.join(sourceRoot, profileName);
     const targetRoot = path.resolve(
-        process.env.GPAY_PROFILE_DIR || path.join(os.homedir(), 'puppeteer-chrome-profile'),
+        process.env.GPAY_PROFILE_DIR || path.resolve(__dirname, '..', '..', 'puppeteer-chrome-profile'),
     );
     const targetProfile = path.join(targetRoot, 'Default');
 

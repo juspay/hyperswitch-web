@@ -45,4 +45,4 @@ The default paths work with a standard Google Chrome installation and its `Defau
 - `CHROME_PATH`: Chrome executable used to run the test.
 - `CHROME_USER_DATA_DIR`: source Chrome user-data directory used during profile setup.
 - `GPAY_SOURCE_PROFILE`: source profile folder name. Defaults to `Default`.
-- `GPAY_PROFILE_DIR`: destination copied profile. Defaults to `~/puppeteer-chrome-profile`.
+- `GPAY_PROFILE_DIR`: destination copied profile. By default, `puppeteer-chrome-profile` is created next to the repository, outside it.

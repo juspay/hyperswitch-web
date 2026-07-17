@@ -9,6 +9,6 @@
     "test": "node gpay-test.js"
   },
   "devDependencies": {
-    "puppeteer-core": "^25.3.0"
+    "puppeteer-core": "^24.43.1"
   }
 }
