@@ -1,8 +1,10 @@
-# Google Pay Wallet Automation
+# Puppeteer Tests
 
-This folder contains a standalone Puppeteer automation script for the Google Pay wallet flow.
+This folder contains standalone Puppeteer automation tests. Each test flow is kept in its own folder so additional payment-method tests can be added without affecting the application or Cypress tests.
 
-The script is not part of the standard Cypress run. It launches Google Chrome with a copied Chrome user profile, opens the Hyperswitch demo store, enters the payment element iframe, clicks Google Pay, confirms the Google Pay sheet, and verifies that the demo page shows `Payment succeeded`.
+## Google Pay
+
+The Google Pay test is located in `googlepay/gpay-test.js`. It is not part of the standard Cypress run. It launches Google Chrome with a copied Chrome user profile, opens the Hyperswitch demo store, enters the payment element iframe, clicks Google Pay, confirms the Google Pay sheet, and verifies that the demo page shows `Payment succeeded`.
 
 ## Prerequisites
 
@@ -19,13 +21,13 @@ Each command works on macOS, Linux, Windows Command Prompt, and Windows PowerShe
 1. Install the test dependencies:
 
 ```text
-npm --prefix googlepay-test install
+npm --prefix puppeteer-tests install
 ```
 
 2. Close Chrome, then create the test profile:
 
 ```text
-npm --prefix googlepay-test run profile:setup
+npm --prefix puppeteer-tests run profile:setup
 ```
 
 Run this command again whenever the signed-in Chrome profile needs to be refreshed. It replaces the previous copied profile.
@@ -33,7 +35,7 @@ Run this command again whenever the signed-in Chrome profile needs to be refresh
 3. Run the Google Pay test:
 
 ```text
-npm --prefix googlepay-test test
+npm --prefix puppeteer-tests run test:googlepay
 ```
 
 The test launches Chrome, completes the wallet flow, and reports whether the demo page shows `Payment succeeded`.

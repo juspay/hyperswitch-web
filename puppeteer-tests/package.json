@@ -1,12 +1,11 @@
 {
-  "name": "googlepay-test",
+  "name": "puppeteer-tests",
   "version": "1.0.0",
   "private": true,
-  "description": "Standalone Google Pay wallet automation",
-  "main": "gpay-test.js",
+  "description": "Standalone Puppeteer payment automation tests",
   "scripts": {
     "profile:setup": "node setup-profile.js",
-    "test": "node gpay-test.js"
+    "test:googlepay": "node googlepay/gpay-test.js"
   },
   "devDependencies": {
     "puppeteer-core": "^24.43.1"

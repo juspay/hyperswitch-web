@@ -16,7 +16,8 @@ const getDefaultChromePath = () => {
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 (async () => {
-    const PROFILE_DIR = process.env.GPAY_PROFILE_DIR || path.resolve(__dirname, '..', '..', 'puppeteer-chrome-profile');
+    const PROFILE_DIR =
+        process.env.GPAY_PROFILE_DIR || path.resolve(__dirname, '..', '..', '..', 'puppeteer-chrome-profile');
     const CHROME_PATH = process.env.CHROME_PATH || getDefaultChromePath();
     const DEMO_URL = 'https://hyperswitch-demo-store.netlify.app';
 
