@@ -1,90 +1,48 @@
 # Google Pay Wallet Automation
 
-This folder contains a standalone Puppeteer automation script for the Google Pay wallet flow:
-
-```sh
-node googlepay-test/gpay-test.js
-```
+This folder contains a standalone Puppeteer automation script for the Google Pay wallet flow.
 
 The script is not part of the standard Cypress run. It launches Google Chrome with a copied Chrome user profile, opens the Hyperswitch demo store, enters the payment element iframe, clicks Google Pay, confirms the Google Pay sheet, and verifies that the demo page shows `Payment succeeded`.
 
 ## Prerequisites
 
 - Run commands from the repository root.
-- Install root dependencies with `npm install`.
 - Install Google Chrome.
 - Use a Chrome profile that is already signed in to a Google account and can complete Google Pay on the demo store.
 - Close Chrome before copying or refreshing the profile.
 - Keep the copied profile local. It can contain login/session data and must not be committed or shared.
 
-The test reads these optional environment variables:
+## Setup and run
 
-- `CHROME_PATH`: path to the Chrome executable.
-- `GPAY_PROFILE_DIR`: copied Chrome user-data directory. Defaults to `~/puppeteer-chrome-profile`.
+Each command works on macOS, Linux, Windows Command Prompt, and Windows PowerShell.
 
-## macOS
+1. Install the test dependencies:
 
-Create the copied profile:
-
-```sh
-rm -rf "$HOME/puppeteer-chrome-profile"
-mkdir -p "$HOME/puppeteer-chrome-profile/Default"
-rsync -a --exclude='Cache/' --exclude='Code Cache/' --exclude='GPUCache/' --exclude='Service Worker/' --exclude='ShaderCache/' --exclude='GrShaderCache/' --exclude='GraphiteDawnCache/' "$HOME/Library/Application Support/Google/Chrome/Default/" "$HOME/puppeteer-chrome-profile/Default/"
-cp "$HOME/Library/Application Support/Google/Chrome/Local State" "$HOME/puppeteer-chrome-profile/"
+```text
+npm --prefix googlepay-test install
 ```
 
-Refresh the profile and run the test:
+2. Close Chrome, then create the test profile:
 
-```sh
-rsync -a --delete --exclude='Cache/' --exclude='Code Cache/' --exclude='GPUCache/' --exclude='Service Worker/' --exclude='ShaderCache/' --exclude='GrShaderCache/' --exclude='GraphiteDawnCache/' "$HOME/Library/Application Support/Google/Chrome/Default/" "$HOME/puppeteer-chrome-profile/Default/"
-cp "$HOME/Library/Application Support/Google/Chrome/Local State" "$HOME/puppeteer-chrome-profile/"
-node googlepay-test/gpay-test.js
+```text
+npm --prefix googlepay-test run profile:setup
 ```
 
-## Linux
+Run this command again whenever the signed-in Chrome profile needs to be refreshed. It replaces the previous copied profile.
 
-Create the copied profile:
+3. Run the Google Pay test:
 
-```sh
-rm -rf "$HOME/puppeteer-chrome-profile"
-mkdir -p "$HOME/puppeteer-chrome-profile/Default"
-rsync -a --exclude='Cache/' --exclude='Code Cache/' --exclude='GPUCache/' --exclude='Service Worker/' --exclude='ShaderCache/' --exclude='GrShaderCache/' --exclude='GraphiteDawnCache/' "$HOME/.config/google-chrome/Default/" "$HOME/puppeteer-chrome-profile/Default/"
-cp "$HOME/.config/google-chrome/Local State" "$HOME/puppeteer-chrome-profile/"
+```text
+npm --prefix googlepay-test test
 ```
 
-Refresh the profile and run the test:
+The test launches Chrome, completes the wallet flow, and reports whether the demo page shows `Payment succeeded`.
 
-```sh
-rsync -a --delete --exclude='Cache/' --exclude='Code Cache/' --exclude='GPUCache/' --exclude='Service Worker/' --exclude='ShaderCache/' --exclude='GrShaderCache/' --exclude='GraphiteDawnCache/' "$HOME/.config/google-chrome/Default/" "$HOME/puppeteer-chrome-profile/Default/"
-cp "$HOME/.config/google-chrome/Local State" "$HOME/puppeteer-chrome-profile/"
-CHROME_PATH="/usr/bin/google-chrome" node googlepay-test/gpay-test.js
-```
+## Optional configuration
 
-If Chrome is installed somewhere else, update `CHROME_PATH`.
+The default paths work with a standard Google Chrome installation and its `Default` profile. These environment variables can override them:
 
-## Windows PowerShell
-
-Create the copied profile:
-
-```powershell
-$Source = "$env:LOCALAPPDATA\Google\Chrome\User Data"
-$Target = "$env:USERPROFILE\puppeteer-chrome-profile"
-Remove-Item -Recurse -Force $Target -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force "$Target\Default" | Out-Null
-robocopy "$Source\Default" "$Target\Default" /E /XD "Cache" "Code Cache" "GPUCache" "Service Worker" "ShaderCache" "GrShaderCache" "GraphiteDawnCache"
-Copy-Item "$Source\Local State" "$Target\" -Force
-```
-
-Refresh the profile and run the test:
-
-```powershell
-$Source = "$env:LOCALAPPDATA\Google\Chrome\User Data"
-$Target = "$env:USERPROFILE\puppeteer-chrome-profile"
-robocopy "$Source\Default" "$Target\Default" /MIR /XD "Cache" "Code Cache" "GPUCache" "Service Worker" "ShaderCache" "GrShaderCache" "GraphiteDawnCache"
-Copy-Item "$Source\Local State" "$Target\" -Force
-$env:GPAY_PROFILE_DIR = $Target
-$env:CHROME_PATH = "$env:ProgramFiles\Google\Chrome\Application\chrome.exe"
-node googlepay-test/gpay-test.js
-```
-
-`robocopy` may return exit code `1` even when files were copied successfully. If Chrome is installed under `Program Files (x86)`, set `CHROME_PATH` to that `chrome.exe` path before running the script.
+- `CHROME_PATH`: Chrome executable used to run the test.
+- `CHROME_USER_DATA_DIR`: source Chrome user-data directory used during profile setup.
+- `GPAY_SOURCE_PROFILE`: source profile folder name. Defaults to `Default`.
+- `GPAY_PROFILE_DIR`: destination copied profile. Defaults to `~/puppeteer-chrome-profile`.
