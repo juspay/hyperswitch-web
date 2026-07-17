@@ -93,6 +93,10 @@ let make = () => {
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
       <PaymentMethodCollectElement integrateError logger />
     </LoaderController>
+  | "paymentMethodsSDK" =>
+    <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
+      <PaymentMethodsSDK />
+    </LoaderController>
   | _ =>
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />

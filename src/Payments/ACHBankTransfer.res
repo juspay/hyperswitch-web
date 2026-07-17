@@ -9,27 +9,23 @@ let make = () => {
   let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let setComplete = Recoil.useSetRecoilState(fieldsComplete)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  let complete = email.value != "" && email.isValid->Option.getOr(false)
-  let empty = email.value == ""
+  let complete = areRequiredFieldsValid && !areRequiredFieldsEmpty
+  let empty = areRequiredFieldsEmpty
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
-
-  React.useEffect(() => {
-    setComplete(_ => complete)
-    None
-  }, [complete])
+  SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if complete {
+      if areRequiredFieldsValid && !areRequiredFieldsEmpty {
         let bodyArr =
           PaymentBody.dynamicPaymentBody("bank_transfer", "ach")->mergeAndFlattenToTuples(
             requiredFieldsBody,
@@ -45,7 +41,13 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, isManualRetryEnabled, sdkAuthorization))
+  }, (
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    isManualRetryEnabled,
+    requiredFieldsBody,
+    sdkAuthorization,
+  ))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"

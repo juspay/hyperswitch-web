@@ -1,6 +1,4 @@
 type apiCallV1 =
-  | FetchPaymentMethodList
-  | FetchCustomerPaymentMethodList
   | FetchSessions
   | FetchThreeDsAuth
   | CalculateTax
@@ -14,6 +12,8 @@ type apiCallV1 =
   | FetchEligibilityCheck
   | FetchAuthenticationSync
   | FetchPaymentMethodEligibility
+  | FetchSdkConfigs
+  | FetchClientList
 
 type commonApiParams = {
   publishableKey: option<string>,
@@ -55,7 +55,10 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
 
   let clientSecretVal = clientSecret->Option.getOr("")
   let publishableKeyVal = publishableKey->Option.getOr("")
-  let paymentIntentID = Utils.getPaymentId(clientSecretVal)
+  let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+    ~clientSecret=clientSecretVal,
+    ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
+  )
   let pollIdVal = pollId->Option.getOr("")
   let payoutIdVal = payoutId->Option.getOr("")
 
@@ -84,9 +87,9 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   }->List.filterMap(x => x)
 
   let queryParams = switch apiCallType {
-  | FetchPaymentMethodList
-  | FetchCustomerPaymentMethodList
-  | RetrievePaymentIntent => defaultParams
+  | RetrievePaymentIntent
+  | FetchSdkConfigs
+  | FetchClientList => defaultParams
   | FetchSessions
   | FetchThreeDsAuth
   | CalculateTax
@@ -103,13 +106,11 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   }
 
   let path = switch apiCallType {
-  | FetchPaymentMethodList => "account/payment_methods"
   | FetchSessions => "payments/session_tokens"
-  | FetchThreeDsAuth => `payments/${paymentIntentID}/3ds/authentication`
-  | FetchCustomerPaymentMethodList => "customers/payment_methods"
-  | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
+  | FetchThreeDsAuth => `payments/${paymentIntentId}/3ds/authentication`
+  | CalculateTax => `payments/${paymentIntentId}/calculate_tax`
   | CreatePaymentMethod => "payment_methods"
-  | RetrievePaymentIntent => `payments/${paymentIntentID}`
+  | RetrievePaymentIntent => `payments/${paymentIntentId}`
   | CallAuthLink => "payment_methods/auth/link"
   | CallAuthExchange => "payment_methods/auth/exchange"
   | RetrieveStatus => `poll/status/${pollIdVal}`
@@ -118,7 +119,9 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
     `authentication/${authenticationIdVal}/enabled_authn_methods_token`
   | FetchEligibilityCheck => `authentication/${authenticationIdVal}/eligibility-check`
   | FetchAuthenticationSync => `authentication/${merchantId}/${authenticationIdVal}/sync`
-  | FetchPaymentMethodEligibility => `payments/${paymentIntentID}/eligibility`
+  | FetchPaymentMethodEligibility => `payments/${paymentIntentId}/eligibility`
+  | FetchSdkConfigs => "v1/sdk/configs/web/sdk_config.json"
+  | FetchClientList => `payments/${paymentIntentId}/client`
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`

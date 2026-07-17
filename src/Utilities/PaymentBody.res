@@ -150,6 +150,69 @@ let savedCardBody = (
   savedCardBody
 }
 
+// Saved-card confirm body for the third-party-vault (e.g. VGS) return-user flow.
+// Identical to `savedCardBody` except the plain `card_cvc` is replaced by the
+// VGS-tokenised CVC alias nested under `payment_method_data.vault_card_token_data`.
+// The CVC iframe only renders for cards that require CVV, so the token is always
+// present here.
+let savedCardVaultCvcBody = (
+  ~paymentToken,
+  ~customerId,
+  ~cvcToken,
+  ~isCustomerAcceptanceRequired,
+) => {
+  let body = [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_token", paymentToken->JSON.Encode.string),
+    ("customer_id", customerId->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [
+        (
+          "card_token",
+          [("card_cvc_token", cvcToken->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
+        ),
+      ]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]
+
+  if isCustomerAcceptanceRequired {
+    body->Array.push(("customer_acceptance", customerAcceptanceBody))->ignore
+  }
+
+  body
+}
+
+// Non-PCI (isPciCompliant=false) counterpart of savedCardVaultCvcBody: the CVC is
+// tokenised by Hyperswitch's hosted vault, so it is sent as vault_card_token / card_cvc.
+let externalSavedCardVaultCvcBody = (
+  ~paymentToken,
+  ~customerId,
+  ~cvcToken,
+  ~isCustomerAcceptanceRequired,
+) => {
+  let body = [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_token", paymentToken->JSON.Encode.string),
+    ("customer_id", customerId->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [
+        (
+          "vault_card_token",
+          [("card_cvc", cvcToken->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
+        ),
+      ]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]
+
+  if isCustomerAcceptanceRequired {
+    body->Array.push(("customer_acceptance", customerAcceptanceBody))->ignore
+  }
+
+  body
+}
+
 let mastercardClickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
   let clickToPayServiceDetails =
     [
@@ -658,7 +721,7 @@ let sofortBody = (~country, ~name, ~email) => [
   ),
 ]
 
-let iDealBody = (~name, ~bankName) => [
+let iDealBody = () => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "ideal"->JSON.Encode.string),
   (
@@ -666,44 +729,19 @@ let iDealBody = (~name, ~bankName) => [
     [
       (
         "bank_redirect",
-        [
-          (
-            "ideal",
-            [
-              (
-                "billing_details",
-                [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-              ),
-              ("bank_name", (bankName == "" ? "american_express" : bankName)->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
+        [("ideal", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
       ),
     ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
-let epsBody = (~name, ~bankName) => [
+let epsBody = () => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "eps"->JSON.Encode.string),
   (
     "payment_method_data",
     [
-      (
-        "bank_redirect",
-        [
-          (
-            "eps",
-            [
-              (
-                "billing_details",
-                [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-              ),
-              ("bank_name", (bankName === "" ? "american_express" : bankName)->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
+      ("bank_redirect", [("eps", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson),
     ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
@@ -821,23 +859,9 @@ let rewardBody = (~paymentMethodType) => [
   ("payment_method_data", "reward"->JSON.Encode.string),
 ]
 
-let fpxOBBody = (~bank) => [
+let fpxOBBody = () => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "online_banking_fpx"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "bank_redirect",
-        [
-          (
-            "online_banking_fpx",
-            [("issuer", bank->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
 ]
 let thailandOBBody = (~bank) => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
@@ -896,6 +920,73 @@ let eftBody = () => {
     ("payment_method", "bank_redirect"->JSON.Encode.string),
     ("payment_method_type", "eft"->JSON.Encode.string),
     ("payment_method_data", paymentMethodData),
+  ]
+}
+
+// Vault card body used when card fields are tokenised via the Cards SDK iframe.
+// Each card field is replaced by the same vault token; last4Digits and binNumber
+// are decoded from the vault API response.
+let vaultCardBody = (~token) => {
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_method_type", "debit"->JSON.Encode.string),
+    ("payment_token", token->JSON.Encode.string),
+  ]
+}
+let vaultExternalCardBody = (~token, ~last4Digits, ~binNumber, ~expiryMonth, ~expiryYear) => {
+  let vaultDataCard =
+    [
+      ("card_cvc", token->JSON.Encode.string),
+      ("card_number", token->JSON.Encode.string),
+      ("card_exp_month", expiryMonth->JSON.Encode.string),
+      ("card_exp_year", expiryYear->JSON.Encode.string),
+      ("last_four", last4Digits->JSON.Encode.string),
+      ("bin_number", binNumber->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_method_type", "debit"->JSON.Encode.string),
+    ("payment_method_data", [("vault_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson),
+  ]
+}
+
+// VGS vault confirm body. Unlike the Hyperswitch vault (single token reused for
+// every field), VGS returns a distinct alias per field, so card_number / exp /
+// cvc are sent separately. last4Digits / binNumber are derived from the (format-
+// preserving) card_number alias by the caller. Mirrors vaultCardBody's shape.
+let vgsVaultCardBody = (~cardNumber, ~month, ~year, ~cvcNumber, ~last4Digits, ~binNumber) => {
+  let vaultDataCard =
+    [
+      ("card_number", cardNumber->JSON.Encode.string),
+      ("card_exp_month", month->JSON.Encode.string),
+      ("card_exp_year", year->JSON.Encode.string),
+      ("card_cvc", cvcNumber->JSON.Encode.string),
+      ("last_four", last4Digits->JSON.Encode.string),
+      ("bin_number", binNumber->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_method_type", "debit"->JSON.Encode.string),
+    ("payment_method_data", [("vault_card", vaultDataCard)]->Utils.getJsonFromArrayOfJson),
+  ]
+}
+
+let cardTokenizationBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {
+  let cardBody = [
+    ("card_number", cardNumber->CardValidations.clearSpaces->JSON.Encode.string),
+    ("card_exp_month", month->JSON.Encode.string),
+    ("card_exp_year", year->JSON.Encode.string),
+    ("card_cvc", cvcNumber->JSON.Encode.string),
+  ]
+
+  [
+    ("payment_method_type", "card"->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [("card", cardBody->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
+    ),
   ]
 }
 
@@ -1008,8 +1099,8 @@ let getPaymentBody = (
   | "afterpay_clearpay" => afterpayRedirectionBody()
   | "crypto_currency" => cryptoBody()
   | "sofort" => sofortBody(~country, ~name=fullName, ~email)
-  | "ideal" => iDealBody(~name=fullName, ~bankName=bank)
-  | "eps" => epsBody(~name=fullName, ~bankName=bank)
+  | "ideal" => iDealBody()
+  | "eps" => epsBody()
   | "blik" => blikBody(~blikCode)
   | "ali_pay"
   | "ali_pay_hk" =>
@@ -1039,7 +1130,7 @@ let getPaymentBody = (
   | "online_banking_slovakia" => slovakiaOB(~bank)
   | "mb_way" => mbWayBody(~phoneNumber)
   | "przelewy24" => p24Body(~email)
-  | "online_banking_fpx" => fpxOBBody(~bank)
+  | "online_banking_fpx" => fpxOBBody()
   | "online_banking_thailand" => thailandOBBody(~bank)
   | "revolut_pay" => revolutPayBody()
   | "classic"

@@ -1,4 +1,5 @@
 let paymentMethodListValue = Recoil.atom("paymentMethodListValue", PaymentMethodsRecord.defaultList)
+let sdkConfigsValue = Recoil.atom("sdkConfigsValue", SdkConfigTypes.defaultSdkConfigValue)
 let paymentManagementListValue = Recoil.atom(
   "paymentManagementListValue",
   UnifiedHelpersV2.defaultPaymentsList,
@@ -12,14 +13,14 @@ let paymentListLookupNew = (
   ~isKlarnaSDKFlow,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ~areAllGooglePayRequiredFieldsPrefilled,
+  ~collectBillingDetailsFromWalletConnector,
   ~isGooglePayReady,
   ~shouldDisplayApplePayInTabs,
   ~shouldDisplayPayPalInTabs,
-  ~localeString,
   ~showWalletsWithOtherPaymentMethods,
   ~showGroupedSavedPaymentMethods,
 ) => {
-  let pmList = list->PaymentMethodsRecord.buildFromPaymentList(~localeString)
+  let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
   let walletToBeDisplayedInTabs = [
     "mb_way",
@@ -51,8 +52,7 @@ let paymentListLookupNew = (
   }
 
   let requiresGooglePayBillingDetails =
-    !paymentMethodListValue.collect_billing_details_from_wallets &&
-    !areAllGooglePayRequiredFieldsPrefilled
+    !collectBillingDetailsFromWalletConnector && !areAllGooglePayRequiredFieldsPrefilled
 
   let shouldDisplayGooglePayInTabs =
     isGooglePayReady && (showWalletsWithOtherPaymentMethods || requiresGooglePayBillingDetails)
@@ -113,129 +113,7 @@ let paymentListLookupNew = (
     otherPaymentList->Utils.removeDuplicate->Utils.sortBasedOnPriority(order),
   )
 }
-type exp = Redirect | SDK
-type paylater = Klarna(exp) | AfterPay(exp) | Affirm(exp)
-type wallet = Gpay(exp) | ApplePay(exp) | Paypal(exp)
-type card = Credit(exp) | Debit(exp)
-type banks = Sofort | Eps | GiroPay | Ideal | EFT
-type transfer = ACH | Sepa | Bacs | Instant
-type connectorType =
-  | PayLater(paylater)
-  | Wallets(wallet)
-  | Cards(card)
-  | Banks(banks)
-  | BankTransfer(transfer)
-  | BankDebit(transfer)
-  | Crypto
 
-let getMethod = method => {
-  switch method {
-  | PayLater(_) => "pay_later"
-  | Wallets(_) => "wallet"
-  | Cards(_) => "card"
-  | Banks(_) => "bank_redirect"
-  | BankTransfer(_) => "bank_transfer"
-  | BankDebit(_) => "bank_debit"
-  | Crypto => "crypto"
-  }
-}
-
-let getMethodType = method => {
-  switch method {
-  | PayLater(val) =>
-    switch val {
-    | Klarna(_) => "klarna"
-    | AfterPay(_) => "afterpay_clearpay"
-    | Affirm(_) => "affirm"
-    }
-  | Wallets(val) =>
-    switch val {
-    | Gpay(_) => "google_pay"
-    | ApplePay(_) => "apple_pay"
-    | Paypal(_) => "paypal"
-    }
-  | Cards(_) => "card"
-  | Banks(val) =>
-    switch val {
-    | Sofort => "sofort"
-    | Eps => "eps"
-    | GiroPay => "giropay"
-    | Ideal => "ideal"
-    | EFT => "eft"
-    }
-  | BankDebit(val)
-  | BankTransfer(val) =>
-    switch val {
-    | ACH => "ach"
-    | Bacs => "bacs"
-    | Sepa => "sepa"
-    | Instant => "instant"
-    }
-  | Crypto => "crypto_currency"
-  }
-}
-let getExperience = (val: exp) => {
-  switch val {
-  | Redirect => "redirect_to_url"
-  | SDK => "invoke_sdk_client"
-  }
-}
-let getPaymentExperienceType = (val: PaymentMethodsRecord.paymentFlow) => {
-  switch val {
-  | RedirectToURL => "redirect_to_url"
-  | InvokeSDK => "invoke_sdk_client"
-  | QrFlow => "display_qr_code"
-  }
-}
-let getExperienceType = method => {
-  switch method {
-  | PayLater(val) =>
-    switch val {
-    | Klarna(val) => val->getExperience
-    | AfterPay(val) => val->getExperience
-    | Affirm(val) => val->getExperience
-    }
-  | Wallets(val) =>
-    switch val {
-    | Gpay(val) => val->getExperience
-    | ApplePay(val) => val->getExperience
-    | Paypal(val) => val->getExperience
-    }
-  | Cards(_) => "card"
-  | Crypto => "redirect_to_url"
-  | _ => ""
-  }
-}
-
-let getConnectors = (list: PaymentMethodsRecord.paymentMethodList, method: connectorType) => {
-  let paymentMethod =
-    list.payment_methods->Array.find(item => item.payment_method == method->getMethod)
-  switch paymentMethod {
-  | Some(val) =>
-    let paymentMethodType =
-      val.payment_method_types->Array.find(item =>
-        item.payment_method_type == method->getMethodType
-      )
-    switch paymentMethodType {
-    | Some(val) =>
-      let experienceType = val.payment_experience->Array.find(item => {
-        item.payment_experience_type->getPaymentExperienceType == method->getExperienceType
-      })
-      let eligibleConnectors = switch experienceType {
-      | Some(val) => val.eligible_connectors
-      | None => []
-      }
-      switch method {
-      | Banks(_) => ([], val.bank_names)
-      | BankTransfer(_) => (val.bank_transfers_connectors, [])
-      | BankDebit(_) => (val.bank_debits_connectors, [])
-      | _ => (eligibleConnectors, [])
-      }
-    | None => ([], [])
-    }
-  | None => ([], [])
-  }
-}
 let getDisplayNameAndIcon = (
   customNames: PaymentType.customMethodNames,
   paymentMethodName,
@@ -292,39 +170,6 @@ let appendedCustomerAcceptance = (~isGuestCustomer, ~paymentType, ~body, ~always
   isAppendingCustomerAcceptance(~isGuestCustomer, ~paymentType, ~alwaysSend)
     ? body->Array.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
     : body
-}
-
-let usePaymentMethodTypeFromList = (
-  ~paymentMethodListValue,
-  ~paymentMethod,
-  ~paymentMethodType,
-) => {
-  React.useMemo(() => {
-    PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~paymentMethodListValue,
-      ~paymentMethod,
-      ~paymentMethodType=getPaymentMethodName(
-        ~paymentMethodType=paymentMethod,
-        ~paymentMethodName=paymentMethodType,
-      ),
-    )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
-  }, (paymentMethodListValue, paymentMethod, paymentMethodType))
-}
-
-let useAreAllRequiredFieldsPrefilled = (
-  ~paymentMethodListValue,
-  ~paymentMethod,
-  ~paymentMethodType,
-) => {
-  let paymentMethodTypes = usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod,
-    ~paymentMethodType,
-  )
-
-  paymentMethodTypes.required_fields->Array.reduce(true, (acc, requiredField) => {
-    acc && requiredField.value != ""
-  })
 }
 
 let getIsKlarnaSDKFlow = sessions => {
@@ -400,10 +245,15 @@ let filterSavedMethodsByWalletReadiness = (
   )
 }
 
-let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
+let useGetPaymentMethodList = (
+  ~paymentType: CardThemeType.mode,
+  ~sessions,
+  ~areAllApplePayRequiredFieldsPrefilled,
+  ~areAllGooglePayRequiredFieldsPrefilled,
+  ~areAllPaypalRequiredFieldsPrefilled,
+) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   let {paymentMethodOrder} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -413,27 +263,11 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
   let isKlarnaSDKFlow = getIsKlarnaSDKFlow(sessions)
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(paymentMethodListValue)
-
-  let areAllApplePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="apple_pay",
-  )
-
-  let areAllGooglePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="google_pay",
-  )
-
-  let areAllPaypalRequiredFieldsPreFilled = useAreAllRequiredFieldsPrefilled(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="paypal",
-  )
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(sdkConfigsValue)
 
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let isVgsScriptReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isVgsScriptReady)
 
   let (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist) = usePaypalFlowStatus(
     ~sessions,
@@ -454,11 +288,14 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     ~savedPaymentMethods: option<array<PaymentType.customerMethods>>,
   ) => {
     let paymentOrder = paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
-    let pList = paymentList->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+    let pList = paymentList->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
+
+    let collectBillingDetailsFromWalletConnector = SdkConfigParser.getCollectBillingDetailsFromWalletConnector(
+      sdkConfigsValue.account_config->Option.flatMap(ac => ac.profile),
+    )
 
     let requiresApplePayBillingDetails =
-      !paymentMethodListValue.collect_billing_details_from_wallets &&
-      !areAllApplePayRequiredFieldsPrefilled
+      !collectBillingDetailsFromWalletConnector && !areAllApplePayRequiredFieldsPrefilled
 
     let shouldDisplayApplePayInTabs =
       isApplePayReady && (showWalletsWithOtherPaymentMethods || requiresApplePayBillingDetails)
@@ -469,8 +306,7 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     }
 
     let requiresPaypalBillingDetails =
-      !paymentMethodListValue.collect_billing_details_from_wallets &&
-      !areAllPaypalRequiredFieldsPreFilled
+      !collectBillingDetailsFromWalletConnector && !areAllPaypalRequiredFieldsPrefilled
 
     let isPaypalEligibleInRedirectFlow =
       isShowPaypal && isPaypalRedirectFlow && (!isPaypalSDKFlow || !isPaypalTokenExist)
@@ -502,10 +338,10 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
         ~isKlarnaSDKFlow,
         ~paymentMethodListValue=pList,
         ~areAllGooglePayRequiredFieldsPrefilled,
+        ~collectBillingDetailsFromWalletConnector,
         ~isGooglePayReady,
         ~shouldDisplayApplePayInTabs,
         ~shouldDisplayPayPalInTabs,
-        ~localeString,
         ~showWalletsWithOtherPaymentMethods,
         ~showGroupedSavedPaymentMethods,
       )
@@ -524,6 +360,8 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
         | "klarna" => !(isKlarnaSDKFlow && isKlarnaInvokeSDKExperience)
         | "apple_pay" => shouldDisplayApplePayInTabs
         | "paypal" => shouldDisplayPayPalInTabs
+        // Drop card when the VGS vault script failed to load (card cannot tokenise).
+        | "card" => isVgsScriptReady
         | _ => true
         }
       })
@@ -558,16 +396,18 @@ let useGetPaymentMethodList = (~paymentType: CardThemeType.mode, ~sessions) => {
     isKlarnaSDKFlow,
     areAllApplePayRequiredFieldsPrefilled,
     areAllGooglePayRequiredFieldsPrefilled,
-    areAllPaypalRequiredFieldsPreFilled,
+    areAllPaypalRequiredFieldsPrefilled,
     isPaypalSDKFlow,
     isPaypalRedirectFlow,
     isPaypalTokenExist,
     isApplePayReady,
     isGooglePayReady,
+    isVgsScriptReady,
     optionAtomValue.customerPaymentMethods,
     optionAtomValue.displaySavedPaymentMethods,
     displayGroupedSavedMethods,
     layoutClass.savedMethodCustomization.hiddenPaymentMethods,
+    sdkConfigsValue.account_config,
   ))
 }
 

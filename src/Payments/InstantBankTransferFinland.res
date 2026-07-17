@@ -24,6 +24,10 @@ let make = () => {
     ~empty=areRequiredFieldsEmpty,
     ~paymentType=paymentMethod,
   )
+  SubscriptionEventHooks.useEmitFormStatus(
+    ~empty=areRequiredFieldsEmpty,
+    ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
+  )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse

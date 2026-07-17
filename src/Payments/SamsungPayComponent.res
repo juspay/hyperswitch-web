@@ -7,6 +7,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isSamsungPayReady = Recoil.useRecoilValueFromAtom(isSamsungPayReady)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
@@ -52,6 +53,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~state,
         ~pinCode,
       )
+      emitter.emitPaymentMethodStatus(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="samsung_pay",
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=true,
+      )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
       SamsungPayHelpers.handleSamsungPayClicked(
         ~sessionObj=sessionObj->Option.getOr(JSON.Encode.null)->getDictFromJson,
         ~componentName,

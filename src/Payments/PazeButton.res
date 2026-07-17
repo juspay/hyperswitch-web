@@ -6,15 +6,21 @@ let make = (~token: SessionsType.token) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
-  let {iframeId, publishableKey, clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, publishableKey, clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(
+    keys,
+  )
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
-  let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
+  let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+    ~clientSecret=clientSecret->Option.getOr(""),
+    ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
+  )
   let (showLoader, setShowLoader) = React.useState(() => false)
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
@@ -40,6 +46,13 @@ let make = (~token: SessionsType.token) => {
         ~state,
         ~pinCode,
       )
+      emitter.emitPaymentMethodStatus(
+        ~paymentMethod="wallet",
+        ~paymentMethodType="paze",
+        ~isSavedPaymentMethod=false,
+        ~isOneClickWallet=true,
+      )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
       setShowLoader(_ => true)
       let metadata =
         [
@@ -48,7 +61,7 @@ let make = (~token: SessionsType.token) => {
           ("clientId", token.clientId->JSON.Encode.string),
           ("clientName", token.clientName->JSON.Encode.string),
           ("clientProfileId", token.clientProfileId->JSON.Encode.string),
-          ("sessionId", paymentIntentID->JSON.Encode.string),
+          ("sessionId", paymentIntentId->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
           ("emailAddress", token.email_address->JSON.Encode.string),
           ("transactionAmount", token.transaction_amount->JSON.Encode.string),

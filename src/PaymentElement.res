@@ -24,12 +24,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let isVgsScriptReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isVgsScriptReady)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
   let isShowOrPayUsingWhileLoading = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.isShowOrPayUsingWhileLoading,
   )
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let (isTokenize, setIsTokenize) = Recoil.useRecoilState(RecoilAtoms.isTokenize)
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
+  let {publishableKey, iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
 
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(RecoilAtoms.selectedOptionAtom)
@@ -176,9 +180,34 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [savedMethods])
 
+  React.useEffect(() => {
+    let isTokenize = switch sdkConfigsValue.account_config {
+    | Some(val) =>
+      switch val.profile {
+      | Some(vault) => vault.vaulting_action === Tokenize
+      | None => false
+      }
+    | None => false
+    }
+    setIsTokenize(_ => isTokenize)
+    None
+  }, (sessionToken, sdkConfigsValue))
+
+  let areAllApplePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreWalletRequiredFieldsPrefilled(
+    ~paymentMethodType="apple_pay",
+  )
+  let areAllGooglePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreWalletRequiredFieldsPrefilled(
+    ~paymentMethodType="google_pay",
+  )
+  let areAllPaypalRequiredFieldsPrefilled = DynamicFieldsUtils.useAreWalletRequiredFieldsPrefilled(
+    ~paymentMethodType="paypal",
+  )
   let (walletList, paymentOptionsList, actualList) = useGetPaymentMethodList(
     ~paymentType,
     ~sessions,
+    ~areAllApplePayRequiredFieldsPrefilled,
+    ~areAllGooglePayRequiredFieldsPrefilled,
+    ~areAllPaypalRequiredFieldsPrefilled,
   )
 
   let dict = sessions->getDictFromJson
@@ -200,7 +229,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   React.useEffect(() => {
     switch paymentMethodList {
     | Loaded(paymentlist) =>
-      let pList = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let pList = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
 
       setPaymentOptions(_ =>
         [
@@ -345,7 +374,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           getVisaCards
           closeComponentIfSavedMethodsAreEmpty
         />
-      | Card => <CardPayment cardProps expiryProps cvcProps />
+      | Card =>
+        isTokenize ? <ParentCardComponent /> : <CardPayment cardProps expiryProps cvcProps />
       | ACHTransfer =>
         <ReusableReactSuspense
           loaderComponent={<LoaderPaymentShimmer />} componentName="ACHBankTransferLazy">
@@ -492,10 +522,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let evalMethodsList = () =>
       switch paymentMethodList {
       | SemiLoaded | LoadError(_) | Loaded(_) =>
-        messageParentWindow([
-          ("ready", true->JSON.Encode.bool),
-          ("elementType", CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string),
-        ])
+        SubscriptionEventHooks.emitReady(
+          ~iframeId,
+          ~elementType=CardThemeType.getPaymentModeToString(paymentType),
+        )
       | _ => ()
       }
     if !displaySavedPaymentMethods {
@@ -505,13 +535,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | LoadingSavedCards => ()
       | LoadedSavedCards(list, _) =>
         list->Array.length > 0
-          ? messageParentWindow([
-              ("ready", true->JSON.Encode.bool),
-              (
-                "elementType",
-                CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string,
-              ),
-            ])
+          ? SubscriptionEventHooks.emitReady(
+              ~iframeId,
+              ~elementType=CardThemeType.getPaymentModeToString(paymentType),
+            )
           : evalMethodsList()
       | NoResult(_) => evalMethodsList()
       }
@@ -647,7 +674,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         condition={!displaySavedPaymentMethods &&
         paymentOptions->Array.length == 0 &&
         walletOptions->Array.length == 0}>
-        <PaymentElementShimmer />
+        {if isVgsScriptReady {
+          <PaymentElementShimmer />
+        } else {
+          // VGS vault script failed → card was removed and no other method
+          // remains. Surface the standard top-level error instead of an
+          // indefinite shimmer.
+          <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+        }}
       </RenderIf>
     }}
     <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>

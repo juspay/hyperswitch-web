@@ -25,8 +25,8 @@ import {
 import { cobadgeCards, cobadgeCardBrands } from "../../support/cards";
 
 describe("Cobadge Card Flow - Cybersource", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
@@ -35,6 +35,8 @@ describe("Cobadge Card Flow - Cybersource", () => {
     cobadgeCards.visaCartesBancaires;
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
 
     changeObjectKeyValue(
@@ -67,8 +69,6 @@ describe("Cobadge Card Flow - Cybersource", () => {
       .find(`[data-testid=${testIds.cardNoInputTestId}]`)
       .safeType(cardNo);
 
-    cy.wait(1500);
-
     getIframeBody()
       .find(".hellow-rodl select", { timeout: 10000 })
       .should("exist");
@@ -79,8 +79,6 @@ describe("Cobadge Card Flow - Cybersource", () => {
         $select.attr("size", $select.find("option").length);
         $select.css({ width: "auto", position: "absolute", "z-index": "9999" });
       });
-
-    cy.wait(2000);
 
     getIframeBody()
       .find(".hellow-rodl select")
@@ -96,8 +94,6 @@ describe("Cobadge Card Flow - Cybersource", () => {
       .find(".hellow-rodl select option:disabled")
       .should("contain.text", "Select a card brand");
 
-    cy.wait(1000);
-
     getIframeBody()
       .find(".hellow-rodl select")
       .then(($select) => {
@@ -111,8 +107,6 @@ describe("Cobadge Card Flow - Cybersource", () => {
       .find(`[data-testid=${testIds.cardNoInputTestId}]`)
       .safeType(cardNo);
 
-    cy.wait(1500);
-
     getIframeBody()
       .find(".hellow-rodl select", { timeout: 10000 })
       .then(($select) => {
@@ -120,13 +114,9 @@ describe("Cobadge Card Flow - Cybersource", () => {
         $select.css({ width: "auto", position: "absolute", "z-index": "9999" });
       });
 
-    cy.wait(1000);
-
     getIframeBody()
       .find(".hellow-rodl select")
       .select(cobadgeCardBrands.VISA);
-
-    cy.wait(1500);
 
     getIframeBody()
       .find(".hellow-rodl select")
@@ -138,16 +128,12 @@ describe("Cobadge Card Flow - Cybersource", () => {
         $select.removeAttr("size");
         $select.css({ width: "", position: "", "z-index": "" });
       });
-
-    cy.wait(1000);
   });
 
   it("should allow switching between Visa and CartesBancaires brands", () => {
     getIframeBody()
       .find(`[data-testid=${testIds.cardNoInputTestId}]`)
       .safeType(cardNo);
-
-    cy.wait(1500);
 
     getIframeBody()
       .find(".hellow-rodl select", { timeout: 10000 })
@@ -156,13 +142,9 @@ describe("Cobadge Card Flow - Cybersource", () => {
         $select.css({ width: "auto", position: "absolute", "z-index": "9999" });
       });
 
-    cy.wait(1000);
-
     getIframeBody()
       .find(".hellow-rodl select")
       .select(cobadgeCardBrands.VISA);
-
-    cy.wait(1500);
 
     getIframeBody()
       .find(".hellow-rodl select")
@@ -171,8 +153,6 @@ describe("Cobadge Card Flow - Cybersource", () => {
     getIframeBody()
       .find(".hellow-rodl select")
       .select(cobadgeCardBrands.CARTES_BANCAIRES);
-
-    cy.wait(1500);
 
     getIframeBody()
       .find(".hellow-rodl select")
@@ -184,16 +164,12 @@ describe("Cobadge Card Flow - Cybersource", () => {
         $select.removeAttr("size");
         $select.css({ width: "", position: "", "z-index": "" });
       });
-
-    cy.wait(1000);
   });
 
   it("should complete payment with selected cobadge card brand (Visa)", () => {
     getIframeBody()
       .find(`[data-testid=${testIds.cardNoInputTestId}]`)
       .safeType(cardNo);
-
-    cy.wait(1500);
 
     getIframeBody()
       .find(".hellow-rodl select", { timeout: 10000 })
@@ -202,22 +178,17 @@ describe("Cobadge Card Flow - Cybersource", () => {
         $select.css({ width: "auto", position: "absolute", "z-index": "9999" });
       });
 
-    cy.wait(1000);
-
     getIframeBody()
       .find(".hellow-rodl select")
       .select(cobadgeCardBrands.VISA);
 
-    cy.wait(1000);
-
     getIframeBody()
       .find(".hellow-rodl select")
+      .should("have.value", cobadgeCardBrands.VISA)
       .then(($select) => {
         $select.removeAttr("size");
         $select.css({ width: "", position: "", "z-index": "" });
       });
-
-    cy.wait(500);
 
     getIframeBody()
       .find(`[data-testid=${testIds.expiryInputTestId}]`)
@@ -226,8 +197,6 @@ describe("Cobadge Card Flow - Cybersource", () => {
     getIframeBody()
       .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
       .safeType(cvc);
-
-    cy.wait(1000);
 
     cy.get("#submit").should("be.visible").click();
 

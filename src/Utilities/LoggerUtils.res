@@ -74,9 +74,6 @@ let handleLogging = (
 
 let eventNameToStrMapper = (eventName: HyperLoggerTypes.eventName) => (eventName :> string)
 
-let getPaymentId = clientSecret =>
-  String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-
 let convertToScreamingSnakeCase = text => {
   text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
 }
@@ -90,6 +87,7 @@ let toSnakeCaseWithSeparator = (str, separator) => {
 let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   sendLogs: () => (),
   setClientSecret: _x => (),
+  setSdkAuthorization: _x => (),
   setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
   setLogError: (
     ~value as _,
@@ -239,8 +237,6 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
 > =>
   switch eventName {
   | CONFIRM_CALL => Some(CONFIRM_CALL_INIT)
-  | PAYMENT_METHODS_CALL => Some(PAYMENT_METHODS_CALL_INIT)
-  | CUSTOMER_PAYMENT_METHODS_CALL => Some(CUSTOMER_PAYMENT_METHODS_CALL_INIT)
   | CREATE_CUSTOMER_PAYMENT_METHODS_CALL => Some(CREATE_CUSTOMER_PAYMENT_METHODS_CALL_INIT)
   | POLL_STATUS_CALL => Some(POLL_STATUS_CALL_INIT)
   | COMPLETE_AUTHORIZE_CALL => Some(COMPLETE_AUTHORIZE_CALL_INIT)
@@ -252,6 +248,8 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | AUTHENTICATION_CALL => Some(AUTHENTICATION_CALL_INIT)
   | CONFIRM_PAYOUT_CALL => Some(CONFIRM_PAYOUT_CALL_INIT)
   | PAYMENT_METHOD_ELIGIBILITY_CALL => Some(PAYMENT_METHOD_ELIGIBILITY_CALL_INIT)
+  | SDK_CONFIGS_CALL => Some(SDK_CONFIGS_CALL_INIT)
+  | CLIENT_LIST_CALL => Some(CLIENT_LIST_CALL_INIT)
   | ENABLED_AUTHN_METHODS_TOKEN_CALL => Some(ENABLED_AUTHN_METHODS_TOKEN_CALL)
   | ELIGIBILITY_CHECK_CALL => Some(ELIGIBILITY_CHECK_CALL)
   | AUTHENTICATION_SYNC_CALL => Some(AUTHENTICATION_SYNC_CALL)
@@ -267,9 +265,8 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | CONFIRM_CALL_INIT
   | CONFIRM_PAYOUT_CALL_INIT
   | SESSIONS_CALL_INIT
-  | PAYMENT_METHODS_CALL_INIT
-  | CUSTOMER_PAYMENT_METHODS_CALL_INIT
   | CREATE_CUSTOMER_PAYMENT_METHODS_CALL_INIT
+  | SDK_CONFIGS_CALL_INIT
   | TRUSTPAY_SCRIPT
   | PM_AUTH_CONNECTOR_SCRIPT
   | GOOGLE_PAY_SCRIPT
@@ -339,6 +336,11 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | ONE_CLICK_HANDLER_CALLBACK
   | PAYMENT_ELEMENT_OPTIONS
   | TEST_MODE
-  | DDC_FLOW =>
+  | DDC_FLOW
+  | VGS_VAULT_FLOW
+  | UPDATE_INTENT
+  | UPDATE_SDK
+  | DYNAMIC_FIELDS_RENDERED
+  | CLIENT_LIST_CALL_INIT =>
     None
   }

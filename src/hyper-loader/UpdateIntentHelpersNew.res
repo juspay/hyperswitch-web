@@ -4,6 +4,7 @@
 open Utils
 open Identity
 open EventListenerManager
+open HyperLoggerTypes
 
 // --- Iframe messaging helpers ---
 
@@ -38,12 +39,9 @@ let waitForReady = () => {
 let getNewCredentials = async (~callback: unit => promise<JSON.t>, ~currentClientSecret) => {
   let callbackResult = await callback()
   let newSdkAuthorization = callbackResult->getDictFromJson->getString("sdkAuthorization", "")
-  let sdkAuthorizationData = newSdkAuthorization->getSdkAuthorizationData
-  let newClientSecret = switch sdkAuthorizationData.clientSecret->getNonEmptyOption {
-  | Some(cs) => cs
-  | None => currentClientSecret
-  }
-  (newSdkAuthorization, newClientSecret)
+  // Note: under the new SDK auth contract, client_secret is no longer embedded in the token.
+  // We unconditionally return currentClientSecret so that callers continue using the original secret.
+  (newSdkAuthorization, currentClientSecret)
 }
 
 // --- Send credentials update to iframes ---
@@ -165,8 +163,11 @@ let unMountPreMountLoaderIframe = (selectorString: string) => {
   }
 }
 
-// Sets up the preMountLoader iframe and creates promises for all 4 API responses.
-// Returns a tuple of (paymentMethodsData, customerPaymentMethodsData, sessionTokensData).
+// Sets up the preMountLoader iframe and creates promises for all API responses.
+// Returns a tuple of (sessionTokensData, sdkConfigsData, clientListData).
+// clientListData is the single source for both payment_methods and
+// customer_payment_methods data (replaces the old paymentMethodsData/
+// customerPaymentMethodsData pair).
 // Can be called during init and during updateIntent.
 let setupPreMountLoaderPromises = (
   ~publishableKey,
@@ -223,29 +224,29 @@ let setupPreMountLoaderPromises = (
     })
   }
 
-  let paymentMethodsData = createDataPromise(
-    ~dataKey="payment_methods",
-    ~listenerName="onPaymentMethodsData-shared",
-    ~sendKey="sendPaymentMethodsResponse",
-  )
-  let customerPaymentMethodsData = createDataPromise(
-    ~dataKey="customer_payment_methods",
-    ~listenerName="onCustomerPaymentMethodsData-shared",
-    ~sendKey="sendCustomerPaymentMethodsResponse",
-  )
-
   let sessionTokensData = createDataPromise(
     ~dataKey="session_tokens",
     ~listenerName="onSessionTokensData-shared",
     ~sendKey="sendSessionTokensResponse",
   )
 
+  let sdkConfigsData = createDataPromise(
+    ~dataKey="sdk_configs",
+    ~listenerName="onSdkConfigsData-shared",
+    ~sendKey="sendSdkConfigsResponse",
+  )
+
+  let clientListData = createDataPromise(
+    ~dataKey="client_list",
+    ~listenerName="onClientListData-shared",
+    ~sendKey="sendClientListResponse",
+  )
+
   let requestMsg =
     [("requestPreMountLoaderMountedCallback", true->JSON.Encode.bool)]->Dict.fromArray
   preMountLoaderIframeDiv->Window.iframePostMessage(requestMsg)
 
-  // Clean up preMountLoader iframe after all promises resolve
-  Promise.all([paymentMethodsData, customerPaymentMethodsData, sessionTokensData])
+  Promise.all([sessionTokensData, sdkConfigsData, clientListData])
   ->Promise.then(_ => {
     let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
     preMountLoaderIframeDiv->Window.iframePostMessage(msg)
@@ -254,7 +255,7 @@ let setupPreMountLoaderPromises = (
   ->Promise.catch(_ => Promise.resolve())
   ->ignore
 
-  (paymentMethodsData, customerPaymentMethodsData, sessionTokensData)
+  (sessionTokensData, sdkConfigsData, clientListData)
 }
 
 // --- Core performUpdateIntent ---
@@ -267,9 +268,9 @@ let performUpdateIntent = async (
   ~isUpdateIntentInProgress: ref<bool>,
   ~clientSecretRef: ref<string>,
   ~sdkAuthorizationRef: ref<string>,
-  ~paymentMethodsDataPromise: ref<promise<JSON.t>>,
-  ~customerPaymentMethodsDataPromise: ref<promise<JSON.t>>,
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
+  ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
+  ~clientListDataPromise: ref<promise<JSON.t>>,
   ~iframes: array<Nullable.t<Dom.element>>,
   ~callback: unit => promise<JSON.t>,
   ~publishableKey,
@@ -280,25 +281,26 @@ let performUpdateIntent = async (
   ~isSdkParamsEnabled,
   ~selectorString,
   ~shouldWaitForReady,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   if isUpdateIntentInProgress.contents {
     updateIntentInProgressResponse()
   } else {
     isUpdateIntentInProgress.contents = true
 
+    logger.setLogInfo(~value="Update Intent Initiated", ~eventName=UPDATE_INTENT)
+
     let response = try {
       // Get new credentials from merchant callback
-      let (newSdkAuthorization, newClientSecret) = await getNewCredentials(
-        ~callback,
-        ~currentClientSecret=clientSecretRef.contents,
-      )
+      let callbackResult = await callback()
+      let newSdkAuthorization = callbackResult->getDictFromJson->getString("sdkAuthorization", "")
 
       // Mount new preMountLoader with new credentials (refs NOT updated yet —
-      // we validate all API responses before committing any state changes)
+      // we validate all API responses before committing any state changes).
       let (
-        newPaymentMethodsPromise,
-        newCustomerPaymentMethodsPromise,
         newSessionTokensPromise,
+        newSdkConfigsDataPromise,
+        newClientListDataPromise,
       ) = setupPreMountLoaderPromises(
         ~publishableKey,
         ~sdkSessionId,
@@ -307,15 +309,15 @@ let performUpdateIntent = async (
         ~isTestMode,
         ~isSdkParamsEnabled,
         ~selectorString,
-        ~currentClientSecret=newClientSecret,
+        ~currentClientSecret=clientSecretRef.contents,
         ~currentSdkAuthorization=newSdkAuthorization,
       )
 
-      // Wait for ALL API responses before updating anything
+      // Wait for ALL API responses before updating anything.
       let results = await Promise.all([
-        newPaymentMethodsPromise,
-        newCustomerPaymentMethodsPromise,
         newSessionTokensPromise,
+        newSdkConfigsDataPromise,
+        newClientListDataPromise,
       ])
 
       // Check if any API response indicates an error
@@ -330,19 +332,25 @@ let performUpdateIntent = async (
           ->getDictFromJson
           ->getDictFromDict("error")
           ->getString("message", "An API call failed during updateIntent.")
+        logger.setLogError(~value=errorMessage, ~eventName=UPDATE_INTENT)
         getFailedSubmitResponse(~message=errorMessage, ~errorType="update_intent_error")
 
       | None =>
         // All API calls succeeded — now commit state changes
-        clientSecretRef.contents = newClientSecret
+
         sdkAuthorizationRef.contents = newSdkAuthorization
 
-        paymentMethodsDataPromise.contents = newPaymentMethodsPromise
-        customerPaymentMethodsDataPromise.contents = newCustomerPaymentMethodsPromise
         sessionTokensDataPromise.contents = newSessionTokensPromise
+        sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
+        clientListDataPromise.contents = newClientListDataPromise
 
         // Send ElementsUpdate to all inner iframes with new credentials
-        sendElementsUpdateToIframes(iframes, ~newSdkAuthorization, ~newClientSecret)
+        logger.setLogInfo(~value="Update SDK Sent to Iframes", ~eventName=UPDATE_SDK)
+        sendElementsUpdateToIframes(
+          iframes,
+          ~newSdkAuthorization,
+          ~newClientSecret=clientSecretRef.contents,
+        )
 
         // Wait for the payment element to signal ready (only if a payment element is mounted)
         let readyPromise = if shouldWaitForReady {
@@ -351,15 +359,14 @@ let performUpdateIntent = async (
           None
         }
 
-        // Forward fresh data to all mounted iframes
+        // Forward fresh data to all mounted iframes. clientList is the single
+        // source for both payment_methods and customer_payment_methods data,
+        // forwarded once under the "clientList" key (retired the separate
+        // "paymentMethodList"/"customerPaymentMethods" keys).
         let _ = await Promise.all([
-          forwardPromiseToIframes(iframes, newPaymentMethodsPromise, "paymentMethodList"),
-          forwardPromiseToIframes(
-            iframes,
-            newCustomerPaymentMethodsPromise,
-            "customerPaymentMethods",
-          ),
           forwardPromiseToIframes(iframes, newSessionTokensPromise, "sessions"),
+          forwardPromiseToIframes(iframes, newSdkConfigsDataPromise, "sdkConfigs"),
+          forwardPromiseToIframes(iframes, newClientListDataPromise, "clientList"),
         ])
 
         switch readyPromise {
@@ -367,19 +374,18 @@ let performUpdateIntent = async (
         | None => ()
         }
 
+        logger.setLogInfo(~value="Update Intent Completed Successfully", ~eventName=UPDATE_INTENT)
         [("status", "succeeded"->JSON.Encode.string)]->getJsonFromArrayOfJson
       }
     } catch {
     | Exn.Error(e) =>
-      getFailedSubmitResponse(
-        ~message=Exn.message(e)->Option.getOr("Something went wrong during updateIntent!"),
-        ~errorType="update_intent_error",
-      )
+      let msg = Exn.message(e)->Option.getOr("Something went wrong during updateIntent!")
+      logger.setLogError(~value=msg, ~eventName=UPDATE_INTENT)
+      getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
     | _ =>
-      getFailedSubmitResponse(
-        ~message="An unexpected error occurred during updateIntent.",
-        ~errorType="update_intent_error",
-      )
+      let msg = "An unexpected error occurred during updateIntent."
+      logger.setLogError(~value=msg, ~eventName=UPDATE_INTENT)
+      getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
     }
     isUpdateIntentInProgress.contents = false
     response

@@ -156,6 +156,22 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     clientSecret := value
   }
 
+  let sdkAuthorization = ref(None)
+
+  let setSdkAuthorization = value => {
+    sdkAuthorization := if value === "" {
+        None
+      } else {
+        Some(value)
+      }
+  }
+
+  let getPaymentId = () =>
+    Utils.getPaymentIdOrExtractFromSdkAuth(
+      ~clientSecret=clientSecret.contents,
+      ~sdkAuthorization=sdkAuthorization.contents,
+    )
+
   let sourceRef = ref(source->getSourceString)
 
   let setSource = value => {
@@ -223,10 +239,9 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       DISPLAY_QR_CODE_INFO_PAGE,
       DISPLAY_VOUCHER,
       LOADER_CHANGED,
-      PAYMENT_METHODS_CALL,
       PAYMENT_METHOD_CHANGED,
       SESSIONS_CALL,
-      CUSTOMER_PAYMENT_METHODS_CALL,
+      CLIENT_LIST_CALL,
       RETRIEVE_CALL,
       DISPLAY_THREE_DS_SDK,
       APPLE_PAY_FLOW,
@@ -302,7 +317,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
             value: "",
             // internalMetadata: "",
             category: USER_EVENT,
-            paymentId: clientSecret.contents->getPaymentId,
+            paymentId: getPaymentId(),
             merchantId: merchantId.contents,
             browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
             browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -329,7 +344,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
             value: "",
             // internalMetadata: "",
             category: USER_EVENT,
-            paymentId: clientSecret.contents->getPaymentId,
+            paymentId: getPaymentId(),
             merchantId: merchantId.contents,
             browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
             browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -379,7 +394,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       value,
       // internalMetadata,
       category: logCategory,
-      paymentId: clientSecret.contents->getPaymentId,
+      paymentId: getPaymentId(),
       merchantId: merchantId.contents,
       browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -435,7 +450,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       // | StringValue(a) => a
       // },
       category: logCategory,
-      paymentId: clientSecret.contents->getPaymentId,
+      paymentId: getPaymentId(),
       merchantId: merchantId.contents,
       browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -481,7 +496,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       value,
       // internalMetadata,
       category: logCategory,
-      paymentId: clientSecret.contents->getPaymentId,
+      paymentId: getPaymentId(),
       merchantId: merchantId.contents,
       browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -515,7 +530,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       category: USER_EVENT,
       value: "log initiated",
       // internalMetadata: "",
-      paymentId: clientSecret.contents->getPaymentId,
+      paymentId: getPaymentId(),
       merchantId: merchantId.contents,
       browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -550,6 +565,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     sendLogs,
     setSessionId,
     setClientSecret,
+    setSdkAuthorization,
     setMerchantId,
     setMetadata,
     setLogApi,

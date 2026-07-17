@@ -26,7 +26,7 @@ let getCustomerSavedPaymentMethods = (
     ->Option.getOr(Dict.make())
     ->getStrArray("hiddenPaymentMethods")
 
-  PaymentHelpers.fetchCustomerPaymentMethodList(
+  PaymentHelpers.fetchClientList(
     ~clientSecret=clientSecretRef.contents,
     ~publishableKey,
     ~endpoint,
@@ -58,7 +58,7 @@ let getCustomerSavedPaymentMethods = (
 
     let customerDetailsDict = customerDetails->JSON.Decode.object->Option.getOr(Dict.make())
     let (customerPaymentMethods, isGuestCustomer) =
-      customerDetailsDict->PaymentType.itemToCustomerObjMapper
+      customerDetailsDict->PaymentType.itemToCustomerObjMapperFromClientList
 
     customerPaymentMethods->Array.sort((a, b) => compareLogic(a.lastUsedAt, b.lastUsedAt))
 

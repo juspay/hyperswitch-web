@@ -8,12 +8,13 @@ let loadPaypalSDK = (
   ~buttonStyle: PaypalSDKTypes.style,
   ~iframeId,
   ~isManualRetryEnabled,
-  ~paymentMethodListValue,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+  ~connectors,
   ~isGuestCustomer,
   ~postSessionTokens: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
   ~publishableKey,
-  ~paymentMethodTypes,
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>,
   ~confirm: PaymentHelpersTypes.paymentIntent,
   ~completeAuthorize: PaymentHelpersTypes.completeAuthorize,
   ~handleCloseLoader,
@@ -28,6 +29,7 @@ let loadPaypalSDK = (
   ~isTestMode=false,
   ~nonPiiAdderessData: PaymentUtils.nonPiiAdderessData,
   ~sdkAuthorization,
+  ~emitter: SubscriptionEventHooks.emitter,
 ) => {
   open Promise
 
@@ -71,6 +73,13 @@ let loadPaypalSDK = (
           ~state,
           ~pinCode,
         )
+        emitter.emitPaymentMethodStatus(
+          ~paymentMethod="wallet",
+          ~paymentMethodType="paypal",
+          ~isSavedPaymentMethod=false,
+          ~isOneClickWallet=true,
+        )
+        emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
         makeOneClickHandlerPromise(sdkHandleIsThere)->then(result => {
           let result = result->JSON.Decode.bool->Option.getOr(false)
           if result {
@@ -79,8 +88,6 @@ let loadPaypalSDK = (
               ("param", "paymentloader"->JSON.Encode.string),
               ("iframeId", iframeId->JSON.Encode.string),
             ])
-            let (connectors, _) =
-              paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
             let body = PaymentBody.paypalSdkBody(~token="", ~connectors)
             let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
               ~isGuestCustomer,
@@ -182,11 +189,9 @@ let loadPaypalSDK = (
           let details = purchaseUnit->paypalShippingDetails(payerDetails)
           let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
             ~details,
-            ~paymentMethodTypes,
+            ~requiredFields,
           )
 
-          let (connectors, _) =
-            paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
           let orderId = val->getDictFromJson->getString("id", "")
           let body = PaymentBody.paypalSdkBody(~token=orderId, ~connectors)
           let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
@@ -256,13 +261,14 @@ let loadBraintreePaypalSdk = (
   ~token,
   ~buttonStyle: PaypalSDKTypes.style,
   ~iframeId,
-  ~paymentMethodListValue,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+  ~connectors,
   ~isGuestCustomer,
   ~intent: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
   ~orderDetails,
   ~publishableKey,
-  ~paymentMethodTypes,
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>,
   ~handleCloseLoader,
   ~areOneClickWalletsRendered: (
     RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
@@ -308,15 +314,11 @@ let loadBraintreePaypalSdk = (
                       : paypalCheckoutInstance.tokenizePayment(
                           data,
                           (_err, payload) => {
-                            let (connectors, _) =
-                              paymentMethodListValue->PaymentUtils.getConnectors(
-                                Wallets(Paypal(SDK)),
-                              )
                             let body = PaymentBody.paypalSdkBody(~token=payload.nonce, ~connectors)
 
                             let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
                               ~details=payload.details,
-                              ~paymentMethodTypes,
+                              ~requiredFields,
                             )
 
                             let paypalBody = body->mergeAndFlattenToTuples(requiredFieldsBody)

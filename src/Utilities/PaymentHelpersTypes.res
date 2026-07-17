@@ -18,6 +18,7 @@ type paymentIntent = (
   ~isThirdPartyFlow: bool=?,
   ~intentCallback: Core__JSON.t => unit=?,
   ~manualRetry: bool=?,
+  ~isTrustpayInterceptorConfirm: bool=?,
 ) => unit
 
 type completeAuthorize = (

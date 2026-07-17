@@ -20,12 +20,12 @@ type eventName =
   | CONFIRM_PAYOUT_CALL
   | SESSIONS_CALL_INIT
   | SESSIONS_CALL
-  | PAYMENT_METHODS_CALL_INIT
-  | PAYMENT_METHODS_CALL
-  | CUSTOMER_PAYMENT_METHODS_CALL_INIT
-  | CUSTOMER_PAYMENT_METHODS_CALL
   | CREATE_CUSTOMER_PAYMENT_METHODS_CALL_INIT
   | CREATE_CUSTOMER_PAYMENT_METHODS_CALL
+  | SDK_CONFIGS_CALL_INIT
+  | SDK_CONFIGS_CALL
+  | CLIENT_LIST_CALL_INIT
+  | CLIENT_LIST_CALL
   | TRUSTPAY_SCRIPT
   | PM_AUTH_CONNECTOR_SCRIPT
   | GOOGLE_PAY_SCRIPT
@@ -105,6 +105,10 @@ type eventName =
   | PAYMENT_METHOD_ELIGIBILITY_CALL
   | PAYMENT_METHOD_ELIGIBILITY_CALL_INIT
   | DDC_FLOW
+  | VGS_VAULT_FLOW
+  | UPDATE_INTENT
+  | UPDATE_SDK
+  | DYNAMIC_FIELDS_RENDERED
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
@@ -166,6 +170,7 @@ type loggerMake = {
   sendLogs: unit => unit,
   setSessionId: string => unit,
   setClientSecret: string => unit,
+  setSdkAuthorization: string => unit,
   setMerchantId: string => unit,
   setMetadata: JSON.t => unit,
   setSource: string => unit,

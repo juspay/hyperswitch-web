@@ -20,40 +20,21 @@ let currentYear = Date.getFullYear(Date.make())
 let years = Array.fromInitializer(~length=currentYear - startYear, i => currentYear - i)
 
 @react.component
-let make = () => {
-  open Utils
+let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
+  let path = fieldConfig.confirmRequestWritePath
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (error, setError) = React.useState(_ => false)
-  let (isNotEligible, setIsNotEligible) = React.useState(_ => false)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
+  let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
+    ~field=fieldConfig,
+    ~localeObject=localeString,
+  )
+  let dateFormat = fieldConfig.inputFormatPattern->Option.getOr("dd-MM-yyyy")
+  let (selectedDate, setSelectedDate) = React.useState(() => Nullable.null)
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      switch dateOfBirth->Nullable.toOption {
-      | Some(_) => setError(_ => false)
-      | None => ()
-      }
-    }
-  }, (dateOfBirth, isNotEligible))
+  let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
-  useSubmitPaymentData(submitCallback)
-
-  let onChange = date => {
-    let isAbove18 = switch date->Nullable.toOption {
-    | Some(val) => val->checkIs18OrAbove
-    | None => false
-    }
-    LoggerUtils.logInputChangeInfo("dateOfBirth", loggerState)
-    setDateOfBirth(_ => date)
-    setIsNotEligible(_ => !isAbove18)
-  }
-
-  let errorString = error
-    ? localeString.dateofBirthRequiredText
-    : localeString.dateOfBirthInvalidText
+  let field = ReactFinalForm.useField(path, ~config={validate: validate})
+  let invalid = field.meta.invalid
+  let showError = field.meta.touched || field.meta.submitFailed
 
   <div className="flex flex-col gap-1">
     <div
@@ -63,18 +44,27 @@ let make = () => {
         fontSize: themeObj.fontSizeLg,
         opacity: "0.6",
       }>
-      {React.string(localeString.dateOfBirth)}
+      {label->React.string}
     </div>
     <DatePicker
       showIcon=true
       icon={<Icon name="calander" size=13 className="!px-[6px] !py-[10px]" />}
       className="w-full border border-gray-300 rounded p-2"
-      selected={dateOfBirth}
-      onChange
-      dateFormat="dd-MM-yyyy"
+      selected={selectedDate}
+      onBlur={_ => field.input.onBlur()}
+      onChange={date => {
+        setSelectedDate(_ => date)
+        let strVal =
+          date
+          ->Nullable.toOption
+          ->Option.map(d => d->Date.toLocaleDateStringWithLocale("en-CA"))
+          ->Option.getOr("")
+        field.input.onChange(strVal)
+      }}
+      dateFormat
       wrapperClassName="datepicker"
       shouldCloseOnSelect=true
-      placeholderText={localeString.dateOfBirthPlaceholderText}
+      placeholderText={placeholder}
       renderCustomHeader={val => {
         <div className="flex gap-4 items-center justify-center m-2">
           <select
@@ -108,7 +98,7 @@ let make = () => {
         </div>
       }}
     />
-    <RenderIf condition={error || isNotEligible}>
+    <RenderIf condition={showError && invalid}>
       <div
         className="Error pt-1"
         style={
@@ -117,7 +107,7 @@ let make = () => {
           alignSelf: "start",
           textAlign: "left",
         }>
-        {React.string(errorString)}
+        {field.meta.error->Option.getOr("")->React.string}
       </div>
     </RenderIf>
   </div>

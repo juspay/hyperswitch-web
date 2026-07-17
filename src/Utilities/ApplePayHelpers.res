@@ -12,6 +12,7 @@ let processPayment = (
   ~options: PaymentType.options,
   ~publishableKey,
   ~isManualRetryEnabled,
+  ~isTrustpayInterceptorConfirm=false,
 ) => {
   let requestBody = PaymentUtils.appendedCustomerAcceptance(
     ~isGuestCustomer,
@@ -29,6 +30,7 @@ let processPayment = (
     ~handleUserError=true,
     ~isThirdPartyFlow,
     ~manualRetry=isManualRetryEnabled,
+    ~isTrustpayInterceptorConfirm,
   )
 }
 
@@ -36,7 +38,7 @@ let getApplePayFromResponse = (
   ~token,
   ~billingContactDict,
   ~shippingContactDict,
-  ~requiredFields=[],
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>=[],
   ~connectors,
   ~isPaymentSession=false,
   ~isSavedMethodsFlow=false,
@@ -48,7 +50,13 @@ let getApplePayFromResponse = (
   let requiredFieldsBody = if isPaymentSession || isSavedMethodsFlow {
     DynamicFieldsUtils.getApplePayRequiredFields(~billingContact, ~shippingContact)
   } else {
-    DynamicFieldsUtils.getApplePayRequiredFields(~billingContact, ~shippingContact, ~requiredFields)
+    DynamicFieldsUtils.getApplePayRequiredFields(
+      ~billingContact,
+      ~shippingContact,
+      ~requiredFieldPaths=requiredFields->Array.map(fieldConfig =>
+        fieldConfig.confirmRequestWritePath
+      ),
+    )
   }
 
   let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
@@ -69,6 +77,7 @@ let startApplePaySession = (
   ~sdkAuthorization=None,
 ) => {
   open Promise
+  let sdkHandleIsThere = LoaderPaymentElement.isPaymentButtonHandlerProvided.contents
   let ssn = applePaySession(3, paymentRequest)
   switch applePaySessionRef.contents->Nullable.toOption {
   | Some(session) =>
@@ -83,14 +92,36 @@ let startApplePaySession = (
   applePaySessionRef := ssn->Js.Nullable.return
 
   ssn.onvalidatemerchant = _event => {
-    let merchantSession =
-      applePayPresent
-      ->Belt.Option.flatMap(JSON.Decode.object)
-      ->Option.getOr(Dict.make())
-      ->Dict.get("session_token_data")
-      ->Option.getOr(Dict.make()->JSON.Encode.object)
-      ->transformKeysWithoutModifyingValue(CamelCase)
-    ssn.completeMerchantValidation(merchantSession)
+    makeOneClickHandlerPromise(sdkHandleIsThere)
+    ->then(result => {
+      let result = result->JSON.Decode.bool->Option.getOr(false)
+      if result {
+        let merchantSession =
+          applePayPresent
+          ->Belt.Option.flatMap(JSON.Decode.object)
+          ->Option.getOr(Dict.make())
+          ->Dict.get("session_token_data")
+          ->Option.getOr(Dict.make()->JSON.Encode.object)
+          ->transformKeysWithoutModifyingValue(CamelCase)
+        ssn.completeMerchantValidation(merchantSession)
+      } else {
+        ssn.completeMerchantValidation(Dict.make()->JSON.Encode.object)
+        handleFailureResponse(
+          ~message="ApplePay Merchant Validation Cancelled",
+          ~errorType="apple_pay",
+        )->resolvePromise
+      }
+      resolve()
+    })
+    ->catch(_ => {
+      ssn.completeMerchantValidation(Dict.make()->JSON.Encode.object)
+      handleFailureResponse(
+        ~message="ApplePay Merchant Validation failed",
+        ~errorType="apple_pay",
+      )->resolvePromise
+      resolve()
+    })
+    ->ignore
   }
 
   ssn.onshippingcontactselected = shippingAddressChangeEvent => {
@@ -195,6 +226,7 @@ let startApplePaySession = (
       ~errorType="apple_pay",
     )->resolvePromise
   }
+
   ssn.begin()
 }
 
@@ -202,11 +234,13 @@ let useHandleApplePayResponse = (
   ~connectors,
   ~intent,
   ~setApplePayClicked=_ => (),
+  ~setShowApplePayLoader=_ => (),
   ~syncPayment=() => (),
   ~isInvokeSDKFlow=true,
   ~isSavedMethodsFlow=false,
   ~isWallet=true,
   ~requiredFieldsBody=Dict.make(),
+  ~requiredFields: array<SuperpositionTypes.fieldConfig>=[],
   ~sdkAuthorization,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -215,12 +249,6 @@ let useHandleApplePayResponse = (
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
-
-  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="apple_pay",
-  )
 
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
@@ -243,7 +271,7 @@ let useHandleApplePayResponse = (
             ~token,
             ~billingContactDict,
             ~shippingContactDict,
-            ~requiredFields=paymentMethodTypes.required_fields,
+            ~requiredFields,
             ~connectors,
             ~isSavedMethodsFlow,
           )
@@ -266,6 +294,7 @@ let useHandleApplePayResponse = (
           )
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
+          setShowApplePayLoader(_ => false)
           if isSavedMethodsFlow || !isWallet {
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
           }
@@ -276,6 +305,29 @@ let useHandleApplePayResponse = (
           processPayment(
             ~bodyArr=PaymentBody.applePayThirdPartySdkBody(~connectors, ~token),
             ~isThirdPartyFlow=true,
+            ~isGuestCustomer,
+            ~paymentMethodListValue,
+            ~intent,
+            ~options,
+            ~publishableKey,
+            ~isManualRetryEnabled,
+          )
+        } else if dict->Dict.get("applePayConfirmRequest")->Option.isSome {
+          // The interceptor in the parent window is asking us to call /confirm and
+          // return the TrustPay secrets so it can swap them into TrustPay's
+          // merchant-validation FormData. Reuse processPayment so the confirm goes
+          // through PaymentHelpers; intentCall posts "applePayConfirmSecrets" back to
+          // the parent for the interceptor flow (~isTrustpayInterceptorConfirm=true).
+          logger.setLogInfo(
+            ~value="[ApplePayInterceptor] applePayConfirmRequest received — calling /confirm",
+            ~eventName=APPLE_PAY_FLOW,
+            ~paymentMethod="APPLE_PAY",
+          )
+
+          processPayment(
+            ~bodyArr=PaymentBody.applePayThirdPartySdkBody(~connectors),
+            ~isThirdPartyFlow=true,
+            ~isTrustpayInterceptorConfirm=true,
             ~isGuestCustomer,
             ~paymentMethodListValue,
             ~intent,
@@ -307,6 +359,7 @@ let useHandleApplePayResponse = (
     isManualRetryEnabled,
     isWallet,
     requiredFieldsBody,
+    requiredFields,
     isSavedMethodsFlow,
     sdkAuthorization,
   ))

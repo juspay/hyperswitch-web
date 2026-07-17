@@ -52,6 +52,7 @@ let make = () => {
           let sdkAuthorization = metaDataDict->getString("sdkAuthorization", "")
 
           logger.setClientSecret(clientSecret)
+          logger.setSdkAuthorization(sdkAuthorization)
           logger.setMerchantId(publishableKey)
 
           let headersDict = metaDataDict->getDictFromDict("headers")

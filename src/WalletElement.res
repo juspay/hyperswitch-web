@@ -8,12 +8,28 @@ let make = (~paymentType) => {
 
   let setPaymentMethodListValue = Recoil.useSetRecoilState(PaymentUtils.paymentMethodListValue)
 
-  let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(~paymentType, ~sessions)
+  let areAllApplePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreWalletRequiredFieldsPrefilled(
+    ~paymentMethodType="apple_pay",
+  )
+  let areAllGooglePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreWalletRequiredFieldsPrefilled(
+    ~paymentMethodType="google_pay",
+  )
+  let areAllPaypalRequiredFieldsPrefilled = DynamicFieldsUtils.useAreWalletRequiredFieldsPrefilled(
+    ~paymentMethodType="paypal",
+  )
+  let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(
+    ~paymentType,
+    ~sessions,
+    ~areAllApplePayRequiredFieldsPrefilled,
+    ~areAllGooglePayRequiredFieldsPrefilled,
+    ~areAllPaypalRequiredFieldsPrefilled,
+  )
 
   React.useEffect(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
-      let pList = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let pList =
+        paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
       setWalletOptions(_ => walletList)
       setPaymentMethodListValue(_ => pList)
     | _ => ()

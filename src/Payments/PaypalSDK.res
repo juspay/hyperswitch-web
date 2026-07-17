@@ -3,6 +3,8 @@ open PaymentTypeContext
 
 @react.component
 let make = (~sessionObj: SessionsType.token) => {
+  let paymentMethod = "wallet"
+  let paymentMethodType = "paypal"
   let {
     iframeId,
     publishableKey,
@@ -33,9 +35,18 @@ let make = (~sessionObj: SessionsType.token) => {
   let clientScript =
     Window.document(Window.window)->Window.getElementById("braintree-client")->Nullable.toOption
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
+  let connectors = React.useMemo(() => {
+    SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+      sdkConfigsValue.payment_methods,
+      paymentMethod,
+      paymentMethodType,
+    )
+  }, [sdkConfigsValue.payment_methods])
   let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   let buttonStyle = switch options.wallets.payPal {
   | PaypalConfigObj(cfg) =>
@@ -109,21 +120,49 @@ let make = (~sessionObj: SessionsType.token) => {
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="paypal",
+  let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
+  DynamicFieldsUtils.useLogDynamicFieldsRendered(
+    ~fields=requiredFields,
+    ~paymentMethod,
+    ~resolutionContext,
   )
 
   UtilityHooks.useHandlePostMessages(
     ~complete=isCompleted,
     ~empty=!isCompleted,
-    ~paymentType="paypal",
+    ~paymentType=paymentMethodType,
   )
 
   let mountPaypalSDK = () => {
     let clientId = sessionObj.token
-    let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields&currency=${paymentMethodListValue.currency}`
+    let paypalIntent = sessionObj.intent
+    let currency = sessionObj.currency
+
+    let intentParam = if paypalIntent !== "" {
+      `&intent=${paypalIntent}`
+    } else {
+      loggerState.setLogInfo(
+        ~value="PayPal SDK: intent is missing from session object, omitting intent param from SDK URL",
+        ~eventName=PAYPAL_SDK_FLOW,
+      )
+      ""
+    }
+
+    let currencyParam = if currency !== "" {
+      `&currency=${currency}`
+    } else {
+      loggerState.setLogInfo(
+        ~value="PayPal SDK: currency is missing from session object, omitting currency param from SDK URL",
+        ~eventName=PAYPAL_SDK_FLOW,
+      )
+      ""
+    }
+
+    let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields${currencyParam}${intentParam}`
     loggerState.setLogInfo(~value="PayPal SDK Script Loading", ~eventName=PAYPAL_SDK_FLOW)
     let paypalScript = Window.createElement("script")
     paypalScript->Window.elementSrc(paypalScriptURL)
@@ -142,12 +181,13 @@ let make = (~sessionObj: SessionsType.token) => {
         ~buttonStyle,
         ~iframeId,
         ~paymentMethodListValue,
+        ~connectors,
         ~isGuestCustomer,
         ~postSessionTokens=intent,
         ~isManualRetryEnabled,
         ~options,
         ~publishableKey,
-        ~paymentMethodTypes,
+        ~requiredFields,
         ~confirm,
         ~completeAuthorize,
         ~handleCloseLoader,
@@ -160,6 +200,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~isTestMode,
         ~nonPiiAdderessData,
         ~sdkAuthorization,
+        ~emitter,
       )
     })
     Window.body->Window.appendChild(paypalScript)
@@ -179,12 +220,13 @@ let make = (~sessionObj: SessionsType.token) => {
             ~buttonStyle,
             ~iframeId,
             ~paymentMethodListValue,
+            ~connectors,
             ~isGuestCustomer,
             ~intent,
             ~options,
             ~orderDetails,
             ~publishableKey,
-            ~paymentMethodTypes,
+            ~requiredFields,
             ~handleCloseLoader,
             ~areOneClickWalletsRendered,
             ~isManualRetryEnabled,

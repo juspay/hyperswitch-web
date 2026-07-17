@@ -62,6 +62,14 @@ let make = (
   ~installmentsError,
   ~setInstallmentsError,
   ~eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  ~isEligibilityPending=false,
+  // Vault saved-card (return user) flow (VGS or Hyperswitch): when true, this card's
+  // CVC is collected inside the nested iframe (ParentCardComponent saved-card mode)
+  // instead of the plain input. `setCvcIframeRef` lifts the iframe ref to
+  // SavedMethods, which owns submit. Defaults keep other call sites
+  // (e.g. ClickToPayAuthenticate) intact.
+  ~isVaultCvcFlow=false,
+  ~setCvcIframeRef=_ => (),
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {
@@ -103,12 +111,15 @@ let make = (
   | None => "debit"
   }
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   React.useEffect(() => {
     setSelectedInstallmentPlan(_ => None)
     setShowInstallments(_ => false)
     None
   }, [paymentItem])
+
+  let isOneClickWallet = paymentItem.paymentMethod === "wallet"
 
   React.useEffect(() => {
     if isActive {
@@ -126,6 +137,13 @@ let make = (
         ~isSavedPaymentMethod=true,
         ~isCvcEmpty,
       )
+      emitter.emitPaymentMethodStatus(
+        ~paymentMethod=paymentItem.paymentMethod,
+        ~paymentMethodType,
+        ~isSavedPaymentMethod=true,
+        ~isOneClickWallet,
+      )
+      emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
     }
     None
   }, (isActive, paymentItem, country, state, pinCode, isCvcEmpty))
@@ -144,6 +162,7 @@ let make = (
   }, (isActive, paymentItem, country, state, pinCode))
 
   React.useEffect(() => {
+    // TODO - Handle Events for VGS/Vault case
     CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
     None
   }, [isCVCValid])
@@ -195,6 +214,19 @@ let make = (
       autocomplete="cc-csc"
     />
 
+  // Inner-iframe container id for the VGS saved-card CVC. Only the active card
+  // mounts this iframe (the CVC slots below are gated on isActive), so a single
+  // constant id is unique at any time.
+  let cvcIframeContainerId = "saved-card-cvc-inner-iframe-container"
+  // VGS saved-card flow renders the secure CVC iframe in place of the plain input;
+  // ParentCardComponent (saved-card mode) hosts it and lifts its ref to SavedMethods.
+  let makeCvcField = (~fieldName="", ~height="1.8rem", ~inputFieldClassName="flex justify-start") =>
+    isVaultCvcFlow
+      ? <ParentCardComponent
+          isSavedCardFlow=true containerId=cvcIframeContainerId setExternalIframeRef=setCvcIframeRef
+        />
+      : makeCvcInput(~fieldName, ~height, ~inputFieldClassName)
+
   let {innerLayout} = config.appearance
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
@@ -203,11 +235,6 @@ let make = (
     installmentOptions
     ->PaymentUtils.filterInstallmentPlansByPaymentMethod(paymentItem.paymentMethod)
     ->Array.length > 0
-
-  let surchargeAmount =
-    eligibilitySurchargeDetails
-    ->Option.map(s => s.displayTotalSurchargeAmount->Float.toString)
-    ->Option.getOr("")
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
@@ -282,7 +309,7 @@ let make = (
                   </div>
                 </RenderIf>
                 <div className={cvcContainerClassName}>
-                  {makeCvcInput(
+                  {makeCvcField(
                     ~fieldName=cvcFieldName,
                     ~height=cvcHeight,
                     ~inputFieldClassName="",
@@ -304,7 +331,7 @@ let make = (
                     className={`flex h mx-4 justify-start w-16 ${isActive
                         ? "opacity-1 mt-4"
                         : "opacity-0"}`}>
-                    {makeCvcInput()}
+                    {makeCvcField()}
                   </div>
                 </div>
               </RenderIf>
@@ -373,16 +400,10 @@ let make = (
                   paymentMethodType
                   cardBrand={cardBrand->CardUtils.getCardType}
                 />
-                <RenderIf condition={eligibilitySurchargeDetails->Option.isSome && isCard}>
-                  <div className="flex items-baseline text-xs mt-2 ml-1">
-                    <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
-                    <div className="text-left text-gray-400">
-                      {localeString.surchargeMsgAmountForCard(
-                        paymentMethodListValue.currency,
-                        surchargeAmount,
-                      )}
-                    </div>
-                  </div>
+                <RenderIf condition={isCard}>
+                  <SurchargeEligibilityNotice
+                    eligibilitySurchargeDetails isEligibilityPending className="mt-3 ml-1.5"
+                  />
                 </RenderIf>
               </RenderIf>
             </div>
