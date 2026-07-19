@@ -257,8 +257,21 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             ->Option.flatMap(JSON.Decode.bool)
             ->Option.getOr(false)
           ) {
+            if dict->getDictIsSome("mountElement") {
+              let newLaunchTime = dict->getFloat("launchTime", 0.0)
+              setLaunchTime(_ => newLaunchTime)
+              let initLoadlatency = Date.now() -. newLaunchTime
+              logger.setLogInfo(
+                ~value=Window.hrefWithoutSearch,
+                ~eventName=APP_RENDERED,
+                ~latency=initLoadlatency,
+              )
+            }
             if (
-              dict->Dict.get("otherElements")->Option.flatMap(JSON.Decode.bool)->Option.getOr(false)
+              dict
+              ->Dict.get("otherElements")
+              ->Option.flatMap(JSON.Decode.bool)
+              ->Option.getOr(false)
             ) {
               updateOptions(dict)
             } else {
@@ -327,12 +340,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               }
               let newLaunchTime = dict->getFloat("launchTime", 0.0)
               setLaunchTime(_ => newLaunchTime)
-              let initLoadlatency = Date.now() -. newLaunchTime
-              logger.setLogInfo(
-                ~value=Window.hrefWithoutSearch,
-                ~eventName=APP_RENDERED,
-                ~latency=initLoadlatency,
-              )
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
