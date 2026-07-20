@@ -165,7 +165,20 @@ let make = (
       })
     }
 
-    let create = (componentType, newOptions) => {
+    let create = (arg1: JSON.t, arg2: Nullable.t<JSON.t>) => {
+      let (componentType, newOptions) = switch arg1->JSON.Classify.classify {
+      | String(typeStr) =>
+        let opts = arg2->Nullable.toOption->Option.getOr(JSON.Encode.null)
+        (typeStr, opts)
+      | Object(dict) =>
+        let componentType = dict->getString("type", "paymentMethodsManagement")
+        let opts = switch dict->Dict.get("options") {
+        | Some(o) => o
+        | None => arg2->Nullable.toOption->Option.getOr(JSON.Encode.null)
+        }
+        (componentType, opts)
+      | _ => ("paymentMethodsManagement", JSON.Encode.null)
+      }
       componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
@@ -244,6 +257,7 @@ let make = (
         ~isPaymentManagementElement=true,
         ~redirectionFlags=RecoilAtoms.defaultRedirectionFlags,
         ~logger=Some(logger),
+        ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

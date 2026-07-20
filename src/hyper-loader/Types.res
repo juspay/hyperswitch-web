@@ -37,13 +37,14 @@ type paymentElement = {
   focus: unit => unit,
   clear: unit => unit,
   onSDKHandleClick: option<unit => Promise.t<unit>> => unit,
+  confirmPayment: JSON.t => promise<JSON.t>,
 }
 
 type element = {
   getElement: string => option<paymentElement>,
   update: JSON.t => unit,
   fetchUpdates: unit => promise<JSON.t>,
-  create: (string, JSON.t) => paymentElement,
+  create: (JSON.t, Nullable.t<JSON.t>) => paymentElement,
   updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
 }
 
@@ -154,9 +155,10 @@ let defaultPaymentElement = {
   focus: () => (),
   clear: () => (),
   onSDKHandleClick: _fnArgument => (),
+  confirmPayment: _payload => Promise.resolve(Dict.make()->JSON.Encode.object),
 }
 
-let create = (_componentType, _options) => {
+let create = (_options: JSON.t, _options2: Nullable.t<JSON.t>) => {
   defaultPaymentElement
 }
 
