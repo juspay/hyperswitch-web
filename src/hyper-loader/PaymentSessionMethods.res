@@ -210,7 +210,7 @@ let getCustomerSavedPaymentMethods = (
             ~errorType=cvcValidationErrorType,
           )->resolve
         } else {
-          body->Array.push(("card_cvc", cvcString->JSON.Encode.string))->ignore
+          body->Array.push(PaymentBody.cardTokenCvcTuple(~cvcNumber=cvcString))->ignore
           PaymentHelpers.paymentIntentForPaymentSession(
             ~body,
             ~paymentType,

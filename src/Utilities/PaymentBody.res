@@ -126,6 +126,13 @@ let customerAcceptanceBody =
     ),
   ]->Utils.getJsonFromArrayOfJson
 
+let cardTokenCvcTuple = (~cvcNumber) => (
+  "payment_method_data",
+  [
+    ("card_token", [("card_cvc", cvcNumber->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
+  ]->Utils.getJsonFromArrayOfJson,
+)
+
 let savedCardBody = (
   ~paymentToken,
   ~customerId,
@@ -140,7 +147,7 @@ let savedCardBody = (
   ]
 
   if requiresCvv {
-    savedCardBody->Array.push(("card_cvc", cvcNumber->JSON.Encode.string))->ignore
+    savedCardBody->Array.push(cardTokenCvcTuple(~cvcNumber))->ignore
   }
 
   if isCustomerAcceptanceRequired {
