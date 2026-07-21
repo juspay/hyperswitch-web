@@ -93,9 +93,18 @@ let renderSingleField = (
     </RenderIf>
 
   | BankNamesSelect =>
-    let options = Bank.getBanks(paymentMethodType)->Array.map(bank => {
-      DropdownField.value: bank.value,
-      label: bank.displayName,
+    let allowedValues = field.dropdownOptions->Option.getOr([])
+    let banks = Bank.getBanks(paymentMethodType)
+    let options = allowedValues->Array.map(bankValue => {
+      let label =
+        banks
+        ->Array.find(bank => bank.value == bankValue)
+        ->Option.map(bank => bank.displayName)
+        ->Option.getOr(bankValue)
+      {
+        DropdownField.value: bankValue,
+        label,
+      }
     })
     <RenderIf condition={options->Array.length > 0}>
       <BankNamesSelectField fieldConfig=field options />
