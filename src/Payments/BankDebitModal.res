@@ -240,6 +240,7 @@ let make = (~setModalData) => {
         className={`p-2 text-base px-4`}
         maxLength=17
         placeholder="eg: John Doe"
+        ariaLabel={localeString.fullNameLabel}
         onBlur={_ => setInputFocus(_ => NONE)}
       />
       <RenderIf condition={isSepaDebit}>
@@ -260,6 +261,8 @@ let make = (~setModalData) => {
           maxLength=42
           inputRef=ibanRef
           placeholder="eg: DE00 0000 0000 0000 0000 00"
+          ariaLabel={localeString.formFieldSepaIbanLabel}
+          ariaRequired=true
         />
       </RenderIf>
       <div className="flex flex-row items-center w-full justify-between">
@@ -285,6 +288,8 @@ let make = (~setModalData) => {
               className={` p-2 text-base px-4`}
               maxLength=9
               placeholder="123456789"
+              ariaLabel={localeString.formFieldACHRoutingNumberLabel}
+              ariaRequired=true
               errorString=routingError
               onBlur=routingBlur
               onFocus={_ => setInputFocus(_ => Routing)}
@@ -311,6 +316,8 @@ let make = (~setModalData) => {
               className={`p-2 text-base px-4`}
               maxLength={isBecsDebit ? 9 : 17}
               placeholder="000123456789"
+              ariaLabel={localeString.formFieldBankAccountNumberLabel}
+              ariaRequired=true
               onFocus={_ => setInputFocus(_ => Account)}
               onBlur={_ => setInputFocus(_ => NONE)}
             />
@@ -363,6 +370,8 @@ let make = (~setModalData) => {
           className={`p-2 text-base px-4`}
           maxLength=7
           placeholder="eg: 000-000"
+          ariaLabel={localeString.sortCodeText}
+          ariaRequired=true
         />
       </RenderIf>
       <Button

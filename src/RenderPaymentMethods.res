@@ -95,6 +95,8 @@ let make = (
             id="card-number"
             isFocus
             autocomplete="cc-number"
+            ariaLabel={localeString.cardNumberLabel}
+            ariaRequired=true
           />
         | CardExpiryElement =>
           <InputField
@@ -111,6 +113,8 @@ let make = (
             id="card-expiry"
             isFocus
             autocomplete="cc-exp"
+            ariaLabel={localeString.validThruText}
+            ariaRequired=true
           />
         | CardCVCElement => <CardCVCElement cvcProps paymentType />
         | PaymentMethodsManagement =>

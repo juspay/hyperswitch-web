@@ -72,6 +72,9 @@ let make = (
     themeObj.colorBackground
   }, [themeObj])
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
+  let selectId = `dropdown-${fieldName->String.trim->String.replaceRegExp(%re("/\s+/g"), "-")}`
+  let hasError = value.errorString->String.length > 0
+  let ariaInvalid = AccessibilityUtils.ariaInvalid(~hasError, ~isValid=value.isValid)
   <RenderIf condition={options->Array.length > 0}>
     <div className="flex flex-col w-full" style={color: themeObj.colorText}>
       <RenderIf
@@ -93,6 +96,7 @@ let make = (
       <div className="relative">
         <select
           ref={dropdownRef->ReactDOM.Ref.domRef}
+          id={selectId}
           style={
             background: disabled ? disbaledBG : themeObj.colorBackground,
             opacity: disabled ? "35%" : "",
@@ -105,7 +109,9 @@ let make = (
           onFocus={handleFocus}
           onChange=handleChange
           className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
-          ariaLabel={`${fieldName} option tab`}>
+          ariaLabel={localeString.optionTabLabel(fieldName)}
+          ariaInvalid
+          ariaDescribedby=?{hasError ? Some(selectId ++ "-error") : None}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>
@@ -139,17 +145,18 @@ let make = (
           }>
           <Icon size=10 name={"arrow-down"} />
         </div>
-        <RenderIf condition={value.errorString->String.length > 0}>
-          <div
+        <RenderIf condition={hasError}>
+          <LiveError
+            text={value.errorString}
             className="Error pt-1"
-            style={
+            style={{
               color: themeObj.colorDangerText,
               fontSize: themeObj.fontSizeSm,
               alignSelf: "start",
               textAlign: "left",
-            }>
-            {React.string(value.errorString)}
-          </div>
+            }}
+            id={selectId ++ "-error"}
+          />
         </RenderIf>
       </div>
     </div>

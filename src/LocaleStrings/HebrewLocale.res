@@ -266,4 +266,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "הצג פחות",
   refreshingText: "מרענן...",
   paymentDetailsBeingCheckedText: "פרטי התשלום נבדקים. אנא המתן",
+  // --- accessibility labels ---
+  cardNetworkLabel: "רשת כרטיסים",
+  morePaymentMethodsLabel: "אמצעי תשלום נוספים",
+  yearLabel: "שנה",
+  monthLabel: "חודש",
+  optionTabLabel: fieldName => `${fieldName} לשונית אפשרות`,
 }

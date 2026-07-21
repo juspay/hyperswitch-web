@@ -3,7 +3,7 @@ open Utils
 
 @react.component
 let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVisaCards) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
 
   let (identifier, setIdentifier) = React.useState(_ => "")
@@ -189,6 +189,8 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
         <div className="w-full flex space-x-2">
           <div className="relative w-1/3">
             <select
+              id="ctp-identifier-type"
+              ariaLabel={`${localeString.emailLabel} / ${localeString.formFieldPhoneNumberLabel}`}
               value={identifierType->getIdentityType}
               onChange={handleTypeChange}
               className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none">
@@ -207,6 +209,10 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
           {identifierType === EMAIL_ADDRESS
             ? <input
                 type_="text"
+                id="ctp-email"
+                ariaLabel={localeString.emailLabel}
+                ariaRequired=true
+                autoComplete="email"
                 value={identifier}
                 onChange={handleInputChange}
                 placeholder="Enter email"
@@ -216,6 +222,8 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
             : <div className="w-2/3 flex border border-gray-300 rounded-md overflow-hidden">
                 <div className="relative">
                   <select
+                    id="ctp-country-code"
+                    ariaLabel={localeString.formFieldCountryCodeRequiredLabel}
                     value={countryCode}
                     onChange={handleCountryCodeChange}
                     className="h-full p-3 appearance-none focus:outline-none">
@@ -239,6 +247,10 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                 </div>
                 <input
                   type_="tel"
+                  id="ctp-phone"
+                  ariaLabel={localeString.formFieldPhoneNumberLabel}
+                  ariaRequired=true
+                  autoComplete="tel-national"
                   value={identifier}
                   onChange={handlePhoneInputChange}
                   placeholder="Mobile number"

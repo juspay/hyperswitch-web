@@ -26,6 +26,9 @@ let make = (
   ~paymentType=?,
   ~isDisabled=false,
   ~autocomplete="on",
+  ~ariaRequired=false,
+  ~ariaLabel=?,
+  ~fieldId=?,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
@@ -93,23 +96,52 @@ let make = (
   let inputLogoClass = getClassName("InputLogo")
   let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
 
+  let generatedId = React.useId()
+  let inputId = AccessibilityUtils.getControlId(~fieldId, ~preferredId=name, ~generatedId)
+  let errorText = errorString->Option.getOr("")
+  let hasError = errorText->String.length > 0
+  let (
+    accessibleLabel,
+    errorId,
+    describedById,
+    ariaInvalid,
+  ) = AccessibilityUtils.getFieldAccessibility(
+    ~controlId=inputId,
+    ~fieldName,
+    ~placeholder,
+    ~ariaLabel,
+    ~hasError,
+    ~isValid,
+  )
+  let errorClassName =
+    innerLayout === Spaced ? "Error pt-1" : AccessibilityUtils.visuallyHiddenClass
+  let errorStyle: option<JsxDOM.style> =
+    innerLayout === Spaced
+      ? Some({
+          color: themeObj.colorDangerText,
+          fontSize: themeObj.fontSizeSm,
+          alignSelf: "start",
+          textAlign: "left",
+        })
+      : None
+
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
     <RenderIf
       condition={!isLabelHidden &&
       fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
       innerLayout === Spaced}>
-      <div
+      <label
+        htmlFor={inputId}
         className={`Label ${labelClass}`}
         style={
           fontWeight: themeObj.fontWeightNormal,
           fontSize: themeObj.fontSizeLg,
           marginBottom: "5px",
           opacity: "0.6",
-        }
-        ariaHidden=true>
+        }>
         {React.string(fieldName)}
-      </div>
+      </label>
     </RenderIf>
     <div className="flex flex-row " style={direction: direction}>
       <div className={`relative w-full ${inputFieldClassName}`}>
@@ -120,6 +152,7 @@ let make = (
             width: fieldWidth,
             height,
           }
+          id={inputId}
           dataTestId={name}
           disabled={isDisabled || readOnly}
           ref={inputRef->ReactDOM.Ref.domRef}
@@ -134,7 +167,10 @@ let make = (
           onChange
           onBlur=handleBlur
           onFocus=handleFocus
-          ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
+          ariaLabel={accessibleLabel}
+          ariaInvalid
+          ariaRequired
+          ariaDescribedby=?describedById
         />
         <RenderIf condition={!isLabelHidden && config.appearance.labels == Floating}>
           <div
@@ -155,23 +191,8 @@ let make = (
         {rightIcon}
       </div>
     </div>
-    <RenderIf condition={innerLayout === Spaced}>
-      {switch errorString {
-      | Some(val) =>
-        <RenderIf condition={val->String.length > 0}>
-          <div
-            className="Error pt-1"
-            style={
-              color: themeObj.colorDangerText,
-              fontSize: themeObj.fontSizeSm,
-              alignSelf: "start",
-              textAlign: "left",
-            }>
-            {React.string(val)}
-          </div>
-        </RenderIf>
-      | None => React.null
-      }}
+    <RenderIf condition={hasError}>
+      <LiveError text={errorText} className=errorClassName style=?errorStyle id={errorId} />
     </RenderIf>
   </div>
 }
