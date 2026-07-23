@@ -7,8 +7,8 @@ let useClickToPay = (
   ~savedMethods,
   ~loadSavedCards,
 ) => {
-  let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
-  let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
+  let (clickToPayConfig, setClickToPayConfig) = Jotai.useAtom(JotaiAtoms.clickToPayConfig)
+  let setShowPaymentMethodsScreen = Jotai.useSetAtom(JotaiAtoms.showPaymentMethodsScreen)
   let {clickToPayProvider, isReady} = clickToPayConfig
   let setClickToPayProvider = provider =>
     setClickToPayConfig(prev => {
@@ -16,9 +16,9 @@ let useClickToPay = (
       clickToPayProvider: provider,
     })
 
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let sessionsObj = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
-  let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let sessionsObj = Jotai.useAtomValue(JotaiAtoms.sessions)
+  let {clientSecret} = Jotai.useAtomValue(JotaiAtoms.keys)
 
   let closeComponentIfSavedMethodsAreEmpty = () => {
     if savedMethods->Array.length === 0 && loadSavedCards !== PaymentType.LoadingSavedCards {

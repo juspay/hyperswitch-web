@@ -140,7 +140,7 @@ let makeRow = (
   ~globalEmailFields: option<array<fieldConfig>>=?,
   ~globalCardHolderNameFields: option<array<fieldConfig>>=?,
 ) => {
-  let {config, localeString, themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {config, localeString, themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   switch items->Array.length {
   | 0 => React.null
   | 1 =>

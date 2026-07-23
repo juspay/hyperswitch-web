@@ -3,8 +3,8 @@ open Utils
 
 @react.component
 let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVisaCards) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let (clickToPayConfig, setClickToPayConfig) = Jotai.useAtom(JotaiAtoms.clickToPayConfig)
 
   let (identifier, setIdentifier) = React.useState(_ => "")
   let (isValid, setIsValid) = React.useState(_ => false)

@@ -1,10 +1,10 @@
-open RecoilAtoms
+open JotaiAtoms
 module Loader = {
   @react.component
   let make = (~cardShimmerCount) => {
-    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-    let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+    let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
+    let {themeObj} = Jotai.useAtomValue(configAtom)
+    let {layout} = Jotai.useAtomValue(optionAtom)
     let layoutClass = CardUtils.getLayoutClass(layout)
     open PaymentType
     open PaymentElementShimmer
@@ -64,13 +64,13 @@ let make = (
   ~expiryProps: CardUtils.expiryProps,
   ~cvcProps: CardUtils.cvcProps,
 ) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
+  let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
+  let {layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (showMore, setShowMore) = React.useState(_ => false)
-  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let (selectedOption, setSelectedOption) = Jotai.useAtom(selectedOptionAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let {
     displayInSeparateScreen,
     groupByPaymentMethods,

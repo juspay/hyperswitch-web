@@ -1,16 +1,16 @@
 open CardUtils
 open LoggerUtils
-open RecoilAtoms
+open JotaiAtoms
 
 let useCardForm = (~logger, ~paymentType) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
-  let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(showPaymentMethodsScreen)
-  let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
-  let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {clientSecret, publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let {localeString} = Jotai.useAtomValue(configAtom)
+  let cardScheme = Jotai.useAtomValue(cardBrand)
+  let showPaymentMethodsScreen = Jotai.useAtomValue(showPaymentMethodsScreen)
+  let selectedOption = Jotai.useAtomValue(selectedOptionAtom)
+  let paymentToken = Jotai.useAtomValue(paymentTokenAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let {clientSecret, publishableKey, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let customPodUri = Jotai.useAtomValue(customPodUri)
   let (cardEligibilityError, setCardEligibilityError) = React.useState(_ => None)
   let (eligibilitySurchargeDetails, setEligibilitySurchargeDetails) = React.useState(_ => None)
   let (isEligibilityPending, setIsEligibilityPending) = React.useState(_ => false)

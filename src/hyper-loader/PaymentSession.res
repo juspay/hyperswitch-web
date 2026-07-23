@@ -5,7 +5,7 @@ let make = (
   ~publishableKey,
   ~sdkSessionId,
   ~logger: option<HyperLoggerTypes.loggerMake>,
-  ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
   ~isTestMode=false,
   ~isUpdateIntentInProgress: ref<bool>,

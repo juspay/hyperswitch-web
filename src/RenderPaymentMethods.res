@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 open Utils
 @react.component
 let make = (
@@ -11,8 +11,8 @@ let make = (
   ~blurState,
   ~isFocus,
 ) => {
-  let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {showLoader} = Jotai.useAtomValue(configAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
   let {
     isCardValid,
     setIsCardValid,

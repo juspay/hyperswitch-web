@@ -7,7 +7,7 @@ let make = () => {
   let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   let eventsToSendToParent = ["openurl_if_required"]
   eventsToSendToParent->UtilityHooks.useSendEventsToParent

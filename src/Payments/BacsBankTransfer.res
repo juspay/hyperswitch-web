@@ -1,17 +1,17 @@
-open RecoilAtoms
+open JotaiAtoms
 open Utils
 
 @react.component
 let default = () => {
-  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let {themeObj} = Jotai.useAtomValue(configAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let setComplete = Recoil.useSetRecoilState(fieldsComplete)
-  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let email = Jotai.useAtomValue(userEmailAddress)
+  let fullName = Jotai.useAtomValue(userFullName)
+  let setComplete = Jotai.useSetAtom(fieldsComplete)
+  let {layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())

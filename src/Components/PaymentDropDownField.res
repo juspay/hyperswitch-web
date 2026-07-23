@@ -1,20 +1,20 @@
-open RecoilAtoms
+open JotaiAtoms
 @react.component
 let make = (
-  ~value: RecoilAtomTypes.field,
-  ~setValue: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
+  ~value: JotaiAtomTypes.field,
+  ~setValue: (JotaiAtomTypes.field => JotaiAtomTypes.field) => unit,
   ~fieldName,
   ~options,
   ~disabled=false,
   ~className="",
 ) => {
-  let {config} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let {config} = Jotai.useAtomValue(configAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
+  let {readOnly} = Jotai.useAtomValue(optionAtom)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
-  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {parentURL, iframeId} = Jotai.useAtomValue(keys)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
   let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
 

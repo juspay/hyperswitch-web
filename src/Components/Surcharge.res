@@ -5,7 +5,7 @@ let make = (
   ~cardBrand=CardUtils.NOTFOUND,
   ~isForWallets=false,
 ) => {
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let getPaymentMethodTypes = paymentMethodType => {
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~paymentMethodListValue,

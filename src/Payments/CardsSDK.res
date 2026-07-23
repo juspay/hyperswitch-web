@@ -1,5 +1,5 @@
 // CardsSDK
-// Reads the vaultCredentials Recoil atom (set by PaymentMethodsSDK after decoding
+// Reads the vaultCredentials Jotai atom (set by PaymentMethodsSDK after decoding
 // the vaultConfig blob) and dispatches to the right vault-specific card component.
 //
 // Extending for a new vault:
@@ -11,8 +11,8 @@
 // always false for the new-card flow (full card fields).
 @react.component
 let make = (~cvcOnly=false) => {
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let vaultCredentials = Recoil.useRecoilValueFromAtom(RecoilAtoms.vaultCredentials)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
 
   let {cardProps, expiryProps, cvcProps} = CommonCardProps.useCardForm(
     ~logger=loggerState,

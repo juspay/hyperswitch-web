@@ -13,7 +13,7 @@
     "react-datepicker": "^8.4.0",
     "react-dom": "^18.2.0",
     "react-final-form": "^7.0.0",
-    "recoil": "^0.7.7",
+    "jotai": "^2.0.0",
     "webpack-merge": "^6.0.1"
   },
   "scripts": {

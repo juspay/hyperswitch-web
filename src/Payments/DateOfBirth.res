@@ -22,7 +22,7 @@ let years = Array.fromInitializer(~length=currentYear - startYear, i => currentY
 @react.component
 let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
   let path = fieldConfig.confirmRequestWritePath
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
     ~field=fieldConfig,
     ~localeObject=localeString,
