@@ -34,7 +34,6 @@ const confirmBody = {
       card_exp_year: "28",
       card_holder_name: "",
       card_cvc: "424",
-      card_issuer: "",
       card_network: "Visa",
     },
   },
