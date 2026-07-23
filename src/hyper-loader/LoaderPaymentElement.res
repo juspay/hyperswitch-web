@@ -93,6 +93,7 @@ let make = (
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~logger: option<HyperLoggerTypes.loggerMake>,
+  ~confirmPayment: JSON.t => promise<JSON.t>,
 ) => {
   try {
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
@@ -567,6 +568,7 @@ let make = (
       update,
       mount,
       onSDKHandleClick,
+      confirmPayment,
     }
   } catch {
   | e => {

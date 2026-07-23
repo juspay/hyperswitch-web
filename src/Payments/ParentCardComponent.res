@@ -134,6 +134,7 @@ let make = (
       ~redirectionFlags,
       ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
       ~logger=Some(loggerState),
+      ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
     )
     element.mount(`#${containerId}`)
     Some(
