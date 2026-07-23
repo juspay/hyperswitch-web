@@ -3,7 +3,7 @@ open SuperpositionTypes
 module EmailInput = {
   @react.component
   let make = (~primaryFieldConfig, ~fields) => {
-    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     let fieldRef = React.useRef(Nullable.null)
     let form = ReactFinalForm.useForm()
 

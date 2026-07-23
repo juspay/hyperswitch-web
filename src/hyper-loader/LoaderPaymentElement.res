@@ -90,7 +90,7 @@ let make = (
   mountPostMessage,
   ~appearance,
   ~isPaymentManagementElement=false,
-  ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~logger: option<HyperLoggerTypes.loggerMake>,
 ) => {

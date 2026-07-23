@@ -1,6 +1,6 @@
 @react.component
 let make = (
-  ~paymentToken: RecoilAtomTypes.paymentToken,
+  ~paymentToken: JotaiAtomTypes.paymentToken,
   ~setPaymentToken,
   ~savedMethods: array<PaymentType.customerMethods>,
   ~loadSavedCards: PaymentType.savedCardsLoadState,
@@ -16,7 +16,7 @@ let make = (
   open UtilityHooks
   open Promise
 
-  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+  let clickToPayConfig = Jotai.useAtomValue(JotaiAtoms.clickToPayConfig)
 
   let {clickToPayProvider} = clickToPayConfig
   let customerMethods =
@@ -24,14 +24,14 @@ let make = (
     ->Option.getOr([])
     ->Array.map(obj => obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider))
 
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
-    RecoilAtoms.showPaymentMethodsScreen,
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Jotai.useAtom(
+    JotaiAtoms.showPaymentMethodsScreen,
   )
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
     loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT)
@@ -42,16 +42,16 @@ let make = (
     savedPaymentMethodsCheckboxCheckedByDefault,
     layout,
     alwaysSendCustomerAcceptance,
-  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
   )
   let isGuestCustomer = useIsGuestCustomer()
 
-  let {iframeId, clientSecret, sdkAuthorization, publishableKey} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.keys,
+  let {iframeId, clientSecret, sdkAuthorization, publishableKey} = Jotai.useAtomValue(
+    JotaiAtoms.keys,
   )
-  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
@@ -76,7 +76,7 @@ let make = (
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let savedCardlength = savedMethods->Array.length
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
   let layoutClass = CardUtils.getLayoutClass(layout)
   let {
@@ -88,7 +88,7 @@ let make = (
   let groupSavedMethodsSeparately = !displayInSeparateScreen && !groupByPaymentMethods
 
   let maxItems = layoutClass.savedMethodCustomization.maxItems
-  let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
+  let selectedOption = Jotai.useAtomValue(JotaiAtoms.selectedOptionAtom)
 
   let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
   let (showInstallments, setShowInstallments) = React.useState(_ => false)
@@ -105,8 +105,8 @@ let make = (
   // iframe (hosted by ParentCardComponent in saved-card mode) instead of a plain
   // input. SavedMethods stays the submit owner: it forwards the doSubmit message
   // to that iframe and confirms with the vault_card_token_data body.
-  let isTokenize = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTokenize)
-  let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
+  let isTokenize = Jotai.useAtomValue(JotaiAtoms.isTokenize)
+  let sessionToken = Jotai.useAtomValue(JotaiAtoms.sessions)
   let vaultCredentials = React.useMemo(
     () => VaultHelpers.getVaultCredentialsFromSessions(sessionToken),
     [sessionToken],

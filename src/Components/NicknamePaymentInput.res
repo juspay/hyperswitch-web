@@ -1,10 +1,10 @@
 @react.component
 let make = () => {
-  open RecoilAtoms
+  open JotaiAtoms
   open Utils
 
-  let (nickName, setNickName) = Recoil.useRecoilState(userCardNickName)
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let (nickName, setNickName) = Jotai.useAtom(userCardNickName)
+  let {localeString} = Jotai.useAtomValue(configAtom)
 
   let onChange = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]

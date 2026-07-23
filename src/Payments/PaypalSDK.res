@@ -11,14 +11,12 @@ let make = (~sessionObj: SessionsType.token) => {
     sdkHandleOneClickConfirmPayment,
     clientSecret,
     sdkAuthorization,
-  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
-  )
-  let (loggerState, _setLoggerState) = Recoil.useRecoilState(RecoilAtoms.loggerAtom)
-  let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
+  } = Jotai.useAtomValue(JotaiAtoms.keys)
+  let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
+  let (loggerState, _setLoggerState) = Jotai.useAtom(JotaiAtoms.loggerAtom)
+  let areOneClickWalletsRendered = Jotai.useSetAtom(JotaiAtoms.areOneClickWalletsRendered)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
   let paymentType = usePaymentType()
   let nonPiiAdderessData = PaymentUtils.useNonPiiAddressData()
 
@@ -26,16 +24,16 @@ let make = (~sessionObj: SessionsType.token) => {
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
   let intent = PaymentHelpers.usePostSessionTokens(Some(loggerState), Paypal, Wallet)
   let confirm = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
-  let sessions = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
-  let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
+  let sessions = Jotai.useAtomValue(JotaiAtoms.sessions)
+  let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
   let completeAuthorize = PaymentHelpers.useCompleteAuthorize(Some(loggerState), Paypal)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let checkoutScript =
     Window.document(Window.window)->Window.getElementById("braintree-checkout")->Nullable.toOption
   let clientScript =
     Window.document(Window.window)->Window.getElementById("braintree-client")->Nullable.toOption
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
   let connectors = React.useMemo(() => {
     SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
       sdkConfigsValue.payment_methods,
@@ -43,9 +41,9 @@ let make = (~sessionObj: SessionsType.token) => {
       paymentMethodType,
     )
   }, [sdkConfigsValue.payment_methods])
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
 
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   let buttonStyle = switch options.wallets.payPal {

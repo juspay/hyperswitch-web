@@ -95,7 +95,7 @@ let errorIcon = {
 module ErrorTextAndImage = {
   @react.component
   let make = (~divRef, ~level) => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     let message = switch level {
     | Top => "We'll be back with you shortly :)"
     | _ => "Try another payment method :)"
@@ -175,7 +175,7 @@ module ErrorCard = {
     })
 
     let (divH, setDivH) = React.useState(_ => 0.0)
-    let (keys, _setKeys) = Recoil.useRecoilState(RecoilAtoms.keys)
+    let (keys, _setKeys) = Jotai.useAtom(JotaiAtoms.keys)
     let {iframeId} = keys
     let divRef = React.useRef(Nullable.null)
 

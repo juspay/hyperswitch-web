@@ -1,18 +1,18 @@
 @react.component
 let make = (~options) => {
-  open RecoilAtoms
-  let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (documentType, setSelectedDocumentType) = Recoil.useRecoilState(RecoilAtoms.userDocumentType)
-  let setDocumentNumber = Recoil.useSetRecoilState(RecoilAtoms.userDocumentNumber)
+  open JotaiAtoms
+  let {config, localeString} = Jotai.useAtomValue(configAtom)
+  let (documentType, setSelectedDocumentType) = Jotai.useAtom(JotaiAtoms.userDocumentType)
+  let setDocumentNumber = Jotai.useSetAtom(JotaiAtoms.userDocumentNumber)
 
-  let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
-  let pixCPF = Recoil.useRecoilValueFromAtom(userPixCPF)
+  let pixCNPJ = Jotai.useAtomValue(userPixCNPJ)
+  let pixCPF = Jotai.useAtomValue(userPixCPF)
 
   React.useEffect(() => {
     switch documentType {
     | "cpf" => setDocumentNumber(_ => pixCPF)
     | "cnpj" => setDocumentNumber(_ => pixCNPJ)
-    | _ => setDocumentNumber(_ => RecoilAtoms.defaultFieldValues)
+    | _ => setDocumentNumber(_ => JotaiAtoms.defaultFieldValues)
     }
     None
   }, (documentType, pixCNPJ, pixCPF))
