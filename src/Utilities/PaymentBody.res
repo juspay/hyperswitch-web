@@ -146,11 +146,11 @@ let savedCardBody = (
   ]
 
   if requiresCvv {
-    savedCardBody->Array.push(cardTokenCvcTuple(~cvcNumber))->ignore
+    savedCardBody->Array.push(cardTokenCvcTuple(~cvcNumber))
   }
 
   if isCustomerAcceptanceRequired {
-    savedCardBody->Array.push(("customer_acceptance", customerAcceptanceBody))->ignore
+    savedCardBody->Array.push(("customer_acceptance", customerAcceptanceBody))
   }
 
   savedCardBody
