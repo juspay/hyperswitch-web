@@ -66,8 +66,8 @@ let make = () => {
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (headers, setHeaders) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
-  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
+  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
     getPaymentMethodConfig(Other)
   )

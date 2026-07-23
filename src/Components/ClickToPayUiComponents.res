@@ -23,11 +23,9 @@ module LoadingState = {
 module OtpInput = {
   @react.component
   let make = (~getCards: string => promise<unit>, ~setIsClickToPayRememberMe) => {
-    let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+    let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
     let (isOtpSubmitting, setIsOtpSubmitting) = React.useState(_ => false)
-    let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(
-      RecoilAtoms.clickToPayConfig,
-    )
+    let (clickToPayConfig, setClickToPayConfig) = Jotai.useAtom(JotaiAtoms.clickToPayConfig)
     let otpValueRef = React.useRef("")
     let (resendLoading, setResendLoading) = React.useState(_ => false)
     let addListener = (~element, ~event, ~callback, ~options=?) =>

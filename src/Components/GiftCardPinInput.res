@@ -1,10 +1,10 @@
 @react.component
 let make = () => {
-  open RecoilAtoms
+  open JotaiAtoms
   open Utils
 
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (giftCardPin, setGiftCardPin) = Recoil.useRecoilState(userGiftCardPin)
+  let {localeString} = Jotai.useAtomValue(configAtom)
+  let (giftCardPin, setGiftCardPin) = Jotai.useAtom(userGiftCardPin)
   let giftCardPinRef = React.useRef(Nullable.null)
 
   let updateGiftCardPin = val => {

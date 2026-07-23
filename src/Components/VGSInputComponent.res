@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 
 // Container for a single VGS secure field.  VGS injects its own iframe into the
 // `id` div; this wrapper provides the label + border/background/focus styling via
@@ -9,7 +9,7 @@ open RecoilAtoms
 // vertical padding) instead of the taller new-card field.
 @react.component
 let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?, ~compact=false, ~height="") => {
-  let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, config} = Jotai.useAtomValue(configAtom)
   let {innerLayout} = config.appearance
 
   let (focusClass, setFocusClass) = React.useState(_ => "")

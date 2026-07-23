@@ -71,15 +71,15 @@ let make = (
   ~isVaultCvcFlow=false,
   ~setCvcIframeRef=_ => (),
 ) => {
-  let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {
     hideExpiredPaymentMethods,
     displayDefaultSavedPaymentIcon,
     displayBillingDetails,
     layout,
-  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let {hideCardExpiry} = CardUtils.getLayoutClass(layout).savedMethodCustomization
-  let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
+  let (cardBrand, setCardBrand) = Jotai.useAtom(JotaiAtoms.cardBrand)
   let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcError} = cvcProps
   let isCvcEmpty = cvcNumber->String.length == 0
   let cvcRef = React.useRef(Nullable.null)
@@ -228,7 +228,7 @@ let make = (
       : makeCvcInput(~fieldName, ~height, ~inputFieldClassName)
 
   let {innerLayout} = config.appearance
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
 
   let hasInstallmentPlans =
@@ -256,7 +256,7 @@ let make = (
         opacity: {isCardExpired ? "0.7" : "1"},
       }
       onClick={_ => {
-        open RecoilAtomTypes
+        open JotaiAtomTypes
         setPaymentToken(_ => {
           paymentToken: paymentItem.paymentToken,
           customerId: paymentItem.customerId,

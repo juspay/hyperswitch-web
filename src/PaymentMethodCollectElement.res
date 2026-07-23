@@ -1,14 +1,14 @@
 open PaymentMethodCollectTypes
 open PaymentMethodCollectUtils
-open RecoilAtoms
+open JotaiAtoms
 
 @react.component
 let make = (~integrateError, ~logger) => {
   open Promise
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let options = Recoil.useRecoilValueFromAtom(paymentMethodCollectOptionAtom)
+  let {localeString} = Jotai.useAtomValue(configAtom)
+  let {themeObj} = Jotai.useAtomValue(configAtom)
+  let keys = Jotai.useAtomValue(keys)
+  let options = Jotai.useAtomValue(paymentMethodCollectOptionAtom)
 
   // Component states
   let (availablePaymentMethods, setAvailablePaymentMethods) = React.useState(_ =>

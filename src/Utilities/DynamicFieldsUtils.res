@@ -194,7 +194,7 @@ let buildSuperpositionBaseContext = (
 let checkIfNameIsValid = (
   requiredFieldsType: array<PaymentMethodsRecord.required_fields>,
   paymentMethodFields,
-  field: RecoilAtomTypes.field,
+  field: JotaiAtomTypes.field,
 ) => {
   requiredFieldsType
   ->Array.filter(required_field => required_field.field_type === paymentMethodFields)
@@ -230,12 +230,12 @@ let usePaymentMethodTypeFromList = (
 }
 
 let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
-  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let userCountryName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let userCountryName = Jotai.useAtomValue(JotaiAtoms.userCountry)
   let country = Utils.getCountryCode(userCountryName).isoAlpha2
 
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {billingAddress} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   // isUseBillingAddress force-includes the billing.address.* set into the required/render sets whenever
   // the merchant opts in.
   let isUseBillingAddress = billingAddress.isUseBillingAddress
@@ -311,7 +311,7 @@ let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
 }
 
 let useAreWalletRequiredFieldsPrefilled = (~paymentMethodType) => {
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {billingAddress} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let (_, missingRequiredFields, _, _) = useSuperpositionRequiredFields(
     ~paymentMethod="wallet",
     ~paymentMethodType,
@@ -545,7 +545,7 @@ let useLogDynamicFieldsRendered = (
   ~resolutionContext,
   ~isSavedCardFlow=false,
 ) => {
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let lastLoggedKey = React.useRef("")
   let {
     rawConfigs,
@@ -623,9 +623,9 @@ let useLogDynamicFieldsRendered = (
 
 // TODO: refactor event emitters to use react-final-forms
 let useSyncEmitAddressAtoms = () => {
-  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
-  let setUserAddressState = Recoil.useSetRecoilState(RecoilAtoms.userAddressState)
-  let setUserAddressPincode = Recoil.useSetRecoilState(RecoilAtoms.userAddressPincode)
+  let country = Jotai.useAtomValue(JotaiAtoms.userCountry)
+  let setUserAddressState = Jotai.useSetAtom(JotaiAtoms.userAddressState)
+  let setUserAddressPincode = Jotai.useSetAtom(JotaiAtoms.userAddressPincode)
 
   (flatValues: Dict.t<JSON.t>) => {
     let readBillingValue = path =>

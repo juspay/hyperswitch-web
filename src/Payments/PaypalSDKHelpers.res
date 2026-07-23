@@ -19,7 +19,7 @@ let loadPaypalSDK = (
   ~completeAuthorize: PaymentHelpersTypes.completeAuthorize,
   ~handleCloseLoader,
   ~areOneClickWalletsRendered: (
-    RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
+    JotaiAtoms.areOneClickWalletsRendered => JotaiAtoms.areOneClickWalletsRendered
   ) => unit,
   ~setIsCompleted,
   ~isCallbackUsedVal as _: bool,
@@ -271,7 +271,7 @@ let loadBraintreePaypalSdk = (
   ~requiredFields: array<SuperpositionTypes.fieldConfig>,
   ~handleCloseLoader,
   ~areOneClickWalletsRendered: (
-    RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
+    JotaiAtoms.areOneClickWalletsRendered => JotaiAtoms.areOneClickWalletsRendered
   ) => unit,
   ~isManualRetryEnabled,
 ) => {

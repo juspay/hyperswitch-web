@@ -93,7 +93,7 @@ let defaultConfig = {
   loader: Auto,
   sdkAuthorization: "",
 }
-type recoilConfig = {
+type jotaiConfig = {
   config: configClass,
   themeObj: themeClass,
   localeString: LocaleStringTypes.localeStrings,
@@ -146,7 +146,7 @@ let getConstantStringsObject = async () => {
   }
 }
 
-let defaultRecoilConfig: recoilConfig = {
+let defaultJotaiConfig: jotaiConfig = {
   config: defaultConfig,
   themeObj: defaultConfig.appearance.variables,
   localeString: EnglishLocale.localeStrings,

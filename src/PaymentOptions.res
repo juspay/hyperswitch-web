@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 module TabLoader = {
   @react.component
   let make = (~cardShimmerCount) => {
@@ -6,9 +6,9 @@ module TabLoader = {
     open PaymentElementShimmer
     open PaymentTypeContext
 
-    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-    let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+    let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
+    let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
+    let {themeObj} = Jotai.useAtomValue(configAtom)
     let contextPaymentType = usePaymentType()
 
     switch (contextPaymentType, paymentMethodList, paymentManagementList) {
@@ -57,16 +57,16 @@ let make = (
   ~expiryProps: CardUtils.expiryProps,
   ~cvcProps: CardUtils.cvcProps,
 ) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {readOnly, customMethodNames, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
+  let {readOnly, customMethodNames, layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let payOptionsRef = React.useRef(Nullable.null)
   let selectRef = React.useRef(Nullable.null)
   let (winW, winH) = Utils.useWindowSize()
-  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
+  let (selectedOption, setSelectedOption) = Jotai.useAtom(selectedOptionAtom)
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   React.useEffect(() => {
     let width = switch payOptionsRef.current->Nullable.toOption {
     | Some(ref) => ref->Window.Element.clientWidth

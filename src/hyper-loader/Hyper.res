@@ -178,7 +178,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       options
       ->getOptionsDict
       ->getBool("shouldUseTopRedirection", false)
-    let overridenDefaultRedirectionFlags: RecoilAtomTypes.redirectionFlags = {
+    let overridenDefaultRedirectionFlags: JotaiAtomTypes.redirectionFlags = {
       shouldUseTopRedirection,
       shouldRemoveBeforeUnloadEvents: false,
     }
@@ -186,7 +186,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       options
       ->getOptionsDict
       ->getJsonObjectFromDict("redirectionFlags")
-      ->RecoilAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
+      ->JotaiAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
 
     /*
      * Forces re-initialization of HyperLoader.

@@ -4,7 +4,7 @@ open SuperpositionTypes
 let make = (~fieldConfig: fieldConfig, ~isLabelHidden=false) => {
   let fieldRef = React.useRef(Nullable.null)
   let path = fieldConfig.confirmRequestWritePath
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
     ~field=fieldConfig,
     ~localeObject=localeString,

@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 open Utils
 
 let cleanSocialSecurityNumber = socialSecurityNumber =>
@@ -24,12 +24,12 @@ let formatSocialSecurityNumber = socialSecurityNumber => {
 
 @react.component
 let make = () => {
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
+  let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
-  let setComplete = Recoil.useSetRecoilState(fieldsComplete)
+  let setComplete = Jotai.useSetAtom(fieldsComplete)
   let (socialSecurityNumber, setSocialSecurityNumber) = React.useState(_ => "")
 
   let (socialSecurityNumberError, setSocialSecurityNumberError) = React.useState(_ => "")
