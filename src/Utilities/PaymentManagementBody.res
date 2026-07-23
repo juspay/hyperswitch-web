@@ -43,7 +43,6 @@ let saveCardBody = (
     ("card_exp_month", month->JSON.Encode.string),
     ("card_exp_year", year->JSON.Encode.string),
     ("card_cvc", cvcNumber->JSON.Encode.string),
-    ("card_issuer", ""->JSON.Encode.string),
   ]
 
   cardHolderName
