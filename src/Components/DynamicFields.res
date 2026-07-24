@@ -25,6 +25,7 @@ module FormBody = {
     ~formRef: React.ref<option<ReactFinalForm.Form.formMethods>>,
     ~languagePreferenceFields: array<fieldConfig>,
     ~missingRequiredFieldsFiltered: array<fieldConfig>,
+    ~persistableFields: array<fieldConfig>,
     ~dynamicFieldsOutsideBilling: array<fieldConfig>,
     ~dynamicFieldsInsideBilling: array<fieldConfig>,
     ~allEmailFields: array<fieldConfig>,
@@ -39,6 +40,7 @@ module FormBody = {
     let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
     let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
     let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
+    let setUserDynamicFieldsValues = Recoil.useSetRecoilState(userDynamicFieldsValues)
 
     let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
     let isRenderDynamicFieldsInsideBilling = dynamicFieldsInsideBilling->Array.length > 0
@@ -62,6 +64,17 @@ module FormBody = {
         )
 
         setRequiredFieldsBody(_ => flatValues)
+
+        // Persist field values so they survive the remount on payment-method-type switch.
+        setUserDynamicFieldsValues(prev => {
+          let next = prev->Dict.copy
+          persistableFields->Array.forEach(field => {
+            let path = field.confirmRequestWritePath
+            next->Dict.set(path, Utils.getString(flatValues, path, ""))
+          })
+          next
+        })
+
         syncEmitAddressAtoms(flatValues)
 
         let isEmpty = missingRequiredFieldsFiltered->Array.some(field => {
@@ -162,6 +175,7 @@ let make = (
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {billingAddress, redirectionInfo, defaultValues} = Recoil.useRecoilValueFromAtom(optionAtom)
   let syncEmitAddressAtoms = DynamicFieldsUtils.useSyncEmitAddressAtoms()
+  let cachedUserDynamicFieldsValues = Recoil.useRecoilValueFromAtom(userDynamicFieldsValues)
 
   let intentData = paymentMethodListValue.intent_data.intentDataObject
 
@@ -186,6 +200,13 @@ let make = (
     None
   }, [requiredFields])
 
+  let rendersVisibleInput = (field: fieldConfig) =>
+    switch field.fieldRenderType {
+    | CardNumber | Cvc | CardExpiryMonth | CardExpiryYear | CardNetwork | LanguagePreference => false
+    | Dropdown => field.dropdownOptions->Option.getOr([])->Array.length > 0
+    | _ => true
+    }
+
   let missingRequiredFieldsFiltered = React.useMemo(() => {
     let firstEmailPath =
       missingRequiredFields
@@ -203,27 +224,54 @@ let make = (
     //   - Any card-data fields (card_exp_month, card_exp_year, card_network, etc.)
     //   - Duplicate Email / CardHolderName fields (only the first path is rendered)
     //   - Dropdown fields with no options (would render React.null anyway)
-    missingRequiredFields->Array.filter(field => {
-      switch field.fieldRenderType {
-      | CardNumber
-      | Cvc
-      | CardExpiryMonth
-      | CardExpiryYear
-      | CardNetwork
-      | LanguagePreference => false
-      | Dropdown =>
-        let options = field.dropdownOptions->Option.getOr([])
-        options->Array.length > 0
-      | Email => firstEmailPath === Some(field.confirmRequestWritePath)
-      | CardHolderName => firstCardHolderNamePath === Some(field.confirmRequestWritePath)
-      | _ => true
+    missingRequiredFields->Array.filter(field =>
+      if !rendersVisibleInput(field) {
+        false
+      } else {
+        switch field.fieldRenderType {
+        | Email => firstEmailPath === Some(field.confirmRequestWritePath)
+        | CardHolderName => firstCardHolderNamePath === Some(field.confirmRequestWritePath)
+        | _ => true
+        }
       }
-    })
+    )
+  }, [missingRequiredFields])
+
+  // Fields whose typed values we persist across the remount. Unlike missingRequiredFieldsFiltered
+  // (which dedups Email/CardHolderName to the single input shown), this keeps BOTH name paths
+  // (first_name + last_name) and every email path — the combined name/email inputs write all of
+  // them into RFF — while dropping the self-managed fields.
+  let persistableFields = React.useMemo(() => {
+    missingRequiredFields->Array.filter(field =>
+      rendersVisibleInput(field) &&
+        // Exclude Country/PhoneCountryCode — they own their value outside RFF (userCountry atom /
+        // local state), so they're seeded through that path, not the persistence cache.
+        switch field.fieldRenderType {
+        | Country | PhoneCountryCode => false
+        | _ => true
+        }
+    )
   }, [missingRequiredFields])
 
   let initialValuesWithBillingDataOverride = React.useMemo(() => {
     DynamicFieldsUtils.applyBillingDetailsOverride(initialValues, defaultValues.billingDetails)
   }, (initialValues, defaultValues.billingDetails))
+
+  let initialValuesWithUserInputOverride = React.useMemo(() => {
+    let merged = initialValuesWithBillingDataOverride
+    persistableFields->Array.forEach(field =>
+      switch cachedUserDynamicFieldsValues->Dict.get(field.confirmRequestWritePath) {
+      | Some(value) =>
+        SuperpositionHelper.setValueAtNestedPath(
+          merged,
+          field.confirmRequestWritePath->String.split("."),
+          value,
+        )->ignore
+      | None => ()
+      }
+    )
+    merged
+  }, [initialValuesWithBillingDataOverride])
 
   let isInsideBillingField = (field: fieldConfig) =>
     field.fieldRenderType === Email ||
@@ -312,7 +360,7 @@ let make = (
   <>
     <RenderIf condition={!isSavedCardFlow && shouldRenderForm}>
       <ReactFinalForm.Form
-        initialValues={Some(initialValuesWithBillingDataOverride)}
+        initialValues={Some(initialValuesWithUserInputOverride)}
         onSubmit={_values => ()}
         render={formProps =>
           <FormBody
@@ -320,6 +368,7 @@ let make = (
             formRef
             languagePreferenceFields
             missingRequiredFieldsFiltered
+            persistableFields
             dynamicFieldsOutsideBilling
             dynamicFieldsInsideBilling
             allEmailFields

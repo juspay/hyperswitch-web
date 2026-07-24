@@ -71,6 +71,10 @@ let userAddressCity = Recoil.atom("userAddressCity", defaultFieldValues)
 let userAddressPincode = Recoil.atom("userAddressPincode", defaultFieldValues)
 let userAddressState = Recoil.atom("userAddressState", defaultFieldValues)
 let userAddressCountry = Recoil.atom("userAddressCountry", defaultFieldValues)
+let userDynamicFieldsValues: Recoil.recoilAtom<Dict.t<string>> = Recoil.atom(
+  "userDynamicFieldsValues",
+  Dict.make(),
+)
 let userBlikCode = Recoil.atom("userBlikCode", defaultFieldValues)
 let userGiftCardNumber = Recoil.atom("userGiftCardNumber", defaultFieldValues)
 let userGiftCardPin = Recoil.atom("userGiftCardPin", defaultFieldValues)
