@@ -1031,12 +1031,17 @@ let getHeaders = (
   | Some("") | None => []
   | Some(uriVal) => [("x-feature", uriVal)]
   }
+  let platformKeyHeader = switch ApiEndpoint.getPlatformPublishableKey() {
+  | Some(key) if key !== "" => [("x-platform-api-key", key)]
+  | _ => []
+  }
 
   let finalHeaders = [
     ...defaultHeaders,
     ...authorizationHeaders,
     ...authHeader,
     ...customPodHeader,
+    ...platformKeyHeader,
     ...Dict.toArray(headers),
   ]
 

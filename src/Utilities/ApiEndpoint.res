@@ -2,17 +2,130 @@ let switchToInteg = false
 let isLocal = false
 let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
 
+// ─── Endpoint refs ────────────────────────────────────────────────────────────
+//
+// Priority hierarchy (highest → lowest) for each call type:
+//
+//  Backend (non-confirm) API calls  — getApiEndPoint(~isConfirmCall=false)
+//    1. customConfig.overrideCustomBackendEndpoint  (backendOverrideEndPoint)
+//    2. customConfig.customEndpoint                 (apiEndPoint)
+//    3. customBackendUrl  [legacy]                  (apiEndPoint)
+//    4. Build-time ENV_BACKEND_URL                  (GlobalVars.backendEndPoint)
+//    5. Test-mode fallback: https://beta.hyperswitch.io/api  (pk_snd_* on prod)
+//
+//  Confirm API calls  — getApiEndPoint(~isConfirmCall=true)
+//    1. customConfig.overrideCustomConfirmEndpoint  (confirmOverrideEndPoint)
+//    2. customConfig.customEndpoint                 (apiEndPoint)
+//    3. customBackendUrl  [legacy]                  (apiEndPoint)
+//    4. Build-time ENV_CONFIRM_URL                  (GlobalVars.confirmEndPoint)
+//    5. Test-mode fallback: https://beta.hyperswitch.io/api  (pk_snd_* on prod)
+//
+//  SDK-config fetch  — getSdkConfigEndPoint()
+//    1. customConfig.overrideCustomSDKConfigEndpoint  (sdkConfigEndPoint)
+//    2. customConfig.customEndpoint                   (apiEndPoint)
+//    3. customBackendUrl  [legacy]                    (apiEndPoint)
+//    4. Build-time ENV_BACKEND_URL                    (GlobalVars.backendEndPoint)
+//    5. Test-mode fallback: https://beta.hyperswitch.io/api  (pk_snd_* on prod)
+//
+//  Assets / S3 calls  — getAssetsEndPoint()
+//    1. customConfig.overrideCustomAssetsEndpoint  (assetsEndPoint)
+//    2. customConfig.customEndpoint                (apiEndPoint)
+//    3. customBackendUrl  [legacy]                 (apiEndPoint)
+//    4. Build-time SDK URL                         (GlobalVars.sdkUrl; empty on local)
+//
+//  Logging / beacon calls  — getLoggingEndPoint()
+//    1. customConfig.overrideCustomLoggingEndpoint  (loggingOverrideEndPoint)
+//    2. Build-time log endpoint                     (GlobalVars.logEndpoint)
+//
+//  Airborne calls  — (consumed directly by the airborne module)
+//    1. customConfig.overrideCustomAirborneEndpoint  (airborneEndPoint)
+//    2. Module-internal default
+//
+// Note: customConfig.customEndpoint always wins over the legacy customBackendUrl
+// because customConfig is parsed and applied after customBackendUrl in Hyper.res
+// init (both write to the same apiEndPoint ref — last write wins).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// General backend endpoint override (set by customBackendUrl or customConfig.customEndpoint)
 let apiEndPoint: ref<option<string>> = ref(None)
+
+// Per-endpoint specific overrides (set by customConfig.override* fields)
+let backendOverrideEndPoint: ref<option<string>> = ref(None)
+let assetsEndPoint: ref<option<string>> = ref(None)
+let sdkConfigEndPoint: ref<option<string>> = ref(None)
+let confirmOverrideEndPoint: ref<option<string>> = ref(None)
+let airborneEndPoint: ref<option<string>> = ref(None)
+let loggingOverrideEndPoint: ref<option<string>> = ref(None)
+let platformPublishableKey: ref<option<string>> = ref(None)
 
 let setApiEndPoint = str => {
   apiEndPoint := Some(str)
 }
 
+let setBackendOverrideEndPoint = str => {
+  backendOverrideEndPoint := Some(str)
+}
+
+let setAssetsEndPoint = str => {
+  assetsEndPoint := Some(str)
+}
+
+let setSdkConfigEndPoint = str => {
+  sdkConfigEndPoint := Some(str)
+}
+
+let setConfirmOverrideEndPoint = str => {
+  confirmOverrideEndPoint := Some(str)
+}
+
+let setAirborneEndPoint = str => {
+  airborneEndPoint := Some(str)
+}
+
+let setLoggingOverrideEndPoint = str => {
+  loggingOverrideEndPoint := Some(str)
+}
+
+let setPlatformPublishableKey = key => {
+  platformPublishableKey := Some(key)
+}
+
+let getPlatformPublishableKey = () => platformPublishableKey.contents
+
+let getLoggingEndPoint = () =>
+  switch loggingOverrideEndPoint.contents {
+  | Some(str) => str
+  | None => GlobalVars.logEndpoint
+  }
+
+let getAssetsEndPoint = () =>
+  switch (assetsEndPoint.contents, apiEndPoint.contents) {
+  | (Some(str), _) => str
+  | (None, Some(str)) => str
+  | (None, None) => GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
+  }
+
+let getSdkConfigEndPoint = (~publishableKey="") => {
+  let testMode = publishableKey->String.startsWith("pk_snd_")
+  switch (sdkConfigEndPoint.contents, apiEndPoint.contents) {
+  | (Some(str), _) => str
+  | (None, Some(str)) => str
+  | (None, None) =>
+    GlobalVars.isProd && testMode ? "https://beta.hyperswitch.io/api" : GlobalVars.backendEndPoint
+  }
+}
+
 let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false) => {
   let testMode = publishableKey->String.startsWith("pk_snd_")
-  switch apiEndPoint.contents {
-  | Some(str) => str
-  | None =>
+  let specificOverride = if isConfirmCall {
+    confirmOverrideEndPoint.contents
+  } else {
+    backendOverrideEndPoint.contents
+  }
+  switch (specificOverride, apiEndPoint.contents) {
+  | (Some(str), _) => str
+  | (None, Some(str)) => str
+  | (None, None) =>
     let backendEndPoint = isConfirmCall ? GlobalVars.confirmEndPoint : GlobalVars.backendEndPoint
     GlobalVars.isProd && testMode ? "https://beta.hyperswitch.io/api" : backendEndPoint
   }

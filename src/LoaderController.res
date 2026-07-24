@@ -488,18 +488,33 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         if dict->getDictIsSome("isSamsungPayReady") {
           setIsSamsungPayReady(_ => dict->getBool("isSamsungPayReady", false))
         }
-        if (
-          dict->getDictIsSome("customBackendUrl") &&
-            dict
-            ->getString("customBackendUrl", "")
-            ->String.length > 0
-        ) {
-          if dict->getDictIsSome("endpoint") {
-            switch dict->getString("endpoint", "") {
-            | "" => ()
-            | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
-            }
-          }
+
+        // Apply the parent-computed backend endpoint regardless of whether customBackendUrl
+        // (legacy) or customConfig.customEndpoint (new) was used — both arrive resolved here.
+        switch dict->getString("endpoint", "") {
+        | "" => ()
+        | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+        }
+
+        // Confirm-specific endpoint forwarded separately so isConfirmCall=true resolves correctly.
+        switch dict->getString("confirmEndpoint", "") {
+        | "" => ()
+        | endpoint => ApiEndpoint.setConfirmOverrideEndPoint(endpoint)
+        }
+        // Logging endpoint override forwarded so beacon calls use the merchant-configured URL.
+        switch dict->getString("loggingEndpoint", "") {
+        | "" => ()
+        | endpoint => ApiEndpoint.setLoggingOverrideEndPoint(endpoint)
+        }
+        // Assets/S3 endpoint override forwarded so country-state data fetches use the correct URL.
+        switch dict->getString("assetsEndpoint", "") {
+        | "" => ()
+        | endpoint => ApiEndpoint.setAssetsEndPoint(endpoint)
+        }
+
+        switch dict->getString("platformPublishableKey", "") {
+        | "" => ()
+        | key => ApiEndpoint.setPlatformPublishableKey(key)
         }
 
         // Single clientList message carries both the merchant's enabled
