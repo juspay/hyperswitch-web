@@ -110,7 +110,6 @@ type surchargeDetails = {displayTotalSurchargeAmount: float}
 
 type paymentMethodsContent = {
   paymentMethodName: string,
-  fields: array<paymentMethodsFields>,
   paymentFlow: paymentFlowWithConnector,
   handleUserError: bool,
   methodType: string,
@@ -135,7 +134,6 @@ let defaultPaymentFieldsInfo = {
 
 let defaultPaymentMethodContent = {
   paymentMethodName: "",
-  fields: [],
   paymentFlow: [],
   handleUserError: false,
   methodType: "",
@@ -818,67 +816,6 @@ let getFieldType = (dict, isBancontact) => {
   }
 }
 
-let getIsBillingField = requiredFieldType => {
-  switch requiredFieldType {
-  | AddressLine1
-  | AddressLine2
-  | AddressCity
-  | AddressPincode
-  | AddressState
-  | AddressCountry(_) => true
-  | _ => false
-  }
-}
-
-let getIsAnyBillingDetailEmpty = (requiredFields: array<required_fields>) => {
-  requiredFields->Array.reduce(false, (acc, requiredField) => {
-    if getIsBillingField(requiredField.field_type) {
-      requiredField.value === "" || acc
-    } else {
-      acc
-    }
-  })
-}
-
-let getPaymentMethodFields = (
-  paymentMethod,
-  requiredFields: array<required_fields>,
-  ~localeString,
-  ~isSavedCardFlow=false,
-  ~isAllStoredCardsHaveName=false,
-) => {
-  let isAnyBillingDetailEmpty = requiredFields->getIsAnyBillingDetailEmpty
-  let requiredFieldsArr = requiredFields->Array.map(requiredField => {
-    let isShowBillingField = getIsBillingField(requiredField.field_type) && isAnyBillingDetailEmpty
-    if requiredField.value === "" || isShowBillingField {
-      if (
-        isSavedCardFlow &&
-        requiredField.display_name === "card_holder_name" &&
-        isAllStoredCardsHaveName
-      ) {
-        None
-      } else {
-        requiredField.field_type
-      }
-    } else {
-      None
-    }
-  })
-  requiredFieldsArr->Array.concat(
-    (
-      getPaymentMethodsFields(~localeString)
-      ->Array.find(x => x.paymentMethodName === paymentMethod)
-      ->Option.getOr({
-        paymentMethodName: "",
-        fields: [],
-        icon: Some(icon("", ~size=19, ~width=25)),
-        displayName: "",
-        miniIcon: Some(icon("", ~size=19, ~width=25)),
-      })
-    ).fields,
-  )
-}
-
 let getPaymentDetails = (arr: array<string>, ~localeString) => {
   let finalArr = []
   let paymentMethodsFields = getPaymentMethodsFields(~localeString)
@@ -920,7 +857,6 @@ type paymentMethodTypes = {
   bank_names: array<string>,
   bank_debits_connectors: array<string>,
   bank_transfers_connectors: array<string>,
-  required_fields: array<required_fields>,
   surcharge_details: option<surchargeDetails>,
   pm_auth_connector: option<string>,
 }
@@ -973,7 +909,6 @@ let defaultPaymentMethodType = {
   bank_names: [],
   bank_debits_connectors: [],
   bank_transfers_connectors: [],
-  required_fields: [],
   surcharge_details: None,
   pm_auth_connector: None,
 }
@@ -1159,7 +1094,6 @@ let getPaymentMethodTypesFromFlatList = (paymentMethodsEnabled: array<JSON.t>) =
       bank_names: [],
       bank_debits_connectors: [],
       bank_transfers_connectors: [],
-      required_fields: [],
       // Forward-compatible: clientList doesn't send `surcharge_details` today
       // (confirmed via full-file grep), but this is a real, callable decode
       // path against a real dict — it will activate automatically the day the
@@ -1211,7 +1145,7 @@ let itemToObjMapperFromClientList = dict => {
   }
 }
 
-let buildFromPaymentList = (pList, ~localeString) => {
+let buildFromPaymentList = pList => {
   let paymentMethodArr = pList.payment_methods
 
   paymentMethodArr
@@ -1228,11 +1162,6 @@ let buildFromPaymentList = (pList, ~localeString) => {
       )
       {
         paymentMethodName,
-        fields: getPaymentMethodFields(
-          paymentMethodName,
-          individualPaymentMethod.required_fields,
-          ~localeString,
-        ),
         paymentFlow: paymentExperience,
         handleUserError,
         methodType,

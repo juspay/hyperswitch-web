@@ -596,8 +596,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let sdkConfigsJson = dict->getJsonObjectFromDict("sdkConfigs")
           let sdkConfigsDict = sdkConfigsJson->getDictFromJson
           let isSdkConfigsError =
+            sdkConfigsJson == JSON.Encode.null ||
             sdkConfigsJson == Dict.make()->JSON.Encode.object ||
-              sdkConfigsDict->Dict.get("error")->Option.isSome
+            sdkConfigsDict->Dict.get("error")->Option.isSome
           let updatedState: PaymentType.loadType = isSdkConfigsError
             ? LoadError(sdkConfigsJson)
             : Loaded(sdkConfigsJson)

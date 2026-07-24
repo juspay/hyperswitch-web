@@ -123,8 +123,7 @@ let make = (
               if requiresCvv && isCvcComplete {
                 setCvcError(_ => "")
 
-                let bodyWithCvc =
-                  bodyArr->Array.concat([("card_cvc", cvcNumber->JSON.Encode.string)])
+                let bodyWithCvc = bodyArr->Array.concat([PaymentBody.cardTokenCvcTuple(~cvcNumber)])
 
                 let paymentType = paymentTypeStr->PaymentHelpers.getPaymentType
 

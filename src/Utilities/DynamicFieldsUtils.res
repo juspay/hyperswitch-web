@@ -12,6 +12,17 @@ type superpositionResolutionContext = {
 
 let billingPrefix = "payment_method_data.billing."
 
+let filterByActiveFields = (
+  flatValues: Dict.t<JSON.t>,
+  activeFields: array<SuperpositionTypes.fieldConfig>,
+): Dict.t<JSON.t> =>
+  activeFields
+  ->Array.filterMap(field => {
+    let path = field.confirmRequestWritePath
+    flatValues->Dict.get(path)->Option.map(value => (path, value))
+  })
+  ->Dict.fromArray
+
 // Derive a stable, locale-independent test id from a field's write path,
 // e.g. "payment_method_data.billing.address.line1" -> "line1".
 let getFieldTestId = (path: string): string => {
@@ -142,19 +153,6 @@ let extractValuesFromPMLRequiredFields = (
   })
 }
 
-let removeBillingDetailsIfUseBillingAddress = (
-  missingRequiredFields: array<SuperpositionTypes.fieldConfig>,
-  billingAddress: PaymentType.billingAddress,
-) => {
-  if billingAddress.isUseBillingAddress {
-    missingRequiredFields->Array.filter(requiredField => {
-      !(requiredField.confirmRequestWritePath->String.startsWith(billingPrefix))
-    })
-  } else {
-    missingRequiredFields
-  }
-}
-
 let buildSuperpositionBaseContext = (
   ~paymentMethod: string,
   ~paymentMethodType: string,
@@ -165,19 +163,15 @@ let buildSuperpositionBaseContext = (
   ~contextUsed: option<SdkConfigTypes.contextUsed>,
 ) => {
   let mandateType = switch paymentMethodListValue.payment_type {
-  | NEW_MANDATE => "new_mandate"
-  | SETUP_MANDATE => "setup_mandate"
+  | NEW_MANDATE => "mandate"
+  | SETUP_MANDATE => "mandate"
   | NORMAL => "non_mandate"
   | NONE => "non_mandate"
   }
 
   let profile = accountConfig->Option.flatMap(ac => ac.profile)
   let collectBilling = SdkConfigParser.getCollectBillingDetailsFromWalletConnector(profile)
-    ? "true"
-    : "false"
   let collectShipping = SdkConfigParser.getCollectShippingDetailsFromWalletConnector(profile)
-    ? "true"
-    : "false"
   let (profileId, processorMerchantId, organizationId) = SdkConfigParser.getProfileContext(
     contextUsed,
   )
@@ -187,8 +181,8 @@ let buildSuperpositionBaseContext = (
     payment_method_type: paymentMethodType,
     country,
     mandate_type: mandateType,
-    collect_shipping_details_from_wallet_connector: collectShipping,
-    collect_billing_details_from_wallet_connector: collectBilling,
+    always_collect_shipping_details_from_wallet_connector: collectShipping,
+    always_collect_billing_details_from_wallet_connector: collectBilling,
     profile_id: ?profileId,
     processor_merchant_id: ?processorMerchantId,
     organization_id: ?organizationId,
@@ -238,7 +232,17 @@ let usePaymentMethodTypeFromList = (
 let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
   let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let userCountryName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let country = Utils.getCountryCode(userCountryName).isoAlpha2
+
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  // isUseBillingAddress force-includes the billing.address.* set into the required/render sets whenever
+  // the merchant opts in.
+  let isUseBillingAddress = billingAddress.isUseBillingAddress
+  let suppressBillingPrefill = switch billingAddress.usePrefilledValues {
+  | Never => isUseBillingAddress
+  | Auto => false
+  }
 
   let rawConfigs = sdkConfigsValue.raw_configs
   let getSuperpositionFinalFields = ConfigurationService.useConfigurationService(~rawConfigs)
@@ -278,8 +282,21 @@ let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
   ))
 
   let (requiredFields, missingRequiredFields, initialValues) = React.useMemo(() => {
-    getSuperpositionFinalFields(eligibleConnectors, superpositionBaseContext, intentData)
-  }, (getSuperpositionFinalFields, eligibleConnectors, superpositionBaseContext, intentData))
+    getSuperpositionFinalFields(
+      eligibleConnectors,
+      superpositionBaseContext,
+      intentData,
+      ~isUseBillingAddress,
+      ~suppressBillingPrefill,
+    )
+  }, (
+    getSuperpositionFinalFields,
+    eligibleConnectors,
+    superpositionBaseContext,
+    intentData,
+    isUseBillingAddress,
+    suppressBillingPrefill,
+  ))
 
   let resolutionContext = React.useMemo(() => {
     {
@@ -291,6 +308,24 @@ let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
   }, (rawConfigs, configPaymentMethodType, eligibleConnectors, superpositionBaseContext))
 
   (requiredFields, missingRequiredFields, initialValues, resolutionContext)
+}
+
+let useAreWalletRequiredFieldsPrefilled = (~paymentMethodType) => {
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let (_, missingRequiredFields, _, _) = useSuperpositionRequiredFields(
+    ~paymentMethod="wallet",
+    ~paymentMethodType,
+  )
+  // Billing is collected via the wallet sheet, so it must not block the wallet prefilled-gate
+  // when isUseBillingAddress is set.
+  let relevant = if billingAddress.isUseBillingAddress {
+    missingRequiredFields->Array.filter(field =>
+      !(field.confirmRequestWritePath->String.startsWith(billingPrefix))
+    )
+  } else {
+    missingRequiredFields
+  }
+  relevant->Array.length == 0
 }
 
 let splitName = (str: option<string>) => {
