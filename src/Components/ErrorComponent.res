@@ -2,7 +2,7 @@ open RecoilAtoms
 
 @react.component
 let make = (~errorStr=None, ~cardError="", ~expiryError="", ~cvcError="") => {
-  let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
 
   let errorTextStyle: JsxDOM.style = {
@@ -29,7 +29,9 @@ let make = (~errorStr=None, ~cardError="", ~expiryError="", ~cvcError="") => {
     </RenderIf>
   | Compressed =>
     <RenderIf condition=isCompressedErrorShown>
-      <div className="Error pt-1" style=errorTextStyle> {React.string("Invalid input")} </div>
+      <div className="Error pt-1" style=errorTextStyle>
+        {React.string(localeString.enterValidDetailsText)}
+      </div>
     </RenderIf>
   }
 }
