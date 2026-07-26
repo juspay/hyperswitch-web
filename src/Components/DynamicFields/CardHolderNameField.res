@@ -79,6 +79,7 @@ module FullNameFieldInput = {
       placeholder
       inputRef
       ?autocomplete
+      ariaRequired={firstNameFieldConfig.isRequired || lastNameFieldConfig.isRequired}
     />
   }
 }

@@ -268,4 +268,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "عرض أقل",
   refreshingText: "جارٍ التحديث...",
   paymentDetailsBeingCheckedText: "جارٍ التحقق من تفاصيل الدفع. يرجى الانتظار",
+  // --- accessibility labels ---
+  cardNetworkLabel: "شبكة البطاقة",
+  morePaymentMethodsLabel: "طرق دفع إضافية",
+  yearLabel: "السنة",
+  monthLabel: "الشهر",
+  optionTabLabel: fieldName => `${fieldName} تبويب الخيار`,
 }

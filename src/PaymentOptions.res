@@ -190,6 +190,7 @@ let make = (
           <select
             value=selectedPaymentOption.paymentMethodName
             ref={selectRef->ReactDOM.Ref.domRef}
+            ariaLabel={localeString.morePaymentMethodsLabel}
             className={`TabMore place-items-start outline-none`}
             onChange=handleChange
             disabled=readOnly

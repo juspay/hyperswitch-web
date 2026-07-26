@@ -253,6 +253,12 @@ type localeStrings = {
   showLess: string,
   refreshingText: string,
   paymentDetailsBeingCheckedText: string,
+  // --- accessibility labels ---
+  cardNetworkLabel: string,
+  morePaymentMethodsLabel: string,
+  yearLabel: string,
+  monthLabel: string,
+  optionTabLabel: string => string,
 }
 
 type constantStrings = {

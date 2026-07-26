@@ -42,5 +42,6 @@ let make = (~fieldConfig: fieldConfig, ~isLabelHidden=false) => {
     inputRef={fieldRef}
     autocomplete
     ?maxLength
+    ariaRequired={fieldConfig.isRequired}
   />
 }

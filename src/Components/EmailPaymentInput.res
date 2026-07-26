@@ -64,6 +64,7 @@ let make = () => {
       inputRef=emailRef
       placeholder="Eg: johndoe@gmail.com"
       name=TestUtils.emailInputTestId
+      ariaRequired=true
     />
   </RenderIf>
 }

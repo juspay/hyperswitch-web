@@ -24,6 +24,8 @@ let make = (
   ~inputRef,
   ~displayValue=?,
   ~setDisplayValue=?,
+  ~ariaRequired=false,
+  ~fieldId=?,
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -93,6 +95,23 @@ let make = (
   let inputLogoClass = getClassName("InputLogo")
   let inputClassStyles = isSpacedInnerLayout ? "Input" : "Input-Compressed"
 
+  let generatedId = React.useId()
+  let inputId = AccessibilityUtils.getControlId(~fieldId, ~preferredId=name, ~generatedId)
+  let hasError = value.errorString->String.length > 0
+  let (
+    accessibleLabel,
+    errorId,
+    describedById,
+    ariaInvalid,
+  ) = AccessibilityUtils.getFieldAccessibility(
+    ~controlId=inputId,
+    ~fieldName,
+    ~placeholder,
+    ~ariaLabel=None,
+    ~hasError,
+    ~isValid=value.isValid,
+  )
+
   let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
 
   // Wrap onChange to include logging
@@ -111,17 +130,17 @@ let make = (
       fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
       isSpacedInnerLayout}>
-      <div
+      <label
+        htmlFor={inputId}
         className={`Label ${labelClass}`}
         style={
           fontWeight: themeObj.fontWeightNormal,
           fontSize: themeObj.fontSizeLg,
           marginBottom: "5px",
           opacity: "0.6",
-        }
-        ariaHidden=true>
+        }>
         {React.string(fieldName)}
-      </div>
+      </label>
     </RenderIf>
     <div className={`flex ${flexDirectionBasedOnType} w-full`} style={color: themeObj.colorText}>
       <RenderIf condition={type_ === "tel"}>
@@ -142,17 +161,17 @@ let make = (
         fieldName->String.length > 0 &&
         config.appearance.labels == Above &&
         isSpacedInnerLayout}>
-        <div
+        <label
+          htmlFor={inputId}
           className={`Label ${labelClass}`}
           style={
             fontWeight: themeObj.fontWeightNormal,
             fontSize: themeObj.fontSizeLg,
             marginBottom: "5px",
             opacity: "0.6",
-          }
-          ariaHidden=true>
+          }>
           {React.string(fieldName)}
-        </div>
+        </label>
       </RenderIf>
       <div className="flex flex-row w-full" style={direction: direction}>
         <div className="relative w-full">
@@ -162,6 +181,7 @@ let make = (
               padding: themeObj.spacingUnit,
               width: "100%",
             }
+            id={inputId}
             disabled=readOnly
             ref={inputRef->ReactDOM.Ref.domRef}
             type_
@@ -177,7 +197,10 @@ let make = (
             onChange=wrappedOnChange
             onBlur=handleBlur
             onFocus=handleFocus
-            ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
+            ariaLabel={accessibleLabel}
+            ariaInvalid
+            ariaRequired
+            ariaDescribedby=?describedById
           />
           <RenderIf condition={config.appearance.labels == Floating}>
             <div
@@ -201,17 +224,17 @@ let make = (
         </div>
       </div>
       <RenderIf condition={value.errorString->String.length > 0}>
-        <div
+        <LiveError
+          text={value.errorString}
           className="Error pt-1"
-          style={
+          style={{
             color: themeObj.colorDangerText,
             fontSize: themeObj.fontSizeSm,
             alignSelf: "start",
             textAlign: "left",
-          }
-          ariaHidden=true>
-          {React.string(value.errorString)}
-        </div>
+          }}
+          id={errorId}
+        />
       </RenderIf>
     </div>
   </div>

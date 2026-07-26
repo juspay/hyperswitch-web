@@ -31,6 +31,11 @@ external make: (
   ~placeholderText: string=?,
   ~className: string=?,
   ~wrapperClassName: string=?,
+  ~id: string=?,
+  ~ariaLabelledBy: string=?,
+  ~ariaDescribedBy: string=?,
+  ~ariaInvalid: [#"false" | #"true"]=?,
+  ~ariaRequired: string=?,
   ~closeOnScroll: bool=?,
   ~shouldCloseOnSelect: bool=?,
 ) => React.element = "default"

@@ -212,6 +212,8 @@ let make = (
       height
       name={TestUtils.cardCVVInputTestId}
       autocomplete="cc-csc"
+      ariaLabel={localeString.cvcTextLabel}
+      ariaRequired=true
     />
 
   // Inner-iframe container id for the VGS saved-card CVC. Only the active card

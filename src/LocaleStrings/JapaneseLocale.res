@@ -266,4 +266,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "表示を減らす",
   refreshingText: "更新中...",
   paymentDetailsBeingCheckedText: "お支払い情報を確認中です。しばらくお待ちください",
+  // --- accessibility labels ---
+  cardNetworkLabel: "カードネットワーク",
+  morePaymentMethodsLabel: "他の支払い方法",
+  yearLabel: "年",
+  monthLabel: "月",
+  optionTabLabel: fieldName => `${fieldName} オプションタブ`,
 }

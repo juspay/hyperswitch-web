@@ -125,6 +125,8 @@ let make = (
             placeholder="1234 1234 1234 1234"
             isFocus
             autocomplete="cc-number"
+            ariaLabel={localeString.cardNumberLabel}
+            ariaRequired=true
           />
         </div>
       </div>}
@@ -145,6 +147,8 @@ let make = (
             placeholder=localeString.expiryPlaceholder
             isFocus
             autocomplete="cc-exp"
+            ariaLabel={localeString.validThruText}
+            ariaRequired=true
           />
         </div>
         <div className="w-1/5">
@@ -164,6 +168,8 @@ let make = (
             placeholder="123"
             isFocus
             autocomplete="cc-csc"
+            ariaLabel={localeString.cvcTextLabel}
+            ariaRequired=true
           />
         </div>
         <RenderIf condition={!options.hidePostalCode}>
@@ -181,6 +187,7 @@ let make = (
               inputRef=zipRef
               placeholder="ZIP"
               isFocus
+              ariaLabel={localeString.postalCodeLabel}
             />
           </div>
         </RenderIf>

@@ -267,4 +267,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Mostra meno",
   refreshingText: "Aggiornamento...",
   paymentDetailsBeingCheckedText: "I dettagli del pagamento sono in fase di verifica. Attendere prego",
+  // --- accessibility labels ---
+  cardNetworkLabel: "Circuito della carta",
+  morePaymentMethodsLabel: "Altri metodi di pagamento",
+  yearLabel: "Anno",
+  monthLabel: "Mese",
+  optionTabLabel: fieldName => `Scheda opzione ${fieldName}`,
 }

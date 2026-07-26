@@ -71,6 +71,7 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
       inputRef=nameRef
       placeholder
       name=TestUtils.fullNameInputTestId
+      ariaRequired=true
     />
   </RenderIf>
 }

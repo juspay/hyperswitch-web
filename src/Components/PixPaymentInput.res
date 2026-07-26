@@ -146,5 +146,6 @@ let make = (~fieldType="") => {
     placeholder
     ?maxLength
     paymentType=Payment
+    ariaRequired={true}
   />
 }

@@ -52,5 +52,6 @@ let make = () => {
     placeholder={localeString.giftCardPinPlaceholder}
     maxLength=12
     paymentType=Payment
+    ariaRequired=true
   />
 }
