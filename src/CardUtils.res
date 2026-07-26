@@ -95,6 +95,7 @@ type cvcProps = {
   onCvcKeyDown: ReactEvent.Keyboard.t => unit,
   cvcError: string,
   setCvcError: (string => string) => unit,
+  maxCVCLength: int,
 }
 
 let useDefaultCvcProps = () => {
@@ -110,6 +111,7 @@ let useDefaultCvcProps = () => {
     onCvcKeyDown: _ => (),
     cvcError: "",
     setCvcError: _ => (),
+    maxCVCLength: CardValidations.getobjFromCardPattern("").maxCVCLength,
   }
 }
 
