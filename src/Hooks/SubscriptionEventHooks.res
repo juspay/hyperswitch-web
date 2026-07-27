@@ -114,12 +114,17 @@ let emitReady = (~iframeId, ~elementType) =>
 // useEmitFormStatus
 // ---------------------------------------------------------------------------
 // Effect hook: emits formStatus whenever empty/complete/isOneClickWallet changes.
-let useEmitFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=false) => {
+let useEmitFormStatus = (
+  ~empty: bool,
+  ~complete: bool,
+  ~isOneClickWallet: bool=false,
+  ~enabled=true,
+) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
-    if !isOneClickWallet {
+    if enabled && !isOneClickWallet {
       let formStatusValue = PaymentEventData.computeFormStatus(~isComplete=complete, ~isEmpty=empty)
       if (
         PaymentEventData.shouldEmitEvent(
@@ -131,7 +136,7 @@ let useEmitFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=
       }
     }
     None
-  }, (empty, complete, isOneClickWallet, subscribedEvents))
+  }, (empty, complete, isOneClickWallet, subscribedEvents, enabled))
 }
 
 // ---------------------------------------------------------------------------

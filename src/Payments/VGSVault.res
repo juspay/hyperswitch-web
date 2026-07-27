@@ -18,7 +18,12 @@ let vgsScriptIntegrity = "sha384-ddxU1XAc77oB4EIpKOgJQ3FN2a6STYPK0JipRqg1x/eW+n5
 let make = (~cvcOnly=false) => {
   let vaultCredentials = Recoil.useRecoilValueFromAtom(RecoilAtoms.vaultCredentials)
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let cardFlowType = Recoil.useRecoilValueFromAtom(RecoilAtoms.cardFlowType)
+  let savedCardBrand =
+    Recoil.useRecoilValueFromAtom(RecoilAtoms.savedCardBrand)->CardUtils.normalizeCardBrand
   let {innerLayout} = config.appearance
+  let elementType = cardFlowType->CardThemeType.getPaymentModeToString
 
   let (vaultId, environment) = switch vaultCredentials {
   | VGS(creds) => (creds.vaultId, creds.environment)
@@ -61,17 +66,44 @@ let make = (~cvcOnly=false) => {
   // duplicate `on` listeners. One effect per field so each registers exactly once
   // regardless of how the field state updates are batched.
   React.useEffect(() => {
-    handleVGSField(cardField, setIsCardFocused, setVgsCardError)
+    handleVGSField(
+      cardField,
+      setIsCardFocused,
+      setVgsCardError,
+      () => Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL),
+      () => Utils.handleOnBlurPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL),
+    )
     None
   }, [cardField])
   React.useEffect(() => {
-    handleVGSField(expiryField, setIsExpiryFocused, setVgsExpiryError)
+    handleVGSField(
+      expiryField,
+      setIsExpiryFocused,
+      setVgsExpiryError,
+      () => Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL),
+      () => Utils.handleOnBlurPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL),
+    )
     None
   }, [expiryField])
   React.useEffect(() => {
-    handleVGSField(cvcField, setIsCVCFocused, setVgsCVCError)
+    handleVGSField(
+      cvcField,
+      setIsCVCFocused,
+      setVgsCVCError,
+      () => Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL),
+      () => Utils.handleOnBlurPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL),
+    )
     None
   }, [cvcField])
+
+  React.useEffect(() => {
+    if cvcOnly {
+      cvcField->Option.forEach(field =>
+        field.update({validations: savedCardCvcValidations(savedCardBrand)})
+      )
+    }
+    None
+  }, (cvcOnly, cvcField, savedCardBrand))
 
   let initializeVGSFields = (vault: returnValue) => {
     // Saved-card (return user) flow only collects the CVC; the card number and
@@ -85,7 +117,7 @@ let make = (~cvcOnly=false) => {
     // Saved-card cvc uses compact, icon-less options so the field matches the
     // native (non-vault) saved-card cvc input.
     setCVCField(_ => Some(
-      vault.field("#vgs-cc-cvc", cvcOnly ? savedCardCvcOptions : cardCvcOptions),
+      vault.field("#vgs-cc-cvc", cvcOnly ? savedCardCvcOptions(savedCardBrand) : cardCvcOptions),
     ))
     setForm(_ => Some(vault))
   }
@@ -98,6 +130,61 @@ let make = (~cvcOnly=false) => {
   let handleVGSErrors = vgsState => {
     let dict = vgsState->getDictFromJson
     formStateRef.current = dict
+
+    // VGS keeps values inside its own secure field iframes. Only mirror the
+    // boolean state needed by ParentCardComponent to reproduce the public card
+    // event contract; no PAN, expiry, or CVC value crosses this boundary.
+    let fieldState = fieldName =>
+      dict
+      ->Dict.get(fieldName)
+      ->Option.flatMap(JSON.Decode.object)
+      ->Option.getOr(Dict.make())
+    if cvcOnly {
+      let cvcState = fieldState("card_cvc")
+      let cvcValid = cvcState->getBool("isValid", false)
+      let status =
+        [
+          ("empty", cvcState->getBool("isEmpty", true)->JSON.Encode.bool),
+          ("complete", cvcValid->JSON.Encode.bool),
+          ("valid", cvcValid->JSON.Encode.bool),
+        ]->Dict.fromArray
+      messageParentWindow(
+        [("savedCardCvcStatus", status->JSON.Encode.object)],
+        ~targetOrigin=parentURL,
+      )
+    } else {
+      let hasCardState = dict->Dict.get("card_number")->Option.isSome
+      let hasExpiryState = dict->Dict.get("card_exp")->Option.isSome
+      let hasCvcState = dict->Dict.get("card_cvc")->Option.isSome
+      let cardState = fieldState("card_number")
+      let expiryState = fieldState("card_exp")
+      let cvcState = fieldState("card_cvc")
+      let cardValid = cardState->getBool("isValid", false)
+      let expiryValid = expiryState->getBool("isValid", false)
+      let cvcValid = cvcState->getBool("isValid", false)
+      let empty =
+        cardState->getBool("isEmpty", true) ||
+        expiryState->getBool("isEmpty", true) ||
+        cvcState->getBool("isEmpty", true)
+      let status =
+        [
+          ("complete", (cardValid && expiryValid && cvcValid)->JSON.Encode.bool),
+          ("empty", empty->JSON.Encode.bool),
+          ("isCvcEmpty", cvcState->getBool("isEmpty", true)->JSON.Encode.bool),
+          ("isCvcComplete", cvcValid->JSON.Encode.bool),
+          ("isCardValid", cardValid->JSON.Encode.bool),
+          ("isExpiryValid", expiryValid->JSON.Encode.bool),
+          ("isCvcValid", cvcValid->JSON.Encode.bool),
+          ("hasCardValidationStatus", hasCardState->JSON.Encode.bool),
+          ("hasExpiryValidationStatus", hasExpiryState->JSON.Encode.bool),
+          ("hasCvcValidationStatus", hasCvcState->JSON.Encode.bool),
+        ]->Dict.fromArray
+      messageParentWindow(
+        [("cardFieldStatus", status->JSON.Encode.object)],
+        ~targetOrigin=parentURL,
+      )
+    }
+
     let setIfPresent = (setError, errStr) =>
       if errStr != "" {
         setError(_ => errStr)
@@ -118,7 +205,10 @@ let make = (~cvcOnly=false) => {
     | "error" =>
       // Card payment can't work without VGS — tell the outer iframe so it can drop
       // the card method from the payment methods list.
-      messageParentWindow([("vgsScriptLoadFailed", true->JSON.Encode.bool)])
+      messageParentWindow(
+        [("vgsScriptLoadFailed", true->JSON.Encode.bool)],
+        ~targetOrigin=parentURL,
+      )
     | _ => ()
     }
     None
@@ -134,7 +224,7 @@ let make = (~cvcOnly=false) => {
       switch form {
       | Some(vault) =>
         // Validate synchronously from the latest tracked field state (mirroring
-        // the native CardPayment submit path) instead of relying on VGS's async
+        // the native Hyperswitch vault collector submit path) instead of relying on VGS's async
         // submit error callback, which raced with the focus-blur state change.
         let stateDict = formStateRef.current
         if cvcOnly {
@@ -148,10 +238,13 @@ let make = (~cvcOnly=false) => {
             let emptyPayload = JSON.Encode.object(Dict.make())
             let onSuccess = (_, data) => {
               let cvcToken = data->getDictFromJson->getString("card_cvc", "")
-              messageParentWindow([
-                ("savedCardCvcTokenEvent", true->JSON.Encode.bool),
-                ("cvcToken", cvcToken->JSON.Encode.string),
-              ])
+              messageParentWindow(
+                [
+                  ("savedCardCvcTokenEvent", true->JSON.Encode.bool),
+                  ("cvcToken", cvcToken->JSON.Encode.string),
+                ],
+                ~targetOrigin=parentURL,
+              )
             }
             let onError = _ =>
               postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
@@ -178,25 +271,28 @@ let make = (~cvcOnly=false) => {
             // Gating on isOuterValid here (rather than inside onSuccess) means we
             // never send card data to VGS when the outer fields are invalid:
             // ParentCardComponent has already reported that error and isn't
-            // listening for the token. Mirrors CardPayment's submit gate.
+            // listening for the token. Mirrors the Hyperswitch vault collector's submit gate.
             let emptyPayload = JSON.Encode.object(Dict.make())
 
             // Tokenisation succeeded — forward the aliases to ParentCardComponent so
             // it can build the confirm body and call intent.
             let onSuccess = (_, data) => {
               let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
-              messageParentWindow([
-                ("vgsTokenEvent", true->JSON.Encode.bool),
-                (
-                  "vgsCardData",
-                  [
-                    ("cardNumber", cardNumber->JSON.Encode.string),
-                    ("month", month->JSON.Encode.string),
-                    ("year", year->JSON.Encode.string),
-                    ("cvcNumber", cvcNumber->JSON.Encode.string),
-                  ]->getJsonFromArrayOfJson,
-                ),
-              ])
+              messageParentWindow(
+                [
+                  ("vgsTokenEvent", true->JSON.Encode.bool),
+                  (
+                    "vgsCardData",
+                    [
+                      ("cardNumber", cardNumber->JSON.Encode.string),
+                      ("month", month->JSON.Encode.string),
+                      ("year", year->JSON.Encode.string),
+                      ("cvcNumber", cvcNumber->JSON.Encode.string),
+                    ]->getJsonFromArrayOfJson,
+                  ),
+                ],
+                ~targetOrigin=parentURL,
+              )
             }
 
             // Fields are valid, so onError here is a genuine tokenisation/network
@@ -225,7 +321,7 @@ let make = (~cvcOnly=false) => {
     }
   }, (form, localeString, cvcOnly))
 
-  useSubmitPaymentData(submitCallback)
+  useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
 
   <div className="animate-slowShow">
     <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>

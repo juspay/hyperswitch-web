@@ -1,6 +1,7 @@
 @react.component
 let make = (
   ~eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  ~eligibilityError: option<string>,
   ~isEligibilityPending=false,
   ~className="",
 ) => {
@@ -11,7 +12,10 @@ let make = (
     ->Option.map(s => s.displayTotalSurchargeAmount->Float.toString)
     ->Option.getOr("")
 
-  <RenderIf condition={isEligibilityPending || eligibilitySurchargeDetails->Option.isSome}>
+  <RenderIf
+    condition={isEligibilityPending ||
+    eligibilityError->Option.isSome ||
+    eligibilitySurchargeDetails->Option.isSome}>
     <div className={`w-full ${className}`}>
       {if isEligibilityPending {
         <div className="w-full" role="status" ariaLive=#polite ariaAtomic=true>
@@ -26,6 +30,18 @@ let make = (
               className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_ease_infinite] bg-gradient-to-r from-transparent via-white/70 to-transparent"
             />
           </div>
+        </div>
+      } else if eligibilityError->Option.isSome {
+        <div
+          className="flex items-start text-xs"
+          role="alert"
+          ariaLive=#polite
+          ariaAtomic=true
+          style={color: themeObj.colorDangerText, lineHeight: "1.45"}>
+          {EligibilityHelpers.getCardEligibilityErrorText(
+            ~cardEligibilityError=eligibilityError,
+            ~localeString,
+          )->React.string}
         </div>
       } else {
         <div className="flex items-start text-xs" role="status" ariaLive=#polite ariaAtomic=true>

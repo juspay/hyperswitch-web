@@ -2,18 +2,29 @@ open CardUtils
 open LoggerUtils
 open RecoilAtoms
 
-let useCardForm = (~logger, ~paymentType) => {
+let useCardForm = (
+  ~logger,
+  ~paymentType,
+  ~runEligibility=true,
+  ~logControlEvents=true,
+  ~useExternalCardSupport=false,
+  ~cardBrandOverride="",
+) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
   let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(showPaymentMethodsScreen)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {clientSecret, publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let (cardEligibilityError, setCardEligibilityError) = React.useState(_ => None)
-  let (eligibilitySurchargeDetails, setEligibilitySurchargeDetails) = React.useState(_ => None)
-  let (isEligibilityPending, setIsEligibilityPending) = React.useState(_ => false)
+  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let {
+    cardEligibilityError,
+    updateCardEligibilityError,
+    eligibilitySurchargeDetails,
+    isEligibilityPending,
+    triggerOnCardNumberChange,
+    resetEligibilityState,
+  } = UseCardEligibility.useCardEligibility(~logger, ~runEligibility)
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -31,12 +42,6 @@ let useCardForm = (~logger, ~paymentType) => {
   let zipRef = React.useRef(Nullable.null)
   let isCoBadgedCardDetectedOnce = React.useRef(false)
   let prevCardBrandRef = React.useRef("")
-  let eligibilityControllerRef = React.useRef(None)
-  let {
-    startDebounce: startEligibilityDebounce,
-    cancelDebounce: cancelEligibilityDebounce,
-  } = CommonHooks.useDebounce(~delayMs=300)
-  let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
   let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
@@ -44,13 +49,18 @@ let useCardForm = (~logger, ~paymentType) => {
   let (isZipValid, setIsZipValid) = React.useState(_ => None)
   let (isCardSupported, setIsCardSupported) = React.useState(_ => None)
 
-  let cardBrand = getCardBrand(cardNumber)
-  let isNotBancontact = selectedOption !== "bancontact_card" && cardBrand == ""
+  let detectedCardBrand = getCardBrand(cardNumber)
+  let isNotBancontact = selectedOption !== "bancontact_card" && detectedCardBrand == ""
   let (cardBrand, setCardBrand) = React.useState(_ =>
-    !showPaymentMethodsScreen && isNotBancontact ? cardScheme : cardBrand
+    !showPaymentMethodsScreen && isNotBancontact ? cardScheme : detectedCardBrand
   )
 
-  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentMethodsScreen)
+  let derivedCardBrand =
+    CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentMethodsScreen)
+  let cardBrand =
+    cardBrandOverride === ""
+      ? derivedCardBrand
+      : cardBrandOverride->CardUtils.normalizeCardBrand
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
@@ -60,11 +70,15 @@ let useCardForm = (~logger, ~paymentType) => {
   }, (cardNumber, cardScheme, cardBrand, showPaymentMethodsScreen))
 
   React.useEffect(() => {
-    setIsCardSupported(_ =>
-      PaymentUtils.checkIsCardSupported(cardNumber, cardBrand, supportedCardBrands)
-    )
+    // The raw split-card iframe does not own the merchant's configured card
+    // networks. ParentCardComponent sends the authoritative support result.
+    if !useExternalCardSupport {
+      setIsCardSupported(_ =>
+        PaymentUtils.checkIsCardSupported(cardNumber, cardBrand, supportedCardBrands)
+      )
+    }
     None
-  }, (supportedCardBrands, cardNumber, cardBrand))
+  }, (supportedCardBrands, cardNumber, cardBrand, useExternalCardSupport))
 
   let cardType = React.useMemo1(() => {
     cardBrand->getCardType
@@ -110,63 +124,18 @@ let useCardForm = (~logger, ~paymentType) => {
     None
   }, (paymentToken.paymentToken, showPaymentMethodsScreen))
 
-  React.useEffect0(() => {
-    Some(
-      () => {
-        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
-      },
-    )
-  })
-
-  let checkCardEligibility = async (~cardNumber) => {
-    await EligibilityHelpers.startEligibilityCheck(
-      ~controllerRef=eligibilityControllerRef,
-      ~clientSecret,
-      ~publishableKey,
-      ~logger,
-      ~customPodUri,
-      ~bodyArr=PaymentBody.cardPaymentMethodEligibilityBody(~cardNumber),
-      ~sdkAuthorization,
-      ~endpoint,
-      ~shouldBlockConfirm=paymentMethodListValue.should_block_confirm,
-      ~setIsEligibilityPending,
-      ~setEligibilitySurchargeDetails,
-      ~setEligibilityError=Some(setCardEligibilityError),
-      ~errorLogMessage="Card payment eligibility check failed",
-      ~fetchEligibility={
-        (
-          ~clientSecret,
-          ~publishableKey,
-          ~logger,
-          ~customPodUri,
-          ~bodyArr,
-          ~sdkAuthorization,
-          ~endpoint,
-          ~signal,
-        ) =>
-          PaymentHelpers.fetchPaymentMethodEligibility(
-            ~clientSecret,
-            ~publishableKey,
-            ~logger,
-            ~customPodUri,
-            ~bodyArr,
-            ~sdkAuthorization,
-            ~endpoint,
-            ~signal,
-          )
-      },
-    )
-  }
-
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
     let card = val->formatCardNumber(cardType)
     let clearValue = card->CardValidations.clearSpaces
-    let isCardSupportedAndValid =
+    let isCardSupportedAndValid = if useExternalCardSupport {
+      CardUtils.cardValid(clearValue, cardBrand) && isCardSupported->Option.getOr(false)
+    } else {
       PaymentUtils.checkIsCardSupported(clearValue, cardBrand, supportedCardBrands)->Option.getOr(
         false,
       )
+    }
 
     setCardValid(clearValue, cardBrand, setIsCardValid)
 
@@ -187,20 +156,7 @@ let useCardForm = (~logger, ~paymentType) => {
       setIsCardValid(_ => Some(false))
     }
 
-    if paymentMethodListValue.sdk_next_action === Some("eligibility_check") {
-      cancelEligibilityDebounce()
-      setCardEligibilityError(_ => None)
-      setEligibilitySurchargeDetails(_ => None)
-      if !isCardSupportedAndValid {
-        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
-        eligibilityControllerRef.current = None
-        setIsEligibilityPending(_ => false)
-      } else {
-        startEligibilityDebounce(() => {
-          checkCardEligibility(~cardNumber=clearValue)->ignore
-        })
-      }
-    }
+    triggerOnCardNumberChange(~cardNumber=clearValue, ~isCardSupportedAndValid)
   }
 
   let changeCardExpiry = ev => {
@@ -209,7 +165,7 @@ let useCardForm = (~logger, ~paymentType) => {
     let formattedExpiry = val->CardValidations.formatCardExpiryNumber
     if isExipryValid(formattedExpiry) {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
-      CardUtils.emitExpiryDate(formattedExpiry)
+      CardUtils.emitExpiryDate(formattedExpiry, ~targetOrigin=parentURL)
     }
     setExpiryValid(formattedExpiry, setIsExpiryValid)
     setCardExpiry(_ => formattedExpiry)
@@ -249,29 +205,35 @@ let useCardForm = (~logger, ~paymentType) => {
   React.useEffect0(() => {
     open Utils
     let handleFun = (ev: Window.event) => {
-      let json = ev.data->safeParse
-      let dict = json->Utils.getDictFromJson
-      if dict->Dict.get("doBlur")->Option.isSome {
-        logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR)
-        setBlurState(_ => true)
-      } else if dict->Dict.get("doFocus")->Option.isSome {
-        logger.setLogInfo(~value="doFocus Triggered", ~eventName=FOCUS)
-        cardRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
-      } else if dict->Dict.get("doClearValues")->Option.isSome {
-        logger.setLogInfo(~value="doClearValues Triggered", ~eventName=CLEAR)
-        //clear all values
-        setCardNumber(_ => "")
-        setCardExpiry(_ => "")
-        setCvcNumber(_ => "")
-        setIsCardValid(_ => None)
-        setCardError(_ => "")
-        setCvcError(_ => "")
-        setExpiryError(_ => "")
-        setIsExpiryValid(_ => None)
-        setIsCVCValid(_ => None)
-        setCardEligibilityError(_ => None)
-        setEligibilitySurchargeDetails(_ => None)
-        setIsEligibilityPending(_ => false)
+      if ev.source === iframeParent && (parentURL === "*" || ev.origin === parentURL) {
+        let json = ev.data->safeParse
+        let dict = json->Utils.getDictFromJson
+        if dict->Dict.get("doBlur")->Option.isSome {
+          if logControlEvents {
+            logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR)
+          }
+          setBlurState(_ => true)
+        } else if dict->Dict.get("doFocus")->Option.isSome {
+          if logControlEvents {
+            logger.setLogInfo(~value="doFocus Triggered", ~eventName=FOCUS)
+          }
+          cardRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
+        } else if dict->Dict.get("doClearValues")->Option.isSome {
+          if logControlEvents {
+            logger.setLogInfo(~value="doClearValues Triggered", ~eventName=CLEAR)
+          }
+          //clear all values
+          setCardNumber(_ => "")
+          setCardExpiry(_ => "")
+          setCvcNumber(_ => "")
+          setIsCardValid(_ => None)
+          setCardError(_ => "")
+          setCvcError(_ => "")
+          setExpiryError(_ => "")
+          setIsExpiryValid(_ => None)
+          setIsCVCValid(_ => None)
+          resetEligibilityState()
+        }
       }
     }
     handleMessage(handleFun, "Error in parsing sent Data")
@@ -280,9 +242,13 @@ let useCardForm = (~logger, ~paymentType) => {
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
     if cardNumberInRange(cardNumber, cardBrand)->Array.includes(true) && calculateLuhn(cardNumber) {
-      setIsCardValid(_ =>
-        PaymentUtils.checkIsCardSupported(cardNumber, cardBrand, supportedCardBrands)
-      )
+      if useExternalCardSupport {
+        setIsCardValid(_ => Some(true))
+      } else {
+        setIsCardValid(_ =>
+          PaymentUtils.checkIsCardSupported(cardNumber, cardBrand, supportedCardBrands)
+        )
+      }
     } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => Some(false))
     } else {
@@ -338,9 +304,26 @@ let useCardForm = (~logger, ~paymentType) => {
     | _ => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
     }
     let cardError = isCardValid->Option.isSome ? cardError : ""
+    let supportStatus = switch isCardSupported {
+    | Some(true) => "true"
+    | Some(false) => "false"
+    | None => "none"
+    }
+    let validityStatus = switch isCardValid {
+    | Some(true) => "true"
+    | Some(false) => "false"
+    | None => "none"
+    }
+    let hasEligibilityError = cardEligibilityError->Option.isSome ? "true" : "false"
+    Console.log(
+      `[UnifiedCardSupport][inner] card error effect: brand=${cardBrand}, panLength=${cardNumber
+          ->CardValidations.clearSpaces
+          ->String.length
+          ->Int.toString}, support=${supportStatus}, valid=${validityStatus}, eligibilityError=${hasEligibilityError}, error="${cardError}"`,
+    )
     setCardError(_ => cardError)
     None
-  }, (isCardValid, isCardSupported, cardNumber, cardEligibilityError))
+  }, (isCardValid, isCardSupported, cardNumber, cardEligibilityError, cardBrand))
 
   React.useEffect(() => {
     setCvcError(_ => isCVCValid->Option.getOr(true) ? "" : localeString.inCompleteCVCErrorText)
@@ -380,6 +363,7 @@ let useCardForm = (~logger, ~paymentType) => {
     isCardValid,
     setIsCardValid,
     isCardSupported,
+    updateCardSupport: support => setIsCardSupported(_ => support),
     cardNumber,
     changeCardNumber,
     handleCardBlur,
@@ -390,6 +374,7 @@ let useCardForm = (~logger, ~paymentType) => {
     maxCardLength,
     cardBrand,
     cardEligibilityError,
+    updateCardEligibilityError,
     eligibilitySurchargeDetails,
     isEligibilityPending,
   }

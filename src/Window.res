@@ -12,7 +12,7 @@ type eventData = {
   oneClickConfirmTriggered: bool,
 }
 type loaderEvent = {key: string, data: eventData}
-type event = {key: string, data: string, origin: string}
+type event = {key: string, data: string, origin: string, source: Dom.element}
 type date = {now: unit => string}
 type body
 type packageJson = {version: string}
@@ -202,13 +202,15 @@ let sendPostMessageJSON = (element, message) => {
   element->postMessageJSON(message, GlobalVars.targetOrigin)
 }
 
-let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
+let iframePostMessage = (
+  iframeRef: nullable<Dom.element>,
+  message,
+  ~targetOrigin=GlobalVars.targetOrigin,
+) => {
   switch iframeRef->Nullable.toOption {
   | Some(ref) =>
     try {
-      ref
-      ->contentWindow
-      ->sendPostMessage(message)
+      ref->contentWindow->postMessage(message->JSON.Encode.object->JSON.stringify, targetOrigin)
     } catch {
     | _ => ()
     }

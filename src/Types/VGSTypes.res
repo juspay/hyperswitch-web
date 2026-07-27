@@ -19,8 +19,15 @@ type fieldOptions = {
   css?: vgsFieldCss,
 }
 
+type fieldUpdateOptions = {
+  validations: array<string>,
+}
+
 // A mounted secure field. `on` subscribes to field events (focus/blur/update).
-type field = {on: (string, JSON.t => unit) => unit}
+type field = {
+  on: (string, JSON.t => unit) => unit,
+  update: fieldUpdateOptions => unit,
+}
 
 // The form handle returned by VGSCollect.create.
 type returnValue = {

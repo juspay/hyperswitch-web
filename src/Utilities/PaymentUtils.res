@@ -599,6 +599,7 @@ let useEmitPaymentMethodInfo = (
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
   ~cvcProps: CardUtils.cvcProps,
+  ~skipCard=false,
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {country, state, pinCode} = useNonPiiAddressData()
@@ -645,7 +646,9 @@ let useEmitPaymentMethodInfo = (
         ~paymentMethodType=paymentMethodName,
       )
     } else if paymentMethodName === "card" {
-      emitPaymentMethodInfoWrapper(~paymentMethod="card", ~paymentMethodType="debit")
+      if !skipCard {
+        emitPaymentMethodInfoWrapper(~paymentMethod="card", ~paymentMethodType="debit")
+      }
     } else {
       let finalOptionalPaymentMethodTypeValue =
         paymentMethods
@@ -683,6 +686,7 @@ let useEmitPaymentMethodInfo = (
     country,
     state,
     pinCode,
+    skipCard,
   ))
 }
 

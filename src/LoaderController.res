@@ -51,6 +51,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   )
   let setIsTestMode = Recoil.useSetRecoilState(RecoilAtoms.isTestMode)
   let setIsSavedCardCvcFlow = Recoil.useSetRecoilState(RecoilAtoms.isSavedCardCvcFlow)
+  let setCardCollectionMode = Recoil.useSetRecoilState(RecoilAtoms.cardCollectionMode)
+  let setCardBrand = Recoil.useSetRecoilState(RecoilAtoms.cardBrand)
+  let setSavedCardBrand = Recoil.useSetRecoilState(RecoilAtoms.savedCardBrand)
+  let setIsBancontactCardFlow = Recoil.useSetRecoilState(RecoilAtoms.isBancontactCardFlow)
+  let setCardFlowType = Recoil.useSetRecoilState(RecoilAtoms.cardFlowType)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -264,6 +269,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             } else {
               let sdkSessionId = dict->getString("sdkSessionId", "no-element")
               logger.setSessionId(sdkSessionId)
+              if dict->Dict.get("loggerSource")->Option.isSome {
+                logger.setSource(dict->getString("loggerSource", "hyper_payment"))
+              }
               if GlobalVars.isInteg {
                 setBlockConfirm(_ => dict->getBool("blockConfirm", false))
               }
@@ -461,6 +469,27 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           | "" => ()
           | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
           }
+        }
+        if dict->Dict.get("cardCollectionMode")->Option.isSome {
+          setCardCollectionMode(_ =>
+            switch dict->getString("cardCollectionMode", "tokenise") {
+            | "raw" => RawEmit
+            | _ => Tokenise
+            }
+          )
+        }
+        if dict->Dict.get("savedCardBrand")->Option.isSome {
+          let savedCardBrand = dict->getString("savedCardBrand", "")->CardUtils.normalizeCardBrand
+          setCardBrand(_ => savedCardBrand)
+          setSavedCardBrand(_ => savedCardBrand)
+        }
+        if dict->Dict.get("isBancontactCardFlow")->Option.isSome {
+          setIsBancontactCardFlow(_ => dict->Utils.getBool("isBancontactCardFlow", false))
+        }
+        if dict->Dict.get("cardFlowType")->Option.isSome {
+          setCardFlowType(_ =>
+            dict->getString("cardFlowType", "payment")->CardThemeType.getPaymentMode
+          )
         }
         if dict->getDictIsSome("sessions") {
           setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))

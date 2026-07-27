@@ -20,8 +20,14 @@ let showPaymentMethodsScreen = Recoil.atom("showPaymentMethodsScreen", false)
 // Typed vault credentials decoded from the vaultConfig blob in fullScreenIframeMounted.
 // Set by PaymentMethodsSDK; read by CardsSDK / vault-specific card components.
 let vaultCredentials = Recoil.atom("vaultCredentials", VaultHelpers.defaultVaultCredentials)
+type cardCollectionMode = Tokenise | RawEmit
+let cardCollectionMode = Recoil.atom("cardCollectionMode", Tokenise)
+let isBancontactCardFlow = Recoil.atom("isBancontactCardFlow", false)
+let cardFlowType = Recoil.atom("cardFlowType", CardThemeType.Payment)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")
+// A saved-card CVC collector has no PAN from which to detect its brand.
+let savedCardBrand = Recoil.atom("savedCardBrand", "")
 let paymentMethodCollectOptionAtom = Recoil.atom(
   "paymentMethodCollectOptions",
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,

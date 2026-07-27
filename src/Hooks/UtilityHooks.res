@@ -21,23 +21,31 @@ let useIsGuestCustomer = () => {
   }, (paymentMethodList, customerPaymentMethods))
 }
 
-let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false) => {
+let useHandlePostMessages = (
+  ~complete,
+  ~empty,
+  ~paymentType,
+  ~savedMethod=false,
+  ~enabled=true,
+) => {
   open RecoilAtoms
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
 
   React.useEffect(() => {
-    Utils.handlePostMessageEvents(
-      ~iframeId,
-      ~complete,
-      ~empty,
-      ~paymentType,
-      ~loggerState,
-      ~savedMethod,
-    )
+    if enabled {
+      Utils.handlePostMessageEvents(
+        ~iframeId,
+        ~complete,
+        ~empty,
+        ~paymentType,
+        ~loggerState,
+        ~savedMethod,
+      )
+    }
     None
-  }, (complete, empty, paymentType, savedMethod))
+  }, (complete, empty, paymentType, savedMethod, enabled))
 }
 
 let useIsCustomerAcceptanceRequired = (
