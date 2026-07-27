@@ -1,6 +1,6 @@
 @react.component
 let make = (~isCollapsed, ~setIsCollapsed) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   <div
     className="Label flex flex-row gap-1 items-end cursor-pointer mt-3 text-sm font-medium float-left w-fit"
     style={

@@ -12,7 +12,7 @@
 //   PaymentMethodsSDK (inner iframe)
 //     • reads its `sessions` atom (populated by LoaderController)
 //     • calls getVaultCredentialsFromSessions(sessions) → typed vaultCredentials variant
-//     • stores variant in vaultCredentials Recoil atom
+//     • stores variant in the vaultCredentials Jotai atom
 //
 //   CardsSDK / vault-specific card components
 //     • read vaultCredentials atom
@@ -48,7 +48,7 @@ type vgsVaultType = {
   environment: string,
 }
 
-// ── Typed credentials variant (set in Recoil atom inside the inner iframe) ───
+// ── Typed credentials variant (set in a Jotai atom inside the inner iframe) ──
 
 type vaultCredentials =
   | HyperswitchVault(hyperswitchVaultType)

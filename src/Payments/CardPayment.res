@@ -13,7 +13,7 @@ let make = (
   //     so the submitCallback registered here is a deliberate no-op.
   //   • business-logic UI (DynamicFields, save-card checkbox, nickname,
   //     installments, ClickToPay, Surcharge) is hidden — those features rely
-  //     on Recoil atoms that are not populated inside the iframe.
+  //     on Jotai atoms that are not populated inside the iframe.
   //   • useHandlePostMessages still runs so complete / empty state is reported
   //     to the parent window (PaymentMethodsSDK can forward it if needed).
   ~isInsideCardSDK=false,
@@ -22,26 +22,26 @@ let make = (
   open Utils
   open UtilityHooks
   open PaymentTypeContext
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let {config, themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let {innerLayout} = config.appearance
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let email = Recoil.useRecoilValueFromAtom(RecoilAtoms.userEmailAddress)
-  let fullName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
-  let phoneNumber = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
+  let fullName = Jotai.useAtomValue(JotaiAtoms.userFullName)
+  let phoneNumber = Jotai.useAtomValue(JotaiAtoms.userPhoneNumber)
   let (isSaveDetailsWithClickToPay, setIsSaveDetailsWithClickToPay) = React.useState(_ => false)
   let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
   let (showInstallments, setShowInstallments) = React.useState(_ => false)
-  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+  let clickToPayConfig = Jotai.useAtomValue(JotaiAtoms.clickToPayConfig)
   let (clickToPayCardBrand, setClickToPayCardBrand) = React.useState(_ => "")
   let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
   let ctpCards = clickToPayConfig.clickToPayCards->Option.getOr([])
-  let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
-  let {clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let vaultCredentials = Recoil.useRecoilValueFromAtom(RecoilAtoms.vaultCredentials)
-  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
+  let nickname = Jotai.useAtomValue(JotaiAtoms.userCardNickName)
+  let {clientSecret, sdkAuthorization} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
@@ -94,14 +94,14 @@ let make = (
     savedPaymentMethodsCheckboxCheckedByDefault,
     alwaysSendCustomerAcceptance,
     layout,
-  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
-  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
-    RecoilAtoms.showPaymentMethodsScreen,
+  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Jotai.useAtom(
+    JotaiAtoms.showPaymentMethodsScreen,
   )
-  let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
+  let setComplete = Jotai.useSetAtom(JotaiAtoms.fieldsComplete)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
   )
@@ -143,7 +143,7 @@ let make = (
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let (installmentsError, setInstallmentsError) = React.useState(_ => "")
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
 
   let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
 
@@ -689,7 +689,7 @@ let make = (
             </RenderIf>
           </RenderIf>
           // Business-logic UI is hidden inside the Cards SDK iframe (those features
-          // rely on Recoil atoms not populated there); shown for the standard flow.
+          // rely on Jotai atoms not populated there); shown for the standard flow.
           <RenderIf condition={!isInsideCardSDK}>
             {<>
               <DynamicFields

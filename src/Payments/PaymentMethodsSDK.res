@@ -7,12 +7,12 @@
 // credentials from `sessions` and renders the right payment UI.
 @react.component
 let make = () => {
-  let sessions = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
-  let setVaultCredentials = Recoil.useSetRecoilState(RecoilAtoms.vaultCredentials)
+  let sessions = Jotai.useAtomValue(JotaiAtoms.sessions)
+  let setVaultCredentials = Jotai.useSetAtom(JotaiAtoms.vaultCredentials)
   // When the iframe was mounted for the saved-card (return user) flow, only the
   // vault CVC field is collected here — the card number / expiry live on the
   // already-saved card. CardsSDK renders the vault-appropriate CVC-only component.
-  let isSavedCardCvcFlow = Recoil.useRecoilValueFromAtom(RecoilAtoms.isSavedCardCvcFlow)
+  let isSavedCardCvcFlow = Jotai.useAtomValue(JotaiAtoms.isSavedCardCvcFlow)
 
   React.useEffect(() => {
     setVaultCredentials(_ => VaultHelpers.getVaultCredentialsFromSessions(sessions))

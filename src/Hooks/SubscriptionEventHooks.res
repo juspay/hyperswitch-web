@@ -6,7 +6,7 @@ open PaymentEventTypes
 // ---------------------------------------------------------------------------
 // Call once at the top of any component that needs to emit events imperatively
 // (e.g. inside event handlers or callbacks, not in effects).
-// Reads subscriptionEvents from Recoil — no prop drilling required.
+// Reads subscriptionEvents from Jotai — no prop drilling required.
 
 type emitter = {
   emitCardInfo: (~cardInfo: PaymentEventData.cardInfo) => unit,
@@ -24,7 +24,7 @@ type emitter = {
 }
 
 let useSubscriptionEventEmitter = (): emitter => {
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   let emitCardInfo = (~cardInfo: PaymentEventData.cardInfo) => {
@@ -115,7 +115,7 @@ let emitReady = (~iframeId, ~elementType) =>
 // ---------------------------------------------------------------------------
 // Effect hook: emits formStatus whenever empty/complete/isOneClickWallet changes.
 let useEmitFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=false) => {
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
@@ -139,10 +139,10 @@ let useEmitFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=
 // ---------------------------------------------------------------------------
 // Effect hook: emits paymentMethodInfoBillingAddress whenever address atoms change.
 let useEmitBillingAddress = () => {
-  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
-  let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState).value
-  let pinCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode).value
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let country = Jotai.useAtomValue(JotaiAtoms.userCountry)
+  let state = Jotai.useAtomValue(JotaiAtoms.userAddressState).value
+  let pinCode = Jotai.useAtomValue(JotaiAtoms.userAddressPincode).value
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
@@ -203,8 +203,8 @@ let useEmitPaymentMethodStatus = (
   ~isSavedPaymentMethod: bool,
   ~isOneClickWallet: bool,
 ) => {
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
@@ -239,7 +239,7 @@ let useEmitPaymentMethodStatus = (
 let useEmitSurchargeInfo = (
   ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
 ) => {
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
