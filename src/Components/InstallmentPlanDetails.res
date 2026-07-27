@@ -1,6 +1,6 @@
 @react.component
 let make = (~plan: PaymentMethodsRecord.installmentPlan, ~currency) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   let interestLabel =
     plan.interest_rate == 0.0

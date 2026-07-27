@@ -22,25 +22,26 @@ let make = (
     iframeId,
     paymentId,
     sdkHandleOneClickConfirmPayment,
-  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let sdkSessionId = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessionId)
-  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let optionsPayment = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let sdkConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
-  let email = Recoil.useRecoilValueFromAtom(RecoilAtoms.userEmailAddress)
-  let fullName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
-  let phoneNumber = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
-  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(RecoilAtoms.redirectionFlagsAtom)
-  let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
-  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
-    RecoilAtoms.showPaymentMethodsScreen,
+  } = Jotai.useAtomValue(JotaiAtoms.keys)
+  let sdkSessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  // let analyticsMetadata = Jotai.useAtomValue(JotaiAtoms.analyticsMetadata)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
+  let optionsPayment = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let sdkConfig = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let nickname = Jotai.useAtomValue(JotaiAtoms.userCardNickName)
+  let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
+  let fullName = Jotai.useAtomValue(JotaiAtoms.userFullName)
+  let phoneNumber = Jotai.useAtomValue(JotaiAtoms.userPhoneNumber)
+  let clickToPayConfig = Jotai.useAtomValue(JotaiAtoms.clickToPayConfig)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+  let sessionToken = Jotai.useAtomValue(JotaiAtoms.sessions)
+  let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
+  let setComplete = Jotai.useSetAtom(JotaiAtoms.fieldsComplete)
+  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Jotai.useAtom(
+    JotaiAtoms.showPaymentMethodsScreen,
   )
 
   let {
@@ -100,7 +101,7 @@ let make = (
     hasCvcValidationStatus,
     cardInfo,
   } = innerCardState
-  let setIsVgsScriptReady = Recoil.useSetRecoilState(RecoilAtoms.isVgsScriptReady)
+  let setIsVgsScriptReady = Jotai.useSetAtom(JotaiAtoms.isVgsScriptReady)
 
   let mountConfigRef = React.useRef((
     sdkConfig,
@@ -195,25 +196,17 @@ let make = (
       )
     }
     None
-  }, (rawCardNumber, isRawNewCardFlow, isBancontact, cardSupportState))
+  }, (
+    rawCardNumber,
+    isRawNewCardFlow,
+    isBancontact,
+    cardSupportState,
+    paymentMethodListValue.sdk_next_action,
+    clientSecret,
+  ))
 
   React.useEffect(() => {
     if isRawNewCardFlow && iframeMounted {
-      let configuredBrands = supportedCardBrands->Option.getOr([])
-      let hasConfiguredBrands = supportedCardBrands->Option.isSome ? "true" : "false"
-      let supportStatus = switch cardSupportState {
-      | Some(true) => "true"
-      | Some(false) => "false"
-      | None => "none"
-      }
-      Console.log(
-        `[UnifiedCardSupport][outer] brand=${cardBrand}, panLength=${rawCardNumber
-          ->CardValidations.clearSpaces
-          ->String.length
-          ->Int.toString}, hasConfiguredBrands=${hasConfiguredBrands}, configuredBrands=[${configuredBrands->Array.join(
-            ",",
-          )}], support=${supportStatus}`,
-      )
       let supportState =
         [
           ("hasStatus", cardSupportState->Option.isSome->JSON.Encode.bool),

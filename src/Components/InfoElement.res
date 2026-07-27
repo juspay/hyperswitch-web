@@ -1,9 +1,9 @@
 @react.component
 let make = () => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {redirectionInfo} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {redirectionInfo} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let selectedOption =
-    Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)->PaymentModeType.paymentMode
+    Jotai.useAtomValue(JotaiAtoms.selectedOptionAtom)->PaymentModeType.paymentMode
 
   let displayText = switch selectedOption {
   | ACHTransfer

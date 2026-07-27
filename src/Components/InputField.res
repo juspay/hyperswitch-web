@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 open PaymentTypeContext
 
 @react.component
@@ -28,8 +28,8 @@ let make = (
 ) => {
   open ElementType
   let (eleClassName, setEleClassName) = React.useState(_ => "input-base")
-  let {iframeId, parentURL} = Recoil.useRecoilValueFromAtom(keys)
-  let options = Recoil.useRecoilValueFromAtom(elementOptions)
+  let {iframeId, parentURL} = Jotai.useAtomValue(keys)
+  let options = Jotai.useAtomValue(elementOptions)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
   let elementType = contextPaymentType->CardThemeType.getPaymentModeToString

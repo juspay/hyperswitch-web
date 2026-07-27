@@ -1,5 +1,5 @@
 // CardsSDK
-// Reads the vaultCredentials Recoil atom (set by PaymentMethodsSDK after decoding
+// Reads the vaultCredentials Jotai atom (set by PaymentMethodsSDK after decoding
 // the vaultConfig blob) and dispatches to the right vault-specific card component.
 //
 // Extending for a new vault:
@@ -11,13 +11,13 @@
 // always false for the new-card flow (full card fields).
 @react.component
 let make = (~cvcOnly=false) => {
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let vaultCredentials = Recoil.useRecoilValueFromAtom(RecoilAtoms.vaultCredentials)
-  let cardCollectionMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.cardCollectionMode)
-  let isBancontact = Recoil.useRecoilValueFromAtom(RecoilAtoms.isBancontactCardFlow)
-  let cardFlowType = Recoil.useRecoilValueFromAtom(RecoilAtoms.cardFlowType)
-  let savedCardBrand = Recoil.useRecoilValueFromAtom(RecoilAtoms.savedCardBrand)
-  let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
+  let cardCollectionMode = Jotai.useAtomValue(JotaiAtoms.cardCollectionMode)
+  let isBancontact = Jotai.useAtomValue(JotaiAtoms.isBancontactCardFlow)
+  let cardFlowType = Jotai.useAtomValue(JotaiAtoms.cardFlowType)
+  let savedCardBrand = Jotai.useAtomValue(JotaiAtoms.savedCardBrand)
+  let setShowPaymentMethodsScreen = Jotai.useSetAtom(JotaiAtoms.showPaymentMethodsScreen)
 
   // A full new-card collector always represents the payment-method screen.
   // This was previously initialised by the Hyperswitch vault collector itself; keeping it at the
@@ -41,10 +41,7 @@ let make = (~cvcOnly=false) => {
   switch (cardCollectionMode, vaultCredentials, cvcOnly) {
   | (RawEmit, _, true) =>
     <CardCVCElement
-      cvcProps
-      paymentType=CardThemeType.CardCVCElement
-      isSavedCardCvcFlow=true
-      savedCardBrand
+      cvcProps paymentType=CardThemeType.CardCVCElement isSavedCardCvcFlow=true savedCardBrand
     />
   | (RawEmit, _, false) => <RawCardCollector cardProps expiryProps cvcProps isBancontact />
   | (Tokenise, HyperswitchVault(_), _) =>

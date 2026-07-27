@@ -1,11 +1,11 @@
-open RecoilAtoms
-open RecoilAtomTypes
+open JotaiAtoms
+open JotaiAtomTypes
 open PaymentTypeContext
 
 @react.component
 let make = (
   ~setValue=?,
-  ~value: RecoilAtomTypes.field,
+  ~value: JotaiAtomTypes.field,
   ~valueDropDown=?,
   ~setValueDropDown=?,
   ~dropDownFieldName=?,
@@ -25,11 +25,11 @@ let make = (
   ~displayValue=?,
   ~setDisplayValue=?,
 ) => {
-  let {config} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(keys)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let {config} = Jotai.useAtomValue(configAtom)
+  let {themeObj} = Jotai.useAtomValue(configAtom)
+  let {readOnly} = Jotai.useAtomValue(optionAtom)
+  let {parentURL, iframeId} = Jotai.useAtomValue(keys)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)

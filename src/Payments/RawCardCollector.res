@@ -6,9 +6,9 @@ let make = (
   ~cvcProps: CardUtils.cvcProps,
   ~isBancontact=false,
 ) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let setComplete = Jotai.useSetAtom(JotaiAtoms.fieldsComplete)
   let {
     isCardValid,
     isCardSupported,
@@ -51,10 +51,7 @@ let make = (
       // ParentCardComponent uses Window.iframePostMessage, which serializes the
       // payload. Parse the string before decoding the eligibility state.
       let dict = ev.data->safeParse->getDictFromJson
-      if (
-        ev.source === iframeParent &&
-        ev.origin === parentURL
-      ) {
+      if ev.source === iframeParent && ev.origin === parentURL {
         if dict->Dict.get("cardEligibilityStateUpdate")->Option.isSome {
           let eligibilityState =
             dict->getJsonObjectFromDict("cardEligibilityStateUpdate")->getDictFromJson
@@ -65,18 +62,11 @@ let make = (
           )
         }
         if dict->Dict.get("cardSupportStateUpdate")->Option.isSome {
-          let supportState =
-            dict->getJsonObjectFromDict("cardSupportStateUpdate")->getDictFromJson
+          let supportState = dict->getJsonObjectFromDict("cardSupportStateUpdate")->getDictFromJson
           let receivedSupport =
             supportState->getBool("hasStatus", false)
               ? Some(supportState->getBool("supported", true))
               : None
-          let supportStatus = switch receivedSupport {
-          | Some(true) => "true"
-          | Some(false) => "false"
-          | None => "none"
-          }
-          Console.log(`[UnifiedCardSupport][inner] received support=${supportStatus}`)
           updateCardSupport(receivedSupport)
         }
       }

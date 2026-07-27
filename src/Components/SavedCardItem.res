@@ -70,27 +70,24 @@ let make = (
   ~setCvcIframeRef=_ => (),
   ~setSavedCardCvcState=_ => (),
 ) => {
-  let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {
     hideExpiredPaymentMethods,
     displayDefaultSavedPaymentIcon,
     displayBillingDetails,
     layout,
-  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let {hideCardExpiry} = CardUtils.getLayoutClass(layout).savedMethodCustomization
-  let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
+  let (cardBrand, setCardBrand) = Jotai.useAtom(JotaiAtoms.cardBrand)
   let (savedCardCvcState, setLocalSavedCardCvcState) = React.useState(_ =>
     CardIframeProtocol.initialSavedCardCvcState
   )
-  let savedCardBrand =
-    paymentItem.card.scheme->Option.getOr("")->CardUtils.normalizeCardBrand
+  let savedCardBrand = paymentItem.card.scheme->Option.getOr("")->CardUtils.normalizeCardBrand
   let isCvcEmpty = savedCardCvcState.empty
   let pickerItemClass = isActive ? "PickerItem--selected" : ""
 
   let focusCVC = () => {
-    setCardBrand(_ =>
-      savedCardBrand
-    )
+    setCardBrand(_ => savedCardBrand)
   }
 
   let isCard = paymentItem.paymentMethod === "card"
@@ -205,7 +202,7 @@ let make = (
       cardCollectionMode
     />
 
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
 
   let hasInstallmentPlans =
@@ -233,7 +230,7 @@ let make = (
         opacity: {isCardExpired ? "0.7" : "1"},
       }
       onClick={_ => {
-        open RecoilAtomTypes
+        open JotaiAtomTypes
         setPaymentToken(_ => {
           paymentToken: paymentItem.paymentToken,
           customerId: paymentItem.customerId,
@@ -285,9 +282,7 @@ let make = (
                     {React.string(`${localeString.cvcTextLabel}:`)}
                   </div>
                 </RenderIf>
-                <div className={cvcContainerClassName}>
-                  {makeCvcField()}
-                </div>
+                <div className={cvcContainerClassName}> {makeCvcField()} </div>
               </div>
             </RenderIf>
           </div>

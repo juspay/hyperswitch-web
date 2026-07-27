@@ -8,11 +8,11 @@ type eligibilityState = {
 }
 
 let useCardEligibility = (~logger, ~runEligibility=true): eligibilityState => {
-  open RecoilAtoms
+  open JotaiAtoms
 
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {clientSecret, publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let {clientSecret, publishableKey, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let customPodUri = Jotai.useAtomValue(customPodUri)
   let (cardEligibilityError, setCardEligibilityError) = React.useState(_ => None)
   let (eligibilitySurchargeDetails, setEligibilitySurchargeDetails) = React.useState(_ => None)
   let (isEligibilityPending, setIsEligibilityPending) = React.useState(_ => false)

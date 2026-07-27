@@ -16,12 +16,12 @@ let vgsScriptIntegrity = "sha384-ddxU1XAc77oB4EIpKOgJQ3FN2a6STYPK0JipRqg1x/eW+n5
 
 @react.component
 let make = (~cvcOnly=false) => {
-  let vaultCredentials = Recoil.useRecoilValueFromAtom(RecoilAtoms.vaultCredentials)
-  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let cardFlowType = Recoil.useRecoilValueFromAtom(RecoilAtoms.cardFlowType)
+  let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
+  let {themeObj, localeString, config} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {parentURL, iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let cardFlowType = Jotai.useAtomValue(JotaiAtoms.cardFlowType)
   let savedCardBrand =
-    Recoil.useRecoilValueFromAtom(RecoilAtoms.savedCardBrand)->CardUtils.normalizeCardBrand
+    Jotai.useAtomValue(JotaiAtoms.savedCardBrand)->CardUtils.normalizeCardBrand
   let {innerLayout} = config.appearance
   let elementType = cardFlowType->CardThemeType.getPaymentModeToString
 

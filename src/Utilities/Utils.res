@@ -557,8 +557,8 @@ let isVpaIdValid = vpaId => {
 }
 
 let checkEmailValid = (
-  email: RecoilAtomTypes.field,
-  fn: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
+  email: JotaiAtomTypes.field,
+  fn: (JotaiAtomTypes.field => JotaiAtomTypes.field) => unit,
 ) => {
   switch email.value->String.match(
     %re(
@@ -853,7 +853,7 @@ let isoOptionsToCountryNames = (isoOptions: array<string>): array<string> =>
     ->Option.map(item => item.countryName)
   )
 
-let getStateNames = (country: RecoilAtomTypes.field) => {
+let getStateNames = (country: JotaiAtomTypes.field) => {
   let options =
     CountryStateDataRefs.stateDataRef.contents
     ->getDictFromJson
@@ -873,11 +873,11 @@ let getStateNames = (country: RecoilAtomTypes.field) => {
 }
 
 let isAddressComplete = (
-  line1: RecoilAtomTypes.field,
-  city: RecoilAtomTypes.field,
-  postalCode: RecoilAtomTypes.field,
-  country: RecoilAtomTypes.field,
-  state: RecoilAtomTypes.field,
+  line1: JotaiAtomTypes.field,
+  city: JotaiAtomTypes.field,
+  postalCode: JotaiAtomTypes.field,
+  country: JotaiAtomTypes.field,
+  state: JotaiAtomTypes.field,
 ) =>
   line1.value != "" &&
   city.value != "" &&
@@ -1893,7 +1893,7 @@ let isDigitLimitExceeded = (val, ~digit) => {
 }
 
 /* Redirect Handling */
-let replaceRootHref = (href: string, redirectionFlags: RecoilAtomTypes.redirectionFlags) => {
+let replaceRootHref = (href: string, redirectionFlags: JotaiAtomTypes.redirectionFlags) => {
   if redirectionFlags.shouldRemoveBeforeUnloadEvents {
     handleBeforeRedirectPostMessage()
   }
@@ -1926,7 +1926,7 @@ let convertKeyValueToJsonStringPair = (key, value) => (key, JSON.Encode.string(v
 
 let validateName = (
   val: string,
-  prev: RecoilAtomTypes.field,
+  prev: JotaiAtomTypes.field,
   localeString: LocaleStringTypes.localeStrings,
 ) => {
   let isValid = val !== "" && %re("/^\D*$/")->RegExp.test(val)
@@ -1955,7 +1955,7 @@ let validateNickname = (val: string, localeString: LocaleStringTypes.localeStrin
 
 let setNickNameState = (
   val,
-  prevState: RecoilAtomTypes.field,
+  prevState: JotaiAtomTypes.field,
   localeString: LocaleStringTypes.localeStrings,
 ) => {
   let (isValid, errorString) = val->validateNickname(localeString)

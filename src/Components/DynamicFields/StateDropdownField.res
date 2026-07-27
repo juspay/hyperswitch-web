@@ -2,11 +2,11 @@ open SuperpositionTypes
 
 @react.component
 let make = (~fieldConfig: fieldConfig) => {
-  let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {label} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
   let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
-  let countryName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let countryName = Jotai.useAtomValue(JotaiAtoms.userCountry)
   let countryIso = Utils.getCountryCode(countryName).isoAlpha2
 
   let stateDisplayNames = Utils.getStateNames({

@@ -15,7 +15,7 @@ let useEmitCardState = (
   ~isCvcValid,
   ~emitRawCardNumber=false,
 ) => {
-  let {parentURL} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
   let cardInfo = React.useMemo(() => {
     PaymentEventData.buildCardInfo(
       ~cardNumber,

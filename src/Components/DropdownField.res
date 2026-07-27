@@ -19,7 +19,7 @@ let defaultValue = {
   value: "",
 }
 
-open RecoilAtoms
+open JotaiAtoms
 @react.component
 let make = (
   ~appearance: CardThemeType.appearance,
@@ -35,12 +35,12 @@ let make = (
   ~className="",
   ~width="w-full",
 ) => {
-  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let {themeObj, localeString, config} = Jotai.useAtomValue(configAtom)
+  let {readOnly} = Jotai.useAtomValue(optionAtom)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
-  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {parentURL, iframeId} = Jotai.useAtomValue(keys)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
   let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
 

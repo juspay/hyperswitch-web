@@ -1,6 +1,6 @@
 open CardUtils
 open LoggerUtils
-open RecoilAtoms
+open JotaiAtoms
 
 let useCardForm = (
   ~logger,
@@ -10,13 +10,13 @@ let useCardForm = (
   ~useExternalCardSupport=false,
   ~cardBrandOverride="",
 ) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
-  let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(showPaymentMethodsScreen)
-  let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
-  let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let {localeString} = Jotai.useAtomValue(configAtom)
+  let cardScheme = Jotai.useAtomValue(cardBrand)
+  let showPaymentMethodsScreen = Jotai.useAtomValue(showPaymentMethodsScreen)
+  let selectedOption = Jotai.useAtomValue(selectedOptionAtom)
+  let paymentToken = Jotai.useAtomValue(paymentTokenAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let {parentURL} = Jotai.useAtomValue(keys)
   let {
     cardEligibilityError,
     updateCardEligibilityError,
@@ -55,12 +55,13 @@ let useCardForm = (
     !showPaymentMethodsScreen && isNotBancontact ? cardScheme : detectedCardBrand
   )
 
-  let derivedCardBrand =
-    CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentMethodsScreen)
+  let derivedCardBrand = CardUtils.getCardBrandFromStates(
+    cardBrand,
+    cardScheme,
+    showPaymentMethodsScreen,
+  )
   let cardBrand =
-    cardBrandOverride === ""
-      ? derivedCardBrand
-      : cardBrandOverride->CardUtils.normalizeCardBrand
+    cardBrandOverride === "" ? derivedCardBrand : cardBrandOverride->CardUtils.normalizeCardBrand
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
@@ -304,23 +305,6 @@ let useCardForm = (
     | _ => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
     }
     let cardError = isCardValid->Option.isSome ? cardError : ""
-    let supportStatus = switch isCardSupported {
-    | Some(true) => "true"
-    | Some(false) => "false"
-    | None => "none"
-    }
-    let validityStatus = switch isCardValid {
-    | Some(true) => "true"
-    | Some(false) => "false"
-    | None => "none"
-    }
-    let hasEligibilityError = cardEligibilityError->Option.isSome ? "true" : "false"
-    Console.log(
-      `[UnifiedCardSupport][inner] card error effect: brand=${cardBrand}, panLength=${cardNumber
-          ->CardValidations.clearSpaces
-          ->String.length
-          ->Int.toString}, support=${supportStatus}, valid=${validityStatus}, eligibilityError=${hasEligibilityError}, error="${cardError}"`,
-    )
     setCardError(_ => cardError)
     None
   }, (isCardValid, isCardSupported, cardNumber, cardEligibilityError, cardBrand))

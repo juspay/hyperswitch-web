@@ -9,11 +9,11 @@ let app = switch ReactDOM.querySelector("#app") {
   root->ReactDOM.Client.Root.render(
     <div className="h-auto flex flex-col ">
       <div className="h-auto flex flex-col">
-        <Recoil.RecoilRoot>
+        <Jotai.Provider>
           <ErrorBoundary level=ErrorBoundary.Top componentName="App">
             <App />
           </ErrorBoundary>
-        </Recoil.RecoilRoot>
+        </Jotai.Provider>
       </div>
     </div>,
   )

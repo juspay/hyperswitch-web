@@ -21,14 +21,14 @@ let paymentMode = str => {
 module WalletsSaveDetailsText = {
   @react.component
   let make = () => {
-    open RecoilAtoms
-    let {isGooglePay, isApplePay, isPaypal, isSamsungPay} = Recoil.useRecoilValueFromAtom(
+    open JotaiAtoms
+    let {isGooglePay, isApplePay, isPaypal, isSamsungPay} = Jotai.useAtomValue(
       areOneClickWalletsRendered,
     )
-    let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+    let {localeString} = Jotai.useAtomValue(configAtom)
     let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
-    let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-    let {alwaysSendCustomerAcceptance} = Recoil.useRecoilValueFromAtom(optionAtom)
+    let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+    let {alwaysSendCustomerAcceptance} = Jotai.useAtomValue(optionAtom)
     let walletMessageConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
       ~paymentMethod="wallet",
     )
@@ -67,18 +67,16 @@ let make = (~sessions, ~walletOptions) => {
   open SessionsType
   open PayPalHelpers
   let dict = sessions->Utils.getDictFromJson
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
 
   let sessionObj = React.useMemo(() => itemToObjMapper(dict, Others), [dict])
 
-  let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
+  let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
+  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
 
   let isApplePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsApplePayDelayedSessionFlow()
   let isGooglePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsGooglePayDelayedSessionFlow()
-  let setIsShowOrPayUsingWhileLoading = Recoil.useSetRecoilState(
-    RecoilAtoms.isShowOrPayUsingWhileLoading,
-  )
+  let setIsShowOrPayUsingWhileLoading = Jotai.useSetAtom(JotaiAtoms.isShowOrPayUsingWhileLoading)
 
   let {paypalToken, isPaypalSDKFlow, isPaypalRedirectFlow} = usePaymentMethodData(
     ~paymentMethodListValue,
@@ -125,9 +123,9 @@ let make = (~sessions, ~walletOptions) => {
   let klarnaTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
   let pazeTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Paze)
 
-  let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let {clientSecret} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
 
   <div role="region" ariaLabel="Wallet Section" className="flex flex-col gap-2 h-auto w-full">
     {walletOptions

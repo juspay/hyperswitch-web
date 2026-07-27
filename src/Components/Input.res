@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 @react.component
 let make = (
   ~isValid=None,
@@ -19,10 +19,10 @@ let make = (
   ~className="",
   ~inputRef,
 ) => {
-  let options = Recoil.useRecoilValueFromAtom(elementOptions)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let options = Jotai.useAtomValue(elementOptions)
+  let {themeObj} = Jotai.useAtomValue(configAtom)
   let (_inputFocused, setInputFocused) = React.useState(_ => false)
-  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {parentURL, iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
   let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
 
   let setFocus = (val: bool) => {

@@ -94,11 +94,9 @@ let decodeCardInfo = (json: JSON.t): PaymentEventData.cardInfo => {
   }
 }
 
-let decodeStateUpdate = (
-  ~dict,
-  ~allowRawCardNumber,
-  ~allowFullCardState,
-): option<decodedCardUpdate> => {
+let decodeStateUpdate = (~dict, ~allowRawCardNumber, ~allowFullCardState): option<
+  decodedCardUpdate,
+> => {
   if allowFullCardState && dict->Dict.get("cardStateUpdate")->Option.isSome {
     let update = dict->getJsonObjectFromDict("cardStateUpdate")->getDictFromJson
     let status = update->getJsonObjectFromDict("fieldStatus")->getDictFromJson

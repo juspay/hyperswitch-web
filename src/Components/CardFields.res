@@ -5,9 +5,9 @@ let make = (
   ~cvcProps: CardUtils.cvcProps,
   ~isBancontact=false,
 ) => {
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {config, themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {innerLayout} = config.appearance
-  let {layout} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
 
   let {
