@@ -20,8 +20,7 @@ let make = (~cvcOnly=false) => {
   let {themeObj, localeString, config} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {parentURL, iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
   let cardFlowType = Jotai.useAtomValue(JotaiAtoms.cardFlowType)
-  let savedCardBrand =
-    Jotai.useAtomValue(JotaiAtoms.savedCardBrand)->CardUtils.normalizeCardBrand
+  let savedCardBrand = Jotai.useAtomValue(JotaiAtoms.savedCardBrand)->CardUtils.normalizeCardBrand
   let {innerLayout} = config.appearance
   let elementType = cardFlowType->CardThemeType.getPaymentModeToString
 
