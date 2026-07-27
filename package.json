@@ -3,17 +3,21 @@
   "version": "0.132.0",
   "main": "index.js",
   "private": true,
+  "engines": {
+    "node": ">=20.11.0"
+  },
   "dependencies": {
     "@glennsl/rescript-fetch": "^0.2.0",
     "@rescript/core": "^1.6.1",
-    "@rescript/react": "^0.13.1",
+    "@rescript/react": "0.15.0",
+    "@rescript/runtime": "12.3.0",
     "@sentry/react": "^9.9.0",
     "@sentry/webpack-plugin": "^3.2.2",
-    "react": "^18.2.0",
-    "react-datepicker": "^8.4.0",
-    "react-dom": "^18.2.0",
-    "react-final-form": "^7.0.0",
     "jotai": "^2.0.0",
+    "react": "19.2.8",
+    "react-datepicker": "^8.4.0",
+    "react-dom": "19.2.8",
+    "react-final-form": "^7.0.0",
     "webpack-merge": "^6.0.1"
   },
   "scripts": {
@@ -90,7 +94,7 @@
     "mini-css-extract-plugin": "^2.9.2",
     "postcss": "^8.4.16",
     "postcss-loader": "^8.1.1",
-    "rescript": "^11.1.0",
+    "rescript": "12.3.0",
     "tailwindcss": "^3.1.8",
     "terser-webpack-plugin": "^5.3.10",
     "webpack": "^5.94.0",
@@ -108,6 +112,5 @@
       }
     ],
     "repositoryUrl": "https://github.com/juspay/hyperswitch-web.git"
-  },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  }
 }
