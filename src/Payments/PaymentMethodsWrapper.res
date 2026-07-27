@@ -34,8 +34,8 @@ let make = (~paymentMethodName: string) => {
   let fullName = Jotai.useAtomValue(userFullName)
   let email = Jotai.useAtomValue(userEmailAddress)
   let currency = Jotai.useAtomValue(userCurrency)
-  let (country, _) = Jotai.useAtom(userCountry)
-  let (selectedBank, _) = Jotai.useAtom(userBank)
+  let country = Jotai.useAtomValue(userCountry)
+  let selectedBank = Jotai.useAtomValue(userBank)
   let setFieldComplete = Jotai.useSetAtom(fieldsComplete)
   let cleanPhoneNumber = str => str->String.replaceRegExp(%re("/\s/g"), "")
 

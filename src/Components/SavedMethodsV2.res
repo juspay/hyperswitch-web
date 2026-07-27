@@ -11,7 +11,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   let logger = Jotai.useAtomValue(loggerAtom)
   let customPodUri = Jotai.useAtomValue(customPodUri)
   let (savedMethodsV2, setSavedMethodsV2) = Jotai.useAtom(JotaiAtomsV2.savedMethodsV2)
-  let (_, setManagePaymentMethod) = Jotai.useAtom(JotaiAtomsV2.managePaymentMethod)
+  let setManagePaymentMethod = Jotai.useSetAtom(JotaiAtomsV2.managePaymentMethod)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let updateCard = PaymentHelpersV2.useUpdateCard(Some(loggerState), Card)
   let {iframeId, sdkAuthorization} = keys

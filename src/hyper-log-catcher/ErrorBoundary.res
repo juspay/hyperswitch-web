@@ -175,7 +175,7 @@ module ErrorCard = {
     })
 
     let (divH, setDivH) = React.useState(_ => 0.0)
-    let (keys, _setKeys) = Jotai.useAtom(JotaiAtoms.keys)
+    let keys = Jotai.useAtomValue(JotaiAtoms.keys)
     let {iframeId} = keys
     let divRef = React.useRef(Nullable.null)
 

@@ -14,9 +14,9 @@ let make = (
   // Jotai state
   let {config, constantString, localeString} = Jotai.useAtomValue(configAtom)
   let {enabledPaymentMethodsWithDynamicFields} = Jotai.useAtomValue(paymentMethodCollectOptionAtom)
-  let (_, setPayoutDynamicFields) = Jotai.useAtom(payoutDynamicFieldsAtom)
+  let setPayoutDynamicFields = Jotai.useSetAtom(payoutDynamicFieldsAtom)
   let (formData, setFormData) = Jotai.useAtom(formDataAtom)
-  let (activePmt, _) = Jotai.useAtom(paymentMethodTypeAtom)
+  let activePmt = Jotai.useAtomValue(paymentMethodTypeAtom)
   let (validityDict, setValidityDict) = Jotai.useAtom(validityDictAtom)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let supportedCardBrands = React.useMemo(() => {

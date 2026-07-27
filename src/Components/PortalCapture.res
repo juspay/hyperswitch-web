@@ -1,6 +1,6 @@
 @react.component
 let make = React.memo((~name: string) => {
-  let (_, setPortalNodes) = Jotai.useAtom(JotaiAtoms.portalNodes)
+  let setPortalNodes = Jotai.useSetAtom(JotaiAtoms.portalNodes)
   let setDiv = React.useCallback((elem: Nullable.t<Dom.element>) => {
     setPortalNodes(
       prevDict => {

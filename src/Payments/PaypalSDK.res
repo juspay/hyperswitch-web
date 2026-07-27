@@ -13,7 +13,7 @@ let make = (~sessionObj: SessionsType.token) => {
     sdkAuthorization,
   } = Jotai.useAtomValue(JotaiAtoms.keys)
   let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
-  let (loggerState, _setLoggerState) = Jotai.useAtom(JotaiAtoms.loggerAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let areOneClickWalletsRendered = Jotai.useSetAtom(JotaiAtoms.areOneClickWalletsRendered)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
   let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)

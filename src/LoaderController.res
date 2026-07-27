@@ -9,7 +9,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
   let setSdkConfigs = Jotai.useSetAtom(sdkConfigs)
   let setSdkConfigsValue = Jotai.useSetAtom(PaymentUtils.sdkConfigsValue)
-  let (_, setSessions) = Jotai.useAtom(sessions)
+  let setSessions = Jotai.useSetAtom(sessions)
   let (options, setOptions) = Jotai.useAtom(elementOptions)
   let (optionsPayment, setOptionsPayment) = Jotai.useAtom(optionAtom)
   let setPaymentManagementList = Jotai.useSetAtom(paymentManagementList)
@@ -25,7 +25,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
-  let (_, setPaymentMethodCollectOptions) = Jotai.useAtom(paymentMethodCollectOptionAtom)
+  let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
