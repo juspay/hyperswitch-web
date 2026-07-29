@@ -23,9 +23,9 @@ let make = (
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
-   let confirmEndpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ~isConfirmCall=true)
-   let loggingEndpoint = ApiEndpoint.getLoggingEndPoint()
-   let assetsEndpoint = ApiEndpoint.getAssetsEndPoint()
+    let confirmEndpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ~isConfirmCall=true)
+    let loggingEndpoint = ApiEndpoint.getLoggingEndPoint()
+    let assetsEndpoint = ApiEndpoint.getAssetsEndPoint()
 
     let appearance =
       localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)

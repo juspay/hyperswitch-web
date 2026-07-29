@@ -66,7 +66,8 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   let merchantId = params.merchantId->Option.getOr("")
 
   let baseUrl = switch apiCallType {
-  | FetchSdkConfigs => ApiEndpoint.getSdkConfigEndPoint(~publishableKey=publishableKeyVal)
+  | FetchSdkConfigs =>
+    ApiEndpoint.getSdkConfigEndPoint(~publishableKey=publishableKeyVal, ~customBackendBaseUrl)
   | _ =>
     customBackendBaseUrl->Option.getOr(
       ApiEndpoint.getApiEndPoint(~publishableKey=publishableKeyVal),

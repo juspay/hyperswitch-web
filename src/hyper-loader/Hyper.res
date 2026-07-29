@@ -246,7 +246,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let overrideCustomAssetsEndpoint = getFieldStr("overrideCustomAssetsEndpoint")
       let overrideCustomSDKConfigEndpoint = getFieldStr("overrideCustomSDKConfigEndpoint")
       let overrideCustomConfirmEndpoint = getFieldStr("overrideCustomConfirmEndpoint")
-      let overrideCustomAirborneEndpoint = getFieldStr("overrideCustomAirborneEndpoint")
       let overrideCustomLoggingEndpoint = getFieldStr("overrideCustomLoggingEndpoint")
       customEndpoint === "" ? () : ApiEndpoint.setApiEndPoint(customEndpoint)
       overrideCustomBackendEndpoint === ""
@@ -261,9 +260,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       overrideCustomConfirmEndpoint === ""
         ? ()
         : ApiEndpoint.setConfirmOverrideEndPoint(overrideCustomConfirmEndpoint)
-      overrideCustomAirborneEndpoint === ""
-        ? ()
-        : ApiEndpoint.setAirborneEndPoint(overrideCustomAirborneEndpoint)
       overrideCustomLoggingEndpoint === ""
         ? ()
         : ApiEndpoint.setLoggingOverrideEndPoint(overrideCustomLoggingEndpoint)

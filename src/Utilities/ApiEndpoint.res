@@ -26,6 +26,7 @@ let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
 //    3. customBackendUrl  [legacy]                    (apiEndPoint)
 //    4. Build-time ENV_BACKEND_URL                    (GlobalVars.backendEndPoint)
 //    5. Test-mode fallback: https://beta.hyperswitch.io/api  (pk_snd_* on prod)
+//     * caller may supply ~customBackendBaseUrl which is used between (3) and (4)
 //
 //  Assets / S3 calls  — getAssetsEndPoint()
 //    1. customConfig.overrideCustomAssetsEndpoint  (assetsEndPoint)
@@ -38,8 +39,7 @@ let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
 //    2. Build-time log endpoint                     (GlobalVars.logEndpoint)
 //
 //  Airborne calls  — (consumed directly by the airborne module)
-//    1. customConfig.overrideCustomAirborneEndpoint  (airborneEndPoint)
-//    2. Module-internal default
+//    1. Module-internal default
 //
 // Note: customConfig.customEndpoint always wins over the legacy customBackendUrl
 // because customConfig is parsed and applied after customBackendUrl in Hyper.res
@@ -54,7 +54,6 @@ let backendOverrideEndPoint: ref<option<string>> = ref(None)
 let assetsEndPoint: ref<option<string>> = ref(None)
 let sdkConfigEndPoint: ref<option<string>> = ref(None)
 let confirmOverrideEndPoint: ref<option<string>> = ref(None)
-let airborneEndPoint: ref<option<string>> = ref(None)
 let loggingOverrideEndPoint: ref<option<string>> = ref(None)
 let platformPublishableKey: ref<option<string>> = ref(None)
 
@@ -78,16 +77,16 @@ let setConfirmOverrideEndPoint = str => {
   confirmOverrideEndPoint := Some(str)
 }
 
-let setAirborneEndPoint = str => {
-  airborneEndPoint := Some(str)
-}
-
 let setLoggingOverrideEndPoint = str => {
   loggingOverrideEndPoint := Some(str)
 }
 
 let setPlatformPublishableKey = key => {
-  platformPublishableKey := Some(key)
+  platformPublishableKey := if key === "" {
+      None
+    } else {
+      Some(key)
+    }
 }
 
 let getPlatformPublishableKey = () => platformPublishableKey.contents
@@ -105,12 +104,13 @@ let getAssetsEndPoint = () =>
   | (None, None) => GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
   }
 
-let getSdkConfigEndPoint = (~publishableKey="") => {
+let getSdkConfigEndPoint = (~publishableKey="", ~customBackendBaseUrl=None) => {
   let testMode = publishableKey->String.startsWith("pk_snd_")
-  switch (sdkConfigEndPoint.contents, apiEndPoint.contents) {
-  | (Some(str), _) => str
-  | (None, Some(str)) => str
-  | (None, None) =>
+  switch (sdkConfigEndPoint.contents, apiEndPoint.contents, customBackendBaseUrl) {
+  | (Some(str), _, _) => str
+  | (None, Some(str), _) => str
+  | (None, None, Some(str)) => str
+  | (None, None, None) =>
     GlobalVars.isProd && testMode ? "https://beta.hyperswitch.io/api" : GlobalVars.backendEndPoint
   }
 }

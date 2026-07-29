@@ -512,10 +512,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         | endpoint => ApiEndpoint.setAssetsEndPoint(endpoint)
         }
 
-        switch dict->getString("platformPublishableKey", "") {
-        | "" => ()
-        | key => ApiEndpoint.setPlatformPublishableKey(key)
-        }
+        // Always apply (even empty string) so a normal instance mounted after a platform
+        // instance clears the stale ref and stops sending x-platform-api-key headers.
+        ApiEndpoint.setPlatformPublishableKey(dict->getString("platformPublishableKey", ""))
 
         // Single clientList message carries both the merchant's enabled
         // payment methods (payment_methods_enabled) and the customer's
