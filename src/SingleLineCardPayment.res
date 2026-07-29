@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 open CardUtils
 @react.component
 let make = (
@@ -10,9 +10,9 @@ let make = (
   ~handleElementFocus,
   ~isFocus,
 ) => {
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
-  let options = Recoil.useRecoilValueFromAtom(elementOptions)
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {iframeId} = Jotai.useAtomValue(keys)
+  let options = Jotai.useAtomValue(elementOptions)
+  let {localeString} = Jotai.useAtomValue(configAtom)
 
   let {
     isCardValid,

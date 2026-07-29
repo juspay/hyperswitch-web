@@ -19,7 +19,7 @@ let make = (
   ~analyticsMetadata,
   ~customBackendUrl,
   ~platformPublishableKey="",
-  ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+  ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~isTestMode=false,
   ~preloadSDKWithParams=Dict.make(),
   ~isUpdateIntentInProgress: ref<bool>,
@@ -1579,7 +1579,7 @@ let make = (
         iframeRef,
         mountPostMessage,
         ~appearance,
-        ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
+        ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
         ~logger=Some(logger),
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)

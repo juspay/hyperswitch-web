@@ -1,7 +1,7 @@
 @react.component
 let make = () => {
-  let isUpdateIntentLoading = Recoil.useRecoilValueFromAtom(RecoilAtoms.isUpdateIntentLoading)
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let isUpdateIntentLoading = Jotai.useAtomValue(JotaiAtoms.isUpdateIntentLoading)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   <RenderIf condition=isUpdateIntentLoading>
     <div

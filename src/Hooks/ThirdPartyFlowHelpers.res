@@ -1,7 +1,7 @@
 open Utils
 
 let useIsApplePayDelayedSessionFlow = () => {
-  let sessions = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
+  let sessions = Jotai.useAtomValue(JotaiAtoms.sessions)
 
   React.useMemo(() => {
     let sessionObj = switch sessions {
@@ -36,7 +36,7 @@ let useIsApplePayDelayedSessionFlow = () => {
 }
 
 let useIsGooglePayDelayedSessionFlow = () => {
-  let sessions = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
+  let sessions = Jotai.useAtomValue(JotaiAtoms.sessions)
 
   React.useMemo(() => {
     let sessionObj = switch sessions {
