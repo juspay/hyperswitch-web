@@ -1,50 +1,6 @@
 let switchToInteg = false
 let isLocal = false
 let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
-
-// ─── Endpoint refs ────────────────────────────────────────────────────────────
-//
-// Priority hierarchy (highest → lowest) for each call type:
-//
-//  Backend (non-confirm) API calls  — getApiEndPoint(~isConfirmCall=false)
-//    1. customConfig.overrideCustomBackendEndpoint  (backendOverrideEndPoint)
-//    2. customConfig.customEndpoint                 (apiEndPoint)
-//    3. customBackendUrl  [legacy]                  (apiEndPoint)
-//    4. Build-time ENV_BACKEND_URL                  (GlobalVars.backendEndPoint)
-//    5. Test-mode fallback: https://beta.hyperswitch.io/api  (pk_snd_* on prod)
-//
-//  Confirm API calls  — getApiEndPoint(~isConfirmCall=true)
-//    1. customConfig.overrideCustomConfirmEndpoint  (confirmOverrideEndPoint)
-//    2. customConfig.customEndpoint                 (apiEndPoint)
-//    3. customBackendUrl  [legacy]                  (apiEndPoint)
-//    4. Build-time ENV_CONFIRM_URL                  (GlobalVars.confirmEndPoint)
-//    5. Test-mode fallback: https://beta.hyperswitch.io/api  (pk_snd_* on prod)
-//
-//  SDK-config fetch  — getSdkConfigEndPoint()
-//    1. customConfig.overrideCustomSDKConfigEndpoint  (sdkConfigEndPoint)
-//    2. customConfig.overrideCustomBackendEndpoint    (backendOverrideEndPoint)
-//    3. customConfig.customEndpoint                   (apiEndPoint)
-//    4. customBackendUrl  [legacy]                    (apiEndPoint)
-//    5. Build-time ENV_BACKEND_URL                    (GlobalVars.backendEndPoint)
-//    6. Test-mode fallback: https://beta.hyperswitch.io/api  (pk_snd_* on prod)
-//     * caller may supply ~customBackendBaseUrl which is used between (4) and (5)
-//
-//  Assets / S3 calls  — getAssetsEndPoint()
-//    1. customConfig.overrideCustomAssetsEndpoint  (assetsEndPoint)
-//    2. customConfig.customEndpoint                (apiEndPoint)
-//    3. customBackendUrl  [legacy]                 (apiEndPoint)
-//    4. Build-time SDK URL                         (GlobalVars.sdkUrl; empty on local)
-//
-//  Logging / beacon calls  — getLoggingEndPoint()
-//    1. customConfig.overrideCustomLoggingEndpoint  (loggingOverrideEndPoint)
-//    2. Build-time log endpoint                     (GlobalVars.logEndpoint)
-//
-//
-// Note: customConfig.customEndpoint always wins over the legacy customBackendUrl
-// because customConfig is parsed and applied after customBackendUrl in Hyper.res
-// init (both write to the same apiEndPoint ref — last write wins).
-// ─────────────────────────────────────────────────────────────────────────────
-
 // General backend endpoint override (set by customBackendUrl or customConfig.customEndpoint)
 let apiEndPoint: ref<option<string>> = ref(None)
 
