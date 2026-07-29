@@ -39,8 +39,6 @@ let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
 //    1. customConfig.overrideCustomLoggingEndpoint  (loggingOverrideEndPoint)
 //    2. Build-time log endpoint                     (GlobalVars.logEndpoint)
 //
-//  Airborne calls  — (consumed directly by the airborne module)
-//    1. Module-internal default
 //
 // Note: customConfig.customEndpoint always wins over the legacy customBackendUrl
 // because customConfig is parsed and applied after customBackendUrl in Hyper.res
