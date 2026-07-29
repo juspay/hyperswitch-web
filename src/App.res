@@ -131,6 +131,13 @@ let make = () => {
         let isSdkParamsEnabled =
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
         let platformPublishableKey = getQueryParamsDictforKey(url.search, "platformPublishableKey")
+        let sdkConfigEndpoint = getQueryParamsDictforKey(url.search, "sdkConfigEndpoint")
+
+        // Set the sdkConfigEndPoint ref immediately so fetchSdkConfigs (called during
+        // PreMountLoader's first render) resolves to the correct URL before any postMessage arrives.
+        if sdkConfigEndpoint !== "" {
+          ApiEndpoint.setSdkConfigEndPoint(sdkConfigEndpoint)
+        }
 
         <PreMountLoader
           publishableKey

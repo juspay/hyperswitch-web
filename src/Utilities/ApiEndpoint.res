@@ -22,11 +22,12 @@ let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
 //
 //  SDK-config fetch  — getSdkConfigEndPoint()
 //    1. customConfig.overrideCustomSDKConfigEndpoint  (sdkConfigEndPoint)
-//    2. customConfig.customEndpoint                   (apiEndPoint)
-//    3. customBackendUrl  [legacy]                    (apiEndPoint)
-//    4. Build-time ENV_BACKEND_URL                    (GlobalVars.backendEndPoint)
-//    5. Test-mode fallback: https://beta.hyperswitch.io/api  (pk_snd_* on prod)
-//     * caller may supply ~customBackendBaseUrl which is used between (3) and (4)
+//    2. customConfig.overrideCustomBackendEndpoint    (backendOverrideEndPoint)
+//    3. customConfig.customEndpoint                   (apiEndPoint)
+//    4. customBackendUrl  [legacy]                    (apiEndPoint)
+//    5. Build-time ENV_BACKEND_URL                    (GlobalVars.backendEndPoint)
+//    6. Test-mode fallback: https://beta.hyperswitch.io/api  (pk_snd_* on prod)
+//     * caller may supply ~customBackendBaseUrl which is used between (4) and (5)
 //
 //  Assets / S3 calls  — getAssetsEndPoint()
 //    1. customConfig.overrideCustomAssetsEndpoint  (assetsEndPoint)
@@ -106,11 +107,17 @@ let getAssetsEndPoint = () =>
 
 let getSdkConfigEndPoint = (~publishableKey="", ~customBackendBaseUrl=None) => {
   let testMode = publishableKey->String.startsWith("pk_snd_")
-  switch (sdkConfigEndPoint.contents, apiEndPoint.contents, customBackendBaseUrl) {
-  | (Some(str), _, _) => str
-  | (None, Some(str), _) => str
-  | (None, None, Some(str)) => str
-  | (None, None, None) =>
+  switch (
+    sdkConfigEndPoint.contents,
+    backendOverrideEndPoint.contents,
+    apiEndPoint.contents,
+    customBackendBaseUrl,
+  ) {
+  | (Some(str), _, _, _) => str
+  | (None, Some(str), _, _) => str
+  | (None, None, Some(str), _) => str
+  | (None, None, None, Some(str)) => str
+  | (None, None, None, None) =>
     GlobalVars.isProd && testMode ? "https://beta.hyperswitch.io/api" : GlobalVars.backendEndPoint
   }
 }

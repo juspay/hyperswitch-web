@@ -117,6 +117,7 @@ let mountPreMountLoaderIframe = (
   ~currentClientSecret,
   ~currentSdkAuthorization,
   ~platformPublishableKey="",
+  ~sdkConfigEndpoint="",
 ) => {
   // Remove any existing preMountLoader iframe + its wrapper div before creating a new one
   let existingIframe = Window.querySelector(`#orca-payment-element-iframeRef-${selectorString}`)
@@ -141,7 +142,7 @@ let mountPreMountLoaderIframe = (
           id="orca-payment-element-iframeRef-${selectorString}"
           name="orca-payment-element-iframeRef-${selectorString}"
           title="Orca Payment Element Frame"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${currentClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabledValue}&sdkAuthorization=${currentSdkAuthorization}&platformPublishableKey=${platformPublishableKey}"
+          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${currentClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabledValue}&sdkAuthorization=${currentSdkAuthorization}&platformPublishableKey=${platformPublishableKey}&sdkConfigEndpoint=${sdkConfigEndpoint}"
           allow="*"
           name="orca-payment"
           style="outline: none;"
@@ -181,6 +182,7 @@ let setupPreMountLoaderPromises = (
   ~currentClientSecret,
   ~currentSdkAuthorization,
   ~platformPublishableKey="",
+  ~sdkConfigEndpoint="",
 ) => {
   let preMountLoaderIframeDiv = mountPreMountLoaderIframe(
     ~publishableKey,
@@ -193,6 +195,7 @@ let setupPreMountLoaderPromises = (
     ~currentClientSecret,
     ~currentSdkAuthorization,
     ~platformPublishableKey,
+    ~sdkConfigEndpoint,
   )
 
   let preMountLoaderMountedPromise = Promise.make((resolve, _reject) => {

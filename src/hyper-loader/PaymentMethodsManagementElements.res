@@ -26,6 +26,7 @@ let make = (
     let confirmEndpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ~isConfirmCall=true)
     let loggingEndpoint = ApiEndpoint.getLoggingEndPoint()
     let assetsEndpoint = ApiEndpoint.getAssetsEndPoint()
+    let sdkConfigEndpoint = ApiEndpoint.getSdkConfigEndPoint(~publishableKey)
 
     let appearance =
       localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
@@ -209,6 +210,7 @@ let make = (
             ("confirmEndpoint", confirmEndpoint->JSON.Encode.string),
             ("loggingEndpoint", loggingEndpoint->JSON.Encode.string),
             ("assetsEndpoint", assetsEndpoint->JSON.Encode.string),
+            ("sdkConfigEndpoint", sdkConfigEndpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
             ("customPodUri", customPodUri->JSON.Encode.string),
             ("parentURL", "*"->JSON.Encode.string),

@@ -509,6 +509,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         | "" => ()
         | endpoint => ApiEndpoint.setAssetsEndPoint(endpoint)
         }
+        // SDK-config endpoint override forwarded so fetchSdkConfigs in child iframes resolves correctly.
+        switch dict->getString("sdkConfigEndpoint", "") {
+        | "" => ()
+        | endpoint => ApiEndpoint.setSdkConfigEndPoint(endpoint)
+        }
 
         // Always apply (even empty string) so a normal instance mounted after a platform
         // instance clears the stale ref and stops sending x-platform-api-key headers.

@@ -39,6 +39,7 @@ let make = (
     let confirmEndpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ~isConfirmCall=true)
     let loggingEndpoint = ApiEndpoint.getLoggingEndPoint()
     let assetsEndpoint = ApiEndpoint.getAssetsEndPoint()
+    let sdkConfigEndpoint = ApiEndpoint.getSdkConfigEndPoint(~publishableKey)
     let redirect = ref("if_required")
 
     let appearance =
@@ -124,6 +125,7 @@ let make = (
       ~currentClientSecret=clientSecretRef.contents,
       ~currentSdkAuthorization=sdkAuthorizationRef.contents,
       ~platformPublishableKey,
+      ~sdkConfigEndpoint,
     )
 
     // Extract isTaxCalculationEnabled from the clientList response
@@ -469,6 +471,7 @@ let make = (
           ("confirmEndpoint", confirmEndpoint->JSON.Encode.string),
           ("loggingEndpoint", loggingEndpoint->JSON.Encode.string),
           ("assetsEndpoint", assetsEndpoint->JSON.Encode.string),
+          ("sdkConfigEndpoint", sdkConfigEndpoint->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
           ("blockConfirm", blockConfirm->JSON.Encode.bool),
           ("customPodUri", customPodUri->JSON.Encode.string),
