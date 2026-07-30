@@ -3,6 +3,9 @@
   "version": "0.132.0",
   "main": "index.js",
   "private": true,
+  "engines": {
+    "node": ">=20.11.0"
+  },
   "dependencies": {
     "@glennsl/rescript-fetch": "^0.2.0",
     "@rescript/core": "^1.6.1",
@@ -10,11 +13,11 @@
     "@rescript/runtime": "12.3.0",
     "@sentry/react": "^9.9.0",
     "@sentry/webpack-plugin": "^3.2.2",
-    "react": "19.2.0",
-    "react-datepicker": "^8.4.0",
-    "react-dom": "19.2.0",
-    "react-final-form": "^7.0.0",
     "jotai": "^2.0.0",
+    "react": "19.2.8",
+    "react-datepicker": "^8.4.0",
+    "react-dom": "19.2.8",
+    "react-final-form": "^7.0.0",
     "webpack-merge": "^6.0.1"
   },
   "scripts": {

@@ -1,17 +1,17 @@
 type t<+'a> = promise<'a>
 
-exception JsError(Exn.t)
+exception JsError(JsExn.t)
 
 @new
-external make: ((@uncurry ('a => unit), 'e => unit) => unit) => t<'a> = "Promise"
+external make: ((@uncurry 'a => unit, 'e => unit) => unit) => t<'a> = "Promise"
 
 @val @scope("Promise")
 external resolve: 'a => t<'a> = "resolve"
 
-@send external then: (t<'a>, @uncurry ('a => t<'b>)) => t<'b> = "then"
+@send external then: (t<'a>, @uncurry 'a => t<'b>) => t<'b> = "then"
 
 @send
-external thenResolve: (t<'a>, @uncurry ('a => 'b)) => t<'b> = "then"
+external thenResolve: (t<'a>, @uncurry 'a => 'b) => t<'b> = "then"
 
 @send external finally: (t<'a>, unit => unit) => t<'a> = "finally"
 
@@ -39,15 +39,16 @@ external all6: ((t<'a>, t<'b>, t<'c>, t<'d>, t<'e>, t<'f>)) => t<('a, 'b, 'c, 'd
 @send
 external _catch: (t<'a>, @uncurry exn => t<'a>) => t<'a> = "catch"
 
-@val @module("./Caml_exceptions")
-external isCamlExceptionOrOpenVariant: 'a => bool = "isCamlExceptionOrOpenVariant"
-
 let catch = (promise, callback) => {
   _catch(promise, err => {
-    let v = if isCamlExceptionOrOpenVariant(err) {
+    let normalizedError = JsExn.anyToExnInternal(err)
+    let v = if normalizedError === err {
       err
     } else {
-      JsError(Identity.unsafeToJsExn(err))
+      switch normalizedError {
+      | JsExn(jsError) => JsError(jsError)
+      | rescriptException => rescriptException
+      }
     }
     callback(v)
   })
