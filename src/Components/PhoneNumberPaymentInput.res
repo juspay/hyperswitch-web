@@ -1,13 +1,13 @@
 @react.component
 let make = () => {
-  open RecoilAtoms
+  open JotaiAtoms
   open PaymentType
   open Utils
 
   let phoneRef = React.useRef(Nullable.null)
-  let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {fields} = Jotai.useAtomValue(optionAtom)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
-  let (phone, setPhone) = Recoil.useRecoilState(userPhoneNumber)
+  let (phone, setPhone) = Jotai.useAtom(userPhoneNumber)
   let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = getClientCountry(clientTimeZone)
   let currentCountryCode = Utils.getCountryCode(clientCountry.countryName)

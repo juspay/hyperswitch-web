@@ -20,6 +20,7 @@ function Payment() {
   const isCypressTestMode = getQueryParam("isCypressTestMode") === "true";
   const publishableKeyQueryParam = getQueryParam("publishableKey");
   const clientSecretQueryParam = getQueryParam("clientSecret");
+  const profileIdQueryParam = getQueryParam("profileId");
   const localeQueryParam = getQueryParam("locale");
   const themeQueryParam = getQueryParam("theme");
   const layoutQueryParam = getQueryParam("layout");
@@ -38,6 +39,10 @@ function Payment() {
           ? publishableKeyQueryParam
           : configData.publishableKey;
 
+        const profileId = isCypressTestMode
+          ? profileIdQueryParam
+          : configData?.profileId;
+
         const paymentIntentData = await getPaymentIntentData({
           baseUrl,
           isCypressTestMode,
@@ -50,7 +55,7 @@ function Payment() {
         const hyper = await loadHyperScript({
           clientUrl: urlsData.clientUrl,
           publishableKey,
-          profileId: configData?.profileId,
+          profileId,
           customBackendUrl: urlsData.serverUrl,
           isScriptLoaded,
           setIsScriptLoaded,

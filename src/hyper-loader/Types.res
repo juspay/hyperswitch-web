@@ -10,6 +10,7 @@ type eventData = {
   clickTriggered: bool,
   completeDoThis: bool,
   elementType: string,
+  iframeId: string,
   classChange: bool,
   newClassType: string,
   confirmTriggered: bool,
@@ -228,6 +229,12 @@ type eventType =
   | CompleteDoThis
   | ConfirmPayment
   | OneClickConfirmPayment
+  | CvcStatus
+  | FormStatus
+  | PaymentMethodInfoCard
+  | PaymentMethodStatus
+  | BillingAddress
+  | Surcharge
   | None
 
 let eventTypeMapper = event => {
@@ -241,6 +248,7 @@ let eventTypeMapper = event => {
   | "blur" => Blur
   | "confirmTriggered" => ConfirmPayment
   | "oneClickConfirmTriggered" => OneClickConfirmPayment
+  | "surchargeInfo" => Surcharge
   | _ => None
   }
 }

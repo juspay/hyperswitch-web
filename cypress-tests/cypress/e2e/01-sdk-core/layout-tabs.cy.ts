@@ -15,13 +15,15 @@ import {
 import { stripeCards } from "../../support/cards";
 
 describe("Layout - Tabs (Default)", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
     changeObjectKeyValue(
       createPaymentBody,
@@ -127,13 +129,13 @@ describe("Layout - Tabs (Default)", () => {
     });
 
     it("should apply box-shadow to the selected tab", () => {
+      // Retrying assertion: the selected tab applies its box-shadow via the
+      // `animate-slowShow` enter-animation, so a one-shot read inside `.then()`
+      // can capture the pre-animation `none`.
       getIframeBody()
         .find(".Tab--selected")
         .first()
-        .then(($el) => {
-          const boxShadow = $el.css("box-shadow");
-          expect(boxShadow).to.not.equal("none");
-        });
+        .should("not.have.css", "box-shadow", "none");
     });
   });
 

@@ -1,20 +1,21 @@
-open RecoilAtoms
+open JotaiAtoms
 open Utils
 
 @react.component
 let make = (~cvcProps: CardUtils.cvcProps) => {
-  let (paymentTokenAtom, setPaymentTokenAtom) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let nickName = Recoil.useRecoilValueFromAtom(userCardNickName)
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
-  let (_, setManagePaymentMethod) = Recoil.useRecoilState(RecoilAtomsV2.managePaymentMethod)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let (paymentTokenAtom, setPaymentTokenAtom) = Jotai.useAtom(JotaiAtoms.paymentTokenAtom)
+  let keys = Jotai.useAtomValue(keys)
+  let nickName = Jotai.useAtomValue(userCardNickName)
+  let fullName = Jotai.useAtomValue(userFullName)
+  let {localeString} = Jotai.useAtomValue(configAtom)
+  let logger = Jotai.useAtomValue(loggerAtom)
+  let customPodUri = Jotai.useAtomValue(customPodUri)
+  let (savedMethodsV2, setSavedMethodsV2) = Jotai.useAtom(JotaiAtomsV2.savedMethodsV2)
+  let setManagePaymentMethod = Jotai.useSetAtom(JotaiAtomsV2.managePaymentMethod)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let updateCard = PaymentHelpersV2.useUpdateCard(Some(loggerState), Card)
   let {iframeId, sdkAuthorization} = keys
+  let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
   let {isCVCValid, cvcNumber, setCvcError} = cvcProps
   let complete = isCVCValid->Option.getOr(false) && paymentTokenAtom.paymentToken !== ""
   let isEmpty = cvcNumber == ""
@@ -120,7 +121,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   }
 
   React.useEffect(() => {
-    messageParentWindow([("ready", true->JSON.Encode.bool)])
+    SubscriptionEventHooks.emitReady(~iframeId, ~elementType)
     None
   }, [])
 

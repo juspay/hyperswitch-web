@@ -6,13 +6,15 @@ import { cybersourceCards } from "../../support/cards";
 import { connectorEnum, connectorProfileIdMapping } from "../../support/utils";
 
 describe("Cybersource Card Payment flow test", () => {
-  const publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
-  const secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
+  let publishableKey: string;
+  let secretKey: string;
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
   beforeEach(() => {
+    publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
+    secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.iframe(iframeSelector);
     changeObjectKeyValue(
       createPaymentBody,
@@ -44,8 +46,7 @@ describe("Cybersource Card Payment flow test", () => {
 
     getIframeBody().get("#submit").click();
 
-    cy.wait(3000);
-    cy.contains("Thanks for your order!").should("be.visible");
+    cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
   });
 
   it("should fail with an invalid card number", () => {
@@ -70,7 +71,6 @@ describe("Cybersource Card Payment flow test", () => {
 
     getIframeBody().get("#submit").click();
 
-    cy.wait(3000);
-    cy.contains("Please enter valid details").should("be.visible");
+    cy.contains("Please enter valid details", { timeout: 10000 }).should("be.visible");
   });
 });

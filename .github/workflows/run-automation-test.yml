@@ -7,55 +7,113 @@ on:
     branches:
       - main
 
-# ✅ Add explicit permissions block for least privilege
+# Explicit least-privilege permissions
 permissions:
   contents: read
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Setup job — runs once, creates a shared merchant + connector profiles.
+  # The parallel Cypress jobs download the credentials artifact and reuse
+  # the same merchant account instead of each creating their own.
+  # ─────────────────────────────────────────────────────────────────────────
+  setup:
+    runs-on: ubuntu-latest
+    environment: Testing
+
+    env:
+      HS_Server_Url: "https://sandbox.hyperswitch.io"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # Download the GPG-encrypted connector credentials from S3 and decrypt.
+      - name: Download encrypted creds from S3 and decrypt
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONNECTOR_CREDS_AWS_ACCESS_KEY_ID }}
+          AWS_REGION: ${{ secrets.CONNECTOR_CREDS_AWS_REGION }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONNECTOR_CREDS_AWS_SECRET_ACCESS_KEY }}
+          CONNECTOR_AUTH_PASSPHRASE: ${{ secrets.CONNECTOR_AUTH_PASSPHRASE }}
+          CONNECTOR_CREDS_S3_BUCKET_URI: ${{ secrets.CONNECTOR_CREDS_S3_BUCKET_URI }}
+          S3_SOURCE_FILE_NAME: "68bba6ea-3c75-440f-9c4b-00a30ecbb79d.json.gpg"
+        run: |
+          mkdir -p cypress-tests
+          aws s3 cp "${CONNECTOR_CREDS_S3_BUCKET_URI}/${S3_SOURCE_FILE_NAME}" cypress-tests/creds.json.gpg
+          gpg --quiet --batch --yes --decrypt \
+              --passphrase="${CONNECTOR_AUTH_PASSPHRASE}" \
+              --output cypress-tests/creds.json cypress-tests/creds.json.gpg
+          rm cypress-tests/creds.json.gpg
+
+      - name: Create merchant, profiles, and MCAs
+        env:
+          ADMIN_API_KEY: ${{ secrets.CYPRESS_ADMIN_KEY }}
+          HYPERSWITCH_API_URL: ${{ env.HS_Server_Url }}
+          CONNECTOR_AUTH_FILE_PATH: "./cypress-tests/creds.json"
+          CREDENTIALS_OUTPUT_PATH: "./cypress-tests/test-credentials.json"
+        run: node cypress-tests/setup.js
+
+      - name: Upload credentials artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-credentials
+          path: cypress-tests/test-credentials.json
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Cypress test jobs — 5 parallel jobs sharing the same merchant account.
+  # ─────────────────────────────────────────────────────────────────────────
   cypress:
     runs-on: ubuntu-latest
     environment: Testing
-    
+    needs: [setup]
+
     strategy:
       fail-fast: false
       matrix:
         category: [01-sdk-core, 02-cards, 03-bank-transfers, 04-alternative-payments, 05-external-3ds]
 
     env:
-      HS_Prof_Id: ${{ secrets.PROFILE_ID }}
       HS_Server_Url: "https://sandbox.hyperswitch.io"
       HS_Client_Url: "http://localhost:9050"
-      # Environment variables for Hyperswitch credentials and URLs
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        # Checks out the repository so that the workflow can access the code
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20" # Specifies the version of Node.js to use
-          cache: "npm" # Caches npm dependencies to speed up subsequent installs
+          node-version: "20"
+          cache: "npm"
 
       - name: Update git submodules
         run: git submodule update --init --recursive
 
       - name: Install dependencies
         run: npm install
-        # Installs the necessary npm dependencies for the project
 
-      - name: Create .env file
+      - name: Download credentials artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: test-credentials
+          path: cypress-tests/
+
+      # Demo app only needs server/client URLs — Cypress injects keys via URL
+      # params when isCypressTestMode=true, so no API credentials are needed here.
+      - name: Create demo app .env file
         working-directory: ./Hyperswitch-React-Demo-App
         run: |
           touch .env
-          echo STATIC_DIR = ./dist >> .env
-          echo HYPERSWITCH_PUBLISHABLE_KEY = $HS_Pub_Key >> .env
-          echo HYPERSWITCH_SECRET_KEY = $HS_Sec_Key >> .env
-          echo PROFILE_ID = $HS_Prof_Id >> .env
-          echo HYPERSWITCH_SERVER_URL = $HS_Server_Url >> .env
-          echo HYPERSWITCH_CLIENT_URL = $HS_Client_Url >> .env
-        # Creates a .env file with environment variables needed for the application
+          echo "STATIC_DIR=./dist"                        >> .env
+          echo "HYPERSWITCH_SERVER_URL=$HS_Server_Url"    >> .env
+          echo "HYPERSWITCH_CLIENT_URL=$HS_Client_Url"     >> .env
 
       - name: Build and start local server
         run: |
@@ -63,14 +121,19 @@ jobs:
           echo "Hyperswitch Web started"
           cd Hyperswitch-React-Demo-App && npm run start &
           echo "Demo App started"
-        # Builds the project and starts both the Hyperswitch Web and Demo App servers in the background
 
       - name: Run Cypress Tests (${{ matrix.category }})
         uses: cypress-io/github-action@v6
         with:
           working-directory: ./cypress-tests
           spec: cypress/e2e/${{ matrix.category }}/**/*.cy.ts
+          wait-on: http://localhost:9050/HyperLoader.js,http://localhost:9060
+          wait-on-timeout: 120
         env:
-          CYPRESS_HYPERSWITCH_PUBLISHABLE_KEY: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
-          CYPRESS_HYPERSWITCH_SECRET_KEY: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
-        # Runs Cypress tests located in the specified directory
+          # Path to the pre-existing credentials file (downloaded from artifact).
+          # cypress.config.js reads this and injects the keys into Cypress.env()
+          # with PRESETUP_CREDENTIALS=true so e2e.ts skips the setup task.
+          CREDENTIALS_OUTPUT_PATH: "./test-credentials.json"
+
+          # Target environment (controls which API URL is used).
+          TEST_ENV: sandbox

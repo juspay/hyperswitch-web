@@ -161,7 +161,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       options
       ->getOptionsDict
       ->getBool("shouldUseTopRedirection", false)
-    let overridenDefaultRedirectionFlags: RecoilAtomTypes.redirectionFlags = {
+    let overridenDefaultRedirectionFlags: JotaiAtomTypes.redirectionFlags = {
       shouldUseTopRedirection,
       shouldRemoveBeforeUnloadEvents: false,
     }
@@ -169,7 +169,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       options
       ->getOptionsDict
       ->getJsonObjectFromDict("redirectionFlags")
-      ->RecoilAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
+      ->JotaiAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
 
     /*
      * Forces re-initialization of HyperLoader.
@@ -323,9 +323,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       // Shared refs for updateIntent — created once, passed to both Elements and PaymentSession.
       let isUpdateIntentInProgress = ref(false)
       let emptyJsonPromise = Promise.resolve(JSON.Encode.null)
-      let paymentMethodsDataPromise = ref(emptyJsonPromise)
-      let customerPaymentMethodsDataPromise = ref(emptyJsonPromise)
       let sessionTokensDataPromise = ref(emptyJsonPromise)
+      let sdkConfigsDataPromise = ref(emptyJsonPromise)
+      let clientListDataPromise = ref(emptyJsonPromise)
+      // TODO(sdk-configs): profileId is available here at init time for consumers who provide
+      // it at Hyper.init stage. sdk-configs could be prefetched early (before elements() is
+      // called) for a latency optimisation. Currently deferred to PreMountLoader for consistency.
 
       let retrievePaymentIntentFn = async clientSecretOrSdkAuth => {
         // Try to decode as base64 — if decodable, it's an SDK authorization token.
@@ -557,9 +560,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~isUpdateIntentInProgress,
           ~clientSecretRef=clientSecret,
           ~sdkAuthorizationRef=sdkAuthorization,
-          ~paymentMethodsDataPromise,
-          ~customerPaymentMethodsDataPromise,
           ~sessionTokensDataPromise,
+          ~sdkConfigsDataPromise,
+          ~clientListDataPromise,
         )
       }
 
@@ -744,9 +747,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~isUpdateIntentInProgress,
           ~clientSecretRef=clientSecret,
           ~sdkAuthorizationRef=sdkAuthorization,
-          ~paymentMethodsDataPromise,
-          ~customerPaymentMethodsDataPromise,
           ~sessionTokensDataPromise,
+          ~sdkConfigsDataPromise,
+          ~clientListDataPromise,
         )
       }
 

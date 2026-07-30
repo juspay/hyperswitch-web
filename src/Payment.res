@@ -1,7 +1,7 @@
 open CardUtils
 open CardThemeType
 open CardTheme
-open RecoilAtoms
+open JotaiAtoms
 open PaymentTypeContext
 open CommonCardProps
 
@@ -11,10 +11,10 @@ let setUserError = message => {
 
 @react.component
 let make = (~paymentMode, ~integrateError, ~logger) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let {localeString} = Jotai.useAtomValue(configAtom)
+  let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
+  let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
   let (isFocus, setIsFocus) = React.useState(_ => false)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(logger), Card)
@@ -103,7 +103,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
         setCardError(_ => localeString.cardNumberEmptyText)
         setUserError(localeString.enterFieldsText)
       } else if cardEligibilityError->Option.isSome {
-        let msg = EligibilityHelpers.getCardEligibilityErrorText(~cardEligibilityError, ~localeString)
+        let msg = EligibilityHelpers.getCardEligibilityErrorText(
+          ~cardEligibilityError,
+          ~localeString,
+        )
         setCardError(_ => msg)
         setUserError(msg)
       }

@@ -353,6 +353,7 @@ let rec intentCall = (
   ~redirectionFlags,
   ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
+  ~isTrustpayInterceptorConfirm=false,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -820,11 +821,21 @@ let rec intentCall = (
                 let walletName = session_token->getString("wallet_name", "")
 
                 let message = switch walletName {
-                | "apple_pay" => [
-                    ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->anyTypeToJson),
-                    ("componentName", componentName->JSON.Encode.string),
-                  ]
+                | "apple_pay" =>
+                  if isTrustpayInterceptorConfirm {
+                    let secrets =
+                      session_token
+                      ->getDictFromDict("session_token_data")
+                      ->Dict.get("secrets")
+                      ->Option.getOr(JSON.Encode.null)
+                    [("applePayConfirmSecrets", secrets)]
+                  } else {
+                    [
+                      ("applePayButtonClicked", true->JSON.Encode.bool),
+                      ("applePayPresent", session_token->anyTypeToJson),
+                      ("componentName", componentName->JSON.Encode.string),
+                    ]
+                  }
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | "open_banking" => {
                     let metaData = [
@@ -907,10 +918,20 @@ let rec intentCall = (
                 }
                 let walletName = session_token->getString("wallet_name", "")
                 let message = switch walletName {
-                | "apple_pay" => [
-                    ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->anyTypeToJson),
-                  ]
+                | "apple_pay" =>
+                  if isTrustpayInterceptorConfirm {
+                    let secrets =
+                      session_token
+                      ->getDictFromDict("session_token_data")
+                      ->Dict.get("secrets")
+                      ->Option.getOr(JSON.Encode.null)
+                    [("applePayConfirmSecrets", secrets)]
+                  } else {
+                    [
+                      ("applePayButtonClicked", true->JSON.Encode.bool),
+                      ("applePayPresent", session_token->anyTypeToJson),
+                    ]
+                  }
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
@@ -1053,13 +1074,13 @@ let rec intentCall = (
 }
 
 let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
-  open RecoilAtoms
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
-  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  open JotaiAtoms
+  let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
+  let keys = Jotai.useAtomValue(keys)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let customPodUri = Jotai.useAtomValue(customPodUri)
+  let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
+  let setIsManualRetryEnabled = Jotai.useSetAtom(isManualRetryEnabled)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="") => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -1140,13 +1161,13 @@ let rec maskPayload = payloadJson => {
 }
 
 let useCompleteAuthorizeHandler = () => {
-  open RecoilAtoms
+  open JotaiAtoms
 
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(isCompleteCallbackUsed)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
+  let customPodUri = Jotai.useAtomValue(customPodUri)
+  let setIsManualRetryEnabled = Jotai.useSetAtom(isManualRetryEnabled)
+  let isCallbackUsedVal = Jotai.useAtomValue(isCompleteCallbackUsed)
+  let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
+  let keys = Jotai.useAtomValue(keys)
 
   (
     ~clientSecret: option<string>,
@@ -1234,8 +1255,8 @@ let useCompleteAuthorizeHandler = () => {
 
 let useCompleteAuthorize = (optLogger, paymentType) => {
   let completeAuthorizeHandler = useCompleteAuthorizeHandler()
-  let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
+  let keys = Jotai.useAtomValue(JotaiAtoms.keys)
+  let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
   let url = RescriptReactRouter.useUrl()
   let mode =
     CardUtils.getQueryParamsDictforKey(url.search, "componentName")
@@ -1287,19 +1308,19 @@ let useRedsysCompleteAuthorize = optLogger => {
 }
 
 let usePaymentIntent = (optLogger, paymentType) => {
-  open RecoilAtoms
+  open JotaiAtoms
   open Promise
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
-  let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  let blockConfirm = Jotai.useAtomValue(isConfirmBlocked)
+  let customPodUri = Jotai.useAtomValue(customPodUri)
+  let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
+  let keys = Jotai.useAtomValue(keys)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
 
-  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let setIsManualRetryEnabled = Jotai.useSetAtom(isManualRetryEnabled)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -1308,6 +1329,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry=false,
+    ~isTrustpayInterceptorConfirm=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -1412,6 +1434,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~componentName,
             ~redirectionFlags,
             ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
+            ~isTrustpayInterceptorConfirm,
           )
           ->then(val => {
             intentCallback(val)
@@ -1449,7 +1472,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
       switch paymentMethodList {
       | LoadError(data)
       | Loaded(data) =>
-        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
         if paymentList.payment_methods->Array.length > 0 {
@@ -1643,45 +1666,7 @@ let createPaymentMethod = async (
   )
 }
 
-let fetchPaymentMethodList = async (
-  ~sdkAuthorization=None,
-  ~clientSecret,
-  ~publishableKey,
-  ~logger,
-  ~customPodUri,
-  ~endpoint,
-) => {
-  let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchPaymentMethodList,
-    ~params={
-      clientSecret: Some(clientSecret),
-      customBackendBaseUrl: Some(endpoint),
-      publishableKey: None,
-      forceSync: None,
-      pollId: None,
-      payoutId: None,
-      sdkAuthorization,
-    },
-  )
-
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=PAYMENT_METHODS_CALL,
-    ~logger,
-    ~method=#GET,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(publishableKey),
-    ~onSuccess,
-    ~onFailure,
-    ~sdkAuthorization,
-  )
-}
-
-let fetchCustomerPaymentMethodList = async (
+let fetchClientList = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
@@ -1691,11 +1676,11 @@ let fetchCustomerPaymentMethodList = async (
   ~sdkAuthorization=None,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
-    ~apiCallType=FetchCustomerPaymentMethodList,
+    ~apiCallType=FetchClientList,
     ~params={
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
-      publishableKey: None,
+      publishableKey: Some(publishableKey),
       forceSync: None,
       pollId: None,
       payoutId: None,
@@ -1704,12 +1689,11 @@ let fetchCustomerPaymentMethodList = async (
   )
 
   let onSuccess = data => data
-
   let onFailure = _ => JSON.Encode.null
 
   await fetchApiWithLogging(
     uri,
-    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+    ~eventName=CLIENT_LIST_CALL,
     ~logger,
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
@@ -1925,7 +1909,7 @@ let callAuthExchange = async (
 
   let onSuccess = _ => {
     let endpoint = ApiEndpoint.getApiEndPoint()
-    fetchCustomerPaymentMethodList(
+    fetchClientList(
       ~clientSecret=clientSecret->Option.getOr(""),
       ~publishableKey,
       ~logger,
@@ -1933,12 +1917,12 @@ let callAuthExchange = async (
       ~endpoint,
       ~sdkAuthorization,
     )
-    ->then(customerListResponse => {
-      let customerListResponse = [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
+    ->then(clientListResponse => {
+      let clientListResponse = [("clientList", clientListResponse)]->Dict.fromArray
       setOptionValue(prev => {
         ...prev,
-        customerPaymentMethods: customerListResponse->createCustomerObjArr(
-          "customerPaymentMethods",
+        customerPaymentMethods: clientListResponse->createCustomerObjArrFromClientList(
+          "clientList",
         ),
       })
       resolve(JSON.Encode.null)
@@ -2022,17 +2006,17 @@ let usePostSessionTokens = (
   paymentType: payment,
   paymentMethod: PaymentMethodCollectTypes.paymentMethod,
 ) => {
-  open RecoilAtoms
+  open JotaiAtoms
   open Promise
   let url = RescriptReactRouter.useUrl()
   let paymentTypeFromUrl =
     CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(RecoilAtoms.redirectionFlagsAtom)
+  let customPodUri = Jotai.useAtomValue(customPodUri)
+  let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
+  let keys = Jotai.useAtomValue(keys)
+  let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
 
-  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let setIsManualRetryEnabled = Jotai.useSetAtom(isManualRetryEnabled)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -2041,6 +2025,7 @@ let usePostSessionTokens = (
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry as _=false,
+    ~isTrustpayInterceptorConfirm as _=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -2171,7 +2156,7 @@ let usePostSessionTokens = (
       switch paymentMethodList {
       | LoadError(data)
       | Loaded(data) =>
-        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
         if paymentList.payment_methods->Array.length > 0 {
@@ -2375,4 +2360,41 @@ let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
   | "card" => "card"
   | _ => paymentMethodType
   }
+}
+
+let fetchSdkConfigs = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~endpoint,
+  ~sdkAuthorization=None,
+) => {
+  let uri = APIUtils.generateApiUrlV1(
+    ~apiCallType=FetchSdkConfigs,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: Some(publishableKey),
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      sdkAuthorization,
+    },
+  )
+
+  let onSuccess = data => data
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=SDK_CONFIGS_CALL,
+    ~logger,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+    ~sdkAuthorization,
+  )
 }

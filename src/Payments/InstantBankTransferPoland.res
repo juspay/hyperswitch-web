@@ -1,16 +1,16 @@
-open RecoilAtoms
+open JotaiAtoms
 open Utils
 
 @react.component
 let make = () => {
-  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let {themeObj} = Jotai.useAtomValue(configAtom)
+  let {layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Jotai.useAtomValue(areRequiredFieldsEmpty)
+  let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
 
@@ -23,6 +23,10 @@ let make = () => {
     ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType=paymentMethod,
+  )
+  SubscriptionEventHooks.useEmitFormStatus(
+    ~empty=areRequiredFieldsEmpty,
+    ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
   )
 
   let submitCallback = React.useCallback((ev: Window.event) => {

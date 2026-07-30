@@ -4,7 +4,7 @@ let make = () => {
 
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
-  let setLoggerState = Recoil.useSetRecoilState(RecoilAtoms.loggerAtom)
+  let setLoggerState = Jotai.useSetAtom(JotaiAtoms.loggerAtom)
 
   let paymentMode = getQueryParamsDictforKey(url.search, "componentName")
   let paymentType = paymentMode->CardThemeType.getPaymentMode
@@ -92,6 +92,10 @@ let make = () => {
   | "paymentMethodCollect" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
       <PaymentMethodCollectElement integrateError logger />
+    </LoaderController>
+  | "paymentMethodsSDK" =>
+    <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
+      <PaymentMethodsSDK />
     </LoaderController>
   | _ =>
     switch fullscreenMode {

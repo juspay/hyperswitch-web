@@ -1,11 +1,11 @@
 let useIsGuestCustomer = () => {
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
-  let {customerPaymentMethods} = RecoilAtoms.optionAtom->Recoil.useRecoilValueFromAtom
+  let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
+  let {customerPaymentMethods} = JotaiAtoms.optionAtom->Jotai.useAtomValue
 
   React.useMemo(() => {
     switch paymentMethodList {
     | Loaded(val) =>
-      let pList = val->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let pList = val->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapperFromClientList
       let guestCustomerValue = pList.isGuestCustomer
       if guestCustomerValue->Option.isNone {
         switch customerPaymentMethods {
@@ -22,14 +22,22 @@ let useIsGuestCustomer = () => {
 }
 
 let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false) => {
-  open RecoilAtoms
+  open JotaiAtoms
 
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let {iframeId} = Jotai.useAtomValue(keys)
 
   React.useEffect(() => {
-    Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod)
+    Utils.handlePostMessageEvents(
+      ~iframeId,
+      ~complete,
+      ~empty,
+      ~paymentType,
+      ~loggerState,
+      ~savedMethod,
+    )
     None
-  }, (complete, empty, paymentType))
+  }, (complete, empty, paymentType, savedMethod))
 }
 
 let useIsCustomerAcceptanceRequired = (
@@ -37,7 +45,7 @@ let useIsCustomerAcceptanceRequired = (
   ~isSaveCardsChecked,
   ~isGuestCustomer,
 ) => {
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
 
   React.useMemo(() => {
     if displaySavedPaymentMethodsCheckbox {
@@ -74,7 +82,7 @@ let useSendEventsToParent = eventsToSendToParent => {
 }
 
 let useUpdateRedirectionFlags = () => {
-  let setRedirectionFlags = Recoil.useSetRecoilState(RecoilAtoms.redirectionFlagsAtom)
+  let setRedirectionFlags = Jotai.useSetAtom(JotaiAtoms.redirectionFlagsAtom)
   let updateRedirectionFlagsAtom = paymentOptions => {
     let topRedirection =
       paymentOptions

@@ -6,8 +6,14 @@
   "scripts": {
     "format:cypress": "prettier --write \"cypress/**/*.{js,ts,jsx,tsx}\"",
     "lint": "./node_modules/.bin/tslint -c tslint.json -p cypress/**/*.ts -t stylish",
-    "start": "cypress open",
-    "test": "cypress run"
+    "start":          "cypress open",
+    "start:sandbox":  "TEST_ENV=sandbox cypress open",
+    "start:integ":    "TEST_ENV=integ   cypress open",
+    "start:local":    "TEST_ENV=local   cypress open",
+    "test":           "cypress run",
+    "test:sandbox":   "TEST_ENV=sandbox cypress run",
+    "test:integ":     "TEST_ENV=integ   cypress run",
+    "test:local":     "TEST_ENV=local   cypress run"
   },
   "repository": {
     "type": "git",
