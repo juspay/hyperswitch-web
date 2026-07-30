@@ -201,6 +201,32 @@ describe("Card Number Validation", () => {
     });
   });
 
+  describe("CVC Length by Card Brand", () => {
+    it("should size the CVC to 3 for a Visa", () => {
+      const { cardNo } = stripeCards.successCard;
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+        .type(cardNo);
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .should("have.attr", "maxlength", "3");
+    });
+
+    it("should size the CVC to 4 for an American Express", () => {
+      const { cardNo } = stripeCards.amexCard15;
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+        .type(cardNo);
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .should("have.attr", "maxlength", "4");
+    });
+  });
+
   describe("Card Brand Icons", () => {
     it("should display card brand icon dynamically for Visa", () => {
       getIframeBody()
