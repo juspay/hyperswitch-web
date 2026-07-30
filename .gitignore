@@ -2,7 +2,7 @@ node_modules
 .bsb.lock
 .merlin
 .netlify
-lib/bs
+lib/
 public/*.LICENSE.txt
 public/app.js
 public/app.css
