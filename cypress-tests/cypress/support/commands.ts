@@ -29,18 +29,46 @@ import * as testIds from "../../../src/Utilities/TestUtils.bs";
 // commands.js or your custom support file
 const iframeSelector =
   "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
+const innerCardIframeSelector =
+  'iframe[id^="orca-payment-element-iframeRef-"][src*="componentName=paymentMethodsSDK"]';
 
 let globalState = {};
 
+Cypress.Commands.addQuery("paymentElementBody", function () {
+  return () => {
+    const document = cy.state("document") as Document;
+    const outerIframe = document.querySelector(
+      iframeSelector,
+    ) as HTMLIFrameElement | null;
+    const outerBody = outerIframe?.contentDocument?.body;
+
+    if (!outerBody) {
+      return Cypress.$() as JQuery<HTMLBodyElement>;
+    }
+
+    let $paymentElementBodies = Cypress.$(outerBody);
+    outerBody.querySelectorAll(innerCardIframeSelector).forEach((iframe) => {
+      const cardIframe = iframe as HTMLIFrameElement;
+      if (cardIframe.contentDocument?.body) {
+        $paymentElementBodies = $paymentElementBodies.add(
+          cardIframe.contentDocument.body,
+        );
+      }
+    });
+
+    return $paymentElementBodies as JQuery<HTMLBodyElement>;
+  };
+});
+
 Cypress.Commands.add("enterValueInIframe", (selector, value) => {
-  cy.iframe(iframeSelector)
+  cy.paymentElementBody()
     .find(`[data-testid=${selector}]`)
     .should("be.visible")
     .type(value);
 });
 
 Cypress.Commands.add("selectValueInIframe", (selector, value) => {
-  cy.iframe(iframeSelector)
+  cy.paymentElementBody()
     .find(`[data-testid=${selector}]`)
     .should("be.visible")
     .select(value);
@@ -134,13 +162,13 @@ Cypress.Commands.add(
         idArr = idArr.filter((item) => !testIdsToRemoveArr.includes(item));
 
         idArr.forEach((ele) => {
-          cy.iframe(iframeSelector)
+          cy.paymentElementBody()
             .find(`[data-testid=${ele}]`)
             .should("be.visible")
             .type(mapping[ele], { force: true });
 
           if (ele === "Country" || ele === "State") {
-            cy.iframe(iframeSelector)
+            cy.paymentElementBody()
               .find(`[data-testid=${ele}]`)
               .should("be.visible")
               .select(mapping[ele]);
@@ -198,7 +226,7 @@ Cypress.Commands.add("nestedIFrame", (selector, callback) => {
     .should("exist")
     .should("be.visible")
     .then(($ele) => {
-      const $body = $ele.contents().find("body");
+      const $body = $ele.contents().find("body") as JQuery<HTMLElement>;
       callback($body);
     });
 });
@@ -209,17 +237,21 @@ Cypress.Commands.add("nestedIFrame", (selector, callback) => {
 Cypress.Commands.add("waitForSDKReady", () => {
   return cy
     .get(iframeSelector, { timeout: 15000 })
-    .should("be.visible")
-    .its("0.contentDocument")
-    .its("body")
-    .should("not.be.empty")
-    .then(() => {
-      // Wait for the card number input to be rendered inside the iframe,
-      // ensuring React has fully mounted the card form and registered
-      // the submitCallback before any test interaction.
-      cy.iframe(iframeSelector)
-        .find('[data-testid="cardNoInput"]', { timeout: 15000 })
-        .should("be.visible");
+    .should(($outerIframes) => {
+      const outerIframe = $outerIframes[0] as HTMLIFrameElement;
+      const outerBody = outerIframe.contentDocument?.body;
+      expect(outerBody, "outer payment element body").to.exist;
+
+      const innerIframe = outerBody?.querySelector(
+        innerCardIframeSelector,
+      ) as HTMLIFrameElement | null;
+      expect(innerIframe, "inner card iframe").to.exist;
+      expect(
+        innerIframe?.contentDocument?.body.querySelector(
+          '[data-testid="cardNoInput"]',
+        ),
+        "card number input",
+      ).to.exist;
     });
 });
 
@@ -245,7 +277,7 @@ Cypress.Commands.add("safeClick", { prevSubject: "element" }, (subject) => {
 });
 
 Cypress.Commands.add("enterCardDetails", (cardDetails: any) => {
-  const iframeBody = () => cy.iframe(iframeSelector);
+  const iframeBody = () => cy.paymentElementBody();
 
   iframeBody().find('[data-testid="cardNoInput"]').safeType(cardDetails.cardNo);
 

@@ -28,7 +28,7 @@ describe.skip("External 3DS using Netcetera Checks", () => {
     }
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
-    getIframeBody = () => cy.iframe(iframeSelector);
+    getIframeBody = () => cy.paymentElementBody();
     // Mutate the shared payment body here (not at describe-load time) so this
     // suite's 3DS settings don't leak into other specs.
     changeObjectKeyValue(

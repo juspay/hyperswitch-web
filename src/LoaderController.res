@@ -51,6 +51,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsSavedCardCvcFlow = Jotai.useSetAtom(JotaiAtoms.isSavedCardCvcFlow)
   let setCardCollectionMode = Jotai.useSetAtom(JotaiAtoms.cardCollectionMode)
   let setCardBrand = Jotai.useSetAtom(JotaiAtoms.cardBrand)
+  let setSupportedCardBrands = Jotai.useSetAtom(JotaiAtoms.supportedCardBrands)
   let setSavedCardBrand = Jotai.useSetAtom(JotaiAtoms.savedCardBrand)
   let setIsBancontactCardFlow = Jotai.useSetAtom(JotaiAtoms.isBancontactCardFlow)
   let setCardFlowType = Jotai.useSetAtom(JotaiAtoms.cardFlowType)
@@ -142,15 +143,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       )
       let appearance =
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-      let localeString = await CardTheme.getLocaleObject(
-        optionsLocaleString == "" ? config.locale : optionsLocaleString,
-      )
+      let requestedLocale = optionsLocaleString == "" ? config.locale : optionsLocaleString
+      let resolvedLocale = requestedLocale === "auto" ? Window.Navigator.language : requestedLocale
+      let localeString = await CardTheme.getLocaleObject(requestedLocale)
       let constantString = await CardTheme.getConstantStringsObject()
-      let _ = await S3Utils.initializeCountryData(~locale=config.locale, ~logger)
+      let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
       setConfig(_ => {
         config: {
           appearance,
-          locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
+          locale: resolvedLocale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
           pmSessionId: config.pmSessionId,
@@ -480,6 +481,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let savedCardBrand = dict->getString("savedCardBrand", "")->CardUtils.normalizeCardBrand
           setCardBrand(_ => savedCardBrand)
           setSavedCardBrand(_ => savedCardBrand)
+        }
+        if dict->Dict.get("supportedCardBrands")->Option.isSome {
+          setSupportedCardBrands(_ => Some(dict->getStrArray("supportedCardBrands")))
         }
         if dict->Dict.get("isBancontactCardFlow")->Option.isSome {
           setIsBancontactCardFlow(_ => dict->Utils.getBool("isBancontactCardFlow", false))

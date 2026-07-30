@@ -16,6 +16,7 @@ let useCardForm = (
   let selectedOption = Jotai.useAtomValue(selectedOptionAtom)
   let paymentToken = Jotai.useAtomValue(paymentTokenAtom)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let forwardedSupportedCardBrands = Jotai.useAtomValue(JotaiAtoms.supportedCardBrands)
   let {parentURL} = Jotai.useAtomValue(keys)
   let {
     cardEligibilityError,
@@ -63,8 +64,11 @@ let useCardForm = (
   let cardBrand =
     cardBrandOverride === "" ? derivedCardBrand : cardBrandOverride->CardUtils.normalizeCardBrand
   let supportedCardBrands = React.useMemo(() => {
-    paymentMethodListValue->PaymentUtils.getSupportedCardBrands
-  }, [paymentMethodListValue])
+    switch forwardedSupportedCardBrands {
+    | Some(brands) => Some(brands)
+    | None => paymentMethodListValue->PaymentUtils.getSupportedCardBrands
+    }
+  }, (paymentMethodListValue, forwardedSupportedCardBrands))
 
   let maxCardLength = React.useMemo(() => {
     getMaxLength(cardBrand)

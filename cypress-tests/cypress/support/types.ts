@@ -19,6 +19,7 @@ export type CustomerData = {
 declare global {
   namespace Cypress {
     interface Chainable {
+      paymentElementBody(): Chainable<JQuery<HTMLBodyElement>>;
       enterValueInIframe(
         selector: string,
         value: string,
@@ -41,10 +42,10 @@ declare global {
       getGlobalState(key: string): Chainable<string>;
       nestedIFrame(
         selector: string,
-        callback: (body: Chainable<JQuery<HTMLElement>>) => void,
+        callback: (body: JQuery<HTMLElement>) => void,
       ): Chainable<void>;
       // New smart wait utilities
-      waitForSDKReady(): Chainable<JQuery<HTMLBodyElement>>;
+      waitForSDKReady(): Chainable<JQuery<HTMLElement>>;
       safeType(text: string, options?: Partial<Cypress.TypeOptions>): Chainable<JQuery<HTMLElement>>;
       safeClick(): Chainable<JQuery<HTMLElement>>;
       enterCardDetails(cardDetails: cardDetails): Chainable<void>;

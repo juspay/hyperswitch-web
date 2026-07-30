@@ -36,7 +36,7 @@ describe("Mandate Card Flow - Cybersource", () => {
   beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
-    getIframeBody = () => cy.iframe(iframeSelector);
+    getIframeBody = () => cy.paymentElementBody();
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
@@ -108,15 +108,15 @@ describe("Mandate Card Flow - Cybersource", () => {
 
     // Verify the saved card from the first payment is present.
     // addNewCardIcon appears when at least one saved card exists.
-    getIframeBody()
+    cy.iframe(iframeSelector)
       .find(`[data-testid=${testIds.addNewCardIcon}]`, { timeout: 20000 })
       .should("be.visible");
 
     // Card ending in 4242 should be pre-selected
-    getIframeBody().contains("4242").should("be.visible");
+    cy.iframe(iframeSelector).contains("4242").should("be.visible");
 
     // off_session mandate — no CVV input required
-    getIframeBody()
+    cy.iframe(iframeSelector)
       .find("[data-testid=cvvInput]")
       .should("not.exist");
 

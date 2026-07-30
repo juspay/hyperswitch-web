@@ -26,6 +26,10 @@ let isBancontactCardFlow = Jotai.atom(false)
 let cardFlowType = Jotai.atom(CardThemeType.Payment)
 let phoneJson = Jotai.atom(Loading)
 let cardBrand = Jotai.atom("")
+// The nested card iframe does not load the merchant payment-method list.
+// ParentCardComponent forwards the enabled card networks it already decoded so
+// card support validation and cobadge selection use the same configuration.
+let supportedCardBrands = Jotai.atom((None: option<array<string>>))
 // A saved-card CVC collector has no PAN from which to detect its brand.
 let savedCardBrand = Jotai.atom("")
 let paymentMethodCollectOptionAtom = Jotai.atom(

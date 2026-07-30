@@ -116,7 +116,15 @@ let make = (
         reportCardFieldErrors()
       }
     }
-  }, (cardNumber, cardExpiry, cvcNumber, cardBrand, isCardDetailsValid, isBancontact))
+  }, (
+    cardNumber,
+    cardExpiry,
+    cvcNumber,
+    cardBrand,
+    isCardDetailsValid,
+    isBancontact,
+    localeString,
+  ))
   useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
 
   <div>

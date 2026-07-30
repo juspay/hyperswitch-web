@@ -103,7 +103,16 @@ let make = (
         reportCardFieldErrors()
       }
     }
-  }, (cardNumber, cardExpiry, cvcNumber, cardBrand, complete, vaultCredentials, loggerState))
+  }, (
+    cardNumber,
+    cardExpiry,
+    cvcNumber,
+    cardBrand,
+    complete,
+    vaultCredentials,
+    loggerState,
+    localeString,
+  ))
   useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
 
   <div className="animate-slowShow">

@@ -166,6 +166,8 @@ let make = (
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
+  let supportedCardBrandsRef = React.useRef(supportedCardBrands)
+  supportedCardBrandsRef.current = supportedCardBrands
   let cardSupportState = React.useMemo(() => {
     if isRawNewCardFlow && !isBancontact {
       let clearCardNumber = rawCardNumber->CardValidations.clearSpaces
@@ -417,10 +419,21 @@ let make = (
         currentFlowType,
       ) = mountConfigRef.current
       let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey=currentPublishableKey)
+      let paymentOptionsVal =
+        [
+          ("locale", currentSdkConfig.config.locale->JSON.Encode.string),
+          ("appearance", currentSdkConfig.config.appearance->Identity.anyTypeToJson),
+        ]->getJsonFromArrayOfJson
+      let supportedCardBrandEntries = switch supportedCardBrandsRef.current {
+      | Some(brands) => [
+          ("supportedCardBrands", brands->Array.map(JSON.Encode.string)->JSON.Encode.array),
+        ]
+      | None => []
+      }
       let message =
         [
           ("paymentElementCreate", true->JSON.Encode.bool),
-          ("paymentOptions", currentSdkConfig.config->Identity.anyTypeToJson),
+          ("paymentOptions", paymentOptionsVal),
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", currentPublishableKey->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
@@ -442,7 +455,9 @@ let make = (
             "cardFlowType",
             currentFlowType->CardThemeType.getPaymentModeToString->JSON.Encode.string,
           ),
-        ]->Dict.fromArray
+        ]
+        ->Array.concat(supportedCardBrandEntries)
+        ->Dict.fromArray
       mountedIframeRef->Window.iframePostMessage(message, ~targetOrigin=innerIframeOrigin)
       setIframeMounted(_ => true)
     },
@@ -491,11 +506,30 @@ let make = (
   }, (iframeMounted, sessionToken))
 
   React.useEffect(() => {
+    switch (iframeMounted, supportedCardBrands) {
+    | (true, Some(brands)) =>
+      iframeRef.current->Window.iframePostMessage(
+        [
+          ("supportedCardBrands", brands->Array.map(JSON.Encode.string)->JSON.Encode.array),
+        ]->Dict.fromArray,
+        ~targetOrigin=innerIframeOrigin,
+      )
+    | _ => ()
+    }
+    None
+  }, (iframeMounted, supportedCardBrands))
+
+  React.useEffect(() => {
     if iframeMounted {
+      let paymentOptions =
+        [
+          ("locale", sdkConfig.config.locale->JSON.Encode.string),
+          ("appearance", sdkConfig.config.appearance->Identity.anyTypeToJson),
+        ]->getJsonFromArrayOfJson
       iframeRef.current->Window.iframePostMessage(
         [
           ("paymentElementCreate", false->JSON.Encode.bool),
-          ("paymentOptions", sdkConfig.config->Identity.anyTypeToJson),
+          ("paymentOptions", paymentOptions),
         ]->Dict.fromArray,
         ~targetOrigin=innerIframeOrigin,
       )
@@ -987,13 +1021,7 @@ let make = (
               />
             </RenderIf>
             <RenderIf condition={!isBancontact}>
-              <Terms
-                styles={
-                  marginTop: themeObj.spacingGridColumn,
-                }
-                paymentMethod
-                paymentMethodType
-              />
+              <Terms paymentMethod paymentMethodType />
             </RenderIf>
             <RenderIf condition={clickToPayCardBrand !== ""}>
               <div className="space-y-3 mt-2">
