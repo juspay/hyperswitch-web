@@ -227,6 +227,48 @@ describe("Card Number Validation", () => {
     });
   });
 
+  describe("CVC Validity Styling", () => {
+    // A field is marked invalid on blur and unmarked while focused, uniformly across the
+    // SDK. The second case matters because the expiry auto-advances into the CVC: focus
+    // must still land there, and must still clear the mark.
+    const typeVisaThenShortCvc = () => {
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+        .type(stripeCards.successCard.cardNo);
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .type("12");
+    };
+
+    it("should mark an out-of-range CVC invalid on blur and unmark it on focus", () => {
+      typeVisaThenShortCvc();
+
+      getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).click();
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .should("have.class", "Input--invalid");
+
+      getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).click();
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .should("not.have.class", "Input--invalid");
+    });
+
+    it("should focus the CVC and unmark it when the expiry auto-advances", () => {
+      typeVisaThenShortCvc();
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.expiryInputTestId}]`)
+        .type("1230");
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .should("have.focus")
+        .and("not.have.class", "Input--invalid");
+    });
+  });
+
   describe("Card Brand Icons", () => {
     it("should display card brand icon dynamically for Visa", () => {
       getIframeBody()
