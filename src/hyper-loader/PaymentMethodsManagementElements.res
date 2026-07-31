@@ -255,7 +255,7 @@ let make = (
         mountPostMessage,
         ~appearance,
         ~isPaymentManagementElement=true,
-        ~redirectionFlags=RecoilAtoms.defaultRedirectionFlags,
+        ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
         ~logger=Some(logger),
         ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
       )

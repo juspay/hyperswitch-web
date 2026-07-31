@@ -1,28 +1,26 @@
 @react.component
 let make = (~token: SessionsType.token) => {
   open Utils
-  open RecoilAtoms
+  open JotaiAtoms
 
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
-  let {iframeId, publishableKey, clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(
-    keys,
-  )
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let options = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {iframeId, publishableKey, clientSecret, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let {themeObj} = Jotai.useAtomValue(configAtom)
+  let updateSession = Jotai.useAtomValue(updateSession)
+  let options = Jotai.useAtomValue(optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
     ~clientSecret=clientSecret->Option.getOr(""),
     ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
   )
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onClick = _ => {

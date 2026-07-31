@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 open Utils
 
 // `isVaultCvcFlow` reuses this CVC element for the Hyperswitch-vault saved-card
@@ -15,16 +15,16 @@ let make = (
   ~paymentType: CardThemeType.mode,
   ~isVaultCvcFlow=false,
 ) => {
-  let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {config, localeString} = Jotai.useAtomValue(configAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let {innerLayout} = config.appearance
-  let keys = Recoil.useRecoilValueFromAtom(keys)
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(RecoilAtoms.redirectionFlagsAtom)
+  let keys = Jotai.useAtomValue(keys)
+  let customPodUri = Jotai.useAtomValue(customPodUri)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
   // Vault credentials (pmSessionId / sdkAuthorization) for the saved-card tokenise
   // call; populated by PaymentMethodsSDK in the inner iframe. Only used in vault mode.
-  let vaultCredentials = Recoil.useRecoilValueFromAtom(RecoilAtoms.vaultCredentials)
+  let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
 
   let {
     isCVCValid,
@@ -123,8 +123,7 @@ let make = (
               if requiresCvv && isCvcComplete {
                 setCvcError(_ => "")
 
-                let bodyWithCvc =
-                  bodyArr->Array.concat([("card_cvc", cvcNumber->JSON.Encode.string)])
+                let bodyWithCvc = bodyArr->Array.concat([PaymentBody.cardTokenCvcTuple(~cvcNumber)])
 
                 let paymentType = paymentTypeStr->PaymentHelpers.getPaymentType
 

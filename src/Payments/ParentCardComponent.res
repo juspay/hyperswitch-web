@@ -15,16 +15,16 @@ let make = (
   ~containerId=innerIframeContainerDivId,
   ~setExternalIframeRef: option<Nullable.t<Dom.element> => unit>=?,
 ) => {
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let optionsPayment = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let sdkConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(RecoilAtoms.redirectionFlagsAtom)
+  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
+  let optionsPayment = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let sdkConfig = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let nickname = Jotai.useAtomValue(JotaiAtoms.userCardNickName)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+  let sessionToken = Jotai.useAtomValue(JotaiAtoms.sessions)
+  let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
 
   let {
     displaySavedPaymentMethodsCheckbox,
@@ -49,7 +49,7 @@ let make = (
   let iframeRef = React.useRef(Nullable.null)
   let (iframeMounted, setIframeMounted) = React.useState(_ => false)
   let (cardBrand, setCardBrand) = React.useState(_ => "")
-  let setIsVgsScriptReady = Recoil.useSetRecoilState(RecoilAtoms.isVgsScriptReady)
+  let setIsVgsScriptReady = Jotai.useSetAtom(JotaiAtoms.isVgsScriptReady)
 
   // mountPostMessage is captured once (in useEffect0) and fires later when the
   // inner iframe signals readiness, so it must read the LATEST config values

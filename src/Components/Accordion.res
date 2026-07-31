@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 @react.component
 let make = (
   ~paymentOption: PaymentMethodsRecord.paymentFieldsInfo,
@@ -7,10 +7,10 @@ let make = (
   ~borderBottom: bool,
   ~borderRadiusStyle,
 ) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {layout, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
+  let {layout, customMethodNames} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
+  let (selectedOption, setSelectedOption) = Jotai.useAtom(selectedOptionAtom)
   let (
     accordionClass,
     accordionItemLabelClass,

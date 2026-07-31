@@ -16,8 +16,8 @@ let vgsScriptIntegrity = "sha384-ddxU1XAc77oB4EIpKOgJQ3FN2a6STYPK0JipRqg1x/eW+n5
 
 @react.component
 let make = (~cvcOnly=false) => {
-  let vaultCredentials = Recoil.useRecoilValueFromAtom(RecoilAtoms.vaultCredentials)
-  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
+  let {themeObj, localeString, config} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {innerLayout} = config.appearance
 
   let (vaultId, environment) = switch vaultCredentials {

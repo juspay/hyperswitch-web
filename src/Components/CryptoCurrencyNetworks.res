@@ -4,7 +4,7 @@ open SuperpositionTypes
 let make = (~networkField: fieldConfig, ~currencyField: fieldConfig) => {
   let networkPath = networkField.confirmRequestWritePath
   let currencyFieldPath = currencyField.confirmRequestWritePath
-  let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {label} = DynamicFieldsUtils.resolveFieldTexts(
     ~field=networkField,
     ~localeObject=localeString,

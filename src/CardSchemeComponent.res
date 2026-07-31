@@ -1,7 +1,7 @@
 module CoBadgeCardSchemeDropDown = {
   @react.component
   let make = (~eligibleCardSchemes, ~setCardBrand) => {
-    let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+    let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
     <select
       className="w-4"
       onClick={_ =>
@@ -36,7 +36,7 @@ let make = (
     [cardBrand],
   )
 
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let enabledCardSchemes =
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands->Option.getOr([])
 
@@ -52,8 +52,8 @@ let make = (
 
   let marginLeft = isCardCoBadged ? "-ml-2" : ""
 
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let {layout} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let cardBrandIconSetting = CardUtils.getLayoutClass(layout).cardBrandIcon
   let shouldShowCoBadgeCardSchemeDropDown =
     isCardCoBadged && cardNumber->CardValidations.clearSpaces->String.length >= 16

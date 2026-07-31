@@ -1,13 +1,13 @@
 @react.component
 let make = (~isChecked, ~setIsChecked) => {
-  let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(RecoilAtoms.showPaymentMethodsScreen)
-  let {business, customMessageForCardTerms} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let showPaymentMethodsScreen = Jotai.useAtomValue(JotaiAtoms.showPaymentMethodsScreen)
+  let {business, customMessageForCardTerms} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customMessageConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
     ~paymentMethod="card",
     ~paymentMethodType="debit",
   )
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   let handleChange = value => {
     LoggerUtils.logInputChangeInfo("saveDetails", loggerState)
