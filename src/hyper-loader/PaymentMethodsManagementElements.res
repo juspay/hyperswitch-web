@@ -165,16 +165,16 @@ let make = (
       })
     }
 
-    let create = (arg1: JSON.t, arg2: Nullable.t<JSON.t>) => {
-      let (componentType, newOptions) = switch arg1->JSON.Classify.classify {
+    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+      let (componentType, newOptions) = switch componentTypeOrOptions->JSON.Classify.classify {
       | String(typeStr) =>
-        let opts = arg2->Nullable.toOption->Option.getOr(JSON.Encode.null)
+        let opts = legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
         (typeStr, opts)
       | Object(dict) =>
         let componentType = dict->getString("type", "paymentMethodsManagement")
         let opts = switch dict->Dict.get("options") {
         | Some(o) => o
-        | None => arg2->Nullable.toOption->Option.getOr(JSON.Encode.null)
+        | None => legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
         }
         (componentType, opts)
       | _ => ("paymentMethodsManagement", JSON.Encode.null)

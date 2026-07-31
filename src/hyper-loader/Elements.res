@@ -388,20 +388,20 @@ let make = (
       }
     }
 
-    let create = (arg1: JSON.t, arg2: Nullable.t<JSON.t>) => {
+    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
       // New API:    elements.create({ type: "payment", options: {...} })
       // Legacy API: elements.create("payment", options)
-      let (componentType, newOptions) = switch arg1->JSON.Classify.classify {
+      let (componentType, newOptions) = switch componentTypeOrOptions->JSON.Classify.classify {
       | String(typeStr) =>
         // Legacy: first arg is the type string, second arg is options
-        let opts = arg2->Nullable.toOption->Option.getOr(JSON.Encode.null)
+        let opts = legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
         (typeStr, opts)
       | Object(dict) =>
         // New API: extract type and options from the object
         let componentType = dict->getString("type", "payment")
         let opts = switch dict->Dict.get("options") {
         | Some(o) => o
-        | None => arg2->Nullable.toOption->Option.getOr(JSON.Encode.null)
+        | None => legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
         }
         (componentType, opts)
       | _ => ("payment", JSON.Encode.null)
