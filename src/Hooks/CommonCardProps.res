@@ -7,7 +7,7 @@ let useCardForm = (
   ~paymentType,
   ~runEligibility=true,
   ~logControlEvents=true,
-  ~useExternalCardSupport=false,
+  ~enableExternalCardSupport=false,
   ~cardBrandOverride="",
 ) => {
   let {localeString} = Jotai.useAtomValue(configAtom)
@@ -77,13 +77,13 @@ let useCardForm = (
   React.useEffect(() => {
     // The raw split-card iframe does not own the merchant's configured card
     // networks. ParentCardComponent sends the authoritative support result.
-    if !useExternalCardSupport {
+    if !enableExternalCardSupport {
       setIsCardSupported(_ =>
         PaymentUtils.checkIsCardSupported(cardNumber, cardBrand, supportedCardBrands)
       )
     }
     None
-  }, (supportedCardBrands, cardNumber, cardBrand, useExternalCardSupport))
+  }, (supportedCardBrands, cardNumber, cardBrand, enableExternalCardSupport))
 
   let cardType = React.useMemo1(() => {
     cardBrand->getCardType
@@ -134,7 +134,7 @@ let useCardForm = (
     logInputChangeInfo("cardNumber", logger)
     let card = val->formatCardNumber(cardType)
     let clearValue = card->CardValidations.clearSpaces
-    let isCardSupportedAndValid = if useExternalCardSupport {
+    let isCardSupportedAndValid = if enableExternalCardSupport {
       CardUtils.cardValid(clearValue, cardBrand) && isCardSupported->Option.getOr(false)
     } else {
       PaymentUtils.checkIsCardSupported(clearValue, cardBrand, supportedCardBrands)->Option.getOr(
@@ -247,7 +247,7 @@ let useCardForm = (
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
     if cardNumberInRange(cardNumber, cardBrand)->Array.includes(true) && calculateLuhn(cardNumber) {
-      if useExternalCardSupport {
+      if enableExternalCardSupport {
         setIsCardValid(_ => Some(true))
       } else {
         setIsCardValid(_ =>

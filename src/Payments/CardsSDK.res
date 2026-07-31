@@ -34,7 +34,7 @@ let make = (~cvcOnly=false) => {
     ~paymentType=cardFlowType,
     ~runEligibility=cardCollectionMode !== RawEmit,
     ~logControlEvents=cardCollectionMode !== RawEmit,
-    ~useExternalCardSupport=cardCollectionMode === RawEmit && !cvcOnly,
+    ~enableExternalCardSupport=cardCollectionMode === RawEmit && !cvcOnly,
     ~cardBrandOverride=cvcOnly ? savedCardBrand : "",
   )
 
@@ -62,6 +62,8 @@ let make = (~cvcOnly=false) => {
     // Vault details not yet loaded. For the new-card flow render the form so the
     // UI is visible; for the saved-card CVC-only flow render nothing until the
     // vault resolves, so the tiny CVC slot never briefly shows a full card form.
-    cvcOnly ? React.null : <HyperswitchVaultCardCollector cardProps expiryProps cvcProps />
+    <RenderIf condition={!cvcOnly}>
+      <HyperswitchVaultCardCollector cardProps expiryProps cvcProps />
+    </RenderIf>
   }
 }
