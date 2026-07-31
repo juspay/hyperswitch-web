@@ -259,12 +259,21 @@ Cypress.Commands.add(
   "safeType",
   { prevSubject: "element" },
   (subject, text, options = {}) => {
-    cy.wrap(subject)
+    const testId = subject.attr("data-testid");
+    const getSubject = () =>
+      testId
+        ? cy.paymentElementBody().find(`[data-testid="${testId}"]`)
+        : cy.wrap(subject);
+
+    getSubject()
       .should("not.be.disabled")
       .should("be.visible")
-      .clear({ force: true })
+      .clear({ force: true });
+
+    return getSubject()
+      .should("not.be.disabled")
+      .should("be.visible")
       .type(text, { delay: 50, ...options });
-    return cy.wrap(subject);
   },
 );
 

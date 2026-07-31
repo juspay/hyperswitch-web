@@ -271,7 +271,7 @@ let make = (
     None
   }, (isSavedCardCvcFlow, isCvcEmpty, isCvcComplete, keys.iframeId))
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     if isSavedCardCvcFlow {
       cvcRef.current
       ->Nullable.toOption
@@ -279,7 +279,7 @@ let make = (
       ->ignore
     }
     None
-  })
+  }, [isSavedCardCvcFlow])
 
   <PaymentInputField
     fieldName={isSavedCardCvcFlow ? "" : localeString.cvcTextLabel}

@@ -46,7 +46,7 @@ let make = (
     None
   }, [complete])
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     let handleEligibilityMessage = (ev: Window.event) => {
       // ParentCardComponent uses Window.iframePostMessage, which serializes the
       // payload. Parse the string before decoding the eligibility state.
@@ -73,7 +73,7 @@ let make = (
     }
     Window.addEventListener("message", handleEligibilityMessage)
     Some(() => Window.removeEventListener("message", handleEligibilityMessage))
-  })
+  }, (updateCardEligibilityError, updateCardSupport, parentURL))
 
   let reportCardFieldErrors = () => {
     CardCollectorBridge.reportValidationErrors(

@@ -26,11 +26,11 @@ let make = (
   let sdkSessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
-  // let analyticsMetadata = Jotai.useAtomValue(JotaiAtoms.analyticsMetadata)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let optionsPayment = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let sdkConfig = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let isConfigReady = Jotai.useAtomValue(JotaiAtoms.isConfigReady)
   let nickname = Jotai.useAtomValue(JotaiAtoms.userCardNickName)
   let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
   let fullName = Jotai.useAtomValue(JotaiAtoms.userFullName)
@@ -464,34 +464,38 @@ let make = (
     [],
   )
 
-  React.useEffect0(() => {
-    let setIframeRefFn = ref => {
-      iframeRef.current = ref
-      switch setExternalIframeRef {
-      | Some(fn) => fn(ref)
-      | None => ()
+  React.useEffect(() => {
+    if isConfigReady {
+      let setIframeRefFn = ref => {
+        iframeRef.current = ref
+        switch setExternalIframeRef {
+        | Some(fn) => fn(ref)
+        | None => ()
+        }
       }
+      let element = LoaderPaymentElement.make(
+        "paymentMethodsSDK",
+        Dict.make()->JSON.Encode.object,
+        setIframeRefFn,
+        [],
+        mountPostMessage,
+        ~appearance=Dict.make()->JSON.Encode.object,
+        ~redirectionFlags,
+        ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
+        ~logger=Some(loggerState),
+      )
+      element.mount(`#${containerId}`)
+      Some(
+        () => {
+          element.unmount()
+          setExternalIframeRef->Option.forEach(callback => callback(Nullable.null))
+          setIframeMounted(_ => false)
+        },
+      )
+    } else {
+      None
     }
-    let element = LoaderPaymentElement.make(
-      "paymentMethodsSDK",
-      Dict.make()->JSON.Encode.object,
-      setIframeRefFn,
-      [],
-      mountPostMessage,
-      ~appearance=Dict.make()->JSON.Encode.object,
-      ~redirectionFlags,
-      ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
-      ~logger=Some(loggerState),
-    )
-    element.mount(`#${containerId}`)
-    Some(
-      () => {
-        element.unmount()
-        setExternalIframeRef->Option.forEach(callback => callback(Nullable.null))
-        setIframeMounted(_ => false)
-      },
-    )
-  })
+  }, [isConfigReady])
 
   React.useEffect(() => {
     switch (iframeMounted, sessionToken) {
@@ -965,6 +969,7 @@ let make = (
     isBancontact,
     cardEligibilityError,
     isEligibilityPending,
+    paymentMethodListValue.should_block_confirm,
     clickToPayCardBrand,
     isSaveDetailsWithClickToPay,
     isClickToPayRememberMe,

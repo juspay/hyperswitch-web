@@ -5,6 +5,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   open JotaiAtomsV2
 
   let (configAtom, setConfig) = Jotai.useAtom(configAtom)
+  let setIsConfigReady = Jotai.useSetAtom(isConfigReady)
   let (keys, setKeys) = Jotai.useAtom(keys)
   let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
   let setSdkConfigs = Jotai.useSetAtom(sdkConfigs)
@@ -163,6 +164,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         constantString,
         showLoader: config.loader == Auto || config.loader == Always,
       })
+      setIsConfigReady(_ => true)
     } catch {
     | _ => ()
     }
