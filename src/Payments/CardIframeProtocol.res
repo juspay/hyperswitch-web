@@ -35,6 +35,7 @@ type savedCardCvcState = {
   empty: bool,
   complete: bool,
   valid: bool,
+  error: string,
 }
 
 type cardSnapshot = {
@@ -70,6 +71,7 @@ let initialSavedCardCvcState: savedCardCvcState = {
   empty: true,
   complete: false,
   valid: false,
+  error: "",
 }
 
 let jsonOptionString = (dict, key) => {
@@ -153,6 +155,7 @@ let decodeSavedCardCvcState = (dict): option<savedCardCvcState> =>
       empty: status->getBool("empty", true),
       complete: status->getBool("complete", false),
       valid: status->getBool("valid", false),
+      error: status->getString("error", ""),
     })
   } else {
     None

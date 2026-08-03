@@ -164,10 +164,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         constantString,
         showLoader: config.loader == Auto || config.loader == Always,
       })
-      setIsConfigReady(_ => true)
     } catch {
     | _ => ()
     }
+    setIsConfigReady(_ => true)
   }
 
   let updateRedirectionFlags = UtilityHooks.useUpdateRedirectionFlags()

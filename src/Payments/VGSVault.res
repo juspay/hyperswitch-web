@@ -59,6 +59,29 @@ let make = (~cvcOnly=false) => {
   // VGS's async submit error callback, whose blur-driven state change used to race
   // with and swallow the first submit's errors.
   let formStateRef = React.useRef(Dict.make())
+  let savedCvcStatusRef = React.useRef(None)
+
+  let emitSavedCardCvcStatus = (~dict, ~error) => {
+    let cvcState =
+      dict
+      ->Dict.get("card_cvc")
+      ->Option.flatMap(JSON.Decode.object)
+      ->Option.getOr(Dict.make())
+    let empty = cvcState->getBool("isEmpty", true)
+    let valid = cvcState->getBool("isValid", false)
+    savedCvcStatusRef.current = Some((empty, valid, valid))
+    let status =
+      [
+        ("empty", empty->JSON.Encode.bool),
+        ("complete", valid->JSON.Encode.bool),
+        ("valid", valid->JSON.Encode.bool),
+        ("error", error->JSON.Encode.string),
+      ]->Dict.fromArray
+    messageParentWindow(
+      [("savedCardCvcStatus", status->JSON.Encode.object)],
+      ~targetOrigin=parentURL,
+    )
+  }
 
   // Register each field's focus/blur listeners exactly once — when that field is
   // first created (None → Some) — rather than on every render, which would stack
@@ -139,17 +162,9 @@ let make = (~cvcOnly=false) => {
       ->Option.flatMap(JSON.Decode.object)
       ->Option.getOr(Dict.make())
     if cvcOnly {
-      let cvcState = fieldState("card_cvc")
-      let cvcValid = cvcState->getBool("isValid", false)
-      let status =
-        [
-          ("empty", cvcState->getBool("isEmpty", true)->JSON.Encode.bool),
-          ("complete", cvcValid->JSON.Encode.bool),
-          ("valid", cvcValid->JSON.Encode.bool),
-        ]->Dict.fromArray
-      messageParentWindow(
-        [("savedCardCvcStatus", status->JSON.Encode.object)],
-        ~targetOrigin=parentURL,
+      emitSavedCardCvcStatus(
+        ~dict,
+        ~error=vgsErrorHandler(dict, "card_cvc", localeString),
       )
     } else {
       let hasCardState = dict->Dict.get("card_number")->Option.isSome
@@ -194,6 +209,27 @@ let make = (~cvcOnly=false) => {
   }
 
   React.useEffect(() => {
+    if cvcOnly {
+      switch savedCvcStatusRef.current {
+      | Some((empty, complete, valid)) =>
+        let status =
+          [
+            ("empty", empty->JSON.Encode.bool),
+            ("complete", complete->JSON.Encode.bool),
+            ("valid", valid->JSON.Encode.bool),
+            ("error", vgsCVCError->JSON.Encode.string),
+          ]->Dict.fromArray
+        messageParentWindow(
+          [("savedCardCvcStatus", status->JSON.Encode.object)],
+          ~targetOrigin=parentURL,
+        )
+      | None => ()
+      }
+    }
+    None
+  }, (cvcOnly, vgsCVCError, parentURL))
+
+  React.useEffect(() => {
     switch vgsScriptStatus {
     | "ready" =>
       if vaultId != "" && environment != "" && !vaultInitializedRef.current {
@@ -233,6 +269,7 @@ let make = (~cvcOnly=false) => {
           // vault_card_token_data confirm body with the already-known payment_token.
           let cvcErr = vgsErrorHandler(stateDict, "card_cvc", ~isSubmit=true, localeString)
           setVgsCVCError(_ => cvcErr)
+          emitSavedCardCvcStatus(~dict=stateDict, ~error=cvcErr)
           if cvcErr == "" && isOuterValid {
             let emptyPayload = JSON.Encode.object(Dict.make())
             let onSuccess = (_, data) => {
@@ -318,7 +355,7 @@ let make = (~cvcOnly=false) => {
       | None => Console.error("VGS Vault not initialized for submission")
       }
     }
-  }, (form, localeString, cvcOnly))
+  }, (form, localeString, cvcOnly, parentURL))
 
   useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
 
@@ -334,11 +371,9 @@ let make = (~cvcOnly=false) => {
             fieldName=""
             id="vgs-cc-cvc"
             isFocused={isCVCFocused->Option.getOr(false)}
-            errorStr=vgsCVCError
             compact=true
             height="1.8rem"
           />
-          <ErrorComponent cvcError=vgsCVCError />
         </div>
       } else {
         <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>

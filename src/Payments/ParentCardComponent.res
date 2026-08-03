@@ -992,8 +992,13 @@ let make = (
             ? "animate-slowShow"
             : ""}`}
         style={gridGap: themeObj.spacingGridColumn}>
-        <div id=containerId style={position: "relative"} />
-        <RenderIf condition={showPaymentMethodsScreen || isBancontact || !isRawMode}>
+        <div
+          id=containerId
+          style={position: "relative", visibility: hasCardFieldStatus ? "visible" : "hidden"}
+        />
+        <RenderIf
+          condition={hasCardFieldStatus &&
+          (showPaymentMethodsScreen || isBancontact || !isRawMode)}>
           {<>
             <CardBusinessFields
               paymentMethod

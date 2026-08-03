@@ -78,6 +78,7 @@ let make = (
     layout,
   } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let {hideCardExpiry} = CardUtils.getLayoutClass(layout).savedMethodCustomization
+  let {innerLayout} = config.appearance
   let (cardBrand, setCardBrand) = Jotai.useAtom(JotaiAtoms.cardBrand)
   let (savedCardCvcState, setLocalSavedCardCvcState) = React.useState(_ =>
     CardIframeProtocol.initialSavedCardCvcState
@@ -304,12 +305,40 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf
+                condition={hideCardExpiry &&
+                isActive &&
+                innerLayout === Spaced &&
+                savedCardCvcState.error !== ""}>
+                <div
+                  className="Error pt-1 mt-1 ml-3"
+                  style={
+                    color: themeObj.colorDangerText,
+                    fontSize: themeObj.fontSizeSm,
+                  }>
+                  {React.string(savedCardCvcState.error)}
+                </div>
+              </RenderIf>
+              <RenderIf
                 condition={isActive && displayBillingDetails && billingDetailsArrayLength > 0}>
                 <div className="tracking-wide text-sm text-left gap-2 mt-4 ml-2">
                   <div className="font-semibold"> {React.string(billingDetailsText)} </div>
                   <div className="font-normal">
                     {React.string(Array.join(billingDetailsArray, ", "))}
                   </div>
+                </div>
+              </RenderIf>
+              <RenderIf
+                condition={!hideCardExpiry &&
+                isActive &&
+                innerLayout === Spaced &&
+                savedCardCvcState.error !== ""}>
+                <div
+                  className="Error pt-1 mt-1 ml-1"
+                  style={
+                    color: themeObj.colorDangerText,
+                    fontSize: themeObj.fontSizeSm,
+                  }>
+                  {React.string(savedCardCvcState.error)}
                 </div>
               </RenderIf>
               <RenderIf condition={isCardExpired}>

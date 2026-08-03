@@ -47,7 +47,9 @@ let make = (
     ? CardValidations.getobjFromCardPattern(savedCardBrand).maxCVCLength
     : 4
   let compressedLayoutStyleForCvcError =
-    innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
+    !isSavedCardCvcFlow && innerLayout === Compressed && cvcError->String.length > 0
+      ? "!border-l-0"
+      : ""
 
   // Single submit handler for both modes:
   //   • saved-card flow: SavedMethods forwards doSubmit (carrying the selected
@@ -255,6 +257,7 @@ let make = (
           ("empty", isCvcEmpty->JSON.Encode.bool),
           ("complete", isCVCValid->Option.getOr(false)->JSON.Encode.bool),
           ("valid", isCVCValid->Option.getOr(false)->JSON.Encode.bool),
+          ("error", cvcError->JSON.Encode.string),
         ]->Dict.fromArray
       Utils.messageParentWindow(
         [("savedCardCvcStatus", status->JSON.Encode.object)],
@@ -262,7 +265,14 @@ let make = (
       )
     }
     None
-  }, (isSavedCardCvcFlow, isCvcEmpty, isCvcComplete, isCVCValid, keys.parentURL))
+  }, (
+    isSavedCardCvcFlow,
+    isCvcEmpty,
+    isCvcComplete,
+    isCVCValid,
+    cvcError,
+    keys.parentURL,
+  ))
 
   React.useEffect(() => {
     if !isSavedCardCvcFlow {
@@ -288,7 +298,7 @@ let make = (
     value=cvcNumber
     onChange=changeCVCNumber
     onBlur=handleCVCBlur
-    errorString=cvcError
+    errorString={isSavedCardCvcFlow ? "" : cvcError}
     type_="tel"
     className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
     maxLength=maxCvcLength
