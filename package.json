@@ -13,6 +13,7 @@
     "@rescript/runtime": "12.3.0",
     "@sentry/react": "^9.9.0",
     "@sentry/webpack-plugin": "^3.2.2",
+    "final-form": "^5.0.0",
     "jotai": "^2.0.0",
     "react": "19.2.8",
     "react-datepicker": "^8.4.0",
@@ -112,5 +113,6 @@
       }
     ],
     "repositoryUrl": "https://github.com/juspay/hyperswitch-web.git"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
