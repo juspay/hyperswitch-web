@@ -162,10 +162,7 @@ let make = (~cvcOnly=false) => {
       ->Option.flatMap(JSON.Decode.object)
       ->Option.getOr(Dict.make())
     if cvcOnly {
-      emitSavedCardCvcStatus(
-        ~dict,
-        ~error=vgsErrorHandler(dict, "card_cvc", localeString),
-      )
+      emitSavedCardCvcStatus(~dict, ~error=vgsErrorHandler(dict, "card_cvc", localeString))
     } else {
       let hasCardState = dict->Dict.get("card_number")->Option.isSome
       let hasExpiryState = dict->Dict.get("card_exp")->Option.isSome

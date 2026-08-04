@@ -265,14 +265,7 @@ let make = (
       )
     }
     None
-  }, (
-    isSavedCardCvcFlow,
-    isCvcEmpty,
-    isCvcComplete,
-    isCVCValid,
-    cvcError,
-    keys.parentURL,
-  ))
+  }, (isSavedCardCvcFlow, isCvcEmpty, isCvcComplete, isCVCValid, cvcError, keys.parentURL))
 
   React.useEffect(() => {
     if !isSavedCardCvcFlow {

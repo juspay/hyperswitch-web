@@ -96,6 +96,19 @@ let decodeCardInfo = (json: JSON.t): PaymentEventData.cardInfo => {
   }
 }
 
+let decodeFieldStatus = (status: Dict.t<JSON.t>): fieldStatus => {
+  complete: status->getBool("complete", false),
+  empty: status->getBool("empty", true),
+  isCvcEmpty: status->getBool("isCvcEmpty", true),
+  isCvcComplete: status->getBool("isCvcComplete", false),
+  isCardValid: status->getBool("isCardValid", false),
+  isExpiryValid: status->getBool("isExpiryValid", false),
+  isCvcValid: status->getBool("isCvcValid", false),
+  hasCardValidationStatus: status->getBool("hasCardValidationStatus", false),
+  hasExpiryValidationStatus: status->getBool("hasExpiryValidationStatus", false),
+  hasCvcValidationStatus: status->getBool("hasCvcValidationStatus", false),
+}
+
 let decodeStateUpdate = (~dict, ~allowRawCardNumber, ~allowFullCardState): option<
   decodedCardUpdate,
 > => {
@@ -111,37 +124,13 @@ let decodeStateUpdate = (~dict, ~allowRawCardNumber, ~allowFullCardState): optio
       CardSnapshot({
         cardBrand: update->getString("cardBrand", ""),
         rawCardNumber,
-        fieldStatus: {
-          complete: status->getBool("complete", false),
-          empty: status->getBool("empty", true),
-          isCvcEmpty: status->getBool("isCvcEmpty", true),
-          isCvcComplete: status->getBool("isCvcComplete", false),
-          isCardValid: status->getBool("isCardValid", false),
-          isExpiryValid: status->getBool("isExpiryValid", false),
-          isCvcValid: status->getBool("isCvcValid", false),
-          hasCardValidationStatus: status->getBool("hasCardValidationStatus", false),
-          hasExpiryValidationStatus: status->getBool("hasExpiryValidationStatus", false),
-          hasCvcValidationStatus: status->getBool("hasCvcValidationStatus", false),
-        },
+        fieldStatus: status->decodeFieldStatus,
         cardInfo: update->getJsonObjectFromDict("cardInfo")->decodeCardInfo,
       }),
     )
   } else if allowFullCardState && dict->Dict.get("cardFieldStatus")->Option.isSome {
     let status = dict->getJsonObjectFromDict("cardFieldStatus")->getDictFromJson
-    Some(
-      FieldStatusUpdate({
-        complete: status->getBool("complete", false),
-        empty: status->getBool("empty", true),
-        isCvcEmpty: status->getBool("isCvcEmpty", true),
-        isCvcComplete: status->getBool("isCvcComplete", false),
-        isCardValid: status->getBool("isCardValid", false),
-        isExpiryValid: status->getBool("isExpiryValid", false),
-        isCvcValid: status->getBool("isCvcValid", false),
-        hasCardValidationStatus: status->getBool("hasCardValidationStatus", false),
-        hasExpiryValidationStatus: status->getBool("hasExpiryValidationStatus", false),
-        hasCvcValidationStatus: status->getBool("hasCvcValidationStatus", false),
-      }),
-    )
+    Some(FieldStatusUpdate(status->decodeFieldStatus))
   } else {
     None
   }

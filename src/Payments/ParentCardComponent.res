@@ -5,6 +5,25 @@ open PaymentType
 let innerIframeContainerDivId = "parent-card-inner-iframe-container"
 let tokenResponseListenerActivity = "onParentCardTokenResponse"
 
+let encodeInnerPaymentOptions = (sdkConfig: CardTheme.jotaiConfig) => {
+  let fonts =
+    sdkConfig.config.fonts
+    ->Array.map(font =>
+      [
+        ("cssSrc", font.cssSrc->JSON.Encode.string),
+        ("family", font.family->JSON.Encode.string),
+        ("src", font.src->JSON.Encode.string),
+        ("weight", font.weight->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson
+    )
+    ->JSON.Encode.array
+  [
+    ("locale", sdkConfig.config.locale->JSON.Encode.string),
+    ("appearance", sdkConfig.config.appearance->Identity.anyTypeToJson),
+    ("fonts", fonts),
+  ]->getJsonFromArrayOfJson
+}
+
 @react.component
 let make = (
   ~isSavedCardFlow=false,
@@ -419,11 +438,7 @@ let make = (
         currentFlowType,
       ) = mountConfigRef.current
       let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey=currentPublishableKey)
-      let paymentOptionsVal =
-        [
-          ("locale", currentSdkConfig.config.locale->JSON.Encode.string),
-          ("appearance", currentSdkConfig.config.appearance->Identity.anyTypeToJson),
-        ]->getJsonFromArrayOfJson
+      let paymentOptionsVal = currentSdkConfig->encodeInnerPaymentOptions
       let supportedCardBrandEntries = switch supportedCardBrandsRef.current {
       | Some(brands) => [
           ("supportedCardBrands", brands->Array.map(JSON.Encode.string)->JSON.Encode.array),
@@ -525,11 +540,7 @@ let make = (
 
   React.useEffect(() => {
     if iframeMounted {
-      let paymentOptions =
-        [
-          ("locale", sdkConfig.config.locale->JSON.Encode.string),
-          ("appearance", sdkConfig.config.appearance->Identity.anyTypeToJson),
-        ]->getJsonFromArrayOfJson
+      let paymentOptions = sdkConfig->encodeInnerPaymentOptions
       iframeRef.current->Window.iframePostMessage(
         [
           ("paymentElementCreate", false->JSON.Encode.bool),
@@ -788,7 +799,15 @@ let make = (
     if !isSavedCardFlow {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-      if confirm.doSubmit {
+      if confirm.doSubmit && !hasCardFieldStatus {
+        // The public Payment Element can become ready before the nested collector has
+        // installed its submit listener. Settle the merchant promise instead of posting a
+        // message that could be dropped during that startup window.
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterFieldsText,
+        )
+      } else if confirm.doSubmit {
         let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
         let outerValid =
           areRequiredFieldsValid &&
@@ -964,6 +983,7 @@ let make = (
     intent,
     saveCard,
     isSavedCardFlow,
+    hasCardFieldStatus,
     isRawMode,
     isPMMFlow,
     isBancontact,
