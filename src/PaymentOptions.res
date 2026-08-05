@@ -122,6 +122,7 @@ let make = (
     ~cardProps,
     ~expiryProps,
     ~cvcProps,
+    ~skipCard=true,
   )
   SubscriptionEventHooks.useEmitPaymentMethodStatus(
     ~paymentMethodName=selectedPaymentOption.paymentMethodName,

@@ -37,8 +37,11 @@ let make = (
   )
 
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
-  let enabledCardSchemes =
-    paymentMethodListValue->PaymentUtils.getSupportedCardBrands->Option.getOr([])
+  let forwardedSupportedCardBrands = Jotai.useAtomValue(JotaiAtoms.supportedCardBrands)
+  let enabledCardSchemes = switch forwardedSupportedCardBrands {
+  | Some(brands) => brands
+  | None => paymentMethodListValue->PaymentUtils.getSupportedCardBrands->Option.getOr([])
+  }
 
   let matchedCardSchemes =
     cardNumber->CardValidations.clearSpaces->CardValidations.getAllMatchedCardSchemes

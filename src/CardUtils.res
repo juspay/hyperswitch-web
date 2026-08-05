@@ -18,6 +18,7 @@ type cardProps = {
   isCardValid: option<bool>,
   setIsCardValid: (option<bool> => option<bool>) => unit,
   isCardSupported: option<bool>,
+  updateCardSupport: option<bool> => unit,
   cardNumber: string,
   changeCardNumber: JsxEvent.Form.t => unit,
   handleCardBlur: JsxEvent.Focus.t => unit,
@@ -28,6 +29,7 @@ type cardProps = {
   maxCardLength: int,
   cardBrand: string,
   cardEligibilityError: option<string>,
+  updateCardEligibilityError: option<string> => unit,
   eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   isEligibilityPending: bool,
 }
@@ -38,6 +40,7 @@ let useDefaultCardProps = () => {
     isCardValid: None,
     setIsCardValid: _ => (),
     isCardSupported: None,
+    updateCardSupport: _ => (),
     cardNumber: "",
     changeCardNumber: _ => (),
     handleCardBlur: _ => (),
@@ -48,6 +51,7 @@ let useDefaultCardProps = () => {
     maxCardLength: 0,
     cardBrand: "",
     cardEligibilityError: None,
+    updateCardEligibilityError: _ => (),
     eligibilitySurchargeDetails: None,
     isEligibilityPending: false,
   }
@@ -207,6 +211,31 @@ let getCardStringFromType = val => {
   | UNIONPAY => "UnionPay"
   | INTERAC => "Interac"
   | NOTFOUND => "NOTFOUND"
+  }
+}
+
+let normalizeCardBrand = brand => {
+  let normalized =
+    brand
+    ->String.toLowerCase
+    ->String.replaceRegExp(%re("/[_\\s-]/g"), "")
+  switch normalized {
+  | "visa" => "Visa"
+  | "mastercard" => "Mastercard"
+  | "americanexpress"
+  | "amex" => "AmericanExpress"
+  | "maestro" => "Maestro"
+  | "dinersclub"
+  | "diners" => "DinersClub"
+  | "discover" => "Discover"
+  | "bajaj" => "BAJAJ"
+  | "sodexo" => "SODEXO"
+  | "rupay" => "RuPay"
+  | "jcb" => "JCB"
+  | "cartesbancaires" => "CartesBancaires"
+  | "unionpay" => "UnionPay"
+  | "interac" => "Interac"
+  | _ => brand
   }
 }
 
@@ -773,8 +802,8 @@ let getCardBrandInvalidError = (~cardBrand, ~localeString: LocaleStringTypes.loc
   }
 }
 
-let emitExpiryDate = formattedExpiry =>
-  Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
+let emitExpiryDate = (~targetOrigin="*", formattedExpiry) =>
+  Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)], ~targetOrigin)
 
 let emitIsFormReadyForSubmission = isFormReadyForSubmission =>
   Utils.messageParentWindow([

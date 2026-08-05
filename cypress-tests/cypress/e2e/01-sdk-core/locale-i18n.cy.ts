@@ -141,11 +141,16 @@ describe("Locale / i18n Tests", () => {
   beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
-    getIframeBody = () => cy.iframe(iframeSelector);
+    getIframeBody = () => cy.paymentElementBody();
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
       connectorProfileIdMapping.get(connectorEnum.STRIPE),
+    );
+    changeObjectKeyValue(
+      createPaymentBody,
+      "email",
+      "hyperswitch_sdk_demo_id@gmail.com",
     );
     changeObjectKeyValue(createPaymentBody, "billing", defaultBillingAddress);
   });
@@ -287,6 +292,9 @@ describe("Locale / i18n Tests", () => {
           "no_three_ds",
         );
         removeObjectKey(createPaymentBody, "billing");
+        // Cybersource returns the billing fields through required_fields only
+        // when the payment intent does not already provide the contact data.
+        removeObjectKey(createPaymentBody, "email");
 
         cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
           cy.getGlobalState("clientSecret").then((clientSecret) => {
@@ -296,7 +304,8 @@ describe("Locale / i18n Tests", () => {
 
         cy.waitForSDKReady();
 
-        getIframeBody()
+        // Billing fields remain owned by the outer Payment Element iframe.
+        cy.iframe(iframeSelector)
           .contains(billingDetailsText, { timeout: 10000 })
           .should("be.visible");
       });

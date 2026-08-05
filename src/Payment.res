@@ -23,7 +23,13 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     paymentMode->getPaymentMode
   }, [paymentMode])
 
-  let {cardProps, expiryProps, cvcProps, zipProps, blurState} = useCardForm(~logger, ~paymentType)
+  let {cardProps, expiryProps, cvcProps, zipProps, blurState} = useCardForm(
+    ~logger,
+    ~paymentType,
+    // The unified Card flow owns eligibility in ParentCardComponent. Keep the
+    // legacy hook enabled for the standalone card-number/expiry/CVC elements.
+    ~runEligibility=paymentType !== Card,
+  )
   let {isCardValid, setCardError, cardNumber, cardBrand, cardEligibilityError} = cardProps
   let {isExpiryValid, setExpiryError, cardExpiry} = expiryProps
   let {isCVCValid, setCvcError, cvcNumber} = cvcProps
