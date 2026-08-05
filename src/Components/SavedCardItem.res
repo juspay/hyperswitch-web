@@ -376,7 +376,7 @@ let make = (
                   cardBrand={cardBrand->CardUtils.getCardType}
                 />
                 <RenderIf condition={isCard}>
-                  <SurchargeEligibilityNotice
+                  <EligibilityNotice
                     eligibilitySurchargeDetails
                     eligibilityError
                     isEligibilityPending

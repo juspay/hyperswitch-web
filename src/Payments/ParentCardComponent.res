@@ -1038,7 +1038,7 @@ let make = (
               setInstallmentsError
             />
             <RenderIf condition=isRawMode>
-              <SurchargeEligibilityNotice
+              <EligibilityNotice
                 eligibilitySurchargeDetails
                 eligibilityError=None
                 isEligibilityPending={isEligibilityPending &&

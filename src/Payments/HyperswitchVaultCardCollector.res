@@ -119,7 +119,7 @@ let make = (
     <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>
       <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
         <CardFields cardProps expiryProps cvcProps />
-        <SurchargeEligibilityNotice
+        <EligibilityNotice
           eligibilitySurchargeDetails
           eligibilityError=None
           isEligibilityPending={isEligibilityPending && paymentMethodListValue.should_block_confirm}
