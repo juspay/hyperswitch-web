@@ -10,7 +10,6 @@ let make = (
   ~setIsClickToPayAuthenticateError,
   ~setPaymentToken,
   ~paymentTokenVal,
-  ~cvcProps,
   ~getVisaCards,
   ~setIsClickToPayRememberMe,
   ~closeComponentIfSavedMethodsAreEmpty,
@@ -213,7 +212,6 @@ let make = (
           brandIcon={customerMethod->CardUtils.getPaymentMethodBrand}
           index=i
           savedCardlength={ctpCards->Array.length}
-          cvcProps
           setRequiredFieldsBody
           setSelectedInstallmentPlan
           showInstallments
@@ -221,6 +219,7 @@ let make = (
           installmentsError
           setInstallmentsError
           eligibilitySurchargeDetails=None
+          eligibilityError=None
         />
       })
       ->React.array}

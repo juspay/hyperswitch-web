@@ -44,10 +44,19 @@ let savedCardCvcCss =
   ->Dict.fromArray
   ->JSON.Encode.object
 
-// Saved-card cvc field options: like cardCvcOptions but without the card icon and
-// with the compact sizing above, to match the non-vault saved-card cvc input.
-let savedCardCvcOptions = {
+let savedCardCvcValidations = savedCardBrand => {
+  let exactLengthPatterns =
+    CardValidations.getobjFromCardPattern(savedCardBrand).cvcLength
+    ->Array.map(length => `\\d{${length->Int.toString}}`)
+    ->Array.join("|")
+  ["required", `/^(?:${exactLengthPatterns})$/`]
+}
+
+// Without a card-number field VGS cannot infer the card brand, so use the saved
+// card's exact legacy CVC lengths instead of generic validCardSecurityCode.
+let savedCardCvcOptions = savedCardBrand => {
   ...cardCvcOptions,
+  validations: savedCardCvcValidations(savedCardBrand),
   showCardIcon: false,
   css: savedCardCvcCss,
 }

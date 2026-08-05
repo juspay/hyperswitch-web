@@ -40,7 +40,7 @@ describe("External 3DS using Redsys flow test", () => {
   beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
-    getIframeBody = () => cy.iframe(iframeSelector);
+    getIframeBody = () => cy.paymentElementBody();
 
     changeObjectKeyValue(
       createPaymentBody,
