@@ -166,19 +166,11 @@ let make = (
     }
 
     let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
-      let (componentType, newOptions) = switch componentTypeOrOptions->JSON.Classify.classify {
-      | String(typeStr) =>
-        let opts = legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
-        (typeStr, opts)
-      | Object(dict) =>
-        let componentType = dict->getString("type", "paymentMethodsManagement")
-        let opts = switch dict->Dict.get("options") {
-        | Some(o) => o
-        | None => legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
-        }
-        (componentType, opts)
-      | _ => ("paymentMethodsManagement", JSON.Encode.null)
-      }
+      let (componentType, newOptions) = parseComponentTypeAndOptions(
+        ~componentTypeOrOptions,
+        ~legacyOptions,
+        ~defaultComponentType="paymentMethodsManagement",
+      )
       componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
