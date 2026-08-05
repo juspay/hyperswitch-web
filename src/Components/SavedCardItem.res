@@ -54,7 +54,6 @@ let make = (
   ~brandIcon,
   ~index,
   ~savedCardlength,
-  ~cvcProps: CardUtils.cvcProps,
   ~setRequiredFieldsBody,
   ~setSelectedInstallmentPlan,
   ~showInstallments,
@@ -62,14 +61,14 @@ let make = (
   ~installmentsError,
   ~setInstallmentsError,
   ~eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  ~eligibilityError: option<string>,
   ~isEligibilityPending=false,
-  // Vault saved-card (return user) flow (VGS or Hyperswitch): when true, this card's
-  // CVC is collected inside the nested iframe (ParentCardComponent saved-card mode)
-  // instead of the plain input. `setCvcIframeRef` lifts the iframe ref to
-  // SavedMethods, which owns submit. Defaults keep other call sites
-  // (e.g. ClickToPayAuthenticate) intact.
+  // `isVaultCvcFlow` only selects whether the inner collector returns a vault
+  // token or raw CVC. SavedCardItem always renders that collector through
+  // ParentCardComponent.
   ~isVaultCvcFlow=false,
   ~setCvcIframeRef=_ => (),
+  ~setSavedCardCvcState=_ => (),
 ) => {
   let {themeObj, config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {
@@ -79,24 +78,17 @@ let make = (
     layout,
   } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let {hideCardExpiry} = CardUtils.getLayoutClass(layout).savedMethodCustomization
+  let {innerLayout} = config.appearance
   let (cardBrand, setCardBrand) = Jotai.useAtom(JotaiAtoms.cardBrand)
-  let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcError} = cvcProps
-  let isCvcEmpty = cvcNumber->String.length == 0
-  let cvcRef = React.useRef(Nullable.null)
+  let (savedCardCvcState, setLocalSavedCardCvcState) = React.useState(_ =>
+    CardIframeProtocol.initialSavedCardCvcState
+  )
+  let savedCardBrand = paymentItem.card.scheme->Option.getOr("")->CardUtils.normalizeCardBrand
+  let isCvcEmpty = savedCardCvcState.empty
   let pickerItemClass = isActive ? "PickerItem--selected" : ""
 
   let focusCVC = () => {
-    setCardBrand(_ =>
-      switch paymentItem.card.scheme {
-      | Some(val) => val
-      | None => ""
-      }
-    )
-    let optionalRef = cvcRef.current->Nullable.toOption
-    switch optionalRef {
-    | Some(_) => optionalRef->Option.forEach(input => input->CardUtils.focus)->ignore
-    | None => ()
-    }
+    setCardBrand(_ => savedCardBrand)
   }
 
   let isCard = paymentItem.paymentMethod === "card"
@@ -162,10 +154,9 @@ let make = (
   }, (isActive, paymentItem, country, state, pinCode))
 
   React.useEffect(() => {
-    // TODO - Handle Events for VGS/Vault case
-    CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
+    CardUtils.emitIsFormReadyForSubmission(savedCardCvcState.valid)
     None
-  }, [isCVCValid])
+  }, [savedCardCvcState.valid])
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
@@ -191,43 +182,27 @@ let make = (
 
   let isFloating = config.appearance.labels == Floating
   let cvcContainerClassName = isFloating ? "flex w-24" : "flex w-16 opacity-50"
-  let cvcHeight = isFloating ? "" : "1.8rem"
-  let cvcFieldName = isFloating ? localeString.cvcTextLabel : ""
 
-  let makeCvcInput = (~fieldName="", ~height="1.8rem", ~inputFieldClassName="flex justify-start") =>
-    <PaymentInputField
-      fieldName
-      isValid=isCVCValid
-      setIsValid=setIsCVCValid
-      value=cvcNumber
-      onChange=changeCVCNumber
-      onBlur=handleCVCBlur
-      errorString=""
-      inputFieldClassName
-      type_="tel"
-      className={`tracking-widest w-full`}
-      maxLength=4
-      inputRef=cvcRef
-      placeholder="123"
-      height
-      name={TestUtils.cardCVVInputTestId}
-      autocomplete="cc-csc"
-    />
-
-  // Inner-iframe container id for the VGS saved-card CVC. Only the active card
+  // Inner-iframe container id for the saved-card CVC. Only the active card
   // mounts this iframe (the CVC slots below are gated on isActive), so a single
   // constant id is unique at any time.
   let cvcIframeContainerId = "saved-card-cvc-inner-iframe-container"
-  // VGS saved-card flow renders the secure CVC iframe in place of the plain input;
-  // ParentCardComponent (saved-card mode) hosts it and lifts its ref to SavedMethods.
-  let makeCvcField = (~fieldName="", ~height="1.8rem", ~inputFieldClassName="flex justify-start") =>
-    isVaultCvcFlow
-      ? <ParentCardComponent
-          isSavedCardFlow=true containerId=cvcIframeContainerId setExternalIframeRef=setCvcIframeRef
-        />
-      : makeCvcInput(~fieldName, ~height, ~inputFieldClassName)
+  let cardCollectionMode = isVaultCvcFlow ? "tokenise" : "raw"
+  let handleSavedCardCvcStateChange = state => {
+    setLocalSavedCardCvcState(_ => state)
+    setSavedCardCvcState(state)
+  }
+  let makeCvcField = () =>
+    <ParentCardComponent
+      key=cardCollectionMode
+      isSavedCardFlow=true
+      containerId=cvcIframeContainerId
+      setExternalIframeRef=setCvcIframeRef
+      onSavedCardCvcStateChange=handleSavedCardCvcStateChange
+      savedCardBrand
+      cardCollectionMode
+    />
 
-  let {innerLayout} = config.appearance
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
 
@@ -308,13 +283,7 @@ let make = (
                     {React.string(`${localeString.cvcTextLabel}:`)}
                   </div>
                 </RenderIf>
-                <div className={cvcContainerClassName}>
-                  {makeCvcField(
-                    ~fieldName=cvcFieldName,
-                    ~height=cvcHeight,
-                    ~inputFieldClassName="",
-                  )}
-                </div>
+                <div className={cvcContainerClassName}> {makeCvcField()} </div>
               </div>
             </RenderIf>
           </div>
@@ -336,14 +305,17 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf
-                condition={hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
+                condition={hideCardExpiry &&
+                isActive &&
+                innerLayout === Spaced &&
+                savedCardCvcState.error !== ""}>
                 <div
                   className="Error pt-1 mt-1 ml-3"
                   style={
                     color: themeObj.colorDangerText,
                     fontSize: themeObj.fontSizeSm,
                   }>
-                  {React.string(cvcError)}
+                  {React.string(savedCardCvcState.error)}
                 </div>
               </RenderIf>
               <RenderIf
@@ -356,14 +328,17 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf
-                condition={!hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
+                condition={!hideCardExpiry &&
+                isActive &&
+                innerLayout === Spaced &&
+                savedCardCvcState.error !== ""}>
                 <div
                   className="Error pt-1 mt-1 ml-1"
                   style={
                     color: themeObj.colorDangerText,
                     fontSize: themeObj.fontSizeSm,
                   }>
-                  {React.string(cvcError)}
+                  {React.string(savedCardCvcState.error)}
                 </div>
               </RenderIf>
               <RenderIf condition={isCardExpired}>
@@ -401,8 +376,11 @@ let make = (
                   cardBrand={cardBrand->CardUtils.getCardType}
                 />
                 <RenderIf condition={isCard}>
-                  <SurchargeEligibilityNotice
-                    eligibilitySurchargeDetails isEligibilityPending className="mt-3 ml-1.5"
+                  <EligibilityNotice
+                    eligibilitySurchargeDetails
+                    eligibilityError
+                    isEligibilityPending
+                    className="mt-3 ml-1.5"
                   />
                 </RenderIf>
               </RenderIf>

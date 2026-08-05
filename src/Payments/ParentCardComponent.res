@@ -3,28 +3,65 @@ open UtilityHooks
 open PaymentType
 
 let innerIframeContainerDivId = "parent-card-inner-iframe-container"
+let tokenResponseListenerActivity = "onParentCardTokenResponse"
 
-// `isSavedCardFlow` reuses this component as the inner-iframe host for the
-// saved-card (return user) CVC flow. In that mode it only mounts + renders the
-// CVC iframe (no DynamicFields / checkbox / installments / terms — those belong
-// to SavedCardItem) and does NOT own submit: SavedMethods forwards the doSubmit
-// message to the iframe (via `setExternalIframeRef`) and confirms the payment.
+let encodeInnerPaymentOptions = (sdkConfig: CardTheme.jotaiConfig) => {
+  let fonts =
+    sdkConfig.config.fonts
+    ->Array.map(font =>
+      [
+        ("cssSrc", font.cssSrc->JSON.Encode.string),
+        ("family", font.family->JSON.Encode.string),
+        ("src", font.src->JSON.Encode.string),
+        ("weight", font.weight->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson
+    )
+    ->JSON.Encode.array
+  [
+    ("locale", sdkConfig.config.locale->JSON.Encode.string),
+    ("appearance", sdkConfig.config.appearance->Identity.anyTypeToJson),
+    ("fonts", fonts),
+  ]->getJsonFromArrayOfJson
+}
+
 @react.component
 let make = (
   ~isSavedCardFlow=false,
   ~containerId=innerIframeContainerDivId,
   ~setExternalIframeRef: option<Nullable.t<Dom.element> => unit>=?,
+  ~onSavedCardCvcStateChange: option<CardIframeProtocol.savedCardCvcState => unit>=?,
+  ~savedCardBrand="",
+  ~cardCollectionMode="tokenise",
+  ~isBancontact=false,
+  ~flowType=CardThemeType.Payment,
 ) => {
-  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let {
+    clientSecret,
+    publishableKey,
+    iframeId,
+    paymentId,
+    sdkHandleOneClickConfirmPayment,
+  } = Jotai.useAtomValue(JotaiAtoms.keys)
+  let sdkSessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
+  let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let optionsPayment = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let sdkConfig = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let isConfigReady = Jotai.useAtomValue(JotaiAtoms.isConfigReady)
   let nickname = Jotai.useAtomValue(JotaiAtoms.userCardNickName)
+  let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
+  let fullName = Jotai.useAtomValue(JotaiAtoms.userFullName)
+  let phoneNumber = Jotai.useAtomValue(JotaiAtoms.userPhoneNumber)
+  let clickToPayConfig = Jotai.useAtomValue(JotaiAtoms.clickToPayConfig)
   let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
   let sessionToken = Jotai.useAtomValue(JotaiAtoms.sessions)
   let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
+  let setComplete = Jotai.useSetAtom(JotaiAtoms.fieldsComplete)
+  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Jotai.useAtom(
+    JotaiAtoms.showPaymentMethodsScreen,
+  )
 
   let {
     displaySavedPaymentMethodsCheckbox,
@@ -35,8 +72,20 @@ let make = (
   } = optionsPayment
   let layoutClass = CardUtils.getLayoutClass(layout)
   let {themeObj, localeString} = sdkConfig
+  let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin
+  let isRawMode = cardCollectionMode === "raw"
+  let isRawNewCardFlow = isRawMode && !isSavedCardFlow
+  let isPMMFlow = flowType === CardThemeType.PaymentMethodsManagement
+  let loggerSource =
+    "hyper_" ++
+    flowType
+    ->CardThemeType.getPaymentModeToStrMapper
+    ->LoggerUtils.toSnakeCaseWithSeparator("_")
+  let paymentMethod = isBancontact ? "bank_redirect" : "card"
+  let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
@@ -45,22 +94,78 @@ let make = (
   let (selectedInstallmentPlan, setSelectedInstallmentPlan) = React.useState(_ => None)
   let (showInstallments, setShowInstallments) = React.useState(_ => false)
   let (installmentsError, setInstallmentsError) = React.useState(_ => "")
+  let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
+  let (isSaveDetailsWithClickToPay, setIsSaveDetailsWithClickToPay) = React.useState(_ => false)
+  let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
 
   let iframeRef = React.useRef(Nullable.null)
   let (iframeMounted, setIframeMounted) = React.useState(_ => false)
-  let (cardBrand, setCardBrand) = React.useState(_ => "")
+  let (innerCardState, setInnerCardState) = React.useState(_ => CardIframeProtocol.initialState)
+  let (savedCardCvcState, setSavedCardCvcState) = React.useState(_ =>
+    CardIframeProtocol.initialSavedCardCvcState
+  )
+  let {
+    cardBrand,
+    rawCardNumber,
+    cardFieldsComplete,
+    cardFieldsEmpty,
+    isCvcEmpty,
+    isCvcComplete,
+    hasCardFieldStatus,
+    isCardValid,
+    isExpiryValid,
+    isCvcValid,
+    hasCardValidationStatus,
+    hasExpiryValidationStatus,
+    hasCvcValidationStatus,
+    cardInfo,
+  } = innerCardState
   let setIsVgsScriptReady = Jotai.useSetAtom(JotaiAtoms.isVgsScriptReady)
 
-  // mountPostMessage is captured once (in useEffect0) and fires later when the
-  // inner iframe signals readiness, so it must read the LATEST config values
-  // via refs rather than its stale-at-creation closure.
-  let sdkConfigRef = React.useRef(sdkConfig)
-  let publishableKeyRef = React.useRef(publishableKey)
+  let mountConfigRef = React.useRef((
+    sdkConfig,
+    publishableKey,
+    sdkSessionId,
+    customPodUri,
+    paymentId,
+    sdkHandleOneClickConfirmPayment,
+    loggerSource,
+    isSavedCardFlow,
+    savedCardBrand,
+    cardCollectionMode,
+    isBancontact,
+    flowType,
+  ))
   React.useEffect(() => {
-    sdkConfigRef.current = sdkConfig
-    publishableKeyRef.current = publishableKey
+    mountConfigRef.current = (
+      sdkConfig,
+      publishableKey,
+      sdkSessionId,
+      customPodUri,
+      paymentId,
+      sdkHandleOneClickConfirmPayment,
+      loggerSource,
+      isSavedCardFlow,
+      savedCardBrand,
+      cardCollectionMode,
+      isBancontact,
+      flowType,
+    )
     None
-  }, (sdkConfig, publishableKey))
+  }, (
+    sdkConfig,
+    publishableKey,
+    sdkSessionId,
+    customPodUri,
+    paymentId,
+    sdkHandleOneClickConfirmPayment,
+    loggerSource,
+    isSavedCardFlow,
+    savedCardBrand,
+    cardCollectionMode,
+    isBancontact,
+    flowType,
+  ))
 
   let isGuestCustomer = useIsGuestCustomer()
   let isCustomerAcceptanceFromHook = useIsCustomerAcceptanceRequired(
@@ -70,111 +175,379 @@ let make = (
   )
   let isCustomerAcceptanceRequired =
     (!isGuestCustomer && alwaysSendCustomerAcceptance) || isCustomerAcceptanceFromHook
-
   let conditionsForShowingSaveCardCheckbox =
     paymentMethodListValue.mandate_payment->Option.isNone &&
     !isGuestCustomer &&
     paymentMethodListValue.payment_type !== SETUP_MANDATE &&
-    displaySavedPaymentMethodsCheckbox
+    displaySavedPaymentMethodsCheckbox &&
+    !isBancontact
 
-  // ── Step 1: Inject the inner iframe via LoaderPaymentElement.make().mount() ──
-  // The inner iframe is rendered by <LoaderController> (see App.res), exactly like
-  // the first iframe. So `mountPostMessage` — which LoaderPaymentElement invokes
-  // when the inner iframe signals { iframeMounted: true } — sends the standard
-  // `paymentElementCreate` message that LoaderController consumes. We send only the
-  // minimal fields needed to replicate current behaviour: paymentOptions (drives
-  // setConfigs → theme/locale/keys), iframeId (used for height), publishableKey.
-  // Height management is handled automatically by LoaderPaymentElement.mount's
-  // built-in { iframeHeight, iframeId } listener. Vault data is forwarded separately
-  // via the standard `sessions` message (Step 2).
+  let supportedCardBrands = React.useMemo(() => {
+    paymentMethodListValue->PaymentUtils.getSupportedCardBrands
+  }, [paymentMethodListValue])
+  let supportedCardBrandsRef = React.useRef(supportedCardBrands)
+  supportedCardBrandsRef.current = supportedCardBrands
+  let cardSupportState = React.useMemo(() => {
+    if isRawNewCardFlow && !isBancontact {
+      let clearCardNumber = rawCardNumber->CardValidations.clearSpaces
+      let detectedBrand = clearCardNumber->CardUtils.getCardBrand
+      let effectiveBrand = cardBrand === "" ? detectedBrand : cardBrand
+      PaymentUtils.checkIsCardSupported(clearCardNumber, effectiveBrand, supportedCardBrands)
+    } else {
+      None
+    }
+  }, (rawCardNumber, cardBrand, isRawNewCardFlow, isBancontact, supportedCardBrands))
+  let {
+    cardEligibilityError,
+    eligibilitySurchargeDetails,
+    isEligibilityPending,
+    triggerOnCardNumberChange,
+    resetEligibilityState: _,
+  } = UseCardEligibility.useCardEligibility(
+    ~logger=loggerState,
+    ~runEligibility=isRawNewCardFlow && !isBancontact,
+  )
+
+  React.useEffect(() => {
+    if isRawNewCardFlow && !isBancontact {
+      let clearCardNumber = rawCardNumber->CardValidations.clearSpaces
+      triggerOnCardNumberChange(
+        ~cardNumber=clearCardNumber,
+        ~isCardSupportedAndValid=cardSupportState->Option.getOr(false),
+      )
+    }
+    None
+  }, (
+    rawCardNumber,
+    isRawNewCardFlow,
+    isBancontact,
+    cardSupportState,
+    paymentMethodListValue.sdk_next_action,
+    clientSecret,
+  ))
+
+  React.useEffect(() => {
+    if isRawNewCardFlow && iframeMounted {
+      let supportState =
+        [
+          ("hasStatus", cardSupportState->Option.isSome->JSON.Encode.bool),
+          ("supported", cardSupportState->Option.getOr(true)->JSON.Encode.bool),
+        ]->Dict.fromArray
+      iframeRef.current->Window.iframePostMessage(
+        [("cardSupportStateUpdate", supportState->JSON.Encode.object)]->Dict.fromArray,
+        ~targetOrigin=innerIframeOrigin,
+      )
+    }
+    None
+  }, (
+    isRawNewCardFlow,
+    iframeMounted,
+    cardSupportState,
+    cardBrand,
+    rawCardNumber,
+    supportedCardBrands,
+  ))
+
+  React.useEffect(() => {
+    if isSavedCardFlow && iframeMounted {
+      iframeRef.current->Window.iframePostMessage(
+        [
+          ("savedCardBrand", savedCardBrand->CardUtils.normalizeCardBrand->JSON.Encode.string),
+        ]->Dict.fromArray,
+        ~targetOrigin=innerIframeOrigin,
+      )
+    }
+    None
+  }, (isSavedCardFlow, iframeMounted, savedCardBrand))
+
+  React.useEffect(() => {
+    if isRawNewCardFlow && iframeMounted {
+      let eligibilityState =
+        [
+          ("hasError", cardEligibilityError->Option.isSome->JSON.Encode.bool),
+          ("error", cardEligibilityError->Option.getOr("")->JSON.Encode.string),
+        ]->Dict.fromArray
+      iframeRef.current->Window.iframePostMessage(
+        [("cardEligibilityStateUpdate", eligibilityState->JSON.Encode.object)]->Dict.fromArray,
+        ~targetOrigin=innerIframeOrigin,
+      )
+    }
+    None
+  }, (isRawNewCardFlow, iframeMounted, cardEligibilityError))
+
+  let ctpCards = clickToPayConfig.clickToPayCards->Option.getOr([])
+  let clickToPayCardBrand =
+    isRawNewCardFlow &&
+    !isBancontact &&
+    !isPMMFlow &&
+    cardBrand !== "" &&
+    clickToPayConfig.availableCardBrands->Array.includes(cardBrand->String.toLowerCase)
+      ? cardBrand
+      : ""
+
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
+  let (cardBin, cardLast4, infoCardBrand, cardExpiryMonth, cardExpiryYear) = switch cardInfo {
+  | Some(info) => (
+      info.bin->Option.getOr(""),
+      info.last4->Option.getOr(""),
+      info.brand->Option.getOr(cardBrand),
+      info.expiryMonth->Option.getOr(""),
+      info.expiryYear->Option.getOr(""),
+    )
+  | None => ("", "", cardBrand, "", "")
+  }
+
+  // Preserve the pre-split, unconditional `paymentMethodInfo` message. The
+  // legacy top-level hook cannot observe nested card state, so Card now emits
+  // it here while all non-card methods continue using that hook.
+  React.useEffect(() => {
+    if !isSavedCardFlow && !isBancontact {
+      switch cardInfo {
+      | Some(info)
+        if isCardValid && isExpiryValid && info.isCardNumberValid && info.isExpiryValid =>
+        PaymentUtils.emitPaymentMethodInfo(
+          ~paymentMethod="card",
+          ~paymentMethodType="debit",
+          ~cardBrand=infoCardBrand->CardUtils.getCardType,
+          ~cardLast4,
+          ~cardBin,
+          ~cardExpiryMonth,
+          ~cardExpiryYear,
+          ~country,
+          ~state,
+          ~pinCode,
+          ~isCvcEmpty,
+        )
+      | _ =>
+        PaymentUtils.emitPaymentMethodInfo(
+          ~paymentMethod="card",
+          ~paymentMethodType="debit",
+          ~country,
+          ~state,
+          ~pinCode,
+        )
+      }
+    }
+    None
+  }, (
+    isSavedCardFlow,
+    cardBin,
+    cardLast4,
+    infoCardBrand,
+    cardExpiryMonth,
+    cardExpiryYear,
+    cardBrand,
+    isCardValid,
+    isExpiryValid,
+    isCvcEmpty,
+    country,
+    state,
+    pinCode,
+    isBancontact,
+  ))
+
+  UtilityHooks.useHandlePostMessages(
+    ~complete=cardFieldsComplete && isInstallmentValid && areRequiredFieldsValid,
+    ~empty=cardFieldsEmpty,
+    ~paymentType="card",
+    ~enabled=!isSavedCardFlow,
+  )
+  SubscriptionEventHooks.useEmitFormStatus(
+    ~empty=cardFieldsEmpty,
+    ~complete=cardFieldsComplete && isInstallmentValid && areRequiredFieldsValid,
+    ~enabled=!isSavedCardFlow,
+  )
+  SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
+
+  React.useEffect(() => {
+    if !isSavedCardFlow {
+      cardInfo->Option.forEach(info => emitter.emitCardInfo(~cardInfo=info))
+    }
+    None
+  }, (cardInfo, isSavedCardFlow))
+
+  React.useEffect(() => {
+    if !isSavedCardFlow && hasCardFieldStatus {
+      emitter.emitCvcStatus(~iframeId, ~isCvcEmpty, ~isCvcComplete)
+    }
+    None
+  }, (isSavedCardFlow, hasCardFieldStatus, isCvcEmpty, isCvcComplete, iframeId))
+
+  React.useEffect(() => {
+    if isSavedCardFlow {
+      onSavedCardCvcStateChange->Option.forEach(callback => callback(savedCardCvcState))
+      if savedCardCvcState.ready {
+        emitter.emitCvcStatus(
+          ~iframeId,
+          ~isCvcEmpty=savedCardCvcState.empty,
+          ~isCvcComplete=savedCardCvcState.complete,
+        )
+      }
+    }
+    None
+  }, (isSavedCardFlow, savedCardCvcState, iframeId))
+
+  React.useEffect(() => {
+    if !isSavedCardFlow && hasCardFieldStatus {
+      setComplete(_ => cardFieldsComplete && isInstallmentValid)
+      setShowPaymentMethodsScreen(_ => true)
+    }
+    None
+  }, (isSavedCardFlow, hasCardFieldStatus, cardFieldsComplete, isInstallmentValid))
+
+  // The legacy direct Card flow emitted this only after all three validation
+  // states had resolved. Preserve that timing at the public iframe boundary.
+  React.useEffect(() => {
+    if (
+      !isSavedCardFlow &&
+      hasCardValidationStatus &&
+      hasExpiryValidationStatus &&
+      hasCvcValidationStatus
+    ) {
+      CardUtils.emitIsFormReadyForSubmission(
+        isCardValid && isExpiryValid && isCvcValid && areRequiredFieldsValid,
+      )
+    }
+    None
+  }, (
+    isSavedCardFlow,
+    hasCardValidationStatus,
+    hasExpiryValidationStatus,
+    hasCvcValidationStatus,
+    isCardValid,
+    isExpiryValid,
+    isCvcValid,
+    areRequiredFieldsValid,
+  ))
+
   let mountPostMessage = React.useCallback(
     (mountedIframeRef, selectorString, _sdkHandleOneClickConfirmPayment) => {
-      let sdkConfig = sdkConfigRef.current
-      let publishableKey = publishableKeyRef.current
-
-      let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey)
-
-      // sdkConfig.config is the resolved config blob; LoaderController.setConfigs
-      // re-parses it via CardTheme.itemToObjMapper (it already carries
-      // clientSecret / sdkAuthorization / pmSessionId / loader).
-      let message = [
-        ("paymentElementCreate", true->JSON.Encode.bool),
-        ("paymentOptions", sdkConfig.config->Identity.anyTypeToJson),
-        ("iframeId", selectorString->JSON.Encode.string),
-        ("publishableKey", publishableKey->JSON.Encode.string),
-        ("endpoint", endpoint->JSON.Encode.string),
-        // Tells the inner iframe (PaymentMethodsSDK) to render only the vault
-        // CVC field for the saved-card flow. Always false for the new-card flow.
-        ("isSavedCardCvcFlow", isSavedCardFlow->JSON.Encode.bool),
-      ]->Dict.fromArray
-
-      mountedIframeRef->Window.iframePostMessage(message)
+      let (
+        currentSdkConfig,
+        currentPublishableKey,
+        currentSdkSessionId,
+        currentCustomPodUri,
+        currentPaymentId,
+        currentHandleOneClickConfirmPayment,
+        currentLoggerSource,
+        currentIsSavedCardFlow,
+        currentSavedCardBrand,
+        currentCardCollectionMode,
+        currentIsBancontact,
+        currentFlowType,
+      ) = mountConfigRef.current
+      let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey=currentPublishableKey)
+      let paymentOptionsVal = currentSdkConfig->encodeInnerPaymentOptions
+      let supportedCardBrandEntries = switch supportedCardBrandsRef.current {
+      | Some(brands) => [
+          ("supportedCardBrands", brands->Array.map(JSON.Encode.string)->JSON.Encode.array),
+        ]
+      | None => []
+      }
+      let message =
+        [
+          ("paymentElementCreate", true->JSON.Encode.bool),
+          ("paymentOptions", paymentOptionsVal),
+          ("iframeId", selectorString->JSON.Encode.string),
+          ("publishableKey", currentPublishableKey->JSON.Encode.string),
+          ("endpoint", endpoint->JSON.Encode.string),
+          ("sdkSessionId", currentSdkSessionId->JSON.Encode.string),
+          ("customPodUri", currentCustomPodUri->JSON.Encode.string),
+          ("paymentId", currentPaymentId->JSON.Encode.string),
+          ("parentURL", Window.Location.origin->JSON.Encode.string),
+          (
+            "sdkHandleOneClickConfirmPayment",
+            currentHandleOneClickConfirmPayment->JSON.Encode.bool,
+          ),
+          ("launchTime", Date.now()->JSON.Encode.float),
+          ("loggerSource", currentLoggerSource->JSON.Encode.string),
+          ("isSavedCardCvcFlow", currentIsSavedCardFlow->JSON.Encode.bool),
+          ("savedCardBrand", currentSavedCardBrand->JSON.Encode.string),
+          ("cardCollectionMode", currentCardCollectionMode->JSON.Encode.string),
+          ("isBancontactCardFlow", currentIsBancontact->JSON.Encode.bool),
+          (
+            "cardFlowType",
+            currentFlowType->CardThemeType.getPaymentModeToString->JSON.Encode.string,
+          ),
+        ]
+        ->Array.concat(supportedCardBrandEntries)
+        ->Dict.fromArray
+      mountedIframeRef->Window.iframePostMessage(message, ~targetOrigin=innerIframeOrigin)
       setIframeMounted(_ => true)
     },
     [],
   )
 
-  React.useEffect0(() => {
-    let setIframeRefFn = ref => {
-      iframeRef.current = ref
-      // Saved-card flow: hand the iframe ref up to SavedMethods, which forwards
-      // the doSubmit message to this CVC iframe and confirms the payment.
-      switch setExternalIframeRef {
-      | Some(fn) => fn(ref)
-      | None => ()
+  React.useEffect(() => {
+    if isConfigReady {
+      let setIframeRefFn = ref => {
+        iframeRef.current = ref
+        switch setExternalIframeRef {
+        | Some(fn) => fn(ref)
+        | None => ()
+        }
       }
+      let element = LoaderPaymentElement.make(
+        "paymentMethodsSDK",
+        Dict.make()->JSON.Encode.object,
+        setIframeRefFn,
+        [],
+        mountPostMessage,
+        ~appearance=Dict.make()->JSON.Encode.object,
+        ~redirectionFlags,
+        ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
+        ~logger=Some(loggerState),
+        ~confirmPayment=(_json => Promise.resolve(JSON.Encode.null)),
+      )
+      element.mount(`#${containerId}`)
+      Some(
+        () => {
+          element.unmount()
+          setExternalIframeRef->Option.forEach(callback => callback(Nullable.null))
+          setIframeMounted(_ => false)
+        },
+      )
+    } else {
+      None
     }
-    let element = LoaderPaymentElement.make(
-      "paymentMethodsSDK",
-      Dict.make()->JSON.Encode.object,
-      setIframeRefFn,
-      [],
-      mountPostMessage,
-      ~appearance=Dict.make()->JSON.Encode.object,
-      ~redirectionFlags,
-      ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
-      ~logger=Some(loggerState),
-      ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
-    )
-    element.mount(`#${containerId}`)
-    Some(
-      () => {
-        element.unmount()
-        setIframeMounted(_ => false)
-      },
-    )
-  })
+  }, [isConfigReady])
 
-  // ── Step 2: Forward sessions to the inner iframe (reactive) ─────────────────
-  // Mirrors Hyper.res's sessionUpdate push: when sessions resolve (or change),
-  // forward them via the standard `sessions` message that the inner LoaderController
-  // already handles. The inner iframe derives the vault from its own `sessions` atom,
-  // so ParentCardComponent stays vault-agnostic.
   React.useEffect(() => {
     switch (iframeMounted, sessionToken) {
     | (true, Loaded(s)) =>
-      iframeRef.current->Window.iframePostMessage([("sessions", s)]->Dict.fromArray)
+      iframeRef.current->Window.iframePostMessage(
+        [("sessions", s)]->Dict.fromArray,
+        ~targetOrigin=innerIframeOrigin,
+      )
     | _ => ()
     }
     None
   }, (iframeMounted, sessionToken))
 
-  // ── Step 3: Re-forward config (appearance) to the inner iframe (reactive) ────
-  // mountPostMessage forwards paymentOptions exactly once — when the inner iframe
-  // first signals readiness. If the merchant's custom appearance only resolves
-  // into sdkConfig AFTER that first send (a mount-time race), the inner iframe
-  // keeps the default appearance until a remount (e.g. switching payment-method
-  // tabs and back). Re-posting the latest config whenever sdkConfig changes applies
-  // the appearance immediately on first render. paymentElementCreate=false takes
-  // LoaderController's lightweight path: it re-runs setConfigs (theme/appearance)
-  // without re-initialising sessionId / options / render logs.
+  React.useEffect(() => {
+    switch (iframeMounted, supportedCardBrands) {
+    | (true, Some(brands)) =>
+      iframeRef.current->Window.iframePostMessage(
+        [
+          ("supportedCardBrands", brands->Array.map(JSON.Encode.string)->JSON.Encode.array),
+        ]->Dict.fromArray,
+        ~targetOrigin=innerIframeOrigin,
+      )
+    | _ => ()
+    }
+    None
+  }, (iframeMounted, supportedCardBrands))
+
   React.useEffect(() => {
     if iframeMounted {
+      let paymentOptions = sdkConfig->encodeInnerPaymentOptions
       iframeRef.current->Window.iframePostMessage(
         [
           ("paymentElementCreate", false->JSON.Encode.bool),
-          ("paymentOptions", sdkConfig.config->Identity.anyTypeToJson),
+          ("paymentOptions", paymentOptions),
         ]->Dict.fromArray,
+        ~targetOrigin=innerIframeOrigin,
       )
     }
     None
@@ -183,15 +556,69 @@ let make = (
   React.useEffect(() => {
     let handleMessage = (ev: Window.event) => {
       let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
-
-      if dict->Dict.get("cardBrandUpdate")->Option.isSome {
-        setCardBrand(_ => dict->getString("cardBrandUpdate", ""))
+      let isInnerCardMessage =
+        iframeRef.current
+        ->Nullable.toOption
+        ->Option.map(innerIframe =>
+          ev.source === innerIframe->Window.contentWindow && ev.origin === innerIframeOrigin
+        )
+        ->Option.getOr(false)
+      if (
+        ev.source === iframeParent &&
+        iframeMounted &&
+        (dict->Dict.get("doBlur")->Option.isSome ||
+        dict->Dict.get("doFocus")->Option.isSome ||
+        dict->Dict.get("doClearValues")->Option.isSome)
+      ) {
+        iframeRef.current->Window.iframePostMessage(dict, ~targetOrigin=innerIframeOrigin)
+      }
+      if isInnerCardMessage {
+        if isSavedCardFlow {
+          switch CardIframeProtocol.decodeSavedCardCvcState(dict) {
+          | Some(status) => setSavedCardCvcState(_ => status)
+          | None => ()
+          }
+        }
+        switch CardIframeProtocol.decodeStateUpdate(
+          ~dict,
+          ~allowRawCardNumber=isRawMode,
+          ~allowFullCardState=!isSavedCardFlow,
+        ) {
+        | Some(update) =>
+          setInnerCardState(previous => CardIframeProtocol.applyStateUpdate(previous, update))
+        | None => ()
+        }
       }
 
-      // The VGS Collect.js script failed to load in the inner iframe — card
-      // payment is impossible, so mark the vault script as unavailable. The
-      // payment methods list filters out "card" when this is false.
-      if dict->Dict.get("vgsScriptLoadFailed")->Option.isSome {
+      // Native card fields used to live directly in this iframe, so these
+      // messages reached the merchant without another hop. Re-emit the same
+      // public interaction payloads and normalize identity to this outer
+      // Payment Element (the nested iframe id is an implementation detail).
+      let publicElementType = flowType->CardThemeType.getPaymentModeToString
+      if isInnerCardMessage && dict->Dict.get("focus")->Option.isSome {
+        messageParentWindow([
+          ("focus", dict->getBool("focus", true)->JSON.Encode.bool),
+          ("elementType", publicElementType->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+        ])
+      }
+      if isInnerCardMessage && dict->Dict.get("blur")->Option.isSome {
+        messageParentWindow([
+          ("blur", dict->getBool("blur", true)->JSON.Encode.bool),
+          ("elementType", publicElementType->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+        ])
+      }
+      if isInnerCardMessage && dict->Dict.get("clickTriggered")->Option.isSome {
+        messageParentWindow([
+          ("clickTriggered", dict->getBool("clickTriggered", true)->JSON.Encode.bool),
+          ("event", dict->getString("event", "")->JSON.Encode.string),
+        ])
+      }
+      if isInnerCardMessage && dict->Dict.get("expiryDate")->Option.isSome {
+        messageParentWindow([("expiryDate", dict->getString("expiryDate", "")->JSON.Encode.string)])
+      }
+      if isInnerCardMessage && dict->Dict.get("vgsScriptLoadFailed")->Option.isSome {
         loggerState.setLogError(
           ~value=`Error during loading VGS script`->Identity.anyTypeToJson->JSON.stringify,
           ~eventName=VGS_VAULT_FLOW,
@@ -201,62 +628,266 @@ let make = (
     }
     Window.addEventListener("message", handleMessage)
     Some(() => Window.removeEventListener("message", handleMessage))
-  }, [iframeMounted])
+  }, (iframeMounted, isRawMode, isSavedCardFlow, flowType, iframeId))
+
+  let confirmBody = (
+    baseBody,
+    ~confirmParams,
+    ~includeAcceptance=true,
+    ~includeInstallments=true,
+    ~save=false,
+  ) => {
+    let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
+    let bodyWithAcceptance =
+      includeAcceptance && isCustomerAcceptanceRequired
+        ? baseBody->Array.concat(onSessionBody)
+        : baseBody
+    let installmentBody = includeInstallments
+      ? selectedInstallmentPlan->PaymentBody.installmentBody
+      : []
+    let finalBody =
+      bodyWithAcceptance
+      ->Array.concat(installmentBody)
+      ->mergeAndFlattenToTuples(requiredFieldsBody)
+    if save {
+      saveCard(~bodyArr=finalBody, ~confirmParam=confirmParams, ~handleUserError=true)
+    } else {
+      intent(
+        ~bodyArr=finalBody,
+        ~confirmParam=confirmParams,
+        ~handleUserError=false,
+        ~manualRetry=isManualRetryEnabled,
+      )
+    }
+  }
+
+  let handleClickToPay = (~rawCardData, ~confirmParams) => {
+    let cardNumber = rawCardData->getString("cardNumber", "")
+    let month = rawCardData->getString("month", "")
+    let year = rawCardData->getString("year", "")
+    let cvcNumber = rawCardData->getString("cvcNumber", "")
+    let {clickToPayProvider} = clickToPayConfig
+    ClickToPayHelpers.handleOpenClickToPayWindow()
+
+    switch clickToPayProvider {
+    | MASTERCARD =>
+      try {
+        (
+          async () => {
+            let encryptedResult = await ClickToPayHelpers.encryptCardForClickToPay(
+              ~cardNumber=cardNumber->CardValidations.clearSpaces,
+              ~expiryMonth=month,
+              ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
+              ~cvcNumber,
+              ~logger=loggerState,
+            )
+            switch encryptedResult {
+            | Ok(encryptedCard) =>
+              let response = await ClickToPayHelpers.handleProceedToPay(
+                ~encryptedCard,
+                ~isCheckoutWithNewCard=true,
+                ~isUnrecognizedUser=ctpCards->Array.length == 0,
+                ~email=email.value,
+                ~phoneNumber=phoneNumber.value,
+                ~countryCode=phoneNumber.countryCode
+                ->Option.getOr("")
+                ->String.replace("+", ""),
+                ~rememberMe=isClickToPayRememberMe,
+                ~logger=loggerState,
+                ~clickToPayProvider,
+                ~clickToPayToken=clickToPayConfig.clickToPayToken,
+              )
+              let responseDict = response.payload->getDictFromJson
+              let headers = responseDict->getDictFromDict("headers")
+              let checkoutResponseData = responseDict->getDictFromDict("checkoutResponseData")
+              confirmBody(
+                PaymentBody.mastercardClickToPayBody(
+                  ~merchantTransactionId=headers->getString("merchant-transaction-id", ""),
+                  ~correlationId=checkoutResponseData->getString("srcCorrelationId", ""),
+                  ~xSrcFlowId=headers->getString("x-src-cx-flow-id", ""),
+                ),
+                ~confirmParams,
+                ~includeAcceptance=false,
+              )
+            | Error(err) =>
+              loggerState.setLogError(
+                ~value={
+                  "message": `Error during checkout - ${err->formatException->JSON.stringify}`,
+                  "scheme": clickToPayProvider,
+                }
+                ->JSON.stringifyAny
+                ->Option.getOr(""),
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
+            }
+          }
+        )()->ignore
+      } catch {
+      | err =>
+        loggerState.setLogError(
+          ~value={
+            "message": `Error during checkout - ${err->formatException->JSON.stringify}`,
+            "scheme": clickToPayProvider,
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+      }
+    | VISA =>
+      let payload = [
+        convertKeyValueToJsonStringPair(
+          "primaryAccountNumber",
+          cardNumber->String.replaceAll(" ", ""),
+        ),
+        convertKeyValueToJsonStringPair("panExpirationMonth", month),
+        convertKeyValueToJsonStringPair("panExpirationYear", year),
+        convertKeyValueToJsonStringPair("cardSecurityCode", cvcNumber->String.trim),
+        convertKeyValueToJsonStringPair("cardHolderName", fullName.value->String.trim),
+      ]
+      let cardPayload = Dict.make()
+      payload->Array.forEach(((key, value)) => Dict.set(cardPayload, key, value))
+
+      (
+        async () => {
+          let encryptedCard =
+            await cardPayload->JSON.Encode.object->ClickToPayCardEncryption.getEncryptedCard
+          try {
+            let response = await ClickToPayHelpers.handleProceedToPay(
+              ~visaEncryptedCard=encryptedCard,
+              ~isCheckoutWithNewCard=true,
+              ~isUnrecognizedUser=ctpCards->Array.length == 0,
+              ~email=email.value,
+              ~phoneNumber=phoneNumber.value,
+              ~countryCode=phoneNumber.countryCode
+              ->Option.getOr("")
+              ->String.replace("+", ""),
+              ~rememberMe=isClickToPayRememberMe,
+              ~logger=loggerState,
+              ~clickToPayProvider,
+              ~clickToPayToken=clickToPayConfig.clickToPayToken,
+              ~orderId=clientSecret->Option.getOr(""),
+              ~fullName=fullName.value,
+            )
+            let responseDict = response.payload->getDictFromJson
+            confirmBody(
+              PaymentBody.visaClickToPayBody(
+                ~email=clickToPayConfig.email,
+                ~encryptedPayload=responseDict->getString("checkoutResponse", ""),
+              ),
+              ~confirmParams,
+              ~includeAcceptance=false,
+            )
+          } catch {
+          | err =>
+            loggerState.setLogError(
+              ~value={
+                "message": `Error during checkout - ${err->formatException->JSON.stringify}`,
+                "scheme": clickToPayProvider,
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
+          }
+        }
+      )()->ignore
+    | NONE => ()
+    }
+  }
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    // Saved-card flow: SavedMethods owns submit/confirm; this CVC-iframe host
-    // ignores the doSubmit message entirely.
     if !isSavedCardFlow {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-      if confirm.doSubmit {
+      if confirm.doSubmit && !hasCardFieldStatus {
+        // The public Payment Element can become ready before the nested collector has
+        // installed its submit listener. Settle the merchant promise instead of posting a
+        // message that could be dropped during that startup window.
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterFieldsText,
+        )
+      } else if confirm.doSubmit {
         let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
-        let isInstallmentValid = !showInstallments || selectedInstallmentPlan->Option.isSome
-        let outerValid = areRequiredFieldsValid && isNicknameValid && isInstallmentValid
+        let outerValid =
+          areRequiredFieldsValid &&
+          isNicknameValid &&
+          isInstallmentValid &&
+          cardEligibilityError->Option.isNone &&
+          !isEligibilityPending
         let innerMessage = json->getDictFromJson
         innerMessage->Dict.set("isOuterValid", outerValid->JSON.Encode.bool)
-        iframeRef.current->Window.iframePostMessage(innerMessage)
-        if !outerValid {
-          // Report the error back to Hyper.res immediately — do not forward to inner iframe.
-          let setUserError = message =>
-            postFailedSubmitResponse(~errortype="validation_error", ~message)
-          if !areRequiredFieldsValid {
-            setUserError(localeString.enterValidDetailsText)
-          } else if !isNicknameValid {
-            setUserError(localeString.enterValidDetailsText)
-          } else if !isInstallmentValid {
-            setUserError(localeString.installmentSelectPlanError)
-          }
-        } else {
-          // Forward the full doSubmit message (including confirmParams) to the inner iframe.
-          // iframeRef.current->Window.iframePostMessage(json->getDictFromJson)
 
-          let handle = (ev: Types.event) => {
-            let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
-
-            // Vault-agnostic confirm: takes the per-vault card body and merges the
-            // outer business-logic (customer-acceptance, installments, required
-            // fields) before calling intent. Shared by every vault token path.
-            let confirmWithVaultBody = baseBody => {
-              let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
-              let cardBody = isCustomerAcceptanceRequired
-                ? baseBody->Array.concat(onSessionBody)
-                : baseBody
-              let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
-              let finalBody =
-                cardBody->Array.concat(installmentBody)->mergeAndFlattenToTuples(requiredFieldsBody)
-              intent(
-                ~bodyArr=finalBody,
-                ~confirmParam=confirm.confirmParams,
-                ~handleUserError=false,
-                ~manualRetry=isManualRetryEnabled,
+        if outerValid {
+          let handle = (tokenEvent: Types.event) => {
+            let dict = tokenEvent.data->Identity.anyTypeToJson->getDictFromJson
+            let isInnerCardMessage =
+              iframeRef.current
+              ->Nullable.toOption
+              ->Option.map(innerIframe =>
+                tokenEvent.source === innerIframe->Window.contentWindow &&
+                  tokenEvent.origin === innerIframeOrigin
               )
-            }
-
-            if dict->Dict.get("cardTokenEvent")->Option.isSome {
-              // Hyperswitch vault: inner iframe sends the full vault API response.
-              // Decode it into a typed record; ParentCardComponent (or the merchant
-              // in a future direct-SDK flow) can then act on the structured fields.
+              ->Option.getOr(false)
+            if !isInnerCardMessage {
+              ()
+            } else if dict->Dict.get("rawCardEvent")->Option.isSome && isRawMode {
+              let rawCardData = dict->getJsonObjectFromDict("rawCardData")->getDictFromJson
+              let cardNumber = rawCardData->getString("cardNumber", "")
+              let month = rawCardData->getString("month", "")
+              let year = rawCardData->getString("year", "")
+              let cvcNumber = rawCardData->getString("cvcNumber", "")
+              let rawBrand = rawCardData->getString("cardBrand", "")
+              let cardNetwork = [
+                ("card_network", rawBrand !== "" ? rawBrand->JSON.Encode.string : JSON.Encode.null),
+              ]
+              let rawClickToPayBrand =
+                rawBrand !== "" &&
+                  clickToPayConfig.availableCardBrands->Array.includes(rawBrand->String.toLowerCase)
+                  ? rawBrand
+                  : ""
+              let isClickToPay =
+                (ctpCards->Array.length > 0 && rawClickToPayBrand !== "") ||
+                  isSaveDetailsWithClickToPay
+              if isClickToPay && !isBancontact && !isPMMFlow {
+                handleClickToPay(~rawCardData, ~confirmParams=confirm.confirmParams)
+              } else if isPMMFlow {
+                confirmBody(
+                  PaymentManagementBody.saveCardBody(
+                    ~cardNumber,
+                    ~month,
+                    ~year,
+                    ~cardHolderName=None,
+                    ~cvcNumber,
+                    ~cardBrand=cardNetwork,
+                    ~nickname=nickname.value,
+                  ),
+                  ~confirmParams=confirm.confirmParams,
+                  ~includeInstallments=false,
+                  ~save=true,
+                )
+              } else if isBancontact {
+                confirmBody(
+                  PaymentBody.bancontactBody(),
+                  ~confirmParams=confirm.confirmParams,
+                  ~includeAcceptance=false,
+                )
+              } else {
+                confirmBody(
+                  PaymentBody.cardPaymentBody(
+                    ~cardNumber,
+                    ~month,
+                    ~year,
+                    ~cardHolderName=None,
+                    ~cvcNumber,
+                    ~cardBrand=cardNetwork,
+                    ~nickname=nickname.value,
+                  ),
+                  ~confirmParams=confirm.confirmParams,
+                )
+              }
+            } else if dict->Dict.get("cardTokenEvent")->Option.isSome {
               let vaultResponse = dict->getJsonObjectFromDict("vaultResponse")
               let {
                 token,
@@ -275,43 +906,68 @@ let make = (
                       ~expiryMonth,
                       ~expiryYear,
                     )
-                confirmWithVaultBody(vaultBody)
+                confirmBody(vaultBody, ~confirmParams=confirm.confirmParams)
               } else {
                 Console.error("ParentCardComponent: payment token not found in vaultResponse")
               }
             } else if dict->Dict.get("vgsTokenEvent")->Option.isSome {
-              // VGS vault: inner iframe sends the aliased card fields (a distinct
-              // alias per field) after VGS tokenisation.
               let vgsCardData = dict->getJsonObjectFromDict("vgsCardData")->getDictFromJson
               let cardNumber = vgsCardData->getString("cardNumber", "")
-              let month = vgsCardData->getString("month", "")
-              let year = vgsCardData->getString("year", "")
-              let cvcNumber = vgsCardData->getString("cvcNumber", "")
-              // VGS returns a format-preserving card_number alias, so bin / last4 are
-              // derived from it the same way a real PAN would be (mirrors vaultCardBody).
-              let last4Digits = cardNumber->CardUtils.getCardLast4
-              let binNumber = cardNumber->CardUtils.getCardBin
-              confirmWithVaultBody(
+              confirmBody(
                 PaymentBody.vgsVaultCardBody(
                   ~cardNumber,
-                  ~month,
-                  ~year,
-                  ~cvcNumber,
-                  ~last4Digits,
-                  ~binNumber,
+                  ~month=vgsCardData->getString("month", ""),
+                  ~year=vgsCardData->getString("year", ""),
+                  ~cvcNumber=vgsCardData->getString("cvcNumber", ""),
+                  ~last4Digits=cardNumber->CardUtils.getCardLast4,
+                  ~binNumber=cardNumber->CardUtils.getCardBin,
                 ),
+                ~confirmParams=confirm.confirmParams,
               )
             } else if dict->Dict.get("cardTokenFail")->Option.isSome {
               postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
             }
-
-            // Validation / tokenization error from inner iframe — forward to Hyper.res
-            // so it can reject the merchant's confirmPayment() promise.
-            if dict->Dict.get("submitSuccessful")->Option.isSome {
+            if isInnerCardMessage && dict->Dict.get("submitSuccessful")->Option.isSome {
               messageParentWindow(dict->Dict.toArray)
             }
+            if (
+              isInnerCardMessage &&
+              (dict->Dict.get("rawCardEvent")->Option.isSome ||
+              dict->Dict.get("cardTokenEvent")->Option.isSome ||
+              dict->Dict.get("vgsTokenEvent")->Option.isSome ||
+              dict->Dict.get("cardTokenFail")->Option.isSome ||
+              dict->Dict.get("submitSuccessful")->Option.isSome)
+            ) {
+              EventListenerManager.removeSmartEventListener(
+                "message",
+                tokenResponseListenerActivity,
+              )
+            }
           }
-          EventListenerManager.addSmartEventListener("message", handle, "onParentCardTokenResponse")
+          EventListenerManager.addSmartEventListener(
+            "message",
+            handle,
+            tokenResponseListenerActivity,
+          )
+        }
+
+        iframeRef.current->Window.iframePostMessage(innerMessage, ~targetOrigin=innerIframeOrigin)
+        if !outerValid {
+          let setUserError = message =>
+            postFailedSubmitResponse(~errortype="validation_error", ~message)
+          if !areRequiredFieldsValid || !isNicknameValid {
+            setUserError(localeString.enterValidDetailsText)
+          } else if !isInstallmentValid {
+            setUserError(localeString.installmentSelectPlanError)
+          } else if isEligibilityPending && paymentMethodListValue.should_block_confirm {
+            setUserError(localeString.paymentDetailsBeingCheckedText)
+          } else if cardEligibilityError->Option.isSome {
+            setUserError(
+              EligibilityHelpers.getCardEligibilityErrorText(~cardEligibilityError, ~localeString),
+            )
+          } else {
+            setUserError(localeString.enterValidDetailsText)
+          }
         }
       }
     }
@@ -326,61 +982,91 @@ let make = (
     isManualRetryEnabled,
     localeString,
     intent,
+    saveCard,
     isSavedCardFlow,
+    hasCardFieldStatus,
+    isRawMode,
+    isPMMFlow,
+    isBancontact,
+    cardEligibilityError,
+    isEligibilityPending,
+    paymentMethodListValue.should_block_confirm,
+    clickToPayCardBrand,
+    isSaveDetailsWithClickToPay,
+    isClickToPayRememberMe,
+    clickToPayConfig,
+    ctpCards,
+    email,
+    phoneNumber,
+    fullName,
+    clientSecret,
   ))
-  useSubmitPaymentData(submitCallback)
+  useSubmitPaymentDataFromParent(submitCallback)
 
-  let cardType = cardBrand->CardUtils.getCardType
-  // Match the mt-4 top margin that other payment methods (e.g. CardPayment) add
-  // in accordion layout so the gap between the accordion title row and the
-  // payment content is consistent across all methods.
   let accordionMarginClass = layoutClass.\"type" === Accordion ? "mt-4" : ""
+  let showNickname = (!hideCardNicknameField && isCustomerAcceptanceRequired) || isPMMFlow
 
-  // Mirror the flex-col + gridGap layout that CardPayment used when everything
-  // was in a single component, so the iframe (card fields) and the outer
-  // business-logic elements (DynamicFields, checkbox, etc.) stay evenly spaced.
   isSavedCardFlow
-    ? // Saved-card (return user) flow: render only the CVC iframe container; the
-      // surrounding business-logic UI is owned by SavedCardItem / SavedMethods.
-      <div id=containerId style={position: "relative"} />
+    ? <div id=containerId style={position: "relative"} />
     : <div
-        className={`ParentCardComponent flex flex-col w-full ${accordionMarginClass}`}
+        className={`ParentCardComponent flex flex-col w-full ${accordionMarginClass} ${isRawMode
+            ? "animate-slowShow"
+            : ""}`}
         style={gridGap: themeObj.spacingGridColumn}>
-        // Inner iframe container — LoaderPaymentElement.mount injects the iframe here
-        // and manages its height automatically via { iframeHeight, iframeId } messages.
-
         <div
           id=containerId
-          style={
-            position: "relative",
-          }
+          style={position: "relative", visibility: hasCardFieldStatus ? "visible" : "hidden"}
         />
-        <DynamicFields
-          paymentMethod="card"
-          paymentMethodType="debit"
-          setRequiredFieldsBody
-          isBancontact=false
-          isSaveDetailsWithClickToPay=false
-        />
-        <RenderIf condition={conditionsForShowingSaveCardCheckbox && !alwaysSendCustomerAcceptance}>
-          <div className="flex items-center justify-start">
-            <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
-          </div>
+        <RenderIf
+          condition={hasCardFieldStatus &&
+          (showPaymentMethodsScreen || isBancontact || !isRawMode)}>
+          {<>
+            <CardBusinessFields
+              paymentMethod
+              paymentMethodType
+              setRequiredFieldsBody
+              isBancontact
+              isSaveDetailsWithClickToPay
+              showSaveCardCheckbox={conditionsForShowingSaveCardCheckbox &&
+              !alwaysSendCustomerAcceptance}
+              isSaveCardsChecked
+              setIsSaveCardsChecked
+              showNickname
+              setSelectedInstallmentPlan
+              showInstallments
+              setShowInstallments
+              installmentsError
+              setInstallmentsError
+            />
+            <RenderIf condition=isRawMode>
+              <EligibilityNotice
+                eligibilitySurchargeDetails
+                eligibilityError=None
+                isEligibilityPending={isEligibilityPending &&
+                paymentMethodListValue.should_block_confirm}
+              />
+            </RenderIf>
+            <RenderIf condition={cardBrand !== "" || isRawMode}>
+              <Surcharge
+                paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType}
+              />
+            </RenderIf>
+            <RenderIf condition={!isBancontact}>
+              <Terms paymentMethod paymentMethodType />
+            </RenderIf>
+            <RenderIf condition={clickToPayCardBrand !== ""}>
+              <div className="space-y-3 mt-2">
+                <ClickToPayHelpers.SrcMark cardBrands=clickToPayCardBrand height="32" />
+                <ClickToPayDetails
+                  isSaveDetailsWithClickToPay
+                  setIsSaveDetailsWithClickToPay
+                  clickToPayCardBrand
+                  isClickToPayRememberMe
+                  setIsClickToPayRememberMe
+                />
+              </div>
+            </RenderIf>
+          </>}
         </RenderIf>
-        <RenderIf condition={!hideCardNicknameField && isCustomerAcceptanceRequired}>
-          <NicknamePaymentInput />
-        </RenderIf>
-        <InstallmentOptions
-          setSelectedInstallmentPlan
-          showInstallments
-          setShowInstallments
-          paymentMethod="card"
-          errorString=installmentsError
-          setErrorString=setInstallmentsError
-        />
-        <RenderIf condition={cardBrand !== ""}>
-          <Surcharge paymentMethod="card" paymentMethodType="debit" cardBrand=cardType />
-        </RenderIf>
-        <Terms paymentMethod="card" paymentMethodType="debit" />
       </div>
 }

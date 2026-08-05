@@ -16,7 +16,7 @@ type eventData = {
   confirmTriggered: bool,
   oneClickConfirmTriggered: bool,
 }
-type event = {key: string, data: eventData, source: Dom.element}
+type event = {key: string, data: eventData, origin: string, source: Dom.element}
 type eventParam = Event(event) | EventData(eventData) | Empty
 type eventHandler = option<JSON.t> => unit
 @send external onload: (Dom.element, unit => promise<'a>) => promise<'a> = "onload"
