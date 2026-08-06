@@ -2065,6 +2065,30 @@ let getSdkAuthorizationData = sdkAuthorization => {
   }
 }
 
+// Parses the unified create() API arguments into (componentType, options).
+// Supports both:
+//   Legacy API: create("payment", options)
+//   New API:    create({ type: "payment", options: {...} })
+let parseComponentTypeAndOptions = (
+  ~componentTypeOrOptions: JSON.t,
+  ~legacyOptions: Nullable.t<JSON.t>,
+  ~defaultComponentType: string,
+): (string, JSON.t) => {
+  switch componentTypeOrOptions->JSON.Classify.classify {
+  | String(typeStr) =>
+    let opts = legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
+    (typeStr, opts)
+  | Object(dict) =>
+    let componentType = dict->getString("type", defaultComponentType)
+    let opts = switch dict->Dict.get("options") {
+    | Some(o) => o
+    | None => legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
+    }
+    (componentType, opts)
+  | _ => (defaultComponentType, JSON.Encode.null)
+  }
+}
+
 let getPaymentIdOrExtractFromSdkAuth = (~clientSecret, ~sdkAuthorization) => {
   switch sdkAuthorization {
   | Some(sdkAuth) =>
