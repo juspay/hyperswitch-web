@@ -3,6 +3,8 @@ node_modules
 .merlin
 .netlify
 lib/bs
+lib/ocaml
+lib/watch.lock
 public/*.LICENSE.txt
 public/app.js
 public/app.css

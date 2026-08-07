@@ -23,6 +23,7 @@ let make = React.memo((~name: string) => {
         clonedDict
       },
     )
+    None
   }, (setPortalNodes, name))
 
   <div id="sss" ref={ReactDOM.Ref.callbackDomRef(setDiv)} />
