@@ -199,7 +199,12 @@ let make = (
 
   let rendersVisibleInput = (field: fieldConfig) =>
     switch field.fieldRenderType {
-    | CardNumber | Cvc | CardExpiryMonth | CardExpiryYear | CardNetwork | LanguagePreference => false
+    | CardNumber
+    | Cvc
+    | CardExpiryMonth
+    | CardExpiryYear
+    | CardNetwork
+    | LanguagePreference => false
     | Dropdown => field.dropdownOptions->Option.getOr([])->Array.length > 0
     | _ => true
     }
@@ -234,20 +239,22 @@ let make = (
     )
   }, [missingRequiredFields])
 
+  // Exclude Country/PhoneCountryCode — they own their value outside RFF (userCountry atom /
+  // local state), so they're seeded through that path, not the persistence cache.
+  let isPersistableRenderType = field =>
+    switch field.fieldRenderType {
+    | Country | PhoneCountryCode => false
+    | _ => true
+    }
+
   // Fields whose typed values we persist across the remount. Unlike missingRequiredFieldsFiltered
   // (which dedups Email/CardHolderName to the single input shown), this keeps BOTH name paths
   // (first_name + last_name) and every email path — the combined name/email inputs write all of
   // them into RFF — while dropping the self-managed fields.
   let persistableFields = React.useMemo(() => {
-    missingRequiredFields->Array.filter(field =>
-      rendersVisibleInput(field) &&
-        // Exclude Country/PhoneCountryCode — they own their value outside RFF (userCountry atom /
-        // local state), so they're seeded through that path, not the persistence cache.
-        switch field.fieldRenderType {
-        | Country | PhoneCountryCode => false
-        | _ => true
-        }
-    )
+    missingRequiredFields->Array.filter(field => {
+      rendersVisibleInput(field) && isPersistableRenderType(field)
+    })
   }, [missingRequiredFields])
 
   let initialValuesWithBillingDataOverride = React.useMemo(() => {
@@ -259,7 +266,7 @@ let make = (
     persistableFields->Array.forEach(field =>
       switch cachedUserDynamicFieldsValues->Dict.get(field.confirmRequestWritePath) {
       | Some(value) =>
-        SuperpositionHelper.setValueAtNestedPath(
+        DynamicFieldsUtils.setValueAtNestedPathAllowingEmpty(
           merged,
           field.confirmRequestWritePath->String.split("."),
           value,
@@ -268,7 +275,7 @@ let make = (
       }
     )
     merged
-  }, [initialValuesWithBillingDataOverride])
+  }, (initialValuesWithBillingDataOverride, cachedUserDynamicFieldsValues, persistableFields))
 
   let isInsideBillingField = (field: fieldConfig) =>
     field.fieldRenderType === Email ||
