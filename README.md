@@ -88,13 +88,13 @@ Ways to get started with Hyperswitch:
 
   ### Setup Node
 
-  Check if your machine has node already installed by running the below command on your local machine.
+  Node.js 20.11.0 or newer is required. Check the installed version by running:
 
   ```bash
   node -v
   ```
 
-  If your machine does not have node installed in it, you can install it from [here](https://nodejs.org/en/download)
+  If Node.js is not installed, or the installed version is older than 20.11.0, install a supported version from [nodejs.org](https://nodejs.org/en/download).
 
     <h3>Clone the repo</h3>
 
@@ -113,6 +113,12 @@ Ways to get started with Hyperswitch:
      npm install
      ```
 
+     Alternatively, with Yarn Classic:
+
+     ```bash
+     yarn install
+     ```
+
   2. Once the installation is successful, you can open two terminals.<br>
 
      - On the first terminal run the following command for generating the build:
@@ -121,10 +127,22 @@ Ways to get started with Hyperswitch:
        npm run re:start
        ```
 
+       Alternatively, with Yarn Classic:
+
+       ```bash
+       yarn re:start
+       ```
+
      - On the second terminal, run the following command for starting the SDK server (by default on http://localhost:9050).
 
        ```bash
-         npm run start
+       npm run start
+       ```
+
+       Alternatively, with Yarn Classic:
+
+       ```bash
+       yarn start
        ```
 
      Upon success, you should see a message _Compiled successfully_ message on both of your terminals.
@@ -135,6 +153,14 @@ Ways to get started with Hyperswitch:
      cd Hyperswitch-React-Demo-App
      npm install
      npm run start
+     ```
+
+     Alternatively, with Yarn Classic:
+
+     ```bash
+     cd Hyperswitch-React-Demo-App
+     yarn install
+     yarn start
      ```
 
      Now you can launch the demo app on http://localhost:5252/ where you can test your payments.<br>

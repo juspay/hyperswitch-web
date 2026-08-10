@@ -28,7 +28,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let isShowOrPayUsing = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsing)
   let isShowOrPayUsingWhileLoading = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsingWhileLoading)
-  let (isTokenize, setIsTokenize) = Jotai.useAtom(JotaiAtoms.isTokenize)
+  let setIsTokenize = Jotai.useSetAtom(JotaiAtoms.isTokenize)
   let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
   let {publishableKey, iframeId} = Jotai.useAtomValue(JotaiAtoms.keys)
   let sessionToken = Jotai.useAtomValue(JotaiAtoms.sessions)
@@ -176,18 +176,50 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [savedMethods])
 
-  React.useEffect(() => {
-    let isTokenize = switch sdkConfigsValue.account_config {
-    | Some(val) =>
-      switch val.profile {
-      | Some(vault) => vault.vaulting_action === Tokenize
-      | None => false
-      }
+  // Resolve the collection mode from the loaded config on the first render.
+  // Keeping this behind an effect briefly mounted the raw collector before
+  // remounting the tokenising collector for vault-enabled accounts.
+  let isTokenize = switch sdkConfigsValue.account_config {
+  | Some(val) =>
+    switch val.profile {
+    | Some(vault) => vault.vaulting_action === Tokenize
     | None => false
     }
+  | None => false
+  }
+
+  React.useEffect(() => {
     setIsTokenize(_ => isTokenize)
     None
-  }, (sessionToken, sdkConfigsValue))
+  }, [isTokenize])
+
+  // `vaulting_action=tokenize` expresses the account preference, while the
+  // sessions response is the source of truth that a usable vault is actually
+  // available for this payment. Falling into Tokenise + NoVault keeps the card
+  // number inside the inner iframe, where the outer payment-method-list
+  // eligibility configuration is unavailable. Route that case through RawEmit
+  // so eligibility stays in the outer iframe, matching the pre-unification
+  // pre-unification no-vault card flow.
+  let hasVaultCredentials = React.useMemo(() => {
+    switch VaultHelpers.getVaultCredentialsFromSessions(sessionToken) {
+    | HyperswitchVault(credentials) =>
+      credentials.sdkAuthorization !== "" && credentials.pmSessionId !== ""
+    | VGS(credentials) => credentials.vaultId !== "" && credentials.environment !== ""
+    | NoVault => false
+    }
+  }, [sessionToken])
+  // While a tokenising account's sessions payload is in flight, retain the old
+  // tokenising collector experience. Only fall back to raw after sessions have
+  // resolved and confirmed that no usable vault exists; this also guarantees
+  // PAN forwarding is never enabled before vault resolution.
+  let cardCollectionMode = if !isTokenize {
+    "raw"
+  } else {
+    switch sessionToken {
+    | Loading => "tokenise"
+    | _ => hasVaultCredentials ? "tokenise" : "raw"
+    }
+  }
 
   let areAllApplePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreWalletRequiredFieldsPrefilled(
     ~paymentMethodType="apple_pay",
@@ -370,8 +402,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           getVisaCards
           closeComponentIfSavedMethodsAreEmpty
         />
-      | Card =>
-        isTokenize ? <ParentCardComponent /> : <CardPayment cardProps expiryProps cvcProps />
+      | Card => <ParentCardComponent key={`card-${cardCollectionMode}`} cardCollectionMode />
       | ACHTransfer =>
         <ReusableReactSuspense
           loaderComponent={<LoaderPaymentShimmer />} componentName="ACHBankTransferLazy">
@@ -417,7 +448,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           loaderComponent={<LoaderPaymentShimmer />} componentName="BacsBankDebitLazy">
           <BacsBankDebitLazy />
         </ReusableReactSuspense>
-      | BanContactCard => <CardPayment cardProps expiryProps cvcProps isBancontact=true />
+      | BanContactCard => <ParentCardComponent cardCollectionMode="raw" isBancontact=true />
       | BecsBankDebit =>
         <ReusableReactSuspense
           loaderComponent={<LoaderPaymentShimmer />} componentName="BecsBankDebitLazy">

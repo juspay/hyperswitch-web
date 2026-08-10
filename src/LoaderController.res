@@ -5,6 +5,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   open JotaiAtomsV2
 
   let (configAtom, setConfig) = Jotai.useAtom(configAtom)
+  let setIsConfigReady = Jotai.useSetAtom(isConfigReady)
   let (keys, setKeys) = Jotai.useAtom(keys)
   let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
   let setSdkConfigs = Jotai.useSetAtom(sdkConfigs)
@@ -49,6 +50,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsPaymentButtonHandlerProvided = Jotai.useSetAtom(isPaymentButtonHandlerProvidedAtom)
   let setIsTestMode = Jotai.useSetAtom(JotaiAtoms.isTestMode)
   let setIsSavedCardCvcFlow = Jotai.useSetAtom(JotaiAtoms.isSavedCardCvcFlow)
+  let setCardCollectionMode = Jotai.useSetAtom(JotaiAtoms.cardCollectionMode)
+  let setCardBrand = Jotai.useSetAtom(JotaiAtoms.cardBrand)
+  let setSupportedCardBrands = Jotai.useSetAtom(JotaiAtoms.supportedCardBrands)
+  let setSavedCardBrand = Jotai.useSetAtom(JotaiAtoms.savedCardBrand)
+  let setIsBancontactCardFlow = Jotai.useSetAtom(JotaiAtoms.isBancontactCardFlow)
+  let setCardFlowType = Jotai.useSetAtom(JotaiAtoms.cardFlowType)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -137,15 +144,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       )
       let appearance =
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-      let localeString = await CardTheme.getLocaleObject(
-        optionsLocaleString == "" ? config.locale : optionsLocaleString,
-      )
+      let requestedLocale = optionsLocaleString == "" ? config.locale : optionsLocaleString
+      let resolvedLocale = requestedLocale === "auto" ? Window.Navigator.language : requestedLocale
+      let localeString = await CardTheme.getLocaleObject(requestedLocale)
       let constantString = await CardTheme.getConstantStringsObject()
-      let _ = await S3Utils.initializeCountryData(~locale=config.locale, ~logger)
+      let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
       setConfig(_ => {
         config: {
           appearance,
-          locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
+          locale: resolvedLocale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
           pmSessionId: config.pmSessionId,
@@ -160,6 +167,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     } catch {
     | _ => ()
     }
+    setIsConfigReady(_ => true)
   }
 
   let updateRedirectionFlags = UtilityHooks.useUpdateRedirectionFlags()
@@ -262,6 +270,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             } else {
               let sdkSessionId = dict->getString("sdkSessionId", "no-element")
               logger.setSessionId(sdkSessionId)
+              if dict->Dict.get("loggerSource")->Option.isSome {
+                logger.setSource(dict->getString("loggerSource", "hyper_payment"))
+              }
               if GlobalVars.isInteg {
                 setBlockConfirm(_ => dict->getBool("blockConfirm", false))
               }
@@ -459,6 +470,30 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           | "" => ()
           | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
           }
+        }
+        if dict->Dict.get("cardCollectionMode")->Option.isSome {
+          setCardCollectionMode(_ =>
+            switch dict->getString("cardCollectionMode", "tokenise") {
+            | "raw" => RawEmit
+            | _ => Tokenise
+            }
+          )
+        }
+        if dict->Dict.get("savedCardBrand")->Option.isSome {
+          let savedCardBrand = dict->getString("savedCardBrand", "")->CardUtils.normalizeCardBrand
+          setCardBrand(_ => savedCardBrand)
+          setSavedCardBrand(_ => savedCardBrand)
+        }
+        if dict->Dict.get("supportedCardBrands")->Option.isSome {
+          setSupportedCardBrands(_ => Some(dict->getStrArray("supportedCardBrands")))
+        }
+        if dict->Dict.get("isBancontactCardFlow")->Option.isSome {
+          setIsBancontactCardFlow(_ => dict->Utils.getBool("isBancontactCardFlow", false))
+        }
+        if dict->Dict.get("cardFlowType")->Option.isSome {
+          setCardFlowType(_ =>
+            dict->getString("cardFlowType", "payment")->CardThemeType.getPaymentMode
+          )
         }
         if dict->getDictIsSome("sessions") {
           setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))

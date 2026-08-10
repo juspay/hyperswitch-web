@@ -1,19 +1,21 @@
 open JotaiAtoms
 open Utils
 
-// `isVaultCvcFlow` reuses this CVC element for the Hyperswitch-vault saved-card
+// `isSavedCardCvcFlow` reuses this CVC element for the unified saved-card
 // (return user) flow. The single submit handler below has two mutually-exclusive
 // paths:
 //   • default (Elements CVC widget): listens for `requestCVCConfirm` and confirms
 //     the payment-session intent itself with the entered CVC.
-//   • vault saved-card flow: listens for the forwarded doSubmit, tokenises the CVC
-//     through the payment-method-session update call, and posts `savedCardCvcTokenEvent`
-//     back to SavedMethods, which owns the confirm (mirrors the VGS saved-card flow).
+//   • saved-card flow: listens for the forwarded doSubmit and returns either the
+//     raw CVC (non-vault) or a tokenised CVC (vault) to SavedMethods, which remains
+//     the submit owner.
 @react.component
 let make = (
   ~cvcProps: CardUtils.cvcProps,
   ~paymentType: CardThemeType.mode,
+  ~isSavedCardCvcFlow=false,
   ~isVaultCvcFlow=false,
+  ~savedCardBrand="",
 ) => {
   let {config, localeString} = Jotai.useAtomValue(configAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
@@ -36,69 +38,87 @@ let make = (
     cvcError,
     setCvcError,
   } = cvcProps
+  let savedCardBrand = savedCardBrand->CardUtils.normalizeCardBrand
   let isCvcEmpty = cvcNumber === ""
-  let isCvcComplete = cvcNumber->String.length >= 3
+  let isCvcComplete = isSavedCardCvcFlow
+    ? CardUtils.checkCardCVC(cvcNumber, savedCardBrand)
+    : cvcNumber->String.length >= 3
+  let maxCvcLength = isSavedCardCvcFlow
+    ? CardValidations.getobjFromCardPattern(savedCardBrand).maxCVCLength
+    : 4
   let compressedLayoutStyleForCvcError =
-    innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
+    !isSavedCardCvcFlow && innerLayout === Compressed && cvcError->String.length > 0
+      ? "!border-l-0"
+      : ""
 
-  // Single submit handler for both modes (mutually exclusive on `isVaultCvcFlow`):
-  //   • vault saved-card flow: SavedMethods forwards the validated doSubmit (carrying
-  //     the selected card's payment_token); we tokenise the CVC via the
-  //     payment-method-session update call and post the token back as
-  //     `savedCardCvcTokenEvent`. SavedMethods builds the vault_card_token_data confirm
-  //     body and calls intent. Validation / tokenisation failures post a failed-submit
-  //     response, which SavedMethods forwards to Hyper.res to reject confirmPayment().
+  // Single submit handler for both modes:
+  //   • saved-card flow: SavedMethods forwards doSubmit (carrying the selected
+  //     payment_token). Validation happens here; non-vault flows return the raw CVC,
+  //     while vault flows tokenise it first.
   //   • Elements CVC widget: confirms the payment-session intent itself on the
   //     `requestCVCConfirm` message, posting the response back to the parent window.
   let submitCallback = React.useCallback((ev: Window.event) => {
     open Promise
-    if isVaultCvcFlow {
+    if isSavedCardCvcFlow {
       let confirmDict = ev.data->safeParse->getDictFromJson
       let confirm = confirmDict->ConfirmType.itemToObjMapper
       let isOuterValid = confirmDict->getBool("isOuterValid", true)
 
       if confirm.doSubmit {
-        let paymentMethodToken = confirmDict->getString("paymentToken", "")
-        let (pmSessionId, sdkAuthorization) = switch vaultCredentials {
-        | HyperswitchVault(creds) => (creds.pmSessionId, creds.sdkAuthorization)
-        | _ => ("", "")
-        }
-        let isCvcComplete = cvcNumber->String.length >= 3
+        let isCvcValid = isCVCValid->Option.getOr(false)
 
-        if isCvcComplete && isOuterValid {
+        if isCvcValid && isOuterValid {
           setCvcError(_ => "")
-          PaymentHelpersV2.updatePaymentMethod(
-            ~bodyArr=PaymentManagementBody.vaultUpdateCVVBody(~cvcNumber),
-            ~pmSessionId,
-            ~logger=loggerState,
-            ~customPodUri,
-            ~sdkAuthorization,
-          )
-          ->then(res => {
-            let vaultTokenData = VaultHelpers.decodeVaultTokenData(res)
-            if vaultTokenData.token !== "" {
-              messageParentWindow([
-                ("savedCardCvcTokenEvent", true->JSON.Encode.bool),
-                ("cvcToken", vaultTokenData.token->JSON.Encode.string),
-              ])
-            } else {
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+          if isVaultCvcFlow {
+            let (pmSessionId, sdkAuthorization) = switch vaultCredentials {
+            | HyperswitchVault(creds) => (creds.pmSessionId, creds.sdkAuthorization)
+            | _ => ("", "")
             }
-            resolve()
-          })
-          ->catch(_ => {
-            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-            resolve()
-          })
-          ->ignore
-        } else if isOuterValid {
-          // Only the CVC is invalid/empty (outer fields are validated upstream).
+            PaymentHelpersV2.updatePaymentMethod(
+              ~bodyArr=PaymentManagementBody.vaultUpdateCVVBody(~cvcNumber),
+              ~pmSessionId,
+              ~logger=loggerState,
+              ~customPodUri,
+              ~sdkAuthorization,
+            )
+            ->then(res => {
+              let vaultTokenData = VaultHelpers.decodeVaultTokenData(res)
+              if vaultTokenData.token !== "" {
+                messageParentWindow(
+                  [
+                    ("savedCardCvcTokenEvent", true->JSON.Encode.bool),
+                    ("cvcToken", vaultTokenData.token->JSON.Encode.string),
+                  ],
+                  ~targetOrigin=keys.parentURL,
+                )
+              } else {
+                postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+              }
+              resolve()
+            })
+            ->catch(_ => {
+              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+              resolve()
+            })
+            ->ignore
+          } else {
+            messageParentWindow(
+              [
+                ("savedCardCvcDataEvent", true->JSON.Encode.bool),
+                ("cvcNumber", cvcNumber->JSON.Encode.string),
+              ],
+              ~targetOrigin=keys.parentURL,
+            )
+          }
+        } else if !isCvcValid {
           let errorMsg =
             cvcNumber->String.length == 0
               ? localeString.cvcNumberEmptyText
               : localeString.inCompleteCVCErrorText
           setCvcError(_ => errorMsg)
-          postFailedSubmitResponse(~errortype="validation_error", ~message=errorMsg)
+          if isOuterValid {
+            postFailedSubmitResponse(~errortype="validation_error", ~message=errorMsg)
+          }
         }
       }
     } else {
@@ -200,7 +220,9 @@ let make = (
       }
     }
   }, (
+    isSavedCardCvcFlow,
     isVaultCvcFlow,
+    isCVCValid,
     cvcNumber,
     keys,
     paymentType,
@@ -210,7 +232,7 @@ let make = (
     localeString,
     vaultCredentials,
   ))
-  useSubmitPaymentData(submitCallback)
+  useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=keys.parentURL)
 
   React.useEffect(() => {
     SubscriptionEventHooks.emitReady(
@@ -221,31 +243,61 @@ let make = (
   }, (keys.iframeId, paymentType))
 
   React.useEffect(() => {
-    if !isVaultCvcFlow {
+    if !isSavedCardCvcFlow {
       let cvcInfoDict = [("isCvcEmpty", isCvcEmpty->JSON.Encode.bool)]->Dict.fromArray
       Utils.messageParentWindow([("cvcInfo", cvcInfoDict->JSON.Encode.object)])
     }
     None
   }, [isCvcEmpty])
+
   React.useEffect(() => {
-    emitter.emitCvcStatus(~iframeId=keys.iframeId, ~isCvcEmpty, ~isCvcComplete)
+    if isSavedCardCvcFlow {
+      let status =
+        [
+          ("empty", isCvcEmpty->JSON.Encode.bool),
+          ("complete", isCVCValid->Option.getOr(false)->JSON.Encode.bool),
+          ("valid", isCVCValid->Option.getOr(false)->JSON.Encode.bool),
+          ("error", cvcError->JSON.Encode.string),
+        ]->Dict.fromArray
+      Utils.messageParentWindow(
+        [("savedCardCvcStatus", status->JSON.Encode.object)],
+        ~targetOrigin=keys.parentURL,
+      )
+    }
     None
-  }, (isCvcEmpty, isCvcComplete, keys.iframeId))
+  }, (isSavedCardCvcFlow, isCvcEmpty, isCvcComplete, isCVCValid, cvcError, keys.parentURL))
+
+  React.useEffect(() => {
+    if !isSavedCardCvcFlow {
+      emitter.emitCvcStatus(~iframeId=keys.iframeId, ~isCvcEmpty, ~isCvcComplete)
+    }
+    None
+  }, (isSavedCardCvcFlow, isCvcEmpty, isCvcComplete, keys.iframeId))
+
+  React.useEffect(() => {
+    if isSavedCardCvcFlow {
+      cvcRef.current
+      ->Nullable.toOption
+      ->Option.forEach(input => input->CardUtils.focus)
+      ->ignore
+    }
+    None
+  }, [isSavedCardCvcFlow])
 
   <PaymentInputField
-    fieldName={isVaultCvcFlow ? "" : localeString.cvcTextLabel}
+    fieldName={isSavedCardCvcFlow ? "" : localeString.cvcTextLabel}
     isValid=isCVCValid
     setIsValid=setIsCVCValid
     value=cvcNumber
     onChange=changeCVCNumber
     onBlur=handleCVCBlur
-    errorString=cvcError
+    errorString={isSavedCardCvcFlow ? "" : cvcError}
     type_="tel"
     className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
-    maxLength=4
+    maxLength=maxCvcLength
     inputRef=cvcRef
     placeholder="123"
-    height={isVaultCvcFlow ? "1.8rem" : ""}
+    height={isSavedCardCvcFlow ? "1.8rem" : ""}
     name=TestUtils.cardCVVInputTestId
     autocomplete="cc-csc"
   />

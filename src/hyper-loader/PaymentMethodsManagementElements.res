@@ -170,7 +170,12 @@ let make = (
       })
     }
 
-    let create = (componentType, newOptions) => {
+    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+      let (componentType, newOptions) = parseComponentTypeAndOptions(
+        ~componentTypeOrOptions,
+        ~legacyOptions,
+        ~defaultComponentType="paymentMethodsManagement",
+      )
       componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
@@ -254,6 +259,7 @@ let make = (
         ~isPaymentManagementElement=true,
         ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
         ~logger=Some(logger),
+        ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
