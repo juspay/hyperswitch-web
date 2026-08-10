@@ -230,10 +230,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     | None => ()
     }
 
-    // Parse customConfig fields from first arg (HyperswitchConfiguration /
+    // Parse customEndpoints fields from first arg (HyperswitchConfiguration /
     // HyperswitchPlatformConfiguration). Applied after customBackendUrl so they take precedence.
     let customConfigDict = switch keys->JSON.Classify.classify {
-    | Object(json) => json->Dict.get("customConfig")->Option.flatMap(JSON.Decode.object)
+    | Object(json) => json->Dict.get("customEndpoints")->Option.flatMap(JSON.Decode.object)
     | _ => None
     }
 
@@ -241,28 +241,26 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     | Some(config) =>
       let getFieldStr = key =>
         config->Dict.get(key)->Option.flatMap(JSON.Decode.string)->Option.getOr("")
-      let customEndpoint = getFieldStr("customEndpoint")
-      let overrideCustomBackendEndpoint = getFieldStr("overrideCustomBackendEndpoint")
-      let overrideCustomAssetsEndpoint = getFieldStr("overrideCustomAssetsEndpoint")
-      let overrideCustomSDKConfigEndpoint = getFieldStr("overrideCustomSDKConfigEndpoint")
-      let overrideCustomConfirmEndpoint = getFieldStr("overrideCustomConfirmEndpoint")
-      let overrideCustomLoggingEndpoint = getFieldStr("overrideCustomLoggingEndpoint")
-      customEndpoint === "" ? () : ApiEndpoint.setApiEndPoint(customEndpoint)
-      overrideCustomBackendEndpoint === ""
+      let customBackendEndpoint = getFieldStr("customBackendEndpoint")
+      let customAssetEndpoint = getFieldStr("customAssetEndpoint")
+      let customSDKConfigEndpoint = getFieldStr("customSDKConfigEndpoint")
+      let customConfirmEndpoint = getFieldStr("customConfirmEndpoint")
+      let customLoggingEndpoint = getFieldStr("customLoggingEndpoint")
+      customBackendEndpoint === ""
         ? ()
-        : ApiEndpoint.setBackendOverrideEndPoint(overrideCustomBackendEndpoint)
-      overrideCustomAssetsEndpoint === ""
+        : ApiEndpoint.setBackendOverrideEndPoint(customBackendEndpoint)
+      customAssetEndpoint === ""
         ? ()
-        : ApiEndpoint.setAssetsEndPoint(overrideCustomAssetsEndpoint)
-      overrideCustomSDKConfigEndpoint === ""
+        : ApiEndpoint.setAssetsEndPoint(customAssetEndpoint)
+      customSDKConfigEndpoint === ""
         ? ()
-        : ApiEndpoint.setSdkConfigEndPoint(overrideCustomSDKConfigEndpoint)
-      overrideCustomConfirmEndpoint === ""
+        : ApiEndpoint.setSdkConfigEndPoint(customSDKConfigEndpoint)
+      customConfirmEndpoint === ""
         ? ()
-        : ApiEndpoint.setConfirmOverrideEndPoint(overrideCustomConfirmEndpoint)
-      overrideCustomLoggingEndpoint === ""
+        : ApiEndpoint.setConfirmOverrideEndPoint(customConfirmEndpoint)
+      customLoggingEndpoint === ""
         ? ()
-        : ApiEndpoint.setLoggingOverrideEndPoint(overrideCustomLoggingEndpoint)
+        : ApiEndpoint.setLoggingOverrideEndPoint(customLoggingEndpoint)
     | None => ()
     }
 

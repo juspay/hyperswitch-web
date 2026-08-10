@@ -1,10 +1,10 @@
 let switchToInteg = false
 let isLocal = false
 let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
-// General backend endpoint override (set by customBackendUrl or customConfig.customEndpoint)
+// General backend endpoint override (set by customBackendUrl)
 let apiEndPoint: ref<option<string>> = ref(None)
 
-// Per-endpoint specific overrides (set by customConfig.override* fields)
+// Per-endpoint specific overrides (set by customEndpoints fields)
 let backendOverrideEndPoint: ref<option<string>> = ref(None)
 let assetsEndPoint: ref<option<string>> = ref(None)
 let sdkConfigEndPoint: ref<option<string>> = ref(None)

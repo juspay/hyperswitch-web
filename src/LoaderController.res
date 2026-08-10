@@ -522,8 +522,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           setIsSamsungPayReady(_ => dict->getBool("isSamsungPayReady", false))
         }
 
-        // Apply the parent-computed backend endpoint regardless of whether customBackendUrl
-        // (legacy) or customConfig.customEndpoint (new) was used — both arrive resolved here.
+        // Apply the parent-computed general backend endpoint (set via legacy customBackendUrl).
+        // customEndpoints.customBackendEndpoint overrides backend calls only — not other endpoints.
         switch dict->getString("endpoint", "") {
         | "" => ()
         | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
