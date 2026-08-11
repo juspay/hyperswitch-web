@@ -15,16 +15,16 @@ describe("Card payment flow test", () => {
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  beforeEach(function () {
+  beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     const mifinityProfileId = connectorProfileIdMapping.get(
       connectorEnum.MIFINITY,
     );
-    if (!mifinityProfileId) {
-      this.skip();
-      return;
-    }
+    assert.ok(
+      mifinityProfileId,
+      "Mifinity connector credentials are missing — add mifinity to creds.json to run these tests.",
+    );
     changeObjectKeyValue(createPaymentBody, "profile_id", mifinityProfileId);
     changeObjectKeyValue(createPaymentBody, "currency", "EUR");
     changeObjectKeyValue(createPaymentBody, "billing", {

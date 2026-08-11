@@ -13,15 +13,15 @@ describe("Adyen AlipayHK payment flow", () => {
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  beforeEach(function () {
+  beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
 
     const adyenProfileId = connectorProfileIdMapping.get(connectorEnum.ADYEN);
-    if (!adyenProfileId) {
-      this.skip();
-      return;
-    }
+    assert.ok(
+      adyenProfileId,
+      "Adyen connector credentials are missing — add adyen to creds.json to run this test.",
+    );
 
     changeObjectKeyValue(createPaymentBody, "profile_id", adyenProfileId);
     changeObjectKeyValue(createPaymentBody, "currency", "HKD");

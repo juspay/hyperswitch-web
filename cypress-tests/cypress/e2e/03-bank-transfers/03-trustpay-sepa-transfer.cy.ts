@@ -13,17 +13,17 @@ describe("Trustpay SEPA Bank Transfer payment flow", () => {
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  beforeEach(function () {
+  beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
 
     const trustpayProfileId = connectorProfileIdMapping.get(
       connectorEnum.TRUSTPAY,
     );
-    if (!trustpayProfileId) {
-      this.skip();
-      return;
-    }
+    assert.ok(
+      trustpayProfileId,
+      "Trustpay connector credentials are missing — add trustpay to creds.json to run this test.",
+    );
 
     changeObjectKeyValue(createPaymentBody, "profile_id", trustpayProfileId);
     changeObjectKeyValue(createPaymentBody, "currency", "EUR");

@@ -13,15 +13,15 @@ describe("Fiuu Online Banking FPX payment flow", () => {
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  beforeEach(function () {
+  beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
 
     const fiuuProfileId = connectorProfileIdMapping.get(connectorEnum.FIUU);
-    if (!fiuuProfileId) {
-      this.skip();
-      return;
-    }
+    assert.ok(
+      fiuuProfileId,
+      "Fiuu connector credentials are missing — add fiuu to creds.json to run this test.",
+    );
 
     changeObjectKeyValue(createPaymentBody, "profile_id", fiuuProfileId);
     changeObjectKeyValue(createPaymentBody, "currency", "MYR");

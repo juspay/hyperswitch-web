@@ -16,12 +16,13 @@ describe("External 3DS using Netcetera Checks", () => {
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  beforeEach(function () {
-    // Run only when the Netcetera connector is configured for this merchant;
-    // otherwise report the suite as pending (visible skip) instead of failing.
-    if (!connectorProfileIdMapping.get(connectorEnum.NETCETERA)) {
-      this.skip();
-    }
+  beforeEach(() => {
+    // Fail fast if Netcetera credentials are absent — this is a config problem,
+    // not an intentional skip. Add netcetera to creds.json to run these tests.
+    assert.ok(
+      connectorProfileIdMapping.get(connectorEnum.NETCETERA),
+      "Netcetera connector credentials are missing — add netcetera to creds.json to run these tests.",
+    );
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.paymentElementBody();
