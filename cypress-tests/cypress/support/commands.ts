@@ -221,13 +221,25 @@ Cypress.Commands.add("getGlobalState", (key: any) => {
 });
 
 Cypress.Commands.add("nestedIFrame", (selector, callback) => {
-  cy.iframe("#orca-fullscreen")
-    .find(selector, { timeout: 15000 })
-    .should("exist")
+  cy.get("#orca-fullscreen", { timeout: 15000 })
     .should("be.visible")
-    .then(($ele) => {
-      const $body = $ele.contents().find("body") as JQuery<HTMLElement>;
-      callback($body);
+    .should(($fullscreen) => {
+      const fullscreenFrame = $fullscreen[0] as HTMLIFrameElement;
+      const nestedFrame =
+        fullscreenFrame.contentDocument?.querySelector(selector);
+      expect(nestedFrame, `${selector} inside #orca-fullscreen`).to.exist;
+    })
+    .then(($fullscreen) => {
+      const fullscreenFrame = $fullscreen[0] as HTMLIFrameElement;
+      const nestedFrame = fullscreenFrame.contentDocument?.querySelector(
+        selector,
+      ) as HTMLIFrameElement;
+
+      cy.wrap(nestedFrame)
+        .should("be.visible")
+        .its("contentDocument.body")
+        .should("not.be.empty")
+        .then((body) => callback(Cypress.$(body)));
     });
 });
 
@@ -464,6 +476,14 @@ Cypress.Commands.add(
                   Crypto: "crypto_currency",
                   "Cash / Voucher": "classic",
                   "E-Voucher": "evoucher",
+                  AlipayHK: "ali_pay_hk",
+                  DuitNow: "duit_now",
+                  "Bancontact Card": "bancontact_card",
+                  "SEPA Bank Transfer": "sepa_bank_transfer",
+                  "Online Banking Fpx": "online_banking_fpx",
+                  "Pay by Bank": "open_banking_uk",
+                  Klarna: "klarna",
+                  Trustly: "trustly",
                   Card: "card",
                 };
                 const selectValue =

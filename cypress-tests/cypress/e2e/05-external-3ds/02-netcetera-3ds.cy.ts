@@ -8,12 +8,8 @@ import {
   connectorProfileIdMapping,
   connectorEnum,
 } from "../../support/utils";
-// Skipped for now: setup.js provisions netcetera as an authentication-only
-// connector (three_ds_server), so the netcetera profile has no payment
-// connector and a card payment on it renders no payment form. Re-enable once a
-// combined "payment processor + netcetera authenticator + external-3DS" profile
-// is provisioned.
-describe.skip("External 3DS using Netcetera Checks", () => {
+
+describe("External 3DS using Netcetera Checks", () => {
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let publishableKey: string;
   let secretKey: string;
@@ -41,6 +37,7 @@ describe.skip("External 3DS using Netcetera Checks", () => {
       "request_external_three_ds_authentication",
       true,
     );
+    changeObjectKeyValue(createPaymentBody, "connector", ["cybersource"]);
     changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
@@ -83,10 +80,46 @@ describe.skip("External 3DS using Netcetera Checks", () => {
       .type("1234");
     getIframeBody().get("#submit").click();
 
+    // Wait for the fullscreen overlay with the 3DS iframe, then go into it
+    cy.wait(5000); // Give ACS time to set cookies/session
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
-      cy.wrap($body).find("#otp", { timeout: 10000 }).should("be.visible").type("1234");
-      cy.wrap($body).find("#sendOtp").click();
-      cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
+      // NDM Simulator: filter to only visible text inputs (OTP field)
+      cy.wrap($body)
+        .find("input[type='text']", { timeout: 30000 })
+        .filter(":visible")
+        .first()
+        .should("be.visible")
+        .type("1234");
+      // Click the Pay button
+      cy.wrap($body).find("button[type='submit']").contains("Pay").click();
+    });
+    // Poll the payment status via API until succeeded
+    cy.getGlobalState("paymentId").then((paymentId) => {
+      let attempts = 0;
+      const maxAttempts = 30;
+      const poll = () => {
+        cy.request({
+          method: "GET",
+          url: `${Cypress.env("HYPERSWITCH_API_URL")}/payments/${paymentId}?force_sync=true`,
+          headers: {
+            "api-key": secretKey,
+          },
+        }).then((response) => {
+          if (response.body.status === "succeeded") {
+            cy.log("Payment succeeded:", response.body.status);
+            expect(response.body.status).to.eq("succeeded");
+          } else if (attempts >= maxAttempts) {
+            throw new Error(
+              `Payment did not succeed after ${maxAttempts} attempts. Last status: ${response.body.status}`
+            );
+          } else {
+            attempts++;
+            cy.wait(2000);
+            poll();
+          }
+        });
+      };
+      poll();
     });
   });
 
@@ -111,11 +144,38 @@ describe.skip("External 3DS using Netcetera Checks", () => {
       .type("1234");
     getIframeBody().get("#submit").click();
 
+    cy.wait(5000); // Give ACS time to set cookies/session
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
-      cy.wrap($body).find("#cancel", { timeout: 10000 }).should("be.visible").click();
-      cy.contains("Payment failed. Please check your payment method.", { timeout: 10000 }).should(
-        "be.visible",
-      );
+      // Find the Cancel button in NDM Simulator
+      cy.wrap($body).find("button").contains("Cancel").click();
+    });
+    // Poll the payment status via API until it reaches "failed"
+    cy.getGlobalState("paymentId").then((paymentId) => {
+      let attempts = 0;
+      const maxAttempts = 20;
+      const poll = () => {
+        cy.request({
+          method: "GET",
+          url: `${Cypress.env("HYPERSWITCH_API_URL")}/payments/${paymentId}?force_sync=true`,
+          headers: {
+            "api-key": secretKey,
+          },
+        }).then((response) => {
+          if (response.body.status === "failed") {
+            cy.log("Payment failed as expected:", response.body.status);
+            expect(response.body.status).to.eq("failed");
+          } else if (attempts >= maxAttempts) {
+            throw new Error(
+              `Payment did not fail after ${maxAttempts} attempts. Last status: ${response.body.status}`
+            );
+          } else {
+            attempts++;
+            cy.wait(2000);
+            poll();
+          }
+        });
+      };
+      poll();
     });
   });
 
@@ -139,6 +199,33 @@ describe.skip("External 3DS using Netcetera Checks", () => {
       .should("be.visible")
       .type("1234");
     getIframeBody().get("#submit").click();
-    cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
+
+    // Poll the payment status via Retrieve Payment Intent API until succeeded
+    cy.getGlobalState("paymentId").then((paymentId) => {
+      let attempts = 0;
+      const maxAttempts = 30;
+      const poll = () => {
+        cy.request({
+          method: "GET",
+          url: `${Cypress.env("HYPERSWITCH_API_URL")}/payments/${paymentId}?force_sync=true`,
+          headers: {
+            "api-key": secretKey,
+          },
+        }).then((response) => {
+          expect(response.body.status).to.exist;
+          if (response.body.status === "succeeded") {
+            cy.log("Payment succeeded:", response.body.status);
+            expect(response.body.status).to.eq("succeeded");
+          } else if (attempts >= maxAttempts) {
+            throw new Error(`Payment did not succeed after ${maxAttempts} attempts. Last status: ${response.body.status}`);
+          } else {
+            attempts++;
+            cy.wait(2000);
+            poll();
+          }
+        });
+      };
+      poll();
+    });
   });
 });

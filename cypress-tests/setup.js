@@ -78,6 +78,9 @@ const PROFILE_KEY_MAP = {
 // ---------------------------------------------------------------------------
 const REQUIRED_CONNECTORS = [
   "stripe",
+  "adyen",
+  "fiuu",
+  "klarna",
   "cybersource",
   "trustpay",
   "bankofamerica",
@@ -89,6 +92,7 @@ const REQUIRED_CONNECTORS = [
   "cashtocode",
   "loonio",
   "gigadat",
+  "trustly",
 ];
 
 // ---------------------------------------------------------------------------
@@ -108,7 +112,7 @@ const REQUIRED_CONNECTORS = [
 // ---------------------------------------------------------------------------
 const CONNECTOR_PAYMENT_METHODS = {
   // ── Card processors (default) ───────────────────────────────────────────
-  // Covers: stripe, adyen, netcetera, redsys, bankofamerica, juspay
+  // Covers: adyen, netcetera, redsys, bankofamerica, juspay
   // recurring_enabled: true  → supports mandate / setup_future_usage flows
   default: [
     {
@@ -134,6 +138,64 @@ const CONNECTOR_PAYMENT_METHODS = {
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: true,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── Stripe ──────────────────────────────────────────────────────────────
+  // Card coverage + Bancontact redirect + Klarna pay_later (via Stripe).
+  stripe: [
+    {
+      payment_method: "card",
+      payment_method_types: [
+        {
+          payment_method_type: "credit",
+          card_networks: [
+            "Visa",
+            "Mastercard",
+            "AmericanExpress",
+            "UnionPay",
+            "DinersClub",
+          ],
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: true,
+          installment_payment_enabled: false,
+        },
+        {
+          payment_method_type: "debit",
+          card_networks: ["Visa", "Mastercard"],
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: true,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+    {
+      payment_method: "bank_redirect",
+      payment_method_types: [
+        {
+          payment_method_type: "bancontact_card",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+    {
+      payment_method: "pay_later",
+      payment_method_types: [
+        {
+          payment_method_type: "klarna",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
           installment_payment_enabled: false,
         },
       ],
@@ -227,6 +289,18 @@ const CONNECTOR_PAYMENT_METHODS = {
         },
         {
           payment_method_type: "blik",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+    {
+      payment_method: "bank_transfer",
+      payment_method_types: [
+        {
+          payment_method_type: "sepa_bank_transfer",
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: false,
@@ -340,6 +414,73 @@ const CONNECTOR_PAYMENT_METHODS = {
       payment_method_types: [
         {
           payment_method_type: "interac",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── Fiuu ────────────────────────────────────────────────────────────────
+  // DuitNow (real_time_payment) + FPX (bank_redirect).
+  fiuu: [
+    {
+      payment_method: "real_time_payment",
+      payment_method_types: [
+        {
+          payment_method_type: "duit_now",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+    {
+      payment_method: "bank_redirect",
+      payment_method_types: [
+        {
+          payment_method_type: "online_banking_fpx",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── Klarna (direct connector) ───────────────────────────────────────────
+  // Used when Klarna credentials are available. Stripe also supports Klarna
+  // as a fallback (see stripe entry above).
+  klarna: [
+    {
+      payment_method: "pay_later",
+      payment_method_types: [
+        {
+          payment_method_type: "klarna",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── Trustly ────────────────────────────────────────────────────────────
+  trustly: [
+    {
+      payment_method: "bank_redirect",
+      payment_method_types: [
+        {
+          payment_method_type: "trustly",
+          payment_experience: "redirect_to_url",
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: false,
@@ -532,9 +673,9 @@ async function createMerchantConnectorAccount(
 
   // Pass metadata from creds.json if present (e.g. cybersource needs
   // google_pay, apple_pay_combined, acquirer_bin, acquirer_merchant_id).
-  if (metadata) {
-    requestBody.metadata = metadata;
-  }
+  // Some connectors (e.g. klarna) require the metadata field to be present
+  // even when empty, so we default to {}.
+  requestBody.metadata = metadata || {};
 
   const response = await fetch(
     `${apiBaseUrl}/account/${merchantId}/connectors`,
@@ -745,7 +886,12 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
     connectorProfileIds,
   };
 
-  const cachePath = path.join(__dirname, "test-credentials.json");
+  const cachePath = process.env.CREDENTIALS_OUTPUT_PATH
+    ? path.resolve(process.env.CREDENTIALS_OUTPUT_PATH)
+    : path.join(
+        __dirname,
+        `test-credentials-${process.env.TEST_ENV || "sandbox"}.json`,
+      );
   try {
     fs.writeFileSync(cachePath, JSON.stringify(_credentialsCache, null, 2));
     console.log(
