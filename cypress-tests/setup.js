@@ -67,6 +67,10 @@ const CONNECTOR_TYPE_MAP = {
 const PROFILE_KEY_MAP = {
   loonio: "interac",
   gigadat: "interac",
+  // Netcetera is an authentication_processor that must share the same
+  // business profile as cybersource (the payment_processor). Adding both
+  // connectors to the same profile allows 3DS authentication to work.
+  netcetera: "cybersource",
 };
 
 // ---------------------------------------------------------------------------
@@ -112,7 +116,7 @@ const REQUIRED_CONNECTORS = [
 // ---------------------------------------------------------------------------
 const CONNECTOR_PAYMENT_METHODS = {
   // ── Card processors (default) ───────────────────────────────────────────
-  // Covers: adyen, netcetera, redsys, bankofamerica, juspay
+  // Covers: netcetera, redsys, bankofamerica, juspay
   // recurring_enabled: true  → supports mandate / setup_future_usage flows
   default: [
     {
@@ -192,6 +196,52 @@ const CONNECTOR_PAYMENT_METHODS = {
       payment_method_types: [
         {
           payment_method_type: "klarna",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── Adyen ───────────────────────────────────────────────────────────────
+  // Cards (default networks) + AlipayHK wallet.
+  // AlipayHK requires HKD currency and billing country HK (set per test).
+  adyen: [
+    {
+      payment_method: "card",
+      payment_method_types: [
+        {
+          payment_method_type: "credit",
+          card_networks: [
+            "Visa",
+            "Mastercard",
+            "AmericanExpress",
+            "UnionPay",
+            "DinersClub",
+          ],
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: true,
+          installment_payment_enabled: false,
+        },
+        {
+          payment_method_type: "debit",
+          card_networks: ["Visa", "Mastercard"],
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: true,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+    {
+      payment_method: "wallet",
+      payment_method_types: [
+        {
+          payment_method_type: "ali_pay_hk",
           payment_experience: "redirect_to_url",
           minimum_amount: 100,
           maximum_amount: 99999999,
