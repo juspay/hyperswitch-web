@@ -422,6 +422,7 @@ const CONNECTOR_PAYMENT_METHODS = {
       payment_method_types: [
         {
           payment_method_type: "classic",
+          payment_experience: "redirect_to_url",
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: false,
@@ -429,6 +430,7 @@ const CONNECTOR_PAYMENT_METHODS = {
         },
         {
           payment_method_type: "evoucher",
+          payment_experience: "redirect_to_url",
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: false,
