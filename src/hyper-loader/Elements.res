@@ -444,11 +444,13 @@ let make = (
           ->Dict.get("subscriptionEvents")
           ->Option.getOr(JSON.Encode.null)
 
+        let resolvedAppearance = resolveWidgetAppearance(~newOptions, ~elementsAppearance=appearance)
+
         let widgetOptions =
           [
             ("clientSecret", clientSecretRef.contents->JSON.Encode.string),
             ("sdkAuthorization", sdkAuthorizationRef.contents->JSON.Encode.string),
-            ("appearance", appearance),
+            ("appearance", resolvedAppearance),
             ("locale", locale),
             ("loader", loader),
             ("fonts", fonts),

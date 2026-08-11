@@ -185,11 +185,13 @@ let make = (
       ) => {
         open Promise
 
+        let resolvedAppearance = resolveWidgetAppearance(~newOptions, ~elementsAppearance=appearance)
+
         let widgetOptions =
           [
             ("pmSessionId", pmSessionId->JSON.Encode.string),
             ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
-            ("appearance", appearance),
+            ("appearance", resolvedAppearance),
             ("locale", locale),
             ("loader", loader),
             ("fonts", fonts),
