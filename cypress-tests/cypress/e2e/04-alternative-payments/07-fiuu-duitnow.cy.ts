@@ -13,16 +13,15 @@ describe("Fiuu DuitNow payment flow", () => {
   const iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  beforeEach(() => {
+  beforeEach(function () {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
 
     const fiuuProfileId = connectorProfileIdMapping.get(connectorEnum.FIUU);
-    assert.ok(
-      fiuuProfileId,
-      "Fiuu connector credentials are missing from creds.json — " +
-        "connector was not provisioned. Add fiuu to creds.json to run this test.",
-    );
+    if (!fiuuProfileId) {
+      this.skip();
+      return;
+    }
 
     changeObjectKeyValue(createPaymentBody, "profile_id", fiuuProfileId);
     changeObjectKeyValue(createPaymentBody, "currency", "MYR");
