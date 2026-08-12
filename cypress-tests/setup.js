@@ -74,6 +74,18 @@ const PROFILE_KEY_MAP = {
 };
 
 // ---------------------------------------------------------------------------
+// Connectors that require authentication_connector_details to be set on the
+// business profile AFTER both the payment processor and auth processor MCAs
+// have been created.
+//
+// Key   = profile key (as stored in connectorProfileIds)
+// Value = connector name to register as the authentication_connector
+// ---------------------------------------------------------------------------
+const AUTH_CONNECTOR_FOR_PROFILE = {
+  cybersource: "netcetera",
+};
+
+// ---------------------------------------------------------------------------
 // Whitelist of connectors actually used by Cypress web tests.
 //
 // The shared backend creds.json may contain 60+ connectors, but the web SDK
@@ -688,6 +700,49 @@ async function createBusinessProfile(
 }
 
 /**
+ * Patches a business profile to set authentication_connector_details.
+ * Required for profiles that have both a payment processor (e.g. cybersource)
+ * and an authentication processor (e.g. netcetera).
+ *
+ * @param {string} secretKey
+ * @param {string} merchantId
+ * @param {string} profileId
+ * @param {string} authConnectorName  e.g. "netcetera"
+ * @param {string} apiBaseUrl
+ */
+async function patchProfileAuthConnector(
+  secretKey,
+  merchantId,
+  profileId,
+  authConnectorName,
+  apiBaseUrl,
+) {
+  const response = await fetch(
+    `${apiBaseUrl}/account/${merchantId}/business_profile/${profileId}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": secretKey,
+      },
+      body: JSON.stringify({
+        authentication_connector_details: {
+          authentication_connectors: [authConnectorName],
+          three_ds_requestor_url: "https://sandbox.hyperswitch.io",
+        },
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `[setup] Failed to patch auth connector on profile "${profileId}": HTTP ${response.status} ${response.statusText}\n${errorText}`,
+    );
+  }
+}
+
+/**
  * Creates a merchant connector account (MCA) on the given profile.
  * @param {string} secretKey
  * @param {string} merchantId
@@ -912,6 +967,11 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
       );
 
       connectorProfileIds[profileKey] = profileId;
+      // Also expose netcetera under its own key so tests can look it up
+      // via connectorEnum.NETCETERA ("netcetera") directly.
+      if (profileKey !== connectorName) {
+        connectorProfileIds[connectorName] = profileId;
+      }
       console.log(
         `[setup] ${connectorName.padEnd(20)} → profile_id: ${profileId}` +
           (profileKey !== connectorName ? ` (shared as "${profileKey}")` : ""),
@@ -930,6 +990,22 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
   console.log(
     `[setup] Done. ${Object.keys(connectorProfileIds).length} connector(s) configured.`,
   );
+
+  // ── Patch authentication_connector_details on profiles that need it ───────
+  // Must run AFTER all MCAs are created so the auth connector MCA exists.
+  for (const [profileKey, authConnector] of Object.entries(AUTH_CONNECTOR_FOR_PROFILE)) {
+    const profileId = connectorProfileIds[profileKey];
+    if (!profileId) {
+      console.warn(`[setup] Skipping auth connector patch for "${profileKey}": profile not found.`);
+      continue;
+    }
+    try {
+      await patchProfileAuthConnector(secretKey, merchantId, profileId, authConnector, apiBaseUrl);
+      console.log(`[setup] Patched profile ${profileId} with authentication_connector: ${authConnector}`);
+    } catch (err) {
+      console.error(`[setup] Error patching auth connector for "${profileKey}":`, err.message);
+    }
+  }
 
   _credentialsCache = {
     publishableKey,
