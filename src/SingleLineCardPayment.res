@@ -43,6 +43,7 @@ let make = (
     handleCVCBlur,
     cvcRef,
     onCvcKeyDown,
+    maxCVCLength,
   } = cvcProps
 
   let {
@@ -159,7 +160,7 @@ let make = (
             paymentType
             type_="tel"
             className={`tracking-widest w-auto`}
-            maxLength=4
+            maxLength=maxCVCLength
             inputRef=cvcRef
             placeholder="123"
             isFocus
