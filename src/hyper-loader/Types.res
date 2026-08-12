@@ -231,12 +231,7 @@ type eventType =
   | CompleteDoThis
   | ConfirmPayment
   | OneClickConfirmPayment
-  | CvcStatus
-  | FormStatus
-  | PaymentMethodInfoCard
-  | PaymentMethodStatus
-  | BillingAddress
-  | Surcharge
+  | SurchargeInfo
   | None
 
 let eventTypeMapper = event => {
@@ -250,7 +245,7 @@ let eventTypeMapper = event => {
   | "blur" => Blur
   | "confirmTriggered" => ConfirmPayment
   | "oneClickConfirmTriggered" => OneClickConfirmPayment
-  | "surchargeInfo" => Surcharge
+  | "surchargeInfo" => SurchargeInfo
   | _ => None
   }
 }

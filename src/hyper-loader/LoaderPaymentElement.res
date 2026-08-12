@@ -78,9 +78,19 @@ let buildIframeHtmlString = (~iframeId: string, ~iframeSrc: string, ~additionalS
    style="border: 0px; ${additionalStyle} outline: none;"
    width="100%"
 ></iframe>`
-// Multi-instance support: tracks unmounted element refs so sibling mount() calls can
-// adopt handler-only instances (e.g. React wrapper) that never mount themselves.
-let unclaimedSelectorRefsByType: Dict.t<array<ref<string>>> = Dict.make()
+// Multi-instance support: rendezvous queues that pair handler-only instances
+// (C, created at React render time, calls on()) with mounting instances
+// (O, created in useEffect, calls mount()).
+//
+// React.StrictMode renders components twice and runs effects twice (cleanup +
+// re-run), so we CANNOT register at make() time (duplicates accumulate).
+// Instead we register lazily: mount() queues the selector, on() claims it.
+// Whichever arrives first enqueues; the second dequeues and completes the pair.
+
+// Selectors from mount() calls waiting for a matching on() call.
+let pendingMountSelectorsByType: Dict.t<array<string>> = Dict.make()
+// Refs from on() calls waiting for a matching mount() selector.
+let pendingOnRefsByType: Dict.t<array<ref<string>>> = Dict.make()
 
 let make = (
   componentType,
@@ -102,12 +112,6 @@ let make = (
     // Unique per-instance ID to scope event listener names and prevent collisions.
     let elementInstanceId = generateRandomString(8)
 
-    // Register for sibling adoption — see unclaimedSelectorRefsByType.
-    if componentType->Utils.canHaveMultipleInstances {
-      let refs = unclaimedSelectorRefsByType->Dict.get(componentType)->Option.getOr([])
-      refs->Array.push(localSelectorRef)->ignore
-      unclaimedSelectorRefsByType->Dict.set(componentType, refs)
-    }
     let setPaymentIframeRef = ref => {
       setIframeRef(ref)
     }
@@ -134,6 +138,28 @@ let make = (
     }
 
     let on = (eventType, eventHandler) => {
+      // Multi-instance: if this C instance has no selector yet, try to claim
+      // a pending mount selector.  If none is available, register self in the
+      // pendingOnRefs queue so the next mount() can adopt us.
+      // Guard on "" prevents re-registration on StrictMode effect re-runs.
+      if componentType->Utils.canHaveMultipleInstances && localSelectorRef.contents === "" {
+        let mounts = pendingMountSelectorsByType->Dict.get(componentType)->Option.getOr([])
+        if mounts->Array.length > 0 {
+          let selector = mounts->Array.getUnsafe(0)
+          let remaining = mounts->Array.sliceToEnd(~start=1)
+          pendingMountSelectorsByType->Dict.set(componentType, remaining)
+          localSelectorRef := selector
+        } else {
+          // No mount yet — register ref for adoption when mount() comes.
+          let refs = pendingOnRefsByType->Dict.get(componentType)->Option.getOr([])
+
+          // Avoid duplicate registration (e.g. on() called twice on same instance).
+          if !(refs->Array.some(r => r === localSelectorRef)) {
+            refs->Array.push(localSelectorRef)->ignore
+            pendingOnRefsByType->Dict.set(componentType, refs)
+          }
+        }
+      }
       let matchesInstance = (ev: Types.event) => {
         // Multi-instance: match by elementType + iframeId so events route to the correct instance.
         if componentType->Utils.canHaveMultipleInstances {
@@ -238,32 +264,7 @@ let make = (
           OneClickConfirmPayment,
           `onHelpOneClickConfirmPayment-${componentType}-${elementInstanceId}`,
         )
-      | CvcStatus =>
-        addSubscriptionEventListener(
-          "CVC_STATUS",
-          `onCVC_STATUS-${componentType}-${elementInstanceId}`,
-        )
-      | FormStatus =>
-        addSubscriptionEventListener(
-          "FORM_STATUS",
-          `onFORM_STATUS-${componentType}-${elementInstanceId}`,
-        )
-      | PaymentMethodInfoCard =>
-        addSubscriptionEventListener(
-          "PAYMENT_METHOD_INFO_CARD",
-          `onPAYMENT_METHOD_INFO_CARD-${componentType}-${elementInstanceId}`,
-        )
-      | PaymentMethodStatus =>
-        addSubscriptionEventListener(
-          "PAYMENT_METHOD_STATUS",
-          `onPAYMENT_METHOD_STATUS-${componentType}-${elementInstanceId}`,
-        )
-      | BillingAddress =>
-        addSubscriptionEventListener(
-          "PAYMENT_METHOD_INFO_BILLING_ADDRESS",
-          `onPAYMENT_METHOD_INFO_BILLING_ADDRESS-${componentType}-${elementInstanceId}`,
-        )
-      | Surcharge =>
+      | SurchargeInfo =>
         addSubscriptionEventListener(
           "surchargeInfo",
           `onSurchargeInfo-${componentType}-${elementInstanceId}`,
@@ -347,12 +348,22 @@ let make = (
       let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
       localSelectorRef := localSelectorString
 
-      // Adopt oldest unmounted sibling so its .on() handlers can resolve this iframeId.
+      // Multi-instance rendezvous: pair this mount with a waiting on() ref, or
+      // enqueue the selector so a future on() call can claim it.
       if componentType->Utils.canHaveMultipleInstances {
-        let refs = unclaimedSelectorRefsByType->Dict.get(componentType)->Option.getOr([])
-        switch refs->Array.find(r => r.contents === "") {
-        | Some(siblingRef) => siblingRef := localSelectorString
-        | None => ()
+        let refs = pendingOnRefsByType->Dict.get(componentType)->Option.getOr([])
+        let emptyIdx = refs->Array.findIndex(r => r.contents === "")
+        if emptyIdx >= 0 {
+          // A C instance is already waiting — hand it the selector.
+          let siblingRef = refs->Array.getUnsafe(emptyIdx)
+          siblingRef := localSelectorString
+          let remaining = refs->Array.filterWithIndex((_, i) => i !== emptyIdx)
+          pendingOnRefsByType->Dict.set(componentType, remaining)
+        } else {
+          // No C instance waiting yet — enqueue for a future on() call.
+          let mounts = pendingMountSelectorsByType->Dict.get(componentType)->Option.getOr([])
+          mounts->Array.push(localSelectorString)->ignore
+          pendingMountSelectorsByType->Dict.set(componentType, mounts)
         }
       }
       let iframeHeightRef = ref(25.0)
