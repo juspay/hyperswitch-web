@@ -4,6 +4,26 @@ open PaymentType
 
 let innerIframeContainerDivId = "parent-card-inner-iframe-container"
 let tokenResponseListenerActivity = "onParentCardTokenResponse"
+let innerIframeContentInset = "2px"
+
+let encodeInnerElementOptions = (options: PaymentType.options) => {
+  let layout = CardUtils.getLayoutClass(options.layout)
+  let cvcIcon = layout.cvcIcon === Hidden ? "hidden" : "default"
+  let cardBrandIcon = switch layout.cardBrandIcon {
+  | Hidden => "hidden"
+  | Animated => "animated"
+  | HideGeneric => "hideGeneric"
+  | Standard => "standard"
+  }
+  let layoutOptions =
+    [
+      ("cvcIcon", cvcIcon->JSON.Encode.string),
+      ("cardBrandIcon", cardBrandIcon->JSON.Encode.string),
+    ]->Dict.fromArray
+  [("layout", layoutOptions->JSON.Encode.object), ("readOnly", options.readOnly->JSON.Encode.bool)]
+  ->Dict.fromArray
+  ->JSON.Encode.object
+}
 
 let encodeInnerPaymentOptions = (sdkConfig: CardTheme.jotaiConfig) => {
   let fonts =
@@ -187,6 +207,9 @@ let make = (
   }, [paymentMethodListValue])
   let supportedCardBrandsRef = React.useRef(supportedCardBrands)
   supportedCardBrandsRef.current = supportedCardBrands
+  let innerElementOptionsRef = React.useRef(optionsPayment)
+  innerElementOptionsRef.current = optionsPayment
+  let lastForwardedInnerElementOptionsRef = React.useRef("")
   let cardSupportState = React.useMemo(() => {
     if isRawNewCardFlow && !isBancontact {
       let clearCardNumber = rawCardNumber->CardValidations.clearSpaces
@@ -439,6 +462,8 @@ let make = (
       ) = mountConfigRef.current
       let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey=currentPublishableKey)
       let paymentOptionsVal = currentSdkConfig->encodeInnerPaymentOptions
+      let elementOptionsVal = innerElementOptionsRef.current->encodeInnerElementOptions
+      lastForwardedInnerElementOptionsRef.current = elementOptionsVal->JSON.stringify
       let supportedCardBrandEntries = switch supportedCardBrandsRef.current {
       | Some(brands) => [
           ("supportedCardBrands", brands->Array.map(JSON.Encode.string)->JSON.Encode.array),
@@ -449,6 +474,7 @@ let make = (
         [
           ("paymentElementCreate", true->JSON.Encode.bool),
           ("paymentOptions", paymentOptionsVal),
+          ("options", elementOptionsVal),
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", currentPublishableKey->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
@@ -552,6 +578,22 @@ let make = (
     }
     None
   }, (iframeMounted, sdkConfig))
+
+  React.useEffect(() => {
+    let elementOptions = optionsPayment->encodeInnerElementOptions
+    let serializedElementOptions = elementOptions->JSON.stringify
+    if iframeMounted && serializedElementOptions !== lastForwardedInnerElementOptionsRef.current {
+      iframeRef.current->Window.iframePostMessage(
+        [
+          ("paymentElementsUpdate", true->JSON.Encode.bool),
+          ("options", elementOptions),
+        ]->Dict.fromArray,
+        ~targetOrigin=innerIframeOrigin,
+      )
+      lastForwardedInnerElementOptionsRef.current = serializedElementOptions
+    }
+    None
+  }, (iframeMounted, optionsPayment))
 
   React.useEffect(() => {
     let handleMessage = (ev: Window.event) => {
@@ -1005,21 +1047,36 @@ let make = (
 
   let accordionMarginClass = layoutClass.\"type" === Accordion ? "mt-4" : ""
   let showNickname = (!hideCardNicknameField && isCustomerAcceptanceRequired) || isPMMFlow
+  let isCardFormReady = isSavedCardFlow ? savedCardCvcState.ready : hasCardFieldStatus
+  let isCardFormLoading = !isCardFormReady && !isBancontact
+  let innerIframeContainerStyle: ReactDOM.Style.t = {
+    position: isCardFormLoading ? "absolute" : "relative",
+    visibility: isCardFormLoading ? "hidden" : "visible",
+    inset: isCardFormLoading ? "0" : "",
+    margin: `-${innerIframeContentInset}`,
+    width: `calc(100% + (${innerIframeContentInset} * 2))`,
+  }
 
   isSavedCardFlow
-    ? <div id=containerId style={position: "relative"} />
+    ? <div className="relative w-full">
+        <div id=containerId style=innerIframeContainerStyle />
+        <RenderIf condition=isCardFormLoading>
+          <CardFormShimmer compact=true />
+        </RenderIf>
+      </div>
     : <div
-        className={`ParentCardComponent flex flex-col w-full ${accordionMarginClass} ${isRawMode
+        className={`ParentCardComponent relative flex flex-col w-full ${accordionMarginClass} ${isRawMode
             ? "animate-slowShow"
             : ""}`}
-        style={gridGap: themeObj.spacingGridColumn}>
-        <div
-          id=containerId
-          style={position: "relative", visibility: hasCardFieldStatus ? "visible" : "hidden"}
-        />
+        style={gridGap: themeObj.spacingGridColumn}
+      >
+        <div id=containerId style=innerIframeContainerStyle />
+        <RenderIf condition=isCardFormLoading>
+          <CardFormShimmer />
+        </RenderIf>
         <RenderIf
-          condition={hasCardFieldStatus &&
-          (showPaymentMethodsScreen || isBancontact || !isRawMode)}>
+          condition={hasCardFieldStatus && (showPaymentMethodsScreen || isBancontact || !isRawMode)}
+        >
           {<>
             <CardBusinessFields
               paymentMethod

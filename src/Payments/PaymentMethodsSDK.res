@@ -14,6 +14,7 @@ let make = () => {
   // vault CVC field is collected here — the card number / expiry live on the
   // already-saved card. CardsSDK renders the vault-appropriate CVC-only component.
   let isSavedCardCvcFlow = Jotai.useAtomValue(JotaiAtoms.isSavedCardCvcFlow)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   React.useEffect(() => {
     setVaultCredentials(_ => VaultHelpers.getVaultCredentialsFromSessions(sessions))
@@ -22,7 +23,18 @@ let make = () => {
 
   // Only card today; future payment methods would branch here.
   <RenderIf condition=isConfigReady>
-    <div style={padding: "2px"}>
+    <div
+      className="w-full font-medium"
+      style={
+        padding: "2px",
+        boxSizing: "border-box",
+        color: themeObj.colorText,
+        background: "transparent",
+        fontFamily: themeObj.fontFamily,
+        fontSize: themeObj.fontSizeBase,
+      }
+      dir=localeString.localeDirection
+    >
       <CardsSDK cvcOnly=isSavedCardCvcFlow />
     </div>
   </RenderIf>

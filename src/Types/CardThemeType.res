@@ -103,6 +103,7 @@ let getPaymentMode = val => {
   switch val {
   | "card" => Card
   | "payment" => Payment
+  | "paymentMethodsSDK" => Payment
   | "cardNumber" => CardNumberElement
   | "cardExpiry" => CardExpiryElement
   | "cardCvc" => CardCVCElement

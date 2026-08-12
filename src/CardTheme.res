@@ -22,7 +22,7 @@ let getTheme = (val): theme => {
 }
 
 let getInnerLayout = str => {
-  switch str {
+  switch str->String.toLowerCase {
   | "compressed" => Compressed
   | _ => Spaced
   }
@@ -399,7 +399,7 @@ let getAppearance = (
       labels: switch getWarningString(json, "labels", "above", ~logger)->String.toLowerCase {
       | "above" => Above
       | "floating" => Floating
-      | "none" => Never
+      | "none" | "never" => Never
       | str => {
           str->unknownPropValueWarning(["above", "floating", "never"], "appearance.labels")
           Above
