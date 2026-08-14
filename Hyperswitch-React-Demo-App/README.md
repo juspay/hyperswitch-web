@@ -35,6 +35,36 @@ SELF_SERVER_URL=http://localhost:5252                  # Your local running demo
 PROFILE_ID=""
 ```
 
+## Widgets harness
+
+The checkout page mounts the payment element only. `widgets.html` mounts any element
+`widgets.create()` accepts, one or several at a time, and tabulates every event they
+emit. It mints its own intent, so it needs no arguments:
+
+```
+http://localhost:5252/widgets.html                              # cardNumber + cardExpiry + cardCvc
+http://localhost:5252/widgets.html?element=payment              # the payment element
+http://localhost:5252/widgets.html?element=card&element=payPal  # several at once
+```
+
+Pick elements with the checkboxes, or pass `element` once per element. Override the
+keys with `?publishableKey=&clientSecret=`.
+
+`?sdk=` loads a different SDK build, so one demo app can compare two of them:
+
+```
+http://localhost:5252/widgets.html?sdk=http://localhost:9050
+http://localhost:5252/widgets.html?sdk=http://localhost:9052
+```
+
+Start the second SDK with **`ENV_SDK_URL` naming itself** — a loader creates its
+element iframes at the origin baked in at build time, so without it the second build
+serves the first build's elements and the comparison silently shows one build twice:
+
+```sh
+PORT=9052 ENV_SDK_URL=http://localhost:9052 npm run start   # in hyperswitch-web
+```
+
 ## Troubleshooting
 If your demo application is not working, you can check the following to hopefully find the issue.
 
