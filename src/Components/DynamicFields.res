@@ -239,22 +239,8 @@ let make = (
     )
   }, [missingRequiredFields])
 
-  // Exclude Country/PhoneCountryCode — they own their value outside RFF (userCountry atom /
-  // local state), so they're seeded through that path, not the persistence cache.
-  let isPersistableRenderType = field =>
-    switch field.fieldRenderType {
-    | Country | PhoneCountryCode => false
-    | _ => true
-    }
-
-  // Fields whose typed values we persist across the remount. Unlike missingRequiredFieldsFiltered
-  // (which dedups Email/CardHolderName to the single input shown), this keeps BOTH name paths
-  // (first_name + last_name) and every email path — the combined name/email inputs write all of
-  // them into RFF — while dropping the self-managed fields.
   let persistableFields = React.useMemo(() => {
-    missingRequiredFields->Array.filter(field => {
-      rendersVisibleInput(field) && isPersistableRenderType(field)
-    })
+    missingRequiredFields->Array.filter(field => rendersVisibleInput(field))
   }, [missingRequiredFields])
 
   let initialValuesWithBillingDataOverride = React.useMemo(() => {

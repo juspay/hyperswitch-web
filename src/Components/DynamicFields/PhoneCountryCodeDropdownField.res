@@ -50,7 +50,16 @@ let make = (~fieldConfig: fieldConfig, ~isLabelHidden=false) => {
     ~config={validate, initialValue: Some(defaultCode)},
   )
 
-  let (valueDropDown, setValueDropDown) = React.useState(_ => defaultDropdownValue)
+  // RFF stores only the dial code, while the dropdown needs its full flag#code option value.
+  // Rebuild that UI value from RFF so a cached code survives the form remount.
+  let storedCode = field.input.value->Option.getOr(defaultCode)
+  let initialDropdownValue =
+    phoneNumberCodeOptions
+    ->Array.find(option => option.value->getPhoneCode === storedCode)
+    ->Option.map(option => option.value)
+    ->Option.getOr(defaultDropdownValue)
+
+  let (valueDropDown, setValueDropDown) = React.useState(_ => initialDropdownValue)
   let (displayValue, setDisplayValue) = React.useState(_ => "")
 
   React.useEffect(() => {
