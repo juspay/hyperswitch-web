@@ -81,8 +81,8 @@ describe("External 3DS using Netcetera Checks", () => {
       .type("1234");
     getIframeBody().get("#submit").click();
 
-    // Wait for the fullscreen overlay with the 3DS iframe, then go into it
-    cy.wait(5000); // Give ACS time to set cookies/session
+    // Wait for the fullscreen overlay to appear, then go into the nested 3DS iframe
+    cy.get("#orca-fullscreen", { timeout: 30000 }).should("be.visible");
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
       // NDM Simulator: filter to only visible text inputs (OTP field)
       cy.wrap($body)
@@ -96,31 +96,9 @@ describe("External 3DS using Netcetera Checks", () => {
     });
     // Poll the payment status via API until succeeded
     cy.getGlobalState("paymentId").then((paymentId) => {
-      let attempts = 0;
-      const maxAttempts = 30;
-      const poll = () => {
-        cy.request({
-          method: "GET",
-          url: `${Cypress.env("HYPERSWITCH_API_URL")}/payments/${paymentId}?force_sync=true`,
-          headers: {
-            "api-key": secretKey,
-          },
-        }).then((response) => {
-          if (response.body.status === "succeeded") {
-            cy.log("Payment succeeded:", response.body.status);
-            expect(response.body.status).to.eq("succeeded");
-          } else if (attempts >= maxAttempts) {
-            throw new Error(
-              `Payment did not succeed after ${maxAttempts} attempts. Last status: ${response.body.status}`
-            );
-          } else {
-            attempts++;
-            cy.wait(2000);
-            poll();
-          }
-        });
-      };
-      poll();
+      cy.pollPaymentStatus(secretKey, paymentId, "succeeded", {
+        timeoutMs: 30000,
+      });
     });
   });
 
@@ -145,38 +123,14 @@ describe("External 3DS using Netcetera Checks", () => {
       .type("1234");
     getIframeBody().get("#submit").click();
 
-    cy.wait(5000); // Give ACS time to set cookies/session
+    cy.get("#orca-fullscreen", { timeout: 30000 }).should("be.visible");
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
       // Find the Cancel button in NDM Simulator
       cy.wrap($body).find("button").contains("Cancel").click();
     });
     // Poll the payment status via API until it reaches "failed"
     cy.getGlobalState("paymentId").then((paymentId) => {
-      let attempts = 0;
-      const maxAttempts = 20;
-      const poll = () => {
-        cy.request({
-          method: "GET",
-          url: `${Cypress.env("HYPERSWITCH_API_URL")}/payments/${paymentId}?force_sync=true`,
-          headers: {
-            "api-key": secretKey,
-          },
-        }).then((response) => {
-          if (response.body.status === "failed") {
-            cy.log("Payment failed as expected:", response.body.status);
-            expect(response.body.status).to.eq("failed");
-          } else if (attempts >= maxAttempts) {
-            throw new Error(
-              `Payment did not fail after ${maxAttempts} attempts. Last status: ${response.body.status}`
-            );
-          } else {
-            attempts++;
-            cy.wait(2000);
-            poll();
-          }
-        });
-      };
-      poll();
+      cy.pollPaymentStatus(secretKey, paymentId, "failed");
     });
   });
 
@@ -203,30 +157,9 @@ describe("External 3DS using Netcetera Checks", () => {
 
     // Poll the payment status via Retrieve Payment Intent API until succeeded
     cy.getGlobalState("paymentId").then((paymentId) => {
-      let attempts = 0;
-      const maxAttempts = 30;
-      const poll = () => {
-        cy.request({
-          method: "GET",
-          url: `${Cypress.env("HYPERSWITCH_API_URL")}/payments/${paymentId}?force_sync=true`,
-          headers: {
-            "api-key": secretKey,
-          },
-        }).then((response) => {
-          expect(response.body.status).to.exist;
-          if (response.body.status === "succeeded") {
-            cy.log("Payment succeeded:", response.body.status);
-            expect(response.body.status).to.eq("succeeded");
-          } else if (attempts >= maxAttempts) {
-            throw new Error(`Payment did not succeed after ${maxAttempts} attempts. Last status: ${response.body.status}`);
-          } else {
-            attempts++;
-            cy.wait(2000);
-            poll();
-          }
-        });
-      };
-      poll();
+      cy.pollPaymentStatus(secretKey, paymentId, "succeeded", {
+        timeoutMs: 30000,
+      });
     });
   });
 });

@@ -56,7 +56,6 @@ export enum connectorEnum {
   ADYEN = "adyen",
   FIUU = "fiuu",
   VOLT = "volt",
-  KLARNA = "klarna",
   STRIPE = "stripe",
   NETCETERA = "netcetera",
   REDSYS = "redsys",

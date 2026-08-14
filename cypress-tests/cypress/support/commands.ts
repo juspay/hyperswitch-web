@@ -297,6 +297,51 @@ Cypress.Commands.add("safeClick", { prevSubject: "element" }, (subject) => {
   return cy.wrap(subject);
 });
 
+// ---------------------------------------------------------------------------
+// pollPaymentStatus
+//
+// Polls GET /payments/:id?force_sync=true until the status matches
+// `expectedStatus`, retrying every 2 s for up to `timeoutMs` (default 20 s).
+// Fails immediately if `timeoutMs` is exceeded.
+//
+// Usage:
+//   cy.pollPaymentStatus(secretKey, paymentId, "succeeded");
+//   cy.pollPaymentStatus(secretKey, paymentId, "failed", { timeoutMs: 30000 });
+// ---------------------------------------------------------------------------
+
+Cypress.Commands.add(
+  "pollPaymentStatus",
+  (
+    secretKey: string,
+    paymentId: string,
+    expectedStatus: string,
+    { timeoutMs = 20000, intervalMs = 2000 }: { timeoutMs?: number; intervalMs?: number } = {},
+  ) => {
+    const deadline = Date.now() + timeoutMs;
+
+    const poll = (): Cypress.Chainable<any> =>
+      cy.request({
+          method: "GET",
+          url: `${Cypress.env("HYPERSWITCH_API_URL")}/payments/${paymentId}?force_sync=true`,
+          headers: { "api-key": secretKey },
+        })
+        .then((response) => {
+          if (response.body.status === expectedStatus) {
+            cy.log(`Payment status: ${response.body.status}`);
+            expect(response.body.status).to.eq(expectedStatus);
+          } else if (Date.now() >= deadline) {
+            throw new Error(
+              `Payment did not reach "${expectedStatus}" within ${timeoutMs} ms. Last status: ${response.body.status}`,
+            );
+          } else {
+            return cy.wait(intervalMs).then(poll);
+          }
+        });
+
+    return poll();
+  },
+);
+
 Cypress.Commands.add("enterCardDetails", (cardDetails: any) => {
   const iframeBody = () => cy.paymentElementBody();
 
