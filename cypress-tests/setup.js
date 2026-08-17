@@ -1003,7 +1003,8 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
       await patchProfileAuthConnector(secretKey, merchantId, profileId, authConnector, apiBaseUrl);
       console.log(`[setup] Patched profile ${profileId} with authentication_connector: ${authConnector}`);
     } catch (err) {
-      console.error(`[setup] Error patching auth connector for "${profileKey}":`, err.message);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[setup] Error patching auth connector for "${profileKey}":`, msg);
     }
   }
 
