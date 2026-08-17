@@ -16,6 +16,7 @@ const localhostSources = [
   "http://localhost:8207",
   "http://localhost:3103",
   "http://localhost:5252",
+  "http://localhost:9060",
   "http://127.0.0.1:8080",
   "http://127.0.0.1:8207",
   "http://127.0.0.1:3103",
@@ -87,7 +88,6 @@ const authorizedFrameSources = [
   "'self'",
   "https:",
   ...localhostSources,
-  "http://localhost:9060"
   // Add other trusted sources here
 ];
 function extractBaseDSNUrl(dsn) {
