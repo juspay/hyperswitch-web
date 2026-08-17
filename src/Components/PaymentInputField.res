@@ -16,6 +16,7 @@ let make = (
   ~onFocus=?,
   ~fieldName="",
   ~isLabelHidden=false,
+  ~id=?,
   ~name="",
   ~type_="text",
   ~maxLength=?,
@@ -120,6 +121,7 @@ let make = (
             width: fieldWidth,
             height,
           }
+          ?id
           dataTestId={name}
           disabled={isDisabled || readOnly}
           ref={inputRef->ReactDOM.Ref.domRef}

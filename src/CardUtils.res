@@ -95,6 +95,7 @@ type cvcProps = {
   onCvcKeyDown: ReactEvent.Keyboard.t => unit,
   cvcError: string,
   setCvcError: (string => string) => unit,
+  maxCVCLength: int,
 }
 
 let useDefaultCvcProps = () => {
@@ -110,6 +111,7 @@ let useDefaultCvcProps = () => {
     onCvcKeyDown: _ => (),
     cvcError: "",
     setCvcError: _ => (),
+    maxCVCLength: CardValidations.getobjFromCardPattern("").maxCVCLength,
   }
 }
 
@@ -583,41 +585,39 @@ let handleInputFocus = (
 }
 
 let getCardElementValue = (iframeId, key) => {
-  let firstIframeVal = if (Window.parent->Window.frames)["0"]->Window.name !== iframeId {
-    switch (Window.parent->Window.frames)["0"]
-    ->Window.document
-    ->Window.getElementById(key)
-    ->Nullable.toOption {
-    | Some(dom) => dom->Window.value
-    | None => ""
+  // Probe every parent frame, not a hardcoded 0-2: any foreign frame (e.g. a wallet payframe)
+  // shifts sibling indices, and touching a cross-origin frame throws - guard and skip it.
+  let frames = Window.parent->Window.frames
+  let framesCount = frames->Window.framesLength
+  let rec probe = index =>
+    if index >= framesCount {
+      ""
+    } else {
+      let probed = try {
+        let frame = frames->Window.frameAt(index)
+        if frame->Window.name !== iframeId {
+          switch frame
+          ->Window.document
+          ->Window.getElementById(key)
+          ->Nullable.toOption {
+          | Some(dom) => dom->Window.value
+          | None => ""
+          }
+        } else {
+          ""
+        }
+      } catch {
+      | exn =>
+        // A cross-origin frame is the expected case here; anything else is worth surfacing.
+        switch exn {
+        | Exn.Error(obj) if obj->Exn.name == Some("SecurityError") => ()
+        | _ => Console.warn2(`Skipped frame ${index->Int.toString} while reading ${key}`, exn)
+        }
+        ""
+      }
+      probed === "" ? probe(index + 1) : probed
     }
-  } else {
-    ""
-  }
-  let secondIframeVal = if (Window.parent->Window.frames)["1"]->Window.name !== iframeId {
-    switch (Window.parent->Window.frames)["1"]
-    ->Window.document
-    ->Window.getElementById(key)
-    ->Nullable.toOption {
-    | Some(dom) => dom->Window.value
-    | None => ""
-    }
-  } else {
-    ""
-  }
-
-  let thirdIframeVal = if (Window.parent->Window.frames)["2"]->Window.name !== iframeId {
-    switch (Window.parent->Window.frames)["2"]
-    ->Window.document
-    ->Window.getElementById(key)
-    ->Nullable.toOption {
-    | Some(dom) => dom->Window.value
-    | None => ""
-    }
-  } else {
-    ""
-  }
-  thirdIframeVal === "" ? secondIframeVal === "" ? firstIframeVal : secondIframeVal : thirdIframeVal
+  probe(0)
 }
 
 let checkCardCVC = (cvcNumber, cardBrand) => {
