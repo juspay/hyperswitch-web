@@ -2104,12 +2104,14 @@ let getPaymentIdOrExtractFromSdkAuth = (~clientSecret, ~sdkAuthorization) => {
 }
 
 let resolveWidgetAppearance = (~newOptions, ~elementsAppearance) => {
-  let perWidget = newOptions
+  let perWidget =
+    newOptions
     ->JSON.Decode.object
-    ->Option.flatMap(d => d->Dict.get("appearance"))
+    ->Option.flatMap(options => options->Dict.get("appearance"))
     ->Option.getOr(JSON.Encode.null)
   switch perWidget->JSON.Classify.classify {
-  | Object(obj) if obj->Dict.keysToArray->Array.length > 0 => perWidget
+  | Object(obj) => obj->Dict.keysToArray->Array.length > 0 ? perWidget : elementsAppearance
+
   | _ => elementsAppearance
   }
 }
