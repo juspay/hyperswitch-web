@@ -613,6 +613,20 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     miniIcon: None,
   },
   {
+    paymentMethodName: "pix_automatico_push_transfer",
+    fields: [InfoElement],
+    icon: Some(icon("pix", ~size=26, ~width=40)),
+    displayName: localeString.payment_methods_pix_automatico_push_transfer,
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "pix_automatico_qr_transfer",
+    fields: [InfoElement],
+    icon: Some(icon("pix", ~size=26, ~width=40)),
+    displayName: localeString.payment_methods_pix_automatico_qr_transfer,
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "boleto",
     icon: Some(icon("boleto", ~size=21, ~width=25)),
     displayName: localeString.payment_methods_boleto,
