@@ -200,6 +200,7 @@ let make = (
   let {
     cardEligibilityError,
     eligibilitySurchargeDetails,
+    eligibilityOfferDetails,
     isEligibilityPending,
     triggerOnCardNumberChange,
     resetEligibilityState: _,
@@ -207,6 +208,13 @@ let make = (
     ~logger=loggerState,
     ~runEligibility=isRawNewCardFlow && !isBancontact,
   )
+
+  let selectedOfferQuoteIds =
+    eligibilityOfferDetails
+    ->Option.map((offerDetails: EligibilityHelpers.eligibilityOfferDetails) =>
+      offerDetails.offerQuoteIds
+    )
+    ->Option.getOr([])
 
   React.useEffect(() => {
     if isRawNewCardFlow && !isBancontact {
@@ -359,6 +367,7 @@ let make = (
     ~enabled=!isSavedCardFlow,
   )
   SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
+  SubscriptionEventHooks.useEmitAppliedOffersInfo(~offerDetails=eligibilityOfferDetails)
 
   React.useEffect(() => {
     if !isSavedCardFlow {
@@ -645,9 +654,11 @@ let make = (
     let installmentBody = includeInstallments
       ? selectedInstallmentPlan->PaymentBody.installmentBody
       : []
+    let offerDetailsBody = PaymentBody.offerDetailsBody(~offerQuoteIds=selectedOfferQuoteIds)
     let finalBody =
       bodyWithAcceptance
       ->Array.concat(installmentBody)
+      ->Array.concat(offerDetailsBody)
       ->mergeAndFlattenToTuples(requiredFieldsBody)
     if save {
       saveCard(~bodyArr=finalBody, ~confirmParam=confirmParams, ~handleUserError=true)
@@ -815,7 +826,7 @@ let make = (
           isNicknameValid &&
           isInstallmentValid &&
           cardEligibilityError->Option.isNone &&
-          !isEligibilityPending
+          !(paymentMethodListValue.should_block_confirm && isEligibilityPending)
         let innerMessage = json->getDictFromJson
         innerMessage->Dict.set("isOuterValid", outerValid->JSON.Encode.bool)
 
@@ -989,6 +1000,7 @@ let make = (
     isPMMFlow,
     isBancontact,
     cardEligibilityError,
+    selectedOfferQuoteIds,
     isEligibilityPending,
     paymentMethodListValue.should_block_confirm,
     clickToPayCardBrand,
@@ -1037,13 +1049,14 @@ let make = (
               setShowInstallments
               installmentsError
               setInstallmentsError
+              eligibilityOfferDetails
+              isEligibilityPending
             />
             <RenderIf condition=isRawMode>
               <EligibilityNotice
                 eligibilitySurchargeDetails
                 eligibilityError=None
-                isEligibilityPending={isEligibilityPending &&
-                paymentMethodListValue.should_block_confirm}
+                isEligibilityPending
               />
             </RenderIf>
             <RenderIf condition={cardBrand !== "" || isRawMode}>

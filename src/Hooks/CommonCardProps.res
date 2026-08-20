@@ -22,6 +22,7 @@ let useCardForm = (
     cardEligibilityError,
     updateCardEligibilityError,
     eligibilitySurchargeDetails,
+    eligibilityOfferDetails,
     isEligibilityPending,
     triggerOnCardNumberChange,
     resetEligibilityState,
@@ -388,6 +389,7 @@ let useCardForm = (
     cardEligibilityError,
     updateCardEligibilityError,
     eligibilitySurchargeDetails,
+    eligibilityOfferDetails,
     isEligibilityPending,
   }
 
