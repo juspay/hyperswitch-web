@@ -19,6 +19,17 @@ let startYear = 1900
 let currentYear = Date.getFullYear(Date.make())
 let years = Array.fromInitializer(~length=currentYear - startYear, i => currentYear - i)
 
+let parseISODateString = (dateString: option<string>): Nullable.t<Date.t> =>
+  switch dateString {
+  | Some(dateString) =>
+    switch dateString->String.split("-")->Array.map(part => part->Int.fromString) {
+    | [Some(year), Some(month), Some(date)] =>
+      Nullable.make(Date.makeWithYMD(~year, ~month=month - 1, ~date))
+    | _ => Nullable.null
+    }
+  | None => Nullable.null
+  }
+
 @react.component
 let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
   let path = fieldConfig.confirmRequestWritePath
@@ -28,11 +39,14 @@ let make = (~fieldConfig: SuperpositionTypes.fieldConfig) => {
     ~localeObject=localeString,
   )
   let dateFormat = fieldConfig.inputFormatPattern->Option.getOr("dd-MM-yyyy")
-  let (selectedDate, setSelectedDate) = React.useState(() => Nullable.null)
 
   let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
   let field = ReactFinalForm.useField(path, ~config={validate: validate})
+
+  let (selectedDate, setSelectedDate) = React.useState(() =>
+    field.input.value->parseISODateString
+  )
   let invalid = field.meta.invalid
   let showError = field.meta.touched || field.meta.submitFailed
 

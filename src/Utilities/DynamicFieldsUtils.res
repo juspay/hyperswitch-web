@@ -507,47 +507,6 @@ let getKlarnaRequiredFields = (
   })
 }
 
-/*
- Function based on 'SuperpositionHelper.setValueAtNestedPath',
- but allows empty string values to be set at the final key in the path.
-*/
-let setValueAtNestedPathAllowingEmpty = (
-  dict: Dict.t<JSON.t>,
-  keys: array<string>,
-  value: string,
-): Dict.t<JSON.t> => {
-  let keysLength = keys->Array.length
-
-  if keysLength === 0 {
-    dict
-  } else if keysLength === 1 {
-    let key = CommonUtils.getArrayElement(keys, 0, "")
-    if key !== "" {
-      dict->Dict.set(key, value->JSON.Encode.string)
-    }
-    dict
-  } else {
-    let currentDict = ref(dict)
-    let pathLength = keysLength - 1
-
-    for i in 0 to pathLength - 1 {
-      let key = CommonUtils.getArrayElement(keys, i, "")
-      if key !== "" {
-        let nestedDict = SuperpositionHelper.getOrCreateNestedDictionary(currentDict.contents, key)
-        currentDict.contents->Dict.set(key, nestedDict->JSON.Encode.object)
-        currentDict := nestedDict
-      }
-    }
-
-    let finalKey = CommonUtils.getArrayElement(keys, pathLength, "")
-    if finalKey !== "" {
-      currentDict.contents->Dict.set(finalKey, value->JSON.Encode.string)
-    }
-
-    dict
-  }
-}
-
 let applyBillingDetailsOverride = (
   initialValues: Dict.t<JSON.t>,
   billingDetails: PaymentType.billingDetails,

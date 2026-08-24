@@ -209,6 +209,10 @@ let make = (
     | _ => true
     }
 
+  let persistableFields = React.useMemo(() => {
+    missingRequiredFields->Array.filter(field => rendersVisibleInput(field))
+  }, [missingRequiredFields])
+
   let missingRequiredFieldsFiltered = React.useMemo(() => {
     let firstEmailPath =
       missingRequiredFields
@@ -223,25 +227,16 @@ let make = (
       ->Option.map(fieldConfig => fieldConfig.confirmRequestWritePath)
 
     // remove fields that would render as React.null:
-    //   - Any card-data fields (card_exp_month, card_exp_year, card_network, etc.)
     //   - Duplicate Email / CardHolderName fields (only the first path is rendered)
-    //   - Dropdown fields with no options (would render React.null anyway)
-    missingRequiredFields->Array.filter(field =>
-      if !rendersVisibleInput(field) {
-        false
-      } else {
-        switch field.fieldRenderType {
-        | Email => firstEmailPath === Some(field.confirmRequestWritePath)
-        | CardHolderName => firstCardHolderNamePath === Some(field.confirmRequestWritePath)
-        | _ => true
-        }
+    // (Card-data fields, hidden dropdowns, etc. are already excluded from persistableFields.)
+    persistableFields->Array.filter(field =>
+      switch field.fieldRenderType {
+      | Email => firstEmailPath === Some(field.confirmRequestWritePath)
+      | CardHolderName => firstCardHolderNamePath === Some(field.confirmRequestWritePath)
+      | _ => true
       }
     )
-  }, [missingRequiredFields])
-
-  let persistableFields = React.useMemo(() => {
-    missingRequiredFields->Array.filter(field => rendersVisibleInput(field))
-  }, [missingRequiredFields])
+  }, (missingRequiredFields, persistableFields))
 
   let initialValuesWithBillingDataOverride = React.useMemo(() => {
     DynamicFieldsUtils.applyBillingDetailsOverride(initialValues, defaultValues.billingDetails)
@@ -252,11 +247,11 @@ let make = (
     persistableFields->Array.forEach(field =>
       switch cachedUserDynamicFieldsValues->Dict.get(field.confirmRequestWritePath) {
       | Some(value) =>
-        DynamicFieldsUtils.setValueAtNestedPathAllowingEmpty(
+        Utils.setNested(
           merged,
           field.confirmRequestWritePath->String.split("."),
-          value,
-        )->ignore
+          value->JSON.Encode.string,
+        )
       | None => ()
       }
     )
