@@ -158,7 +158,8 @@ let make = (
 
   let bottomElement = {
     <div
-      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
+      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods"
+    >
       {visibleSavedMethods
       ->Array.mapWithIndex((obj, i) => {
         let isActive = paymentTokenVal == obj.paymentToken
@@ -368,7 +369,8 @@ let make = (
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     let isCustomerAcceptanceRequired =
-      alwaysSendCustomerAcceptance || customerMethod.recurringEnabled->not || isSaveCardsChecked
+      customerMethod.paymentMethod != "bank_redirect" &&
+        (alwaysSendCustomerAcceptance || customerMethod.recurringEnabled->not || isSaveCardsChecked)
     let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
 
     let buildSavedPaymentMethodBody = cvc =>
@@ -690,9 +692,11 @@ let make = (
       </div>
     </RenderIf>
     <RenderIf
-      condition={alwaysSendCustomerAcceptance ||
-      (displaySavedPaymentMethodsCheckbox &&
-      paymentMethodListValue.payment_type === SETUP_MANDATE)}>
+      condition={customerMethod.paymentMethod != "bank_redirect" &&
+        (alwaysSendCustomerAcceptance ||
+        (displaySavedPaymentMethodsCheckbox &&
+        paymentMethodListValue.payment_type === SETUP_MANDATE))}
+    >
       <Terms
         styles={
           marginTop: themeObj.spacingGridColumn,

@@ -45,6 +45,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: "添加信用卡/借記卡",
   useExisitingSavedCards: "使用已保存的信用卡/借記卡",
   saveCardDetails: "保存卡片詳細信息",
+  savePaymentDetails: `安全儲存我的付款資訊以便更快付款`,
+  savePaymentDetailsWhereverPossible: `安全儲存我的付款資訊以便更快付款（如適用）`,
   addBankAccount: "添加銀行帳戶",
   achBankDebitTerms: _ =>
     `您的ACH借記授權現在將被設置，我們會在未來扣款前確認金額並通知您。`,

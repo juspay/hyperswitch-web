@@ -45,6 +45,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `新しいカードを追加`,
   useExisitingSavedCards: `既存の保存済みカードを使用する`,
   saveCardDetails: `カードの詳細を保存`,
+  savePaymentDetails: `支払い情報を安全に保存して、より迅速に支払う`,
+  savePaymentDetailsWhereverPossible: `支払い情報を安全に保存してより迅速に支払う（利用可能な場合）`,
   addBankAccount: `銀行口座を追加`,
   achBankDebitTerms: str =>
     `口座番号を提供し、この支払いを確認することにより、${str} および支払いサービス プロバイダーである Hyperswitch が、銀行に口座からの引き落としの指示を送信し、その指示に従って口座からの引き落としの銀行に指示を送信することを承認したことになります。お客様は、銀行との契約条件に基づいて、銀行から返金を受ける権利があります。払い戻しは、アカウントが引き落とされた日から 8 週間以内に請求する必要があります。`,

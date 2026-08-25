@@ -35,6 +35,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `Dodaj kartę kredytową lub debetową`,
   useExisitingSavedCards: `Użyj zapisanych kart debetowych lub kredytowych`,
   saveCardDetails: `Zapisz dane karty`,
+  savePaymentDetails: `Bezpiecznie zapisz moje dane płatności, aby przyspieszyć płatności`,
+  savePaymentDetailsWhereverPossible: `Bezpiecznie zapisz moje dane płatności, aby przyspieszyć płatności, jeśli jest to możliwe`,
   addBankAccount: `Dodaj konto bankowe`,
   achBankDebitTerms: str =>
     `Podając numer konta i potwierdzając tę płatność, upoważniasz ${str} i Hyperswitch, naszego dostawcę usług płatniczych, do przekazania Twojemu bankowi dyspozycji obciążenia Twojego konta, a Twój bank – do obciążenia Twojego konta zgodnie z tymi instrukcjami. Przysługuje Ci prawo do zwrotu pieniędzy od banku zgodnie z warunkami umowy zawartej z bankiem. Wniosek o zwrot pieniędzy należy złożyć w ciągu 8 dni od dnia obciążenia konta.`,

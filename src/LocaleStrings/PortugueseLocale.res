@@ -35,6 +35,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `Adicionar cartão de débito/crédito`,
   useExisitingSavedCards: `Usar cartões de débito/crédito guardados`,
   saveCardDetails: `Guardar dados do cartão`,
+  savePaymentDetails: `Guardar os meus dados de pagamento em segurança para pagamentos mais rápidos`,
+  savePaymentDetailsWhereverPossible: `Guardar os meus dados de pagamento em segurança para pagamentos mais rápidos, quando disponível`,
   addBankAccount: `Adicionar conta bancária`,
   achBankDebitTerms: str =>
     `Ao fornecer o seu número de conta e confirmar este pagamento, está a autorizar ${str} e a Hyperswitch, nossa prestadora de serviços de pagamento, a enviar instruções ao seu banco para debitar a sua conta e ao seu banco para debitar a sua conta de acordo com essas instruções. Tem direito a um reembolso do seu banco de acordo com os termos e condições do seu contrato com o seu banco. Um reembolso tem de ser solicitado dentro de 8 semanas a partir da data em que a sua conta tiver sido debitada.`,
