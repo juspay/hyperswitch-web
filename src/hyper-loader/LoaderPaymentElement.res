@@ -268,11 +268,6 @@ let make = (
           "surchargeInfo",
           `onSurchargeInfo-${componentType}-${elementInstanceId}`,
         )
-      | Offers =>
-        addSubscriptionEventListener(
-          "appliedOffersInfo",
-          `onAppliedOffersInfo-${componentType}-${elementInstanceId}`,
-        )
       | _ => ()
       }
     }
