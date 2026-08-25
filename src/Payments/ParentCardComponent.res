@@ -4,7 +4,6 @@ open PaymentType
 
 let innerIframeContainerDivId = "parent-card-inner-iframe-container"
 let tokenResponseListenerActivity = "onParentCardTokenResponse"
-let innerIframeContentInset = "2px"
 
 let encodeInnerElementOptions = (options: PaymentType.options) => {
   let layout = CardUtils.getLayoutClass(options.layout)
@@ -155,6 +154,7 @@ let make = (
     cardCollectionMode,
     isBancontact,
     flowType,
+    optionsPayment,
   ))
   React.useEffect(() => {
     mountConfigRef.current = (
@@ -170,6 +170,7 @@ let make = (
       cardCollectionMode,
       isBancontact,
       flowType,
+      optionsPayment,
     )
     None
   }, (
@@ -185,6 +186,7 @@ let make = (
     cardCollectionMode,
     isBancontact,
     flowType,
+    optionsPayment,
   ))
 
   let isGuestCustomer = useIsGuestCustomer()
@@ -207,9 +209,7 @@ let make = (
   }, [paymentMethodListValue])
   let supportedCardBrandsRef = React.useRef(supportedCardBrands)
   supportedCardBrandsRef.current = supportedCardBrands
-  let innerElementOptionsRef = React.useRef(optionsPayment)
-  innerElementOptionsRef.current = optionsPayment
-  let lastForwardedInnerElementOptionsRef = React.useRef("")
+  let lastPostedElementOptionsRef = React.useRef("")
   let cardSupportState = React.useMemo(() => {
     if isRawNewCardFlow && !isBancontact {
       let clearCardNumber = rawCardNumber->CardValidations.clearSpaces
@@ -459,11 +459,12 @@ let make = (
         currentCardCollectionMode,
         currentIsBancontact,
         currentFlowType,
+        currentOptionsPayment,
       ) = mountConfigRef.current
       let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey=currentPublishableKey)
       let paymentOptionsVal = currentSdkConfig->encodeInnerPaymentOptions
-      let elementOptionsVal = innerElementOptionsRef.current->encodeInnerElementOptions
-      lastForwardedInnerElementOptionsRef.current = elementOptionsVal->JSON.stringify
+      let elementOptionsVal = currentOptionsPayment->encodeInnerElementOptions
+      lastPostedElementOptionsRef.current = elementOptionsVal->JSON.stringify
       let supportedCardBrandEntries = switch supportedCardBrandsRef.current {
       | Some(brands) => [
           ("supportedCardBrands", brands->Array.map(JSON.Encode.string)->JSON.Encode.array),
@@ -524,7 +525,7 @@ let make = (
         ~redirectionFlags,
         ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
         ~logger=Some(loggerState),
-        ~confirmPayment=(_json => Promise.resolve(JSON.Encode.null)),
+        ~confirmPayment=_json => Promise.resolve(JSON.Encode.null),
       )
       element.mount(`#${containerId}`)
       Some(
@@ -582,7 +583,7 @@ let make = (
   React.useEffect(() => {
     let elementOptions = optionsPayment->encodeInnerElementOptions
     let serializedElementOptions = elementOptions->JSON.stringify
-    if iframeMounted && serializedElementOptions !== lastForwardedInnerElementOptionsRef.current {
+    if iframeMounted && serializedElementOptions !== lastPostedElementOptionsRef.current {
       iframeRef.current->Window.iframePostMessage(
         [
           ("paymentElementsUpdate", true->JSON.Encode.bool),
@@ -590,7 +591,7 @@ let make = (
         ]->Dict.fromArray,
         ~targetOrigin=innerIframeOrigin,
       )
-      lastForwardedInnerElementOptionsRef.current = serializedElementOptions
+      lastPostedElementOptionsRef.current = serializedElementOptions
     }
     None
   }, (iframeMounted, optionsPayment))
@@ -792,8 +793,9 @@ let make = (
 
       (
         async () => {
-          let encryptedCard =
-            await cardPayload->JSON.Encode.object->ClickToPayCardEncryption.getEncryptedCard
+          let encryptedCard = await cardPayload
+          ->JSON.Encode.object
+          ->ClickToPayCardEncryption.getEncryptedCard
           try {
             let response = await ClickToPayHelpers.handleProceedToPay(
               ~visaEncryptedCard=encryptedCard,
@@ -1049,19 +1051,21 @@ let make = (
   let showNickname = (!hideCardNicknameField && isCustomerAcceptanceRequired) || isPMMFlow
   let isCardFormReady = isSavedCardFlow ? savedCardCvcState.ready : hasCardFieldStatus
   let isCardFormLoading = !isCardFormReady && !isBancontact
-  let innerIframeContainerStyle: ReactDOM.Style.t = {
-    position: isCardFormLoading ? "absolute" : "relative",
-    visibility: isCardFormLoading ? "hidden" : "visible",
-    inset: isCardFormLoading ? "0" : "",
-    margin: `-${innerIframeContentInset}`,
-    width: `calc(100% + (${innerIframeContentInset} * 2))`,
-  }
+  // The 2px negative margin and expanded width cancel the 2px padding the inner
+  // paymentMethodsSDK iframe adds around its content (see PaymentMethodsSDK.res).
+  let innerIframeContainerClass = `-m-[2px] w-[calc(100%_+_4px)] ${isCardFormLoading
+      ? "absolute inset-0 invisible"
+      : "relative"}`
 
   isSavedCardFlow
     ? <div className="relative w-full">
-        <div id=containerId style=innerIframeContainerStyle />
+        <div id=containerId className=innerIframeContainerClass />
+        // Single compact bar matching the 1.8rem label-less CVC input that
+        // CardCVCElement renders in the saved-card (cvcOnly) flow.
         <RenderIf condition=isCardFormLoading>
-          <CardFormShimmer compact=true />
+          <PaymentElementShimmer.Shimmer>
+            <div className="animate-pulse w-full h-[1.8rem] rounded bg-slate-200" />
+          </PaymentElementShimmer.Shimmer>
         </RenderIf>
       </div>
     : <div
@@ -1070,9 +1074,9 @@ let make = (
             : ""}`}
         style={gridGap: themeObj.spacingGridColumn}
       >
-        <div id=containerId style=innerIframeContainerStyle />
+        <div id=containerId className=innerIframeContainerClass />
         <RenderIf condition=isCardFormLoading>
-          <CardFormShimmer />
+          <PaymentShimmer />
         </RenderIf>
         <RenderIf
           condition={hasCardFieldStatus && (showPaymentMethodsScreen || isBancontact || !isRawMode)}
