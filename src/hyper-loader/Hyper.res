@@ -194,6 +194,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       ~merchantId=publishableKey,
       ~metadata=analyticsMetadata,
     )
+    LoggerContext.setSessionData(~sessionId=sessionID, ~merchantId=publishableKey, ())
     let isReadyPromise = Promise.make((resolve, _) => {
       let handleOnReady = (event: Types.event) => {
         let json = event.data->anyTypeToJson
@@ -741,8 +742,42 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         Promise.resolve(msg)
       }
 
+      let makeAuthenticationSession = (
+        authenticationSessionOptions,
+        ~clientSecretId,
+        ~authenticationIdVal,
+      ) => {
+        open ClickToPayLogger
+
+        authenticationId := authenticationIdVal
+
+        switch validateAuthenticationSession(~clientSecret=clientSecretId) {
+        | Invalid(issue) => {
+            logLifecycle(
+              ~event=ClickToPay(AuthenticationSessionRejected({reason: issue})),
+              ~message=switch issue {
+              | InvalidClientSecret => "Authentication session rejected invalid client secret"
+              | MissingAuthenticationId => "Authentication session rejected missing authentication ID"
+              },
+            )
+            let message = switch issue {
+            | InvalidClientSecret => "clientSecret is expected to be in format ******_secret_*****"
+            | MissingAuthenticationId => "authenticationId is expected to be a non-empty string"
+            }
+            let errorObject = Utils.getFailedSubmitResponse(~errorType="INVALID_FORMAT", ~message)
+            Exn.raiseError(errorObject->JSON.stringify)
+          }
+        | Valid =>
+          AuthenticationSession.make(
+            authenticationSessionOptions,
+            ~clientSecret={clientSecretId},
+            ~publishableKey,
+          )
+        }
+      }
+
       let initAuthenticationSession = authenticationSessionOptions => {
-        open Promise
+        open ClickToPayLogger
 
         let clientSecretId =
           authenticationSessionOptions
@@ -750,35 +785,28 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.flatMap(x => x->Dict.get("clientSecret"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
-        let authenticationIdVal =
-          authenticationSessionOptions
-          ->Utils.getDictFromJson
-          ->Utils.getString("authenticationId", "")
-        authenticationId := authenticationIdVal
-        Promise.make((resolve, _) => {
-          logger.setAuthenticationId(authenticationIdVal)
-          resolve(JSON.Encode.null)
-        })
-        ->then(_ => {
-          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=AUTHENTICATION_SESSION)
-          logger.setLogDebug(
-            ~value=Window.hrefWithoutSearch,
-            ~eventName=AUTHENTICATION_SESSION_INIT,
-          )
-          resolve()
-        })
-        ->catch(_ => resolve())
-        ->ignore
+        let authenticationOptions = authenticationSessionOptions->Utils.getDictFromJson
+        let authenticationIdVal = authenticationOptions->Utils.getString("authenticationId", "")
+        LoggerContext.setSessionData(
+          ~newFlow=true,
+          ~authenticationId=authenticationIdVal,
+          ~paymentId=authenticationIdVal,
+          ~merchantId=authenticationOptions->Utils.getString("merchantId", ""),
+          ~profileId=authenticationOptions->Utils.getString("profileId", ""),
+          (),
+        )
 
-        AuthenticationSession.make(
-          authenticationSessionOptions,
-          ~clientSecret={clientSecretId},
-          ~publishableKey,
-          ~logger=Some(logger),
+        ClickToPayLogger.observeMerchantSync(~event=InitAuthenticationSession, ~call=() =>
+          makeAuthenticationSession(
+            authenticationSessionOptions,
+            ~clientSecretId,
+            ~authenticationIdVal,
+          )
         )
       }
 
       let deinit = async () => {
+        LoggerRuntime.flush()
         await Promise.race([
           Promise.make((resolve, _) => {
             let _ = setTimeout(() => {

@@ -2093,13 +2093,158 @@ let usePostSessionTokens = (
   }
 }
 
+let getClickToPayApiErrorField = (error, keys) => {
+  let errorObject =
+    error
+    ->JSON.Decode.object
+    ->Option.map(rootObject =>
+      rootObject
+      ->Dict.get("error")
+      ->Option.flatMap(JSON.Decode.object)
+      ->Option.getOr(rootObject)
+    )
+  keys->Array.findMap(key =>
+    errorObject->Option.flatMap(errorObject =>
+      errorObject->Dict.get(key)->Option.flatMap(JSON.Decode.string)
+    )
+  )
+}
+
+let raiseObservedApiFailure = (~error, ~name, ~message=?, ~details) => {
+  let summary: LoggerCommonHelpers.exceptionSummary = {name, message, details}
+  raise(LoggerCommonHelpers.ObservedFailure(error, summary))
+}
+
+type clickToPayApiResult = {
+  data: JSON.t,
+  statusCode: int,
+  attemptCount: int,
+}
+
+let fetchClickToPayApi = async (
+  ~event: ClickToPayLogger.apiEvent,
+  ~message,
+  ~uri,
+  ~bodyStr,
+  ~headers,
+  ~method,
+  ~customPodUri,
+  ~publishableKey,
+  ~onSuccess,
+  ~onFailure,
+  ~maxRetry,
+) => {
+  let requestedAttempts = maxRetry->Option.getOr(1)
+  let maxAttempts = requestedAttempts > 0 ? requestedAttempts : 1
+
+  let rec fetchResponse = async (~attempt) => {
+    try {
+      let response = await fetchApi(
+        uri,
+        ~bodyStr,
+        ~headers,
+        ~method,
+        ~customPodUri,
+        ~publishableKey,
+      )
+      (response, attempt)
+    } catch {
+    | error =>
+      if attempt < maxAttempts {
+        let _ = await delay(500)
+        await fetchResponse(~attempt=attempt + 1)
+      } else {
+        let errorJson = error->formatException
+        let errorSummary = error->LoggerCommonHelpers.summarizeException
+        raiseObservedApiFailure(
+          ~error=errorJson,
+          ~name="NETWORK_ERROR",
+          ~message=?errorSummary.message,
+          ~details=LoggerCommonHelpers.apiResultDetails(~attemptCount=attempt),
+        )
+      }
+    }
+  }
+
+  let attemptFetch = async () => {
+    let (response, attemptCount) = await fetchResponse(~attempt=1)
+    let statusCode = response->Fetch.Response.status
+
+    let data = try {
+      await response->Fetch.Response.json
+    } catch {
+    | error => {
+        let errorJson = error->formatException
+        let errorSummary = error->LoggerCommonHelpers.summarizeException
+        raiseObservedApiFailure(
+          ~error=errorJson,
+          ~name="RESPONSE_DECODE_ERROR",
+          ~message=?errorSummary.message,
+          ~details=LoggerCommonHelpers.apiResultDetails(~attemptCount, ~statusCode),
+        )
+      }
+    }
+
+    if response->Fetch.Response.ok {
+      {data, statusCode, attemptCount}
+    } else {
+      let errorCode = data->getClickToPayApiErrorField(["code", "type", "reason"])
+      let errorMessage =
+        data
+        ->getClickToPayApiErrorField(["message"])
+        ->Option.map(message => message->LoggerCommonHelpers.truncateDiagnosticText(~maxLength=256))
+      let errorDetails =
+        errorCode
+        ->Option.map(errorCode => [
+          ("error_code", errorCode->LoggerCommonHelpers.screamingSnakeCase->JSON.Encode.string),
+        ])
+        ->Option.getOr([])
+      raiseObservedApiFailure(
+        ~error=data,
+        ~name="HTTP_ERROR",
+        ~message=?errorMessage,
+        ~details=LoggerCommonHelpers.apiResultDetails(~attemptCount, ~statusCode)->Array.concat(
+          errorDetails,
+        ),
+      )
+    }
+  }
+
+  try {
+    let httpMethod =
+      method
+      ->Identity.anyTypeToJson
+      ->JSON.Decode.string
+      ->Option.getOr("UNKNOWN")
+    let result = await ClickToPayLogger.observeApi(
+      ~event,
+      ~message,
+      ~details=LoggerCommonHelpers.apiRequestDetails(
+        ~url=uri,
+        ~method=httpMethod,
+        ~maxAttempts,
+        ~requestBodyPresent=bodyStr->String.trim !== "",
+        ~retryPolicy="NETWORK_ERRORS_ONLY",
+      ),
+      ~resultDetails=result =>
+        LoggerCommonHelpers.apiResultDetails(
+          ~attemptCount=result.attemptCount,
+          ~statusCode=result.statusCode,
+        ),
+      ~call=attemptFetch,
+    )
+    onSuccess(result.data)
+  } catch {
+  | LoggerCommonHelpers.ObservedFailure(error, _) => onFailure(error)
+  | error => onFailure(error->formatException)
+  }
+}
+
 let fetchEnabledAuthnMethodsToken = async (
   ~clientSecret,
   ~publishableKey,
-  ~logger,
   ~customPodUri,
   ~endpoint,
-  ~isPaymentSession=false,
   ~profileId,
   ~authenticationId,
   ~maxRetry=Some(3),
@@ -2126,10 +2271,10 @@ let fetchEnabledAuthnMethodsToken = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=ENABLED_AUTHN_METHODS_RETURNED,
-    ~logger,
+  await fetchClickToPayApi(
+    ~event=EnabledAuthnMethodsToken,
+    ~message="Click to Pay enabled-authentication-methods token request",
+    ~uri,
     ~method=#POST,
     ~bodyStr=body->JSON.stringify,
     ~headers,
@@ -2137,7 +2282,6 @@ let fetchEnabledAuthnMethodsToken = async (
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
-    ~isPaymentSession,
     ~maxRetry,
   )
 }
@@ -2145,10 +2289,8 @@ let fetchEnabledAuthnMethodsToken = async (
 let fetchEligibilityCheck = async (
   ~clientSecret,
   ~publishableKey,
-  ~logger,
   ~customPodUri,
   ~endpoint,
-  ~isPaymentSession=false,
   ~profileId,
   ~authenticationId,
   ~bodyArr: array<(string, Core__JSON.t)>,
@@ -2179,10 +2321,10 @@ let fetchEligibilityCheck = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=ELIGIBILITY_CHECK_RETURNED,
-    ~logger,
+  await fetchClickToPayApi(
+    ~event=EligibilityCheck,
+    ~message="Click to Pay eligibility-check request",
+    ~uri,
     ~method=#POST,
     ~bodyStr=body->JSON.stringify,
     ~headers,
@@ -2190,7 +2332,6 @@ let fetchEligibilityCheck = async (
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
-    ~isPaymentSession,
     ~maxRetry,
   )
 }
@@ -2198,10 +2339,8 @@ let fetchEligibilityCheck = async (
 let fetchAuthenticationSync = async (
   ~clientSecret,
   ~publishableKey,
-  ~logger,
   ~customPodUri,
   ~endpoint,
-  ~isPaymentSession=false,
   ~profileId,
   ~authenticationId,
   ~merchantId,
@@ -2232,12 +2371,12 @@ let fetchAuthenticationSync = async (
 
   let onSuccess = data => data
 
-  let onFailure = err => err
+  let onFailure = error => error
 
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=AUTHENTICATION_SYNC_RETURNED,
-    ~logger,
+  await fetchClickToPayApi(
+    ~event=AuthenticationSync,
+    ~message="Click to Pay authentication-sync request",
+    ~uri,
     ~method=#POST,
     ~bodyStr=body->JSON.stringify,
     ~headers,
@@ -2245,7 +2384,6 @@ let fetchAuthenticationSync = async (
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
-    ~isPaymentSession,
     ~maxRetry,
   )
 }

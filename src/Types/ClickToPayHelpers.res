@@ -1,4 +1,5 @@
 open Promise
+open ClickToPayLogger
 let scriptId = "mastercard-external-script"
 
 let getScriptSrc = () => {
@@ -65,7 +66,8 @@ let createWindowTimeoutPromise = (): promise<'a> => {
   })
 }
 
-let handleOpenClickToPayWindow = (~logger: HyperLoggerTypes.loggerMake) => {
+let handleOpenClickToPayWindowWithCallbacks = (~onTimeout, ~onNavigated) => {
+  let navigationTimeoutMs = LoggerCommonHelpers.defaultOperationTimeoutMs
   clickToPayWindowRef.contents = windowOpen(
     "about:blank",
     "ClickToPayWindow",
@@ -73,17 +75,14 @@ let handleOpenClickToPayWindow = (~logger: HyperLoggerTypes.loggerMake) => {
   )
   LoaderHTML.injectLoader(clickToPayWindowRef.contents)
 
-  // Set up 30-second timeout to check if window URL is still about:blank
+  // Check whether the popup navigated before the shared SDK operation timeout.
   let timeoutId = setTimeout(() => {
     switch clickToPayWindowRef.contents->Nullable.toOption {
     | Some(window) =>
       try {
         let currentHref = window->Window.Location.windowHref
         if currentHref == "about:blank" || currentHref == "" {
-          logger.setLogError(
-            ~value="Click to Pay window URL did not change within 30 seconds. Window is still at about:blank. Closing window.",
-            ~eventName=CREATE_WINDOW_TIMEOUT,
-          )
+          onTimeout()
 
           // Reject the timeout promise to unblock any waiting checkout operations
           switch windowTimeoutRejectFnRef.contents {
@@ -103,19 +102,30 @@ let handleOpenClickToPayWindow = (~logger: HyperLoggerTypes.loggerMake) => {
       | _ => {
           // If we can't access the window location (e.g., cross-origin),
           // it means the window navigated to a different origin - which is good
-          logger.setLogDebug(
-            ~value="Click to Pay window URL has changed after 30 seconds.",
-            ~eventName=CREATE_WINDOW_TIMEOUT,
-          )
+          onNavigated()
           ()
         }
       }
     | None => ()
     }
     windowTimeoutRef.contents = None
-  }, 30000)
+  }, navigationTimeoutMs)
   windowTimeoutRef.contents = Some(timeoutId)
 }
+
+let handleOpenClickToPayWindow = (~logger: HyperLoggerTypes.loggerMake) =>
+  handleOpenClickToPayWindowWithCallbacks(
+    ~onTimeout=() =>
+      logger.setLogError(
+        ~value="Click to Pay window URL did not change within 30 seconds. Window is still at about:blank. Closing window.",
+        ~eventName=CREATE_WINDOW_TIMEOUT,
+      ),
+    ~onNavigated=() =>
+      logger.setLogDebug(
+        ~value="Click to Pay window URL has changed after 30 seconds.",
+        ~eventName=CREATE_WINDOW_TIMEOUT,
+      ),
+  )
 
 // Global window extensions
 type mastercardCheckoutServices
@@ -1245,21 +1255,16 @@ let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorC
   let scriptSrc = GlobalVars.isProd
     ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
     : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
-  switch querySelector(`script[src*="secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js"]`)->Nullable.toOption {
-  | Some(_) => onLoadCallback()
-  | None => {
-      let script = createElement("script")
-      script->setType("text/javascript")
-      script->setSrc(scriptSrc)
-      script->setOnload(onLoadCallback)
-      script->setOnError(onErrorCallback)
-      body->Window.appendChild(script)
-    }
-  }
+  observeResource(
+    ~event=VisaUctp(VsdkScript),
+    ~url=scriptSrc,
+    ~message="Visa UCTP VSDK script",
+    ~onLoad=onLoadCallback,
+    ~onError=onErrorCallback,
+  )
 }
 
 let loadDirectSdkScripts = (
-  logger: HyperLoggerTypes.loggerMake,
   onLoadCallback: directSdkLoadStatus => unit,
   onErrorCallback: unit => unit,
 ) => {
@@ -1299,86 +1304,33 @@ let loadDirectSdkScripts = (
     }
   }
 
-  let appendScript = (src, onLoad, onError) => {
-    let script = createElement("script")
-    script->setType("text/javascript")
-    script->setSrc(src)
-    script->setOnload(onLoad)
-    script->setOnError(onError)
-    body->Window.appendChild(script)
-  }
-
-  // Visa Direct script — skip if already in DOM
-  logger.setLogDebug(
-    ~value="Loading Visa Direct Click to Pay script",
-    ~eventName=VISA_DCTP_LOAD_SCRIPT_INIT,
-  )
-  switch querySelector(`script[src*="visaSdk.js"]`)->Nullable.toOption {
-  | Some(_) => {
-      logger.setLogDebug(
-        ~value="Visa Direct Click to Pay script already in DOM, skipping load",
-        ~eventName=VISA_DCTP_LOAD_SCRIPT_RETURNED,
-      )
+  observeResource(
+    ~event=VisaDirect(SrciAdapterScript),
+    ~url=visaDirectSrc,
+    ~message="Visa Direct SRCI adapter script",
+    ~onLoad=() => {
       visaDirectLoaded := true
       evaluate()
-    }
-  | None =>
-    appendScript(
-      visaDirectSrc,
-      () => {
-        logger.setLogDebug(
-          ~value="Successfully loaded Visa Direct Click to Pay script",
-          ~eventName=VISA_DCTP_LOAD_SCRIPT_RETURNED,
-        )
-        visaDirectLoaded := true
-        evaluate()
-      },
-      () => {
-        logger.setLogError(
-          ~value="Failed to load Visa Direct Click to Pay script",
-          ~eventName=VISA_DCTP_LOAD_SCRIPT_RETURNED,
-        )
-        visaDirectFailed := true
-        evaluate()
-      },
-    )
-  }
-
-  // Mastercard Direct script — skip if already in DOM
-  logger.setLogDebug(
-    ~value="Loading Mastercard Direct Click to Pay script",
-    ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_INIT,
+    },
+    ~onError=() => {
+      visaDirectFailed := true
+      evaluate()
+    },
   )
-  switch querySelector(`script[src*="srcsdk.mastercard.js"]`)->Nullable.toOption {
-  | Some(_) => {
-      logger.setLogDebug(
-        ~value="Mastercard Direct Click to Pay script already in DOM, skipping load",
-        ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_RETURNED,
-      )
+
+  observeResource(
+    ~event=MastercardDirect(SrcSdkScript),
+    ~url=mastercardDirectSrc,
+    ~message="Mastercard Direct SRC SDK script",
+    ~onLoad=() => {
       mastercardDirectLoaded := true
       evaluate()
-    }
-  | None =>
-    appendScript(
-      mastercardDirectSrc,
-      () => {
-        logger.setLogDebug(
-          ~value="Successfully loaded Mastercard Direct Click to Pay script",
-          ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_RETURNED,
-        )
-        mastercardDirectLoaded := true
-        evaluate()
-      },
-      () => {
-        logger.setLogError(
-          ~value="Failed to load Mastercard Direct Click to Pay script",
-          ~eventName=MASTERCARD_DCTP_LOAD_SCRIPT_RETURNED,
-        )
-        mastercardDirectFailed := true
-        evaluate()
-      },
-    )
-  }
+    },
+    ~onError=() => {
+      mastercardDirectFailed := true
+      evaluate()
+    },
+  )
 }
 
 let loadClickToPayUIScripts = (
@@ -1554,7 +1506,9 @@ let checkoutVisaUnified = async (
       }
     }
   }
-  await vsdk.checkout(checkoutConfig)
+  await observeFunction(~event=VisaUctp(Checkout), ~message="Visa UCTP checkout", ~call=() =>
+    vsdk.checkout(checkoutConfig)
+  )
 }
 
 let closeWindow = (status, payload: JSON.t) => {
