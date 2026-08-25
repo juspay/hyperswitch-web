@@ -27,6 +27,7 @@ let make = (
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~clientListDataPromise: ref<promise<JSON.t>>,
+  ~confirmPayment: JSON.t => promise<JSON.t>,
 ) => {
   try {
     let iframeRef = []
@@ -387,7 +388,12 @@ let make = (
       }
     }
 
-    let create = (componentType, newOptions) => {
+    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+      let (componentType, newOptions) = parseComponentTypeAndOptions(
+        ~componentTypeOrOptions,
+        ~legacyOptions,
+        ~defaultComponentType="payment",
+      )
       componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
@@ -1572,6 +1578,7 @@ let make = (
         ~appearance,
         ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
         ~logger=Some(logger),
+        ~confirmPayment,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

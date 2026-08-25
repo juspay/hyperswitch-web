@@ -15,7 +15,7 @@ describe("Element Lifecycle Tests", () => {
   beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
-    getIframeBody = () => cy.iframe(iframeSelector);
+    getIframeBody = () => cy.paymentElementBody();
     changeObjectKeyValue(createPaymentBody, "customer_id", "element_lifecycle_test_user");
   });
 
@@ -159,12 +159,18 @@ describe("Element Lifecycle Tests", () => {
 
     getIframeBody()
       .find(`[data-testid=${testIds.cardNoInputTestId}]`, { timeout: 10000 })
-      .type("4242424242424242")
+      .type("4242424242424242");
+
+    getIframeBody()
+      .find(`[data-testid=${testIds.cardNoInputTestId}]`)
       .should("have.value", "4242 4242 4242 4242");
 
     getIframeBody()
       .find(`[data-testid=${testIds.expiryInputTestId}]`)
-      .type("1230")
+      .type("1230");
+
+    getIframeBody()
+      .find(`[data-testid=${testIds.expiryInputTestId}]`)
       .invoke("val")
       .should((val) => {
         expect(val).to.match(/12\s*\/?\s*30/);
@@ -172,7 +178,10 @@ describe("Element Lifecycle Tests", () => {
 
     getIframeBody()
       .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
-      .type("123")
+      .type("123");
+
+    getIframeBody()
+      .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
       .should("have.value", "123");
   });
 });

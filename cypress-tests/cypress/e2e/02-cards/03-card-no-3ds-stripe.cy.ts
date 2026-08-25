@@ -14,7 +14,7 @@ describe("Stripe Non-3DS Card Payment", () => {
   beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
-    getIframeBody = () => cy.iframe(iframeSelector);
+    getIframeBody = () => cy.paymentElementBody();
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
         cy.visit(getClientURL(clientSecret, publishableKey));

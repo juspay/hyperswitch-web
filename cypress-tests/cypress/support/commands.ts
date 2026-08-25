@@ -29,18 +29,46 @@ import * as testIds from "../../../src/Utilities/TestUtils.bs";
 // commands.js or your custom support file
 const iframeSelector =
   "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
+const innerCardIframeSelector =
+  'iframe[id^="orca-payment-element-iframeRef-"][src*="componentName=paymentMethodsSDK"]';
 
 let globalState = {};
 
+Cypress.Commands.addQuery("paymentElementBody", function () {
+  return () => {
+    const document = cy.state("document") as Document;
+    const outerIframe = document.querySelector(
+      iframeSelector,
+    ) as HTMLIFrameElement | null;
+    const outerBody = outerIframe?.contentDocument?.body;
+
+    if (!outerBody) {
+      return Cypress.$() as JQuery<HTMLBodyElement>;
+    }
+
+    let $paymentElementBodies = Cypress.$(outerBody);
+    outerBody.querySelectorAll(innerCardIframeSelector).forEach((iframe) => {
+      const cardIframe = iframe as HTMLIFrameElement;
+      if (cardIframe.contentDocument?.body) {
+        $paymentElementBodies = $paymentElementBodies.add(
+          cardIframe.contentDocument.body,
+        );
+      }
+    });
+
+    return $paymentElementBodies as JQuery<HTMLBodyElement>;
+  };
+});
+
 Cypress.Commands.add("enterValueInIframe", (selector, value) => {
-  cy.iframe(iframeSelector)
+  cy.paymentElementBody()
     .find(`[data-testid=${selector}]`)
     .should("be.visible")
     .type(value);
 });
 
 Cypress.Commands.add("selectValueInIframe", (selector, value) => {
-  cy.iframe(iframeSelector)
+  cy.paymentElementBody()
     .find(`[data-testid=${selector}]`)
     .should("be.visible")
     .select(value);
@@ -134,13 +162,13 @@ Cypress.Commands.add(
         idArr = idArr.filter((item) => !testIdsToRemoveArr.includes(item));
 
         idArr.forEach((ele) => {
-          cy.iframe(iframeSelector)
+          cy.paymentElementBody()
             .find(`[data-testid=${ele}]`)
             .should("be.visible")
             .type(mapping[ele], { force: true });
 
           if (ele === "Country" || ele === "State") {
-            cy.iframe(iframeSelector)
+            cy.paymentElementBody()
               .find(`[data-testid=${ele}]`)
               .should("be.visible")
               .select(mapping[ele]);
@@ -193,13 +221,25 @@ Cypress.Commands.add("getGlobalState", (key: any) => {
 });
 
 Cypress.Commands.add("nestedIFrame", (selector, callback) => {
-  cy.iframe("#orca-fullscreen")
-    .find(selector, { timeout: 15000 })
-    .should("exist")
+  cy.get("#orca-fullscreen", { timeout: 15000 })
     .should("be.visible")
-    .then(($ele) => {
-      const $body = $ele.contents().find("body");
-      callback($body);
+    .should(($fullscreen) => {
+      const fullscreenFrame = $fullscreen[0] as HTMLIFrameElement;
+      const nestedFrame =
+        fullscreenFrame.contentDocument?.querySelector(selector);
+      expect(nestedFrame, `${selector} inside #orca-fullscreen`).to.exist;
+    })
+    .then(($fullscreen) => {
+      const fullscreenFrame = $fullscreen[0] as HTMLIFrameElement;
+      const nestedFrame = fullscreenFrame.contentDocument?.querySelector(
+        selector,
+      ) as HTMLIFrameElement;
+
+      cy.wrap(nestedFrame)
+        .should("be.visible")
+        .its("contentDocument.body")
+        .should("not.be.empty")
+        .then((body) => callback(Cypress.$(body)));
     });
 });
 
@@ -209,17 +249,21 @@ Cypress.Commands.add("nestedIFrame", (selector, callback) => {
 Cypress.Commands.add("waitForSDKReady", () => {
   return cy
     .get(iframeSelector, { timeout: 15000 })
-    .should("be.visible")
-    .its("0.contentDocument")
-    .its("body")
-    .should("not.be.empty")
-    .then(() => {
-      // Wait for the card number input to be rendered inside the iframe,
-      // ensuring React has fully mounted the card form and registered
-      // the submitCallback before any test interaction.
-      cy.iframe(iframeSelector)
-        .find('[data-testid="cardNoInput"]', { timeout: 15000 })
-        .should("be.visible");
+    .should(($outerIframes) => {
+      const outerIframe = $outerIframes[0] as HTMLIFrameElement;
+      const outerBody = outerIframe.contentDocument?.body;
+      expect(outerBody, "outer payment element body").to.exist;
+
+      const innerIframe = outerBody?.querySelector(
+        innerCardIframeSelector,
+      ) as HTMLIFrameElement | null;
+      expect(innerIframe, "inner card iframe").to.exist;
+      expect(
+        innerIframe?.contentDocument?.body.querySelector(
+          '[data-testid="cardNoInput"]',
+        ),
+        "card number input",
+      ).to.exist;
     });
 });
 
@@ -227,12 +271,21 @@ Cypress.Commands.add(
   "safeType",
   { prevSubject: "element" },
   (subject, text, options = {}) => {
-    cy.wrap(subject)
+    const testId = subject.attr("data-testid");
+    const getSubject = () =>
+      testId
+        ? cy.paymentElementBody().find(`[data-testid="${testId}"]`)
+        : cy.wrap(subject);
+
+    getSubject()
       .should("not.be.disabled")
       .should("be.visible")
-      .clear({ force: true })
+      .clear({ force: true });
+
+    return getSubject()
+      .should("not.be.disabled")
+      .should("be.visible")
       .type(text, { delay: 50, ...options });
-    return cy.wrap(subject);
   },
 );
 
@@ -244,8 +297,53 @@ Cypress.Commands.add("safeClick", { prevSubject: "element" }, (subject) => {
   return cy.wrap(subject);
 });
 
+// ---------------------------------------------------------------------------
+// pollPaymentStatus
+//
+// Polls GET /payments/:id?force_sync=true until the status matches
+// `expectedStatus`, retrying every 2 s for up to `timeoutMs` (default 20 s).
+// Fails immediately if `timeoutMs` is exceeded.
+//
+// Usage:
+//   cy.pollPaymentStatus(secretKey, paymentId, "succeeded");
+//   cy.pollPaymentStatus(secretKey, paymentId, "failed", { timeoutMs: 30000 });
+// ---------------------------------------------------------------------------
+
+Cypress.Commands.add(
+  "pollPaymentStatus",
+  (
+    secretKey: string,
+    paymentId: string,
+    expectedStatus: string,
+    { timeoutMs = 20000, intervalMs = 2000 }: { timeoutMs?: number; intervalMs?: number } = {},
+  ) => {
+    const deadline = Date.now() + timeoutMs;
+
+    const poll = (): Cypress.Chainable<any> =>
+      cy.request({
+          method: "GET",
+          url: `${Cypress.env("HYPERSWITCH_API_URL")}/payments/${paymentId}?force_sync=true`,
+          headers: { "api-key": secretKey },
+        })
+        .then((response) => {
+          if (response.body.status === expectedStatus) {
+            cy.log(`Payment status: ${response.body.status}`);
+            expect(response.body.status).to.eq(expectedStatus);
+          } else if (Date.now() >= deadline) {
+            throw new Error(
+              `Payment did not reach "${expectedStatus}" within ${timeoutMs} ms. Last status: ${response.body.status}`,
+            );
+          } else {
+            return cy.wait(intervalMs).then(poll);
+          }
+        });
+
+    return poll();
+  },
+);
+
 Cypress.Commands.add("enterCardDetails", (cardDetails: any) => {
-  const iframeBody = () => cy.iframe(iframeSelector);
+  const iframeBody = () => cy.paymentElementBody();
 
   iframeBody().find('[data-testid="cardNoInput"]').safeType(cardDetails.cardNo);
 
@@ -423,6 +521,14 @@ Cypress.Commands.add(
                   Crypto: "crypto_currency",
                   "Cash / Voucher": "classic",
                   "E-Voucher": "evoucher",
+                  AlipayHK: "ali_pay_hk",
+                  DuitNow: "duit_now",
+                  "Bancontact Card": "bancontact_card",
+                  "SEPA Bank Transfer": "sepa_bank_transfer",
+                  "Online Banking Fpx": "online_banking_fpx",
+                  "Pay by Bank": "open_banking_uk",
+                  Klarna: "klarna",
+                  Trustly: "trustly",
                   Card: "card",
                 };
                 const selectValue =

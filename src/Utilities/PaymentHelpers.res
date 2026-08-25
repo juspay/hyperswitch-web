@@ -2384,6 +2384,7 @@ let fetchSdkConfigs = async (
   )
 
   let onSuccess = data => data
+
   let onFailure = _ => JSON.Encode.null
 
   await fetchApiWithLogging(

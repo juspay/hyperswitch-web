@@ -3,6 +3,8 @@ node_modules
 .merlin
 .netlify
 lib/bs
+lib/ocaml
+lib/watch.lock
 public/*.LICENSE.txt
 public/app.js
 public/app.css
@@ -30,6 +32,7 @@ user_data.sh
 # Sensitive credential files - DO NOT COMMIT
 cypress-tests/creds.json
 cypress-tests/test-credentials.json
+cypress-tests/test-credentials-*.json
 cypress-tests/cypress.env.json
 cypress-tests/.env.json
 Hyperswitch-React-Demo-App/.env

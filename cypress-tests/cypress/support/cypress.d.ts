@@ -8,5 +8,11 @@ declare namespace Cypress {
       getIframeBody: () => Chainable<JQuery<HTMLBodyElement>>,
       methodName: string,
     ): Chainable<boolean>;
+    pollPaymentStatus(
+      secretKey: string,
+      paymentId: string,
+      expectedStatus: string,
+      options?: { timeoutMs?: number; intervalMs?: number },
+    ): Chainable<any>;
   }
 }

@@ -1,11 +1,10 @@
 {
-  "$schema": "https://raw.githubusercontent.com/rescript-lang/rescript-compiler/master/docs/docson/build-schema.json",
   "name": "orca-payment-page",
   "jsx": {
     "version": 4,
     "mode": "classic"
   },
-  "bsc-flags": ["-bs-super-errors", "-open RescriptCore"],
+  "compiler-flags": ["-open RescriptCore"],
   "sources": [
     {
       "dir": "src",
@@ -23,7 +22,7 @@
     "module": "esmodule",
     "in-source": true
   },
-  "bs-dependencies": [
+  "dependencies": [
     "@rescript/react",
     "@rescript/core",
     "@glennsl/rescript-fetch"

@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Widgets</title>
+    <style>
+      :root {
+        --border: #dcdfea;
+        --muted: #62667e;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        color: #1e2139;
+        background: #f6f7fb;
+      }
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 13px;
+        margin: 0;
+      }
+      .sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 0 0 8px;
+      }
+      code,
+      dd,
+      .choices label,
+      .widget > h3,
+      table {
+        font-family: ui-monospace, monospace;
+      }
+      fieldset {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        margin: 0 0 20px;
+        padding: 16px;
+      }
+      legend,
+      dt {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        padding: 0 6px;
+      }
+      /* Configuration, elements and mounted widgets all lay out as grids. */
+      dl,
+      .choices,
+      .widgets {
+        display: grid;
+        margin: 0;
+        gap: 12px 16px;
+      }
+      dl {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+      .choices {
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 6px 12px;
+      }
+      .widgets {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        align-items: start;
+      }
+      dt {
+        padding: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 400;
+      }
+      dd {
+        margin: 2px 0 0;
+        font-size: 12px;
+        word-break: break-all;
+      }
+      dd.origin {
+        font-family: inherit;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .presets,
+      .choices label,
+      .widget > h3,
+      .result {
+        font-size: 12px;
+      }
+      .presets {
+        margin: 0 0 12px;
+      }
+      .presets a {
+        margin-right: 12px;
+      }
+      .choices label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      /* The widget cards carry the background, so their group does not. */
+      fieldset.group {
+        background: transparent;
+        border-style: dashed;
+      }
+      /* Each widget is its own card, so it is obvious where one ends. */
+      .widget {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        overflow: hidden;
+      }
+      /* Only the single card fields are narrow; the rest are whole checkout
+         surfaces and get clipped in a shared column. */
+      .widget.wide {
+        grid-column: 1 / -1;
+      }
+      .widget > h3 {
+        color: var(--muted);
+        background: #fafbfe;
+        border-bottom: 1px solid var(--border);
+        margin: 0;
+        padding: 6px 10px;
+        font-weight: 500;
+      }
+      .mount {
+        padding: 10px;
+      }
+      /* The SDK sizes its own iframe, so the host must not clip it. */
+      .mount > iframe {
+        display: block;
+        width: 100%;
+        border: 0;
+      }
+      button {
+        font: inherit;
+        padding: 9px 18px;
+        border: 0;
+        border-radius: 8px;
+        background: #006df9;
+        color: #fff;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: #fff;
+        color: #1e2139;
+        border: 1px solid var(--border);
+        padding: 5px 12px;
+        font-size: 12px;
+      }
+      button:disabled {
+        background: #a9aec4;
+        cursor: default;
+      }
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .result {
+        margin: 0;
+        color: var(--muted);
+      }
+      #status {
+        font-family: ui-monospace, monospace;
+        color: #1e2139;
+      }
+      /* The events are their own region, not part of the form above them. */
+      hr {
+        border: 0;
+        border-top: 1px solid var(--border);
+        margin: 36px 0 24px;
+      }
+      .events-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        line-height: 1.5;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 5px 10px;
+        border-top: 1px solid var(--border);
+        vertical-align: top;
+      }
+      thead th {
+        border-top: 0;
+        background: #fafbfe;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      td:nth-child(2),
+      td:nth-child(3) {
+        white-space: nowrap;
+      }
+      td:last-child {
+        color: var(--muted);
+        word-break: break-word;
+      }
+      tbody:empty::after {
+        content: "waiting for events";
+        display: block;
+        padding: 8px 10px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Widgets</h1>
+      <p class="sub">
+        Mounts any element <code>widgets.create()</code> accepts and records
+        every event it emits. Mints its own intent; override the keys with
+        <code>?publishableKey=&amp;clientSecret=</code>.
+      </p>
+
+      <fieldset>
+        <legend>Configuration</legend>
+        <dl id="config"></dl>
+      </fieldset>
+
+      <form method="get">
+        <fieldset>
+          <legend>Elements</legend>
+          <p class="presets" id="presets"></p>
+          <div class="choices" id="choices"></div>
+          <div class="toolbar">
+            <button class="secondary" type="submit">Mount selected</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <form id="payment-form">
+        <fieldset class="group">
+          <legend>Mounted</legend>
+          <div class="widgets" id="mounts"></div>
+        </fieldset>
+        <div class="toolbar">
+          <button id="submit" type="submit" disabled>confirmPayment</button>
+          <p class="result">Result: <span id="status">not run</span></p>
+        </div>
+      </form>
+
+      <hr />
+
+      <section>
+        <div class="events-head">
+          <h2>Events</h2>
+          <button class="secondary" type="button" id="clear">Clear</button>
+        </div>
+        <p class="sub">
+          Element events, plus the <code>hyper.confirmPayment</code> lifecycle.
+          A programmatic confirm emits no element events of its own.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Time</th>
+              <th scope="col">Source</th>
+              <th scope="col">Event</th>
+              <th scope="col">Payload</th>
+            </tr>
+          </thead>
+          <tbody id="events"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script>
+      // Element types mirror CardThemeType.getPaymentMode; event names mirror
+      // Types.eventTypeMapper. Extend either list to cover a new one.
+      const ELEMENTS =
+        `payment card cardNumber cardExpiry cardCvc expressCheckout googlePay
+         applePay payPal samsungPay klarna paze paymentMethodCollect
+         paymentMethodsManagement`.split(/\s+/);
+      const EVENTS =
+        `ready change focus blur clickTriggered escape confirmTriggered
+         oneClickConfirmTriggered surchargeInfo completeDoThis`.split(/\s+/);
+      // The single card fields sit side by side; every other element needs the
+      // full row.
+      const CARD_FIELDS = ["cardNumber", "cardExpiry", "cardCvc"];
+      const NARROW = new Set(CARD_FIELDS);
+      // Named sets for combinations that only work together.
+      const PRESETS = {
+        "card fields": CARD_FIELDS,
+        card: ["card"],
+        payment: ["payment"],
+      };
+
+      const params = new URLSearchParams(location.search);
+      const selection = params.has("element")
+        ? params.getAll("element")
+        : PRESETS["card fields"];
+
+      const el = (id) => document.getElementById(id);
+      const node = (tag, text = "", className = "") =>
+        Object.assign(document.createElement(tag), {
+          textContent: text,
+          className,
+        });
+      const eventsEl = el("events");
+      const submitEl = el("submit");
+      const statusEl = el("status");
+
+      const record = (source, event, payload) => {
+        const row = eventsEl.insertRow(0);
+        [
+          new Date().toISOString().slice(11, 23),
+          source,
+          event,
+          payload ?? "",
+        ].forEach((text) => (row.insertCell().textContent = text));
+      };
+
+      el("clear").onclick = () => eventsEl.replaceChildren();
+
+      // Each row names its value's source, so it is clear which variable it is.
+      const showConfig = (rows) =>
+        el("config").replaceChildren(
+          ...rows.map(([label, value, origin]) => {
+            const group = node("div");
+            group.append(
+              node("dt", label),
+              node("dd", value),
+              node("dd", origin, "origin"),
+            );
+            return group;
+          }),
+        );
+
+      Object.entries(PRESETS).forEach(([name, elements]) => {
+        const link = node("a", name);
+        link.href = `?${elements.map((type) => `element=${type}`).join("&")}`;
+        el("presets").append(link);
+      });
+
+      // A plain GET form: the browser serialises the checked boxes into
+      // ?element=…&element=…, so there is no query-building code to maintain.
+      ELEMENTS.forEach((type) => {
+        const label = node("label");
+        const input = Object.assign(node("input"), {
+          type: "checkbox",
+          name: "element",
+          value: type,
+          checked: selection.includes(type),
+        });
+        label.append(input, document.createTextNode(type));
+        el("choices").append(label);
+      });
+
+      const loadSdk = (clientUrl) =>
+        new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = `${clientUrl}/HyperLoader.js`;
+          script.onload = () => resolve(window.Hyper);
+          script.onerror = () => reject(new Error(`cannot load ${script.src}`));
+          document.head.appendChild(script);
+        });
+
+      // server.js serves these at the root, the dev server proxies them under
+      // /payments — use whichever answers.
+      let apiBase = "";
+      const getJson = async (path) => {
+        const res = await fetch(`${apiBase}${path}`);
+        if (!res.ok) throw new Error(`${apiBase}${path} -> ${res.status}`);
+        return res.json();
+      };
+      const resolveApiBase = async () => {
+        for (const base of ["", "/payments"]) {
+          try {
+            if ((await fetch(`${base}/urls`)).ok) return base;
+          } catch (err) {
+            /* try the next one */
+          }
+        }
+        throw new Error("neither /urls nor /payments/urls answered");
+      };
+
+      const summarise = (payload) => {
+        if (payload === undefined || payload === null) return "";
+        if (typeof payload !== "object") return String(payload);
+        const text = JSON.stringify(payload);
+        return text.length > 200 ? `${text.slice(0, 200)}…` : text;
+      };
+
+      let hyper;
+
+      const mountElement = (widgets, type) => {
+        const card = node(
+          "div",
+          "",
+          NARROW.has(type) ? "widget" : "widget wide",
+        );
+        const mount = node("div", "", "mount");
+        mount.id = `${type}-mount`;
+        card.append(node("h3", type), mount);
+        el("mounts").append(card);
+
+        const element = widgets.create(type, {});
+        // Subscribe to every known event so none is filtered out.
+        EVENTS.forEach((event) =>
+          element.on(event, (payload) =>
+            record(type, event, summarise(payload)),
+          ),
+        );
+        element.mount(`#${mount.id}`);
+      };
+
+      const init = async () => {
+        apiBase = await resolveApiBase();
+        const [config, urls] = await Promise.all([
+          getJson("/config"),
+          getJson("/urls"),
+        ]);
+        const publishableKey =
+          params.get("publishableKey") || config.publishableKey;
+        const clientSecret =
+          params.get("clientSecret") ||
+          (await getJson("/create-intent")).clientSecret;
+
+        // ?sdk= loads a different build, so two tabs can compare one against the
+        // other. Each build must have been built with ENV_SDK_URL naming itself,
+        // since that is where its loader creates the element iframes.
+        const clientUrl = params.get("sdk") || urls.clientUrl;
+
+        showConfig([
+          [
+            "SDK",
+            clientUrl,
+            params.has("sdk") ? "?sdk=" : "/urls · HYPERSWITCH_CLIENT_URL",
+          ],
+          ["Server", urls.serverUrl, "/urls · HYPERSWITCH_SERVER_URL"],
+          [
+            "Publishable key",
+            publishableKey,
+            "/config · HYPERSWITCH_PUBLISHABLE_KEY",
+          ],
+          [
+            "Payment",
+            clientSecret.split("_secret_")[0],
+            "/create-intent · clientSecret",
+          ],
+        ]);
+
+        const Hyper = await loadSdk(clientUrl);
+        hyper = Hyper(
+          { publishableKey, profileId: config.profileId },
+          { customBackendUrl: urls.serverUrl },
+        );
+        const widgets = hyper.widgets({ clientSecret });
+
+        selection.forEach((type) => {
+          try {
+            mountElement(widgets, type);
+          } catch (err) {
+            record(type, "mount failed", err.message);
+          }
+        });
+
+        submitEl.disabled = false;
+      };
+
+      el("payment-form").onsubmit = async (event) => {
+        event.preventDefault();
+        submitEl.disabled = true;
+        statusEl.textContent = "pending…";
+        record("hyper", "confirmPayment", "called");
+        const startedAt = performance.now();
+        try {
+          const { error, status, payment_id } = await hyper.confirmPayment({
+            confirmParams: { return_url: location.href },
+            redirect: "if_required",
+          });
+          const seconds = ((performance.now() - startedAt) / 1000).toFixed(1);
+          const outcome = error
+            ? [error.type, `${error.message} (${seconds}s)`]
+            : [status, `${payment_id} (${seconds}s)`];
+          statusEl.textContent = `${outcome[0]}: ${outcome[1]}`;
+          record("hyper", ...outcome);
+        } catch (err) {
+          statusEl.textContent = `threw: ${err.message}`;
+          record("hyper", "threw", err.message);
+        }
+        submitEl.disabled = false;
+      };
+
+      init().catch((err) => {
+        statusEl.textContent = `init failed: ${err.message}`;
+      });
+    </script>
+  </body>
+</html>
