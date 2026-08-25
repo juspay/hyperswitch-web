@@ -268,4 +268,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "表示を減らす",
   refreshingText: "更新中...",
   paymentDetailsBeingCheckedText: "お支払い情報を確認中です。しばらくお待ちください",
+  eligibleOffersText: "利用可能な特典",
+  checkingEligibleOffersText: "利用可能な特典を確認中",
+  cardOfferText: "カード特典",
+  offerAppliedText: "適用済み",
 }

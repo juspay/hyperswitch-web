@@ -4,7 +4,7 @@ let make = (
   ~isEligibilityPending=false,
   ~className="",
 ) => {
-  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let successColor = themeObj.colorSuccess
 
   let appliedOffer =
@@ -21,7 +21,7 @@ let make = (
         fontWeight: themeObj.fontWeightNormal,
         fontSize: themeObj.fontSizeLg,
       }
-      ariaLabel="Eligible offers"
+      ariaLabel=localeString.eligibleOffersText
     >
       {if isEligibilityPending {
         <div
@@ -30,7 +30,7 @@ let make = (
           role="status"
           ariaLive=#polite
         >
-          <span className="sr-only"> {"Checking eligible offers"->React.string} </span>
+          <span className="sr-only"> {localeString.checkingEligibleOffersText->React.string} </span>
           <div className="flex flex-col gap-2" ariaHidden=true>
             <div
               className="relative h-2.5 w-[120px] overflow-hidden rounded"
@@ -53,7 +53,7 @@ let make = (
       } else {
         switch appliedOffer {
         | Some(offer) =>
-          let offerTitle = offer.title === "" ? "Card offer" : offer.title
+          let offerTitle = offer.title === "" ? localeString.cardOfferText : offer.title
           <div
             className="relative overflow-hidden"
             style={
@@ -138,7 +138,7 @@ let make = (
                 }
               >
                 <Icon name="checkmark" size=14 />
-                <span> {"Applied"->React.string} </span>
+                <span> {localeString.offerAppliedText->React.string} </span>
               </div>
             </div>
           </div>
