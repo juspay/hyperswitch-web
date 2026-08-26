@@ -298,6 +298,9 @@ let make = (
     inputRef=cvcRef
     placeholder="123"
     height={isSavedCardCvcFlow ? "1.8rem" : ""}
+    // The sibling cross-read in CardUtils.getCardElementValue resolves the CVC by this id; the
+    // saved-card re-collect input is a different form and must not answer to it.
+    id=?{isSavedCardCvcFlow ? None : Some("card-cvc")}
     name=TestUtils.cardCVVInputTestId
     autocomplete="cc-csc"
   />

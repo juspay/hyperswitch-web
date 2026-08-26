@@ -38,6 +38,7 @@ let make = (
     handleCVCBlur,
     cvcRef,
     cvcError,
+    maxCVCLength,
   } = cvcProps
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
@@ -118,7 +119,7 @@ let make = (
             )}
             type_="tel"
             className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
-            maxLength=4
+            maxLength=maxCVCLength
             inputRef=cvcRef
             placeholder="123"
             name=TestUtils.cardCVVInputTestId
