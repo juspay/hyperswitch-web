@@ -2,7 +2,7 @@ let useCustomPaymentMethodConfigs = (~paymentMethod, ~paymentMethodType=?) => {
   let {paymentMethodsConfig} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let allowedPmTypeForCardPayment = ["debit", "credit"]
 
-  React.useMemo3(() => {
+  React.useMemo(() => {
     let methodLevelConfig =
       paymentMethodsConfig->Array.find(config => config.paymentMethod == paymentMethod)
 
@@ -35,6 +35,18 @@ type saveCheckboxConfig = {
   checkedByDefault: bool,
 }
 
+let resolveSaveCheckboxFlag = (
+  ~typeLevelConfig,
+  ~methodLevelConfig,
+  ~getTypeLevelFlag,
+  ~getMethodLevelFlag,
+  ~fallback,
+) =>
+  typeLevelConfig
+  ->Option.flatMap(getTypeLevelFlag)
+  ->Option.orElse(methodLevelConfig->Option.flatMap(getMethodLevelFlag))
+  ->Option.getOr(fallback)
+
 // PM/PMType granularity control for the "save payment details" checkbox.
 // Resolution order: paymentMethodTypes[] level > paymentMethodsConfig[] level
 // > the legacy global options.
@@ -45,7 +57,7 @@ let useSaveCheckboxConfig = (~paymentMethod, ~paymentMethodType): saveCheckboxCo
     savedPaymentMethodsCheckboxCheckedByDefault,
   } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
 
-  React.useMemo5(() => {
+  React.useMemo(() => {
     let methodLevelConfig =
       paymentMethodsConfig->Array.find(config => config.paymentMethod == paymentMethod)
 
@@ -57,20 +69,20 @@ let useSaveCheckboxConfig = (~paymentMethod, ~paymentMethodType): saveCheckboxCo
       )
 
     {
-      displayCheckbox: typeLevelConfig
-      ->Option.flatMap(config => config.displaySavedPaymentMethodsCheckbox)
-      ->Option.orElse(
-        methodLevelConfig->Option.flatMap(config => config.displaySavedPaymentMethodsCheckbox),
-      )
-      ->Option.getOr(displaySavedPaymentMethodsCheckbox),
-      checkedByDefault: typeLevelConfig
-      ->Option.flatMap(config => config.savedPaymentMethodsCheckboxCheckedByDefault)
-      ->Option.orElse(
-        methodLevelConfig->Option.flatMap(config =>
-          config.savedPaymentMethodsCheckboxCheckedByDefault
-        ),
-      )
-      ->Option.getOr(savedPaymentMethodsCheckboxCheckedByDefault),
+      displayCheckbox: resolveSaveCheckboxFlag(
+        ~typeLevelConfig,
+        ~methodLevelConfig,
+        ~getTypeLevelFlag=config => config.displaySavedPaymentMethodsCheckbox,
+        ~getMethodLevelFlag=config => config.displaySavedPaymentMethodsCheckbox,
+        ~fallback=displaySavedPaymentMethodsCheckbox,
+      ),
+      checkedByDefault: resolveSaveCheckboxFlag(
+        ~typeLevelConfig,
+        ~methodLevelConfig,
+        ~getTypeLevelFlag=config => config.savedPaymentMethodsCheckboxCheckedByDefault,
+        ~getMethodLevelFlag=config => config.savedPaymentMethodsCheckboxCheckedByDefault,
+        ~fallback=savedPaymentMethodsCheckboxCheckedByDefault,
+      ),
     }
   }, (
     paymentMethod,
@@ -100,7 +112,7 @@ let useSaveDetailsCheckbox = (~paymentMethod, ~paymentMethodType): saveDetailsCh
   let (isChecked, setIsChecked) = Jotai.useAtom(JotaiAtoms.saveDetailsCheckedAtom)
 
   // Re-seed the shared state from the resolved config on payment method switch.
-  React.useEffect2(() => {
+  React.useEffect(() => {
     setIsChecked(_ => checkboxConfig.checkedByDefault)
     None
   }, (paymentMethodType, checkboxConfig.checkedByDefault))
@@ -109,7 +121,7 @@ let useSaveDetailsCheckbox = (~paymentMethod, ~paymentMethodType): saveDetailsCh
   // types too, but the SDK does not consume it for cards: the card save
   // checkbox has its own dedicated components and visibility rules, so the
   // acceptance-driven checkbox must never activate for card.
-  let acceptance = React.useMemo3(() => {
+  let acceptance = React.useMemo(() => {
     paymentMethod == "card"
       ? None
       : paymentMethodListValue

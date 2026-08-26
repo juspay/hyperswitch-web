@@ -353,11 +353,7 @@ let make = (
       />
     </RenderIf>
     <RenderIf condition={isRenderInfoElement}>
-      {if !hasAnyField || isShowSaveDetailsCheckbox {
-        <Block bottomElement />
-      } else {
-        bottomElement
-      }}
+      {!hasAnyField || isShowSaveDetailsCheckbox ? <Block bottomElement /> : bottomElement}
     </RenderIf>
     // No fields to collect: info element block first, checkbox below it.
     <RenderIf condition={!hasAnyField && isShowSaveDetailsCheckbox}>

@@ -1697,7 +1697,7 @@ let overrideFieldsToExcludeFromMasking = [
   "paymentMethodsConfig.paymentMethodTypes.message.value",
 ]
 
-let normalizePath = path => path->String.replaceRegExp(/\[(\d+)\]/g, "")
+let normalizePath = path => path->String.replaceRegExp(%re("/\[(\d+)\]/g"), "")
 
 let isPathStartsWithPattern = (normalizedPath, normalizedPattern) =>
   normalizedPath == normalizedPattern || normalizedPath->String.startsWith(normalizedPattern ++ ".")

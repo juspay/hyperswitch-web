@@ -227,6 +227,7 @@ let make = (
   , [paymentTokenVal])
   let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
   let isCardPaymentMethod = customerMethod.paymentMethod === "card"
+  let isBankRedirectPaymentMethod = customerMethod.paymentMethod === "bank_redirect"
   let isSavedCardCvcFlow = isCardPaymentMethod && customerMethod.requiresCvv
   let empty = isSavedCardCvcFlow ? savedCardCvcState.empty : cvcNumber == ""
   let isCardPaymentMethodValid =
@@ -369,8 +370,8 @@ let make = (
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     let isCustomerAcceptanceRequired =
-      customerMethod.paymentMethod != "bank_redirect" &&
-        (alwaysSendCustomerAcceptance || customerMethod.recurringEnabled->not || isSaveCardsChecked)
+      !isBankRedirectPaymentMethod &&
+      (alwaysSendCustomerAcceptance || customerMethod.recurringEnabled->not || isSaveCardsChecked)
     let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
 
     let buildSavedPaymentMethodBody = cvc =>
@@ -692,10 +693,10 @@ let make = (
       </div>
     </RenderIf>
     <RenderIf
-      condition={customerMethod.paymentMethod != "bank_redirect" &&
-        (alwaysSendCustomerAcceptance ||
-        (displaySavedPaymentMethodsCheckbox &&
-        paymentMethodListValue.payment_type === SETUP_MANDATE))}
+      condition={!isBankRedirectPaymentMethod &&
+      (alwaysSendCustomerAcceptance ||
+      (displaySavedPaymentMethodsCheckbox &&
+      paymentMethodListValue.payment_type === SETUP_MANDATE))}
     >
       <Terms
         styles={

@@ -1,6 +1,7 @@
 module RenderSavedPaymentMethodItem = {
   @react.component
   let make = (~paymentItem: PaymentType.customerMethods, ~paymentMethodType) => {
+    let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     switch paymentItem.paymentMethod {
     | "card" =>
       <div
@@ -49,32 +50,32 @@ module RenderSavedPaymentMethodItem = {
       <div
         className="flex flex-col items-start"
         role="group"
-        ariaLabel={`Pay by Bank – ${paymentItem.bankRedirect.bankName}${maskFragment}`}
+        ariaLabel={`${localeString.payment_methods_pay_by_bank} – ${paymentItem.bankRedirect.bankName}${maskFragment}`}
       >
         <div className="text-base tracking-wide">
           {React.string(
             paymentItem.bankRedirect.bankName->String.length > 0
               ? paymentItem.bankRedirect.bankName
-              : "Pay by Bank",
+              : localeString.payment_methods_pay_by_bank,
           )}
         </div>
-        {hasMask || hasHolderName
-          ? <div className={`PickerItemLabel flex flex-row gap-3 items-center text-sm`}>
-              {hasMask
-                ? <>
-                    <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
-                    <div className="tracking-wide" ariaHidden=true>
-                      {React.string(paymentItem.bankRedirect.mask)}
-                    </div>
-                  </>
-                : React.null}
-              {hasHolderName
-                ? <div className="opacity-80" ariaHidden=true>
-                    {React.string(paymentItem.bankRedirect.accountHolderName)}
-                  </div>
-                : React.null}
-            </div>
-          : React.null}
+        <RenderIf condition={hasMask || hasHolderName}>
+          <div className={`PickerItemLabel flex flex-row gap-3 items-center text-sm`}>
+            <RenderIf condition={hasMask}>
+              <>
+                <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
+                <div className="tracking-wide" ariaHidden=true>
+                  {React.string(paymentItem.bankRedirect.mask)}
+                </div>
+              </>
+            </RenderIf>
+            <RenderIf condition={hasHolderName}>
+              <div className="opacity-80" ariaHidden=true>
+                {React.string(paymentItem.bankRedirect.accountHolderName)}
+              </div>
+            </RenderIf>
+          </div>
+        </RenderIf>
       </div>
 
     | _ =>
