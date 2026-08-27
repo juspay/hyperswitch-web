@@ -34,6 +34,7 @@ let make = (
   ~cardCollectionMode="tokenise",
   ~isBancontact=false,
   ~flowType=CardThemeType.Payment,
+  ~isActive=true,
 ) => {
   let {
     clientSecret,
@@ -351,12 +352,12 @@ let make = (
     ~complete=cardFieldsComplete && isInstallmentValid && areRequiredFieldsValid,
     ~empty=cardFieldsEmpty,
     ~paymentType="card",
-    ~enabled=!isSavedCardFlow,
+    ~enabled=!isSavedCardFlow && isActive,
   )
   SubscriptionEventHooks.useEmitFormStatus(
     ~empty=cardFieldsEmpty,
     ~complete=cardFieldsComplete && isInstallmentValid && areRequiredFieldsValid,
-    ~enabled=!isSavedCardFlow,
+    ~enabled=!isSavedCardFlow && isActive,
   )
   SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
 
@@ -797,7 +798,7 @@ let make = (
   }
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    if !isSavedCardFlow {
+    if !isSavedCardFlow && isActive {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && !hasCardFieldStatus {
@@ -973,6 +974,7 @@ let make = (
     }
   }, (
     iframeRef,
+    isActive,
     areRequiredFieldsValid,
     isCustomerAcceptanceRequired,
     selectedInstallmentPlan,

@@ -386,8 +386,29 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     selectedOption,
   ))
 
+  // Keep the card body (and its PCI iframe) mounted after first selection so returning
+  // to Card does not reload the vault iframe or wipe typed card data. It is lazy: it only
+  // mounts once Card has been selected at least once, then stays alive and is hidden via
+  // display:none when another method is active.
+  let (cardMounted, setCardMounted) = React.useState(() => false)
+  React.useEffect(() => {
+    if !cardMounted && selectedOption->PaymentModeType.paymentMode == Card {
+      setCardMounted(_ => true)
+    }
+    None
+  }, (cardMounted, selectedOption))
+
   let paymentFormElement = {
-    <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
+    let cardIsActive = selectedOption->PaymentModeType.paymentMode == Card
+    <>
+      <RenderIf condition=cardMounted>
+        <div style={display: cardIsActive ? "" : "none"} ariaHidden={!cardIsActive}>
+          <ParentCardComponent
+            key={`card-${cardCollectionMode}`} cardCollectionMode isActive=cardIsActive
+          />
+        </div>
+      </RenderIf>
+      <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
       {switch selectedOption->PaymentModeType.paymentMode {
       | SavedMethods =>
         <SavedMethods
@@ -402,7 +423,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           getVisaCards
           closeComponentIfSavedMethodsAreEmpty
         />
-      | Card => <ParentCardComponent key={`card-${cardCollectionMode}`} cardCollectionMode />
+      | Card => React.null
       | ACHTransfer =>
         <ReusableReactSuspense
           loaderComponent={<LoaderPaymentShimmer />} componentName="ACHBankTransferLazy">
@@ -512,7 +533,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
         </ReusableReactSuspense>
       }}
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </>
   }
 
   let checkoutEle = if groupSavedMethodsWithPaymentMethods {
