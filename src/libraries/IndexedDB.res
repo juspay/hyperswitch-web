@@ -6,8 +6,27 @@ type request<'a>
 type event
 
 module IndexedDB = {
-  @val @scope("window") external instance: 'a = "indexedDB"
+  @val @scope("window") external windowIndexedDB: option<'a> = "indexedDB"
+  @val @scope("self") external selfIndexedDB: option<'a> = "indexedDB"
   @send external open_: ('a, string, int) => openDBRequest = "open"
+
+  let getIndexedDBInstance = () => {
+    let windowIDB = try {windowIndexedDB} catch {
+    | _ => None
+    }
+    let selfIDB = try {selfIndexedDB} catch {
+    | _ => None
+    }
+
+    switch (windowIDB, selfIDB) {
+    | (Some(idb), _) => Some(idb)
+    | (_, Some(idb)) => Some(idb)
+    | _ => {
+        Console.error("IndexedDB is not supported in this environment:")
+        None
+      }
+    }
+  }
 }
 
 module OpenDBRequest = {
@@ -71,29 +90,19 @@ let getErrorMessageFromEvent = event => {
 }
 
 let openDBAndGetRequest = (~dbName, ~objectStoreName) => {
-  let request = IndexedDB.instance->IndexedDB.open_(dbName, 1)
+  switch IndexedDB.getIndexedDBInstance() {
+  | Some(idb) =>
+    let request = idb->IndexedDB.open_(dbName, 1)
 
-  request->OpenDBRequest.onupgradeneeded(event => {
-    let db = getDbFromEvent(event)
-    let _ =
-      db->DB.createObjectStore(objectStoreName, {"keyPath": "timestamp", "autoIncrement": true})
-  })
+    request->OpenDBRequest.onupgradeneeded(event => {
+      let db = getDbFromEvent(event)
+      let _ =
+        db->DB.createObjectStore(objectStoreName, {"keyPath": "timestamp", "autoIncrement": true})
+    })
 
-  request
-}
-
-let setupDatabase = (~dbName, ~objectStoreName, ~onSuccess, ~onError) => {
-  let request = openDBAndGetRequest(~dbName, ~objectStoreName)
-
-  request->OpenDBRequest.onsuccess(event => {
-    let db = getDbFromEvent(event)
-    onSuccess(db)
-  })
-
-  request->OpenDBRequest.onerror(event => {
-    let errorMessage = getErrorMessageFromEvent(event)
-    onError(errorMessage)
-  })
+    Some(request)
+  | None => None
+  }
 }
 
 let addData = (db, objectStoreName, data) => {
