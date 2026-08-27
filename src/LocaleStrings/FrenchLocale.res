@@ -45,6 +45,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `Ajouter une carte de crédit/débit`,
   useExisitingSavedCards: `Utiliser les cartes de débit/crédit enregistrées`,
   saveCardDetails: `Enregistrer les détails de la carte`,
+  savePaymentDetails: `Enregistrer mes informations de paiement en toute sécurité pour des paiements plus rapides`,
+  savePaymentDetailsWhereverPossible: `Enregistrer mes informations de paiement en toute sécurité pour des paiements plus rapides, lorsque disponible`,
   addBankAccount: `Ajouter un compte bancaire`,
   achBankDebitTerms: str =>
     `En fournissant votre numéro de compte et en confirmant ce paiement, vous autorisez ${str} et Hyperswitch, notre fournisseur de services de paiement, à envoyer des instructions à votre banque pour débiter votre compte et à débiter votre compte conformément à ces instructions. Vous avez droit à un remboursement de votre banque selon les modalités de votre accord avec votre banque. Une demande de remboursement doit être effectuée dans les 8 semaines à compter de la date à laquelle votre compte a été débité.`,

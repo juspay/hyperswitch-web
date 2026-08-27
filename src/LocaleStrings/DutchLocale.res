@@ -35,6 +35,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `Kredit/debetkort`,
   useExisitingSavedCards: `Brug gemte debet-/kreditkort`,
   saveCardDetails: `Gem kortoplysninger`,
+  savePaymentDetails: `Gem mine betalingsoplysninger sikkert til hurtigere betalinger`,
+  savePaymentDetailsWhereverPossible: `Gem mine betalingsoplysninger sikkert til hurtigere betalinger, hvor det er tilgængeligt`,
   addBankAccount: `Tilføj bankkonto`,
   achBankDebitTerms: str =>
     `Ved at angive dit kontonummer og bekræfte denne betaling giver du ${str} og Hyperswitch, vores betalingstjenesteudbyder, tilladelse til at sende instruktioner til din bank om at debitere din konto og din bank om at debitere din konto i overensstemmelse med disse instruktioner. Du har ret til en refusion fra din bank i henhold til vilkårene og betingelserne i din aftale med din bank. Der skal anmodes om en refusion inden for otte uger fra den dato, hvor din konto blev debiteret.`,

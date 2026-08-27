@@ -158,7 +158,8 @@ let make = (
 
   let bottomElement = {
     <div
-      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
+      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods"
+    >
       {visibleSavedMethods
       ->Array.mapWithIndex((obj, i) => {
         let isActive = paymentTokenVal == obj.paymentToken
@@ -226,6 +227,7 @@ let make = (
   , [paymentTokenVal])
   let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
   let isCardPaymentMethod = customerMethod.paymentMethod === "card"
+  let isBankRedirectPaymentMethod = customerMethod.paymentMethod === "bank_redirect"
   let isSavedCardCvcFlow = isCardPaymentMethod && customerMethod.requiresCvv
   let empty = isSavedCardCvcFlow ? savedCardCvcState.empty : cvcNumber == ""
   let isCardPaymentMethodValid =
@@ -368,7 +370,8 @@ let make = (
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     let isCustomerAcceptanceRequired =
-      alwaysSendCustomerAcceptance || customerMethod.recurringEnabled->not || isSaveCardsChecked
+      !isBankRedirectPaymentMethod &&
+      (alwaysSendCustomerAcceptance || customerMethod.recurringEnabled->not || isSaveCardsChecked)
     let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
 
     let buildSavedPaymentMethodBody = cvc =>
@@ -690,9 +693,11 @@ let make = (
       </div>
     </RenderIf>
     <RenderIf
-      condition={alwaysSendCustomerAcceptance ||
+      condition={!isBankRedirectPaymentMethod &&
+      (alwaysSendCustomerAcceptance ||
       (displaySavedPaymentMethodsCheckbox &&
-      paymentMethodListValue.payment_type === SETUP_MANDATE)}>
+      paymentMethodListValue.payment_type === SETUP_MANDATE))}
+    >
       <Terms
         styles={
           marginTop: themeObj.spacingGridColumn,

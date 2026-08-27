@@ -1,12 +1,14 @@
 module RenderSavedPaymentMethodItem = {
   @react.component
   let make = (~paymentItem: PaymentType.customerMethods, ~paymentMethodType) => {
+    let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     switch paymentItem.paymentMethod {
     | "card" =>
       <div
         className="flex flex-col items-start"
         role="group"
-        ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
+        ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}
+      >
         <div className="text-base tracking-wide">
           {React.string(
             paymentItem.card.nickname->String.length > 15
@@ -26,7 +28,8 @@ module RenderSavedPaymentMethodItem = {
       <div
         className="flex flex-col items-start"
         role="group"
-        ariaLabel={`${paymentMethodType->String.toUpperCase} bank debit account ending in ${paymentItem.bank.mask}`}>
+        ariaLabel={`${paymentMethodType->String.toUpperCase} bank debit account ending in ${paymentItem.bank.mask}`}
+      >
         <div>
           {React.string(
             `${paymentMethodType->String.toUpperCase} ${paymentItem.paymentMethod->Utils.snakeToTitleCase}`,
@@ -36,6 +39,43 @@ module RenderSavedPaymentMethodItem = {
           <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
           <div ariaHidden=true> {React.string(paymentItem.bank.mask)} </div>
         </div>
+      </div>
+
+    | "bank_redirect" =>
+      // Open-banking saved methods often carry no account mask; the secondary
+      // row (and its aria fragment) only renders when there is something to show.
+      let hasMask = paymentItem.bankRedirect.mask->String.length > 0
+      let hasHolderName = paymentItem.bankRedirect.accountHolderName->String.length > 0
+      let maskFragment = hasMask ? `, account ending in ${paymentItem.bankRedirect.mask}` : ""
+      <div
+        className="flex flex-col items-start"
+        role="group"
+        ariaLabel={`${localeString.payment_methods_pay_by_bank} – ${paymentItem.bankRedirect.bankName}${maskFragment}`}
+      >
+        <div className="text-base tracking-wide">
+          {React.string(
+            paymentItem.bankRedirect.bankName->String.length > 0
+              ? paymentItem.bankRedirect.bankName
+              : localeString.payment_methods_pay_by_bank,
+          )}
+        </div>
+        <RenderIf condition={hasMask || hasHolderName}>
+          <div className={`PickerItemLabel flex flex-row gap-3 items-center text-sm`}>
+            <RenderIf condition={hasMask}>
+              <>
+                <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
+                <div className="tracking-wide" ariaHidden=true>
+                  {React.string(paymentItem.bankRedirect.mask)}
+                </div>
+              </>
+            </RenderIf>
+            <RenderIf condition={hasHolderName}>
+              <div className="opacity-80" ariaHidden=true>
+                {React.string(paymentItem.bankRedirect.accountHolderName)}
+              </div>
+            </RenderIf>
+          </div>
+        </RenderIf>
       </div>
 
     | _ =>
@@ -236,13 +276,15 @@ let make = (
           paymentToken: paymentItem.paymentToken,
           customerId: paymentItem.customerId,
         })
-      }}>
+      }}
+    >
       <div className="w-full">
         <div>
           <div className="flex flex-row justify-between items-center">
             <div
               className={`flex flex-row justify-center items-center`}
-              style={columnGap: themeObj.spacingUnit}>
+              style={columnGap: themeObj.spacingUnit}
+            >
               <div style={color: isActive ? themeObj.colorPrimary : ""}>
                 <Radio
                   checked=isActive
@@ -260,7 +302,8 @@ let make = (
                   <RenderSavedPaymentMethodItem paymentItem={paymentItem} paymentMethodType />
                   <RenderIf
                     condition={displayDefaultSavedPaymentIcon &&
-                    paymentItem.defaultPaymentMethodSet}>
+                    paymentItem.defaultPaymentMethodSet}
+                  >
                     <Icon size=16 name="checkmark" style={color: themeObj.colorPrimary} />
                   </RenderIf>
                 </div>
@@ -270,7 +313,8 @@ let make = (
               <div
                 className={`flex flex-row items-center justify-end gap-3 -mt-1`}
                 style={fontSize: "14px", opacity: "0.5"}
-                ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
+                ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}
+              >
                 <div className="flex" ariaHidden=true>
                   {React.string(`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
                 </div>
@@ -292,14 +336,16 @@ let make = (
               <RenderIf condition={!hideCardExpiry && isActive && isRenderCvv}>
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
-                  style={fontSize: "14px", opacity: "0.5"}>
+                  style={fontSize: "14px", opacity: "0.5"}
+                >
                   <div className="tracking-widest w-12 mt-6">
                     {React.string(`${localeString.cvcTextLabel}: `)}
                   </div>
                   <div
                     className={`flex h mx-4 justify-start w-16 ${isActive
                         ? "opacity-1 mt-4"
-                        : "opacity-0"}`}>
+                        : "opacity-0"}`}
+                  >
                     {makeCvcField()}
                   </div>
                 </div>
@@ -308,18 +354,21 @@ let make = (
                 condition={hideCardExpiry &&
                 isActive &&
                 innerLayout === Spaced &&
-                savedCardCvcState.error !== ""}>
+                savedCardCvcState.error !== ""}
+              >
                 <div
                   className="Error pt-1 mt-1 ml-3"
                   style={
                     color: themeObj.colorDangerText,
                     fontSize: themeObj.fontSizeSm,
-                  }>
+                  }
+                >
                   {React.string(savedCardCvcState.error)}
                 </div>
               </RenderIf>
               <RenderIf
-                condition={isActive && displayBillingDetails && billingDetailsArrayLength > 0}>
+                condition={isActive && displayBillingDetails && billingDetailsArrayLength > 0}
+              >
                 <div className="tracking-wide text-sm text-left gap-2 mt-4 ml-2">
                   <div className="font-semibold"> {React.string(billingDetailsText)} </div>
                   <div className="font-normal">
@@ -331,13 +380,15 @@ let make = (
                 condition={!hideCardExpiry &&
                 isActive &&
                 innerLayout === Spaced &&
-                savedCardCvcState.error !== ""}>
+                savedCardCvcState.error !== ""}
+              >
                 <div
                   className="Error pt-1 mt-1 ml-1"
                   style={
                     color: themeObj.colorDangerText,
                     fontSize: themeObj.fontSizeSm,
-                  }>
+                  }
+                >
                   {React.string(savedCardCvcState.error)}
                 </div>
               </RenderIf>
@@ -352,7 +403,8 @@ let make = (
                     style={
                       paddingTop: themeObj.spacingUnit,
                     }
-                    className="w-full flex pl-1">
+                    className="w-full flex pl-1"
+                  >
                     <InstallmentOptions
                       setSelectedInstallmentPlan
                       showInstallments

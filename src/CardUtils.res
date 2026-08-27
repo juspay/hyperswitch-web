@@ -765,6 +765,11 @@ let getWalletBrandIcon = (customerMethod: PaymentType.customerMethods) => {
 let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
   switch customerMethod.paymentMethod {
   | "wallet" => getWalletBrandIcon(customerMethod)
+  | "bank_redirect" =>
+    <Icon
+      size=Utils.brandIconSize
+      name={BankLogoResolver.resolveIconName(~bankName=customerMethod.bankRedirect.bankName)}
+    />
   | _ =>
     getCardBrandIcon(
       switch customerMethod.card.scheme {
