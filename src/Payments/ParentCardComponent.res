@@ -105,6 +105,12 @@ let make = (
   let (savedCardCvcState, setSavedCardCvcState) = React.useState(_ =>
     CardIframeProtocol.initialSavedCardCvcState
   )
+  let (hasInnerIframeHeight, setHasInnerIframeHeight) = React.useState(_ => false)
+  // The CVC status is posted from CardCVCElement's mount effect, but the iframe is only
+  // sized a round trip later, once LoaderController's ResizeObserver has measured that
+  // same commit. Until then it is still `height: 0`, so the status alone is not something
+  // to hand over to.
+  let isCvcReady = savedCardCvcState.ready && hasInnerIframeHeight
   let {
     cardBrand,
     rawCardNumber,
@@ -500,6 +506,10 @@ let make = (
         ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
         ~logger=Some(loggerState),
         ~confirmPayment=(_json => Promise.resolve(JSON.Encode.null)),
+        // The saved-card CVC box is reserved by this component, so the iframe has to snap
+        // to the height it reports rather than animate into it — otherwise the field
+        // grows in over 0.35s just as the stand-in hands over.
+        ~animateResize=!isSavedCardFlow,
       )
       element.mount(`#${containerId}`)
       Some(
@@ -578,6 +588,9 @@ let make = (
           switch CardIframeProtocol.decodeSavedCardCvcState(dict) {
           | Some(status) => setSavedCardCvcState(_ => status)
           | None => ()
+          }
+          if dict->getFloat("iframeHeight", 0.0) > 0.0 {
+            setHasInnerIframeHeight(_ => true)
           }
         }
         switch CardIframeProtocol.decodeStateUpdate(
@@ -1008,8 +1021,23 @@ let make = (
   let accordionMarginClass = layoutClass.\"type" === Accordion ? "mt-4" : ""
   let showNickname = (!hideCardNicknameField && isCustomerAcceptanceRequired) || isPMMFlow
 
+  // Selecting a saved card mounts a fresh inner iframe, which takes a moment to boot and
+  // to be sized. Reserve the field's box up front and hold a static stand-in over the
+  // container until the real field is both rendered and sized — no growth, no reflow, no
+  // fade. The stand-in overlays the container rather than replacing it, so the iframe
+  // stays in normal flow and the row can never end up shorter than the field it holds.
+  // The container is hidden by opacity, not display, because CardCVCElement focuses
+  // itself on mount and an input inside a hidden iframe cannot take focus.
   isSavedCardFlow
-    ? <div id=containerId style={position: "relative"} />
+    ? <div className="relative w-full" style={minHeight: SavedCardCvcStyles.reservedBoxHeight}>
+        <div
+          id=containerId
+          className={`relative ${isCvcReady ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        />
+        <RenderIf condition={!isCvcReady}>
+          <SavedCardCvcFieldSkeleton />
+        </RenderIf>
+      </div>
     : <div
         className={`ParentCardComponent flex flex-col w-full ${accordionMarginClass} ${isRawMode
             ? "animate-slowShow"
