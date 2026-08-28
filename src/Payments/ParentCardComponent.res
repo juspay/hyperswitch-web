@@ -1049,35 +1049,22 @@ let make = (
 
   let accordionMarginClass = layoutClass.\"type" === Accordion ? "mt-4" : ""
   let showNickname = (!hideCardNicknameField && isCustomerAcceptanceRequired) || isPMMFlow
-  let isCardFormReady = isSavedCardFlow ? savedCardCvcState.ready : hasCardFieldStatus
-  let isCardFormLoading = !isCardFormReady && !isBancontact
   // The 2px negative margin and expanded width cancel the 2px padding the inner
   // paymentMethodsSDK iframe adds around its content (see PaymentMethodsSDK.res).
-  let innerIframeContainerClass = `-m-[2px] w-[calc(100%_+_4px)] ${isCardFormLoading
-      ? "absolute inset-0 invisible"
-      : "relative"}`
+  let innerIframeContainerClass = "-m-[2px] w-[calc(100%_+_4px)]"
 
   isSavedCardFlow
-    ? <div className="relative w-full">
-        <div id=containerId className=innerIframeContainerClass />
-        // Single compact bar matching the 1.8rem label-less CVC input that
-        // CardCVCElement renders in the saved-card (cvcOnly) flow.
-        <RenderIf condition=isCardFormLoading>
-          <PaymentElementShimmer.Shimmer>
-            <div className="animate-pulse w-full h-[1.8rem] rounded bg-slate-200" />
-          </PaymentElementShimmer.Shimmer>
-        </RenderIf>
-      </div>
+    ? <div id=containerId className=innerIframeContainerClass />
     : <div
-        className={`ParentCardComponent relative flex flex-col w-full ${accordionMarginClass} ${isRawMode
+        className={`ParentCardComponent flex flex-col w-full ${accordionMarginClass} ${isRawMode
             ? "animate-slowShow"
             : ""}`}
         style={gridGap: themeObj.spacingGridColumn}
       >
-        <div id=containerId className=innerIframeContainerClass />
-        <RenderIf condition=isCardFormLoading>
-          <PaymentShimmer />
-        </RenderIf>
+        <div
+          id=containerId
+          className={`${innerIframeContainerClass} ${hasCardFieldStatus ? "visible" : "invisible"}`}
+        />
         <RenderIf
           condition={hasCardFieldStatus && (showPaymentMethodsScreen || isBancontact || !isRawMode)}
         >
