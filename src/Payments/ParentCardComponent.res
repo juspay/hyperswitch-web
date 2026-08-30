@@ -105,12 +105,12 @@ let make = (
   let (savedCardCvcState, setSavedCardCvcState) = React.useState(_ =>
     CardIframeProtocol.initialSavedCardCvcState
   )
-  let (hasInnerIframeHeight, setHasInnerIframeHeight) = React.useState(_ => false)
+  let (innerIframeHeight, setInnerIframeHeight) = React.useState(_ => 0.0)
   // The CVC status is posted from CardCVCElement's mount effect, but the iframe is only
   // sized a round trip later, once LoaderController's ResizeObserver has measured that
   // same commit. Until then it is still `height: 0`, so the status alone is not something
   // to hand over to.
-  let isCvcReady = savedCardCvcState.ready && hasInnerIframeHeight
+  let isCvcReady = savedCardCvcState.ready && innerIframeHeight > 0.0
   let {
     cardBrand,
     rawCardNumber,
@@ -127,6 +127,9 @@ let make = (
     hasCvcValidationStatus,
     cardInfo,
   } = innerCardState
+  let isCardFormReady =
+    hasCardFieldStatus &&
+    (isBancontact || innerIframeHeight > CardIframeProtocol.emptyFrameHeight)
   let setIsVgsScriptReady = Jotai.useSetAtom(JotaiAtoms.isVgsScriptReady)
 
   let mountConfigRef = React.useRef((
@@ -506,10 +509,7 @@ let make = (
         ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
         ~logger=Some(loggerState),
         ~confirmPayment=(_json => Promise.resolve(JSON.Encode.null)),
-        // The saved-card CVC box is reserved by this component, so the iframe has to snap
-        // to the height it reports rather than animate into it — otherwise the field
-        // grows in over 0.35s just as the stand-in hands over.
-        ~animateResize=!isSavedCardFlow,
+        ~animateResize=false,
       )
       element.mount(`#${containerId}`)
       Some(
@@ -584,13 +584,14 @@ let make = (
         iframeRef.current->Window.iframePostMessage(dict, ~targetOrigin=innerIframeOrigin)
       }
       if isInnerCardMessage {
+        let reportedHeight = CardIframeProtocol.decodeIframeHeight(dict)
+        if reportedHeight > 0.0 {
+          setInnerIframeHeight(_ => reportedHeight)
+        }
         if isSavedCardFlow {
           switch CardIframeProtocol.decodeSavedCardCvcState(dict) {
           | Some(status) => setSavedCardCvcState(_ => status)
           | None => ()
-          }
-          if dict->getFloat("iframeHeight", 0.0) > 0.0 {
-            setHasInnerIframeHeight(_ => true)
           }
         }
         switch CardIframeProtocol.decodeStateUpdate(
@@ -1043,10 +1044,18 @@ let make = (
             ? "animate-slowShow"
             : ""}`}
         style={gridGap: themeObj.spacingGridColumn}>
-        <div
-          id=containerId
-          style={position: "relative", visibility: hasCardFieldStatus ? "visible" : "hidden"}
-        />
+        // The container and the shimmer share one flex item so the column's grid gap never
+        // opens up between them: while the iframe is booting the container carries no
+        // height, and the shimmer standing under it is what reserves the form's box.
+        <div className="relative w-full">
+          <div
+            id=containerId
+            style={position: "relative", visibility: isCardFormReady ? "visible" : "hidden"}
+          />
+          <RenderIf condition={!isCardFormReady && !isBancontact}>
+            <PaymentElementShimmer />
+          </RenderIf>
+        </div>
         <RenderIf
           condition={hasCardFieldStatus &&
           (showPaymentMethodsScreen || isBancontact || !isRawMode)}>
