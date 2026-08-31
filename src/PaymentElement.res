@@ -386,10 +386,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     selectedOption,
   ))
 
-  // Keep the card body (and its PCI iframe) mounted after first selection so returning
-  // to Card does not reload the vault iframe or wipe typed card data. It is lazy: it only
-  // mounts once Card has been selected at least once, then stays alive and is hidden via
-  // display:none when another method is active.
   let (cardMounted, setCardMounted) = React.useState(() => false)
   React.useEffect(() => {
     if !cardMounted && selectedOption->PaymentModeType.paymentMode == Card {

@@ -106,11 +106,8 @@ let make = (
     CardIframeProtocol.initialSavedCardCvcState
   )
   let (innerIframeHeight, setInnerIframeHeight) = React.useState(_ => 0.0)
-  // The CVC status is posted from CardCVCElement's mount effect, but the iframe is only
-  // sized a round trip later, once LoaderController's ResizeObserver has measured that
-  // same commit. Until then it is still `height: 0`, so the status alone is not something
-  // to hand over to.
   let isCvcReady = savedCardCvcState.ready && innerIframeHeight > 0.0
+
   let {
     cardBrand,
     rawCardNumber,
@@ -1022,13 +1019,6 @@ let make = (
   let accordionMarginClass = layoutClass.\"type" === Accordion ? "mt-4" : ""
   let showNickname = (!hideCardNicknameField && isCustomerAcceptanceRequired) || isPMMFlow
 
-  // Selecting a saved card mounts a fresh inner iframe, which takes a moment to boot and
-  // to be sized. Reserve the field's box up front and hold a static stand-in over the
-  // container until the real field is both rendered and sized — no growth, no reflow, no
-  // fade. The stand-in overlays the container rather than replacing it, so the iframe
-  // stays in normal flow and the row can never end up shorter than the field it holds.
-  // The container is hidden by opacity, not display, because CardCVCElement focuses
-  // itself on mount and an input inside a hidden iframe cannot take focus.
   isSavedCardFlow
     ? <div className="relative w-full" style={minHeight: SavedCardCvcStyles.reservedBoxHeight}>
         <div
@@ -1044,9 +1034,6 @@ let make = (
             ? "animate-slowShow"
             : ""}`}
         style={gridGap: themeObj.spacingGridColumn}>
-        // The container and the shimmer share one flex item so the column's grid gap never
-        // opens up between them: while the iframe is booting the container carries no
-        // height, and the shimmer standing under it is what reserves the form's box.
         <div className="relative w-full">
           <div
             id=containerId
