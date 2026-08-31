@@ -48,6 +48,8 @@ type localeStrings = {
   addNewCard: string,
   useExisitingSavedCards: string,
   saveCardDetails: string,
+  savePaymentDetails: string,
+  savePaymentDetailsWhereverPossible: string,
   addBankAccount: string,
   achBankDebitTerms: string => string,
   sepaDebitTerms: string => string,

@@ -45,6 +45,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `Kredit-/Debitkarte hinzufügen`,
   useExisitingSavedCards: `Verwenden Sie gespeicherte Debit-/Kreditkarten`,
   saveCardDetails: `Kartendetails speichern`,
+  savePaymentDetails: `Meine Zahlungsdaten sicher speichern für schnellere Zahlungen`,
+  savePaymentDetailsWhereverPossible: `Meine Zahlungsdaten sicher speichern für schnellere Zahlungen, sofern verfügbar`,
   addBankAccount: `Bankkonto hinzufügen`,
   achBankDebitTerms: str =>
     `Indem Sie Ihre Kontonummer angeben und diese Zahlung bestätigen, autorisieren Sie diese ${str} und Hyperswitch, unser Zahlungsdienstleister, um Anweisungen an Ihre Bank zu senden, um Ihr Konto zu belasten, und Ihre Bank, um Ihr Konto gemäß diesen Anweisungen zu belasten. Sie haben gemäß den Bedingungen Ihrer Vereinbarung mit Ihrer Bank Anspruch auf eine Rückerstattung von Ihrer Bank. Eine Rückerstattung muss innerhalb von 8 Wochen ab dem Datum der Belastung Ihres Kontos beantragt werden.`,
