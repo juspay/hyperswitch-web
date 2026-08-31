@@ -31,6 +31,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
   let divRef = React.useRef(Nullable.null)
+  let isFirstSdkAuthCommit = React.useRef(true)
 
   let {config} = configAtom
   let {iframeId} = keys
@@ -243,6 +244,28 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     None
   }, [config])
 
+  // Ack back to the parent/loader that this iframe has actually committed the
+  // new sdkAuthorization to its live state — used by performUpdateIntent
+  // (see UpdateIntentHelpersNew.res's waitForElementsUpdateAcks) to know it's
+  // safe to let a confirm proceed without hitting stale credentials.
+  //
+  // This must run as an effect keyed off keys.sdkAuthorization, NOT fire
+  // synchronously inside the "ElementsUpdate" message handler right after
+  // calling setKeys/setConfig: those are React state setters, so the new
+  // value isn't actually live yet at that point — anything that reads it via
+  // a hook depending on this atom only sees it after React re-renders. Only
+  // once this effect runs (which happens after that commit) is it actually
+  // true that "every consumer of keys.sdkAuthorization now sees the new
+  // value". The ref skips the initial mount, so we only ack real updates.
+  React.useEffect(() => {
+    if isFirstSdkAuthCommit.current {
+      isFirstSdkAuthCommit.current = false
+    } else {
+      messageParentWindow([("elementsUpdateApplied", true->JSON.Encode.bool)])
+    }
+    None
+  }, [keys.sdkAuthorization])
+
   React.useEffect(() => {
     open Promise
     let handleFun = (ev: Window.event) => {
@@ -434,6 +457,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
           | None => ()
           }
+          // Note: the elementsUpdateApplied ack is sent from the useEffect
+          // above (keyed on keys.sdkAuthorization), not here — see that
+          // effect's comment for why.
           if optionsDict->Dict.keysToArray->Array.length > 0 {
             switch getThemePromise(optionsDict) {
             | Some(promise) =>

@@ -34,6 +34,54 @@ let waitForReady = () => {
   })
 }
 
+// --- Wait for every mounted content iframe to apply the new credentials ---
+//
+// sendElementsUpdateToIframes (below) posts "ElementsUpdate" to every mounted
+// content iframe (CVC, expressCheckout, payment element, etc.), but that
+// postMessage dispatch is fire-and-forget — the receiving iframe applies the
+// new sdkAuthorization/clientSecret to its own local state asynchronously
+// (see LoaderController.res's "ElementsUpdate" handler). Previously only the
+// PaymentElement iframe's "ready" signal was awaited (and only when a
+// PaymentElement was mounted), which meant updateIntent's promise could
+// resolve while other mounted widgets (e.g. CardCVCElement) were still
+// holding stale credentials — if the caller then immediately triggered a
+// confirm on one of those widgets, it could be submitted with the OLD
+// sdkAuthorization, producing a 401 from the backend.
+//
+// Each content iframe now replies with {elementsUpdateApplied: true} right
+// after it commits the new credentials to its local state. We wait for one
+// ack per mounted iframe before resolving, bounded by a timeout so a
+// non-responsive iframe (an older SDK build without this ack, or one that's
+// been torn down) can't hang updateIntent forever.
+let waitForElementsUpdateAcks = (~expectedAckCount: int, ~timeoutMs=5000) => {
+  if expectedAckCount <= 0 {
+    Promise.resolve()
+  } else {
+    Promise.make((resolve, _) => {
+      let receivedCount = ref(0)
+      let isDone = ref(false)
+      let finish = () => {
+        if !isDone.contents {
+          isDone.contents = true
+          removeSmartEventListener("message", "updateIntent.elementsUpdateAck")
+          resolve()
+        }
+      }
+      let onMessage = (event: Types.event) => {
+        let dict = event.data->anyTypeToJson->getDictFromJson
+        if dict->getBool("elementsUpdateApplied", false) {
+          receivedCount.contents = receivedCount.contents + 1
+          if receivedCount.contents >= expectedAckCount {
+            finish()
+          }
+        }
+      }
+      addSmartEventListener("message", onMessage, "updateIntent.elementsUpdateAck")
+      setTimeout(() => finish(), timeoutMs)->ignore
+    })
+  }
+}
+
 // --- Credential parsing ---
 
 let getNewCredentials = async (~callback: unit => promise<JSON.t>, ~currentClientSecret) => {
@@ -346,11 +394,19 @@ let performUpdateIntent = async (
 
         // Send ElementsUpdate to all inner iframes with new credentials
         logger.setLogInfo(~value="Update SDK Sent to Iframes", ~eventName=UPDATE_SDK)
+        let expectedAckCount =
+          iframes->Array.filter(iframe => iframe->Nullable.toOption->Option.isSome)->Array.length
         sendElementsUpdateToIframes(
           iframes,
           ~newSdkAuthorization,
           ~newClientSecret=clientSecretRef.contents,
         )
+
+        // Wait for every mounted content iframe to confirm it has applied the
+        // new credentials before this promise resolves — see
+        // waitForElementsUpdateAcks above for why this is required regardless
+        // of which iframe types are mounted.
+        await waitForElementsUpdateAcks(~expectedAckCount)
 
         // Wait for the payment element to signal ready (only if a payment element is mounted)
         let readyPromise = if shouldWaitForReady {
