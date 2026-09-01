@@ -24,24 +24,49 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setUpdateSession = Jotai.useSetAtom(updateSession)
   let setIsUpdateIntentLoading = Jotai.useSetAtom(isUpdateIntentLoading)
   let setShowCardIcon = Jotai.useSetAtom(showCardIcon)
+  let setCardNumberPlaceholder = Jotai.useSetAtom(cardNumberPlaceholder)
+  let setCardExpiryPlaceholder = Jotai.useSetAtom(cardExpiryPlaceholder)
+  let setCardCvcPlaceholder = Jotai.useSetAtom(cardCvcPlaceholder)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
   let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  // The per-field `showCardIcon` knob parses ONLY on the paymentMethodsSDK
-  // cardNumber surface — the scope where the icon RenderIf in
-  // CardSchemeComponent is gated; presence-gated (never resets).
-  let isCardNumberFieldSurface =
-    componentName == "paymentMethodsSDK" &&
-      CardUtils.getQueryParamsDictforKey(url.search, "fieldName") == "cardNumber"
-  let applyShowCardIconOption = optionsDict => {
-    if isCardNumberFieldSurface {
-      switch optionsDict->Dict.get("showCardIcon") {
-      | Some(json) => setShowCardIcon(_ => json->getBoolFromJson(true))
-      | None => ()
-      }
+  // Per-field knob table (VGS vocabulary parity): each row parses ONLY on
+  // the paymentMethodsSDK surface and only on its own fieldName. Presence-
+  // gated: an ABSENT key leaves the atom untouched (never reset to default);
+  // string rows decode via JSON.Decode.string so an explicit "" DOES apply
+  // (non-string values are a silent no-op); the bool row keeps its lax
+  // getBoolFromJson decode. Renderers (CommonCardFieldHooks / CardSchemeComponent)
+  // read the atoms directly, so an update() that changes a knob re-renders
+  // the mounted field.
+  let isPaymentMethodsSDKSurface = componentName == "paymentMethodsSDK"
+  let fieldName = CardUtils.getQueryParamsDictforKey(url.search, "fieldName")
+  // Shared decode helper for the string rows: presence-gated + STRICT string
+  // decode — an explicit "" DOES apply; a non-string value is a silent no-op.
+  let applyString = (setter, json) =>
+    switch json->JSON.Decode.string {
+    | Some(value) => setter(_ => value)
+    | None => ()
+    }
+  let perFieldKnobs: array<(string, string, JSON.t => unit)> = [
+    // (optionKey, fieldName it applies to, presence-gated decode + apply)
+    ("showCardIcon", "cardNumber", json => setShowCardIcon(_ => json->getBoolFromJson(true))),
+    ("placeholder", "cardNumber", json => applyString(setCardNumberPlaceholder, json)),
+    ("placeholder", "cardExpiry", json => applyString(setCardExpiryPlaceholder, json)),
+    ("placeholder", "cardCvc", json => applyString(setCardCvcPlaceholder, json)),
+  ]
+  let applyPerFieldKnobs = optionsDict => {
+    if isPaymentMethodsSDKSurface {
+      perFieldKnobs->Array.forEach(((optionKey, rowFieldName, apply)) => {
+        if fieldName == rowFieldName {
+          switch optionsDict->Dict.get(optionKey) {
+          | Some(json) => apply(json)
+          | None => ()
+          }
+        }
+      })
     }
   }
 
@@ -416,7 +441,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~latency=renderLatency,
                 ~value="",
               )
-              applyShowCardIconOption(dict->getDictFromObj("options"))
+              applyPerFieldKnobs(dict->getDictFromObj("options"))
               updateOptions(dict)
             }
           } else if dict->getDictIsSome("paymentOptions") {
@@ -459,7 +484,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }->ignore
           }
         } else if dict->getDictIsSome("paymentElementsUpdate") {
-          applyShowCardIconOption(dict->getDictFromObj("options"))
+          applyPerFieldKnobs(dict->getDictFromObj("options"))
           updateOptions(dict)
         } else if dict->getDictIsSome("ElementsUpdate") {
           logger.setLogInfo(~value="SDK Credentials Received from Loader", ~eventName=UPDATE_SDK)

@@ -583,6 +583,7 @@ module RenderCardNumber = {
   @react.component
   let make = (~state: cardFieldState) => {
     let {themeObj} = Jotai.useAtomValue(configAtom)
+    let numberPlaceholder = Jotai.useAtomValue(cardNumberPlaceholder)
     let {isCardValid, cardNumber, changeCardNumber, handleCardBlur, cardRef, cardError, maxCardLength, icon, setIsCardValid} = state.cardProps
     <div
       className="animate-slowShow flex flex-col"
@@ -599,7 +600,7 @@ module RenderCardNumber = {
         className="tracking-widest w-full"
         maxLength=maxCardLength
         inputRef=cardRef
-        placeholder="4242 4242 4242 4242"
+        placeholder=numberPlaceholder
         rightIcon=icon
         paymentType=CardThemeType.CardNumberElement
         id="card-number"
@@ -615,6 +616,7 @@ module RenderCardExpiry = {
   @react.component
   let make = (~state: cardFieldState) => {
     let {themeObj} = Jotai.useAtomValue(configAtom)
+    let expiryPlaceholder = Jotai.useAtomValue(cardExpiryPlaceholder)
     let {isExpiryValid, cardExpiry, changeCardExpiry, handleExpiryBlur, expiryRef, expiryError, setIsExpiryValid} = state.expiryProps
     <div
       className="animate-slowShow flex flex-col"
@@ -631,7 +633,7 @@ module RenderCardExpiry = {
         className="tracking-widest w-full"
         maxLength=7
         inputRef=expiryRef
-        placeholder="MM / YY"
+        placeholder=expiryPlaceholder
         paymentType=CardThemeType.CardExpiryElement
         id="card-expiry"
         autocomplete="cc-exp"
@@ -646,6 +648,7 @@ module RenderCardCvc = {
   @react.component
   let make = (~state: cardFieldState) => {
     let {themeObj} = Jotai.useAtomValue(configAtom)
+    let cvcPlaceholder = Jotai.useAtomValue(cardCvcPlaceholder)
     let {isCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef, cvcError, maxCVCLength, setIsCVCValid} = state.cvcProps
     <div
       className="animate-slowShow flex flex-col"
@@ -662,7 +665,7 @@ module RenderCardCvc = {
         className="tracking-widest w-full"
         maxLength=maxCVCLength
         inputRef=cvcRef
-        placeholder="123"
+        placeholder=cvcPlaceholder
         paymentType=CardThemeType.CardCVCElement
         id="card-cvc"
         autocomplete="cc-csc"
