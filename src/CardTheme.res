@@ -110,24 +110,24 @@ let getLocaleObject = async string => {
     }
 
     let promiseLocale = switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
-    | EN => Js.import(EnglishLocale.localeStrings)
-    | HE => Js.import(HebrewLocale.localeStrings)
-    | FR => Js.import(FrenchLocale.localeStrings)
-    | EN_GB => Js.import(EnglishGBLocale.localeStrings)
-    | AR => Js.import(ArabicLocale.localeStrings)
-    | JA => Js.import(JapaneseLocale.localeStrings)
-    | DE => Js.import(DeutschLocale.localeStrings)
-    | FR_BE => Js.import(FrenchBelgiumLocale.localeStrings)
-    | ES => Js.import(SpanishLocale.localeStrings)
-    | CA => Js.import(CatalanLocale.localeStrings)
-    | ZH => Js.import(ChineseLocale.localeStrings)
-    | PT => Js.import(PortugueseLocale.localeStrings)
-    | IT => Js.import(ItalianLocale.localeStrings)
-    | PL => Js.import(PolishLocale.localeStrings)
-    | NL => Js.import(DutchLocale.localeStrings)
-    | SV => Js.import(SwedishLocale.localeStrings)
-    | RU => Js.import(RussianLocale.localeStrings)
-    | ZH_HANT => Js.import(TraditionalChineseLocale.localeStrings)
+    | EN => import(EnglishLocale.localeStrings)
+    | HE => import(HebrewLocale.localeStrings)
+    | FR => import(FrenchLocale.localeStrings)
+    | EN_GB => import(EnglishGBLocale.localeStrings)
+    | AR => import(ArabicLocale.localeStrings)
+    | JA => import(JapaneseLocale.localeStrings)
+    | DE => import(DeutschLocale.localeStrings)
+    | FR_BE => import(FrenchBelgiumLocale.localeStrings)
+    | ES => import(SpanishLocale.localeStrings)
+    | CA => import(CatalanLocale.localeStrings)
+    | ZH => import(ChineseLocale.localeStrings)
+    | PT => import(PortugueseLocale.localeStrings)
+    | IT => import(ItalianLocale.localeStrings)
+    | PL => import(PolishLocale.localeStrings)
+    | NL => import(DutchLocale.localeStrings)
+    | SV => import(SwedishLocale.localeStrings)
+    | RU => import(RussianLocale.localeStrings)
+    | ZH_HANT => import(TraditionalChineseLocale.localeStrings)
     }
 
     let awaitedLocaleValue = await promiseLocale
@@ -139,7 +139,7 @@ let getLocaleObject = async string => {
 
 let getConstantStringsObject = async () => {
   try {
-    let promiseConstantStrings = Js.import(ConstantStrings.constantStrings)
+    let promiseConstantStrings = import(ConstantStrings.constantStrings)
     await promiseConstantStrings
   } catch {
   | _ => ConstantStrings.constantStrings
@@ -422,7 +422,7 @@ let getFonts = (str, dict, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.filterMap(JSON.Decode.object)
   ->Array.map(json => {
     unknownKeysWarning(["cssSrc", "family", "src", "weight"], json, "fonts")
     {

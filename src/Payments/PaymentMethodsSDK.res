@@ -119,7 +119,7 @@ let make = () => {
       | (PaymentSurfaceFamily.PaymentsFamilyV2, Some(unknownField)) =>
         // Recognized family with an unrecognized fieldName — this is a bug
         // in OUR code (never merchant-reachable). Loud-fail.
-        raise(
+        throw(
           InvalidSurfaceFamilyParams({
             componentName,
             surfaceFamily: surfaceFamily->Option.getOr("MISSING"),
@@ -142,7 +142,7 @@ let make = () => {
         // Loud-fail: missing/invalid surfaceFamily is a bug in our own code.
         // Throw so the ErrorBoundary at Index.res:13-15 catches and renders
         // the ghost error card with the URL params for diagnosis.
-        raise(
+        throw(
           InvalidSurfaceFamilyParams({
             componentName,
             surfaceFamily: surfaceFamily->Option.getOr("MISSING"),
