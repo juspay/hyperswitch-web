@@ -39,6 +39,7 @@ let make = (
   let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
   let sessions = Jotai.useAtomValue(JotaiAtoms.sessions)
   let rawIframeOptions = Jotai.useAtomValue(JotaiAtoms.rawIframeOptions)
+  let rawIframePaymentOptions = Jotai.useAtomValue(JotaiAtoms.rawIframePaymentOptions)
   let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
   let setComplete = Jotai.useSetAtom(JotaiAtoms.fieldsComplete)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Jotai.useAtom(
@@ -106,6 +107,7 @@ let make = (
 
   let mountConfigRef = React.useRef((
     rawIframeOptions,
+    rawIframePaymentOptions,
     publishableKey,
     sessionId,
     customPodUri,
@@ -121,6 +123,7 @@ let make = (
   React.useEffect(() => {
     mountConfigRef.current = (
       rawIframeOptions,
+      rawIframePaymentOptions,
       publishableKey,
       sessionId,
       customPodUri,
@@ -136,6 +139,7 @@ let make = (
     None
   }, (
     rawIframeOptions,
+    rawIframePaymentOptions,
     publishableKey,
     sessionId,
     customPodUri,
@@ -417,6 +421,7 @@ let make = (
     (mountedIframeRef, selectorString, _sdkHandleOneClickConfirmPayment) => {
       let (
         currentRawIframeOptions,
+        currentRawIframePaymentOptions,
         currentPublishableKey,
         currentSessionId,
         currentCustomPodUri,
@@ -430,9 +435,7 @@ let make = (
         currentFlowType,
       ) = mountConfigRef.current
       let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey=currentPublishableKey)
-      let paymentOptionsVal = currentRawIframeOptions.paymentOptions
-      let optionsVal = currentRawIframeOptions.options
-      lastPostedOptionsRef.current = optionsVal->JSON.stringify
+      lastPostedOptionsRef.current = currentRawIframeOptions->JSON.stringify
       let supportedCardBrandEntries = switch supportedCardBrandsRef.current {
       | Some(brands) => [
           ("supportedCardBrands", brands->Array.map(JSON.Encode.string)->JSON.Encode.array),
@@ -442,8 +445,8 @@ let make = (
       let message =
         [
           ("paymentElementCreate", true->JSON.Encode.bool),
-          ("paymentOptions", paymentOptionsVal),
-          ("options", optionsVal),
+          ("paymentOptions", currentRawIframePaymentOptions),
+          ("options", currentRawIframeOptions),
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", currentPublishableKey->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
@@ -539,28 +542,28 @@ let make = (
       iframeRef.current->Window.iframePostMessage(
         [
           ("paymentElementCreate", false->JSON.Encode.bool),
-          ("paymentOptions", rawIframeOptions.paymentOptions),
+          ("paymentOptions", rawIframePaymentOptions),
         ]->Dict.fromArray,
         ~targetOrigin=innerIframeOrigin,
       )
     }
     None
-  }, (iframeMounted, rawIframeOptions.paymentOptions))
+  }, (iframeMounted, rawIframePaymentOptions))
 
   React.useEffect(() => {
-    let serializedOptions = rawIframeOptions.options->JSON.stringify
+    let serializedOptions = rawIframeOptions->JSON.stringify
     if iframeMounted && serializedOptions !== lastPostedOptionsRef.current {
       iframeRef.current->Window.iframePostMessage(
         [
           ("paymentElementsUpdate", true->JSON.Encode.bool),
-          ("options", rawIframeOptions.options),
+          ("options", rawIframeOptions),
         ]->Dict.fromArray,
         ~targetOrigin=innerIframeOrigin,
       )
       lastPostedOptionsRef.current = serializedOptions
     }
     None
-  }, (iframeMounted, rawIframeOptions.options))
+  }, (iframeMounted, rawIframeOptions))
 
   React.useEffect(() => {
     let handleMessage = (ev: Window.event) => {
