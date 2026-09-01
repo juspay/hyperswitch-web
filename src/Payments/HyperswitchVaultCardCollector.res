@@ -13,18 +13,9 @@ let make = (
   let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
-  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
 
-  let {
-    isCardValid,
-    isCardSupported,
-    cardNumber,
-    setCardError,
-    cardBrand,
-    eligibilitySurchargeDetails,
-    isEligibilityPending,
-  } = cardProps
+  let {isCardValid, isCardSupported, cardNumber, setCardError, cardBrand} = cardProps
   let {isExpiryValid, cardExpiry, setExpiryError} = expiryProps
   let {isCVCValid, cvcNumber, setCvcError} = cvcProps
 
@@ -119,11 +110,6 @@ let make = (
     <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>
       <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
         <CardFields cardProps expiryProps cvcProps />
-        <EligibilityNotice
-          eligibilitySurchargeDetails
-          eligibilityError=None
-          isEligibilityPending={isEligibilityPending && paymentMethodListValue.should_block_confirm}
-        />
       </div>
     </div>
   </div>

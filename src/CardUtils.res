@@ -31,6 +31,7 @@ type cardProps = {
   cardEligibilityError: option<string>,
   updateCardEligibilityError: option<string> => unit,
   eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  eligibilityOfferDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
   isEligibilityPending: bool,
 }
 
@@ -53,6 +54,7 @@ let useDefaultCardProps = () => {
     cardEligibilityError: None,
     updateCardEligibilityError: _ => (),
     eligibilitySurchargeDetails: None,
+    eligibilityOfferDetails: None,
     isEligibilityPending: false,
   }
 }
@@ -765,6 +767,11 @@ let getWalletBrandIcon = (customerMethod: PaymentType.customerMethods) => {
 let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
   switch customerMethod.paymentMethod {
   | "wallet" => getWalletBrandIcon(customerMethod)
+  | "bank_redirect" =>
+    <Icon
+      size=Utils.brandIconSize
+      name={BankLogoResolver.resolveIconName(~bankName=customerMethod.bankRedirect.bankName)}
+    />
   | _ =>
     getCardBrandIcon(
       switch customerMethod.card.scheme {
