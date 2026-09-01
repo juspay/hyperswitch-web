@@ -38,8 +38,8 @@ let make = (
   let clickToPayConfig = Jotai.useAtomValue(JotaiAtoms.clickToPayConfig)
   let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
   let sessions = Jotai.useAtomValue(JotaiAtoms.sessions)
-  let rawIframeOptions = Jotai.useAtomValue(JotaiAtoms.rawIframeOptions)
-  let rawIframePaymentOptions = Jotai.useAtomValue(JotaiAtoms.rawIframePaymentOptions)
+  let optionsJson = Jotai.useAtomValue(JotaiAtoms.optionsJson)
+  let paymentOptionsJson = Jotai.useAtomValue(JotaiAtoms.paymentOptionsJson)
   let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
   let setComplete = Jotai.useSetAtom(JotaiAtoms.fieldsComplete)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Jotai.useAtom(
@@ -106,8 +106,8 @@ let make = (
   let setIsVgsScriptReady = Jotai.useSetAtom(JotaiAtoms.isVgsScriptReady)
 
   let mountConfigRef = React.useRef((
-    rawIframeOptions,
-    rawIframePaymentOptions,
+    optionsJson,
+    paymentOptionsJson,
     publishableKey,
     sessionId,
     customPodUri,
@@ -122,8 +122,8 @@ let make = (
   ))
   React.useEffect(() => {
     mountConfigRef.current = (
-      rawIframeOptions,
-      rawIframePaymentOptions,
+      optionsJson,
+      paymentOptionsJson,
       publishableKey,
       sessionId,
       customPodUri,
@@ -138,8 +138,8 @@ let make = (
     )
     None
   }, (
-    rawIframeOptions,
-    rawIframePaymentOptions,
+    optionsJson,
+    paymentOptionsJson,
     publishableKey,
     sessionId,
     customPodUri,
@@ -420,8 +420,8 @@ let make = (
   let mountPostMessage = React.useCallback(
     (mountedIframeRef, selectorString, _sdkHandleOneClickConfirmPayment) => {
       let (
-        currentRawIframeOptions,
-        currentRawIframePaymentOptions,
+        currentOptionsJson,
+        currentPaymentOptionsJson,
         currentPublishableKey,
         currentSessionId,
         currentCustomPodUri,
@@ -435,7 +435,7 @@ let make = (
         currentFlowType,
       ) = mountConfigRef.current
       let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey=currentPublishableKey)
-      lastPostedOptionsRef.current = currentRawIframeOptions->JSON.stringify
+      lastPostedOptionsRef.current = currentOptionsJson->JSON.stringify
       let supportedCardBrandEntries = switch supportedCardBrandsRef.current {
       | Some(brands) => [
           ("supportedCardBrands", brands->Array.map(JSON.Encode.string)->JSON.Encode.array),
@@ -445,8 +445,8 @@ let make = (
       let message =
         [
           ("paymentElementCreate", true->JSON.Encode.bool),
-          ("paymentOptions", currentRawIframePaymentOptions),
-          ("options", currentRawIframeOptions),
+          ("paymentOptions", currentPaymentOptionsJson),
+          ("options", currentOptionsJson),
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", currentPublishableKey->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
@@ -542,28 +542,28 @@ let make = (
       iframeRef.current->Window.iframePostMessage(
         [
           ("paymentElementCreate", false->JSON.Encode.bool),
-          ("paymentOptions", rawIframePaymentOptions),
+          ("paymentOptions", paymentOptionsJson),
         ]->Dict.fromArray,
         ~targetOrigin=innerIframeOrigin,
       )
     }
     None
-  }, (iframeMounted, rawIframePaymentOptions))
+  }, (iframeMounted, paymentOptionsJson))
 
   React.useEffect(() => {
-    let serializedOptions = rawIframeOptions->JSON.stringify
+    let serializedOptions = optionsJson->JSON.stringify
     if iframeMounted && serializedOptions !== lastPostedOptionsRef.current {
       iframeRef.current->Window.iframePostMessage(
         [
           ("paymentElementsUpdate", true->JSON.Encode.bool),
-          ("options", rawIframeOptions),
+          ("options", optionsJson),
         ]->Dict.fromArray,
         ~targetOrigin=innerIframeOrigin,
       )
       lastPostedOptionsRef.current = serializedOptions
     }
     None
-  }, (iframeMounted, rawIframeOptions))
+  }, (iframeMounted, optionsJson))
 
   React.useEffect(() => {
     let handleMessage = (ev: Window.event) => {
