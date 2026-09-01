@@ -34,6 +34,7 @@ let make = (
   ~cardCollectionMode="tokenise",
   ~isBancontact=false,
   ~flowType=CardThemeType.Payment,
+  ~isActive=true,
 ) => {
   let {
     clientSecret,
@@ -104,6 +105,9 @@ let make = (
   let (savedCardCvcState, setSavedCardCvcState) = React.useState(_ =>
     CardIframeProtocol.initialSavedCardCvcState
   )
+  let (innerIframeHeight, setInnerIframeHeight) = React.useState(_ => 0.0)
+  let isCvcReady = savedCardCvcState.ready && innerIframeHeight > 0.0
+
   let {
     cardBrand,
     rawCardNumber,
@@ -120,6 +124,9 @@ let make = (
     hasCvcValidationStatus,
     cardInfo,
   } = innerCardState
+  let isCardFormReady =
+    hasCardFieldStatus &&
+    (isBancontact || innerIframeHeight > CardIframeProtocol.emptyFrameHeight)
   let setIsVgsScriptReady = Jotai.useSetAtom(JotaiAtoms.isVgsScriptReady)
 
   let mountConfigRef = React.useRef((
@@ -359,12 +366,12 @@ let make = (
     ~complete=cardFieldsComplete && isInstallmentValid && areRequiredFieldsValid,
     ~empty=cardFieldsEmpty,
     ~paymentType="card",
-    ~enabled=!isSavedCardFlow,
+    ~enabled=!isSavedCardFlow && isActive,
   )
   SubscriptionEventHooks.useEmitFormStatus(
     ~empty=cardFieldsEmpty,
     ~complete=cardFieldsComplete && isInstallmentValid && areRequiredFieldsValid,
-    ~enabled=!isSavedCardFlow,
+    ~enabled=!isSavedCardFlow && isActive,
   )
   SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
   SubscriptionEventHooks.useEmitAppliedOffersInfo(~offerDetails=eligibilityOfferDetails)
@@ -508,6 +515,7 @@ let make = (
         ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
         ~logger=Some(loggerState),
         ~confirmPayment=(_json => Promise.resolve(JSON.Encode.null)),
+        ~animateResize=false,
       )
       element.mount(`#${containerId}`)
       Some(
@@ -582,6 +590,10 @@ let make = (
         iframeRef.current->Window.iframePostMessage(dict, ~targetOrigin=innerIframeOrigin)
       }
       if isInnerCardMessage {
+        let reportedHeight = CardIframeProtocol.decodeIframeHeight(dict)
+        if reportedHeight > 0.0 {
+          setInnerIframeHeight(_ => reportedHeight)
+        }
         if isSavedCardFlow {
           switch CardIframeProtocol.decodeSavedCardCvcState(dict) {
           | Some(status) => setSavedCardCvcState(_ => status)
@@ -808,7 +820,7 @@ let make = (
   }
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    if !isSavedCardFlow {
+    if !isSavedCardFlow && isActive {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && !hasCardFieldStatus {
@@ -984,6 +996,7 @@ let make = (
     }
   }, (
     iframeRef,
+    isActive,
     areRequiredFieldsValid,
     isCustomerAcceptanceRequired,
     selectedInstallmentPlan,
@@ -1019,16 +1032,29 @@ let make = (
   let showNickname = (!hideCardNicknameField && isCustomerAcceptanceRequired) || isPMMFlow
 
   isSavedCardFlow
-    ? <div id=containerId style={position: "relative"} />
+    ? <div className="relative w-full" style={minHeight: SavedCardCvcStyles.reservedBoxHeight}>
+        <div
+          id=containerId
+          className={`relative ${isCvcReady ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        />
+        <RenderIf condition={!isCvcReady}>
+          <SavedCardCvcFieldSkeleton />
+        </RenderIf>
+      </div>
     : <div
         className={`ParentCardComponent flex flex-col w-full ${accordionMarginClass} ${isRawMode
             ? "animate-slowShow"
             : ""}`}
         style={gridGap: themeObj.spacingGridColumn}>
-        <div
-          id=containerId
-          style={position: "relative", visibility: hasCardFieldStatus ? "visible" : "hidden"}
-        />
+        <div className="relative w-full">
+          <div
+            id=containerId
+            style={position: "relative", visibility: isCardFormReady ? "visible" : "hidden"}
+          />
+          <RenderIf condition={!isCardFormReady && !isBancontact}>
+            <PaymentElementShimmer />
+          </RenderIf>
+        </div>
         <RenderIf
           condition={hasCardFieldStatus &&
           (showPaymentMethodsScreen || isBancontact || !isRawMode)}>

@@ -90,6 +90,7 @@ let make = (
   mountPostMessage,
   ~appearance,
   ~isPaymentManagementElement=false,
+  ~animateResize=true,
   ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~logger: option<HyperLoggerTypes.loggerMake>,
@@ -548,7 +549,11 @@ let make = (
           let elem = Window.querySelector(`#${iframeElementId}`)
           switch elem->Nullable.toOption {
           | Some(ele) =>
-            ele->Window.style->Window.setTransition("height 0.35s ease 0s, opacity 0.4s ease 0.1s")
+            ele
+            ->Window.style
+            ->Window.setTransition(
+              animateResize ? "height 0.35s ease 0s, opacity 0.4s ease 0.1s" : "none",
+            )
           | None => ()
           }
         }

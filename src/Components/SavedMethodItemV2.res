@@ -206,7 +206,7 @@ let make = (
                         maxLength=4
                         inputRef=cvcRef
                         placeholder="123"
-                        height="1.8rem"
+                        height=SavedCardCvcStyles.fieldHeight
                         name={TestUtils.cardCVVInputTestId}
                         autocomplete="cc-csc"
                       />
