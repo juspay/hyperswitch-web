@@ -9,6 +9,7 @@ type showLoader = Auto | Always | Never
 type mode =
   | Card
   | Payment
+  | PaymentMethodsSDK
   | CardNumberElement
   | CardExpiryElement
   | CardCVCElement
@@ -103,7 +104,7 @@ let getPaymentMode = val => {
   switch val {
   | "card" => Card
   | "payment" => Payment
-  | "paymentMethodsSDK" => Payment
+  | "paymentMethodsSDK" => PaymentMethodsSDK
   | "cardNumber" => CardNumberElement
   | "cardExpiry" => CardExpiryElement
   | "cardCvc" => CardCVCElement
@@ -124,6 +125,7 @@ let getPaymentModeToString = val => {
   switch val {
   | Card => "card"
   | Payment => "payment"
+  | PaymentMethodsSDK => "paymentMethodsSDK"
   | CardNumberElement => "cardNumber"
   | CardExpiryElement => "cardExpiry"
   | CardCVCElement => "cardCvc"

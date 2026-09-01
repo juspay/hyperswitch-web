@@ -119,6 +119,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PazeElement
     | ExpressCheckoutElement
     | PaymentMethodsManagement
+    | PaymentMethodsSDK
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
         setOptionsPayment(_ => paymentOptions)
@@ -223,7 +224,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       generateStyleSheet("", dict, "themestyle")
     }
     switch paymentMode->CardThemeType.getPaymentMode {
-    | Payment => ()
+    | Payment
+    | PaymentMethodsSDK => ()
     | _ =>
       let styleClass = [
         ("input-base", options.style.base->getDictFromJson),

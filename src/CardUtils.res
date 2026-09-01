@@ -432,7 +432,9 @@ let getCardBrandIcon = (cardType, paymentType) => {
   | INTERAC => <Icon size=brandIconSize name="interac" />
   | NOTFOUND =>
     switch paymentType {
-    | Payment => <Icon size=brandIconSize name="base-card" />
+    | Payment
+    | PaymentMethodsSDK =>
+      <Icon size=brandIconSize name="base-card" />
     | Card
     | CardNumberElement
     | CardExpiryElement

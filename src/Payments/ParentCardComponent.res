@@ -5,19 +5,15 @@ open PaymentType
 let innerIframeContainerDivId = "parent-card-inner-iframe-container"
 let tokenResponseListenerActivity = "onParentCardTokenResponse"
 
-let encodeInnerElementOptions = (options: PaymentType.options) => {
+let encodeInnerCardFieldOptions = (options: PaymentType.options) => {
   let layout = CardUtils.getLayoutClass(options.layout)
-  let cvcIcon = layout.cvcIcon === Hidden ? "hidden" : "default"
-  let cardBrandIcon = switch layout.cardBrandIcon {
-  | Hidden => "hidden"
-  | Animated => "animated"
-  | HideGeneric => "hideGeneric"
-  | Standard => "standard"
-  }
   let layoutOptions =
     [
-      ("cvcIcon", cvcIcon->JSON.Encode.string),
-      ("cardBrandIcon", cardBrandIcon->JSON.Encode.string),
+      ("cvcIcon", layout.cvcIcon->PaymentType.cvcIconStyleToString->JSON.Encode.string),
+      (
+        "cardBrandIcon",
+        layout.cardBrandIcon->PaymentType.cardBrandIconStyleToString->JSON.Encode.string,
+      ),
     ]->Dict.fromArray
   [("layout", layoutOptions->JSON.Encode.object), ("readOnly", options.readOnly->JSON.Encode.bool)]
   ->Dict.fromArray
@@ -61,13 +57,13 @@ let make = (
     paymentId,
     sdkHandleOneClickConfirmPayment,
   } = Jotai.useAtomValue(JotaiAtoms.keys)
-  let sdkSessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
+  let sessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let optionsPayment = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
-  let sdkConfig = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let config = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let isConfigReady = Jotai.useAtomValue(JotaiAtoms.isConfigReady)
   let nickname = Jotai.useAtomValue(JotaiAtoms.userCardNickName)
   let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
@@ -75,7 +71,7 @@ let make = (
   let phoneNumber = Jotai.useAtomValue(JotaiAtoms.userPhoneNumber)
   let clickToPayConfig = Jotai.useAtomValue(JotaiAtoms.clickToPayConfig)
   let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
-  let sessionToken = Jotai.useAtomValue(JotaiAtoms.sessions)
+  let sessions = Jotai.useAtomValue(JotaiAtoms.sessions)
   let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
   let setComplete = Jotai.useSetAtom(JotaiAtoms.fieldsComplete)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Jotai.useAtom(
@@ -88,9 +84,9 @@ let make = (
     alwaysSendCustomerAcceptance,
     hideCardNicknameField,
     layout,
-  } = optionsPayment
+  } = options
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let {themeObj, localeString} = sdkConfig
+  let {themeObj, localeString} = config
   let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin
   let isRawMode = cardCollectionMode === "raw"
   let isRawNewCardFlow = isRawMode && !isSavedCardFlow
@@ -142,9 +138,9 @@ let make = (
   let setIsVgsScriptReady = Jotai.useSetAtom(JotaiAtoms.isVgsScriptReady)
 
   let mountConfigRef = React.useRef((
-    sdkConfig,
+    config,
     publishableKey,
-    sdkSessionId,
+    sessionId,
     customPodUri,
     paymentId,
     sdkHandleOneClickConfirmPayment,
@@ -154,13 +150,13 @@ let make = (
     cardCollectionMode,
     isBancontact,
     flowType,
-    optionsPayment,
+    options,
   ))
   React.useEffect(() => {
     mountConfigRef.current = (
-      sdkConfig,
+      config,
       publishableKey,
-      sdkSessionId,
+      sessionId,
       customPodUri,
       paymentId,
       sdkHandleOneClickConfirmPayment,
@@ -170,13 +166,13 @@ let make = (
       cardCollectionMode,
       isBancontact,
       flowType,
-      optionsPayment,
+      options,
     )
     None
   }, (
-    sdkConfig,
+    config,
     publishableKey,
-    sdkSessionId,
+    sessionId,
     customPodUri,
     paymentId,
     sdkHandleOneClickConfirmPayment,
@@ -186,7 +182,7 @@ let make = (
     cardCollectionMode,
     isBancontact,
     flowType,
-    optionsPayment,
+    options,
   ))
 
   let isGuestCustomer = useIsGuestCustomer()
@@ -209,7 +205,7 @@ let make = (
   }, [paymentMethodListValue])
   let supportedCardBrandsRef = React.useRef(supportedCardBrands)
   supportedCardBrandsRef.current = supportedCardBrands
-  let lastPostedElementOptionsRef = React.useRef("")
+  let lastPostedCardFieldOptionsRef = React.useRef("")
   let cardSupportState = React.useMemo(() => {
     if isRawNewCardFlow && !isBancontact {
       let clearCardNumber = rawCardNumber->CardValidations.clearSpaces
@@ -456,9 +452,9 @@ let make = (
   let mountPostMessage = React.useCallback(
     (mountedIframeRef, selectorString, _sdkHandleOneClickConfirmPayment) => {
       let (
-        currentSdkConfig,
+        currentConfig,
         currentPublishableKey,
-        currentSdkSessionId,
+        currentSessionId,
         currentCustomPodUri,
         currentPaymentId,
         currentHandleOneClickConfirmPayment,
@@ -468,12 +464,12 @@ let make = (
         currentCardCollectionMode,
         currentIsBancontact,
         currentFlowType,
-        currentOptionsPayment,
+        currentOptions,
       ) = mountConfigRef.current
       let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey=currentPublishableKey)
-      let paymentOptionsVal = currentSdkConfig->encodeInnerPaymentOptions
-      let elementOptionsVal = currentOptionsPayment->encodeInnerElementOptions
-      lastPostedElementOptionsRef.current = elementOptionsVal->JSON.stringify
+      let paymentOptionsVal = currentConfig->encodeInnerPaymentOptions
+      let cardFieldOptionsVal = currentOptions->encodeInnerCardFieldOptions
+      lastPostedCardFieldOptionsRef.current = cardFieldOptionsVal->JSON.stringify
       let supportedCardBrandEntries = switch supportedCardBrandsRef.current {
       | Some(brands) => [
           ("supportedCardBrands", brands->Array.map(JSON.Encode.string)->JSON.Encode.array),
@@ -484,11 +480,11 @@ let make = (
         [
           ("paymentElementCreate", true->JSON.Encode.bool),
           ("paymentOptions", paymentOptionsVal),
-          ("options", elementOptionsVal),
+          ("options", cardFieldOptionsVal),
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", currentPublishableKey->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
-          ("sdkSessionId", currentSdkSessionId->JSON.Encode.string),
+          ("sdkSessionId", currentSessionId->JSON.Encode.string),
           ("customPodUri", currentCustomPodUri->JSON.Encode.string),
           ("paymentId", currentPaymentId->JSON.Encode.string),
           ("parentURL", Window.Location.origin->JSON.Encode.string),
@@ -550,7 +546,7 @@ let make = (
   }, [isConfigReady])
 
   React.useEffect(() => {
-    switch (iframeMounted, sessionToken) {
+    switch (iframeMounted, sessions) {
     | (true, Loaded(s)) =>
       iframeRef.current->Window.iframePostMessage(
         [("sessions", s)]->Dict.fromArray,
@@ -559,7 +555,7 @@ let make = (
     | _ => ()
     }
     None
-  }, (iframeMounted, sessionToken))
+  }, (iframeMounted, sessions))
 
   React.useEffect(() => {
     switch (iframeMounted, supportedCardBrands) {
@@ -577,7 +573,7 @@ let make = (
 
   React.useEffect(() => {
     if iframeMounted {
-      let paymentOptions = sdkConfig->encodeInnerPaymentOptions
+      let paymentOptions = config->encodeInnerPaymentOptions
       iframeRef.current->Window.iframePostMessage(
         [
           ("paymentElementCreate", false->JSON.Encode.bool),
@@ -587,23 +583,23 @@ let make = (
       )
     }
     None
-  }, (iframeMounted, sdkConfig))
+  }, (iframeMounted, config))
 
   React.useEffect(() => {
-    let elementOptions = optionsPayment->encodeInnerElementOptions
-    let serializedElementOptions = elementOptions->JSON.stringify
-    if iframeMounted && serializedElementOptions !== lastPostedElementOptionsRef.current {
+    let cardFieldOptions = options->encodeInnerCardFieldOptions
+    let serializedCardFieldOptions = cardFieldOptions->JSON.stringify
+    if iframeMounted && serializedCardFieldOptions !== lastPostedCardFieldOptionsRef.current {
       iframeRef.current->Window.iframePostMessage(
         [
           ("paymentElementsUpdate", true->JSON.Encode.bool),
-          ("options", elementOptions),
+          ("options", cardFieldOptions),
         ]->Dict.fromArray,
         ~targetOrigin=innerIframeOrigin,
       )
-      lastPostedElementOptionsRef.current = serializedElementOptions
+      lastPostedCardFieldOptionsRef.current = serializedCardFieldOptions
     }
     None
-  }, (iframeMounted, optionsPayment))
+  }, (iframeMounted, options))
 
   React.useEffect(() => {
     let handleMessage = (ev: Window.event) => {
@@ -1061,12 +1057,9 @@ let make = (
 
   let accordionMarginClass = layoutClass.\"type" === Accordion ? "mt-4" : ""
   let showNickname = (!hideCardNicknameField && isCustomerAcceptanceRequired) || isPMMFlow
-  // The 2px negative margin and expanded width cancel the 2px padding the inner
-  // paymentMethodsSDK iframe adds around its content (see PaymentMethodsSDK.res).
-  let innerIframeContainerClass = "-m-[2px] w-[calc(100%_+_4px)]"
 
   isSavedCardFlow
-    ? <div id=containerId className=innerIframeContainerClass />
+    ? <div id=containerId style={position: "relative"} />
     : <div
         className={`ParentCardComponent flex flex-col w-full ${accordionMarginClass} ${isRawMode
             ? "animate-slowShow"
@@ -1075,7 +1068,7 @@ let make = (
       >
         <div
           id=containerId
-          className={`${innerIframeContainerClass} ${hasCardFieldStatus ? "visible" : "invisible"}`}
+          style={position: "relative", visibility: hasCardFieldStatus ? "visible" : "hidden"}
         />
         <RenderIf
           condition={hasCardFieldStatus && (showPaymentMethodsScreen || isBancontact || !isRawMode)}

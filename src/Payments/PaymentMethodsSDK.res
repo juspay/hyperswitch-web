@@ -24,7 +24,7 @@ let make = () => {
   // Only card today; future payment methods would branch here.
   <RenderIf condition=isConfigReady>
     <div
-      className="w-full font-medium p-0.5 box-border bg-transparent"
+      className="font-medium p-0.5"
       style={
         color: themeObj.colorText,
         fontFamily: themeObj.fontFamily,
