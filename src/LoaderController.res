@@ -56,6 +56,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setSavedCardBrand = Jotai.useSetAtom(JotaiAtoms.savedCardBrand)
   let setIsBancontactCardFlow = Jotai.useSetAtom(JotaiAtoms.isBancontactCardFlow)
   let setCardFlowType = Jotai.useSetAtom(JotaiAtoms.cardFlowType)
+  let setRawIframeOptions = Jotai.useSetAtom(rawIframeOptions)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -95,6 +96,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
+    setRawIframeOptions(prev => {...prev, options: optionsDict->JSON.Encode.object})
     switch paymentMode->CardThemeType.getPaymentMode {
     | CardNumberElement
     | CardExpiryElement
@@ -301,6 +303,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               }
               if dict->getDictIsSome("paymentOptions") {
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
+                setRawIframeOptions(prev => {
+                  ...prev,
+                  paymentOptions: paymentOptions->JSON.Encode.object,
+                })
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
                 let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
@@ -363,6 +369,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }
           } else if dict->getDictIsSome("paymentOptions") {
             let paymentOptions = dict->getDictFromObj("paymentOptions")
+            setRawIframeOptions(prev => {
+              ...prev,
+              paymentOptions: paymentOptions->JSON.Encode.object,
+            })
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
             let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
@@ -404,6 +414,17 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         } else if dict->getDictIsSome("ElementsUpdate") {
           logger.setLogInfo(~value="SDK Credentials Received from Loader", ~eventName=UPDATE_SDK)
           let optionsDict = dict->getDictFromObj("options")
+          setRawIframeOptions(prev => {
+            let updatedPaymentOptions = prev.paymentOptions->getDictFromJson->Dict.copy
+            ["locale", "appearance", "clientSecret", "sdkAuthorization"]->Array.forEach(
+              key =>
+                switch optionsDict->Dict.get(key) {
+                | Some(val) => updatedPaymentOptions->Dict.set(key, val)
+                | None => ()
+                },
+            )
+            {...prev, paymentOptions: updatedPaymentOptions->JSON.Encode.object}
+          })
           let clientSecret = dict->Dict.get("clientSecret")
           switch clientSecret {
           | Some(val) =>

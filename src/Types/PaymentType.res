@@ -648,22 +648,6 @@ let getCardBrandIconStyle = (str): cardBrandIconStyle => {
   }
 }
 
-let cvcIconStyleToString = (val: cvcIconStyle): string => {
-  switch val {
-  | Hidden => "hidden"
-  | Default => "default"
-  }
-}
-
-let cardBrandIconStyleToString = (val: cardBrandIconStyle): string => {
-  switch val {
-  | Hidden => "hidden"
-  | Animated => "animated"
-  | HideGeneric => "hideGeneric"
-  | Standard => "standard"
-  }
-}
-
 let getAddress = (dict, str, logger) => {
   dict
   ->Dict.get(str)
