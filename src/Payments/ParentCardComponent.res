@@ -504,6 +504,7 @@ let make = (
         ~logger=Some(loggerState),
         ~confirmPayment=_json => Promise.resolve(JSON.Encode.null),
         ~animateResize=false,
+        ~surfaceFamily="vault",
       )
       element.mount(`#${containerId}`)
       Some(

@@ -95,6 +95,12 @@ let make = (
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  ~fieldName: option<string>=?,
+  ~surfaceFamily: option<string>=?,
+  // MessageChannel Card Relay: group identity rides the URL so the mounted
+  // field can derive its portKey (`<groupId>:<fieldName>`). Default "" omits
+  // the param — v18 URL strings stay bit-identical for existing call sites.
+  ~groupId="",
 ) => {
   try {
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
@@ -530,16 +536,51 @@ let make = (
 
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->getClasses("base")
+      // v18 note: per-field iframes (vault + payments-V2) are mounted with
+      // `componentName=paymentMethodsSDK` + a `fieldName` URL param. The
+      // bundled `paymentMethodsSDK` surface has `fieldName=None`. Per-field
+      // iframes use `appearance.variables.cardFieldHeight` for their initial
+      // height (default "48px" via `CardTheme.default`); bundled iframes stay
+      // at `height: 0;` and rely on the dynamic height reporting for visibility.
+      // This replaces the v17 `componentType` discriminant which collapsed
+      // under the unified URL, and the v18 hardcoded `height: 3rem` which
+      // merchants had no knob to override.
+      let cardFieldHeight =
+        optionsDict
+        ->getDictFromDict("appearance")
+        ->getDictFromDict("variables")
+        ->getString("cardFieldHeight", "48px")
       let additionalIframeStyle =
-        componentType->Utils.isOtherElements ? "height: 3rem;" : "height: 0;"
+        componentType->Utils.isOtherElements || fieldName->Option.isSome
+          ? `height: ${cardFieldHeight};`
+          : "height: 0;"
       switch oElement->Nullable.toOption {
       | Some(elem) => {
           let iframeElementId = `orca-${elementIframeId}-iframeRef-${localSelectorString}`
+          // v18 unified URL scheme — optional `fieldName` and `surfaceFamily`
+          // params ride alongside `componentName`. Both are URL-encoded
+          // defensively (current values are alphanumeric, but future payment
+          // methods may introduce unicode).
+          let baseIframeSrc = `${sdkDomainUrl}/index.html?componentName=${componentType}`
+          let iframeSrcWithField = switch fieldName {
+          | Some(f) => `${baseIframeSrc}&fieldName=${Js.Global.encodeURIComponent(f)}`
+          | None => baseIframeSrc
+          }
+          let finalIframeSrc = switch surfaceFamily {
+          | Some(sf) => `${iframeSrcWithField}&surfaceFamily=${Js.Global.encodeURIComponent(sf)}`
+          | None => iframeSrcWithField
+          }
+          // MessageChannel Card Relay: appended AFTER surfaceFamily so the
+          // existing v18 URL strings (asserted byte-for-byte by
+          // v18-loader-url.test.js) stay identical when groupId is "".
+          let finalIframeSrc = groupId !== ""
+            ? `${finalIframeSrc}&groupId=${Js.Global.encodeURIComponent(groupId)}`
+            : finalIframeSrc
           let iframeDiv = `<div id="orca-${elementIframeWrapperDivId}-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
           ${buildIframeHtmlString(
               ~iframeId=iframeElementId,
-              ~iframeSrc=`${sdkDomainUrl}/index.html?componentName=${componentType}`,
+              ~iframeSrc=finalIframeSrc,
               ~additionalStyle=additionalIframeStyle,
             )}
           </div>`

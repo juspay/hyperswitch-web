@@ -260,6 +260,7 @@ let make = (
       fetchUpdates,
       create,
       updateIntent: _ => Promise.resolve(JSON.Encode.null),
+      cardForm: () => defaultCardForm,
     }
   } catch {
   | e => {

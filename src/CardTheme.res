@@ -204,6 +204,7 @@ let getVariables = (str, dict, default, logger) => {
       "buttonTextFontSize",
       "buttonTextFontWeight",
       "buttonBorderWidth",
+      "cardFieldHeight",
     ]
     unknownKeysWarning(validKeys, json, "appearance.variables")
     {
@@ -364,6 +365,12 @@ let getVariables = (str, dict, default, logger) => {
         json,
         "disabledFieldColor",
         default.disabledFieldColor,
+        ~logger,
+      ),
+      cardFieldHeight: getWarningString(
+        json,
+        "cardFieldHeight",
+        default.cardFieldHeight,
         ~logger,
       ),
     }

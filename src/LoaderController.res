@@ -23,12 +23,27 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsSamsungPayReady = Jotai.useSetAtom(isSamsungPayReady)
   let setUpdateSession = Jotai.useSetAtom(updateSession)
   let setIsUpdateIntentLoading = Jotai.useSetAtom(isUpdateIntentLoading)
+  let setShowCardIcon = Jotai.useSetAtom(showCardIcon)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
   let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+  // The per-field `showCardIcon` knob parses ONLY on the paymentMethodsSDK
+  // cardNumber surface — the scope where the icon RenderIf in
+  // CardSchemeComponent is gated; presence-gated (never resets).
+  let isCardNumberFieldSurface =
+    componentName == "paymentMethodsSDK" &&
+      CardUtils.getQueryParamsDictforKey(url.search, "fieldName") == "cardNumber"
+  let applyShowCardIconOption = optionsDict => {
+    if isCardNumberFieldSurface {
+      switch optionsDict->Dict.get("showCardIcon") {
+      | Some(json) => setShowCardIcon(_ => json->getBoolFromJson(true))
+      | None => ()
+      }
+    }
+  }
 
   let divRef = React.useRef(Nullable.null)
 
@@ -254,6 +269,44 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       let json = ev.data->safeParse
       try {
         let dict = json->getDictFromJson
+
+        // ── MessageChannel Card Relay: port ingestion (pre-isConfigReady) ──
+        // port2 rides WITH the field's mount-config message (transfer list);
+        // the coordinator's per-field ports ride with the `cardFieldPort`
+        // frames the group forwards. This runs at the handshake layer —
+        // BEFORE and INDEPENDENT of the `setConfigs → isConfigReady` gate —
+        // because ports are structural: a port that misses the mount window
+        // is a permanently uncoupled channel. Keys come from the message
+        // itself (`portKey`); the registry is per-document. Same-epoch
+        // re-installs are no-ops; new epochs close the superseded port.
+        //
+        // INGESTION GATE (review SF-3): only absorb [port] when the SAME
+        // message carries a handshake-shaped key (`paymentElementCreate` the
+        // group posts to a field; `cardFieldPort` the group posts to the
+        // coordinator). This WHO-window listener otherwise absorbs any port
+        // a same-origin parent frame BLINDS into us — a weaker-but-cheaper
+        // check than an origin comparison, see the residual-trust note in
+        // docs/messagechannel-architecture-pitch.md (threat model).
+        let ports = ev->MessageChannelBinding.eventPorts
+        if ports->Array.length > 0 {
+          let handshakeShaped =
+            dict->getDictIsSome("paymentElementCreate") || dict->getDictIsSome("cardFieldPort")
+          if handshakeShaped {
+            switch ports->Array.get(0) {
+            | Some(port) =>
+              let portKey = dict->getString("portKey", "")
+              if portKey !== "" {
+                SadPortRegistry.installPort(
+                  ~key=portKey,
+                  ~epoch=dict->getFloat("portEpoch", 0.0)->Float.toInt,
+                  ~port,
+                )
+              }
+            | None => ()
+            }
+          }
+        }
+
         if dict->getDictIsSome("paymentElementCreate") {
           // Set iframeId for ALL elements including individual card elements (cardNumber, cardExpiry, cardCvc)
           if dict->getDictIsSome("iframeId") {
@@ -363,6 +416,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~latency=renderLatency,
                 ~value="",
               )
+              applyShowCardIconOption(dict->getDictFromObj("options"))
               updateOptions(dict)
             }
           } else if dict->getDictIsSome("paymentOptions") {
@@ -405,6 +459,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }->ignore
           }
         } else if dict->getDictIsSome("paymentElementsUpdate") {
+          applyShowCardIconOption(dict->getDictFromObj("options"))
           updateOptions(dict)
         } else if dict->getDictIsSome("ElementsUpdate") {
           logger.setLogInfo(~value="SDK Credentials Received from Loader", ~eventName=UPDATE_SDK)

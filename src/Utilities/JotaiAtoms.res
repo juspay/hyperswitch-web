@@ -35,6 +35,12 @@ let supportedCardBrands = Jotai.atom((None: option<array<string>>))
 let savedCardBrand = Jotai.atom("")
 let optionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
 let paymentOptionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
+// Per-field `showCardIcon` visibility knob — the cardNumber field's
+// brand-icon RenderIf gates on it alongside the existing
+// `getCardBrandIconVisibility` rule; co-badge dropdown is exempted.
+// Presence-gated: only written when the key is present on a mount-config /
+// update payload — never reset to default.
+let showCardIcon = Jotai.atom(true)
 let paymentMethodCollectOptionAtom = Jotai.atom(
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
 )

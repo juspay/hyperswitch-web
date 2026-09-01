@@ -18,6 +18,41 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
+// Transfer-capable postMessage binding — added for the MessageChannel Card
+// Relay. The STRING payload argument is deliberate: the window plane is
+// stringified end-to-end (receivers `safeParse` `ev.data`), and a transfer
+// list is orthogonal to the payload encoding, so `port2` rides alongside the
+// exact same mount-config string the legacy path already sends.
+// `Window.iframePostMessage` is intentionally left string-only and untouched.
+@send
+external postMessageWithTransfer: (
+  Dom.element,
+  string,
+  string,
+  array<MessageChannelBinding.port>,
+) => unit = "postMessage"
+
+let messageWindowWithTransfer = (window, ~targetOrigin="*", message: string, ~transfer) => {
+  window->postMessageWithTransfer(message, targetOrigin, transfer)
+}
+
+let iframePostMessageWithTransfer = (
+  iframeRef: nullable<Dom.element>,
+  message: string,
+  ~targetOrigin=GlobalVars.targetOrigin,
+  ~transfer,
+) => {
+  switch iframeRef->Nullable.toOption {
+  | Some(ref) =>
+    try {
+      ref->Window.contentWindow->postMessageWithTransfer(message, targetOrigin, transfer)
+    } catch {
+    | _ => ()
+    }
+  | None => Console.error("This element does not exist or is not mounted yet.")
+  }
+}
+
 type dataModule = {states: JSON.t}
 
 @val
@@ -671,9 +706,12 @@ let constructClass = (~classname, ~dict) => {
   ->Array.map(entry => {
     let (key, value) = entry
 
+    let toKebabCaseIfNeeded = key =>
+      key->String.includes("-") ? key : key->toKebabCase
+
     let class = if !(key->String.startsWith(":")) && !(key->String.startsWith(".")) {
       switch value->JSON.Decode.string {
-      | Some(str) => `${key->toKebabCase}:${str}`
+      | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
       | None => ""
       }
     } else if key->String.startsWith(":") {
@@ -685,7 +723,7 @@ let constructClass = (~classname, ~dict) => {
           ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
-            | Some(str) => `${key->toKebabCase}:${str}`
+            | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
             | None => ""
             }
           })
@@ -702,7 +740,7 @@ let constructClass = (~classname, ~dict) => {
           ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
-            | Some(str) => `${key->toKebabCase}:${str}`
+            | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
             | None => ""
             }
           })
@@ -1237,7 +1275,13 @@ let isOtherElements = componentType => {
   componentType == "card" ||
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
-  componentType == "cardCvc"
+  componentType == "cardCvc" ||
+  // Per-field vault iframes mounted by `PaymentMethodsSessionGroup` — they
+  // need the same `height: 3rem;` initial style as the legacy raw
+  // card-number/expiry/cvc iframes so the inner input is visible pre-handshake.
+  componentType == "vaultCardNumber" ||
+  componentType == "vaultCardExpiry" ||
+  componentType == "vaultCardCvc"
 }
 
 // Elements that can have multiple instances (for event listener naming)
@@ -1248,6 +1292,12 @@ let canHaveMultipleInstances = componentType => {
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
   componentType == "cardCvc" ||
+  // Per-field vault iframes also adopt sibling refs via
+  // `unclaimedSelectorRefsByType`; without this they all share the same
+  // `onMount-{componentType}` listener name.
+  componentType == "vaultCardNumber" ||
+  componentType == "vaultCardExpiry" ||
+  componentType == "vaultCardCvc" ||
   componentType == "paymentMethodsSDK"
 }
 

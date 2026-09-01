@@ -74,6 +74,14 @@ type themeClass = {
   buttonTextFontWeight: string,
   buttonBorderWidth: string,
   disabledFieldColor: string,
+  // Height of standalone per-field card iframes (vault cardForm + payments-V2
+  // per-field surface + VGS direct-injection). Merchants can override via
+  // `appearance.variables.cardFieldHeight` (e.g. "56px", "3rem"). Applied as
+  // an inline `height:` on the outermost wrapper div INSIDE the iframe and
+  // on the iframe ELEMENT itself, so both surfaces agree. Ignored by bundled
+  // surfaces (CardsSDK, paymentMethodsManagement, etc.) — only field-height
+  // consumers read this knob.
+  cardFieldHeight: string,
 }
 type appearance = {
   theme: theme,

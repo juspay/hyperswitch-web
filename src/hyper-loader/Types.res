@@ -40,12 +40,75 @@ type paymentElement = {
   confirmPayment: JSON.t => promise<JSON.t>,
 }
 
+type fieldHandle = {
+  mount: string => unit,
+  unmount: unit => unit,
+  destroy: unit => unit,
+  update: JSON.t => unit,
+  focus: unit => unit,
+  blur: unit => unit,
+  clear: unit => unit,
+  on: (string, JSON.t => unit) => unit,
+}
+
+// ── CardForm — v20 unified group surface ────────────────────────────────────
+//
+// v20 CardForm unification: ONE group shape serves both the vault session
+// (`hyper.paymentMethodsSession(...)`) and the payments intent
+// (`hyper.widgets(...)`). The group is created with NO context argument —
+// `cardForm()` takes zero arguments — and the confirm flow is INFERRED at
+// `confirm()`-time from which fields are mounted:
+//
+//   cardNumber + cardExpiry + cardCvc mounted → Flow A (full tokenization /
+//                                               payment-intent confirm)
+//   only cardCvc mounted                      → Flow B (saved-card CVC
+//                                               re-collect; vault surface
+//                                               only)
+//   anything else                             → validation_error envelope
+//                                               (code `incomplete_field_set`)
+//
+// There is exactly ONE field vocabulary across both surfaces:
+// `cardNumber | cardExpiry | cardCvc` — the legacy `*V2` suffix scheme is
+// retracted in v20 (the factory you obtained the cardForm from decides which
+// flow runs; no suffix is needed to disambiguate).
+//
+// v20: the old separate saved-card-CVC confirm entrypoint is FULLY RETIRED —
+// it does not exist on this record, nor on `paymentMethodsSessionGroup`, nor
+// on any default/lock in this file. Saved-card CVC recollect is now the
+// Flow B branch of the single flow-inferring `confirm()`.
+type cardForm = {
+  create: (string, JSON.t) => fieldHandle,
+  on: (string, JSON.t => unit) => unit,
+  confirm: unit => promise<JSON.t>,
+  deinit: unit => unit,
+  update: JSON.t => unit,
+  fields: ref<JSON.t>,
+}
+
+// The session record returned by `hyper.paymentMethodsSession(...)`. After
+// the v20 re-shape the CardForm surface moves behind `cardForm()`; the
+// direct `create()`/`confirm()` fields are REMOVED from this
+// record (they live on `cardForm` now). Session-scoped methods that are NOT
+// CardForm-specific (`update`, `on`, `deinit`, `fields`) stay at this level.
+type paymentMethodsSessionGroup = {
+  cardForm: unit => cardForm,
+  update: JSON.t => unit,
+  on: (string, JSON.t => unit) => unit,
+  deinit: unit => unit,
+  fields: ref<JSON.t>,
+}
+
 type element = {
   getElement: string => option<paymentElement>,
   update: JSON.t => unit,
   fetchUpdates: unit => promise<JSON.t>,
   create: (JSON.t, Nullable.t<JSON.t>) => paymentElement,
   updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
+  // v20: the widgets-obtained element ALSO exposes the payments CardForm
+  // factory (`widgets.cardForm()`). The vault session-group surfaces the
+  // same shape via `paymentMethodsSessionGroup.cardForm` — one vocabulary,
+  // one group shape, the factory decides the flow.
+  cardForm: unit => cardForm,
 }
 
 type getCustomerSavedPaymentMethods = {
@@ -109,6 +172,7 @@ type hyperInstance = {
   completeUpdateIntent: string => promise<JSON.t>,
   initiateUpdateIntent: unit => promise<JSON.t>,
   confirmTokenization: JSON.t => promise<JSON.t>,
+  paymentMethodsSession: JSON.t => paymentMethodsSessionGroup,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -162,12 +226,47 @@ let create = (_options: JSON.t, _options2: Nullable.t<JSON.t>) => {
   defaultPaymentElement
 }
 
+// Error envelope resolved by the DEFAULT cardForm stub (`defaultCardForm`)
+// when a merchant confirms before `Hyper.make(...)` initialized (i.e. the
+// default hyperInstance path). NOT a lazy-load error — v22 dismantled the
+// vault-sdk lazy chunk; there is nothing to "wait for" anymore.
+let vaultSDKNotLoadedError: JSON.t = {
+  let errorDict = Dict.make()
+  errorDict->Dict.set("code", "sdk_not_ready"->JSON.Encode.string)
+  errorDict->Dict.set("message", "Default stub — hyper not initialized"->JSON.Encode.string)
+  let resultDict = Dict.make()
+  resultDict->Dict.set("status", "error"->JSON.Encode.string)
+  resultDict->Dict.set("error", errorDict->JSON.Encode.object)
+  resultDict->JSON.Encode.object
+}
+
+let defaultFieldHandle: fieldHandle = {
+  mount: _ => (),
+  unmount: () => (),
+  destroy: () => (),
+  update: _ => (),
+  focus: () => (),
+  blur: () => (),
+  clear: () => (),
+  on: (_, _) => (),
+}
+
+let defaultCardForm: cardForm = {
+  create: (_, _) => defaultFieldHandle,
+  on: (_, _) => (),
+  confirm: () => Promise.resolve(vaultSDKNotLoadedError),
+  deinit: () => (),
+  update: _ => (),
+  fields: ref(Dict.make()->JSON.Encode.object),
+}
+
 let defaultElement = {
   getElement,
   update,
   fetchUpdates,
   create,
   updateIntent: _ => Promise.resolve(JSON.Encode.null),
+  cardForm: () => defaultCardForm,
 }
 
 let getCustomerDefaultSavedPaymentMethodData = () => {
@@ -205,6 +304,14 @@ let defaultInitAuthenticationSession: initAuthenticationSession = {
   getActiveClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
 }
 
+let defaultPaymentMethodsSessionGroup: paymentMethodsSessionGroup = {
+  cardForm: () => defaultCardForm,
+  update: _ => (),
+  on: (_, _) => (),
+  deinit: () => (),
+  fields: ref(Dict.make()->JSON.Encode.object),
+}
+
 let defaultHyperInstance = {
   confirmOneClickPayment: oneClickConfirmPaymentFn,
   confirmPayment: confirmPaymentFn,
@@ -219,6 +326,7 @@ let defaultHyperInstance = {
   completeUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   initiateUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   confirmTokenization: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
+  paymentMethodsSession: _ => defaultPaymentMethodsSessionGroup,
 }
 
 type eventType =

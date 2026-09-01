@@ -49,6 +49,7 @@ let default = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#F6F8FA",
+  cardFieldHeight: "48px",
 }
 let defaultRules = theme =>
   {

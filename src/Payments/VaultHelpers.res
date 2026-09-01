@@ -179,12 +179,16 @@ type vaultTokenData = {
   binNumber: string,
   expiryMonth: string,
   expiryYear: string,
+  brand: string,
 }
 
 // Decodes the vault API response JSON into a vaultTokenData record.
 //   token       ← associated_payment_methods[0].payment_method_token.data
 //   last4Digits ← payment_method_data.card.last4_digits
 //   binNumber   ← payment_method_data.card.card_isin (may be null)
+//   brand       ← payment_method_data.card.card_brand, falling back to
+//                 payment_method_data.card.card_network (some backends emit
+//                 brand only via the network field)
 let decodeVaultTokenData = (vaultResponse: JSON.t): vaultTokenData => {
   let vaultDict = vaultResponse->getDictFromJson
 
@@ -207,6 +211,9 @@ let decodeVaultTokenData = (vaultResponse: JSON.t): vaultTokenData => {
   let binNumber = cardDict->getString("card_isin", "")
   let expiryMonth = cardDict->getString("expiry_month", "")
   let expiryYear = cardDict->getString("expiry_year", "")
+  let cardBrand = cardDict->getString("card_brand", "")
+  let cardNetwork = cardDict->getString("card_network", "")
+  let brand = cardBrand !== "" ? cardBrand : cardNetwork
 
-  {token, last4Digits, binNumber, expiryMonth, expiryYear}
+  {token, last4Digits, binNumber, expiryMonth, expiryYear, brand}
 }

@@ -411,6 +411,25 @@ let make = (
       | "samsungPay"
       | "paymentMethodsManagement"
       | "payment" => ()
+      // Phase 2 PR 1 — new payments V2 split-field strings.
+      //
+      // Recognized here so we silence the "Unknown Key" warn; the actual
+      // field-mount flow (`LoaderPaymentElement.make` + unified
+      // `PaymentMethodsSDK` container rendering the shared per-field
+      // shells) lands in the cardForm group. At this validation layer the
+      // branches are no-ops — merchants who adopt the new strings early get
+      // a stub mount, not a crash.
+      //
+      // The LEGACY `cardNumber|cardExpiry|cardCvc` arms above are FROZEN —
+      // they continue to flow into the existing catch-all DOM-scrape path
+      // (`src/Payment.res`, `src/CardUtils.getCardElementValue`); we did not
+      // modify them.
+      //
+      // v20: the `*V2` suffix vocabulary is RETRACTED. Bare-field card
+      // mounts for the payments CardForm surface now go through
+      //   `hyper.widgets(options).cardForm().create("cardNumber", opts)`
+      // (backed by `PaymentsGroup.makeCardForm`), never through this
+      // widget-level `create(...)`.
       | str => Console.warn(`Unknown Key: ${str} type in create`)
       }
 
@@ -1569,6 +1588,16 @@ let make = (
         mountedIframeRef->Window.iframePostMessage(message)
       }
 
+      // v20 Chunk 1 — the V* split-field dispatch branch is retired.
+      // The old PaymentSurfaceFamily classifier predicates are gone
+      // (bare `cardNumber|cardExpiry|cardCvc` flows end-to-end), and
+      // the merchant-facing entry into the payments CardForm surface is now
+      //   `hyper.widgets(options).cardForm()`
+      // (the `cardForm` record field below) — backed by
+      // `PaymentsGroup.makeCardForm`.
+      //
+      // Legacy bare strings (`cardNumber` / `cardExpiry` / `cardCvc`) hit
+      // `LoaderPaymentElement.make` unchanged through the FROZEN catch-all.
       let paymentElement = LoaderPaymentElement.make(
         componentType,
         newOptions,
@@ -1583,12 +1612,45 @@ let make = (
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
+    // v20 Chunk 1 — Chain 1 wiring: `widgets(options).cardForm()` returns
+    // the real payments CardForm backed by `PaymentsGroup`. Lazily
+    // instantiated on first call so merchants that never reach the split
+    // card fields don't pay the group-construction cost; memoized so every
+    // `cardForm()` call on one widgets element returns the SAME group
+    // (fields stay mounted, readiness stays latched, the F6 confirm mutex
+    // is per-group). Config keys mirror what the legacy path already
+    // pulled from `hyper.widgets(...)` options/clientSecretRef.
+    // `open Types` above shadows the option `None` constructor with the
+    // eventType one. Recover it via an inner module alias so the ref is
+    // typeable without restructuring the file's opens.
+    module StdOption = {
+      type t<'a> = option<'a>
+      let none: option<'a> = None
+    }
+    let cardFormRef: ref<option<Types.cardForm>> = ref(StdOption.none)
+    let cardForm = (): Types.cardForm =>
+      switch cardFormRef.contents {
+      | Some(group) => group
+      | None =>
+        let group = PaymentsGroup.makeCardForm(
+          ~config={
+            clientSecret: clientSecretRef.contents,
+            publishableKey: Some(publishableKey),
+            endpoint: Some(endpoint),
+            appearance: Some(appearance),
+            locale: locale->JSON.Decode.string,
+          },
+        )
+        cardFormRef := Some(group)
+        group
+      }
     {
       getElement,
       update,
       fetchUpdates,
       create,
       updateIntent,
+      cardForm,
     }
   } catch {
   | e => {
