@@ -237,6 +237,7 @@ type eventType =
   | PaymentMethodStatus
   | BillingAddress
   | Surcharge
+  | Offers
   | None
 
 let eventTypeMapper = event => {
@@ -251,6 +252,7 @@ let eventTypeMapper = event => {
   | "confirmTriggered" => ConfirmPayment
   | "oneClickConfirmTriggered" => OneClickConfirmPayment
   | "surchargeInfo" => Surcharge
+  | "appliedOffersInfo" => Offers
   | _ => None
   }
 }

@@ -267,4 +267,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Visa mindre",
   refreshingText: "Uppdaterar...",
   paymentDetailsBeingCheckedText: "Betalningsinformation kontrolleras. Vänligen vänta",
+  eligibleOffersText: "Tillgängliga erbjudanden",
+  checkingEligibleOffersText: "Kontrollerar tillgängliga erbjudanden",
+  cardOfferText: "Korterbjudande",
+  offerAppliedText: "Tillämpat",
 }
