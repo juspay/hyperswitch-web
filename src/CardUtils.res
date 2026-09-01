@@ -222,7 +222,7 @@ let normalizeCardBrand = brand => {
   let normalized =
     brand
     ->String.toLowerCase
-    ->String.replaceRegExp(%re("/[_\\s-]/g"), "")
+    ->String.replaceRegExp(%re("/[-_\s]/g"), "")
   switch normalized {
   | "visa" => "Visa"
   | "mastercard" => "Mastercard"
