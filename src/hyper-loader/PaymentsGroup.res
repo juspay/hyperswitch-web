@@ -480,6 +480,14 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               }
               Promise.resolve()
             })
+            // Terminal `catch` (eslint promise/catch-or-return): a clientList
+            // fetch rejection must NOT bring the coordinator mount down —
+            // mounts proceed without the pre-warmed list (see the fetch's 403
+            // dev-static-asset-noise history).
+            ->Promise.catch(err => {
+              Console.error2("[PaymentsGroup] clientList fetch rejected — coordinator continues without pre-warmed list", err)
+              Promise.resolve()
+            })
             ->ignore
           } else if dict->getBool("paymentConfirmAck", false) {
             // Relay settled (ack) — release the F4-confirm mutex latched at
@@ -749,6 +757,13 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         mountedIframeRef->Window.iframePostMessage(
           [("clientList", json)]->Dict.fromArray,
         )
+        Promise.resolve()
+      })
+      // Terminal `catch` (eslint promise/catch-or-return): a clientList fetch
+      // rejection must NOT abort the field mount — the field's own
+      // `paymentMethodList` atom can still reach Loaded on its fallback path.
+      ->Promise.catch(err => {
+        Console.error2("[PaymentsGroup] clientList fetch rejected — field continues without pre-warmed list", err)
         Promise.resolve()
       })
       ->ignore
