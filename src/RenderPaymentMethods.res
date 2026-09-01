@@ -122,6 +122,7 @@ let make = (
             <PaymentManagementLazy paymentType cardProps cvcProps expiryProps />
           </ReusableReactSuspense>
         | PaymentMethodCollectElement
+        | PaymentMethodsSDK
         | NONE => React.null
         }}
       </div>
