@@ -1,48 +1,14 @@
-// CardFormCoordinator — hidden 0×0 hosted iframe that OWNS CardForm confirm
-// end-to-end for BOTH surface families (vault `save`/`update`; payments
-// Flow A `usePaymentIntent`).
-//
-// Responsibilities:
-//   1. PORT-PLANE AGGREGATION — per-field MessageChannel ports (installed by
-//      LoaderController from `ev.ports`, see SadPortRegistry) deliver each
-//      field's FULL `cardStateUpdate` snapshot INCLUDING raw SAD. The
-//      coordinator folds these into its own per-field cache; raw values
-//      NEVER touch the merchant window.
-//   2. BRAND RELAY — the latest non-empty `cardBrand` from cardNumber's port
-//      stream is posted onto the cardCvc port as `detectedCardBrand` on
-//      CHANGE of a non-empty brand.
-//   3. FOCUS PROGRESSION — the `focusReady` false→true edge on a field's port
-//      stream posts a `doFocus` port-frame to `CardFormShared.nextFieldFor`
-//      (default-absent → false semantics; cardCvc is terminal).
-//   4. CONFIRM OWNERSHIP — `initiateConfirm` from the group runs
-//      `usePaymentIntent` (payments Flow A) or
-//      `PaymentHelpersV2.{savePaymentMethod,updatePaymentMethod}` (vault).
-//      Payments Flow A resolution rides the unchanged `submitSuccessful`
-//      broadcast (consumed by Hyper.res:432) — we post NOTHING extra there.
-//      Vault confirmations settle into the confirm-result union via
-//      `buildConfirmResult` (owned by this module; the group aliases it) and
-//      post back as `{confirmResult, confirmId, iframeId}`.
-//   5. SETTLE DISCIPLINE — exactly-once, group-wide-mutex, hang backstop,
-//      reusing the `confirmSettleTimeoutMs` vocabulary (8s).
-//   6. SPIKE SCAFFOLDING — the `spikeCommand` protocol, reachable only from a
-//      harness iframe carrying `spike=1` in its URL.
-//
-// Mount-window discipline: mount-config arrives via the standard
-// LoaderController handshake; clientList/sessions arrive via the group's
-// retargeted posts (LoaderController sets the atoms). There is NO
-// "gate effect that blocks confirm until Loaded": the vault arm
-// FAILS FAST when its sessions/credentials are missing, and the payments
-// gate lives inside `usePaymentIntent`'s `switch paymentMethodList`
-// (`PaymentHelpers.res`) — `None` decays to the `confirm_payment_failed`
-// early-exit (no network call). Groups already wait for the coordinator's
-// `iframeMounted` before flushing commands, which covers the LIST POST
-// ordering in practice.
+/* CardFormCoordinator — hidden 0x0 hosted iframe that OWNS CardForm confirm for both
+   surface families (vault save/update; payments Flow A `usePaymentIntent`).
+   Per-field MessageChannel ports deliver each field's FULL snapshot INCLUDING raw SAD;
+   the coordinator folds them into its own cache and raw values NEVER touch the merchant
+   window — only the masked confirm-result union is posted back.
+   It also relays the detected brand onto the cvc port and routes `doFocus` on the
+   `focusReady` false→true edge. Settle is exactly-once with an 8s hang backstop. */
+
 open Utils
 open JotaiAtoms
 
-// ── Confirm-result union ──────────────────────────────────────────────────
-// Owned here (next to the confirm owner); both group modules alias these
-// exports.
 type errorType =
   | ValidationError
   | ApiError
@@ -67,8 +33,6 @@ let defaultErrorMessage = (~code: string): string =>
   | _ => "An unexpected error occurred"
   }
 
-// Locale resolution short-circuits on the EN default for now (mirrors the
-// pre-move arm; non-EN translations are a separate thread).
 let resolveErrorMessage = (~code: string, ~locale: string, ~fallback: option<string>): string => {
   let _ = locale
   switch fallback {
@@ -85,9 +49,8 @@ let makeErrorResult = (
   (),
 ): JSON.t => {
   let resolvedMessage = resolveErrorMessage(~code, ~locale, ~fallback=message)
-  // The confirm mutex ("confirm_in_progress") is a session/api concern, not a
-  // card-input concern — classified ApiError in the default arm so the vault
-  // surface matches the payments CardForm's `confirm_in_progress` envelope.
+  /* the confirm mutex is a session/api concern, not a card-input one — classified ApiError
+     so the vault surface matches the payments `confirm_in_progress` envelope. */
   let resolvedType = switch typeOverride {
   | Some(t) => t
   | None =>
@@ -137,14 +100,14 @@ type confirmOutcome =
 
 let buildConfirmResult = (~outcome: confirmOutcome): JSON.t =>
   switch outcome {
-  | FlowASuccess(p) =>
-    // Hardening (same as pre-move): `paymentMethodId=None` is legal (VGS
-    // aliases); `Some("")` is a decode bug and demotes to tokenization_failed.
-    let pmIdMissing = switch p.paymentMethodId {
+  | FlowASuccess(payload) =>
+    /* Hardening (same as pre-move): `paymentMethodId=None` is legal (VGS
+       aliases); `Some("")` is a decode bug and demotes to tokenization_failed. */
+    let pmIdMissing = switch payload.paymentMethodId {
     | Some(s) => s == ""
     | None => false
     }
-    if p.token == "" || pmIdMissing {
+    if payload.token == "" || pmIdMissing {
       makeErrorResult(
         ~code="tokenization_failed",
         ~message="vault confirm response was missing token / payment_method_id",
@@ -153,26 +116,26 @@ let buildConfirmResult = (~outcome: confirmOutcome): JSON.t =>
     } else {
       let cardDict =
         [
-          ("brand", p.brand->JSON.Encode.string),
-          ("last4", p.last4->JSON.Encode.string),
-          ("expiryMonth", p.expiryMonth->JSON.Encode.string),
-          ("expiryYear", p.expiryYear->JSON.Encode.string),
+          ("brand", payload.brand->JSON.Encode.string),
+          ("last4", payload.last4->JSON.Encode.string),
+          ("expiryMonth", payload.expiryMonth->JSON.Encode.string),
+          ("expiryYear", payload.expiryYear->JSON.Encode.string),
         ]->Dict.fromArray
-      let pmIdJson = switch p.paymentMethodId {
+      let pmIdJson = switch payload.paymentMethodId {
       | Some(s) => s->JSON.Encode.string
       | None => JSON.Encode.null
       }
       [
         ("status", "success"->JSON.Encode.string),
-        ("token", p.token->JSON.Encode.string),
+        ("token", payload.token->JSON.Encode.string),
         ("paymentMethodId", pmIdJson),
         ("card", cardDict->JSON.Encode.object),
       ]
       ->Dict.fromArray
       ->JSON.Encode.object
     }
-  | FlowBSuccess(p) =>
-    if p.cvcToken == "" {
+  | FlowBSuccess(payload) =>
+    if payload.cvcToken == "" {
       makeErrorResult(
         ~code="tokenization_failed",
         ~message="vault Flow B (saved-card CVC recollect) response was missing cvcToken",
@@ -181,32 +144,35 @@ let buildConfirmResult = (~outcome: confirmOutcome): JSON.t =>
     } else {
       let cardDict =
         [
-          ("brand", p.brand->JSON.Encode.string),
-          ("last4", p.last4->JSON.Encode.string),
+          ("brand", payload.brand->JSON.Encode.string),
+          ("last4", payload.last4->JSON.Encode.string),
         ]->Dict.fromArray
       [
         ("status", "success"->JSON.Encode.string),
-        ("cvcToken", p.cvcToken->JSON.Encode.string),
+        ("cvcToken", payload.cvcToken->JSON.Encode.string),
         ("card", cardDict->JSON.Encode.object),
       ]
       ->Dict.fromArray
       ->JSON.Encode.object
     }
-  | Failure(p) =>
-    makeErrorResult(~code=p.code, ~message=?p.message, ~locale=p.locale, ~typeOverride=?p.typeOverride, ())
+  | Failure(payload) =>
+    makeErrorResult(
+      ~code=payload.code,
+      ~message=?payload.message,
+      ~locale=payload.locale,
+      ~typeOverride=?payload.typeOverride,
+      (),
+    )
   }
 
-// ── Settle vocabulary ───────────────────────────────────────────────────────
-// Kept IDENTICAL to the groups: 8s round-trip budget, exactly-once settle,
-// hang backstop via setTimeout.
 let confirmSettleTimeoutMs = 8000
 
-// Per-group port key shape: "<groupId>:<fieldName>" — the mounter
-// (`CoordinatorMount`) composes these deterministically.
+/* Per-group port key shape: "<groupId>:<fieldName>" — the mounter
+   (`CoordinatorMount`) composes these deterministically. */
 let portKey = (~groupId: string, ~fieldName: string): string => `${groupId}:${fieldName}`
 
-// The coordinator's per-field cache entry: the most recent FULL port-plane
-// payload (incl. RAW SAD — never relaid to the merchant window).
+/* The coordinator's per-field cache entry: the most recent FULL port-plane
+   payload (incl. RAW SAD — never relaid to the merchant window). */
 type fieldSnapshotEntry = {payload: JSON.t}
 
 @react.component
@@ -222,9 +188,9 @@ let make = () => {
   let surfaceFamilyStr = CardUtils.getQueryParamsDictforKey(url.search, "surfaceFamily")
   let surfaceFamily = surfaceFamilyStr == "" ? None : Some(surfaceFamilyStr)
   let groupId = CardUtils.getQueryParamsDictforKey(url.search, "groupId")
-  // Spike arms accept commands ONLY on spike harnesses — the dedicated
-  // coordinator iframe must carry `spike=1` in its URL. Without this, any
-  // same-origin page could window-post raws into the coordinator.
+  /* Spike arms accept commands ONLY on spike harnesses — the dedicated
+     coordinator iframe must carry `spike=1` in its URL. Without this, any
+     same-origin page could window-post raws into the coordinator. */
   let spikeEnabled = CardUtils.getQueryParamsDictforKey(url.search, "spike") === "1"
 
   let coordinatorFamily = PaymentSurfaceFamily.classifyCoordinatorFromUrl(
@@ -232,11 +198,6 @@ let make = () => {
     ~surfaceFamily,
   )
 
-  // ── Aggregate state ───────────────────────────────────────────────────────
-  // fieldSnapshotsRef: latest per-field FULL port payload (incl. raw SAD).
-  // prevFocusReadyRef: latch backing the focusReady false→true edge.
-  // lastBrandRef: brand-relay cache (relay on CHANGE of a non-empty brand).
-  // confirmingRef: group-wide mutex backing `confirm_in_progress`.
   let fieldSnapshotsRef = React.useRef(Dict.make(): Dict.t<fieldSnapshotEntry>)
   let prevFocusReadyRef = React.useRef(Dict.make(): Dict.t<bool>)
   let lastBrandRef = React.useRef("")
@@ -244,13 +205,11 @@ let make = () => {
 
   let (registryVersion, setRegistryVersion) = React.useState(() => 0)
   React.useEffect0(() => {
-    let bump = () => setRegistryVersion(v => v + 1)
-    SadPortRegistry.addChangeListener(bump)
-    Some(() => SadPortRegistry.removeChangeListener(bump))
+    let onRegistryChange = () => setRegistryVersion(v => v + 1)
+    SadPortRegistry.addChangeListener(onRegistryChange)
+    Some(() => SadPortRegistry.removeChangeListener(onRegistryChange))
   })
 
-  // Real payments confirm dispatcher — legal here because the coordinator
-  // runs INSIDE our own app.js bundle.
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
 
   let postSpikeResult = (entries: array<(string, JSON.t)>) => {
@@ -260,8 +219,7 @@ let make = () => {
     )
   }
 
-  // Masked result post: the confirm-result union — the ONLY thing the group
-  // sees.
+  // masked result post — the confirm-result union is the ONLY thing the group sees.
   let postConfirmResult = (~confirmId: string, result: JSON.t) => {
     messageParentWindow(
       [
@@ -278,10 +236,6 @@ let make = () => {
     [sessions],
   )
 
-  // Aggregate a raw field across the coordinator's own port-plane cache.
-  // `pick` selects that field's raw slot from ONE field snapshot; first
-  // non-empty wins (the same guard the group's `!== ""` cache-on-change
-  // carries: a stale frozen cache can never blank out a good value).
   let aggregateRawValue = (pick: Dict.t<JSON.t> => string): string => {
     fieldSnapshotsRef.current
     ->Dict.valuesToArray
@@ -305,11 +259,9 @@ let make = () => {
   let aggregatedCvcNumber = () => aggregateRawValue(d => d->getString("rawCvc", ""))
   let aggregatedCardBrand = () => aggregateRawValue(d => d->getString("cardBrand", ""))
 
-  // Validity gate: the port snapshots already carry the tri-state
-  // validation status per field (has*ValidationStatus + isXxxValid). A field
-  // is CONFIRMED-invalid ONLY when it has a status AND it is false —
-  // absent/None status is pristine (first-keystroke race) and must NOT
-  // reject; the non-empty check still covers untouched fields.
+  /* a field is CONFIRMED-invalid only when it HAS a validation status and that status is
+     false; an absent status is pristine (first-keystroke race) and must NOT reject. The
+     non-empty check still covers untouched fields. */
   let snapshotFieldStatus = fieldName =>
     fieldSnapshotsRef.current
     ->Dict.get(fieldName)
@@ -331,10 +283,8 @@ let make = () => {
   let anyContributingFieldConfirmedInvalid = () =>
     cardNumberConfirmedInvalid() || cardExpiryConfirmedInvalid() || cardCvcConfirmedInvalid()
 
-  // ── Port-plane wiring ─────────────────────────────────────────────────────
-  // For every registered port under this group's prefix, attach a frame
-  // listener (overwritten cleanly on registry bumps because the registry
-  // closes superseded ports for us on epoch replacement).
+  /* attach a frame listener per registered port under this group's prefix; safe to overwrite
+     because the registry closes superseded ports on epoch replacement. */
   React.useEffect(() => {
     SadPortRegistry.registry
     ->Dict.keysToArray
@@ -344,11 +294,10 @@ let make = () => {
       | Some(port) =>
         let fieldName = key->String.replace(`${groupId}:`, "")
         MessageChannelBinding.onPortMessage(port, ev => {
-          let data: JSON.t = ev.data->Identity.anyTypeToJson
-          switch CardFormPortProtocol.decodePortFrame(data) {
+          let frameJson: JSON.t = ev.data->Identity.anyTypeToJson
+          switch CardFormPortProtocol.decodePortFrame(frameJson) {
           | Some({kind, payload}) if kind === CardFormPortProtocol.kindFieldStateUpdate => {
               fieldSnapshotsRef.current->Dict.set(fieldName, {payload: payload})
-              // Brand relay: cardNumber's non-empty brand, on CHANGE ONLY.
               let cardBrand = payload->getDictFromJson->getString("cardBrand", "")
               if fieldName === "cardNumber" && cardBrand !== "" && cardBrand !== lastBrandRef.current {
                 lastBrandRef.current = cardBrand
@@ -360,8 +309,8 @@ let make = () => {
                   ),
                 )->ignore
               }
-              // Focus progression: false→true edge per field, default-absent
-              // → false; cardCvc is terminal (nextFieldFor returns None).
+              /* Focus progression: false→true edge per field, default-absent
+                 → false; cardCvc is terminal (nextFieldFor returns None). */
               let focusReady =
                 payload->getDictFromJson->getBool("focusReady", false)
               let prevReady = prevFocusReadyRef.current->Dict.get(fieldName)->Option.getOr(false)
@@ -390,7 +339,6 @@ let make = () => {
     None
   }, (registryVersion, groupId))
 
-  // ── Command channel: spike commands + initiateConfirm ────────────────────
   React.useEffect(() => {
     let handleCommand = (ev: Window.event) => {
       if ev.source === iframeParent && (keys.parentURL === "*" || ev.origin === keys.parentURL) {
@@ -399,14 +347,10 @@ let make = () => {
         let command = dict->getString("cardFormCoordinatorCommand", "")
         if command !== "" {
           let confirmId = dict->getString("confirmId", "")
-          // Merchant-passed locale echo (the groups thread `"locale"` onto
-          // every confirm command) — failure envelopes settle in the
-          // command's own locale so resolution surfaces stay consistent.
           let errorLocale = dict->getString("locale", "en")
           if coordinatorFamily === PaymentSurfaceFamily.OtherCoordinatorFamily {
-            // ADMISSION GATE: misrouted coordinator iframes must FAIL LOUDLY
-            // (mirrors PaymentMethodsSDK's InvalidSurfaceFamilyParams branch)
-            // rather than silently drop the caller's confirm slot.
+            /* ADMISSION GATE: a misrouted coordinator iframe must FAIL LOUDLY rather than silently
+               drop the caller's confirm slot. */
             postConfirmResult(
               ~confirmId,
               buildConfirmResult(
@@ -420,15 +364,13 @@ let make = () => {
                 }),
               ),
             )
-          // The group's confirm mutex latches BEFORE posting any confirm
-          // command, so the coordinator never sees two in-flight commands
-          // for one group and needs no inner confirming gate.
+          /* the group's mutex latches BEFORE posting any confirm command, so the coordinator never
+             sees two in-flight commands for one group and needs no inner gate. */
           } else if command === "initiateConfirm" {
             let flowKind = dict->getString("flow", "save")
             let isVaultCommand = flowKind === "save" || flowKind === "update"
-            // Family gating: payments commands must not run on a vault
-            // coordinator and vice-versa — misrouting fails loud, never
-            // silently lands in the wrong arm.
+            /* family gating: payments commands must not run on a vault coordinator or vice versa —
+               misrouting fails loud rather than landing in the wrong arm. */
             let misroute = (isVaultCommand && coordinatorFamily !== PaymentSurfaceFamily.VaultCoordinator) || (
               !isVaultCommand && coordinatorFamily !== PaymentSurfaceFamily.PaymentsCoordinator
             )
@@ -462,12 +404,9 @@ let make = () => {
                 )
               }
             } else if flowKind === "payments" || flowKind === "savedCardCvc" {
-              // ── Payments flows (Flow A / Flow B): fire-and-forget intent.
-              // The network outcome rides the unchanged `submitSuccessful`
-              // broadcast (`PaymentHelpers.intentCall` → `Hyper.res:440`).
-              // The coordinator posts the `paymentConfirmAck` /
-              // `paymentConfirmFail` pair so the outer group can settle its
-              // confirm mutex.
+              /* payments flows are fire-and-forget: the network outcome rides the unchanged
+                 `submitSuccessful` broadcast. The coordinator posts the paymentConfirmAck/Fail pair so
+                 the outer group can settle its confirm mutex. */
               let cardNumber = aggregatedCardNumber()
               let cardExpiry = aggregatedCardExpiry()
               let cvcNumber = aggregatedCvcNumber()
@@ -523,10 +462,8 @@ let make = () => {
                     ~targetOrigin=keys.parentURL,
                   )
                 } else {
-                  // Flow B — saved-card CVC recollect via `savedCardBody`:
-                  // payment_token + card_token.card_cvc + customer_id from
-                  // the clientList's intent_data. `customer_acceptance`
-                  // always attached (matches SavedMethods' rule).
+                  /* Flow B — saved-card CVC recollect via `savedCardBody`: payment_token, card_cvc and
+                     customer_id from the clientList's intent_data; customer_acceptance always attached. */
                   let paymentToken = dict->getString("paymentToken", "")
                   let customerId = switch paymentMethodListValue {
                   | Loaded(data)
@@ -534,9 +471,8 @@ let make = () => {
                     data->getDictFromJson->getDictFromDict("intent_data")->getString("customer_id", "")
                   | _ => ""
                   }
-                  // GATE the dispatch when the clientList did not carry a
-                  // customer_id (SemiLoaded / not-Loaded paths) — do NOT
-                  // silently drop the customer_id key from the body.
+                  /* gate the dispatch when the clientList carried no customer_id — do NOT silently drop the
+                     key from the body. */
                   if customerId === "" {
                     messageParentWindow(
                       [
@@ -685,16 +621,16 @@ let make = () => {
                         ),
                       )
                     } else {
-                      let d = VaultHelpers.decodeVaultTokenData(response)
+                      let vaultTokenData = VaultHelpers.decodeVaultTokenData(response)
                       settle(
                         buildConfirmResult(
                           ~outcome=FlowASuccess({
-                            token: d.token,
+                            token: vaultTokenData.token,
                             paymentMethodId: None,
-                            brand: d.brand,
-                            last4: d.last4Digits,
-                            expiryMonth: d.expiryMonth,
-                            expiryYear: d.expiryYear,
+                            brand: vaultTokenData.brand,
+                            last4: vaultTokenData.last4Digits,
+                            expiryMonth: vaultTokenData.expiryMonth,
+                            expiryYear: vaultTokenData.expiryYear,
                           }),
                         ),
                       )
@@ -737,11 +673,11 @@ let make = () => {
                         ),
                       )
                     } else {
-                      let d = VaultHelpers.decodeVaultTokenData(response)
+                      let vaultTokenData = VaultHelpers.decodeVaultTokenData(response)
                       settle(
                         buildConfirmResult(
                           ~outcome=FlowBSuccess({
-                            cvcToken: d.token,
+                            cvcToken: vaultTokenData.token,
                             brand: dict->getString("savedCardBrand", ""),
                             last4: dict->getString("savedCardLast4", ""),
                           }),
@@ -770,8 +706,6 @@ let make = () => {
           }
         }
 
-        // ── Spike-scaffold commands, gated on the harness iframe's `spike=1`
-        //    URL param ──────────────────────────────────────────────────────
         switch spikeEnabled ? dict->getString("spikeCommand", "") : "" {
         | "" => ()
         | "ping" =>
@@ -848,15 +782,15 @@ let make = () => {
                     ("error", "vault confirm POST returned null (HTTP failure)"->JSON.Encode.string),
                   ])
                 } else {
-                  let d = VaultHelpers.decodeVaultTokenData(response)
+                  let vaultTokenData = VaultHelpers.decodeVaultTokenData(response)
                   postSpikeResult([
                     ("kind", "vaultSave"->JSON.Encode.string),
-                    ("ok", (d.token !== "")->JSON.Encode.bool),
-                    ("token", d.token->JSON.Encode.string),
-                    ("brand", d.brand->JSON.Encode.string),
-                    ("last4Digits", d.last4Digits->JSON.Encode.string),
-                    ("expiryMonth", d.expiryMonth->JSON.Encode.string),
-                    ("expiryYear", d.expiryYear->JSON.Encode.string),
+                    ("ok", (vaultTokenData.token !== "")->JSON.Encode.bool),
+                    ("token", vaultTokenData.token->JSON.Encode.string),
+                    ("brand", vaultTokenData.brand->JSON.Encode.string),
+                    ("last4Digits", vaultTokenData.last4Digits->JSON.Encode.string),
+                    ("expiryMonth", vaultTokenData.expiryMonth->JSON.Encode.string),
+                    ("expiryYear", vaultTokenData.expiryYear->JSON.Encode.string),
                   ])
                 }
                 Promise.resolve()
@@ -906,13 +840,13 @@ let make = () => {
                     ("error", "vault update POST returned null (HTTP failure)"->JSON.Encode.string),
                   ])
                 } else {
-                  let d = VaultHelpers.decodeVaultTokenData(response)
+                  let vaultTokenData = VaultHelpers.decodeVaultTokenData(response)
                   postSpikeResult([
                     ("kind", "vaultUpdate"->JSON.Encode.string),
-                    ("ok", (d.token !== "")->JSON.Encode.bool),
-                    ("cvcToken", d.token->JSON.Encode.string),
-                    ("brand", d.brand->JSON.Encode.string),
-                    ("last4Digits", d.last4Digits->JSON.Encode.string),
+                    ("ok", (vaultTokenData.token !== "")->JSON.Encode.bool),
+                    ("cvcToken", vaultTokenData.token->JSON.Encode.string),
+                    ("brand", vaultTokenData.brand->JSON.Encode.string),
+                    ("last4Digits", vaultTokenData.last4Digits->JSON.Encode.string),
                   ])
                 }
                 Promise.resolve()
@@ -929,8 +863,8 @@ let make = () => {
             }
           }
         | "synthesize3dsFullscreen" => {
-            // The EXACT message shape `PaymentHelpers.intentCall` posts for a
-            // three_ds_invoke next action.
+            /* The EXACT message shape `PaymentHelpers.intentCall` posts for a
+               three_ds_invoke next action. */
             let metaData =
               [
                 ("threeDSData", Dict.make()->JSON.Encode.object),
@@ -979,13 +913,11 @@ let make = () => {
     handleMessage(handleCommand, "")
   }, (keys, sessions, paymentMethodListValue, registryVersion, groupId))
 
-  // Readiness: the coordinator INTENTIONALLY emits NO window-plane `ready`
-  // beacon — the field iframes arm Hyper.res:143-153's first-ready-wins
-  // latch; a coordinator beacon would be an earlier, non-field readiness
-  // source (and would falsify the docs).
+  /* the coordinator INTENTIONALLY emits no window-plane `ready` beacon — the field iframes
+     arm Hyper.res's first-ready-wins latch and a coordinator beacon would pre-empt it. */
 
-  // Spike-state beacons gate on the harness iframe's spike=1 flag so a normal
-  // merchant page can never observe coordinator internals.
+  /* Spike-state beacons gate on the harness iframe's spike=1 flag so a normal
+     merchant page can never observe coordinator internals. */
   React.useEffect(() => {
     if spikeEnabled {
       switch paymentMethodListValue {
@@ -1016,7 +948,5 @@ let make = () => {
     None
   }, [sessions])
 
-  // 0×0 by contract — the iframe element itself is hidden by the mounter
-  // (CoordinatorMount / spike page); the inner document renders nothing.
   React.null
 }

@@ -18,12 +18,9 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
-// Transfer-capable postMessage binding — added for the MessageChannel Card
-// Relay. The STRING payload argument is deliberate: the window plane is
-// stringified end-to-end (receivers `safeParse` `ev.data`), and a transfer
-// list is orthogonal to the payload encoding, so `port2` rides alongside the
-// exact same mount-config string the legacy path already sends.
-// `Window.iframePostMessage` is intentionally left string-only and untouched.
+/* transfer-capable postMessage. The STRING payload is deliberate: the window plane is
+   stringified end-to-end, so `port2` rides alongside the exact same mount-config string.
+   `Window.iframePostMessage` stays string-only and untouched. */
 @send
 external postMessageWithTransfer: (
   Dom.element,
@@ -1283,9 +1280,7 @@ let isOtherElements = componentType => {
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
   componentType == "cardCvc" ||
-  // Per-field vault iframes mounted by `PaymentMethodsSessionGroup` — they
-  // need the same `height: 3rem;` initial style as the legacy raw
-  // card-number/expiry/cvc iframes so the inner input is visible pre-handshake.
+  // per-field vault iframes need the same `height: 3rem;` initial style as the legacy ones.
   componentType == "vaultCardNumber" ||
   componentType == "vaultCardExpiry" ||
   componentType == "vaultCardCvc"
@@ -1299,9 +1294,7 @@ let canHaveMultipleInstances = componentType => {
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
   componentType == "cardCvc" ||
-  // Per-field vault iframes also adopt sibling refs via
-  // `unclaimedSelectorRefsByType`; without this they all share the same
-  // `onMount-{componentType}` listener name.
+  // per-field vault iframes adopt sibling refs; otherwise they share one onMount listener name.
   componentType == "vaultCardNumber" ||
   componentType == "vaultCardExpiry" ||
   componentType == "vaultCardCvc" ||

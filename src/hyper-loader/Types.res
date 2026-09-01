@@ -51,29 +51,10 @@ type fieldHandle = {
   on: (string, JSON.t => unit) => unit,
 }
 
-// ── CardForm — unified group surface ────────────────────────────────────────
-//
-// ONE group shape serves both the vault session
-// (`hyper.paymentMethodsSession(...)`) and the payments intent
-// (`hyper.widgets(...)`). The group is created with NO context argument —
-// `cardForm()` takes zero arguments — and the confirm flow is INFERRED at
-// `confirm()`-time from which fields are mounted:
-//
-//   cardNumber + cardExpiry + cardCvc mounted → Flow A (full tokenization /
-//                                               payment-intent confirm)
-//   only cardCvc mounted                      → Flow B (saved-card CVC
-//                                               re-collect; vault surface
-//                                               only)
-//   anything else                             → validation_error envelope
-//                                               (code `incomplete_field_set`)
-//
-// There is exactly ONE field vocabulary across both surfaces:
-// `cardNumber | cardExpiry | cardCvc` — the factory the cardForm came from
-// decides which flow runs, so no suffix is needed to disambiguate.
-//
-// There is NO separate saved-card-CVC confirm entrypoint on this record, on
-// `paymentMethodsSessionGroup`, or on any default in this file: saved-card CVC
-// recollect is the Flow B branch of the single flow-inferring `confirm()`.
+/* ONE group shape serves both the vault session and the payments intent. `cardForm()` takes
+   no arguments; the flow is INFERRED at `confirm()`-time from the mounted fields: the full
+   set → Flow A, only cardCvc → Flow B (saved-card CVC recollect, vault only), anything else
+   → `incomplete_field_set`. There is no separate saved-card-CVC confirm entrypoint. */
 type cardForm = {
   create: (string, JSON.t) => fieldHandle,
   on: (string, JSON.t => unit) => unit,
@@ -83,10 +64,8 @@ type cardForm = {
   fields: ref<JSON.t>,
 }
 
-// The session record returned by `hyper.paymentMethodsSession(...)`. The
-// CardForm surface lives behind `cardForm()`, so `create()`/`confirm()` are NOT
-// on this record. Session-scoped methods that are NOT CardForm-specific
-// (`update`, `on`, `deinit`, `fields`) stay at this level.
+/* the CardForm surface lives behind `cardForm()`, so `create()` and `confirm()` are NOT on
+   this record; session-scoped `update`, `on`, `deinit` and `fields` stay here. */
 type paymentMethodsSessionGroup = {
   cardForm: unit => cardForm,
   update: JSON.t => unit,
@@ -101,10 +80,8 @@ type element = {
   fetchUpdates: unit => promise<JSON.t>,
   create: (JSON.t, Nullable.t<JSON.t>) => paymentElement,
   updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
-  // The widgets-obtained element ALSO exposes the payments CardForm
-  // factory (`widgets.cardForm()`). The vault session-group surfaces the
-  // same shape via `paymentMethodsSessionGroup.cardForm` — one vocabulary,
-  // one group shape, the factory decides the flow.
+  /* widgets also exposes the payments CardForm factory; the vault session-group surfaces the
+     same shape. */
   cardForm: unit => cardForm,
 }
 
@@ -223,10 +200,8 @@ let create = (_options: JSON.t, _options2: Nullable.t<JSON.t>) => {
   defaultPaymentElement
 }
 
-// Error envelope resolved by the DEFAULT cardForm stub (`defaultCardForm`)
-// when a merchant confirms before `Hyper.make(...)` initialized (i.e. the
-// default hyperInstance path). NOT a lazy-load error — there is no vault-sdk
-// lazy chunk to "wait for".
+/* resolved by the DEFAULT cardForm stub when a merchant confirms before `Hyper.make(...)`
+   initialized. NOT a lazy-load error — there is no vault-sdk chunk to wait for. */
 let vaultSDKNotLoadedError: JSON.t = {
   let errorDict = Dict.make()
   errorDict->Dict.set("code", "sdk_not_ready"->JSON.Encode.string)

@@ -1,16 +1,8 @@
-// Standalone card-CVC field for the VaultSDK surface.
-//
-// Rendered inside the per-field iframe (URL: `componentName=paymentMethodsSDK&fieldName=cardCvc&surfaceFamily=vault`).
-// Reads the merchant-supplied `savedCard.brand` from the Jotai `savedCardBrand`
-// atom (populated by `LoaderController` from the `paymentElementCreate` mount
-// message in `PaymentMethodsSessionGroup`). This drives 3-vs-4 digit CVC
-// validation — when the merchant swaps saved cards in-place, they call
-// `fieldHandle.update({savedCard: {brand: "amex"}})` and the group posts an
-// updated `savedCardBrand` into this iframe; no remount required.
-//
-// MessageChannel Card Relay: PURE EMITTER — the hidden `cardFormCoordinator`
-// iframe owns the confirm; this shell never runs the
-// `update-saved-payment-method` POST itself.
+/* Standalone card-CVC field for the VaultSDK surface, rendered inside the per-field iframe.
+   `savedCard.brand` arrives on the Jotai `savedCardBrand` atom and drives 3-vs-4 digit CVC
+   validation; an in-place saved-card swap needs no remount.
+   PURE EMITTER — the hidden `cardFormCoordinator` iframe owns the confirm. */
+
 open Utils
 open JotaiAtoms
 
@@ -20,14 +12,8 @@ let make = () => {
   let savedCardBrand = Jotai.useAtomValue(savedCardBrand)
   let keys = Jotai.useAtomValue(keys)
 
-  // Brand-aware CVC maxLength. The outer group
-  // (PaymentMethodsSessionGroup) detects the live card brand from the
-  // cardNumber iframe's `cardStateUpdate` stream and posts
-  // `[("detectedCardBrand", "<normalized-brand>")]` into this iframe on
-  // every brand change. We lift that into a React state and prefer it over
-  // the (empty) local derived brand. Saved-card flow B is untouched: when
-  // `savedCardBrand` is non-empty it wins over the live-detected brand,
-  // matching the behaviour of `CardsSDK.cvcOnly` on the bundled surface.
+  /* the group posts `detectedCardBrand` on every brand change; lifted into React state and
+     preferred over the empty local brand. A non-empty `savedCardBrand` (Flow B) still wins. */
   let (detectedBrand, setDetectedBrand) = React.useState(_ => "")
   React.useEffect(() => {
     let handleBrandEvent = (ev: Window.event) => {
@@ -45,10 +31,7 @@ let make = () => {
 
   let state = CommonCardFieldHooks.useCardCvcField(
     ~logger=loggerState,
-    // Precedence: explicit merchant-supplied `savedCard.brand` (Flow B) >
-    // live-detected brand from the group (Flow A) > `useCardForm` default.
-    // Both map into `CommonCardProps.useCardForm`'s `cardBrandForCvc` and
-    // thence `maxCVCLength` / `formatCVCNumber` / `cvcNumberInRange`.
+    // precedence: merchant `savedCard.brand` (Flow B) > live-detected brand > useCardForm default.
     ~cardBrandOverride=if savedCardBrand !== "" { savedCardBrand } else { detectedBrand },
     ~onInitiateConfirm=_ => (),
     ~dualPlane=true,

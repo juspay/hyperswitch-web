@@ -16,19 +16,13 @@ let useEmitCardState = (
   ~emitRawCardNumber=false,
   ~emitRawCardExpiry=false,
   ~emitRawCvc=false,
-  // Keystroke-level focus-readiness, computed in the field's own iframe where
-  // the timing decision belongs (brand-aware max length + Luhn for cardNumber
-  // via CardUtils.focusCardValid; all-4-digits + validity for expiry;
-  // maxCVCLength + validity for CVC). Emit-on-true keeps the envelope slim —
-  // consumers default-absent to false. Do NOT infer this group-side from
-  // `fieldStatus.complete`: that fires on isXxxValid+non-empty, not
-  // max-length+Luhn, so it advances focus too early.
+  /* focus-readiness is computed in the field's own iframe, where the timing decision belongs.
+     Do NOT infer it group-side from `fieldStatus.complete`: that fires on isXxxValid plus
+     non-empty, not max-length plus Luhn, so focus would advance too early. */
   ~focusReady=false,
-  // MessageChannel Card Relay: when non-empty, the FULL snapshot
-  // (incl. raw SAD) ALSO rides the field's MessageChannel port to the hidden
-  // coordinator, while the window plane gets the SPLIT payload (raw keys
-  // stripped). Empty string = the window-only path. Bundled
-  // collectors never pass this — their shapes stay unchanged.
+  /* when non-empty, the FULL snapshot (raw SAD included) ALSO rides the field's MessageChannel
+     port to the hidden coordinator, while the window plane gets the SPLIT payload with raw
+     keys stripped. Empty means the window-only path; bundled collectors never pass it. */
   ~portKey="",
 ) => {
   let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
@@ -56,13 +50,9 @@ let useEmitCardState = (
         ("hasCvcValidationStatus", isCvcValid->Option.isSome->JSON.Encode.bool),
       ]->Dict.fromArray
     if portKey !== "" {
-      // ── Dual-plane emission (MessageChannel Card Relay) ──────────────────
-      // ONE encoder, one React memo, TWO payloads: window gets the SPLIT
-      // state (raw keys stripped entirely — absent, never null), the
-      // coordinator port gets the full snapshot (raws included, opt-in via
-      // the same emit flags so bundled-collector semantics map 1:1 onto
-      // relayed state). The port post is fire-and-forget: the coordinator
-      // caches the latest snapshot per field — no ACK round-trip.
+      /* dual-plane emission: ONE encoder, one memo, TWO payloads — the window gets the SPLIT state
+         (raw keys absent, never null), the coordinator port gets the full snapshot. The port post
+         is fire-and-forget; the coordinator caches the latest snapshot per field. */
       let {windowPayload, portPayload} = CardFormPortProtocol.encodeFieldStateUpdate({
         cardBrand,
         fieldStatus: fieldStatus->JSON.Encode.object,
@@ -74,16 +64,13 @@ let useEmitCardState = (
       })
       messageParentWindow([("cardStateUpdate", windowPayload)], ~targetOrigin=parentURL)
       if !SadPortRegistry.postFrame(~key=portKey, portPayload) {
-        // A registered-key drop is an integration-drift signal in dev;
-        // never throw, never fall back to the window plane for raws.
+        /* A registered-key drop is an integration-drift signal in dev;
+           never throw, never fall back to the window plane for raws. */
         Console.warn(`[CardCollectorBridge] dropped port frame for unregistered portKey "${portKey}"`)
       }
     } else {
-      // ── Single-plane emission (bundled collectors: window only) ────────────
-      // Card-number / expiry / CVC raw values are opt-in: standalone per-field
-      // vault iframes enable all three so the outer group can cache them and
-      // inject them back into the cardNumber iframe's confirm payload. Bundled
-      // collectors leave them off so PAN/CVC stay inside the same iframe.
+      /* bundled collectors leave the raw opt-ins off so PAN and CVC stay inside the iframe;
+         standalone per-field iframes enable them so the group can aggregate the confirm payload. */
       let stateEntries = [
         ("cardBrand", cardBrand->JSON.Encode.string),
         ("fieldStatus", fieldStatus->JSON.Encode.object),
@@ -98,9 +85,7 @@ let useEmitCardState = (
       let stateEntries = emitRawCvc
         ? stateEntries->Array.concat([("rawCvc", cvcNumber->JSON.Encode.string)])
         : stateEntries
-      // Emit-on-true: only include the key when the iframe believes focus
-      // should move NOW. Group-side default-absent → false keeps the latch
-      // semantics simple (transitions to true are the only ones that matter).
+      // emit-on-true; consumers default-absent to false, which keeps the latch simple.
       let stateEntries = focusReady
         ? stateEntries->Array.concat([("focusReady", true->JSON.Encode.bool)])
         : stateEntries

@@ -35,18 +35,15 @@ let supportedCardBrands = Jotai.atom((None: option<array<string>>))
 let savedCardBrand = Jotai.atom("")
 let optionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
 let paymentOptionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
-// Per-field `showCardIcon` visibility knob — the cardNumber field's
-// brand-icon RenderIf gates on it alongside the existing
-// `getCardBrandIconVisibility` rule; co-badge dropdown is exempted.
-// Presence-gated: only written when the key is present on a mount-config /
-// update payload — never reset to default.
+/* per-field `showCardIcon` gate on the brand icon; the co-badge dropdown is exempt.
+   Presence-gated: only written when the key is present, never reset to a default. */
 let showCardIcon = Jotai.atom(true)
-// Per-field `placeholder` knobs — one atom per field type, read by the
-// standalone per-field renderers in `CommonCardFieldHooks`. Presence-gated:
-// only written when the key is present; an explicit "" DOES apply.
-let cardNumberPlaceholder = Jotai.atom("4242 4242 4242 4242")
-let cardExpiryPlaceholder = Jotai.atom("MM / YY")
-let cardCvcPlaceholder = Jotai.atom("123")
+/* per-field placeholder knobs. `None` means "merchant passed nothing" and the renderer falls
+   back to the BUNDLED card form's placeholder — notably the translated
+   `localeString.expiryPlaceholder`, which cannot be a static default here. */
+let cardNumberPlaceholder = Jotai.atom((None: option<string>))
+let cardExpiryPlaceholder = Jotai.atom((None: option<string>))
+let cardCvcPlaceholder = Jotai.atom((None: option<string>))
 let paymentMethodCollectOptionAtom = Jotai.atom(
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
 )

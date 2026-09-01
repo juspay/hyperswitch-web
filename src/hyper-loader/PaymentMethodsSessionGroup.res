@@ -1,80 +1,26 @@
-// Factory behind `hyper.paymentMethodsSession(options)` — the VAULT CardForm
-// group (mounts per-field iframes, relays confirms, owns the session state
-// machine). Confirms are relay-only: the group posts a content-free
-// `cardFormCoordinatorCommand` into its hidden `cardFormCoordinator` iframe;
-// THE COORDINATOR iframe issues the vault POST itself
-// (`CardFormCoordinator.res` vault arm) and the group settles on the
-// coordinator's masked `confirmResult` envelope — no raw payload ever
-// crosses the merchant window plane.
-//
-// Structure:
-//   1. Decodes `options.sdkAuthorization` via `Utils.getSdkAuthorizationData`
-//      (b64 "k=v,k=v" blob → `{publishableKey, pmSessionId, customerId, profileId}`).
-//   2. Mode A (no `options.vault` passed): issues `fetchPaymentManagementList` from
-//      this merchant-page context to discover `vault_details.vault_type` /
-//      `vault_data`. Mirrors the established pattern in `Hyper.res`
-//      (`fetchSessions`); the stored payload reaches the field iframes via the
-//      standard `sessions` postMessage channel.
-//   3. Mode B (`options.vault = {vault_type, vault_data}`): builds a synthetic
-//      session JSON mirroring `fetchPaymentManagementList`'s shape, and runs it
-//      through the same `VaultHelpers.buildVaultConfig` → decode pipeline so
-//      downstream consumers see an identical structure either way. No fetch.
-//   4. Per-instance state refs (never module-level): `sessionsDataRef`,
-//      `vaultCredentialsRef`, `sessionStateRef: Active | Consumed | Deinitialized`,
-//      `confirmingRef` (mutex backing `confirm_in_progress`), `expiresAtRef`,
-//      `eventCallbacksRef` (group-level `on()` registry).
-//   5. `expires_at` proactive handling: if the session is already expired at
-//      creation time, the single `confirm()` entrypoint short-circuits with
-//      `{status:"error", error:{code:"session_expired", ...}}`.
-//
-// Shared vocabulary (field-type allow-list, auto-focus progression, the
-// `change`-payload reshaper) lives canonically in `CardFormShared.res` and is
-// aliased below — parallel to `PaymentsGroup.res` (payments CardForm group).
+/* Factory behind `hyper.paymentMethodsSession(options)` — the vault CardForm group.
+   Confirms are relay-only: the group posts a content-free `cardFormCoordinatorCommand`
+   into the hidden coordinator iframe and settles on its masked `confirmResult`. Raw card
+   data never crosses the merchant window plane — it rides the MessageChannel port plane only. */
 
 open Utils
 
-// Local aliases for `Types` fields we need (avoids `open Types` which would
-// shadow the global `None` variant needed for optional labeled args like
-// `~optLogger=None` / `~customPodUri=None` below).
-// Queued port1 channel awaiting its coordinator iframe-mounted flush
-// (MessageChannel Card Relay). The shape lives in `CoordinatorMount` — shared
-// by both groups — so `CoordinatorMount.teardown` can close the un-transferred
-// ones on group deinit.
+/* port1 queued until the coordinator iframe mounts and flushes it. Shape lives in
+   `CoordinatorMount` so its teardown can close ports that were never transferred. */
 type pendingPort = CoordinatorMount.pendingPort
 
+/* aliased rather than `open Types`, which would shadow the global `None` needed by
+   optional labeled args such as `~optLogger=None`. */
 type paymentMethodsSessionGroup = Types.paymentMethodsSessionGroup
 type fieldHandle = Types.fieldHandle
 type cardForm = Types.cardForm
 
-// ── Session state discriminant ───────────────────────────────────────────────
-// Per-group lifecycle flag. `Active → Consumed` lands in the coordinator
-// confirm-settlement arm on a `status == "success"` result (see the
-// `coordinatorConfirmPendingRef` settle below); `→ Deinitialized` lands via
-// `deinit()`. A Consumed session's single `confirm()` entrypoint refuses
-// further confirms.
+// Active → Consumed on a successful confirm, → Deinitialized on `deinit()`; a non-Active session refuses further confirms.
 type sessionState =
   | Active
   | Consumed
   | Deinitialized
 
-// ── Result-union mapper ──────────────────────────────────────────────────────
-//
-// Single source of truth for the unified `confirm()` result union: one
-// entrypoint, Flow A vs Flow CVC-recollect inferred from mounted fields. The
-// error envelope is
-//     { status: "error", error: { code, message, type? } }
-//
-// `type` discriminator:
-//   - "validation_error" → merchant-fixable input problem
-//   - "api_error"        → session / tokenization / network failure
-//   - "card_error"       → field-specific card validation failure
-//
-// The mapper is pure (no refs, no I/O) and synchronous. Locale resolution is a
-// labeled argument with defaults so the public `confirm()` API surface doesn't
-// grow — the group passes its bootstrap `locale` string through.
-
-// The union vocabulary + builders live in `CardFormCoordinator.res` (the
-// confirm owner); these aliases keep the group's VGS + guard code readable.
 type errorType = CardFormCoordinator.errorType
 
 let defaultErrorMessage = CardFormCoordinator.defaultErrorMessage
@@ -89,7 +35,6 @@ let makeErrorResult = (
 ): JSON.t => {
   CardFormCoordinator.makeErrorResult(~code, ~message?, ~locale, ~typeOverride?, ())
 }
-// Convenience builders for the reserved codes we emit from this module.
 let sessionExpiredResult = (~locale: string="en", ()): JSON.t =>
   makeErrorResult(~code="session_expired", ~locale, ())
 
@@ -99,8 +44,6 @@ let sessionConsumedResult = (~locale: string="en", ()): JSON.t =>
 let confirmInFlightResult = (~locale: string="en", ()): JSON.t =>
   makeErrorResult(~code="confirm_in_progress", ~locale, ())
 
-// The payload record types + `buildConfirmResult` live in
-// `CardFormCoordinator.res`, next to the confirm owner.
 type flowASuccessPayload = CardFormCoordinator.flowASuccessPayload
 type flowBSuccessPayload = CardFormCoordinator.flowBSuccessPayload
 type failurePayload = CardFormCoordinator.failurePayload
@@ -108,18 +51,6 @@ type confirmOutcome = CardFormCoordinator.confirmOutcome
 
 let buildConfirmResult = CardFormCoordinator.buildConfirmResult
 
-// ── Synthetic session JSON construction (Mode B) ─────────────────────────────
-// Mirrors `fetchPaymentManagementList`'s response shape so downstream helpers
-// (`VaultHelpers.getVaultCredentialsFromSessions`, `LoaderController`'s `sessions`
-// atom) decode identically for either bootstrap path.
-//
-//   {
-//     "payment_method_session_id": <pmSessionId>,
-//     "customer_id": <customerId>,
-//     "vault_details": { "vault_type": <vt>, "vault_data": <vd> },
-//     "associated_payment_methods": [],
-//     "expires_at": <expiresAt ISO-8601 str>
-//   }
 let buildSyntheticSession = (
   ~pmSessionId: string,
   ~customerId: string,
@@ -139,11 +70,8 @@ let buildSyntheticSession = (
   sessionDict->JSON.Encode.object
 }
 
-// ── expires_at helpers ───────────────────────────────────────────────────────
-// Backend sends ISO-8601 (e.g. "2026-08-14T12:34:56.000Z"); `Date.fromString`
-// wraps `new Date(str)` which parses ISO cleanly. Returns `0.0` when missing or
-// unparseable — treated as "unknown" and NOT considered proactively expired.
-// We only flag `session_expired` when we positively know `now >= expiresAt`.
+/* 0.0 means missing or unparseable — treated as unknown, NOT expired. We only flag
+   `session_expired` when we positively know now >= expiresAt. */
 let parseExpiresAtMs = (expiresAtStr: string): float => {
   if expiresAtStr->String.length == 0 {
     0.0
@@ -159,155 +87,66 @@ let parseExpiresAtMs = (expiresAtStr: string): float => {
 let isExpired = (~expiresAtMs: float): bool =>
   expiresAtMs > 0.0 && Date.now() >= expiresAtMs
 
-// ── Field registry shape ─────────────────────────────────────────────────────
-// Each `create()` registers one of these — the iframe handle + the public
-// fieldHandle record. `deinit()` walks the table and calls `handle.destroy()`.
-//
-// Confirm resolution ownership: the group posts a content-free
-// `cardFormCoordinatorCommand` into the coordinator (see the vault arm in
-// CardFormCoordinator) and settles on the coordinator's masked
-// `confirmResult` envelope — no raw payload crosses the window plane. Confirm
-// settlement rides `coordinatorConfirmPendingRef` (confirmId-keyed) alone —
-// there is no window-relay resolver slot.
+// confirm settlement rides `coordinatorConfirmPendingRef` alone; no window-relay resolver.
 type fieldEntry = {
   iframeRef: ref<Nullable.t<Dom.element>>,
   handle: fieldHandle,
   fieldType: string,
-  // Merchant-supplied `savedCard` options captured at `create()` — used by
-  // the Flow B (saved-card CVC recollect) branch of the unified `confirm()`
-  // to surface `{card: {brand, last4}}` on the success union.
-  // Only populated for `cardCvc` fields; empty for cardNumber/cardExpiry.
   savedCardBrandRef: ref<string>,
   savedCardLast4Ref: ref<string>,
-  // No group-side raw caches exist: the coordinator receives full snapshots
-  // on the port plane and the window-plane `cardStateUpdate` carries the
-  // SPLIT payload (no raw keys), so nothing could ever populate them.
-  // Last observed `focusReady` emitted by this field's iframe. Auto-focus
-  // progression fires ONLY on the `false → true` edge of THIS signal — the
-  // iframe owns the timing decision (brand-aware max length + Luhn for
-  // cardNumber; 4-digit MMYY + validity for expiry; maxCVCLength + validity
-  // for CVC), and the group just routes `doFocus` to the next field's iframe.
-  // Do NOT key this off `fieldStatus.complete`: that fires on isXxxValid +
-  // non-empty WITHOUT brand-aware length+Luhn gating, so a Visa card would
-  // advance to expiry at 14 digits instead of 16.
+  /* no raw caches here: the window-plane `cardStateUpdate` carries the SPLIT payload (no
+     raw keys); full snapshots reach the coordinator on the port plane only.
+     auto-focus advances only on the false→true edge of the iframe-emitted `focusReady`.
+     Do NOT key this off `fieldStatus.complete` — that fires on valid + non-empty without
+     brand-aware length and Luhn gating, so a Visa would advance at 14 digits, not 16. */
   prevFocusReadyRef: ref<bool>,
 }
 
-// ── `change`-payload reshaper ─────────────────────────────────────────────
-// The contract + commentary live in `CardFormShared` (single canon shared by
-// both CardForm group factories); aliased here so the compiled module keeps
-// it as a named export.
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
-// ── Auto-focus progression map ────────────────────────────────────────────
-// Tab-order within the vault flow (shared canon in `CardFormShared`):
-//   cardNumber → cardExpiry → cardCvc → (terminal; no next field)
-// The group's per-field `cardStateUpdate` listener uses this map to decide
-// which field's iframe receives `doFocus` when the current field's EMITTED
-// `focusReady` signal transitions from `false` to `true`. The iframe owns
-// the timing decision (keystroke-level brand-aware max length + Luhn for
-// cardNumber; 4-digit MMYY + validity for expiry); this map only routes it.
-// Module-level alias so the compiled module keeps `nextFieldFor` as a named
-// export.
 let nextFieldFor = CardFormShared.nextFieldFor
 
-// ── Format-preserving alias → brand detector ─────────────────────────────
-// VGS returns format-preserving aliases (e.g. `4111xxxxxxxx1111`): only the
-// LEADING prefix is the real card's BIN — the rest is mask plus the card's
-// last four digits. So this deliberately reads no more than the first 4 chars.
-//
-// `Validation.getCardBrand` is NOT usable here: it strips non-digits first, so
-// `6521xxxxxxxx9999` collapses to `65219999` and its 6-digit BIN range check
-// sees the fabricated prefix `652199`. Every pattern longer than the preserved
-// prefix (the RuPay / Mastercard numeric ranges, Maestro, Discover,
-// CartesBancaires) can then fire on digits that were never part of a BIN.
-//
-// Match order matters: narrower / longer prefixes first so a 4-digit range
-// can't shadow a 1-digit one. Returns lowercase canonical brand strings — this
-// value is the merchant-facing `brand` on the confirm envelope — or "" when
-// nothing matches.
-//
-// Diners note: the IATA Diners range is a 3-char prefix series (300-305) PLUS
-// two 2-char prefixes (36, 38), so that branch matches on `three`, not `four`.
-//
-// Module-level (not inside `make()`) so it can be exercised directly, without
-// spinning up a full session-group.
-let detectBrandFromAlias = (alias: string): string => {
-  let a = alias->String.trim
-  let len = a->String.length
-  if len == 0 {
-    ""
-  } else {
-    let ch0 = a->String.charAt(0)
-    let two = if len >= 2 {
-      ch0 ++ a->String.charAt(1)
-    } else {
-      ch0
-    }
-    let three = if len >= 3 {
-      a->String.substring(~start=0, ~end=3)
-    } else {
-      ""
-    }
-    let four = if len >= 4 {
-      a->String.substring(~start=0, ~end=4)
-    } else {
-      ""
-    }
-    if ch0 == "4" {
-      "visa"
-    } else if ["51", "52", "53", "54", "55"]->Array.includes(two) {
-      "mastercard"
-    } else if two == "34" || two == "37" {
-      "amex"
-    } else if four == "6011" || two == "65" {
-      "discover"
-    } else if two == "35" {
-      "jcb"
-    } else if (
-      ["300", "301", "302", "303", "304", "305"]->Array.includes(three) ||
-      two == "36" ||
-      two == "38"
-    ) {
-      "diners club"
-    } else if two == "62" || two == "81" {
-      "unionpay"
-    } else {
-      ""
-    }
-  }
-}
+/* VGS aliases are format-preserving (`4111xxxxxxxx1111`) — only the leading prefix is a
+   real BIN. `CardValidations.getAllMatchedCardSchemes` regex-matches issuer prefixes
+   WITHOUT stripping non-digits; `Validation.getCardBrand` and `CardUtils.getCardBrand`
+   strip first, so `6521xxxxxxxx9999` collapses to `65219999` and their BIN check reads the
+   fabricated prefix `652199` — RuPay for a Discover card. Co-badged prefixes match several
+   issuers, so the winner is resolved against this surface's published brand vocabulary. */
+let aliasBrandVocabulary = [
+  ("Visa", "visa"),
+  ("Mastercard", "mastercard"),
+  ("AmericanExpress", "amex"),
+  ("Discover", "discover"),
+  ("JCB", "jcb"),
+  ("DinersClub", "diners club"),
+  ("UnionPay", "unionpay"),
+]
 
-// ── Confirm settle-timeout ───────────────────────────────────────────────────
-// Max wall-clock a single confirm relay may stay in flight before the group
-// settles it itself. Backstop for "the field iframe never posted its
-// resolution" (e.g. the merchant unmounted the field mid-confirm): without it
-// the `confirm()` promise stays pending FOREVER. `PaymentsGroup.res` carries
-// the same value for its ack/fail settle-timeout — a per-group behavioral
-// knob, deliberately not hauled into `CardFormShared`.
+let detectBrandFromAlias = (alias: string): string =>
+  alias
+  ->String.trim
+  ->CardValidations.getAllMatchedCardSchemes
+  ->Array.findMap(issuer =>
+    aliasBrandVocabulary
+    ->Array.find(((patternIssuer, _)) => patternIssuer == issuer)
+    ->Option.map(((_, merchantBrand)) => merchantBrand)
+  )
+  ->Option.getOr("")
+
+// backstop: without it a dropped resolution leaves the `confirm()` promise pending forever.
 let confirmSettleTimeoutMs = 8000
-
-// ── Factory ──────────────────────────────────────────────────────────────────
 
 let make = (options: JSON.t): paymentMethodsSessionGroup => {
   let optionsDict = options->getDictFromJson
 
-  // 1. sdkAuthorization decode → {publishableKey, pmSessionId, customerId, profileId}
   let sdkAuthorizationRaw = optionsDict->getString("sdkAuthorization", "")
   let sdkAuth = sdkAuthorizationRaw->getSdkAuthorizationData
   let publishableKey = sdkAuth.publishableKey->Option.getOr("")
   let pmSessionId = sdkAuth.pmSessionId->Option.getOr("")
   let customerId = sdkAuth.customerId->Option.getOr("")
 
-  // 1a. Locale pull-through. Merchants pass `locale` on bootstrap (either the
-  //     explicit string or "auto" for navigator). Resolved once here and
-  //     stashed; all confirm-path error envelopes thread it through. Only EN
-  //     strings ship today — the labeled arg keeps the signature stable so
-  //     more locales can land without breaking the public surface.
-  let localeRaw = optionsDict->getString("locale", "auto")
-  let locale = if localeRaw == "auto" { "en" } else { localeRaw }
+  let locale = optionsDict->getString("locale", "auto")
 
-  // 2. Per-instance state refs (never module-level).
   let sessionsDataRef: ref<JSON.t> = ref(JSON.Encode.null)
   let vaultCredentialsRef: ref<JSON.t> = ref(JSON.Encode.null)
   let sessionStateRef: ref<sessionState> = ref(Active)
@@ -315,53 +154,21 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
   let expiresAtRef: ref<float> = ref(0.0)
   let eventCallbacksRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
 
-  // Lazily-instantiated VGS broker. One per group,
-  // memoized across all `create()` calls. Created on first VGS-branch use
-  // (`create()` for a VGS field, or the unified `confirm()` on the VGS
-  // confirm path).
   let vgsBrokerRef: ref<option<VGSVaultBroker.vgsBrokerHandle>> = ref(None)
 
-  // VGS saved-card metadata. The Hyperswitch branch of
-  // `create()` stores these on the fieldEntry record; VGS doesn't build a
-  // fieldEntry, so we capture `options.savedCard.{brand, last4}` here when a
-  // VGS cardCvc field is created. Read by the Flow B (saved-card recollect)
-  // VGS branch of `confirm()` when building the Flow B success union (VGS's
-  // card_cvc alias response doesn't echo back the card's identity — we
-  // surface the merchant-supplied hints instead).
+  // VGS builds no fieldEntry, so savedCard hints are captured here for the Flow B union.
   let vgsSavedCardBrandRef: ref<string> = ref("")
   let vgsSavedCardLast4Ref: ref<string> = ref("")
 
-  // Brand-aware CVC maxLength. The cardNumber iframe
-  // detects the brand on each keystroke and emits it via `cardStateUpdate`'s
-  // `cardBrand` envelope key. We cache the latest non-empty value here so the
-  // group can propagate it to the cardCvc iframe exactly once per brand
-  // change (not on every keystroke). The CVC iframe lifts it into a React
-  // state that feeds `~cardBrandOverride`, which drives
-  // `CommonCardProps.useCardForm`'s `maxCVCLength` / `formatCVCNumber` /
-  // `cvcNumberInRange`. Only applies when the CVC iframe has no explicit
-  // `savedCardBrand` (Flow B) — saved-card flows thread the brand via their
-  // own mount-config path and are untouched by this propagation.
+  // pushed to the cardCvc iframe once per brand CHANGE, not per keystroke.
   let lastDetectedBrandRef: ref<string> = ref("")
 
-  // Internal registry of fields created via `create`. The `fields` JSON blob
-  // still exposes per-field metadata on the returned group; `fieldsRef` holds
-  // the real records for `deinit()` teardown.
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
 
-  // ── MessageChannel Card Relay: coordinator wiring ────────────────────────
-  //
-  // The hidden 0×0 `cardFormCoordinator` iframe owns the Hyperswitch-vault
-  // confirm (Flow A / Flow B). The group posts masked
-  // `cardFormCoordinatorCommand` commands in and watches the masked
-  // `confirmResult` back; raw SAD rides off-window per-field ports.
-  // `groupInstanceId` doubles as the coordinator's `localSelectorString`
-  // (locked DOM/iframeId contract #3) and rides `groupId` URL params into
-  // every field iframe + the coordinator iframe (locked contract #5).
-  //
-  // VGS-VAULT branches NEVER touch this block (locked: no coordinator for
-  // VGS-only groups) — a VGS group's fields don't carry ports and the
-  // registry never sees VGS portKeys.
+  /* the hidden coordinator owns the vault confirm: masked commands in, masked `confirmResult`
+     back, raw SAD on the per-field ports. `groupInstanceId` is its selector and the `groupId`
+     URL param. VGS-only groups never mount a coordinator. */
   let groupInstanceId = `vault-${pmSessionId}-${Date.now()->Float.toString}-${Math.random()->Float.toString->String.slice(~start=2, ~end=8)}`
   let portEpochCounterRef: ref<int> = ref(0)
   let pendingPortsRef: ref<array<pendingPort>> = ref([])
@@ -369,12 +176,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
   let coordinatorMountRef: ref<option<CoordinatorMount.coordinatorMount>> = ref(None)
   let coordinatorReadyRef: ref<bool> = ref(false)
   let coordinatorListenerName = `onVaultCoordinator-${groupInstanceId}`
-  // Active confirm slot: `(confirmId, resolve)` exactly-one-at-a-time (the
-  // `confirmingRef` mutex owns the singleton; cleared on settle).
   let coordinatorConfirmPendingRef: ref<option<(string, JSON.t => unit)>> = ref(None)
 
-  // Forward the current `sessions` snapshot to the mounted coordinator —
-  // the coordinator decodes vaultCredentials off it for the confirm POST.
   let syncCoordinatorSessions = () => {
     if sessionsDataRef.contents != JSON.Encode.null && coordinatorReadyRef.contents {
       coordinatorMountRef.contents->Option.forEach(mount =>
@@ -409,8 +212,9 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       (ev: Types.event) => {
         let isOurCoordinator =
           coordinatorMountRef.contents
-          ->Option.map(m =>
-            ev.source === m.iframe->Window.contentWindow && ev.origin === innerIframeOrigin
+          ->Option.map(coordinatorMount =>
+            ev.source === coordinatorMount.iframe->Window.contentWindow &&
+              ev.origin === innerIframeOrigin
           )
           ->Option.getOr(false)
         if isOurCoordinator {
@@ -443,9 +247,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     switch coordinatorMountRef.contents {
     | Some(_) => ()
     | None =>
-      // Fullscreen answer-loop satellites: same shape as the payments group
-      // (pass-through `options` anatomy mirrors the group's mount config;
-      // appearance from the top-level merchant bag).
       let groupAppearance =
         optionsDict->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
       let groupConfigAsOptions =
@@ -466,8 +267,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       )
       coordinatorMountRef := Some(mount)
       attachCoordinatorListener()
-      // Per-group fullscreen lifecycle (router + answerer — see PaymentsGroup
-      // for the full rationale; grouped slot + ungated teardown + uplink).
       let (fullscreenRouter, fullscreenAnswerer) = CoordinatorMount.makeFullscreenFlows(
         ~mount,
         ~localSelectorString=groupInstanceId,
@@ -475,8 +274,7 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         ~options=groupConfigAsOptions,
         ~appearance=groupAppearance,
       )
-      // Types.event (EventListenerManager's domain) and Window.event are
-      // structurally the same message event — cast keeps both sites exact.
+      // `Types.event` and `Window.event` are the same message event; the cast keeps both exact.
       EventListenerManager.addSmartEventListener(
         "message",
         (ev: Types.event) => fullscreenRouter(%raw(`ev`)),
@@ -490,16 +288,12 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-  // 3. Mode A vs Mode B bootstrap — synchronously kick off whichever path applies.
   let vaultOptionDict = optionsDict->Dict.get("vault")->Option.flatMap(JSON.Decode.object)
 
   switch vaultOptionDict {
   | Some(vaultDict) => {
-      // Mode B — skip discovery fetch.
       let vaultType = vaultDict->getString("vault_type", "")
       let vaultData = vaultDict->Dict.get("vault_data")->Option.getOr(JSON.Encode.null)
-      // Mode B callers may also pass `expires_at` on the top level if they
-      // already hold the backend response; default "" → treated as unknown.
       let expiresAt = optionsDict->getString("expires_at", "")
       expiresAtRef := parseExpiresAtMs(expiresAt)
 
@@ -512,18 +306,12 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       )
       sessionsDataRef := syntheticSession
 
-      // Run through the canonical VaultHelpers decode path so both modes produce
-      // identical typed outputs downstream.
       let vaultMode = vaultType->VaultHelpers.getVaultModeFromName
       let loadedSession: PaymentType.loadType = Loaded(syntheticSession)
       let vaultConfigJson = VaultHelpers.buildVaultConfig(loadedSession, vaultMode)
       vaultCredentialsRef := vaultConfigJson
     }
   | None => {
-      // Mode A — discovery fetch. Issued from this merchant-page context,
-      // matching `Hyper.res:776` (`fetchSessions`); the result will be posted
-      // into the coordinator iframe via the standard `sessions` channel once
-      // fields mount.
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
       PaymentHelpersV2.fetchPaymentManagementList(
         ~pmSessionId,
@@ -544,9 +332,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         let loadedSession: PaymentType.loadType = Loaded(sessionJson)
         let vaultConfigJson = VaultHelpers.buildVaultConfig(loadedSession, vaultMode)
         vaultCredentialsRef := vaultConfigJson
-        // Late-settle coverage: if the coordinator mounted before the Mode A
-        // fetch resolved, push the session snapshot now (ready-flush handles
-        // the common ordering; this is the slow-fetch twin).
+        /* slow-fetch twin of the ready-flush: if the coordinator mounted before this fetch
+           resolved, push the session snapshot now. */
         syncCoordinatorSessions()
         Promise.resolve()
       })
@@ -558,32 +345,12 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-  // 4. Field handle factory. Each `create()` call spins up an iframe at
-  //    the unified URL
-  //    `index.html?componentName=paymentMethodsSDK&fieldName=<bare>&surfaceFamily=vault`
-  //    (so App.res routes to `PaymentMethodsSDK`), posts a ParentCardComponent-style
-  //    `paymentElementCreate: true` config on `iframeMounted`, and forwards
-  //    updates via `paymentElementsUpdate` (LoaderPaymentElement.update). Field
-  //    actions ride the existing `doFocus|doBlur|doClearValues` postMessage
-  //    protocol; state flows back as `cardStateUpdate` / `savedCardCvcStatus`,
-  //    which we re-dispatch to user-registered `on(event, cb)` listeners.
-  //
-  // The iframe sees the BARE field name ("cardNumber" / "cardExpiry" /
-  // "cardCvc") in the `fieldName` URL param; `surfaceFamily=vault` carries the
-  // surface-family signal. The allow-list is the shared `CardFormShared` canon
-  // (identical to `PaymentsGroup`'s) — aliased, not duplicated.
+  /* each `create()` mounts an iframe at componentName=paymentMethodsSDK with the bare
+     `fieldName` and `surfaceFamily=vault`, driven over the paymentElementCreate protocol. */
   let mapFieldTypeToInternalFieldName = CardFormShared.mapFieldTypeToInternalFieldName
 
-  // ── VGS provider detection + broker memoization ────────────────────────
-  //
-  // Returns "vgs" | "hyperswitch" | "unknown". Reads `vaultCredentialsRef`
-  // (populated by bootstrap code in step 3 above) and sniffs VGS via the
-  // `{vaultId, environment}` credential shape. Mode A bootstrap resolves
-  // async — if `create()` runs before the fetch settles, vaultCredentialsRef
-  // is still null and we return "unknown" (which `create()` treats as the
-  // Hyperswitch default).
+  // Mode A resolves async, so a `create()` that beats the fetch sees "unknown" (= Hyperswitch).
   let detectVaultType = (): string => {
-    // Prefer explicit Mode B declaration (synchronous, deterministic).
     let declaredType =
       optionsDict
       ->Dict.get("vault")
@@ -595,22 +362,16 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     } else if VGSVaultBroker.isVGSProvider(vaultCredentialsRef.contents) {
       "vgs"
     } else if vaultCredentialsRef.contents !== JSON.Encode.null {
-      // Credentials exist and aren't VGS — Hyperswitch family
       "hyperswitch"
     } else {
-      // Mode A fetch not settled yet — default to Hyperswitch.
       "hyperswitch"
     }
   }
 
-  // Memoized broker factory — create ONCE per group and share across all
-  // `create()` calls. Returns None for non-VGS providers.
   let getOrCreateVgsBroker = (): option<VGSVaultBroker.vgsBrokerHandle> => {
     switch vgsBrokerRef.contents {
     | Some(broker) => Some(broker)
     | None =>
-      // Pull VGS-specific credentials from `vaultCredentialsRef` (Mode A) OR
-      // from Mode B's declared `vault_data`.
       let vaultDataDict =
         optionsDict
         ->Dict.get("vault")
@@ -627,9 +388,7 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       | None => fromCredentials->getString("environment", "")
       }
       if vaultId->String.length == 0 || environment->String.length == 0 {
-        // No usable VGS credentials — keep the broker unset so we don't
-        // chase a half-configured path. `create()` will fall back to the
-        // default error-handle behavior.
+        // no usable VGS credentials — leave the broker unset and fall back to the error handle.
         None
       } else {
         let broker = VGSVaultBroker.make(~pmSessionId, ~vaultId, ~environment, ~eventCallbacksRef)
@@ -639,25 +398,14 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-  // `LoaderPaymentElement.make`'s `mountPostMessage` runs on `iframeMounted` and
-  // is responsible for the initial config handshake. We synthesise a config
-  // payload matching ParentCardComponent's (its keys are what LoaderController
-  // actually reads); anything unused by the vault surface is filled with the
-  // minimal well-formed value.
   let buildMountConfig = (~options: JSON.t, ~fieldId: string) => {
-    // NOTE: `options` here is the PER-FIELD options bag passed to
-    // `cardForm.create("cardNumber", opts)`, which is typically `{}`. The
-    // merchant's top-level options (including `appearance`) live on the
-    // outer `optionsDict` bound at `make()` entry (line 480). We must NOT
-    // shadow it — read per-field overrides from `fieldOptionsDict`, then
-    // fall back to the outer merchant bag for `appearance`.
+    /* `options` here is the PER-FIELD bag from `cardForm.create(type, opts)`; do NOT shadow
+       the outer merchant `optionsDict`, which is where the top-level `appearance` lives. */
     let fieldOptionsDict = options->getDictFromJson
     let savedCardDict = fieldOptionsDict->getDictFromDict("savedCard")
     let savedCardBrand = savedCardDict->getString("brand", "")
     let emptyJson = Dict.make()->JSON.Encode.object
     let fieldAppearance = fieldOptionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
-    // Per-field appearance wins only if it actually carries keys; otherwise
-    // prefer the merchant-supplied appearance from the top-level bag.
     let appearance = if (
       fieldAppearance
       ->JSON.Decode.object
@@ -673,12 +421,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         ("shouldUseTopRedirection", JSON.Encode.bool(false)),
         ("shouldRemoveBeforeUnloadEvents", JSON.Encode.bool(false)),
       ]->Dict.fromArray
-    // Wrap appearance in the canonical widgetOptions envelope that
-    // CardTheme.itemToObjMapper expects on the iframe side (whitelist:
-    // ["appearance", "fonts", "locale", "clientSecret", "loader",
-    //  "pmSessionId", "sdkAuthorization"]). Posting the raw merchant bag
-    // directly caused "Unknown Key: 'variables'/'rules'" warnings and
-    // silently dropped merchant appearance customizations.
+    /* appearance must be wrapped in the widgetOptions envelope `CardTheme.itemToObjMapper`
+       expects — the raw merchant bag warns "Unknown Key" and drops the customizations. */
     let paymentOptions =
       [
         ("appearance", appearance),
@@ -716,38 +460,17 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     ]->Dict.fromArray
   }
 
-  // Per-field callback registry — events named `fieldReady`, `fieldChange`,
-  // `fieldFocus`, `fieldBlur`, `fieldError` plus the single-slot cardStateUpdate
-  // pipeline are wired through `addSmartEventListener` elsewhere. Here we keep a
-  // straightforward Dict keyed by event name.
   let createFieldHandle = (fieldType: string, options: JSON.t, fieldId: string): fieldEntry => {
     let iframeRef: ref<Nullable.t<Dom.element>> = ref(Nullable.null)
 
-    // Merchant-registered event listeners.
     let eventHandlersRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
 
-    // Capture the merchant-supplied `savedCard` hints so the Flow B branch
-    // of `confirm()` can surface them on the success union without requiring
-    // the field's postMessage payload to round-trip cardholder-sensitive
-    // data back.
     let savedCardDict = options->getDictFromJson->getDictFromDict("savedCard")
     let savedCardBrandRef = ref(savedCardDict->getString("brand", ""))
     let savedCardLast4Ref = ref(savedCardDict->getString("last4", ""))
 
-    // No per-field raw-value caches here:
-    // the coordinator receives full snapshots on the port plane; the window
-    // `cardStateUpdate` carries the SPLIT payload with raw keys absent.
-    // Auto-focus progression: tracks the previous
-    // `focusReady` emitted by this field's iframe so the `cardStateUpdate`
-    // branch can detect its false→true edge and post `doFocus` to the NEXT
-    // field's iframe exactly once per "user finished this field" moment —
-    // not on every keystroke that keeps the field focus-ready.
     let prevFocusReadyRef = ref(false)
 
-    // The `mountPostMessage` LoaderPaymentElement invokes on `iframeMounted`:
-    // we post the initial config into the fresh iframe, then follow with any
-    // `sessions` snapshot we already hold. The iframe's LoaderController reads
-    // this and hands off to the vault-host tree.
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
       let config = buildMountConfig(~options, ~fieldId)
       // MessageChannel Card Relay: ONE channel per field mount per portEpoch.
@@ -770,20 +493,13 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         {fieldName: mapFieldTypeToInternalFieldName(fieldType), epoch, port: channel.port1},
       ])
       flushPendingPorts()
-      // Mirror what ParentCardComponent.res:519-526 does: if we already hold
-      // the session JWT, forward it so the inner LoaderController can populate
-      // its `sessions` atom → `vaultCredentials` atom → field components.
       if sessionsDataRef.contents != JSON.Encode.null {
         mountedIframeRef->Window.iframePostMessage(
           [("sessions", sessionsDataRef.contents)]->Dict.fromArray,
         )
       }
-      // Brand-cache warm-up for a late-mounted cardCvc. The `cardStateUpdate`
-      // branch only pushes on a brand CHANGE; a CVC field mounted after the
-      // user already finished the cardNumber would otherwise sit at the
-      // permissive default until the next brand transition (or forever, if
-      // none comes). Mount order is merchant-controlled, so the group fills
-      // the gap at handshake time with whatever it has already learned.
+      /* a cardCvc mounted after the user finished the cardNumber would never see a brand
+         CHANGE, so seed it at handshake time with the brand we already learned. */
       if fieldType === "cardCvc" && lastDetectedBrandRef.contents !== "" {
         mountedIframeRef->Window.iframePostMessage(
           [("detectedCardBrand", lastDetectedBrandRef.contents->JSON.Encode.string)]->Dict.fromArray,
@@ -791,13 +507,9 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       }
     }
 
-    // Wire merchant-facing event handlers. Match the message by its window
-    // source (the per-field iframe's contentWindow) AND origin — top-level
-    // `iframeId` is only present in `ready|focus|blur` payloads, not in
-    // `cardStateUpdate`, so keying on source is the reliable cross-event
-    // matcher. Origin check adds defense-in-depth against our own iframe
-    // being redirected to a hostile origin mid-session (mirrors
-    // ParentCardComponent.res:559-565).
+    /* match on the iframe's contentWindow AND origin: top-level `iframeId` is absent from
+       `cardStateUpdate`, so source is the reliable cross-event matcher, and the origin check
+       guards against our own iframe being redirected to a hostile origin mid-session. */
     let attachFieldListener = () => {
       let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin
       EventListenerManager.addSmartEventListener(
@@ -832,35 +544,17 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
             } else if isBlur {
               eventHandlersRef.contents->Dict.get("blur")->Option.forEach(cb => cb(payload))
             } else if isCardTokenEvent || isCardTokenFail || isCvcTokenEvent {
-              // These keys are posted by HyperswitchVaultCardCollector /
-              // VGSVault / CardCVCElement, none of which this group's fieldName
-              // URLs load. Confirms resolve ONLY via the coordinator's masked
-              // `confirmResult` envelope, so this arm is a deliberate no-op.
+              // confirms resolve only via the coordinator's masked `confirmResult`, so this arm is a no-op.
               ()
             } else {
               switch cardStateUpdate {
               | Some(stateJson) =>
-                // `cardStateUpdate` rides the `change` channel. When it carries
-                // an error we ALSO fire the merchant's `error` listener — once
-                // per state update, never double-firing with the group-level
-                // `error` event which emits from the confirm path only. The
-                // envelope includes `elementType`/`iframeId` so the merchant
-                // knows which field flagged it.
                 let stateDict = stateJson->getDictFromJson
-                // The raw-SAD half of `cardStateUpdate` rides the port plane
-                // straight to the coordinator — the SPLIT payload fed into this
-                // branch never carries `rawCardNumber`/`rawCardExpiry`/`rawCvc`.
+                /* the raw half of `cardStateUpdate` goes straight to the coordinator on the port plane;
+                   the SPLIT payload here never carries rawCardNumber, rawCardExpiry or rawCvc. */
 
-                // ── Auto-focus progression ─────────────────────────────────
-                // The field's iframe decides WHEN focus should advance (it has
-                // the keystroke stream + brand context); this group only routes
-                // the signal. We watch the emitted `focusReady` key for its
-                // `false → true` edge and post `doFocus` into the NEXT field's
-                // iframe exactly once per "user finished this field" moment.
-                // `prevFocusReadyRef` is the latch — steady-state keystrokes
-                // that keep the field focus-ready don't re-fire. The envelope
-                // default-absent → false keeps the latch simple. cardCvc's
-                // `nextFieldFor` is None, so the edge there is a no-op.
+                /* the iframe decides WHEN focus advances; this only routes it. `prevFocusReadyRef` latches
+                   the false→true edge so steady-state keystrokes do not re-fire `doFocus`. */
                 let prevFocusReady = prevFocusReadyRef.contents
                 let newFocusReady = stateDict->getBool("focusReady", false)
                 prevFocusReadyRef := newFocusReady
@@ -881,14 +575,7 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                   })
                 }
 
-                // ── Brand-aware CVC maxLength ──────────────────────────────
-                // The cardNumber iframe detects the brand on every keystroke
-                // and surfaces it in this envelope. Cache the latest non-empty
-                // value group-wide, and on every CHANGE push it to the cardCvc
-                // iframe so its `useCardForm` re-derives `cardBrandForCvc` /
-                // `maxCVCLength` reactively. Flow B (saved-card CVC) is
-                // untouched — its `savedCardBrand` mount-config key feeds the
-                // same `~cardBrandOverride` slot with higher priority.
+                // push to the cardCvc iframe on brand CHANGE only; Flow B's `savedCardBrand` wins.
                 if fieldType === "cardNumber" {
                   let cardBrand = stateDict->getString("cardBrand", "")->CardUtils.normalizeCardBrand
                   if cardBrand !== "" && cardBrand !== lastDetectedBrandRef.contents {
@@ -909,8 +596,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                 }
 
                 let errorMessage = stateDict->getString("error", "")
-                // Reshape to the merchant-facing `{empty, complete, valid,
-                // error?, brand?, elementType}` shape before surfacing.
                 let changePayload = reshapeCardStateUpdateToChangePayload(
                   ~fieldType,
                   ~stateJson,
@@ -939,23 +624,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       )
     }
 
-    // One `LoaderPaymentElement` per field. Uses the unified URL
-    // (`componentName=paymentMethodsSDK&fieldName=<bare>&surfaceFamily=vault`)
-    // so `App.res` routes to `PaymentMethodsSDK`; per-field dispatch happens
-    // inside `PaymentMethodsSDK` via the `fieldName` + `surfaceFamily` URL
-    // params.
-    // Per-field appearance wins only if it actually carries keys; otherwise
-    // prefer the merchant-supplied appearance from the top-level
-    // (`optionsDict`) bag. Mirrors the precedence rule used by
-    // `buildMountConfig` above — `options` here is the PER-FIELD bag passed
-    // to `cardForm.create("cardNumber", opts)` and is typically `{}`.
-    //
-    // The merged appearance is ALSO injected into the positional `options`
-    // JSON handed to `LoaderPaymentElement.make`, because that component
-    // reads `appearance.variables.cardFieldHeight` from its OWN `optionsDict`
-    // (the positional bag, see LoaderPaymentElement.res:365+543-547) to size
-    // the iframe wrapper. Without this, a merchant-bumped `cardFieldHeight`
-    // never reaches the iframe style.
     let fieldOptionsDict = options->getDictFromJson
     let emptyJson = Dict.make()->JSON.Encode.object
     let fieldAppearance = fieldOptionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
@@ -969,10 +637,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     } else {
       optionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
     }
-    // Inject the resolved appearance back into the per-field options JSON so
-    // `LoaderPaymentElement` sees it via its own `optionsDict`. Field-level
-    // keys are preserved; `appearance` key is overwritten with the merged
-    // value (same precedence as the `~appearance` named arg below).
     let fieldOptionsWithAppearanceDict = fieldOptionsDict->Dict.copy
     fieldOptionsWithAppearanceDict->Dict.set("appearance", appearanceJson)
     let optionsForElement = fieldOptionsWithAppearanceDict->JSON.Encode.object
@@ -1007,47 +671,30 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       destroy: () => {
         element.destroy()
         iframeRef := Nullable.null
-        // Remove THIS field's smartEventListener so destroying one field
-        // doesn't leak its routing callback across remount cycles on the
-        // same page. `fieldId` is unique per `create()` (timestamp+rand), so
-        // dead listeners would otherwise ACCUMULATE (never clobber). The
-        // listener is registered by `attachFieldListener` under
-        // `onVaultField-${fieldId}`; removal here is the single teardown
-        // site and is idempotent — group-level `deinit()` reaches it via its
-        // per-entry `handle.destroy()` walk, so both paths are covered
-        // without a deinit-callback pool.
+        /* remove THIS field's smartEventListener — `fieldId` is unique per `create()`, so dead
+           listeners would accumulate across remounts. Idempotent; `deinit()` reaches it too. */
         EventListenerManager.removeSmartEventListener(
           "message",
           `onVaultField-${fieldId}`,
         )
       },
       update: newOptions => {
-        // Post `paymentElementsUpdate` (mirrors LoaderPaymentElement.update)
-        // through our own ref — the 4th-arg array stays empty by design.
         iframeRef.contents->Window.iframePostMessage(
           [
             ("paymentElementsUpdate", true->JSON.Encode.bool),
             ("options", newOptions),
           ]->Dict.fromArray,
         )
-        // Forward `savedCard.brand` explicitly — the generic `updateOptions`
-        // path in LoaderController expects it as a top-level key, not nested.
-        let d = newOptions->getDictFromJson->getDictFromDict("savedCard")
-        let brand = d->getString("brand", "")
+        // LoaderController expects `savedCard.brand` as a top-level key, not nested.
+        let newSavedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
+        let brand = newSavedCardDict->getString("brand", "")
         if brand->String.length > 0 {
           iframeRef.contents->Window.iframePostMessage(
             [("savedCardBrand", brand->JSON.Encode.string)]->Dict.fromArray,
           )
         }
-        // Refresh the group-side captured savedCard hints (brand + last4) —
-        // without this, `field.update({savedCard: {...}})` re-pointed the
-        // iframe's brand-driven validation but the Flow B branch of
-        // `confirm()` still built the success union from the values captured
-        // at `create()` time. Per-key `!== ""` guards mirror the create
-        // captures above: a partial update (brand only, or last4 only) never
-        // blanks out the sibling hint. Mirrors the payments group's
-        // `savedCardTokenRef` refresh discipline (Flows are symmetric).
-        let last4 = d->getString("last4", "")
+        // refresh the captured hints, else the Flow B union keeps the create()-time values.
+        let last4 = newSavedCardDict->getString("last4", "")
         if brand !== "" {
           savedCardBrandRef := brand
         }
@@ -1056,9 +703,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         }
       },
       focus: () => {
-        // LoaderPaymentElement's own focus() walks the (empty-by-design) 4th
-        // arg array; we bypass it and post directly via the ref that
-        // setIframeRef gave us. Matches ParentCardComponent's pattern.
         iframeRef.contents->Window.iframePostMessage(
           [("doFocus", true->JSON.Encode.bool)]->Dict.fromArray,
         )
@@ -1090,9 +734,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
 
   let create = (fieldType: string, options: JSON.t): fieldHandle => {
     if sessionStateRef.contents != Active {
-      // `create` itself doesn't return the union — callers observe
-      // `session_consumed` on `confirm()`. But `mount()` on a dead session is
-      // meaningless, so return a handle that no-ops on every call.
       Console.warn(
         `[PaymentMethodsSessionGroup] create("${fieldType}") called on consumed/deinitialized session`,
       )
@@ -1100,9 +741,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     } else {
       switch mapFieldTypeToInternalFieldName(fieldType) {
       | "" => {
-          // Unknown field types live in the error-handle path, not
-          // a synchronous throw — merchants add fields defensively and the
-          // error surfaces on mount rather than at create().
           Console.error(
             `[PaymentMethodsSessionGroup] invalid_field_type: ${fieldType}`,
           )
@@ -1112,33 +750,19 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         let vaultType = detectVaultType()
         switch vaultType {
         | "vgs" =>
-          // VGS branch. Lazily create the broker (first
-          // `create()` for VGS mounts the script-fetch machinery) and return
-          // a real `fieldHandle` whose methods delegate to the broker:
-          //   mount    → broker.mountField(fieldId, fieldType, selector, options)
-          //   update   → broker.updateField(fieldId, options)
-          //   unmount  → broker.unmountField(fieldId)
-          //   focus / blur / clear → %raw method calls on the stored VGS
-          //                          fieldHandle via the broker's fieldsRef.
-          //   on(evt, cb) → registers in `eventCallbacksRef` keyed
-          //                 `"<fieldId>::<event>"` so the broker's field
-          //                 event dispatchers can find the listener.
           switch getOrCreateVgsBroker() {
           | Some(broker) => {
               let fieldId = `${fieldType}-${Date.now()->Float.toString}-${Math.random()->Float.toString->String.slice(~start=2, ~end=8)}`
-              // Capture savedCard hints so the Flow B branch of
-              // `confirm()` can surface {card:{brand, last4}} on the Flow B
-              // success union without a backend round-trip. Only relevant
-              // for cardCvc fields; we're harmless if this fires for others.
               let savedCardDict = options->getDictFromJson->getDictFromDict("savedCard")
-              let scBrand = savedCardDict->getString("brand", "")
-              let scLast4 = savedCardDict->getString("last4", "")
-              if fieldType === "cardCvc" && (scBrand->String.length > 0 || scLast4->String.length > 0) {
-                vgsSavedCardBrandRef := scBrand
-                vgsSavedCardLast4Ref := scLast4
+              let savedCardBrand = savedCardDict->getString("brand", "")
+              let savedCardLast4 = savedCardDict->getString("last4", "")
+              if (
+                fieldType === "cardCvc" &&
+                  (savedCardBrand->String.length > 0 || savedCardLast4->String.length > 0)
+              ) {
+                vgsSavedCardBrandRef := savedCardBrand
+                vgsSavedCardLast4Ref := savedCardLast4
               }
-              // VGS still tracks the field in the group's `fields` JSON so
-              // merchants can enumerate via group.fields.
               let fieldsDict = fields.contents->getDictFromJson
               let fieldMeta =
                 [
@@ -1151,21 +775,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
               fieldsDict->Dict.set(fieldId, fieldMeta)
               fields := fieldsDict->JSON.Encode.object
 
-              // Track the most recently mounted selector on the handle so
-              // later destroy()/unmount() flows can recover the DOM spot
-              // without needing to round-trip through the broker's
-              // (private) fieldsRef. Mirrors the `uniqueSelector` tracking
-              // Hyper's LoaderPaymentElement does for Hyperswitch fields.
               let uniqueSelectorRef: ref<option<string>> = ref(None)
 
-              // Group-appearance umbrella for the VGS path. Mirrors the
-              // merge in `createFieldHandle` (Hyperswitch branch) exactly:
-              // the per-field `appearance` from `cardForm.create(type, opts)`
-              // wins only when it carries keys; otherwise fall back to the
-              // group-level appearance from `paymentMethodsSession(options)`.
-              // The broker reads `appearance.variables.cardFieldHeight` off
-              // the options bag it receives — without this merge a
-              // merchant-set GROUP appearance was silently dropped for VGS.
               let fieldOptionsDict = options->getDictFromJson
               let emptyJson = Dict.make()->JSON.Encode.object
               let fieldAppearance = fieldOptionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
@@ -1179,16 +790,10 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
               } else {
                 optionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
               }
-              // Inject the resolved appearance back into the per-field
-              // options JSON handed to the broker (other keys preserved).
               let fieldOptionsWithAppearanceDict = fieldOptionsDict->Dict.copy
               fieldOptionsWithAppearanceDict->Dict.set("appearance", appearanceJson)
               let optionsForBroker = fieldOptionsWithAppearanceDict->JSON.Encode.object
 
-              // Helper: pull the VGS field's opaque handle (if mounted) so
-              // %raw methods can target it. The broker fieldsRef is the
-              // single source of truth; the handle slot is Option because
-              // fields are created before they are mounted.
               let getFieldHandle = (): option<JSON.t> => {
                 switch broker.fieldsRef.contents->Dict.get(fieldId) {
                 | Some(entry) => entry.fieldHandle
@@ -1196,18 +801,12 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                 }
               }
 
-              // The real VGS handle. All methods delegate to the broker; the
-              // broker owns the VGS-side field lifecycle and we just plumb
-              // through the public fieldHandle API surface.
               let handle: fieldHandle = {
                 mount: selector => {
                   uniqueSelectorRef := Some(selector)
                   broker
                   .mountField(~fieldId, ~fieldType, ~selector, ~options=optionsForBroker)
                   ->Promise.catch(err => {
-                    // Mount failures surface via the confirm-path union, not
-                    // via a sync throw. Log so
-                    // integrators iterating in devtools can see the cause.
                     Console.error2(
                       `[PaymentMethodsSessionGroup] VGS mountField(${fieldType}, ${selector}) failed`,
                       err->Identity.anyTypeToJson,
@@ -1226,28 +825,22 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                 },
                 update: newOptions => {
                   broker.updateField(~fieldId, ~options=newOptions)
-                  // Refresh the group-side captured savedCard hints — mirrors
-                  // the Hyperswitch branch's savedCard*Ref refresh. Without
-                  // this the Flow B success union kept the brand/last4 from
-                  // `create()` even after the merchant switched saved cards
-                  // via `field.update({savedCard: {...}})`. Per-key `!== ""`
-                  // guards prevent a partial update blanking out the sibling
-                  // hint (mirrors the create capture guards above).
-                  let savedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
-                  let scBrand = savedCardDict->getString("brand", "")
-                  let scLast4 = savedCardDict->getString("last4", "")
-                  if scBrand !== "" {
-                    vgsSavedCardBrandRef := scBrand
+                  // refresh captured hints; `!== ""` guards keep a partial update from blanking a sibling.
+                  let newSavedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
+                  let newSavedCardBrand = newSavedCardDict->getString("brand", "")
+                  let newSavedCardLast4 = newSavedCardDict->getString("last4", "")
+                  if newSavedCardBrand !== "" {
+                    vgsSavedCardBrandRef := newSavedCardBrand
                   }
-                  if scLast4 !== "" {
-                    vgsSavedCardLast4Ref := scLast4
+                  if newSavedCardLast4 !== "" {
+                    vgsSavedCardLast4Ref := newSavedCardLast4
                   }
                 },
                 focus: () => {
                   switch getFieldHandle() {
-                  | Some(fh) =>
+                  | Some(vgsFieldHandle) =>
                     try {
-                      %raw(`(function(field) { if (field && typeof field.focus === "function") field.focus(); })`)(fh)
+                      %raw(`(function(field) { if (field && typeof field.focus === "function") field.focus(); })`)(vgsFieldHandle)
                     } catch {
                     | exn =>
                       Console.error2(
@@ -1263,9 +856,9 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                 },
                 blur: () => {
                   switch getFieldHandle() {
-                  | Some(fh) =>
+                  | Some(vgsFieldHandle) =>
                     try {
-                      %raw(`(function(field) { if (field && typeof field.blur === "function") field.blur(); })`)(fh)
+                      %raw(`(function(field) { if (field && typeof field.blur === "function") field.blur(); })`)(vgsFieldHandle)
                     } catch {
                     | exn =>
                       Console.error2(
@@ -1280,16 +873,14 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                   }
                 },
                 clear: () => {
-                  // VGSCollect 2.27 field handles expose `clear()` for an
-                  // input reset; if a future version drops it the warn
-                  // below fires so integrators can swap to `update()`.
+                  // VGSCollect 2.27 exposes clear(); the warn fires if a future version drops it.
                   switch getFieldHandle() {
-                  | Some(fh) =>
+                  | Some(vgsFieldHandle) =>
                     try {
                       let cleared: bool = %raw(`(function(field) {
                         if (field && typeof field.clear === "function") { field.clear(); return true; }
                         return false;
-                      })`)(fh)
+                      })`)(vgsFieldHandle)
                       if !cleared {
                         Console.warn(
                           `[PaymentMethodsSessionGroup] VGS clear(${fieldId}) — field has no clear() method; use update({placeholder: ..., validations: ...}) instead`,
@@ -1309,11 +900,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                   }
                 },
                 on: (event, cb) => {
-                  // Register merchant listener in the group's shared
-                  // eventCallbacksRef, keyed `"<fieldId>::<event>"` so the
-                  // broker's per-field event dispatchers (VGSVaultBroker's
-                  // `dispatchFieldEvent`) can find them by composite key.
-                  // Must match `VGSVaultBroker.eventKey` exactly.
+                    /* keyed "<fieldId>::<event>" so the broker's dispatchers find them by composite key —
+                       must match `VGSVaultBroker.eventKey` exactly. */
                   let key = `${fieldId}::${event}`
                   eventCallbacksRef.contents->Dict.set(key, cb)
                 },
@@ -1321,8 +909,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
               handle
             }
           | None => {
-              // VGS declared but credentials missing. Surface a clear
-              // console error and return the no-op handle.
               Console.error(
                 `[PaymentMethodsSessionGroup] vault_type="vgs" declared but vault_data has no vault_id/environment — cannot mount`,
               )
@@ -1330,16 +916,12 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
             }
           }
         | "hyperswitch" =>
-          // First hosted-field mount also creates the hidden confirm-owner
-          // (MessageChannel Card Relay contract #2). Locked: VGS-only groups
-          // never reach this branch — no coordinator gets resources it can't
-          // exercise.
+          /* the first hosted-field mount also creates the hidden confirm owner. VGS-only groups
+             never reach this branch, so no coordinator is created that it could not exercise. */
           ensureCoordinatorMounted()
           let fieldId = `${fieldType}-${Date.now()->Float.toString}-${Math.random()->Float.toString->String.slice(~start=2, ~end=8)}`
           let entry = createFieldHandle(fieldType, options, fieldId)
           fieldsRef.contents->Dict.set(fieldId, entry)
-          // Mirror the existence of this field in the JSON blob the group
-          // exposes, so callers can enumerate created fields.
           let fieldsDict = fields.contents->getDictFromJson
           let fieldMeta =
             [
@@ -1360,66 +942,33 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-  // Group-level update() is intentionally a no-op on the vault surface:
-  // session options (sdkAuthorization, appearance) are fixed at
-  // `paymentMethodsSession(...)` creation time.
   let update = (_options: JSON.t): unit => {
     Console.warn(
       "[PaymentMethodsSessionGroup] session options are fixed at creation; create a new session to change them",
     )
   }
 
-  // 5. Group-level event registry.
   let on = (event: string, cb: JSON.t => unit): unit => {
     eventCallbacksRef.contents->Dict.set(event, cb)
   }
 
-  // 6. Unified `confirm()` — ONE flow-inferring entrypoint for both full-card
-  //    and saved-card-CVC confirms.
-  //
-  //    Guard order (first match wins):
-  //      1. sessionStateRef != Active                              → session_consumed
-  //         (covers both Consumed and Deinitialized — both mean "done")
-  //      2. confirmingRef == true                                  → confirm_in_progress
-  //      3. expiresAt in the past                                  → session_expired
-  //      4. mounted-field-set inference (see below)                → incomplete_field_set
-  //      5. run confirm relay (postMessage → field → vault POST → postMessage back)
-  //
-  //    Flow inference (see the `cardForm` contract in `Types.res`):
-  //      cardNumber (or any of cardNumber|cardExpiry) mounted → Flow A (full
-  //        tokenization; the full set {cardNumber, cardExpiry, cardCvc} is
-  //        expected — cardNumber alone is accepted as the minimal tokenize
-  //        signal).
-  //      ONLY cardCvc mounted → Flow B (saved-card CVC recollect; the merchant
-  //        passes `{savedCard: {brand, last4}}` at `create("cardCvc", opts)` —
-  //        captured at field-create time into savedCard*Ref below).
-  //      nothing mounted → reject with `incomplete_field_set`.
-  //
-  //    On success: sessionStateRef := Consumed. On failure: state stays Active
-  //    so the merchant can retry. The `confirmingRef` mutex is always released
-  //    when the relay settles (success or failure).
+  /* unified confirm(). Guards: non-Active → session_consumed, in flight → confirm_in_progress,
+     past expires_at → session_expired, then flow inference — cardNumber or cardExpiry → Flow A,
+     only cardCvc → Flow B, nothing → incomplete_field_set. Success consumes the session. */
 
-  // Helper: locate the first fieldEntry of the requested type. The group
-  // permits multiple fields of the same type to be created; confirm is
-  // single-shot, and the contract is "first mounted cardNumber (or cardCvc)
-  // wins".
+  // the first mounted field of the type wins; confirm is single-shot.
   let findFieldOfType = (matchFieldType: string): option<fieldEntry> => {
     fieldsRef.contents
     ->Dict.valuesToArray
     ->Array.find(entry => entry.fieldType === matchFieldType)
   }
 
-  // Every failure path emits a single `error` group event carrying the same
-  // envelope that resolves the promise. Emission is centralized at the
-  // `settle` callsite so it always fires exactly once per failure.
   let emitGroupError = (envelope: JSON.t): unit => {
     eventCallbacksRef.contents->Dict.get("error")->Option.forEach(cb => cb(envelope))
   }
 
   let settleResult = (resolve: JSON.t => unit, result: JSON.t): unit => {
-    // Invariant: promise resolution AND `error` event fire exactly once per
-    // failure. Success envelopes are not re-emitted as events — only failures
-    // broadcast.
+    // invariant: promise resolution and the `error` event fire exactly once per failure.
     let outcomeDict = result->getDictFromJson
     let isError = outcomeDict->getString("status", "") === "error"
     if isError {
@@ -1428,30 +977,11 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     resolve(result)
   }
 
-  // ── VGS confirm paths ────────────────────────────────────────────────────
-  //
-  // The Hyperswitch branch routes via field-iframe postMessage
-  // (`initiate-confirm` → `cardTokenEvent`). VGS path calls the broker's
-  // `submitForm()` directly — same single `vault.submit("/post", ...)` for
-  // both Flow A (full card) and Flow B (saved-card CVC recollect). For Flow A
-  // the response contains all 4 aliases (`card_number`, `card_exp_month`,
-  // `card_exp_year`, `card_cvc`); for Flow B only `card_cvc` is populated
-  // because only the CVC field was mounted on the form.
-  //
-  // Guard order and mutex discipline exactly mirror the Hyperswitch paths:
-  //   1) sessionStateRef check lives at the call site (shared)
-  //   2) confirm-set already flipped `confirmingRef := true`; we ALWAYS reset
-  //      it in both success and failure settles.
-  //   3) We `sessionStateRef := Consumed` on success only — failures leave
-  //      the session Active so the merchant can retry.
-  //   4) `settleResult` emits the group-level `error` event on failure and
-  //      resolves the promise exactly once in both branches.
+  /* the VGS path calls the broker's submitForm() directly — one vault.submit for both flows;
+     Flow A gets all four aliases back, Flow B only `card_cvc`. */
   let confirmVgsFlowA = (): promise<JSON.t> => {
     switch getOrCreateVgsBroker() {
     | None =>
-      // VGS provider was detected but we couldn't construct a broker (missing
-      // credentials). Surface as a validation error — this is a merchant
-      // configuration problem, not a tokenization problem.
       Promise.resolve(
         buildConfirmResult(
           ~outcome=Failure({
@@ -1465,11 +995,7 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         ),
       )
     | Some(broker) =>
-      // Check that at least one cardNumber field is mounted. "Mounted" =
-      // broker's fieldsRef has an entry with a non-None fieldHandle. We
-      // don't check isEmpty — VGSCollect will surface empty-field errors
-      // through onError. "At least a cardNumber field mounted" is the
-      // required precondition.
+      // precondition is "a cardNumber field is mounted"; VGSCollect surfaces empty fields itself.
       let cardNumberMounted =
         broker.fieldsRef.contents
         ->Dict.valuesToArray
@@ -1495,10 +1021,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
           let resultDict = result->getDictFromJson
           let status = resultDict->getString("status", "")
           if status == "error" {
-            // Forward the error envelope from submitForm into the union
-            // shape. All VGS-side failures are tokenization/api
-            // problems → ApiError type; we honor the code surfaced by the
-            // broker (usually "tokenization_failed" or "vgs_form_not_ready").
             confirmingRef := false
             let errDict = resultDict->getDictFromDict("error")
             let code = errDict->getString("code", "tokenization_failed")
@@ -1515,23 +1037,16 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                 typeOverride: Some(ApiError),
               }),
             )
-            // Invariant: fire the group-level `error` event alongside promise
-            // resolution exactly once per failure. Success envelopes don't
-            // re-emit (matches Hyperswitch relay discipline).
             emitGroupError(envelope)
             Promise.resolve(envelope)
           } else {
-            // Success: mark session consumed, decode + emit Flow A union.
-            // Failure to decode (e.g. alias absent) still consumes the
-            // session — matches Hyperswitch semantics where a successful
-            // postMessage round-trip implies the vault has already vaulted
-            // the data.
+            /* a successful round-trip means the vault already stored the data, so consume the
+               session even if the alias fails to decode. */
             sessionStateRef := Consumed
             let cardNumberAlias = resultDict->getString("card_number", "")
             let expMonth = resultDict->getString("card_exp_month", "")
             let expYear = resultDict->getString("card_exp_year", "")
-            // Brand derived from the BIN prefix retained in the
-            // format-preserving alias. Empty when no range matches.
+            // brand from the BIN prefix retained in the format-preserving alias; "" when unmatched.
             let brand = detectBrandFromAlias(cardNumberAlias)
             let last4 =
               cardNumberAlias->String.length >= 4
@@ -1540,10 +1055,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
             let envelope = buildConfirmResult(
               ~outcome=FlowASuccess({
                 token: cardNumberAlias,
-                // No backend session-confirm — the card_number alias IS the
-                // merchant's VGS reference; paymentMethodId stays None
-                // (serializes to JSON null). The merchant backend resolves it
-                // against their own VGS proxy.
+                /* no backend session-confirm: the card_number alias IS the merchant's VGS reference, so
+                   paymentMethodId stays None. */
                 paymentMethodId: None,
                 brand,
                 last4,
@@ -1556,8 +1069,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
           }
         })
         ->Promise.catch(_exn => {
-          // Defensive — broker.submitForm() never rejects; if it ever does
-          // (refactor regression), the merchant still gets a sane envelope.
           confirmingRef := false
           let envelope = buildConfirmResult(
             ~outcome=Failure({
@@ -1574,8 +1085,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-  // VGS Flow B (saved-card CVC recollect): the unified `confirm()` routes here
-  // when the ONLY mounted field is a VGS `cardCvc`.
   let confirmVgsFlowB = (): promise<JSON.t> => {
     switch getOrCreateVgsBroker() {
     | None =>
@@ -1664,10 +1173,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-  // Relay a masked command envelope into the coordinator iframe. Settle is
-  // centrally keyed on `confirmId` returned in the coordinator's
-  // `confirmResult` broadcast; the group keeps an exactly-once sink + an 8s
-  // hang backstop so a dropped frame resolves deterministically.
+  /* settle is keyed on the confirmId echoed in the coordinator's `confirmResult`; an
+     exactly-once sink plus a hang backstop keeps a dropped frame deterministic. */
   let runCoordinatorRelay = (
     ~flow: string,
     ~savedCardBrand: string="",
@@ -1741,21 +1248,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-
-  // Unified `confirm()` — flow inferred from mounted fields at call time.
-  //
-  //   Flow A (full tokenization): any of cardNumber|cardExpiry mounted.
-  //     Hyperswitch branch: the group posts
-  //     `{cardFormCoordinatorCommand: "initiateConfirm", flow: "save", …}`
-  //     to the coordinator (content-free; raw state rides the port plane).
-  //     VGS branch: single `vault.submit` expects the card_number
-  //     alias set. cardNumber alone is the minimal tokenize signal —
-  //     omitting cardCvc is allowed.
-  //   Flow B (saved-card CVC recollect): ONLY cardCvc mounted. Hyperswitch
-  //     branch: the same command with `flow: "update"`. VGS
-  //     branch: single `vault.submit` sees only `card_cvc`.
-  //   Flow inference failure (nothing mounted, or — VGS only — a partial
-  //     card set without cardNumber): reject `incomplete_field_set`.
+  /* Flow A posts `flow: "save"` to the coordinator (content-free; state rides the port
+     plane); Flow B posts `flow: "update"`. VGS branches go through a single vault.submit. */
   let confirm = (): promise<JSON.t> =>
     if sessionStateRef.contents != Active {
       Promise.resolve(sessionConsumedResult(~locale, ()))
@@ -1769,9 +1263,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
           buildConfirmResult(
             ~outcome=Failure({
               code: "incomplete_field_set",
-              // defaultErrorMessage supplies the locked message; an explicit
-              // override keeps this locale-pinned to EN. Either path resolves
-              // identically today.
               message: None,
               locale,
               typeOverride: Some(ValidationError),
@@ -1779,7 +1270,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
           ),
         )
       if detectVaultType() == "vgs" {
-        // Inference runs over the broker's mounted VGS fields.
         let (numberMounted, cvcMounted) = switch vgsBrokerRef.contents {
         | Some(broker) => {
             let entries = broker.fieldsRef.contents->Dict.valuesToArray
@@ -1791,13 +1281,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         | None => (false, false)
         }
         if numberMounted {
-          // Flow A — VGS direct-injection: single vault.submit("/post") on the
-          // shared VGSCollect form. No backend session-confirm call.
           confirmVgsFlowA()
         } else if cvcMounted {
-          // Flow B — VGS saved-card CVC recollect: same single vault.submit on
-          // the shared form (only card_cvc was mounted, so only `card_cvc`
-          // comes back).
           confirmVgsFlowB()
         } else {
           incompleteFieldSet()
@@ -1806,18 +1291,13 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         switch (findFieldOfType("cardNumber"), findFieldOfType("cardExpiry"), findFieldOfType("cardCvc")) {
         | (None, None, None) => incompleteFieldSet()
         | (Some(_field), _, _) =>
-          // Flow A — full-card confirm. The command rides to the coordinator;
-          // the union comes back masked over `confirmResult` (the coordinator
-          // decodes the backend response + builds FlowASuccess itself).
           confirmingRef := true
           runCoordinatorRelay(~flow="save")
         | (None, Some(_), _) =>
           // cardExpiry w/o cardNumber can't tokenize on its own — reject.
           incompleteFieldSet()
         | (None, None, Some(field)) =>
-          // Flow B — saved-card CVC recollect. `savedCard` hints come from
-          // the entry's captured-at-create refs and ride the command payload
-          // so the masked result can echo them back in the Flow B union.
+          // Flow B — savedCard hints ride the command so the masked result can echo them back.
           confirmingRef := true
           runCoordinatorRelay(
             ~flow="update",
@@ -1828,14 +1308,9 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       }
     }
 
-  // 7. deinit — tears down state; idempotent. Iterates the registered fields,
-  //    removes each iframe from the DOM, releases per-field refs, and (for
-  //    VGS-direct-injection) also tears down the VGS broker: unmount all
-  //    field state and release the script-load marker so a subsequent
-  //    pmSession re-loads cleanly.
+  // idempotent teardown: field iframes, refs, and (for VGS) the broker plus script marker.
   let deinit = (): unit => {
     if sessionStateRef.contents != Deinitialized {
-      // Tear down Hyperswitch-vault field iframes.
       fieldsRef.contents
       ->Dict.valuesToArray
       ->Array.forEach(entry => {
@@ -1847,16 +1322,11 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       })
       fieldsRef := Dict.make()
 
-      // Tear down VGS broker if we ever created one. `unmountAll` wipes the
-      // broker's field registry.
       vgsBrokerRef.contents->Option.forEach(broker => broker.unmountAll())
       vgsBrokerRef := None
 
-      // Remove the VGS script entirely so a fresh pmSession rebuilds
-      // cleanly (e.g. merchant hot-swap environment requires a fresh
-      // VGSCollect.create() call). Removing the <script> tag also removes
-      // the data-vgs-script-loaded marker, which is the real goal here:
-      // the broker's script dedupe is one-shot per page.
+        /* removing the <script> also removes the data-vgs-script-loaded marker, which is the
+           point: the broker's script dedupe is one-shot per page. */
       switch Window.querySelector(`script[data-vgs-script-loaded]`)->Nullable.toOption {
       | Some(script) =>
         try {
@@ -1871,8 +1341,7 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       sessionStateRef := Deinitialized
       confirmingRef := false
 
-      // MessageChannel Card Relay teardown (contract #7 — deinit-before-
-      // flush port closure + confirm-owner iframe removal + listener cleanup).
+      // close ports queued but never transferred, remove the coordinator iframe and listener.
       installedPortKeysRef.contents->Array.forEach(key => SadPortRegistry.closePort(~key))
       installedPortKeysRef := []
       coordinatorMountRef.contents->Option.forEach(

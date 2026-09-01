@@ -411,12 +411,8 @@ let make = (
       | "samsungPay"
       | "paymentMethodsManagement"
       | "payment" => ()
-      // Split card fields for the payments CardForm surface are NOT created
-      // here — they go through
-      // `hyper.widgets(options).cardForm().create("cardNumber", opts)`
-      // (backed by `PaymentsGroup.makeCardForm`). The `cardNumber` /
-      // `cardExpiry` / `cardCvc` arms above are the legacy catch-all
-      // DOM-scrape path (`src/Payment.res`, `CardUtils.getCardElementValue`).
+      /* split card fields for the payments surface are created via
+         `hyper.widgets(options).cardForm().create(...)`; the arms above are the legacy DOM-scrape path. */
       | str => Console.warn(`Unknown Key: ${str} type in create`)
       }
 
@@ -1589,16 +1585,9 @@ let make = (
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
-    // `widgets(options).cardForm()` returns the payments CardForm backed by
-    // `PaymentsGroup`. Lazily instantiated on first call so merchants that
-    // never reach the split card fields don't pay the group-construction
-    // cost; memoized so every `cardForm()` call on one widgets element
-    // returns the SAME group (fields stay mounted, readiness stays latched,
-    // the confirm mutex is per-group).
-    //
-    // `open Types` above shadows the option `None` constructor with the
-    // eventType one. Recover it via an inner module alias so the ref is
-    // typeable without restructuring the file's opens.
+    /* lazily instantiated and memoized, so every `cardForm()` call on one widgets element
+       returns the SAME group (fields stay mounted, readiness latched, mutex per group).
+       `open Types` shadows the option `None` constructor, so recover it via an inner alias. */
     module StdOption = {
       type t<'a> = option<'a>
       let none: option<'a> = None

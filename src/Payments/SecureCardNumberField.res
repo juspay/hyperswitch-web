@@ -1,11 +1,8 @@
-// Standalone card-number field for the VaultSDK surface.
-//
-// Rendered inside the per-field iframe (URL: `componentName=paymentMethodsSDK&fieldName=cardNumber&surfaceFamily=vault`).
-// All shared plumbing (form state, ready/change emits, focus/blur listener) lives
-// in `CommonCardFieldHooks.useCardNumberField`.
-//
-// MessageChannel Card Relay: PURE EMITTER — the hidden `cardFormCoordinator`
-// iframe owns the confirm; this shell never runs the tokenisation POST itself.
+/* Standalone card-number field for the VaultSDK surface; the shared plumbing lives in
+   `CommonCardFieldHooks.useCardNumberField`.
+   PURE EMITTER — the hidden `cardFormCoordinator` iframe owns the confirm and runs the
+   tokenisation POST. */
+
 open Utils
 open JotaiAtoms
 

@@ -105,18 +105,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     let optionsDict = dict->getDictFromObj("options")
     setOptionsJson(_ => optionsDict->JSON.Encode.object)
 
-    // Per-field knobs apply ONLY on the paymentMethodsSDK surface and only for
-    // the field this iframe renders. Presence-gated: an ABSENT key leaves the
-    // atom untouched (never reset to a default), an explicit "" DOES apply, and
-    // a wrongly-typed value is a silent no-op. The field renderers read these
-    // atoms directly, so an update() that changes a knob re-renders the mounted
-    // field.
+    /* per-field knobs apply only on the paymentMethodsSDK surface. Presence-gated: an ABSENT
+       key leaves the atom untouched, an explicit "" DOES apply, a wrongly-typed value is a no-op. */
     if isPaymentMethodsSDKSurface {
-      let applyString = (key, setter) =>
+      /* placeholder atoms hold `option<string>` so a renderer can tell "merchant passed nothing"
+         (None → the bundled card form's placeholder) from an explicit override, including "". */
+      let applyPlaceholder = (key, setter) =>
         optionsDict
         ->Dict.get(key)
         ->Option.flatMap(JSON.Decode.string)
-        ->Option.forEach(value => setter(_ => value))
+        ->Option.forEach(value => setter(_ => Some(value)))
       let applyBool = (key, setter) =>
         optionsDict
         ->Dict.get(key)
@@ -125,9 +123,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       switch fieldName {
       | "cardNumber" =>
         applyBool("showCardIcon", setShowCardIcon)
-        applyString("placeholder", setCardNumberPlaceholder)
-      | "cardExpiry" => applyString("placeholder", setCardExpiryPlaceholder)
-      | "cardCvc" => applyString("placeholder", setCardCvcPlaceholder)
+        applyPlaceholder("placeholder", setCardNumberPlaceholder)
+      | "cardExpiry" => applyPlaceholder("placeholder", setCardExpiryPlaceholder)
+      | "cardCvc" => applyPlaceholder("placeholder", setCardCvcPlaceholder)
       | _ => ()
       }
     }
@@ -289,22 +287,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       try {
         let dict = json->getDictFromJson
 
-        // ── MessageChannel Card Relay: port ingestion (pre-isConfigReady) ──
-        // port2 rides WITH the field's mount-config message (transfer list);
-        // the coordinator's per-field ports ride with the `cardFieldPort`
-        // frames the group forwards. This runs at the handshake layer —
-        // BEFORE and INDEPENDENT of the `setConfigs → isConfigReady` gate —
-        // because ports are structural: a port that misses the mount window
-        // is a permanently uncoupled channel. Keys come from the message
-        // itself (`portKey`); the registry is per-document. Same-epoch
-        // re-installs are no-ops; new epochs close the superseded port.
-        //
-        // INGESTION GATE: only absorb [port] when the SAME message carries a
-        // handshake-shaped key (`paymentElementCreate` the group posts to a
-        // field; `cardFieldPort` the group posts to the coordinator). This
-        // window listener would otherwise absorb any port a same-origin parent
-        // frame blinds into us — a weaker-but-cheaper check than an origin
-        // comparison.
+        /* port ingestion runs at the handshake layer, BEFORE and INDEPENDENT of the
+           `setConfigs → isConfigReady` gate: a port that misses the mount window is a permanently
+           uncoupled channel. Keys come from the message itself (`portKey`); same-epoch re-installs
+           are no-ops and a new epoch closes the superseded port.
+           INGESTION GATE: only absorb [port] when the SAME message carries a handshake-shaped key
+           (`paymentElementCreate` for a field, `cardFieldPort` for the coordinator) — otherwise this
+           window listener would absorb any port a same-origin frame blinds into us. */
         let ports = ev->MessageChannelBinding.eventPorts
         if ports->Array.length > 0 {
           let handshakeShaped =

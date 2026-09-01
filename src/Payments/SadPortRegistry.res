@@ -1,18 +1,10 @@
-// SadPortRegistry — per-document registry of MessagePort endpoints for the
-// MessageChannel Card Relay.
-//
-// Each document that participates in the port plane owns one registry:
-//
-//   * Per-field iframe — a single port (keyed by its groupId:fieldName
-//     portKey) installed by LoaderController when the mount-config message
-//     arrives with a transfer list.
-//   * Hidden coordinator iframe — one port PER FIELD of its group, installed
-//     the same way from the `cardFieldPort` frames the group forwards.
-//
-// Epoch discipline: ports are keyed AND epoch-tagged. Re-installing under the
-// same key with a NEW epoch closes the stale port before replacing it (a
-// remount must never leave a live listener on a dead channel). A same-epoch
-// duplicate install is a no-op.
+/* SadPortRegistry — per-document registry of MessagePort endpoints for the Card Relay.
+   A field iframe owns one port (keyed groupId:fieldName); the hidden coordinator owns one
+   per field of its group, installed from the `cardFieldPort` frames the group forwards.
+   Epoch discipline: ports are keyed AND epoch-tagged. Re-installing under the same key with
+   a NEW epoch closes the stale port first — a remount must never leave a live listener on a
+   dead channel. A same-epoch duplicate install is a no-op. */
+
 open Utils
 open MessageChannelBinding
 
@@ -23,8 +15,7 @@ type portHandle = {
 
 let registry: Dict.t<portHandle> = Dict.make()
 
-// React-consumable change notification: consumers (the coordinator) subscribe
-// once and re-scan the per-document registry on every structural mutation.
+// consumers subscribe once and re-scan the registry on every structural mutation.
 let changeListeners: ref<array<unit => unit>> = ref([])
 
 let addChangeListener = (cb: unit => unit): unit => {
@@ -76,11 +67,9 @@ let closeAllPorts = () => {
   ->Array.forEach(key => closePort(~key))
 }
 
-// Post a versioned relay frame on a registered port. Returns false when the
-// key isn't registered — DROP semantics: the caller does NOT fall back to the
-// window plane for raws (the dual-plane emitters post their masked window
-// half regardless), so `false` means the snapshot is lost for this cycle and
-// the caller should `Console.warn` as a dev-time integration-drift signal.
+/* returns false when the key is not registered. DROP semantics: the caller does NOT fall
+   back to the window plane for raws, so false means the snapshot is lost for this cycle and
+   the caller should warn as a dev-time drift signal. */
 let postFrame = (~key: string, frame: JSON.t) =>
   switch registry->Dict.get(key) {
   | Some(handle) =>

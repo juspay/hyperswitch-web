@@ -97,8 +97,8 @@ let make = (
   ~confirmPayment: JSON.t => promise<JSON.t>,
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
-  // Group identity rides the URL so the mounted field can derive its portKey
-  // (`<groupId>:<fieldName>`).
+  /* Group identity rides the URL so the mounted field can derive its portKey
+     (`<groupId>:<fieldName>`). */
   ~groupId: option<string>=?,
 ) => {
   try {
@@ -535,13 +535,8 @@ let make = (
 
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->getClasses("base")
-      // Per-field iframes (both surface families) are mounted with
-      // `componentName=paymentMethodsSDK` + a `fieldName` URL param; the
-      // bundled `paymentMethodsSDK` surface has `fieldName=None`. Per-field
-      // iframes take their initial height from
-      // `appearance.variables.cardFieldHeight` (default "48px" via
-      // `CardTheme.default`) so merchants can override it; bundled iframes stay
-      // at `height: 0;` and rely on dynamic height reporting for visibility.
+      /* per-field iframes take their initial height from `appearance.variables.cardFieldHeight`
+         (default "48px"); bundled iframes stay at `height: 0;` and rely on height reporting. */
       let cardFieldHeight =
         optionsDict
         ->getDictFromDict("appearance")
@@ -554,11 +549,8 @@ let make = (
       switch oElement->Nullable.toOption {
       | Some(elem) => {
           let iframeElementId = `orca-${elementIframeId}-iframeRef-${localSelectorString}`
-          // Optional `fieldName`, `surfaceFamily` and `groupId` params ride
-          // alongside `componentName`. Values are URL-encoded defensively
-          // (current values are alphanumeric, but future payment methods may
-          // introduce unicode). Param order is part of the contract the mounted
-          // field parses back out, so append in this order.
+          /* values are URL-encoded defensively. Param ORDER is part of the contract the mounted field
+             parses back out, so append in this order. */
           let appendParam = (url, key, value) =>
             switch value {
             | Some(v) => `${url}&${key}=${encodeURIComponent(v)}`

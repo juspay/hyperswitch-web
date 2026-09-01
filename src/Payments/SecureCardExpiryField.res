@@ -1,17 +1,7 @@
-// Standalone card-expiry field — shared by BOTH surface families.
-//
-// Rendered inside the per-field iframe:
-//   - vault:     `componentName=paymentMethodsSDK&fieldName=cardExpiry&surfaceFamily=vault`
-//     (routed from PaymentMethodsSDK.res)
-//   - payments:  `componentName=paymentMethodsSDK&fieldName=cardExpiry&surfaceFamily=payments`
-//     (same `PaymentMethodsSDK.res` route — both families share this shell)
-//
-// Expiry NEVER owns confirm on either surface: the parent group's confirm
-// relay targets cardNumber (Flow A) or cardCvc (Flow B) only, so this
-// component registers no confirm listener (`~onInitiateConfirm` defaults to
-// None — the unit arg closes the optional-args chain) and simply emits
-// `cardStateUpdate` upstream. All shared plumbing (form state, ready/change
-// emits, focus/blur listener) lives in `CommonCardFieldHooks.useCardExpiryField`.
+/* Standalone card-expiry field, shared by both surface families.
+   Expiry NEVER owns confirm: the group's relay targets cardNumber (Flow A) or cardCvc
+   (Flow B), so this registers no confirm listener and just emits `cardStateUpdate`. */
+
 open JotaiAtoms
 
 @react.component

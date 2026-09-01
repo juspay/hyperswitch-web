@@ -1,37 +1,18 @@
-// Shared plumbing for standalone per-field card inputs, on both the vault and
-// payments surfaces. Each `use*Field` hook owns:
-//   1. `useCardForm` mount (formatting, validity, brand detection),
-//   2. `ready` emit once the parent's `iframeId` arrives,
-//   3. a per-field doFocus/doBlur postMessage listener (the shared
-//      `useCardForm` handler targets `cardRef`, which is unbound in
-//      single-input iframes),
-//   4. an `initiate-confirm` postMessage listener that packages the current
-//      form state and hands it to the surface-specific injected handler,
-//   5. `CardCollectorBridge.useEmitCardState` so `fieldHandle.on("change")`
-//      sees a coherent snapshot.
-//
-// Surface divergence (vault tokenisation vs hosted-fields relay) is injected
-// via `~onInitiateConfirm`, keeping this module atom-free. Renderers live
-// under `Render.*` so per-field components stay one-liners.
+/* Shared plumbing for standalone per-field card inputs on the vault and payments
+   surfaces. Surface divergence (vault tokenisation vs hosted-fields relay) is injected
+   via `~onInitiateConfirm`, keeping this module atom-free. */
+
 open JotaiAtoms
 open Utils
 
-// Local DOM-event bindings — `CommonHooks.addEventListener` targets the
-// opaque `Window.element` type which doesn't unify with `Dom.element` (the
-// type of `React.ref` contents we hold). Inline externals sidestep the
-// module-mismatch without a wider refactor.
+/* `CommonHooks.addEventListener` targets `Window.element`, which does not unify with the
+   `Dom.element` a `React.ref` holds — inline externals sidestep the mismatch. */
 @send external addDomEventListener: (Dom.element, string, Dom.event => unit) => unit = "addEventListener"
 @send external removeDomEventListener: (Dom.element, string, Dom.event => unit) => unit = "removeEventListener"
 
-// Per-field confirm-relay handler input. The LOCAL cardNumber/expiry/cvc
-// fields reflect this iframe's own `useCardForm` state — for the cardNumber
-// iframe (which OWNS confirm), only its `cardNumber` local is populated; the
-// sibling values (cardExpiry, cvcNumber) come in via the outer group's
-// `initiate-confirm` payload, which carries the latest cached per-field
-// state the group aggregated from each field's `cardStateUpdate` stream.
-// We prefer the external (group-supplied) values when present, falling back
-// to the local state so single-iframe surfaces (e.g. saved-card CVC) still
-// work unchanged.
+/* the cardNumber iframe owns confirm but holds only its OWN local value; the sibling
+   values arrive on the group's `initiate-confirm` payload. External values win when
+   present, so single-iframe surfaces (saved-card CVC) still work off the locals. */
 type confirmHandlerArgs = {
   loggerState: HyperLoggerTypes.loggerMake,
   localeString: LocaleStringTypes.localeStrings,
@@ -42,13 +23,9 @@ type confirmHandlerArgs = {
   cardExpiry: string,
   cvcNumber: string,
   cardBrand: string,
-  // Payments-surface saved-card flow (Flow B): the merchant supplies the
-  // saved card's `payment_token` per selected card via
-  // `cardForm.create("cardCvc", {savedCard: {token, brand}})`. The outer
-  // group is the only place that knows it (the iframe only ever learns the
-  // BRAND for length-validation), so it rides the confirm-relay payload —
-  // same channel the aggregated sibling raw values use. Empty string when
-  // the mounted field set isn't a saved-card recollect (Flow A).
+  /* Flow B saved-card `payment_token`: only the outer group knows it (the iframe learns the
+     BRAND alone, for length validation), so it rides the confirm-relay payload. Empty when
+     the mounted field set is not a saved-card recollect. */
   paymentToken: string,
   parentURL: string,
   iframeId: string,
@@ -61,35 +38,16 @@ type cardFieldState = {
   cvcProps: CardUtils.cvcProps,
 }
 
-// Per-field `formStatusChange` aggregated-status emission.
-//
-// The group-event contract surfaces FIVE form-status states per field —
-// `complete | incomplete | invalid | focused | blurred`. The subscription-event
-// pipeline (`SubscriptionEventHooks.useEmitFormStatus` +
-// `PaymentEventData.computeFormStatus`) carries only three
-// (`empty | filling | complete`) and is gated on the merchant opting into
-// `subscriptionEvents` — neither suits the group's ALWAYS-ON aggregation, nor
-// does it surface invalid/focused/blurred. So this is a sibling emission keyed
-// on its own postMessage event name (`formStatusChange`) that the outer group's
-// per-field listener merges into its `on("formStatusChange")` surface.
-//
-// Status mapping:
-//   - "empty" → incomplete  (no user input yet)
-//   - "filling" → incomplete (some input, isValid not yet Some(true))
-//   - "complete" → complete (isValid = Some(true) AND value non-empty)
-//   - invalid → invalid (isValid = Some(false))
-//   - focus/blur transitions surface as "focused" / "blurred" (one-shot)
-// The status canon lives in `CardFormShared`; aliased + opened below so the
-// constructor matches in `computeFieldFormStatus` keep their bare spelling.
+/* per-field `formStatusChange` carries FIVE states (complete, incomplete, invalid, focused,
+   blurred); the subscription-event pipeline carries only three, is merchant-opt-in, and
+   never surfaces invalid/focused/blurred. The status canon lives in `CardFormShared`. */
+
 open CardFormShared
 
 type fieldFormStatus = CardFormShared.fieldFormStatus
 
 let fieldFormStatusToString = CardFormShared.fieldFormStatusToString
 
-// Compute the aggregate (non-focus/blur) status from the live form state.
-// Pure: reads current isValid + value and returns what the group's FSM would
-// label this field as. Focus/blur are tracked separately via DOM listeners.
 let computeFieldFormStatus = (~isValid: option<bool>, ~value: string): fieldFormStatus =>
   switch isValid {
   | Some(false) => Invalid
@@ -97,9 +55,6 @@ let computeFieldFormStatus = (~isValid: option<bool>, ~value: string): fieldForm
   | None => Incomplete
   }
 
-// Emit `formStatusChange` upstream. `message` is the current error string
-// (set when status=invalid; otherwise omitted). `cardBrand` is forwarded so
-// the group's payload can carry brand context without a second request.
 let emitFormStatusChange = (
   ~parentURL: string,
   ~iframeId: string,
@@ -116,59 +71,42 @@ let emitFormStatusChange = (
     ("cardBrand", cardBrand->JSON.Encode.string),
   ]
   let fields = switch message {
-  | Some(m) if m !== "" => baseFields->Array.concat([("message", m->JSON.Encode.string)])
+  | Some(errorMessage) if errorMessage !== "" =>
+    baseFields->Array.concat([("message", errorMessage->JSON.Encode.string)])
   | _ => baseFields
   }
   messageParentWindow(fields, ~targetOrigin=parentURL)
 }
 
-// All three fields share the same base machinery; only paymentType, the ref
-// used for focus/blur, the elementType emitted on ready, and the confirm
-// trigger name differ.
 let useCardFieldBase = (
   ~logger: HyperLoggerTypes.loggerMake,
   ~paymentType: CardThemeType.mode,
   ~inputRef: CardThemeType.mode,
-  // Optional: when absent, no confirm-listener is registered. Expiry passes
-  // nothing (the card-number iframe owns confirm for new-card flow); number
-  // and saved-card CVC always pass their vault-specific handler.
+  // absent → no confirm listener: expiry passes nothing, the card-number iframe owns confirm.
   ~onInitiateConfirm: option<confirmHandlerArgs => unit>,
-  // Vault card-number confirm uses `"initiate-confirm"`; the saved-card CVC
-  // relay uses `"initiate-confirm-cvc"` (see PaymentMethodsSessionGroup).
+  // vault card-number confirm uses "initiate-confirm"; saved-card CVC uses "initiate-confirm-cvc".
   ~confirmTriggerKey="initiate-confirm",
   ~cardBrandOverride="",
-  // MessageChannel Card Relay: when true, this field's FULL state
-  // snapshot rides its MessageChannel port to the hidden coordinator (raw SAD
-  // on the port plane only; the merchant-window plane gets the SPLIT payload
-  // from CardFormPortProtocol.encodeFieldStateUpdate). The port side key is
-  // derived from the iframe's own `groupId` URL param (embedded by the
-  // mounting group). Bundled collectors never pass this flag — they stay on
-  // the window-only path.
+  /* when true this field's FULL snapshot rides its MessageChannel port to the hidden
+     coordinator — raw SAD on the port plane ONLY; the window plane gets the SPLIT payload
+     from `CardFormPortProtocol.encodeFieldStateUpdate`. Bundled collectors never set it. */
   ~dualPlane=false,
   (),
 ): cardFieldState => {
   let {localeString} = Jotai.useAtomValue(configAtom)
   let setShowPaymentMethodsScreen = Jotai.useSetAtom(showPaymentMethodsScreen)
 
-  // Per-field iframes must opt into live cardBrand tracking the same way the
-  // bundled collector does (CardsSDK.res). Without this,
-  // `CardUtils.getCardBrandFromStates` (called inside `useCardForm`) reads the
-  // frozen `cardScheme` Jotai atom — which nothing in a standalone per-field
-  // iframe ever writes — and the brand icon never re-renders as the user
-  // types. Setting the flag flips the derivation to the live React-state
-  // `cardBrand`, which `useCardForm` updates on every keystroke. Each iframe
-  // has its own Jotai store, so this write is scoped to this field's iframe.
-  // Safe for the saved-card CVC flow: `cardBrandOverride` short-circuits the
-  // derived brand before `getCardBrandFromStates` is consulted.
+  /* per-field iframes must opt into live cardBrand tracking the way CardsSDK does: without it
+     `CardUtils.getCardBrandFromStates` reads the frozen `cardScheme` atom, which nothing in a
+     standalone field iframe ever writes, so the brand icon never re-renders while typing.
+     Scoped to this iframe's own Jotai store; a saved-card override short-circuits first. */
   React.useEffect0(() => {
     setShowPaymentMethodsScreen(_ => true)
     None
   })
 
-  // MessageChannel Card Relay: the port key for this field. The mount-target
-  // group's DOM contract carries `groupId` into the field iframe URL; the
-  // group forwards port2 WITH the mount-config transfer, keyed
-  // `${groupId}:${fieldName}` (see CardFormCoordinator.portKey).
+  /* port key for this field: the group carries `groupId` into the iframe URL and forwards
+     port2 WITH the mount-config transfer, keyed `${groupId}:${fieldName}`. */
   let groupIdFromUrl = CardUtils.getQueryParamsDictforKey(
     RescriptReactRouter.useUrl().search,
     "groupId",
@@ -185,18 +123,15 @@ let useCardFieldBase = (
     ""
   }
 
-  // Registry bump — the port is ingested by LoaderController on mount-config
-  // arrival; this effect rewires when the registry gains the key.
   let (registryVersion, setRegistryVersion) = React.useState(() => 0)
-  React.useEffect0(() => {
-    let bump = () => setRegistryVersion(v => v + 1)
-    SadPortRegistry.addChangeListener(bump)
-    Some(() => SadPortRegistry.removeChangeListener(bump))
-  })
+  React.useEffect(() => {
+    let onRegistryChange = () => setRegistryVersion(v => v + 1)
+    SadPortRegistry.addChangeListener(onRegistryChange)
+    Some(() => SadPortRegistry.removeChangeListener(onRegistryChange))
+  }, [])
 
-  // Port-plane BRAND relay: the coordinator posts
-  // `detectedCardBrand` frames (payload = brand string) onto cardNumber's
-  // sibling cvc port. Saved-card override (`cardBrandOverride` arg) wins.
+  /* port-plane brand relay: the coordinator posts `detectedCardBrand` frames onto the cvc
+     sibling port. A saved-card `cardBrandOverride` still wins. */
   let (portBrandOverride, setPortBrandOverride) = React.useState(_ => "")
   let effectiveCardBrandOverride = if cardBrandOverride !== "" {
     cardBrandOverride
@@ -207,8 +142,6 @@ let useCardFieldBase = (
   let {cardProps, expiryProps, cvcProps, blurState: _} = CommonCardProps.useCardForm(
     ~logger,
     ~paymentType,
-    // Standalone per-field iframes run their own eligibility probe — no outer
-    // ParentCardComponent to answer the support/eligibility queries.
     ~runEligibility=false,
     ~logControlEvents=false,
     ~cardBrandOverride=effectiveCardBrandOverride,
@@ -217,8 +150,6 @@ let useCardFieldBase = (
   let keys = Jotai.useAtomValue(keys)
   let {parentURL} = keys
 
-  // Merchant-facing `fieldHandle.on("ready", cb)` — fire once the mount-config
-  // has propagated (iframeId non-empty ⇒ parent finished handshake).
   React.useEffect(() => {
     if keys.iframeId !== "" && keys.iframeId !== "no-element" {
       let elementType = switch paymentType {
@@ -232,10 +163,8 @@ let useCardFieldBase = (
     None
   }, [keys.iframeId])
 
-  // Per-field doFocus/doBlur — `useCardForm`'s shared handler only sets a
-  // visual blur class on its own input and doesn't touch the DOM element in
-  // this iframe. We need real DOM focus/blur so `fieldHandle.focus()` /
-  // `fieldHandle.blur()` match merchant expectations.
+  /* `useCardForm`'s shared handler only sets a visual blur class; we need real DOM focus and
+     blur so `fieldHandle.focus()` and `.blur()` match merchant expectations. */
   let focusTarget = switch inputRef {
   | CardThemeType.CardNumberElement => cardProps.cardRef
   | CardThemeType.CardExpiryElement => expiryProps.expiryRef
@@ -243,7 +172,7 @@ let useCardFieldBase = (
   | _ => cardProps.cardRef
   }
   React.useEffect(() => {
-    let handleFun = (ev: Window.event) => {
+    let handleFocusEvent = (ev: Window.event) => {
       if ev.source === iframeParent && (parentURL === "*" || ev.origin === parentURL) {
         let json = ev.data->safeParse
         let dict = json->getDictFromJson
@@ -254,21 +183,18 @@ let useCardFieldBase = (
         }
       }
     }
-    handleMessage(handleFun, "")
+    handleMessage(handleFocusEvent, "")
   }, (focusTarget, parentURL))
 
-  // SINGLE doFocus handler, DUAL-BOUND: the SAME focusRef fires for the
-  // legacy window-posted `doFocus` (above) AND for the relay's port frame
-  // `{cardFormPortV, kind: "doFocus"}` (below). Port detects the channel via
-  // the registry key LoaderController absorbed from the mount-config
-  // transfer; registryVersion braces us for the ingest race.
+  /* ONE focusRef, dual-bound: the same handler serves the window-posted `doFocus` and the
+     port frame `{cardFormPortV, kind: "doFocus"}`; registryVersion covers the ingest race. */
   React.useEffect(() => {
     if portKey !== "" {
       switch SadPortRegistry.getPort(~key=portKey) {
       | Some(port) =>
         MessageChannelBinding.onPortMessage(port, ev => {
-          let data: JSON.t = ev.data->Identity.anyTypeToJson
-          switch CardFormPortProtocol.decodePortFrame(data) {
+          let frameJson: JSON.t = ev.data->Identity.anyTypeToJson
+          switch CardFormPortProtocol.decodePortFrame(frameJson) {
           | Some({kind, payload}) =>
             if kind === CardFormPortProtocol.kindDoFocus &&
               payload->JSON.Decode.bool->Option.getOr(false) {
@@ -288,15 +214,8 @@ let useCardFieldBase = (
     None
   }, (portKey, registryVersion, focusTarget))
 
-  // Confirm relay. The merchant-page group's `confirm()` posts the trigger
-  // name into this iframe; we package the live form state and hand it to the
-  // `onInitiateConfirm` handler.
-  // Keeping this a useEffect (not useCallback) lets a
-  // `cardNumber` change re-register the listener with the latest closure —
-  // same pattern the bundled collector uses via `useSubmitPaymentDataFromParent`.
-  //
-  // NEVER conditionally call a React hook — hoist the option
-  // switch INSIDE the effect body so hook-order is stable across renders.
+  /* a useEffect (not useCallback) re-registers with the latest closure on cardNumber change.
+     NEVER call the hook conditionally — the option switch stays INSIDE the effect body. */
   React.useEffect(() => {
     switch onInitiateConfirm {
     | Some(confirmHandler) => {
@@ -339,9 +258,6 @@ let useCardFieldBase = (
       parentURL,
     ))
 
-  // Emit state upstream — powers `fieldHandle.on("change", ...)` and the
-  // confirm flow. We re-use the same shape as the bundled collector so
-  // downstream listeners don't need to distinguish per-field vs bundled.
   let (complete, empty) = switch paymentType {
   | CardThemeType.CardNumberElement => (
       cardProps.isCardValid->Option.getOr(false),
@@ -357,18 +273,11 @@ let useCardFieldBase = (
     )
   | _ => (false, true)
   }
-  // Keystroke-level focus-readiness, computed HERE in the iframe (where the
-  // keystrokes land and the timing decision belongs), NOT inferred by the group
-  // from `fieldStatus.complete` transitions.
-  //   cardNumber → CardUtils.focusCardValid: brand-aware max length AND Luhn.
-  //                Same semantic the bundled form uses at
-  //                CommonCardProps.res:170 to advance card→expiry — one source
-  //                of truth, no duplicated heuristics.
-  //   cardExpiry → all 4 MMYY digits typed AND the validator is green.
-  //   cardCvc    → brand-aware maxCVCLength reached AND the validator is green.
-  //                 (Terminal field today — the group ignores the signal for
-  //                 cvc→nothing, but emitting keeps the contract symmetric.)
-  // The group only routes `doFocus` on the `false → true` edge of this flag.
+  /* focus-readiness is computed HERE in the iframe, where the keystrokes land — NOT inferred
+     by the group from `fieldStatus.complete`. cardNumber uses `CardUtils.focusCardValid`
+     (brand-aware max length AND Luhn, the same call the bundled form makes); expiry needs all
+     4 MMYY digits plus a green validator; cvc needs maxCVCLength plus a green validator.
+     The group routes `doFocus` on the false→true edge of this flag only. */
   let focusReady = switch paymentType {
   | CardThemeType.CardNumberElement =>
     CardUtils.focusCardValid(cardProps.cardNumber, cardProps.cardBrand)
@@ -391,33 +300,19 @@ let useCardFieldBase = (
     ~isExpiryValid=expiryProps.isExpiryValid,
     ~isCvcValid=cvcProps.isCVCValid,
     ~focusReady,
-    // Standalone per-field vault/payments iframes: each field's IFRAME is its
-    // own trust domain (`?componentName=paymentMethodsSDK&...&surfaceFamily=…`
-    // is loaded from the vault/sdk domain), so emitting the raw per-field value
-    // upstream to the same-origin parent group is the established channel for
-    // cross-iframe confirm aggregation (mirrors `ParentCardComponent`'s
-    // bundled `? emitRawCardNumber=true` opt-in for the unified card form).
-    // Expiry/CVC specifically MUST emit raw here so the outer group can
-    // inject them into the cardNumber iframe's confirm payload — otherwise
-    // the confirm body sees empty strings for fields the user filled in a
-    // DIFFERENT iframe. Raw cardNumber MUST ride too: with `portKey` active
-    // the window payload is stripped by `encodeFieldStateUpdate`, so the
-    // ONLY delivery path to the coordinator is the port frame — dropping
-    // the PAN here leaves `aggregatedCardNumber` permanently "" and every
-    // confirm decays to "Card details incomplete or invalid".
+    /* each field iframe is its own trust domain, and the raw value must reach the parent group
+       so the confirm payload can be aggregated across iframes. Raw cardNumber MUST ride too:
+       with `portKey` active `encodeFieldStateUpdate` strips the window payload, so the port
+       frame is the ONLY delivery path to the coordinator — dropping the PAN here leaves
+       `aggregatedCardNumber` permanently "" and every confirm fails as incomplete. */
     ~emitRawCardNumber=true,
     ~emitRawCardExpiry=true,
     ~emitRawCvc=true,
-    // Port plane: only fields mounted with a groupId in their URL participate;
-    // empty → window-only path.
     ~portKey,
   )
 
-  // ── formStatusChange emission ───────────────────────────────────────────
-  // Watch the field's relevant isValid + value and re-emit the aggregated
-  // status when either changes. We do NOT key on `complete`/`empty` directly
-  // because those are derived from isValid+value — keying on the sources
-  // means the status effect re-fires exactly once per validity transition.
+  /* key on isValid and value rather than the derived complete/empty, so the status effect
+     re-fires exactly once per validity transition. */
   let elementType = switch paymentType {
   | CardThemeType.CardNumberElement => "cardNumber"
   | CardThemeType.CardExpiryElement => "cardExpiry"
@@ -461,14 +356,8 @@ let useCardFieldBase = (
     None
   }, (relevantIsValid, relevantValue, relevantError, keys.iframeId, parentURL))
 
-  // Focus/blur transitions are one-shot (not status-latched) — we attach
-  // native DOM listeners on the field's input ref so we don't fight
-  // `useCardForm`'s shared focus/blur handler. These fire the *focused* and
-  // *blurred* one-shot statuses which the outer group merges into its
-  // per-field FSM (returning to complete/incomplete/invalid on next input).
-  // Bound via local @send externals because the `Dom.element` reference held
-  // by `focusTarget` does not unify with the `Window.element` type
-  // `CommonHooks.addEventListener` expects (existing module mismatch).
+  /* focus and blur are one-shot, not status-latched; native DOM listeners avoid fighting
+     `useCardForm`'s shared handler and take local @send externals for the type mismatch. */
   React.useEffect(() => {
     let currentInput = focusTarget.current->Nullable.toOption
     switch currentInput {
@@ -510,13 +399,9 @@ let useCardFieldBase = (
 let useCardNumberField = (
   ~logger: HyperLoggerTypes.loggerMake,
   ~onInitiateConfirm: confirmHandlerArgs => unit,
-  // Vault defaults to `"initiate-confirm"`; the payments surface passes
-  // `"initiate-payment-confirm"` so the parent group's doSubmit broadcast
-  // triggers this field's confirm relay.
   ~confirmTriggerKey="initiate-confirm",
-  // MessageChannel Card Relay: both shells flip this on — raw SAD rides their
-  // per-field port; bundled users (`CardsSDK`, `RawCardCollector`) keep the
-  // default FALSE so their emission stays window-only.
+  /* both shells flip this on — raw SAD rides their per-field port. Bundled users
+     (CardsSDK, RawCardCollector) keep FALSE so their emission stays window-only. */
   ~dualPlane=false,
   (),
 ): cardFieldState => {
@@ -534,9 +419,6 @@ let useCardNumberField = (
 let useCardExpiryField = (
   ~logger: HyperLoggerTypes.loggerMake,
   ~onInitiateConfirm: option<confirmHandlerArgs => unit>=None,
-  // Symmetric with `useCardNumberField`; payments-V2 expiry does not own
-  // confirm today, but keeping the trigger key overridable avoids a future
-  // shape change if the group ever delegates confirm to expiry.
   ~confirmTriggerKey="initiate-confirm",
   ~dualPlane=false,
   (),
@@ -572,15 +454,14 @@ let useCardCvcField = (
   )
 }
 
-// Thin renderers — per-field JSX is parameterised by which sub-record of
-// cardFieldState to bind, so the host components stay one-liners. ReScript
-// allows one `@react.component` per module, hence each renderer lives in its
-// own submodule (named `*Renderer`).
+/* ReScript allows one `@react.component` per module, so each renderer lives in its own
+   `*Renderer` submodule. */
 module RenderCardNumber = {
   @react.component
   let make = (~state: cardFieldState) => {
     let {themeObj} = Jotai.useAtomValue(configAtom)
-    let numberPlaceholder = Jotai.useAtomValue(cardNumberPlaceholder)
+    let numberPlaceholder =
+      Jotai.useAtomValue(cardNumberPlaceholder)->Option.getOr("1234 1234 1234 1234")
     let {isCardValid, cardNumber, changeCardNumber, handleCardBlur, cardRef, cardError, maxCardLength, icon, setIsCardValid} = state.cardProps
     <div
       className="animate-slowShow flex flex-col"
@@ -613,7 +494,8 @@ module RenderCardExpiry = {
   @react.component
   let make = (~state: cardFieldState) => {
     let {themeObj} = Jotai.useAtomValue(configAtom)
-    let expiryPlaceholder = Jotai.useAtomValue(cardExpiryPlaceholder)
+    let expiryPlaceholder =
+      Jotai.useAtomValue(cardExpiryPlaceholder)->Option.getOr(state.localeString.expiryPlaceholder)
     let {isExpiryValid, cardExpiry, changeCardExpiry, handleExpiryBlur, expiryRef, expiryError, setIsExpiryValid} = state.expiryProps
     <div
       className="animate-slowShow flex flex-col"
@@ -645,7 +527,7 @@ module RenderCardCvc = {
   @react.component
   let make = (~state: cardFieldState) => {
     let {themeObj} = Jotai.useAtomValue(configAtom)
-    let cvcPlaceholder = Jotai.useAtomValue(cardCvcPlaceholder)
+    let cvcPlaceholder = Jotai.useAtomValue(cardCvcPlaceholder)->Option.getOr("123")
     let {isCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef, cvcError, maxCVCLength, setIsCVCValid} = state.cvcProps
     <div
       className="animate-slowShow flex flex-col"

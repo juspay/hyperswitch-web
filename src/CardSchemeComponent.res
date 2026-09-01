@@ -61,10 +61,8 @@ let make = (
   let shouldShowCoBadgeCardSchemeDropDown =
     isCardCoBadged && cardNumber->CardValidations.clearSpaces->String.length >= 16
 
-  // Per-field `showCardIcon` knob (default true) is an ADDITIONAL gate on
-  // the brand icon only. The co-badge dropdown RenderIf below is
-  // INTENTIONALLY exempted — merchant co-badge selection must stay available
-  // even when the decorative icon is stripped.
+  /* `showCardIcon` gates the brand icon only — the co-badge dropdown below is INTENTIONALLY
+     exempt: merchant co-badge selection must stay available when the icon is stripped. */
   let showCardIcon = Jotai.useAtomValue(JotaiAtoms.showCardIcon)
   let showCardBrandIcon =
     CardUtils.getCardBrandIconVisibility(cardBrandIconSetting, cardType) && showCardIcon

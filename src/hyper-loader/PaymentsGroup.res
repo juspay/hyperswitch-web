@@ -1,77 +1,14 @@
-// Outer (merchant-page) CardForm factory for the payments surface, wired
-// behind `hyper.widgets(options).cardForm()`.
-//
-// ── CONFIRM OWNERSHIP (MessageChannel Card Relay) ────────────────────────
-// The group never fans a confirm relay into a field iframe: fields ship their
-// state to the hidden `cardFormCoordinator` iframe directly over MessageChannel
-// ports (the dual-plane design — raw card data rides ONLY the port plane;
-// masked events continue on the window). The group posts a CONTENT-FREE
-// `{cardFormCoordinatorCommand: "initiateConfirm"}` command into the
-// coordinator; the coordinator aggregates port-side raws and runs the real
-// `usePaymentIntent`.
-//
-// The root-window `doSubmit` broadcast never reaches group-mounted iframes, so
-// the group keeps a defensive `doSubmit` listener as a fallback route into the
-// coordinator command for merchants who synthesize their own `doSubmit` events.
-//
-// This group's job is therefore:
-//   1. Mount per-field iframes via `LoaderPaymentElement.make` under the
-//      unified URL (`componentName=paymentMethodsSDK&fieldName=<bare>&surfaceFamily=payments`)
-//      + the hidden coordinator iframe via `CoordinatorMount`.
-//   2. Aggregate per-field `cardStateUpdate` emissions (mask-only: raw keys
-//      are absent from the window post) into a per-field validity snapshot
-//      + a group-level "all fields complete" flag.
-//   3. Explicit `confirm()` entry-point, flow-inferred from mounted fields:
-//      a mounted `cardNumber` selects Flow A (post the content-free
-//      `initiateConfirm` COMMAND with `flow: "payments"` to the
-//      coordinator); a cardCvc-ONLY mount (`{savedCard: {token, brand}}`)
-//      posts the same command with `flow: "savedCardCvc"`. Gated by the
-//      `confirmingRef` mutex.
-//   4. Surface coordinator `paymentConfirmAck` / `paymentConfirmFail`
-//      via the group-level `on(...)` channels.
-//   5. Feed the coordinator: mount config posts + clientList forward +
-//      port-flush choreography.
-//
-// Note on `submitSuccessful`: the coordinator's real
-// `usePaymentIntent`-driven confirm posts `submitSuccessful` to the
-// merchant page (via `messageParentWindow` inside the intent machinery in
-// `PaymentHelpers.res`). The outer `Hyper.res:440` listener already owns
-// that contract end-to-end — `PaymentsGroup` does NOT need to
-// re-implement submit-response plumbing. We only track
-// `paymentConfirmAck` / `paymentConfirmFail` so integrators debugging the
-// relay can see it in devtools.
-//
-// The only field vocabulary is bare `cardNumber|cardExpiry|cardCvc` — the
-// factory the CardForm came from (`widgets.cardForm()` vs the vault session
-// group) decides the flow, so no suffix is needed.
+/* Outer (merchant-page) CardForm factory for the payments surface, behind
+   `hyper.widgets(options).cardForm()`.
+   Confirm ownership sits in the hidden `cardFormCoordinator` iframe: fields ship their
+   state to it over MessageChannel ports and the group posts only a CONTENT-FREE
+   `initiateConfirm` frame. Raw card data rides ONLY the port plane; the window plane
+   carries masked events. */
 
 open Utils
 
-// ── Public types ─────────────────────────────────────────────────────────────
-
-// Per-field handle shape mirrors `Types.fieldHandle` so merchant-facing field
-// methods match the vault group surface.
 type fieldHandle = Types.fieldHandle
 
-// Group-config record — the merchant-supplied options. Unlike the vault
-// group's `options: JSON.t`, the payments group expects a typed record so
-// the mount-config keys are stable and the tests can assert them.
-//
-// Required:
-//   - `clientSecret`: payment-intent client secret handed into the inner
-//     iframe (the inner `usePaymentIntent` reads `keys.clientSecret` to
-//     derive the `payments/{id}/confirm` URI).
-// Optional (defaults noted inline):
-//   - `publishableKey`: defaults to `""`; forwarded on the mount-config so
-//     `usePaymentIntent` can attach the `api-key` header when
-//     `sdkAuthorization` is absent.
-//   - `endpoint`: defaults to `ApiEndpoint.getApiEndPoint()` — overridable
-//     for sandboxes / local dev.
-//   - `appearance`: theming blob forwarded to LoaderPaymentElement.
-//   - `locale`: forwarded on the mount-config for every field iframe (and
-//     fanned out on group-`update()`); "en" when unset. The inner iframe's
-//     own LoaderController handshake is the fallback when the field mounts
-//     without a locale key.
 type groupConfig = {
   clientSecret: string,
   publishableKey: option<string>,
@@ -80,22 +17,12 @@ type groupConfig = {
   locale: option<string>,
 }
 
-// The group record returned to merchants: the CardForm surface
-// (`Types.cardForm`) plus the observability extras (`onFieldEvent` /
-// `fieldEvents`). `confirm()` is an explicit entry point (parity with vault's
-// `PaymentMethodsSessionGroup.confirm`) because the `hyper.confirmPayment()`
-// fan-out never reaches group-mounted iframes. It is zero-arg: full-card vs
-// saved-card-CVC is inferred from the mounted fields, so no separate CVC-only
-// confirm exists anywhere.
+// `confirm()` is explicit because `hyper.confirmPayment()`'s fan-out never reaches group-mounted iframes.
 type cardForm = {
   create: (string, JSON.t) => fieldHandle,
   update: JSON.t => unit,
   on: (string, JSON.t => unit) => unit,
-  // Segmented per-fieldType event subscription. Whereas `on` fans
-  // into the group-level event pool, `onFieldEvent(fieldType, event, cb)`
-  // fans into the per-fieldType pool so a listener fires ONLY when the
-  // event originates from a `create(<fieldType>, ...)` mount. Pair with
-  // `fieldEvents` (a metadata dict of mounted types) for introspection.
+  // fires only for events from a `create(<fieldType>, ...)` mount, unlike group-level `on`.
   onFieldEvent: (string, string, JSON.t => unit) => unit,
   confirm: unit => promise<JSON.t>,
   deinit: unit => unit,
@@ -103,112 +30,47 @@ type cardForm = {
   fieldEvents: ref<JSON.t>,
 }
 
-// ── Per-field registry ───────────────────────────────────────────────────────
-
-// Aggregated per-field lifecycle status. Mirrors the vault group's
-// group-event surface:
-//   "complete"   — isValid=Some(true), value non-empty
-//   "incomplete" — no validity judgment yet OR user cleared the field
-//   "invalid"    — isValid=Some(false) (post-blur validation failed)
-//   "focused"    — one-shot; transient state while the input has DOM focus
-//   "blurred"    — one-shot; transient state right after DOM blur
-//
-// The status machine is intentionally monotone-free: focused/blurred are
-// one-shot updates that do NOT change the underlying validity track
-// (complete/incomplete/invalid). The group never latches one-shot states.
-// The 5-state canon + string round-trippers live in `CardFormShared` — aliased
-// here so the compiled module keeps these names.
 type aggregatedStatus = CardFormShared.fieldFormStatus
 
 let aggregatedStatusToString = CardFormShared.fieldFormStatusToString
 
 let aggregatedStatusFromString = CardFormShared.fieldFormStatusFromString
 
-// ── `change`-payload reshaper ─────────────────────────────────────────────
-// The contract + commentary live in `CardFormShared` (single canon shared by
-// both CardForm group factories); aliased here so in-module call sites stay
-// unqualified.
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
-// One entry per mounted field. `iframeRef` is the raw DOM handle exposed by
-// `LoaderPaymentElement.make` via its `setIframeRef` callback. Confirm
-// ack/fail is surfaced via the group-level event bus rather than a per-field
-// resolver.
 type fieldEntry = {
   iframeRef: ref<Nullable.t<Dom.element>>,
   handle: fieldHandle,
   fieldType: string,
-  // Latest `cardStateUpdate` snapshot for this field. `None` until the first
-  // emit arrives — treated as "not yet valid" by the readiness aggregator.
   lastStateRef: ref<option<JSON.t>>,
-  // Latest aggregated lifecycle status for this field. `None` until the
-  // iframe's first `formStatusChange` emit arrives. The group routes events
-  // through this ref (rather than re-deriving from lastStateRef) so
-  // focused/blurred one-shots don't get washed away by the next
-  // `cardStateUpdate` tick.
+  // routed through this ref so focused/blurred one-shots survive the next cardStateUpdate.
   lastFormStatusRef: ref<option<aggregatedStatus>>,
-  // Unique per-field EventListenerManager activity-name. Tracked so the
-  // per-field `destroy()` (and group `deinit()`) can remove this listener,
-  // not just clobber its Map entry: each `create()` generates a fresh
-  // `fieldId` → a fresh activity-name, so without the removal the OLD listener
-  // leaks across group re-instantiations on the same page.
+  // a fresh fieldId per create(), so without explicit removal old listeners accumulate.
   listenerName: string,
-  // Saved-card (Flow B) hint captured at `create()` from
-  // `options.savedCard.token` and refreshed by `handle.update({savedCard:
-  // {token, brand}})` — mirrors the vault group's `savedCardBrandRef /
-  // savedCardLast4Ref` capture discipline. The payments Flow B confirm
-  // relay embeds it as `paymentToken` so the CVC iframe can build a
-  // `PaymentBody.savedCardBody` — the iframe itself never learns the token
-  // any other way (its mount config only carries the BRAND for CVC-length
-  // validation). `""` for non-saved-card fields.
+  /* saved-card token captured at `create()`; the Flow B relay embeds it as `paymentToken`
+     because the CVC iframe's mount config carries only the BRAND, never the token. */
   savedCardTokenRef: ref<string>,
-  // Last observed `focusReady` emitted by this field's iframe. Auto-focus
-  // progression fires ONLY on the `false → true` edge of THIS signal — the
-  // iframe owns the timing decision (brand-aware max length + Luhn for
-  // cardNumber; 4-digit MMYY + validity for expiry; maxCVCLength + validity
-  // for CVC), and the group just routes `doFocus` to the next field's
-  // iframe. (Mirrors `PaymentMethodsSessionGroup.res`'s latch semantics.)
+  /* auto-focus advances only on the false→true edge of the iframe-emitted `focusReady`.
+     Do NOT key this off `fieldStatus.complete` — the iframe owns the timing decision
+     (brand-aware max length plus Luhn); the group merely routes `doFocus`. */
   prevFocusReadyRef: ref<bool>,
 }
 
-// ── Merchant-facing surface helpers ─────────────────────────────────────────
-
-// Public field strings accepted by `create(...)`: bare vocabulary only
-// (`cardNumber|cardExpiry|cardCvc`). The identity allow-list canon lives in
-// `CardFormShared`; unknown strings fall through to the same error-handle
-// pattern vault uses.
 let mapFieldTypeToInternalFieldName = CardFormShared.mapFieldTypeToInternalFieldName
 
-// ── Auto-focus progression map ────────────────────────────────────────────
-// Tab-order within the payments CardForm surface (shared canon in
-// `CardFormShared` — one vocabulary, one order):
-//   cardNumber → cardExpiry → cardCvc → (terminal; no next field)
-// The group's per-field `cardStateUpdate` listener uses this map to decide
-// which field's iframe receives `doFocus` when the current field's EMITTED
-// `focusReady` signal transitions from `false` to `true`. The iframe owns
-// the timing decision (keystroke-level brand-aware max length + Luhn for
-// cardNumber; 4-digit MMYY + validity for expiry); this map only routes it.
-// Module-level alias (not inside `makeCardForm`) so the compiled module keeps
-// `nextFieldFor` as a named export.
 let nextFieldFor = CardFormShared.nextFieldFor
 
-// Group-readiness aggregation. All 3 card fields must be mounted AND have
-// emitted at least one `cardStateUpdate` with `complete=true` AND be
-// individually valid. We do NOT short-circuit on `isCvcValid` alone because
-// per-field validity flags ride on the snapshot's `fieldStatus` sub-dict.
 let computeGroupReadiness = (fieldsRef: ref<Dict.t<fieldEntry>>): bool => {
   let entries = fieldsRef.contents->Dict.valuesToArray
-  // Require exactly one of each bare field; fewer means fields are unmounted,
-  // more means caller misuse (we don't today police duplicates).
-  let expected = ["cardNumber", "cardExpiry", "cardCvc"]
-  let hasAllFields = expected->Array.every(ft =>
-    entries->Array.some(e => e.fieldType === ft)
+  let expectedFieldTypes = ["cardNumber", "cardExpiry", "cardCvc"]
+  let hasAllFields = expectedFieldTypes->Array.every(expectedFieldType =>
+    entries->Array.some(entry => entry.fieldType === expectedFieldType)
   )
   if !hasAllFields {
     false
   } else {
-    entries->Array.every(e =>
-      switch e.lastStateRef.contents {
+    entries->Array.every(entry =>
+      switch entry.lastStateRef.contents {
       | Some(stateJson) =>
         let stateDict = stateJson->getDictFromJson
         let fieldStatus = stateDict->getDictFromDict("fieldStatus")
@@ -219,26 +81,14 @@ let computeGroupReadiness = (fieldsRef: ref<Dict.t<fieldEntry>>): bool => {
   }
 }
 
-// ── Confirm settle-timeout ───────────────────────────────────────────────────
-// Max wall-clock the `confirm()` mutex may stay latched waiting for the field
-// iframe's `paymentConfirmAck` / `paymentConfirmFail`. If neither lands (field
-// unmounted mid-confirm, iframe redirected, …) the timeout releases the mutex
-// so a later `confirm()` isn't wedged forever. `PaymentMethodsSessionGroup.res`
-// carries the same value for its relay settle-timeout — a per-group behavioral
-// knob, deliberately not shared.
+// backstop: without it a missing ack/fail leaves the confirm mutex latched forever.
 let confirmSettleTimeoutMs = 8000
 
-// ── Factory ─────────────────────────────────────────────────────────────────
-
-// Queued port1 channel awaiting its coordinator iframe-mounted flush
-// (MessageChannel Card Relay). Shape hoisted into CoordinatorMount so both
-// groups share it and `CoordinatorMount.teardown` can close the
-// un-transferred ones on group deinit.
+/* port1 queued until the coordinator iframe mounts and flushes it. Shape lives in
+   `CoordinatorMount` so its teardown can close ports that were never transferred. */
 type pendingPort = CoordinatorMount.pendingPort
 
 let makeCardForm = (~config: groupConfig): Types.cardForm => {
-  // 1. Resolve optional config values once — these don't change over the
-  //    group's lifetime; merchant mutations update via group.update().
   let clientSecret = config.clientSecret
   let publishableKey = config.publishableKey->Option.getOr("")
   let endpoint = switch config.endpoint {
@@ -248,10 +98,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let appearance = config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
   let locale = config.locale->Option.getOr("en")
 
-  // 2. Per-instance state refs (never module-level). The group multiplexes
-  //    a single EventListenerManager callback across N mounted fields;
-  //    routing is done by matching `event.source` against the field's
-  //    iframe content window.
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
   let fieldEvents: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
@@ -259,64 +105,24 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let eventCallbacksRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
   let deinitCallbacksRef: ref<array<unit => unit>> = ref([])
 
-  // Tracks whether ANY field has ever emitted a `paymentConfirmAck`. Used
-  // by the readiness convolver to detect "confirm is in flight" — when an
-  // ack lands, we flip this true so a subsequent `group.on("ready")` query
-  // can distinguish "mounted + complete" from "mounted + complete + confirm
-  // dispatched".
   let confirmDispatchedRef: ref<bool> = ref(false)
 
-  // Per-group confirm mutex. A second `confirm()` while one is already
-  // dispatched short-circuits with the `confirm_in_progress` error envelope
-  // (type `api_error`) instead of posting a duplicate `initiateConfirm`
-  // command into the coordinator. LATCHED at
-  // dispatch and held until the relay settles: the per-field listener's
-  // `paymentConfirmAck` / `paymentConfirmFail` arms release it, the
-  // `confirmSettleTimeoutRef` timeout below releases it as a backstop, and
-  // `deinit()` clears both. Group-scoped (never module-level): two
-  // coexisting groups on one page confirm independently.
+  /* per-group confirm mutex, LATCHED at dispatch until the relay settles: released by the
+     ack/fail arms, the settle-timeout backstop, or deinit(). Two groups confirm independently. */
   let confirmingRef: ref<bool> = ref(false)
 
-  // Id slot for the confirm settle-timeout. Armed by `confirm()` at dispatch
-  // (one slot suffices: the mutex guarantees at most one armed confirm per
-  // group at a time); cancelled by the first release path to fire so at most
-  // one party owns settlement.
   let confirmSettleTimeoutRef = ref(None)
 
-  // Readiness saturates. Without this latch, a merchant typing a
-  // single bad character (e.g. wiping the CVC field) drops
-  // `computeGroupReadiness` to false on the very next cardStateUpdate,
-  // silently retracting a previously-emitted `ready` and flickering their
-  // submit button off. Instead:
-  //   - `hasBeenReadyRef` latches true on the first `ready` emit.
-  //   - On subsequent updates, we compare the freshly-computed readiness
-  //     against hasBeenReadyRef: `true && !prev` = rising edge → emit
-  //     `ready` again (so second rise after a fall also fires); `false &&
-  //     prev` = falling edge → emit `unready` explicitly so the merchant
-  //     re-disables their submit; `true && prev` = steady-ready (no-op);
-  //     `false && !prev` = still-not-ready (no-op, merchant never armed).
+  /* readiness is latched so clearing one character does not silently retract `ready`.
+     Edges only: rising re-emits `ready`, falling emits an explicit `unready`. */
   let hasBeenReadyRef: ref<bool> = ref(false)
 
-  // Brand-aware CVC maxLength (mirrors `PaymentMethodsSessionGroup`). The
-  // cardNumber iframe detects the brand on each keystroke and emits it via
-  // `cardStateUpdate`'s `cardBrand` envelope key. We cache the latest
-  // non-empty value here so the group can propagate it to the cardCvc iframe
-  // exactly once per brand change (not on every keystroke). The CVC iframe
-  // lifts it into a React state that feeds `~cardBrandOverride`, which
-  // drives `CommonCardProps.useCardForm`'s `maxCVCLength` /
-  // `formatCVCNumber` / `cvcNumberInRange`.
+  // pushed to the cardCvc iframe once per brand CHANGE, not per keystroke.
   let lastDetectedBrandRef: ref<string> = ref("")
 
-  // Client-list fetch (payments-V2 fix): `usePaymentIntent` inside the
-  // cardNumber iframe gates the confirm dispatch on the Jotai
-  // `paymentMethodList` atom reaching `Loaded`/`LoadError`/`SemiLoaded`
-  // (`PaymentHelpers.res` ~line 1472) — otherwise it short-circuits with a
-  // `payment_methods_loading` broadcast and the network call NEVER fires.
-  // Stacked payment iframes get `clientList` forwarded by
-  // `Elements.res`'s PreMountLoader plumbing; group-mounted per-field
-  // iframes have no such forwarder, so the group fetches ONCE at factory
-  // time and forwards the result to every field iframe at mount (promise
-  // re-`then` covers late-mounted fields).
+  /* `usePaymentIntent` gates confirm on `paymentMethodList` reaching Loaded, else it
+     short-circuits and NO network call fires. Group-mounted fields have no PreMountLoader
+     forwarder, so fetch once here and forward at every mount. */
   let clientListDataPromise = PaymentHelpers.fetchClientList(
     ~clientSecret,
     ~publishableKey,
@@ -325,37 +131,20 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     ~endpoint,
   )
 
-  // ── MessageChannel Card Relay: coordinator wiring ────────────────────────
-  //
-  // The hidden 0×0 `cardFormCoordinator` iframe — OWNERSHIP of the confirm
-  // (Flow A / Flow B) lives INSIDE it now: the group relays
-  // `cardFormCoordinatorCommand` frames in and watches the masked
-  // `confirmResult` post back. Per-field MessageChannels deliver raw SAD to
-  // the coordinator off-window; the group never sees them.
-  //
-  //   groupInstanceId   — unique per factory call; rides `groupId` URL param
-  //                       into each field iframe + the coordinator iframe, AND
-  //                       IS the coordinator's `localSelectorString` (locked
-  //                       DOM/iframeId contract #3).
-  //   portEpochCounter  — incremented per field mount; rides with the port
-  //                       transfer as `portEpoch`. Fresh mounts replace stale
-  //                       epochs in the per-document SadPortRegistry.
-  //   pendingPortsRef   — port1s queued for the coordinator, flushed when
-  //                       its `iframeMounted` broadcast lands.
+  /* the hidden coordinator owns the confirm: the group relays masked commands in and reads
+     masked `confirmResult` back, while per-field MessageChannels deliver raw SAD off-window.
+     `groupInstanceId` is its selector and the `groupId` URL param; portEpoch replaces stale ports. */
   let groupInstanceId = `payments-${Date.now()->Float.toString}-${Math.random()->Float.toString->String.slice(~start=2, ~end=8)}`
   let portEpochCounterRef: ref<int> = ref(0)
   let pendingPortsRef: ref<array<pendingPort>> = ref([])
-  // Every portKey this group ever installed — deinit closes them in the
-  // per-document registry (deinit-before-flush contract #7).
+  // every portKey this group installed — deinit closes them in the per-document registry.
   let installedPortKeysRef: ref<array<string>> = ref([])
   let coordinatorMountRef: ref<option<CoordinatorMount.coordinatorMount>> = ref(None)
   let coordinatorReadyRef: ref<bool> = ref(false)
   let coordinatorListenerName = `onPaymentsCoordinator-${groupInstanceId}`
 
-  // Relay a masked command envelope into the coordinator iframe. Flow params
-  // ride the same frame (`flow`, `paymentToken`, `confirmId`); raw SAD is
-  // never part of the message (the coordinator reads it off its per-field
-  // port registry instead, per architecture pitchline #4).
+  /* relays a masked command envelope; `flow`, `paymentToken` and `confirmId` ride the same
+     frame. Raw SAD is never in the message — the coordinator reads it off its port registry. */
   let postCoordinatorCommand = fields => {
     try
       coordinatorMountRef.contents->Option.forEach(mount =>
@@ -389,8 +178,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       (ev: Types.event) => {
         let isOurCoordinator =
           coordinatorMountRef.contents
-          ->Option.map(m =>
-            ev.source === m.iframe->Window.contentWindow &&
+          ->Option.map(coordinatorMount =>
+            ev.source === coordinatorMount.iframe->Window.contentWindow &&
             ev.origin === URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
           )
           ->Option.getOr(false)
@@ -398,15 +187,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           let json = try ev.data->Identity.anyTypeToJson catch { | _ => JSON.Encode.null }
           let dict = json->getDictFromJson
           if dict->getBool("iframeMounted", false) {
-            // Coordinator booted: flush the queued port1 channels + the
-            // clientList snapshot (the COORDINATOR is the confirm owner —
-            // its `usePaymentIntent` gate needs paymentMethodList Loaded).
-            // It ALSO needs `keys.clientSecret` + `keys.publishableKey`:
-            // LoaderController only hydrates those from a
-            // `paymentElementCreate` envelope, which the field-mount path
-            // never delivered to the coordinator iframe. Without this post
-            // its `intent()` outer switch decays every confirm to the
-            // `confirm_payment_failed` early-exit (no network call at all).
+            /* coordinator booted: flush the queued port1 channels and the clientList snapshot. It also
+               needs `keys.clientSecret`, which only a `paymentElementCreate` envelope hydrates. */
             coordinatorReadyRef := true
             flushPendingPorts()
             switch coordinatorMountRef.contents {
@@ -429,10 +211,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                   ("componentType", "payment"->JSON.Encode.string),
                   ("paymentOptions", coordinatorPaymentOptions),
                   ("options", Dict.make()->JSON.Encode.object),
-                  // The coordinator's own intent `~iframeId` + the group's
-                  // fullscreen router both key on this value — it MUST
-                  // equal `groupInstanceId` (= localSelectorString on the
-                  // mount) or three_ds_invoke routing desynchronises.
+                  /* MUST equal `groupInstanceId` (the coordinator's localSelectorString) — the intent's
+                     `~iframeId` and the fullscreen router both key on it, or three_ds_invoke routing desyncs. */
                   ("iframeId", groupInstanceId->JSON.Encode.string),
                   ("publishableKey", publishableKey->JSON.Encode.string),
                   ("endpoint", endpoint->JSON.Encode.string),
@@ -460,18 +240,14 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               }
               Promise.resolve()
             })
-            // Terminal `catch` (eslint promise/catch-or-return): a clientList
-            // fetch rejection must NOT bring the coordinator mount down —
-            // mounts proceed without the pre-warmed list (see the fetch's 403
-            // dev-static-asset-noise history).
+            // terminal catch: a clientList rejection must not bring the coordinator mount down.
             ->Promise.catch(err => {
               Console.error2("[PaymentsGroup] clientList fetch rejected — coordinator continues without pre-warmed list", err)
               Promise.resolve()
             })
             ->ignore
           } else if dict->getBool("paymentConfirmAck", false) {
-            // Relay settled (ack) — release the confirm mutex latched at
-            // dispatch and cancel the settle-timeout backstop.
+            // relay settled (ack) — release the confirm mutex and cancel the settle-timeout backstop.
             confirmDispatchedRef := true
             confirmingRef := false
             confirmSettleTimeoutRef.contents->Option.forEach(clearTimeout)
@@ -512,11 +288,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     switch coordinatorMountRef.contents {
     | Some(_) => ()
     | None =>
-      // Fullscreen answer-loop satellites: the overlay docs consume `metadata`
-      // strongly; `options`/`appearance` are pass-through for driver
-      // consumers (LoaderPaymentElement mirrors its create-time options) —
-      // we forward the group config shape, which matches the mount configs
-      // every field iframe of this group already receives.
       let groupAppearance =
         config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
       let groupConfigAsOptions =
@@ -538,12 +309,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       )
       coordinatorMountRef := Some(mount)
       attachCoordinatorListener()
-      // Per-group fullscreen lifecycle for the coordinator's next-action
-      // plumbing (three_ds_invoke etc.): ROUTER mounts scoped / tears down
-      // UNGATED (bare `{fullscreen:false}` frames carry no iframeId) /
-      // forwards the overlay's uplink stream back into the coordinator;
-      // ANSWERER satisfies the metadata answer loop the overlay docs block
-      // on (`iframeMountedCallback` / `driverMounted`).
+      // teardown is UNGATED — bare `{fullscreen:false}` frames carry no iframeId.
       let (fullscreenRouter, fullscreenAnswerer) = CoordinatorMount.makeFullscreenFlows(
         ~mount,
         ~localSelectorString=groupInstanceId,
@@ -551,9 +317,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         ~options=groupConfigAsOptions,
         ~appearance=groupAppearance,
       )
-      // Types.event (EventListenerManager's domain type) and Window.event
-      // (hyper-loader controller docs) are structurally the same message
-      // event — cast via %raw('ev') so both caller vocabularies stay exact.
+      // `Types.event` and `Window.event` are the same message event; the cast keeps both exact.
       EventListenerManager.addSmartEventListener(
         "message",
         (ev: Types.event) => fullscreenRouter(%raw(`ev`)),
@@ -580,26 +344,14 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     }
   }
 
-
-
-  // 3. Mount-config builder — mirrors `PaymentMethodsSessionGroup.buildMountConfig`
-  //    but with the payments-V2 endpoint + no session-specific fields.
-  //    LoaderController inside the iframe reads `paymentElementCreate` to
-  //    bootstrap its atom graph (configAtom / keys / sessions).
   let buildMountConfig = (~options: JSON.t, ~fieldId: string) => {
-    // NOTE: `options` here is the PER-FIELD options bag passed to
-    // `cardForm.create("cardNumber", opts)`, which is typically `{}`. The
-    // group-level `appearance` (bound at make() entry from
-    // `config.appearance`) must NOT shadow it — read per-field overrides
-    // from `fieldOptionsDict`, then fall back to the group-level bag.
-    // (Precedence rule mirrors `PaymentMethodsSessionGroup.buildMountConfig`.)
+    /* `options` here is the PER-FIELD bag from `cardForm.create(type, opts)`; it must NOT
+       shadow the group-level `appearance` bound at make() entry. */
     let fieldOptionsDict = options->getDictFromJson
     let savedCardDict = fieldOptionsDict->getDictFromDict("savedCard")
     let savedCardBrand = savedCardDict->getString("brand", "")
     let emptyJson = Dict.make()->JSON.Encode.object
     let fieldAppearance = fieldOptionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
-    // Per-field appearance wins only if it actually carries keys; otherwise
-    // prefer the group-level appearance from `config.appearance`.
     let appearance = if (
       fieldAppearance
       ->JSON.Decode.object
@@ -615,15 +367,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         ("shouldUseTopRedirection", JSON.Encode.bool(false)),
         ("shouldRemoveBeforeUnloadEvents", JSON.Encode.bool(false)),
       ]->Dict.fromArray
-    // Wrap appearance in the canonical widgetOptions envelope that
-    // CardTheme.itemToObjMapper expects on the iframe side (whitelist:
-    // ["appearance", "fonts", "locale", "clientSecret", "loader",
-    //  "pmSessionId", "sdkAuthorization"]). Posting the raw merchant bag
-    // directly caused "Unknown Key: 'variables'/'rules'" warnings and
-    // silently dropped merchant appearance customizations. For payments,
-    // sdkAuthorization / pmSessionId aren't part of the flow — emit empty
-    // strings so the iframe-side `getWarningString`/`getString` defaults
-    // kick in without spurious warnings.
+    /* appearance must be wrapped in the widgetOptions envelope `CardTheme.itemToObjMapper`
+       expects — the raw merchant bag warns "Unknown Key" and drops the customizations. */
     let paymentOptions =
       [
         ("appearance", appearance),
@@ -664,46 +409,25 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     ]->Dict.fromArray
   }
 
-  // 4. Per-field factory. Mounts ONE iframe per `create()` call. The
-  //    per-field listener watches every postMessage from this iframe for
-  //    the field's lifetime; routing desugars into four message kinds in
-  //    priority order: ready/focus/blur, paymentConfirm{Ack,Fail}, then
-  //    cardStateUpdate.
   let createFieldHandle = (fieldType: string, options: JSON.t, fieldId: string): fieldEntry => {
     let iframeRef: ref<Nullable.t<Dom.element>> = ref(Nullable.null)
     let lastStateRef: ref<option<JSON.t>> = ref(None)
     let lastFormStatusRef: ref<option<aggregatedStatus>> = ref(None)
     let eventHandlersRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
-    // Unique activity-name for THIS field's listener. Tracked on the
-    // fieldEntry so per-field `destroy()` and group-level `deinit()` can
-    // remove it via `EventListenerManager.removeSmartEventListener`.
     let listenerName = `onPaymentsV2Field-${fieldId}`
 
-    // No raw-value caching here: per-field raw card data rides off-window
-    // MessageChannel ports (`CardFormCoordinator` aggregates) — the group never
-    // holds it.
-    // Saved-card (Flow B) hint — captured from the merchant's
-    // `create("cardCvc", {savedCard: {token, brand}})` options so the Flow B
-    // branch of `confirm()` can embed it as `paymentToken` on the
-    // `cardFormCoordinatorCommand` (flow:"savedCardCvc") into the coordinator.
-    // Refreshed in `handle.update` when the merchant switches the selected
-    // saved card in place.
+    /* no raw-value caching here: raw card data rides the off-window ports to the coordinator.
+       The saved-card token is a Flow B hint embedded as `paymentToken` on the command. */
     let savedCardTokenRef = ref(
       options->getDictFromJson->getDictFromDict("savedCard")->getString("token", ""),
     )
-    // Auto-focus progression latch (mirrors `PaymentMethodsSessionGroup`):
-    // tracks the previous `focusReady` emitted by this field's iframe so the
-    // `cardStateUpdate` branch can detect its false→true edge and post
-    // `doFocus` to the NEXT field's iframe exactly once per "user finished
-    // this field" moment — not on every keystroke that keeps the field
-    // focus-ready.
+    // latches the previous `focusReady` so the false→true edge posts `doFocus` exactly once.
     let prevFocusReadyRef = ref(false)
 
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
       let config = buildMountConfig(~options, ~fieldId)
-      // MessageChannel Card Relay: ONE MessageChannel per field mount per
-      // portEpoch. `port2` rides WITH the mount-config transfer; `port1`
-      // queues for the coordinator (flushed on its iframeMounted).
+      /* ONE MessageChannel per field mount per portEpoch: `port2` rides WITH the mount-config
+         transfer, `port1` queues for the coordinator and flushes on its `iframeMounted`. */
       portEpochCounterRef := portEpochCounterRef.contents + 1
       let epoch = portEpochCounterRef.contents
       let channel = MessageChannelBinding.makeChannel()
@@ -727,10 +451,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         },
       ])
       flushPendingPorts()
-      // Forward the group-fetched clientList into this iframe so its
-      // `paymentMethodList` atom reaches Loaded — required for the inner
-      // `usePaymentIntent` confirm gate (see the fetch comments in `makeCardForm`).
-      // Promise re-`then` covers late mounts automatically.
       clientListDataPromise
       ->Promise.then(json => {
         mountedIframeRef->Window.iframePostMessage(
@@ -738,21 +458,13 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         )
         Promise.resolve()
       })
-      // Terminal `catch` (eslint promise/catch-or-return): a clientList fetch
-      // rejection must NOT abort the field mount — the field's own
-      // `paymentMethodList` atom can still reach Loaded on its fallback path.
       ->Promise.catch(err => {
         Console.error2("[PaymentsGroup] clientList fetch rejected — field continues without pre-warmed list", err)
         Promise.resolve()
       })
       ->ignore
-      // Brand-cache warm-up for a late-mounted cardCvc (mirrors
-      // `PaymentMethodsSessionGroup`). The `cardStateUpdate` branch only
-      // pushes on a brand CHANGE; a CVC field mounted after the user
-      // already finished the cardNumber would otherwise sit at the
-      // permissive default until the next brand transition (or forever, if
-      // none comes). Mount order is merchant-controlled, so the group fills
-      // the gap at handshake time with whatever it has already learned.
+      /* a cardCvc mounted after the user finished the cardNumber would never see a brand
+         CHANGE, so seed it at handshake time with the brand we already learned. */
       if fieldType === "cardCvc" && lastDetectedBrandRef.contents !== "" {
         mountedIframeRef->Window.iframePostMessage(
           [("detectedCardBrand", lastDetectedBrandRef.contents->JSON.Encode.string)]->Dict.fromArray,
@@ -760,10 +472,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       }
     }
 
-    // The per-field listener lives for the lifetime of the mount. Like the
-    // vault group, we key on `ev.source === iframe.contentWindow` so
-    // multi-field groups don't cross-dispatch events. Origin check adds
-    // defense-in-depth against our own iframe being redirected mid-session.
+    /* key on `ev.source === iframe.contentWindow` so multi-field groups don't cross-dispatch;
+       the origin check guards against our own iframe being redirected mid-session. */
     let attachFieldListener = () => {
       let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
       EventListenerManager.addSmartEventListener(
@@ -798,16 +508,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             } else if isBlur {
               eventHandlersRef.contents->Dict.get("blur")->Option.forEach(cb => cb(payload))
             } else if isConfirmAck {
-              // The coordinator accepted the `initiateConfirm` command and
-              // kicked off the network call. Flip the dispatched flag and
-              // surface a `ready`-class event so integrators observing the
-              // group can distinguish "ready to confirm" from "confirm in
-              // flight".
               confirmDispatchedRef := true
-              // The relay settled (ack): release the `confirm()`
-              // mutex latched at dispatch and cancel its settle-timeout
-              // backstop. Whichever release path fires first owns the slot;
-              // re-clearing an already-None ref is a no-op.
+              // ack settles: release the mutex and cancel its backstop; whichever fires first owns it.
               confirmingRef := false
               confirmSettleTimeoutRef.contents->Option.forEach(clearTimeout)
               confirmSettleTimeoutRef := None
@@ -815,12 +517,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               ->Dict.get("confirmDispatched")
               ->Option.forEach(cb => cb(payload))
             } else if isConfirmFail {
-              // Validation failure inside the iframe — surface as the
-              // group-level `error` event so merchant listeners don't
-              // need to enumerate per-field handles.
-              // Fail is also a settlement: same release discipline
-              // as the ack arm so the group can accept the next confirm()
-              // immediately instead of waiting out the backstop.
               confirmingRef := false
               confirmSettleTimeoutRef.contents->Option.forEach(clearTimeout)
               confirmSettleTimeoutRef := None
@@ -835,16 +531,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               }
               eventHandlersRef.contents->Dict.get("error")->Option.forEach(cb => cb(errorPayload))
             } else if isFormStatusChange {
-              // Per-field formStatusChange. The inner iframe emits
-              // a structured `{status, elementType, message?, cardBrand}`
-              // payload on each validity transition (complete/incomplete/
-              // invalid) AND on focus/blur one-shots. We update the
-              // per-field ref so the group's aggregation reflects the
-              // latest status, then fan the event to BOTH the per-field
-              // `fieldEvents.<fieldType>.formStatusChange` handlers AND
-              // the group-level `on("formStatusChange")` slot — merchants
-              // should not need to subscribe per-field unless they want
-              // to distinguish field sources.
               let rawStatus = dict->getString("status", "incomplete")
               let status =
                 aggregatedStatusFromString(rawStatus)->Option.getOr(CardFormShared.Incomplete)
@@ -855,34 +541,32 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               let cardBrand = dict->getString("cardBrand", "")
               lastFormStatusRef := Some(status)
               let eventPayload = {
-                let p = Dict.make()
-                p->Dict.set("field", fieldType->JSON.Encode.string)
-                p->Dict.set("elementType", fieldType->JSON.Encode.string)
-                p->Dict.set("iframeId", fieldId->JSON.Encode.string)
-                p->Dict.set("status", status->aggregatedStatusToString->JSON.Encode.string)
+                let payloadDict = Dict.make()
+                payloadDict->Dict.set("field", fieldType->JSON.Encode.string)
+                payloadDict->Dict.set("elementType", fieldType->JSON.Encode.string)
+                payloadDict->Dict.set("iframeId", fieldId->JSON.Encode.string)
+                payloadDict->Dict.set(
+                  "status",
+                  status->aggregatedStatusToString->JSON.Encode.string,
+                )
                 switch message {
-                | Some(m) => p->Dict.set("message", m->JSON.Encode.string)
+                | Some(messageText) =>
+                  payloadDict->Dict.set("message", messageText->JSON.Encode.string)
                 | None => ()
                 }
                 if cardBrand !== "" {
-                  p->Dict.set("cardBrand", cardBrand->JSON.Encode.string)
+                  payloadDict->Dict.set("cardBrand", cardBrand->JSON.Encode.string)
                 }
-                p->JSON.Encode.object
+                payloadDict->JSON.Encode.object
               }
-              // Per-field handle slot (`fieldHandle.on("formStatusChange")`).
               eventHandlersRef.contents
               ->Dict.get("formStatusChange")
               ->Option.forEach(cb => cb(eventPayload))
-              // Segmented per-fieldType slot
-              //   `group.onFieldEvent("cardNumber", "formStatusChange")`.
-              // Keyed by the PUBLIC field-type string the merchant passed
-              // to `create(...)` — no internal mapping is exposed.
               fieldEventsCallbacksRef.contents
               ->Dict.get(fieldType)
               ->Option.forEach(handlers =>
                 handlers->Dict.get("formStatusChange")->Option.forEach(cb => cb(eventPayload))
               )
-              // Group-level aggregation slot (`group.on("formStatusChange")`).
               eventCallbacksRef.contents
               ->Dict.get("formStatusChange")
               ->Option.forEach(cb => cb(eventPayload))
@@ -891,18 +575,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               | Some(stateJson) =>
                 lastStateRef := Some(stateJson)
                 let stateDict = stateJson->getDictFromJson
-                // ── Auto-focus progression (mirrors the vault group) ─────
-                // The field's iframe decides WHEN focus should advance (it
-                // has the keystroke stream + brand context); this group only
-                // routes the signal. We watch the emitted `focusReady` key
-                // for its `false → true` edge and post `doFocus` into the
-                // NEXT field's iframe exactly once per "user finished this
-                // field" moment. `prevFocusReadyRef` is the latch —
-                // steady-state keystrokes that keep the field focus-ready
-                // don't re-fire. The envelope default-absent → false keeps
-                // the latch simple (the shared hook emits on true only).
-                // cardCvc's `nextFieldFor` is None, so the edge there is a
-                // no-op.
+                /* the iframe decides WHEN focus advances; this only routes it. `prevFocusReadyRef` latches
+                   the false→true edge so steady-state keystrokes do not re-fire `doFocus`. */
                 let prevFocusReady = prevFocusReadyRef.contents
                 let newFocusReady = stateDict->getBool("focusReady", false)
                 prevFocusReadyRef := newFocusReady
@@ -923,12 +597,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                   })
                 }
 
-                // ── Brand-aware CVC maxLength (mirrors the vault group) ──
-                // The cardNumber iframe detects the brand on every
-                // keystroke and surfaces it in this envelope. Cache the
-                // latest non-empty value group-wide, and on every CHANGE
-                // push it to the cardCvc iframe so its `useCardForm`
-                // re-derives `cardBrandForCvc` / `maxCVCLength` reactively.
                 if fieldType === "cardNumber" {
                   let cardBrand = stateDict->getString("cardBrand", "")->CardUtils.normalizeCardBrand
                   if cardBrand !== "" && cardBrand !== lastDetectedBrandRef.contents {
@@ -948,8 +616,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                   }
                 }
 
-                // Reshape to the merchant-facing `{empty, complete, valid,
-                // error?, brand?, elementType}` shape before surfacing.
                 let changePayload = reshapeCardStateUpdateToChangePayload(
                   ~fieldType,
                   ~stateJson,
@@ -957,18 +623,9 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                 eventHandlersRef.contents
                 ->Dict.get("change")
                 ->Option.forEach(cb => cb(changePayload))
-                // Readiness is edge-triggered, so the merchant always gets an
-                // explicit signal in both directions:
-                //   rising  (false → true)   → fire `ready`
-                //   steady  (true  → true)   → no-op (don't spam)
-                //   falling (true  → false)  → fire `unready`
-                //   idle    (false → false)  → no-op
-                // The first pass has `hasBeenReadyRef.contents=false`, so a
-                // `true` readiness still emits.
+                // edge-triggered: rising fires `ready`, falling fires `unready`; steady states no-op.
                 let readiness = computeGroupReadiness(fieldsRef)
                 if readiness && !hasBeenReadyRef.contents {
-                  // Rising edge (readiness false→true, incl. re-fires after
-                  // a fall). Merchant's submit button flips armed.
                   hasBeenReadyRef := true
                   let readinessPayload =
                     [
@@ -981,9 +638,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                   ->Dict.get("ready")
                   ->Option.forEach(cb => cb(readinessPayload))
                 } else if !readiness && hasBeenReadyRef.contents {
-                  // Falling edge. Merchant must EXPLICITLY disarm — we
-                  // surface this via `unready` instead of letting their
-                  // submit stay enabled on a stale snapshot.
                   hasBeenReadyRef := false
                   let unreadyPayload =
                     [
@@ -1005,24 +659,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
        )
      }
 
-    // Mount via LoaderPaymentElement — the unified URL is built inside
-    // `LoaderPaymentElement.mount`; we supply `fieldName` (bare) and
-    // `surfaceFamily="payments"` so App.res routes to `<PaymentMethodsSDK>` →
-    // the matching shared per-field shell (the same components serve the vault
-    // family).
-    //
-    // Per-field appearance wins only if it actually carries keys; otherwise
-    // prefer the group-level appearance from `config.appearance`. Mirrors
-    // the precedence rule used by `buildMountConfig` above — `options` here
-    // is the PER-FIELD bag passed to `cardForm.create("cardNumber", opts)`
-    // and is typically `{}`.
-    //
-    // The merged appearance is ALSO injected into the positional `options`
-    // JSON handed to `LoaderPaymentElement.make`, because that component
-    // reads `appearance.variables.cardFieldHeight` from its OWN
-    // `optionsDict` (the positional bag, see LoaderPaymentElement.res:365 +
-    // 543-547) to size the iframe wrapper. Without this, a merchant-bumped
-    // `cardFieldHeight` never reaches the iframe style.
+    /* the merged appearance is ALSO injected into the positional `options` JSON, because
+       LoaderPaymentElement reads `appearance.variables.cardFieldHeight` off its own bag. */
     let fieldOptionsDict = options->getDictFromJson
     let emptyJson = Dict.make()->JSON.Encode.object
     let fieldAppearance = fieldOptionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
@@ -1036,10 +674,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     } else {
       appearance
     }
-    // Inject the resolved appearance back into the per-field options JSON so
-    // `LoaderPaymentElement` sees it via its own `optionsDict`. Field-level
-    // keys are preserved; `appearance` key is overwritten with the merged
-    // value (same precedence as the `~appearance` named arg below).
     let fieldOptionsWithAppearanceDict = fieldOptionsDict->Dict.copy
     fieldOptionsWithAppearanceDict->Dict.set("appearance", appearanceJson)
     let optionsForElement = fieldOptionsWithAppearanceDict->JSON.Encode.object
@@ -1069,9 +703,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       destroy: () => {
         element.destroy()
         iframeRef := Nullable.null
-        // Remove THIS field's smartEventListener so destroying one
-        // field doesn't leak its routing callback across group re-mounts on
-        // the same page. Activity-name is the one captured at mount.
         EventListenerManager.removeSmartEventListener(
           "message",
           `onPaymentsV2Field-${fieldId}`,
@@ -1084,17 +715,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             ("options", newOptions),
           ]->Dict.fromArray,
         )
-        // Saved-card switch (Flow B): the merchant re-points the mounted CVC
-        // field at a different saved card via
-        // `field.update({savedCard: {token, brand}})`. Forward `savedCard.brand`
-        // as a TOP-LEVEL postMessage key (that is the shape LoaderController's
-        // `savedCardBrand` atom handler expects; the generic
-        // `paymentElementsUpdate` options path does NOT lift nested
-        // `savedCard.brand`), and refresh the group's captured token so the
-        // Flow B confirm relay targets the newly-selected card. The vault
-        // group (`PaymentMethodsSessionGroup`) applies the same refresh
-        // discipline to its captured `savedCardBrandRef`/`savedCardLast4Ref`
-        // (and the VGS equivalents).
+        /* saved-card switch (Flow B): `savedCard.brand` must be a TOP-LEVEL postMessage key —
+           LoaderController does not lift it out of a nested bag — and refresh the captured token. */
         let savedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
         let savedCardBrand = savedCardDict->getString("brand", "")
         if savedCardBrand !== "" {
@@ -1127,11 +749,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       },
     }
 
-    // Register the per-field listener's remove-task with the
-    // group-level deinit pool, so `deinit()` tears down every mounted
-    // field's postMessage routing even if the merchant forgot to call
-    // `field.destroy()` first. Activity-name matches what's recorded on the
-    // returned fieldEntry so either path can independently remove it.
+    // registered with the group deinit pool, so deinit() tears down routing even without destroy().
     deinitCallbacksRef.contents->Array.push(
       () => EventListenerManager.removeSmartEventListener("message", `onPaymentsV2Field-${fieldId}`),
     )
@@ -1148,28 +766,14 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     }
   }
 
-  // Helper: locate the first fieldEntry of the requested type (mirrors the
-  // vault group's helper of the same name). Confirm routing is "first
-  // mounted field of the type wins".
   let findFieldOfType = (matchFieldType: string): option<fieldEntry> => {
     fieldsRef.contents
     ->Dict.valuesToArray
     ->Array.find(entry => entry.fieldType === matchFieldType)
   }
 
-  // 6. `doSubmit` relay. The merchant's `hyper.confirmPayment()` call ends
-  //    in `Hyper.res:488` which broadcasts `doSubmit` to every iframe it
-  //    owns (including ours). We listen for that broadcast at the group
-  //    level and forward it to the COORDINATOR as a content-free
-  //    `initiateConfirm` command (`flow: "payments"`). Other children
-  //    (expiry, cvc) are intentionally NOT notified — only the confirm-owner
-  //    (the coordinator) runs the network call.
-  //
-  //    The relay's EventListenerManager activity-name is UNIQUE per
-  //    factory call (same `<timestamp>-<rand>` style as the per-field
-  //    `onPaymentsV2Field-${fieldId}` names). A static name would get
-  //    clobbered when two groups coexist on one page — the second `deinit()`
-  //    would remove the FIRST group's relay.
+  /* `doSubmit` relay forwards Hyper's broadcast into the coordinator as a content-free
+     `initiateConfirm`. The activity-name is unique per factory call so two groups coexist. */
   let doSubmitListenerName =
     `onPaymentsV2DoSubmit-${Date.now()->Float.toString}-${Math.random()
       ->Float.toString
@@ -1178,21 +782,15 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     EventListenerManager.addSmartEventListener(
       "message",
       (ev: Types.event) => {
-        // N10 — deliberately NO ev.origin / ev.source check on this intake:
-        // `doSubmit` is a broadcast-by-design contract (`Hyper.res` fans it
-        // onto the root window so every interested listener hears it) and
-        // hearing a foreign `doSubmit` grants the sender no power beyond
-        // re-invoking the already-exposed `group.confirm()` — the relay only
-        // ever posts `cardFormCoordinatorCommand` into OUR OWN coordinator.
-        // (Contrast the per-field listeners above, which consume field-
-        // emitted secrets and DO gate on source + origin.)
+        /* deliberately NO ev.origin / ev.source check on this intake: `doSubmit` is a
+           broadcast-by-design contract, and hearing a foreign one grants no power beyond re-invoking
+           the already-exposed `group.confirm()` — the relay only posts into OUR OWN coordinator.
+           The per-field listeners above consume field-emitted secrets and DO gate on source and origin. */
         let json = try ev.data->Identity.anyTypeToJson catch { | _ => JSON.Encode.null }
         let dict = json->getDictFromJson
         let isDoSubmit = dict->getBool("doSubmit", false)
         if isDoSubmit {
-          // MessageChannel Card Relay: both flows post a coordinator
-          // command; raw SAD is never assembled group-side anymore (the
-          // coordinator aggregates over its per-field ports).
+          // both flows post a coordinator command; raw SAD is never assembled group-side.
           switch findFieldOfType("cardNumber") {
           | Some(_entry) =>
             postCoordinatorCommand([
@@ -1217,13 +815,9 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     )
   }
   attachSubmitRelay()
-  // Register the relay's remove-task so deinit() cleans up. Without this
-  // the listener leaks across group re-instantiations on the same page (the
-  // merchant re-mounting a checkout flow would stack do-submit handlers on
-  // the root window).
+  // without this the root-window listener leaks across group re-instantiations.
   deinitCallbacksRef.contents->Array.push(() => EventListenerManager.removeSmartEventListener("message", doSubmitListenerName))
 
-  // 7. Public group surface.
   let create = (fieldType: string, options: JSON.t): fieldHandle => {
     switch mapFieldTypeToInternalFieldName(fieldType) {
     | "" => {
@@ -1231,7 +825,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         Types.defaultFieldHandle
       }
     | _ =>
-      // First hosted-field mount also mounts the confirm-owner coordinator.
       ensureCoordinatorMounted()
       let fieldId = `${fieldType}-${Date.now()->Float.toString}-${Math.random()->Float.toString->String.slice(~start=2, ~end=8)}`
       let entry = createFieldHandle(fieldType, options, fieldId)
@@ -1245,22 +838,10 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       fieldsDict->Dict.set(fieldId, fieldMeta)
       fields := fieldsDict->JSON.Encode.object
 
-      // Track the segmented per-fieldType `fieldEvents` registry. Merchants
-      // primarily use the `fieldHandle.on(...)` returned here,
-      // but the group also maintains a segmented callback pool so a
-      // merchant can subscribe to a class of fields (e.g. all
-      // `cardNumber` mounts) without holding an individual handle.
-      // The pool is consulted during `formStatusChange` fan-out.
       if fieldEventsCallbacksRef.contents->Dict.get(fieldType)->Option.isNone {
         fieldEventsCallbacksRef.contents->Dict.set(fieldType, Dict.make())
       }
       let fieldEventsDict = fieldEvents.contents->getDictFromJson
-      // The JSON dict carries *metadata only* (field handles and their
-      // callback pools are opaque to merchant-land). Tests assert on the
-      // presence of the key after `create()` to verify segmentation is
-      // registered; the underlying callback pool lives in
-      // `fieldEventsCallbacksRef` and fans out via the `onFieldEvent`
-      // method on the returned group record below.
       let poolMeta =
         [("fieldType", fieldType->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object
       fieldEventsDict->Dict.set(fieldType, poolMeta)
@@ -1270,14 +851,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   }
 
   let update = (newOptions: JSON.t): unit => {
-    // Fail LOUD on attempts to mutate immutable config mid-flight.
-    // `clientSecret` is baked into the inner iframe's mount-config at
-    // `create()` time and the inner `usePaymentIntent` derives the
-    // `payments/{id}/confirm` URI from THAT snapshot — silently accepting an
-    // override here would fan an update out while the iframe keeps
-    // confirming against the OLD intent. Same for `confirmParams`, which
-    // is threaded into the same mount-config. Refuse with Console.warn so
-    // the merchant's console shows the misuse instead of confusing receipts.
+    /* refuse immutable config changes loudly: `clientSecret` and `confirmParams` are baked into
+       the mount-config, so an override would confirm against the OLD intent. */
     let newOptionsDict = newOptions->getDictFromJson
     let attemptsClientSecretMutation = newOptionsDict->Dict.get("clientSecret")->Option.isSome
     let attemptsConfirmParamsMutation = newOptionsDict->Dict.get("confirmParams")->Option.isSome
@@ -1287,8 +862,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         "Create a new group (or remount the fields) to switch intents.",
       )
     } else {
-      // Fan non-immutable updates (e.g. appearance/locale tweaks) out to
-      // every mounted field.
       fieldsRef.contents
       ->Dict.valuesToArray
       ->Array.forEach(entry => {
@@ -1306,37 +879,11 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     eventCallbacksRef.contents->Dict.set(event, cb)
   }
 
-  // Explicit group-level `confirm()` (zero-arg per `Types.cardForm`).
-  // Without this the only path into the `cardNumber`
-  // iframe was the root-window `doSubmit` broadcast, which Hyper.res can
-  // only fan into iframes it DIRECTLY owns — group-mounted iframes never
-  // heard it, so the confirm was silently dropped. Explicit confirm matches
-  // the vault group's surface (Types.res:82) and posts a CONTENT-FREE
-  // `{cardFormCoordinatorCommand: "initiateConfirm", …}` command into the
-  // group's hidden coordinator iframe (`postCoordinatorCommand` — see
-  // :1365-1369/:1420-1425); the coordinator aggregates port-side raws and
-  // runs the real `usePaymentIntent`. The response arrives out-of-band via
-  // `submitSuccessful` (settlement) and `paymentConfirmAck`/`paymentConfirmFail`
-  // (mutex release).
-  //
-  // Guard order:
-  //   1. Mutex — a confirm already dispatched by THIS group resolves the
-  //      `{status:"error", error:{code:"confirm_in_progress", type:"api_error",
-  //      message:"confirm already in progress"}}` envelope.
-  //   2. Flow inference (mirrors the vault group's unified `confirm()`):
-  //      - cardNumber mounted (with or without siblings) → Flow A: post the
-  //        `initiateConfirm` command with `flow: "payments"`.
-  //      - ONLY cardCvc mounted → Flow B saved-card recollect: the same
-  //        command with `flow: "savedCardCvc"` + the captured
-  //        `savedCard.token` as `paymentToken`. No captured token →
-  //        synchronous `validation_error` envelope (mount-time contract —
-  //        the merchant must pass `{savedCard: {token, brand}}` at create).
-  //      - nothing mounted → explicit `validation_error` envelope
-  //      synchronously — never a hanging Promise.
+  /* explicit zero-arg confirm — `hyper.confirmPayment()`'s `doSubmit` never reaches
+     group-mounted iframes. Guards: mutex → `confirm_in_progress`; cardNumber mounted → Flow A;
+     only cardCvc → Flow B; nothing mounted → `validation_error`. */
   let confirm = (): promise<JSON.t> => {
     if confirmingRef.contents {
-      // Mutex: double-confirm never re-posts the trigger into the
-      // cardNumber iframe; the merchant gets a retryable api_error envelope.
       Promise.resolve(
         [
           ("status", "error"->JSON.Encode.string),
@@ -1359,22 +906,15 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             ("flow", "payments"->JSON.Encode.string),
             ("confirmId", `${Date.now()->Float.toString}-${Math.random()->Float.toString}`->JSON.Encode.string),
           ])
-          // The mutex LATCHES across the relay — releasing it synchronously
-          // here would make the flag never observably true across an await, so
-          // `confirm_in_progress` would be unreachable and a re-entrant
-          // double-confirm would dispatch twice. Release happens in the field
-          // listener's `paymentConfirmAck` / `paymentConfirmFail` arms, or in
-          // this settle-timeout backstop — whichever fires first (ack/fail
-          // cancel the timer).
+          /* the mutex LATCHES across the relay — releasing here would make the flag never observably
+             true across an await, so `confirm_in_progress` would be unreachable. */
           confirmSettleTimeoutRef := Some(
             setTimeout(() => {
               confirmingRef := false
               confirmSettleTimeoutRef := None
             }, confirmSettleTimeoutMs),
           )
-          // Resolve immediately with an `initiated` envelope. Result of the
-          // real payment-intent confirm is delivered via the inner iframe's
-          // `submitSuccessful` broadcast (Hyper.res:440 owns that contract).
+          // the real confirm result arrives on the inner iframe's `submitSuccessful` broadcast.
           Promise.resolve(
             [
               ("status", "initiated"->JSON.Encode.string),
@@ -1383,10 +923,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           )
         }
       | (None, Some(entry)) =>
-        // Flow B — saved-card CVC recollect. The coordinator's
-        // `savedCardCvc` arm owns the real confirm POST (mirrors Flow A's
-        // `payments` arm), including the `usePaymentIntent` gate and the
-        // `submitSuccessful` broadcast.
+        // Flow B — the coordinator's `savedCardCvc` arm owns the real confirm POST.
         let paymentToken = entry.savedCardTokenRef.contents
         if paymentToken === "" {
           Promise.resolve(
@@ -1414,19 +951,13 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             ("paymentToken", paymentToken->JSON.Encode.string),
             ("confirmId", `${Date.now()->Float.toString}-${Math.random()->Float.toString}`->JSON.Encode.string),
           ])
-          // Same latch discipline as the Flow A arm: hold the mutex
-          // until `paymentConfirmAck`/`paymentConfirmFail` settles or the
-          // backstop timeout releases it. (The coordinator posts the same
-          // ack/fail pair for the `savedCardCvc` arm.)
+          // same latch discipline as Flow A; the coordinator posts the same ack/fail pair.
           confirmSettleTimeoutRef := Some(
             setTimeout(() => {
               confirmingRef := false
               confirmSettleTimeoutRef := None
             }, confirmSettleTimeoutMs),
           )
-          // Same fire-and-forget ack contract as Flow A — the
-          // network outcome rides the inner iframe's `submitSuccessful`
-          // broadcast, not this envelope.
           Promise.resolve(
             [
               ("status", "initiated"->JSON.Encode.string),
@@ -1456,13 +987,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     }
   }
 
-  // Segmented per-fieldType subscription. The pool key is the PUBLIC
-  // merchant-facing string (`cardNumber`, etc.) — the group internally routes
-  // events using that same string (see `entry.fieldType` in the per-field
-  // listener), so merchants can subscribe to a segmented slot without knowing
-  // the internal field-id mapping. The extras (`onFieldEvent`/`fieldEvents`)
-  // stay on the factory result structurally but are NOT part of the
-  // `Types.cardForm` contract.
+  // `onFieldEvent` and `fieldEvents` are NOT part of the `Types.cardForm` contract.
   let onFieldEvent = (fieldType: string, event: string, cb: JSON.t => unit): unit => {
     switch fieldEventsCallbacksRef.contents->Dict.get(fieldType) {
     | Some(pool) => pool->Dict.set(event, cb)
@@ -1486,15 +1011,11 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     fieldEventsCallbacksRef := Dict.make()
     confirmDispatchedRef := false
     confirmingRef := false
-    // Cancel any armed confirm settle-timeout so a dead group's timer
-    // can't fire later and flip refs on a re-mounted successor — the slot is
-    // per-group, but hygiene keeps the lifecycle airtight.
+    // cancel any armed settle-timeout so a dead group's timer can't fire later.
     confirmSettleTimeoutRef.contents->Option.forEach(clearTimeout)
     confirmSettleTimeoutRef := None
-    // Close the group's epoch ports in the per-document registry BEFORE
-    // running deinitCallbacks (which strip the coordinator's DOM+listeners),
-    // matching the vault group's order: ports die before their listeners /
-    // iframeRoutes do.
+    /* close the group's epoch ports BEFORE running deinitCallbacks (which strip the
+       coordinator's DOM and listeners): ports must die before their listeners do. */
     installedPortKeysRef.contents->Array.forEach(key => SadPortRegistry.closePort(~key))
     installedPortKeysRef := []
     deinitCallbacksRef.contents->Array.forEach(cb => cb())
@@ -1504,9 +1025,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     coordinatorReadyRef := false
   }
 
-  // The returned record narrows to `Types.cardForm` (the internal extras
-  // stay reachable inside this module/tests via their own lets below, but
-  // the merchant-facing factory result is exactly the public contract).
   let cardForm: cardForm = {
     create,
     update,
@@ -1521,8 +1039,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   publicCardForm
 }
 
-// Deprecated internal alias. Kept so out-of-tree call sites degrade
-// to a compile-time deprecation rather than breakage — new code must use
-// `makeCardForm`.
+// deprecated alias — new code must use `makeCardForm`.
 @deprecated("Use makeCardForm")
 let make = (~config: groupConfig): Types.cardForm => makeCardForm(~config)

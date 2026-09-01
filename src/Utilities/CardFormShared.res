@@ -1,14 +1,10 @@
-// Shared canon for the CardForm surfaces: the bindings below are owned here
-// and aliased (not `open`ed) by `PaymentsGroup.res`,
-// `PaymentMethodsSessionGroup.res` and `CommonCardFieldHooks.res`, so the
-// compiled `.bs.js` of both group factories keeps them as named exports.
+/* shared canon for the CardForm surfaces; aliased (not `open`ed) by the group factories so
+   their compiled modules keep these as named exports. */
 
 open Utils
 
-// ── Per-field lifecycle status vocabulary ────────────────────────────────
-// `focused`/`blurred` are ONE-SHOT transitions that do not change the
-// underlying validity track (complete/incomplete/invalid) — the group never
-// latches them.
+/* `focused` and `blurred` are ONE-SHOT transitions that never change the underlying
+   validity track (complete/incomplete/invalid); the group never latches them. */
 type fieldFormStatus =
   | Complete
   | Incomplete
@@ -35,23 +31,18 @@ let fieldFormStatusFromString = (str: string): option<fieldFormStatus> =>
   | _ => None
   }
 
-// ── Bare-name allow-list (identity mapping) ───────────────────────────────
-// Both surfaces' merchant vocabulary is the BARE field name; unknown strings
-// fall through to "" and take the invalid-field-type rejection path
-// (`create()` logs `invalid_field_type` + returns the no-op default handle).
-let mapFieldTypeToInternalFieldName = (ft: string): string =>
-  switch ft {
-  | "cardNumber" => "cardNumber"
-  | "cardExpiry" => "cardExpiry"
-  | "cardCvc" => "cardCvc"
+/* merchant vocabulary is the BARE field name; unknown strings fall through to "" and take
+   the invalid-field-type rejection path. */
+let mapFieldTypeToInternalFieldName = (fieldType: string): string =>
+  switch fieldType {
+  | "cardNumber"
+  | "cardExpiry"
+  | "cardCvc" => fieldType
   | _ => ""
   }
 
-// ── Auto-focus progression map (one vocabulary, one order) ────────────────
-// cardNumber → cardExpiry → cardCvc → (terminal; no next field). This map
-// only ROUTES the focus request — the iframe owns the timing decision
-// (keystroke-level brand-aware max length + Luhn for cardNumber; 4-digit
-// MMYY + validity for expiry).
+/* cardNumber → cardExpiry → cardCvc (terminal). This map only ROUTES the focus request —
+   the iframe owns the timing decision. */
 let nextFieldFor = (fieldType: string): option<string> =>
   switch fieldType {
   | "cardNumber" => Some("cardExpiry")
@@ -59,15 +50,9 @@ let nextFieldFor = (fieldType: string): option<string> =>
   | _ => None
   }
 
-// ── Merchant-facing `change`-payload reshaper ─────────────────────────────
-// Per-field iframes emit a verbose `cardStateUpdate` envelope (`{cardBrand,
-// fieldStatus:{empty,complete,isCardValid,isExpiryValid,isCvcValid,...},
-// cardInfo, ...}`) that the group caches for confirm-relay. The merchant-facing
-// `change` payload is the slim `{empty, complete, valid, error?, brand?,
-// elementType}` shape — keyed on `brand` (camelCase), not `cardBrand`.
-// Reshaping here keeps `CardCollectorBridge`'s emitter unchanged. `brand` is
-// omitted entirely when "", and `valid` picks the per-field relevant validity
-// flag (cardNumber → isCardValid, etc.).
+/* per-field iframes emit a verbose `cardStateUpdate`; the merchant-facing `change` payload
+   is the slim `{empty, complete, valid, error?, brand?, elementType}` shape keyed on
+   `brand` (camelCase). `brand` is omitted when "", and `valid` picks the per-field flag. */
 let reshapeCardStateUpdateToChangePayload = (
   ~fieldType: string,
   ~stateJson: JSON.t,
@@ -84,16 +69,16 @@ let reshapeCardStateUpdateToChangePayload = (
   }
   let brand = stateDict->getString("cardBrand", "")
   let errorMessage = stateDict->getString("error", "")
-  let p = Dict.make()
-  p->Dict.set("empty", empty->JSON.Encode.bool)
-  p->Dict.set("complete", complete->JSON.Encode.bool)
-  p->Dict.set("valid", valid->JSON.Encode.bool)
-  p->Dict.set("elementType", fieldType->JSON.Encode.string)
+  let changePayload = Dict.make()
+  changePayload->Dict.set("empty", empty->JSON.Encode.bool)
+  changePayload->Dict.set("complete", complete->JSON.Encode.bool)
+  changePayload->Dict.set("valid", valid->JSON.Encode.bool)
+  changePayload->Dict.set("elementType", fieldType->JSON.Encode.string)
   if brand !== "" {
-    p->Dict.set("brand", brand->JSON.Encode.string)
+    changePayload->Dict.set("brand", brand->JSON.Encode.string)
   }
   if errorMessage !== "" {
-    p->Dict.set("error", errorMessage->JSON.Encode.string)
+    changePayload->Dict.set("error", errorMessage->JSON.Encode.string)
   }
-  p->JSON.Encode.object
+  changePayload->JSON.Encode.object
 }
