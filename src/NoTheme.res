@@ -24,7 +24,7 @@ let noThemeValues = {
   fontSizeXs: "",
   fontSize2Xs: "",
   fontSize3Xs: "",
-  colorSuccess: "",
+  colorSuccess: "#16875B",
   colorWarning: "",
   colorPrimaryText: "",
   colorBackgroundText: "",

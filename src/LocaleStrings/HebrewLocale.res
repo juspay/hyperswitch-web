@@ -268,4 +268,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "הצג פחות",
   refreshingText: "מרענן...",
   paymentDetailsBeingCheckedText: "פרטי התשלום נבדקים. אנא המתן",
+  eligibleOffersText: "הצעות זכאיות",
+  checkingEligibleOffersText: "בודק הצעות זכאיות",
+  cardOfferText: "הצעת כרטיס",
+  offerAppliedText: "הוחלה",
 }

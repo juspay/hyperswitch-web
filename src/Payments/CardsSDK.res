@@ -29,10 +29,14 @@ let make = (~cvcOnly=false) => {
     None
   }, [cvcOnly])
 
+  // Eligibility can only be checked against raw card data (the eligibility
+  // API needs the actual card number), so it is only ever run for the
+  // RawEmit card-collection mode — never for Tokenise (Hyperswitch vault or
+  // VGS), where this component only ever sees vaulted/tokenised card data.
   let {cardProps, expiryProps, cvcProps} = CommonCardProps.useCardForm(
     ~logger=loggerState,
     ~paymentType=cardFlowType,
-    ~runEligibility=cardCollectionMode !== RawEmit,
+    ~runEligibility=cardCollectionMode === RawEmit,
     ~logControlEvents=cardCollectionMode !== RawEmit,
     ~enableExternalCardSupport=cardCollectionMode === RawEmit && !cvcOnly,
     ~cardBrandOverride=cvcOnly ? savedCardBrand : "",

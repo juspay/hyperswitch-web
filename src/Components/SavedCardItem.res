@@ -101,6 +101,7 @@ let make = (
   ~installmentsError,
   ~setInstallmentsError,
   ~eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  ~eligibilityOfferDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
   ~eligibilityError: option<string>,
   ~isEligibilityPending=false,
   // `isVaultCvcFlow` only selects whether the inner collector returns a vault
@@ -398,6 +399,11 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf condition={isActive}>
+                <RenderIf condition={isCard}>
+                  <EligibilityOfferNotice
+                    eligibilityOfferDetails isEligibilityPending className="mt-3"
+                  />
+                </RenderIf>
                 <RenderIf condition={isCard && hasInstallmentPlans}>
                   <div
                     style={
@@ -432,7 +438,7 @@ let make = (
                     eligibilitySurchargeDetails
                     eligibilityError
                     isEligibilityPending
-                    className="mt-3 ml-1.5"
+                    className="mt-3"
                   />
                 </RenderIf>
               </RenderIf>
