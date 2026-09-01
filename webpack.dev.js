@@ -49,8 +49,8 @@ const devServer = {
   ],
   headers: {
     "Cache-Control": "must-revalidate",
+    "Access-Control-Allow-Origin": "*"
   },
-  allowedHosts: "all",
 };
 
 module.exports = merge(common(), {
