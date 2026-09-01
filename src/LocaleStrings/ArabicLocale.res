@@ -270,4 +270,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "عرض أقل",
   refreshingText: "جارٍ التحديث...",
   paymentDetailsBeingCheckedText: "جارٍ التحقق من تفاصيل الدفع. يرجى الانتظار",
+  eligibleOffersText: "العروض المتاحة",
+  checkingEligibleOffersText: "جارٍ التحقق من العروض المتاحة",
+  cardOfferText: "عرض البطاقة",
+  offerAppliedText: "تم التطبيق",
 }

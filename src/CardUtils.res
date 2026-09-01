@@ -31,6 +31,7 @@ type cardProps = {
   cardEligibilityError: option<string>,
   updateCardEligibilityError: option<string> => unit,
   eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  eligibilityOfferDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
   isEligibilityPending: bool,
 }
 
@@ -53,6 +54,7 @@ let useDefaultCardProps = () => {
     cardEligibilityError: None,
     updateCardEligibilityError: _ => (),
     eligibilitySurchargeDetails: None,
+    eligibilityOfferDetails: None,
     isEligibilityPending: false,
   }
 }

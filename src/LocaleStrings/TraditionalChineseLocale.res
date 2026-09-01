@@ -267,4 +267,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "收起",
   refreshingText: "重新整理中...",
   paymentDetailsBeingCheckedText: "正在檢查付款詳情，請稍候",
+  eligibleOffersText: "可用優惠",
+  checkingEligibleOffersText: "正在查詢可用優惠",
+  cardOfferText: "卡優惠",
+  offerAppliedText: "已套用",
 }
