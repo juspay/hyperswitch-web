@@ -4,7 +4,7 @@
 // iframe — VGS Collect.js injects its own secure field iframes directly at the
 // merchant's DOM spots via `form.field(selector, options)`.
 //
-// Owed pieces:
+// The broker owns:
 //   - `isVGSProvider` detection helper (decodes vault_credentials blob)
 //   - single-shot `loadVGSScript` (loads `vgs-collect/v2.27.2` onto the
 //     merchant's `document.head`, deduped via a `data-vgs-script-loaded`
@@ -28,11 +28,85 @@
 //
 // Per-field "ready" is the canonical merchant-visible mount signal. Confirms
 // ride `submitForm` (`vault.submit(...)`) — aliases resolve entirely in-page,
-// no backend session-confirm call (relay-only; see plan §4.4).
-//
-// Plan reference: docs/plans/secure-card-fields-plan-2026-08.md §3.4.
+// with no backend session-confirm call.
 
 open Utils
+
+// ── VGS Collect.js bindings ───────────────────────────────────────────────
+// The broker carries the VGSCollect form and field handles as opaque `JSON.t`
+// (the shape `PaymentMethodsSessionGroup` consumes), so the VGSCollect methods
+// it needs are bound on that carrier rather than on the typed `VGSTypes`
+// records — those are shaped for the React path, whose `field` / `submit` /
+// `update` signatures differ from the ones this surface needs.
+type vgsCollectGlobal = {create: (string, string, JSON.t => unit) => JSON.t}
+@val @scope("window") external vgsCollect: Nullable.t<vgsCollectGlobal> = "VGSCollect"
+
+@send external formField: (JSON.t, string, JSON.t) => JSON.t = "field"
+@send
+external formSubmit: (
+  JSON.t,
+  string,
+  JSON.t,
+  (int, JSON.t) => unit,
+  (int, JSON.t) => unit,
+) => unit = "submit"
+@send external fieldOn: (JSON.t, string, JSON.t => unit) => unit = "on"
+@send external fieldUpdate: (JSON.t, JSON.t) => unit = "update"
+@send external fieldDelete: JSON.t => unit = "delete"
+// Presence probes for the two optional field-handle methods. The call itself
+// still goes through the `@send` bindings above so `this` stays bound to the
+// handle; these only answer "does this VGSCollect build expose it?".
+@get external fieldUpdateHandler: JSON.t => Nullable.t<JSON.t => unit> = "update"
+@get external fieldDeleteHandler: JSON.t => Nullable.t<unit => unit> = "delete"
+
+// ── DOM bindings not covered by `Window` ──────────────────────────────────
+// `Window.addEventListener` is `@scope("window")` and takes no options record,
+// so we need an element-scoped one that can pass `{once: true}`.
+type eventListenerOptions = {once: bool}
+@send
+external addElementEventListener: (Dom.element, string, 'ev => unit, eventListenerOptions) => unit =
+  "addEventListener"
+@send
+external elementQuerySelector: (Dom.element, string) => Nullable.t<Dom.element> = "querySelector"
+@send external setStyleProperty: (Window.style, string, string) => unit = "setProperty"
+@send
+external setStylePropertyImportant: (Window.style, string, string, string) => unit = "setProperty"
+
+type mutationObserver
+type mutationObserverInit = {childList: bool, subtree: bool}
+@new
+external makeMutationObserver: ((JSON.t, mutationObserver) => unit) => mutationObserver =
+  "MutationObserver"
+@send
+external observeMutations: (mutationObserver, Dom.element, mutationObserverInit) => unit = "observe"
+@send external disconnectObserver: mutationObserver => unit = "disconnect"
+
+// ── Failure helpers ───────────────────────────────────────────────────────
+// Mount failures reject with a JS `Error` that also carries `code` and the
+// whole `{code, message}` envelope as own properties, so a caller inspecting
+// the rejection gets structured data instead of only a message string.
+@set external setErrorCode: (Error.t, string) => unit = "code"
+@set external setErrorEnvelope: (Error.t, JSON.t) => unit = "envelope"
+
+let makeBrokerError = (~code: string, ~message: string): exn => {
+  let envelope = Dict.make()
+  envelope->Dict.set("code", code->JSON.Encode.string)
+  envelope->Dict.set("message", message->JSON.Encode.string)
+  let error = Error.make(message)
+  error->setErrorCode(code)
+  error->setErrorEnvelope(envelope->JSON.Encode.object)
+  error->Error.toException
+}
+
+// Best-effort message for a caught exception. A JS `Error` does not expose
+// `.message` through `JSON.stringify`, so read it off the exception directly
+// — same idiom as `Utils.formatException`.
+let exceptionMessage = (exn: exn): string =>
+  exn
+  ->JsExn.fromException
+  ->Option.flatMap(JsExn.message)
+  ->getNonEmptyOption
+  ->Option.getOr("unknown")
 
 // ── Script-load state discriminant ────────────────────────────────────────
 // Per-broker lifecycle; `Loading` is entered exactly once per page (the
@@ -45,11 +119,9 @@ type scriptState =
 
 // ── Per-field mount state ─────────────────────────────────────────────────
 // Keyed by a per-mount `fieldId`. The opaque `fieldHandle` slot is what
-// `form.field(selector, options)` returned — Task B needs it to invoke
-// `field.update(...)`, `field.on(...)`, and (via %raw) `field.delete()` for
-// the unmount path. Storing the handle as `JSON.t` (rather than a typed
-// `VGSTypes.field`) lets us forward VGS-specific methods through `%raw`
-// without lifting the Broker into the typed VGSTypes surface.
+// `form.field(selector, options)` returned. It stays a `JSON.t` because the
+// VGSCollect field surface the broker drives (`on` / `update` / `delete`) is
+// wider than the typed `VGSTypes.field` record the React path uses.
 type fieldEntry = {
   fieldType: string,
   selector: string,
@@ -62,8 +134,7 @@ type fieldEntry = {
 // instance. All refs are per-broker, never module-level. The group only
 // needs `mountField` / `updateField` / `unmountField` / `submitForm` /
 // `unmountAll`; `formRef`, `scriptStateRef`, `fieldsRef`, and `ensureReady`
-// are exposed so the group can introspect broker state on its confirm paths
-// and so Task C hardening doesn't reshape the record again.
+// are exposed so the group can introspect broker state on its confirm paths.
 type vgsBrokerHandle = {
   formRef: ref<option<JSON.t>>,
   scriptStateRef: ref<scriptState>,
@@ -152,29 +223,29 @@ let loadVGSScript = (): Promise.t<unit> => {
           // Prior attempt errored; clean up the marker so a retry re-appends.
           existing->Window.remove
           inFlightScriptPromise := None
-          reject(%raw(`new Error("vgs-collect previously failed to load")`))
+          reject(Error.make("vgs-collect previously failed to load")->Error.toException)
         | _ =>
           // Mid-flight (another broker/page already attached handlers):
           // attach a resolvable listener via addEventListener so we don't
           // clobber their `@set elementOnload`. The listener removes
           // itself via `{once: true}` so the handler table stays clean.
-          // `%raw` because `Window.addEventListener` is scoped @window and
-          // doesn't accept an options record typed for `once`.
-          %raw(`(function(el, onload, onerror) {
-            el.addEventListener("load", onload, { once: true });
-            el.addEventListener("error", onerror, { once: true });
-          })`)(
-            existing,
-            () => {
+          existing->addElementEventListener(
+            "load",
+            _ => {
               existing->Window.setAttribute(scriptMarkerAttribute, "loaded")
               resolve()
             },
-            err => {
+            {once: true},
+          )
+          existing->addElementEventListener(
+            "error",
+            (err: exn) => {
               existing->Window.setAttribute(scriptMarkerAttribute, "error")
               existing->Window.remove
               inFlightScriptPromise := None
               reject(err)
             },
+            {once: true},
           )
         }
       | None =>
@@ -215,18 +286,18 @@ let loadVGSScript = (): Promise.t<unit> => {
 // those builders are pure functions returning plain records, which the
 // ReScript compiler already lowers to JS objects the VGSCollect runtime
 // can consume directly (no JSON.stringify required). We still run them
-// through `Identity.anyTypeToJson` so the broker only ever hands `%raw`
-// JS a `JSON.t` — keeps the binding monomorphic.
+// through `Identity.anyTypeToJson` so every option bag the broker hands to
+// VGSCollect is the same `JSON.t` — keeps the bindings monomorphic.
 //
 // Card-expiry placeholder comes from `options.placeholder` (merchant
 // override) falling back to "MM / YY" — matches the React path which uses
 // `localeString.expiryPlaceholder` (default EN is "MM / YY"). Brokers don't
 // carry locale context, so merchants that want a localized placeholder pass
-// it explicitly via `options.placeholder` (Task F may wire localeString).
+// it explicitly via `options.placeholder`.
 //
 // CVC validation branching (3-digit default vs 4-digit amex) is computed
-// inside `VGSConstants.savedCardCvcValidations` (VGSConstants.res:47-59)
-// — the broker just branches on the presence of `options.savedCard.brand`.
+// inside `VGSConstants.savedCardCvcValidations` — the broker just branches
+// on the presence of `options.savedCard.brand`.
 let computeVGSBaseOptions = (~fieldType: string, ~options: JSON.t): JSON.t => {
   let optionsDict = options->getDictFromJson
   switch fieldType {
@@ -241,7 +312,8 @@ let computeVGSBaseOptions = (~fieldType: string, ~options: JSON.t): JSON.t => {
     let savedCardBrand = savedCardDict->getString("brand", "")
     if savedCardBrand->String.length > 0 {
       // savedCard.brand present → amex & co. get their brand-specific
-      // 3-vs-4 digit CVC validations; see VGSConstants.res:47-59.
+      // 3-vs-4 digit CVC validations; see
+      // `VGSConstants.savedCardCvcValidations`.
       // Merchants supply the lowercase scheme string ("amex", "visa"), but
       // getobjFromCardPattern keys on the issuer display name
       // ("AmericanExpress", "Visa"). Normalize through the SAME helper the
@@ -270,12 +342,12 @@ let computeVGSBaseOptions = (~fieldType: string, ~options: JSON.t): JSON.t => {
 //     response echoes back, and `VGSHelpers.getTokenizedData` reads exactly
 //     "card_number" / "card_exp" / "card_cvc" from it — merchant renaming
 //     would silently break tokenization mapping.
-//   - "validations": merchant-supplied validations need a replace-vs-merge
-//     decision at the plan level (replacing would silently drop "required"
-//     and the saved-card brand-length regexes). Plan-doc follow-up.
+//   - "validations": a merchant-supplied set would need a replace-vs-merge
+//     decision first — replacing would silently drop "required" and the
+//     saved-card brand-length regexes.
 //   - "serializers": rewrites the submitted alias value shape (e.g. strip
 //     spaces); interacts with the "MM / YY" expiry split in
-//     `VGSHelpers.getTokenizedData`. Plan-doc follow-up.
+//     `VGSHelpers.getTokenizedData`.
 let merchantOverridableStringKeys = [
   "placeholder",
   "successColor",
@@ -327,23 +399,21 @@ let computeFieldOptions = (~fieldType: string, ~options: JSON.t): JSON.t => {
   applyMerchantOptionOverrides(~basis, ~options)
 }
 
-// ── Update-path merchant-option filter (F7) ─────────────────────────────────
+// ── Update-path merchant-option filter ────────────────────────────────────
 // `mountField` runs merchant opts through `applyMerchantOptionOverrides`,
-// which enforces the §8.18 frozen-option exclusions (merchant may NEVER set
-// `type` / `name` / `validations` / `serializers` on this surface).
-// `updateField` must honor the SAME exclusions — previously it forwarded the
-// merchant bag RAW into VGSCollect's `field.update(opts)`, bypassing them.
-// Two sets therefore intersect here:
+// which enforces the frozen-option exclusions listed above (a merchant may
+// NEVER set `type` / `name` / `validations` / `serializers` on this surface).
+// `updateField` must honor the SAME exclusions, so two sets intersect here:
 //   1. VGSCollect's `field.update` honors ONLY: validations, placeholder,
 //      ariaLabel, options, css, hideValue, autoComplete, disabled, readOnly,
 //      showCardIcon (anything else is dropped by VGS at best).
-//   2. Our mount-time merchant allowlist (§8.18): placeholder, successColor,
+//   2. Our mount-time merchant allowlist: placeholder, successColor,
 //      errorColor, ariaLabel, autoComplete, inputMode, defaultValue,
 //      showCardIcon, disabled, readOnly, hideValue, yearLength, css.
 // INTERSECTION (forwarded): placeholder, ariaLabel, autoComplete, css,
 // hideValue, disabled, readOnly, showCardIcon.
-//   - `validations` / `options` sit on VGS's list but NOT ours (§8.18 freezes
-//     `validations`; `options` was never merchant-exposed), so they stay out.
+//   - `validations` / `options` sit on VGS's list but NOT ours (`validations`
+//     is frozen; `options` was never merchant-exposed), so they stay out.
 //   - Our mount-only keys (successColor, errorColor, inputMode, defaultValue,
 //     yearLength) are post-create no-ops to VGS — filtered here rather than
 //     forwarded silently.
@@ -370,34 +440,27 @@ let filterFieldUpdateOptions = (~options: JSON.t): JSON.t => {
   filtered->JSON.Encode.object
 }
 
-// ── Field-event payload (locked plan §4.3 shape) ───────────────────────────
+// ── Field-event payload ───────────────────────────────────────────────────
 // VGS Collect emits per-event state payloads shaped
 //   {name, isEmpty, isValid, isFocused, error?, cardBrand?, cardType?, ...}
-// We normalize into the locked plan §4.3 merchant-facing envelope — the SAME
-// shape the Hyperswitch-field `change` channel emits via
+// We normalize into the merchant-facing envelope — the SAME shape the
+// Hyperswitch-field `change` channel emits via
 // `CardFormShared.reshapeCardStateUpdateToChangePayload`:
 //   {empty, complete, valid, error?, brand?, elementType}
 //   - empty       ← state.isEmpty
 //   - valid       ← state.isValid
 //   - complete    ← computed (!empty && valid) — VGS state carries no
-//                   `complete` key; this mirrors §4.3's status-table semantic
-//                   ("complete = isValid AND value is non-empty").
+//                   `complete` key, and the merchant-facing contract defines
+//                   complete as "isValid AND value is non-empty".
 //   - error?      ← present ONLY when the state carries a non-empty `error`
 //   - brand?      ← present when detectable: VGS card-number change states
 //                   may carry `cardBrand` (preferred) or `cardType`
 //                   (fallback); forwarded unnormalized, parity with the
 //                   canonical reshaper's raw `cardBrand` pass-through.
 //   - elementType ← the public field-type string ("cardNumber" | ...).
-// F6 fix — the pre-normalization envelope (`{fieldType, fieldId, isEmpty,
-// isValid, error}`) was retired: listeners register on the field HANDLE, so
-// `fieldId`/`fieldType` keys were redundant, and `isEmpty`/`isValid`/
-// always-present-`error` deviated from the locked contract. This single
-// builder serves ALL four merchant-visible field events on this surface
-// (ready/change/focus/blur) so the envelope vocabulary stays uniform.
-let buildFieldEventPayload = (
-  ~fieldType: string,
-  ~state: JSON.t,
-): JSON.t => {
+// This single builder serves ALL four merchant-visible field events on this
+// surface (ready/change/focus/blur) so the envelope vocabulary stays uniform.
+let buildFieldEventPayload = (~fieldType: string, ~state: JSON.t): JSON.t => {
   let stateDict = state->getDictFromJson
   let empty = stateDict->getBool("isEmpty", true)
   let valid = stateDict->getBool("isValid", false)
@@ -441,8 +504,8 @@ let dispatchFieldEvent = (
 
 // ── Broker factory ────────────────────────────────────────────────────────
 // One per pmSession. `eventCallbacksRef` is the group's `on()` registry —
-// passed in so Task B/C's mount/submit paths can fan state out to merchant
-// listeners without registering a second callback pool.
+// passed in so the mount/submit paths can fan state out to merchant listeners
+// without registering a second callback pool.
 let make = (
   ~pmSessionId: string,
   ~vaultId: string,
@@ -461,9 +524,6 @@ let make = (
 
   // ── Form creation (internal) ──────────────────────────────────────────
   // Calls `window.VGSCollect.create(vaultId, environment, onErrorCallback)`.
-  // VGS's browser-global API is plain JS; we bind via %raw because there is
-  // no typed surface yet — Task B may introduce one as the mount path
-  // hardens.
   let createForm = (): promise<JSON.t> =>
     switch formRef.contents {
     | Some(form) => Promise.resolve(form)
@@ -487,14 +547,11 @@ let make = (
               // `submitForm` (structured propagation lives there).
               Console.error2("[VGSVaultBroker] VGSCollect form-level error", errJson)
             }
-            let form: JSON.t = %raw(`
-              (function(vaultId, environment, onError) {
-                if (typeof window.VGSCollect === "undefined") {
-                  throw new Error("VGSCollect script failed to register window.VGSCollect");
-                }
-                return window.VGSCollect.create(vaultId, environment, onError);
-              })
-            `)(vaultId, environment, onError)
+            let form: JSON.t = switch vgsCollect->Nullable.toOption {
+            | Some(collect) => collect.create(vaultId, environment, onError)
+            | None =>
+              Error.raise(Error.make("VGSCollect script failed to register window.VGSCollect"))
+            }
             formRef := Some(form)
             scriptStateRef := Ready
             Promise.resolve(form)
@@ -509,25 +566,23 @@ let make = (
       }
     }
 
-  //Combined "script is loaded AND form is created" — Task B field mounts
-  // always go through here first so they can assume both exist.
-  let ensureReady = (): promise<unit> =>
-    createForm()->Promise.then(_ => Promise.resolve())
+  // Combined "script is loaded AND form is created" — field mounts always go
+  // through here first so they can assume both exist.
+  let ensureReady = (): promise<unit> => createForm()->Promise.then(_ => Promise.resolve())
 
-  // ── Task C: real submitForm — single vault.submit("/post", …) ─────────
+  // ── submitForm — single vault.submit("/post", …) ──────────────────────
   //
   // Single network round-trip; never rejects — the group maps a resolved
-  // "error" envelope into the guide §4.4 Failure union via
-  // `buildConfirmResult`. Success envelope:
+  // "error" envelope into the public Failure union via `buildConfirmResult`.
+  // Success envelope:
   //   {status:"success", card_number, card_exp_month, card_exp_year, card_cvc}
   // The card_exp_* keys come from reusing `VGSHelpers.getTokenizedData`
   // (VGS only emits a combined `card_exp` alias; we split it here so the
-  // group's Flow A union can expose month/year as separate fields — task
-  // 4c's success shape).
+  // group's Flow A union can expose month/year as separate fields).
   //
   // Error envelope:
   //   {status:"error", error:{code, message, type:"api_error"}}
-  // — matches the guide's §4.4 error shape (tokenization/network failure).
+  // — the public error shape for a tokenization/network failure.
   // `vgs_form_not_ready` is a broker-preflight failure; downstream callers
   // treat it identically to `tokenization_failed` (both emit type=api_error
   // and leave the session Active so a retry can re-submit).
@@ -556,10 +611,14 @@ let make = (
         let onError: (int, JSON.t) => unit = (_status, errors) => {
           // VGS's onError payload is a per-field errors map; we squash to a
           // single string because the group maps everything to
-          // `tokenization_failed` regardless. Fall back to a generic message
-          // if stringify throws (e.g. circular refs).
+          // `tokenization_failed` regardless. VGS hands us whatever JS value
+          // it likes here, so guard the stringify against a non-serializable
+          // (e.g. circular) payload rather than letting it throw back into
+          // VGS and strand the promise.
           let messageStr: string = {
-            let jsonStr: string = %raw(`(function(e) { try { return JSON.stringify(e); } catch(_) { return "unknown"; } })`)(errors)
+            let jsonStr = try errors->JSON.stringify catch {
+            | _ => "unknown"
+            }
             if jsonStr->String.length > 0 {
               jsonStr
             } else {
@@ -577,22 +636,13 @@ let make = (
         }
         let emptyPayload = JSON.Encode.object(Dict.make())
         try {
-          %raw(`(function(form, path, payload, onSuccess, onError) {
-            form.submit(path, payload, onSuccess, onError);
-          })`)(form, "/post", emptyPayload, onSuccess, onError)
+          form->formSubmit("/post", emptyPayload, onSuccess, onError)
         } catch {
         | exn =>
           // Synchronous throw out of form.submit() — e.g. browser extensions
           // blocking the call. Resolve the same error envelope shape so the
           // caller doesn't need two pathways.
-          let messageStr: string = {
-            let literal: string = %raw(`(function(e) { try { return (e && e.message) ? String(e.message) : String(e); } catch (_) { return "unknown"; } })`)(exn)
-            if literal->String.length > 0 {
-              literal
-            } else {
-              "unknown"
-            }
-          }
+          let messageStr = exn->exceptionMessage
           let errorDict = Dict.make()
           errorDict->Dict.set("code", "tokenization_failed"->JSON.Encode.string)
           errorDict->Dict.set("message", messageStr->JSON.Encode.string)
@@ -606,7 +656,7 @@ let make = (
     }
   }
 
-  // ── Task B: real field mounting via form.field(selector, options) ────
+  // ── Field mounting via form.field(selector, options) ──────────────────
   //
   //  1. ensureReady() resolves the script load + form creation handshake.
   //  2. Compute VGS field options per field type (and savedCard.brand for
@@ -637,17 +687,16 @@ let make = (
       | None =>
         // `ensureReady` resolved but formRef is empty — should be
         // unreachable; treat as a hard failure so the caller can log.
-        let errDict = Dict.make()
-        errDict->Dict.set("code", "vgs_form_not_ready"->JSON.Encode.string)
-        errDict->Dict.set(
-          "message",
-          "VGS form not initialized after ensureReady()"->JSON.Encode.string,
+        Promise.reject(
+          makeBrokerError(
+            ~code="vgs_form_not_ready",
+            ~message="VGS form not initialized after ensureReady()",
+          ),
         )
-        Promise.reject(%raw(`(function(e) { var err = new Error(e.message); err.code = e.code; err.envelope = e; return err; })`)(errDict->JSON.Encode.object))
       | Some(form) =>
         let computedOptions = computeFieldOptions(~fieldType, ~options)
 
-        // ── cardFieldHeight sizing (v20 polish) ───────────────────────────
+        // ── cardFieldHeight sizing ────────────────────────────────────────
         // VGS's injected iframe defaults to 150×300px (their stylesheet) and
         // ignores both the merchant's container height AND any css={} we pass
         // via field options (which only styles the INNER <input>). To give
@@ -694,48 +743,31 @@ let make = (
         // above for the contract. We ALSO leave `style.display` alone —
         // merchants own layout; we only own the height default.
         try {
-          %raw(`(function(sel, h) {
-            var el = document.querySelector(sel);
-            if (el && el.style && typeof el.style.setProperty === "function") {
-              el.style.setProperty("height", h);
-              el.style.setProperty("width", "100%");
-            }
-          })`)(selector, cardFieldHeight)
+          Window.querySelector(selector)
+          ->Nullable.toOption
+          ->Option.forEach(el => {
+            let elementStyle = el->Window.style
+            elementStyle->setStyleProperty("height", cardFieldHeight)
+            elementStyle->setStyleProperty("width", "100%")
+          })
         } catch {
         | _ => ()
         }
 
-        // Mount the VGS field. We bind via %raw because the returned field
-        // handle shape varies between VGSCollect versions and we need both
-        // the typed `on/update` surface AND the (untyped) `delete()` method
-        // for unmount. Everything we do through `fieldHandle` flows through
-        // the same opaque JSON.t — no type information is lost at runtime.
+        // Mount the VGS field. The handle stays an opaque `JSON.t` — that is
+        // the carrier `fieldEntry` / `PaymentMethodsSessionGroup` expect, and
+        // the `@send` bindings at the top of this file give us the `on` /
+        // `update` / `delete` methods on it.
         let fieldHandle: JSON.t = try {
-          %raw(`(function(form, sel, opts) { return form.field(sel, opts); })`)(
-            form,
-            selector,
-            computedOptions,
-          )
+          form->formField(selector, computedOptions)
         } catch {
         | exn =>
-          // Best-effort stringify of the upstream error. JS Error objects
-          // don't carry a `.message` via the plain JSON.stringify path —
-          // they need the `String(err)` route — so use that for the message.
-          let upstreamMsg: string = {
-            let literal: string = %raw(`(function(e) { try { return (e && e.message) ? String(e.message) : String(e); } catch (_) { return "unknown"; } })`)(exn)
-            if literal->String.length > 0 {
-              literal
-            } else {
-              "unknown"
-            }
-          }
-          let errDict = Dict.make()
-          errDict->Dict.set("code", "vgs_mount_failed"->JSON.Encode.string)
-          errDict->Dict.set(
-            "message",
-            `form.field("${selector}") threw: ${upstreamMsg}`->JSON.Encode.string,
+          throw(
+            makeBrokerError(
+              ~code="vgs_mount_failed",
+              ~message=`form.field("${selector}") threw: ${exn->exceptionMessage}`,
+            ),
           )
-          %raw(`(function(e) { var err = new Error(e.message); err.code = e.code; err.envelope = e; throw err; })`)(errDict->JSON.Encode.object)
         }
 
         // Step 2: force the injected VGS <iframe> to fill its container.
@@ -757,40 +789,49 @@ let make = (
         // styling OR after 5s — whichever comes first — so we never leak
         // an observer on a failed mount.
         try {
-          %raw(`(function(sel) {
-            var container = document.querySelector(sel);
-            if (!container) return;
-            function styleIframe() {
-              var iframe = container.querySelector("iframe");
-              if (iframe && iframe.style) {
-                iframe.style.setProperty("width", "100%", "important");
-                iframe.style.setProperty("height", "100%", "important");
-                iframe.style.setProperty("display", "block", "important");
-                return true;
+          switch Window.querySelector(selector)->Nullable.toOption {
+          | None => ()
+          | Some(container) =>
+            let styleIframe = (): bool =>
+              switch container->elementQuerySelector("iframe")->Nullable.toOption {
+              | Some(iframe) =>
+                let iframeStyle = iframe->Window.style
+                iframeStyle->setStylePropertyImportant("width", "100%", "important")
+                iframeStyle->setStylePropertyImportant("height", "100%", "important")
+                iframeStyle->setStylePropertyImportant("display", "block", "important")
+                true
+              | None => false
               }
-              return false;
-            }
+
             // First-pass: may hit sync injection.
-            if (styleIframe()) return;
-            // Async fallback: watch for the iframe append, then style it.
-            var observer = new MutationObserver(function() {
-              if (styleIframe()) observer.disconnect();
-            });
-            observer.observe(container, { childList: true, subtree: false });
-            setTimeout(function() { observer.disconnect(); }, 5000);
-          })`)(selector)
+            if !styleIframe() {
+              // Async fallback: watch for the iframe append, then style it.
+              // The observer is handed to its own callback as the second
+              // argument, so it can disconnect itself.
+              let observer = makeMutationObserver((_mutations, observer) =>
+                if styleIframe() {
+                  observer->disconnectObserver
+                }
+              )
+              observer->observeMutations(container, {childList: true, subtree: false})
+              let _ = setTimeout(() => observer->disconnectObserver, 5000)
+            }
+          }
         } catch {
         | _ => ()
         }
 
         // Bookkeeping: store the handle + mount metadata. This replaces any
         // prior entry under the same fieldId (remount flow).
-        fieldsRef.contents->Dict.set(fieldId, {fieldType, selector, options, fieldHandle: Some(fieldHandle)})
+        fieldsRef.contents->Dict.set(
+          fieldId,
+          {fieldType, selector, options, fieldHandle: Some(fieldHandle)},
+        )
 
         // Wire per-field event dispatchers. VGS emits a state-shaped JSON
-        // per event; we reshape into the locked §4.3 merchant-facing
-        // envelope (`buildFieldEventPayload`) before invoking merchant
-        // listeners. Registration errors here log-and-continue —
+        // per event; we reshape into the merchant-facing envelope
+        // (`buildFieldEventPayload`) before invoking merchant listeners.
+        // Registration errors here log-and-continue —
         // the field is already mounted; one missing listener shouldn't
         // poison the rest of the wire-up.
         let wireEvent = (event: string): unit => {
@@ -799,7 +840,7 @@ let make = (
               let payload = buildFieldEventPayload(~fieldType, ~state)
               dispatchFieldEvent(~eventCallbacksRef, ~fieldId, ~event, ~payload)
             }
-            %raw(`(function(field, ev, cb) { field.on(ev, cb); })`)(fieldHandle, event, cb)
+            fieldHandle->fieldOn(event, cb)
           } catch {
           | exn =>
             Console.error2(
@@ -828,19 +869,22 @@ let make = (
   // Forward a VGS `field.update(opts)` call to the mounted field. Used by
   // the group's `fieldHandle.update(options)` to let merchants flip
   // allowlisted knobs (placeholder / ariaLabel / css / disabled / ...) mid-
-  // flight — never the §8.18-frozen structural keys. Silent no-op when the
-  // fieldId is unknown or the field hasn't mounted yet.
+  // flight — never the frozen structural keys. Silent no-op when the fieldId
+  // is unknown or the field hasn't mounted yet.
   let updateField = (~fieldId: string, ~options: JSON.t): unit => {
     switch fieldsRef.contents->Dict.get(fieldId) {
     | Some({fieldHandle: Some(fh)}) =>
       try {
-        // F7 fix — route merchant opts through the §8.18 ⇄ VGS-update
+        // Route merchant opts through the frozen-option ⇄ VGS-update
         // intersection (`filterFieldUpdateOptions` above) instead of the raw
         // bag: a raw `type`/`name`/`validations`/`serializers` key would
         // reach VGSCollect unfiltered, bypassing the exclusions the mount
         // path enforces via `applyMerchantOptionOverrides`.
         let filteredOptions = filterFieldUpdateOptions(~options)
-        %raw(`(function(field, opts) { if (typeof field.update === "function") { field.update(opts); } })`)(fh, filteredOptions)
+        switch fh->fieldUpdateHandler->Nullable.toOption {
+        | Some(_) => fh->fieldUpdate(filteredOptions)
+        | None => ()
+        }
       } catch {
       | exn =>
         Console.error2(
@@ -862,20 +906,22 @@ let make = (
     switch fieldsRef.contents->Dict.get(fieldId) {
     | Some({fieldHandle: Some(fh), selector}) =>
       try {
-        let deleted: bool = %raw(`(function(field) {
-          if (field && typeof field.delete === "function") {
-            try { field.delete(); return true; } catch (e) { return false; }
+        let deleted = switch fh->fieldDeleteHandler->Nullable.toOption {
+        | Some(_) =>
+          try {
+            fh->fieldDelete
+            true
+          } catch {
+          | _ => false
           }
-          return false;
-        })`)(fh)
+        | None => false
+        }
         if !deleted {
           // Fallback: clear the container's innerHTML. This kills the VGS
-          // iframe without needing a typed binding to `field.delete()`.
-          let _ = %raw(`(function(sel) {
-            var el = document.querySelector(sel);
-            if (el) { el.innerHTML = ""; return true; }
-            return false;
-          })`)(selector)
+          // iframe on builds whose field handle has no `delete()`.
+          Window.querySelector(selector)
+          ->Nullable.toOption
+          ->Option.forEach(el => el->Window.innerHTML(""))
         }
       } catch {
       | exn =>
@@ -884,12 +930,15 @@ let make = (
           exn->Identity.anyTypeToJson,
         )
       }
-      fieldsRef.contents->Dict.set(fieldId, {
-        fieldType: "",
-        selector: "",
-        options: JSON.Encode.null,
-        fieldHandle: None,
-      })
+      fieldsRef.contents->Dict.set(
+        fieldId,
+        {
+          fieldType: "",
+          selector: "",
+          options: JSON.Encode.null,
+          fieldHandle: None,
+        },
+      )
     | _ => ()
     }
   }
@@ -907,5 +956,15 @@ let make = (
     fieldsRef := Dict.make()
   }
 
-  {formRef, scriptStateRef, fieldsRef, ensureReady, submitForm, mountField, updateField, unmountField, unmountAll}
+  {
+    formRef,
+    scriptStateRef,
+    fieldsRef,
+    ensureReady,
+    submitForm,
+    mountField,
+    updateField,
+    unmountField,
+    unmountAll,
+  }
 }

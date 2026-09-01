@@ -3,7 +3,7 @@ open VGSTypes
 // Pinned VGS Collect.js version — must stay in sync with the script src + integrity
 // hash below, and with the CSP allow-list in webpack.common.js.
 //
-// RELEASE CHECKLIST (Phase 1b Task E): when bumping `vgsScriptURL`, ALWAYS
+// RELEASE CHECKLIST: when bumping `vgsScriptURL`, ALWAYS
 // regenerate `vgsScriptIntegrity` from the new payload. One-liner:
 //   curl -s <NEW_URL> | openssl dgst -sha384 -binary | openssl base64 -A
 // SRI is enforced on both load paths (iframe `useScript` hook in VGSVault.res

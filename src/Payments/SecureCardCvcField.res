@@ -1,6 +1,6 @@
-// Phase 1a Task 3: standalone card-CVC field for the VaultSDK surface.
+// Standalone card-CVC field for the VaultSDK surface.
 //
-// Rendered inside the per-field iframe (v18 URL: `componentName=paymentMethodsSDK&fieldName=cardCvc&surfaceFamily=vault`).
+// Rendered inside the per-field iframe (URL: `componentName=paymentMethodsSDK&fieldName=cardCvc&surfaceFamily=vault`).
 // Reads the merchant-supplied `savedCard.brand` from the Jotai `savedCardBrand`
 // atom (populated by `LoaderController` from the `paymentElementCreate` mount
 // message in `PaymentMethodsSessionGroup`). This drives 3-vs-4 digit CVC
@@ -8,10 +8,9 @@
 // `fieldHandle.update({savedCard: {brand: "amex"}})` and the group posts an
 // updated `savedCardBrand` into this iframe; no remount required.
 //
-// MessageChannel Card Relay: PURE EMITTER — the confirm owns in the hidden
-// `cardFormCoordinator` iframe; this shell no longer runs the
-// `update-saved-payment-method` POST nor responds to the retired
-// `initiate-confirm-cvc` trigger.
+// MessageChannel Card Relay: PURE EMITTER — the hidden `cardFormCoordinator`
+// iframe owns the confirm; this shell never runs the
+// `update-saved-payment-method` POST itself.
 open Utils
 open JotaiAtoms
 
@@ -21,7 +20,7 @@ let make = () => {
   let savedCardBrand = Jotai.useAtomValue(savedCardBrand)
   let keys = Jotai.useAtomValue(keys)
 
-  // v20 Chunk 2 follow-up — brand-aware CVC maxLength. The outer group
+  // Brand-aware CVC maxLength. The outer group
   // (PaymentMethodsSessionGroup) detects the live card brand from the
   // cardNumber iframe's `cardStateUpdate` stream and posts
   // `[("detectedCardBrand", "<normalized-brand>")]` into this iframe on

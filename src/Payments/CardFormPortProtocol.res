@@ -1,5 +1,4 @@
-// CardFormPortProtocol — the MessageChannel Card Relay wire format
-// (docs/messagechannel-architecture-pitch.md).
+// CardFormPortProtocol — the MessageChannel Card Relay wire format.
 //
 // TWO PLANES, ONE SNAPSHOT SOURCE:
 //
@@ -15,8 +14,7 @@
 //
 // The encoder is the ONLY place the two halves are produced from one field
 // state — both sides of every emit come from one coherent React memo, so the
-// coordinator can never observe a raw/validity skew the group previously
-// avoided by caching.
+// coordinator can never observe a raw/validity skew.
 open Utils
 
 // Bumped whenever frame shape changes. Gate test asserts the integer and the
@@ -100,8 +98,8 @@ let encodeFieldStateUpdate = (snapshot: fieldStateSnapshot): dualPlanePayload =>
 }
 
 // Generic versioned-frame builder for non-state port messages (confirm
-// relay, focus commands, brand relay). P0.2/P0.3 build on this so every port
-// frame shares the {cardFormPortV, kind, payload} envelope.
+// relay, focus commands, brand relay) so every port frame shares the
+// {cardFormPortV, kind, payload} envelope.
 let makePortFrame = (~kind: string, ~payload: JSON.t): JSON.t =>
   [
     (protocolVersionKey, protocolVersion->JSON.Encode.float),
@@ -111,7 +109,7 @@ let makePortFrame = (~kind: string, ~payload: JSON.t): JSON.t =>
   ->Dict.fromArray
   ->JSON.Encode.object
 
-// Consumer-side frame helpers (P0.2+): tolerant decode of the envelope.
+// Consumer-side frame helpers: tolerant decode of the envelope.
 type portFrame = {
   version: float,
   kind: string,

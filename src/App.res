@@ -98,10 +98,9 @@ let make = () => {
       <PaymentMethodsSDK />
     </LoaderController>
   // MessageChannel Card Relay: ONE hidden 0×0 coordinator iframe per CardForm
-  // group. Runs the standard LoaderController handshake; owns confirm
-  // end-to-end for both surface families (see
-  // `docs/messagechannel-architecture-pitch.md`). `surfaceFamily` +
-  // `groupId` ride the URL.
+  // group. Runs the standard LoaderController handshake and owns confirm
+  // end-to-end for both surface families. `surfaceFamily` + `groupId` ride
+  // the URL.
   | "cardFormCoordinator" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
       <CardFormCoordinator />

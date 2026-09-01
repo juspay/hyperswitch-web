@@ -1,5 +1,5 @@
 // SadPortRegistry — per-document registry of MessagePort endpoints for the
-// MessageChannel Card Relay (docs/messagechannel-architecture-pitch.md).
+// MessageChannel Card Relay.
 //
 // Each document that participates in the port plane owns one registry:
 //

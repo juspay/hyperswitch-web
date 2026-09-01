@@ -41,10 +41,9 @@ let paymentOptionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
 // Presence-gated: only written when the key is present on a mount-config /
 // update payload — never reset to default.
 let showCardIcon = Jotai.atom(true)
-// Per-field `placeholder` knobs (VGS vocabulary parity) — one atom per field
-// type, defaults are today's hard-coded render literals. Presence-gated:
-// only written when the key is present; an explicit "" DOES apply (string
-// decode, not the VGS getNonEmptyOption idiom).
+// Per-field `placeholder` knobs — one atom per field type, read by the
+// standalone per-field renderers in `CommonCardFieldHooks`. Presence-gated:
+// only written when the key is present; an explicit "" DOES apply.
 let cardNumberPlaceholder = Jotai.atom("4242 4242 4242 4242")
 let cardExpiryPlaceholder = Jotai.atom("MM / YY")
 let cardCvcPlaceholder = Jotai.atom("123")

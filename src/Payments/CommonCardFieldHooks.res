@@ -1,5 +1,5 @@
-// Shared plumbing for standalone per-field card inputs (Phase 1a vault fields;
-// reused by Phase 2 PaymentsV2 fields). Each `use*Field` hook owns:
+// Shared plumbing for standalone per-field card inputs, on both the vault and
+// payments surfaces. Each `use*Field` hook owns:
 //   1. `useCardForm` mount (formatting, validity, brand detection),
 //   2. `ready` emit once the parent's `iframeId` arrives,
 //   3. a per-field doFocus/doBlur postMessage listener (the shared
@@ -61,27 +61,25 @@ type cardFieldState = {
   cvcProps: CardUtils.cvcProps,
 }
 
-// PR 4: per-field `formStatusChange` aggregated-status emission.
+// Per-field `formStatusChange` aggregated-status emission.
 //
-// The plan §4.3 group-event contract asks the outer group to surface FIVE
-// form-status states per field — `complete | incomplete | invalid | focused |
-// blurred`. The legacy subscription-event pipeline (`SubscriptionEventHooks.
-// useEmitFormStatus` + `PaymentEventData.computeFormStatus`) only carries
-// three (`empty | filling | complete`), and is also gated on the merchant
-// opting into `subscriptionEvents` — neither suits the V2 group's ALWAYS-ON
-// aggregation, nor does it surface invalid/focused/blurred. PR 4 therefore
-// introduces a sibling emission keyed on a NEW postMessage event name
-// (`formStatusChange`) that the outer group's per-field listener merges into
-// its own `on("formStatusChange")` surface.
+// The group-event contract surfaces FIVE form-status states per field —
+// `complete | incomplete | invalid | focused | blurred`. The subscription-event
+// pipeline (`SubscriptionEventHooks.useEmitFormStatus` +
+// `PaymentEventData.computeFormStatus`) carries only three
+// (`empty | filling | complete`) and is gated on the merchant opting into
+// `subscriptionEvents` — neither suits the group's ALWAYS-ON aggregation, nor
+// does it surface invalid/focused/blurred. So this is a sibling emission keyed
+// on its own postMessage event name (`formStatusChange`) that the outer group's
+// per-field listener merges into its `on("formStatusChange")` surface.
 //
-// Status mapping (locked to §4.3 + PR 4 spec):
+// Status mapping:
 //   - "empty" → incomplete  (no user input yet)
 //   - "filling" → incomplete (some input, isValid not yet Some(true))
 //   - "complete" → complete (isValid = Some(true) AND value non-empty)
 //   - invalid → invalid (isValid = Some(false))
 //   - focus/blur transitions surface as "focused" / "blurred" (one-shot)
-// v22 (P2): the status canon moved to `CardFormShared`; aliased + opened
-// below so the 5-state vocabulary above stays the documented FSM and the
+// The status canon lives in `CardFormShared`; aliased + opened below so the
 // constructor matches in `computeFieldFormStatus` keep their bare spelling.
 open CardFormShared
 
@@ -139,13 +137,13 @@ let useCardFieldBase = (
   // relay uses `"initiate-confirm-cvc"` (see PaymentMethodsSessionGroup).
   ~confirmTriggerKey="initiate-confirm",
   ~cardBrandOverride="",
-  // MessageChannel Card Relay (P0.3): when true, this field's FULL state
+  // MessageChannel Card Relay: when true, this field's FULL state
   // snapshot rides its MessageChannel port to the hidden coordinator (raw SAD
   // on the port plane only; the merchant-window plane gets the SPLIT payload
   // from CardFormPortProtocol.encodeFieldStateUpdate). The port side key is
   // derived from the iframe's own `groupId` URL param (embedded by the
-  // mounting group). Bundled collectors never pass this flag — they stay
-  // byte-frozen on the legacy path.
+  // mounting group). Bundled collectors never pass this flag — they stay on
+  // the window-only path.
   ~dualPlane=false,
   (),
 ): cardFieldState => {
@@ -359,11 +357,11 @@ let useCardFieldBase = (
     )
   | _ => (false, true)
   }
-  // v20 Chunk 2 rework — keystroke-level focus-readiness, computed HERE in
-  // the iframe (where the keystrokes land and the timing decision belongs),
-  // not inferred by the group from `fieldStatus.complete` transitions.
+  // Keystroke-level focus-readiness, computed HERE in the iframe (where the
+  // keystrokes land and the timing decision belongs), NOT inferred by the group
+  // from `fieldStatus.complete` transitions.
   //   cardNumber → CardUtils.focusCardValid: brand-aware max length AND Luhn.
-  //                This is the exact semantic the legacy bundled form uses at
+  //                Same semantic the bundled form uses at
   //                CommonCardProps.res:170 to advance card→expiry — one source
   //                of truth, no duplicated heuristics.
   //   cardExpiry → all 4 MMYY digits typed AND the validator is green.
@@ -410,12 +408,12 @@ let useCardFieldBase = (
     ~emitRawCardNumber=true,
     ~emitRawCardExpiry=true,
     ~emitRawCvc=true,
-    // P0.3 `/port plane`: only fields mounted with a groupId in their URL
-    // participate; empty → byte-frozen legacy path.
+    // Port plane: only fields mounted with a groupId in their URL participate;
+    // empty → window-only path.
     ~portKey,
   )
 
-  // ── PR 4: formStatusChange emission ─────────────────────────────────────
+  // ── formStatusChange emission ───────────────────────────────────────────
   // Watch the field's relevant isValid + value and re-emit the aggregated
   // status when either changes. We do NOT key on `complete`/`empty` directly
   // because those are derived from isValid+value — keying on the sources
@@ -512,14 +510,13 @@ let useCardFieldBase = (
 let useCardNumberField = (
   ~logger: HyperLoggerTypes.loggerMake,
   ~onInitiateConfirm: confirmHandlerArgs => unit,
-  // Vault (Phase 1a) defaults to `"initiate-confirm"`; payments-V2 passes
+  // Vault defaults to `"initiate-confirm"`; the payments surface passes
   // `"initiate-payment-confirm"` so the parent group's doSubmit broadcast
-  // triggers this field's confirm relay (Phase 2 PR 3 will wire the actual
-  // `confirmPaymentWrapper` call inside the V2 handler).
+  // triggers this field's confirm relay.
   ~confirmTriggerKey="initiate-confirm",
-  // MessageChannel Card Relay (P0.3): both shells flip this on — raw SAD
-  // rides their per-field port; bundled users (`CardsSDK`, `RawCardCollector`)
-  // keep the default FALSE so their legacy emission stays byte-frozen.
+  // MessageChannel Card Relay: both shells flip this on — raw SAD rides their
+  // per-field port; bundled users (`CardsSDK`, `RawCardCollector`) keep the
+  // default FALSE so their emission stays window-only.
   ~dualPlane=false,
   (),
 ): cardFieldState => {

@@ -1,34 +1,14 @@
-// v22 (P2) — shared canon for the CardForm surfaces. These four bindings were
-// copy-evolved across `PaymentsGroup.res`, `PaymentMethodsSessionGroup.res`,
-// and `CommonCardFieldHooks.res`; they are now owned HERE:
-//
-//   1. `fieldFormStatus` — the per-field lifecycle status union (5 states),
-//      previously declared identically as `fieldFormStatus` in
-//      `CommonCardFieldHooks.res` and `aggregatedStatus` in `PaymentsGroup.res`.
-//   2. `mapFieldTypeToInternalFieldName` — the bare-name allow-list identity
-//      mapping, previously declared identically in both group factories.
-//   3. `nextFieldFor` — the auto-focus progression map, previously declared
-//      identically in both group factories.
-//   4. `reshapeCardStateUpdateToChangePayload` — the locked merchant-facing
-//      `change` payload reshaper, previously declared identically in both
-//      group factories.
-//
-// Consumers ALIAS (`let nextFieldFor = CardFormShared.nextFieldFor`) rather
-// than `open` so the compiled `.bs.js` of BOTH group factories keeps the
-// named exports that tests import directly.
-//
-// Intentionally NOT unified here (consciously duplicated, bound to factory
-// state): the detected-brand warm-up/echo blocks (`lastDetectedBrandRef`),
-// the per-field message listeners (vault `attachReadyListener` vs payments
-// `attachFieldListener` — different flag sets + origin constants), and the
-// vault-only session helpers (`buildConfirmResult`, `detectBrandFromAlias`,
-// `isExpired`/`parseExpiresAtMs`).
+// Shared canon for the CardForm surfaces: the bindings below are owned here
+// and aliased (not `open`ed) by `PaymentsGroup.res`,
+// `PaymentMethodsSessionGroup.res` and `CommonCardFieldHooks.res`, so the
+// compiled `.bs.js` of both group factories keeps them as named exports.
+
 open Utils
 
-// ── Per-field lifecycle status vocabulary (locked, plan §4.3) ─────────────
-// Five states: `focused`/`blurred` are ONE-SHOT transitions that do not
-// change the underlying validity track (complete/incomplete/invalid) — the
-// group never latches them.
+// ── Per-field lifecycle status vocabulary ────────────────────────────────
+// `focused`/`blurred` are ONE-SHOT transitions that do not change the
+// underlying validity track (complete/incomplete/invalid) — the group never
+// latches them.
 type fieldFormStatus =
   | Complete
   | Incomplete
@@ -56,8 +36,8 @@ let fieldFormStatusFromString = (str: string): option<fieldFormStatus> =>
   }
 
 // ── Bare-name allow-list (identity mapping) ───────────────────────────────
-// Both surfaces' merchant vocabulary is the BARE field name (v20); unknown
-// strings fall through to "" and take the invalid-field-type rejection path
+// Both surfaces' merchant vocabulary is the BARE field name; unknown strings
+// fall through to "" and take the invalid-field-type rejection path
 // (`create()` logs `invalid_field_type` + returns the no-op default handle).
 let mapFieldTypeToInternalFieldName = (ft: string): string =>
   switch ft {
@@ -79,17 +59,15 @@ let nextFieldFor = (fieldType: string): option<string> =>
   | _ => None
   }
 
-// ── Plan §4.3 `change`-payload reshaper (locked contract) ─────────────────
+// ── Merchant-facing `change`-payload reshaper ─────────────────────────────
 // Per-field iframes emit a verbose `cardStateUpdate` envelope (`{cardBrand,
 // fieldStatus:{empty,complete,isCardValid,isExpiryValid,isCvcValid,...},
-// cardInfo, ...}`) that the group caches for confirm-relay. Plan §4.3 locks
-// the merchant-facing `change` payload to the slim `{empty, complete, valid,
-// error?, brand?, elementType}` shape — keying on `brand` (camelCase), not
-// `cardBrand`. Reshaping here keeps `CardCollectorBridge`'s emitter
-// unchanged (still serves V1 + co-located surfaces) while giving v18-P2 /
-// payments-surface merchants the locked contract. `brand` is omitted
-// entirely when "", matching the plan's `brand?` optional. `valid` picks
-// the per-field relevant validity flag (cardNumber → isCardValid, etc.).
+// cardInfo, ...}`) that the group caches for confirm-relay. The merchant-facing
+// `change` payload is the slim `{empty, complete, valid, error?, brand?,
+// elementType}` shape — keyed on `brand` (camelCase), not `cardBrand`.
+// Reshaping here keeps `CardCollectorBridge`'s emitter unchanged. `brand` is
+// omitted entirely when "", and `valid` picks the per-field relevant validity
+// flag (cardNumber → isCardValid, etc.).
 let reshapeCardStateUpdateToChangePayload = (
   ~fieldType: string,
   ~stateJson: JSON.t,

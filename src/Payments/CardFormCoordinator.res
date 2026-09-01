@@ -1,10 +1,8 @@
 // CardFormCoordinator — hidden 0×0 hosted iframe that OWNS CardForm confirm
 // end-to-end for BOTH surface families (vault `save`/`update`; payments
-// Flow A `usePaymentIntent`). See `docs/messagechannel-architecture-pitch.md`.
+// Flow A `usePaymentIntent`).
 //
-// THIS VERSION: P0.2-promoted from the P0.0 spike scaffold.
-//
-// Responsibilities (locked):
+// Responsibilities:
 //   1. PORT-PLANE AGGREGATION — per-field MessageChannel ports (installed by
 //      LoaderController from `ev.ports`, see SadPortRegistry) deliver each
 //      field's FULL `cardStateUpdate` snapshot INCLUDING raw SAD. The
@@ -21,20 +19,18 @@
 //      `PaymentHelpersV2.{savePaymentMethod,updatePaymentMethod}` (vault).
 //      Payments Flow A resolution rides the unchanged `submitSuccessful`
 //      broadcast (consumed by Hyper.res:432) — we post NOTHING extra there.
-//      Vault confirmations settle into the §4.4 union via
-//      `buildConfirmResult` (MOVED here in P0.2 from
-//      PaymentMethodsSessionGroup; the group aliases this module) and post
-//      back as `{confirmResult, confirmId, iframeId}`.
+//      Vault confirmations settle into the confirm-result union via
+//      `buildConfirmResult` (owned by this module; the group aliases it) and
+//      post back as `{confirmResult, confirmId, iframeId}`.
 //   5. SETTLE DISCIPLINE — exactly-once, group-wide-mutex, hang backstop,
-//      reusing the `confirmSettleTimeoutMs` vocabulary (8s), mirroring the
-//      vault group's former settle() structure.
-//   6. SPIKE SCAFFOLDING — the `spikeCommand` protocol from P0.0 is retained
-//      for the spike harness + P0.4 dogfood dogfood; it is retired in P1.
+//      reusing the `confirmSettleTimeoutMs` vocabulary (8s).
+//   6. SPIKE SCAFFOLDING — the `spikeCommand` protocol, reachable only from a
+//      harness iframe carrying `spike=1` in its URL.
 //
 // Mount-window discipline: mount-config arrives via the standard
 // LoaderController handshake; clientList/sessions arrive via the group's
-// retargeted posts (LoaderController sets the atoms). Review SF-2 correction:
-// there is NO "gate effect that blocks confirm until Loaded": the vault arm
+// retargeted posts (LoaderController sets the atoms). There is NO
+// "gate effect that blocks confirm until Loaded": the vault arm
 // FAILS FAST when its sessions/credentials are missing, and the payments
 // gate lives inside `usePaymentIntent`'s `switch paymentMethodList`
 // (`PaymentHelpers.res`) — `None` decays to the `confirm_payment_failed`
@@ -44,9 +40,9 @@
 open Utils
 open JotaiAtoms
 
-// ── Move: §4.4 confirm-result union (was PaymentMethodsSessionGroup) ───────
-// Verbatim move so the union contract stays byte-identical. The group module
-// aliases these exports (P0.3) and its tests retarget here (P0.4).
+// ── Confirm-result union ──────────────────────────────────────────────────
+// Owned here (next to the confirm owner); both group modules alias these
+// exports.
 type errorType =
   | ValidationError
   | ApiError
@@ -202,12 +198,11 @@ let buildConfirmResult = (~outcome: confirmOutcome): JSON.t =>
 
 // ── Settle vocabulary ───────────────────────────────────────────────────────
 // Kept IDENTICAL to the groups: 8s round-trip budget, exactly-once settle,
-// hang backstop via setTimeout. (Plan §4.4 / F5.)
+// hang backstop via setTimeout.
 let confirmSettleTimeoutMs = 8000
 
-// Per-group port key shape: "<groupId>:<fieldName>" — the mounter composes
-// these deterministically (CoordinatorMount in P0.3; the spike page for
-// P0.4 dogfood).
+// Per-group port key shape: "<groupId>:<fieldName>" — the mounter
+// (`CoordinatorMount`) composes these deterministically.
 let portKey = (~groupId: string, ~fieldName: string): string => `${groupId}:${fieldName}`
 
 // The coordinator's per-field cache entry: the most recent FULL port-plane
@@ -265,7 +260,8 @@ let make = () => {
     )
   }
 
-  // Masked result post: the §4.4 union — the ONLY thing the group sees.
+  // Masked result post: the confirm-result union — the ONLY thing the group
+  // sees.
   let postConfirmResult = (~confirmId: string, result: JSON.t) => {
     messageParentWindow(
       [
@@ -285,8 +281,7 @@ let make = () => {
   // Aggregate a raw field across the coordinator's own port-plane cache.
   // `pick` selects that field's raw slot from ONE field snapshot; first
   // non-empty wins (the same guard the group's `!== ""` cache-on-change
-  // carries: a stale frozen cache can never blank out a previously good
-  // value).
+  // carries: a stale frozen cache can never blank out a good value).
   let aggregateRawValue = (pick: Dict.t<JSON.t> => string): string => {
     fieldSnapshotsRef.current
     ->Dict.valuesToArray
@@ -310,7 +305,7 @@ let make = () => {
   let aggregatedCvcNumber = () => aggregateRawValue(d => d->getString("rawCvc", ""))
   let aggregatedCardBrand = () => aggregateRawValue(d => d->getString("cardBrand", ""))
 
-  // Validity gate (F1): the port snapshots already carry the tri-state
+  // Validity gate: the port snapshots already carry the tri-state
   // validation status per field (has*ValidationStatus + isXxxValid). A field
   // is CONFIRMED-invalid ONLY when it has a status AND it is false —
   // absent/None status is pristine (first-keystroke race) and must NOT
@@ -395,7 +390,7 @@ let make = () => {
     None
   }, (registryVersion, groupId))
 
-  // ── Command channel: spike commands (retire P1) + initiateConfirm ────────
+  // ── Command channel: spike commands + initiateConfirm ────────────────────
   React.useEffect(() => {
     let handleCommand = (ev: Window.event) => {
       if ev.source === iframeParent && (keys.parentURL === "*" || ev.origin === keys.parentURL) {
@@ -472,7 +467,7 @@ let make = () => {
               // broadcast (`PaymentHelpers.intentCall` → `Hyper.res:440`).
               // The coordinator posts the `paymentConfirmAck` /
               // `paymentConfirmFail` pair so the outer group can settle its
-              // F4 mutex — same vocabulary the per-field iframes used.
+              // confirm mutex.
               let cardNumber = aggregatedCardNumber()
               let cardExpiry = aggregatedCardExpiry()
               let cvcNumber = aggregatedCvcNumber()
@@ -528,8 +523,7 @@ let make = () => {
                     ~targetOrigin=keys.parentURL,
                   )
                 } else {
-                  // Flow B — saved-card CVC recollect (mirrors the retired
-                  // `SecureCardCvcV2Field`'s savedCardBody path):
+                  // Flow B — saved-card CVC recollect via `savedCardBody`:
                   // payment_token + card_token.card_cvc + customer_id from
                   // the clientList's intent_data. `customer_acceptance`
                   // always attached (matches SavedMethods' rule).
@@ -540,7 +534,7 @@ let make = () => {
                     data->getDictFromJson->getDictFromDict("intent_data")->getString("customer_id", "")
                   | _ => ""
                   }
-                  // F6: GATE the dispatch when the clientList did not carry a
+                  // GATE the dispatch when the clientList did not carry a
                   // customer_id (SemiLoaded / not-Loaded paths) — do NOT
                   // silently drop the customer_id key from the body.
                   if customerId === "" {
@@ -776,8 +770,8 @@ let make = () => {
           }
         }
 
-        // ── Spike-scaffold commands (gated on the harness iframe's spike=1
-        //    URL param — review GLM-N1; retire with P0.0 harness in P1) ────
+        // ── Spike-scaffold commands, gated on the harness iframe's `spike=1`
+        //    URL param ──────────────────────────────────────────────────────
         switch spikeEnabled ? dict->getString("spikeCommand", "") : "" {
         | "" => ()
         | "ping" =>

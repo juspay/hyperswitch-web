@@ -1,8 +1,7 @@
 // CoordinatorMount — the merchant-DOM contract for ONE hidden
-// `cardFormCoordinator` iframe per CardForm group (MessageChannel Card
-// Relay; docs/messagechannel-architecture-pitch.md).
+// `cardFormCoordinator` iframe per CardForm group (MessageChannel Card Relay).
 //
-// DOM contract (locked):
+// DOM contract:
 //   1. The coordinator iframe lives inside an SDK-appended container div
 //      (`#orca-<elementIframeId>-iframeRef-<localSelectorString>`), and is
 //      GEOMETRICALLY hidden via `Utils.makeHiddenIframe`; the inner document
@@ -95,10 +94,9 @@ let withPortMeta = (~mountConfig: JSON.t, ~portKey: string, ~portEpoch: int): JS
   dict->JSON.Encode.object
 }
 
-// Post a field's mount-config WITH its port2 in the transfer list — the
-// field-side hinge of the P0.3 choreography (called at the same sites today's
-// groups call `Window.iframePostMessage(config)` for a fresh field mount
-// config).
+// Post a field's mount-config WITH its port2 in the transfer list. Called at
+// the same sites the groups call `Window.iframePostMessage(config)` for a
+// fresh field mount config.
 let postFieldMountConfigWithPort = (
   ~fieldIframe: Nullable.t<Dom.element>,
   ~mountConfig: JSON.t,
@@ -182,10 +180,10 @@ let makeFullscreenFlows = (
       metadataRef := dict->getJsonObjectFromDict("metadata")
       fullscreenActiveRef := true
       mount.fullscreenSlot->Window.innerHTML("")
-      let parmType = dict->getString("param", "")
+      let paramType = dict->getString("param", "")
       let overlaySrc =
-        parmType !== ""
-          ? `${sdkDomain}/fullscreenIndex.html?fullscreenType=${parmType}`
+        paramType !== ""
+          ? `${sdkDomain}/fullscreenIndex.html?fullscreenType=${paramType}`
           : `${sdkDomain}/fullscreenIndex.html?fullscreenType=fullscreen`
       mount.fullscreenSlot->Utils.makeIframe(overlaySrc)->ignore
     } else if dict->Dict.get("fullscreen")->Option.isSome && !(dict->getBool("fullscreen", true)) {

@@ -125,8 +125,8 @@ const authorizedConnectSources = [
   "https://vgs-collect-keeper.apps.verygood.systems/vgs",
   // VGS edge endpoints — where vault.submit() POSTs (Hyperswitch iframe flow).
   // Covers both {vaultId}.sandbox.verygoodvault.com and {vaultId}.live.verygoodvault.com.
-  // See docs/vgs-csp-requirements.md for the merchant-side CSP split
-  // (direct-injection flow requires merchants to whitelist VGS in their own CSP).
+  // The direct-injection flow runs in the merchant page, so merchants must
+  // whitelist VGS in their own CSP as well.
   "https://*.verygoodvault.com",
   "https://eu.playground.klarnaevt.com",
   extractBaseDSNUrl(process.env.SENTRY_DSN),

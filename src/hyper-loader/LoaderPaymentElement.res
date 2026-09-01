@@ -97,10 +97,9 @@ let make = (
   ~confirmPayment: JSON.t => promise<JSON.t>,
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
-  // MessageChannel Card Relay: group identity rides the URL so the mounted
-  // field can derive its portKey (`<groupId>:<fieldName>`). Default "" omits
-  // the param — v18 URL strings stay bit-identical for existing call sites.
-  ~groupId="",
+  // Group identity rides the URL so the mounted field can derive its portKey
+  // (`<groupId>:<fieldName>`).
+  ~groupId: option<string>=?,
 ) => {
   try {
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
@@ -536,15 +535,13 @@ let make = (
 
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->getClasses("base")
-      // v18 note: per-field iframes (vault + payments-V2) are mounted with
-      // `componentName=paymentMethodsSDK` + a `fieldName` URL param. The
+      // Per-field iframes (both surface families) are mounted with
+      // `componentName=paymentMethodsSDK` + a `fieldName` URL param; the
       // bundled `paymentMethodsSDK` surface has `fieldName=None`. Per-field
-      // iframes use `appearance.variables.cardFieldHeight` for their initial
-      // height (default "48px" via `CardTheme.default`); bundled iframes stay
-      // at `height: 0;` and rely on the dynamic height reporting for visibility.
-      // This replaces the v17 `componentType` discriminant which collapsed
-      // under the unified URL, and the v18 hardcoded `height: 3rem` which
-      // merchants had no knob to override.
+      // iframes take their initial height from
+      // `appearance.variables.cardFieldHeight` (default "48px" via
+      // `CardTheme.default`) so merchants can override it; bundled iframes stay
+      // at `height: 0;` and rely on dynamic height reporting for visibility.
       let cardFieldHeight =
         optionsDict
         ->getDictFromDict("appearance")
@@ -557,30 +554,26 @@ let make = (
       switch oElement->Nullable.toOption {
       | Some(elem) => {
           let iframeElementId = `orca-${elementIframeId}-iframeRef-${localSelectorString}`
-          // v18 unified URL scheme — optional `fieldName` and `surfaceFamily`
-          // params ride alongside `componentName`. Both are URL-encoded
-          // defensively (current values are alphanumeric, but future payment
-          // methods may introduce unicode).
-          let baseIframeSrc = `${sdkDomainUrl}/index.html?componentName=${componentType}`
-          let iframeSrcWithField = switch fieldName {
-          | Some(f) => `${baseIframeSrc}&fieldName=${Js.Global.encodeURIComponent(f)}`
-          | None => baseIframeSrc
-          }
-          let finalIframeSrc = switch surfaceFamily {
-          | Some(sf) => `${iframeSrcWithField}&surfaceFamily=${Js.Global.encodeURIComponent(sf)}`
-          | None => iframeSrcWithField
-          }
-          // MessageChannel Card Relay: appended AFTER surfaceFamily so the
-          // existing v18 URL strings (asserted byte-for-byte by
-          // v18-loader-url.test.js) stay identical when groupId is "".
-          let finalIframeSrc = groupId !== ""
-            ? `${finalIframeSrc}&groupId=${Js.Global.encodeURIComponent(groupId)}`
-            : finalIframeSrc
+          // Optional `fieldName`, `surfaceFamily` and `groupId` params ride
+          // alongside `componentName`. Values are URL-encoded defensively
+          // (current values are alphanumeric, but future payment methods may
+          // introduce unicode). Param order is part of the contract the mounted
+          // field parses back out, so append in this order.
+          let appendParam = (url, key, value) =>
+            switch value {
+            | Some(v) => `${url}&${key}=${encodeURIComponent(v)}`
+            | None => url
+            }
+          let iframeSrc =
+            `${sdkDomainUrl}/index.html?componentName=${componentType}`
+            ->appendParam("fieldName", fieldName)
+            ->appendParam("surfaceFamily", surfaceFamily)
+            ->appendParam("groupId", groupId)
           let iframeDiv = `<div id="orca-${elementIframeWrapperDivId}-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
           ${buildIframeHtmlString(
               ~iframeId=iframeElementId,
-              ~iframeSrc=finalIframeSrc,
+              ~iframeSrc,
               ~additionalStyle=additionalIframeStyle,
             )}
           </div>`

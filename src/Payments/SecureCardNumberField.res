@@ -4,9 +4,8 @@
 // All shared plumbing (form state, ready/change emits, focus/blur listener) lives
 // in `CommonCardFieldHooks.useCardNumberField`.
 //
-// MessageChannel Card Relay: PURE EMITTER — the confirm owns in the hidden
-// `cardFormCoordinator` iframe; this shell no longer runs the tokenisation
-// POST nor responds to the retired `initiate-confirm` trigger.
+// MessageChannel Card Relay: PURE EMITTER — the hidden `cardFormCoordinator`
+// iframe owns the confirm; this shell never runs the tokenisation POST itself.
 open Utils
 open JotaiAtoms
 

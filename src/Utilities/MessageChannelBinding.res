@@ -1,5 +1,5 @@
 // MessageChannelBinding — minimal DOM bindings for the MessageChannel Card
-// Relay (see docs/messagechannel-architecture-pitch.md).
+// Relay.
 //
 // One `MessageChannel` is created per field mount per portEpoch. `port2`
 // rides WITH the field's mount-config message (postMessage transfer); `port1`

@@ -6,7 +6,7 @@
 // message ParentCardComponent forwards. So this component just derives the vault
 // credentials from `sessions` and renders the right payment UI.
 //
-// Phase 2 (v18): surface-family dispatch via URL params. This single component
+// Surface-family dispatch via URL params. This single component
 // serves THREE surfaces, discriminated by the iframe's URL:
 //
 //   componentName=paymentMethodsSDK       → BUNDLED vault card surface (no
@@ -15,10 +15,10 @@
 //                                            on cardCollectionMode /
 //                                            vaultCredentials / cvcOnly.
 //
-//   componentName=paymentMethodsSDK       → VAULT PER-FIELD surface.
-//   &surfaceFamily=vault                    The v17 `componentName=vaultCard*`
-//   &fieldName=cardNumber |                 scheme is retracted. Renders one of
-//             cardExpiry |                  <SecureCard{Number|Expiry|Cvc}Field />.
+//   componentName=paymentMethodsSDK       → VAULT PER-FIELD surface. Renders
+//   &surfaceFamily=vault                    one of
+//   &fieldName=cardNumber |                 <SecureCard{Number|Expiry|Cvc}Field />.
+//             cardExpiry |
 //             cardCvc
 //
 //   componentName=paymentMethodsSDK       → PAYMENTS card surface.
@@ -27,8 +27,8 @@
 //             cardExpiry |                  `.create("cardNumber"|"cardExpiry"
 //             cardCvc                       |"cardCvc")` — bare vocabulary.
 //                                            Renders the SAME shared shells
-//                                            as the vault surface (P1
-//                                            convergence); confirm belongs to
+//                                            as the vault surface; confirm
+//                                            belongs to
 //                                            the hidden `cardFormCoordinator`
 //                                            iframe (MessageChannel Card
 //                                            Relay), not to any per-field
@@ -42,11 +42,10 @@
 // iframe URL), and swallowing it silently would make future regressions
 // undetectable.
 //
-// Single-iframe topology (v18): for the payments CardForm surface, the
-// payments CardForm group (`PaymentsGroup.makeCardForm`) mounts ONE iframe per
-// field via `LoaderPaymentElement.make("paymentMethodsSDK", ...,
-// ~fieldName=Some(<bare>), ~surfaceFamily=Some("payments"))`. The retired V2
-// vocabulary never leaves the merchant-API boundary.
+// Single-iframe topology: for the payments CardForm surface, the payments
+// CardForm group (`PaymentsGroup.makeCardForm`) mounts ONE iframe per field via
+// `LoaderPaymentElement.make("paymentMethodsSDK", ..., ~fieldName=Some(<bare>),
+// ~surfaceFamily=Some("payments"))`.
 
 // Raised when the iframe is mounted with a missing or unknown `surfaceFamily`.
 // Caught by `ErrorBoundary level=ErrorBoundary.Top` in `src/Index.res:13-15`.
@@ -68,7 +67,7 @@ let make = () => {
   let isSavedCardCvcFlow = Jotai.useAtomValue(JotaiAtoms.isSavedCardCvcFlow)
   let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
-  // v18 — URL-param surface dispatch.
+  // URL-param surface dispatch.
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let fieldNameStr = CardUtils.getQueryParamsDictforKey(url.search, "fieldName")
   let surfaceFamilyStr = CardUtils.getQueryParamsDictforKey(url.search, "surfaceFamily")
@@ -129,13 +128,13 @@ let make = () => {
         )
 
       | (PaymentSurfaceFamily.PaymentsFamilyV2, None) =>
-        // Phase 2 bundled payments V2 surface is not yet scoped — no
-        // merchant-facing API manufactures a bundled V2 mount today (every
-        // V2 mount arrives with `fieldName` populated). Loud-warn so any
-        // future regression that reaches this branch is visible in devtools.
+        // A bundled payments surface is not scoped — no merchant-facing API
+        // manufactures a bundled payments mount today (every payments mount
+        // arrives with `fieldName` populated). Loud-warn so any future
+        // regression that reaches this branch is visible in devtools.
         Console.warn(
           "[PaymentMethodsSDK] PaymentsFamilyV2 with no fieldName — " ++
-          "bundled V2 surface is not yet wired. Treat as a bug.",
+          "bundled payments surface is not wired. Treat as a bug.",
         )
         React.null
 

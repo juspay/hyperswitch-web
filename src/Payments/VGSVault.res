@@ -11,10 +11,6 @@ open VGSTypes
 open VGSHelpers
 open VGSConstants
 
-// `vgsScriptIntegrity` is imported from VGSConstants (see src/Utilities/VGSConstants.res)
-// — co-located with `vgsScriptURL` so the two stay in lockstep when the pinned
-// VGS version is bumped.
-
 @react.component
 let make = (~cvcOnly=false) => {
   let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)

@@ -33,42 +33,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  // Per-field knob table (VGS vocabulary parity): each row parses ONLY on
-  // the paymentMethodsSDK surface and only on its own fieldName. Presence-
-  // gated: an ABSENT key leaves the atom untouched (never reset to default);
-  // string rows decode via JSON.Decode.string so an explicit "" DOES apply
-  // (non-string values are a silent no-op); the bool row keeps its lax
-  // getBoolFromJson decode. Renderers (CommonCardFieldHooks / CardSchemeComponent)
-  // read the atoms directly, so an update() that changes a knob re-renders
-  // the mounted field.
   let isPaymentMethodsSDKSurface = componentName == "paymentMethodsSDK"
   let fieldName = CardUtils.getQueryParamsDictforKey(url.search, "fieldName")
-  // Shared decode helper for the string rows: presence-gated + STRICT string
-  // decode — an explicit "" DOES apply; a non-string value is a silent no-op.
-  let applyString = (setter, json) =>
-    switch json->JSON.Decode.string {
-    | Some(value) => setter(_ => value)
-    | None => ()
-    }
-  let perFieldKnobs: array<(string, string, JSON.t => unit)> = [
-    // (optionKey, fieldName it applies to, presence-gated decode + apply)
-    ("showCardIcon", "cardNumber", json => setShowCardIcon(_ => json->getBoolFromJson(true))),
-    ("placeholder", "cardNumber", json => applyString(setCardNumberPlaceholder, json)),
-    ("placeholder", "cardExpiry", json => applyString(setCardExpiryPlaceholder, json)),
-    ("placeholder", "cardCvc", json => applyString(setCardCvcPlaceholder, json)),
-  ]
-  let applyPerFieldKnobs = optionsDict => {
-    if isPaymentMethodsSDKSurface {
-      perFieldKnobs->Array.forEach(((optionKey, rowFieldName, apply)) => {
-        if fieldName == rowFieldName {
-          switch optionsDict->Dict.get(optionKey) {
-          | Some(json) => apply(json)
-          | None => ()
-          }
-        }
-      })
-    }
-  }
 
   let divRef = React.useRef(Nullable.null)
 
@@ -138,6 +104,34 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
     setOptionsJson(_ => optionsDict->JSON.Encode.object)
+
+    // Per-field knobs apply ONLY on the paymentMethodsSDK surface and only for
+    // the field this iframe renders. Presence-gated: an ABSENT key leaves the
+    // atom untouched (never reset to a default), an explicit "" DOES apply, and
+    // a wrongly-typed value is a silent no-op. The field renderers read these
+    // atoms directly, so an update() that changes a knob re-renders the mounted
+    // field.
+    if isPaymentMethodsSDKSurface {
+      let applyString = (key, setter) =>
+        optionsDict
+        ->Dict.get(key)
+        ->Option.flatMap(JSON.Decode.string)
+        ->Option.forEach(value => setter(_ => value))
+      let applyBool = (key, setter) =>
+        optionsDict
+        ->Dict.get(key)
+        ->Option.flatMap(JSON.Decode.bool)
+        ->Option.forEach(value => setter(_ => value))
+      switch fieldName {
+      | "cardNumber" =>
+        applyBool("showCardIcon", setShowCardIcon)
+        applyString("placeholder", setCardNumberPlaceholder)
+      | "cardExpiry" => applyString("placeholder", setCardExpiryPlaceholder)
+      | "cardCvc" => applyString("placeholder", setCardCvcPlaceholder)
+      | _ => ()
+      }
+    }
+
     switch paymentMode->CardThemeType.getPaymentMode {
     | CardNumberElement
     | CardExpiryElement
@@ -305,13 +299,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         // itself (`portKey`); the registry is per-document. Same-epoch
         // re-installs are no-ops; new epochs close the superseded port.
         //
-        // INGESTION GATE (review SF-3): only absorb [port] when the SAME
-        // message carries a handshake-shaped key (`paymentElementCreate` the
-        // group posts to a field; `cardFieldPort` the group posts to the
-        // coordinator). This WHO-window listener otherwise absorbs any port
-        // a same-origin parent frame BLINDS into us — a weaker-but-cheaper
-        // check than an origin comparison, see the residual-trust note in
-        // docs/messagechannel-architecture-pitch.md (threat model).
+        // INGESTION GATE: only absorb [port] when the SAME message carries a
+        // handshake-shaped key (`paymentElementCreate` the group posts to a
+        // field; `cardFieldPort` the group posts to the coordinator). This
+        // window listener would otherwise absorb any port a same-origin parent
+        // frame blinds into us — a weaker-but-cheaper check than an origin
+        // comparison.
         let ports = ev->MessageChannelBinding.eventPorts
         if ports->Array.length > 0 {
           let handshakeShaped =
@@ -441,7 +434,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~latency=renderLatency,
                 ~value="",
               )
-              applyPerFieldKnobs(dict->getDictFromObj("options"))
               updateOptions(dict)
             }
           } else if dict->getDictIsSome("paymentOptions") {
@@ -484,7 +476,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }->ignore
           }
         } else if dict->getDictIsSome("paymentElementsUpdate") {
-          applyPerFieldKnobs(dict->getDictFromObj("options"))
           updateOptions(dict)
         } else if dict->getDictIsSome("ElementsUpdate") {
           logger.setLogInfo(~value="SDK Credentials Received from Loader", ~eventName=UPDATE_SDK)

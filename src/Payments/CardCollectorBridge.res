@@ -16,18 +16,18 @@ let useEmitCardState = (
   ~emitRawCardNumber=false,
   ~emitRawCardExpiry=false,
   ~emitRawCvc=false,
-  // v20 Chunk 2 rework — keystroke-level focus-readiness, computed in the
-  // field's own iframe where the timing decision belongs (brand-aware max
-  // length + Luhn for cardNumber via CardUtils.focusCardValid; all-4-digits
-  // + validity for expiry; maxCVCLength + validity for CVC). Emit-on-true
-  // keeps the envelope slim — consumers default-absent to false. Previously
-  // the group-side inferred "done" from `fieldStatus.complete` transitions,
-  // which fired too early (fires on isXxxValid+non-empty, not max-length+Luhn).
+  // Keystroke-level focus-readiness, computed in the field's own iframe where
+  // the timing decision belongs (brand-aware max length + Luhn for cardNumber
+  // via CardUtils.focusCardValid; all-4-digits + validity for expiry;
+  // maxCVCLength + validity for CVC). Emit-on-true keeps the envelope slim —
+  // consumers default-absent to false. Do NOT infer this group-side from
+  // `fieldStatus.complete`: that fires on isXxxValid+non-empty, not
+  // max-length+Luhn, so it advances focus too early.
   ~focusReady=false,
-  // MessageChannel Card Relay (P0.3): when non-empty, the FULL snapshot
+  // MessageChannel Card Relay: when non-empty, the FULL snapshot
   // (incl. raw SAD) ALSO rides the field's MessageChannel port to the hidden
   // coordinator, while the window plane gets the SPLIT payload (raw keys
-  // stripped). Empty string = the legacy path, byte-frozen. Bundled
+  // stripped). Empty string = the window-only path. Bundled
   // collectors never pass this — their shapes stay unchanged.
   ~portKey="",
 ) => {
@@ -79,7 +79,7 @@ let useEmitCardState = (
         Console.warn(`[CardCollectorBridge] dropped port frame for unregistered portKey "${portKey}"`)
       }
     } else {
-      // ── Legacy single-plane emission (bundled collectors stay byte-frozen) ─
+      // ── Single-plane emission (bundled collectors: window only) ────────────
       // Card-number / expiry / CVC raw values are opt-in: standalone per-field
       // vault iframes enable all three so the outer group can cache them and
       // inject them back into the cardNumber iframe's confirm payload. Bundled

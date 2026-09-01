@@ -4,8 +4,7 @@
 //   - vault:     `componentName=paymentMethodsSDK&fieldName=cardExpiry&surfaceFamily=vault`
 //     (routed from PaymentMethodsSDK.res)
 //   - payments:  `componentName=paymentMethodsSDK&fieldName=cardExpiry&surfaceFamily=payments`
-//     (same `PaymentMethodsSDK.res` route — families share the shell since
-//     P1 convergence)
+//     (same `PaymentMethodsSDK.res` route — both families share this shell)
 //
 // Expiry NEVER owns confirm on either surface: the parent group's confirm
 // relay targets cardNumber (Flow A) or cardCvc (Flow B) only, so this
@@ -13,10 +12,6 @@
 // None — the unit arg closes the optional-args chain) and simply emits
 // `cardStateUpdate` upstream. All shared plumbing (form state, ready/change
 // emits, focus/blur listener) lives in `CommonCardFieldHooks.useCardExpiryField`.
-//
-// (Consolidation note: the vault `SecureCardExpiryField.res` and payments
-// `SecureCardExpiryV2Field.res` shells were byte-identical; merged into this
-// single component during the v22 cleanup.)
 open JotaiAtoms
 
 @react.component
