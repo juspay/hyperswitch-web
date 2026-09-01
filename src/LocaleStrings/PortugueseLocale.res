@@ -268,4 +268,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Mostrar menos",
   refreshingText: "Atualizando...",
   paymentDetailsBeingCheckedText: "Os detalhes do pagamento estão sendo verificados. Por favor, aguarde",
+  eligibleOffersText: "Ofertas elegíveis",
+  checkingEligibleOffersText: "Verificando ofertas elegíveis",
+  cardOfferText: "Oferta de cartão",
+  offerAppliedText: "Aplicada",
 }

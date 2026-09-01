@@ -255,6 +255,10 @@ type localeStrings = {
   showLess: string,
   refreshingText: string,
   paymentDetailsBeingCheckedText: string,
+  eligibleOffersText: string,
+  checkingEligibleOffersText: string,
+  cardOfferText: string,
+  offerAppliedText: string,
 }
 
 type constantStrings = {

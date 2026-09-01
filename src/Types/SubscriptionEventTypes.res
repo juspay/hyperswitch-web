@@ -1,11 +1,12 @@
 open ErrorUtils
 open PaymentEventTypes
 
-let validSubscriptionEvents = ["surchargeInfo"]
+let validSubscriptionEvents = ["surchargeInfo", "appliedOffersInfo"]
 
 let stringToEvent = (str, key) =>
   switch str {
   | "surchargeInfo" => Surcharge
+  | "appliedOffersInfo" => Offers
   | _ => {
       str->unknownPropValueWarning(validSubscriptionEvents, key)
       UnknownEvent
@@ -132,6 +133,42 @@ let createSurchargePayload = (
   [
     ("elementType", "payment"->JSON.Encode.string),
     ("eventName", "surchargeInfo"->JSON.Encode.string),
+    ("payload", payload),
+  ]
+}
+
+let createAppliedOffersPayload = (
+  ~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
+) => {
+  let event = switch offerDetails {
+  | Some(details) =>
+    // Only a single auto-applied offer is expected in `eligible_offers`; emit
+    // just that applied offer to the merchant (as a one-element array) rather
+    // than the full eligible-offers/uplifted-quote-ids lists.
+    let appliedOffers =
+      details.eligibleOffers
+      ->Array.get(0)
+      ->Option.map(offer => [
+        (
+          {
+            offerQuoteId: offer.offerQuoteId,
+            offerAmount: offer.offerAmount,
+            currency: offer.currency,
+            code: offer.code,
+            title: offer.title,
+            description: offer.description,
+          }: PaymentEventData.eligibleOffer
+        ),
+      ])
+      ->Option.getOr([])
+    PaymentEventData.buildOffersEvent(~offers=appliedOffers)
+  | None => PaymentEventData.buildOffersEvent()
+  }
+  let payload = PaymentEventData.offersEventToJson(event)
+
+  [
+    ("elementType", "payment"->JSON.Encode.string),
+    ("eventName", "appliedOffersInfo"->JSON.Encode.string),
     ("payload", payload),
   ]
 }
