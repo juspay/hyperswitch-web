@@ -12,7 +12,7 @@ type eventData = {
   oneClickConfirmTriggered: bool,
 }
 type loaderEvent = {key: string, data: eventData}
-type event = {key: string, data: string, origin: string}
+type event = {key: string, data: string, origin: string, source: Dom.element}
 type date = {now: unit => string}
 type body
 type packageJson = {version: string}
@@ -75,6 +75,8 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @get external fullscreen: window => option<window> = "fullscreen"
 @get external frames: window => {..} = "frames"
 @get external name: window => string = "name"
+@get external framesLength: {..} => int = "length"
+@get_index external frameAt: ({..}, int) => window = ""
 @get external contentWindow: Dom.element => Dom.element = "contentWindow"
 @get external style: Dom.element => style = "style"
 @get external readyState: document => string = "readyState"
@@ -202,13 +204,15 @@ let sendPostMessageJSON = (element, message) => {
   element->postMessageJSON(message, GlobalVars.targetOrigin)
 }
 
-let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
+let iframePostMessage = (
+  iframeRef: nullable<Dom.element>,
+  message,
+  ~targetOrigin=GlobalVars.targetOrigin,
+) => {
   switch iframeRef->Nullable.toOption {
   | Some(ref) =>
     try {
-      ref
-      ->contentWindow
-      ->sendPostMessage(message)
+      ref->contentWindow->postMessage(message->JSON.Encode.object->JSON.stringify, targetOrigin)
     } catch {
     | _ => ()
     }

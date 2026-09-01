@@ -16,7 +16,7 @@ type eventData = {
   confirmTriggered: bool,
   oneClickConfirmTriggered: bool,
 }
-type event = {key: string, data: eventData, source: Dom.element}
+type event = {key: string, data: eventData, origin: string, source: Dom.element}
 type eventParam = Event(event) | EventData(eventData) | Empty
 type eventHandler = option<JSON.t> => unit
 @send external onload: (Dom.element, unit => promise<'a>) => promise<'a> = "onload"
@@ -37,13 +37,14 @@ type paymentElement = {
   focus: unit => unit,
   clear: unit => unit,
   onSDKHandleClick: option<unit => Promise.t<unit>> => unit,
+  confirmPayment: JSON.t => promise<JSON.t>,
 }
 
 type element = {
   getElement: string => option<paymentElement>,
   update: JSON.t => unit,
   fetchUpdates: unit => promise<JSON.t>,
-  create: (string, JSON.t) => paymentElement,
+  create: (JSON.t, Nullable.t<JSON.t>) => paymentElement,
   updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
 }
 
@@ -154,9 +155,10 @@ let defaultPaymentElement = {
   focus: () => (),
   clear: () => (),
   onSDKHandleClick: _fnArgument => (),
+  confirmPayment: _payload => Promise.resolve(Dict.make()->JSON.Encode.object),
 }
 
-let create = (_componentType, _options) => {
+let create = (_options: JSON.t, _options2: Nullable.t<JSON.t>) => {
   defaultPaymentElement
 }
 
@@ -235,6 +237,7 @@ type eventType =
   | PaymentMethodStatus
   | BillingAddress
   | Surcharge
+  | Offers
   | None
 
 let eventTypeMapper = event => {
@@ -249,6 +252,7 @@ let eventTypeMapper = event => {
   | "confirmTriggered" => ConfirmPayment
   | "oneClickConfirmTriggered" => OneClickConfirmPayment
   | "surchargeInfo" => Surcharge
+  | "appliedOffersInfo" => Offers
   | _ => None
   }
 }

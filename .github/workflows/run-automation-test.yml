@@ -42,7 +42,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CONNECTOR_CREDS_AWS_SECRET_ACCESS_KEY }}
           CONNECTOR_AUTH_PASSPHRASE: ${{ secrets.CONNECTOR_AUTH_PASSPHRASE }}
           CONNECTOR_CREDS_S3_BUCKET_URI: ${{ secrets.CONNECTOR_CREDS_S3_BUCKET_URI }}
-          S3_SOURCE_FILE_NAME: "68bba6ea-3c75-440f-9c4b-00a30ecbb79d.json.gpg"
+          S3_SOURCE_FILE_NAME: "f53aa14d-e544-48f1-ac4e-0200f65e0cb6.json.gpg"
         run: |
           mkdir -p cypress-tests
           aws s3 cp "${CONNECTOR_CREDS_S3_BUCKET_URI}/${S3_SOURCE_FILE_NAME}" cypress-tests/creds.json.gpg
@@ -117,7 +117,8 @@ jobs:
 
       - name: Build and start local server
         run: |
-          npm run re:build && npm run start &
+          npm run re:build
+          npm run start &
           echo "Hyperswitch Web started"
           cd Hyperswitch-React-Demo-App && npm run start &
           echo "Demo App started"

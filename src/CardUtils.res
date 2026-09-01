@@ -18,6 +18,7 @@ type cardProps = {
   isCardValid: option<bool>,
   setIsCardValid: (option<bool> => option<bool>) => unit,
   isCardSupported: option<bool>,
+  updateCardSupport: option<bool> => unit,
   cardNumber: string,
   changeCardNumber: JsxEvent.Form.t => unit,
   handleCardBlur: JsxEvent.Focus.t => unit,
@@ -28,7 +29,9 @@ type cardProps = {
   maxCardLength: int,
   cardBrand: string,
   cardEligibilityError: option<string>,
+  updateCardEligibilityError: option<string> => unit,
   eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  eligibilityOfferDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
   isEligibilityPending: bool,
 }
 
@@ -38,6 +41,7 @@ let useDefaultCardProps = () => {
     isCardValid: None,
     setIsCardValid: _ => (),
     isCardSupported: None,
+    updateCardSupport: _ => (),
     cardNumber: "",
     changeCardNumber: _ => (),
     handleCardBlur: _ => (),
@@ -48,7 +52,9 @@ let useDefaultCardProps = () => {
     maxCardLength: 0,
     cardBrand: "",
     cardEligibilityError: None,
+    updateCardEligibilityError: _ => (),
     eligibilitySurchargeDetails: None,
+    eligibilityOfferDetails: None,
     isEligibilityPending: false,
   }
 }
@@ -91,6 +97,7 @@ type cvcProps = {
   onCvcKeyDown: ReactEvent.Keyboard.t => unit,
   cvcError: string,
   setCvcError: (string => string) => unit,
+  maxCVCLength: int,
 }
 
 let useDefaultCvcProps = () => {
@@ -106,6 +113,7 @@ let useDefaultCvcProps = () => {
     onCvcKeyDown: _ => (),
     cvcError: "",
     setCvcError: _ => (),
+    maxCVCLength: CardValidations.getobjFromCardPattern("").maxCVCLength,
   }
 }
 
@@ -207,6 +215,31 @@ let getCardStringFromType = val => {
   | UNIONPAY => "UnionPay"
   | INTERAC => "Interac"
   | NOTFOUND => "NOTFOUND"
+  }
+}
+
+let normalizeCardBrand = brand => {
+  let normalized =
+    brand
+    ->String.toLowerCase
+    ->String.replaceRegExp(%re("/[-_\s]/g"), "")
+  switch normalized {
+  | "visa" => "Visa"
+  | "mastercard" => "Mastercard"
+  | "americanexpress"
+  | "amex" => "AmericanExpress"
+  | "maestro" => "Maestro"
+  | "dinersclub"
+  | "diners" => "DinersClub"
+  | "discover" => "Discover"
+  | "bajaj" => "BAJAJ"
+  | "sodexo" => "SODEXO"
+  | "rupay" => "RuPay"
+  | "jcb" => "JCB"
+  | "cartesbancaires" => "CartesBancaires"
+  | "unionpay" => "UnionPay"
+  | "interac" => "Interac"
+  | _ => brand
   }
 }
 
@@ -554,41 +587,39 @@ let handleInputFocus = (
 }
 
 let getCardElementValue = (iframeId, key) => {
-  let firstIframeVal = if (Window.parent->Window.frames)["0"]->Window.name !== iframeId {
-    switch (Window.parent->Window.frames)["0"]
-    ->Window.document
-    ->Window.getElementById(key)
-    ->Nullable.toOption {
-    | Some(dom) => dom->Window.value
-    | None => ""
+  // Probe every parent frame, not a hardcoded 0-2: any foreign frame (e.g. a wallet payframe)
+  // shifts sibling indices, and touching a cross-origin frame throws - guard and skip it.
+  let frames = Window.parent->Window.frames
+  let framesCount = frames->Window.framesLength
+  let rec probe = index =>
+    if index >= framesCount {
+      ""
+    } else {
+      let probed = try {
+        let frame = frames->Window.frameAt(index)
+        if frame->Window.name !== iframeId {
+          switch frame
+          ->Window.document
+          ->Window.getElementById(key)
+          ->Nullable.toOption {
+          | Some(dom) => dom->Window.value
+          | None => ""
+          }
+        } else {
+          ""
+        }
+      } catch {
+      | exn =>
+        // A cross-origin frame is the expected case here; anything else is worth surfacing.
+        switch exn {
+        | Exn.Error(obj) if obj->Exn.name == Some("SecurityError") => ()
+        | _ => Console.warn2(`Skipped frame ${index->Int.toString} while reading ${key}`, exn)
+        }
+        ""
+      }
+      probed === "" ? probe(index + 1) : probed
     }
-  } else {
-    ""
-  }
-  let secondIframeVal = if (Window.parent->Window.frames)["1"]->Window.name !== iframeId {
-    switch (Window.parent->Window.frames)["1"]
-    ->Window.document
-    ->Window.getElementById(key)
-    ->Nullable.toOption {
-    | Some(dom) => dom->Window.value
-    | None => ""
-    }
-  } else {
-    ""
-  }
-
-  let thirdIframeVal = if (Window.parent->Window.frames)["2"]->Window.name !== iframeId {
-    switch (Window.parent->Window.frames)["2"]
-    ->Window.document
-    ->Window.getElementById(key)
-    ->Nullable.toOption {
-    | Some(dom) => dom->Window.value
-    | None => ""
-    }
-  } else {
-    ""
-  }
-  thirdIframeVal === "" ? secondIframeVal === "" ? firstIframeVal : secondIframeVal : thirdIframeVal
+  probe(0)
 }
 
 let checkCardCVC = (cvcNumber, cardBrand) => {
@@ -736,6 +767,11 @@ let getWalletBrandIcon = (customerMethod: PaymentType.customerMethods) => {
 let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
   switch customerMethod.paymentMethod {
   | "wallet" => getWalletBrandIcon(customerMethod)
+  | "bank_redirect" =>
+    <Icon
+      size=Utils.brandIconSize
+      name={BankLogoResolver.resolveIconName(~bankName=customerMethod.bankRedirect.bankName)}
+    />
   | _ =>
     getCardBrandIcon(
       switch customerMethod.card.scheme {
@@ -773,8 +809,8 @@ let getCardBrandInvalidError = (~cardBrand, ~localeString: LocaleStringTypes.loc
   }
 }
 
-let emitExpiryDate = formattedExpiry =>
-  Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
+let emitExpiryDate = (~targetOrigin="*", formattedExpiry) =>
+  Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)], ~targetOrigin)
 
 let emitIsFormReadyForSubmission = isFormReadyForSubmission =>
   Utils.messageParentWindow([

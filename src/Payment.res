@@ -23,8 +23,22 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     paymentMode->getPaymentMode
   }, [paymentMode])
 
-  let {cardProps, expiryProps, cvcProps, zipProps, blurState} = useCardForm(~logger, ~paymentType)
-  let {isCardValid, setCardError, cardNumber, cardBrand, cardEligibilityError} = cardProps
+  let {cardProps, expiryProps, cvcProps, zipProps, blurState} = useCardForm(
+    ~logger,
+    ~paymentType,
+    // The unified Card flow owns eligibility in ParentCardComponent. Keep the
+    // legacy hook enabled for the standalone card-number/expiry/CVC elements.
+    ~runEligibility=paymentType !== Card,
+  )
+  let {
+    isCardValid,
+    setCardError,
+    cardNumber,
+    cardBrand,
+    cardEligibilityError,
+    eligibilityOfferDetails,
+    isEligibilityPending,
+  } = cardProps
   let {isExpiryValid, setExpiryError, cardExpiry} = expiryProps
   let {isCVCValid, setCvcError, cvcNumber} = cvcProps
   let {isZipValid} = zipProps
@@ -38,14 +52,25 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     switch (isCardValid, isExpiryValid, isCVCValid) {
     | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
       CardUtils.emitIsFormReadyForSubmission(
-        cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+        cardValid && expiryValid && cvcValid && areRequiredFieldsValid && !isEligibilityPending,
       )
     | _ => ()
     }
     None
-  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid))
+  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid, isEligibilityPending))
   let submitAPICall = (body, confirmParam) => {
-    intent(~bodyArr=body, ~confirmParam, ~handleUserError=false, ~manualRetry=isManualRetryEnabled)
+    let offerDetailsBody =
+      eligibilityOfferDetails
+      ->Option.map(offerDetails =>
+        PaymentBody.offerDetailsBody(~offerQuoteIds=offerDetails.offerQuoteIds)
+      )
+      ->Option.getOr([])
+    intent(
+      ~bodyArr=body->Array.concat(offerDetailsBody),
+      ~confirmParam,
+      ~handleUserError=false,
+      ~manualRetry=isManualRetryEnabled,
+    )
   }
 
   let submitValue = (_ev, confirmParam) => {
@@ -54,12 +79,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       isCardValid->Option.getOr(false) &&
       isExpiryValid->Option.getOr(false) &&
       isCVCValid->Option.getOr(false) &&
-      cardEligibilityError->Option.isNone
+      cardEligibilityError->Option.isNone &&
+      !isEligibilityPending
     | CardNumberElement =>
       isCardValid->Option.getOr(false) &&
       checkCardCVC(getCardElementValue(iframeId, "card-cvc"), cardBrand) &&
       checkCardExpiry(getCardElementValue(iframeId, "card-expiry")) &&
-      cardEligibilityError->Option.isNone
+      cardEligibilityError->Option.isNone &&
+      !isEligibilityPending
     | _ => true
     }
     let cardNetwork = [
@@ -109,6 +136,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
         )
         setCardError(_ => msg)
         setUserError(msg)
+      } else if isEligibilityPending {
+        setUserError(localeString.paymentDetailsBeingCheckedText)
       }
       if cardExpiry === "" {
         setExpiryError(_ => localeString.cardExpiryDateEmptyText)
@@ -143,8 +172,24 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     isExpiryValid,
     isCardValid,
     cardEligibilityError,
+    eligibilityOfferDetails,
+    isEligibilityPending,
     sdkAuthorization,
   ))
+
+  React.useEffect(() => {
+    // Only the payment element and cardCvc ever emit `ready`, so confirmPayment's ready-gate
+    // stalled forever for card/cardNumber/cardExpiry mounts - emit for these modes too.
+    switch paymentMode->getPaymentMode {
+    | (Card | CardNumberElement | CardExpiryElement) as mode =>
+      SubscriptionEventHooks.emitReady(
+        ~iframeId,
+        ~elementType=CardThemeType.getPaymentModeToString(mode),
+      )
+    | _ => ()
+    }
+    None
+  }, (iframeId, paymentMode))
 
   if integrateError {
     <ErrorOccured />

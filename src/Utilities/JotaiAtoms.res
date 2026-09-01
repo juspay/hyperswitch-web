@@ -2,6 +2,7 @@ open JotaiAtomTypes
 
 let keys = Jotai.atom(CommonHooks.defaultkeys)
 let configAtom = Jotai.atom(CardTheme.defaultJotaiConfig)
+let isConfigReady = Jotai.atom(false)
 let portalNodes = Jotai.atom(PortalState.defaultDict)
 let elementOptions = Jotai.atom(ElementType.defaultOptions)
 let optionAtom = Jotai.atom(PaymentType.defaultOptions)
@@ -20,8 +21,18 @@ let showPaymentMethodsScreen = Jotai.atom(false)
 // Typed vault credentials decoded from the vaultConfig blob in fullScreenIframeMounted.
 // Set by PaymentMethodsSDK; read by CardsSDK / vault-specific card components.
 let vaultCredentials = Jotai.atom(VaultHelpers.defaultVaultCredentials)
+type cardCollectionMode = Tokenise | RawEmit
+let cardCollectionMode = Jotai.atom(Tokenise)
+let isBancontactCardFlow = Jotai.atom(false)
+let cardFlowType = Jotai.atom(CardThemeType.Payment)
 let phoneJson = Jotai.atom(Loading)
 let cardBrand = Jotai.atom("")
+// The nested card iframe does not load the merchant payment-method list.
+// ParentCardComponent forwards the enabled card networks it already decoded so
+// card support validation and cobadge selection use the same configuration.
+let supportedCardBrands = Jotai.atom((None: option<array<string>>))
+// A saved-card CVC collector has no PAN from which to detect its brand.
+let savedCardBrand = Jotai.atom("")
 let paymentMethodCollectOptionAtom = Jotai.atom(
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
 )
@@ -75,6 +86,7 @@ let isShowOrPayUsing = Jotai.atom(false)
 let isShowOrPayUsingWhileLoading = Jotai.atom(false)
 let areRequiredFieldsValid = Jotai.atom(true)
 let areRequiredFieldsEmpty = Jotai.atom(false)
+let saveDetailsCheckedAtom = Jotai.atom(false)
 let dateOfBirth = Jotai.atom((Nullable.null: Nullable.t<Date.t>))
 let userBillingName = Jotai.atom(defaultFieldValues)
 let userVpaId = Jotai.atom(defaultFieldValues)

@@ -14,7 +14,7 @@ describe("Card Number Validation", () => {
   beforeEach(() => {
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
-    getIframeBody = () => cy.iframe(iframeSelector);
+    getIframeBody = () => cy.paymentElementBody();
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
         cy.visit(getClientURL(clientSecret, publishableKey));
@@ -198,6 +198,74 @@ describe("Card Number Validation", () => {
 
       getIframeBody().get("#submit").click();
       cy.contains("Thanks for your order!").should("be.visible");
+    });
+  });
+
+  describe("CVC Length by Card Brand", () => {
+    it("should size the CVC to 3 for a Visa", () => {
+      const { cardNo } = stripeCards.successCard;
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+        .type(cardNo);
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .should("have.attr", "maxlength", "3");
+    });
+
+    it("should size the CVC to 4 for an American Express", () => {
+      const { cardNo } = stripeCards.amexCard15;
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+        .type(cardNo);
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .should("have.attr", "maxlength", "4");
+    });
+  });
+
+  describe("CVC Validity Styling", () => {
+    // A field is marked invalid on blur and unmarked while focused, uniformly across the
+    // SDK. The second case matters because the expiry auto-advances into the CVC: focus
+    // must still land there, and must still clear the mark.
+    const typeVisaThenShortCvc = () => {
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+        .type(stripeCards.successCard.cardNo);
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .type("12");
+    };
+
+    it("should mark an out-of-range CVC invalid on blur and unmark it on focus", () => {
+      typeVisaThenShortCvc();
+
+      getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).click();
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .should("have.class", "Input--invalid");
+
+      getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).click();
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .should("not.have.class", "Input--invalid");
+    });
+
+    it("should focus the CVC and unmark it when the expiry auto-advances", () => {
+      typeVisaThenShortCvc();
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.expiryInputTestId}]`)
+        .type("1230");
+
+      getIframeBody()
+        .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+        .should("have.focus")
+        .and("not.have.class", "Input--invalid");
     });
   });
 

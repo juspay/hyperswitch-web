@@ -48,6 +48,8 @@ type localeStrings = {
   addNewCard: string,
   useExisitingSavedCards: string,
   saveCardDetails: string,
+  savePaymentDetails: string,
+  savePaymentDetailsWhereverPossible: string,
   addBankAccount: string,
   achBankDebitTerms: string => string,
   sepaDebitTerms: string => string,
@@ -253,6 +255,10 @@ type localeStrings = {
   showLess: string,
   refreshingText: string,
   paymentDetailsBeingCheckedText: string,
+  eligibleOffersText: string,
+  checkingEligibleOffersText: string,
+  cardOfferText: string,
+  offerAppliedText: string,
 }
 
 type constantStrings = {

@@ -314,6 +314,18 @@ let useSubmitPaymentData = callback => {
   React.useEffect(() => {handleMessage(callback, "")}, [callback])
 }
 
+// Nested SDK components must only accept confirm/control messages from their
+// direct host iframe. This keeps unrelated window messages from entering a
+// payment submit path while retaining the existing callback API.
+let useSubmitPaymentDataFromParent = (~parentOrigin="*", callback) => {
+  let parentCallback = React.useCallback((ev: Window.event) => {
+    if ev.source === iframeParent && (parentOrigin === "*" || ev.origin === parentOrigin) {
+      callback(ev)
+    }
+  }, (callback, parentOrigin))
+  useSubmitPaymentData(parentCallback)
+}
+
 let useWindowSize = () => {
   let (size, setSize) = React.useState(_ => (0, 0))
   React.useLayoutEffect1(() => {
@@ -2050,6 +2062,30 @@ let getSdkAuthorizationData = sdkAuthorization => {
     profileId: getValueFromArrayOfKeys("profile_id"),
     pmSessionId: getValueFromArrayOfKeys("payment_method_session_id"),
     paymentId: getValueFromArrayOfKeys("payment_id"),
+  }
+}
+
+// Parses the unified create() API arguments into (componentType, options).
+// Supports both:
+//   Legacy API: create("payment", options)
+//   New API:    create({ type: "payment", options: {...} })
+let parseComponentTypeAndOptions = (
+  ~componentTypeOrOptions: JSON.t,
+  ~legacyOptions: Nullable.t<JSON.t>,
+  ~defaultComponentType: string,
+): (string, JSON.t) => {
+  switch componentTypeOrOptions->JSON.Classify.classify {
+  | String(typeStr) =>
+    let opts = legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
+    (typeStr, opts)
+  | Object(dict) =>
+    let componentType = dict->getString("type", defaultComponentType)
+    let opts = switch dict->Dict.get("options") {
+    | Some(o) => o
+    | None => legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
+    }
+    (componentType, opts)
+  | _ => (defaultComponentType, JSON.Encode.null)
   }
 }
 

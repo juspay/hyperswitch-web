@@ -21,6 +21,7 @@ type emitter = {
   emitSurcharge: (
     ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   ) => unit,
+  emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
 }
 
 let useSubscriptionEventEmitter = (): emitter => {
@@ -95,7 +96,19 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
-  {emitCardInfo, emitPaymentMethodStatus, emitBillingAddress, emitCvcStatus, emitSurcharge}
+  let emitOffers = (~offerDetails) => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=Offers,
+      ) &&
+      offerDetails->Option.isSome
+    ) {
+      Utils.messageParentWindow(createAppliedOffersPayload(~offerDetails))
+    }
+  }
+
+  {emitCardInfo, emitPaymentMethodStatus, emitBillingAddress, emitCvcStatus, emitSurcharge, emitOffers}
 }
 
 // ---------------------------------------------------------------------------
@@ -114,12 +127,17 @@ let emitReady = (~iframeId, ~elementType) =>
 // useEmitFormStatus
 // ---------------------------------------------------------------------------
 // Effect hook: emits formStatus whenever empty/complete/isOneClickWallet changes.
-let useEmitFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=false) => {
+let useEmitFormStatus = (
+  ~empty: bool,
+  ~complete: bool,
+  ~isOneClickWallet: bool=false,
+  ~enabled=true,
+) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
-    if !isOneClickWallet {
+    if enabled && !isOneClickWallet {
       let formStatusValue = PaymentEventData.computeFormStatus(~isComplete=complete, ~isEmpty=empty)
       if (
         PaymentEventData.shouldEmitEvent(
@@ -131,7 +149,7 @@ let useEmitFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=
       }
     }
     None
-  }, (empty, complete, isOneClickWallet, subscribedEvents))
+  }, (empty, complete, isOneClickWallet, subscribedEvents, enabled))
 }
 
 // ---------------------------------------------------------------------------
@@ -254,4 +272,28 @@ let useEmitSurchargeInfo = (
     }
     None
   }, (surchargeDetails, subscribedEvents))
+}
+
+// ---------------------------------------------------------------------------
+// useEmitAppliedOffersInfo
+// ---------------------------------------------------------------------------
+// Effect hook: emits the auto-applied offers when eligibility offer details change.
+let useEmitAppliedOffersInfo = (
+  ~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
+) => {
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let subscribedEvents = options.subscriptionEvents
+
+  React.useEffect(() => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=Offers,
+      ) &&
+      offerDetails->Option.isSome
+    ) {
+      Utils.messageParentWindow(createAppliedOffersPayload(~offerDetails))
+    }
+    None
+  }, (offerDetails, subscribedEvents))
 }

@@ -580,6 +580,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sessionTokensDataPromise,
           ~sdkConfigsDataPromise,
           ~clientListDataPromise,
+          ~confirmPayment,
         )
       }
 

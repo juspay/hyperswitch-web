@@ -122,7 +122,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let checkoutEle = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement">
       {switch selectedOption->PaymentModeType.paymentMode {
-      | Card => <CardPayment cardProps expiryProps cvcProps />
+      | Card =>
+        <ParentCardComponent
+          cardCollectionMode="raw" flowType=CardThemeType.PaymentMethodsManagement
+        />
       | _ => React.null
       }}
     </ErrorBoundary>

@@ -1,12 +1,14 @@
 module RenderSavedPaymentMethodItem = {
   @react.component
   let make = (~paymentItem: PaymentType.customerMethods, ~paymentMethodType) => {
+    let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     switch paymentItem.paymentMethod {
     | "card" =>
       <div
         className="flex flex-col items-start"
         role="group"
-        ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
+        ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}
+      >
         <div className="text-base tracking-wide">
           {React.string(
             paymentItem.card.nickname->String.length > 15
@@ -26,7 +28,8 @@ module RenderSavedPaymentMethodItem = {
       <div
         className="flex flex-col items-start"
         role="group"
-        ariaLabel={`${paymentMethodType->String.toUpperCase} bank debit account ending in ${paymentItem.bank.mask}`}>
+        ariaLabel={`${paymentMethodType->String.toUpperCase} bank debit account ending in ${paymentItem.bank.mask}`}
+      >
         <div>
           {React.string(
             `${paymentMethodType->String.toUpperCase} ${paymentItem.paymentMethod->Utils.snakeToTitleCase}`,
@@ -36,6 +39,43 @@ module RenderSavedPaymentMethodItem = {
           <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
           <div ariaHidden=true> {React.string(paymentItem.bank.mask)} </div>
         </div>
+      </div>
+
+    | "bank_redirect" =>
+      // Open-banking saved methods often carry no account mask; the secondary
+      // row (and its aria fragment) only renders when there is something to show.
+      let hasMask = paymentItem.bankRedirect.mask->String.length > 0
+      let hasHolderName = paymentItem.bankRedirect.accountHolderName->String.length > 0
+      let maskFragment = hasMask ? `, account ending in ${paymentItem.bankRedirect.mask}` : ""
+      <div
+        className="flex flex-col items-start"
+        role="group"
+        ariaLabel={`${localeString.payment_methods_pay_by_bank} – ${paymentItem.bankRedirect.bankName}${maskFragment}`}
+      >
+        <div className="text-base tracking-wide">
+          {React.string(
+            paymentItem.bankRedirect.bankName->String.length > 0
+              ? paymentItem.bankRedirect.bankName
+              : localeString.payment_methods_pay_by_bank,
+          )}
+        </div>
+        <RenderIf condition={hasMask || hasHolderName}>
+          <div className={`PickerItemLabel flex flex-row gap-3 items-center text-sm`}>
+            <RenderIf condition={hasMask}>
+              <>
+                <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
+                <div className="tracking-wide" ariaHidden=true>
+                  {React.string(paymentItem.bankRedirect.mask)}
+                </div>
+              </>
+            </RenderIf>
+            <RenderIf condition={hasHolderName}>
+              <div className="opacity-80" ariaHidden=true>
+                {React.string(paymentItem.bankRedirect.accountHolderName)}
+              </div>
+            </RenderIf>
+          </div>
+        </RenderIf>
       </div>
 
     | _ =>
@@ -54,7 +94,6 @@ let make = (
   ~brandIcon,
   ~index,
   ~savedCardlength,
-  ~cvcProps: CardUtils.cvcProps,
   ~setRequiredFieldsBody,
   ~setSelectedInstallmentPlan,
   ~showInstallments,
@@ -62,14 +101,15 @@ let make = (
   ~installmentsError,
   ~setInstallmentsError,
   ~eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  ~eligibilityOfferDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
+  ~eligibilityError: option<string>,
   ~isEligibilityPending=false,
-  // Vault saved-card (return user) flow (VGS or Hyperswitch): when true, this card's
-  // CVC is collected inside the nested iframe (ParentCardComponent saved-card mode)
-  // instead of the plain input. `setCvcIframeRef` lifts the iframe ref to
-  // SavedMethods, which owns submit. Defaults keep other call sites
-  // (e.g. ClickToPayAuthenticate) intact.
+  // `isVaultCvcFlow` only selects whether the inner collector returns a vault
+  // token or raw CVC. SavedCardItem always renders that collector through
+  // ParentCardComponent.
   ~isVaultCvcFlow=false,
   ~setCvcIframeRef=_ => (),
+  ~setSavedCardCvcState=_ => (),
 ) => {
   let {themeObj, config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {
@@ -79,24 +119,17 @@ let make = (
     layout,
   } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let {hideCardExpiry} = CardUtils.getLayoutClass(layout).savedMethodCustomization
+  let {innerLayout} = config.appearance
   let (cardBrand, setCardBrand) = Jotai.useAtom(JotaiAtoms.cardBrand)
-  let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcError} = cvcProps
-  let isCvcEmpty = cvcNumber->String.length == 0
-  let cvcRef = React.useRef(Nullable.null)
+  let (savedCardCvcState, setLocalSavedCardCvcState) = React.useState(_ =>
+    CardIframeProtocol.initialSavedCardCvcState
+  )
+  let savedCardBrand = paymentItem.card.scheme->Option.getOr("")->CardUtils.normalizeCardBrand
+  let isCvcEmpty = savedCardCvcState.empty
   let pickerItemClass = isActive ? "PickerItem--selected" : ""
 
   let focusCVC = () => {
-    setCardBrand(_ =>
-      switch paymentItem.card.scheme {
-      | Some(val) => val
-      | None => ""
-      }
-    )
-    let optionalRef = cvcRef.current->Nullable.toOption
-    switch optionalRef {
-    | Some(_) => optionalRef->Option.forEach(input => input->CardUtils.focus)->ignore
-    | None => ()
-    }
+    setCardBrand(_ => savedCardBrand)
   }
 
   let isCard = paymentItem.paymentMethod === "card"
@@ -162,10 +195,9 @@ let make = (
   }, (isActive, paymentItem, country, state, pinCode))
 
   React.useEffect(() => {
-    // TODO - Handle Events for VGS/Vault case
-    CardUtils.emitIsFormReadyForSubmission(isCVCValid->Option.getOr(false))
+    CardUtils.emitIsFormReadyForSubmission(savedCardCvcState.valid)
     None
-  }, [isCVCValid])
+  }, [savedCardCvcState.valid])
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
@@ -191,43 +223,27 @@ let make = (
 
   let isFloating = config.appearance.labels == Floating
   let cvcContainerClassName = isFloating ? "flex w-24" : "flex w-16 opacity-50"
-  let cvcHeight = isFloating ? "" : "1.8rem"
-  let cvcFieldName = isFloating ? localeString.cvcTextLabel : ""
 
-  let makeCvcInput = (~fieldName="", ~height="1.8rem", ~inputFieldClassName="flex justify-start") =>
-    <PaymentInputField
-      fieldName
-      isValid=isCVCValid
-      setIsValid=setIsCVCValid
-      value=cvcNumber
-      onChange=changeCVCNumber
-      onBlur=handleCVCBlur
-      errorString=""
-      inputFieldClassName
-      type_="tel"
-      className={`tracking-widest w-full`}
-      maxLength=4
-      inputRef=cvcRef
-      placeholder="123"
-      height
-      name={TestUtils.cardCVVInputTestId}
-      autocomplete="cc-csc"
-    />
-
-  // Inner-iframe container id for the VGS saved-card CVC. Only the active card
+  // Inner-iframe container id for the saved-card CVC. Only the active card
   // mounts this iframe (the CVC slots below are gated on isActive), so a single
   // constant id is unique at any time.
   let cvcIframeContainerId = "saved-card-cvc-inner-iframe-container"
-  // VGS saved-card flow renders the secure CVC iframe in place of the plain input;
-  // ParentCardComponent (saved-card mode) hosts it and lifts its ref to SavedMethods.
-  let makeCvcField = (~fieldName="", ~height="1.8rem", ~inputFieldClassName="flex justify-start") =>
-    isVaultCvcFlow
-      ? <ParentCardComponent
-          isSavedCardFlow=true containerId=cvcIframeContainerId setExternalIframeRef=setCvcIframeRef
-        />
-      : makeCvcInput(~fieldName, ~height, ~inputFieldClassName)
+  let cardCollectionMode = isVaultCvcFlow ? "tokenise" : "raw"
+  let handleSavedCardCvcStateChange = state => {
+    setLocalSavedCardCvcState(_ => state)
+    setSavedCardCvcState(state)
+  }
+  let makeCvcField = () =>
+    <ParentCardComponent
+      key=cardCollectionMode
+      isSavedCardFlow=true
+      containerId=cvcIframeContainerId
+      setExternalIframeRef=setCvcIframeRef
+      onSavedCardCvcStateChange=handleSavedCardCvcStateChange
+      savedCardBrand
+      cardCollectionMode
+    />
 
-  let {innerLayout} = config.appearance
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
 
@@ -261,13 +277,15 @@ let make = (
           paymentToken: paymentItem.paymentToken,
           customerId: paymentItem.customerId,
         })
-      }}>
+      }}
+    >
       <div className="w-full">
         <div>
           <div className="flex flex-row justify-between items-center">
             <div
               className={`flex flex-row justify-center items-center`}
-              style={columnGap: themeObj.spacingUnit}>
+              style={columnGap: themeObj.spacingUnit}
+            >
               <div style={color: isActive ? themeObj.colorPrimary : ""}>
                 <Radio
                   checked=isActive
@@ -285,7 +303,8 @@ let make = (
                   <RenderSavedPaymentMethodItem paymentItem={paymentItem} paymentMethodType />
                   <RenderIf
                     condition={displayDefaultSavedPaymentIcon &&
-                    paymentItem.defaultPaymentMethodSet}>
+                    paymentItem.defaultPaymentMethodSet}
+                  >
                     <Icon size=16 name="checkmark" style={color: themeObj.colorPrimary} />
                   </RenderIf>
                 </div>
@@ -295,7 +314,8 @@ let make = (
               <div
                 className={`flex flex-row items-center justify-end gap-3 -mt-1`}
                 style={fontSize: "14px", opacity: "0.5"}
-                ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
+                ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}
+              >
                 <div className="flex" ariaHidden=true>
                   {React.string(`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
                 </div>
@@ -308,13 +328,7 @@ let make = (
                     {React.string(`${localeString.cvcTextLabel}:`)}
                   </div>
                 </RenderIf>
-                <div className={cvcContainerClassName}>
-                  {makeCvcField(
-                    ~fieldName=cvcFieldName,
-                    ~height=cvcHeight,
-                    ~inputFieldClassName="",
-                  )}
-                </div>
+                <div className={cvcContainerClassName}> {makeCvcField()} </div>
               </div>
             </RenderIf>
           </div>
@@ -323,31 +337,39 @@ let make = (
               <RenderIf condition={!hideCardExpiry && isActive && isRenderCvv}>
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
-                  style={fontSize: "14px", opacity: "0.5"}>
+                  style={fontSize: "14px", opacity: "0.5"}
+                >
                   <div className="tracking-widest w-12 mt-6">
                     {React.string(`${localeString.cvcTextLabel}: `)}
                   </div>
                   <div
                     className={`flex h mx-4 justify-start w-16 ${isActive
                         ? "opacity-1 mt-4"
-                        : "opacity-0"}`}>
+                        : "opacity-0"}`}
+                  >
                     {makeCvcField()}
                   </div>
                 </div>
               </RenderIf>
               <RenderIf
-                condition={hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
+                condition={hideCardExpiry &&
+                isActive &&
+                innerLayout === Spaced &&
+                savedCardCvcState.error !== ""}
+              >
                 <div
                   className="Error pt-1 mt-1 ml-3"
                   style={
                     color: themeObj.colorDangerText,
                     fontSize: themeObj.fontSizeSm,
-                  }>
-                  {React.string(cvcError)}
+                  }
+                >
+                  {React.string(savedCardCvcState.error)}
                 </div>
               </RenderIf>
               <RenderIf
-                condition={isActive && displayBillingDetails && billingDetailsArrayLength > 0}>
+                condition={isActive && displayBillingDetails && billingDetailsArrayLength > 0}
+              >
                 <div className="tracking-wide text-sm text-left gap-2 mt-4 ml-2">
                   <div className="font-semibold"> {React.string(billingDetailsText)} </div>
                   <div className="font-normal">
@@ -356,14 +378,19 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf
-                condition={!hideCardExpiry && isActive && innerLayout === Spaced && cvcError != ""}>
+                condition={!hideCardExpiry &&
+                isActive &&
+                innerLayout === Spaced &&
+                savedCardCvcState.error !== ""}
+              >
                 <div
                   className="Error pt-1 mt-1 ml-1"
                   style={
                     color: themeObj.colorDangerText,
                     fontSize: themeObj.fontSizeSm,
-                  }>
-                  {React.string(cvcError)}
+                  }
+                >
+                  {React.string(savedCardCvcState.error)}
                 </div>
               </RenderIf>
               <RenderIf condition={isCardExpired}>
@@ -372,12 +399,18 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf condition={isActive}>
+                <RenderIf condition={isCard}>
+                  <EligibilityOfferNotice
+                    eligibilityOfferDetails isEligibilityPending className="mt-3"
+                  />
+                </RenderIf>
                 <RenderIf condition={isCard && hasInstallmentPlans}>
                   <div
                     style={
                       paddingTop: themeObj.spacingUnit,
                     }
-                    className="w-full flex pl-1">
+                    className="w-full flex pl-1"
+                  >
                     <InstallmentOptions
                       setSelectedInstallmentPlan
                       showInstallments
@@ -401,8 +434,11 @@ let make = (
                   cardBrand={cardBrand->CardUtils.getCardType}
                 />
                 <RenderIf condition={isCard}>
-                  <SurchargeEligibilityNotice
-                    eligibilitySurchargeDetails isEligibilityPending className="mt-3 ml-1.5"
+                  <EligibilityNotice
+                    eligibilitySurchargeDetails
+                    eligibilityError
+                    isEligibilityPending
+                    className="mt-3"
                   />
                 </RenderIf>
               </RenderIf>
