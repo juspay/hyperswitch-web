@@ -56,8 +56,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setSavedCardBrand = Jotai.useSetAtom(JotaiAtoms.savedCardBrand)
   let setIsBancontactCardFlow = Jotai.useSetAtom(JotaiAtoms.isBancontactCardFlow)
   let setCardFlowType = Jotai.useSetAtom(JotaiAtoms.cardFlowType)
-  let setOptionsJson = Jotai.useSetAtom(optionsJson)
-  let setPaymentOptionsJson = Jotai.useSetAtom(paymentOptionsJson)
+  let setOptionsJson = Jotai.useSetAtom(optionsJsonAtom)
+  let setPaymentOptionsJson = Jotai.useSetAtom(paymentOptionsJsonAtom)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
