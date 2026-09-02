@@ -1,9 +1,7 @@
 open CardUtils
-open LoggerUtils
 open JotaiAtoms
 
 let useCardForm = (
-  ~logger,
   ~paymentType,
   ~runEligibility=true,
   ~logControlEvents=true,
@@ -26,7 +24,7 @@ let useCardForm = (
     isEligibilityPending,
     triggerOnCardNumberChange,
     resetEligibilityState,
-  } = UseCardEligibility.useCardEligibility(~logger, ~runEligibility)
+  } = UseCardEligibility.useCardEligibility(~runEligibility)
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -155,7 +153,7 @@ let useCardForm = (
 
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    logInputChangeInfo("cardNumber", logger)
+    SdkRuntimeLogger.logUser(~event=InputFieldChanged, ~message="cardNumber")
     let card = val->formatCardNumber(cardType)
     let clearValue = card->CardValidations.clearSpaces
     let isCardSupportedAndValid = if enableExternalCardSupport {
@@ -190,7 +188,7 @@ let useCardForm = (
 
   let changeCardExpiry = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    logInputChangeInfo("cardExpiry", logger)
+    SdkRuntimeLogger.logUser(~event=InputFieldChanged, ~message="cardExpiry")
     let formattedExpiry = val->CardValidations.formatCardExpiryNumber
     if isExipryValid(formattedExpiry) {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
@@ -202,7 +200,7 @@ let useCardForm = (
 
   let changeCVCNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    logInputChangeInfo("cardCVC", logger)
+    SdkRuntimeLogger.logUser(~event=InputFieldChanged, ~message="cardCVC")
     let cvc = val->CardValidations.formatCVCNumber(cardBrandForCvc)
     setCvcNumber(_ => cvc)
     if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrandForCvc)->Array.includes(true) {
@@ -218,7 +216,7 @@ let useCardForm = (
 
   let changeZipCode = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    logInputChangeInfo("zipCode", logger)
+    SdkRuntimeLogger.logUser(~event=InputFieldChanged, ~message="zipCode")
     setZipCode(_ => val)
   }
 
@@ -239,19 +237,18 @@ let useCardForm = (
         let dict = json->Utils.getDictFromJson
         if dict->Dict.get("doBlur")->Option.isSome {
           if logControlEvents {
-            logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR)
+            SdkRuntimeLogger.logUser(~event=FieldBlurred, ~message="doBlur Triggered")
           }
           setBlurState(_ => true)
         } else if dict->Dict.get("doFocus")->Option.isSome {
           if logControlEvents {
-            logger.setLogInfo(~value="doFocus Triggered", ~eventName=FOCUS)
+            SdkRuntimeLogger.logUser(~event=FieldFocused, ~message="doFocus Triggered")
           }
           cardRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
         } else if dict->Dict.get("doClearValues")->Option.isSome {
           if logControlEvents {
-            logger.setLogInfo(~value="doClearValues Triggered", ~eventName=CLEAR)
+            SdkRuntimeLogger.logUser(~event=FieldCleared, ~message="doClearValues Triggered")
           }
-          //clear all values
           setCardNumber(_ => "")
           setCardExpiry(_ => "")
           setCvcNumber(_ => "")

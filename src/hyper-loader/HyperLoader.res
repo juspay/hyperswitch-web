@@ -3,7 +3,7 @@ let loadHyper = (str, option) => {
 }
 
 let loadStripe = (str, option) => {
-  ErrorUtils.manageErrorWarning(DEPRECATED_LOADSTRIPE, ~logger=LoggerUtils.defaultLoggerConfig)
+  ErrorUtils.manageErrorWarning(DeprecatedLoadStripe)
   loadHyper(str, option)
 }
 

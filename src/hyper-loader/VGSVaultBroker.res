@@ -138,9 +138,8 @@ let emitBrokerError = (
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
   ~code: string,
   ~message: string,
-  ~logger: HyperLoggerTypes.loggerMake,
 ): unit => {
-  logger.setLogInfo(~value=`${code}: ${message}`, ~eventName=VGS_VAULT_FLOW, ~logType=ERROR)
+  SdkRuntimeLogger.logFunction(~event=WalletFlow(Vgs, Failed), ~message=`${code}: ${message}`)
   eventCallbacksRef.contents
   ->Dict.get("error")
   ->Option.forEach(cb =>
@@ -407,7 +406,6 @@ let make = (
   ~vaultId: string,
   ~environment: string,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
-  ~logger: HyperLoggerTypes.loggerMake,
 ): vgsBrokerHandle => {
   let formRef: ref<option<JSON.t>> = ref(None)
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
@@ -515,7 +513,10 @@ let make = (
               Error.raise(Error.make("VGSCollect script failed to register window.VGSCollect"))
             }
             formRef := Some(form)
-            logger.setLogInfo(~value="VGS collect form created", ~eventName=VGS_VAULT_FLOW)
+            SdkRuntimeLogger.logFunction(
+              ~event=WalletFlow(Vgs, Progressed),
+              ~message="VGS collect form created",
+            )
             Promise.resolve(form)
           })
           ->Promise.catch(err => {
@@ -745,7 +746,6 @@ let make = (
               ~eventCallbacksRef,
               ~code="vgs_field_event_binding_failed",
               ~message,
-              ~logger,
             )
           }
         }
@@ -766,7 +766,6 @@ let make = (
         ~eventCallbacksRef,
         ~code=err->exceptionCodeOr(~fallback="vgs_mount_failed"),
         ~message,
-        ~logger,
       )
       Promise.reject(err)
     })
@@ -785,7 +784,7 @@ let make = (
       | exn =>
         let message = `updateField(${fieldId}) threw — the requested options were not applied: ${exn->exceptionMessage}`
         Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
-        emitBrokerError(~eventCallbacksRef, ~code="vgs_field_update_failed", ~message, ~logger)
+        emitBrokerError(~eventCallbacksRef, ~code="vgs_field_update_failed", ~message)
       }
     | _ => ()
     }
@@ -814,7 +813,7 @@ let make = (
       | exn =>
         let message = `unmountField(${fieldId}) threw — the secure field may still be in the DOM: ${exn->exceptionMessage}`
         Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
-        emitBrokerError(~eventCallbacksRef, ~code="vgs_field_unmount_failed", ~message, ~logger)
+        emitBrokerError(~eventCallbacksRef, ~code="vgs_field_unmount_failed", ~message)
       }
       lastFieldPayloadRef.contents->Dict.delete(fieldId)
       fieldsRef.contents->Dict.set(

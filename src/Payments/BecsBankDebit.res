@@ -4,9 +4,8 @@ open Utils
 
 @react.component
 let make = () => {
-  let cleanBSB = str => str->String.replaceRegExp(%re("/-/g"), "")
+  let cleanBSB = str => str->String.replaceRegExp(/-/g, "")
 
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let setComplete = Jotai.useSetAtom(fieldsComplete)
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let (modalData, setModalData) = React.useState(_ => None)
@@ -19,7 +18,7 @@ let make = () => {
   let city = Jotai.useAtomValue(userAddressCity)
   let postalCode = Jotai.useAtomValue(userAddressPincode)
   let state = Jotai.useAtomValue(userAddressState)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHelpers.usePaymentIntent(BankDebits)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let {sdkAuthorization} = Jotai.useAtomValue(keys)
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2

@@ -1,12 +1,6 @@
-// Common utilities shared between Elements.res and PaymentSession.res updateIntent flows.
-// This file extracts the shared logic so both flows stay DRY.
-
 open Utils
 open Identity
 open EventListenerManager
-open HyperLoggerTypes
-
-// --- Iframe messaging helpers ---
 
 let postMessageToIframes = (iframes: array<Nullable.t<Dom.element>>, message) => {
   iframes->Array.forEach(ifR => ifR->Window.iframePostMessage(message))
@@ -281,14 +275,13 @@ let performUpdateIntent = async (
   ~isSdkParamsEnabled,
   ~selectorString,
   ~shouldWaitForReady,
-  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   if isUpdateIntentInProgress.contents {
     updateIntentInProgressResponse()
   } else {
     isUpdateIntentInProgress.contents = true
 
-    logger.setLogInfo(~value="Update Intent Initiated", ~eventName=UPDATE_INTENT)
+    CorePaymentLogger.logLifecycle(~event=UpdateIntent, ~message="Update Intent Initiated")
 
     let response = try {
       // Get new credentials from merchant callback
@@ -332,7 +325,7 @@ let performUpdateIntent = async (
           ->getDictFromJson
           ->getDictFromDict("error")
           ->getString("message", "An API call failed during updateIntent.")
-        logger.setLogError(~value=errorMessage, ~eventName=UPDATE_INTENT)
+        CorePaymentLogger.logLifecycle(~event=UpdateIntentFailed, ~message=errorMessage)
         getFailedSubmitResponse(~message=errorMessage, ~errorType="update_intent_error")
 
       | None =>
@@ -344,8 +337,7 @@ let performUpdateIntent = async (
         sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
         clientListDataPromise.contents = newClientListDataPromise
 
-        // Send ElementsUpdate to all inner iframes with new credentials
-        logger.setLogInfo(~value="Update SDK Sent to Iframes", ~eventName=UPDATE_SDK)
+        CorePaymentLogger.logLifecycle(~event=UpdateSdk, ~message="Update SDK Sent to Iframes")
         sendElementsUpdateToIframes(
           iframes,
           ~newSdkAuthorization,
@@ -374,17 +366,20 @@ let performUpdateIntent = async (
         | None => ()
         }
 
-        logger.setLogInfo(~value="Update Intent Completed Successfully", ~eventName=UPDATE_INTENT)
+        CorePaymentLogger.logLifecycle(
+          ~event=UpdateIntent,
+          ~message="Update Intent Completed Successfully",
+        )
         [("status", "succeeded"->JSON.Encode.string)]->getJsonFromArrayOfJson
       }
     } catch {
     | Exn.Error(e) =>
       let msg = Exn.message(e)->Option.getOr("Something went wrong during updateIntent!")
-      logger.setLogError(~value=msg, ~eventName=UPDATE_INTENT)
+      CorePaymentLogger.logLifecycle(~event=UpdateIntentFailed, ~message=msg)
       getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
     | _ =>
       let msg = "An unexpected error occurred during updateIntent."
-      logger.setLogError(~value=msg, ~eventName=UPDATE_INTENT)
+      CorePaymentLogger.logLifecycle(~event=UpdateIntentFailed, ~message=msg)
       getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
     }
     isUpdateIntentInProgress.contents = false

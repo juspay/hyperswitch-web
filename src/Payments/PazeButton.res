@@ -12,9 +12,8 @@ let make = (~token: SessionsType.token) => {
   let options = Jotai.useAtomValue(optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
+  let intent = PaymentHelpers.usePaymentIntent(Paze)
   let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
     ~clientSecret=clientSecret->Option.getOr(""),
     ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
@@ -26,16 +25,16 @@ let make = (~token: SessionsType.token) => {
   let onClick = _ => {
     if isTestMode {
       Console.warn("Paze button clicked in test mode - interaction disabled")
-      loggerState.setLogInfo(
-        ~value="Paze button clicked in test mode - interaction disabled",
-        ~eventName=PAZE_SDK_FLOW,
+      SdkRuntimeLogger.logFunction(
+        ~event=WalletFlow(Paze, Progressed),
         ~paymentMethod="PAZE",
+        ~message="Paze button clicked in test mode - interaction disabled",
       )
     } else {
-      loggerState.setLogInfo(
-        ~value="Paze SDK Button Clicked",
-        ~eventName=PAZE_SDK_FLOW,
+      SdkRuntimeLogger.logFunction(
+        ~event=WalletFlow(Paze, Progressed),
         ~paymentMethod="PAZE",
+        ~message="Paze SDK Button Clicked",
       )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod="wallet",
@@ -118,7 +117,8 @@ let make = (~token: SessionsType.token) => {
       border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
       pointerEvents: updateSession ? "none" : "auto",
       opacity: showLoader || updateSession ? "0.5" : "1.0",
-    }>
+    }
+  >
     {showLoader ? <Spinner /> : <Icon name="paze" size=55 />}
   </button>
 }

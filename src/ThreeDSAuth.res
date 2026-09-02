@@ -8,8 +8,6 @@ let make = () => {
   let threeDsAuthoriseUrl = React.useRef("")
   let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
-  let logger = HyperLogger.make(~source=Elements(Payment))
-
   let handleFrictionLess = () => {
     let ele = Window.querySelector("#threeDsAuthDiv")
     switch ele->Nullable.toOption {
@@ -36,9 +34,7 @@ let make = () => {
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
         let publishableKey = metaDataDict->getString("publishableKey", "")
         let sdkAuthorization = metaDataDict->getOptionString("sdkAuthorization")
-        logger.setClientSecret(paymentIntentId)
-        logger.setSdkAuthorization(sdkAuthorization->Option.getOr(""))
-        logger.setMerchantId(publishableKey)
+        LoggerContext.setSessionData(~paymentId=paymentIntentId, ~merchantId=publishableKey, ())
         let headersDict =
           metaDataDict
           ->getJsonObjectFromDict("headers")
@@ -55,7 +51,6 @@ let make = () => {
         let threeDsMethodComp = metaDataDict->getString("3dsMethodComp", "U")
         open Promise
         PaymentHelpers.threeDsAuth(
-          ~logger,
           ~clientSecret=paymentIntentId,
           ~threeDsMethodComp,
           ~headers=headers->Dict.fromArray,
@@ -79,11 +74,10 @@ let make = () => {
 
             let ele = Window.querySelector("#threeDsAuthDiv")
 
-            LoggerUtils.handleLogging(
-              ~optLogger=Some(logger),
-              ~eventName=DISPLAY_THREE_DS_SDK,
-              ~value=transStatus,
+            SdkRuntimeLogger.logLifecycle(
+              ~event=DisplayThreeDsSdk,
               ~paymentMethod="CARD",
+              ~message=transStatus,
             )
 
             switch ele->Nullable.toOption {
@@ -107,12 +101,10 @@ let make = () => {
         })
         ->catch(err => {
           let exceptionMessage = err->formatException
-          LoggerUtils.handleLogging(
-            ~optLogger=Some(logger),
-            ~eventName=DISPLAY_THREE_DS_SDK,
-            ~value=exceptionMessage->JSON.stringify,
+          SdkRuntimeLogger.logLifecycle(
+            ~event=DisplayThreeDsSdkFailed,
             ~paymentMethod="CARD",
-            ~logType=ERROR,
+            ~message=exceptionMessage->JSON.stringify,
           )
           let errorObj = PaymentError.itemToObjMapper(dict)
           postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)

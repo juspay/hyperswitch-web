@@ -2,7 +2,8 @@ type errorLevel = Top | RequestButton | PaymentMethod
 
 let errorIcon = {
   <svg
-    xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 512 512" id="dead-ghost">
+    xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 512 512" id="dead-ghost"
+  >
     <path
       fill="none"
       stroke="currentColor"
@@ -109,7 +110,8 @@ module ErrorTextAndImage = {
         borderRadius: themeObj.borderRadius,
         borderColor: themeObj.borderColor,
       }
-      className="flex  items-center">
+      className="flex  items-center"
+    >
       <div className="flex flex-row  items-center m-6">
         <div style={marginLeft: "1rem"}> {errorIcon} </div>
         <div className="flex flex-col items-center justify-center" style={marginLeft: "3rem"}>
@@ -129,48 +131,16 @@ module ErrorCard = {
     ~componentName,
     ~publishableKey,
   ) => {
-    let beaconApiCall = data => {
-      if data->Array.length > 0 {
-        let logData = data->Array.map(HyperLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
-        Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
-      }
-    }
-
     React.useEffect0(() => {
-      let loggingLevel = GlobalVars.loggingLevelStr
-      let enableLogging = GlobalVars.enableLogging
-      if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Array.includes(loggingLevel) {
-        let errorDict =
-          error
-          ->Identity.anyTypeToJson
-          ->Utils.getDictFromJson
+      LoggerContext.setSessionData(~merchantId=publishableKey, ())
+      let errorDict =
+        error
+        ->Identity.anyTypeToJson
+        ->Utils.getDictFromJson
 
-        errorDict->Dict.set("componentName", componentName->JSON.Encode.string)
+      errorDict->Dict.set("componentName", componentName->JSON.Encode.string)
 
-        let errorLog: HyperLoggerTypes.logFile = {
-          logType: ERROR,
-          timestamp: Date.now()->Float.toString,
-          sessionId: "",
-          source: "orca-elements",
-          version: GlobalVars.repoVersion,
-          value: errorDict->JSON.Encode.object->JSON.stringify,
-          // internalMetadata: "",
-          category: USER_ERROR,
-          paymentId: "",
-          merchantId: publishableKey,
-          browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-          browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
-          platform: Window.Navigator.platform,
-          userAgent: Window.Navigator.userAgent,
-          appId: "",
-          eventName: SDK_CRASH,
-          latency: "",
-          paymentMethod: "",
-          firstEvent: false,
-          metadata: JSON.Encode.null,
-        }
-        beaconApiCall([errorLog])
-      }
+      SdkRuntimeLogger.logCrash(~details=[("error", errorDict->JSON.Encode.object)])
       None
     })
 

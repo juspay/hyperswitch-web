@@ -3,7 +3,7 @@ open PaymentMethodCollectUtils
 open JotaiAtoms
 
 @react.component
-let make = (~integrateError, ~logger) => {
+let make = (~integrateError) => {
   open Promise
   let {localeString} = Jotai.useAtomValue(configAtom)
   let {themeObj} = Jotai.useAtomValue(configAtom)
@@ -102,7 +102,6 @@ let make = (~integrateError, ~logger) => {
       PaymentHelpers.createPaymentMethod(
         ~clientSecret=keys.clientSecret->Option.getOr(""),
         ~publishableKey=keys.publishableKey,
-        ~logger,
         ~customPodUri="",
         ~endpoint=ApiEndpoint.getApiEndPoint(),
         ~body=pmdBody,
@@ -125,7 +124,6 @@ let make = (~integrateError, ~logger) => {
       PaymentHelpers.confirmPayout(
         ~clientSecret=keys.clientSecret->Option.getOr(""),
         ~publishableKey=keys.publishableKey,
-        ~logger,
         ~customPodUri="",
         ~endpoint,
         ~body=pmdBody,
@@ -230,12 +228,15 @@ let make = (~integrateError, ~logger) => {
       }
       className="flex flex-col items-center justify-center self-center leading-none
         xs:mt-auto xs:mb-auto
-        lg:ml-auto lg:mr-auto">
+        lg:ml-auto lg:mr-auto"
+    >
       <div
         className="flex flex-col items-center rounded-lg max-w-[500px]
-          xs:shadow-lg">
+          xs:shadow-lg"
+      >
         <div
-          className="flex flex-row justify-between items-center w-full px-10 py-5 border-b border-jp-gray-300">
+          className="flex flex-row justify-between items-center w-full px-10 py-5 border-b border-jp-gray-300"
+        >
           <div className="text-2xl font-semibold"> {React.string(options.collectorName)} </div>
           <img className="h-12 w-auto max-w-21" src={options.logo} alt="o" />
         </div>
@@ -247,7 +248,8 @@ let make = (~integrateError, ~logger) => {
         <div className="flex border-t border-bg-jp-gray-300 py-5 w-full justify-center">
           <div
             className="flex flex-col max-w-[500px] bg-white w-full mx-2.5
-            xs:mx-10">
+            xs:mx-10"
+          >
             {statusInfoFields
             ->Array.mapWithIndex((info, i) => {
               <div key={i->Int.toString} className={`flex flex-row items-center mb-0.5`}>
@@ -256,7 +258,8 @@ let make = (~integrateError, ~logger) => {
                 </div>
                 <div
                   className="text-[11px] ml-2.5 pl-2.5 border-l border-jp-gray-300
-                    xs:text-xs">
+                    xs:text-xs"
+                >
                   {React.string(info.value)}
                 </div>
               </div>
@@ -278,7 +281,8 @@ let make = (~integrateError, ~logger) => {
   } else {
     <div
       className="flex flex-col h-screen min-w-[320px] overflow-hidden
-        lg:flex-row">
+        lg:flex-row"
+    >
       {
         let merchantLogo = options.logo
         let merchantName = options.collectorName
@@ -293,15 +297,19 @@ let make = (~integrateError, ~logger) => {
               <div
                 className="flex flex-col w-full h-max items-center p-6
                 lg:w-4/10 lg:px-12 lg:py-20 lg:h-screen lg:items-end"
-                style={backgroundColor: merchantTheme}>
+                style={backgroundColor: merchantTheme}
+              >
                 <div
                   className="flex flex-col text-white w-full min-w-[300px] max-w-[520px]
-                  lg:rounded-md lg:shadow-lg lg:min-w-80 lg:max-w-96 lg:bg-white lg:text-black">
+                  lg:rounded-md lg:shadow-lg lg:min-w-80 lg:max-w-96 lg:bg-white lg:text-black"
+                >
                   <div
                     className="flex flex-col-reverse justify-end
-                    lg:mx-5 lg:mt-5 lg:flex-row lg:justify-between">
+                    lg:mx-5 lg:mt-5 lg:flex-row lg:justify-between"
+                  >
                     <div
-                      className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl flex justify-start items-center">
+                      className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl flex justify-start items-center"
+                    >
                       <p> {React.string(`${options.currency} ${options.amount}`)} </p>
                     </div>
                     <div className="flex self-start h-12 w-auto bg-white rounded-sm">
@@ -321,7 +329,8 @@ let make = (~integrateError, ~logger) => {
                   </div>
                   <div
                     className="mt-4 px-4 py-1.5 bg-gray-200 text-[13px] rounded-full w-max text-black
-                    lg:w-full lg:rounded-none lg:rounded-b-lg">
+                    lg:w-full lg:rounded-none lg:rounded-b-lg"
+                  >
                     {React.string(options.sessionExpiry->localeString.linkExpiryInfo)}
                   </div>
                 </div>

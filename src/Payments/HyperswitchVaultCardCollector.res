@@ -11,7 +11,6 @@ let make = (
   ~cvcProps: CardUtils.cvcProps,
 ) => {
   let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
   let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
 
@@ -70,7 +69,6 @@ let make = (
         ~bodyArr=PaymentBody.cardTokenizationBody(~cardNumber, ~cvcNumber, ~month, ~year),
         ~pmSessionId,
         ~sdkAuthorization,
-        ~logger=loggerState,
       )
       messageParentWindow(
         [("cardTokenEvent", true->JSON.Encode.bool), ("vaultResponse", response)],
@@ -94,16 +92,7 @@ let make = (
         reportCardFieldErrors()
       }
     }
-  }, (
-    cardNumber,
-    cardExpiry,
-    cvcNumber,
-    cardBrand,
-    complete,
-    vaultCredentials,
-    loggerState,
-    localeString,
-  ))
+  }, (cardNumber, cardExpiry, cvcNumber, cardBrand, complete, vaultCredentials, localeString))
   useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
 
   <div className="animate-slowShow">

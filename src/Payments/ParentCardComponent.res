@@ -26,7 +26,6 @@ let make = (
   } = Jotai.useAtomValue(JotaiAtoms.keys)
   let sessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
@@ -64,12 +63,12 @@ let make = (
     "hyper_" ++
     flowType
     ->CardThemeType.getPaymentModeToStrMapper
-    ->LoggerUtils.toSnakeCaseWithSeparator("_")
+    ->LoggerCommonHelpers.snakeCase
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
-  let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
+  let intent = PaymentHelpers.usePaymentIntent(Card)
+  let saveCard = PaymentHelpersV2.useSaveCard(Card)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
@@ -197,10 +196,7 @@ let make = (
     isEligibilityPending,
     triggerOnCardNumberChange,
     resetEligibilityState: _,
-  } = UseCardEligibility.useCardEligibility(
-    ~logger=loggerState,
-    ~runEligibility=isRawNewCardFlow && !isBancontact,
-  )
+  } = UseCardEligibility.useCardEligibility(~runEligibility=isRawNewCardFlow && !isBancontact)
 
   let selectedOfferQuoteIds =
     eligibilityOfferDetails
@@ -501,7 +497,6 @@ let make = (
         ~appearance=Dict.make()->JSON.Encode.object,
         ~redirectionFlags,
         ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
-        ~logger=Some(loggerState),
         ~confirmPayment=_json => Promise.resolve(JSON.Encode.null),
         ~animateResize=false,
         ~surfaceFamily="vault",
@@ -639,9 +634,9 @@ let make = (
         messageParentWindow([("expiryDate", dict->getString("expiryDate", "")->JSON.Encode.string)])
       }
       if isInnerCardMessage && dict->Dict.get("vgsScriptLoadFailed")->Option.isSome {
-        loggerState.setLogError(
-          ~value=`Error during loading VGS script`->Identity.anyTypeToJson->JSON.stringify,
-          ~eventName=VGS_VAULT_FLOW,
+        SdkRuntimeLogger.logFunction(
+          ~event=WalletFlow(Vgs, Failed),
+          ~message="Error during loading VGS script",
         )
         setIsVgsScriptReady(_ => false)
       }
@@ -701,7 +696,6 @@ let make = (
               ~expiryMonth=month,
               ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
               ~cvcNumber,
-              ~logger=loggerState,
             )
             switch encryptedResult {
             | Ok(encryptedCard) =>
@@ -715,7 +709,6 @@ let make = (
                 ->Option.getOr("")
                 ->String.replace("+", ""),
                 ~rememberMe=isClickToPayRememberMe,
-                ~logger=loggerState,
                 ~clickToPayProvider,
                 ~clickToPayToken=clickToPayConfig.clickToPayToken,
               )
@@ -732,28 +725,18 @@ let make = (
                 ~includeAcceptance=false,
               )
             | Error(err) =>
-              loggerState.setLogError(
-                ~value={
-                  "message": `Error during checkout - ${err->formatException->JSON.stringify}`,
-                  "scheme": clickToPayProvider,
-                }
-                ->JSON.stringifyAny
-                ->Option.getOr(""),
-                ~eventName=CLICK_TO_PAY_FLOW,
+              ClickToPayLogger.logLifecycle(
+                ~event=CheckoutFailed,
+                ~message=`Error during checkout - ${err->formatException->JSON.stringify}`,
               )
             }
           }
         )()->ignore
       } catch {
       | err =>
-        loggerState.setLogError(
-          ~value={
-            "message": `Error during checkout - ${err->formatException->JSON.stringify}`,
-            "scheme": clickToPayProvider,
-          }
-          ->JSON.stringifyAny
-          ->Option.getOr(""),
-          ~eventName=CLICK_TO_PAY_FLOW,
+        ClickToPayLogger.logLifecycle(
+          ~event=CheckoutFailed,
+          ~message=`Error during checkout - ${err->formatException->JSON.stringify}`,
         )
       }
     | VISA =>
@@ -786,7 +769,6 @@ let make = (
               ->Option.getOr("")
               ->String.replace("+", ""),
               ~rememberMe=isClickToPayRememberMe,
-              ~logger=loggerState,
               ~clickToPayProvider,
               ~clickToPayToken=clickToPayConfig.clickToPayToken,
               ~orderId=clientSecret->Option.getOr(""),
@@ -803,14 +785,9 @@ let make = (
             )
           } catch {
           | err =>
-            loggerState.setLogError(
-              ~value={
-                "message": `Error during checkout - ${err->formatException->JSON.stringify}`,
-                "scheme": clickToPayProvider,
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
+            ClickToPayLogger.logLifecycle(
+              ~event=CheckoutFailed,
+              ~message=`Error during checkout - ${err->formatException->JSON.stringify}`,
             )
           }
         }

@@ -1,8 +1,6 @@
 open Utils
 @react.component
 let make = () => {
-  let logger = HyperLogger.make(~source=Elements(Payment))
-
   let stateMetadataRef = React.useRef(Dict.make()->JSON.Encode.object)
   let consumePostMessageForThreeDsMethodCompletionRef = React.useRef(false)
   let threeDsUrlRef = React.useRef("")
@@ -26,12 +24,7 @@ let make = () => {
     let iframeId = metadataDict->getString("iframeId", "")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
-      LoggerUtils.handleLogging(
-        ~optLogger=Some(logger),
-        ~eventName=THREE_DS_METHOD_RESULT,
-        ~value="Y",
-        ~paymentMethod="CARD",
-      )
+      SdkRuntimeLogger.logLifecycle(~event=ThreeDsMethodResult, ~paymentMethod="CARD", ~message="Y")
 
       isThreeDSMethodCompletionFired.current = true
 
@@ -100,13 +93,7 @@ let make = () => {
   }
 
   let handleOnError = value => {
-    LoggerUtils.handleLogging(
-      ~optLogger=Some(logger),
-      ~eventName=THREE_DS_METHOD_RESULT,
-      ~value,
-      ~paymentMethod="CARD",
-      ~logType=ERROR,
-    )
+    SdkRuntimeLogger.logLifecycle(~event=ThreeDsMethodFailed, ~paymentMethod="CARD", ~message=value)
     stateMetadataRef.current
     ->Utils.getDictFromJson
     ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
@@ -232,11 +219,8 @@ let make = () => {
 
           let paymentIntentId = metaDataDict->Utils.getString("paymentIntentId", "")
           let publishableKey = metaDataDict->Utils.getString("publishableKey", "")
-          let sdkAuthorization = metaDataDict->Utils.getString("sdkAuthorization", "")
 
-          logger.setClientSecret(paymentIntentId)
-          logger.setSdkAuthorization(sdkAuthorization)
-          logger.setMerchantId(publishableKey)
+          LoggerContext.setSessionData(~paymentId=paymentIntentId, ~merchantId=publishableKey, ())
 
           let ele = Window.querySelector("#threeDsInvisibleDiv")
 

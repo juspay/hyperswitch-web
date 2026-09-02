@@ -25,7 +25,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
   let isGPayReady = Jotai.useAtomValue(JotaiAtoms.isGooglePayReady)
   let isVgsScriptReady = Jotai.useAtomValue(JotaiAtoms.isVgsScriptReady)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let isShowOrPayUsing = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsing)
   let isShowOrPayUsingWhileLoading = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsingWhileLoading)
   let setIsTokenize = Jotai.useSetAtom(JotaiAtoms.isTokenize)
@@ -270,18 +269,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
       if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
         ErrorUtils.manageErrorWarning(
-          SDK_CONNECTOR_WARNING,
+          SdkConnectorWarning,
           ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
-          ~logger=loggerState,
         )
       } else if !checkPriorityList(paymentMethodOrder) {
         ErrorUtils.manageErrorWarning(
-          SDK_CONNECTOR_WARNING,
+          SdkConnectorWarning,
           ~dynamicStr=`'paymentMethodOrder' is ${Array.join(
               paymentMethodOrder->getOptionalArr,
               ", ",
             )} . Please enable Card Payment as 1st priority to show it as default.`,
-          ~logger=loggerState,
         )
       }
 
@@ -309,9 +306,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       }
     }
     if selectedOption !== "" {
-      loggerState.setLogInfo(
-        ~value="",
-        ~eventName=PAYMENT_METHOD_CHANGED,
+      SdkRuntimeLogger.logUser(
+        ~event=PaymentMethodSelected,
         ~paymentMethod=selectedOption->String.toUpperCase,
       )
     }
@@ -422,65 +418,77 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | Card => React.null
       | ACHTransfer =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="ACHBankTransferLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="ACHBankTransferLazy"
+        >
           <ACHBankTransferLazy />
         </ReusableReactSuspense>
       | SepaTransfer =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="SepaBankTransferLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="SepaBankTransferLazy"
+        >
           <SepaBankTransferLazy />
         </ReusableReactSuspense>
       | InstantTransfer =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="InstantBankTransferLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="InstantBankTransferLazy"
+        >
           <InstantBankTransferLazy />
         </ReusableReactSuspense>
       | InstantTransferFinland =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="InstantBankTransferFinlandLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="InstantBankTransferFinlandLazy"
+        >
           <InstantBankTransferFinlandLazy />
         </ReusableReactSuspense>
       | InstantTransferPoland =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="InstantBankTransferPolandLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="InstantBankTransferPolandLazy"
+        >
           <InstantBankTransferPolandLazy />
         </ReusableReactSuspense>
       | BacsTransfer =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="BacsBankTransferLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="BacsBankTransferLazy"
+        >
           <BacsBankTransferLazy />
         </ReusableReactSuspense>
       | ACHBankDebit =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="ACHBankDebitLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="ACHBankDebitLazy"
+        >
           <ACHBankDebitLazy />
         </ReusableReactSuspense>
       | SepaBankDebit =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="SepaBankDebitLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="SepaBankDebitLazy"
+        >
           <SepaBankDebitLazy />
         </ReusableReactSuspense>
       | BacsBankDebit =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="BacsBankDebitLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="BacsBankDebitLazy"
+        >
           <BacsBankDebitLazy />
         </ReusableReactSuspense>
       | BanContactCard => <ParentCardComponent cardCollectionMode="raw" isBancontact=true />
       | BecsBankDebit =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="BecsBankDebitLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="BecsBankDebitLazy"
+        >
           <BecsBankDebitLazy />
         </ReusableReactSuspense>
       | Boleto =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="BoletoLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="BoletoLazy"
+        >
           <BoletoLazy />
         </ReusableReactSuspense>
       | ApplePay =>
         switch applePayToken {
         | ApplePayTokenOptional(optToken) =>
           <ReusableReactSuspense
-            loaderComponent={<LoaderPaymentShimmer />} componentName="ApplePayLazy">
+            loaderComponent={<LoaderPaymentShimmer />} componentName="ApplePayLazy"
+          >
             <ApplePayLazy sessionObj=optToken walletOptions />
           </ReusableReactSuspense>
         | _ => React.null
@@ -490,7 +498,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           {switch gPayToken {
           | OtherTokenOptional(optToken) =>
             <ReusableReactSuspense
-              loaderComponent={<LoaderPaymentShimmer />} componentName="GPayLazy">
+              loaderComponent={<LoaderPaymentShimmer />} componentName="GPayLazy"
+            >
               {switch googlePayThirdPartyToken {
               | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
                 <GPayLazy
@@ -508,9 +517,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           | OtherTokenOptional(optToken) =>
             switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
             | (Some(_token), true, _) => {
-                loggerState.setLogInfo(
-                  ~value="PayPal Invoke SDK Flow in Tabs",
-                  ~eventName=PAYPAL_SDK_FLOW,
+                SdkRuntimeLogger.logFunction(
+                  ~event=WalletFlow(PaypalSdk, Progressed),
+                  ~message="PayPal Invoke SDK Flow in Tabs",
                 )
                 React.null
               }
@@ -525,7 +534,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         </SessionPaymentWrapper>
       | _ =>
         <ReusableReactSuspense
-          loaderComponent={<LoaderPaymentShimmer />} componentName="PaymentMethodsWrapperLazy">
+          loaderComponent={<LoaderPaymentShimmer />} componentName="PaymentMethodsWrapperLazy"
+        >
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
         </ReusableReactSuspense>
       }}
@@ -545,7 +555,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       setIsClickToPayAuthenticateError
       getVisaCards
       isShowPaymentMethodsDependingOnClickToPay
-      closeComponentIfSavedMethodsAreEmpty>
+      closeComponentIfSavedMethodsAreEmpty
+    >
       {paymentFormElement}
     </SavedMethodsWithPaymentForm>
   } else {
@@ -631,7 +642,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       <div
         className="PaymentLabel text-2xl font-semibold text-[#151619] mb-6"
         role="heading"
-        ariaLevel={1}>
+        ariaLevel={1}
+      >
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
@@ -664,17 +676,20 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         className="flex flex-col place-items-center"
         role="region"
         ariaLabel="Payment Section"
-        tabIndex={0}>
+        tabIndex={0}
+      >
         <ErrorBoundary
           key="payment_request_buttons_all"
           level={ErrorBoundary.RequestButton}
-          componentName="PaymentRequestButtonElement">
+          componentName="PaymentRequestButtonElement"
+        >
           <PaymentRequestButtonElement sessions walletOptions />
         </ErrorBoundary>
         <RenderIf
           condition={paymentOptions->Array.length > 0 &&
           walletOptions->Array.length > 0 &&
-          checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}>
+          checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}
+        >
           <Or separatorText={layoutClass.separatorText} />
         </RenderIf>
         {switch layoutClass.\"type" {
@@ -718,7 +733,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       <RenderIf
         condition={!displaySavedPaymentMethods &&
         paymentOptions->Array.length == 0 &&
-        walletOptions->Array.length == 0}>
+        walletOptions->Array.length == 0}
+      >
         {if isVgsScriptReady {
           <PaymentElementShimmer />
         } else {

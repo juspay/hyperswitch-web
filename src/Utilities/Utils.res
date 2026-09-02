@@ -193,27 +193,27 @@ let getDecodedBoolFromJson = (json, callbackFunc, defaultValue) => {
   ->Option.getOr(defaultValue)
 }
 
-let getRequiredString = (dict, key, default, ~logger) => {
+let getRequiredString = (dict, key, default) => {
   let optionalStr = getOptionString(dict, key)
   switch optionalStr {
   | Some(val) => {
-      val == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr=key, ~logger) : ()
+      val == "" ? manageErrorWarning(RequiredParameter, ~dynamicStr=key) : ()
       val
     }
   | None => {
-      manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr=key, ~logger)
+      manageErrorWarning(RequiredParameter, ~dynamicStr=key)
       optionalStr->Option.getOr(default)
     }
   }
 }
 
-let getWarningString = (dict, key, default, ~logger) => {
+let getWarningString = (dict, key, default) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.string {
     | Some(val) => val
     | None =>
-      manageErrorWarning(TYPE_STRING_ERROR, ~dynamicStr=key, ~logger)
+      manageErrorWarning(TypeStringError, ~dynamicStr=key)
       default
     }
   | None => default
@@ -257,25 +257,25 @@ let getBool = (dict, key, default) => {
 
 let getOptionsDict = options => options->Option.getOr(JSON.Encode.null)->getDictFromJson
 
-let getBoolWithWarning = (dict, key, default, ~logger) => {
+let getBoolWithWarning = (dict, key, default) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.bool {
     | Some(val) => val
     | None =>
-      manageErrorWarning(TYPE_BOOL_ERROR, ~dynamicStr=key, ~logger)
+      manageErrorWarning(TypeBoolError, ~dynamicStr=key)
       default
     }
   | None => default
   }
 }
-let getNumberWithWarning = (dict, key, ~logger, default) => {
+let getNumberWithWarning = (dict, key, default) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.float {
     | Some(val) => val->Float.toInt
     | None =>
-      manageErrorWarning(TYPE_INT_ERROR, ~dynamicStr=key, ~logger)
+      manageErrorWarning(TypeIntError, ~dynamicStr=key)
       default
     }
   | None => default
@@ -451,7 +451,7 @@ let toCamelCase = str => {
     ) => {
       letter->String.toUpperCase
     })
-    ->String.replaceRegExp(%re(`/[^a-zA-Z]/g`), "")
+    ->String.replaceRegExp(/[^a-zA-Z]/g, "")
   }
 }
 
@@ -468,9 +468,9 @@ let toCamelCaseWithNumberSupport = str => {
     ) => {
       letter->String.toUpperCase
     })
-    ->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+    ->String.replaceRegExp(/[^a-zA-Z0-9]/g, "")
   } else {
-    str->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+    str->String.replaceRegExp(/[^a-zA-Z0-9]/g, "")
   }
 }
 
@@ -583,9 +583,7 @@ let removeDuplicate = arr => {
 }
 
 let isVpaIdValid = vpaId => {
-  switch vpaId->String.match(
-    %re("/^[a-zA-Z0-9]([a-zA-Z0-9.-]{1,50})[a-zA-Z0-9]@[a-zA-Z0-9]{2,}$/"),
-  ) {
+  switch vpaId->String.match(/^[a-zA-Z0-9]([a-zA-Z0-9.-]{1,50})[a-zA-Z0-9]@[a-zA-Z0-9]{2,}$/) {
   | Some(_match) => Some(true)
   | None => vpaId->String.length > 0 ? Some(false) : None
   }
@@ -596,9 +594,7 @@ let checkEmailValid = (
   fn: (JotaiAtomTypes.field => JotaiAtomTypes.field) => unit,
 ) => {
   switch email.value->String.match(
-    %re(
-      "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/"
-    ),
+    /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   ) {
   | Some(_match) =>
     fn(prev => {
@@ -843,18 +839,12 @@ let validateRountingNumber = str => {
   }
 }
 
-let handlePostMessageEvents = (
-  ~complete,
-  ~empty,
-  ~paymentType,
-  ~loggerState: HyperLoggerTypes.loggerMake,
-  ~savedMethod=false,
-) => {
+let handlePostMessageEvents = (~iframeId, ~complete, ~empty, ~paymentType, ~savedMethod=false) => {
   if complete && paymentType !== "" {
     let value = `Payment Data Filled: ${savedMethod
         ? "Saved Payment Method"
         : "New Payment Method"}`
-    loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
+    SdkRuntimeLogger.logUser(~event=PaymentDataFilled, ~paymentMethod=paymentType, ~message=value)
   }
   messageParentWindow([
     ("elementType", "payment"->JSON.Encode.string),
@@ -864,7 +854,7 @@ let handlePostMessageEvents = (
   ])
 }
 
-let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
+let onlyDigits = str => str->String.replaceRegExp(/\D/g, "")
 
 let getCountryCode = country => {
   CountryStateDataRefs.countryDataRef.contents
@@ -944,7 +934,7 @@ let snakeToTitleCase = str => {
 }
 
 let formatIBAN = iban => {
-  let formatted = iban->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+  let formatted = iban->String.replaceRegExp(/[^a-zA-Z0-9]/g, "")
   let countryCode = formatted->String.substring(~start=0, ~end=2)->String.toUpperCase
   let codeLastTwo = formatted->String.substring(~start=2, ~end=4)
   let remaining = formatted->String.substringToEnd(~start=4)
@@ -958,7 +948,7 @@ let formatIBAN = iban => {
 }
 
 let formatBSB = bsb => {
-  let formatted = bsb->String.replaceRegExp(%re("/\D+/g"), "")
+  let formatted = bsb->String.replaceRegExp(/\D+/g, "")
   let firstPart = formatted->String.substring(~start=0, ~end=3)
   let secondPart = formatted->String.substring(~start=3, ~end=6)
 
@@ -1006,16 +996,16 @@ let findVersion = (re, content) => {
 
 let browserDetect = content => {
   let patterns = [
-    ("Instagram", %re("/Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Instagram"),
-    ("FBAV", %re("/FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Facebook"),
-    ("Twitter", %re("/iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Twitter"),
-    ("LinkedIn", %re("/LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig"), "LinkedIn"),
-    ("Edg", %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Microsoft Edge"),
-    ("Chrome", %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Chrome"),
-    ("Safari", %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Safari"),
-    ("Opera", %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Opera"),
-    ("Firefox", %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
-    ("fxios", %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
+    ("Instagram", /Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig, "Instagram"),
+    ("FBAV", /FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig, "Facebook"),
+    ("Twitter", /iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig, "Twitter"),
+    ("LinkedIn", /LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig, "LinkedIn"),
+    ("Edg", /Edg\/([\d]+\.[\w]?\.?[\w]+)/ig, "Microsoft Edge"),
+    ("Chrome", /Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig, "Chrome"),
+    ("Safari", /Safari\/([\d]+\.[\w]?\.?[\w]+)/ig, "Safari"),
+    ("Opera", /Opera\/([\d]+\.[\w]?\.?[\w]+)/ig, "Opera"),
+    ("Firefox", /Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig, "Firefox"),
+    ("fxios", /fxios\/([\d]+\.[\w]?\.?[\w]+)/ig, "Firefox"),
   ]
 
   switch patterns
@@ -1151,8 +1141,7 @@ let fetchApi = (
 
 let fetchApiWithLogging = async (
   uri,
-  ~eventName,
-  ~logger,
+  ~event: CorePaymentLogger.apiEvent,
   ~onSuccess,
   ~onFailure,
   ~bodyStr="",
@@ -1160,69 +1149,61 @@ let fetchApiWithLogging = async (
   ~method,
   ~customPodUri=None,
   ~publishableKey=None,
-  ~isPaymentSession=false,
+  ~isPaymentSession as _=false,
   ~onCatchCallback=None,
   ~sdkAuthorization=None,
   ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
-  open LoggerUtils
-
-  // * Log request initiation
-  LogAPIResponse.logApiResponse(
-    ~logger,
-    ~uri,
-    ~eventName=apiEventInitMapper(eventName),
-    ~status=Request,
-  )
-
+  let requestDetails = [("url", uri->JSON.Encode.string)]
+  let statusCode = ref(0)
+  let responseOk = ref(false)
   try {
-    let body = switch method {
-    | #GET => None
-    | _ => Some(Fetch.Body.string(bodyStr))
-    }
+    await CorePaymentLogger.observeApi(
+      ~event,
+      ~details=requestDetails,
+      ~resultDetails=_ => [("status_code", statusCode.contents->JSON.Encode.int)],
+      ~resultFailure=_ =>
+        responseOk.contents
+          ? None
+          : Some({
+              LoggerCommonHelpers.name: "HTTP_ERROR",
+              message: Some(statusCode.contents->Int.toString),
+              details: [],
+            }),
+      ~call=async () => {
+        let body = switch method {
+        | #GET => None
+        | _ => Some(Fetch.Body.string(bodyStr))
+        }
 
-    let resp = await Fetch.fetch(
-      uri,
-      {
-        method,
-        ?body,
-        ?signal,
-        headers: getHeaders(
-          ~headers=headers->Option.getOr(Dict.make()),
-          ~uri,
-          ~customPodUri,
-          ~publishableKey,
-          ~sdkAuthorization,
-        ),
+        let resp = await Fetch.fetch(
+          uri,
+          {
+            method,
+            ?body,
+            ?signal,
+            headers: getHeaders(
+              ~headers=headers->Option.getOr(Dict.make()),
+              ~uri,
+              ~customPodUri,
+              ~publishableKey,
+              ~sdkAuthorization,
+            ),
+          },
+        )
+
+        statusCode := resp->Fetch.Response.status
+        responseOk := resp->Fetch.Response.ok
+
+        if resp->Fetch.Response.ok {
+          let data = await Fetch.Response.json(resp)
+          onSuccess(data)
+        } else {
+          let data = await resp->Fetch.Response.json
+          onFailure(data)
+        }
       },
     )
-
-    let statusCode = resp->Fetch.Response.status
-
-    if resp->Fetch.Response.ok {
-      let data = await Fetch.Response.json(resp)
-      LogAPIResponse.logApiResponse(
-        ~logger,
-        ~uri,
-        ~eventName=Some(eventName),
-        ~status=Success,
-        ~statusCode,
-        ~isPaymentSession,
-      )
-      onSuccess(data)
-    } else {
-      let data = await resp->Fetch.Response.json
-      LogAPIResponse.logApiResponse(
-        ~logger,
-        ~uri,
-        ~eventName=Some(eventName),
-        ~status=Error,
-        ~statusCode,
-        ~data,
-        ~isPaymentSession,
-      )
-      onFailure(data)
-    }
   } catch {
   | err => {
       let exceptionMessage = err->formatException
@@ -1230,17 +1211,8 @@ let fetchApiWithLogging = async (
         "Unexpected error while making request:",
         {
           "uri": uri,
-          "event": eventName,
           "error": exceptionMessage,
         },
-      )
-      LogAPIResponse.logApiResponse(
-        ~logger,
-        ~uri,
-        ~eventName=Some(eventName),
-        ~status=Exception,
-        ~data=exceptionMessage,
-        ~isPaymentSession,
       )
       switch onCatchCallback {
       | Some(fun) => fun(exceptionMessage)
@@ -1661,16 +1633,7 @@ let makeOneClickHandlerPromise = sdkHandleIsThere => {
   })
 }
 
-let generateRandomString = length => {
-  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-  let result = ref("")
-  let charactersLength = characters->String.length
-  Int.range(0, length)->Array.forEach(_ => {
-    let charIndex = mod((Math.random() *. 100.0)->Float.toInt, charactersLength)
-    result := result.contents ++ characters->String.charAt(charIndex)
-  })
-  result.contents
-}
+let generateRandomString = LoggerCommonHelpers.generateRandomString
 
 let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   switch paymentType {
@@ -1787,7 +1750,7 @@ let getStateNameFromCode = (stateCode: string, countryIso: string): string => {
   ->Option.getOr(stateCode)
 }
 
-let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")
+let removeHyphen = str => str->String.replaceRegExp(/-/g, "")
 
 let compareLogic = (a, b) => {
   if a == b {
@@ -1928,7 +1891,7 @@ let isWidgetPresent = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => 
 }
 
 let isDigitLimitExceeded = (val, ~digit) => {
-  switch val->String.match(%re("/\d/g")) {
+  switch val->String.match(/\d/g) {
   | Some(matches) => matches->Array.length > digit
   | None => false
   }
@@ -1971,7 +1934,7 @@ let validateName = (
   prev: JotaiAtomTypes.field,
   localeString: LocaleStringTypes.localeStrings,
 ) => {
-  let isValid = val !== "" && %re("/^\D*$/")->RegExp.test(val)
+  let isValid = val !== "" && /^\D*$/->RegExp.test(val)
   let errorString = if val === "" {
     prev.errorString
   } else if isValid {
@@ -2017,15 +1980,21 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
 }
 
 let getStringFromBool = val => val ? "true" : "false"
-let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventName) => {
+let loadScriptIfNotExist = (~url, ~provider: SdkRuntimeLogger.resourceProvider) => {
   if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
     let script = Window.createElement("script")
     script->Window.elementSrc(url)
     script->Window.elementOnerror(_ => {
-      logger.setLogError(~value="Script failed to load", ~eventName)
+      SdkRuntimeLogger.logResource(
+        ~event=ScriptLoad(provider, Failed),
+        ~message="Script failed to load",
+      )
     })
     script->Window.elementOnload(() => {
-      logger.setLogInfo(~value="Script loaded successfully", ~eventName)
+      SdkRuntimeLogger.logResource(
+        ~event=ScriptLoad(provider, Progressed),
+        ~message="Script loaded successfully",
+      )
     })
     Window.body->Window.appendChild(script)
   }

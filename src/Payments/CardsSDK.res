@@ -11,7 +11,6 @@
 // always false for the new-card flow (full card fields).
 @react.component
 let make = (~cvcOnly=false) => {
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
   let cardCollectionMode = Jotai.useAtomValue(JotaiAtoms.cardCollectionMode)
   let isBancontact = Jotai.useAtomValue(JotaiAtoms.isBancontactCardFlow)
@@ -34,7 +33,6 @@ let make = (~cvcOnly=false) => {
   // RawEmit card-collection mode — never for Tokenise (Hyperswitch vault or
   // VGS), where this component only ever sees vaulted/tokenised card data.
   let {cardProps, expiryProps, cvcProps} = CommonCardProps.useCardForm(
-    ~logger=loggerState,
     ~paymentType=cardFlowType,
     ~runEligibility=cardCollectionMode === RawEmit,
     ~logControlEvents=cardCollectionMode !== RawEmit,

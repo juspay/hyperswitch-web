@@ -10,7 +10,6 @@ let getCustomerSavedPaymentMethods = (
   ~clientSecretRef: ref<string>,
   ~publishableKey,
   ~endpoint,
-  ~logger,
   ~customPodUri,
   ~sdkAuthorizationRef: ref<string>,
   ~redirectionFlags,
@@ -31,7 +30,6 @@ let getCustomerSavedPaymentMethods = (
     ~publishableKey,
     ~endpoint,
     ~customPodUri,
-    ~logger,
     ~isPaymentSession=true,
     ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
   )
@@ -46,12 +44,12 @@ let getCustomerSavedPaymentMethods = (
       )
     } catch {
     | err =>
-      logger.setLogError(
-        ~value=`ERROR DURING LOADING GOOGLE PAY CLIENT - ${err
+      SdkRuntimeLogger.logResource(
+        ~event=ScriptLoad(GooglePayScript, Failed),
+        ~paymentMethod="GOOGLE_PAY",
+        ~message=`ERROR DURING LOADING GOOGLE PAY CLIENT - ${err
           ->formatException
           ->JSON.stringify}`,
-        ~eventName=GOOGLE_PAY_SCRIPT,
-        ~paymentMethod="GOOGLE_PAY",
       )
       None
     }
@@ -204,7 +202,7 @@ let getCustomerSavedPaymentMethods = (
       let hasCvc = payloadDict->Dict.get("cvc")
       if hasCvc->Option.isSome {
         let cvcString = hasCvc->getStringFromOptionalJson("")
-        let isValidCvc = %re("/^\d{3,4}$/")->RegExp.test(cvcString)
+        let isValidCvc = /^\d{3,4}$/->RegExp.test(cvcString)
         if !isValidCvc {
           handleFailureResponse(
             ~message="CVC must be a string of 3 to 4 numeric digits",
@@ -218,7 +216,6 @@ let getCustomerSavedPaymentMethods = (
             ~payload=updatedPayload,
             ~publishableKey,
             ~clientSecret=clientSecretRef.contents,
-            ~logger,
             ~customPodUri,
             ~redirectionFlags,
             ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
@@ -252,7 +249,6 @@ let getCustomerSavedPaymentMethods = (
           ~payload=updatedPayload,
           ~publishableKey,
           ~clientSecret=clientSecretRef.contents,
-          ~logger,
           ~customPodUri,
           ~redirectionFlags,
           ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
@@ -333,7 +329,6 @@ let getCustomerSavedPaymentMethods = (
             ~payload,
             ~publishableKey,
             ~clientSecret=clientSecretRef.contents,
-            ~logger,
             ~customPodUri,
             ~redirectionFlags,
             ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
@@ -350,7 +345,6 @@ let getCustomerSavedPaymentMethods = (
         ~paymentRequest=applePayTokenRef.contents.paymentRequestData,
         ~applePaySessionRef,
         ~applePayPresent=applePayTokenRef.contents.sessionTokenData,
-        ~logger,
         ~callBackFunc=processPayment,
         ~clientSecret=clientSecretRef.contents,
         ~publishableKey,
@@ -371,7 +365,11 @@ let getCustomerSavedPaymentMethods = (
           let metadata = json->Identity.anyTypeToJson
 
           let value = "Payment Data Filled: New Payment Method"
-          logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="GOOGLE_PAY")
+          SdkRuntimeLogger.logUser(
+            ~event=PaymentDataFilled,
+            ~paymentMethod="GOOGLE_PAY",
+            ~message=value,
+          )
 
           let completeGooglePayPayment = () => {
             let body = GooglePayHelpers.getGooglePayBodyFromResponse(
@@ -390,7 +388,6 @@ let getCustomerSavedPaymentMethods = (
               ~payload,
               ~publishableKey,
               ~clientSecret=clientSecretRef.contents,
-              ~logger,
               ~customPodUri,
               ~redirectionFlags,
               ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
@@ -400,11 +397,10 @@ let getCustomerSavedPaymentMethods = (
           completeGooglePayPayment()
         })
         ->catch(err => {
-          logger.setLogInfo(
-            ~value=err->Identity.anyTypeToJson->JSON.stringify,
-            ~eventName=GOOGLE_PAY_FLOW,
+          SdkRuntimeLogger.logFunction(
+            ~event=WalletFlow(GooglePay, Started),
             ~paymentMethod="GOOGLE_PAY",
-            ~logType=DEBUG,
+            ~message=err->Identity.anyTypeToJson->JSON.stringify,
           )
 
           handleFailureResponse(
@@ -413,11 +409,10 @@ let getCustomerSavedPaymentMethods = (
           )->resolve
         })
       | None =>
-        logger.setLogInfo(
-          ~value="GooglePay client unavailable for loadPaymentData",
-          ~eventName=GOOGLE_PAY_FLOW,
+        SdkRuntimeLogger.logFunction(
+          ~event=WalletFlow(GooglePay, Started),
           ~paymentMethod="GOOGLE_PAY",
-          ~logType=DEBUG,
+          ~message="GooglePay client unavailable for loadPaymentData",
         )
         handleFailureResponse(
           ~message="Google Pay is not available",
@@ -504,7 +499,6 @@ let getCustomerSavedPaymentMethods = (
       PaymentHelpers.fetchSessions(
         ~clientSecret=clientSecretRef.contents,
         ~publishableKey,
-        ~logger,
         ~customPodUri,
         ~endpoint,
         ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
@@ -552,22 +546,20 @@ let getCustomerSavedPaymentMethods = (
             )
             ->catch(
               err => {
-                logger.setLogInfo(
-                  ~value=err->Identity.anyTypeToJson->JSON.stringify,
-                  ~eventName=GOOGLE_PAY_FLOW,
+                SdkRuntimeLogger.logFunction(
+                  ~event=WalletFlow(GooglePay, Started),
                   ~paymentMethod="GOOGLE_PAY",
-                  ~logType=DEBUG,
+                  ~message=err->Identity.anyTypeToJson->JSON.stringify,
                 )
                 false->resolve
               },
             )
           } catch {
           | exn => {
-              logger.setLogInfo(
-                ~value=exn->Identity.anyTypeToJson->JSON.stringify,
-                ~eventName=GOOGLE_PAY_FLOW,
+              SdkRuntimeLogger.logFunction(
+                ~event=WalletFlow(GooglePay, Started),
                 ~paymentMethod="GOOGLE_PAY",
-                ~logType=DEBUG,
+                ~message=exn->Identity.anyTypeToJson->JSON.stringify,
               )
               false->resolve
             }
@@ -592,11 +584,10 @@ let getCustomerSavedPaymentMethods = (
         )
         ->catch(
           err => {
-            logger.setLogInfo(
-              ~value=err->Identity.anyTypeToJson->JSON.stringify,
-              ~eventName=GOOGLE_PAY_FLOW,
+            SdkRuntimeLogger.logFunction(
+              ~event=WalletFlow(GooglePay, Started),
               ~paymentMethod="GOOGLE_PAY",
-              ~logType=DEBUG,
+              ~message=err->Identity.anyTypeToJson->JSON.stringify,
             )
             resolve()
           },

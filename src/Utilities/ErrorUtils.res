@@ -1,31 +1,29 @@
-open HyperLoggerTypes
-
 type type_ = Error | Warning
 type stringType = Dynamic(string => string) | Static(string)
-type error = array<(HyperLoggerTypes.eventName, type_, string)>
+type error = array<(LoaderLogger.lifecycleEvent, type_, string)>
 
 let errorWarning = [
   (
-    INVALID_PK,
+    LoaderLogger.InvalidPublishableKey,
     Error,
     Static(
       "INTEGRATION ERROR: Invalid Publishable key, starts with pk_dev_(development), pk_snd_(sandbox/test) or pk_prd_(production/live)",
     ),
   ),
   (
-    DEPRECATED_LOADSTRIPE,
+    LoaderLogger.DeprecatedLoadStripe,
     Warning,
     Static("loadStripe is deprecated. Please use loadHyper instead."),
   ),
   (
-    REQUIRED_PARAMETER,
+    LoaderLogger.RequiredParameter,
     Error,
     Dynamic(
       str => {`INTEGRATION ERROR: ${str} is a required field/parameter or ${str} cannot be empty`},
     ),
   ),
   (
-    TYPE_BOOL_ERROR,
+    LoaderLogger.TypeBoolError,
     Error,
     Dynamic(
       str => {
@@ -34,7 +32,7 @@ let errorWarning = [
     ),
   ),
   (
-    TYPE_STRING_ERROR,
+    LoaderLogger.TypeStringError,
     Error,
     Dynamic(
       str => {
@@ -43,7 +41,7 @@ let errorWarning = [
     ),
   ),
   (
-    TYPE_INT_ERROR,
+    LoaderLogger.TypeIntError,
     Error,
     Dynamic(
       str => {
@@ -52,7 +50,7 @@ let errorWarning = [
     ),
   ),
   (
-    VALUE_OUT_OF_RANGE,
+    LoaderLogger.ValueOutOfRange,
     Warning,
     Dynamic(
       str => {
@@ -61,7 +59,7 @@ let errorWarning = [
     ),
   ),
   (
-    SDK_CONNECTOR_WARNING,
+    LoaderLogger.SdkConnectorWarning,
     Warning,
     Dynamic(
       str => {
@@ -69,9 +67,9 @@ let errorWarning = [
       },
     ),
   ),
-  (INVALID_FORMAT, Error, Dynamic(str => {str})),
+  (LoaderLogger.InvalidFormat, Error, Dynamic(str => {str})),
   (
-    HTTP_NOT_ALLOWED,
+    LoaderLogger.HttpNotAllowed,
     Error,
     Dynamic(
       str =>
@@ -79,7 +77,7 @@ let errorWarning = [
     ),
   ),
   (
-    INTERNAL_API_DOWN,
+    LoaderLogger.InternalApiDown,
     Warning,
     Static(
       "LOAD ERROR: Something went wrong! Please try again or contact out dev support https://hyperswitch.io/docs/support",
@@ -87,26 +85,18 @@ let errorWarning = [
   ),
 ]
 
-let manageErrorWarning = (
-  key: HyperLoggerTypes.eventName,
-  ~dynamicStr="",
-  ~logger: HyperLoggerTypes.loggerMake,
-) => {
+let manageErrorWarning = (key: LoaderLogger.lifecycleEvent, ~dynamicStr="") => {
   let entry = errorWarning->Array.find(((value, _, _)) => value == key)
   switch entry {
   | Some(value) => {
-      let (eventName, type_, str) = value
+      let (event, type_, str) = value
 
       let value = switch str {
       | Static(string) => string
       | Dynamic(fn) => fn(dynamicStr)
       }
-      let logType: HyperLoggerTypes.logType = switch type_ {
-      | Warning => WARNING
-      | Error => ERROR
-      }
 
-      logger.setLogError(~value, ~eventName, ~logType, ~logCategory=USER_ERROR)
+      LoaderLogger.logLifecycle(~event, ~message=value)
 
       switch type_ {
       | Warning => Console.warn(value)
@@ -140,10 +130,9 @@ let unknownPropValueWarning = (inValidValue, validValueArr, dictType) => {
     ->Array.join(", ")
   Console.warn(`Unknown Value: '${inValidValue}' value in ${dictType}, Expected ${expectedValues}`)
 }
-let valueOutRangeWarning = (num: int, dictType, range, ~logger: HyperLoggerTypes.loggerMake) => {
+let valueOutRangeWarning = (num: int, dictType, range) => {
   manageErrorWarning(
-    VALUE_OUT_OF_RANGE,
+    LoaderLogger.ValueOutOfRange,
     ~dynamicStr=`${num->Int.toString} value in ${dictType} Expected value between ${range}`,
-    ~logger: HyperLoggerTypes.loggerMake,
   )
 }

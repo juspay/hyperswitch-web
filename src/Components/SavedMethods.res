@@ -33,10 +33,8 @@ let make = (
   let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
-    loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT)
   }
   let {
     displaySavedPaymentMethodsCheckbox,
@@ -79,7 +77,7 @@ let make = (
   let (isEligibilityPending, setIsEligibilityPending) = React.useState(_ => false)
   let eligibilityControllerRef = React.useRef(None)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let intent = PaymentHelpers.usePaymentIntent(Card)
   let savedCardlength = savedMethods->Array.length
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
@@ -213,7 +211,6 @@ let make = (
       </RenderIf>
       <RenderIf condition={shouldShowClickToPaySection}>
         <ClickToPayAuthenticate
-          loggerState
           savedMethods
           isClickToPayAuthenticateError
           setIsClickToPayAuthenticateError
@@ -263,7 +260,6 @@ let make = (
         ~controllerRef=eligibilityControllerRef,
         ~clientSecret,
         ~publishableKey,
-        ~logger=loggerState,
         ~customPodUri,
         ~bodyArr=eligibilityBody,
         ~sdkAuthorization,
@@ -277,7 +273,6 @@ let make = (
           (
             ~clientSecret,
             ~publishableKey,
-            ~logger,
             ~customPodUri,
             ~bodyArr,
             ~sdkAuthorization,
@@ -287,7 +282,6 @@ let make = (
             PaymentHelpers.fetchPaymentMethodEligibility(
               ~clientSecret,
               ~publishableKey,
-              ~logger,
               ~customPodUri,
               ~bodyArr,
               ~sdkAuthorization,
@@ -423,7 +417,6 @@ let make = (
       if customerMethod.card.isClickToPayCard {
         ClickToPayHelpers.handleProceedToPay(
           ~srcDigitalCardId=customerMethod.paymentToken,
-          ~logger=loggerState,
           ~clickToPayProvider,
           ~isClickToPayRememberMe,
           ~clickToPayToken=clickToPayConfig.clickToPayToken,

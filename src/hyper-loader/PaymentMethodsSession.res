@@ -129,8 +129,11 @@ type fieldEntry = {
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
 
-let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): paymentMethodsSession => {
-  logger.setLogInfo(~value="Payment method session card form created", ~eventName=CARD_FORM_FLOW)
+let make = (options: JSON.t): paymentMethodsSession => {
+  SdkRuntimeLogger.logLifecycle(
+    ~event=CardFormCreated,
+    ~message="Payment method session card form created",
+  )
   let optionsDict = options->getDictFromJson
 
   let sdkAuthorizationRaw = optionsDict->getString("sdkAuthorization", "")
@@ -363,7 +366,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): paymentMetho
       if vaultId->String.length == 0 || environment->String.length == 0 {
         None
       } else {
-        let broker = VGSVaultBroker.make(~vaultId, ~environment, ~eventCallbacksRef, ~logger)
+        let broker = VGSVaultBroker.make(~vaultId, ~environment, ~eventCallbacksRef)
         vgsBrokerRef := Some(broker)
         Some(broker)
       }
@@ -496,7 +499,6 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): paymentMetho
           savedCardBrandRef := brand
         }
       },
-      ~logger,
     )
 
     attachFieldListener()
@@ -510,7 +512,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): paymentMetho
   }
 
   let create = (fieldType: string, options: JSON.t): fieldHandle => {
-    logger.setLogInfo(~value=`${fieldType} created`, ~eventName=CARD_FORM_FLOW)
+    SdkRuntimeLogger.logLifecycle(~event=CardFormFieldCreated, ~message=`${fieldType} created`)
     if sessionStateRef.contents != Active {
       Console.warn(
         `[PaymentMethodsSession] create("${fieldType}") called on consumed/deinitialized session`,
@@ -916,18 +918,18 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): paymentMetho
   let logTokenizeOutcome = (result: JSON.t) =>
     switch result->getDictFromJson->getDictFromDict("error")->Dict.get("code") {
     | Some(code) =>
-      logger.setLogInfo(
-        ~value=`tokenize failed: ${code->JSON.Decode.string->Option.getOr("")}`,
-        ~eventName=CARD_FORM_FLOW,
-        ~logType=ERROR,
+      SdkRuntimeLogger.logFunction(
+        ~event=CardFormConfirm(Failed),
+        ~message=`tokenize failed: ${code->JSON.Decode.string->Option.getOr("")}`,
       )
-    | None => logger.setLogInfo(~value="tokenize succeeded", ~eventName=CARD_FORM_FLOW)
+    | None =>
+      SdkRuntimeLogger.logFunction(~event=CardFormConfirm(Progressed), ~message="tokenize succeeded")
     }
 
   let tokenize = (): promise<JSON.t> => {
-    logger.setLogInfo(
-      ~value=`tokenize initiated: ${detectVaultType()} vault`,
-      ~eventName=CARD_FORM_FLOW,
+    SdkRuntimeLogger.logFunction(
+      ~event=CardFormConfirm(Started),
+      ~message=`tokenize initiated: ${detectVaultType()} vault`,
     )
     let outcome = if sessionStateRef.contents != Active {
       Promise.resolve(sessionConsumedResult(~locale, ()))
@@ -989,7 +991,10 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): paymentMetho
   }
 
   let deinit = (): unit => {
-    logger.setLogInfo(~value="Payment method session card form deinitialized", ~eventName=CARD_FORM_FLOW)
+    SdkRuntimeLogger.logLifecycle(
+      ~event=CardFormDeinitialized,
+      ~message="Payment method session card form deinitialized",
+    )
     if sessionStateRef.contents != Deinitialized {
       fieldsRef.contents
       ->Dict.valuesToArray

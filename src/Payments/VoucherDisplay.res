@@ -5,7 +5,6 @@ let make = () => {
   let (returnUrl, setReturnUrl) = React.useState(_ => "")
   let (downloadUrl, setDownloadUrl) = React.useState(_ => "")
   let (reference, setReference) = React.useState(_ => "")
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let (downloadCounter, setDownloadCounter) = React.useState(_ => 0)
   let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
   let (paymentIntent, setPaymentIntent) = React.useState(_ => JSON.Encode.null)
@@ -59,13 +58,13 @@ let make = () => {
               ref={linkRef->ReactDOM.Ref.domRef}
               onClick={_ => {
                 setDownloadCounter(c => c + 1)
-                LoggerUtils.handleLogging(
-                  ~optLogger=Some(logger),
-                  ~value=downloadCounter->Int.toString,
-                  ~eventName=DISPLAY_VOUCHER,
+                CorePaymentLogger.logLifecycle(
+                  ~event=DisplayVoucher,
                   ~paymentMethod,
+                  ~message=downloadCounter->Int.toString,
                 )
-              }}>
+              }}
+            >
               {React.string("here")}
             </a>
             {React.string(" to download it.")}
@@ -95,7 +94,8 @@ let make = () => {
               }
               onClick={_ => {
                 closeModal()
-              }}>
+              }}
+            >
               {React.string("Done")}
             </button>
           </div>

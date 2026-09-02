@@ -7,7 +7,6 @@ let make = () => {
   let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   let eventsToSendToParent = ["openurl_if_required"]
   eventsToSendToParent->UtilityHooks.useSendEventsToParent
@@ -45,7 +44,10 @@ let make = () => {
       } catch {
       | err => {
           let exceptionMessage = err->formatException->JSON.stringify
-          loggerState.setLogError(~value=exceptionMessage, ~eventName=THREE_DS_POPUP_REDIRECTION)
+          CorePaymentLogger.logLifecycle(
+            ~event=ThreeDsPopupRedirectionFailed,
+            ~message=exceptionMessage,
+          )
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
         }
       }

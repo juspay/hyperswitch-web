@@ -68,7 +68,6 @@ let startApplePaySession = (
   ~paymentRequest,
   ~applePaySessionRef,
   ~applePayPresent,
-  ~logger: HyperLoggerTypes.loggerMake,
   ~callBackFunc,
   ~resolvePromise,
   ~clientSecret,
@@ -155,7 +154,6 @@ let startApplePaySession = (
 
       calculateTax(
         ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
-        ~logger,
         ~publishableKey,
         ~clientSecret,
         ~paymentMethodType,
@@ -208,18 +206,21 @@ let startApplePaySession = (
   ssn.onpaymentauthorized = event => {
     ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson)
     applePaySessionRef := Nullable.null
-    let value = "Payment Data Filled: New Payment Method"
-    logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="APPLE_PAY")
+    SdkRuntimeLogger.logUser(
+      ~event=PaymentDataFilled,
+      ~paymentMethod="APPLE_PAY",
+      ~message="Payment Data Filled: New Payment Method",
+    )
 
     let payment = event.payment
     payment->callBackFunc
   }
   ssn.oncancel = _ => {
     applePaySessionRef := Nullable.null
-    logger.setLogError(
-      ~value="Apple Pay Payment Cancelled",
-      ~eventName=APPLE_PAY_FLOW,
+    SdkRuntimeLogger.logFunction(
+      ~event=WalletFlow(ApplePay, Failed),
       ~paymentMethod="APPLE_PAY",
+      ~message="Apple Pay Payment Cancelled",
     )
     handleFailureResponse(
       ~message="ApplePay Session Cancelled",
@@ -246,7 +247,6 @@ let useHandleApplePayResponse = (
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
@@ -313,15 +313,10 @@ let useHandleApplePayResponse = (
             ~isManualRetryEnabled,
           )
         } else if dict->Dict.get("applePayConfirmRequest")->Option.isSome {
-          // The interceptor in the parent window is asking us to call /confirm and
-          // return the TrustPay secrets so it can swap them into TrustPay's
-          // merchant-validation FormData. Reuse processPayment so the confirm goes
-          // through PaymentHelpers; intentCall posts "applePayConfirmSecrets" back to
-          // the parent for the interceptor flow (~isTrustpayInterceptorConfirm=true).
-          logger.setLogInfo(
-            ~value="[ApplePayInterceptor] applePayConfirmRequest received — calling /confirm",
-            ~eventName=APPLE_PAY_FLOW,
+          SdkRuntimeLogger.logFunction(
+            ~event=WalletFlow(ApplePay, Progressed),
             ~paymentMethod="APPLE_PAY",
+            ~message="[ApplePayInterceptor] applePayConfirmRequest received — calling /confirm",
           )
 
           processPayment(
@@ -338,11 +333,10 @@ let useHandleApplePayResponse = (
         }
       } catch {
       | _ =>
-        logger.setLogError(
-          ~value="Error in parsing Apple Pay Data",
-          ~eventName=APPLE_PAY_FLOW,
+        SdkRuntimeLogger.logFunction(
+          ~event=WalletFlow(ApplePay, Failed),
           ~paymentMethod="APPLE_PAY",
-          // ~internalMetadata=err->formatException->JSON.stringify,
+          ~message="Error in parsing Apple Pay Data",
         )
       }
     }
@@ -504,7 +498,6 @@ let handleApplePayBraintreeClick = (
   authorization,
   applePayPaymentRequest,
   selectorString,
-  logger: HyperLoggerTypes.loggerMake,
   event: Types.event,
 ) => {
   messageParentWindow([
@@ -524,16 +517,16 @@ let handleApplePayBraintreeClick = (
         ~errortype="validation_error",
         ~message="ApplePay Braintree nonce is empty",
       )
-      logger.setLogError(
-        ~value="ApplePay Braintree nonce is empty",
-        ~eventName=APPLE_PAY_FLOW,
+      SdkRuntimeLogger.logFunction(
+        ~event=WalletFlow(ApplePay, Failed),
         ~paymentMethod="APPLE_PAY",
+        ~message="ApplePay Braintree nonce is empty",
       )
     } else {
-      logger.setLogInfo(
-        ~value="ApplePay Braintree payment Successfull",
-        ~eventName=APPLE_PAY_FLOW,
+      SdkRuntimeLogger.logFunction(
+        ~event=WalletFlow(ApplePay, Progressed),
         ~paymentMethod="APPLE_PAY",
+        ~message="ApplePay Braintree payment Successfull",
       )
       event.source->Window.sendPostMessage(
         [
@@ -545,10 +538,10 @@ let handleApplePayBraintreeClick = (
   }
 
   let onError = err => {
-    logger.setLogError(
-      ~value=err->JSON.stringify,
-      ~eventName=APPLE_PAY_FLOW,
+    SdkRuntimeLogger.logFunction(
+      ~event=WalletFlow(ApplePay, Failed),
       ~paymentMethod="APPLE_PAY",
+      ~message=err->JSON.stringify,
     )
     messageParentWindow([
       ("fullscreen", false->JSON.Encode.bool),
@@ -568,10 +561,10 @@ let handleApplePayBraintreeClick = (
         switch err->Nullable.toOption {
         | None =>
           try {
-            logger.setLogInfo(
-              ~value="Braintree ApplePay instance created successfully",
-              ~eventName=APPLE_PAY_FLOW,
+            SdkRuntimeLogger.logFunction(
+              ~event=WalletFlow(ApplePay, Progressed),
               ~paymentMethod="APPLE_PAY",
+              ~message="Braintree ApplePay instance created successfully",
             )
             braintreeApplePayPaymentCreate(
               {
@@ -580,10 +573,10 @@ let handleApplePayBraintreeClick = (
               (err, applePayInstance) => {
                 switch err->Nullable.toOption {
                 | None =>
-                  logger.setLogInfo(
-                    ~value="Braintree ApplePay payment session started",
-                    ~eventName=APPLE_PAY_FLOW,
+                  SdkRuntimeLogger.logFunction(
+                    ~event=WalletFlow(ApplePay, Progressed),
                     ~paymentMethod="APPLE_PAY",
+                    ~message="Braintree ApplePay payment session started",
                   )
                   handleApplePayBraintreePaymentSession(
                     applePayPaymentRequest,

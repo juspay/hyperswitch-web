@@ -56,10 +56,7 @@ let fetchCountryStateFromS3 = endpoint => {
 
 let getBaseUrl = GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
 
-let getCountryStateData = async (
-  ~locale="en",
-  ~logger=HyperLogger.make(~source=Elements(Payment)),
-) => {
+let getCountryStateData = async (~locale="en") => {
   let normalizedLocale = getNormalizedLocale(locale)
   let timestamp = Date.now()->Float.toString
   let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
@@ -72,12 +69,7 @@ let getCountryStateData = async (
       await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
     } catch {
     | _ => {
-        logger.setLogError(
-          ~value="Failed to fetch country state data",
-          ~eventName=S3_API,
-          ~logType=ERROR,
-          ~logCategory=USER_ERROR,
-        )
+        SdkRuntimeLogger.logFunction(~event=S3Api, ~message="Failed to fetch country state data")
 
         let fallbackCountries = country
         try {
@@ -97,13 +89,10 @@ let getCountryStateData = async (
   }
 }
 
-let initializeCountryData = async (
-  ~locale="en",
-  ~logger=HyperLogger.make(~source=Elements(Payment)),
-) => {
+let initializeCountryData = async (~locale="en") => {
   try {
     open CountryStateDataRefs
-    let data = await getCountryStateData(~locale, ~logger)
+    let data = await getCountryStateData(~locale)
     countryDataRef.contents = data.countries
     stateDataRef.contents = data.states
     data

@@ -1,8 +1,8 @@
 open Utils
 open Identity
 open PaymentHelpersTypes
-open LoggerUtils
 open URLModule
+open LoggerCommonHelpers
 
 let intentCall = (
   ~fetchApi: (
@@ -19,7 +19,6 @@ let intentCall = (
   ~headers,
   ~bodyStr,
   ~confirmParam: ConfirmType.confirmParams,
-  ~optLogger,
   ~handleUserError,
   ~paymentType,
   ~fetchMethod,
@@ -64,10 +63,9 @@ let intentCall = (
                 ->getDictFromJson
                 ->getString("payment_method_type", "")
               }
-              handleLogging(
-                ~optLogger,
-                ~value=data->JSON.stringify,
-                ~eventName=PAYMENT_FAILED,
+              CorePaymentLogger.logLifecycle(
+                ~event=PaymentFailed,
+                ~message=data->JSON.stringify,
                 ~paymentMethod,
               )
             }
@@ -162,13 +160,7 @@ let intentCall = (
 
             if intent.authenticationDetails.status == "requires_customer_action" {
               if intent.nextAction.type_ == "redirect_to_url" {
-                handleLogging(
-                  ~optLogger,
-                  ~value="",
-                  // ~internalMetadata=intent.nextAction.redirectToUrl,
-                  ~eventName=REDIRECTING_USER,
-                  ~paymentMethod,
-                )
+                CorePaymentLogger.logLifecycle(~event=RedirectingUser, ~paymentMethod)
                 handleOpenUrl(intent.nextAction.redirectToUrl)
               } else {
                 if !isPaymentSession {
@@ -178,13 +170,10 @@ let intentCall = (
                   )
                 }
                 if uri->String.includes("force_sync=true") {
-                  handleLogging(
-                    ~optLogger,
-                    ~value=intent.nextAction.type_,
-                    // ~internalMetadata=intent.nextAction.type_,
-                    ~eventName=REDIRECTING_USER,
+                  CorePaymentLogger.logLifecycle(
+                    ~event=RedirectingUserFailed,
+                    ~message=intent.nextAction.type_,
                     ~paymentMethod,
-                    ~logType=ERROR,
                   )
                   handleOpenUrl(url.href)
                 } else {
@@ -197,27 +186,24 @@ let intentCall = (
               }
             } else if intent.authenticationDetails.status != "" {
               if intent.authenticationDetails.status === "succeeded" {
-                handleLogging(
-                  ~optLogger,
-                  ~value=intent.authenticationDetails.status,
-                  ~eventName=PAYMENT_SUCCESS,
+                CorePaymentLogger.logLifecycle(
+                  ~event=PaymentSuccess,
+                  ~message=intent.authenticationDetails.status,
                   ~paymentMethod,
                 )
               } else if intent.authenticationDetails.status === "failed" {
-                handleLogging(
-                  ~optLogger,
-                  ~value=intent.authenticationDetails.status,
-                  ~eventName=PAYMENT_FAILED,
+                CorePaymentLogger.logLifecycle(
+                  ~event=PaymentFailed,
+                  ~message=intent.authenticationDetails.status,
                   ~paymentMethod,
                 )
               }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else {
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-              handleLogging(
-                ~optLogger,
-                ~value="succeeded",
-                ~eventName=PAYMENT_SUCCESS,
+              CorePaymentLogger.logLifecycle(
+                ~event=PaymentSuccess,
+                ~message="succeeded",
                 ~paymentMethod,
               )
               url.searchParams.set("status", "succeeded")
@@ -262,13 +248,7 @@ let intentCall = (
   })
 }
 
-let fetchPaymentManagementList = (
-  ~pmSessionId,
-  ~endpoint,
-  ~optLogger as _,
-  ~customPodUri,
-  ~sdkAuthorization,
-) => {
+let fetchPaymentManagementList = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAuthorization) => {
   open Promise
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/list-payment-methods`
@@ -319,7 +299,6 @@ let retrievePaymentMethodSession = (~pmSessionId, ~endpoint, ~customPodUri, ~sdk
 let deletePaymentMethodV2 = (
   ~paymentMethodToken,
   ~pmSessionId,
-  ~logger as _,
   ~customPodUri,
   ~sdkAuthorization,
 ) => {
@@ -353,13 +332,7 @@ let deletePaymentMethodV2 = (
   })
 }
 
-let updatePaymentMethod = (
-  ~bodyArr,
-  ~pmSessionId,
-  ~logger as _,
-  ~customPodUri,
-  ~sdkAuthorization,
-) => {
+let updatePaymentMethod = (~bodyArr, ~pmSessionId, ~customPodUri, ~sdkAuthorization) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]
@@ -389,7 +362,7 @@ let updatePaymentMethod = (
   })
 }
 
-let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
+let useSaveCard = (paymentType: payment) => {
   open JotaiAtoms
   let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
   let keys = Jotai.useAtomValue(keys)
@@ -423,7 +396,6 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
           ~headers,
           ~bodyStr,
           ~confirmParam: ConfirmType.confirmParams,
-          ~optLogger,
           ~handleUserError,
           ~paymentType,
           ~fetchMethod=#POST,
@@ -447,7 +419,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
   }
 }
 
-let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
+let useUpdateCard = (paymentType: payment) => {
   open JotaiAtoms
   let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
   let keys = Jotai.useAtomValue(keys)
@@ -481,7 +453,6 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
           ~headers,
           ~bodyStr,
           ~confirmParam: ConfirmType.confirmParams,
-          ~optLogger,
           ~handleUserError,
           ~paymentType,
           ~fetchMethod=#PUT,
@@ -505,7 +476,7 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
   }
 }
 
-let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization, ~logger as _) => {
+let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]

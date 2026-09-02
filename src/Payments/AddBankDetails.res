@@ -22,7 +22,6 @@ let make = (~paymentMethodType) => {
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let setShowPaymentMethodsScreen = Jotai.useSetAtom(JotaiAtoms.showPaymentMethodsScreen)
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
 
@@ -46,7 +45,6 @@ let make = (~paymentMethodType) => {
             ~paymentMethodType,
             ~publishableKey,
             ~setOptionValue,
-            ~logger,
             ~sdkAuthorization,
           )
           ->then(_ => {
@@ -88,7 +86,6 @@ let make = (~paymentMethodType) => {
       ~iframeId,
       ~paymentMethodType,
       ~pmAuthConnectorsArr,
-      ~logger,
       ~sdkAuthorization,
     )->ignore
   }
@@ -104,7 +101,8 @@ let make = (~paymentMethodType) => {
         borderRadius: themeObj.borderRadius,
         borderColor: themeObj.borderColor,
         borderWidth: "2px",
-      }>
+      }
+    >
       {if showLoader {
         <Loader />
       } else {

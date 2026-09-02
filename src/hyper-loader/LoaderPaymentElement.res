@@ -11,7 +11,7 @@ let isPaymentButtonHandlerProvided = ref(false)
 
 let currentOneClickHandler = ref((None: option<unit => Promise.t<unit>>))
 
-let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Types.event) => {
+let walletOneClickEventHandler = (event: Types.event) => {
   open Promise
   let json = try {
     event.data->anyTypeToJson
@@ -23,27 +23,24 @@ let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Ty
   if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
     switch currentOneClickHandler.contents {
     | Some(eH) => {
-        logger.setLogInfo(
-          ~value=`One click handler callback execution initiated`,
-          ~eventName=ONE_CLICK_HANDLER_CALLBACK,
-          ~logType=INFO,
+        SdkRuntimeLogger.logFunction(
+          ~event=OneClickHandlerCallback(Progressed),
+          ~message=`One click handler callback execution initiated`,
         )
         eH()
         ->then(_ => {
-          logger.setLogInfo(
-            ~value=`One click handler callback executed successfully`,
-            ~eventName=ONE_CLICK_HANDLER_CALLBACK,
-            ~logType=INFO,
+          SdkRuntimeLogger.logFunction(
+            ~event=OneClickHandlerCallback(Progressed),
+            ~message=`One click handler callback executed successfully`,
           )
           let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
           event.source->Window.sendPostMessage(msg)
           resolve()
         })
         ->catch(_ => {
-          logger.setLogError(
-            ~value=`Error in one click handler callback`,
-            ~eventName=ONE_CLICK_HANDLER_CALLBACK,
-            ~logType=ERROR,
+          SdkRuntimeLogger.logFunction(
+            ~event=OneClickHandlerCallback(Failed),
+            ~message=`Error in one click handler callback`,
           )
           let msg = [("walletClickEvent", false->JSON.Encode.bool)]->Dict.fromArray
           event.source->Window.sendPostMessage(msg)
@@ -57,10 +54,10 @@ let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Ty
   }
 }
 
-let ensureWalletOneClickListener = logger => {
+let ensureWalletOneClickListener = () => {
   addSmartEventListener(
     "message",
-    event => walletOneClickEventHandler(logger, event),
+    event => walletOneClickEventHandler(event),
     "walletOneClickHandler",
   )
 }
@@ -103,14 +100,12 @@ let make = (
   ~animateResize=true,
   ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
-  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
 ) => {
   try {
-    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let mountId = ref("")
     let localSelectorRef = ref("")
     // Unique per-instance ID to scope event listener names and prevent collisions.
@@ -132,7 +127,7 @@ let make = (
         true,
       )
 
-    ensureWalletOneClickListener(logger)
+    ensureWalletOneClickListener()
 
     let onSDKHandleClick = eventHandler => {
       if eventHandler->Option.isSome {

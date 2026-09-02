@@ -9,7 +9,6 @@ type cardFieldState = {
 }
 
 let useCardFieldBase = (
-  ~logger: HyperLoggerTypes.loggerMake,
   ~paymentType: CardThemeType.mode,
   ~cardBrandOverride="",
   ~dualPlane=false,
@@ -55,7 +54,6 @@ let useCardFieldBase = (
   }
 
   let {cardProps, expiryProps, cvcProps, blurState: _} = CommonCardProps.useCardForm(
-    ~logger,
     ~paymentType,
     ~runEligibility=false,
     ~logControlEvents=false,
@@ -186,45 +184,16 @@ let useCardFieldBase = (
   {localeString, cardProps, expiryProps, cvcProps}
 }
 
-let useCardNumberField = (
-  ~logger: HyperLoggerTypes.loggerMake,
-  ~dualPlane=false,
-  (),
-): cardFieldState => {
-  useCardFieldBase(
-    ~logger,
-    ~paymentType=CardThemeType.CardNumberElement,
-    ~dualPlane,
-    (),
-  )
+let useCardNumberField = (~dualPlane=false, ()): cardFieldState => {
+  useCardFieldBase(~paymentType=CardThemeType.CardNumberElement, ~dualPlane, ())
 }
 
-let useCardExpiryField = (
-  ~logger: HyperLoggerTypes.loggerMake,
-  ~dualPlane=false,
-  (),
-): cardFieldState => {
-  useCardFieldBase(
-    ~logger,
-    ~paymentType=CardThemeType.CardExpiryElement,
-    ~dualPlane,
-    (),
-  )
+let useCardExpiryField = (~dualPlane=false, ()): cardFieldState => {
+  useCardFieldBase(~paymentType=CardThemeType.CardExpiryElement, ~dualPlane, ())
 }
 
-let useCardCvcField = (
-  ~logger: HyperLoggerTypes.loggerMake,
-  ~cardBrandOverride="",
-  ~dualPlane=false,
-  (),
-): cardFieldState => {
-  useCardFieldBase(
-    ~logger,
-    ~paymentType=CardThemeType.CardCVCElement,
-    ~cardBrandOverride,
-    ~dualPlane,
-    (),
-  )
+let useCardCvcField = (~cardBrandOverride="", ~dualPlane=false, ()): cardFieldState => {
+  useCardFieldBase(~paymentType=CardThemeType.CardCVCElement, ~cardBrandOverride, ~dualPlane, ())
 }
 
 module RenderCardNumber = {

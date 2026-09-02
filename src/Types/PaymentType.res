@@ -515,14 +515,14 @@ let defaultPaymentMethodMessage = {
   displayMode: DefaultSdkMessage,
 }
 
-let getPaymentMethodMessage = (dict, logger, context) => {
+let getPaymentMethodMessage = (dict, context) => {
   let messageDict = dict->getDictFromDict("message")
   if messageDict->Dict.toArray->Array.length > 0 {
     unknownKeysWarning(["value", "displayMode"], messageDict, context ++ ".message")
     let value = messageDict->getOptionString("value")
     let displayMode = if messageDict->Dict.get("displayMode")->Option.isSome {
       messageDict
-      ->getWarningString("displayMode", "default_sdk_message", ~logger)
+      ->getWarningString("displayMode", "default_sdk_message")
       ->getMessageDisplayMode(context ++ ".message.displayMode")
     } else {
       switch value {
@@ -539,7 +539,7 @@ let getPaymentMethodMessage = (dict, logger, context) => {
   }
 }
 
-let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
+let getPaymentMethodTypeConfig = (json, paymentMethod) => {
   let context = "options.paymentMethodsConfig." ++ paymentMethod
   unknownKeysWarning(
     [
@@ -552,8 +552,8 @@ let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
     context,
   )
   {
-    paymentMethodType: json->getWarningString("paymentMethodType", "", ~logger),
-    message: getPaymentMethodMessage(json, logger, context),
+    paymentMethodType: json->getWarningString("paymentMethodType", ""),
+    message: getPaymentMethodMessage(json, context),
     displaySavedPaymentMethodsCheckbox: getOptionBool(json, "displaySavedPaymentMethodsCheckbox"),
     savedPaymentMethodsCheckboxCheckedByDefault: getOptionBool(
       json,
@@ -562,7 +562,7 @@ let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
   }
 }
 
-let getPaymentMethodConfig = (json, logger) => {
+let getPaymentMethodConfig = json => {
   unknownKeysWarning(
     [
       "paymentMethod",
@@ -574,12 +574,11 @@ let getPaymentMethodConfig = (json, logger) => {
     json,
     "options.paymentMethodsConfig",
   )
-  let paymentMethod = json->getWarningString("paymentMethod", "", ~logger)
+  let paymentMethod = json->getWarningString("paymentMethod", "")
   {
     paymentMethod,
     message: getPaymentMethodMessage(
       json,
-      logger,
       "options.paymentMethodsConfig." ++ paymentMethod,
     ),
     displaySavedPaymentMethodsCheckbox: getOptionBool(json, "displaySavedPaymentMethodsCheckbox"),
@@ -589,14 +588,14 @@ let getPaymentMethodConfig = (json, logger) => {
     ),
     paymentMethodTypes: json
     ->getArrayOfObjectsFromDict("paymentMethodTypes")
-    ->Array.map(pmTypeJson => getPaymentMethodTypeConfig(pmTypeJson, logger, paymentMethod)),
+    ->Array.map(pmTypeJson => getPaymentMethodTypeConfig(pmTypeJson, paymentMethod)),
   }
 }
 
-let getPaymentMethodsConfig = (dict, str, logger) => {
+let getPaymentMethodsConfig = (dict, str) => {
   dict
   ->getArrayOfObjectsFromDict(str)
-  ->Array.map(json => getPaymentMethodConfig(json, logger))
+  ->Array.map(json => getPaymentMethodConfig(json))
 }
 
 let getLayout = str => {
@@ -648,7 +647,7 @@ let getCardBrandIconStyle = (str): cardBrandIconStyle => {
   }
 }
 
-let getAddress = (dict, str, logger) => {
+let getAddress = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
@@ -660,7 +659,7 @@ let getAddress = (dict, str, logger) => {
       json,
       "options.defaultValues.billingDetails.address",
     )
-    let country = getWarningString(json, "country", "", ~logger)
+    let country = getWarningString(json, "country", "")
     if country != "" {
       unknownPropValueWarning(
         country,
@@ -669,17 +668,17 @@ let getAddress = (dict, str, logger) => {
       )
     }
     {
-      line1: getWarningString(json, "line1", "", ~logger),
-      line2: getWarningString(json, "line2", "", ~logger),
-      city: getWarningString(json, "city", "", ~logger),
-      state: getWarningString(json, "state", "", ~logger),
+      line1: getWarningString(json, "line1", ""),
+      line2: getWarningString(json, "line2", ""),
+      city: getWarningString(json, "city", ""),
+      state: getWarningString(json, "state", ""),
       country,
-      postal_code: getWarningString(json, "postal_code", "", ~logger),
+      postal_code: getWarningString(json, "postal_code", ""),
     }
   })
   ->Option.getOr(defaultAddress)
 }
-let getBillingDetails = (dict, str, logger) => {
+let getBillingDetails = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
@@ -690,36 +689,36 @@ let getBillingDetails = (dict, str, logger) => {
       "options.defaultValues.billingDetails",
     )
     {
-      name: getWarningString(json, "name", "", ~logger),
-      email: getWarningString(json, "email", "", ~logger),
-      phone: getWarningString(json, "phone", "", ~logger),
-      address: getAddress(json, "address", logger),
+      name: getWarningString(json, "name", ""),
+      email: getWarningString(json, "email", ""),
+      phone: getWarningString(json, "phone", ""),
+      address: getAddress(json, "address"),
     }
   })
   ->Option.getOr(defaultBillingDetails)
 }
 
-let getDefaultValues = (dict, str, logger) => {
+let getDefaultValues = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(["billingDetails"], json, "options.defaultValues")
     let defaultValues: defaultValues = {
-      billingDetails: getBillingDetails(json, "billingDetails", logger),
+      billingDetails: getBillingDetails(json, "billingDetails"),
     }
     defaultValues
   })
   ->Option.getOr(defaultDefaultValues)
 }
-let getBusiness = (dict, str, logger) => {
+let getBusiness = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(["name"], json, "options.business")
     {
-      name: getWarningString(json, "name", "", ~logger),
+      name: getWarningString(json, "name", ""),
     }
   })
   ->Option.getOr(defaultBusiness)
@@ -856,28 +855,28 @@ let getShowTerms: (string, string) => showTerms = (str, key) => {
   }
 }
 
-let getShowAddress = (dict, str, logger) => {
+let getShowAddress = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     let x: showAddress = {
-      line1: getWarningString(json, "line1", "auto", ~logger)->getShowType(
+      line1: getWarningString(json, "line1", "auto")->getShowType(
         "options.fields.address.line1",
       ),
-      line2: getWarningString(json, "line2", "auto", ~logger)->getShowType(
+      line2: getWarningString(json, "line2", "auto")->getShowType(
         "options.fields.address.line2",
       ),
-      city: getWarningString(json, "city", "auto", ~logger)->getShowType(
+      city: getWarningString(json, "city", "auto")->getShowType(
         "options.fields.address.city",
       ),
-      state: getWarningString(json, "state", "auto", ~logger)->getShowType(
+      state: getWarningString(json, "state", "auto")->getShowType(
         "options.fields.address.state",
       ),
-      country: getWarningString(json, "country", "auto", ~logger)->getShowType(
+      country: getWarningString(json, "country", "auto")->getShowType(
         "options.fields.address.country",
       ),
-      postal_code: getWarningString(json, "postal_code", "auto", ~logger)->getShowType(
+      postal_code: getWarningString(json, "postal_code", "auto")->getShowType(
         "options.fields.name.postal_code",
       ),
     }
@@ -885,32 +884,32 @@ let getShowAddress = (dict, str, logger) => {
   })
   ->Option.getOr(defaultshowAddress)
 }
-let getDeatils = (val, logger) => {
+let getDeatils = val => {
   switch val->JSON.Classify.classify {
   | String(str) => JSONString(str)
   | Object(json) =>
     JSONObject({
-      name: getWarningString(json, "name", "auto", ~logger)->getShowType("options.fields.name"),
-      email: getWarningString(json, "email", "auto", ~logger)->getShowType("options.fields.email"),
-      phone: getWarningString(json, "phone", "auto", ~logger)->getShowType("options.fields.phone"),
-      address: JSONObject(getShowAddress(json, "address", logger)),
+      name: getWarningString(json, "name", "auto")->getShowType("options.fields.name"),
+      email: getWarningString(json, "email", "auto")->getShowType("options.fields.email"),
+      phone: getWarningString(json, "phone", "auto")->getShowType("options.fields.phone"),
+      address: JSONObject(getShowAddress(json, "address")),
     })
   | _ => JSONString("")
   }
 }
-let getBilling = (dict, str, logger) => {
+let getBilling = (dict, str) => {
   dict
   ->Dict.get(str)
-  ->Option.map(json => json->getDeatils(logger))
+  ->Option.map(json => json->getDeatils)
   ->Option.getOr(defaultFields.billingDetails)
 }
-let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
+let getFields: (Dict.t<JSON.t>, string) => fields = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     let defaultFields: fields = {
-      billingDetails: getBilling(json, "billingDetails", logger),
+      billingDetails: getBilling(json, "billingDetails"),
     }
     defaultFields
   })
@@ -931,33 +930,33 @@ let getGroupingBehaviorFromString = str => {
   }
 }
 
-let getGroupingBehaviorFromObject = (json, ~logger) => {
+let getGroupingBehaviorFromObject = json => {
   unknownKeysWarning(
     ["displayInSeparateScreen", "groupByPaymentMethods"],
     json,
     "options.layout.savedMethodCustomization.groupingBehavior",
   )
   {
-    displayInSeparateScreen: getBoolWithWarning(json, "displayInSeparateScreen", true, ~logger),
-    groupByPaymentMethods: getBoolWithWarning(json, "groupByPaymentMethods", false, ~logger),
+    displayInSeparateScreen: getBoolWithWarning(json, "displayInSeparateScreen", true),
+    groupByPaymentMethods: getBoolWithWarning(json, "groupByPaymentMethods", false),
   }
 }
 
-let getGroupingBehavior = (dict, ~logger) => {
+let getGroupingBehavior = dict => {
   dict
   ->Dict.get("groupingBehavior")
   ->Option.map(val => {
     switch val->JSON.Classify.classify {
     | String(str) => str->getGroupingBehaviorFromString
-    | Object(json) => json->getGroupingBehaviorFromObject(~logger)
+    | Object(json) => json->getGroupingBehaviorFromObject
     | _ => defaultGroupingBehavior
     }
   })
   ->Option.getOr(defaultGroupingBehavior)
 }
 
-let getMaxItems = (dict, key, default, ~logger) => {
-  let parsedMaxItems = getNumberWithWarning(dict, key, default, ~logger)
+let getMaxItems = (dict, key, default) => {
+  let parsedMaxItems = getNumberWithWarning(dict, key, default)
   if parsedMaxItems > 0 {
     parsedMaxItems
   } else {
@@ -965,13 +964,12 @@ let getMaxItems = (dict, key, default, ~logger) => {
       parsedMaxItems,
       "options.layout.savedMethodCustomization.maxItems",
       "[>0] - maxItems must be a positive number. Value set to default (4)",
-      ~logger,
     )
     default
   }
 }
 
-let getSavedMethodCustomization = (dict, str, logger) => {
+let getSavedMethodCustomization = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
@@ -988,27 +986,26 @@ let getSavedMethodCustomization = (dict, str, logger) => {
       "options.layout.savedMethodCustomization",
     )
     {
-      groupingBehavior: json->getGroupingBehavior(~logger),
-      maxItems: getMaxItems(json, "maxItems", 4, ~logger),
+      groupingBehavior: json->getGroupingBehavior,
+      maxItems: getMaxItems(json, "maxItems", 4),
       hideCardExpiry: getBool(json, "hideCardExpiry", false),
-      defaultCollapsed: getBoolWithWarning(json, "defaultCollapsed", true, ~logger),
+      defaultCollapsed: getBoolWithWarning(json, "defaultCollapsed", true),
       hiddenPaymentMethods: json->getStrArray("hiddenPaymentMethods"),
     }
   })
   ->Option.getOr(defaultSavedMethodCustomization)
 }
 
-let getLayoutValues = (val, logger) => {
+let getLayoutValues = val => {
   switch val->JSON.Classify.classify {
   | String(str) => StringLayout(str->getLayout)
   | Object(json) =>
     ObjectLayout({
-      let layoutType = getWarningString(json, "type", "tabs", ~logger)
+      let layoutType = getWarningString(json, "type", "tabs")
       let paymentMethodsArrangementForTabsType = getWarningString(
         json,
         "paymentMethodsArrangementForTabs",
         "default",
-        ~logger,
       )
       unknownKeysWarning(
         [
@@ -1029,43 +1026,39 @@ let getLayoutValues = (val, logger) => {
         "options.layout",
       )
       {
-        defaultCollapsed: getBoolWithWarning(json, "defaultCollapsed", false, ~logger),
-        radios: getBoolWithWarning(json, "radios", false, ~logger),
-        spacedAccordionItems: getBoolWithWarning(json, "spacedAccordionItems", false, ~logger),
-        maxAccordionItems: getNumberWithWarning(json, "maxAccordionItems", 4, ~logger),
+        defaultCollapsed: getBoolWithWarning(json, "defaultCollapsed", false),
+        radios: getBoolWithWarning(json, "radios", false),
+        spacedAccordionItems: getBoolWithWarning(json, "spacedAccordionItems", false),
+        maxAccordionItems: getNumberWithWarning(json, "maxAccordionItems", 4),
         \"type": layoutType->getLayout,
         savedMethodCustomization: getSavedMethodCustomization(
           json,
           "savedMethodCustomization",
-          logger,
         ),
         paymentMethodsArrangementForTabs: paymentMethodsArrangementForTabsType->getPaymentMethodsArrangementForTabs,
         displayOneClickPaymentMethodsOnTop: getBoolWithWarning(
           json,
           "displayOneClickPaymentMethodsOnTop",
           true,
-          ~logger,
         ),
         showCheckedIconForSelection: getBoolWithWarning(
           json,
           "showCheckedIconForSelection",
           false,
-          ~logger,
         ),
         separatorText: getOptionString(json, "separatorText"),
-        cvcIcon: getWarningString(json, "cvcIcon", "", ~logger)->getCvcIconStyle,
+        cvcIcon: getWarningString(json, "cvcIcon", "")->getCvcIconStyle,
         cardBrandIcon: getWarningString(
           json,
           "cardBrandIcon",
           "standard",
-          ~logger,
         )->getCardBrandIconStyle,
       }
     })
   | _ => StringLayout(Tabs)
   }
 }
-let getTerms = (dict, str, logger) => {
+let getTerms = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
@@ -1076,28 +1069,28 @@ let getTerms = (dict, str, logger) => {
       "options.terms",
     )
     {
-      auBecsDebit: getWarningString(json, "auBecsDebit", "auto", ~logger)->getShowTerms(
+      auBecsDebit: getWarningString(json, "auBecsDebit", "auto")->getShowTerms(
         "options.terms.auBecsDebit",
       ),
-      bancontact: getWarningString(json, "bancontact", "auto", ~logger)->getShowTerms(
+      bancontact: getWarningString(json, "bancontact", "auto")->getShowTerms(
         "options.terms.bancontact",
       ),
-      card: getWarningString(json, "card", "auto", ~logger)->getShowTerms("options.terms.card"),
-      ideal: getWarningString(json, "ideal", "auto", ~logger)->getShowTerms("options.terms.ideal"),
-      sepaDebit: getWarningString(json, "sepaDebit", "auto", ~logger)->getShowTerms(
+      card: getWarningString(json, "card", "auto")->getShowTerms("options.terms.card"),
+      ideal: getWarningString(json, "ideal", "auto")->getShowTerms("options.terms.ideal"),
+      sepaDebit: getWarningString(json, "sepaDebit", "auto")->getShowTerms(
         "options.terms.sepaDebit",
       ),
-      sofort: getWarningString(json, "sofort", "auto", ~logger)->getShowTerms(
+      sofort: getWarningString(json, "sofort", "auto")->getShowTerms(
         "options.terms.sofort",
       ),
-      usBankAccount: getWarningString(json, "usBankAccount", "auto", ~logger)->getShowTerms(
+      usBankAccount: getWarningString(json, "usBankAccount", "auto")->getShowTerms(
         "options.terms.usBankAccount",
       ),
     }
   })
   ->Option.getOr(defaultTerms)
 }
-let getApplePayHeight: (int, 'a) => heightType = (val, logger) => {
+let getApplePayHeight: int => heightType = val => {
   if val >= 45 {
     ApplePay(val)
   } else {
@@ -1105,13 +1098,12 @@ let getApplePayHeight: (int, 'a) => heightType = (val, logger) => {
       val,
       "options.style.height",
       "[h>=45] - ApplePay. Value set to min",
-      ~logger,
     )
     ApplePay(48)
   }
 }
 
-let getGooglePayHeight: (int, 'a) => heightType = (val, logger) => {
+let getGooglePayHeight: int => heightType = val => {
   if val >= 45 {
     GooglePay(val)
   } else {
@@ -1119,13 +1111,12 @@ let getGooglePayHeight: (int, 'a) => heightType = (val, logger) => {
       val,
       "options.style.height",
       "[h>=45] - GooglePay. Value set to min",
-      ~logger,
     )
     GooglePay(48)
   }
 }
 
-let getSamsungPayHeight: (int, 'a) => heightType = (val, logger) => {
+let getSamsungPayHeight: int => heightType = val => {
   if val >= 45 {
     SamsungPay(val)
   } else {
@@ -1133,30 +1124,29 @@ let getSamsungPayHeight: (int, 'a) => heightType = (val, logger) => {
       val,
       "options.style.height",
       "[h>=45] - SamsungPay. Value set to min",
-      ~logger,
     )
     SamsungPay(48)
   }
 }
 
-let getPaypalHeight: (int, 'a) => heightType = (val, logger) => {
+let getPaypalHeight: int => heightType = val => {
   if val < 25 {
-    valueOutRangeWarning(val, "options.style.height", "[25-55] - Paypal. Value set to min", ~logger)
+    valueOutRangeWarning(val, "options.style.height", "[25-55] - Paypal. Value set to min")
     Paypal(25)
   } else if val > 55 {
-    valueOutRangeWarning(val, "options.style.height", "[25-55] - Paypal. Value set to max", ~logger)
+    valueOutRangeWarning(val, "options.style.height", "[25-55] - Paypal. Value set to max")
     Paypal(55)
   } else {
     Paypal(val)
   }
 }
 
-let getKlarnaHeight: (int, 'a) => heightType = (val, logger) => {
+let getKlarnaHeight: int => heightType = val => {
   if val < 40 {
-    valueOutRangeWarning(val, "options.style.height", "[40-60] - Klarna. Value set to min", ~logger)
+    valueOutRangeWarning(val, "options.style.height", "[40-60] - Klarna. Value set to min")
     Klarna(40)
   } else if val > 60 {
-    valueOutRangeWarning(val, "options.style.height", "[40-60] - Paypal. Value set to max", ~logger)
+    valueOutRangeWarning(val, "options.style.height", "[40-60] - Paypal. Value set to max")
     Klarna(60)
   } else {
     Klarna(val)
@@ -1173,40 +1163,40 @@ let getTheme = str => {
     Dark
   }
 }
-let getHeightArray = (val, logger) => {
+let getHeightArray = val => {
   (
-    val->getApplePayHeight(logger),
-    val->getGooglePayHeight(logger),
-    val->getPaypalHeight(logger),
-    val->getKlarnaHeight(logger),
-    val->getSamsungPayHeight(logger),
+    val->getApplePayHeight,
+    val->getGooglePayHeight,
+    val->getPaypalHeight,
+    val->getKlarnaHeight,
+    val->getSamsungPayHeight,
   )
 }
-let getStyle = (dict, str, logger) => {
+let getStyle = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(["type", "theme", "height"], json, "options.wallets.style")
     let style = {
-      type_: getWarningString(json, "type", "", ~logger)->getTypeArray,
-      theme: getWarningString(json, "theme", "", ~logger)->getTheme,
-      height: getNumberWithWarning(json, "height", 48, ~logger)->getHeightArray(logger),
-      buttonRadius: getNumberWithWarning(json, "buttonRadius", 2, ~logger),
+      type_: getWarningString(json, "type", "")->getTypeArray,
+      theme: getWarningString(json, "theme", "")->getTheme,
+      height: getNumberWithWarning(json, "height", 48)->getHeightArray,
+      buttonRadius: getNumberWithWarning(json, "buttonRadius", 2),
     }
     style
   })
   ->Option.getOr(defaultStyle)
 }
 
-let getGooglePayWalletConfig = (json, logger) => {
+let getGooglePayWalletConfig = json => {
   unknownKeysWarning(
     ["display", "buttonColor", "buttonType", "height", "buttonRadius", "buttonBorderType"],
     json,
     "options.wallets.googlePay",
   )
   {
-    display: getWarningString(json, "display", "auto", ~logger)->getShowType(
+    display: getWarningString(json, "display", "auto")->getShowType(
       "options.wallets.googlePay.display",
     ),
     buttonColor: switch json->Dict.get("buttonColor")->Option.flatMap(JSON.Decode.string) {
@@ -1250,14 +1240,14 @@ let getGooglePayWalletConfig = (json, logger) => {
   }
 }
 
-let getPaypalWalletConfig = (json, logger) => {
+let getPaypalWalletConfig = json => {
   unknownKeysWarning(
     ["display", "color", "label", "height", "shape", "borderRadius"],
     json,
     "options.wallets.payPal",
   )
   {
-    display: getWarningString(json, "display", "auto", ~logger)->getShowType(
+    display: getWarningString(json, "display", "auto")->getShowType(
       "options.wallets.payPal.display",
     ),
     color: switch json->Dict.get("color")->Option.flatMap(JSON.Decode.string) {
@@ -1301,7 +1291,7 @@ let getPaypalWalletConfig = (json, logger) => {
   }
 }
 
-let getGooglePayWalletField = (dict, key, logger) => {
+let getGooglePayWalletField = (dict, key) => {
   switch dict->Dict.get(key) {
   | None => GooglePayConfigString(Auto)
   | Some(json) =>
@@ -1309,14 +1299,14 @@ let getGooglePayWalletField = (dict, key, logger) => {
     | Some(str) => GooglePayConfigString(str->getShowType(`options.wallets.${key}`))
     | None =>
       switch JSON.Decode.object(json) {
-      | Some(obj) => GooglePayConfigObj(getGooglePayWalletConfig(obj, logger))
+      | Some(obj) => GooglePayConfigObj(getGooglePayWalletConfig(obj))
       | None => GooglePayConfigString(Auto)
       }
     }
   }
 }
 
-let getPaypalWalletField = (dict, key, logger) => {
+let getPaypalWalletField = (dict, key) => {
   switch dict->Dict.get(key) {
   | None => PaypalConfigString(Auto)
   | Some(json) =>
@@ -1324,21 +1314,21 @@ let getPaypalWalletField = (dict, key, logger) => {
     | Some(str) => PaypalConfigString(str->getShowType(`options.wallets.${key}`))
     | None =>
       switch JSON.Decode.object(json) {
-      | Some(obj) => PaypalConfigObj(getPaypalWalletConfig(obj, logger))
+      | Some(obj) => PaypalConfigObj(getPaypalWalletConfig(obj))
       | None => PaypalConfigString(Auto)
       }
     }
   }
 }
 
-let getApplePayWalletConfig = (json, logger) => {
+let getApplePayWalletConfig = json => {
   unknownKeysWarning(
     ["display", "buttonStyle", "buttonType", "height", "buttonRadius"],
     json,
     "options.wallets.applePay",
   )
   {
-    display: getWarningString(json, "display", "auto", ~logger)->getShowType(
+    display: getWarningString(json, "display", "auto")->getShowType(
       "options.wallets.applePay.display",
     ),
     buttonStyle: switch json->Dict.get("buttonStyle")->Option.flatMap(JSON.Decode.string) {
@@ -1372,7 +1362,7 @@ let getApplePayWalletConfig = (json, logger) => {
   }
 }
 
-let getApplePayWalletField = (dict, key, logger) => {
+let getApplePayWalletField = (dict, key) => {
   switch dict->Dict.get(key) {
   | None => ApplePayConfigString(Auto)
   | Some(json) =>
@@ -1380,14 +1370,14 @@ let getApplePayWalletField = (dict, key, logger) => {
     | Some(str) => ApplePayConfigString(str->getShowType(`options.wallets.${key}`))
     | None =>
       switch JSON.Decode.object(json) {
-      | Some(obj) => ApplePayConfigObj(getApplePayWalletConfig(obj, logger))
+      | Some(obj) => ApplePayConfigObj(getApplePayWalletConfig(obj))
       | None => ApplePayConfigString(Auto)
       }
     }
   }
 }
 
-let getWallets = (dict, str, logger) => {
+let getWallets = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
@@ -1408,25 +1398,25 @@ let getWallets = (dict, str, logger) => {
     )
 
     {
-      walletReturnUrl: getRequiredString(json, "walletReturnUrl", "", ~logger),
-      applePay: getApplePayWalletField(json, "applePay", logger),
-      googlePay: getGooglePayWalletField(json, "googlePay", logger),
-      payPal: getPaypalWalletField(json, "payPal", logger),
-      klarna: getWarningString(json, "klarna", "auto", ~logger)->getShowType(
+      walletReturnUrl: getRequiredString(json, "walletReturnUrl", ""),
+      applePay: getApplePayWalletField(json, "applePay"),
+      googlePay: getGooglePayWalletField(json, "googlePay"),
+      payPal: getPaypalWalletField(json, "payPal"),
+      klarna: getWarningString(json, "klarna", "auto")->getShowType(
         "options.wallets.klarna",
       ),
-      paze: getWarningString(json, "paze", "auto", ~logger)->getShowType("options.wallets.paze"),
-      samsungPay: getWarningString(json, "samsungPay", "auto", ~logger)->getShowType(
+      paze: getWarningString(json, "paze", "auto")->getShowType("options.wallets.paze"),
+      samsungPay: getWarningString(json, "samsungPay", "auto")->getShowType(
         "options.wallets.samsungPay",
       ),
-      style: getStyle(json, "style", logger),
+      style: getStyle(json, "style"),
     }
   })
   ->Option.getOr(defaultWallets)
 }
 
-let getRedirectionInfo = (dict, str, logger) => {
-  let value = getWarningString(dict, str, "show", ~logger)
+let getRedirectionInfo = (dict, str) => {
+  let value = getWarningString(dict, str, "show")
   switch value {
   | "hidden" => HideRedirectionInfo
   | "show" => ShowRedirectionInfo
@@ -1437,19 +1427,15 @@ let getRedirectionInfo = (dict, str, logger) => {
   }
 }
 
-let getLayout = (dict, str, logger) => {
+let getLayout = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.map(json => {
-    json->getLayoutValues(logger)
+    json->getLayoutValues
   })
   ->Option.getOr(ObjectLayout(defaultLayout))
 }
 
-// Single shared mapper for the customerCard field shape, called both by the
-// old `getCardDetails` (unwrapping a sibling `card` key) and the new
-// clientList path (unwrapping `payment_method_data.card`) — so there is
-// exactly one place that knows the customerCard field mapping.
 let cardJsonToCustomerCard: Dict.t<JSON.t> => customerCard = json => {
   {
     scheme: Some(getString(json, "scheme", "")),
@@ -1615,7 +1601,7 @@ let getCustomMethodNames = (dict, str) => {
   })
 }
 
-let getBillingAddress = (dict, str, logger) => {
+let getBillingAddress = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
@@ -1627,12 +1613,11 @@ let getBillingAddress = (dict, str, logger) => {
     )
 
     {
-      isUseBillingAddress: getBoolWithWarning(json, "isUseBillingAddress", false, ~logger),
+      isUseBillingAddress: getBoolWithWarning(json, "isUseBillingAddress", false),
       usePrefilledValues: getWarningString(
         json,
         "usePrefilledValues",
         "auto",
-        ~logger,
       )->getShowType("options.billingAddress.usePrefilledValues"),
     }
   })
@@ -1726,48 +1711,44 @@ let sanitizePreloadSdkParms = dict => {
   ->getDictFromJson
 }
 
-let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
+let itemToObjMapper = dict => {
   unknownKeysWarning(allowedPaymentElementOptions, dict, "options")
 
-  logger.setLogInfo(
-    ~value=dict->sanitizePaymentElementOptions->JSON.Encode.object->JSON.stringify,
-    ~eventName=PAYMENT_ELEMENT_OPTIONS,
-    ~logType=INFO,
+  CorePaymentLogger.logLifecycle(
+    ~event=PaymentElementOptions,
+    ~message=dict->sanitizePaymentElementOptions->JSON.Encode.object->JSON.stringify,
   )
 
   {
-    defaultValues: getDefaultValues(dict, "defaultValues", logger),
-    business: getBusiness(dict, "business", logger),
-    layout: getLayout(dict, "layout", logger),
+    defaultValues: getDefaultValues(dict, "defaultValues"),
+    business: getBusiness(dict, "business"),
+    layout: getLayout(dict, "layout"),
     customerPaymentMethods: getCustomerMethods(dict, "customerPaymentMethods"),
     paymentMethodOrder: getOptionalStrArray(dict, "paymentMethodOrder"),
     subscriptionEvents: SubscriptionEventTypes.getSubscriptionEvents(dict, "subscriptionEvents"),
-    fields: getFields(dict, "fields", logger),
-    branding: getWarningString(dict, "branding", "auto", ~logger)->getShowType("options.branding"),
+    fields: getFields(dict, "fields"),
+    branding: getWarningString(dict, "branding", "auto")->getShowType("options.branding"),
     displaySavedPaymentMethodsCheckbox: getBoolWithWarning(
       dict,
       "displaySavedPaymentMethodsCheckbox",
       true,
-      ~logger,
     ),
     displaySavedPaymentMethods: getBoolWithWarning(
       dict,
       "displaySavedPaymentMethods",
       true,
-      ~logger,
     ),
     savedPaymentMethodsCheckboxCheckedByDefault: getBoolWithWarning(
       dict,
       "savedPaymentMethodsCheckboxCheckedByDefault",
       defaultOptions.savedPaymentMethodsCheckboxCheckedByDefault,
-      ~logger,
     ),
-    readOnly: getBoolWithWarning(dict, "readOnly", false, ~logger),
-    terms: getTerms(dict, "terms", logger),
-    wallets: getWallets(dict, "wallets", logger),
+    readOnly: getBoolWithWarning(dict, "readOnly", false),
+    terms: getTerms(dict, "terms"),
+    wallets: getWallets(dict, "wallets"),
     customMethodNames: getCustomMethodNames(dict, "customMethodNames"),
-    payButtonStyle: getStyle(dict, "payButtonStyle", logger),
-    billingAddress: getBillingAddress(dict, "billingAddress", logger),
+    payButtonStyle: getStyle(dict, "payButtonStyle"),
+    billingAddress: getBillingAddress(dict, "billingAddress"),
     sdkHandleConfirmPayment: dict
     ->getDictFromDict("sdkHandleConfirmPayment")
     ->getSdkHandleConfirmPaymentProps,
@@ -1782,9 +1763,9 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
-    paymentMethodsConfig: getPaymentMethodsConfig(dict, "paymentMethodsConfig", logger),
+    paymentMethodsConfig: getPaymentMethodsConfig(dict, "paymentMethodsConfig"),
     alwaysSendCustomerAcceptance: getBool(dict, "alwaysSendCustomerAcceptance", false),
-    redirectionInfo: getRedirectionInfo(dict, "redirectionInfo", logger),
+    redirectionInfo: getRedirectionInfo(dict, "redirectionInfo"),
   }
 }
 

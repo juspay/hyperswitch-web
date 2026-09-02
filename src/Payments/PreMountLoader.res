@@ -59,7 +59,6 @@ let getMessageHandlerV1Elements = (
   ~sdkAuthorization,
   ~clientSecret,
   ~publishableKey,
-  ~logger,
   ~customPodUri,
   ~endpoint,
   ~merchantHostname,
@@ -77,7 +76,6 @@ let getMessageHandlerV1Elements = (
       PaymentHelpers.fetchSessions(
         ~clientSecret,
         ~publishableKey,
-        ~logger,
         ~customPodUri,
         ~endpoint,
         ~merchantHostname,
@@ -86,7 +84,6 @@ let getMessageHandlerV1Elements = (
       PaymentHelpers.fetchSdkConfigs(
         ~clientSecret,
         ~publishableKey,
-        ~logger,
         ~customPodUri,
         ~endpoint,
         ~sdkAuthorization=Some(sdkAuthorization),
@@ -94,7 +91,6 @@ let getMessageHandlerV1Elements = (
       PaymentHelpers.fetchClientList(
         ~clientSecret,
         ~publishableKey,
-        ~logger,
         ~customPodUri,
         ~endpoint,
         ~sdkAuthorization=Some(sdkAuthorization),
@@ -115,16 +111,9 @@ let getMessageHandlerV1Elements = (
   }
 }
 
-let getMessageHandlerV2PMM = (
-  ~pmSessionId,
-  ~logger,
-  ~customPodUri,
-  ~endpoint,
-  ~sdkAuthorization,
-) => {
+let getMessageHandlerV2PMM = (~pmSessionId, ~customPodUri, ~endpoint, ~sdkAuthorization) => {
   let listPromise = PaymentHelpersV2.fetchPaymentManagementList(
     ~pmSessionId,
-    ~optLogger=Some(logger),
     ~customPodUri,
     ~endpoint,
     ~sdkAuthorization,
@@ -142,7 +131,6 @@ let getMessageHandlerV2PMM = (
 module PreMountLoaderForElements = {
   @react.component
   let make = (
-    ~logger,
     ~publishableKey,
     ~sdkAuthorization,
     ~clientSecret,
@@ -157,7 +145,6 @@ module PreMountLoaderForElements = {
         ~sdkAuthorization,
         ~clientSecret,
         ~publishableKey,
-        ~logger,
         ~customPodUri,
         ~endpoint,
         ~merchantHostname,
@@ -172,9 +159,9 @@ module PreMountLoaderForElements = {
 
 module PreMountLoaderForPMMElements = {
   @react.component
-  let make = (~logger, ~endpoint, ~customPodUri, ~pmSessionId, ~sdkAuthorization) => {
+  let make = (~endpoint, ~customPodUri, ~pmSessionId, ~sdkAuthorization) => {
     useMessageHandler(() =>
-      getMessageHandlerV2PMM(~pmSessionId, ~sdkAuthorization, ~logger, ~customPodUri, ~endpoint)
+      getMessageHandlerV2PMM(~pmSessionId, ~sdkAuthorization, ~customPodUri, ~endpoint)
     )
 
     React.null
@@ -195,17 +182,12 @@ let make = (
   ~isTestMode=false,
   ~isSdkParamsEnabled=false,
 ) => {
-  let logger = HyperLogger.make(
-    ~sessionId,
-    ~source=Loader,
-    ~merchantId=publishableKey,
-    ~clientSecret,
-  )
+  LoggerRuntime.configure(~runtimeSource=HyperLoader)
+  LoggerContext.setSessionData(~sessionId, ~merchantId=publishableKey, ())
 
   switch hyperComponentName {
   | Elements =>
     <PreMountLoaderForElements
-      logger
       publishableKey
       sdkAuthorization
       clientSecret
@@ -216,6 +198,6 @@ let make = (
       isSdkParamsEnabled
     />
   | PaymentMethodsManagementElements =>
-    <PreMountLoaderForPMMElements logger endpoint customPodUri pmSessionId sdkAuthorization />
+    <PreMountLoaderForPMMElements endpoint customPodUri pmSessionId sdkAuthorization />
   }
 }

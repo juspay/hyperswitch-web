@@ -5,12 +5,11 @@ let klarnaIcon = <Icon size=35 width=90 name="klarna" />
 
 @react.component
 let make = () => {
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey} = Jotai.useAtomValue(keys)
   let options = Jotai.useAtomValue(optionAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let intent = PaymentHelpers.usePaymentIntent(Other)
   let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
   let (klarnaClicked, setKlarnaClicked) = React.useState(_ => false)
   let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
@@ -26,17 +25,17 @@ let make = () => {
     try {
       if isTestMode {
         Console.warn("Klarna checkout button clicked in test mode - interaction disabled")
-        loggerState.setLogInfo(
-          ~value="Klarna checkout button clicked in test mode - interaction disabled",
-          ~eventName=KLARNA_CHECKOUT_FLOW,
+        SdkRuntimeLogger.logFunction(
+          ~event=WalletFlow(Klarna, Progressed),
           ~paymentMethod="KLARNA",
+          ~message="Klarna checkout button clicked in test mode - interaction disabled",
         )
         resolve()
       } else {
-        loggerState.setLogInfo(
-          ~value="Klarna Checkout Button Clicked",
-          ~eventName=KLARNA_CHECKOUT_FLOW,
+        SdkRuntimeLogger.logFunction(
+          ~event=WalletFlow(Klarna, Progressed),
           ~paymentMethod="KLARNA",
+          ~message="Klarna Checkout Button Clicked",
         )
 
         setKlarnaClicked(_ => true)
@@ -83,7 +82,8 @@ let make = () => {
     onClick={_ =>
       if !options.readOnly {
         onKlarnaClick()->ignore
-      }}>
+      }}
+  >
     <div className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
       {if klarnaClicked {
         <Loader />
