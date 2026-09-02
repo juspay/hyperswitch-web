@@ -60,8 +60,17 @@ type cardForm = {
   fields: ref<JSON.t>,
 }
 
-type paymentMethodsSessionGroup = {
-  cardForm: unit => cardForm,
+type vaultCardForm = {
+  create: (string, JSON.t) => fieldHandle,
+  on: (string, JSON.t => unit) => unit,
+  tokenize: unit => promise<JSON.t>,
+  deinit: unit => unit,
+  update: JSON.t => unit,
+  fields: ref<JSON.t>,
+}
+
+type paymentMethodsSession = {
+  cardForm: unit => vaultCardForm,
   update: JSON.t => unit,
   on: (string, JSON.t => unit) => unit,
   deinit: unit => unit,
@@ -138,7 +147,7 @@ type hyperInstance = {
   completeUpdateIntent: string => promise<JSON.t>,
   initiateUpdateIntent: unit => promise<JSON.t>,
   confirmTokenization: JSON.t => promise<JSON.t>,
-  paymentMethodsSession: JSON.t => paymentMethodsSessionGroup,
+  paymentMethodsSession: JSON.t => paymentMethodsSession,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -222,6 +231,15 @@ let defaultCardForm: cardForm = {
   fields: ref(Dict.make()->JSON.Encode.object),
 }
 
+let defaultVaultCardForm: vaultCardForm = {
+  create: (_, _) => defaultFieldHandle,
+  on: (_, _) => (),
+  tokenize: () => Promise.resolve(vaultSDKNotLoadedError),
+  deinit: () => (),
+  update: _ => (),
+  fields: ref(Dict.make()->JSON.Encode.object),
+}
+
 let defaultElement = {
   getElement,
   update,
@@ -266,8 +284,8 @@ let defaultInitAuthenticationSession: initAuthenticationSession = {
   getActiveClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
 }
 
-let defaultPaymentMethodsSessionGroup: paymentMethodsSessionGroup = {
-  cardForm: () => defaultCardForm,
+let defaultPaymentMethodsSession: paymentMethodsSession = {
+  cardForm: () => defaultVaultCardForm,
   update: _ => (),
   on: (_, _) => (),
   deinit: () => (),
@@ -288,7 +306,7 @@ let defaultHyperInstance = {
   completeUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   initiateUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   confirmTokenization: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
-  paymentMethodsSession: _ => defaultPaymentMethodsSessionGroup,
+  paymentMethodsSession: _ => defaultPaymentMethodsSession,
 }
 
 type eventType =

@@ -105,47 +105,6 @@ let closeInstalledPorts = (channel: coordinatorChannel): unit => {
   channel.installedPortKeysRef := []
 }
 
-let seedCvcBrandOnMount = (
-  ~fieldType: string,
-  ~fieldIframe: Nullable.t<Dom.element>,
-  ~lastDetectedBrandRef: ref<string>,
-): unit =>
-  if fieldType === "cardCvc" && lastDetectedBrandRef.contents !== "" {
-    fieldIframe->Window.iframePostMessage(
-      [("detectedCardBrand", lastDetectedBrandRef.contents->JSON.Encode.string)]->Dict.fromArray,
-    )
-  }
-
-let routeFocusAndBrand = (
-  ~fieldType: string,
-  ~stateDict: Dict.t<JSON.t>,
-  ~prevFocusReadyRef: ref<bool>,
-  ~lastDetectedBrandRef: ref<string>,
-  ~iframeOfFieldType: string => option<Dom.element>,
-): unit => {
-  let postToField = (targetFieldType, fields) =>
-    iframeOfFieldType(targetFieldType)->Option.forEach(iframe =>
-      iframe->Nullable.make->Window.iframePostMessage(fields->Dict.fromArray)
-    )
-
-  let prevFocusReady = prevFocusReadyRef.contents
-  let newFocusReady = stateDict->getBool("focusReady", false)
-  prevFocusReadyRef := newFocusReady
-  if newFocusReady && !prevFocusReady {
-    CardFormShared.nextFieldFor(fieldType)->Option.forEach(nextFieldType =>
-      postToField(nextFieldType, [("doFocus", true->JSON.Encode.bool)])
-    )
-  }
-
-  if fieldType === "cardNumber" {
-    let cardBrand = stateDict->getString("cardBrand", "")->CardUtils.normalizeCardBrand
-    if cardBrand !== "" && cardBrand !== lastDetectedBrandRef.contents {
-      lastDetectedBrandRef := cardBrand
-      postToField("cardCvc", [("detectedCardBrand", cardBrand->JSON.Encode.string)])
-    }
-  }
-}
-
 let resolveFieldAppearance = (
   ~fieldOptionsDict: Dict.t<JSON.t>,
   ~groupAppearance: JSON.t,

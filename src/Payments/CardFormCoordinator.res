@@ -18,6 +18,8 @@ let defaultErrorMessage = (~code: string): string =>
   | "session_expired" => "Payment method session has expired"
   | "session_consumed" => "Payment method session has already been consumed or deinitialized"
   | "confirm_in_progress" => "A confirm is already in flight for this payment method session"
+  | "tokenization_in_progress" =>
+    "A tokenization is already in flight for this payment method session"
   | "incomplete_field_set" =>
     "mount {cardNumber,cardExpiry,cardCvc} for tokenize or only cardCvc for saved-card recollect"
   | "validation_error" => "Validation failed for one or more fields"
@@ -49,6 +51,7 @@ let makeErrorResult = (
     | "session_expired"
     | "session_consumed"
     | "tokenization_failed"
+    | "tokenization_in_progress"
     | "confirm_in_progress" => ApiError
     | _ => CardError
     }
@@ -248,6 +251,20 @@ let make = () => {
   let anyContributingFieldConfirmedInvalid = () =>
     cardNumberConfirmedInvalid() || cardExpiryConfirmedInvalid() || cardCvcConfirmedInvalid()
 
+  let relayDetectedBrandToCvc = (brand: string) =>
+    SadPortRegistry.postFrame(
+      ~key=portKey(~groupId, ~fieldName="cardCvc"),
+      CardFormPortProtocol.makePortFrame(
+        ~kind=CardFormPortProtocol.kindDetectedCardBrand,
+        ~payload=brand->JSON.Encode.string,
+      ),
+    )->ignore
+
+  let seedDetectedBrandOnCvcRegistration = (fieldName: string) =>
+    if fieldName === "cardCvc" && lastBrandRef.current !== "" {
+      relayDetectedBrandToCvc(lastBrandRef.current)
+    }
+
   React.useEffect(() => {
     SadPortRegistry.registry
     ->Dict.keysToArray
@@ -264,13 +281,7 @@ let make = () => {
               let cardBrand = payload->getDictFromJson->getString("cardBrand", "")
               if fieldName === "cardNumber" && cardBrand !== "" && cardBrand !== lastBrandRef.current {
                 lastBrandRef.current = cardBrand
-                SadPortRegistry.postFrame(
-                  ~key=portKey(~groupId, ~fieldName="cardCvc"),
-                  CardFormPortProtocol.makePortFrame(
-                    ~kind=CardFormPortProtocol.kindDetectedCardBrand,
-                    ~payload=cardBrand->JSON.Encode.string,
-                  ),
-                )->ignore
+                relayDetectedBrandToCvc(cardBrand)
               }
               let focusReady =
                 payload->getDictFromJson->getBool("focusReady", false)
@@ -294,6 +305,7 @@ let make = () => {
             Console.warn(`[CardFormCoordinator] dropped un-decodable port frame (port "${key}")`)
           }
         })
+        seedDetectedBrandOnCvcRegistration(fieldName)
       | None => ()
       }
     })

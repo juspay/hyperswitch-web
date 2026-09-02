@@ -38,7 +38,6 @@ type fieldEntry = {
   lastFormStatusRef: ref<option<aggregatedStatus>>,
   listenerName: string,
   savedCardTokenRef: ref<string>,
-  prevFocusReadyRef: ref<bool>,
 }
 
 let mapFieldTypeToInternalFieldName = CardFormShared.mapFieldTypeToInternalFieldName
@@ -103,8 +102,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     }
 
   let hasBeenReadyRef: ref<bool> = ref(false)
-
-  let lastDetectedBrandRef: ref<string> = ref("")
 
   let clientListDataPromise = PaymentHelpers.fetchClientList(
     ~clientSecret,
@@ -322,11 +319,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     ->Dict.valuesToArray
     ->Array.find(entry => entry.fieldType === matchFieldType)
 
-  let iframeOfFieldType = (matchFieldType: string): option<Dom.element> =>
-    matchFieldType
-    ->findFieldOfType
-    ->Option.flatMap(entry => entry.iframeRef.contents->Nullable.toOption)
-
   let createFieldHandle = (fieldType: string, options: JSON.t, fieldId: string): fieldEntry => {
     let iframeRef: ref<Nullable.t<Dom.element>> = ref(Nullable.null)
     let lastStateRef: ref<option<JSON.t>> = ref(None)
@@ -337,8 +329,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     let savedCardTokenRef = ref(
       options->getDictFromJson->getDictFromDict("savedCard")->getString("token", ""),
     )
-    let prevFocusReadyRef = ref(false)
-
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
       coordinator->openFieldPort(
         ~fieldIframe=mountedIframeRef,
@@ -357,7 +347,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         Promise.resolve()
       })
       ->ignore
-      seedCvcBrandOnMount(~fieldType, ~fieldIframe=mountedIframeRef, ~lastDetectedBrandRef)
     }
 
     let attachFieldListener = () => {
@@ -459,14 +448,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               switch cardStateUpdate {
               | Some(stateJson) =>
                 lastStateRef := Some(stateJson)
-                routeFocusAndBrand(
-                  ~fieldType,
-                  ~stateDict=stateJson->getDictFromJson,
-                  ~prevFocusReadyRef,
-                  ~lastDetectedBrandRef,
-                  ~iframeOfFieldType,
-                )
-
                 let changePayload = reshapeCardStateUpdateToChangePayload(
                   ~fieldType,
                   ~stateJson,
@@ -545,7 +526,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       lastFormStatusRef,
       listenerName,
       savedCardTokenRef,
-      prevFocusReadyRef,
     }
   }
 
