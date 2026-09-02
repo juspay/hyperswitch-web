@@ -23,7 +23,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsSamsungPayReady = Jotai.useSetAtom(isSamsungPayReady)
   let setUpdateSession = Jotai.useSetAtom(updateSession)
   let setIsUpdateIntentLoading = Jotai.useSetAtom(isUpdateIntentLoading)
-  let setShowCardIcon = Jotai.useSetAtom(showCardIcon)
+  let setCardBrandIconOverride = Jotai.useSetAtom(cardBrandIconOverride)
+  let setCvcIconOverride = Jotai.useSetAtom(cvcIconOverride)
   let setCardNumberPlaceholder = Jotai.useSetAtom(cardNumberPlaceholder)
   let setCardExpiryPlaceholder = Jotai.useSetAtom(cardExpiryPlaceholder)
   let setCardCvcPlaceholder = Jotai.useSetAtom(cardCvcPlaceholder)
@@ -115,17 +116,43 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         ->Dict.get(key)
         ->Option.flatMap(JSON.Decode.string)
         ->Option.forEach(value => setter(_ => Some(value)))
-      let applyBool = (key, setter) =>
+      /* Flat icon-style knobs: string decode → allowed-list membership; an INVALID
+         string warns (unknownPropValueWarning) and is dropped with NO write; a
+         WRONGLY-TYPED value is a silent no-op (placeholder precedent). Presence-gated:
+         an absent key never resets — "standard"/"default" are the restore writes. */
+      let applyIconStyle = (key, allowedList, warnPath, toStyle, setter) =>
         optionsDict
         ->Dict.get(key)
-        ->Option.flatMap(JSON.Decode.bool)
-        ->Option.forEach(value => setter(_ => value))
+        ->Option.flatMap(JSON.Decode.string)
+        ->Option.forEach(value =>
+          if allowedList->Array.some(allowed => allowed == value) {
+            setter(_ => Some(value->toStyle))
+          } else {
+            ErrorUtils.unknownPropValueWarning(value, allowedList, warnPath)
+          }
+        )
       switch fieldName {
-      | "cardNumber" =>
-        applyBool("showCardIcon", setShowCardIcon)
-        applyPlaceholder("placeholder", setCardNumberPlaceholder)
+      | "cardNumber" => {
+          applyIconStyle(
+            "cardBrandIcon",
+            ["standard", "hidden", "animated", "hideGeneric"],
+            "options.cardBrandIcon",
+            PaymentType.getCardBrandIconStyle,
+            setCardBrandIconOverride,
+          )
+          applyPlaceholder("placeholder", setCardNumberPlaceholder)
+        }
       | "cardExpiry" => applyPlaceholder("placeholder", setCardExpiryPlaceholder)
-      | "cardCvc" => applyPlaceholder("placeholder", setCardCvcPlaceholder)
+      | "cardCvc" => {
+          applyIconStyle(
+            "cvcIcon",
+            ["hidden", "default"],
+            "options.cvcIcon",
+            PaymentType.getCvcIconStyle,
+            setCvcIconOverride,
+          )
+          applyPlaceholder("placeholder", setCardCvcPlaceholder)
+        }
       | _ => ()
       }
     }

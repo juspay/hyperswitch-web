@@ -57,15 +57,17 @@ let make = (
 
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let cardBrandIconSetting = CardUtils.getLayoutClass(layout).cardBrandIcon
+  /* Override precedence: the merchant's flat `cardBrandIcon` knob (paymentMethodsSDK
+     surface) beats the layout dialect; the co-badge dropdown below is INTENTIONALLY
+     exempt from suppression — merchant co-badge selection must stay available even
+     when the brand icon is stripped. */
+  let cardBrandIconSetting =
+    Jotai.useAtomValue(JotaiAtoms.cardBrandIconOverride)->Option.getOr(
+      CardUtils.getLayoutClass(layout).cardBrandIcon,
+    )
   let shouldShowCoBadgeCardSchemeDropDown =
     isCardCoBadged && cardNumber->CardValidations.clearSpaces->String.length >= 16
-
-  /* `showCardIcon` gates the brand icon only — the co-badge dropdown below is INTENTIONALLY
-     exempt: merchant co-badge selection must stay available when the icon is stripped. */
-  let showCardIcon = Jotai.useAtomValue(JotaiAtoms.showCardIcon)
-  let showCardBrandIcon =
-    CardUtils.getCardBrandIconVisibility(cardBrandIconSetting, cardType) && showCardIcon
+  let showCardBrandIcon = CardUtils.getCardBrandIconVisibility(cardBrandIconSetting, cardType)
 
   React.useEffect1(() => {
     if shouldShowCoBadgeCardSchemeDropDown && !isCoBadgedCardDetectedOnce.current {

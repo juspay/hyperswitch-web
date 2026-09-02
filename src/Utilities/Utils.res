@@ -1549,6 +1549,11 @@ let rec flatten = (obj, addIndicatorForObject) => {
 
 external eventDataFromJson: JSON.t => Types.eventData = "%identity"
 
+/* `Types.event` (EventListenerManager's handler view) and `Window.event`
+   (hyper-loader controller view) are two record overlays of the SAME runtime
+   MessageEvent; only the nominal type of `data` differs. */
+external eventToWindowEvent: Types.event => Window.event = "%identity"
+
 let sanitizeEventData = (data: Types.eventData): Types.eventData => {
   let dict = data->anyTypeToJson->getDictFromJson
   let isCompleteEvent = dict->Dict.get("complete")->Option.isSome

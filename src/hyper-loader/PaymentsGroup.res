@@ -317,15 +317,16 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         ~options=groupConfigAsOptions,
         ~appearance=groupAppearance,
       )
-      // `Types.event` and `Window.event` are the same message event; the cast keeps both exact.
+      // `Types.event` and `Window.event` are two record overlays of the SAME
+      // MessageEvent; the Utils.eventToWindowEvent identity bridges them typed.
       EventListenerManager.addSmartEventListener(
         "message",
-        (ev: Types.event) => fullscreenRouter(%raw(`ev`)),
+        (ev: Types.event) => fullscreenRouter(ev->eventToWindowEvent),
         `onPaymentsCoordinatorFullscreen-${groupInstanceId}`,
       )
       EventListenerManager.addSmartEventListener(
         "message",
-        (ev: Types.event) => fullscreenAnswerer(%raw(`ev`)),
+        (ev: Types.event) => fullscreenAnswerer(ev->eventToWindowEvent),
         CoordinatorMount.fullscreenAnswerListenerName(groupInstanceId),
       )
       deinitCallbacksRef.contents->Array.push(() => {

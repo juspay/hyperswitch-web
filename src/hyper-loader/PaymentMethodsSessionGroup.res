@@ -51,12 +51,14 @@ type confirmOutcome = CardFormCoordinator.confirmOutcome
 
 let buildConfirmResult = CardFormCoordinator.buildConfirmResult
 
+/* The synthetic session intentionally lacks `expires_at`: the BACKEND
+   sessions payload is the sole expiry source; a merchant-supplied value must
+   not seed the staleness gate. */
 let buildSyntheticSession = (
   ~pmSessionId: string,
   ~customerId: string,
   ~vaultType: string,
   ~vaultData: JSON.t,
-  ~expiresAt: string,
 ): JSON.t => {
   let vaultDetailsDict = Dict.make()
   vaultDetailsDict->Dict.set("vault_type", vaultType->JSON.Encode.string)
@@ -66,7 +68,6 @@ let buildSyntheticSession = (
   sessionDict->Dict.set("customer_id", customerId->JSON.Encode.string)
   sessionDict->Dict.set("vault_details", vaultDetailsDict->JSON.Encode.object)
   sessionDict->Dict.set("associated_payment_methods", []->JSON.Encode.array)
-  sessionDict->Dict.set("expires_at", expiresAt->JSON.Encode.string)
   sessionDict->JSON.Encode.object
 }
 
@@ -274,15 +275,16 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         ~options=groupConfigAsOptions,
         ~appearance=groupAppearance,
       )
-      // `Types.event` and `Window.event` are the same message event; the cast keeps both exact.
+      // `Types.event` and `Window.event` are two record overlays of the SAME
+      // MessageEvent; the Utils.eventToWindowEvent identity bridges them typed.
       EventListenerManager.addSmartEventListener(
         "message",
-        (ev: Types.event) => fullscreenRouter(%raw(`ev`)),
+        (ev: Types.event) => fullscreenRouter(ev->eventToWindowEvent),
         `onVaultCoordinatorFullscreen-${groupInstanceId}`,
       )
       EventListenerManager.addSmartEventListener(
         "message",
-        (ev: Types.event) => fullscreenAnswerer(%raw(`ev`)),
+        (ev: Types.event) => fullscreenAnswerer(ev->eventToWindowEvent),
         CoordinatorMount.fullscreenAnswerListenerName(groupInstanceId),
       )
     }
@@ -294,16 +296,12 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
   | Some(vaultDict) => {
       let vaultType = vaultDict->getString("vault_type", "")
       let vaultData = vaultDict->Dict.get("vault_data")->Option.getOr(JSON.Encode.null)
-      let expiresAt = optionsDict->getString("expires_at", "")
-      expiresAtRef := parseExpiresAtMs(expiresAt)
+      /* Merchant-supplied `expires_at` is intentionally NOT parsed here: the
+         backend sessions payload is the sole expiry source. In Mode B the
+         gate stays "unknown" (never proactively expired) until/unless a
+         backend sessions hydrate lands. */
 
-      let syntheticSession = buildSyntheticSession(
-        ~pmSessionId,
-        ~customerId,
-        ~vaultType,
-        ~vaultData,
-        ~expiresAt,
-      )
+      let syntheticSession = buildSyntheticSession(~pmSessionId, ~customerId, ~vaultType, ~vaultData)
       sessionsDataRef := syntheticSession
 
       let vaultMode = vaultType->VaultHelpers.getVaultModeFromName
@@ -794,9 +792,11 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
               fieldOptionsWithAppearanceDict->Dict.set("appearance", appearanceJson)
               let optionsForBroker = fieldOptionsWithAppearanceDict->JSON.Encode.object
 
-              let getFieldHandle = (): option<JSON.t> => {
+              /* The broker stores handles as opaque JSON.t; this consumer boundary
+                 reclaims the typed `VGSTypes.field` view once, via `fieldFromJson`. */
+              let getFieldHandle = (): option<VGSTypes.field> => {
                 switch broker.fieldsRef.contents->Dict.get(fieldId) {
-                | Some(entry) => entry.fieldHandle
+                | Some(entry) => entry.fieldHandle->Option.map(VGSTypes.fieldFromJson)
                 | None => None
                 }
               }
@@ -840,7 +840,7 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                   switch getFieldHandle() {
                   | Some(vgsFieldHandle) =>
                     try {
-                      %raw(`(function(field) { if (field && typeof field.focus === "function") field.focus(); })`)(vgsFieldHandle)
+                      vgsFieldHandle.focus->Option.forEach(invoke => invoke())
                     } catch {
                     | exn =>
                       Console.error2(
@@ -858,7 +858,7 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                   switch getFieldHandle() {
                   | Some(vgsFieldHandle) =>
                     try {
-                      %raw(`(function(field) { if (field && typeof field.blur === "function") field.blur(); })`)(vgsFieldHandle)
+                      vgsFieldHandle.blur->Option.forEach(invoke => invoke())
                     } catch {
                     | exn =>
                       Console.error2(
@@ -877,10 +877,13 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                   switch getFieldHandle() {
                   | Some(vgsFieldHandle) =>
                     try {
-                      let cleared: bool = %raw(`(function(field) {
-                        if (field && typeof field.clear === "function") { field.clear(); return true; }
-                        return false;
-                      })`)(vgsFieldHandle)
+                      let cleared = switch vgsFieldHandle.clear {
+                      | Some(invoke) => {
+                          invoke()
+                          true
+                        }
+                      | None => false
+                      }
                       if !cleared {
                         Console.warn(
                           `[PaymentMethodsSessionGroup] VGS clear(${fieldId}) — field has no clear() method; use update({placeholder: ..., validations: ...}) instead`,

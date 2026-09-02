@@ -527,8 +527,15 @@ module RenderCardCvc = {
   @react.component
   let make = (~state: cardFieldState) => {
     let {themeObj} = Jotai.useAtomValue(configAtom)
+    let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
     let cvcPlaceholder = Jotai.useAtomValue(cardCvcPlaceholder)->Option.getOr("123")
     let {isCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef, cvcError, maxCVCLength, setIsCVCValid} = state.cvcProps
+    let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
+    let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
+      ~cvcNumber,
+      ~isCVCValid,
+      ~isCvcValidValue,
+    )
     <div
       className="animate-slowShow flex flex-col"
       style={{gridGap: "0px", height: themeObj.cardFieldHeight}}>
@@ -540,6 +547,15 @@ module RenderCardCvc = {
         onChange=changeCVCNumber
         onBlur=handleCVCBlur
         errorString=cvcError
+        rightIcon={CardUtils.setRightIconForCvc(
+          ~cardComplete,
+          ~cardEmpty,
+          ~cardInvalid,
+          ~color=themeObj.colorIconCardCvcError,
+          ~cvcIcon=Jotai.useAtomValue(cvcIconOverride)->Option.getOr(
+            CardUtils.getLayoutClass(layout).cvcIcon,
+          ),
+        )}
         type_="tel"
         className="tracking-widest w-full"
         maxLength=maxCVCLength

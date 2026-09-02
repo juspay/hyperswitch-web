@@ -22,10 +22,18 @@ type fieldOptions = {
 type fieldUpdateOptions = {validations: array<string>}
 
 // A mounted secure field. `on` subscribes to field events (focus/blur/update).
+// `focus`/`blur`/`clear` are OPTIONAL: VGSCollect 2.27 exposes them but the
+// API may drop them; absent slots are left as None by `fieldFromJson` callers.
 type field = {
   on: (string, JSON.t => unit) => unit,
   update: fieldUpdateOptions => unit,
+  focus?: unit => unit,
+  blur?: unit => unit,
+  clear?: unit => unit,
 }
+
+// Reclaim typing for a handle the broker stores as opaque JSON.t.
+external fieldFromJson: JSON.t => field = "%identity"
 
 // The form handle returned by VGSCollect.create.
 type returnValue = {
