@@ -1,8 +1,3 @@
-/* Standalone card-number field for the VaultSDK surface; the shared plumbing lives in
-   `CommonCardFieldHooks.useCardNumberField`.
-   PURE EMITTER — the hidden `cardFormCoordinator` iframe owns the confirm and runs the
-   tokenisation POST. */
-
 open Utils
 open JotaiAtoms
 

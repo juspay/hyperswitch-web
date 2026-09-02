@@ -51,10 +51,6 @@ type fieldHandle = {
   on: (string, JSON.t => unit) => unit,
 }
 
-/* ONE group shape serves both the vault session and the payments intent. `cardForm()` takes
-   no arguments; the flow is INFERRED at `confirm()`-time from the mounted fields: the full
-   set → Flow A, only cardCvc → Flow B (saved-card CVC recollect, vault only), anything else
-   → `incomplete_field_set`. There is no separate saved-card-CVC confirm entrypoint. */
 type cardForm = {
   create: (string, JSON.t) => fieldHandle,
   on: (string, JSON.t => unit) => unit,
@@ -64,8 +60,6 @@ type cardForm = {
   fields: ref<JSON.t>,
 }
 
-/* the CardForm surface lives behind `cardForm()`, so `create()` and `confirm()` are NOT on
-   this record; session-scoped `update`, `on`, `deinit` and `fields` stay here. */
 type paymentMethodsSessionGroup = {
   cardForm: unit => cardForm,
   update: JSON.t => unit,
@@ -80,8 +74,6 @@ type element = {
   fetchUpdates: unit => promise<JSON.t>,
   create: (JSON.t, Nullable.t<JSON.t>) => paymentElement,
   updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
-  /* widgets also exposes the payments CardForm factory; the vault session-group surfaces the
-     same shape. */
   cardForm: unit => cardForm,
 }
 
@@ -200,8 +192,6 @@ let create = (_options: JSON.t, _options2: Nullable.t<JSON.t>) => {
   defaultPaymentElement
 }
 
-/* resolved by the DEFAULT cardForm stub when a merchant confirms before `Hyper.make(...)`
-   initialized. NOT a lazy-load error — there is no vault-sdk chunk to wait for. */
 let vaultSDKNotLoadedError: JSON.t = {
   let errorDict = Dict.make()
   errorDict->Dict.set("code", "sdk_not_ready"->JSON.Encode.string)

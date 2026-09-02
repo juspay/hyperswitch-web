@@ -1,11 +1,3 @@
-/* CardFormCoordinator — hidden 0x0 hosted iframe that OWNS CardForm confirm for both
-   surface families (vault save/update; payments Flow A `usePaymentIntent`).
-   Per-field MessageChannel ports deliver each field's FULL snapshot INCLUDING raw SAD;
-   the coordinator folds them into its own cache and raw values NEVER touch the merchant
-   window — only the masked confirm-result union is posted back.
-   It also relays the detected brand onto the cvc port and routes `doFocus` on the
-   `focusReady` false→true edge. Settle is exactly-once with an 8s hang backstop. */
-
 open Utils
 open JotaiAtoms
 
@@ -49,8 +41,6 @@ let makeErrorResult = (
   (),
 ): JSON.t => {
   let resolvedMessage = resolveErrorMessage(~code, ~locale, ~fallback=message)
-  /* the confirm mutex is a session/api concern, not a card-input one — classified ApiError
-     so the vault surface matches the payments `confirm_in_progress` envelope. */
   let resolvedType = switch typeOverride {
   | Some(t) => t
   | None =>
@@ -101,8 +91,6 @@ type confirmOutcome =
 let buildConfirmResult = (~outcome: confirmOutcome): JSON.t =>
   switch outcome {
   | FlowASuccess(payload) =>
-    /* Hardening (same as pre-move): `paymentMethodId=None` is legal (VGS
-       aliases); `Some("")` is a decode bug and demotes to tokenization_failed. */
     let pmIdMissing = switch payload.paymentMethodId {
     | Some(s) => s == ""
     | None => false
@@ -165,12 +153,8 @@ let buildConfirmResult = (~outcome: confirmOutcome): JSON.t =>
     )
   }
 
-/* Per-group port key shape: "<groupId>:<fieldName>" — the mounter
-   (`CoordinatorMount`) composes these deterministically. */
 let portKey = (~groupId: string, ~fieldName: string): string => `${groupId}:${fieldName}`
 
-/* The coordinator's per-field cache entry: the most recent FULL port-plane
-   payload (incl. RAW SAD — never relaid to the merchant window). */
 type fieldSnapshotEntry = {payload: JSON.t}
 
 @react.component
@@ -204,7 +188,6 @@ let make = () => {
   })
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
-  // masked result post — the confirm-result union is the ONLY thing the group sees.
   let postConfirmResult = (~confirmId: string, result: JSON.t) => {
     messageParentWindow(
       [
@@ -244,9 +227,6 @@ let make = () => {
   let aggregatedCvcNumber = () => aggregateRawValue(d => d->getString("rawCvc", ""))
   let aggregatedCardBrand = () => aggregateRawValue(d => d->getString("cardBrand", ""))
 
-  /* a field is CONFIRMED-invalid only when it HAS a validation status and that status is
-     false; an absent status is pristine (first-keystroke race) and must NOT reject. The
-     non-empty check still covers untouched fields. */
   let snapshotFieldStatus = fieldName =>
     fieldSnapshotsRef.current
     ->Dict.get(fieldName)
@@ -268,8 +248,6 @@ let make = () => {
   let anyContributingFieldConfirmedInvalid = () =>
     cardNumberConfirmedInvalid() || cardExpiryConfirmedInvalid() || cardCvcConfirmedInvalid()
 
-  /* attach a frame listener per registered port under this group's prefix; safe to overwrite
-     because the registry closes superseded ports on epoch replacement. */
   React.useEffect(() => {
     SadPortRegistry.registry
     ->Dict.keysToArray
@@ -294,8 +272,6 @@ let make = () => {
                   ),
                 )->ignore
               }
-              /* Focus progression: false→true edge per field, default-absent
-                 → false; cardCvc is terminal (nextFieldFor returns None). */
               let focusReady =
                 payload->getDictFromJson->getBool("focusReady", false)
               let prevReady = prevFocusReadyRef.current->Dict.get(fieldName)->Option.getOr(false)
@@ -334,8 +310,6 @@ let make = () => {
           let confirmId = dict->getString("confirmId", "")
           let errorLocale = dict->getString("locale", "en")
           if coordinatorFamily === PaymentSurfaceFamily.OtherCoordinatorFamily {
-            /* ADMISSION GATE: a misrouted coordinator iframe must FAIL LOUDLY rather than silently
-               drop the caller's confirm slot. */
             postConfirmResult(
               ~confirmId,
               buildConfirmResult(
@@ -349,13 +323,9 @@ let make = () => {
                 }),
               ),
             )
-          /* the group's mutex latches BEFORE posting any confirm command, so the coordinator never
-             sees two in-flight commands for one group and needs no inner gate. */
           } else if command === "initiateConfirm" {
             let flowKind = dict->getString("flow", "save")
             let isVaultCommand = flowKind === "save" || flowKind === "update"
-            /* family gating: payments commands must not run on a vault coordinator or vice versa —
-               misrouting fails loud rather than landing in the wrong arm. */
             let misroute = (isVaultCommand && coordinatorFamily !== PaymentSurfaceFamily.VaultCoordinator) || (
               !isVaultCommand && coordinatorFamily !== PaymentSurfaceFamily.PaymentsCoordinator
             )
@@ -389,9 +359,6 @@ let make = () => {
                 )
               }
             } else if flowKind === "payments" || flowKind === "savedCardCvc" {
-              /* payments flows are fire-and-forget: the network outcome rides the unchanged
-                 `submitSuccessful` broadcast. The coordinator posts the paymentConfirmAck/Fail pair so
-                 the outer group can settle its confirm mutex. */
               let cardNumber = aggregatedCardNumber()
               let cardExpiry = aggregatedCardExpiry()
               let cvcNumber = aggregatedCvcNumber()
@@ -447,8 +414,6 @@ let make = () => {
                     ~targetOrigin=keys.parentURL,
                   )
                 } else {
-                  /* Flow B — saved-card CVC recollect via `savedCardBody`: payment_token, card_cvc and
-                     customer_id from the clientList's intent_data; customer_acceptance always attached. */
                   let paymentToken = dict->getString("paymentToken", "")
                   let customerId = switch paymentMethodListValue {
                   | Loaded(data)
@@ -456,8 +421,6 @@ let make = () => {
                     data->getDictFromJson->getDictFromDict("intent_data")->getString("customer_id", "")
                   | _ => ""
                   }
-                  /* gate the dispatch when the clientList carried no customer_id — do NOT silently drop the
-                     key from the body. */
                   if customerId === "" {
                     messageParentWindow(
                       [
@@ -492,12 +455,6 @@ let make = () => {
             } else {
               confirmingRef.current = true
               let settledRef = ref(false)
-              /* exactly-once sink for the vault arm. Deliberately NO deadline: every branch
-                 below settles — the four validation guards and the credential guard settle
-                 synchronously, and both POSTs settle in BOTH their `then` and their `catch`
-                 (a null body counts as an HTTP failure). An 8s timer here could only pre-empt a
-                 slow-but-successful vault save and report `tokenization_failed` for a card that
-                 WAS stored — the worst outcome available. */
               let settle = result => {
                 if !settledRef.contents {
                   settledRef := true
@@ -625,7 +582,6 @@ let make = () => {
                   })
                   ->ignore
                 } else {
-                  // flow === "update" — saved-card CVC recollect.
                   PaymentHelpersV2.updatePaymentMethod(
                     ~bodyArr=PaymentManagementBody.vaultUpdateCVVBody(~cvcNumber),
                     ~pmSessionId=pmSessionIdCopy,
@@ -683,7 +639,5 @@ let make = () => {
     handleMessage(handleCommand, "")
   }, (keys, sessions, paymentMethodListValue, registryVersion, groupId))
 
-  /* the coordinator INTENTIONALLY emits no window-plane `ready` beacon — the field iframes
-     arm Hyper.res's first-ready-wins latch and a coordinator beacon would pre-empt it. */
   React.null
 }

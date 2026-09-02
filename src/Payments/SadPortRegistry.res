@@ -1,10 +1,3 @@
-/* SadPortRegistry — per-document registry of MessagePort endpoints for the Card Relay.
-   A field iframe owns one port (keyed groupId:fieldName); the hidden coordinator owns one
-   per field of its group, installed from the `cardFieldPort` frames the group forwards.
-   Epoch discipline: ports are keyed AND epoch-tagged. Re-installing under the same key with
-   a NEW epoch closes the stale port first — a remount must never leave a live listener on a
-   dead channel. A same-epoch duplicate install is a no-op. */
-
 open Utils
 open MessageChannelBinding
 
@@ -15,7 +8,6 @@ type portHandle = {
 
 let registry: Dict.t<portHandle> = Dict.make()
 
-// consumers subscribe once and re-scan the registry on every structural mutation.
 let changeListeners: ref<array<unit => unit>> = ref([])
 
 let addChangeListener = (cb: unit => unit): unit => {
@@ -67,9 +59,6 @@ let closeAllPorts = () => {
   ->Array.forEach(key => closePort(~key))
 }
 
-/* returns false when the key is not registered. DROP semantics: the caller does NOT fall
-   back to the window plane for raws, so false means the snapshot is lost for this cycle and
-   the caller should warn as a dev-time drift signal. */
 let postFrame = (~key: string, frame: JSON.t) =>
   switch registry->Dict.get(key) {
   | Some(handle) =>

@@ -74,8 +74,6 @@ type themeClass = {
   buttonTextFontWeight: string,
   buttonBorderWidth: string,
   disabledFieldColor: string,
-  /* height of standalone per-field card iframes; merchants override via
-     `appearance.variables.cardFieldHeight`. Bundled surfaces ignore this knob. */
   cardFieldHeight: string,
 }
 type appearance = {

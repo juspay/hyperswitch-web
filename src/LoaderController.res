@@ -106,20 +106,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     let optionsDict = dict->getDictFromObj("options")
     setOptionsJson(_ => optionsDict->JSON.Encode.object)
 
-    /* per-field knobs apply only on the paymentMethodsSDK surface. Presence-gated: an ABSENT
-       key leaves the atom untouched, an explicit "" DOES apply, a wrongly-typed value is a no-op. */
     if isPaymentMethodsSDKSurface {
-      /* placeholder atoms hold `option<string>` so a renderer can tell "merchant passed nothing"
-         (None → the bundled card form's placeholder) from an explicit override, including "". */
       let applyPlaceholder = (key, setter) =>
         optionsDict
         ->Dict.get(key)
         ->Option.flatMap(JSON.Decode.string)
         ->Option.forEach(value => setter(_ => Some(value)))
-      /* Flat icon-style knobs: string decode → allowed-list membership; an INVALID
-         string warns (unknownPropValueWarning) and is dropped with NO write; a
-         WRONGLY-TYPED value is a silent no-op (placeholder precedent). Presence-gated:
-         an absent key never resets — "standard"/"default" are the restore writes. */
       let applyIconStyle = (key, allowedList, warnPath, toStyle, setter) =>
         optionsDict
         ->Dict.get(key)
@@ -314,15 +306,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       try {
         let dict = json->getDictFromJson
 
-        /* port ingestion runs at the handshake layer, BEFORE and INDEPENDENT of the
-           `setConfigs → isConfigReady` gate: a port that misses the mount window is a permanently
-           uncoupled channel. Keys come from the message itself (`portKey`); same-epoch re-installs
-           are no-ops and a new epoch closes the superseded port.
-           INGESTION GATE: only absorb [port] when the SAME message carries a handshake-shaped key
-           (`paymentElementCreate` for a field, `cardFieldPort` for the coordinator) — otherwise this
-           window listener would absorb any port a same-origin frame blinds into us. */
+        let pinnedParentURL = keys.parentURL
+        let isFromHostWindow =
+          ev.source === iframeParent &&
+            (pinnedParentURL === "*" || ev.origin === pinnedParentURL)
         let ports = ev->MessageChannelBinding.eventPorts
-        if ports->Array.length > 0 {
+        if isFromHostWindow && ports->Array.length > 0 {
           let handshakeShaped =
             dict->getDictIsSome("paymentElementCreate") || dict->getDictIsSome("cardFieldPort")
           if handshakeShaped {

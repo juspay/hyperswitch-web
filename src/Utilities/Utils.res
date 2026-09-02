@@ -18,9 +18,6 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
-/* transfer-capable postMessage. The STRING payload is deliberate: the window plane is
-   stringified end-to-end, so `port2` rides alongside the exact same mount-config string.
-   `Window.iframePostMessage` stays string-only and untouched. */
 @send
 external postMessageWithTransfer: (
   Dom.element,
@@ -28,10 +25,6 @@ external postMessageWithTransfer: (
   string,
   array<MessageChannelBinding.port>,
 ) => unit = "postMessage"
-
-let messageWindowWithTransfer = (window, ~targetOrigin="*", message: string, ~transfer) => {
-  window->postMessageWithTransfer(message, targetOrigin, transfer)
-}
 
 let iframePostMessageWithTransfer = (
   iframeRef: nullable<Dom.element>,
@@ -1280,7 +1273,6 @@ let isOtherElements = componentType => {
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
   componentType == "cardCvc" ||
-  // per-field vault iframes need the same `height: 3rem;` initial style as the legacy ones.
   componentType == "vaultCardNumber" ||
   componentType == "vaultCardExpiry" ||
   componentType == "vaultCardCvc"
@@ -1294,7 +1286,6 @@ let canHaveMultipleInstances = componentType => {
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
   componentType == "cardCvc" ||
-  // per-field vault iframes adopt sibling refs; otherwise they share one onMount listener name.
   componentType == "vaultCardNumber" ||
   componentType == "vaultCardExpiry" ||
   componentType == "vaultCardCvc" ||
@@ -1549,9 +1540,6 @@ let rec flatten = (obj, addIndicatorForObject) => {
 
 external eventDataFromJson: JSON.t => Types.eventData = "%identity"
 
-/* `Types.event` (EventListenerManager's handler view) and `Window.event`
-   (hyper-loader controller view) are two record overlays of the SAME runtime
-   MessageEvent; only the nominal type of `data` differs. */
 external eventToWindowEvent: Types.event => Window.event = "%identity"
 
 let sanitizeEventData = (data: Types.eventData): Types.eventData => {

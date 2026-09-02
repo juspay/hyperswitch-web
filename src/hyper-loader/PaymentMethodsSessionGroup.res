@@ -1,30 +1,16 @@
-/* Factory behind `hyper.paymentMethodsSession(options)` — the vault CardForm group.
-   Confirms are relay-only: the group posts a content-free `cardFormCoordinatorCommand`
-   into the hidden coordinator iframe and settles on its masked `confirmResult`. Raw card
-   data never crosses the merchant window plane — it rides the MessageChannel port plane only. */
-
 open Utils
+open CardFormGroupShared
 
-/* port1 queued until the coordinator iframe mounts and flushes it. Shape lives in
-   `CoordinatorMount` so its teardown can close ports that were never transferred. */
-type pendingPort = CoordinatorMount.pendingPort
-
-/* aliased rather than `open Types`, which would shadow the global `None` needed by
-   optional labeled args such as `~optLogger=None`. */
 type paymentMethodsSessionGroup = Types.paymentMethodsSessionGroup
 type fieldHandle = Types.fieldHandle
 type cardForm = Types.cardForm
 
-// Active → Consumed on a successful confirm, → Deinitialized on `deinit()`; a non-Active session refuses further confirms.
 type sessionState =
   | Active
   | Consumed
   | Deinitialized
 
 type errorType = CardFormCoordinator.errorType
-
-let defaultErrorMessage = CardFormCoordinator.defaultErrorMessage
-let resolveErrorMessage = CardFormCoordinator.resolveErrorMessage
 
 let makeErrorResult = (
   ~code: string,
@@ -51,9 +37,6 @@ type confirmOutcome = CardFormCoordinator.confirmOutcome
 
 let buildConfirmResult = CardFormCoordinator.buildConfirmResult
 
-/* The synthetic session intentionally lacks `expires_at`: the BACKEND
-   sessions payload is the sole expiry source; a merchant-supplied value must
-   not seed the staleness gate. */
 let buildSyntheticSession = (
   ~pmSessionId: string,
   ~customerId: string,
@@ -71,8 +54,6 @@ let buildSyntheticSession = (
   sessionDict->JSON.Encode.object
 }
 
-/* 0.0 means missing or unparseable — treated as unknown, NOT expired. We only flag
-   `session_expired` when we positively know now >= expiresAt. */
 let parseExpiresAtMs = (expiresAtStr: string): float => {
   if expiresAtStr->String.length == 0 {
     0.0
@@ -88,31 +69,17 @@ let parseExpiresAtMs = (expiresAtStr: string): float => {
 let isExpired = (~expiresAtMs: float): bool =>
   expiresAtMs > 0.0 && Date.now() >= expiresAtMs
 
-// confirm settlement rides `coordinatorConfirmPendingRef` alone; no window-relay resolver.
 type fieldEntry = {
   iframeRef: ref<Nullable.t<Dom.element>>,
   handle: fieldHandle,
   fieldType: string,
   savedCardBrandRef: ref<string>,
   savedCardLast4Ref: ref<string>,
-  /* no raw caches here: the window-plane `cardStateUpdate` carries the SPLIT payload (no
-     raw keys); full snapshots reach the coordinator on the port plane only.
-     auto-focus advances only on the false→true edge of the iframe-emitted `focusReady`.
-     Do NOT key this off `fieldStatus.complete` — that fires on valid + non-empty without
-     brand-aware length and Luhn gating, so a Visa would advance at 14 digits, not 16. */
   prevFocusReadyRef: ref<bool>,
 }
 
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
-let nextFieldFor = CardFormShared.nextFieldFor
-
-/* VGS aliases are format-preserving (`4111xxxxxxxx1111`) — only the leading prefix is a
-   real BIN. `CardValidations.getAllMatchedCardSchemes` regex-matches issuer prefixes
-   WITHOUT stripping non-digits; `Validation.getCardBrand` and `CardUtils.getCardBrand`
-   strip first, so `6521xxxxxxxx9999` collapses to `65219999` and their BIN check reads the
-   fabricated prefix `652199` — RuPay for a Discover card. Co-badged prefixes match several
-   issuers, so the winner is resolved against this surface's published brand vocabulary. */
 let aliasBrandVocabulary = [
   ("Visa", "visa"),
   ("Mastercard", "mastercard"),
@@ -144,6 +111,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
   let customerId = sdkAuth.customerId->Option.getOr("")
 
   let locale = optionsDict->getString("locale", "auto")
+  let groupAppearance =
+    optionsDict->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
 
   let sessionsDataRef: ref<JSON.t> = ref(JSON.Encode.null)
   let vaultCredentialsRef: ref<JSON.t> = ref(JSON.Encode.null)
@@ -154,89 +123,26 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
 
   let vgsBrokerRef: ref<option<VGSVaultBroker.vgsBrokerHandle>> = ref(None)
 
-  // VGS builds no fieldEntry, so savedCard hints are captured here for the Flow B union.
   let vgsSavedCardBrandRef: ref<string> = ref("")
   let vgsSavedCardLast4Ref: ref<string> = ref("")
 
-  // pushed to the cardCvc iframe once per brand CHANGE, not per keystroke.
   let lastDetectedBrandRef: ref<string> = ref("")
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
 
-  /* the hidden coordinator owns the vault confirm: masked commands in, masked `confirmResult`
-     back, raw SAD on the per-field ports. `groupInstanceId` is its selector and the `groupId`
-     URL param. VGS-only groups never mount a coordinator. */
-  let groupInstanceId = `vault-${pmSessionId}-${Date.now()->Float.toString}-${Math.random()->Float.toString->String.slice(~start=2, ~end=8)}`
-  let portEpochCounterRef: ref<int> = ref(0)
-  let pendingPortsRef: ref<array<pendingPort>> = ref([])
-  let installedPortKeysRef: ref<array<string>> = ref([])
-  let coordinatorMountRef: ref<option<CoordinatorMount.coordinatorMount>> = ref(None)
-  let coordinatorReadyRef: ref<bool> = ref(false)
+  let groupInstanceId = uniqueId(~prefix=`vault-${pmSessionId}`)
+  let coordinator = makeCoordinatorChannel(~groupId=groupInstanceId)
   let coordinatorListenerName = `onVaultCoordinator-${groupInstanceId}`
   let coordinatorConfirmPendingRef: ref<option<(string, JSON.t => unit)>> = ref(None)
 
-  /* commands QUEUE until the coordinator's `iframeMounted`, for exactly the reason ports do:
-     the hidden iframe has no message listener until its React tree mounts, so a `confirm()`
-     racing the boot would be dropped on the floor and — since the relay promise has no
-     deadline — strand the merchant's `await` forever. Mirrors `flushPendingPorts` below and
-     `hyper.confirmPayment()`, which awaits `isReadyPromise` before posting `doSubmit`. */
-  let pendingCoordinatorCommandsRef: ref<array<array<(string, JSON.t)>>> = ref([])
-
-  let postToCoordinator = (
-    mount: CoordinatorMount.coordinatorMount,
-    fields: array<(string, JSON.t)>,
-  ) =>
-    try mount.iframe->Nullable.make->Window.iframePostMessage(fields->Dict.fromArray) catch {
-    | _ => ()
-    }
-
-  let postCoordinatorCommand = (fields: array<(string, JSON.t)>) => {
-    switch (coordinatorMountRef.contents, coordinatorReadyRef.contents) {
-    | (Some(mount), true) => postToCoordinator(mount, fields)
-    | _ =>
-      pendingCoordinatorCommandsRef :=
-        pendingCoordinatorCommandsRef.contents->Array.concat([fields])
-    }
-  }
-
-  /* drained AFTER `syncCoordinatorSessions`, so a queued confirm lands BEHIND the sessions
-     payload the coordinator decodes its vault credentials from. The queue is emptied before
-     the loop so a re-entrant post cannot double-send. */
-  let flushPendingCoordinatorCommands = () => {
-    switch (coordinatorMountRef.contents, coordinatorReadyRef.contents) {
-    | (Some(mount), true) =>
-      let queuedCommands = pendingCoordinatorCommandsRef.contents
-      pendingCoordinatorCommandsRef := []
-      queuedCommands->Array.forEach(fields => postToCoordinator(mount, fields))
-    | _ => ()
-    }
-  }
-
   let syncCoordinatorSessions = () => {
-    if sessionsDataRef.contents != JSON.Encode.null && coordinatorReadyRef.contents {
-      coordinatorMountRef.contents->Option.forEach(mount =>
+    if sessionsDataRef.contents != JSON.Encode.null && coordinator.readyRef.contents {
+      coordinator.mountRef.contents->Option.forEach(mount =>
         mount.iframe->Nullable.make->Window.iframePostMessage(
           [("sessions", sessionsDataRef.contents)]->Dict.fromArray,
         )
       )
-    }
-  }
-
-  let flushPendingPorts = () => {
-    switch (coordinatorMountRef.contents, coordinatorReadyRef.contents) {
-    | (Some(mount), true) =>
-      pendingPortsRef.contents->Array.forEach(({fieldName, epoch, port}) => {
-        CoordinatorMount.forwardPortToCoordinator(
-          ~coordinatorIframe=mount.iframe->Nullable.make,
-          ~groupId=groupInstanceId,
-          ~fieldName,
-          ~portEpoch=epoch,
-          ~port,
-        )
-      })
-      pendingPortsRef := []
-    | _ => ()
     }
   }
 
@@ -245,23 +151,19 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     EventListenerManager.addSmartEventListener(
       "message",
       (ev: Types.event) => {
-        let isOurCoordinator =
-          coordinatorMountRef.contents
-          ->Option.map(coordinatorMount =>
-            ev.source === coordinatorMount.iframe->Window.contentWindow &&
-              ev.origin === innerIframeOrigin
-          )
-          ->Option.getOr(false)
+        let isOurCoordinator = isFromIframe(
+          ~ev,
+          ~iframe=coordinator.mountRef.contents->Option.map(mount => mount.iframe),
+          ~origin=innerIframeOrigin,
+        )
         if isOurCoordinator {
-          let json = try ev.data->Identity.anyTypeToJson catch { | _ => JSON.Encode.null }
+          let json = eventDataJson(ev)
           let dict = json->getDictFromJson
           if dict->getBool("iframeMounted", false) {
-            coordinatorReadyRef := true
-            flushPendingPorts()
+            coordinator.readyRef := true
+            flushPendingPorts(coordinator)
             syncCoordinatorSessions()
-            /* any confirm() that raced the boot is dispatched HERE, after the sessions sync
-               above — never dropped, so its promise cannot hang. */
-            flushPendingCoordinatorCommands()
+            flushPendingCoordinatorCommands(coordinator)
           } else {
             switch dict->Dict.get("confirmResult") {
             | Some(result) =>
@@ -282,11 +184,9 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
   }
 
   let ensureCoordinatorMounted = () => {
-    switch coordinatorMountRef.contents {
+    switch coordinator.mountRef.contents {
     | Some(_) => ()
     | None =>
-      let groupAppearance =
-        optionsDict->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
       let groupConfigAsOptions =
         [
           ("sdkAuthorization", sdkAuthorizationRaw->JSON.Encode.string),
@@ -303,7 +203,7 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         ~groupId=groupInstanceId,
         ~sdkDomain=ApiEndpoint.vaultSdkDomainUrl,
       )
-      coordinatorMountRef := Some(mount)
+      coordinator.mountRef := Some(mount)
       attachCoordinatorListener()
       let (fullscreenRouter, fullscreenAnswerer) = CoordinatorMount.makeFullscreenFlows(
         ~mount,
@@ -312,8 +212,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         ~options=groupConfigAsOptions,
         ~appearance=groupAppearance,
       )
-      // `Types.event` and `Window.event` are two record overlays of the SAME
-      // MessageEvent; the Utils.eventToWindowEvent identity bridges them typed.
       EventListenerManager.addSmartEventListener(
         "message",
         (ev: Types.event) => fullscreenRouter(ev->eventToWindowEvent),
@@ -333,10 +231,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
   | Some(vaultDict) => {
       let vaultType = vaultDict->getString("vault_type", "")
       let vaultData = vaultDict->Dict.get("vault_data")->Option.getOr(JSON.Encode.null)
-      /* Merchant-supplied `expires_at` is intentionally NOT parsed here: the
-         backend sessions payload is the sole expiry source. In Mode B the
-         gate stays "unknown" (never proactively expired) until/unless a
-         backend sessions hydrate lands. */
 
       let syntheticSession = buildSyntheticSession(~pmSessionId, ~customerId, ~vaultType, ~vaultData)
       sessionsDataRef := syntheticSession
@@ -367,8 +261,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         let loadedSession: PaymentType.loadType = Loaded(sessionJson)
         let vaultConfigJson = VaultHelpers.buildVaultConfig(loadedSession, vaultMode)
         vaultCredentialsRef := vaultConfigJson
-        /* slow-fetch twin of the ready-flush: if the coordinator mounted before this fetch
-           resolved, push the session snapshot now. */
         syncCoordinatorSessions()
         Promise.resolve()
       })
@@ -380,11 +272,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-  /* each `create()` mounts an iframe at componentName=paymentMethodsSDK with the bare
-     `fieldName` and `surfaceFamily=vault`, driven over the paymentElementCreate protocol. */
   let mapFieldTypeToInternalFieldName = CardFormShared.mapFieldTypeToInternalFieldName
 
-  // Mode A resolves async, so a `create()` that beats the fetch sees "unknown" (= Hyperswitch).
   let detectVaultType = (): string => {
     let declaredType =
       optionsDict
@@ -423,7 +312,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       | None => fromCredentials->getString("environment", "")
       }
       if vaultId->String.length == 0 || environment->String.length == 0 {
-        // no usable VGS credentials — leave the broker unset and fall back to the error handle.
         None
       } else {
         let broker = VGSVaultBroker.make(~pmSessionId, ~vaultId, ~environment, ~eventCallbacksRef)
@@ -434,66 +322,40 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
   }
 
   let buildMountConfig = (~options: JSON.t, ~fieldId: string) => {
-    /* `options` here is the PER-FIELD bag from `cardForm.create(type, opts)`; do NOT shadow
-       the outer merchant `optionsDict`, which is where the top-level `appearance` lives. */
     let fieldOptionsDict = options->getDictFromJson
     let savedCardDict = fieldOptionsDict->getDictFromDict("savedCard")
     let savedCardBrand = savedCardDict->getString("brand", "")
-    let emptyJson = Dict.make()->JSON.Encode.object
-    let fieldAppearance = fieldOptionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
-    let appearance = if (
-      fieldAppearance
-      ->JSON.Decode.object
-      ->Option.map(d => d->Dict.keysToArray->Array.length > 0)
-      ->Option.getOr(false)
-    ) {
-      fieldAppearance
-    } else {
-      optionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
-    }
-    let redirectionFlagsDict =
-      [
-        ("shouldUseTopRedirection", JSON.Encode.bool(false)),
-        ("shouldRemoveBeforeUnloadEvents", JSON.Encode.bool(false)),
-      ]->Dict.fromArray
-    /* appearance must be wrapped in the widgetOptions envelope `CardTheme.itemToObjMapper`
-       expects — the raw merchant bag warns "Unknown Key" and drops the customizations. */
-    let paymentOptions =
-      [
-        ("appearance", appearance),
-        ("fonts", []->JSON.Encode.array),
-        ("locale", locale->JSON.Encode.string),
-        ("sdkAuthorization", sdkAuthorizationRaw->JSON.Encode.string),
-        ("pmSessionId", pmSessionId->JSON.Encode.string),
-      ]->Dict.fromArray->JSON.Encode.object
-    [
-      ("paymentElementCreate", true->JSON.Encode.bool),
-      ("otherElements", false->JSON.Encode.bool),
-      ("componentType", "payment"->JSON.Encode.string),
-      ("paymentOptions", paymentOptions),
-      ("options", options),
-      ("iframeId", fieldId->JSON.Encode.string),
-      ("publishableKey", publishableKey->JSON.Encode.string),
-      ("endpoint", ApiEndpoint.getVaultEndPoint(~publishableKey)->JSON.Encode.string),
-      ("sdkSessionId", pmSessionId->JSON.Encode.string),
-      ("customPodUri", ""->JSON.Encode.string),
-      ("parentURL", "*"->JSON.Encode.string),
-      ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
-      ("launchTime", Date.now()->JSON.Encode.float),
-      ("loggerSource", "hyper_vault"->JSON.Encode.string),
-      ("isSavedCardCvcFlow", false->JSON.Encode.bool),
-      ("savedCardBrand", savedCardBrand->JSON.Encode.string),
-      ("cardCollectionMode", "tokenise"->JSON.Encode.string),
-      ("isBancontactCardFlow", false->JSON.Encode.bool),
-      ("cardFlowType", "payment"->JSON.Encode.string),
-      ("isTestMode", false->JSON.Encode.bool),
-      ("customBackendUrl", ""->JSON.Encode.string),
-      ("paymentId", ""->JSON.Encode.string),
-      ("blockConfirm", false->JSON.Encode.bool),
-      ("analyticsMetadata", Dict.make()->JSON.Encode.object),
-      ("redirectionFlags", redirectionFlagsDict->JSON.Encode.object),
-    ]->Dict.fromArray
+    let appearance = resolveFieldAppearance(~fieldOptionsDict, ~groupAppearance)
+    buildFieldMountConfig(
+      ~paymentOptions=buildPaymentOptions(
+        ~appearance,
+        ~locale,
+        ~credentialKeys=[
+          ("sdkAuthorization", sdkAuthorizationRaw->JSON.Encode.string),
+          ("pmSessionId", pmSessionId->JSON.Encode.string),
+        ],
+      ),
+      ~options,
+      ~fieldId,
+      ~publishableKey,
+      ~credentialKeys=[
+        ("endpoint", ApiEndpoint.getVaultEndPoint(~publishableKey)->JSON.Encode.string),
+      ],
+      ~sdkSessionId=pmSessionId,
+      ~loggerSource="hyper_vault",
+      ~savedCardBrand,
+    )
   }
+
+  let findFieldOfType = (matchFieldType: string): option<fieldEntry> =>
+    fieldsRef.contents
+    ->Dict.valuesToArray
+    ->Array.find(entry => entry.fieldType === matchFieldType)
+
+  let iframeOfFieldType = (matchFieldType: string): option<Dom.element> =>
+    matchFieldType
+    ->findFieldOfType
+    ->Option.flatMap(entry => entry.iframeRef.contents->Nullable.toOption)
 
   let createFieldHandle = (fieldType: string, options: JSON.t, fieldId: string): fieldEntry => {
     let iframeRef: ref<Nullable.t<Dom.element>> = ref(Nullable.null)
@@ -507,58 +369,31 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     let prevFocusReadyRef = ref(false)
 
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
-      let config = buildMountConfig(~options, ~fieldId)
-      // MessageChannel Card Relay: ONE channel per field mount per portEpoch.
-      portEpochCounterRef := portEpochCounterRef.contents + 1
-      let epoch = portEpochCounterRef.contents
-      let channel = MessageChannelBinding.makeChannel()
-      let portKey = CardFormCoordinator.portKey(
-        ~groupId=groupInstanceId,
+      coordinator->openFieldPort(
+        ~fieldIframe=mountedIframeRef,
+        ~mountConfig=buildMountConfig(~options, ~fieldId)->JSON.Encode.object,
         ~fieldName=mapFieldTypeToInternalFieldName(fieldType),
       )
-      installedPortKeysRef := installedPortKeysRef.contents->Array.concat([portKey])
-      CoordinatorMount.postFieldMountConfigWithPort(
-        ~fieldIframe=mountedIframeRef,
-        ~mountConfig=config->JSON.Encode.object,
-        ~portKey,
-        ~portEpoch=epoch,
-        ~port=channel.port2,
-      )
-      pendingPortsRef := pendingPortsRef.contents->Array.concat([
-        {fieldName: mapFieldTypeToInternalFieldName(fieldType), epoch, port: channel.port1},
-      ])
-      flushPendingPorts()
       if sessionsDataRef.contents != JSON.Encode.null {
         mountedIframeRef->Window.iframePostMessage(
           [("sessions", sessionsDataRef.contents)]->Dict.fromArray,
         )
       }
-      /* a cardCvc mounted after the user finished the cardNumber would never see a brand
-         CHANGE, so seed it at handshake time with the brand we already learned. */
-      if fieldType === "cardCvc" && lastDetectedBrandRef.contents !== "" {
-        mountedIframeRef->Window.iframePostMessage(
-          [("detectedCardBrand", lastDetectedBrandRef.contents->JSON.Encode.string)]->Dict.fromArray,
-        )
-      }
+      seedCvcBrandOnMount(~fieldType, ~fieldIframe=mountedIframeRef, ~lastDetectedBrandRef)
     }
 
-    /* match on the iframe's contentWindow AND origin: top-level `iframeId` is absent from
-       `cardStateUpdate`, so source is the reliable cross-event matcher, and the origin check
-       guards against our own iframe being redirected to a hostile origin mid-session. */
     let attachFieldListener = () => {
       let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin
       EventListenerManager.addSmartEventListener(
         "message",
         (ev: Types.event) => {
-          let isOurIframe =
-            iframeRef.contents
-            ->Nullable.toOption
-            ->Option.map(iframe =>
-              ev.source === iframe->Window.contentWindow && ev.origin === innerIframeOrigin
-            )
-            ->Option.getOr(false)
+          let isOurIframe = isFromIframe(
+            ~ev,
+            ~iframe=iframeRef.contents->Nullable.toOption,
+            ~origin=innerIframeOrigin,
+          )
           if isOurIframe {
-            let json = try ev.data->Identity.anyTypeToJson catch { | _ => JSON.Encode.null }
+            let json = eventDataJson(ev)
             let dict = json->getDictFromJson
             let isReady = dict->getBool("ready", false)
             let isFocus = dict->getBool("focus", false)
@@ -579,56 +414,18 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
             } else if isBlur {
               eventHandlersRef.contents->Dict.get("blur")->Option.forEach(cb => cb(payload))
             } else if isCardTokenEvent || isCardTokenFail || isCvcTokenEvent {
-              // confirms resolve only via the coordinator's masked `confirmResult`, so this arm is a no-op.
               ()
             } else {
               switch cardStateUpdate {
               | Some(stateJson) =>
                 let stateDict = stateJson->getDictFromJson
-                /* the raw half of `cardStateUpdate` goes straight to the coordinator on the port plane;
-                   the SPLIT payload here never carries rawCardNumber, rawCardExpiry or rawCvc. */
-
-                /* the iframe decides WHEN focus advances; this only routes it. `prevFocusReadyRef` latches
-                   the false→true edge so steady-state keystrokes do not re-fire `doFocus`. */
-                let prevFocusReady = prevFocusReadyRef.contents
-                let newFocusReady = stateDict->getBool("focusReady", false)
-                prevFocusReadyRef := newFocusReady
-                if newFocusReady && !prevFocusReady {
-                  nextFieldFor(fieldType)->Option.forEach(nextFieldType => {
-                    let nextIframe =
-                      fieldsRef.contents
-                      ->Dict.valuesToArray
-                      ->Array.find(e => e.fieldType === nextFieldType)
-                      ->Option.flatMap(entry => entry.iframeRef.contents->Nullable.toOption)
-                    nextIframe->Option.forEach(iframe =>
-                      iframe
-                      ->Nullable.make
-                      ->Window.iframePostMessage(
-                        [("doFocus", true->JSON.Encode.bool)]->Dict.fromArray,
-                      )
-                    )
-                  })
-                }
-
-                // push to the cardCvc iframe on brand CHANGE only; Flow B's `savedCardBrand` wins.
-                if fieldType === "cardNumber" {
-                  let cardBrand = stateDict->getString("cardBrand", "")->CardUtils.normalizeCardBrand
-                  if cardBrand !== "" && cardBrand !== lastDetectedBrandRef.contents {
-                    lastDetectedBrandRef := cardBrand
-                    let cvcIframe =
-                      fieldsRef.contents
-                      ->Dict.valuesToArray
-                      ->Array.find(e => e.fieldType === "cardCvc")
-                      ->Option.flatMap(entry => entry.iframeRef.contents->Nullable.toOption)
-                    cvcIframe->Option.forEach(iframe =>
-                      iframe
-                      ->Nullable.make
-                      ->Window.iframePostMessage(
-                        [("detectedCardBrand", cardBrand->JSON.Encode.string)]->Dict.fromArray,
-                      )
-                    )
-                  }
-                }
+                routeFocusAndBrand(
+                  ~fieldType,
+                  ~stateDict,
+                  ~prevFocusReadyRef,
+                  ~lastDetectedBrandRef,
+                  ~iframeOfFieldType,
+                )
 
                 let errorMessage = stateDict->getString("error", "")
                 let changePayload = reshapeCardStateUpdateToChangePayload(
@@ -660,75 +457,23 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
 
     let fieldOptionsDict = options->getDictFromJson
-    let emptyJson = Dict.make()->JSON.Encode.object
-    let fieldAppearance = fieldOptionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
-    let appearanceJson = if (
-      fieldAppearance
-      ->JSON.Decode.object
-      ->Option.map(d => d->Dict.keysToArray->Array.length > 0)
-      ->Option.getOr(false)
-    ) {
-      fieldAppearance
-    } else {
-      optionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
-    }
-    let fieldOptionsWithAppearanceDict = fieldOptionsDict->Dict.copy
-    fieldOptionsWithAppearanceDict->Dict.set("appearance", appearanceJson)
-    let optionsForElement = fieldOptionsWithAppearanceDict->JSON.Encode.object
+    let appearanceJson = resolveFieldAppearance(~fieldOptionsDict, ~groupAppearance)
+    let optionsForElement = optionsWithAppearance(~fieldOptionsDict, ~appearance=appearanceJson)
 
-    let element = LoaderPaymentElement.make(
-      "paymentMethodsSDK",
-      optionsForElement,
-      ref => {
-        iframeRef := ref
-      },
-      [],
-      mountPostMessage,
+    let handle: fieldHandle = makeFieldElementAndHandle(
+      ~optionsForElement,
       ~appearance=appearanceJson,
-      ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
+      ~iframeRef,
+      ~mountPostMessage,
       ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
-      ~logger=None,
-      ~confirmPayment=(_json => Promise.resolve(JSON.Encode.null)),
-      ~fieldName=mapFieldTypeToInternalFieldName(fieldType),
       ~surfaceFamily="vault",
+      ~fieldName=mapFieldTypeToInternalFieldName(fieldType),
       ~groupId=groupInstanceId,
-    )
-
-    attachFieldListener()
-
-    let handle: fieldHandle = {
-      mount: selector => {
-        element.mount(selector)
-      },
-      unmount: () => {
-        element.unmount()
-      },
-      destroy: () => {
-        element.destroy()
-        iframeRef := Nullable.null
-        /* remove THIS field's smartEventListener — `fieldId` is unique per `create()`, so dead
-           listeners would accumulate across remounts. Idempotent; `deinit()` reaches it too. */
-        EventListenerManager.removeSmartEventListener(
-          "message",
-          `onVaultField-${fieldId}`,
-        )
-      },
-      update: newOptions => {
-        iframeRef.contents->Window.iframePostMessage(
-          [
-            ("paymentElementsUpdate", true->JSON.Encode.bool),
-            ("options", newOptions),
-          ]->Dict.fromArray,
-        )
-        // LoaderController expects `savedCard.brand` as a top-level key, not nested.
-        let newSavedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
+      ~listenerName=`onVaultField-${fieldId}`,
+      ~eventHandlersRef,
+      ~update=newOptions => {
+        let newSavedCardDict = postFieldUpdate(~iframeRef, ~newOptions)
         let brand = newSavedCardDict->getString("brand", "")
-        if brand->String.length > 0 {
-          iframeRef.contents->Window.iframePostMessage(
-            [("savedCardBrand", brand->JSON.Encode.string)]->Dict.fromArray,
-          )
-        }
-        // refresh the captured hints, else the Flow B union keeps the create()-time values.
         let last4 = newSavedCardDict->getString("last4", "")
         if brand !== "" {
           savedCardBrandRef := brand
@@ -737,25 +482,9 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
           savedCardLast4Ref := last4
         }
       },
-      focus: () => {
-        iframeRef.contents->Window.iframePostMessage(
-          [("doFocus", true->JSON.Encode.bool)]->Dict.fromArray,
-        )
-      },
-      blur: () => {
-        iframeRef.contents->Window.iframePostMessage(
-          [("doBlur", true->JSON.Encode.bool)]->Dict.fromArray,
-        )
-      },
-      clear: () => {
-        iframeRef.contents->Window.iframePostMessage(
-          [("doClearValues", true->JSON.Encode.bool)]->Dict.fromArray,
-        )
-      },
-      on: (event, cb) => {
-        eventHandlersRef.contents->Dict.set(event, cb)
-      },
-    }
+    )
+
+    attachFieldListener()
 
     {
       iframeRef,
@@ -787,7 +516,7 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         | "vgs" =>
           switch getOrCreateVgsBroker() {
           | Some(broker) => {
-              let fieldId = `${fieldType}-${Date.now()->Float.toString}-${Math.random()->Float.toString->String.slice(~start=2, ~end=8)}`
+              let fieldId = uniqueId(~prefix=fieldType)
               let savedCardDict = options->getDictFromJson->getDictFromDict("savedCard")
               let savedCardBrand = savedCardDict->getString("brand", "")
               let savedCardLast4 = savedCardDict->getString("last4", "")
@@ -798,39 +527,21 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                 vgsSavedCardBrandRef := savedCardBrand
                 vgsSavedCardLast4Ref := savedCardLast4
               }
-              let fieldsDict = fields.contents->getDictFromJson
-              let fieldMeta =
-                [
-                  ("id", fieldId->JSON.Encode.string),
-                  ("type", fieldType->JSON.Encode.string),
-                  ("provider", "vgs"->JSON.Encode.string),
-                ]
-                ->Dict.fromArray
-                ->JSON.Encode.object
-              fieldsDict->Dict.set(fieldId, fieldMeta)
-              fields := fieldsDict->JSON.Encode.object
+              registerField(
+                ~fields,
+                ~fieldId,
+                ~fieldType,
+                ~extraMeta=[("provider", "vgs"->JSON.Encode.string)],
+              )
 
               let uniqueSelectorRef: ref<option<string>> = ref(None)
 
               let fieldOptionsDict = options->getDictFromJson
-              let emptyJson = Dict.make()->JSON.Encode.object
-              let fieldAppearance = fieldOptionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
-              let appearanceJson = if (
-                fieldAppearance
-                ->JSON.Decode.object
-                ->Option.map(d => d->Dict.keysToArray->Array.length > 0)
-                ->Option.getOr(false)
-              ) {
-                fieldAppearance
-              } else {
-                optionsDict->Dict.get("appearance")->Option.getOr(emptyJson)
-              }
-              let fieldOptionsWithAppearanceDict = fieldOptionsDict->Dict.copy
-              fieldOptionsWithAppearanceDict->Dict.set("appearance", appearanceJson)
-              let optionsForBroker = fieldOptionsWithAppearanceDict->JSON.Encode.object
+              let optionsForBroker = optionsWithAppearance(
+                ~fieldOptionsDict,
+                ~appearance=resolveFieldAppearance(~fieldOptionsDict, ~groupAppearance),
+              )
 
-              /* The broker stores handles as opaque JSON.t; this consumer boundary
-                 reclaims the typed `VGSTypes.field` view once, via `fieldFromJson`. */
               let getFieldHandle = (): option<VGSTypes.field> => {
                 switch broker.fieldsRef.contents->Dict.get(fieldId) {
                 | Some(entry) => entry.fieldHandle->Option.map(VGSTypes.fieldFromJson)
@@ -862,7 +573,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                 },
                 update: newOptions => {
                   broker.updateField(~fieldId, ~options=newOptions)
-                  // refresh captured hints; `!== ""` guards keep a partial update from blanking a sibling.
                   let newSavedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
                   let newSavedCardBrand = newSavedCardDict->getString("brand", "")
                   let newSavedCardLast4 = newSavedCardDict->getString("last4", "")
@@ -910,7 +620,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                   }
                 },
                 clear: () => {
-                  // VGSCollect 2.27 exposes clear(); the warn fires if a future version drops it.
                   switch getFieldHandle() {
                   | Some(vgsFieldHandle) =>
                     try {
@@ -940,8 +649,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
                   }
                 },
                 on: (event, cb) => {
-                    /* keyed "<fieldId>::<event>" so the broker's dispatchers find them by composite key —
-                       must match `VGSVaultBroker.eventKey` exactly. */
                   let key = `${fieldId}::${event}`
                   eventCallbacksRef.contents->Dict.set(key, cb)
                 },
@@ -956,20 +663,11 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
             }
           }
         | "hyperswitch" =>
-          /* the first hosted-field mount also creates the hidden confirm owner. VGS-only groups
-             never reach this branch, so no coordinator is created that it could not exercise. */
           ensureCoordinatorMounted()
-          let fieldId = `${fieldType}-${Date.now()->Float.toString}-${Math.random()->Float.toString->String.slice(~start=2, ~end=8)}`
+          let fieldId = uniqueId(~prefix=fieldType)
           let entry = createFieldHandle(fieldType, options, fieldId)
           fieldsRef.contents->Dict.set(fieldId, entry)
-          let fieldsDict = fields.contents->getDictFromJson
-          let fieldMeta =
-            [
-              ("id", fieldId->JSON.Encode.string),
-              ("type", fieldType->JSON.Encode.string),
-            ]->Dict.fromArray->JSON.Encode.object
-          fieldsDict->Dict.set(fieldId, fieldMeta)
-          fields := fieldsDict->JSON.Encode.object
+          registerField(~fields, ~fieldId, ~fieldType)
           entry.handle
         | other => {
             Console.error(
@@ -992,23 +690,11 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     eventCallbacksRef.contents->Dict.set(event, cb)
   }
 
-  /* unified confirm(). Guards: non-Active → session_consumed, in flight → confirm_in_progress,
-     past expires_at → session_expired, then flow inference — cardNumber or cardExpiry → Flow A,
-     only cardCvc → Flow B, nothing → incomplete_field_set. Success consumes the session. */
-
-  // the first mounted field of the type wins; confirm is single-shot.
-  let findFieldOfType = (matchFieldType: string): option<fieldEntry> => {
-    fieldsRef.contents
-    ->Dict.valuesToArray
-    ->Array.find(entry => entry.fieldType === matchFieldType)
-  }
-
   let emitGroupError = (envelope: JSON.t): unit => {
     eventCallbacksRef.contents->Dict.get("error")->Option.forEach(cb => cb(envelope))
   }
 
   let settleResult = (resolve: JSON.t => unit, result: JSON.t): unit => {
-    // invariant: promise resolution and the `error` event fire exactly once per failure.
     let outcomeDict = result->getDictFromJson
     let isError = outcomeDict->getString("status", "") === "error"
     if isError {
@@ -1017,8 +703,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     resolve(result)
   }
 
-  /* the VGS path calls the broker's submitForm() directly — one vault.submit for both flows;
-     Flow A gets all four aliases back, Flow B only `card_cvc`. */
   let confirmVgsFlowA = (): promise<JSON.t> => {
     switch getOrCreateVgsBroker() {
     | None =>
@@ -1035,7 +719,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
         ),
       )
     | Some(broker) =>
-      // precondition is "a cardNumber field is mounted"; VGSCollect surfaces empty fields itself.
       let cardNumberMounted =
         broker.fieldsRef.contents
         ->Dict.valuesToArray
@@ -1080,13 +763,10 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
             emitGroupError(envelope)
             Promise.resolve(envelope)
           } else {
-            /* a successful round-trip means the vault already stored the data, so consume the
-               session even if the alias fails to decode. */
             sessionStateRef := Consumed
             let cardNumberAlias = resultDict->getString("card_number", "")
             let expMonth = resultDict->getString("card_exp_month", "")
             let expYear = resultDict->getString("card_exp_year", "")
-            // brand from the BIN prefix retained in the format-preserving alias; "" when unmatched.
             let brand = detectBrandFromAlias(cardNumberAlias)
             let last4 =
               cardNumberAlias->String.length >= 4
@@ -1095,8 +775,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
             let envelope = buildConfirmResult(
               ~outcome=FlowASuccess({
                 token: cardNumberAlias,
-                /* no backend session-confirm: the card_number alias IS the merchant's VGS reference, so
-                   paymentMethodId stays None. */
                 paymentMethodId: None,
                 brand,
                 last4,
@@ -1213,18 +891,12 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-  /* settle is keyed on the confirmId echoed in the coordinator's `confirmResult`, and is an
-     exactly-once sink. Deliberately NO deadline: the old 8s one guarded a real vault POST, so a
-     save slower than 8s resolved the merchant's promise as `tokenization_failed` WHILE the card
-     actually saved. The command cannot be lost (it queues until the coordinator is ready) and
-     every branch of the coordinator's vault arm posts a `confirmResult`, so the only terminal
-     case left is `deinit()` — which settles this promise explicitly. */
   let runCoordinatorRelay = (
     ~flow: string,
     ~savedCardBrand: string="",
     ~savedCardLast4: string="",
   ): promise<JSON.t> => {
-    switch coordinatorMountRef.contents {
+    switch coordinator.mountRef.contents {
     | None =>
       Promise.resolve(
         buildConfirmResult(
@@ -1254,7 +926,7 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
           }
         }
         coordinatorConfirmPendingRef := Some((confirmId, settle))
-        postCoordinatorCommand([
+        postCoordinatorCommand(coordinator, [
           ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
           ("flow", flow->JSON.Encode.string),
           ("confirmId", confirmId->JSON.Encode.string),
@@ -1266,8 +938,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-  /* Flow A posts `flow: "save"` to the coordinator (content-free; state rides the port
-     plane); Flow B posts `flow: "update"`. VGS branches go through a single vault.submit. */
   let confirm = (): promise<JSON.t> =>
     if sessionStateRef.contents != Active {
       Promise.resolve(sessionConsumedResult(~locale, ()))
@@ -1312,10 +982,8 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
           confirmingRef := true
           runCoordinatorRelay(~flow="save")
         | (None, Some(_), _) =>
-          // cardExpiry w/o cardNumber can't tokenize on its own — reject.
           incompleteFieldSet()
         | (None, None, Some(field)) =>
-          // Flow B — savedCard hints ride the command so the masked result can echo them back.
           confirmingRef := true
           runCoordinatorRelay(
             ~flow="update",
@@ -1326,7 +994,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       }
     }
 
-  // idempotent teardown: field iframes, refs, and (for VGS) the broker plus script marker.
   let deinit = (): unit => {
     if sessionStateRef.contents != Deinitialized {
       fieldsRef.contents
@@ -1343,8 +1010,6 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       vgsBrokerRef.contents->Option.forEach(broker => broker.unmountAll())
       vgsBrokerRef := None
 
-        /* removing the <script> also removes the data-vgs-script-loaded marker, which is the
-           point: the broker's script dedupe is one-shot per page. */
       switch Window.querySelector(`script[data-vgs-script-loaded]`)->Nullable.toOption {
       | Some(script) =>
         try {
@@ -1359,20 +1024,14 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       sessionStateRef := Deinitialized
       confirmingRef := false
 
-      // close ports queued but never transferred, remove the coordinator iframe and listener.
-      installedPortKeysRef.contents->Array.forEach(key => SadPortRegistry.closePort(~key))
-      installedPortKeysRef := []
-      coordinatorMountRef.contents->Option.forEach(
-        mount => CoordinatorMount.teardown(~mount, ~pendingPorts=pendingPortsRef.contents),
+      closeInstalledPorts(coordinator)
+      coordinator.mountRef.contents->Option.forEach(
+        mount => CoordinatorMount.teardown(~mount, ~pendingPorts=coordinator.pendingPortsRef.contents),
       )
-      pendingPortsRef := []
-      coordinatorMountRef := None
-      coordinatorReadyRef := false
-      // a confirm queued behind a coordinator that never booted must not outlive the group.
-      pendingCoordinatorCommandsRef := []
-      /* the ONE genuinely terminal case: the coordinator iframe and its listener are gone, so no
-         `confirmResult` can ever arrive. Dropping the resolver here would strand the merchant's
-         `await` forever — this settle is what makes running the relay without a deadline safe. */
+      coordinator.pendingPortsRef := []
+      coordinator.mountRef := None
+      coordinator.readyRef := false
+      coordinator.pendingCommandsRef := []
       coordinatorConfirmPendingRef.contents->Option.forEach(((_pendingId, settle)) =>
         settle(
           buildConfirmResult(

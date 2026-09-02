@@ -16,13 +16,7 @@ let useEmitCardState = (
   ~emitRawCardNumber=false,
   ~emitRawCardExpiry=false,
   ~emitRawCvc=false,
-  /* focus-readiness is computed in the field's own iframe, where the timing decision belongs.
-     Do NOT infer it group-side from `fieldStatus.complete`: that fires on isXxxValid plus
-     non-empty, not max-length plus Luhn, so focus would advance too early. */
   ~focusReady=false,
-  /* when non-empty, the FULL snapshot (raw SAD included) ALSO rides the field's MessageChannel
-     port to the hidden coordinator, while the window plane gets the SPLIT payload with raw
-     keys stripped. Empty means the window-only path; bundled collectors never pass it. */
   ~portKey="",
 ) => {
   let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
@@ -50,9 +44,6 @@ let useEmitCardState = (
         ("hasCvcValidationStatus", isCvcValid->Option.isSome->JSON.Encode.bool),
       ]->Dict.fromArray
     if portKey !== "" {
-      /* dual-plane emission: ONE encoder, one memo, TWO payloads — the window gets the SPLIT state
-         (raw keys absent, never null), the coordinator port gets the full snapshot. The port post
-         is fire-and-forget; the coordinator caches the latest snapshot per field. */
       let {windowPayload, portPayload} = CardFormPortProtocol.encodeFieldStateUpdate({
         cardBrand,
         fieldStatus: fieldStatus->JSON.Encode.object,
@@ -64,13 +55,9 @@ let useEmitCardState = (
       })
       messageParentWindow([("cardStateUpdate", windowPayload)], ~targetOrigin=parentURL)
       if !SadPortRegistry.postFrame(~key=portKey, portPayload) {
-        /* A registered-key drop is an integration-drift signal in dev;
-           never throw, never fall back to the window plane for raws. */
         Console.warn(`[CardCollectorBridge] dropped port frame for unregistered portKey "${portKey}"`)
       }
     } else {
-      /* bundled collectors leave the raw opt-ins off so PAN and CVC stay inside the iframe;
-         standalone per-field iframes enable them so the group can aggregate the confirm payload. */
       let stateEntries = [
         ("cardBrand", cardBrand->JSON.Encode.string),
         ("fieldStatus", fieldStatus->JSON.Encode.object),
@@ -85,7 +72,6 @@ let useEmitCardState = (
       let stateEntries = emitRawCvc
         ? stateEntries->Array.concat([("rawCvc", cvcNumber->JSON.Encode.string)])
         : stateEntries
-      // emit-on-true; consumers default-absent to false, which keeps the latch simple.
       let stateEntries = focusReady
         ? stateEntries->Array.concat([("focusReady", true->JSON.Encode.bool)])
         : stateEntries

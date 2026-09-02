@@ -1,15 +1,7 @@
 open VGSTypes
 
-/* Pinned VGS Collect.js version — must stay in sync with the script src + integrity
-   hash below, and with the CSP allow-list in webpack.common.js.
-   RELEASE CHECKLIST: when bumping `vgsScriptURL`, ALWAYS
-   regenerate `vgsScriptIntegrity` from the new payload. One-liner:
-     curl -s <NEW_URL> | openssl dgst -sha384 -binary | openssl base64 -A
-   SRI is enforced on both load paths, so a mismatch breaks every VGS integration at load. */
 let vgsScriptURL = `https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js`
 
-/* SRI-384 hash for the pinned bundle, co-located with `vgsScriptURL` so a version bump
-   updates both in lockstep. */
 let vgsScriptIntegrity = "sha384-ddxU1XAc77oB4EIpKOgJQ3FN2a6STYPK0JipRqg1x/eW+n5MFn1XbbZa7+KRjkqc"
 
 let cardNumberOptions = {

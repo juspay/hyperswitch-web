@@ -97,8 +97,6 @@ let make = () => {
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
       <PaymentMethodsSDK />
     </LoaderController>
-  /* one hidden 0x0 coordinator iframe per CardForm group; it runs the standard
-     LoaderController handshake and owns confirm for both surface families. */
   | "cardFormCoordinator" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
       <CardFormCoordinator />

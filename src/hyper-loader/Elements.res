@@ -411,8 +411,6 @@ let make = (
       | "samsungPay"
       | "paymentMethodsManagement"
       | "payment" => ()
-      /* split card fields for the payments surface are created via
-         `hyper.widgets(options).cardForm().create(...)`; the arms above are the legacy DOM-scrape path. */
       | str => Console.warn(`Unknown Key: ${str} type in create`)
       }
 
@@ -1585,9 +1583,6 @@ let make = (
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
-    /* lazily instantiated and memoized, so every `cardForm()` call on one widgets element
-       returns the SAME group (fields stay mounted, readiness latched, mutex per group).
-       `open Types` shadows the option `None` constructor, so recover it via an inner alias. */
     module StdOption = {
       type t<'a> = option<'a>
       let none: option<'a> = None

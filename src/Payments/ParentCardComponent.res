@@ -614,8 +614,6 @@ let make = (
         }
       }
 
-      /* re-emit the public interaction payloads with this outer element's identity — the nested
-         iframe id is an implementation detail. */
       let publicElementType = flowType->CardThemeType.getPaymentModeToString
       if isInnerCardMessage && dict->Dict.get("focus")->Option.isSome {
         messageParentWindow([

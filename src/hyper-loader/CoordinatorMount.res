@@ -1,11 +1,3 @@
-/* CoordinatorMount — the merchant-DOM contract for ONE hidden `cardFormCoordinator` iframe
-   per CardForm group.
-   `localSelectorString` IS the coordinator's `iframeId`: it rides the mount-config and
-   echoes on every outbound message. The per-group fullscreen slot keeps two CardForm groups
-   on one page from clobbering each other's 3DS overlay.
-   Posts carrying a MessageChannel port MUST use `Utils.iframePostMessageWithTransfer` — the
-   payload stays stringified and the port rides the transfer list. */
-
 open Utils
 
 type coordinatorMount = {
@@ -32,8 +24,6 @@ let create = (
   container->Window.setAttribute("id", `orca-${elementIframeId}-iframeRef-${localSelectorString}`)
   parentContainer->Window.appendChild(container)
 
-  /* URL carries both routing params: `componentName=cardFormCoordinator` plus surfaceFamily
-     for the admission gate and groupId for port-key scoping. */
   let src =
     `${sdkDomain}/index.html?componentName=cardFormCoordinator` ++
     `&surfaceFamily=${surfaceFamily}` ++
@@ -59,8 +49,6 @@ let create = (
   {iframe, container, fullscreenSlot}
 }
 
-/* `portKey` and `portEpoch` tell the receiving document where to registry-absorb the port;
-   they must be embedded BEFORE the mount-config is posted. */
 let withPortMeta = (~mountConfig: JSON.t, ~portKey: string, ~portEpoch: int): JSON.t => {
   let dict = mountConfig->getDictFromJson
   dict->Dict.set("portKey", portKey->JSON.Encode.string)
@@ -83,8 +71,6 @@ let postFieldMountConfigWithPort = (
   )
 }
 
-/* step 2 of the choreography: after the coordinator's `iframeMounted`, transfer port1 in a
-   minimal `cardFieldPort` frame — its LoaderController absorbs `ev.ports` under this key. */
 let forwardPortToCoordinator = (
   ~coordinatorIframe: Nullable.t<Dom.element>,
   ~groupId: string,
@@ -110,10 +96,6 @@ let forwardPortToCoordinator = (
 let fullscreenAnswerListenerName = (localSelectorString: string): string =>
   `onCoordinatorFullscreenAnswer-${localSelectorString}`
 
-/* per-group fullscreen flow factories. The ROUTER mounts iframeId-scoped, tears down
-   UNGATED, and forwards the overlay's uplink into the coordinator iframe so ITS confirm
-   intent is the resolution path when the merchant called group.confirm(). The ANSWERER
-   satisfies the metadata answer loop the overlay docs block on. */
 let makeFullscreenFlows = (
   ~mount: coordinatorMount,
   ~localSelectorString: string,
@@ -139,8 +121,6 @@ let makeFullscreenFlows = (
           : `${sdkDomain}/fullscreenIndex.html?fullscreenType=fullscreen`
       mount.fullscreenSlot->Utils.makeIframe(overlaySrc)->ignore
     } else if dict->Dict.get("fullscreen")->Option.isSome && !(dict->getBool("fullscreen", true)) {
-      /* teardown is UNGATED: bare `{fullscreen:false}` frames carry NO iframeId, so each
-         group-scoped router flushing its own slot reproduces the legacy global flush. */
       mount.fullscreenSlot->Window.innerHTML("")
       fullscreenActiveRef := false
       mount.iframe->Nullable.make->Window.iframePostMessage(
@@ -154,8 +134,6 @@ let makeFullscreenFlows = (
         dict->Dict.get("submitSuccessful")->Option.isSome
       )
     ) {
-      /* the overlay posts these to the MERCHANT window; forward them into the coordinator iframe
-         so the in-flight intent machinery sees them. */
       mount.iframe->Nullable.make->Window.iframePostMessage(dict)
     } else {
       ()
@@ -166,9 +144,6 @@ let makeFullscreenFlows = (
     let json = try ev.data->Identity.anyTypeToJson catch { | _ => JSON.Encode.null }
     let dict = json->getDictFromJson
     let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
-    /* both answers are gated on THIS group's overlay being active: `#orca-fullscreen` is not
-       group-scoped, so on a two-group page an idle group's answerer would otherwise answer the
-       ACTIVE group's overlay with empty metadata and corrupt a live 3DS challenge. */
     if fullscreenActiveRef.contents && dict->Dict.get("iframeMountedCallback")->Option.isSome {
       fullScreenEle->Window.iframePostMessage(
         [
@@ -196,12 +171,7 @@ let makeFullscreenFlows = (
   (router, answerer)
 }
 
-/* teardown closes the epoch's ports and strips the container, order-inverted relative to
-   mount: slots first, then the container. The registry sweep lives in the group's own epoch
-   handle space because SadPortRegistry is per top-document. */
 let teardown = (~mount: coordinatorMount, ~pendingPorts: array<pendingPort>): unit => {
-  /* a queued port1 would live forever otherwise — its port2 field is gone. Closing an
-     already-transferred port is tolerated: detached ports neutralize on close. */
   pendingPorts->Array.forEach(({port}) =>
     try {
       port->MessageChannelBinding.portClose

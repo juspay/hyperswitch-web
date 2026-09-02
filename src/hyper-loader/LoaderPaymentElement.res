@@ -97,8 +97,6 @@ let make = (
   ~confirmPayment: JSON.t => promise<JSON.t>,
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
-  /* Group identity rides the URL so the mounted field can derive its portKey
-     (`<groupId>:<fieldName>`). */
   ~groupId: option<string>=?,
 ) => {
   try {
@@ -535,22 +533,20 @@ let make = (
 
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->getClasses("base")
-      /* per-field iframes take their initial height from `appearance.variables.cardFieldHeight`
-         (default "48px"); bundled iframes stay at `height: 0;` and rely on height reporting. */
-      let cardFieldHeight =
-        optionsDict
-        ->getDictFromDict("appearance")
-        ->getDictFromDict("variables")
-        ->getString("cardFieldHeight", "48px")
-      let additionalIframeStyle =
-        componentType->Utils.isOtherElements || fieldName->Option.isSome
-          ? `height: ${cardFieldHeight};`
-          : "height: 0;"
+      let additionalIframeStyle = switch (fieldName, componentType->Utils.isOtherElements) {
+      | (Some(_), _) =>
+        let cardFieldHeight =
+          optionsDict
+          ->getDictFromDict("appearance")
+          ->getDictFromDict("variables")
+          ->getString("cardFieldHeight", "48px")
+        `height: ${cardFieldHeight};`
+      | (None, true) => "height: 3rem;"
+      | (None, false) => "height: 0;"
+      }
       switch oElement->Nullable.toOption {
       | Some(elem) => {
           let iframeElementId = `orca-${elementIframeId}-iframeRef-${localSelectorString}`
-          /* values are URL-encoded defensively. Param ORDER is part of the contract the mounted field
-             parses back out, so append in this order. */
           let appendParam = (url, key, value) =>
             switch value {
             | Some(v) => `${url}&${key}=${encodeURIComponent(v)}`

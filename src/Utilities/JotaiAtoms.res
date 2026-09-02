@@ -35,15 +35,8 @@ let supportedCardBrands = Jotai.atom((None: option<array<string>>))
 let savedCardBrand = Jotai.atom("")
 let optionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
 let paymentOptionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
-/* per-field icon-style overrides for the paymentMethodsSDK surface. `None` means "merchant
-   passed nothing" → the renderer falls back to the layout dialect
-   (`CardUtils.getLayoutClass(layout).cardBrandIcon` / `.cvcIcon`). The `Override` suffix
-   encodes precedence: `Some(style)` beats the layout value; presence-gated writes only. */
 let cardBrandIconOverride = Jotai.atom((None: option<PaymentType.cardBrandIconStyle>))
 let cvcIconOverride = Jotai.atom((None: option<PaymentType.cvcIconStyle>))
-/* per-field placeholder knobs. `None` means "merchant passed nothing" and the renderer falls
-   back to the BUNDLED card form's placeholder — notably the translated
-   `localeString.expiryPlaceholder`, which cannot be a static default here. */
 let cardNumberPlaceholder = Jotai.atom((None: option<string>))
 let cardExpiryPlaceholder = Jotai.atom((None: option<string>))
 let cardCvcPlaceholder = Jotai.atom((None: option<string>))

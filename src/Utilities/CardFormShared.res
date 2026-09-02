@@ -1,10 +1,5 @@
-/* shared canon for the CardForm surfaces; aliased (not `open`ed) by the group factories so
-   their compiled modules keep these as named exports. */
-
 open Utils
 
-/* `focused` and `blurred` are ONE-SHOT transitions that never change the underlying
-   validity track (complete/incomplete/invalid); the group never latches them. */
 type fieldFormStatus =
   | Complete
   | Incomplete
@@ -31,8 +26,6 @@ let fieldFormStatusFromString = (str: string): option<fieldFormStatus> =>
   | _ => None
   }
 
-/* merchant vocabulary is the BARE field name; unknown strings fall through to "" and take
-   the invalid-field-type rejection path. */
 let mapFieldTypeToInternalFieldName = (fieldType: string): string =>
   switch fieldType {
   | "cardNumber"
@@ -41,8 +34,6 @@ let mapFieldTypeToInternalFieldName = (fieldType: string): string =>
   | _ => ""
   }
 
-/* cardNumber → cardExpiry → cardCvc (terminal). This map only ROUTES the focus request —
-   the iframe owns the timing decision. */
 let nextFieldFor = (fieldType: string): option<string> =>
   switch fieldType {
   | "cardNumber" => Some("cardExpiry")
@@ -50,9 +41,6 @@ let nextFieldFor = (fieldType: string): option<string> =>
   | _ => None
   }
 
-/* per-field iframes emit a verbose `cardStateUpdate`; the merchant-facing `change` payload
-   is the slim `{empty, complete, valid, error?, brand?, elementType}` shape keyed on
-   `brand` (camelCase). `brand` is omitted when "", and `valid` picks the per-field flag. */
 let reshapeCardStateUpdateToChangePayload = (
   ~fieldType: string,
   ~stateJson: JSON.t,
