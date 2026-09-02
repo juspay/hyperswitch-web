@@ -27,6 +27,7 @@ let make = (
   ~paymentType=?,
   ~isDisabled=false,
   ~autocomplete="on",
+  ~fieldContainerRef=?,
 ) => {
   let {themeObj, config} = Jotai.useAtomValue(configAtom)
   let {innerLayout} = config.appearance
@@ -94,7 +95,10 @@ let make = (
   let inputLogoClass = getClassName("InputLogo")
   let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
 
-  <div className="flex flex-col w-full" style={color: themeObj.colorText}>
+  <div
+    className="flex flex-col w-full"
+    style={color: themeObj.colorText}
+    ref=?{fieldContainerRef->Option.map(ReactDOM.Ref.domRef)}>
     <RenderIf
       condition={!isLabelHidden &&
       fieldName->String.length > 0 &&

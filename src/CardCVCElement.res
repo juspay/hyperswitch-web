@@ -51,6 +51,47 @@ let make = (
       ? "!border-l-0"
       : ""
 
+  let isFrenchCvc = localeString.locale == "fr"
+  let cvcFieldContainerRef = React.useRef(Nullable.null)
+  let (useShortCvcLabel, setUseShortCvcLabel) = React.useState(_ => false)
+
+  UseResizeObserver.useResizeObserver(
+    ~elementRef=cvcFieldContainerRef,
+    ~enabled={isFrenchCvc && !isSavedCardCvcFlow},
+    ~refreshKey=localeString.cvcTextLabel,
+    ~onResize=() =>
+      switch cvcFieldContainerRef.current->Nullable.toOption {
+      | Some(container) =>
+        let available = container->Window.Element.clientWidth
+        switch container->Window.Element.querySelector(".Label")->Nullable.toOption {
+        | Some(label) =>
+          let style = label->Window.Element.getComputedStyle
+          let font =
+            style.font->String.length > 0
+              ? style.font
+              : `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+          let canvas = Window.createElement("canvas")
+          switch canvas->Window.Element.getContext("2d")->Nullable.toOption {
+          | Some(ctx) =>
+            ctx->Window.Element.setFont(font)
+            let required = (ctx->Window.Element.measureText(localeString.cvcTextLabel)).width
+            if available > 0 {
+              setUseShortCvcLabel(_ => required > Int.toFloat(available - 24))
+            }
+          | None => ()
+          }
+        | None => ()
+        }
+      | None => ()
+      },
+  )
+
+  let cvcFieldName = isSavedCardCvcFlow
+    ? ""
+    : useShortCvcLabel
+    ? "CVC"
+    : localeString.cvcTextLabel
+
   // Single submit handler for both modes:
   //   • saved-card flow: SavedMethods forwards doSubmit (carrying the selected
   //     payment_token). Validation happens here; non-vault flows return the raw CVC,
@@ -285,7 +326,8 @@ let make = (
   }, [isSavedCardCvcFlow])
 
   <PaymentInputField
-    fieldName={isSavedCardCvcFlow ? "" : localeString.cvcTextLabel}
+    fieldName=cvcFieldName
+    fieldContainerRef=cvcFieldContainerRef
     isValid=isCVCValid
     setIsValid=setIsCVCValid
     value=cvcNumber
