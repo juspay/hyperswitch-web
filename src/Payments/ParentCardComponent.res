@@ -662,7 +662,7 @@ let make = (
   ) => {
     let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
     let bodyWithAcceptance =
-      includeAcceptance && isCustomerAcceptanceRequired
+      includeAcceptance && (isPMMFlow || isCustomerAcceptanceRequired)
         ? baseBody->Array.concat(onSessionBody)
         : baseBody
     let installmentBody = includeInstallments
