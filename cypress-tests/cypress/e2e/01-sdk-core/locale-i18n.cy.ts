@@ -446,6 +446,19 @@ describe("Locale / i18n Tests", () => {
       "zh-hant",
       "ar",
       "he",
+      "da",
+      "lt",
+      "cs",
+      "sk",
+      "is",
+      "cy",
+      "el",
+      "et",
+      "fi",
+      "nb",
+      "bs",
+      "ms",
+      "tr-cy",
     ];
 
     allLocales.forEach((code) => {
