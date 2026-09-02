@@ -134,9 +134,6 @@ let detectBrandFromAlias = (alias: string): string =>
   )
   ->Option.getOr("")
 
-// backstop: without it a dropped resolution leaves the `confirm()` promise pending forever.
-let confirmSettleTimeoutMs = 8000
-
 let make = (options: JSON.t): paymentMethodsSessionGroup => {
   let optionsDict = options->getDictFromJson
 
@@ -178,6 +175,43 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
   let coordinatorReadyRef: ref<bool> = ref(false)
   let coordinatorListenerName = `onVaultCoordinator-${groupInstanceId}`
   let coordinatorConfirmPendingRef: ref<option<(string, JSON.t => unit)>> = ref(None)
+
+  /* commands QUEUE until the coordinator's `iframeMounted`, for exactly the reason ports do:
+     the hidden iframe has no message listener until its React tree mounts, so a `confirm()`
+     racing the boot would be dropped on the floor and — since the relay promise has no
+     deadline — strand the merchant's `await` forever. Mirrors `flushPendingPorts` below and
+     `hyper.confirmPayment()`, which awaits `isReadyPromise` before posting `doSubmit`. */
+  let pendingCoordinatorCommandsRef: ref<array<array<(string, JSON.t)>>> = ref([])
+
+  let postToCoordinator = (
+    mount: CoordinatorMount.coordinatorMount,
+    fields: array<(string, JSON.t)>,
+  ) =>
+    try mount.iframe->Nullable.make->Window.iframePostMessage(fields->Dict.fromArray) catch {
+    | _ => ()
+    }
+
+  let postCoordinatorCommand = (fields: array<(string, JSON.t)>) => {
+    switch (coordinatorMountRef.contents, coordinatorReadyRef.contents) {
+    | (Some(mount), true) => postToCoordinator(mount, fields)
+    | _ =>
+      pendingCoordinatorCommandsRef :=
+        pendingCoordinatorCommandsRef.contents->Array.concat([fields])
+    }
+  }
+
+  /* drained AFTER `syncCoordinatorSessions`, so a queued confirm lands BEHIND the sessions
+     payload the coordinator decodes its vault credentials from. The queue is emptied before
+     the loop so a re-entrant post cannot double-send. */
+  let flushPendingCoordinatorCommands = () => {
+    switch (coordinatorMountRef.contents, coordinatorReadyRef.contents) {
+    | (Some(mount), true) =>
+      let queuedCommands = pendingCoordinatorCommandsRef.contents
+      pendingCoordinatorCommandsRef := []
+      queuedCommands->Array.forEach(fields => postToCoordinator(mount, fields))
+    | _ => ()
+    }
+  }
 
   let syncCoordinatorSessions = () => {
     if sessionsDataRef.contents != JSON.Encode.null && coordinatorReadyRef.contents {
@@ -225,6 +259,9 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
             coordinatorReadyRef := true
             flushPendingPorts()
             syncCoordinatorSessions()
+            /* any confirm() that raced the boot is dispatched HERE, after the sessions sync
+               above — never dropped, so its promise cannot hang. */
+            flushPendingCoordinatorCommands()
           } else {
             switch dict->Dict.get("confirmResult") {
             | Some(result) =>
@@ -1176,8 +1213,12 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
     }
   }
 
-  /* settle is keyed on the confirmId echoed in the coordinator's `confirmResult`; an
-     exactly-once sink plus a hang backstop keeps a dropped frame deterministic. */
+  /* settle is keyed on the confirmId echoed in the coordinator's `confirmResult`, and is an
+     exactly-once sink. Deliberately NO deadline: the old 8s one guarded a real vault POST, so a
+     save slower than 8s resolved the merchant's promise as `tokenization_failed` WHILE the card
+     actually saved. The command cannot be lost (it queues until the coordinator is ready) and
+     every branch of the coordinator's vault arm posts a `confirmResult`, so the only terminal
+     case left is `deinit()` — which settles this promise explicitly. */
   let runCoordinatorRelay = (
     ~flow: string,
     ~savedCardBrand: string="",
@@ -1197,15 +1238,13 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
           }),
         ),
       )
-    | Some(mount) =>
+    | Some(_mount) =>
       Promise.make((resolve, _reject) => {
         let confirmId = `${Date.now()->Float.toString}-${Math.random()->Float.toString}`
         let settledRef = ref(false)
-        let settleTimeoutRef = ref(None)
         let settle = result => {
           if !settledRef.contents {
             settledRef := true
-            settleTimeoutRef.contents->Option.forEach(clearTimeout)
             coordinatorConfirmPendingRef := None
             confirmingRef := false
             if result->getDictFromJson->getString("status", "") == "success" {
@@ -1215,38 +1254,14 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
           }
         }
         coordinatorConfirmPendingRef := Some((confirmId, settle))
-        settleTimeoutRef := Some(
-          setTimeout(
-            () =>
-              settle(
-                buildConfirmResult(
-                  ~outcome=Failure({
-                    code: "tokenization_failed",
-                    message: Some(
-                      "confirm relay timed out waiting for the coordinator — it may be degraded. Retry; the session is still active.",
-                    ),
-                    locale,
-                    typeOverride: Some(ApiError),
-                  }),
-                ),
-              ),
-            confirmSettleTimeoutMs,
-          ),
-        )
-        try
-          mount.iframe->Nullable.make->Window.iframePostMessage(
-            [
-              ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
-              ("flow", flow->JSON.Encode.string),
-              ("confirmId", confirmId->JSON.Encode.string),
-              ("savedCardBrand", savedCardBrand->JSON.Encode.string),
-              ("savedCardLast4", savedCardLast4->JSON.Encode.string),
-              ("locale", locale->JSON.Encode.string),
-            ]->Dict.fromArray,
-          )
-        catch {
-        | _ => ()
-        }
+        postCoordinatorCommand([
+          ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
+          ("flow", flow->JSON.Encode.string),
+          ("confirmId", confirmId->JSON.Encode.string),
+          ("savedCardBrand", savedCardBrand->JSON.Encode.string),
+          ("savedCardLast4", savedCardLast4->JSON.Encode.string),
+          ("locale", locale->JSON.Encode.string),
+        ])
       })
     }
   }
@@ -1353,6 +1368,25 @@ let make = (options: JSON.t): paymentMethodsSessionGroup => {
       pendingPortsRef := []
       coordinatorMountRef := None
       coordinatorReadyRef := false
+      // a confirm queued behind a coordinator that never booted must not outlive the group.
+      pendingCoordinatorCommandsRef := []
+      /* the ONE genuinely terminal case: the coordinator iframe and its listener are gone, so no
+         `confirmResult` can ever arrive. Dropping the resolver here would strand the merchant's
+         `await` forever — this settle is what makes running the relay without a deadline safe. */
+      coordinatorConfirmPendingRef.contents->Option.forEach(((_pendingId, settle)) =>
+        settle(
+          buildConfirmResult(
+            ~outcome=Failure({
+              code: "tokenization_failed",
+              message: Some(
+                "deinit() was called while a confirm was in flight — the card may still have been saved; check the payment method list before retrying",
+              ),
+              locale,
+              typeOverride: Some(ApiError),
+            }),
+          ),
+        )
+      )
       coordinatorConfirmPendingRef := None
       EventListenerManager.removeSmartEventListener("message", coordinatorListenerName)
       EventListenerManager.removeSmartEventListener(

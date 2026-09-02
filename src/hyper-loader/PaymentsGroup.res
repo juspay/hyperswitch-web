@@ -81,8 +81,19 @@ let computeGroupReadiness = (fieldsRef: ref<Dict.t<fieldEntry>>): bool => {
   }
 }
 
-// backstop: without it a missing ack/fail leaves the confirm mutex latched forever.
-let confirmSettleTimeoutMs = 8000
+/* the house error envelope — byte-identical to what `hyper.confirmPayment()` resolves with on
+   failure (`Utils.getFailedSubmitResponse` → `{error: {type, message}}`) plus the group's
+   legacy `code` nested INSIDE `error`. Additive: a merchant matching on `error.type` /
+   `error.message` sees exactly the confirmPayment shape, and one matching the old
+   `error.code` keeps working. Only the old TOP-LEVEL `status` key is gone. */
+let groupFailureResponse = (~code: string, ~errorType: string, ~message: string): JSON.t => {
+  let envelope = getFailedSubmitResponse(~errorType, ~message)
+  let envelopeDict = envelope->getDictFromJson
+  let errorDict = envelopeDict->getDictFromDict("error")
+  errorDict->Dict.set("code", code->JSON.Encode.string)
+  envelopeDict->Dict.set("error", errorDict->JSON.Encode.object)
+  envelopeDict->JSON.Encode.object
+}
 
 /* port1 queued until the coordinator iframe mounts and flushes it. Shape lives in
    `CoordinatorMount` so its teardown can close ports that were never transferred. */
@@ -107,11 +118,27 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
 
   let confirmDispatchedRef: ref<bool> = ref(false)
 
-  /* per-group confirm mutex, LATCHED at dispatch until the relay settles: released by the
-     ack/fail arms, the settle-timeout backstop, or deinit(). Two groups confirm independently. */
+  /* per-group confirm mutex, LATCHED at dispatch until the confirm promise SETTLES — i.e.
+     until the network outcome lands, not until the coordinator acks the dispatch. `settle` is
+     its single owner; deinit() is the only other release. Two groups confirm independently. */
   let confirmingRef: ref<bool> = ref(false)
 
-  let confirmSettleTimeoutRef = ref(None)
+  /* the in-flight `confirm()` resolver, parked at dispatch and consumed EXACTLY ONCE by
+     `submitSuccessful`, `paymentConfirmFail`, or deinit().
+
+     The `confirmId` is carried for shape-parity with the vault sibling, but the payments
+     outcome arrives on the standard `submitSuccessful` broadcast, which `PaymentHelpers`
+     posts WITHOUT any confirmId (and the coordinator's `paymentConfirmFail` frame does not
+     echo one either). So correlation is genuinely unavailable on this path: the match below
+     falls back to the single-in-flight guarantee the confirm mutex already provides, and only
+     enforces the id when a frame actually carries one. */
+  let coordinatorConfirmPendingRef: ref<option<(string, JSON.t => unit)>> = ref(None)
+
+  let settlePendingConfirm = (~confirmId: string="", result: JSON.t): unit =>
+    switch coordinatorConfirmPendingRef.contents {
+    | Some((pendingId, settle)) if confirmId === "" || confirmId === pendingId => settle(result)
+    | _ => ()
+    }
 
   /* readiness is latched so clearing one character does not silently retract `ready`.
      Edges only: rising re-emits `ready`, falling emits an explicit `unready`. */
@@ -143,14 +170,41 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let coordinatorReadyRef: ref<bool> = ref(false)
   let coordinatorListenerName = `onPaymentsCoordinator-${groupInstanceId}`
 
+  /* commands QUEUE until the coordinator's `iframeMounted`, for exactly the reason ports do:
+     the hidden iframe has no message listener until its React tree mounts, so a `confirm()`
+     racing the boot would be dropped on the floor — and since `confirm()` stays pending until a
+     real outcome, that would strand the merchant's `await` forever. This mirrors
+     `hyper.confirmPayment()`, which awaits `isReadyPromise` before posting `doSubmit`. */
+  let pendingCoordinatorCommandsRef: ref<array<array<(string, JSON.t)>>> = ref([])
+
+  let postToCoordinator = (
+    mount: CoordinatorMount.coordinatorMount,
+    fields: array<(string, JSON.t)>,
+  ) =>
+    try mount.iframe->Nullable.make->Window.iframePostMessage(fields->Dict.fromArray) catch {
+    | _ => ()
+    }
+
   /* relays a masked command envelope; `flow`, `paymentToken` and `confirmId` ride the same
      frame. Raw SAD is never in the message — the coordinator reads it off its port registry. */
-  let postCoordinatorCommand = fields => {
-    try
-      coordinatorMountRef.contents->Option.forEach(mount =>
-        mount.iframe->Nullable.make->Window.iframePostMessage(fields->Dict.fromArray)
-      )
-    catch {
+  let postCoordinatorCommand = (fields: array<(string, JSON.t)>) => {
+    switch (coordinatorMountRef.contents, coordinatorReadyRef.contents) {
+    | (Some(mount), true) => postToCoordinator(mount, fields)
+    | _ =>
+      pendingCoordinatorCommandsRef :=
+        pendingCoordinatorCommandsRef.contents->Array.concat([fields])
+    }
+  }
+
+  /* drained AFTER the `paymentElementCreate` envelope goes out, so a queued confirm lands
+     BEHIND the config that hydrates the coordinator's keys. The queue is emptied before the
+     loop so a re-entrant post cannot double-send. */
+  let flushPendingCoordinatorCommands = () => {
+    switch (coordinatorMountRef.contents, coordinatorReadyRef.contents) {
+    | (Some(mount), true) =>
+      let queuedCommands = pendingCoordinatorCommandsRef.contents
+      pendingCoordinatorCommandsRef := []
+      queuedCommands->Array.forEach(fields => postToCoordinator(mount, fields))
     | _ => ()
     }
   }
@@ -229,6 +283,9 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               }
             | None => ()
             }
+            /* any confirm() that raced the boot is dispatched HERE, after the config above —
+               never dropped, so its promise cannot hang. */
+            flushPendingCoordinatorCommands()
             clientListDataPromise
             ->Promise.then(json => {
               switch coordinatorMountRef.contents {
@@ -247,11 +304,11 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             })
             ->ignore
           } else if dict->getBool("paymentConfirmAck", false) {
-            // relay settled (ack) — release the confirm mutex and cancel the settle-timeout backstop.
+            /* the ack means DISPATCHED, not SETTLED — the coordinator fires `intent(...)` and acks
+               immediately, while the real outcome rides `submitSuccessful` seconds later. So it
+               MUST NOT release the confirm mutex: doing so would let a second confirm() race the
+               first one's in-flight POST. It only emits `confirmDispatched`. */
             confirmDispatchedRef := true
-            confirmingRef := false
-            confirmSettleTimeoutRef.contents->Option.forEach(clearTimeout)
-            confirmSettleTimeoutRef := None
             let payload =
               [
                 ("elementType", "paymentsCoordinator"->JSON.Encode.string),
@@ -261,9 +318,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               ->JSON.Encode.object
             eventCallbacksRef.contents->Dict.get("confirmDispatched")->Option.forEach(cb => cb(payload))
           } else if dict->getBool("paymentConfirmFail", false) {
-            confirmingRef := false
-            confirmSettleTimeoutRef.contents->Option.forEach(clearTimeout)
-            confirmSettleTimeoutRef := None
+            /* pre-network validation failure raised by the coordinator BEFORE any API call, so no
+               `submitSuccessful` will ever follow — this arm is terminal and must settle. */
             let errorMessage = dict->getString("errorMessage", "Card details incomplete or invalid")
             let errorPayload = {
               let errDict = Dict.make()
@@ -274,6 +330,30 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               errDict->JSON.Encode.object
             }
             eventCallbacksRef.contents->Dict.get("error")->Option.forEach(cb => cb(errorPayload))
+            settlePendingConfirm(
+              ~confirmId=dict->getString("confirmId", ""),
+              groupFailureResponse(
+                ~code="validation_error",
+                ~errorType="validation_error",
+                ~message=errorMessage,
+              ),
+            )
+          } else {
+            /* the real payment outcome: the coordinator's `intent(...)` broadcasts the SDK's
+               standard `submitSuccessful` frame to the merchant window. Mirror
+               `Hyper.res` `confirmPaymentWrapper` exactly — true resolves the backend response
+               BODY (`data`), false resolves the WHOLE frame (which carries `error`). */
+            switch dict->Dict.get("submitSuccessful") {
+            | Some(submitSuccessfulJson) =>
+              let succeeded = submitSuccessfulJson->JSON.Decode.bool->Option.getOr(false)
+              let result = if succeeded {
+                dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
+              } else {
+                json
+              }
+              settlePendingConfirm(~confirmId=dict->getString("confirmId", ""), result)
+            | None => ()
+            }
           }
         }
       },
@@ -509,18 +589,13 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             } else if isBlur {
               eventHandlersRef.contents->Dict.get("blur")->Option.forEach(cb => cb(payload))
             } else if isConfirmAck {
+              /* same rule as the coordinator arm: ack == dispatched, never settled. `settle` is the
+                 sole owner of the mutex and the backstop, so neither is touched here. */
               confirmDispatchedRef := true
-              // ack settles: release the mutex and cancel its backstop; whichever fires first owns it.
-              confirmingRef := false
-              confirmSettleTimeoutRef.contents->Option.forEach(clearTimeout)
-              confirmSettleTimeoutRef := None
               eventHandlersRef.contents
               ->Dict.get("confirmDispatched")
               ->Option.forEach(cb => cb(payload))
             } else if isConfirmFail {
-              confirmingRef := false
-              confirmSettleTimeoutRef.contents->Option.forEach(clearTimeout)
-              confirmSettleTimeoutRef := None
               let errorMessage = dict->getString("errorMessage", "Card details incomplete or invalid")
               let errorPayload = {
                 let errDict = Dict.make()
@@ -531,6 +606,17 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                 errDict->JSON.Encode.object
               }
               eventHandlersRef.contents->Dict.get("error")->Option.forEach(cb => cb(errorPayload))
+              /* terminal, like the coordinator's fail arm — settle rather than strand the caller.
+                 (Today only the coordinator posts this pair; kept in sync so the invariant
+                 "only `settle` releases the mutex" holds no matter who posts it.) */
+              settlePendingConfirm(
+                ~confirmId=dict->getString("confirmId", ""),
+                groupFailureResponse(
+                  ~code="validation_error",
+                  ~errorType="validation_error",
+                  ~message=errorMessage,
+                ),
+              )
             } else if isFormStatusChange {
               let rawStatus = dict->getString("status", "incomplete")
               let status =
@@ -880,109 +966,81 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     eventCallbacksRef.contents->Dict.set(event, cb)
   }
 
+  /* dispatches the CONTENT-FREE `initiateConfirm` frame and returns a PENDING promise, exactly
+     like `hyper.confirmPayment()`: it resolves only once the coordinator's real network outcome
+     comes back on `submitSuccessful`, or on a pre-network `paymentConfirmFail`, or at deinit().
+     Deliberately NO deadline — same as `hyper.confirmPayment()`, which carries none: the
+     dispatch cannot be lost (queued until the coordinator is ready) and `PaymentHelpers.intentCall`
+     broadcasts an outcome on every branch, so a timer could only ever pre-empt a real result and
+     hand the merchant a bogus failure for a payment that actually went through.
+     Like confirmPayment it NEVER rejects. `Promise.make`'s executor is synchronous, so the mutex
+     is latched before `confirm()` returns and `confirm_in_progress` stays reachable. */
+  let dispatchConfirm = (~flow: string, ~paymentToken: option<string>): promise<JSON.t> =>
+    Promise.make((resolve, _reject) => {
+      let confirmId = `${Date.now()->Float.toString}-${Math.random()->Float.toString}`
+      let settledRef = ref(false)
+      /* the ONE place the confirm mutex is released. Exactly-once, so a `submitSuccessful` that
+         lands after deinit() already settled the promise is dropped. */
+      let settle = (result: JSON.t) =>
+        if !settledRef.contents {
+          settledRef := true
+          coordinatorConfirmPendingRef := None
+          confirmingRef := false
+          resolve(result)
+        }
+      confirmingRef := true
+      coordinatorConfirmPendingRef := Some((confirmId, settle))
+      postCoordinatorCommand(
+        [
+          ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
+          ("flow", flow->JSON.Encode.string),
+          ("confirmId", confirmId->JSON.Encode.string),
+        ]->Array.concat(
+          switch paymentToken {
+          | Some(token) => [("paymentToken", token->JSON.Encode.string)]
+          | None => []
+          },
+        ),
+      )
+    })
+
   /* explicit zero-arg confirm — `hyper.confirmPayment()`'s `doSubmit` never reaches
      group-mounted iframes. Guards: mutex → `confirm_in_progress`; cardNumber mounted → Flow A;
-     only cardCvc → Flow B; nothing mounted → `validation_error`. */
+     only cardCvc → Flow B; nothing mounted → `validation_error`. Every early return now uses the
+     same `{error: {type, message, code}}` envelope confirmPayment resolves with. */
   let confirm = (): promise<JSON.t> => {
     if confirmingRef.contents {
       Promise.resolve(
-        [
-          ("status", "error"->JSON.Encode.string),
-          (
-            "error",
-            [
-              ("code", "confirm_in_progress"->JSON.Encode.string),
-              ("type", "api_error"->JSON.Encode.string),
-              ("message", "confirm already in progress"->JSON.Encode.string),
-            ]->Dict.fromArray->JSON.Encode.object,
-          ),
-        ]->Dict.fromArray->JSON.Encode.object,
+        groupFailureResponse(
+          ~code="confirm_in_progress",
+          ~errorType="api_error",
+          ~message="confirm already in progress",
+        ),
       )
     } else {
       switch (findFieldOfType("cardNumber"), findFieldOfType("cardCvc")) {
-      | (Some(_entry), _) => {
-          confirmingRef := true
-          postCoordinatorCommand([
-            ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
-            ("flow", "payments"->JSON.Encode.string),
-            ("confirmId", `${Date.now()->Float.toString}-${Math.random()->Float.toString}`->JSON.Encode.string),
-          ])
-          /* the mutex LATCHES across the relay — releasing here would make the flag never observably
-             true across an await, so `confirm_in_progress` would be unreachable. */
-          confirmSettleTimeoutRef := Some(
-            setTimeout(() => {
-              confirmingRef := false
-              confirmSettleTimeoutRef := None
-            }, confirmSettleTimeoutMs),
-          )
-          // the real confirm result arrives on the inner iframe's `submitSuccessful` broadcast.
-          Promise.resolve(
-            [
-              ("status", "initiated"->JSON.Encode.string),
-              ("confirmDispatched", true->JSON.Encode.bool),
-            ]->Dict.fromArray->JSON.Encode.object,
-          )
-        }
+      | (Some(_entry), _) => dispatchConfirm(~flow="payments", ~paymentToken=None)
       | (None, Some(entry)) =>
         // Flow B — the coordinator's `savedCardCvc` arm owns the real confirm POST.
         let paymentToken = entry.savedCardTokenRef.contents
         if paymentToken === "" {
           Promise.resolve(
-            [
-              ("status", "error"->JSON.Encode.string),
-              (
-                "error",
-                [
-                  ("code", "validation_error"->JSON.Encode.string),
-                  (
-                    "message",
-                    "saved-card CVC flow requires a token — call cardForm.create(\"cardCvc\", {savedCard: {token, brand}}) or field.update({savedCard: {token, brand}}) before confirm()"
-                    ->JSON.Encode.string,
-                  ),
-                  ("type", "validation_error"->JSON.Encode.string),
-                ]->Dict.fromArray->JSON.Encode.object,
-              ),
-            ]->Dict.fromArray->JSON.Encode.object,
+            groupFailureResponse(
+              ~code="validation_error",
+              ~errorType="validation_error",
+              ~message="saved-card CVC flow requires a token — call cardForm.create(\"cardCvc\", {savedCard: {token, brand}}) or field.update({savedCard: {token, brand}}) before confirm()",
+            ),
           )
         } else {
-          confirmingRef := true
-          postCoordinatorCommand([
-            ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
-            ("flow", "savedCardCvc"->JSON.Encode.string),
-            ("paymentToken", paymentToken->JSON.Encode.string),
-            ("confirmId", `${Date.now()->Float.toString}-${Math.random()->Float.toString}`->JSON.Encode.string),
-          ])
-          // same latch discipline as Flow A; the coordinator posts the same ack/fail pair.
-          confirmSettleTimeoutRef := Some(
-            setTimeout(() => {
-              confirmingRef := false
-              confirmSettleTimeoutRef := None
-            }, confirmSettleTimeoutMs),
-          )
-          Promise.resolve(
-            [
-              ("status", "initiated"->JSON.Encode.string),
-              ("confirmDispatched", true->JSON.Encode.bool),
-            ]->Dict.fromArray->JSON.Encode.object,
-          )
+          dispatchConfirm(~flow="savedCardCvc", ~paymentToken=Some(paymentToken))
         }
       | (None, None) =>
         Promise.resolve(
-          [
-            ("status", "error"->JSON.Encode.string),
-            (
-              "error",
-              [
-                ("code", "validation_error"->JSON.Encode.string),
-                (
-                  "message",
-                  "no card fields mounted — mount cardNumber (+ cardExpiry/cardCvc) for a new card, or only cardCvc with {savedCard: {token, brand}} for saved-card recollect"
-                  ->JSON.Encode.string,
-                ),
-                ("type", "validation_error"->JSON.Encode.string),
-              ]->Dict.fromArray->JSON.Encode.object,
-            ),
-          ]->Dict.fromArray->JSON.Encode.object,
+          groupFailureResponse(
+            ~code="validation_error",
+            ~errorType="validation_error",
+            ~message="no card fields mounted — mount cardNumber (+ cardExpiry/cardCvc) for a new card, or only cardCvc with {savedCard: {token, brand}} for saved-card recollect",
+          ),
         )
       }
     }
@@ -1011,10 +1069,22 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     fieldEvents := Dict.make()->JSON.Encode.object
     fieldEventsCallbacksRef := Dict.make()
     confirmDispatchedRef := false
+    /* an in-flight confirm() is a PENDING promise with no deadline, so tearing the group down
+       without settling it would strand the merchant's `await` forever. deinit() is the ONE
+       genuinely terminal case where no outcome can ever arrive — the coordinator iframe and its
+       listeners are about to be destroyed — so this settle is what makes the timer's removal
+       safe. Settle first (that also releases the mutex), then belt-and-braces the refs below. */
+    settlePendingConfirm(
+      groupFailureResponse(
+        ~code="group_deinitialized",
+        ~errorType="server_error",
+        ~message="cardForm.deinit() was called while a confirm was in flight — the payment may still have gone through; check the intent status",
+      ),
+    )
     confirmingRef := false
-    // cancel any armed settle-timeout so a dead group's timer can't fire later.
-    confirmSettleTimeoutRef.contents->Option.forEach(clearTimeout)
-    confirmSettleTimeoutRef := None
+    // a confirm queued behind a coordinator that never booted must not outlive the group.
+    pendingCoordinatorCommandsRef := []
+    coordinatorConfirmPendingRef := None
     /* close the group's epoch ports BEFORE running deinitCallbacks (which strip the
        coordinator's DOM and listeners): ports must die before their listeners do. */
     installedPortKeysRef.contents->Array.forEach(key => SadPortRegistry.closePort(~key))

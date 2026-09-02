@@ -165,8 +165,6 @@ let buildConfirmResult = (~outcome: confirmOutcome): JSON.t =>
     )
   }
 
-let confirmSettleTimeoutMs = 8000
-
 /* Per-group port key shape: "<groupId>:<fieldName>" — the mounter
    (`CoordinatorMount`) composes these deterministically. */
 let portKey = (~groupId: string, ~fieldName: string): string => `${groupId}:${fieldName}`
@@ -494,31 +492,19 @@ let make = () => {
             } else {
               confirmingRef.current = true
               let settledRef = ref(false)
-              let settleTimeoutRef = ref(None)
+              /* exactly-once sink for the vault arm. Deliberately NO deadline: every branch
+                 below settles — the four validation guards and the credential guard settle
+                 synchronously, and both POSTs settle in BOTH their `then` and their `catch`
+                 (a null body counts as an HTTP failure). An 8s timer here could only pre-empt a
+                 slow-but-successful vault save and report `tokenization_failed` for a card that
+                 WAS stored — the worst outcome available. */
               let settle = result => {
                 if !settledRef.contents {
                   settledRef := true
-                  settleTimeoutRef.contents->Option.forEach(clearTimeout)
                   confirmingRef.current = false
                   postConfirmResult(~confirmId, result)
                 }
               }
-              settleTimeoutRef := Some(
-                setTimeout(() => {
-                  settle(
-                    buildConfirmResult(
-                      ~outcome=Failure({
-                        code: "tokenization_failed",
-                        message: Some(
-                          "confirm relay timed out waiting for the coordinator vault POST — the coordinator may be degraded. Retry; the session is still active.",
-                        ),
-                        locale: errorLocale,
-                        typeOverride: Some(ApiError),
-                      }),
-                    ),
-                  )
-                }, confirmSettleTimeoutMs),
-              )
 
               let flow = dict->getString("flow", "save")
               let cardNumber = aggregatedCardNumber()
