@@ -33,6 +33,8 @@ let cardBrand = Jotai.atom("")
 let supportedCardBrands = Jotai.atom((None: option<array<string>>))
 // A saved-card CVC collector has no PAN from which to detect its brand.
 let savedCardBrand = Jotai.atom("")
+let optionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
+let paymentOptionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
 let paymentMethodCollectOptionAtom = Jotai.atom(
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
 )
@@ -86,6 +88,7 @@ let isShowOrPayUsing = Jotai.atom(false)
 let isShowOrPayUsingWhileLoading = Jotai.atom(false)
 let areRequiredFieldsValid = Jotai.atom(true)
 let areRequiredFieldsEmpty = Jotai.atom(false)
+let saveDetailsCheckedAtom = Jotai.atom(false)
 let dateOfBirth = Jotai.atom((Nullable.null: Nullable.t<Date.t>))
 let userBillingName = Jotai.atom(defaultFieldValues)
 let userVpaId = Jotai.atom(defaultFieldValues)

@@ -191,6 +191,12 @@ type customerCard = {
 }
 type bank = {mask: string}
 
+type bankRedirect = {
+  bankName: string,
+  accountHolderName: string,
+  mask: string,
+}
+
 type addressDetails = {
   line1: option<string>,
   line2: option<string>,
@@ -213,6 +219,7 @@ type customerMethods = {
   requiresCvv: bool,
   lastUsedAt: string,
   bank: bank,
+  bankRedirect: bankRedirect,
   recurringEnabled: bool,
   billing: billingAddressPaymentMethod,
 }
@@ -247,11 +254,15 @@ type paymentMethodMessage = {
 type paymentMethodTypeConfig = {
   paymentMethodType: string,
   message: paymentMethodMessage,
+  displaySavedPaymentMethodsCheckbox: option<bool>,
+  savedPaymentMethodsCheckboxCheckedByDefault: option<bool>,
 }
 
 type paymentMethodConfig = {
   paymentMethod: string,
   message: paymentMethodMessage,
+  displaySavedPaymentMethodsCheckbox: option<bool>,
+  savedPaymentMethodsCheckboxCheckedByDefault: option<bool>,
   paymentMethodTypes: array<paymentMethodTypeConfig>,
 }
 
@@ -331,6 +342,7 @@ let defaultCustomerMethods = {
   requiresCvv: true,
   lastUsedAt: "",
   bank: {mask: ""},
+  bankRedirect: {bankName: "", accountHolderName: "", mask: ""},
   recurringEnabled: false,
   billing: defaultDisplayBillingDetails,
 }
@@ -529,16 +541,36 @@ let getPaymentMethodMessage = (dict, logger, context) => {
 
 let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
   let context = "options.paymentMethodsConfig." ++ paymentMethod
-  unknownKeysWarning(["paymentMethodType", "message"], json, context)
+  unknownKeysWarning(
+    [
+      "paymentMethodType",
+      "message",
+      "displaySavedPaymentMethodsCheckbox",
+      "savedPaymentMethodsCheckboxCheckedByDefault",
+    ],
+    json,
+    context,
+  )
   {
     paymentMethodType: json->getWarningString("paymentMethodType", "", ~logger),
     message: getPaymentMethodMessage(json, logger, context),
+    displaySavedPaymentMethodsCheckbox: getOptionBool(json, "displaySavedPaymentMethodsCheckbox"),
+    savedPaymentMethodsCheckboxCheckedByDefault: getOptionBool(
+      json,
+      "savedPaymentMethodsCheckboxCheckedByDefault",
+    ),
   }
 }
 
 let getPaymentMethodConfig = (json, logger) => {
   unknownKeysWarning(
-    ["paymentMethod", "message", "paymentMethodTypes"],
+    [
+      "paymentMethod",
+      "message",
+      "displaySavedPaymentMethodsCheckbox",
+      "savedPaymentMethodsCheckboxCheckedByDefault",
+      "paymentMethodTypes",
+    ],
     json,
     "options.paymentMethodsConfig",
   )
@@ -549,6 +581,11 @@ let getPaymentMethodConfig = (json, logger) => {
       json,
       logger,
       "options.paymentMethodsConfig." ++ paymentMethod,
+    ),
+    displaySavedPaymentMethodsCheckbox: getOptionBool(json, "displaySavedPaymentMethodsCheckbox"),
+    savedPaymentMethodsCheckboxCheckedByDefault: getOptionBool(
+      json,
+      "savedPaymentMethodsCheckboxCheckedByDefault",
     ),
     paymentMethodTypes: json
     ->getArrayOfObjectsFromDict("paymentMethodTypes")
@@ -1462,11 +1499,23 @@ let getPaymentMethodType = dict => {
   dict->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
 }
 
+let getBankRedirectDict = dict =>
+  dict->getDictFromDict("payment_method_data")->getDictFromDict("bank_redirect")
+
 let getBank = dict => {
   {
     mask: dict
     ->getDictFromDict("bank")
     ->getString("mask", ""),
+  }
+}
+
+let getBankRedirect = dict => {
+  let bankRedirectDict = dict->getBankRedirectDict
+  {
+    bankName: bankRedirectDict->getString("bank_name", ""),
+    accountHolderName: bankRedirectDict->getString("account_holder_name", ""),
+    mask: bankRedirectDict->getString("mask", ""),
   }
 }
 
@@ -1505,6 +1554,7 @@ let itemToCustomerObjMapperFromClientList = clientListDict => {
         requiresCvv: getBool(dict, "requires_cvv", true),
         lastUsedAt: getString(dict, "last_used_at", ""),
         bank: {mask: ""},
+        bankRedirect: dict->getBankRedirect,
         recurringEnabled: getBool(dict, "recurring_enabled", false),
         billing: defaultDisplayBillingDetails,
       }
@@ -1542,6 +1592,7 @@ let getCustomerMethods = (dict, str) => {
           requiresCvv: getBool(dict, "requires_cvv", true),
           lastUsedAt: getString(dict, "last_used_at", ""),
           bank: dict->getBank,
+          bankRedirect: json->getBankRedirect,
           recurringEnabled: getBool(dict, "recurring_enabled", false),
           billing: getBillingAddressPaymentMethod(json, "billing"),
         }
@@ -1599,13 +1650,13 @@ let getConfirmParams = dict => {
 
 let getSdkHandleConfirmPaymentProps = dict => {
   handleConfirm: dict->getBool("handleConfirm", false),
-  buttonText: ?dict->getOptionString("buttonText"),
+  buttonText: ?(dict->getOptionString("buttonText")),
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
 let getSdkHandleSavePaymentProps = dict => {
   handleSave: dict->getBool("handleSave", false),
-  buttonText: ?dict->getOptionString("buttonText"),
+  buttonText: ?(dict->getOptionString("buttonText")),
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
@@ -1664,14 +1715,14 @@ let shouldMaskField = path => {
 let sanitizePaymentElementOptions = dict => {
   dict
   ->JSON.Encode.object
-  ->(Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField))
+  ->Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField)
   ->getDictFromJson
 }
 
 let sanitizePreloadSdkParms = dict => {
   dict
   ->JSON.Encode.object
-  ->(Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField=_ => true))
+  ->Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField=_ => true)
   ->getDictFromJson
 }
 
@@ -1804,6 +1855,11 @@ let convertClickToPayCardToCustomerMethod = (
     lastUsedAt: Js.Date.make()->Js.Date.toISOString, // Current timestamp as Click to Pay doesn't provide this
     bank: {
       mask: "", // Just use the mask field that exists in the type
+    },
+    bankRedirect: {
+      bankName: "",
+      accountHolderName: "",
+      mask: "",
     },
     recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
     billing: defaultDisplayBillingDetails,

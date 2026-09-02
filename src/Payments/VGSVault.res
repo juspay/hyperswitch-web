@@ -369,7 +369,7 @@ let make = (~cvcOnly=false) => {
             id="vgs-cc-cvc"
             isFocused={isCVCFocused->Option.getOr(false)}
             compact=true
-            height="1.8rem"
+            height=SavedCardCvcStyles.fieldHeight
           />
         </div>
       } else {

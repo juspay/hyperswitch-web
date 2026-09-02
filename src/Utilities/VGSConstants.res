@@ -36,8 +36,8 @@ let savedCardCvcCss =
   [
     ("padding", "0px"),
     ("margin", "0px"),
-    ("line-height", "1.8rem"),
-    ("height", "1.8rem"),
+    ("line-height", SavedCardCvcStyles.fieldHeight),
+    ("height", SavedCardCvcStyles.fieldHeight),
     ("box-sizing", "border-box"),
   ]
   ->Array.map(((key, value)) => (key, value->JSON.Encode.string))

@@ -31,6 +31,7 @@ type cardProps = {
   cardEligibilityError: option<string>,
   updateCardEligibilityError: option<string> => unit,
   eligibilitySurchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
+  eligibilityOfferDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
   isEligibilityPending: bool,
 }
 
@@ -53,6 +54,7 @@ let useDefaultCardProps = () => {
     cardEligibilityError: None,
     updateCardEligibilityError: _ => (),
     eligibilitySurchargeDetails: None,
+    eligibilityOfferDetails: None,
     isEligibilityPending: false,
   }
 }
@@ -220,7 +222,7 @@ let normalizeCardBrand = brand => {
   let normalized =
     brand
     ->String.toLowerCase
-    ->String.replaceRegExp(%re("/[_\\s-]/g"), "")
+    ->String.replaceRegExp(%re("/[-_\s]/g"), "")
   switch normalized {
   | "visa" => "Visa"
   | "mastercard" => "Mastercard"
@@ -430,7 +432,9 @@ let getCardBrandIcon = (cardType, paymentType) => {
   | INTERAC => <Icon size=brandIconSize name="interac" />
   | NOTFOUND =>
     switch paymentType {
-    | Payment => <Icon size=brandIconSize name="base-card" />
+    | Payment
+    | PaymentMethodsSDK =>
+      <Icon size=brandIconSize name="base-card" />
     | Card
     | CardNumberElement
     | CardExpiryElement
@@ -765,6 +769,11 @@ let getWalletBrandIcon = (customerMethod: PaymentType.customerMethods) => {
 let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
   switch customerMethod.paymentMethod {
   | "wallet" => getWalletBrandIcon(customerMethod)
+  | "bank_redirect" =>
+    <Icon
+      size=Utils.brandIconSize
+      name={BankLogoResolver.resolveIconName(~bankName=customerMethod.bankRedirect.bankName)}
+    />
   | _ =>
     getCardBrandIcon(
       switch customerMethod.card.scheme {
