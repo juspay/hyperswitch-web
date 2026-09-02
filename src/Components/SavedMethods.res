@@ -74,6 +74,7 @@ let make = (
   )
   let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
   let (eligibilitySurchargeDetails, setEligibilitySurchargeDetails) = React.useState(_ => None)
+  let (eligibilityOfferDetails, setEligibilityOfferDetails) = React.useState(_ => None)
   let (eligibilityError, setEligibilityError) = React.useState(_ => None)
   let (isEligibilityPending, setIsEligibilityPending) = React.useState(_ => false)
   let eligibilityControllerRef = React.useRef(None)
@@ -102,6 +103,13 @@ let make = (
     clickToPayConfig.isReady == Some(true) &&
       (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")
   let (installmentsError, setInstallmentsError) = React.useState(_ => "")
+
+  let selectedOfferQuoteIds =
+    eligibilityOfferDetails
+    ->Option.map((offerDetails: EligibilityHelpers.eligibilityOfferDetails) =>
+      offerDetails.offerQuoteIds
+    )
+    ->Option.getOr([])
 
   // Saved-card (return user) CVC collection always uses the nested
   // ParentCardComponent. The vault flag only selects whether submit returns a raw
@@ -158,17 +166,24 @@ let make = (
 
   let bottomElement = {
     <div
-      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
+      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods"
+    >
       {visibleSavedMethods
       ->Array.mapWithIndex((obj, i) => {
         let isActive = paymentTokenVal == obj.paymentToken
-        let (eligibilitySurchargeDetails, eligibilityError, isEligibilityPending) = isActive
+        let (
+          eligibilitySurchargeDetails,
+          eligibilityOfferDetails,
+          eligibilityError,
+          isEligibilityPending,
+        ) = isActive
           ? (
               eligibilitySurchargeDetails,
+              eligibilityOfferDetails,
               eligibilityError,
-              isEligibilityPending && paymentMethodListValue.should_block_confirm,
+              isEligibilityPending,
             )
-          : (None, None, false)
+          : (None, None, None, false)
         <SavedCardItem
           key={i->Int.toString}
           setPaymentToken
@@ -184,6 +199,7 @@ let make = (
           installmentsError
           setInstallmentsError
           eligibilitySurchargeDetails
+          eligibilityOfferDetails
           eligibilityError
           isEligibilityPending
           isVaultCvcFlow
@@ -226,6 +242,7 @@ let make = (
   , [paymentTokenVal])
   let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
   let isCardPaymentMethod = customerMethod.paymentMethod === "card"
+  let isBankRedirectPaymentMethod = customerMethod.paymentMethod === "bank_redirect"
   let isSavedCardCvcFlow = isCardPaymentMethod && customerMethod.requiresCvv
   let empty = isSavedCardCvcFlow ? savedCardCvcState.empty : cvcNumber == ""
   let isCardPaymentMethodValid =
@@ -251,9 +268,9 @@ let make = (
         ~bodyArr=eligibilityBody,
         ~sdkAuthorization,
         ~endpoint,
-        ~shouldBlockConfirm=paymentMethodListValue.should_block_confirm,
         ~setIsEligibilityPending,
         ~setEligibilitySurchargeDetails,
+        ~setEligibilityOfferDetails,
         ~setEligibilityError=Some(setEligibilityError),
         ~errorLogMessage="Saved card payment eligibility check failed",
         ~fetchEligibility={
@@ -282,6 +299,7 @@ let make = (
     } else {
       eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
       setEligibilitySurchargeDetails(_ => None)
+      setEligibilityOfferDetails(_ => None)
       setEligibilityError(_ => None)
       setIsEligibilityPending(_ => false)
     }
@@ -307,7 +325,7 @@ let make = (
     !isUnknownPaymentMethod &&
     (!isCardPaymentMethod || isCardPaymentMethodValid) &&
     isInstallmentValid &&
-    !isEligibilityPending &&
+    !(paymentMethodListValue.should_block_confirm && isEligibilityPending) &&
     eligibilityError->Option.isNone
   // The outer iframe owns required fields, installments and eligibility; the
   // nested saved-card iframe owns CVC validation. Submit must reach the nested
@@ -316,7 +334,7 @@ let make = (
     areRequiredFieldsValid &&
     !isUnknownPaymentMethod &&
     isInstallmentValid &&
-    !isEligibilityPending &&
+    !(paymentMethodListValue.should_block_confirm && isEligibilityPending) &&
     eligibilityError->Option.isNone &&
     savedCardCvcState.ready
   } else {
@@ -329,6 +347,7 @@ let make = (
   useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType, ~savedMethod=true)
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
   SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
+  SubscriptionEventHooks.useEmitAppliedOffersInfo(~offerDetails=eligibilityOfferDetails)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   React.useEffect(() => {
@@ -368,8 +387,10 @@ let make = (
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     let isCustomerAcceptanceRequired =
-      alwaysSendCustomerAcceptance || customerMethod.recurringEnabled->not || isSaveCardsChecked
+      !isBankRedirectPaymentMethod &&
+      (alwaysSendCustomerAcceptance || customerMethod.recurringEnabled->not || isSaveCardsChecked)
     let installmentBody = selectedInstallmentPlan->PaymentBody.installmentBody
+    let offerDetailsBody = PaymentBody.offerDetailsBody(~offerQuoteIds=selectedOfferQuoteIds)
 
     let buildSavedPaymentMethodBody = cvc =>
       switch customerMethod.paymentMethod {
@@ -380,7 +401,7 @@ let make = (
           ~cvcNumber=cvc,
           ~requiresCvv=customerMethod.requiresCvv,
           ~isCustomerAcceptanceRequired,
-        )->Array.concat(installmentBody)
+        )->Array.concat(installmentBody)->Array.concat(offerDetailsBody)
       | _ => {
           let paymentMethodType = switch customerMethod.paymentMethodType {
           | Some("")
@@ -438,6 +459,7 @@ let make = (
           intent(
             ~bodyArr=clickToPayBody
             ->Array.concat(installmentBody)
+            ->Array.concat(offerDetailsBody)
             ->mergeAndFlattenToTuples(requiredFieldsBody),
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
@@ -554,7 +576,7 @@ let make = (
                         ~cvcToken,
                         ~isCustomerAcceptanceRequired,
                       )
-                let vaultBody = cvcConfirmBody->Array.concat(installmentBody)
+                let vaultBody = cvcConfirmBody->Array.concat(installmentBody)->Array.concat(offerDetailsBody)
                 intent(
                   ~bodyArr=vaultBody->mergeAndFlattenToTuples(requiredFieldsBody),
                   ~confirmParam=confirm.confirmParams,
@@ -649,6 +671,7 @@ let make = (
     sdkAuthorization,
     isEligibilityPending,
     eligibilityError,
+    selectedOfferQuoteIds,
     isHyperswitchVault,
     isSavedCardCvcFlow,
     isVaultCvcFlow,
@@ -690,9 +713,11 @@ let make = (
       </div>
     </RenderIf>
     <RenderIf
-      condition={alwaysSendCustomerAcceptance ||
+      condition={!isBankRedirectPaymentMethod &&
+      (alwaysSendCustomerAcceptance ||
       (displaySavedPaymentMethodsCheckbox &&
-      paymentMethodListValue.payment_type === SETUP_MANDATE)}>
+      paymentMethodListValue.payment_type === SETUP_MANDATE))}
+    >
       <Terms
         styles={
           marginTop: themeObj.spacingGridColumn,

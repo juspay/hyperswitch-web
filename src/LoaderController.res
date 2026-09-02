@@ -57,6 +57,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setSavedCardBrand = Jotai.useSetAtom(JotaiAtoms.savedCardBrand)
   let setIsBancontactCardFlow = Jotai.useSetAtom(JotaiAtoms.isBancontactCardFlow)
   let setCardFlowType = Jotai.useSetAtom(JotaiAtoms.cardFlowType)
+  let setOptionsJson = Jotai.useSetAtom(optionsJsonAtom)
+  let setPaymentOptionsJson = Jotai.useSetAtom(paymentOptionsJsonAtom)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -96,6 +98,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
+    setOptionsJson(_ => optionsDict->JSON.Encode.object)
     switch paymentMode->CardThemeType.getPaymentMode {
     | CardNumberElement
     | CardExpiryElement
@@ -120,6 +123,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PazeElement
     | ExpressCheckoutElement
     | PaymentMethodsManagement
+    | PaymentMethodsSDK
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
         setOptionsPayment(_ => paymentOptions)
@@ -224,7 +228,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       generateStyleSheet("", dict, "themestyle")
     }
     switch paymentMode->CardThemeType.getPaymentMode {
-    | Payment => ()
+    | Payment
+    | PaymentMethodsSDK => ()
     | _ =>
       let styleClass = [
         ("input-base", options.style.base->getDictFromJson),
@@ -322,6 +327,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               }
               if dict->getDictIsSome("paymentOptions") {
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
+                setPaymentOptionsJson(_ => paymentOptions->JSON.Encode.object)
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
                 let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
@@ -384,6 +390,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }
           } else if dict->getDictIsSome("paymentOptions") {
             let paymentOptions = dict->getDictFromObj("paymentOptions")
+            setPaymentOptionsJson(_ => paymentOptions->JSON.Encode.object)
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
             let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
@@ -425,6 +432,17 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         } else if dict->getDictIsSome("ElementsUpdate") {
           logger.setLogInfo(~value="SDK Credentials Received from Loader", ~eventName=UPDATE_SDK)
           let optionsDict = dict->getDictFromObj("options")
+          setPaymentOptionsJson(prev => {
+            let updatedPaymentOptions = prev->getDictFromJson->Dict.copy
+            ["locale", "appearance", "clientSecret", "sdkAuthorization"]->Array.forEach(
+              key =>
+                switch optionsDict->Dict.get(key) {
+                | Some(val) => updatedPaymentOptions->Dict.set(key, val)
+                | None => ()
+                },
+            )
+            updatedPaymentOptions->JSON.Encode.object
+          })
           let clientSecret = dict->Dict.get("clientSecret")
           switch clientSecret {
           | Some(val) =>
