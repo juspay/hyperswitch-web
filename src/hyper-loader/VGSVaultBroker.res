@@ -57,21 +57,14 @@ let exceptionMessage = (exn: exn): string =>
   ->getNonEmptyOption
   ->Option.getOr("unknown")
 
-type scriptState =
-  | Loading
-  | Ready
-  | Failed
-
 type fieldEntry = {
   fieldType: string,
   selector: string,
-  options: JSON.t,
   fieldHandle: option<JSON.t>,
 }
 
 type vgsBrokerHandle = {
   formRef: ref<option<JSON.t>>,
-  scriptStateRef: ref<scriptState>,
   fieldsRef: ref<Dict.t<fieldEntry>>,
   ensureReady: unit => promise<unit>,
   submitForm: unit => promise<JSON.t>,
@@ -290,13 +283,11 @@ let dispatchFieldEvent = (
 }
 
 let make = (
-  ~pmSessionId: string,
   ~vaultId: string,
   ~environment: string,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
 ): vgsBrokerHandle => {
   let formRef: ref<option<JSON.t>> = ref(None)
-  let scriptStateRef: ref<scriptState> = ref(Loading)
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let createFormInFlightRef: ref<option<promise<JSON.t>>> = ref(None)
 
@@ -323,11 +314,9 @@ let make = (
               Error.raise(Error.make("VGSCollect script failed to register window.VGSCollect"))
             }
             formRef := Some(form)
-            scriptStateRef := Ready
             Promise.resolve(form)
           })
           ->Promise.catch(err => {
-            scriptStateRef := Failed
             createFormInFlightRef := None
             Promise.reject(err)
           })
@@ -351,13 +340,9 @@ let make = (
     | Some(form) =>
       Promise.make((resolve, _reject) => {
         let onSuccess: (int, JSON.t) => unit = (_status, data) => {
-          let (cardNumber, expMonth, expYear, cardCvc) = VGSHelpers.getTokenizedData(data)
           let resultDict = Dict.make()
           resultDict->Dict.set("status", "success"->JSON.Encode.string)
-          resultDict->Dict.set("card_number", cardNumber->JSON.Encode.string)
-          resultDict->Dict.set("card_exp_month", expMonth->JSON.Encode.string)
-          resultDict->Dict.set("card_exp_year", expYear->JSON.Encode.string)
-          resultDict->Dict.set("card_cvc", cardCvc->JSON.Encode.string)
+          resultDict->Dict.set("vaultResponse", data->getDictFromJson->JSON.Encode.object)
           resolve(resultDict->JSON.Encode.object)
         }
         let onError: (int, JSON.t) => unit = (_status, errors) => {
@@ -490,7 +475,7 @@ let make = (
 
         fieldsRef.contents->Dict.set(
           fieldId,
-          {fieldType, selector, options, fieldHandle: Some(fieldHandle)},
+          {fieldType, selector, fieldHandle: Some(fieldHandle)},
         )
 
         let wireEvent = (event: string): unit => {
@@ -576,7 +561,6 @@ let make = (
         {
           fieldType: "",
           selector: "",
-          options: JSON.Encode.null,
           fieldHandle: None,
         },
       )
@@ -595,7 +579,6 @@ let make = (
 
   {
     formRef,
-    scriptStateRef,
     fieldsRef,
     ensureReady,
     submitForm,

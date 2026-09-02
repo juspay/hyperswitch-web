@@ -68,7 +68,6 @@ let makePortFrame = (~kind: string, ~payload: JSON.t): JSON.t =>
   ->JSON.Encode.object
 
 type portFrame = {
-  version: float,
   kind: string,
   payload: JSON.t,
 }
@@ -84,7 +83,6 @@ let decodePortFrame = (json: JSON.t): option<portFrame> => {
         )
       }
       {
-        version,
         kind: dict->getString("kind", ""),
         payload: dict->getJsonObjectFromDict("payload"),
       }->Some

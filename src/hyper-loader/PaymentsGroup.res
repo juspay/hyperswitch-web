@@ -22,8 +22,6 @@ type cardForm = {
   fieldEvents: ref<JSON.t>,
 }
 
-type aggregatedStatus = CardFormShared.fieldFormStatus
-
 let aggregatedStatusToString = CardFormShared.fieldFormStatusToString
 
 let aggregatedStatusFromString = CardFormShared.fieldFormStatusFromString
@@ -35,8 +33,6 @@ type fieldEntry = {
   handle: fieldHandle,
   fieldType: string,
   lastStateRef: ref<option<JSON.t>>,
-  lastFormStatusRef: ref<option<aggregatedStatus>>,
-  listenerName: string,
   savedCardTokenRef: ref<string>,
 }
 
@@ -322,7 +318,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let createFieldHandle = (fieldType: string, options: JSON.t, fieldId: string): fieldEntry => {
     let iframeRef: ref<Nullable.t<Dom.element>> = ref(Nullable.null)
     let lastStateRef: ref<option<JSON.t>> = ref(None)
-    let lastFormStatusRef: ref<option<aggregatedStatus>> = ref(None)
     let eventHandlersRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
     let listenerName = `onPaymentsV2Field-${fieldId}`
 
@@ -413,7 +408,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               | None => None
               }
               let cardBrand = dict->getString("cardBrand", "")
-              lastFormStatusRef := Some(status)
               let eventPayload = {
                 let payloadDict = Dict.make()
                 payloadDict->Dict.set("field", fieldType->JSON.Encode.string)
@@ -523,8 +517,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       handle,
       fieldType,
       lastStateRef,
-      lastFormStatusRef,
-      listenerName,
       savedCardTokenRef,
     }
   }

@@ -8,7 +8,6 @@ let make = () => {
   let state = CommonCardFieldHooks.useCardCvcField(
     ~logger=loggerState,
     ~cardBrandOverride=savedCardBrand,
-    ~onInitiateConfirm=_ => (),
     ~dualPlane=true,
     (),
   )

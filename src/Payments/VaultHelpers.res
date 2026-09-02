@@ -179,7 +179,6 @@ type vaultTokenData = {
   binNumber: string,
   expiryMonth: string,
   expiryYear: string,
-  brand: string,
 }
 
 let decodeVaultTokenData = (vaultResponse: JSON.t): vaultTokenData => {
@@ -204,9 +203,6 @@ let decodeVaultTokenData = (vaultResponse: JSON.t): vaultTokenData => {
   let binNumber = cardDict->getString("card_isin", "")
   let expiryMonth = cardDict->getString("expiry_month", "")
   let expiryYear = cardDict->getString("expiry_year", "")
-  let cardBrand = cardDict->getString("card_brand", "")
-  let cardNetwork = cardDict->getString("card_network", "")
-  let brand = cardBrand !== "" ? cardBrand : cardNetwork
 
-  {token, last4Digits, binNumber, expiryMonth, expiryYear, brand}
+  {token, last4Digits, binNumber, expiryMonth, expiryYear}
 }

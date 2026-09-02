@@ -1,4 +1,3 @@
-open Utils
 open MessageChannelBinding
 
 type portHandle = {
@@ -51,12 +50,6 @@ let closePort = (~key: string) => {
     notify()
   | None => ()
   }
-}
-
-let closeAllPorts = () => {
-  registry
-  ->Dict.keysToArray
-  ->Array.forEach(key => closePort(~key))
 }
 
 let postFrame = (~key: string, frame: JSON.t) =>

@@ -30,12 +30,8 @@ let sessionConsumedResult = (~locale: string="en", ()): JSON.t =>
 let tokenizationInFlightResult = (~locale: string="en", ()): JSON.t =>
   makeErrorResult(~code="tokenization_in_progress", ~locale, ())
 
-type flowASuccessPayload = CardFormCoordinator.flowASuccessPayload
-type flowBSuccessPayload = CardFormCoordinator.flowBSuccessPayload
-type failurePayload = CardFormCoordinator.failurePayload
-type confirmOutcome = CardFormCoordinator.confirmOutcome
-
 let buildConfirmResult = CardFormCoordinator.buildConfirmResult
+let isErrorResult = CardFormCoordinator.isErrorResult
 
 let buildSyntheticSession = (
   ~pmSessionId: string,
@@ -111,31 +107,10 @@ type fieldEntry = {
   handle: fieldHandle,
   fieldType: string,
   savedCardBrandRef: ref<string>,
-  savedCardLast4Ref: ref<string>,
 }
 
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
-let aliasBrandVocabulary = [
-  ("Visa", "visa"),
-  ("Mastercard", "mastercard"),
-  ("AmericanExpress", "amex"),
-  ("Discover", "discover"),
-  ("JCB", "jcb"),
-  ("DinersClub", "diners club"),
-  ("UnionPay", "unionpay"),
-]
-
-let detectBrandFromAlias = (alias: string): string =>
-  alias
-  ->String.trim
-  ->CardValidations.getAllMatchedCardSchemes
-  ->Array.findMap(issuer =>
-    aliasBrandVocabulary
-    ->Array.find(((patternIssuer, _)) => patternIssuer == issuer)
-    ->Option.map(((_, merchantBrand)) => merchantBrand)
-  )
-  ->Option.getOr("")
 
 let make = (options: JSON.t): paymentMethodsSession => {
   let optionsDict = options->getDictFromJson
@@ -159,8 +134,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
 
   let vgsBrokerRef: ref<option<VGSVaultBroker.vgsBrokerHandle>> = ref(None)
 
-  let vgsSavedCardBrandRef: ref<string> = ref("")
-  let vgsSavedCardLast4Ref: ref<string> = ref("")
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
@@ -350,7 +323,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
       if vaultId->String.length == 0 || environment->String.length == 0 {
         None
       } else {
-        let broker = VGSVaultBroker.make(~pmSessionId, ~vaultId, ~environment, ~eventCallbacksRef)
+        let broker = VGSVaultBroker.make(~vaultId, ~environment, ~eventCallbacksRef)
         vgsBrokerRef := Some(broker)
         Some(broker)
       }
@@ -395,7 +368,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
 
     let savedCardDict = options->getDictFromJson->getDictFromDict("savedCard")
     let savedCardBrandRef = ref(savedCardDict->getString("brand", ""))
-    let savedCardLast4Ref = ref(savedCardDict->getString("last4", ""))
 
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
       coordinator->openFieldPort(
@@ -494,12 +466,8 @@ let make = (options: JSON.t): paymentMethodsSession => {
       ~update=newOptions => {
         let newSavedCardDict = postFieldUpdate(~iframeRef, ~newOptions)
         let brand = newSavedCardDict->getString("brand", "")
-        let last4 = newSavedCardDict->getString("last4", "")
         if brand !== "" {
           savedCardBrandRef := brand
-        }
-        if last4 !== "" {
-          savedCardLast4Ref := last4
         }
       },
     )
@@ -511,7 +479,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
       handle,
       fieldType,
       savedCardBrandRef,
-      savedCardLast4Ref,
     }
   }
 
@@ -536,16 +503,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
           switch getOrCreateVgsBroker() {
           | Some(broker) => {
               let fieldId = uniqueId(~prefix=fieldType)
-              let savedCardDict = options->getDictFromJson->getDictFromDict("savedCard")
-              let savedCardBrand = savedCardDict->getString("brand", "")
-              let savedCardLast4 = savedCardDict->getString("last4", "")
-              if (
-                fieldType === "cardCvc" &&
-                  (savedCardBrand->String.length > 0 || savedCardLast4->String.length > 0)
-              ) {
-                vgsSavedCardBrandRef := savedCardBrand
-                vgsSavedCardLast4Ref := savedCardLast4
-              }
               registerField(
                 ~fields,
                 ~fieldId,
@@ -592,15 +549,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
                 },
                 update: newOptions => {
                   broker.updateField(~fieldId, ~options=newOptions)
-                  let newSavedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
-                  let newSavedCardBrand = newSavedCardDict->getString("brand", "")
-                  let newSavedCardLast4 = newSavedCardDict->getString("last4", "")
-                  if newSavedCardBrand !== "" {
-                    vgsSavedCardBrandRef := newSavedCardBrand
-                  }
-                  if newSavedCardLast4 !== "" {
-                    vgsSavedCardLast4Ref := newSavedCardLast4
-                  }
                 },
                 focus: () => {
                   switch getFieldHandle() {
@@ -714,9 +662,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
   }
 
   let settleResult = (resolve: JSON.t => unit, result: JSON.t): unit => {
-    let outcomeDict = result->getDictFromJson
-    let isError = outcomeDict->getString("status", "") === "error"
-    if isError {
+    if isErrorResult(result) {
       emitGroupError(result)
     }
     resolve(result)
@@ -783,23 +729,8 @@ let make = (options: JSON.t): paymentMethodsSession => {
             Promise.resolve(envelope)
           } else {
             sessionStateRef := Consumed
-            let cardNumberAlias = resultDict->getString("card_number", "")
-            let expMonth = resultDict->getString("card_exp_month", "")
-            let expYear = resultDict->getString("card_exp_year", "")
-            let brand = detectBrandFromAlias(cardNumberAlias)
-            let last4 =
-              cardNumberAlias->String.length >= 4
-                ? cardNumberAlias->String.sliceToEnd(~start=cardNumberAlias->String.length - 4)
-                : ""
             let envelope = buildConfirmResult(
-              ~outcome=FlowASuccess({
-                token: cardNumberAlias,
-                paymentMethodId: None,
-                brand,
-                last4,
-                expiryMonth: expMonth,
-                expiryYear: expYear,
-              }),
+              ~outcome=Success(resultDict->getJsonObjectFromDict("vaultResponse")),
             )
             tokenizingRef := false
             Promise.resolve(envelope)
@@ -883,11 +814,8 @@ let make = (options: JSON.t): paymentMethodsSession => {
             Promise.resolve(envelope)
           } else {
             sessionStateRef := Consumed
-            let cvcAlias = resultDict->getString("card_cvc", "")
-            let brand = vgsSavedCardBrandRef.contents
-            let last4 = vgsSavedCardLast4Ref.contents
             let envelope = buildConfirmResult(
-              ~outcome=FlowBSuccess({cvcToken: cvcAlias, brand, last4}),
+              ~outcome=Success(resultDict->getJsonObjectFromDict("vaultResponse")),
             )
             tokenizingRef := false
             Promise.resolve(envelope)
@@ -913,7 +841,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
   let runCoordinatorRelay = (
     ~flow: string,
     ~savedCardBrand: string="",
-    ~savedCardLast4: string="",
   ): promise<JSON.t> => {
     switch coordinator.mountRef.contents {
     | None =>
@@ -938,7 +865,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
             settledRef := true
             coordinatorTokenizePendingRef := None
             tokenizingRef := false
-            if result->getDictFromJson->getString("status", "") == "success" {
+            if !isErrorResult(result) {
               sessionStateRef := Consumed
             }
             settleResult(resolve, result)
@@ -950,7 +877,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
           ("flow", flow->JSON.Encode.string),
           ("confirmId", tokenizeId->JSON.Encode.string),
           ("savedCardBrand", savedCardBrand->JSON.Encode.string),
-          ("savedCardLast4", savedCardLast4->JSON.Encode.string),
           ("locale", locale->JSON.Encode.string),
         ])
       })
@@ -1007,7 +933,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
           runCoordinatorRelay(
             ~flow="update",
             ~savedCardBrand=field.savedCardBrandRef.contents,
-            ~savedCardLast4=field.savedCardLast4Ref.contents,
           )
         }
       }

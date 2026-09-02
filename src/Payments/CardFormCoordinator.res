@@ -66,19 +66,6 @@ let makeErrorResult = (
   resultDict->JSON.Encode.object
 }
 
-type flowASuccessPayload = {
-  token: string,
-  paymentMethodId: option<string>,
-  brand: string,
-  last4: string,
-  expiryMonth: string,
-  expiryYear: string,
-}
-type flowBSuccessPayload = {
-  cvcToken: string,
-  brand: string,
-  last4: string,
-}
 type failurePayload = {
   code: string,
   message: option<string>,
@@ -87,65 +74,12 @@ type failurePayload = {
 }
 
 type confirmOutcome =
-  | FlowASuccess(flowASuccessPayload)
-  | FlowBSuccess(flowBSuccessPayload)
+  | Success(JSON.t)
   | Failure(failurePayload)
 
 let buildConfirmResult = (~outcome: confirmOutcome): JSON.t =>
   switch outcome {
-  | FlowASuccess(payload) =>
-    let pmIdMissing = switch payload.paymentMethodId {
-    | Some(s) => s == ""
-    | None => false
-    }
-    if payload.token == "" || pmIdMissing {
-      makeErrorResult(
-        ~code="tokenization_failed",
-        ~message="vault confirm response was missing token / payment_method_id",
-        (),
-      )
-    } else {
-      let cardDict =
-        [
-          ("brand", payload.brand->JSON.Encode.string),
-          ("last4", payload.last4->JSON.Encode.string),
-          ("expiryMonth", payload.expiryMonth->JSON.Encode.string),
-          ("expiryYear", payload.expiryYear->JSON.Encode.string),
-        ]->Dict.fromArray
-      let pmIdJson = switch payload.paymentMethodId {
-      | Some(s) => s->JSON.Encode.string
-      | None => JSON.Encode.null
-      }
-      [
-        ("status", "success"->JSON.Encode.string),
-        ("token", payload.token->JSON.Encode.string),
-        ("paymentMethodId", pmIdJson),
-        ("card", cardDict->JSON.Encode.object),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object
-    }
-  | FlowBSuccess(payload) =>
-    if payload.cvcToken == "" {
-      makeErrorResult(
-        ~code="tokenization_failed",
-        ~message="vault Flow B (saved-card CVC recollect) response was missing cvcToken",
-        (),
-      )
-    } else {
-      let cardDict =
-        [
-          ("brand", payload.brand->JSON.Encode.string),
-          ("last4", payload.last4->JSON.Encode.string),
-        ]->Dict.fromArray
-      [
-        ("status", "success"->JSON.Encode.string),
-        ("cvcToken", payload.cvcToken->JSON.Encode.string),
-        ("card", cardDict->JSON.Encode.object),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object
-    }
+  | Success(vaultResponse) => vaultResponse
   | Failure(payload) =>
     makeErrorResult(
       ~code=payload.code,
@@ -155,6 +89,11 @@ let buildConfirmResult = (~outcome: confirmOutcome): JSON.t =>
       (),
     )
   }
+
+let isErrorResult = (result: JSON.t): bool => {
+  let dict = result->getDictFromJson
+  dict->getString("status", "") === "error" && dict->Dict.get("error")->Option.isSome
+}
 
 let portKey = (~groupId: string, ~fieldName: string): string => `${groupId}:${fieldName}`
 
@@ -563,17 +502,9 @@ let make = () => {
                         ),
                       )
                     } else {
-                      let vaultTokenData = VaultHelpers.decodeVaultTokenData(response)
                       settle(
                         buildConfirmResult(
-                          ~outcome=FlowASuccess({
-                            token: vaultTokenData.token,
-                            paymentMethodId: None,
-                            brand: vaultTokenData.brand,
-                            last4: vaultTokenData.last4Digits,
-                            expiryMonth: vaultTokenData.expiryMonth,
-                            expiryYear: vaultTokenData.expiryYear,
-                          }),
+                          ~outcome=Success(response),
                         ),
                       )
                     }
@@ -614,14 +545,9 @@ let make = () => {
                         ),
                       )
                     } else {
-                      let vaultTokenData = VaultHelpers.decodeVaultTokenData(response)
                       settle(
                         buildConfirmResult(
-                          ~outcome=FlowBSuccess({
-                            cvcToken: vaultTokenData.token,
-                            brand: dict->getString("savedCardBrand", ""),
-                            last4: dict->getString("savedCardLast4", ""),
-                          }),
+                          ~outcome=Success(response),
                         ),
                       )
                     }

@@ -1584,7 +1584,6 @@ let make = (
       paymentElement
     }
     module StdOption = {
-      type t<'a> = option<'a>
       let none: option<'a> = None
     }
     let cardFormRef: ref<option<Types.cardForm>> = ref(StdOption.none)

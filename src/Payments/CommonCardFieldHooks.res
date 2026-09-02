@@ -4,21 +4,6 @@ open Utils
 @send external addDomEventListener: (Dom.element, string, Dom.event => unit) => unit = "addEventListener"
 @send external removeDomEventListener: (Dom.element, string, Dom.event => unit) => unit = "removeEventListener"
 
-type confirmHandlerArgs = {
-  loggerState: HyperLoggerTypes.loggerMake,
-  localeString: LocaleStringTypes.localeStrings,
-  isCardValid: option<bool>,
-  isExpiryValid: option<bool>,
-  isCvcValid: option<bool>,
-  cardNumber: string,
-  cardExpiry: string,
-  cvcNumber: string,
-  cardBrand: string,
-  paymentToken: string,
-  parentURL: string,
-  iframeId: string,
-}
-
 type cardFieldState = {
   localeString: LocaleStringTypes.localeStrings,
   cardProps: CardUtils.cardProps,
@@ -65,8 +50,6 @@ let emitFormStatusChange = (
 let useCardFieldBase = (
   ~logger: HyperLoggerTypes.loggerMake,
   ~paymentType: CardThemeType.mode,
-  ~onInitiateConfirm: option<confirmHandlerArgs => unit>,
-  ~confirmTriggerKey="initiate-confirm",
   ~cardBrandOverride="",
   ~dualPlane=false,
   (),
@@ -180,48 +163,6 @@ let useCardFieldBase = (
     }
     None
   }, (portKey, registryVersion, focusTarget))
-
-  React.useEffect(() => {
-    switch onInitiateConfirm {
-    | Some(confirmHandler) => {
-      let handleConfirmEvent = (ev: Window.event) => {
-        if ev.source === iframeParent && (parentURL === "*" || ev.origin === parentURL) {
-          let json = ev.data->safeParse
-          let dict = json->getDictFromJson
-          if dict->Dict.get(confirmTriggerKey)->Option.isSome {
-            let externalCardNumber = dict->getString("cardNumber", "")
-            let externalCardExpiry = dict->getString("cardExpiry", "")
-            let externalCvcNumber = dict->getString("cvcNumber", "")
-            let externalPaymentToken = dict->getString("paymentToken", "")
-            confirmHandler({
-              loggerState: logger,
-              localeString,
-              isCardValid: cardProps.isCardValid,
-              isExpiryValid: expiryProps.isExpiryValid,
-              isCvcValid: cvcProps.isCVCValid,
-              cardNumber: externalCardNumber !== "" ? externalCardNumber : cardProps.cardNumber,
-              cardExpiry: externalCardExpiry !== "" ? externalCardExpiry : expiryProps.cardExpiry,
-              cvcNumber: externalCvcNumber !== "" ? externalCvcNumber : cvcProps.cvcNumber,
-              cardBrand: cardProps.cardBrand,
-              paymentToken: externalPaymentToken,
-              parentURL,
-              iframeId: keys.iframeId,
-            })
-          }
-        }
-      }
-      handleMessage(handleConfirmEvent, "")
-      }
-    | None => None
-    }
-   }, (
-      cardProps.isCardValid,
-      cardProps.cardNumber,
-      expiryProps.cardExpiry,
-      cvcProps.cvcNumber,
-      cardProps.cardBrand,
-      parentURL,
-    ))
 
   let (complete, empty) = switch paymentType {
   | CardThemeType.CardNumberElement => (
@@ -349,16 +290,12 @@ let useCardFieldBase = (
 
 let useCardNumberField = (
   ~logger: HyperLoggerTypes.loggerMake,
-  ~onInitiateConfirm: confirmHandlerArgs => unit,
-  ~confirmTriggerKey="initiate-confirm",
   ~dualPlane=false,
   (),
 ): cardFieldState => {
   useCardFieldBase(
     ~logger,
     ~paymentType=CardThemeType.CardNumberElement,
-    ~onInitiateConfirm=Some(onInitiateConfirm),
-    ~confirmTriggerKey,
     ~dualPlane,
     (),
   )
@@ -366,16 +303,12 @@ let useCardNumberField = (
 
 let useCardExpiryField = (
   ~logger: HyperLoggerTypes.loggerMake,
-  ~onInitiateConfirm: option<confirmHandlerArgs => unit>=None,
-  ~confirmTriggerKey="initiate-confirm",
   ~dualPlane=false,
   (),
 ): cardFieldState => {
   useCardFieldBase(
     ~logger,
     ~paymentType=CardThemeType.CardExpiryElement,
-    ~onInitiateConfirm,
-    ~confirmTriggerKey,
     ~dualPlane,
     (),
   )
@@ -383,8 +316,6 @@ let useCardExpiryField = (
 
 let useCardCvcField = (
   ~logger: HyperLoggerTypes.loggerMake,
-  ~onInitiateConfirm: confirmHandlerArgs => unit,
-  ~confirmTriggerKey="initiate-confirm-cvc",
   ~cardBrandOverride="",
   ~dualPlane=false,
   (),
@@ -392,8 +323,6 @@ let useCardCvcField = (
   useCardFieldBase(
     ~logger,
     ~paymentType=CardThemeType.CardCVCElement,
-    ~onInitiateConfirm=Some(onInitiateConfirm),
-    ~confirmTriggerKey,
     ~cardBrandOverride,
     ~dualPlane,
     (),
