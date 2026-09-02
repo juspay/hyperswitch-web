@@ -15,37 +15,12 @@ open CardFormShared
 
 type fieldFormStatus = CardFormShared.fieldFormStatus
 
-let fieldFormStatusToString = CardFormShared.fieldFormStatusToString
-
 let computeFieldFormStatus = (~isValid: option<bool>, ~value: string): fieldFormStatus =>
   switch isValid {
   | Some(false) => Invalid
   | Some(true) => value === "" ? Incomplete : Complete
   | None => Incomplete
   }
-
-let emitFormStatusChange = (
-  ~parentURL: string,
-  ~iframeId: string,
-  ~fieldName: string,
-  ~status: fieldFormStatus,
-  ~message: option<string>,
-  ~cardBrand: string,
-) => {
-  let baseFields = [
-    ("formStatusChange", true->JSON.Encode.bool),
-    ("elementType", fieldName->JSON.Encode.string),
-    ("iframeId", iframeId->JSON.Encode.string),
-    ("status", status->fieldFormStatusToString->JSON.Encode.string),
-    ("cardBrand", cardBrand->JSON.Encode.string),
-  ]
-  let fields = switch message {
-  | Some(errorMessage) if errorMessage !== "" =>
-    baseFields->Array.concat([("message", errorMessage->JSON.Encode.string)])
-  | _ => baseFields
-  }
-  messageParentWindow(fields, ~targetOrigin=parentURL)
-}
 
 let useCardFieldBase = (
   ~logger: HyperLoggerTypes.loggerMake,
@@ -92,6 +67,8 @@ let useCardFieldBase = (
   } else {
     portBrandOverride
   }
+
+  let subscriptionEmitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   let {cardProps, expiryProps, cvcProps, blurState: _} = CommonCardProps.useCardForm(
     ~logger,
@@ -238,10 +215,9 @@ let useCardFieldBase = (
       | Invalid => relevantError === "" ? None : Some(relevantError)
       | _ => None
       }
-      emitFormStatusChange(
-        ~parentURL,
+      subscriptionEmitter.emitCardFieldStatus(
+        ~elementType,
         ~iframeId=keys.iframeId,
-        ~fieldName=elementType,
         ~status,
         ~message,
         ~cardBrand=cardProps.cardBrand,
@@ -255,19 +231,17 @@ let useCardFieldBase = (
     switch currentInput {
     | Some(input) => {
         let onFocus = _ =>
-          emitFormStatusChange(
-            ~parentURL,
+          subscriptionEmitter.emitCardFieldStatus(
+            ~elementType,
             ~iframeId=keys.iframeId,
-            ~fieldName=elementType,
             ~status=Focused,
             ~message=None,
             ~cardBrand=cardProps.cardBrand,
           )
         let onBlur = _ =>
-          emitFormStatusChange(
-            ~parentURL,
+          subscriptionEmitter.emitCardFieldStatus(
+            ~elementType,
             ~iframeId=keys.iframeId,
-            ~fieldName=elementType,
             ~status=Blurred,
             ~message=None,
             ~cardBrand=cardProps.cardBrand,

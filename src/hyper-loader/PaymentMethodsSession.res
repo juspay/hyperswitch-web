@@ -401,6 +401,8 @@ let make = (options: JSON.t): paymentMethodsSession => {
             let isCardTokenEvent = dict->getBool("cardTokenEvent", false)
             let isCardTokenFail = dict->getBool("cardTokenFail", false)
             let isCvcTokenEvent = dict->getBool("savedCardCvcTokenEvent", false)
+            let isCardFieldStatus =
+              dict->getString("eventName", "") === SubscriptionEventTypes.cardFieldStatusEventName
             let cardStateUpdate = dict->Dict.get("cardStateUpdate")
             let payload =
               [
@@ -415,6 +417,36 @@ let make = (options: JSON.t): paymentMethodsSession => {
               eventHandlersRef.contents->Dict.get("blur")->Option.forEach(cb => cb(payload))
             } else if isCardTokenEvent || isCardTokenFail || isCvcTokenEvent {
               ()
+            } else if isCardFieldStatus {
+              let statusPayload = dict->getDictFromDict("payload")
+              let rawStatus = statusPayload->getString("status", "incomplete")
+              let status =
+                CardFormShared.fieldFormStatusFromString(rawStatus)->Option.getOr(
+                  CardFormShared.Incomplete,
+                )
+              let eventPayload = {
+                let normalizedPayload = statusPayload->Dict.copy
+                normalizedPayload->Dict.set(
+                  "status",
+                  status->CardFormShared.fieldFormStatusToString->JSON.Encode.string,
+                )
+                let envelope = Dict.make()
+                envelope->Dict.set("elementType", fieldType->JSON.Encode.string)
+                envelope->Dict.set("iframeId", fieldId->JSON.Encode.string)
+                envelope->Dict.set(
+                  "eventName",
+                  SubscriptionEventTypes.cardFieldStatusEventName->JSON.Encode.string,
+                )
+                envelope->Dict.set("payload", normalizedPayload->JSON.Encode.object)
+                envelope->JSON.Encode.object
+              }
+              let cardFieldStatusEvent = SubscriptionEventTypes.cardFieldStatusEventName
+              eventHandlersRef.contents
+              ->Dict.get(cardFieldStatusEvent)
+              ->Option.forEach(cb => cb(eventPayload))
+              eventCallbacksRef.contents
+              ->Dict.get(cardFieldStatusEvent)
+              ->Option.forEach(cb => cb(eventPayload))
             } else {
               switch cardStateUpdate {
               | Some(stateJson) =>
@@ -658,7 +690,17 @@ let make = (options: JSON.t): paymentMethodsSession => {
   }
 
   let emitGroupError = (envelope: JSON.t): unit => {
-    eventCallbacksRef.contents->Dict.get("error")->Option.forEach(cb => cb(envelope))
+    eventCallbacksRef.contents
+    ->Dict.get("error")
+    ->Option.forEach(cb =>
+      try cb(envelope) catch {
+      | exn =>
+        Console.error2(
+          `[PaymentMethodsSession] merchant on("error") handler threw`,
+          exn->Identity.anyTypeToJson,
+        )
+      }
+    )
   }
 
   let settleResult = (resolve: JSON.t => unit, result: JSON.t): unit => {
@@ -707,8 +749,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
         .submitForm()
         ->Promise.then(result => {
           let resultDict = result->getDictFromJson
-          let status = resultDict->getString("status", "")
-          if status == "error" {
+          if isErrorResult(result) {
             tokenizingRef := false
             let errDict = resultDict->getDictFromDict("error")
             let code = errDict->getString("code", "tokenization_failed")
@@ -722,7 +763,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
                   None
                 },
                 locale,
-                typeOverride: Some(ApiError),
+                typeOverride: code === "validation_error" ? Some(ValidationError) : Some(ApiError),
               }),
             )
             emitGroupError(envelope)
@@ -792,8 +833,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
         .submitForm()
         ->Promise.then(result => {
           let resultDict = result->getDictFromJson
-          let status = resultDict->getString("status", "")
-          if status == "error" {
+          if isErrorResult(result) {
             tokenizingRef := false
             let errDict = resultDict->getDictFromDict("error")
             let code = errDict->getString("code", "tokenization_failed")
@@ -807,7 +847,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
                   None
                 },
                 locale,
-                typeOverride: Some(ApiError),
+                typeOverride: code === "validation_error" ? Some(ValidationError) : Some(ApiError),
               }),
             )
             emitGroupError(envelope)
@@ -844,18 +884,19 @@ let make = (options: JSON.t): paymentMethodsSession => {
   ): promise<JSON.t> => {
     switch coordinator.mountRef.contents {
     | None =>
-      Promise.resolve(
-        buildConfirmResult(
-          ~outcome=Failure({
-            code: "tokenization_failed",
-            message: Some(
-              "cardFormCoordinator is not mounted — create + mount a hosted (non-VGS) card field before calling tokenize()",
-            ),
-            locale,
-            typeOverride: Some(ApiError),
-          }),
-        ),
+      tokenizingRef := false
+      let envelope = buildConfirmResult(
+        ~outcome=Failure({
+          code: "tokenization_failed",
+          message: Some(
+            "cardFormCoordinator is not mounted — create + mount a hosted (non-VGS) card field before calling tokenize()",
+          ),
+          locale,
+          typeOverride: Some(ApiError),
+        }),
       )
+      emitGroupError(envelope)
+      Promise.resolve(envelope)
     | Some(_mount) =>
       Promise.make((resolve, _reject) => {
         let tokenizeId = `${Date.now()->Float.toString}-${Math.random()->Float.toString}`
@@ -872,13 +913,32 @@ let make = (options: JSON.t): paymentMethodsSession => {
           }
         }
         coordinatorTokenizePendingRef := Some((tokenizeId, settle))
-        postCoordinatorCommand(coordinator, [
-          ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
-          ("flow", flow->JSON.Encode.string),
-          ("confirmId", tokenizeId->JSON.Encode.string),
-          ("savedCardBrand", savedCardBrand->JSON.Encode.string),
-          ("locale", locale->JSON.Encode.string),
-        ])
+        try {
+          postCoordinatorCommand(coordinator, [
+            ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
+            ("flow", flow->JSON.Encode.string),
+            ("confirmId", tokenizeId->JSON.Encode.string),
+            ("savedCardBrand", savedCardBrand->JSON.Encode.string),
+            ("locale", locale->JSON.Encode.string),
+          ])
+        } catch {
+        | exn =>
+          settle(
+            buildConfirmResult(
+              ~outcome=Failure({
+                code: "tokenization_failed",
+                message: Some(
+                  `could not reach cardFormCoordinator: ${exn
+                    ->JsExn.fromException
+                    ->Option.flatMap(JsExn.message)
+                    ->Option.getOr("unknown")}`,
+                ),
+                locale,
+                typeOverride: Some(ApiError),
+              }),
+            ),
+          )
+        }
       })
     }
   }
@@ -951,7 +1011,15 @@ let make = (options: JSON.t): paymentMethodsSession => {
       })
       fieldsRef := Dict.make()
 
-      vgsBrokerRef.contents->Option.forEach(broker => broker.unmountAll())
+      vgsBrokerRef.contents->Option.forEach(broker =>
+        try broker.unmountAll() catch {
+        | exn =>
+          Console.error2(
+            "[PaymentMethodsSession] VGS unmountAll() threw during deinit",
+            exn->Identity.anyTypeToJson,
+          )
+        }
+      )
       vgsBrokerRef := None
 
       switch Window.querySelector(`script[data-vgs-script-loaded]`)->Nullable.toOption {

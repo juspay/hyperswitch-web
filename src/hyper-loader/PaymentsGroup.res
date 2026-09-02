@@ -22,10 +22,6 @@ type cardForm = {
   fieldEvents: ref<JSON.t>,
 }
 
-let aggregatedStatusToString = CardFormShared.fieldFormStatusToString
-
-let aggregatedStatusFromString = CardFormShared.fieldFormStatusFromString
-
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
 type fieldEntry = {
@@ -362,7 +358,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             let isBlur = dict->getBool("blur", false)
             let isConfirmAck = dict->getBool("paymentConfirmAck", false)
             let isConfirmFail = dict->getBool("paymentConfirmFail", false)
-            let isFormStatusChange = dict->getBool("formStatusChange", false)
+            let isCardFieldStatus =
+              dict->getString("eventName", "") === SubscriptionEventTypes.cardFieldStatusEventName
             let cardStateUpdate = dict->Dict.get("cardStateUpdate")
             let payload =
               [
@@ -399,44 +396,40 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                   ~message=errorMessage,
                 ),
               )
-            } else if isFormStatusChange {
-              let rawStatus = dict->getString("status", "incomplete")
+            } else if isCardFieldStatus {
+              let statusPayload = dict->getDictFromDict("payload")
+              let rawStatus = statusPayload->getString("status", "incomplete")
               let status =
-                aggregatedStatusFromString(rawStatus)->Option.getOr(CardFormShared.Incomplete)
-              let message = switch dict->Dict.get("message") {
-              | Some(json) => json->JSON.Decode.string
-              | None => None
-              }
-              let cardBrand = dict->getString("cardBrand", "")
-              let eventPayload = {
-                let payloadDict = Dict.make()
-                payloadDict->Dict.set("field", fieldType->JSON.Encode.string)
-                payloadDict->Dict.set("elementType", fieldType->JSON.Encode.string)
-                payloadDict->Dict.set("iframeId", fieldId->JSON.Encode.string)
-                payloadDict->Dict.set(
-                  "status",
-                  status->aggregatedStatusToString->JSON.Encode.string,
+                CardFormShared.fieldFormStatusFromString(rawStatus)->Option.getOr(
+                  CardFormShared.Incomplete,
                 )
-                switch message {
-                | Some(messageText) =>
-                  payloadDict->Dict.set("message", messageText->JSON.Encode.string)
-                | None => ()
-                }
-                if cardBrand !== "" {
-                  payloadDict->Dict.set("cardBrand", cardBrand->JSON.Encode.string)
-                }
-                payloadDict->JSON.Encode.object
+              let eventPayload = {
+                let normalizedPayload = statusPayload->Dict.copy
+                normalizedPayload->Dict.set(
+                  "status",
+                  status->CardFormShared.fieldFormStatusToString->JSON.Encode.string,
+                )
+                let envelope = Dict.make()
+                envelope->Dict.set("elementType", fieldType->JSON.Encode.string)
+                envelope->Dict.set("iframeId", fieldId->JSON.Encode.string)
+                envelope->Dict.set(
+                  "eventName",
+                  SubscriptionEventTypes.cardFieldStatusEventName->JSON.Encode.string,
+                )
+                envelope->Dict.set("payload", normalizedPayload->JSON.Encode.object)
+                envelope->JSON.Encode.object
               }
+              let cardFieldStatusEvent = SubscriptionEventTypes.cardFieldStatusEventName
               eventHandlersRef.contents
-              ->Dict.get("formStatusChange")
+              ->Dict.get(cardFieldStatusEvent)
               ->Option.forEach(cb => cb(eventPayload))
               fieldEventsCallbacksRef.contents
               ->Dict.get(fieldType)
               ->Option.forEach(handlers =>
-                handlers->Dict.get("formStatusChange")->Option.forEach(cb => cb(eventPayload))
+                handlers->Dict.get(cardFieldStatusEvent)->Option.forEach(cb => cb(eventPayload))
               )
               eventCallbacksRef.contents
-              ->Dict.get("formStatusChange")
+              ->Dict.get(cardFieldStatusEvent)
               ->Option.forEach(cb => cb(eventPayload))
             } else {
               switch cardStateUpdate {

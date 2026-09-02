@@ -61,7 +61,6 @@ let makeErrorResult = (
   errorDict->Dict.set("message", resolvedMessage->JSON.Encode.string)
   errorDict->Dict.set("type", resolvedType->errorTypeToString->JSON.Encode.string)
   let resultDict = Dict.make()
-  resultDict->Dict.set("status", "error"->JSON.Encode.string)
   resultDict->Dict.set("error", errorDict->JSON.Encode.object)
   resultDict->JSON.Encode.object
 }
@@ -92,7 +91,7 @@ let buildConfirmResult = (~outcome: confirmOutcome): JSON.t =>
 
 let isErrorResult = (result: JSON.t): bool => {
   let dict = result->getDictFromJson
-  dict->getString("status", "") === "error" && dict->Dict.get("error")->Option.isSome
+  dict->Dict.get("error")->Option.flatMap(JSON.Decode.object)->Option.isSome
 }
 
 let portKey = (~groupId: string, ~fieldName: string): string => `${groupId}:${fieldName}`

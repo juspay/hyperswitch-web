@@ -274,7 +274,7 @@ type options = {
   business: business,
   customerPaymentMethods: savedCardsLoadState,
   paymentMethodOrder: option<array<string>>,
-  subscriptionEvents: option<array<PaymentEventTypes.events>>,
+  subscriptionEvents: option<array<SubscriptionEventTypes.subscriptionEvent>>,
   displaySavedPaymentMethodsCheckbox: bool,
   displaySavedPaymentMethods: bool,
   savedPaymentMethodsCheckboxCheckedByDefault: bool,
