@@ -1594,6 +1594,7 @@ let make = (
         let group = PaymentsGroup.makeCardForm(
           ~config={
             clientSecret: clientSecretRef.contents,
+            sdkAuthorization: sdkAuthorizationRef.contents,
             publishableKey: Some(publishableKey),
             endpoint: Some(endpoint),
             appearance: Some(appearance),

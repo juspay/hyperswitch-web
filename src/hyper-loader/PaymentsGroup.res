@@ -5,6 +5,7 @@ type fieldHandle = Types.fieldHandle
 
 type groupConfig = {
   clientSecret: string,
+  sdkAuthorization: string,
   publishableKey: option<string>,
   endpoint: option<string>,
   appearance: option<JSON.t>,
@@ -55,6 +56,7 @@ let groupFailureResponse = (~code: string, ~errorType: string, ~message: string)
 
 let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let clientSecret = config.clientSecret
+  let sdkAuthorization = config.sdkAuthorization
   let publishableKey = config.publishableKey->Option.getOr("")
   let endpoint = switch config.endpoint {
   | Some(e) => e
@@ -88,6 +90,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     ~logger=LoggerUtils.defaultLoggerConfig,
     ~customPodUri="",
     ~endpoint,
+    ~sdkAuthorization=Some(sdkAuthorization)->getNonEmptyOption,
   )
 
   let groupInstanceId = uniqueId(~prefix="payments")
@@ -100,7 +103,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       ~locale,
       ~credentialKeys=[
         ("clientSecret", clientSecret->JSON.Encode.string),
-        ("sdkAuthorization", ""->JSON.Encode.string),
+        ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
         ("pmSessionId", ""->JSON.Encode.string),
       ],
     )
@@ -134,6 +137,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                   ("publishableKey", publishableKey->JSON.Encode.string),
                   ("endpoint", endpoint->JSON.Encode.string),
                   ("clientSecret", clientSecret->JSON.Encode.string),
+                  ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
                   ("sdkSessionId", ""->JSON.Encode.string),
                   ("customPodUri", ""->JSON.Encode.string),
                   ("parentURL", "*"->JSON.Encode.string),
@@ -223,6 +227,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       let groupConfigAsOptions =
         [
           ("clientSecret", config.clientSecret->JSON.Encode.string),
+          ("sdkAuthorization", config.sdkAuthorization->JSON.Encode.string),
           ("publishableKey", config.publishableKey->Option.getOr("")->JSON.Encode.string),
           ("locale", config.locale->Option.getOr("en")->JSON.Encode.string),
           ("appearance", groupAppearance),
