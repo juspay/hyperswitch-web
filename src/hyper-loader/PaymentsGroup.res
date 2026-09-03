@@ -11,17 +11,6 @@ type groupConfig = {
   locale: option<string>,
 }
 
-type cardForm = {
-  create: (string, JSON.t) => fieldHandle,
-  update: JSON.t => unit,
-  on: (string, JSON.t => unit) => unit,
-  onFieldEvent: (string, string, JSON.t => unit) => unit,
-  confirm: unit => promise<JSON.t>,
-  deinit: unit => unit,
-  fields: ref<JSON.t>,
-  fieldEvents: ref<JSON.t>,
-}
-
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
 type fieldEntry = {
@@ -76,8 +65,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
-  let fieldEvents: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
-  let fieldEventsCallbacksRef: ref<Dict.t<Dict.t<JSON.t => unit>>> = ref(Dict.make())
   let eventCallbacksRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
   let deinitCallbacksRef: ref<array<unit => unit>> = ref([])
 
@@ -423,11 +410,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               eventHandlersRef.contents
               ->Dict.get(cardFieldStatusEvent)
               ->Option.forEach(cb => cb(eventPayload))
-              fieldEventsCallbacksRef.contents
-              ->Dict.get(fieldType)
-              ->Option.forEach(handlers =>
-                handlers->Dict.get(cardFieldStatusEvent)->Option.forEach(cb => cb(eventPayload))
-              )
               eventCallbacksRef.contents
               ->Dict.get(cardFieldStatusEvent)
               ->Option.forEach(cb => cb(eventPayload))
@@ -562,14 +544,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       fieldsRef.contents->Dict.set(fieldId, entry)
       registerField(~fields, ~fieldId, ~fieldType)
 
-      if fieldEventsCallbacksRef.contents->Dict.get(fieldType)->Option.isNone {
-        fieldEventsCallbacksRef.contents->Dict.set(fieldType, Dict.make())
-      }
-      let fieldEventsDict = fieldEvents.contents->getDictFromJson
-      let poolMeta =
-        [("fieldType", fieldType->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object
-      fieldEventsDict->Dict.set(fieldType, poolMeta)
-      fieldEvents := fieldEventsDict->JSON.Encode.object
       entry.handle
     }
   }
@@ -666,16 +640,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     }
   }
 
-  let onFieldEvent = (fieldType: string, event: string, cb: JSON.t => unit): unit => {
-    switch fieldEventsCallbacksRef.contents->Dict.get(fieldType) {
-    | Some(pool) => pool->Dict.set(event, cb)
-    | None => {
-        let fresh = Dict.make()
-        fresh->Dict.set(event, cb)
-        fieldEventsCallbacksRef.contents->Dict.set(fieldType, fresh)
-      }
-    }
-  }
 
   let deinit = (): unit => {
     fieldsRef.contents
@@ -685,8 +649,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     })
     fieldsRef := Dict.make()
     fields := Dict.make()->JSON.Encode.object
-    fieldEvents := Dict.make()->JSON.Encode.object
-    fieldEventsCallbacksRef := Dict.make()
     confirmDispatchedRef := false
     settlePendingConfirm(
       groupFailureResponse(
@@ -706,16 +668,13 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     coordinator.readyRef := false
   }
 
-  let cardForm: cardForm = {
+  let cardForm: Types.cardForm = {
     create,
     update,
     on,
-    onFieldEvent,
     confirm,
     deinit,
     fields,
-    fieldEvents,
   }
-  let publicCardForm: Types.cardForm = (cardForm :> Types.cardForm)
-  publicCardForm
+  cardForm
 }
