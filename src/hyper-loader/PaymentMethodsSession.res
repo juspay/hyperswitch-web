@@ -439,8 +439,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
             } else {
               switch cardStateUpdate {
               | Some(stateJson) =>
-                let stateDict = stateJson->getDictFromJson
-                let errorMessage = stateDict->getString("error", "")
                 let changePayload = reshapeCardStateUpdateToChangePayload(
                   ~fieldType,
                   ~stateJson,
@@ -448,18 +446,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
                 eventHandlersRef.contents
                 ->Dict.get("change")
                 ->Option.forEach(cb => cb(changePayload))
-                if errorMessage->String.length > 0 {
-                  let errorPayload = {
-                    let errDict = Dict.make()
-                    errDict->Dict.set("elementType", fieldType->JSON.Encode.string)
-                    errDict->Dict.set("iframeId", fieldId->JSON.Encode.string)
-                    errDict->Dict.set("message", errorMessage->JSON.Encode.string)
-                    errDict->JSON.Encode.object
-                  }
-                  eventHandlersRef.contents
-                  ->Dict.get("error")
-                  ->Option.forEach(cb => cb(errorPayload))
-                }
               | None => ()
               }
             }
@@ -685,27 +671,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
     eventCallbacksRef.contents->Dict.set(event, cb)
   }
 
-  let emitGroupError = (envelope: JSON.t): unit => {
-    eventCallbacksRef.contents
-    ->Dict.get("error")
-    ->Option.forEach(cb =>
-      try cb(envelope) catch {
-      | exn =>
-        Console.error2(
-          `[PaymentMethodsSession] merchant on("error") handler threw`,
-          exn->Identity.anyTypeToJson,
-        )
-      }
-    )
-  }
-
-  let settleResult = (resolve: JSON.t => unit, result: JSON.t): unit => {
-    if isErrorResult(result) {
-      emitGroupError(result)
-    }
-    resolve(result)
-  }
-
   let tokenizeVgsFlowA = (): promise<JSON.t> => {
     switch getOrCreateVgsBroker() {
     | None =>
@@ -762,7 +727,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
                 typeOverride: code === "validation_error" ? Some(ValidationError) : Some(ApiError),
               }),
             )
-            emitGroupError(envelope)
             Promise.resolve(envelope)
           } else {
             sessionStateRef := Consumed
@@ -783,7 +747,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
               typeOverride: Some(ApiError),
             }),
           )
-          emitGroupError(envelope)
           Promise.resolve(envelope)
         })
       }
@@ -846,7 +809,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
                 typeOverride: code === "validation_error" ? Some(ValidationError) : Some(ApiError),
               }),
             )
-            emitGroupError(envelope)
             Promise.resolve(envelope)
           } else {
             sessionStateRef := Consumed
@@ -867,7 +829,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
               typeOverride: Some(ApiError),
             }),
           )
-          emitGroupError(envelope)
           Promise.resolve(envelope)
         })
       }
@@ -891,7 +852,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
           typeOverride: Some(ApiError),
         }),
       )
-      emitGroupError(envelope)
       Promise.resolve(envelope)
     | Some(_mount) =>
       Promise.make((resolve, _reject) => {
@@ -905,7 +865,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
             if !isErrorResult(result) {
               sessionStateRef := Consumed
             }
-            settleResult(resolve, result)
+            resolve(result)
           }
         }
         coordinatorTokenizePendingRef := Some((tokenizeId, settle))

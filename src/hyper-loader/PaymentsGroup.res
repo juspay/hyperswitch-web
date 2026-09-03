@@ -70,7 +70,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let eventCallbacksRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
   let deinitCallbacksRef: ref<array<unit => unit>> = ref([])
 
-  let confirmDispatchedRef: ref<bool> = ref(false)
 
   let confirmingRef: ref<bool> = ref(false)
 
@@ -179,27 +178,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               Promise.resolve()
             })
             ->ignore
-          } else if dict->getBool("paymentConfirmAck", false) {
-            confirmDispatchedRef := true
-            let payload =
-              [
-                ("elementType", "paymentsCoordinator"->JSON.Encode.string),
-                ("iframeId", groupInstanceId->JSON.Encode.string),
-              ]
-              ->Dict.fromArray
-              ->JSON.Encode.object
-            eventCallbacksRef.contents->Dict.get("confirmDispatched")->Option.forEach(cb => cb(payload))
           } else if dict->getBool("paymentConfirmFail", false) {
             let errorMessage = dict->getString("errorMessage", "Card details incomplete or invalid")
-            let errorPayload = {
-              let errDict = Dict.make()
-              errDict->Dict.set("elementType", "paymentsCoordinator"->JSON.Encode.string)
-              errDict->Dict.set("iframeId", groupInstanceId->JSON.Encode.string)
-              errDict->Dict.set("code", "validation_error"->JSON.Encode.string)
-              errDict->Dict.set("message", errorMessage->JSON.Encode.string)
-              errDict->JSON.Encode.object
-            }
-            eventCallbacksRef.contents->Dict.get("error")->Option.forEach(cb => cb(errorPayload))
             settlePendingConfirm(
               ~confirmId=dict->getString("confirmId", ""),
               groupFailureResponse(
@@ -362,7 +342,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             let isReady = dict->getBool("ready", false)
             let isFocus = dict->getBool("focus", false)
             let isBlur = dict->getBool("blur", false)
-            let isConfirmAck = dict->getBool("paymentConfirmAck", false)
             let isConfirmFail = dict->getBool("paymentConfirmFail", false)
             let cardStateUpdate = dict->Dict.get("cardStateUpdate")
             let payload =
@@ -376,22 +355,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               eventHandlersRef.contents->Dict.get("focus")->Option.forEach(cb => cb(payload))
             } else if isBlur {
               eventHandlersRef.contents->Dict.get("blur")->Option.forEach(cb => cb(payload))
-            } else if isConfirmAck {
-              confirmDispatchedRef := true
-              eventHandlersRef.contents
-              ->Dict.get("confirmDispatched")
-              ->Option.forEach(cb => cb(payload))
             } else if isConfirmFail {
               let errorMessage = dict->getString("errorMessage", "Card details incomplete or invalid")
-              let errorPayload = {
-                let errDict = Dict.make()
-                errDict->Dict.set("elementType", fieldType->JSON.Encode.string)
-                errDict->Dict.set("iframeId", fieldId->JSON.Encode.string)
-                errDict->Dict.set("code", "validation_error"->JSON.Encode.string)
-                errDict->Dict.set("message", errorMessage->JSON.Encode.string)
-                errDict->JSON.Encode.object
-              }
-              eventHandlersRef.contents->Dict.get("error")->Option.forEach(cb => cb(errorPayload))
               settlePendingConfirm(
                 ~confirmId=dict->getString("confirmId", ""),
                 groupFailureResponse(
@@ -415,28 +380,15 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                 if readiness && !hasBeenReadyRef.contents {
                   hasBeenReadyRef := true
                   let readinessPayload =
-                    [
-                      ("elementType", "paymentsGroup"->JSON.Encode.string),
-                      ("confirmDispatched", confirmDispatchedRef.contents->JSON.Encode.bool),
-                    ]
+                    [("elementType", "paymentsGroup"->JSON.Encode.string)]
                     ->Dict.fromArray
                     ->JSON.Encode.object
                   eventCallbacksRef.contents
                   ->Dict.get("ready")
                   ->Option.forEach(cb => cb(readinessPayload))
-                } else if !readiness && hasBeenReadyRef.contents {
+                } else if !readiness {
                   hasBeenReadyRef := false
-                  let unreadyPayload =
-                    [
-                      ("elementType", "paymentsGroup"->JSON.Encode.string),
-                      ("confirmDispatched", confirmDispatchedRef.contents->JSON.Encode.bool),
-                    ]
-                    ->Dict.fromArray
-                    ->JSON.Encode.object
-                  eventCallbacksRef.contents
-                  ->Dict.get("unready")
-                  ->Option.forEach(cb => cb(unreadyPayload))
-                 }
+                }
                | None => ()
                }
              }
@@ -660,7 +612,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     })
     fieldsRef := Dict.make()
     fields := Dict.make()->JSON.Encode.object
-    confirmDispatchedRef := false
     settlePendingConfirm(
       groupFailureResponse(
         ~code="group_deinitialized",
