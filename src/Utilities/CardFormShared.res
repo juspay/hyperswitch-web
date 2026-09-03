@@ -1,31 +1,5 @@
 open Utils
 
-type fieldFormStatus =
-  | Complete
-  | Incomplete
-  | Invalid
-  | Focused
-  | Blurred
-
-let fieldFormStatusToString = (status: fieldFormStatus): string =>
-  switch status {
-  | Complete => "complete"
-  | Incomplete => "incomplete"
-  | Invalid => "invalid"
-  | Focused => "focused"
-  | Blurred => "blurred"
-  }
-
-let fieldFormStatusFromString = (str: string): option<fieldFormStatus> =>
-  switch str {
-  | "complete" => Some(Complete)
-  | "incomplete" => Some(Incomplete)
-  | "invalid" => Some(Invalid)
-  | "focused" => Some(Focused)
-  | "blurred" => Some(Blurred)
-  | _ => None
-  }
-
 let mapFieldTypeToInternalFieldName = (fieldType: string): string =>
   switch fieldType {
   | "cardNumber"

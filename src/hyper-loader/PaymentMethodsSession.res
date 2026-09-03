@@ -143,6 +143,24 @@ let make = (options: JSON.t): paymentMethodsSession => {
   let coordinatorListenerName = `onVaultCoordinator-${groupInstanceId}`
   let coordinatorTokenizePendingRef: ref<option<(string, JSON.t => unit)>> = ref(None)
 
+  let subscriptionEventsRef: ref<array<string>> = ref([])
+
+  let coordinatorOptions = () =>
+    [
+      (
+        "subscriptionEvents",
+        subscriptionEventsRef.contents->Array.map(JSON.Encode.string)->JSON.Encode.array,
+      ),
+    ]
+    ->Dict.fromArray
+    ->JSON.Encode.object
+
+  let postCoordinatorOptions = () =>
+    postCoordinatorCommand(
+      coordinator,
+      [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", coordinatorOptions())],
+    )
+
   let syncCoordinatorSessions = () => {
     if sessionsDataRef.contents != JSON.Encode.null && coordinator.readyRef.contents {
       coordinator.mountRef.contents->Option.forEach(mount =>
@@ -170,7 +188,10 @@ let make = (options: JSON.t): paymentMethodsSession => {
             coordinator.readyRef := true
             flushPendingPorts(coordinator)
             syncCoordinatorSessions()
+            postCoordinatorOptions()
             flushPendingCoordinatorCommands(coordinator)
+          } else if dict->getString("eventName", "") === "cardDetailsChange" {
+            eventCallbacksRef.contents->Dict.get("change")->Option.forEach(cb => cb(json))
           } else {
             switch dict->Dict.get("confirmResult") {
             | Some(result) =>
@@ -401,8 +422,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
             let isCardTokenEvent = dict->getBool("cardTokenEvent", false)
             let isCardTokenFail = dict->getBool("cardTokenFail", false)
             let isCvcTokenEvent = dict->getBool("savedCardCvcTokenEvent", false)
-            let isCardFieldStatus =
-              dict->getString("eventName", "") === SubscriptionEventTypes.cardFieldStatusEventName
             let cardStateUpdate = dict->Dict.get("cardStateUpdate")
             let payload =
               [
@@ -417,36 +436,6 @@ let make = (options: JSON.t): paymentMethodsSession => {
               eventHandlersRef.contents->Dict.get("blur")->Option.forEach(cb => cb(payload))
             } else if isCardTokenEvent || isCardTokenFail || isCvcTokenEvent {
               ()
-            } else if isCardFieldStatus {
-              let statusPayload = dict->getDictFromDict("payload")
-              let rawStatus = statusPayload->getString("status", "incomplete")
-              let status =
-                CardFormShared.fieldFormStatusFromString(rawStatus)->Option.getOr(
-                  CardFormShared.Incomplete,
-                )
-              let eventPayload = {
-                let normalizedPayload = statusPayload->Dict.copy
-                normalizedPayload->Dict.set(
-                  "status",
-                  status->CardFormShared.fieldFormStatusToString->JSON.Encode.string,
-                )
-                let envelope = Dict.make()
-                envelope->Dict.set("elementType", fieldType->JSON.Encode.string)
-                envelope->Dict.set("iframeId", fieldId->JSON.Encode.string)
-                envelope->Dict.set(
-                  "eventName",
-                  SubscriptionEventTypes.cardFieldStatusEventName->JSON.Encode.string,
-                )
-                envelope->Dict.set("payload", normalizedPayload->JSON.Encode.object)
-                envelope->JSON.Encode.object
-              }
-              let cardFieldStatusEvent = SubscriptionEventTypes.cardFieldStatusEventName
-              eventHandlersRef.contents
-              ->Dict.get(cardFieldStatusEvent)
-              ->Option.forEach(cb => cb(eventPayload))
-              eventCallbacksRef.contents
-              ->Dict.get(cardFieldStatusEvent)
-              ->Option.forEach(cb => cb(eventPayload))
             } else {
               switch cardStateUpdate {
               | Some(stateJson) =>
@@ -662,7 +651,14 @@ let make = (options: JSON.t): paymentMethodsSession => {
             }
           }
         | "hyperswitch" =>
+          let subscriptionEventsChanged = mergeSubscriptionEvents(
+            ~subscriptionEventsRef,
+            ~fieldOptions=options,
+          )
           ensureCoordinatorMounted()
+          if subscriptionEventsChanged {
+            postCoordinatorOptions()
+          }
           let fieldId = uniqueId(~prefix=fieldType)
           let entry = createFieldHandle(fieldType, options, fieldId)
           fieldsRef.contents->Dict.set(fieldId, entry)

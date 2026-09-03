@@ -114,6 +114,18 @@ let make = () => {
     ~surfaceFamily,
   )
 
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  let optionsPayment = Jotai.useAtomValue(optionAtom)
+  // The port handler below is registered once per port epoch, so it must read the
+  // emitter and the subscription opt-in through refs — both settle only once the
+  // parent's options message lands, which is after the ports are wired up.
+  let emitterRef = React.useRef(emitter)
+  emitterRef.current = emitter
+  let subscribedEventsRef = React.useRef([])
+  subscribedEventsRef.current = optionsPayment.subscriptionEvents->Option.getOr([])
+  // The handler fires on every keystroke of every field; only forward real changes.
+  let lastEmittedCardInfoRef = React.useRef("")
+
   let fieldSnapshotsRef = React.useRef(Dict.make(): Dict.t<fieldSnapshotEntry>)
   let prevFocusReadyRef = React.useRef(Dict.make(): Dict.t<bool>)
   let lastBrandRef = React.useRef("")
@@ -214,6 +226,25 @@ let make = () => {
           switch CardFormPortProtocol.decodePortFrame(frameJson) {
           | Some({kind, payload}) if kind === CardFormPortProtocol.kindFieldStateUpdate => {
               fieldSnapshotsRef.current->Dict.set(fieldName, {payload: payload})
+              if (
+                PaymentEventData.shouldEmitEvent(
+                  ~subscribedEvents=subscribedEventsRef.current,
+                  ~eventType=PaymentEventTypes.PaymentMethodInfoCard,
+                )
+              ) {
+                let cardInfo = PaymentEventData.buildCardInfo(
+                  ~cardNumber=aggregatedCardNumber(),
+                  ~expiry=aggregatedCardExpiry(),
+                  ~cvc=aggregatedCvcNumber(),
+                  ~brand=aggregatedCardBrand(),
+                )
+                let serializedCardInfo =
+                  cardInfo->PaymentEventData.cardInfoToJson->JSON.stringify
+                if serializedCardInfo !== lastEmittedCardInfoRef.current {
+                  lastEmittedCardInfoRef.current = serializedCardInfo
+                  emitterRef.current.emitCardInfo(~elementType="cardForm", ~cardInfo)
+                }
+              }
               let cardBrand = payload->getDictFromJson->getString("cardBrand", "")
               if fieldName === "cardNumber" && cardBrand !== "" && cardBrand !== lastBrandRef.current {
                 lastBrandRef.current = cardBrand

@@ -100,6 +100,31 @@ let openFieldPort = (
   flushPendingPorts(channel)
 }
 
+// Merges a field's `create()` subscriptionEvents into the group-level union.
+// Returns true when the union actually grew, so the caller can re-post the
+// coordinator's options for fields created after the coordinator was configured.
+let mergeSubscriptionEvents = (
+  ~subscriptionEventsRef: ref<array<string>>,
+  ~fieldOptions: JSON.t,
+): bool => {
+  let incoming =
+    fieldOptions
+    ->getDictFromJson
+    ->Dict.get("subscriptionEvents")
+    ->Option.flatMap(JSON.Decode.array)
+    ->Option.getOr([])
+    ->Array.filterMap(JSON.Decode.string)
+  let merged = incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
+    acc->Array.includes(event) ? acc : acc->Array.concat([event])
+  )
+  if merged->Array.length > subscriptionEventsRef.contents->Array.length {
+    subscriptionEventsRef := merged
+    true
+  } else {
+    false
+  }
+}
+
 let closeInstalledPorts = (channel: coordinatorChannel): unit => {
   channel.installedPortKeysRef.contents->Array.forEach(key => SadPortRegistry.closePort(~key))
   channel.installedPortKeysRef := []

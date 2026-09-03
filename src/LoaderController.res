@@ -149,18 +149,17 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     }
 
+    let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(
+      optionsDict,
+      "subscriptionEvents",
+    )
+    setOptionsPayment(prev => {...prev, subscriptionEvents})
+
     switch paymentMode->CardThemeType.getPaymentMode {
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
-    | Card => {
-        setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
-        let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(
-          optionsDict,
-          "subscriptionEvents",
-        )
-        setOptionsPayment(prev => {...prev, subscriptionEvents})
-      }
+    | Card => setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
     | PaymentMethodCollectElement => {
         let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)

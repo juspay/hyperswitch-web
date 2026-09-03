@@ -9,7 +9,7 @@ open PaymentEventTypes
 // Reads subscriptionEvents from Jotai — no prop drilling required.
 
 type emitter = {
-  emitCardInfo: (~cardInfo: PaymentEventData.cardInfo) => unit,
+  emitCardInfo: (~elementType: string=?, ~cardInfo: PaymentEventData.cardInfo) => unit,
   emitPaymentMethodStatus: (
     ~paymentMethod: string,
     ~paymentMethodType: string,
@@ -22,27 +22,20 @@ type emitter = {
     ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   ) => unit,
   emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
-  emitCardFieldStatus: (
-    ~elementType: string,
-    ~iframeId: string,
-    ~status: CardFormShared.fieldFormStatus,
-    ~message: option<string>,
-    ~cardBrand: string,
-  ) => unit,
 }
 
 let useSubscriptionEventEmitter = (): emitter => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
-  let emitCardInfo = (~cardInfo: PaymentEventData.cardInfo) => {
+  let emitCardInfo = (~elementType: string="payment", ~cardInfo: PaymentEventData.cardInfo) => {
     if (
-      shouldEmitEvent(
+      PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Shared(PaymentMethodInfoCard),
+        ~eventType=PaymentMethodInfoCard,
       )
     ) {
-      Utils.messageParentWindow(createCardInfoPayload(cardInfo))
+      Utils.messageParentWindow(createCardInfoPayload(~elementType, cardInfo))
     }
   }
 
@@ -53,9 +46,9 @@ let useSubscriptionEventEmitter = (): emitter => {
     ~isOneClickWallet=false,
   ) => {
     if (
-      shouldEmitEvent(
+      PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Shared(PaymentMethodStatus),
+        ~eventType=PaymentMethodStatus,
       )
     ) {
       Utils.messageParentWindow(
@@ -71,9 +64,9 @@ let useSubscriptionEventEmitter = (): emitter => {
 
   let emitBillingAddress = (~country, ~state, ~postalCode) => {
     if (
-      shouldEmitEvent(
+      PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Shared(PaymentMethodInfoBillingAddress),
+        ~eventType=PaymentMethodInfoBillingAddress,
       )
     ) {
       Utils.messageParentWindow(createBillingAddressPayload(~country, ~state, ~postalCode))
@@ -82,9 +75,9 @@ let useSubscriptionEventEmitter = (): emitter => {
 
   let emitCvcStatus = (~iframeId, ~isCvcEmpty, ~isCvcComplete) => {
     if (
-      shouldEmitEvent(
+      PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Shared(CvcStatus),
+        ~eventType=CvcStatus,
       )
     ) {
       Utils.messageParentWindow(createCvcStatusPayload(~iframeId, ~isCvcEmpty, ~isCvcComplete))
@@ -93,9 +86,9 @@ let useSubscriptionEventEmitter = (): emitter => {
 
   let emitSurcharge = (~surchargeDetails) => {
     if (
-      shouldEmitEvent(
+      PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Shared(Surcharge),
+        ~eventType=Surcharge,
       ) &&
       surchargeDetails->Option.isSome
     ) {
@@ -105,9 +98,9 @@ let useSubscriptionEventEmitter = (): emitter => {
 
   let emitOffers = (~offerDetails) => {
     if (
-      shouldEmitEvent(
+      PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Shared(Offers),
+        ~eventType=Offers,
       ) &&
       offerDetails->Option.isSome
     ) {
@@ -115,28 +108,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
-  let emitCardFieldStatus = (~elementType, ~iframeId, ~status, ~message, ~cardBrand) => {
-    if (
-      shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=CardFieldStatus,
-      )
-    ) {
-      Utils.messageParentWindow(
-        createCardFieldStatusPayload(~elementType, ~iframeId, ~status, ~message, ~cardBrand),
-      )
-    }
-  }
-
-  {
-    emitCardInfo,
-    emitPaymentMethodStatus,
-    emitBillingAddress,
-    emitCvcStatus,
-    emitSurcharge,
-    emitOffers,
-    emitCardFieldStatus,
-  }
+  {emitCardInfo, emitPaymentMethodStatus, emitBillingAddress, emitCvcStatus, emitSurcharge, emitOffers}
 }
 
 // ---------------------------------------------------------------------------
@@ -168,9 +140,9 @@ let useEmitFormStatus = (
     if enabled && !isOneClickWallet {
       let formStatusValue = PaymentEventData.computeFormStatus(~isComplete=complete, ~isEmpty=empty)
       if (
-        shouldEmitEvent(
+        PaymentEventData.shouldEmitEvent(
           ~subscribedEvents=subscribedEvents->Option.getOr([]),
-          ~eventType=Shared(FormStatus),
+          ~eventType=FormStatus,
         )
       ) {
         Utils.messageParentWindow(createFormStatusPayload(~status=formStatusValue))
@@ -193,9 +165,9 @@ let useEmitBillingAddress = () => {
 
   React.useEffect(() => {
     if (
-      shouldEmitEvent(
+      PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Shared(PaymentMethodInfoBillingAddress),
+        ~eventType=PaymentMethodInfoBillingAddress,
       )
     ) {
       Utils.messageParentWindow(createBillingAddressPayload(~country, ~state, ~postalCode=pinCode))
@@ -255,9 +227,9 @@ let useEmitPaymentMethodStatus = (
 
   React.useEffect(() => {
     if (
-      shouldEmitEvent(
+      PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Shared(PaymentMethodStatus),
+        ~eventType=PaymentMethodStatus,
       )
     ) {
       switch getPaymentMethodAndType(~paymentMethodName, ~paymentMethods, ~logger=loggerState) {
@@ -290,9 +262,9 @@ let useEmitSurchargeInfo = (
 
   React.useEffect(() => {
     if (
-      shouldEmitEvent(
+      PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Shared(Surcharge),
+        ~eventType=Surcharge,
       ) &&
       surchargeDetails->Option.isSome
     ) {
@@ -314,9 +286,9 @@ let useEmitAppliedOffersInfo = (
 
   React.useEffect(() => {
     if (
-      shouldEmitEvent(
+      PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Shared(Offers),
+        ~eventType=Offers,
       ) &&
       offerDetails->Option.isSome
     ) {

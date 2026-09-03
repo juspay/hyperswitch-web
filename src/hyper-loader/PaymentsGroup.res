@@ -84,6 +84,18 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
 
   let hasBeenReadyRef: ref<bool> = ref(false)
 
+  let subscriptionEventsRef: ref<array<string>> = ref([])
+
+  let coordinatorOptions = () =>
+    [
+      (
+        "subscriptionEvents",
+        subscriptionEventsRef.contents->Array.map(JSON.Encode.string)->JSON.Encode.array,
+      ),
+    ]
+    ->Dict.fromArray
+    ->JSON.Encode.object
+
   let clientListDataPromise = PaymentHelpers.fetchClientList(
     ~clientSecret,
     ~publishableKey,
@@ -132,7 +144,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                   ("otherElements", false->JSON.Encode.bool),
                   ("componentType", "payment"->JSON.Encode.string),
                   ("paymentOptions", coordinatorPaymentOptions),
-                  ("options", Dict.make()->JSON.Encode.object),
+                  ("options", coordinatorOptions()),
                   ("iframeId", groupInstanceId->JSON.Encode.string),
                   ("publishableKey", publishableKey->JSON.Encode.string),
                   ("endpoint", endpoint->JSON.Encode.string),
@@ -196,6 +208,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                 ~message=errorMessage,
               ),
             )
+          } else if dict->getString("eventName", "") === "cardDetailsChange" {
+            eventCallbacksRef.contents->Dict.get("change")->Option.forEach(cb => cb(json))
           } else {
             switch dict->Dict.get("submitSuccessful") {
             | Some(submitSuccessfulJson) =>
@@ -350,8 +364,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             let isBlur = dict->getBool("blur", false)
             let isConfirmAck = dict->getBool("paymentConfirmAck", false)
             let isConfirmFail = dict->getBool("paymentConfirmFail", false)
-            let isCardFieldStatus =
-              dict->getString("eventName", "") === SubscriptionEventTypes.cardFieldStatusEventName
             let cardStateUpdate = dict->Dict.get("cardStateUpdate")
             let payload =
               [
@@ -388,36 +400,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                   ~message=errorMessage,
                 ),
               )
-            } else if isCardFieldStatus {
-              let statusPayload = dict->getDictFromDict("payload")
-              let rawStatus = statusPayload->getString("status", "incomplete")
-              let status =
-                CardFormShared.fieldFormStatusFromString(rawStatus)->Option.getOr(
-                  CardFormShared.Incomplete,
-                )
-              let eventPayload = {
-                let normalizedPayload = statusPayload->Dict.copy
-                normalizedPayload->Dict.set(
-                  "status",
-                  status->CardFormShared.fieldFormStatusToString->JSON.Encode.string,
-                )
-                let envelope = Dict.make()
-                envelope->Dict.set("elementType", fieldType->JSON.Encode.string)
-                envelope->Dict.set("iframeId", fieldId->JSON.Encode.string)
-                envelope->Dict.set(
-                  "eventName",
-                  SubscriptionEventTypes.cardFieldStatusEventName->JSON.Encode.string,
-                )
-                envelope->Dict.set("payload", normalizedPayload->JSON.Encode.object)
-                envelope->JSON.Encode.object
-              }
-              let cardFieldStatusEvent = SubscriptionEventTypes.cardFieldStatusEventName
-              eventHandlersRef.contents
-              ->Dict.get(cardFieldStatusEvent)
-              ->Option.forEach(cb => cb(eventPayload))
-              eventCallbacksRef.contents
-              ->Dict.get(cardFieldStatusEvent)
-              ->Option.forEach(cb => cb(eventPayload))
             } else {
               switch cardStateUpdate {
               | Some(stateJson) =>
@@ -502,6 +484,19 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   }
 
   let doSubmitListenerName = uniqueId(~prefix="onPaymentsV2DoSubmit")
+  let isFromOurFrames = (ev: Types.event): bool => {
+    let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+    isFromIframe(
+      ~ev,
+      ~iframe=coordinator.mountRef.contents->Option.map(mount => mount.iframe),
+      ~origin=sdkOrigin,
+    ) ||
+    fieldsRef.contents
+    ->Dict.valuesToArray
+    ->Array.some(entry =>
+      isFromIframe(~ev, ~iframe=entry.iframeRef.contents->Nullable.toOption, ~origin=sdkOrigin)
+    )
+  }
   let attachSubmitRelay = () => {
     EventListenerManager.addSmartEventListener(
       "message",
@@ -509,7 +504,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         let json = eventDataJson(ev)
         let dict = json->getDictFromJson
         let isDoSubmit = dict->getBool("doSubmit", false)
-        if isDoSubmit {
+        if isDoSubmit && isFromOurFrames(ev) && !confirmingRef.contents {
           switch findFieldOfType("cardNumber") {
           | Some(_entry) =>
             postCoordinatorCommand(coordinator, [
@@ -543,7 +538,17 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         Types.defaultFieldHandle
       }
     | _ =>
+      let subscriptionEventsChanged = mergeSubscriptionEvents(
+        ~subscriptionEventsRef,
+        ~fieldOptions=options,
+      )
       ensureCoordinatorMounted()
+      if subscriptionEventsChanged {
+        postCoordinatorCommand(
+          coordinator,
+          [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", coordinatorOptions())],
+        )
+      }
       let fieldId = uniqueId(~prefix=fieldType)
       let entry = createFieldHandle(fieldType, options, fieldId)
       fieldsRef.contents->Dict.set(fieldId, entry)

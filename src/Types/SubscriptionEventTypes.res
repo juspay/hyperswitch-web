@@ -1,29 +1,16 @@
 open ErrorUtils
 open PaymentEventTypes
 
-// `PaymentEventTypes.events` is the vocabulary shared with the other SDKs via the
-// `hyperswitch-sdk-utils` submodule, so web-only events are added to this wrapper instead.
-type subscriptionEvent =
-  | Shared(PaymentEventTypes.events)
-  | CardFieldStatus
-
-let shouldEmitEvent = (
-  ~eventType: subscriptionEvent,
-  ~subscribedEvents: array<subscriptionEvent>,
-): bool => subscribedEvents->Array.some(subscribed => subscribed == eventType)
-
-let cardFieldStatusEventName = "cardFieldStatusInfo"
-
-let validSubscriptionEvents = ["surchargeInfo", "appliedOffersInfo", cardFieldStatusEventName]
+let validSubscriptionEvents = ["surchargeInfo", "appliedOffersInfo", "cardDetailsChange"]
 
 let stringToEvent = (str, key) =>
   switch str {
-  | "surchargeInfo" => Shared(Surcharge)
-  | "appliedOffersInfo" => Shared(Offers)
-  | _ if str === cardFieldStatusEventName => CardFieldStatus
+  | "surchargeInfo" => Surcharge
+  | "appliedOffersInfo" => Offers
+  | "cardDetailsChange" => PaymentMethodInfoCard
   | _ => {
       str->unknownPropValueWarning(validSubscriptionEvents, key)
-      Shared(UnknownEvent)
+      UnknownEvent
     }
   }
 
@@ -42,11 +29,11 @@ let getSubscriptionEvents = (dict, key) => {
       | Some(str) => stringToEvent(str, context)
       | None => {
           item->JSON.stringify->unknownPropValueWarning(validSubscriptionEvents, context)
-          Shared(UnknownEvent)
+          UnknownEvent
         }
       }
     )
-    ->Array.filter(opt => opt != Shared(UnknownEvent))
+    ->Array.filter(opt => opt != UnknownEvent)
 
   if mappedSubscriptionEvents->Array.length === 0 {
     None
@@ -67,11 +54,14 @@ type billingAddress = {
   state: string,
   postalCode: string,
 }
-let createCardInfoPayload = (cardInfo: PaymentEventData.cardInfo) => {
+let createCardInfoPayload = (
+  ~elementType: string="payment",
+  cardInfo: PaymentEventData.cardInfo,
+) => {
   let payload = PaymentEventData.cardInfoToJson(cardInfo)
   [
-    ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", PaymentMethodInfoCard->PaymentEventTypes.eventToString->JSON.Encode.string),
+    ("elementType", elementType->JSON.Encode.string),
+    ("eventName", "cardDetailsChange"->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -186,37 +176,3 @@ let createAppliedOffersPayload = (
     ("payload", payload),
   ]
 }
-
-let cardFieldStatusEventToJson = (
-  ~status: CardFormShared.fieldFormStatus,
-  ~message: option<string>,
-  ~cardBrand: string,
-): JSON.t => {
-  let baseFields = [
-    ("status", status->CardFormShared.fieldFormStatusToString->JSON.Encode.string),
-  ]
-  let withBrand = if cardBrand === "" {
-    baseFields
-  } else {
-    baseFields->Array.concat([("cardBrand", cardBrand->JSON.Encode.string)])
-  }
-  let withMessage = switch message {
-  | Some(errorMessage) if errorMessage !== "" =>
-    withBrand->Array.concat([("message", errorMessage->JSON.Encode.string)])
-  | _ => withBrand
-  }
-  withMessage->Dict.fromArray->JSON.Encode.object
-}
-
-let createCardFieldStatusPayload = (
-  ~elementType: string,
-  ~iframeId: string,
-  ~status: CardFormShared.fieldFormStatus,
-  ~message: option<string>,
-  ~cardBrand: string,
-) => [
-  ("elementType", elementType->JSON.Encode.string),
-  ("iframeId", iframeId->JSON.Encode.string),
-  ("eventName", cardFieldStatusEventName->JSON.Encode.string),
-  ("payload", cardFieldStatusEventToJson(~status, ~message, ~cardBrand)),
-]

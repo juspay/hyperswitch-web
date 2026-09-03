@@ -1,26 +1,12 @@
 open JotaiAtoms
 open Utils
 
-@send external addDomEventListener: (Dom.element, string, Dom.event => unit) => unit = "addEventListener"
-@send external removeDomEventListener: (Dom.element, string, Dom.event => unit) => unit = "removeEventListener"
-
 type cardFieldState = {
   localeString: LocaleStringTypes.localeStrings,
   cardProps: CardUtils.cardProps,
   expiryProps: CardUtils.expiryProps,
   cvcProps: CardUtils.cvcProps,
 }
-
-open CardFormShared
-
-type fieldFormStatus = CardFormShared.fieldFormStatus
-
-let computeFieldFormStatus = (~isValid: option<bool>, ~value: string): fieldFormStatus =>
-  switch isValid {
-  | Some(false) => Invalid
-  | Some(true) => value === "" ? Incomplete : Complete
-  | None => Incomplete
-  }
 
 let useCardFieldBase = (
   ~logger: HyperLoggerTypes.loggerMake,
@@ -67,8 +53,6 @@ let useCardFieldBase = (
   } else {
     portBrandOverride
   }
-
-  let subscriptionEmitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   let {cardProps, expiryProps, cvcProps, blurState: _} = CommonCardProps.useCardForm(
     ~logger,
@@ -183,81 +167,6 @@ let useCardFieldBase = (
     ~emitRawCvc=hasPortPlane,
     ~portKey,
   )
-
-  let elementType = switch paymentType {
-  | CardThemeType.CardNumberElement => "cardNumber"
-  | CardThemeType.CardExpiryElement => "cardExpiry"
-  | CardThemeType.CardCVCElement => "cardCvc"
-  | _ => "card"
-  }
-  let (relevantIsValid, relevantValue, relevantError) = switch paymentType {
-  | CardThemeType.CardNumberElement => (
-      cardProps.isCardValid,
-      cardProps.cardNumber,
-      cardProps.cardError,
-    )
-  | CardThemeType.CardExpiryElement => (
-      expiryProps.isExpiryValid,
-      expiryProps.cardExpiry,
-      expiryProps.expiryError,
-    )
-  | CardThemeType.CardCVCElement => (
-      cvcProps.isCVCValid,
-      cvcProps.cvcNumber,
-      cvcProps.cvcError,
-    )
-  | _ => (None, "", "")
-  }
-  React.useEffect(() => {
-    if keys.iframeId !== "" && keys.iframeId !== "no-element" {
-      let status = computeFieldFormStatus(~isValid=relevantIsValid, ~value=relevantValue)
-      let message = switch status {
-      | Invalid => relevantError === "" ? None : Some(relevantError)
-      | _ => None
-      }
-      subscriptionEmitter.emitCardFieldStatus(
-        ~elementType,
-        ~iframeId=keys.iframeId,
-        ~status,
-        ~message,
-        ~cardBrand=cardProps.cardBrand,
-      )
-    }
-    None
-  }, (relevantIsValid, relevantValue, relevantError, keys.iframeId, parentURL))
-
-  React.useEffect(() => {
-    let currentInput = focusTarget.current->Nullable.toOption
-    switch currentInput {
-    | Some(input) => {
-        let onFocus = _ =>
-          subscriptionEmitter.emitCardFieldStatus(
-            ~elementType,
-            ~iframeId=keys.iframeId,
-            ~status=Focused,
-            ~message=None,
-            ~cardBrand=cardProps.cardBrand,
-          )
-        let onBlur = _ =>
-          subscriptionEmitter.emitCardFieldStatus(
-            ~elementType,
-            ~iframeId=keys.iframeId,
-            ~status=Blurred,
-            ~message=None,
-            ~cardBrand=cardProps.cardBrand,
-          )
-        addDomEventListener(input, "focus", onFocus)
-        addDomEventListener(input, "blur", onBlur)
-        Some(
-          () => {
-            removeDomEventListener(input, "focus", onFocus)
-            removeDomEventListener(input, "blur", onBlur)
-          },
-        )
-      }
-    | None => None
-    }
-  }, (focusTarget, keys.iframeId, parentURL, elementType, cardProps.cardBrand))
 
   {localeString, cardProps, expiryProps, cvcProps}
 }
