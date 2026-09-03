@@ -17,7 +17,6 @@ let defaultErrorMessage = (~code: string): string =>
   switch code {
   | "session_expired" => "Payment method session has expired"
   | "session_consumed" => "Payment method session has already been consumed or deinitialized"
-  | "confirm_in_progress" => "A confirm is already in flight for this payment method session"
   | "tokenization_in_progress" =>
     "A tokenization is already in flight for this payment method session"
   | "incomplete_field_set" =>
@@ -51,8 +50,7 @@ let makeErrorResult = (
     | "session_expired"
     | "session_consumed"
     | "tokenization_failed"
-    | "tokenization_in_progress"
-    | "confirm_in_progress" => ApiError
+    | "tokenization_in_progress" => ApiError
     | _ => CardError
     }
   }

@@ -54,7 +54,7 @@ type fieldHandle = {
 type cardForm = {
   create: (string, JSON.t) => fieldHandle,
   on: (string, JSON.t => unit) => unit,
-  confirm: unit => promise<JSON.t>,
+  confirmPayment: unit => promise<JSON.t>,
   deinit: unit => unit,
   update: JSON.t => unit,
   fields: ref<JSON.t>,
@@ -225,7 +225,7 @@ let defaultFieldHandle: fieldHandle = {
 let defaultCardForm: cardForm = {
   create: (_, _) => defaultFieldHandle,
   on: (_, _) => (),
-  confirm: () => Promise.resolve(vaultSDKNotLoadedError),
+  confirmPayment: () => Promise.resolve(vaultSDKNotLoadedError),
   deinit: () => (),
   update: _ => (),
   fields: ref(Dict.make()->JSON.Encode.object),

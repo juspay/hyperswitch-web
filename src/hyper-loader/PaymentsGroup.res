@@ -603,13 +603,13 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       )
     })
 
-  let confirm = (): promise<JSON.t> => {
+  let confirmPayment = (): promise<JSON.t> => {
     if confirmingRef.contents {
       Promise.resolve(
         groupFailureResponse(
           ~code="confirm_in_progress",
           ~errorType="api_error",
-          ~message="confirm already in progress",
+          ~message="confirmPayment() already in progress",
         ),
       )
     } else {
@@ -622,7 +622,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             groupFailureResponse(
               ~code="validation_error",
               ~errorType="validation_error",
-              ~message="saved-card CVC flow requires a token — call cardForm.create(\"cardCvc\", {savedCard: {token, brand}}) or field.update({savedCard: {token, brand}}) before confirm()",
+              ~message="saved-card CVC flow requires a token — call cardForm.create(\"cardCvc\", {savedCard: {token, brand}}) or field.update({savedCard: {token, brand}}) before confirmPayment()",
             ),
           )
         } else {
@@ -654,7 +654,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       groupFailureResponse(
         ~code="group_deinitialized",
         ~errorType="server_error",
-        ~message="cardForm.deinit() was called while a confirm was in flight — the payment may still have gone through; check the intent status",
+        ~message="cardForm.deinit() was called while confirmPayment() was in flight — the payment may still have gone through; check the intent status",
       ),
     )
     confirmingRef := false
@@ -672,7 +672,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     create,
     update,
     on,
-    confirm,
+    confirmPayment,
     deinit,
     fields,
   }

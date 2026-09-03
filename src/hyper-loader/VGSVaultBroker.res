@@ -287,7 +287,12 @@ let applyMerchantOptionOverrides = (~basis: JSON.t, ~options: JSON.t): JSON.t =>
   let basisDict = basis->getDictFromJson->Dict.copy
   let optionsDict = options->getDictFromJson
   merchantOverridableStringKeys->Array.forEach(key => {
-    switch optionsDict->getOptionString(key)->getNonEmptyOption {
+    // `placeholder: ""` is a request for no placeholder, so it applies; an empty
+    // colour or label is not, so those keep the non-empty guard.
+    let supplied = key === "placeholder"
+      ? optionsDict->getOptionString(key)
+      : optionsDict->getOptionString(key)->getNonEmptyOption
+    switch supplied {
     | Some(value) => basisDict->Dict.set(key, value->JSON.Encode.string)
     | None => ()
     }
