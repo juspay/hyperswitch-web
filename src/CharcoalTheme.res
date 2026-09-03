@@ -49,7 +49,7 @@ let charcoal = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#E1E5EA",
-  cardFieldHeight: "48px",
+  inputFieldHeight: "48px",
 }
 
 let charcoalRules = theme =>

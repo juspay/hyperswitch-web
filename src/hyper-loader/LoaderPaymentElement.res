@@ -535,12 +535,12 @@ let make = (
       let classesBase = optionsDict->getClasses("base")
       let additionalIframeStyle = switch (fieldName, componentType->Utils.isOtherElements) {
       | (Some(_), _) =>
-        let cardFieldHeight =
+        let inputFieldHeight =
           optionsDict
           ->getDictFromDict("appearance")
           ->getDictFromDict("variables")
-          ->getString("cardFieldHeight", "48px")
-        `height: ${cardFieldHeight};`
+          ->getString("inputFieldHeight", "48px")
+        `height: ${inputFieldHeight};`
       | (None, true) => "height: 3rem;"
       | (None, false) => "height: 0;"
       }

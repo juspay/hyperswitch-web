@@ -259,7 +259,7 @@ let computeVGSBaseOptions = (~fieldType: string, ~options: JSON.t): JSON.t => {
     VGSConstants.cardExpiryOptions(placeholder)->Identity.anyTypeToJson
   | "cardCvc" =>
     let savedCardDict = optionsDict->getDictFromDict("savedCard")
-    let savedCardBrand = savedCardDict->getString("brand", "")
+    let savedCardBrand = savedCardDict->CardFormGroupShared.savedCardNetwork
     if savedCardBrand->String.length > 0 {
       let normalizedBrand = CardUtils.normalizeCardBrand(savedCardBrand)
       VGSConstants.savedCardCvcOptions(normalizedBrand)->Identity.anyTypeToJson
@@ -581,21 +581,21 @@ let make = (
         let computedOptions = computeFieldOptions(~fieldType, ~options)
         let vgsName = computedOptions->getDictFromJson->getString("name", "")
 
-        let cardFieldHeight =
+        let inputFieldHeight =
           options
           ->getDictFromJson
           ->getDictFromDict("appearance")
           ->getDictFromDict("variables")
-          ->getString("cardFieldHeight", "48px")
+          ->getString("inputFieldHeight", "48px")
           ->String.trim
-        let cardFieldHeight = if cardFieldHeight == "" || cardFieldHeight == "null" {
+        let inputFieldHeight = if inputFieldHeight == "" || inputFieldHeight == "null" {
           Console.warn2(
-            `[VGSVaultBroker] appearance.variables.cardFieldHeight was empty/"null"; falling back to 48px. Received:`,
-            cardFieldHeight,
+            `[VGSVaultBroker] appearance.variables.inputFieldHeight was empty/"null"; falling back to 48px. Received:`,
+            inputFieldHeight,
           )
           "48px"
         } else {
-          cardFieldHeight
+          inputFieldHeight
         }
 
         try {
@@ -603,7 +603,7 @@ let make = (
           ->Nullable.toOption
           ->Option.forEach(el => {
             let elementStyle = el->Window.style
-            elementStyle->setStyleProperty("height", cardFieldHeight)
+            elementStyle->setStyleProperty("height", inputFieldHeight)
             elementStyle->setStyleProperty("width", "100%")
           })
         } catch {

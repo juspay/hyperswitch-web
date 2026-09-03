@@ -50,7 +50,7 @@ let soft = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#303031",
-  cardFieldHeight: "48px",
+  inputFieldHeight: "48px",
 }
 
 let softRules = theme =>

@@ -50,7 +50,7 @@ let noThemeValues = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "",
-  cardFieldHeight: "48px",
+  inputFieldHeight: "48px",
 }
 
 let noThemeValuesRules = _ => Dict.make()->JSON.Encode.object

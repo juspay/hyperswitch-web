@@ -294,7 +294,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let buildMountConfig = (~options: JSON.t, ~fieldId: string) => {
     let fieldOptionsDict = options->getDictFromJson
     let savedCardDict = fieldOptionsDict->getDictFromDict("savedCard")
-    let savedCardBrand = savedCardDict->getString("brand", "")
+    let savedCardBrand = savedCardDict->savedCardNetwork
     let appearance = resolveFieldAppearance(~fieldOptionsDict, ~groupAppearance=appearance)
     buildFieldMountConfig(
       ~paymentOptions=paymentsPaymentOptions(~appearance),
@@ -324,7 +324,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     let listenerName = `onPaymentsV2Field-${fieldId}`
 
     let savedCardTokenRef = ref(
-      options->getDictFromJson->getDictFromDict("savedCard")->getString("token", ""),
+      options->getDictFromJson->getDictFromDict("savedCard")->getString("paymentMethodToken", ""),
     )
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
       coordinator->openFieldPort(
@@ -461,7 +461,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       ~listenerName,
       ~eventHandlersRef,
       ~update=newOptions => {
-        let savedCardToken = postFieldUpdate(~iframeRef, ~newOptions)->getString("token", "")
+        let savedCardToken =
+          postFieldUpdate(~iframeRef, ~newOptions)->getString("paymentMethodToken", "")
         if savedCardToken !== "" {
           savedCardTokenRef := savedCardToken
         }
@@ -632,7 +633,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             groupFailureResponse(
               ~code="validation_error",
               ~errorType="validation_error",
-              ~message="saved-card CVC flow requires a token — call cardForm.create(\"cardCvc\", {savedCard: {token, brand}}) or field.update({savedCard: {token, brand}}) before confirmPayment()",
+              ~message="saved-card CVC flow requires a token — call cardForm.create(\"cardCvc\", {savedCard: {paymentMethodToken, paymentMethodData: {card: {cardNetwork}}}}) or field.update() with the same shape before confirmPayment()",
             ),
           )
         } else {
@@ -643,7 +644,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           groupFailureResponse(
             ~code="validation_error",
             ~errorType="validation_error",
-            ~message="no card fields mounted — mount cardNumber (+ cardExpiry/cardCvc) for a new card, or only cardCvc with {savedCard: {token, brand}} for saved-card recollect",
+            ~message="no card fields mounted — mount cardNumber (+ cardExpiry/cardCvc) for a new card, or only cardCvc with {savedCard: {paymentMethodToken, paymentMethodData: {card: {cardNetwork}}}} for saved-card recollect",
           ),
         )
       }

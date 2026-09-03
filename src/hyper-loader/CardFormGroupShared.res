@@ -217,6 +217,12 @@ let buildFieldMountConfig = (
   ->Dict.fromArray
 }
 
+let savedCardNetwork = (savedCardDict: Dict.t<JSON.t>): string =>
+  savedCardDict
+  ->getDictFromDict("paymentMethodData")
+  ->getDictFromDict("card")
+  ->getString("cardNetwork", "")
+
 let postFieldUpdate = (
   ~iframeRef: ref<Nullable.t<Dom.element>>,
   ~newOptions: JSON.t,
@@ -228,7 +234,7 @@ let postFieldUpdate = (
     ]->Dict.fromArray,
   )
   let savedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
-  let brand = savedCardDict->getString("brand", "")
+  let brand = savedCardDict->savedCardNetwork
   if brand !== "" {
     iframeRef.contents->Window.iframePostMessage(
       [("savedCardBrand", brand->JSON.Encode.string)]->Dict.fromArray,

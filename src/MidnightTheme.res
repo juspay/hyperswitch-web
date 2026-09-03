@@ -49,7 +49,7 @@ let midnight = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#24252D",
-  cardFieldHeight: "48px",
+  inputFieldHeight: "48px",
 }
 
 let midnightRules = theme =>

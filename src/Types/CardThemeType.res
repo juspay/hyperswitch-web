@@ -74,7 +74,7 @@ type themeClass = {
   buttonTextFontWeight: string,
   buttonBorderWidth: string,
   disabledFieldColor: string,
-  cardFieldHeight: string,
+  inputFieldHeight: string,
 }
 type appearance = {
   theme: theme,

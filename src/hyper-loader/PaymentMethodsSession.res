@@ -354,7 +354,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
   let buildMountConfig = (~options: JSON.t, ~fieldId: string) => {
     let fieldOptionsDict = options->getDictFromJson
     let savedCardDict = fieldOptionsDict->getDictFromDict("savedCard")
-    let savedCardBrand = savedCardDict->getString("brand", "")
+    let savedCardBrand = savedCardDict->savedCardNetwork
     let appearance = resolveFieldAppearance(~fieldOptionsDict, ~groupAppearance)
     buildFieldMountConfig(
       ~paymentOptions=buildPaymentOptions(
@@ -388,7 +388,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
     let eventHandlersRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
 
     let savedCardDict = options->getDictFromJson->getDictFromDict("savedCard")
-    let savedCardBrandRef = ref(savedCardDict->getString("brand", ""))
+    let savedCardBrandRef = ref(savedCardDict->savedCardNetwork)
 
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
       coordinator->openFieldPort(
@@ -486,7 +486,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
       ~eventHandlersRef,
       ~update=newOptions => {
         let newSavedCardDict = postFieldUpdate(~iframeRef, ~newOptions)
-        let brand = newSavedCardDict->getString("brand", "")
+        let brand = newSavedCardDict->savedCardNetwork
         if brand !== "" {
           savedCardBrandRef := brand
         }
@@ -816,7 +816,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
             ~outcome=Failure({
               code: "validation_error",
               message: Some(
-                "cardCvc field not mounted — for saved-card recollect, call cardForm.create(\"cardCvc\", {savedCard: {brand, last4}}) then mount() before tokenize()",
+                "cardCvc field not mounted — for saved-card recollect, call cardForm.create(\"cardCvc\", {savedCard: {paymentMethodData: {card: {cardNetwork}}}}) then mount() before tokenize()",
               ),
               locale,
               typeOverride: None,
