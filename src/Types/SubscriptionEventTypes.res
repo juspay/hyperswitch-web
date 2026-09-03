@@ -1,12 +1,13 @@
 open ErrorUtils
 open PaymentEventTypes
 
-let validSubscriptionEvents = ["surchargeInfo", "appliedOffersInfo"]
+let validSubscriptionEvents = ["surchargeInfo", "appliedOffersInfo", "cardDetailsChange"]
 
 let stringToEvent = (str, key) =>
   switch str {
   | "surchargeInfo" => Surcharge
   | "appliedOffersInfo" => Offers
+  | "cardDetailsChange" => PaymentMethodInfoCard
   | _ => {
       str->unknownPropValueWarning(validSubscriptionEvents, key)
       UnknownEvent
@@ -53,11 +54,14 @@ type billingAddress = {
   state: string,
   postalCode: string,
 }
-let createCardInfoPayload = (cardInfo: PaymentEventData.cardInfo) => {
+let createCardInfoPayload = (
+  ~elementType: string="payment",
+  cardInfo: PaymentEventData.cardInfo,
+) => {
   let payload = PaymentEventData.cardInfoToJson(cardInfo)
   [
-    ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", PaymentMethodInfoCard->PaymentEventTypes.eventToString->JSON.Encode.string),
+    ("elementType", elementType->JSON.Encode.string),
+    ("eventName", "cardDetailsChange"->JSON.Encode.string),
     ("payload", payload),
   ]
 }
