@@ -19,6 +19,7 @@ let defaultErrorMessage = (~code: string): string =>
   | "session_consumed" => "Payment method session has already been consumed or deinitialized"
   | "tokenization_in_progress" =>
     "A tokenization is already in flight for this payment method session"
+  | "confirm_in_progress" => "A confirm is already in flight for this payment method session"
   | "incomplete_field_set" =>
     "mount {cardNumber,cardExpiry,cardCvc} for tokenize or only cardCvc for saved-card recollect"
   | "validation_error" => "Validation failed for one or more fields"
@@ -50,7 +51,8 @@ let makeErrorResult = (
     | "session_expired"
     | "session_consumed"
     | "tokenization_failed"
-    | "tokenization_in_progress" => ApiError
+    | "tokenization_in_progress"
+    | "confirm_in_progress" => ApiError
     | _ => CardError
     }
   }

@@ -149,11 +149,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     }
 
-    let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(
-      optionsDict,
-      "subscriptionEvents",
-    )
-    setOptionsPayment(prev => {...prev, subscriptionEvents})
+    switch optionsDict->Dict.get("subscriptionEvents") {
+    | Some(_) => {
+        let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(
+          optionsDict,
+          "subscriptionEvents",
+        )
+        setOptionsPayment(prev => {...prev, subscriptionEvents})
+      }
+    | None => ()
+    }
 
     switch paymentMode->CardThemeType.getPaymentMode {
     | CardNumberElement
@@ -175,7 +180,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PaymentMethodsSDK
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
-        setOptionsPayment(_ => paymentOptions)
+        setOptionsPayment(prev => {...paymentOptions, subscriptionEvents: prev.subscriptionEvents})
         optionsCallback(paymentOptions)
       }
     | _ => ()
