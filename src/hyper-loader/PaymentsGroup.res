@@ -10,6 +10,7 @@ type groupConfig = {
   endpoint: option<string>,
   appearance: option<JSON.t>,
   locale: option<string>,
+  logger: HyperLoggerTypes.loggerMake,
 }
 
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
@@ -64,6 +65,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   }
   let appearance = config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
   let locale = config.locale->Option.getOr("en")
+  let logger = config.logger
+  logger.setLogInfo(~value="Card form created", ~eventName=CARD_FORM_FLOW)
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
@@ -98,7 +101,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let clientListDataPromise = PaymentHelpers.fetchClientList(
     ~clientSecret,
     ~publishableKey,
-    ~logger=LoggerUtils.defaultLoggerConfig,
+    ~logger,
     ~customPodUri="",
     ~endpoint,
     ~sdkAuthorization=Some(sdkAuthorization)->getNonEmptyOption,
@@ -419,6 +422,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           savedCardTokenRef := savedCardToken
         }
       },
+      ~logger,
     )
 
     attachFieldListener()
@@ -491,6 +495,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         Types.defaultFieldHandle
       }
     | _ =>
+      logger.setLogInfo(~value=`${fieldType} created`, ~eventName=CARD_FORM_FLOW)
       let subscriptionEventsChanged = mergeSubscriptionEvents(
         ~subscriptionEventsRef,
         ~fieldOptions=options,
@@ -538,6 +543,18 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     eventCallbacksRef.contents->Dict.set(event, cb)
   }
 
+  // Only the outcome and its error code are logged — never the card values or the payment token.
+  let logConfirmOutcome = (result: JSON.t) =>
+    switch result->getDictFromJson->getDictFromDict("error")->Dict.get("code") {
+    | Some(code) =>
+      logger.setLogInfo(
+        ~value=`confirmPayment failed: ${code->JSON.Decode.string->Option.getOr("")}`,
+        ~eventName=CARD_FORM_FLOW,
+        ~logType=ERROR,
+      )
+    | None => logger.setLogInfo(~value="confirmPayment succeeded", ~eventName=CARD_FORM_FLOW)
+    }
+
   let dispatchConfirm = (~flow: string, ~paymentToken: option<string>): promise<JSON.t> =>
     Promise.make((resolve, _reject) => {
       let confirmId = `${Date.now()->Float.toString}-${Math.random()->Float.toString}`
@@ -567,7 +584,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     })
 
   let confirmPayment = (): promise<JSON.t> => {
-    if confirmingRef.contents {
+    logger.setLogInfo(~value="confirmPayment initiated", ~eventName=CARD_FORM_FLOW)
+    let outcome = if confirmingRef.contents {
       Promise.resolve(
         groupFailureResponse(
           ~code="confirm_in_progress",
@@ -601,10 +619,15 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         )
       }
     }
+    outcome->Promise.thenResolve(result => {
+      logConfirmOutcome(result)
+      result
+    })
   }
 
 
   let deinit = (): unit => {
+    logger.setLogInfo(~value="Card form deinitialized", ~eventName=CARD_FORM_FLOW)
     fieldsRef.contents
     ->Dict.valuesToArray
     ->Array.forEach(entry => {
