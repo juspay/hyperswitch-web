@@ -8,8 +8,10 @@ type vgsCollectGlobal = {create: (string, string, JSON.t => unit) => JSON.t}
 @send external fieldOn: (JSON.t, string, JSON.t => unit) => unit = "on"
 @send external fieldUpdate: (JSON.t, JSON.t) => unit = "update"
 @send external fieldDelete: JSON.t => unit = "delete"
+@send external fieldClear: JSON.t => unit = "clear"
 @get external fieldUpdateHandler: JSON.t => Nullable.t<JSON.t => unit> = "update"
 @get external fieldDeleteHandler: JSON.t => Nullable.t<unit => unit> = "delete"
+@get external fieldClearHandler: JSON.t => Nullable.t<unit => unit> = "clear"
 
 // `JSON.stringify` really returns `undefined` for `undefined`, functions and symbols.
 @val @scope("JSON") external stringifyNullable: JSON.t => Nullable.t<string> = "stringify"
@@ -343,6 +345,14 @@ let filterFieldUpdateOptions = (~options: JSON.t): JSON.t => {
   filtered->JSON.Encode.object
 }
 
+let vgsFieldBrand = (state: JSON.t): string => {
+  let stateDict = state->getDictFromJson
+  switch stateDict->getString("cardBrand", "") {
+  | "" => stateDict->getString("cardType", "")
+  | brand => brand
+  }
+}
+
 let buildFieldEventPayload = (~fieldType: string, ~state: JSON.t): JSON.t => {
   let stateDict = state->getDictFromJson
   let empty = stateDict->getBool("isEmpty", true)
@@ -351,12 +361,7 @@ let buildFieldEventPayload = (~fieldType: string, ~state: JSON.t): JSON.t => {
   | Some(message) => message
   | None => state->vgsFieldErrorMessage->Option.getOr("")
   }
-  let brand = stateDict->getString("cardBrand", "")
-  let brand = if brand === "" {
-    stateDict->getString("cardType", "")
-  } else {
-    brand
-  }
+  let brand = state->vgsFieldBrand
   let payloadDict = Dict.make()
   payloadDict->Dict.set("empty", empty->JSON.Encode.bool)
   payloadDict->Dict.set("complete", (!empty && valid)->JSON.Encode.bool)
@@ -434,6 +439,56 @@ let make = (
       }
     )
 
+  let lastCardNumberBrandRef = ref("")
+
+  let clearVgsField = (entry: fieldEntry): unit =>
+    switch entry.fieldHandle {
+    | Some(vgsFieldHandle) =>
+      try {
+        switch vgsFieldHandle->fieldClearHandler->Nullable.toOption {
+        | Some(_) => vgsFieldHandle->fieldClear
+        | None =>
+          Console.warn(
+            `[VGSVaultBroker] ${entry.fieldType} kept its value — the VGS field has no clear() method`,
+          )
+        }
+      } catch {
+      | exn =>
+        Console.error2(
+          `[VGSVaultBroker] clear(${entry.fieldType}) threw`,
+          exn->Identity.anyTypeToJson,
+        )
+      }
+    | None => ()
+    }
+
+  // CommonCardProps.changeCardNumber clears expiry and CVC in place when the number is wiped;
+  // VGS hosts each field itself, so the broker relays it off the form state channel. The brand
+  // stands in for that code's prevCardBrandRef guard.
+  let clearDependentFieldsOnEmptiedCardNumber = (): unit =>
+    fieldsRef.contents
+    ->Dict.valuesToArray
+    ->Array.find(entry => entry.fieldType === "cardNumber")
+    ->Option.flatMap(entry => formStateRef.contents->Dict.get(entry.vgsName))
+    ->Option.forEach(state =>
+      if state->getDictFromJson->getBool("isEmpty", true) {
+        if lastCardNumberBrandRef.contents !== "" {
+          lastCardNumberBrandRef := ""
+          fieldsRef.contents
+          ->Dict.valuesToArray
+          ->Array.filter(entry =>
+            entry.fieldType === "cardExpiry" || entry.fieldType === "cardCvc"
+          )
+          ->Array.forEach(clearVgsField)
+        }
+      } else {
+        switch state->vgsFieldBrand {
+        | "" => ()
+        | brand => lastCardNumberBrandRef := brand
+        }
+      }
+    )
+
   let createForm = (): promise<JSON.t> =>
     switch formRef.contents {
     | Some(form) => Promise.resolve(form)
@@ -448,6 +503,7 @@ let make = (
             let onFormStateChange: JSON.t => unit = state => {
               formStateRef := state->getDictFromJson
               publishFieldStates()
+              clearDependentFieldsOnEmptiedCardNumber()
             }
             let form: JSON.t = switch vgsCollect->Nullable.toOption {
             | Some(collect) => collect.create(vaultId, environment, onFormStateChange)

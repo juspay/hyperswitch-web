@@ -1027,7 +1027,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
     }
   }
 
-  let cardForm = (): vaultCardForm => {
+  let createCardForm = (): vaultCardForm => {
     create,
     on,
     tokenize,
@@ -1037,7 +1037,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
   }
 
   {
-    cardForm,
+    createCardForm,
     update,
     on,
     deinit,

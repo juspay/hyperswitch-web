@@ -99,6 +99,19 @@ let useCardFieldBase = (
     handleMessage(handleFocusEvent, "")
   }, (focusTarget, parentURL))
 
+  let clearFieldValue = () =>
+    switch paymentType {
+    | CardThemeType.CardExpiryElement => {
+        expiryProps.setCardExpiry(_ => "")
+        expiryProps.setIsExpiryValid(_ => None)
+      }
+    | CardThemeType.CardCVCElement => {
+        cvcProps.setCvcNumber(_ => "")
+        cvcProps.setIsCVCValid(_ => None)
+      }
+    | _ => ()
+    }
+
   React.useEffect(() => {
     if portKey !== "" {
       switch SadPortRegistry.getPort(~key=portKey) {
@@ -112,6 +125,8 @@ let useCardFieldBase = (
               CardUtils.focusRef(focusTarget)
             } else if kind === CardFormPortProtocol.kindDetectedCardBrand {
               setPortBrandOverride(_ => payload->JSON.Decode.string->Option.getOr(""))
+            } else if kind === CardFormPortProtocol.kindClearField {
+              clearFieldValue()
             } else {
               Console.warn(`[CommonCardFieldHooks] dropped port frame on unknown kind "${kind}" (portKey "${portKey}")`)
             }
