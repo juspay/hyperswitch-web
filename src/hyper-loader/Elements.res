@@ -1599,6 +1599,7 @@ let make = (
             endpoint: Some(endpoint),
             appearance: Some(appearance),
             locale: locale->JSON.Decode.string,
+            logger,
           },
         )
         cardFormRef := Some(group)

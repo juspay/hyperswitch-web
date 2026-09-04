@@ -838,7 +838,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         completeUpdateIntent,
         initiateUpdateIntent,
         confirmTokenization: confirmPayment,
-        paymentMethodsSession: PaymentMethodsSession.make,
+        paymentMethodsSession: options => PaymentMethodsSession.make(options, ~logger),
       }
       Window.setHyper(Window.window, returnObject)
       returnObject
