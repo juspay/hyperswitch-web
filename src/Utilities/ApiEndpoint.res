@@ -1,18 +1,92 @@
 let switchToInteg = false
 let isLocal = false
 let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
-
+// General backend endpoint override (set by customBackendUrl)
 let apiEndPoint: ref<option<string>> = ref(None)
+
+// Per-endpoint specific overrides (set by customEndpoints fields)
+let backendOverrideEndPoint: ref<option<string>> = ref(None)
+let assetsEndPoint: ref<option<string>> = ref(None)
+let sdkConfigEndPoint: ref<option<string>> = ref(None)
+let confirmOverrideEndPoint: ref<option<string>> = ref(None)
+let loggingOverrideEndPoint: ref<option<string>> = ref(None)
+let platformPublishableKey: ref<option<string>> = ref(None)
 
 let setApiEndPoint = str => {
   apiEndPoint := Some(str)
 }
 
+let setBackendOverrideEndPoint = str => {
+  backendOverrideEndPoint := Some(str)
+}
+
+let setAssetsEndPoint = str => {
+  assetsEndPoint := Some(str)
+}
+
+let setSdkConfigEndPoint = str => {
+  sdkConfigEndPoint := Some(str)
+}
+
+let setConfirmOverrideEndPoint = str => {
+  confirmOverrideEndPoint := Some(str)
+}
+
+let setLoggingOverrideEndPoint = str => {
+  loggingOverrideEndPoint := Some(str)
+}
+
+let setPlatformPublishableKey = key => {
+  platformPublishableKey := if key === "" {
+      None
+    } else {
+      Some(key)
+    }
+}
+
+let getPlatformPublishableKey = () => platformPublishableKey.contents
+
+let getLoggingEndPoint = () =>
+  switch loggingOverrideEndPoint.contents {
+  | Some(str) => str
+  | None => GlobalVars.logEndpoint
+  }
+
+let getAssetsEndPoint = () =>
+  switch (assetsEndPoint.contents, apiEndPoint.contents) {
+  | (Some(str), _) => str
+  | (None, Some(str)) => str
+  | (None, None) => GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
+  }
+
+let getSdkConfigEndPoint = (~publishableKey="", ~customBackendBaseUrl=None) => {
+  let testMode = publishableKey->String.startsWith("pk_snd_")
+  switch (
+    sdkConfigEndPoint.contents,
+    backendOverrideEndPoint.contents,
+    apiEndPoint.contents,
+    customBackendBaseUrl,
+  ) {
+  | (Some(str), _, _, _) => str
+  | (None, Some(str), _, _) => str
+  | (None, None, Some(str), _) => str
+  | (None, None, None, Some(str)) => str
+  | (None, None, None, None) =>
+    GlobalVars.isProd && testMode ? "https://beta.hyperswitch.io/api" : GlobalVars.backendEndPoint
+  }
+}
+
 let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false) => {
   let testMode = publishableKey->String.startsWith("pk_snd_")
-  switch apiEndPoint.contents {
-  | Some(str) => str
-  | None =>
+  let specificOverride = if isConfirmCall {
+    confirmOverrideEndPoint.contents
+  } else {
+    backendOverrideEndPoint.contents
+  }
+  switch (specificOverride, apiEndPoint.contents) {
+  | (Some(str), _) => str
+  | (None, Some(str)) => str
+  | (None, None) =>
     let backendEndPoint = isConfirmCall ? GlobalVars.confirmEndPoint : GlobalVars.backendEndPoint
     GlobalVars.isProd && testMode ? "https://beta.hyperswitch.io/api" : backendEndPoint
   }

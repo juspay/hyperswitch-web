@@ -54,7 +54,7 @@ let fetchCountryStateFromS3 = endpoint => {
   ->catch(_ => reject(Exn.anyToExnInternal("Failed to fetch country state data")))
 }
 
-let getBaseUrl = GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
+let getBaseUrl = ApiEndpoint.getAssetsEndPoint()
 
 let getCountryStateData = async (
   ~locale="en",

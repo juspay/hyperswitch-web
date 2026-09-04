@@ -619,19 +619,38 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         if dict->getDictIsSome("isSamsungPayReady") {
           setIsSamsungPayReady(_ => dict->getBool("isSamsungPayReady", false))
         }
-        if (
-          dict->getDictIsSome("customBackendUrl") &&
-            dict
-            ->getString("customBackendUrl", "")
-            ->String.length > 0
-        ) {
-          if dict->getDictIsSome("endpoint") {
-            switch dict->getString("endpoint", "") {
-            | "" => ()
-            | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
-            }
-          }
+
+        // Apply the parent-computed general backend endpoint (set via legacy customBackendUrl).
+        // customEndpoints.customBackendEndpoint overrides backend calls only — not other endpoints.
+        switch dict->getString("endpoint", "") {
+        | "" => ()
+        | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
         }
+
+        // Confirm-specific endpoint forwarded separately so isConfirmCall=true resolves correctly.
+        switch dict->getString("confirmEndpoint", "") {
+        | "" => ()
+        | endpoint => ApiEndpoint.setConfirmOverrideEndPoint(endpoint)
+        }
+        // Logging endpoint override forwarded so beacon calls use the merchant-configured URL.
+        switch dict->getString("loggingEndpoint", "") {
+        | "" => ()
+        | endpoint => ApiEndpoint.setLoggingOverrideEndPoint(endpoint)
+        }
+        // Assets/S3 endpoint override forwarded so country-state data fetches use the correct URL.
+        switch dict->getString("assetsEndpoint", "") {
+        | "" => ()
+        | endpoint => ApiEndpoint.setAssetsEndPoint(endpoint)
+        }
+        // SDK-config endpoint override forwarded so fetchSdkConfigs in child iframes resolves correctly.
+        switch dict->getString("sdkConfigEndpoint", "") {
+        | "" => ()
+        | endpoint => ApiEndpoint.setSdkConfigEndPoint(endpoint)
+        }
+
+        // Always apply (even empty string) so a normal instance mounted after a platform
+        // instance clears the stale ref and stops sending x-platform-api-key headers.
+        ApiEndpoint.setPlatformPublishableKey(dict->getString("platformPublishableKey", ""))
 
         // Single clientList message carries both the merchant's enabled
         // payment methods (payment_methods_enabled) and the customer's

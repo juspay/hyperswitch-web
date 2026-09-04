@@ -100,6 +100,7 @@ function extractBaseDSNUrl(dsn) {
 // List of authorized external connect sources
 const authorizedConnectSources = [
   "'self'",
+  "https:", // it will allow all https connections for custom endpoints
   "https://checkout.hyperswitch.io",
   "https://eu.hyperswitch.io",
   "https://dev.hyperswitch.io",
@@ -153,7 +154,7 @@ const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
   "SDK_TAG_VERSION",
-  require("./package.json").version
+  require("./package.json").version,
 );
 
 /*
@@ -290,14 +291,14 @@ module.exports = (publicPath = "auto") => {
             "Content-Security-Policy": {
               "http-equiv": "Content-Security-Policy",
               content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
+                " ",
               )};
                 style-src ${authorizedStyleSources.join(" ")};
                 frame-src ${authorizedFrameSources.join(" ")};
                 img-src ${authorizedImageSources.join(" ")};
                 font-src ${authorizedFontSources.join(" ")};
                 connect-src ${authorizedConnectSources.join(
-                  " "
+                  " ",
                 )} ${logEndpoint} ${backendEndPoint};
       `,
             },
@@ -315,14 +316,14 @@ module.exports = (publicPath = "auto") => {
             "Content-Security-Policy": {
               "http-equiv": "Content-Security-Policy",
               content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
+                " ",
               )};
           style-src ${authorizedStyleSources.join(" ")};
           frame-src ${authorizedFrameSources.join(" ")};
           img-src ${authorizedImageSources.join(" ")};
           font-src ${authorizedFontSources.join(" ")};
           connect-src ${authorizedConnectSources.join(
-            " "
+            " ",
           )} ${logEndpoint} ${backendEndPoint};
           `,
             },
@@ -345,7 +346,7 @@ module.exports = (publicPath = "auto") => {
         analyzerMode: "static",
         reportFilename: "bundle-report.html",
         openAnalyzer: false,
-      })
+      }),
     );
   }
 
@@ -365,7 +366,7 @@ module.exports = (publicPath = "auto") => {
             paths: ["dist"],
           },
         },
-      })
+      }),
     );
   }
 
@@ -379,7 +380,7 @@ module.exports = (publicPath = "auto") => {
             __dirname,
             "dist",
             isEUStack ? `${sdkEnv}_eu` : sdkEnv,
-            sdkVersionValue
+            sdkVersionValue,
           ),
       crossOriginLoading: "anonymous",
       clean: true,
