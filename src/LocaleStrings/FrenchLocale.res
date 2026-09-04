@@ -11,7 +11,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   poweredBy: `Propulsé par Hyperswitch`,
   validThruText: `Expiration`,
   sortCodeText: `Code de tri`,
-  cvcTextLabel: `Code CVC`,
+  cvcTextLabel: `CVC`,
   line1Label: `Adresse - Ligne 1`,
   line1Placeholder: `Adresse de rue`,
   line1EmptyText: `La ligne d'adresse 1 ne peut pas être vide`,
