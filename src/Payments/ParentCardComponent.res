@@ -504,6 +504,7 @@ let make = (
         ~logger=Some(loggerState),
         ~confirmPayment=_json => Promise.resolve(JSON.Encode.null),
         ~animateResize=false,
+        ~surfaceFamily="vault",
       )
       element.mount(`#${containerId}`)
       Some(
@@ -613,10 +614,6 @@ let make = (
         }
       }
 
-      // Native card fields used to live directly in this iframe, so these
-      // messages reached the merchant without another hop. Re-emit the same
-      // public interaction payloads and normalize identity to this outer
-      // Payment Element (the nested iframe id is an implementation detail).
       let publicElementType = flowType->CardThemeType.getPaymentModeToString
       if isInnerCardMessage && dict->Dict.get("focus")->Option.isSome {
         messageParentWindow([

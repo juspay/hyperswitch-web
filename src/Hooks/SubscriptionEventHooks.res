@@ -9,7 +9,7 @@ open PaymentEventTypes
 // Reads subscriptionEvents from Jotai — no prop drilling required.
 
 type emitter = {
-  emitCardInfo: (~cardInfo: PaymentEventData.cardInfo) => unit,
+  emitCardInfo: (~elementType: string=?, ~cardInfo: PaymentEventData.cardInfo) => unit,
   emitPaymentMethodStatus: (
     ~paymentMethod: string,
     ~paymentMethodType: string,
@@ -28,14 +28,14 @@ let useSubscriptionEventEmitter = (): emitter => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
-  let emitCardInfo = (~cardInfo: PaymentEventData.cardInfo) => {
+  let emitCardInfo = (~elementType: string="payment", ~cardInfo: PaymentEventData.cardInfo) => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
         ~eventType=PaymentMethodInfoCard,
       )
     ) {
-      Utils.messageParentWindow(createCardInfoPayload(cardInfo))
+      Utils.messageParentWindow(createCardInfoPayload(~elementType, cardInfo))
     }
   }
 

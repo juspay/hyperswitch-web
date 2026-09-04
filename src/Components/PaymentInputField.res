@@ -16,6 +16,7 @@ let make = (
   ~onFocus=?,
   ~fieldName="",
   ~isLabelHidden=false,
+  ~isErrorHidden=false,
   ~id=?,
   ~name="",
   ~type_="text",
@@ -161,7 +162,7 @@ let make = (
         {rightIcon}
       </div>
     </div>
-    <RenderIf condition={innerLayout === Spaced}>
+    <RenderIf condition={innerLayout === Spaced && !isErrorHidden}>
       {switch errorString {
       | Some(val) =>
         <RenderIf condition={val->String.length > 0}>

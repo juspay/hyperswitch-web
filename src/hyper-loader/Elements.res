@@ -627,7 +627,7 @@ let make = (
                     let timeOut = delay(600000)->then(_ => {
                       let errorMsg =
                         [("error", "Request Timed Out"->JSON.Encode.string)]->getJsonFromArrayOfJson
-                      reject(Exn.anyToExnInternal(errorMsg))
+                      reject(JsExn.anyToExnInternal(errorMsg))
                     })
 
                     Promise.race([polling, executeGooglePayment, timeOut])
@@ -698,7 +698,7 @@ let make = (
               let applePaySessionTokenData =
                 dict
                 ->Dict.get("applePayPresent")
-                ->Belt.Option.flatMap(JSON.Decode.object)
+                ->Option.flatMap(JSON.Decode.object)
                 ->Option.getOr(Dict.make())
 
               let isDelayedSessionToken =
@@ -748,7 +748,7 @@ let make = (
                   let paymentRequest =
                     applePaySessionTokenData
                     ->Dict.get("payment_request_data")
-                    ->Belt.Option.flatMap(JSON.Decode.object)
+                    ->Option.flatMap(JSON.Decode.object)
                     ->Option.getOr(Dict.make())
                     ->ApplePayTypes.jsonToPaymentRequestDataType
 
@@ -1021,12 +1021,12 @@ let make = (
               let x =
                 item
                 ->JSON.Decode.object
-                ->Belt.Option.flatMap(
+                ->Option.flatMap(
                   x => {
                     x->Dict.get("wallet_name")
                   },
                 )
-                ->Belt.Option.flatMap(JSON.Decode.string)
+                ->Option.flatMap(JSON.Decode.string)
                 ->Option.getOr("")
               x === "apple_pay" || x === "applepay"
             })
@@ -1044,12 +1044,12 @@ let make = (
               let x =
                 item
                 ->JSON.Decode.object
-                ->Belt.Option.flatMap(
+                ->Option.flatMap(
                   x => {
                     x->Dict.get("wallet_name")
                   },
                 )
-                ->Belt.Option.flatMap(JSON.Decode.string)
+                ->Option.flatMap(JSON.Decode.string)
                 ->Option.getOr("")
               x === "google_pay" || x === "googlepay"
             })
@@ -1082,7 +1082,7 @@ let make = (
                   if val->JSON.Decode.bool->Option.getOr(false) {
                     let isDelayedSessionToken =
                       applePayPresent
-                      ->Belt.Option.flatMap(JSON.Decode.object)
+                      ->Option.flatMap(JSON.Decode.object)
                       ->Option.getOr(Dict.make())
                       ->Dict.get("delayed_session_token")
                       ->Option.getOr(JSON.Encode.null)
@@ -1583,12 +1583,34 @@ let make = (
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
+    module StdOption = {
+      let none: option<'a> = None
+    }
+    let cardFormRef: ref<option<Types.cardForm>> = ref(StdOption.none)
+    let cardForm = (): Types.cardForm =>
+      switch cardFormRef.contents {
+      | Some(group) => group
+      | None =>
+        let group = PaymentsGroup.makeCardForm(
+          ~config={
+            clientSecret: clientSecretRef.contents,
+            sdkAuthorization: sdkAuthorizationRef.contents,
+            publishableKey: Some(publishableKey),
+            endpoint: Some(endpoint),
+            appearance: Some(appearance),
+            locale: locale->JSON.Decode.string,
+          },
+        )
+        cardFormRef := Some(group)
+        group
+      }
     {
       getElement,
       update,
       fetchUpdates,
       create,
       updateIntent,
+      cardForm,
     }
   } catch {
   | e => {
