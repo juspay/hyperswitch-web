@@ -49,6 +49,7 @@ let brutal = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#F2F2F2",
+  inputFieldHeight: "48px",
 }
 let brutalRules = (theme: CardThemeType.themeClass) =>
   {
