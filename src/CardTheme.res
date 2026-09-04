@@ -128,6 +128,19 @@ let getLocaleObject = async string => {
     | SV => import(SwedishLocale.localeStrings)
     | RU => import(RussianLocale.localeStrings)
     | ZH_HANT => import(TraditionalChineseLocale.localeStrings)
+    | DA => import(DanishLocale.localeStrings)
+    | LT => import(LithuanianLocale.localeStrings)
+    | CS => import(CzechLocale.localeStrings)
+    | SK => import(SlovakLocale.localeStrings)
+    | IS => import(IcelandicLocale.localeStrings)
+    | CY => import(WelshLocale.localeStrings)
+    | EL => import(GreekLocale.localeStrings)
+    | ET => import(EstonianLocale.localeStrings)
+    | FI => import(FinnishLocale.localeStrings)
+    | NB => import(NorwegianLocale.localeStrings)
+    | BS => import(BosnianLocale.localeStrings)
+    | MS => import(MalayLocale.localeStrings)
+    | TR_CY => import(TurkishLocale.localeStrings)
     }
 
     let awaitedLocaleValue = await promiseLocale
