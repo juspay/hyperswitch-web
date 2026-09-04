@@ -1,12 +1,12 @@
-// PaymentMethodsSDK
-// Rendered inside the innermost iframe (componentName=paymentMethodsSDK), wrapped by
-// <LoaderController> (see App.res). LoaderController owns the standard handshake —
-// it posts `iframeMounted`, runs `setConfigs` (theme/locale/constants → configAtom),
-// sets `keys`, reports height, and populates the `sessions` atom from the `sessions`
-// message ParentCardComponent forwards. So this component just derives the vault
-// credentials from `sessions` and renders the right payment UI.
+exception InvalidSurfaceFamilyParams({
+  componentName: string,
+  surfaceFamily: string,
+  fieldName: string,
+})
+
 @react.component
 let make = () => {
+  let url = RescriptReactRouter.useUrl()
   let sessions = Jotai.useAtomValue(JotaiAtoms.sessions)
   let setVaultCredentials = Jotai.useSetAtom(JotaiAtoms.vaultCredentials)
   let isConfigReady = Jotai.useAtomValue(JotaiAtoms.isConfigReady)
@@ -16,12 +16,21 @@ let make = () => {
   let isSavedCardCvcFlow = Jotai.useAtomValue(JotaiAtoms.isSavedCardCvcFlow)
   let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
-  React.useEffect(() => {
-    setVaultCredentials(_ => VaultHelpers.getVaultCredentialsFromSessions(sessions))
-    None
-  }, [sessions])
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+  let fieldNameStr = CardUtils.getQueryParamsDictforKey(url.search, "fieldName")
+  let surfaceFamilyStr = CardUtils.getQueryParamsDictforKey(url.search, "surfaceFamily")
 
-  // Only card today; future payment methods would branch here.
+  let fieldName = fieldNameStr == "" ? None : Some(fieldNameStr)
+  let surfaceFamily = surfaceFamilyStr == "" ? None : Some(surfaceFamilyStr)
+  let family = PaymentSurfaceFamily.classifyFromUrlParams(~componentName, ~surfaceFamily)
+
+  React.useEffect(() => {
+    if family === PaymentSurfaceFamily.VaultFamily {
+      setVaultCredentials(_ => VaultHelpers.getVaultCredentialsFromSessions(sessions))
+    }
+    None
+  }, (family, sessions))
+
   <RenderIf condition=isConfigReady>
     <div
       className="font-medium p-0.5"
@@ -32,7 +41,44 @@ let make = () => {
       }
       dir=localeString.localeDirection
     >
-      <CardsSDK cvcOnly=isSavedCardCvcFlow />
+      {switch (family, fieldName) {
+      | (PaymentSurfaceFamily.VaultFamily, Some("cardNumber"))
+      | (PaymentSurfaceFamily.PaymentsFamily, Some("cardNumber")) =>
+        <SecureCardNumberField />
+      | (PaymentSurfaceFamily.VaultFamily, Some("cardExpiry"))
+      | (PaymentSurfaceFamily.PaymentsFamily, Some("cardExpiry")) =>
+        <SecureCardExpiryField />
+      | (PaymentSurfaceFamily.VaultFamily, Some("cardCvc"))
+      | (PaymentSurfaceFamily.PaymentsFamily, Some("cardCvc")) =>
+        <SecureCardCvcField />
+      | (PaymentSurfaceFamily.VaultFamily, None) => <CardsSDK cvcOnly=isSavedCardCvcFlow />
+
+      | (PaymentSurfaceFamily.VaultFamily, Some(unknownField))
+      | (PaymentSurfaceFamily.PaymentsFamily, Some(unknownField)) =>
+        throw(
+          InvalidSurfaceFamilyParams({
+            componentName,
+            surfaceFamily: surfaceFamily->Option.getOr("MISSING"),
+            fieldName: `UNKNOWN_FIELD:${unknownField}`,
+          }),
+        )
+
+      | (PaymentSurfaceFamily.PaymentsFamily, None) =>
+        Console.warn(
+          "[PaymentMethodsSDK] PaymentsFamily with no fieldName — " ++
+          "bundled payments surface is not wired. Treat as a bug.",
+        )
+        React.null
+
+      | (PaymentSurfaceFamily.OtherFamily, _) =>
+        throw(
+          InvalidSurfaceFamilyParams({
+            componentName,
+            surfaceFamily: surfaceFamily->Option.getOr("MISSING"),
+            fieldName: fieldName->Option.getOr("MISSING"),
+          }),
+        )
+      }}
     </div>
   </RenderIf>
 }

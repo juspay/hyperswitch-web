@@ -18,6 +18,31 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
+@send
+external postMessageWithTransfer: (
+  Dom.element,
+  string,
+  string,
+  array<MessageChannelBinding.port>,
+) => unit = "postMessage"
+
+let iframePostMessageWithTransfer = (
+  iframeRef: nullable<Dom.element>,
+  message: string,
+  ~targetOrigin=GlobalVars.targetOrigin,
+  ~transfer,
+) => {
+  switch iframeRef->Nullable.toOption {
+  | Some(ref) =>
+    try {
+      ref->Window.contentWindow->postMessageWithTransfer(message, targetOrigin, transfer)
+    } catch {
+    | _ => ()
+    }
+  | None => Console.error("This element does not exist or is not mounted yet.")
+  }
+}
+
 type dataModule = {states: JSON.t}
 
 @val
@@ -419,7 +444,11 @@ let toCamelCase = str => {
   } else {
     str
     ->String.toLowerCase
-    ->Js.String2.unsafeReplaceBy0(%re(`/([-_][a-z])/g`), (letter, _, _) => {
+    ->String.unsafeReplaceRegExpBy0(%re(`/([-_][a-z])/g`), (
+      ~match as letter,
+      ~offset as _,
+      ~input as _,
+    ) => {
       letter->String.toUpperCase
     })
     ->String.replaceRegExp(%re(`/[^a-zA-Z]/g`), "")
@@ -432,7 +461,11 @@ let toCamelCaseWithNumberSupport = str => {
   } else if str->String.includes("_") {
     str
     ->String.toLowerCase
-    ->Js.String2.unsafeReplaceBy0(%re(`/([-_][a-z])/g`), (letter, _, _) => {
+    ->String.unsafeReplaceRegExpBy0(%re(`/([-_][a-z])/g`), (
+      ~match as letter,
+      ~offset as _,
+      ~input as _,
+    ) => {
       letter->String.toUpperCase
     })
     ->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
@@ -442,9 +475,11 @@ let toCamelCaseWithNumberSupport = str => {
 }
 
 let toSnakeCase = str => {
-  str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
-    `_${letter->String.toLowerCase}`
-  )
+  str->String.unsafeReplaceRegExpBy0(%re("/[A-Z]/g"), (
+    ~match as letter,
+    ~offset as _,
+    ~input as _,
+  ) => `_${letter->String.toLowerCase}`)
 }
 type case = CamelCase | SnakeCase | KebabCase
 let rec transformKeys = (json: JSON.t, to: case) => {
@@ -590,7 +625,7 @@ let validatePhoneNumber = (countryCode, number) => {
     ->Dict.get("countries")
     ->Option.flatMap(JSON.Decode.array)
     ->Option.getOr([])
-    ->Belt.Array.keepMap(JSON.Decode.object)
+    ->Array.filterMap(JSON.Decode.object)
 
   let filteredArr = countriesArr->Array.filter(countryObj => {
     countryObj
@@ -671,9 +706,12 @@ let constructClass = (~classname, ~dict) => {
   ->Array.map(entry => {
     let (key, value) = entry
 
+    let toKebabCaseIfNeeded = key =>
+      key->String.includes("-") ? key : key->toKebabCase
+
     let class = if !(key->String.startsWith(":")) && !(key->String.startsWith(".")) {
       switch value->JSON.Decode.string {
-      | Some(str) => `${key->toKebabCase}:${str}`
+      | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
       | None => ""
       }
     } else if key->String.startsWith(":") {
@@ -685,7 +723,7 @@ let constructClass = (~classname, ~dict) => {
           ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
-            | Some(str) => `${key->toKebabCase}:${str}`
+            | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
             | None => ""
             }
           })
@@ -702,7 +740,7 @@ let constructClass = (~classname, ~dict) => {
           ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
-            | Some(str) => `${key->toKebabCase}:${str}`
+            | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
             | None => ""
             }
           })
@@ -913,7 +951,7 @@ let formatIBAN = iban => {
   let remaining = formatted->String.substringToEnd(~start=4)
 
   let chunks = switch remaining->String.match(%re(`/(.{1,4})/g`)) {
-  | Some(matches) => matches->Belt.Array.keepMap(x => x)
+  | Some(matches) => matches->Array.filterMap(x => x)
   | None => []
   }
 
@@ -959,9 +997,9 @@ let rgbaTorgb = bgColor => {
 }
 
 let findVersion = (re, content) => {
-  let result = Js.Re.exec_(re, content)
+  let result = RegExp.exec(re, content)
   let version = switch result {
-  | Some(val) => Js.Re.captures(val)
+  | Some(val) => val->RegExp.Result.matches
   | None => []
   }
   version
@@ -982,12 +1020,9 @@ let browserDetect = content => {
   ]
 
   switch patterns
-  ->Belt.Array.keepMap(((keyword, regex, name)) =>
+  ->Array.filterMap(((keyword, regex, name)) =>
     if RegExp.test(keyword->RegExp.fromString, content) {
-      let version = switch findVersion(regex, content)
-      ->Array.get(1)
-      ->Option.getOr(Nullable.null)
-      ->Nullable.toOption {
+      let version = switch findVersion(regex, content)->Array.get(0) {
       | Some(v) => v
       | None => ""
       }
@@ -996,7 +1031,7 @@ let browserDetect = content => {
       None
     }
   )
-  ->Belt.Array.get(0) {
+  ->Array.get(0) {
   | Some(result) => result
   | None => "Others-0"
   }
@@ -1057,11 +1092,11 @@ let getHeaders = (
 
 let formatException = exc =>
   switch exc {
-  | Exn.Error(obj) =>
-    let message = Exn.message(obj)
-    let name = Exn.name(obj)
-    let stack = Exn.stack(obj)
-    let fileName = Exn.fileName(obj)
+  | JsExn(obj) =>
+    let message = JsExn.message(obj)
+    let name = JsExn.name(obj)
+    let stack = JsExn.stack(obj)
+    let fileName = JsExn.fileName(obj)
 
     if (
       message->Option.isSome ||
@@ -1230,14 +1265,17 @@ let getArrayValFromJsonDict = (dict, key, arrayKey) => {
   ->Dict.get(arrayKey)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(JSON.Decode.string)
+  ->Array.filterMap(JSON.Decode.string)
 }
 
 let isOtherElements = componentType => {
   componentType == "card" ||
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
-  componentType == "cardCvc"
+  componentType == "cardCvc" ||
+  componentType == "vaultCardNumber" ||
+  componentType == "vaultCardExpiry" ||
+  componentType == "vaultCardCvc"
 }
 
 // Elements that can have multiple instances (for event listener naming)
@@ -1248,6 +1286,9 @@ let canHaveMultipleInstances = componentType => {
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
   componentType == "cardCvc" ||
+  componentType == "vaultCardNumber" ||
+  componentType == "vaultCardExpiry" ||
+  componentType == "vaultCardCvc" ||
   componentType == "paymentMethodsSDK"
 }
 
@@ -1361,7 +1402,7 @@ let rec flattenObject = (obj, addIndicatorForObject) => {
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->jsonToNullableJson->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Decode.object {
@@ -1398,7 +1439,7 @@ let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepPare
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->jsonToNullableJson->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->getStringFromJson("")->safeParse->JSON.Decode.object {
@@ -1440,7 +1481,7 @@ let rec flatten = (obj, addIndicatorForObject) => {
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->jsonToNullableJson->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Classify.classify {
@@ -1498,6 +1539,8 @@ let rec flatten = (obj, addIndicatorForObject) => {
 }
 
 external eventDataFromJson: JSON.t => Types.eventData = "%identity"
+
+external eventToWindowEvent: Types.event => Window.event = "%identity"
 
 let sanitizeEventData = (data: Types.eventData): Types.eventData => {
   let dict = data->anyTypeToJson->getDictFromJson
@@ -1855,7 +1898,7 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
   iframes->Array.forEach(iframe => {
     let iframeSrc = iframe->Window.getAttribute("src")->Nullable.toOption->Option.getOr("")
     if iframeSrc->String.includes(`componentName=${componentName}`) {
-      iframe->Js.Nullable.return->Window.iframePostMessage(msg)
+      iframe->Nullable.make->Window.iframePostMessage(msg)
       isMessageSent := true
     }
   })
@@ -1919,7 +1962,7 @@ let replaceRootHref = (href: string, redirectionFlags: JotaiAtomTypes.redirectio
 
 let isValidHexColor = (color: string): bool => {
   let hexRegex = %re("/^#([0-9a-f]{6}|[0-9a-f]{3})$/i")
-  Js.Re.test_(hexRegex, color)
+  RegExp.test(hexRegex, color)
 }
 
 let convertKeyValueToJsonStringPair = (key, value) => (key, JSON.Encode.string(value))
