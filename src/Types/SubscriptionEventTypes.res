@@ -8,6 +8,7 @@ let validSubscriptionEvents = [
   "cvcStatusChange",
   "billingDetailsChange",
   "surchargeInfo",
+  "appliedOffersInfo",
 ]
 
 let modifiedEventFromString = (str, key) => {
@@ -58,10 +59,13 @@ type billingAddress = {
   state: string,
   postalCode: string,
 }
-let createCardInfoPayload = (cardInfo: PaymentEventData.cardInfo) => {
+let createCardInfoPayload = (
+  ~elementType: string="payment",
+  cardInfo: PaymentEventData.cardInfo,
+) => {
   let payload = PaymentEventData.cardInfoToJson(cardInfo)
   [
-    ("elementType", "payment"->JSON.Encode.string),
+    ("elementType", elementType->JSON.Encode.string),
     ("eventName", CardDetailsChange->PaymentEventTypes.eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
@@ -138,6 +142,42 @@ let createSurchargePayload = (
   [
     ("elementType", "payment"->JSON.Encode.string),
     ("eventName", SurchargeInfo->eventToString->JSON.Encode.string),
+    ("payload", payload),
+  ]
+}
+
+let createAppliedOffersPayload = (
+  ~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
+) => {
+  let event = switch offerDetails {
+  | Some(details) =>
+    // Only a single auto-applied offer is expected in `eligible_offers`; emit
+    // just that applied offer to the merchant (as a one-element array) rather
+    // than the full eligible-offers/uplifted-quote-ids lists.
+    let appliedOffers =
+      details.eligibleOffers
+      ->Array.get(0)
+      ->Option.map(offer => [
+        (
+          {
+            offerQuoteId: offer.offerQuoteId,
+            offerAmount: offer.offerAmount,
+            currency: offer.currency,
+            code: offer.code,
+            title: offer.title,
+            description: offer.description,
+          }: PaymentEventData.eligibleOffer
+        ),
+      ])
+      ->Option.getOr([])
+    PaymentEventData.buildOffersEvent(~offers=appliedOffers)
+  | None => PaymentEventData.buildOffersEvent()
+  }
+  let payload = PaymentEventData.offersEventToJson(event)
+
+  [
+    ("elementType", "payment"->JSON.Encode.string),
+    ("eventName", "appliedOffersInfo"->JSON.Encode.string),
     ("payload", payload),
   ]
 }

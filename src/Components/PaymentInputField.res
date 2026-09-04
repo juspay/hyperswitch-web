@@ -16,6 +16,8 @@ let make = (
   ~onFocus=?,
   ~fieldName="",
   ~isLabelHidden=false,
+  ~isErrorHidden=false,
+  ~id=?,
   ~name="",
   ~type_="text",
   ~maxLength=?,
@@ -120,6 +122,7 @@ let make = (
             width: fieldWidth,
             height,
           }
+          ?id
           dataTestId={name}
           disabled={isDisabled || readOnly}
           ref={inputRef->ReactDOM.Ref.domRef}
@@ -155,7 +158,7 @@ let make = (
         {rightIcon}
       </div>
     </div>
-    <RenderIf condition={innerLayout === Spaced}>
+    <RenderIf condition={innerLayout === Spaced && !isErrorHidden}>
       {switch errorString {
       | Some(val) =>
         <RenderIf condition={val->String.length > 0}>

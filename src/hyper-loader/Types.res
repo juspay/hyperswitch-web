@@ -40,12 +40,50 @@ type paymentElement = {
   confirmPayment: JSON.t => promise<JSON.t>,
 }
 
+type fieldHandle = {
+  mount: string => unit,
+  unmount: unit => unit,
+  destroy: unit => unit,
+  update: JSON.t => unit,
+  focus: unit => unit,
+  blur: unit => unit,
+  clear: unit => unit,
+  on: (string, JSON.t => unit) => unit,
+}
+
+type cardForm = {
+  create: (string, JSON.t) => fieldHandle,
+  on: (string, JSON.t => unit) => unit,
+  confirmPayment: unit => promise<JSON.t>,
+  deinit: unit => unit,
+  update: JSON.t => unit,
+  fields: ref<JSON.t>,
+}
+
+type vaultCardForm = {
+  create: (string, JSON.t) => fieldHandle,
+  on: (string, JSON.t => unit) => unit,
+  tokenize: unit => promise<JSON.t>,
+  deinit: unit => unit,
+  update: JSON.t => unit,
+  fields: ref<JSON.t>,
+}
+
+type paymentMethodsSession = {
+  cardForm: unit => vaultCardForm,
+  update: JSON.t => unit,
+  on: (string, JSON.t => unit) => unit,
+  deinit: unit => unit,
+  fields: ref<JSON.t>,
+}
+
 type element = {
   getElement: string => option<paymentElement>,
   update: JSON.t => unit,
   fetchUpdates: unit => promise<JSON.t>,
   create: (JSON.t, Nullable.t<JSON.t>) => paymentElement,
   updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
+  cardForm: unit => cardForm,
 }
 
 type getCustomerSavedPaymentMethods = {
@@ -109,6 +147,7 @@ type hyperInstance = {
   completeUpdateIntent: string => promise<JSON.t>,
   initiateUpdateIntent: unit => promise<JSON.t>,
   confirmTokenization: JSON.t => promise<JSON.t>,
+  paymentMethodsSession: JSON.t => paymentMethodsSession,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -162,12 +201,52 @@ let create = (_options: JSON.t, _options2: Nullable.t<JSON.t>) => {
   defaultPaymentElement
 }
 
+let vaultSDKNotLoadedError: JSON.t = {
+  let errorDict = Dict.make()
+  errorDict->Dict.set("code", "sdk_not_ready"->JSON.Encode.string)
+  errorDict->Dict.set("message", "Default stub — hyper not initialized"->JSON.Encode.string)
+  let resultDict = Dict.make()
+  resultDict->Dict.set("status", "error"->JSON.Encode.string)
+  resultDict->Dict.set("error", errorDict->JSON.Encode.object)
+  resultDict->JSON.Encode.object
+}
+
+let defaultFieldHandle: fieldHandle = {
+  mount: _ => (),
+  unmount: () => (),
+  destroy: () => (),
+  update: _ => (),
+  focus: () => (),
+  blur: () => (),
+  clear: () => (),
+  on: (_, _) => (),
+}
+
+let defaultCardForm: cardForm = {
+  create: (_, _) => defaultFieldHandle,
+  on: (_, _) => (),
+  confirmPayment: () => Promise.resolve(vaultSDKNotLoadedError),
+  deinit: () => (),
+  update: _ => (),
+  fields: ref(Dict.make()->JSON.Encode.object),
+}
+
+let defaultVaultCardForm: vaultCardForm = {
+  create: (_, _) => defaultFieldHandle,
+  on: (_, _) => (),
+  tokenize: () => Promise.resolve(vaultSDKNotLoadedError),
+  deinit: () => (),
+  update: _ => (),
+  fields: ref(Dict.make()->JSON.Encode.object),
+}
+
 let defaultElement = {
   getElement,
   update,
   fetchUpdates,
   create,
   updateIntent: _ => Promise.resolve(JSON.Encode.null),
+  cardForm: () => defaultCardForm,
 }
 
 let getCustomerDefaultSavedPaymentMethodData = () => {
@@ -205,6 +284,14 @@ let defaultInitAuthenticationSession: initAuthenticationSession = {
   getActiveClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
 }
 
+let defaultPaymentMethodsSession: paymentMethodsSession = {
+  cardForm: () => defaultVaultCardForm,
+  update: _ => (),
+  on: (_, _) => (),
+  deinit: () => (),
+  fields: ref(Dict.make()->JSON.Encode.object),
+}
+
 let defaultHyperInstance = {
   confirmOneClickPayment: oneClickConfirmPaymentFn,
   confirmPayment: confirmPaymentFn,
@@ -219,6 +306,7 @@ let defaultHyperInstance = {
   completeUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   initiateUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   confirmTokenization: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
+  paymentMethodsSession: _ => defaultPaymentMethodsSession,
 }
 
 type eventType =

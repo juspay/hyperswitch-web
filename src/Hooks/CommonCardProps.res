@@ -22,6 +22,7 @@ let useCardForm = (
     cardEligibilityError,
     updateCardEligibilityError,
     eligibilitySurchargeDetails,
+    eligibilityOfferDetails,
     isEligibilityPending,
     triggerOnCardNumberChange,
     resetEligibilityState,
@@ -56,6 +57,7 @@ let useCardForm = (
     !showPaymentMethodsScreen && isNotBancontact ? cardScheme : detectedCardBrand
   )
 
+  let stateCardBrand = cardBrand
   let derivedCardBrand = CardUtils.getCardBrandFromStates(
     cardBrand,
     cardScheme,
@@ -63,6 +65,14 @@ let useCardForm = (
   )
   let cardBrand =
     cardBrandOverride === "" ? derivedCardBrand : cardBrandOverride->CardUtils.normalizeCardBrand
+
+  // Nothing in the card element's tree writes the scheme atom, so the brand is lost here and the CVC
+  // rules fall back to the permissive default. CVC-scoped: widening cardBrand changes the payload.
+  let cardBrandForCvc = switch (cardBrand, paymentType) {
+  | ("", CardThemeType.Card) => stateCardBrand
+  | _ => cardBrand
+  }
+  let maxCVCLength = CardValidations.getobjFromCardPattern(cardBrandForCvc).maxCVCLength
   let supportedCardBrands = React.useMemo(() => {
     switch forwardedSupportedCardBrands {
     | Some(brands) => Some(brands)
@@ -89,12 +99,26 @@ let useCardForm = (
     cardBrand->getCardType
   }, [cardBrand])
 
-  React.useEffect(() => {
-    let obj = CardValidations.getobjFromCardPattern(cardBrand)
-    let cvcLength = obj.maxCVCLength
+  // maxLength only constrains new input, so a CVC entered before the brand was known has to be
+  // re-judged against it, by the same rule as a blur: narrowing invalidates it, widening restores it.
+  React.useEffect1(() => {
     if (
-      cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true) &&
-        cvcNumber->String.length == cvcLength
+      cvcNumber->String.length > 0 &&
+        cvcNumberInRange(cvcNumber, cardBrandForCvc)->Array.includes(true)
+    ) {
+      setIsCVCValid(_ => Some(true))
+    } else if cvcNumber->String.length == 0 {
+      setIsCVCValid(_ => None)
+    } else {
+      setIsCVCValid(_ => Some(false))
+    }
+    None
+  }, [cardBrandForCvc])
+
+  React.useEffect(() => {
+    if (
+      cvcNumberInRange(cvcNumber, cardBrandForCvc)->Array.includes(true) &&
+        cvcNumber->String.length == maxCVCLength
     ) {
       blurRef(cvcRef)
     }
@@ -179,13 +203,13 @@ let useCardForm = (
   let changeCVCNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardCVC", logger)
-    let cvc = val->CardValidations.formatCVCNumber(cardBrand)
+    let cvc = val->CardValidations.formatCVCNumber(cardBrandForCvc)
     setCvcNumber(_ => cvc)
-    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
+    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrandForCvc)->Array.includes(true) {
       zipRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
     }
 
-    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
+    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrandForCvc)->Array.includes(true) {
       setIsCVCValid(_ => Some(true))
     } else {
       setIsCVCValid(_ => None)
@@ -275,7 +299,8 @@ let useCardForm = (
   let handleCVCBlur = ev => {
     let cvcNumber = ReactEvent.Focus.target(ev)["value"]
     if (
-      cvcNumber->String.length > 0 && cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
+      cvcNumber->String.length > 0 &&
+        cvcNumberInRange(cvcNumber, cardBrandForCvc)->Array.includes(true)
     ) {
       setIsCVCValid(_ => Some(true))
     } else if cvcNumber->String.length == 0 {
@@ -364,6 +389,7 @@ let useCardForm = (
     cardEligibilityError,
     updateCardEligibilityError,
     eligibilitySurchargeDetails,
+    eligibilityOfferDetails,
     isEligibilityPending,
   }
 
@@ -390,6 +416,7 @@ let useCardForm = (
     onCvcKeyDown,
     cvcError,
     setCvcError,
+    maxCVCLength,
   }
 
   let zipProps: CardUtils.zipProps = {

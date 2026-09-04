@@ -9,12 +9,13 @@ const testEnv = process.env.TEST_ENV || "sandbox";
 
 const apiUrlMap = {
   sandbox: "https://sandbox.hyperswitch.io",
-  integ:   "https://integ.hyperswitch.io/api",
+  integ: "https://integ.hyperswitch.io/api",
   // For local: set LOCAL_API_URL env var (e.g. http://localhost:8080)
   local: process.env.LOCAL_API_URL || "http://localhost:8080",
 };
 
 const apiUrl = apiUrlMap[testEnv] || apiUrlMap.sandbox;
+const requiredPresetProfileIds = ["stripe", "adyen", "fiuu", "trustpay"];
 
 // ── Pre-existing credentials check ──────────────────────────────────────────
 // In CI, the "setup" job creates a merchant + MCAs once and writes the result
@@ -22,20 +23,37 @@ const apiUrl = apiUrlMap[testEnv] || apiUrlMap.sandbox;
 // pass the path via CREDENTIALS_OUTPUT_PATH.  When found, the credentials are
 // injected here so e2e.ts can skip the cy.task("setupCredentials") call.
 //
-// Locally (no test-credentials.json), e2e.ts falls back to the dynamic setup
-// task as before.
+// Local runs use an environment-specific artifact by default so an integration
+// run cannot accidentally reuse credentials provisioned on sandbox. CI keeps
+// using the explicit CREDENTIALS_OUTPUT_PATH supplied by the workflow.
 let presetupCredentials = null;
 const presetupPath =
   process.env.CREDENTIALS_OUTPUT_PATH ||
-  path.join(__dirname, "test-credentials.json");
+  path.join(__dirname, `test-credentials-${testEnv}.json`);
 
 if (fs.existsSync(presetupPath)) {
   try {
-    presetupCredentials = JSON.parse(fs.readFileSync(presetupPath, "utf-8"));
-    console.log(
-      `[cypress.config] Found pre-existing credentials at ${presetupPath}`,
+    const parsedCredentials = JSON.parse(
+      fs.readFileSync(presetupPath, "utf-8"),
     );
-    console.log(`[cypress.config] Merchant: ${presetupCredentials.merchantId}`);
+    const missingProfileIds = requiredPresetProfileIds.filter(
+      (connector) => !parsedCredentials.connectorProfileIds?.[connector],
+    );
+
+    if (missingProfileIds.length > 0) {
+      console.warn(
+        `[cypress.config] Ignoring stale credentials at ${presetupPath}: ` +
+          `missing profile IDs for ${missingProfileIds.join(", ")}.`,
+      );
+    } else {
+      presetupCredentials = parsedCredentials;
+      console.log(
+        `[cypress.config] Found pre-existing credentials at ${presetupPath}`,
+      );
+      console.log(
+        `[cypress.config] Merchant: ${presetupCredentials.merchantId}`,
+      );
+    }
   } catch (err) {
     console.warn(
       `[cypress.config] Failed to parse ${presetupPath}: ${err.message}`,
@@ -61,7 +79,17 @@ module.exports = defineConfig({
     screenshotOnRunFailure: true,
     trashAssetsBeforeRuns: true,
 
-    setupNodeEvents(on) {
+    setupNodeEvents(on, config) {
+      // Override user agent to avoid Netcetera ACS blocking headless Chrome
+      on("before:browser:launch", (browser, launchOptions) => {
+        if (browser.family === "chromium") {
+          launchOptions.args.push(
+            "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+          );
+        }
+        return launchOptions;
+      });
+
       // ── Credential generation task ───────────────────────────────────────
       // Runs in the Node.js process (not the browser).
       // Called once from the global before() hook in cypress/support/e2e.ts.

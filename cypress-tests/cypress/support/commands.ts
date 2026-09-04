@@ -221,13 +221,25 @@ Cypress.Commands.add("getGlobalState", (key: any) => {
 });
 
 Cypress.Commands.add("nestedIFrame", (selector, callback) => {
-  cy.iframe("#orca-fullscreen")
-    .find(selector, { timeout: 15000 })
-    .should("exist")
+  cy.get("#orca-fullscreen", { timeout: 15000 })
     .should("be.visible")
-    .then(($ele) => {
-      const $body = $ele.contents().find("body") as JQuery<HTMLElement>;
-      callback($body);
+    .should(($fullscreen) => {
+      const fullscreenFrame = $fullscreen[0] as HTMLIFrameElement;
+      const nestedFrame =
+        fullscreenFrame.contentDocument?.querySelector(selector);
+      expect(nestedFrame, `${selector} inside #orca-fullscreen`).to.exist;
+    })
+    .then(($fullscreen) => {
+      const fullscreenFrame = $fullscreen[0] as HTMLIFrameElement;
+      const nestedFrame = fullscreenFrame.contentDocument?.querySelector(
+        selector,
+      ) as HTMLIFrameElement;
+
+      cy.wrap(nestedFrame)
+        .should("be.visible")
+        .its("contentDocument.body")
+        .should("not.be.empty")
+        .then((body) => callback(Cypress.$(body)));
     });
 });
 
@@ -284,6 +296,51 @@ Cypress.Commands.add("safeClick", { prevSubject: "element" }, (subject) => {
     .click({ force: true });
   return cy.wrap(subject);
 });
+
+// ---------------------------------------------------------------------------
+// pollPaymentStatus
+//
+// Polls GET /payments/:id?force_sync=true until the status matches
+// `expectedStatus`, retrying every 2 s for up to `timeoutMs` (default 20 s).
+// Fails immediately if `timeoutMs` is exceeded.
+//
+// Usage:
+//   cy.pollPaymentStatus(secretKey, paymentId, "succeeded");
+//   cy.pollPaymentStatus(secretKey, paymentId, "failed", { timeoutMs: 30000 });
+// ---------------------------------------------------------------------------
+
+Cypress.Commands.add(
+  "pollPaymentStatus",
+  (
+    secretKey: string,
+    paymentId: string,
+    expectedStatus: string,
+    { timeoutMs = 20000, intervalMs = 2000 }: { timeoutMs?: number; intervalMs?: number } = {},
+  ) => {
+    const deadline = Date.now() + timeoutMs;
+
+    const poll = (): Cypress.Chainable<any> =>
+      cy.request({
+          method: "GET",
+          url: `${Cypress.env("HYPERSWITCH_API_URL")}/payments/${paymentId}?force_sync=true`,
+          headers: { "api-key": secretKey },
+        })
+        .then((response) => {
+          if (response.body.status === expectedStatus) {
+            cy.log(`Payment status: ${response.body.status}`);
+            expect(response.body.status).to.eq(expectedStatus);
+          } else if (Date.now() >= deadline) {
+            throw new Error(
+              `Payment did not reach "${expectedStatus}" within ${timeoutMs} ms. Last status: ${response.body.status}`,
+            );
+          } else {
+            return cy.wait(intervalMs).then(poll);
+          }
+        });
+
+    return poll();
+  },
+);
 
 Cypress.Commands.add("enterCardDetails", (cardDetails: any) => {
   const iframeBody = () => cy.paymentElementBody();
@@ -464,6 +521,14 @@ Cypress.Commands.add(
                   Crypto: "crypto_currency",
                   "Cash / Voucher": "classic",
                   "E-Voucher": "evoucher",
+                  AlipayHK: "ali_pay_hk",
+                  DuitNow: "duit_now",
+                  "Bancontact Card": "bancontact_card",
+                  "SEPA Bank Transfer": "sepa_bank_transfer",
+                  "Online Banking Fpx": "online_banking_fpx",
+                  "Pay by Bank": "open_banking_uk",
+                  Klarna: "klarna",
+                  Trustly: "trustly",
                   Card: "card",
                 };
                 const selectValue =

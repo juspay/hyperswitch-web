@@ -11,9 +11,6 @@ open VGSTypes
 open VGSHelpers
 open VGSConstants
 
-// Subresource-integrity hash for the pinned vgs-collect 2.27.2 bundle (see VGSConstants).
-let vgsScriptIntegrity = "sha384-ddxU1XAc77oB4EIpKOgJQ3FN2a6STYPK0JipRqg1x/eW+n5MFn1XbbZa7+KRjkqc"
-
 @react.component
 let make = (~cvcOnly=false) => {
   let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
@@ -369,7 +366,7 @@ let make = (~cvcOnly=false) => {
             id="vgs-cc-cvc"
             isFocused={isCVCFocused->Option.getOr(false)}
             compact=true
-            height="1.8rem"
+            height=SavedCardCvcStyles.fieldHeight
           />
         </div>
       } else {

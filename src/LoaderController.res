@@ -23,12 +23,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsSamsungPayReady = Jotai.useSetAtom(isSamsungPayReady)
   let setUpdateSession = Jotai.useSetAtom(updateSession)
   let setIsUpdateIntentLoading = Jotai.useSetAtom(isUpdateIntentLoading)
+  let setCardBrandIconOverride = Jotai.useSetAtom(cardBrandIconOverride)
+  let setCvcIconOverride = Jotai.useSetAtom(cvcIconOverride)
+  let setCardNumberPlaceholder = Jotai.useSetAtom(cardNumberPlaceholder)
+  let setCardExpiryPlaceholder = Jotai.useSetAtom(cardExpiryPlaceholder)
+  let setCardCvcPlaceholder = Jotai.useSetAtom(cardCvcPlaceholder)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
   let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+  let isPaymentMethodsSDKSurface = componentName == "paymentMethodsSDK"
+  let fieldName = CardUtils.getQueryParamsDictforKey(url.search, "fieldName")
 
   let divRef = React.useRef(Nullable.null)
 
@@ -56,6 +63,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setSavedCardBrand = Jotai.useSetAtom(JotaiAtoms.savedCardBrand)
   let setIsBancontactCardFlow = Jotai.useSetAtom(JotaiAtoms.isBancontactCardFlow)
   let setCardFlowType = Jotai.useSetAtom(JotaiAtoms.cardFlowType)
+  let setOptionsJson = Jotai.useSetAtom(optionsJsonAtom)
+  let setPaymentOptionsJson = Jotai.useSetAtom(paymentOptionsJsonAtom)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -95,18 +104,67 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
-    switch paymentMode->CardThemeType.getPaymentMode {
-    | CardNumberElement
-    | CardExpiryElement
-    | CardCVCElement
-    | Card => {
-        setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+    setOptionsJson(_ => optionsDict->JSON.Encode.object)
+
+    if isPaymentMethodsSDKSurface {
+      let applyPlaceholder = (key, setter) =>
+        optionsDict
+        ->Dict.get(key)
+        ->Option.flatMap(JSON.Decode.string)
+        ->Option.forEach(value => setter(_ => Some(value)))
+      let applyIconStyle = (key, allowedList, warnPath, toStyle, setter) =>
+        optionsDict
+        ->Dict.get(key)
+        ->Option.flatMap(JSON.Decode.string)
+        ->Option.forEach(value =>
+          if allowedList->Array.some(allowed => allowed == value) {
+            setter(_ => Some(value->toStyle))
+          } else {
+            ErrorUtils.unknownPropValueWarning(value, allowedList, warnPath)
+          }
+        )
+      switch fieldName {
+      | "cardNumber" => {
+          applyIconStyle(
+            "cardBrandIcon",
+            ["standard", "hidden", "animated", "hideGeneric"],
+            "options.cardBrandIcon",
+            PaymentType.getCardBrandIconStyle,
+            setCardBrandIconOverride,
+          )
+          applyPlaceholder("placeholder", setCardNumberPlaceholder)
+        }
+      | "cardExpiry" => applyPlaceholder("placeholder", setCardExpiryPlaceholder)
+      | "cardCvc" => {
+          applyIconStyle(
+            "cvcIcon",
+            ["hidden", "default"],
+            "options.cvcIcon",
+            PaymentType.getCvcIconStyle,
+            setCvcIconOverride,
+          )
+          applyPlaceholder("placeholder", setCardCvcPlaceholder)
+        }
+      | _ => ()
+      }
+    }
+
+    switch optionsDict->Dict.get("subscriptionEvents") {
+    | Some(_) => {
         let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(
           optionsDict,
           "subscriptionEvents",
         )
         setOptionsPayment(prev => {...prev, subscriptionEvents})
       }
+    | None => ()
+    }
+
+    switch paymentMode->CardThemeType.getPaymentMode {
+    | CardNumberElement
+    | CardExpiryElement
+    | CardCVCElement
+    | Card => setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
     | PaymentMethodCollectElement => {
         let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
@@ -119,9 +177,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PazeElement
     | ExpressCheckoutElement
     | PaymentMethodsManagement
+    | PaymentMethodsSDK
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
-        setOptionsPayment(_ => paymentOptions)
+        setOptionsPayment(prev => {...paymentOptions, subscriptionEvents: prev.subscriptionEvents})
         optionsCallback(paymentOptions)
       }
     | _ => ()
@@ -223,7 +282,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       generateStyleSheet("", dict, "themestyle")
     }
     switch paymentMode->CardThemeType.getPaymentMode {
-    | Payment => ()
+    | Payment
+    | PaymentMethodsSDK => ()
     | _ =>
       let styleClass = [
         ("input-base", options.style.base->getDictFromJson),
@@ -249,6 +309,31 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       let json = ev.data->safeParse
       try {
         let dict = json->getDictFromJson
+
+        let pinnedParentURL = keys.parentURL
+        let isFromHostWindow =
+          ev.source === iframeParent &&
+            (pinnedParentURL === "*" || ev.origin === pinnedParentURL)
+        let ports = ev->MessageChannelBinding.eventPorts
+        if isFromHostWindow && ports->Array.length > 0 {
+          let handshakeShaped =
+            dict->getDictIsSome("paymentElementCreate") || dict->getDictIsSome("cardFieldPort")
+          if handshakeShaped {
+            switch ports->Array.get(0) {
+            | Some(port) =>
+              let portKey = dict->getString("portKey", "")
+              if portKey !== "" {
+                SadPortRegistry.installPort(
+                  ~key=portKey,
+                  ~epoch=dict->getFloat("portEpoch", 0.0)->Float.toInt,
+                  ~port,
+                )
+              }
+            | None => ()
+            }
+          }
+        }
+
         if dict->getDictIsSome("paymentElementCreate") {
           // Set iframeId for ALL elements including individual card elements (cardNumber, cardExpiry, cardCvc)
           if dict->getDictIsSome("iframeId") {
@@ -299,6 +384,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               }
               if dict->getDictIsSome("paymentOptions") {
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
+                setPaymentOptionsJson(_ => paymentOptions->JSON.Encode.object)
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
                 let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
@@ -361,6 +447,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }
           } else if dict->getDictIsSome("paymentOptions") {
             let paymentOptions = dict->getDictFromObj("paymentOptions")
+            setPaymentOptionsJson(_ => paymentOptions->JSON.Encode.object)
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
             let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
@@ -402,6 +489,17 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         } else if dict->getDictIsSome("ElementsUpdate") {
           logger.setLogInfo(~value="SDK Credentials Received from Loader", ~eventName=UPDATE_SDK)
           let optionsDict = dict->getDictFromObj("options")
+          setPaymentOptionsJson(prev => {
+            let updatedPaymentOptions = prev->getDictFromJson->Dict.copy
+            ["locale", "appearance", "clientSecret", "sdkAuthorization"]->Array.forEach(
+              key =>
+                switch optionsDict->Dict.get(key) {
+                | Some(val) => updatedPaymentOptions->Dict.set(key, val)
+                | None => ()
+                },
+            )
+            updatedPaymentOptions->JSON.Encode.object
+          })
           let clientSecret = dict->Dict.get("clientSecret")
           switch clientSecret {
           | Some(val) =>

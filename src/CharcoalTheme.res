@@ -23,7 +23,7 @@ let charcoal = {
   fontSizeXs: "10px",
   fontSize2Xs: "8px",
   fontSize3Xs: "6px",
-  colorSuccess: "",
+  colorSuccess: "#16875B",
   colorWarning: "",
   colorPrimaryText: "#707070",
   colorBackgroundText: "#ffffff",
@@ -49,6 +49,7 @@ let charcoal = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#E1E5EA",
+  inputFieldHeight: "48px",
 }
 
 let charcoalRules = theme =>

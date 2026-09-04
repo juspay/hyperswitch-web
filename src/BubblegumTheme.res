@@ -23,7 +23,7 @@ let bubblegum = {
   fontSizeXs: "10px",
   fontSize2Xs: "8px",
   fontSize3Xs: "6px",
-  colorSuccess: "",
+  colorSuccess: "#16875B",
   colorWarning: "",
   colorPrimaryText: "#5469d4",
   colorBackgroundText: "",
@@ -49,6 +49,7 @@ let bubblegum = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#F6F8FA",
+  inputFieldHeight: "48px",
 }
 let bubblegumRules = theme =>
   {

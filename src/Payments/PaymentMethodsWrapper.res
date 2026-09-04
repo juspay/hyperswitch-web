@@ -51,6 +51,19 @@ let make = (~paymentMethodName: string) => {
 
   let empty = areRequiredFieldsEmpty
 
+  let saveDetails = CustomPaymentMethodsConfig.useSaveDetailsCheckbox(
+    ~paymentMethod=paymentMethodDetails.methodType,
+    ~paymentMethodType=paymentMethodName,
+  )
+
+  // Saveable PMs: acceptance rides on the checkbox when it is shown, or on
+  // the global alwaysSendCustomerAcceptance flag. Non-saveable PMs: never.
+  let shouldSendCustomerAcceptance = switch saveDetails.acceptance {
+  | Some(Supported) | Some(PartiallySupported) =>
+    saveDetails.alwaysSendCustomerAcceptance || (saveDetails.isShow && saveDetails.isChecked)
+  | Some(Unsupported) | None => false
+  }
+
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
     ~empty,
@@ -88,7 +101,11 @@ let make = (~paymentMethodName: string) => {
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
             ),
             ~paymentExperience=paymentFlow,
-          )->mergeAndFlattenToTuples(requiredFieldsBody)
+          )
+          ->Array.concat(shouldSendCustomerAcceptance
+            ? [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
+            : [])
+          ->mergeAndFlattenToTuples(requiredFieldsBody)
 
         intent(
           ~bodyArr=body,
@@ -114,6 +131,7 @@ let make = (~paymentMethodName: string) => {
     requiredFieldsBody,
     areRequiredFieldsValid,
     sdkAuthorization,
+    shouldSendCustomerAcceptance,
   ))
   useSubmitPaymentData(submitCallback)
   let paymentMethod = paymentMethodDetails.methodType

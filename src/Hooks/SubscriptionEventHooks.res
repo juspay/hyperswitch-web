@@ -9,7 +9,7 @@ open PaymentEventTypes
 // Reads subscriptionEvents from Jotai — no prop drilling required.
 
 type emitter = {
-  emitCardInfo: (~cardInfo: PaymentEventData.cardInfo) => unit,
+  emitCardInfo: (~elementType: string=?, ~cardInfo: PaymentEventData.cardInfo) => unit,
   emitPaymentMethodStatus: (
     ~paymentMethod: string,
     ~paymentMethodType: string,
@@ -21,20 +21,21 @@ type emitter = {
   emitSurcharge: (
     ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   ) => unit,
+  emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
 }
 
 let useSubscriptionEventEmitter = (): emitter => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
-  let emitCardInfo = (~cardInfo: PaymentEventData.cardInfo) => {
+  let emitCardInfo = (~elementType: string="payment", ~cardInfo: PaymentEventData.cardInfo) => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
         ~eventType=CardDetailsChange,
       )
     ) {
-      Utils.messageParentWindow(createCardInfoPayload(cardInfo))
+      Utils.messageParentWindow(createCardInfoPayload(~elementType, cardInfo))
     }
   }
 
@@ -95,7 +96,19 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
-  {emitCardInfo, emitPaymentMethodStatus, emitBillingAddress, emitCvcStatus, emitSurcharge}
+  let emitOffers = (~offerDetails) => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=Offers,
+      ) &&
+      offerDetails->Option.isSome
+    ) {
+      Utils.messageParentWindow(createAppliedOffersPayload(~offerDetails))
+    }
+  }
+
+  {emitCardInfo, emitPaymentMethodStatus, emitBillingAddress, emitCvcStatus, emitSurcharge, emitOffers}
 }
 
 // ---------------------------------------------------------------------------
@@ -259,4 +272,28 @@ let useEmitSurchargeInfo = (
     }
     None
   }, (surchargeDetails, subscribedEvents))
+}
+
+// ---------------------------------------------------------------------------
+// useEmitAppliedOffersInfo
+// ---------------------------------------------------------------------------
+// Effect hook: emits the auto-applied offers when eligibility offer details change.
+let useEmitAppliedOffersInfo = (
+  ~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
+) => {
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let subscribedEvents = options.subscriptionEvents
+
+  React.useEffect(() => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=Offers,
+      ) &&
+      offerDetails->Option.isSome
+    ) {
+      Utils.messageParentWindow(createAppliedOffersPayload(~offerDetails))
+    }
+    None
+  }, (offerDetails, subscribedEvents))
 }
