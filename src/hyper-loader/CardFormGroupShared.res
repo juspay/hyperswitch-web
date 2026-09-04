@@ -255,6 +255,7 @@ let makeFieldElementAndHandle = (
   ~listenerName: string,
   ~eventHandlersRef: ref<Dict.t<JSON.t => unit>>,
   ~update: JSON.t => unit,
+  ~logger: HyperLoggerTypes.loggerMake,
 ): Types.fieldHandle => {
   let element = LoaderPaymentElement.make(
     "paymentMethodsSDK",
@@ -265,7 +266,7 @@ let makeFieldElementAndHandle = (
     ~appearance,
     ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
     ~sdkDomainUrl,
-    ~logger=None,
+    ~logger=Some(logger),
     ~confirmPayment=_json => Promise.resolve(JSON.Encode.null),
     ~fieldName,
     ~surfaceFamily,
@@ -273,10 +274,20 @@ let makeFieldElementAndHandle = (
   )
   let postToOwnIframe = fields =>
     iframeRef.contents->Window.iframePostMessage(fields->Dict.fromArray)
+  // Card values never leave the field iframes, so every log here carries the field name only.
+  let logField = (action: string) =>
+    logger.setLogInfo(~value=`${fieldName} ${action}`, ~eventName=CARD_FORM_FLOW)
   {
-    mount: selector => element.mount(selector),
-    unmount: () => element.unmount(),
+    mount: selector => {
+      logField("mounted")
+      element.mount(selector)
+    },
+    unmount: () => {
+      logField("unmounted")
+      element.unmount()
+    },
     destroy: () => {
+      logField("destroyed")
       element.destroy()
       iframeRef := Nullable.null
       EventListenerManager.removeSmartEventListener("message", listenerName)
@@ -284,7 +295,10 @@ let makeFieldElementAndHandle = (
     update,
     focus: () => postToOwnIframe([("doFocus", true->JSON.Encode.bool)]),
     blur: () => postToOwnIframe([("doBlur", true->JSON.Encode.bool)]),
-    clear: () => postToOwnIframe([("doClearValues", true->JSON.Encode.bool)]),
+    clear: () => {
+      logger.setLogInfo(~value=fieldName, ~eventName=CLEAR)
+      postToOwnIframe([("doClearValues", true->JSON.Encode.bool)])
+    },
     on: (event, cb) => eventHandlersRef.contents->Dict.set(event, cb),
   }
 }
