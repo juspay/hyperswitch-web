@@ -304,7 +304,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     let listenerName = `onPaymentsV2Field-${fieldId}`
 
     let savedCardTokenRef = ref(
-      options->getDictFromJson->getDictFromDict("savedCard")->getString("paymentMethodToken", ""),
+      options->getDictFromJson->getDictFromDict("savedCard")->getString("paymentToken", ""),
     )
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
       coordinator->openFieldPort(
@@ -414,7 +414,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       ~eventHandlersRef,
       ~update=newOptions => {
         let savedCardToken =
-          postFieldUpdate(~iframeRef, ~newOptions)->getString("paymentMethodToken", "")
+          postFieldUpdate(~iframeRef, ~newOptions)->getString("paymentToken", "")
         if savedCardToken !== "" {
           savedCardTokenRef := savedCardToken
         }
@@ -585,7 +585,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             groupFailureResponse(
               ~code="validation_error",
               ~errorType="validation_error",
-              ~message="saved-card CVC flow requires a token — call cardForm.create(\"cardCvc\", {savedCard: {paymentMethodToken, paymentMethodData: {card: {cardNetwork}}}}) or field.update() with the same shape before confirmPayment()",
+              ~message="saved-card CVC flow requires a token — call cardForm.create(\"cardCvc\", {savedCard: {paymentToken, paymentMethodData: {card: {cardNetwork}}}}) or field.update() with the same shape before confirmPayment()",
             ),
           )
         } else {
@@ -596,7 +596,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           groupFailureResponse(
             ~code="validation_error",
             ~errorType="validation_error",
-            ~message="no card fields mounted — mount cardNumber (+ cardExpiry/cardCvc) for a new card, or only cardCvc with {savedCard: {paymentMethodToken, paymentMethodData: {card: {cardNetwork}}}} for saved-card recollect",
+            ~message="no card fields mounted — mount cardNumber (+ cardExpiry/cardCvc) for a new card, or only cardCvc with {savedCard: {paymentToken, paymentMethodData: {card: {cardNetwork}}}} for saved-card recollect",
           ),
         )
       }
