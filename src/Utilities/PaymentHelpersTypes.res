@@ -7,6 +7,7 @@ type payment =
   | Applepay
   | Paypal
   | Samsungpay
+  | AmazonPay
   | Paze
   | Other
 
