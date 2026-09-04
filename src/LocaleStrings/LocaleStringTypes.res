@@ -1,5 +1,36 @@
 type locale =
-  EN | HE | FR | EN_GB | AR | JA | DE | FR_BE | ES | CA | PT | IT | PL | NL | SV | RU | ZH | ZH_HANT
+  | EN
+  | HE
+  | FR
+  | EN_GB
+  | AR
+  | JA
+  | DE
+  | FR_BE
+  | FR_CA
+  | ES
+  | CA
+  | PT
+  | IT
+  | PL
+  | NL
+  | SV
+  | RU
+  | ZH
+  | ZH_HANT
+  | DA
+  | LT
+  | CS
+  | SK
+  | IS
+  | CY
+  | EL
+  | ET
+  | FI
+  | NB
+  | BS
+  | MS
+  | TR_CY
 
 type localeStrings = {
   locale: string,

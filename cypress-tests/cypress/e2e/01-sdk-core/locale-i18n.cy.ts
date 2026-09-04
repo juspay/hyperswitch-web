@@ -432,6 +432,7 @@ describe("Locale / i18n Tests", () => {
       "en-gb",
       "fr",
       "fr-be",
+      "fr-ca",
       "de",
       "es",
       "ca",
@@ -446,6 +447,19 @@ describe("Locale / i18n Tests", () => {
       "zh-hant",
       "ar",
       "he",
+      "da",
+      "lt",
+      "cs",
+      "sk",
+      "is",
+      "cy",
+      "el",
+      "et",
+      "fi",
+      "nb",
+      "bs",
+      "ms",
+      "tr-cy",
     ];
 
     allLocales.forEach((code) => {
