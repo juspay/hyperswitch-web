@@ -585,7 +585,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             groupFailureResponse(
               ~code="validation_error",
               ~errorType="validation_error",
-              ~message="saved-card CVC flow requires a token — call cardForm.create(\"cardCvc\", {savedCard: {paymentToken, paymentMethodData: {card: {cardNetwork}}}}) or field.update() with the same shape before confirmPayment()",
+              ~message="savedCard.paymentToken is required for the saved-card CVC flow",
             ),
           )
         } else {
@@ -596,7 +596,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           groupFailureResponse(
             ~code="validation_error",
             ~errorType="validation_error",
-            ~message="no card fields mounted — mount cardNumber (+ cardExpiry/cardCvc) for a new card, or only cardCvc with {savedCard: {paymentToken, paymentMethodData: {card: {cardNetwork}}}} for saved-card recollect",
+            ~message="No card fields are mounted",
           ),
         )
       }
@@ -616,7 +616,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       groupFailureResponse(
         ~code="group_deinitialized",
         ~errorType="server_error",
-        ~message="cardForm.deinit() was called while confirmPayment() was in flight — the payment may still have gone through; check the intent status",
+        ~message="deinit() was called while a confirm was in flight — the payment may still have gone through",
       ),
     )
     confirmingRef := false

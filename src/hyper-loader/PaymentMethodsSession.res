@@ -696,9 +696,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
         buildConfirmResult(
           ~outcome=Failure({
             code: "validation_error",
-            message: Some(
-              "VGS vault declared but vaultData missing vaultId/environment — cannot tokenize",
-            ),
+            message: Some("vaultDetails.vaultData is missing vaultId or environment"),
             locale,
             typeOverride: Some(ValidationError),
           }),
@@ -778,9 +776,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
         buildConfirmResult(
           ~outcome=Failure({
             code: "validation_error",
-            message: Some(
-              "VGS vault declared but vaultData missing vaultId/environment — cannot tokenize Flow B (saved-card CVC recollect)",
-            ),
+            message: Some("vaultDetails.vaultData is missing vaultId or environment"),
             locale,
             typeOverride: Some(ValidationError),
           }),
@@ -796,9 +792,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
           buildConfirmResult(
             ~outcome=Failure({
               code: "validation_error",
-              message: Some(
-                "cardCvc field not mounted — for saved-card recollect, call cardForm.create(\"cardCvc\", {savedCard: {paymentMethodData: {card: {cardNetwork}}}}) then mount() before tokenize()",
-              ),
+              message: Some("cardCvc field is not mounted"),
               locale,
               typeOverride: None,
             }),
@@ -863,9 +857,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
       let envelope = buildConfirmResult(
         ~outcome=Failure({
           code: "tokenization_failed",
-          message: Some(
-            "cardFormCoordinator is not mounted — create + mount a hosted (non-VGS) card field before calling tokenize()",
-          ),
+          message: Some("Card form is not mounted"),
           locale,
           typeOverride: Some(ApiError),
         }),
@@ -1024,7 +1016,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
             ~outcome=Failure({
               code: "tokenization_failed",
               message: Some(
-                "deinit() was called while a tokenization was in flight — the card may still have been saved; check the payment method list before retrying",
+                "deinit() was called while a tokenization was in flight — the card may still have been saved",
               ),
               locale,
               typeOverride: Some(ApiError),
