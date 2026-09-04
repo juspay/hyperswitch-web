@@ -397,6 +397,7 @@ let useCardForm = (
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
+    setCardExpiry,
     changeCardExpiry,
     handleExpiryBlur,
     expiryRef,

@@ -6,6 +6,7 @@ let protocolVersionKey = "cardFormPortV"
 let kindFieldStateUpdate = "fieldStateUpdate"
 let kindDoFocus = "doFocus"
 let kindDetectedCardBrand = "detectedCardBrand"
+let kindClearField = "clearField"
 
 type fieldStateSnapshot = {
   cardBrand: string,

@@ -99,6 +99,19 @@ let useCardFieldBase = (
     handleMessage(handleFocusEvent, "")
   }, (focusTarget, parentURL))
 
+  let clearFieldValue = () =>
+    switch paymentType {
+    | CardThemeType.CardExpiryElement => {
+        expiryProps.setCardExpiry(_ => "")
+        expiryProps.setIsExpiryValid(_ => None)
+      }
+    | CardThemeType.CardCVCElement => {
+        cvcProps.setCvcNumber(_ => "")
+        cvcProps.setIsCVCValid(_ => None)
+      }
+    | _ => ()
+    }
+
   React.useEffect(() => {
     if portKey !== "" {
       switch SadPortRegistry.getPort(~key=portKey) {
@@ -112,6 +125,8 @@ let useCardFieldBase = (
               CardUtils.focusRef(focusTarget)
             } else if kind === CardFormPortProtocol.kindDetectedCardBrand {
               setPortBrandOverride(_ => payload->JSON.Decode.string->Option.getOr(""))
+            } else if kind === CardFormPortProtocol.kindClearField {
+              clearFieldValue()
             } else {
               Console.warn(`[CommonCardFieldHooks] dropped port frame on unknown kind "${kind}" (portKey "${portKey}")`)
             }
@@ -233,6 +248,7 @@ module RenderCardNumber = {
         type_="tel"
         className="tracking-widest w-full"
         maxLength=maxCardLength
+        height=themeObj.inputFieldHeight
         inputRef=cardRef
         placeholder=numberPlaceholder
         rightIcon=icon
@@ -267,6 +283,7 @@ module RenderCardExpiry = {
         type_="tel"
         className="tracking-widest w-full"
         maxLength=7
+        height=themeObj.inputFieldHeight
         inputRef=expiryRef
         placeholder=expiryPlaceholder
         paymentType=CardThemeType.CardExpiryElement
@@ -315,6 +332,7 @@ module RenderCardCvc = {
         type_="tel"
         className="tracking-widest w-full"
         maxLength=maxCVCLength
+        height=themeObj.inputFieldHeight
         inputRef=cvcRef
         placeholder=cvcPlaceholder
         paymentType=CardThemeType.CardCVCElement

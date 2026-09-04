@@ -19,7 +19,7 @@ let defaultErrorMessage = (~code: string): string =>
   | "session_consumed" => "Payment method session has already been consumed or deinitialized"
   | "tokenization_in_progress" => "A tokenization is already in flight for this payment method session"
   | "confirm_in_progress" => "A confirm is already in flight for this payment method session"
-  | "incomplete_field_set" => "mount {cardNumber,cardExpiry,cardCvc} for tokenize or only cardCvc for saved-card recollect"
+  | "incomplete_field_set" => "Mounted card fields are incomplete"
   | "validation_error" => "Validation failed for one or more fields"
   | "tokenization_failed" => "Card tokenization failed"
   | _ => "An unexpected error occurred"
@@ -196,8 +196,24 @@ let make = () => {
     fieldConfirmedInvalid("cardExpiry", "hasExpiryValidationStatus", "isExpiryValid")
   let cardCvcConfirmedInvalid = () =>
     fieldConfirmedInvalid("cardCvc", "hasCvcValidationStatus", "isCvcValid")
-  let anyContributingFieldConfirmedInvalid = () =>
-    cardNumberConfirmedInvalid() || cardExpiryConfirmedInvalid() || cardCvcConfirmedInvalid()
+  let fieldProblem = (fieldName, value, confirmedInvalid) =>
+    if value === "" {
+      Some(`${fieldName} is required`)
+    } else if confirmedInvalid {
+      Some(`${fieldName} is invalid`)
+    } else {
+      None
+    }
+  let cvcFieldProblem = () =>
+    fieldProblem("cardCvc", aggregatedCvcNumber(), cardCvcConfirmedInvalid())
+  let describeCardFieldProblems = () =>
+    [
+      fieldProblem("cardNumber", aggregatedCardNumber(), cardNumberConfirmedInvalid()),
+      fieldProblem("cardExpiry", aggregatedCardExpiry(), cardExpiryConfirmedInvalid()),
+      cvcFieldProblem(),
+    ]
+    ->Array.filterMap(problem => problem)
+    ->Array.join(", ")
 
   let relayDetectedBrandToCvc = (brand: string) =>
     SadPortRegistry.postFrame(
@@ -207,6 +223,17 @@ let make = () => {
         ~payload=brand->JSON.Encode.string,
       ),
     )->ignore
+
+  let clearDependentFields = () =>
+    ["cardExpiry", "cardCvc"]->Array.forEach(fieldName =>
+      SadPortRegistry.postFrame(
+        ~key=portKey(~groupId, ~fieldName),
+        CardFormPortProtocol.makePortFrame(
+          ~kind=CardFormPortProtocol.kindClearField,
+          ~payload=true->JSON.Encode.bool,
+        ),
+      )->ignore
+    )
 
   let seedDetectedBrandOnCvcRegistration = (fieldName: string) =>
     if fieldName === "cardCvc" && lastBrandRef.current !== "" {
@@ -246,14 +273,22 @@ let make = () => {
                     emitterRef.current.emitCardInfo(~elementType="cardForm", ~cardInfo)
                   }
                 }
-                let cardBrand = payload->getDictFromJson->getString("cardBrand", "")
-                if (
-                  fieldName === "cardNumber" &&
-                  cardBrand !== "" &&
-                  cardBrand !== lastBrandRef.current
-                ) {
-                  lastBrandRef.current = cardBrand
-                  relayDetectedBrandToCvc(cardBrand)
+                if fieldName === "cardNumber" {
+                  let payloadDict = payload->getDictFromJson
+                  let cardBrand = payloadDict->getString("cardBrand", "")
+                  let isCardNumberEmpty =
+                    payloadDict->getDictFromDict("fieldStatus")->getBool("empty", false)
+
+                  // CommonCardProps.changeCardNumber clears expiry and CVC in place when the number
+                  // is wiped; they are separate iframes here, so lastBrandRef stands in for its
+                  // prevCardBrandRef guard and the wipe is relayed over the ports.
+                  if isCardNumberEmpty && lastBrandRef.current !== "" {
+                    lastBrandRef.current = ""
+                    clearDependentFields()
+                  } else if cardBrand !== "" && cardBrand !== lastBrandRef.current {
+                    lastBrandRef.current = cardBrand
+                    relayDetectedBrandToCvc(cardBrand)
+                  }
                 }
                 let focusReady = payload->getDictFromJson->getBool("focusReady", false)
                 let prevReady = prevFocusReadyRef.current->Dict.get(fieldName)->Option.getOr(false)
@@ -350,28 +385,22 @@ let make = () => {
               let cardExpiry = aggregatedCardExpiry()
               let cvcNumber = aggregatedCvcNumber()
               let cardBrand = aggregatedCardBrand()
-              if (
-                flowKind === "payments" &&
-                  (cardNumber === "" ||
-                  cardExpiry === "" ||
-                  cvcNumber === "" ||
-                  anyContributingFieldConfirmedInvalid())
-              ) {
+              let cardFieldProblems = describeCardFieldProblems()
+              let cvcProblem = cvcFieldProblem()
+              if flowKind === "payments" && cardFieldProblems !== "" {
                 messageParentWindow(
                   [
                     ("paymentConfirmFail", true->JSON.Encode.bool),
-                    ("errorMessage", "Card details incomplete or invalid"->JSON.Encode.string),
+                    ("errorMessage", cardFieldProblems->JSON.Encode.string),
                     ("iframeId", keys.iframeId->JSON.Encode.string),
                   ],
                   ~targetOrigin=keys.parentURL,
                 )
-              } else if (
-                flowKind === "savedCardCvc" && (cvcNumber === "" || cardCvcConfirmedInvalid())
-              ) {
+              } else if flowKind === "savedCardCvc" && cvcProblem->Option.isSome {
                 messageParentWindow(
                   [
                     ("paymentConfirmFail", true->JSON.Encode.bool),
-                    ("errorMessage", "CVC incomplete or invalid"->JSON.Encode.string),
+                    ("errorMessage", cvcProblem->Option.getOr("")->JSON.Encode.string),
                     ("iframeId", keys.iframeId->JSON.Encode.string),
                   ],
                   ~targetOrigin=keys.parentURL,
@@ -424,7 +453,7 @@ let make = () => {
                         ("paymentConfirmFail", true->JSON.Encode.bool),
                         (
                           "errorMessage",
-                          "saved-card confirm requires the customer payment-method list (clientList) to be loaded"->JSON.Encode.string,
+                          "Customer payment method list is not loaded"->JSON.Encode.string,
                         ),
                         ("iframeId", keys.iframeId->JSON.Encode.string),
                       ],
@@ -473,45 +502,25 @@ let make = () => {
               | VaultHelpers.HyperswitchVault(creds) => (creds.pmSessionId, creds.sdkAuthorization)
               | _ => ("", "")
               }
-              if flow !== "update" && (cardNumber === "" || cardExpiry === "" || cvcNumber === "") {
+              let cardFieldProblems = describeCardFieldProblems()
+              let cvcProblem = cvcFieldProblem()
+              if flow !== "update" && cardFieldProblems !== "" {
                 settle(
                   buildConfirmResult(
                     ~outcome=Failure({
                       code: "validation_error",
-                      message: Some("one or more card fields are incomplete"),
+                      message: Some(cardFieldProblems),
                       locale: errorLocale,
                       typeOverride: None,
                     }),
                   ),
                 )
-              } else if flow !== "update" && anyContributingFieldConfirmedInvalid() {
+              } else if flow === "update" && cvcProblem->Option.isSome {
                 settle(
                   buildConfirmResult(
                     ~outcome=Failure({
                       code: "validation_error",
-                      message: Some("one or more card fields are invalid"),
-                      locale: errorLocale,
-                      typeOverride: None,
-                    }),
-                  ),
-                )
-              } else if flow === "update" && cvcNumber === "" {
-                settle(
-                  buildConfirmResult(
-                    ~outcome=Failure({
-                      code: "validation_error",
-                      message: Some("cvc is incomplete"),
-                      locale: errorLocale,
-                      typeOverride: None,
-                    }),
-                  ),
-                )
-              } else if flow === "update" && cardCvcConfirmedInvalid() {
-                settle(
-                  buildConfirmResult(
-                    ~outcome=Failure({
-                      code: "validation_error",
-                      message: Some("cvc is invalid"),
+                      message: cvcProblem,
                       locale: errorLocale,
                       typeOverride: None,
                     }),
