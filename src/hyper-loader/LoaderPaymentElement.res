@@ -95,6 +95,9 @@ let make = (
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  ~fieldName: option<string>=?,
+  ~surfaceFamily: option<string>=?,
+  ~groupId: option<string>=?,
 ) => {
   try {
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
@@ -530,16 +533,35 @@ let make = (
 
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->getClasses("base")
-      let additionalIframeStyle =
-        componentType->Utils.isOtherElements ? "height: 3rem;" : "height: 0;"
+      let additionalIframeStyle = switch (fieldName, componentType->Utils.isOtherElements) {
+      | (Some(_), _) =>
+        let inputFieldHeight =
+          optionsDict
+          ->getDictFromDict("appearance")
+          ->getDictFromDict("variables")
+          ->getString("inputFieldHeight", "48px")
+        `height: ${inputFieldHeight};`
+      | (None, true) => "height: 3rem;"
+      | (None, false) => "height: 0;"
+      }
       switch oElement->Nullable.toOption {
       | Some(elem) => {
           let iframeElementId = `orca-${elementIframeId}-iframeRef-${localSelectorString}`
+          let appendParam = (url, key, value) =>
+            switch value {
+            | Some(v) => `${url}&${key}=${encodeURIComponent(v)}`
+            | None => url
+            }
+          let iframeSrc =
+            `${sdkDomainUrl}/index.html?componentName=${componentType}`
+            ->appendParam("fieldName", fieldName)
+            ->appendParam("surfaceFamily", surfaceFamily)
+            ->appendParam("groupId", groupId)
           let iframeDiv = `<div id="orca-${elementIframeWrapperDivId}-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
           ${buildIframeHtmlString(
               ~iframeId=iframeElementId,
-              ~iframeSrc=`${sdkDomainUrl}/index.html?componentName=${componentType}`,
+              ~iframeSrc,
               ~additionalStyle=additionalIframeStyle,
             )}
           </div>`

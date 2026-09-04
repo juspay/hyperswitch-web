@@ -35,6 +35,11 @@ let supportedCardBrands = Jotai.atom((None: option<array<string>>))
 let savedCardBrand = Jotai.atom("")
 let optionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
 let paymentOptionsJsonAtom = Jotai.atom(Dict.make()->JSON.Encode.object)
+let cardBrandIconOverride = Jotai.atom((None: option<PaymentType.cardBrandIconStyle>))
+let cvcIconOverride = Jotai.atom((None: option<PaymentType.cvcIconStyle>))
+let cardNumberPlaceholder = Jotai.atom((None: option<string>))
+let cardExpiryPlaceholder = Jotai.atom((None: option<string>))
+let cardCvcPlaceholder = Jotai.atom((None: option<string>))
 let paymentMethodCollectOptionAtom = Jotai.atom(
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
 )

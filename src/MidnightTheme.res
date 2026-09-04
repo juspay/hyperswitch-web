@@ -49,6 +49,7 @@ let midnight = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#24252D",
+  inputFieldHeight: "48px",
 }
 
 let midnightRules = theme =>

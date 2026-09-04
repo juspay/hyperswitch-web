@@ -152,7 +152,7 @@ let getLocaleObject = async string => {
 
 let getConstantStringsObject = async () => {
   try {
-    let promiseConstantStrings = Js.import(ConstantStrings.constantStrings)
+    let promiseConstantStrings = import(ConstantStrings.constantStrings)
     await promiseConstantStrings
   } catch {
   | _ => ConstantStrings.constantStrings
@@ -217,6 +217,7 @@ let getVariables = (str, dict, default, logger) => {
       "buttonTextFontSize",
       "buttonTextFontWeight",
       "buttonBorderWidth",
+      "inputFieldHeight",
     ]
     unknownKeysWarning(validKeys, json, "appearance.variables")
     {
@@ -379,6 +380,12 @@ let getVariables = (str, dict, default, logger) => {
         default.disabledFieldColor,
         ~logger,
       ),
+      inputFieldHeight: getWarningString(
+        json,
+        "inputFieldHeight",
+        default.inputFieldHeight,
+        ~logger,
+      ),
     }
   })
   ->Option.getOr(default)
@@ -428,7 +435,7 @@ let getFonts = (str, dict, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.filterMap(JSON.Decode.object)
   ->Array.map(json => {
     unknownKeysWarning(["cssSrc", "family", "src", "weight"], json, "fonts")
     {

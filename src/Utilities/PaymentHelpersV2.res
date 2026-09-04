@@ -292,6 +292,30 @@ let fetchPaymentManagementList = (
   })
 }
 
+let retrievePaymentMethodSession = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAuthorization) => {
+  open Promise
+  let headers = [("Authorization", sdkAuthorization)]
+  let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
+
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
+  ->then(res => {
+    if !(res->Fetch.Response.ok) {
+      res
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      res->Fetch.Response.json
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.error2("Error ", exceptionMessage)
+    JSON.Encode.null->resolve
+  })
+}
+
 let deletePaymentMethodV2 = (
   ~paymentMethodToken,
   ~pmSessionId,
