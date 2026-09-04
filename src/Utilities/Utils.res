@@ -844,7 +844,6 @@ let validateRountingNumber = str => {
 }
 
 let handlePostMessageEvents = (
-  ~iframeId,
   ~complete,
   ~empty,
   ~paymentType,
@@ -1698,7 +1697,7 @@ let expressCheckoutComponents = [
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
 
 let componentsForPaymentElementCreate =
-  ["payment", "paymentMethodCollect", "paymentMethodsManagement"]->Array.concat(
+  ["payment", "paymentMethodCollect", "paymentMethodsManagement", "cardCvc"]->Array.concat(
     expressCheckoutComponents,
   )
 

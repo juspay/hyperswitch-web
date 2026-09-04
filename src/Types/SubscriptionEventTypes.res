@@ -1,18 +1,23 @@
 open ErrorUtils
 open PaymentEventTypes
 
-let validSubscriptionEvents = ["surchargeInfo", "appliedOffersInfo", "cardDetailsChange"]
+let validSubscriptionEvents = [
+  "paymentMethodChange",
+  "cardDetailsChange",
+  "formStatusChange",
+  "cvcStatusChange",
+  "billingDetailsChange",
+  "surchargeInfo",
+  "appliedOffersInfo",
+]
 
-let stringToEvent = (str, key) =>
-  switch str {
-  | "surchargeInfo" => Surcharge
-  | "appliedOffersInfo" => Offers
-  | "cardDetailsChange" => PaymentMethodInfoCard
-  | _ => {
-      str->unknownPropValueWarning(validSubscriptionEvents, key)
-      UnknownEvent
-    }
+let modifiedEventFromString = (str, key) => {
+  let event = eventFromString(str)
+  if event === UnknownEvent {
+    str->unknownPropValueWarning(validSubscriptionEvents, key)
   }
+  event
+}
 
 let getSubscriptionEvents = (dict, key) => {
   let context = `options.${key}`
@@ -26,7 +31,7 @@ let getSubscriptionEvents = (dict, key) => {
     subscriptionList
     ->Array.map(item =>
       switch JSON.Decode.string(item) {
-      | Some(str) => stringToEvent(str, context)
+      | Some(str) => modifiedEventFromString(str, context)
       | None => {
           item->JSON.stringify->unknownPropValueWarning(validSubscriptionEvents, context)
           UnknownEvent
@@ -61,7 +66,7 @@ let createCardInfoPayload = (
   let payload = PaymentEventData.cardInfoToJson(cardInfo)
   [
     ("elementType", elementType->JSON.Encode.string),
-    ("eventName", "cardDetailsChange"->JSON.Encode.string),
+    ("eventName", CardDetailsChange->PaymentEventTypes.eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -70,7 +75,7 @@ let createFormStatusPayload = (~status) => {
   let payload = PaymentEventData.formStatusEventToJson(~status)
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", FormStatus->eventToString->JSON.Encode.string),
+    ("eventName", FormStatusChange->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -90,7 +95,7 @@ let createPaymentMethodStatusPayload = (
 
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", PaymentMethodStatus->eventToString->JSON.Encode.string),
+    ("eventName", PaymentMethodChange->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -100,7 +105,7 @@ let createBillingAddressPayload = (~country, ~state, ~postalCode) => {
 
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", PaymentMethodInfoBillingAddress->eventToString->JSON.Encode.string),
+    ("eventName", BillingDetailsChange->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -111,7 +116,7 @@ let createCvcStatusPayload = (~iframeId, ~isCvcEmpty, ~isCvcComplete) => {
   [
     ("elementType", "cardCvc"->JSON.Encode.string),
     ("iframeId", iframeId->JSON.Encode.string),
-    ("eventName", CvcStatus->PaymentEventTypes.eventToString->JSON.Encode.string),
+    ("eventName", CvcStatusChange->PaymentEventTypes.eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -136,7 +141,7 @@ let createSurchargePayload = (
   let payload = PaymentEventData.surchargeEventToJson(event)
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", "surchargeInfo"->JSON.Encode.string),
+    ("eventName", SurchargeInfo->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
