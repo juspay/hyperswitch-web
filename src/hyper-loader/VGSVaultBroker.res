@@ -654,6 +654,19 @@ let make = (
           inputFieldHeight
         }
 
+        // VGS renders the input inside its own iframe, so sizing the container alone leaves a
+        // short input in a tall box. Fill it unless the field or the merchant set a height.
+        let computedOptions = {
+          let optionsDict = computedOptions->getDictFromJson->Dict.copy
+          let css = optionsDict->getDictFromDict("css")->Dict.copy
+          if css->Dict.get("height")->Option.isNone {
+            css->Dict.set("height", inputFieldHeight->JSON.Encode.string)
+            css->Dict.set("box-sizing", "border-box"->JSON.Encode.string)
+            optionsDict->Dict.set("css", css->JSON.Encode.object)
+          }
+          optionsDict->JSON.Encode.object
+        }
+
         try {
           Window.querySelector(selector)
           ->Nullable.toOption
