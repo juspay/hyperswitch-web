@@ -33,6 +33,23 @@ let tokenizationInFlightResult = (~locale: string="en", ()): JSON.t =>
 let buildConfirmResult = CardFormCoordinator.buildConfirmResult
 let isErrorResult = CardFormCoordinator.isErrorResult
 
+// vaultDetails is a merchant prop and so is camelCase, but the session it is packed into
+// mirrors the backend payload that VaultHelpers reads, which is snake_case.
+let toSessionVaultData = (vaultData: JSON.t): JSON.t => {
+  let merchantData = vaultData->getDictFromJson
+  let sessionData = Dict.make()
+  [
+    ("vaultId", "vault_id"),
+    ("environment", "environment"),
+    ("sdkAuthorization", "sdk_authorization"),
+  ]->Array.forEach(((merchantKey, sessionKey)) =>
+    merchantData
+    ->Dict.get(merchantKey)
+    ->Option.forEach(value => sessionData->Dict.set(sessionKey, value))
+  )
+  sessionData->JSON.Encode.object
+}
+
 let buildSyntheticSession = (
   ~pmSessionId: string,
   ~customerId: string,
@@ -41,7 +58,7 @@ let buildSyntheticSession = (
 ): JSON.t => {
   let vaultDetailsDict = Dict.make()
   vaultDetailsDict->Dict.set("vault_type", vaultType->JSON.Encode.string)
-  vaultDetailsDict->Dict.set("vault_data", vaultData)
+  vaultDetailsDict->Dict.set("vault_data", vaultData->toSessionVaultData)
   let sessionDict = Dict.make()
   sessionDict->Dict.set("payment_method_session_id", pmSessionId->JSON.Encode.string)
   sessionDict->Dict.set("customer_id", customerId->JSON.Encode.string)
@@ -253,12 +270,13 @@ let make = (options: JSON.t): paymentMethodsSession => {
     }
   }
 
-  let vaultOptionDict = optionsDict->Dict.get("vault")->Option.flatMap(JSON.Decode.object)
+  let vaultOptionDict =
+    optionsDict->Dict.get("vaultDetails")->Option.flatMap(JSON.Decode.object)
 
   switch vaultOptionDict {
   | Some(vaultDict) => {
-      let vaultType = vaultDict->getString("vault_type", "")
-      let vaultData = vaultDict->Dict.get("vault_data")->Option.getOr(JSON.Encode.null)
+      let vaultType = vaultDict->getString("vaultType", "")
+      let vaultData = vaultDict->Dict.get("vaultData")->Option.getOr(JSON.Encode.null)
 
       let syntheticSession = buildSyntheticSession(~pmSessionId, ~customerId, ~vaultType, ~vaultData)
       sessionsDataRef := syntheticSession
@@ -309,9 +327,9 @@ let make = (options: JSON.t): paymentMethodsSession => {
   let detectVaultType = (): string => {
     let declaredType =
       optionsDict
-      ->Dict.get("vault")
+      ->Dict.get("vaultDetails")
       ->Option.flatMap(JSON.Decode.object)
-      ->Option.map(d => d->getString("vault_type", ""))
+      ->Option.map(d => d->getString("vaultType", ""))
       ->Option.getOr("")
     if declaredType->String.length > 0 {
       declaredType
@@ -328,13 +346,13 @@ let make = (options: JSON.t): paymentMethodsSession => {
     | None =>
       let vaultDataDict =
         optionsDict
-        ->Dict.get("vault")
+        ->Dict.get("vaultDetails")
         ->Option.flatMap(JSON.Decode.object)
-        ->Option.flatMap(d => d->Dict.get("vault_data"))
+        ->Option.flatMap(d => d->Dict.get("vaultData"))
         ->Option.flatMap(JSON.Decode.object)
       let fromCredentials = vaultCredentialsRef.contents->getDictFromJson
       let vaultId = switch vaultDataDict {
-      | Some(d) => d->getString("vault_id", "")
+      | Some(d) => d->getString("vaultId", "")
       | None => fromCredentials->getString("vaultId", "")
       }
       let environment = switch vaultDataDict {
@@ -631,7 +649,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
             }
           | None => {
               Console.error(
-                `[PaymentMethodsSession] vault_type="vgs" declared but vault_data has no vault_id/environment — cannot mount`,
+                `[PaymentMethodsSession] vaultType="vgs" declared but vaultData has no vaultId/environment — cannot mount`,
               )
               Types.defaultFieldHandle
             }
@@ -652,7 +670,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
           entry.handle
         | other => {
             Console.error(
-              `[PaymentMethodsSession] unsupported_provider: vault_type "${other}" not yet supported`,
+              `[PaymentMethodsSession] unsupported_provider: vaultType "${other}" not yet supported`,
             )
             Types.defaultFieldHandle
           }
@@ -678,9 +696,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
         buildConfirmResult(
           ~outcome=Failure({
             code: "validation_error",
-            message: Some(
-              "VGS vault declared but vault_data missing vault_id/environment — cannot tokenize",
-            ),
+            message: Some("vaultDetails.vaultData is missing vaultId or environment"),
             locale,
             typeOverride: Some(ValidationError),
           }),
@@ -760,9 +776,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
         buildConfirmResult(
           ~outcome=Failure({
             code: "validation_error",
-            message: Some(
-              "VGS vault declared but vault_data missing vault_id/environment — cannot tokenize Flow B (saved-card CVC recollect)",
-            ),
+            message: Some("vaultDetails.vaultData is missing vaultId or environment"),
             locale,
             typeOverride: Some(ValidationError),
           }),
@@ -778,9 +792,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
           buildConfirmResult(
             ~outcome=Failure({
               code: "validation_error",
-              message: Some(
-                "cardCvc field not mounted — for saved-card recollect, call cardForm.create(\"cardCvc\", {savedCard: {paymentMethodData: {card: {cardNetwork}}}}) then mount() before tokenize()",
-              ),
+              message: Some("cardCvc field is not mounted"),
               locale,
               typeOverride: None,
             }),
@@ -845,9 +857,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
       let envelope = buildConfirmResult(
         ~outcome=Failure({
           code: "tokenization_failed",
-          message: Some(
-            "cardFormCoordinator is not mounted — create + mount a hosted (non-VGS) card field before calling tokenize()",
-          ),
+          message: Some("Card form is not mounted"),
           locale,
           typeOverride: Some(ApiError),
         }),
@@ -1006,7 +1016,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
             ~outcome=Failure({
               code: "tokenization_failed",
               message: Some(
-                "deinit() was called while a tokenization was in flight — the card may still have been saved; check the payment method list before retrying",
+                "deinit() was called while a tokenization was in flight — the card may still have been saved",
               ),
               locale,
               typeOverride: Some(ApiError),
@@ -1027,7 +1037,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
     }
   }
 
-  let cardForm = (): vaultCardForm => {
+  let createCardForm = (): vaultCardForm => {
     create,
     on,
     tokenize,
@@ -1037,7 +1047,7 @@ let make = (options: JSON.t): paymentMethodsSession => {
   }
 
   {
-    cardForm,
+    createCardForm,
     update,
     on,
     deinit,

@@ -70,7 +70,7 @@ type vaultCardForm = {
 }
 
 type paymentMethodsSession = {
-  cardForm: unit => vaultCardForm,
+  createCardForm: unit => vaultCardForm,
   update: JSON.t => unit,
   on: (string, JSON.t => unit) => unit,
   deinit: unit => unit,
@@ -83,7 +83,7 @@ type element = {
   fetchUpdates: unit => promise<JSON.t>,
   create: (JSON.t, Nullable.t<JSON.t>) => paymentElement,
   updateIntent: (unit => promise<JSON.t>) => promise<JSON.t>,
-  cardForm: unit => cardForm,
+  createCardForm: unit => cardForm,
 }
 
 type getCustomerSavedPaymentMethods = {
@@ -246,7 +246,7 @@ let defaultElement = {
   fetchUpdates,
   create,
   updateIntent: _ => Promise.resolve(JSON.Encode.null),
-  cardForm: () => defaultCardForm,
+  createCardForm: () => defaultCardForm,
 }
 
 let getCustomerDefaultSavedPaymentMethodData = () => {
@@ -285,7 +285,7 @@ let defaultInitAuthenticationSession: initAuthenticationSession = {
 }
 
 let defaultPaymentMethodsSession: paymentMethodsSession = {
-  cardForm: () => defaultVaultCardForm,
+  createCardForm: () => defaultVaultCardForm,
   update: _ => (),
   on: (_, _) => (),
   deinit: () => (),

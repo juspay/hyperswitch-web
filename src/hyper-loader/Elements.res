@@ -1587,7 +1587,7 @@ let make = (
       let none: option<'a> = None
     }
     let cardFormRef: ref<option<Types.cardForm>> = ref(StdOption.none)
-    let cardForm = (): Types.cardForm =>
+    let createCardForm = (): Types.cardForm =>
       switch cardFormRef.contents {
       | Some(group) => group
       | None =>
@@ -1610,7 +1610,7 @@ let make = (
       fetchUpdates,
       create,
       updateIntent,
-      cardForm,
+      createCardForm,
     }
   } catch {
   | e => {
