@@ -30,6 +30,7 @@ let mapLocalStringToTypeLocale = val => {
   | "tr-cy" => Some(TR_CY)
   | "zh" => Some(ZH)
   | "en-gb" => Some(EN_GB)
+  | "fr-ca" => Some(FR_CA)
   | "fr-be" => Some(FR_BE)
   | "zh-hant" => Some(ZH_HANT)
   | "en" => Some(EN)

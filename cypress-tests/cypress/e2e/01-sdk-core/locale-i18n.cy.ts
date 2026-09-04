@@ -432,6 +432,7 @@ describe("Locale / i18n Tests", () => {
       "en-gb",
       "fr",
       "fr-be",
+      "fr-ca",
       "de",
       "es",
       "ca",

@@ -118,6 +118,7 @@ let getLocaleObject = async string => {
     | JA => import(JapaneseLocale.localeStrings)
     | DE => import(DeutschLocale.localeStrings)
     | FR_BE => import(FrenchBelgiumLocale.localeStrings)
+    | FR_CA => import(FrenchCanadianLocale.localeStrings)
     | ES => import(SpanishLocale.localeStrings)
     | CA => import(CatalanLocale.localeStrings)
     | ZH => import(ChineseLocale.localeStrings)

@@ -7,6 +7,7 @@ type locale =
   | JA
   | DE
   | FR_BE
+  | FR_CA
   | ES
   | CA
   | PT
