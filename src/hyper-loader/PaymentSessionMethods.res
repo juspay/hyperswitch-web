@@ -168,6 +168,7 @@ let getCustomerSavedPaymentMethods = (
             ("paymentType", (paymentType :> string)->JSON.Encode.string),
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("clientSecret", clientSecretRef.contents->JSON.Encode.string),
+            ("sdkAuthorization", sdkAuthorizationRef.contents->JSON.Encode.string),
             ("requiresCvv", requiresCvv->JSON.Encode.bool),
             ("redirect", redirect->JSON.Encode.string),
           ]->getJsonFromArrayOfJson

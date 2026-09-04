@@ -164,7 +164,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
-    | Card => setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+    | Card =>
+      setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
     | PaymentMethodCollectElement => {
         let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
@@ -312,8 +313,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
         let pinnedParentURL = keys.parentURL
         let isFromHostWindow =
-          ev.source === iframeParent &&
-            (pinnedParentURL === "*" || ev.origin === pinnedParentURL)
+          ev.source === iframeParent && (pinnedParentURL === "*" || ev.origin === pinnedParentURL)
         let ports = ev->MessageChannelBinding.eventPorts
         if isFromHostWindow && ports->Array.length > 0 {
           let handshakeShaped =
