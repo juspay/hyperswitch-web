@@ -17,11 +17,9 @@ let defaultErrorMessage = (~code: string): string =>
   switch code {
   | "session_expired" => "Payment method session has expired"
   | "session_consumed" => "Payment method session has already been consumed or deinitialized"
-  | "tokenization_in_progress" =>
-    "A tokenization is already in flight for this payment method session"
+  | "tokenization_in_progress" => "A tokenization is already in flight for this payment method session"
   | "confirm_in_progress" => "A confirm is already in flight for this payment method session"
-  | "incomplete_field_set" =>
-    "mount {cardNumber,cardExpiry,cardCvc} for tokenize or only cardCvc for saved-card recollect"
+  | "incomplete_field_set" => "mount {cardNumber,cardExpiry,cardCvc} for tokenize or only cardCvc for saved-card recollect"
   | "validation_error" => "Validation failed for one or more fields"
   | "tokenization_failed" => "Card tokenization failed"
   | _ => "An unexpected error occurred"
@@ -52,7 +50,8 @@ let makeErrorResult = (
     | "session_consumed"
     | "tokenization_failed"
     | "tokenization_in_progress"
-    | "confirm_in_progress" => ApiError
+    | "confirm_in_progress" =>
+      ApiError
     | _ => CardError
     }
   }
@@ -128,8 +127,8 @@ let make = () => {
   // The handler fires on every keystroke of every field; only forward real changes.
   let lastEmittedCardInfoRef = React.useRef("")
 
-  let fieldSnapshotsRef = React.useRef(Dict.make(): Dict.t<fieldSnapshotEntry>)
-  let prevFocusReadyRef = React.useRef(Dict.make(): Dict.t<bool>)
+  let fieldSnapshotsRef = React.useRef((Dict.make(): Dict.t<fieldSnapshotEntry>))
+  let prevFocusReadyRef = React.useRef((Dict.make(): Dict.t<bool>))
   let lastBrandRef = React.useRef("")
   let confirmingRef = React.useRef(false)
 
@@ -173,10 +172,8 @@ let make = () => {
       }
     )
   }
-  let aggregatedCardNumber = () =>
-    aggregateRawValue(d => d->getString("rawCardNumber", ""))
-  let aggregatedCardExpiry = () =>
-    aggregateRawValue(d => d->getString("rawCardExpiry", ""))
+  let aggregatedCardNumber = () => aggregateRawValue(d => d->getString("rawCardNumber", ""))
+  let aggregatedCardExpiry = () => aggregateRawValue(d => d->getString("rawCardExpiry", ""))
   let aggregatedCvcNumber = () => aggregateRawValue(d => d->getString("rawCvc", ""))
   let aggregatedCardBrand = () => aggregateRawValue(d => d->getString("cardBrand", ""))
 
@@ -187,7 +184,8 @@ let make = () => {
   let fieldConfirmedInvalid = (fieldName, hasStatusKey, isValidKey) =>
     switch snapshotFieldStatus(fieldName) {
     | Some(status) => {
-        let boolOf = (dict, key) => dict->Dict.get(key)->Option.flatMap(JSON.Decode.bool)->Option.getOr(false)
+        let boolOf = (dict, key) =>
+          dict->Dict.get(key)->Option.flatMap(JSON.Decode.bool)->Option.getOr(false)
         boolOf(status, hasStatusKey) && !boolOf(status, isValidKey)
       }
     | None => false
@@ -223,57 +221,66 @@ let make = () => {
       switch SadPortRegistry.getPort(~key) {
       | Some(port) =>
         let fieldName = key->String.replace(`${groupId}:`, "")
-        MessageChannelBinding.onPortMessage(port, ev => {
-          let frameJson: JSON.t = ev.data->Identity.anyTypeToJson
-          switch CardFormPortProtocol.decodePortFrame(frameJson) {
-          | Some({kind, payload}) if kind === CardFormPortProtocol.kindFieldStateUpdate => {
-              fieldSnapshotsRef.current->Dict.set(fieldName, {payload: payload})
-              if (
-                PaymentEventData.shouldEmitEvent(
-                  ~subscribedEvents=subscribedEventsRef.current,
-                  ~eventType=PaymentEventTypes.PaymentMethodInfoCard,
-                )
-              ) {
-                let cardInfo = PaymentEventData.buildCardInfo(
-                  ~cardNumber=aggregatedCardNumber(),
-                  ~expiry=aggregatedCardExpiry(),
-                  ~cvc=aggregatedCvcNumber(),
-                  ~brand=aggregatedCardBrand(),
-                )
-                let serializedCardInfo =
-                  cardInfo->PaymentEventData.cardInfoToJson->JSON.stringify
-                if serializedCardInfo !== lastEmittedCardInfoRef.current {
-                  lastEmittedCardInfoRef.current = serializedCardInfo
-                  emitterRef.current.emitCardInfo(~elementType="cardForm", ~cardInfo)
+        MessageChannelBinding.onPortMessage(
+          port,
+          ev => {
+            let frameJson: JSON.t = ev.data->Identity.anyTypeToJson
+            switch CardFormPortProtocol.decodePortFrame(frameJson) {
+            | Some({kind, payload}) if kind === CardFormPortProtocol.kindFieldStateUpdate => {
+                fieldSnapshotsRef.current->Dict.set(fieldName, {payload: payload})
+                if (
+                  PaymentEventData.shouldEmitEvent(
+                    ~subscribedEvents=subscribedEventsRef.current,
+                    ~eventType=PaymentEventTypes.CardDetailsChange,
+                  )
+                ) {
+                  let cardInfo = PaymentEventData.buildCardInfo(
+                    ~cardNumber=aggregatedCardNumber(),
+                    ~expiry=aggregatedCardExpiry(),
+                    ~cvc=aggregatedCvcNumber(),
+                    ~brand=aggregatedCardBrand(),
+                  )
+                  let serializedCardInfo = cardInfo->PaymentEventData.cardInfoToJson->JSON.stringify
+                  if serializedCardInfo !== lastEmittedCardInfoRef.current {
+                    lastEmittedCardInfoRef.current = serializedCardInfo
+                    emitterRef.current.emitCardInfo(~elementType="cardForm", ~cardInfo)
+                  }
+                }
+                let cardBrand = payload->getDictFromJson->getString("cardBrand", "")
+                if (
+                  fieldName === "cardNumber" &&
+                  cardBrand !== "" &&
+                  cardBrand !== lastBrandRef.current
+                ) {
+                  lastBrandRef.current = cardBrand
+                  relayDetectedBrandToCvc(cardBrand)
+                }
+                let focusReady = payload->getDictFromJson->getBool("focusReady", false)
+                let prevReady = prevFocusReadyRef.current->Dict.get(fieldName)->Option.getOr(false)
+                prevFocusReadyRef.current->Dict.set(fieldName, focusReady)
+                if focusReady && !prevReady {
+                  CardFormShared.nextFieldFor(fieldName)->Option.forEach(
+                    nextFieldName => {
+                      SadPortRegistry.postFrame(
+                        ~key=portKey(~groupId, ~fieldName=nextFieldName),
+                        CardFormPortProtocol.makePortFrame(
+                          ~kind=CardFormPortProtocol.kindDoFocus,
+                          ~payload=true->JSON.Encode.bool,
+                        ),
+                      )->ignore
+                    },
+                  )
                 }
               }
-              let cardBrand = payload->getDictFromJson->getString("cardBrand", "")
-              if fieldName === "cardNumber" && cardBrand !== "" && cardBrand !== lastBrandRef.current {
-                lastBrandRef.current = cardBrand
-                relayDetectedBrandToCvc(cardBrand)
-              }
-              let focusReady =
-                payload->getDictFromJson->getBool("focusReady", false)
-              let prevReady = prevFocusReadyRef.current->Dict.get(fieldName)->Option.getOr(false)
-              prevFocusReadyRef.current->Dict.set(fieldName, focusReady)
-              if focusReady && !prevReady {
-                CardFormShared.nextFieldFor(fieldName)->Option.forEach(nextFieldName => {
-                  SadPortRegistry.postFrame(
-                    ~key=portKey(~groupId, ~fieldName=nextFieldName),
-                    CardFormPortProtocol.makePortFrame(
-                      ~kind=CardFormPortProtocol.kindDoFocus,
-                      ~payload=true->JSON.Encode.bool,
-                    ),
-                  )->ignore
-                })
-              }
+            | Some({kind, _}) =>
+              Console.warn(
+                `[CardFormCoordinator] dropped port frame on unknown kind "${kind}" (port "${key}")`,
+              )
+            | None =>
+              Console.warn(`[CardFormCoordinator] dropped un-decodable port frame (port "${key}")`)
             }
-          | Some({kind, _}) =>
-            Console.warn(`[CardFormCoordinator] dropped port frame on unknown kind "${kind}" (port "${key}")`)
-          | None =>
-            Console.warn(`[CardFormCoordinator] dropped un-decodable port frame (port "${key}")`)
-          }
-        })
+          },
+        )
         seedDetectedBrandOnCvcRegistration(fieldName)
       | None => ()
       }
@@ -307,9 +314,9 @@ let make = () => {
           } else if command === "initiateConfirm" {
             let flowKind = dict->getString("flow", "save")
             let isVaultCommand = flowKind === "save" || flowKind === "update"
-            let misroute = (isVaultCommand && coordinatorFamily !== PaymentSurfaceFamily.VaultCoordinator) || (
-              !isVaultCommand && coordinatorFamily !== PaymentSurfaceFamily.PaymentsCoordinator
-            )
+            let misroute =
+              (isVaultCommand && coordinatorFamily !== PaymentSurfaceFamily.VaultCoordinator) ||
+                (!isVaultCommand && coordinatorFamily !== PaymentSurfaceFamily.PaymentsCoordinator)
             if misroute {
               if isVaultCommand {
                 postConfirmResult(
@@ -331,8 +338,7 @@ let make = () => {
                     ("paymentConfirmFail", true->JSON.Encode.bool),
                     (
                       "errorMessage",
-                      `payments "initiateConfirm" (${flowKind}) misrouted to a vault-family coordinator`
-                      ->JSON.Encode.string,
+                      `payments "initiateConfirm" (${flowKind}) misrouted to a vault-family coordinator`->JSON.Encode.string,
                     ),
                     ("iframeId", keys.iframeId->JSON.Encode.string),
                   ],
@@ -346,8 +352,10 @@ let make = () => {
               let cardBrand = aggregatedCardBrand()
               if (
                 flowKind === "payments" &&
-                (cardNumber === "" || cardExpiry === "" || cvcNumber === "" ||
-                anyContributingFieldConfirmedInvalid())
+                  (cardNumber === "" ||
+                  cardExpiry === "" ||
+                  cvcNumber === "" ||
+                  anyContributingFieldConfirmedInvalid())
               ) {
                 messageParentWindow(
                   [
@@ -389,7 +397,12 @@ let make = () => {
                     ~cvcNumber,
                     ~cardBrand=cardNetwork,
                   )
-                  intent(~handleUserError=false, ~bodyArr=body, ~confirmParam, ~iframeId=keys.iframeId)
+                  intent(
+                    ~handleUserError=false,
+                    ~bodyArr=body,
+                    ~confirmParam,
+                    ~iframeId=keys.iframeId,
+                  )
                   messageParentWindow(
                     [("paymentConfirmAck", true->JSON.Encode.bool)],
                     ~targetOrigin=keys.parentURL,
@@ -399,7 +412,10 @@ let make = () => {
                   let customerId = switch paymentMethodListValue {
                   | Loaded(data)
                   | LoadError(data) =>
-                    data->getDictFromJson->getDictFromDict("intent_data")->getString("customer_id", "")
+                    data
+                    ->getDictFromJson
+                    ->getDictFromDict("intent_data")
+                    ->getString("customer_id", "")
                   | _ => ""
                   }
                   if customerId === "" {
@@ -408,8 +424,7 @@ let make = () => {
                         ("paymentConfirmFail", true->JSON.Encode.bool),
                         (
                           "errorMessage",
-                          "saved-card confirm requires the customer payment-method list (clientList) to be loaded"
-                          ->JSON.Encode.string,
+                          "saved-card confirm requires the customer payment-method list (clientList) to be loaded"->JSON.Encode.string,
                         ),
                         ("iframeId", keys.iframeId->JSON.Encode.string),
                       ],
@@ -423,7 +438,12 @@ let make = () => {
                       ~requiresCvv=true,
                       ~isCustomerAcceptanceRequired=true,
                     )
-                    intent(~handleUserError=false, ~bodyArr=body, ~confirmParam, ~iframeId=keys.iframeId)
+                    intent(
+                      ~handleUserError=false,
+                      ~bodyArr=body,
+                      ~confirmParam,
+                      ~iframeId=keys.iframeId,
+                    )
                     messageParentWindow(
                       [("paymentConfirmAck", true->JSON.Encode.bool)],
                       ~targetOrigin=keys.parentURL,
@@ -514,7 +534,12 @@ let make = () => {
                 if flow === "save" {
                   let (month, year) = CardUtils.getExpiryDates(cardExpiry)
                   PaymentHelpersV2.savePaymentMethod(
-                    ~bodyArr=PaymentBody.cardTokenizationBody(~cardNumber, ~cvcNumber, ~month, ~year),
+                    ~bodyArr=PaymentBody.cardTokenizationBody(
+                      ~cardNumber,
+                      ~cvcNumber,
+                      ~month,
+                      ~year,
+                    ),
                     ~pmSessionId=pmSessionIdCopy,
                     ~sdkAuthorization=vaultAuthCopy,
                     ~logger=loggerState,
@@ -532,11 +557,7 @@ let make = () => {
                         ),
                       )
                     } else {
-                      settle(
-                        buildConfirmResult(
-                          ~outcome=Success(response),
-                        ),
-                      )
+                      settle(buildConfirmResult(~outcome=Success(response)))
                     }
                     Promise.resolve()
                   })
@@ -575,11 +596,7 @@ let make = () => {
                         ),
                       )
                     } else {
-                      settle(
-                        buildConfirmResult(
-                          ~outcome=Success(response),
-                        ),
-                      )
+                      settle(buildConfirmResult(~outcome=Success(response)))
                     }
                     Promise.resolve()
                   })

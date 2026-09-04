@@ -100,7 +100,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Offers,
+        ~eventType=AppliedOffersInfo,
       ) &&
       offerDetails->Option.isSome
     ) {
@@ -108,7 +108,14 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
-  {emitCardInfo, emitPaymentMethodStatus, emitBillingAddress, emitCvcStatus, emitSurcharge, emitOffers}
+  {
+    emitCardInfo,
+    emitPaymentMethodStatus,
+    emitBillingAddress,
+    emitCvcStatus,
+    emitSurcharge,
+    emitOffers,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -288,7 +295,7 @@ let useEmitAppliedOffersInfo = (
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Offers,
+        ~eventType=AppliedOffersInfo,
       ) &&
       offerDetails->Option.isSome
     ) {

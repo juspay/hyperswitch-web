@@ -844,7 +844,6 @@ let validateRountingNumber = str => {
 }
 
 let handlePostMessageEvents = (
-  ~iframeId,
   ~complete,
   ~empty,
   ~paymentType,
