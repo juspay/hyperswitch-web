@@ -179,6 +179,22 @@ module LocalStorage = {
 module Element = {
   @get external isConnected: Dom.element => bool = "isConnected"
   @get external clientWidth: Dom.element => int = "clientWidth"
+  @send external querySelector: (Dom.element, string) => Nullable.t<Dom.element> = "querySelector"
+
+  type canvasContext
+  type textMetrics = {width: float}
+  @send external getContext: (Dom.element, string) => Nullable.t<canvasContext> = "getContext"
+  @set external setFont: (canvasContext, string) => unit = "font"
+  @send external measureText: (canvasContext, string) => textMetrics = "measureText"
+
+  type computedStyle = {
+    font: string,
+    fontWeight: string,
+    fontSize: string,
+    fontFamily: string,
+  }
+  @val @scope("window")
+  external getComputedStyle: Dom.element => computedStyle = "getComputedStyle"
   @get external nullableContentWindow: Dom.element => Nullable.t<Dom.element> = "contentWindow"
   @get external nullableContentDocument: Dom.element => Nullable.t<document> = "contentDocument"
   @get external document: Dom.element => Nullable.t<document> = "document"
