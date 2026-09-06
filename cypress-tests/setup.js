@@ -67,6 +67,22 @@ const CONNECTOR_TYPE_MAP = {
 const PROFILE_KEY_MAP = {
   loonio: "interac",
   gigadat: "interac",
+  // Netcetera is an authentication_processor that must share the same
+  // business profile as cybersource (the payment_processor). Adding both
+  // connectors to the same profile allows 3DS authentication to work.
+  netcetera: "cybersource",
+};
+
+// ---------------------------------------------------------------------------
+// Connectors that require authentication_connector_details to be set on the
+// business profile AFTER both the payment processor and auth processor MCAs
+// have been created.
+//
+// Key   = profile key (as stored in connectorProfileIds)
+// Value = connector name to register as the authentication_connector
+// ---------------------------------------------------------------------------
+const AUTH_CONNECTOR_FOR_PROFILE = {
+  cybersource: "netcetera",
 };
 
 // ---------------------------------------------------------------------------
@@ -78,6 +94,9 @@ const PROFILE_KEY_MAP = {
 // ---------------------------------------------------------------------------
 const REQUIRED_CONNECTORS = [
   "stripe",
+  "adyen",
+  "fiuu",
+  "klarna",
   "cybersource",
   "trustpay",
   "bankofamerica",
@@ -89,6 +108,7 @@ const REQUIRED_CONNECTORS = [
   "cashtocode",
   "loonio",
   "gigadat",
+  "trustly",
 ];
 
 // ---------------------------------------------------------------------------
@@ -108,7 +128,7 @@ const REQUIRED_CONNECTORS = [
 // ---------------------------------------------------------------------------
 const CONNECTOR_PAYMENT_METHODS = {
   // ── Card processors (default) ───────────────────────────────────────────
-  // Covers: stripe, adyen, netcetera, redsys, bankofamerica, juspay
+  // Covers: netcetera, redsys, bankofamerica, juspay
   // recurring_enabled: true  → supports mandate / setup_future_usage flows
   default: [
     {
@@ -134,6 +154,110 @@ const CONNECTOR_PAYMENT_METHODS = {
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: true,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── Stripe ──────────────────────────────────────────────────────────────
+  // Card coverage + Bancontact redirect + Klarna pay_later (via Stripe).
+  stripe: [
+    {
+      payment_method: "card",
+      payment_method_types: [
+        {
+          payment_method_type: "credit",
+          card_networks: [
+            "Visa",
+            "Mastercard",
+            "AmericanExpress",
+            "UnionPay",
+            "DinersClub",
+          ],
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: true,
+          installment_payment_enabled: false,
+        },
+        {
+          payment_method_type: "debit",
+          card_networks: ["Visa", "Mastercard"],
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: true,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+    {
+      payment_method: "bank_redirect",
+      payment_method_types: [
+        {
+          payment_method_type: "bancontact_card",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+    {
+      payment_method: "pay_later",
+      payment_method_types: [
+        {
+          payment_method_type: "klarna",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── Adyen ───────────────────────────────────────────────────────────────
+  // Cards (default networks) + AlipayHK wallet.
+  // AlipayHK requires HKD currency and billing country HK (set per test).
+  adyen: [
+    {
+      payment_method: "card",
+      payment_method_types: [
+        {
+          payment_method_type: "credit",
+          card_networks: [
+            "Visa",
+            "Mastercard",
+            "AmericanExpress",
+            "UnionPay",
+            "DinersClub",
+          ],
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: true,
+          installment_payment_enabled: false,
+        },
+        {
+          payment_method_type: "debit",
+          card_networks: ["Visa", "Mastercard"],
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: true,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+    {
+      payment_method: "wallet",
+      payment_method_types: [
+        {
+          payment_method_type: "ali_pay_hk",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
           installment_payment_enabled: false,
         },
       ],
@@ -234,6 +358,18 @@ const CONNECTOR_PAYMENT_METHODS = {
         },
       ],
     },
+    {
+      payment_method: "bank_transfer",
+      payment_method_types: [
+        {
+          payment_method_type: "sepa_bank_transfer",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
   ],
 
   // ── PayPal ───────────────────────────────────────────────────────────────
@@ -298,6 +434,7 @@ const CONNECTOR_PAYMENT_METHODS = {
       payment_method_types: [
         {
           payment_method_type: "classic",
+          payment_experience: "redirect_to_url",
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: false,
@@ -305,6 +442,7 @@ const CONNECTOR_PAYMENT_METHODS = {
         },
         {
           payment_method_type: "evoucher",
+          payment_experience: "redirect_to_url",
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: false,
@@ -340,6 +478,73 @@ const CONNECTOR_PAYMENT_METHODS = {
       payment_method_types: [
         {
           payment_method_type: "interac",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── Fiuu ────────────────────────────────────────────────────────────────
+  // DuitNow (real_time_payment) + FPX (bank_redirect).
+  fiuu: [
+    {
+      payment_method: "real_time_payment",
+      payment_method_types: [
+        {
+          payment_method_type: "duit_now",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+    {
+      payment_method: "bank_redirect",
+      payment_method_types: [
+        {
+          payment_method_type: "online_banking_fpx",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── Klarna (direct connector) ───────────────────────────────────────────
+  // Used when Klarna credentials are available. Stripe also supports Klarna
+  // as a fallback (see stripe entry above).
+  klarna: [
+    {
+      payment_method: "pay_later",
+      payment_method_types: [
+        {
+          payment_method_type: "klarna",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── Trustly ────────────────────────────────────────────────────────────
+  trustly: [
+    {
+      payment_method: "bank_redirect",
+      payment_method_types: [
+        {
+          payment_method_type: "trustly",
+          payment_experience: "redirect_to_url",
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: false,
@@ -495,6 +700,49 @@ async function createBusinessProfile(
 }
 
 /**
+ * Patches a business profile to set authentication_connector_details.
+ * Required for profiles that have both a payment processor (e.g. cybersource)
+ * and an authentication processor (e.g. netcetera).
+ *
+ * @param {string} secretKey
+ * @param {string} merchantId
+ * @param {string} profileId
+ * @param {string} authConnectorName  e.g. "netcetera"
+ * @param {string} apiBaseUrl
+ */
+async function patchProfileAuthConnector(
+  secretKey,
+  merchantId,
+  profileId,
+  authConnectorName,
+  apiBaseUrl,
+) {
+  const response = await fetch(
+    `${apiBaseUrl}/account/${merchantId}/business_profile/${profileId}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": secretKey,
+      },
+      body: JSON.stringify({
+        authentication_connector_details: {
+          authentication_connectors: [authConnectorName],
+          three_ds_requestor_url: "https://sandbox.hyperswitch.io",
+        },
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `[setup] Failed to patch auth connector on profile "${profileId}": HTTP ${response.status} ${response.statusText}\n${errorText}`,
+    );
+  }
+}
+
+/**
  * Creates a merchant connector account (MCA) on the given profile.
  * @param {string} secretKey
  * @param {string} merchantId
@@ -532,9 +780,9 @@ async function createMerchantConnectorAccount(
 
   // Pass metadata from creds.json if present (e.g. cybersource needs
   // google_pay, apple_pay_combined, acquirer_bin, acquirer_merchant_id).
-  if (metadata) {
-    requestBody.metadata = metadata;
-  }
+  // Some connectors (e.g. klarna) require the metadata field to be present
+  // even when empty, so we default to {}.
+  requestBody.metadata = metadata || {};
 
   const response = await fetch(
     `${apiBaseUrl}/account/${merchantId}/connectors`,
@@ -719,6 +967,11 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
       );
 
       connectorProfileIds[profileKey] = profileId;
+      // Also expose netcetera under its own key so tests can look it up
+      // via connectorEnum.NETCETERA ("netcetera") directly.
+      if (profileKey !== connectorName) {
+        connectorProfileIds[connectorName] = profileId;
+      }
       console.log(
         `[setup] ${connectorName.padEnd(20)} → profile_id: ${profileId}` +
           (profileKey !== connectorName ? ` (shared as "${profileKey}")` : ""),
@@ -738,6 +991,23 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
     `[setup] Done. ${Object.keys(connectorProfileIds).length} connector(s) configured.`,
   );
 
+  // ── Patch authentication_connector_details on profiles that need it ───────
+  // Must run AFTER all MCAs are created so the auth connector MCA exists.
+  for (const [profileKey, authConnector] of Object.entries(AUTH_CONNECTOR_FOR_PROFILE)) {
+    const profileId = connectorProfileIds[profileKey];
+    if (!profileId) {
+      console.warn(`[setup] Skipping auth connector patch for "${profileKey}": profile not found.`);
+      continue;
+    }
+    try {
+      await patchProfileAuthConnector(secretKey, merchantId, profileId, authConnector, apiBaseUrl);
+      console.log(`[setup] Patched profile ${profileId} with authentication_connector: ${authConnector}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[setup] Error patching auth connector for "${profileKey}":`, msg);
+    }
+  }
+
   _credentialsCache = {
     publishableKey,
     secretKey,
@@ -745,7 +1015,12 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
     connectorProfileIds,
   };
 
-  const cachePath = path.join(__dirname, "test-credentials.json");
+  const cachePath = process.env.CREDENTIALS_OUTPUT_PATH
+    ? path.resolve(process.env.CREDENTIALS_OUTPUT_PATH)
+    : path.join(
+        __dirname,
+        `test-credentials-${process.env.TEST_ENV || "sandbox"}.json`,
+      );
   try {
     fs.writeFileSync(cachePath, JSON.stringify(_credentialsCache, null, 2));
     console.log(

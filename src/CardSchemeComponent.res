@@ -57,10 +57,12 @@ let make = (
 
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let cardBrandIconSetting = CardUtils.getLayoutClass(layout).cardBrandIcon
+  let cardBrandIconSetting =
+    Jotai.useAtomValue(JotaiAtoms.cardBrandIconOverride)->Option.getOr(
+      CardUtils.getLayoutClass(layout).cardBrandIcon,
+    )
   let shouldShowCoBadgeCardSchemeDropDown =
     isCardCoBadged && cardNumber->CardValidations.clearSpaces->String.length >= 16
-
   let showCardBrandIcon = CardUtils.getCardBrandIconVisibility(cardBrandIconSetting, cardType)
 
   React.useEffect1(() => {

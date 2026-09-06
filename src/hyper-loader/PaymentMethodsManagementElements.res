@@ -51,7 +51,7 @@ let make = (
       if (
         Window.querySelector(
           `#orca-payment-element-iframeRef-${localSelectorString}`,
-        )->Js.Nullable.isNullable
+        )->Nullable.isNullable
       ) {
         let componentType = "preMountLoader"
         let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
@@ -270,6 +270,7 @@ let make = (
       fetchUpdates,
       create,
       updateIntent: _ => Promise.resolve(JSON.Encode.null),
+      createCardForm: () => defaultCardForm,
     }
   } catch {
   | e => {

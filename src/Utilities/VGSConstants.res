@@ -1,8 +1,8 @@
 open VGSTypes
 
-// Pinned VGS Collect.js version — must stay in sync with the script src + integrity
-// hash in VGSVault.res and the CSP allow-list in webpack.common.js.
 let vgsScriptURL = `https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js`
+
+let vgsScriptIntegrity = "sha384-ddxU1XAc77oB4EIpKOgJQ3FN2a6STYPK0JipRqg1x/eW+n5MFn1XbbZa7+KRjkqc"
 
 let cardNumberOptions = {
   \"type": "card-number",
@@ -36,8 +36,8 @@ let savedCardCvcCss =
   [
     ("padding", "0px"),
     ("margin", "0px"),
-    ("line-height", "1.8rem"),
-    ("height", "1.8rem"),
+    ("line-height", SavedCardCvcStyles.fieldHeight),
+    ("height", SavedCardCvcStyles.fieldHeight),
     ("box-sizing", "border-box"),
   ]
   ->Array.map(((key, value)) => (key, value->JSON.Encode.string))

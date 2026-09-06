@@ -108,12 +108,31 @@ type bankNames = {
 
 type surchargeDetails = {displayTotalSurchargeAmount: float}
 
+// Tells the SDK whether a newly-entered payment method of this type can be
+// saved for the customer, as reported by the paymentMethods list response.
+// - "supported": eligible to be saved (checkbox reads "Save details")
+// - "partially_supported": save eligible subject to routing (checkbox reads
+//   "Save details wherever possible")
+// - "unsupported": cannot be saved (no checkbox)
+// Absent / unknown: treated like unsupported (no checkbox).
+type customerAcceptanceSupport = Supported | PartiallySupported | Unsupported
+
+let getCustomerAcceptanceSupport = (dict, str) => {
+  switch dict->getString(str, "") {
+  | "supported" => Some(Supported)
+  | "partially_supported" => Some(PartiallySupported)
+  | "unsupported" => Some(Unsupported)
+  | _ => None
+  }
+}
+
 type paymentMethodsContent = {
   paymentMethodName: string,
   paymentFlow: paymentFlowWithConnector,
   handleUserError: bool,
   methodType: string,
   bankNames: array<string>,
+  customerAcceptanceSupport: option<customerAcceptanceSupport>,
 }
 type paymentMethods = array<paymentMethodsContent>
 type paymentFieldsInfo = {
@@ -138,6 +157,7 @@ let defaultPaymentMethodContent = {
   handleUserError: false,
   methodType: "",
   bankNames: [],
+  customerAcceptanceSupport: None,
 }
 let defaultPaymentMethodFields = {
   paymentMethodName: "",
@@ -852,6 +872,7 @@ type paymentMethodTypes = {
   bank_transfers_connectors: array<string>,
   surcharge_details: option<surchargeDetails>,
   pm_auth_connector: option<string>,
+  customer_acceptance_support: option<customerAcceptanceSupport>,
 }
 
 type methods = {
@@ -904,6 +925,7 @@ let defaultPaymentMethodType = {
   bank_transfers_connectors: [],
   surcharge_details: None,
   pm_auth_connector: None,
+  customer_acceptance_support: None,
 }
 
 let defaultIntentData = {
@@ -1098,6 +1120,10 @@ let getPaymentMethodTypesFromFlatList = (paymentMethodsEnabled: array<JSON.t>) =
       // "just work" if/when it does. Known, accepted gap until then (Plaid
       // bank-debit auth eligibility unavailable from clientList).
       pm_auth_connector: getOptionString(jsonDict, "pm_auth_connector"),
+      customer_acceptance_support: getCustomerAcceptanceSupport(
+        jsonDict,
+        "customer_acceptance_support",
+      ),
     }
 
     switch methodsDict->Dict.get(paymentMethod) {
@@ -1159,6 +1185,7 @@ let buildFromPaymentList = pList => {
         handleUserError,
         methodType,
         bankNames,
+        customerAcceptanceSupport: individualPaymentMethod.customer_acceptance_support,
       }
     })
   })

@@ -109,6 +109,7 @@ type eventName =
   | UPDATE_INTENT
   | UPDATE_SDK
   | DYNAMIC_FIELDS_RENDERED
+  | CARD_FORM_FLOW
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

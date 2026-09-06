@@ -66,6 +66,18 @@ let cardPaymentBody = (
   ]
 }
 
+let offerDetailsBody = (~offerQuoteIds) =>
+  offerQuoteIds->Array.length === 0
+    ? []
+    : [
+        (
+          "offer_details",
+          [
+            ("offer_quote_ids", offerQuoteIds->Array.map(JSON.Encode.string)->JSON.Encode.array),
+          ]->Utils.getJsonFromArrayOfJson,
+        ),
+      ]
+
 let installmentBody = (plan: option<PaymentMethodsRecord.installmentPlan>) =>
   switch plan {
   | Some(plan) => [

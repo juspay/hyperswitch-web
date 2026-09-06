@@ -35,6 +35,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `Afegeixi una targeta de crèdit o dèbit`,
   useExisitingSavedCards: `Faci servir les targetes de dèbit o crèdit desades`,
   saveCardDetails: `Desi les dades de la targeta`,
+  savePaymentDetails: `Desa de manera segura les meves dades de pagament per a pagaments més ràpids`,
+  savePaymentDetailsWhereverPossible: `Desa de manera segura les meves dades de pagament per a pagaments més ràpids, quan estigui disponible`,
   addBankAccount: `Afegeixi un compte bancari`,
   achBankDebitTerms: str =>
     `En facilitar el número de compte i confirmar el pagament, autoritza ${str} i Hyperswitch, el nostre proveïdor de serveis de pagament, a enviar ordres al seu banc perquè apliqui els càrrecs corresponents al compte. Tindrà dret a rebre un reembossament del banc d'acord amb els termes i condicions del contracte que hi hagi subscrit. El reembossament s'ha de sol·licitar en un termini de 8 setmanes des de la data en què es va aplicar el càrrec al compte.`,
@@ -267,4 +269,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Mostra menys",
   refreshingText: "Actualitzant...",
   paymentDetailsBeingCheckedText: "S'estan comprovant els detalls del pagament. Si us plau, espereu",
+  eligibleOffersText: "Ofertes disponibles",
+  checkingEligibleOffersText: "Comprovant les ofertes disponibles",
+  cardOfferText: "Oferta de targeta",
+  offerAppliedText: "Aplicada",
 }
