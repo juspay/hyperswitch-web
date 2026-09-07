@@ -45,6 +45,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `أضف بطاقة جديدة`,
   useExisitingSavedCards: `استخدم البطاقات المحفوظة الموجودة`,
   saveCardDetails: `حفظ تفاصيل البطاقة`,
+  savePaymentDetails: `احفظ تفاصيل الدفع الخاصة بي بأمان لإجراء مدفوعات أسرع`,
+  savePaymentDetailsWhereverPossible: `احفظ تفاصيل الدفع الخاصة بي بأمان لإجراء مدفوعات أسرع، حيثما كان ذلك متاحًا`,
   addBankAccount: `إضافة حساب مصرفي`,
   achBankDebitTerms: str =>
     `من خلال تقديم رقم حسابك وتأكيد هذا الدفع ، فإنك تفوض ${str} و Hyperswitch ، مزود خدمة الدفع ، لإرسال تعليمات إلى البنك الذي تتعامل معه للخصم من حسابك والبنك الخاص بك للخصم من حسابك وفقًا لهذه التعليمات. يحق لك استرداد الأموال من البنك الذي تتعامل معه بموجب شروط وأحكام اتفاقيتك مع البنك الذي تتعامل معه. يجب المطالبة باسترداد الأموال في غضون 8 أسابيع بدءًا من تاريخ الخصم من حسابك.`,
@@ -268,4 +270,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "عرض أقل",
   refreshingText: "جارٍ التحديث...",
   paymentDetailsBeingCheckedText: "جارٍ التحقق من تفاصيل الدفع. يرجى الانتظار",
+  eligibleOffersText: "العروض المتاحة",
+  checkingEligibleOffersText: "جارٍ التحقق من العروض المتاحة",
+  cardOfferText: "عرض البطاقة",
+  offerAppliedText: "تم التطبيق",
 }

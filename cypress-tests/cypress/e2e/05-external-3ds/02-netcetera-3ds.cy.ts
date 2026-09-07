@@ -8,24 +8,21 @@ import {
   connectorProfileIdMapping,
   connectorEnum,
 } from "../../support/utils";
-// Skipped for now: setup.js provisions netcetera as an authentication-only
-// connector (three_ds_server), so the netcetera profile has no payment
-// connector and a card payment on it renders no payment form. Re-enable once a
-// combined "payment processor + netcetera authenticator + external-3DS" profile
-// is provisioned.
-describe.skip("External 3DS using Netcetera Checks", () => {
+
+describe("External 3DS using Netcetera Checks", () => {
   let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let publishableKey: string;
   let secretKey: string;
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  beforeEach(function () {
-    // Run only when the Netcetera connector is configured for this merchant;
-    // otherwise report the suite as pending (visible skip) instead of failing.
-    if (!connectorProfileIdMapping.get(connectorEnum.NETCETERA)) {
-      this.skip();
-    }
+  beforeEach(() => {
+    // Fail fast if Netcetera credentials are absent — this is a config problem,
+    // not an intentional skip. Add netcetera to creds.json to run these tests.
+    assert.ok(
+      connectorProfileIdMapping.get(connectorEnum.NETCETERA),
+      "Netcetera connector credentials are missing — add netcetera to creds.json to run these tests.",
+    );
     publishableKey = Cypress.env("HYPERSWITCH_PUBLISHABLE_KEY");
     secretKey = Cypress.env("HYPERSWITCH_SECRET_KEY");
     getIframeBody = () => cy.paymentElementBody();
@@ -41,6 +38,7 @@ describe.skip("External 3DS using Netcetera Checks", () => {
       "request_external_three_ds_authentication",
       true,
     );
+    changeObjectKeyValue(createPaymentBody, "connector", ["cybersource"]);
     changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
@@ -83,10 +81,24 @@ describe.skip("External 3DS using Netcetera Checks", () => {
       .type("1234");
     getIframeBody().get("#submit").click();
 
+    // Wait for the fullscreen overlay to appear, then go into the nested 3DS iframe
+    cy.get("#orca-fullscreen", { timeout: 30000 }).should("be.visible");
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
-      cy.wrap($body).find("#otp", { timeout: 10000 }).should("be.visible").type("1234");
-      cy.wrap($body).find("#sendOtp").click();
-      cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
+      // NDM Simulator: filter to only visible text inputs (OTP field)
+      cy.wrap($body)
+        .find("input[type='text']", { timeout: 30000 })
+        .filter(":visible")
+        .first()
+        .should("be.visible")
+        .type("1234");
+      // Click the Pay button
+      cy.wrap($body).find("button[type='submit']").contains("Pay").click();
+    });
+    // Poll the payment status via API until succeeded
+    cy.getGlobalState("paymentId").then((paymentId) => {
+      cy.pollPaymentStatus(secretKey, paymentId, "succeeded", {
+        timeoutMs: 30000,
+      });
     });
   });
 
@@ -111,11 +123,14 @@ describe.skip("External 3DS using Netcetera Checks", () => {
       .type("1234");
     getIframeBody().get("#submit").click();
 
+    cy.get("#orca-fullscreen", { timeout: 30000 }).should("be.visible");
     cy.nestedIFrame("#threeDsAuthFrame", ($body) => {
-      cy.wrap($body).find("#cancel", { timeout: 10000 }).should("be.visible").click();
-      cy.contains("Payment failed. Please check your payment method.", { timeout: 10000 }).should(
-        "be.visible",
-      );
+      // Find the Cancel button in NDM Simulator
+      cy.wrap($body).find("button").contains("Cancel").click();
+    });
+    // Poll the payment status via API until it reaches "failed"
+    cy.getGlobalState("paymentId").then((paymentId) => {
+      cy.pollPaymentStatus(secretKey, paymentId, "failed");
     });
   });
 
@@ -139,6 +154,12 @@ describe.skip("External 3DS using Netcetera Checks", () => {
       .should("be.visible")
       .type("1234");
     getIframeBody().get("#submit").click();
-    cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
+
+    // Poll the payment status via Retrieve Payment Intent API until succeeded
+    cy.getGlobalState("paymentId").then((paymentId) => {
+      cy.pollPaymentStatus(secretKey, paymentId, "succeeded", {
+        timeoutMs: 30000,
+      });
+    });
   });
 });

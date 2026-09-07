@@ -1,4 +1,3 @@
-
 // ---------------------------------------------------------------------------
 // Demo-app base URL
 // ---------------------------------------------------------------------------
@@ -55,6 +54,8 @@ export const getClientURL = (
 export enum connectorEnum {
   TRUSTPAY = "trustpay",
   ADYEN = "adyen",
+  FIUU = "fiuu",
+  VOLT = "volt",
   STRIPE = "stripe",
   NETCETERA = "netcetera",
   REDSYS = "redsys",
@@ -66,6 +67,7 @@ export enum connectorEnum {
   JUSPAY = "juspay",
   INTERAC = "interac",
   PAYPAL = "paypal",
+  TRUSTLY = "trustly",
 }
 
 // ---------------------------------------------------------------------------
@@ -83,7 +85,9 @@ export enum connectorEnum {
  */
 export const connectorProfileIdMapping = {
   get: (connector: connectorEnum): string | undefined => {
-    const ids = Cypress.env("CONNECTOR_PROFILE_IDS") as Record<string, string> | undefined;
+    const ids = Cypress.env("CONNECTOR_PROFILE_IDS") as
+      | Record<string, string>
+      | undefined;
     return ids?.[connector];
   },
 };
@@ -93,7 +97,9 @@ export const connectorProfileIdMapping = {
  * Used to initialise createPaymentBody.profile_id in the global before() hook.
  */
 export const getDefaultProfileId = (): string => {
-  const ids = Cypress.env("CONNECTOR_PROFILE_IDS") as Record<string, string> | undefined;
+  const ids = Cypress.env("CONNECTOR_PROFILE_IDS") as
+    | Record<string, string>
+    | undefined;
   return ids?.[connectorEnum.STRIPE] ?? "";
 };
 
@@ -182,10 +188,7 @@ export const changeObjectKeyValue = (
   object[key] = value;
 };
 
-export const removeObjectKey = (
-  object: Record<string, any>,
-  key: string,
-) => {
+export const removeObjectKey = (object: Record<string, any>, key: string) => {
   delete object[key];
 };
 

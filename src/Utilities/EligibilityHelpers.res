@@ -13,6 +13,27 @@ type eligibilitySurchargeDetails = {
   displayTotalSurchargeAmount: float,
 }
 
+type eligibilityAmountDetails = {
+  totalAmount: int,
+  netAmount: int,
+  currency: string,
+}
+
+type eligibleOffer = {
+  offerQuoteId: string,
+  offerAmount: int,
+  currency: string,
+  code: string,
+  title: string,
+  description: string,
+}
+
+type eligibilityOfferDetails = {
+  offerQuoteIds: array<string>,
+  eligibleOffers: array<eligibleOffer>,
+  amountDetails: option<eligibilityAmountDetails>,
+}
+
 let parseSdkNextActionError = json => {
   let dict = json->getDictFromJson
   let nextAction = dict->getDictFromDict("sdk_next_action")->Dict.get("next_action")
@@ -65,16 +86,53 @@ let parseEligibilitySurchargeDetails = dict => {
   })
 }
 
+let parseEligibilityAmountDetails = dict =>
+  dict
+  ->getOptionalDict("amount_details")
+  ->Option.map(amountDetailsDict => {
+    totalAmount: getInt(amountDetailsDict, "total_amount", 0),
+    netAmount: getInt(amountDetailsDict, "net_amount", 0),
+    currency: amountDetailsDict->getString("currency", ""),
+  })
+
+let parseEligibilityOfferDetails = dict => {
+  let amountDetails = dict->parseEligibilityAmountDetails
+  dict
+  ->getOptionalDict("offer_details")
+  ->Option.flatMap(offerDetailsDict => {
+    let offerQuoteIds =
+      offerDetailsDict
+      ->getStrArray("uplifted_offer_quote_ids")
+      ->Array.filter(offerQuoteId => offerQuoteId !== "")
+    let eligibleOffers =
+      offerDetailsDict
+      ->getArrayOfObjectsFromDict("eligible_offers")
+      ->Array.map(offerDict => {
+        offerQuoteId: offerDict->getString("offer_quote_id", ""),
+        offerAmount: getInt(offerDict, "offer_amount", 0),
+        currency: offerDict->getString("currency", ""),
+        code: offerDict->getString("code", ""),
+        title: offerDict->getString("title", ""),
+        description: offerDict->getString("description", ""),
+      })
+      ->Array.filter(offer => offer.offerQuoteId !== "")
+
+    eligibleOffers->Array.length > 0 ? Some({offerQuoteIds, eligibleOffers, amountDetails}) : None
+  })
+}
+
 type eligibilityResponse = {
   eligibilityError: option<string>,
   surchargeDetails: option<eligibilitySurchargeDetails>,
+  offerDetails: option<eligibilityOfferDetails>,
 }
 
 let parseEligibilityResponse = json => {
   let dict = json->getDictFromJson
   let eligibilityError = json->parseSdkNextActionError
   let surchargeDetails = dict->parseEligibilitySurchargeDetails
-  {eligibilityError, surchargeDetails}
+  let offerDetails = dict->parseEligibilityOfferDetails
+  {eligibilityError, surchargeDetails, offerDetails}
 }
 
 let performEligibilityCheck = async (
@@ -86,19 +144,20 @@ let performEligibilityCheck = async (
   ~sdkAuthorization,
   ~endpoint,
   ~signal: Fetch.AbortSignal.t,
-  ~shouldBlockConfirm: bool,
   ~setIsEligibilityPending: (bool => bool) => unit,
   ~setEligibilitySurchargeDetails: (
     option<eligibilitySurchargeDetails> => option<eligibilitySurchargeDetails>
+  ) => unit,
+  ~setEligibilityOfferDetails: (
+    option<eligibilityOfferDetails> => option<eligibilityOfferDetails>
   ) => unit,
   ~setEligibilityError: option<(option<string> => option<string>) => unit>,
   ~errorLogMessage: string,
   ~fetchEligibility,
 ) => {
   setEligibilitySurchargeDetails(_ => None)
-  if shouldBlockConfirm {
-    setIsEligibilityPending(_ => true)
-  }
+  setEligibilityOfferDetails(_ => None)
+  setIsEligibilityPending(_ => true)
   try {
     let json = await fetchEligibility(
       ~clientSecret,
@@ -110,9 +169,10 @@ let performEligibilityCheck = async (
       ~endpoint,
       ~signal,
     )
-    let {eligibilityError, surchargeDetails} = parseEligibilityResponse(json)
+    let {eligibilityError, surchargeDetails, offerDetails} = parseEligibilityResponse(json)
     setEligibilityError->Option.forEach(setter => setter(_ => eligibilityError))
     setEligibilitySurchargeDetails(_ => surchargeDetails)
+    setEligibilityOfferDetails(_ => offerDetails)
     setIsEligibilityPending(_ => false)
   } catch {
   | exn =>
@@ -139,9 +199,9 @@ let startEligibilityCheck = async (
   ~bodyArr,
   ~sdkAuthorization,
   ~endpoint,
-  ~shouldBlockConfirm: bool,
   ~setIsEligibilityPending,
   ~setEligibilitySurchargeDetails,
+  ~setEligibilityOfferDetails,
   ~setEligibilityError,
   ~errorLogMessage: string,
   ~fetchEligibility,
@@ -162,14 +222,14 @@ let startEligibilityCheck = async (
       ~sdkAuthorization,
       ~endpoint,
       ~signal,
-      ~shouldBlockConfirm,
       ~setIsEligibilityPending,
       ~setEligibilitySurchargeDetails,
+      ~setEligibilityOfferDetails,
       ~setEligibilityError,
       ~errorLogMessage,
       ~fetchEligibility,
     )
-  | None => ()
+  | None => setIsEligibilityPending(_ => false)
   }
 }
 

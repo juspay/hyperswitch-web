@@ -14,6 +14,8 @@ let make = (
   ~setShowInstallments,
   ~installmentsError,
   ~setInstallmentsError,
+  ~eligibilityOfferDetails,
+  ~isEligibilityPending=false,
 ) => {
   <>
     <DynamicFields
@@ -27,6 +29,7 @@ let make = (
     <RenderIf condition=showNickname>
       <NicknamePaymentInput />
     </RenderIf>
+    <EligibilityOfferNotice eligibilityOfferDetails isEligibilityPending />
     <InstallmentOptions
       setSelectedInstallmentPlan
       showInstallments

@@ -219,6 +219,7 @@ let make = (
           installmentsError
           setInstallmentsError
           eligibilitySurchargeDetails=None
+          eligibilityOfferDetails=None
           eligibilityError=None
         />
       })

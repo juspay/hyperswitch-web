@@ -181,10 +181,6 @@ type vaultTokenData = {
   expiryYear: string,
 }
 
-// Decodes the vault API response JSON into a vaultTokenData record.
-//   token       ← associated_payment_methods[0].payment_method_token.data
-//   last4Digits ← payment_method_data.card.last4_digits
-//   binNumber   ← payment_method_data.card.card_isin (may be null)
 let decodeVaultTokenData = (vaultResponse: JSON.t): vaultTokenData => {
   let vaultDict = vaultResponse->getDictFromJson
 

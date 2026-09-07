@@ -33,7 +33,7 @@ let make = (
         </div>
       } else if eligibilityError->Option.isSome {
         <div
-          className="flex items-start text-xs"
+          className="flex items-start text-left text-xs"
           role="alert"
           ariaLive=#polite
           ariaAtomic=true

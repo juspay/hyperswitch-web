@@ -16,6 +16,7 @@ const localhostSources = [
   "http://localhost:8207",
   "http://localhost:3103",
   "http://localhost:5252",
+  "http://localhost:9060",
   "http://127.0.0.1:8080",
   "http://127.0.0.1:8207",
   "http://127.0.0.1:3103",
@@ -122,6 +123,11 @@ const authorizedConnectSources = [
   "https://eu.klarnaevt.com",
   "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
   "https://vgs-collect-keeper.apps.verygood.systems/vgs",
+  // VGS edge endpoints — where vault.submit() POSTs (Hyperswitch iframe flow).
+  // Covers both {vaultId}.sandbox.verygoodvault.com and {vaultId}.live.verygoodvault.com.
+  // The direct-injection flow runs in the merchant page, so merchants must
+  // whitelist VGS in their own CSP as well.
+  "https://*.verygoodvault.com",
   "https://eu.playground.klarnaevt.com",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
@@ -249,6 +255,8 @@ module.exports = (publicPath = "auto") => {
     sdkUrl: JSON.stringify(sdkUrl),
     backendEndPoint: JSON.stringify(backendEndPoint),
     confirmEndPoint: JSON.stringify(confirmEndPoint),
+    "globalThis.backendEndPoint": JSON.stringify(backendEndPoint),
+    "globalThis.confirmEndPoint": JSON.stringify(confirmEndPoint),
     logEndpoint: JSON.stringify(logEndpoint),
     sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
     sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),

@@ -337,6 +337,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | PAYMENT_ELEMENT_OPTIONS
   | TEST_MODE
   | DDC_FLOW
+  | CARD_FORM_FLOW
   | VGS_VAULT_FLOW
   | UPDATE_INTENT
   | UPDATE_SDK

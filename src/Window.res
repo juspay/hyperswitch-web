@@ -75,6 +75,8 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @get external fullscreen: window => option<window> = "fullscreen"
 @get external frames: window => {..} = "frames"
 @get external name: window => string = "name"
+@get external framesLength: {..} => int = "length"
+@get_index external frameAt: ({..}, int) => window = ""
 @get external contentWindow: Dom.element => Dom.element = "contentWindow"
 @get external style: Dom.element => style = "style"
 @get external readyState: document => string = "readyState"
