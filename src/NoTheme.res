@@ -24,7 +24,7 @@ let noThemeValues = {
   fontSizeXs: "",
   fontSize2Xs: "",
   fontSize3Xs: "",
-  colorSuccess: "",
+  colorSuccess: "#16875B",
   colorWarning: "",
   colorPrimaryText: "",
   colorBackgroundText: "",
@@ -50,6 +50,7 @@ let noThemeValues = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "",
+  inputFieldHeight: "48px",
 }
 
 let noThemeValuesRules = _ => Dict.make()->JSON.Encode.object

@@ -45,6 +45,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: "Add credit/debit card",
   useExisitingSavedCards: "Use saved debit/credit cards",
   saveCardDetails: "Save card details",
+  savePaymentDetails: "Securely save my payment details for faster payments",
+  savePaymentDetailsWhereverPossible: "Securely save my payment details for faster payments, where available",
   addBankAccount: "Add bank account",
   achBankDebitTerms: _ =>
     `Your ACH Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.`,
@@ -265,4 +267,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Show less",
   refreshingText: "Refreshing...",
   paymentDetailsBeingCheckedText: "Payment details are being checked. Please wait",
+  eligibleOffersText: "Eligible offers",
+  checkingEligibleOffersText: "Checking eligible offers",
+  cardOfferText: "Card offer",
+  offerAppliedText: "Applied",
 }

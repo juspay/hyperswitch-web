@@ -23,8 +23,7 @@ describe("Card payment flow test", () => {
     );
     assert.ok(
       mifinityProfileId,
-      "Mifinity connector credentials are missing from creds.json — " +
-        "connector was not provisioned. Add mifinity to creds.json to run these tests.",
+      "Mifinity connector credentials are missing — add mifinity to creds.json to run these tests.",
     );
     changeObjectKeyValue(createPaymentBody, "profile_id", mifinityProfileId);
     changeObjectKeyValue(createPaymentBody, "currency", "EUR");

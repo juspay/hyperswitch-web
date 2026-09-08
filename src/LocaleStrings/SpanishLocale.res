@@ -35,6 +35,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `Añadir tarjeta de crédito/débito`,
   useExisitingSavedCards: `Utilizar las tarjetas de débito/crédito guardadas`,
   saveCardDetails: `Guardar la información de la tarjeta`,
+  savePaymentDetails: `Guardar mis datos de pago de forma segura para pagos más rápidos`,
+  savePaymentDetailsWhereverPossible: `Guardar mis datos de pago de forma segura para pagos más rápidos, cuando esté disponible`,
   addBankAccount: `Añadir cuenta bancaria`,
   achBankDebitTerms: str =>
     `Al proporcionar su número de cuenta y confirmar este pago, autoriza a ${str} y Hyperswitch, nuestro proveedor de servicios de pago, a enviar órdenes a su banco para que aplique cargos en su cuenta y para que realice los correspondientes adeudos en la misma de acuerdo con dichas órdenes. Tiene derecho a recibir un reembolso de su banco de acuerdo con las condiciones del contrato suscrito. El reembolso debe reclamarse en un plazo de 8 semanas desde la fecha en la que se aplicó el cargo en su cuenta.`,
@@ -266,4 +268,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Mostrar menos",
   refreshingText: "Actualizando...",
   paymentDetailsBeingCheckedText: "Se están verificando los detalles del pago. Por favor, espere",
+  eligibleOffersText: "Ofertas disponibles",
+  checkingEligibleOffersText: "Comprobando ofertas disponibles",
+  cardOfferText: "Oferta de tarjeta",
+  offerAppliedText: "Aplicada",
 }

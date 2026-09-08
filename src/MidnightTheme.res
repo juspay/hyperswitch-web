@@ -23,7 +23,7 @@ let midnight = {
   fontSizeXs: "10px",
   fontSize2Xs: "8px",
   fontSize3Xs: "6px",
-  colorSuccess: "",
+  colorSuccess: "#16875B",
   colorWarning: "",
   colorPrimaryText: "#000000",
   colorBackgroundText: "#ffffffe0",
@@ -49,6 +49,7 @@ let midnight = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#24252D",
+  inputFieldHeight: "48px",
 }
 
 let midnightRules = theme =>

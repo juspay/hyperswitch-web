@@ -73,7 +73,7 @@ before(() => {
 
   // ── Credential generation (Node.js task) ─────────────────────────────────
   // Creates a fresh merchant + per-connector profiles + MCAs.
-  // Allow up to 2 minutes — 11 connectors × 2 API calls each = ~22 calls.
+  // Allow up to 2 minutes — 13 connectors × 2 API calls each = ~26 calls.
   cy.task(
     "setupCredentials",
     { adminApiKey, apiBaseUrl, credsFilePath },

@@ -139,6 +139,9 @@ let make = (
               let clientSecretVal =
                 confirmParamsDict->getString("clientSecret", keys.clientSecret->Option.getOr(""))
 
+              let sdkAuthorizationVal =
+                Some(confirmParamsDict->getString("sdkAuthorization", ""))->getNonEmptyOption
+
               let isCvcComplete = cvcNumber->String.length >= 3
               if requiresCvv && isCvcComplete {
                 setCvcError(_ => "")
@@ -147,32 +150,45 @@ let make = (
 
                 let paymentType = paymentTypeStr->PaymentHelpers.getPaymentType
 
-                PaymentHelpers.paymentIntentForPaymentSession(
-                  ~body=bodyWithCvc,
-                  ~paymentType,
-                  ~payload,
-                  ~publishableKey=publishableKeyVal,
-                  ~clientSecret=clientSecretVal,
-                  ~logger=loggerState,
-                  ~customPodUri,
-                  ~redirectionFlags,
-                  ~sdkAuthorization=keys.sdkAuthorization,
-                  ~mode=CardCVCElement,
-                )
-                ->then(response => {
-                  messageParentWindow([("cvcWidgetConfirmResponse", response)])
-                  resolve()
-                })
-                ->catch(err => {
+                switch sdkAuthorizationVal {
+                | Some(sdkAuth) =>
+                  PaymentHelpers.paymentIntentForPaymentSession(
+                    ~body=bodyWithCvc,
+                    ~paymentType,
+                    ~payload,
+                    ~publishableKey=publishableKeyVal,
+                    ~clientSecret=clientSecretVal,
+                    ~logger=loggerState,
+                    ~customPodUri,
+                    ~redirectionFlags,
+                    ~sdkAuthorization=Some(sdkAuth),
+                    ~mode=CardCVCElement,
+                  )
+                  ->then(response => {
+                    messageParentWindow([("cvcWidgetConfirmResponse", response)])
+                    resolve()
+                  })
+                  ->catch(err => {
+                    messageParentWindow([
+                      (
+                        "cvcWidgetConfirmErrorResponse",
+                        err->formatException->JSON.stringify->JSON.Encode.string,
+                      ),
+                    ])
+                    resolve()
+                  })
+                  ->ignore
+                | None =>
                   messageParentWindow([
                     (
                       "cvcWidgetConfirmErrorResponse",
-                      err->formatException->JSON.stringify->JSON.Encode.string,
+                      handleFailureResponse(
+                        ~message="Missing sdkAuthorization in the confirm request. Please retry the payment.",
+                        ~errorType="sdk_authorization_missing",
+                      ),
                     ),
                   ])
-                  resolve()
-                })
-                ->ignore
+                }
               } else if requiresCvv {
                 // Future improvement: We can check if the CVC entered is more than 3 digits and show an appropriate error message. For now, we are just checking if it's less than 3 digits.
                 let isEmptyCVC = cvcNumber->String.length == 0
@@ -297,7 +313,10 @@ let make = (
     maxLength=maxCvcLength
     inputRef=cvcRef
     placeholder="123"
-    height={isSavedCardCvcFlow ? "1.8rem" : ""}
+    height={isSavedCardCvcFlow ? SavedCardCvcStyles.fieldHeight : ""}
+    // The sibling cross-read in CardUtils.getCardElementValue resolves the CVC by this id; the
+    // saved-card re-collect input is a different form and must not answer to it.
+    id=?{isSavedCardCvcFlow ? None : Some("card-cvc")}
     name=TestUtils.cardCVVInputTestId
     autocomplete="cc-csc"
   />

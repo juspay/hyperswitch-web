@@ -74,6 +74,13 @@ let initialSavedCardCvcState: savedCardCvcState = {
   error: "",
 }
 
+// LoaderController reports the inner frame's measured body height + 1px. Before any field
+// renders, that body is only PaymentMethodsSDK's 2px padding, so a height at or below this
+// is the empty frame measuring itself rather than the form it is about to hold.
+let emptyFrameHeight = 5.0
+
+let decodeIframeHeight = dict => dict->getFloat("iframeHeight", 0.0)
+
 let jsonOptionString = (dict, key) => {
   let value = dict->getString(key, "")
   value === "" ? None : Some(value)

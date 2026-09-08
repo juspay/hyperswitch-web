@@ -1,11 +1,17 @@
 @react.component
-let make = (~isChecked, ~setIsChecked) => {
+let make = (
+  ~isChecked,
+  ~setIsChecked,
+  ~paymentMethod="card",
+  ~paymentMethodType="debit",
+  ~acceptance: option<PaymentMethodsRecord.customerAcceptanceSupport>=?,
+) => {
   let showPaymentMethodsScreen = Jotai.useAtomValue(JotaiAtoms.showPaymentMethodsScreen)
   let {business, customMessageForCardTerms} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customMessageConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
-    ~paymentMethod="card",
-    ~paymentMethodType="debit",
+    ~paymentMethod,
+    ~paymentMethodType,
   )
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
@@ -14,23 +20,30 @@ let make = (~isChecked, ~setIsChecked) => {
     setIsChecked(_ => value)
   }
 
-  let customMessageConfigValue = customMessageConfig.value->Option.getOr("")
-
-  let saveCardCheckboxLabel = if showPaymentMethodsScreen {
-    localeString.saveCardDetails
-  } else if customMessageConfigValue->String.length > 0 {
-    customMessageConfigValue
-  } else if customMessageForCardTerms->String.length > 0 {
-    customMessageForCardTerms
-  } else {
-    localeString.cardTerms(business.name)
+  let cardLabel = {
+    let customMessage = customMessageConfig.value->Option.getOr("")
+    if showPaymentMethodsScreen {
+      localeString.saveCardDetails
+    } else if customMessage->String.length > 0 {
+      customMessage
+    } else if customMessageForCardTerms->String.length > 0 {
+      customMessageForCardTerms
+    } else {
+      localeString.cardTerms(business.name)
+    }
   }
 
-  <Checkbox
-    isChecked
-    onChange=handleChange
-    label=saveCardCheckboxLabel
-    ariaLabelChecked="Deselect to avoid saving card details"
-    ariaLabelUnchecked="Select to save card details"
-  />
+  let (label, ariaSubject) = switch (paymentMethod, acceptance) {
+  | ("card", _) => (cardLabel, "card details")
+  | (_, Some(PartiallySupported)) => (
+      localeString.savePaymentDetailsWhereverPossible,
+      "payment details wherever possible",
+    )
+  | (_, _) => (localeString.savePaymentDetails, "payment details")
+  }
+
+  let ariaLabelChecked = "Deselect to avoid saving " ++ ariaSubject
+  let ariaLabelUnchecked = "Select to save " ++ ariaSubject
+
+  <Checkbox isChecked onChange=handleChange label ariaLabelChecked ariaLabelUnchecked />
 }

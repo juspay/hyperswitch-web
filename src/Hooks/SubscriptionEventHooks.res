@@ -9,7 +9,7 @@ open PaymentEventTypes
 // Reads subscriptionEvents from Jotai — no prop drilling required.
 
 type emitter = {
-  emitCardInfo: (~cardInfo: PaymentEventData.cardInfo) => unit,
+  emitCardInfo: (~elementType: string=?, ~cardInfo: PaymentEventData.cardInfo) => unit,
   emitPaymentMethodStatus: (
     ~paymentMethod: string,
     ~paymentMethodType: string,
@@ -21,20 +21,21 @@ type emitter = {
   emitSurcharge: (
     ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   ) => unit,
+  emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
 }
 
 let useSubscriptionEventEmitter = (): emitter => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
-  let emitCardInfo = (~cardInfo: PaymentEventData.cardInfo) => {
+  let emitCardInfo = (~elementType: string="payment", ~cardInfo: PaymentEventData.cardInfo) => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentMethodInfoCard,
+        ~eventType=CardDetailsChange,
       )
     ) {
-      Utils.messageParentWindow(createCardInfoPayload(cardInfo))
+      Utils.messageParentWindow(createCardInfoPayload(~elementType, cardInfo))
     }
   }
 
@@ -47,7 +48,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentMethodStatus,
+        ~eventType=PaymentMethodChange,
       )
     ) {
       Utils.messageParentWindow(
@@ -65,7 +66,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentMethodInfoBillingAddress,
+        ~eventType=BillingDetailsChange,
       )
     ) {
       Utils.messageParentWindow(createBillingAddressPayload(~country, ~state, ~postalCode))
@@ -76,7 +77,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=CvcStatus,
+        ~eventType=CvcStatusChange,
       )
     ) {
       Utils.messageParentWindow(createCvcStatusPayload(~iframeId, ~isCvcEmpty, ~isCvcComplete))
@@ -87,7 +88,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Surcharge,
+        ~eventType=SurchargeInfo,
       ) &&
       surchargeDetails->Option.isSome
     ) {
@@ -95,7 +96,26 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
-  {emitCardInfo, emitPaymentMethodStatus, emitBillingAddress, emitCvcStatus, emitSurcharge}
+  let emitOffers = (~offerDetails) => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=AppliedOffersInfo,
+      ) &&
+      offerDetails->Option.isSome
+    ) {
+      Utils.messageParentWindow(createAppliedOffersPayload(~offerDetails))
+    }
+  }
+
+  {
+    emitCardInfo,
+    emitPaymentMethodStatus,
+    emitBillingAddress,
+    emitCvcStatus,
+    emitSurcharge,
+    emitOffers,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -113,7 +133,7 @@ let emitReady = (~iframeId, ~elementType) =>
 // ---------------------------------------------------------------------------
 // useEmitFormStatus
 // ---------------------------------------------------------------------------
-// Effect hook: emits formStatus whenever empty/complete/isOneClickWallet changes.
+// Effect hook: emits formStatusChange whenever empty/complete/isOneClickWallet changes.
 let useEmitFormStatus = (
   ~empty: bool,
   ~complete: bool,
@@ -129,7 +149,7 @@ let useEmitFormStatus = (
       if (
         PaymentEventData.shouldEmitEvent(
           ~subscribedEvents=subscribedEvents->Option.getOr([]),
-          ~eventType=FormStatus,
+          ~eventType=FormStatusChange,
         )
       ) {
         Utils.messageParentWindow(createFormStatusPayload(~status=formStatusValue))
@@ -142,7 +162,7 @@ let useEmitFormStatus = (
 // ---------------------------------------------------------------------------
 // useEmitBillingAddress
 // ---------------------------------------------------------------------------
-// Effect hook: emits paymentMethodInfoBillingAddress whenever address atoms change.
+// Effect hook: emits billingDetailsChange whenever address atoms change.
 let useEmitBillingAddress = () => {
   let country = Jotai.useAtomValue(JotaiAtoms.userCountry)
   let state = Jotai.useAtomValue(JotaiAtoms.userAddressState).value
@@ -154,7 +174,7 @@ let useEmitBillingAddress = () => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentMethodInfoBillingAddress,
+        ~eventType=BillingDetailsChange,
       )
     ) {
       Utils.messageParentWindow(createBillingAddressPayload(~country, ~state, ~postalCode=pinCode))
@@ -201,7 +221,7 @@ let getPaymentMethodAndType = (
 // ---------------------------------------------------------------------------
 // useEmitPaymentMethodStatus
 // ---------------------------------------------------------------------------
-// Effect hook: emits paymentMethodStatus when the selected payment method changes.
+// Effect hook: emits paymentMethodChange when the selected payment method changes.
 let useEmitPaymentMethodStatus = (
   ~paymentMethodName: string,
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
@@ -216,7 +236,7 @@ let useEmitPaymentMethodStatus = (
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentMethodStatus,
+        ~eventType=PaymentMethodChange,
       )
     ) {
       switch getPaymentMethodAndType(~paymentMethodName, ~paymentMethods, ~logger=loggerState) {
@@ -239,7 +259,7 @@ let useEmitPaymentMethodStatus = (
 // ---------------------------------------------------------------------------
 // useEmitSurchargeInfo
 // ---------------------------------------------------------------------------
-// Effect hook: emits surcharge when the eligibility surcharge details change.
+// Effect hook: emits surchargeInfo when the eligibility surcharge details change.
 // Pass the surcharge details option from the component's React state.
 let useEmitSurchargeInfo = (
   ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
@@ -251,7 +271,7 @@ let useEmitSurchargeInfo = (
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Surcharge,
+        ~eventType=SurchargeInfo,
       ) &&
       surchargeDetails->Option.isSome
     ) {
@@ -259,4 +279,28 @@ let useEmitSurchargeInfo = (
     }
     None
   }, (surchargeDetails, subscribedEvents))
+}
+
+// ---------------------------------------------------------------------------
+// useEmitAppliedOffersInfo
+// ---------------------------------------------------------------------------
+// Effect hook: emits the auto-applied offers when eligibility offer details change.
+let useEmitAppliedOffersInfo = (
+  ~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
+) => {
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let subscribedEvents = options.subscriptionEvents
+
+  React.useEffect(() => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=AppliedOffersInfo,
+      ) &&
+      offerDetails->Option.isSome
+    ) {
+      Utils.messageParentWindow(createAppliedOffersPayload(~offerDetails))
+    }
+    None
+  }, (offerDetails, subscribedEvents))
 }

@@ -1,16 +1,23 @@
 open ErrorUtils
 open PaymentEventTypes
 
-let validSubscriptionEvents = ["surchargeInfo"]
+let validSubscriptionEvents = [
+  "paymentMethodChange",
+  "cardDetailsChange",
+  "formStatusChange",
+  "cvcStatusChange",
+  "billingDetailsChange",
+  "surchargeInfo",
+  "appliedOffersInfo",
+]
 
-let stringToEvent = (str, key) =>
-  switch str {
-  | "surchargeInfo" => Surcharge
-  | _ => {
-      str->unknownPropValueWarning(validSubscriptionEvents, key)
-      UnknownEvent
-    }
+let modifiedEventFromString = (str, key) => {
+  let event = eventFromString(str)
+  if event === UnknownEvent {
+    str->unknownPropValueWarning(validSubscriptionEvents, key)
   }
+  event
+}
 
 let getSubscriptionEvents = (dict, key) => {
   let context = `options.${key}`
@@ -24,7 +31,7 @@ let getSubscriptionEvents = (dict, key) => {
     subscriptionList
     ->Array.map(item =>
       switch JSON.Decode.string(item) {
-      | Some(str) => stringToEvent(str, context)
+      | Some(str) => modifiedEventFromString(str, context)
       | None => {
           item->JSON.stringify->unknownPropValueWarning(validSubscriptionEvents, context)
           UnknownEvent
@@ -52,11 +59,14 @@ type billingAddress = {
   state: string,
   postalCode: string,
 }
-let createCardInfoPayload = (cardInfo: PaymentEventData.cardInfo) => {
+let createCardInfoPayload = (
+  ~elementType: string="payment",
+  cardInfo: PaymentEventData.cardInfo,
+) => {
   let payload = PaymentEventData.cardInfoToJson(cardInfo)
   [
-    ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", PaymentMethodInfoCard->PaymentEventTypes.eventToString->JSON.Encode.string),
+    ("elementType", elementType->JSON.Encode.string),
+    ("eventName", CardDetailsChange->PaymentEventTypes.eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -65,7 +75,7 @@ let createFormStatusPayload = (~status) => {
   let payload = PaymentEventData.formStatusEventToJson(~status)
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", FormStatus->eventToString->JSON.Encode.string),
+    ("eventName", FormStatusChange->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -85,7 +95,7 @@ let createPaymentMethodStatusPayload = (
 
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", PaymentMethodStatus->eventToString->JSON.Encode.string),
+    ("eventName", PaymentMethodChange->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -95,7 +105,7 @@ let createBillingAddressPayload = (~country, ~state, ~postalCode) => {
 
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", PaymentMethodInfoBillingAddress->eventToString->JSON.Encode.string),
+    ("eventName", BillingDetailsChange->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -106,7 +116,7 @@ let createCvcStatusPayload = (~iframeId, ~isCvcEmpty, ~isCvcComplete) => {
   [
     ("elementType", "cardCvc"->JSON.Encode.string),
     ("iframeId", iframeId->JSON.Encode.string),
-    ("eventName", CvcStatus->PaymentEventTypes.eventToString->JSON.Encode.string),
+    ("eventName", CvcStatusChange->PaymentEventTypes.eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
@@ -131,7 +141,43 @@ let createSurchargePayload = (
   let payload = PaymentEventData.surchargeEventToJson(event)
   [
     ("elementType", "payment"->JSON.Encode.string),
-    ("eventName", "surchargeInfo"->JSON.Encode.string),
+    ("eventName", SurchargeInfo->eventToString->JSON.Encode.string),
+    ("payload", payload),
+  ]
+}
+
+let createAppliedOffersPayload = (
+  ~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
+) => {
+  let event = switch offerDetails {
+  | Some(details) =>
+    // Only a single auto-applied offer is expected in `eligible_offers`; emit
+    // just that applied offer to the merchant (as a one-element array) rather
+    // than the full eligible-offers/uplifted-quote-ids lists.
+    let appliedOffers =
+      details.eligibleOffers
+      ->Array.get(0)
+      ->Option.map(offer => [
+        (
+          {
+            offerQuoteId: offer.offerQuoteId,
+            offerAmount: offer.offerAmount,
+            currency: offer.currency,
+            code: offer.code,
+            title: offer.title,
+            description: offer.description,
+          }: PaymentEventData.eligibleOffer
+        ),
+      ])
+      ->Option.getOr([])
+    PaymentEventData.buildOffersEvent(~offers=appliedOffers)
+  | None => PaymentEventData.buildOffersEvent()
+  }
+  let payload = PaymentEventData.offersEventToJson(event)
+
+  [
+    ("elementType", "payment"->JSON.Encode.string),
+    ("eventName", "appliedOffersInfo"->JSON.Encode.string),
     ("payload", payload),
   ]
 }
