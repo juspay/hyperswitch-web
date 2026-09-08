@@ -90,6 +90,7 @@ let decodeCardInfo = (json: JSON.t): PaymentEventData.cardInfo => {
   let dict = json->getDictFromJson
   {
     bin: jsonOptionString(dict, "bin"),
+    extendedBin: jsonOptionString(dict, "extendedBin"),
     last4: jsonOptionString(dict, "last4"),
     brand: jsonOptionString(dict, "brand"),
     expiryMonth: jsonOptionString(dict, "expiryMonth"),
