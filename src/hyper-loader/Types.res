@@ -69,7 +69,7 @@ type vaultCardForm = {
   fields: ref<JSON.t>,
 }
 
-type initPaymentMethodsSession = {
+type initPaymentMethodSession = {
   createCardForm: unit => vaultCardForm,
   update: JSON.t => unit,
   on: (string, JSON.t => unit) => unit,
@@ -147,7 +147,7 @@ type hyperInstance = {
   completeUpdateIntent: string => promise<JSON.t>,
   initiateUpdateIntent: unit => promise<JSON.t>,
   confirmTokenization: JSON.t => promise<JSON.t>,
-  initPaymentMethodsSession: JSON.t => initPaymentMethodsSession,
+  initPaymentMethodSession: JSON.t => initPaymentMethodSession,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -284,7 +284,7 @@ let defaultInitAuthenticationSession: initAuthenticationSession = {
   getActiveClickToPaySession: _ => Promise.resolve(JSON.Encode.null),
 }
 
-let defaultInitPaymentMethodsSession: initPaymentMethodsSession = {
+let defaultInitPaymentMethodSession: initPaymentMethodSession = {
   createCardForm: () => defaultVaultCardForm,
   update: _ => (),
   on: (_, _) => (),
@@ -306,7 +306,7 @@ let defaultHyperInstance = {
   completeUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   initiateUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   confirmTokenization: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
-  initPaymentMethodsSession: _ => defaultInitPaymentMethodsSession,
+  initPaymentMethodSession: _ => defaultInitPaymentMethodSession,
 }
 
 type eventType =

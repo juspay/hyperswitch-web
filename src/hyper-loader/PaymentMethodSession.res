@@ -1,7 +1,7 @@
 open Utils
 open CardFormGroupShared
 
-type initPaymentMethodsSession = Types.initPaymentMethodsSession
+type initPaymentMethodSession = Types.initPaymentMethodSession
 type fieldHandle = Types.fieldHandle
 type vaultCardForm = Types.vaultCardForm
 
@@ -129,7 +129,7 @@ type fieldEntry = {
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
 
-let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentMethodsSession => {
+let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentMethodSession => {
   logger.setLogInfo(~value="Payment method session card form created", ~eventName=CARD_FORM_FLOW)
   let optionsDict = options->getDictFromJson
 
@@ -316,7 +316,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
         Promise.resolve()
       })
       ->Promise.catch(err => {
-        Console.error2("[PaymentMethodsSession] session retrieve failed", err)
+        Console.error2("[PaymentMethodSession] session retrieve failed", err)
         Promise.resolve()
       })
       ->ignore
@@ -513,14 +513,14 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
     logger.setLogInfo(~value=`${fieldType} created`, ~eventName=CARD_FORM_FLOW)
     if sessionStateRef.contents != Active {
       Console.warn(
-        `[PaymentMethodsSession] create("${fieldType}") called on consumed/deinitialized session`,
+        `[PaymentMethodSession] create("${fieldType}") called on consumed/deinitialized session`,
       )
       Types.defaultFieldHandle
     } else {
       switch mapFieldTypeToInternalFieldName(fieldType) {
       | "" => {
           Console.error(
-            `[PaymentMethodsSession] invalid_field_type: ${fieldType}`,
+            `[PaymentMethodSession] invalid_field_type: ${fieldType}`,
           )
           Types.defaultFieldHandle
         }
@@ -560,7 +560,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
                   .mountField(~fieldId, ~fieldType, ~selector, ~options=optionsForBroker)
                   ->Promise.catch(err => {
                     Console.error2(
-                      `[PaymentMethodsSession] VGS mountField(${fieldType}, ${selector}) failed`,
+                      `[PaymentMethodSession] VGS mountField(${fieldType}, ${selector}) failed`,
                       err->Identity.anyTypeToJson,
                     )
                     Promise.resolve()
@@ -586,13 +586,13 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
                     } catch {
                     | exn =>
                       Console.error2(
-                        `[PaymentMethodsSession] VGS focus(${fieldId}) threw`,
+                        `[PaymentMethodSession] VGS focus(${fieldId}) threw`,
                         exn->Identity.anyTypeToJson,
                       )
                     }
                   | None =>
                     Console.warn(
-                      `[PaymentMethodsSession] VGS focus(${fieldId}) — field not yet mounted`,
+                      `[PaymentMethodSession] VGS focus(${fieldId}) — field not yet mounted`,
                     )
                   }
                 },
@@ -604,13 +604,13 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
                     } catch {
                     | exn =>
                       Console.error2(
-                        `[PaymentMethodsSession] VGS blur(${fieldId}) threw`,
+                        `[PaymentMethodSession] VGS blur(${fieldId}) threw`,
                         exn->Identity.anyTypeToJson,
                       )
                     }
                   | None =>
                     Console.warn(
-                      `[PaymentMethodsSession] VGS blur(${fieldId}) — field not yet mounted`,
+                      `[PaymentMethodSession] VGS blur(${fieldId}) — field not yet mounted`,
                     )
                   }
                 },
@@ -627,19 +627,19 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
                       }
                       if !cleared {
                         Console.warn(
-                          `[PaymentMethodsSession] VGS clear(${fieldId}) — field has no clear() method; use update({placeholder: ..., validations: ...}) instead`,
+                          `[PaymentMethodSession] VGS clear(${fieldId}) — field has no clear() method; use update({placeholder: ..., validations: ...}) instead`,
                         )
                       }
                     } catch {
                     | exn =>
                       Console.error2(
-                        `[PaymentMethodsSession] VGS clear(${fieldId}) threw`,
+                        `[PaymentMethodSession] VGS clear(${fieldId}) threw`,
                         exn->Identity.anyTypeToJson,
                       )
                     }
                   | None =>
                     Console.warn(
-                      `[PaymentMethodsSession] VGS clear(${fieldId}) — field not yet mounted`,
+                      `[PaymentMethodSession] VGS clear(${fieldId}) — field not yet mounted`,
                     )
                   }
                 },
@@ -652,7 +652,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
             }
           | None => {
               Console.error(
-                `[PaymentMethodsSession] vaultType="vgs" declared but vaultData has no vaultId/environment — cannot mount`,
+                `[PaymentMethodSession] vaultType="vgs" declared but vaultData has no vaultId/environment — cannot mount`,
               )
               Types.defaultFieldHandle
             }
@@ -673,7 +673,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
           entry.handle
         | other => {
             Console.error(
-              `[PaymentMethodsSession] unsupported_provider: vaultType "${other}" not yet supported`,
+              `[PaymentMethodSession] unsupported_provider: vaultType "${other}" not yet supported`,
             )
             Types.defaultFieldHandle
           }
@@ -684,7 +684,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
 
   let update = (_options: JSON.t): unit => {
     Console.warn(
-      "[PaymentMethodsSession] session options are fixed at creation; create a new session to change them",
+      "[PaymentMethodSession] session options are fixed at creation; create a new session to change them",
     )
   }
 
@@ -1006,7 +1006,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
         try broker.unmountAll() catch {
         | exn =>
           Console.error2(
-            "[PaymentMethodsSession] VGS unmountAll() threw during deinit",
+            "[PaymentMethodSession] VGS unmountAll() threw during deinit",
             exn->Identity.anyTypeToJson,
           )
         }
