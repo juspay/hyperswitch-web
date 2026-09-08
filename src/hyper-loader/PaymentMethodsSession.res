@@ -1,7 +1,7 @@
 open Utils
 open CardFormGroupShared
 
-type paymentMethodsSession = Types.paymentMethodsSession
+type initPaymentMethodsSession = Types.initPaymentMethodsSession
 type fieldHandle = Types.fieldHandle
 type vaultCardForm = Types.vaultCardForm
 
@@ -129,7 +129,7 @@ type fieldEntry = {
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
 
-let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): paymentMethodsSession => {
+let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentMethodsSession => {
   logger.setLogInfo(~value="Payment method session card form created", ~eventName=CARD_FORM_FLOW)
   let optionsDict = options->getDictFromJson
 
