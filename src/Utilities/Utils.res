@@ -1697,7 +1697,7 @@ let expressCheckoutComponents = [
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
 
 let componentsForPaymentElementCreate =
-  ["payment", "paymentMethodCollect", "paymentMethodsManagement", "cardCvc"]->Array.concat(
+  ["payment", "paymentMethodCollect", "paymentMethodsManagement"]->Array.concat(
     expressCheckoutComponents,
   )
 
