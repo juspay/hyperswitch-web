@@ -137,13 +137,15 @@ let vaultSdkDomainUrl =
     ? sdkDomainUrl
     : `${hyperswitchVaultSdkUrl}${GlobalVars.repoPublicPath}`
 
-// True once the merchant has configured any customEndpoints override (backend/asset/
-// sdk-config/confirm/logging). Drives which HTML page (strict vs. relaxed CSP) the SDK
-// serves — see webpack.common.js's *CustomEndpoint.html HtmlWebpackPlugin entries.
-// Deliberately excludes apiEndPoint, which is set by the legacy customBackendUrl field
-// (Hyper.res's customBackendUrl handling) — that's a separate, already-supported
-// mechanism and shouldn't opt a merchant into the relaxed connect-src wildcard.
+// True once the merchant has configured any custom backend/asset/sdk-config/confirm/
+// logging endpoint — via the new customEndpoints fields or the legacy customBackendUrl
+// (apiEndPoint). Drives which HTML page (strict vs. relaxed CSP) the SDK serves — see
+// webpack.common.js's *CustomEndpoint.html HtmlWebpackPlugin entries. Before this PR,
+// authorizedConnectSources always included a bare "https:" wildcard, so customBackendUrl
+// worked against any merchant-hosted domain unconditionally; apiEndPoint stays part of
+// this check so that behavior isn't lost now that the wildcard is conditional.
 let hasCustomEndpointConfig = () =>
+  apiEndPoint.contents->Option.isSome ||
   backendOverrideEndPoint.contents->Option.isSome ||
   assetsEndPoint.contents->Option.isSome ||
   sdkConfigEndPoint.contents->Option.isSome ||
