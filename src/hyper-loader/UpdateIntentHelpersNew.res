@@ -142,7 +142,7 @@ let mountPreMountLoaderIframe = (
           id="orca-payment-element-iframeRef-${selectorString}"
           name="orca-payment-element-iframeRef-${selectorString}"
           title="Orca Payment Element Frame"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${currentClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabledValue}&sdkAuthorization=${currentSdkAuthorization}&platformPublishableKey=${platformPublishableKey}&sdkConfigEndpoint=${sdkConfigEndpoint}"
+          src="${ApiEndpoint.sdkDomainUrl}/${ApiEndpoint.indexPageName()}?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${currentClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabledValue}&sdkAuthorization=${currentSdkAuthorization}&platformPublishableKey=${platformPublishableKey}&sdkConfigEndpoint=${sdkConfigEndpoint}"
           allow="*"
           name="orca-payment"
           style="outline: none;"

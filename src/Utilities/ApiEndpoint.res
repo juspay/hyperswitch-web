@@ -137,6 +137,24 @@ let vaultSdkDomainUrl =
     ? sdkDomainUrl
     : `${hyperswitchVaultSdkUrl}${GlobalVars.repoPublicPath}`
 
+// True once the merchant has configured any customEndpoints override (backend/asset/
+// sdk-config/confirm/logging). Drives which HTML page (strict vs. relaxed CSP) the SDK
+// serves — see webpack.common.js's *CustomEndpoint.html HtmlWebpackPlugin entries.
+// Deliberately excludes apiEndPoint, which is set by the legacy customBackendUrl field
+// (Hyper.res's customBackendUrl handling) — that's a separate, already-supported
+// mechanism and shouldn't opt a merchant into the relaxed connect-src wildcard.
+let hasCustomEndpointConfig = () =>
+  backendOverrideEndPoint.contents->Option.isSome ||
+  assetsEndPoint.contents->Option.isSome ||
+  sdkConfigEndPoint.contents->Option.isSome ||
+  confirmOverrideEndPoint.contents->Option.isSome ||
+  loggingOverrideEndPoint.contents->Option.isSome
+
+let indexPageName = () => hasCustomEndpointConfig() ? "indexCustomEndpoint.html" : "index.html"
+
+let fullscreenIndexPageName = () =>
+  hasCustomEndpointConfig() ? "fullscreenIndexCustomEndpoint.html" : "fullscreenIndex.html"
+
 let addCustomPodHeader = (arr: array<(string, string)>, ~customPodUri=?) => {
   switch customPodUri {
   | Some("")

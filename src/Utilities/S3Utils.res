@@ -54,12 +54,11 @@ let fetchCountryStateFromS3 = endpoint => {
   ->catch(_ => reject(Exn.anyToExnInternal("Failed to fetch country state data")))
 }
 
-let getBaseUrl = ApiEndpoint.getAssetsEndPoint()
-
 let getCountryStateData = async (
   ~locale="en",
   ~logger=HyperLogger.make(~source=Elements(Payment)),
 ) => {
+  let getBaseUrl = ApiEndpoint.getAssetsEndPoint()
   let normalizedLocale = getNormalizedLocale(locale)
   let timestamp = Date.now()->Float.toString
   let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
