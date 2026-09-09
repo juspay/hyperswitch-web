@@ -177,7 +177,16 @@ module PreMountLoaderForElements = {
 
 module PreMountLoaderForPMMElements = {
   @react.component
-  let make = (~logger, ~endpoint, ~customPodUri, ~pmSessionId, ~sdkAuthorization) => {
+  let make = (
+    ~logger,
+    ~endpoint,
+    ~customPodUri,
+    ~pmSessionId,
+    ~sdkAuthorization,
+    ~platformPublishableKey="",
+  ) => {
+    ApiEndpoint.setPlatformPublishableKey(platformPublishableKey)
+
     useMessageHandler(() =>
       getMessageHandlerV2PMM(~pmSessionId, ~sdkAuthorization, ~logger, ~customPodUri, ~endpoint)
     )
@@ -223,6 +232,8 @@ let make = (
       platformPublishableKey
     />
   | PaymentMethodsManagementElements =>
-    <PreMountLoaderForPMMElements logger endpoint customPodUri pmSessionId sdkAuthorization />
+    <PreMountLoaderForPMMElements
+      logger endpoint customPodUri pmSessionId sdkAuthorization platformPublishableKey
+    />
   }
 }

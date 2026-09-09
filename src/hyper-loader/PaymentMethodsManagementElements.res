@@ -59,7 +59,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/${ApiEndpoint.indexPageName()}?fullscreenType=${componentType}&publishableKey=${publishableKey}&pmSessionId=${pmSessionId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}&sdkAuthorization=${sdkAuthorization}"
+          src="${ApiEndpoint.sdkDomainUrl}/${ApiEndpoint.indexPageName()}?fullscreenType=${componentType}&publishableKey=${publishableKey}&pmSessionId=${pmSessionId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}&sdkAuthorization=${sdkAuthorization}&platformPublishableKey=${platformPublishableKey}"
           allow="*"
           name="orca-payment"
           style="outline: none;"
