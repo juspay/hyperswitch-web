@@ -483,6 +483,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 defaultRules: DefaultTheme.defaultRules,
               })
             }->ignore
+            if dict->getDictIsSome("options") {
+              updateOptions(dict)
+            }
           }
         } else if dict->getDictIsSome("paymentElementsUpdate") {
           updateOptions(dict)
