@@ -185,11 +185,16 @@ let make = (
       ) => {
         open Promise
 
+        let widgetAppearance = CardFormGroupShared.resolveFieldAppearance(
+          ~fieldOptionsDict=newOptions->getDictFromJson,
+          ~groupAppearance=appearance,
+        )
+
         let widgetOptions =
           [
             ("pmSessionId", pmSessionId->JSON.Encode.string),
             ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
-            ("appearance", appearance),
+            ("appearance", widgetAppearance),
             ("locale", locale),
             ("loader", loader),
             ("fonts", fonts),

@@ -444,11 +444,16 @@ let make = (
           ->Dict.get("subscriptionEvents")
           ->Option.getOr(JSON.Encode.null)
 
+        let widgetAppearance = CardFormGroupShared.resolveFieldAppearance(
+          ~fieldOptionsDict=newOptions->getDictFromJson,
+          ~groupAppearance=appearance,
+        )
+
         let widgetOptions =
           [
             ("clientSecret", clientSecretRef.contents->JSON.Encode.string),
             ("sdkAuthorization", sdkAuthorizationRef.contents->JSON.Encode.string),
-            ("appearance", appearance),
+            ("appearance", widgetAppearance),
             ("locale", locale),
             ("loader", loader),
             ("fonts", fonts),
