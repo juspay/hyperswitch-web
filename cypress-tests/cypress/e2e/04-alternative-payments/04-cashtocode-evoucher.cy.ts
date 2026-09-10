@@ -53,9 +53,12 @@ describe("cashtocode E-voucher test ", () => {
         .get("#submit")
         .click()
         .then(() => {
+          // CashtoCode now serves E-voucher from the same WCL sandbox host as
+          // the Cash / Voucher flow. The cluster number is assigned per
+          // request, so match the host pattern rather than a fixed cluster.
           cy.url().should(
-            "include",
-            "https://dev.evoucher.cashtocode.com/",
+            "match",
+            /^https:\/\/cluster\d+\.wcl-test\.cashtocode\.com\//,
           );
         });
     });
