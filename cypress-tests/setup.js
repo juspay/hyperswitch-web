@@ -396,6 +396,9 @@ const CONNECTOR_PAYMENT_METHODS = {
       payment_method_types: [
         {
           payment_method_type: "mifinity",
+          // Required for the payment methods list to resolve this connector.
+          // Mirrors juspay/hyperswitch cypress-tests configs/Payment/Commons.js.
+          payment_experience: "redirect_to_url",
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: false,
@@ -413,6 +416,9 @@ const CONNECTOR_PAYMENT_METHODS = {
       payment_method_types: [
         {
           payment_method_type: "crypto_currency",
+          // Required for the payment methods list to resolve this connector.
+          // Mirrors juspay/hyperswitch cypress-tests configs/Payment/Commons.js.
+          payment_experience: "redirect_to_url",
           minimum_amount: 100,
           maximum_amount: 99999999,
           recurring_enabled: false,
