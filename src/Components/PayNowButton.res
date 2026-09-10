@@ -46,6 +46,7 @@ let make = (~onClickHandler=?, ~label=?) => {
   }
 
   let onClickHandlerFunc = _ => {
+    SdkRuntimeLogger.logUser(~event=PayButtonClicked, ~message=buttonText)
     switch onClickHandler {
     | Some(fn) => fn()
     | None => ()
@@ -53,6 +54,7 @@ let make = (~onClickHandler=?, ~label=?) => {
   }
 
   let handleOnClick = _ => {
+    SdkRuntimeLogger.logUser(~event=PayButtonClicked, ~message=buttonText)
     setIsPayNowButtonDisable(_ => true)
     setShowLoader(_ => true)
     EventListenerManager.addSmartEventListener("message", handleMessage, "onSubmitSuccessful")
@@ -72,14 +74,16 @@ let make = (~onClickHandler=?, ~label=?) => {
         opacity: {isPayNowButtonDisable ? "0.6" : "1"},
         width: themeObj.buttonWidth,
         border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
-      }>
+      }
+    >
       <span
         id="button-text"
         style={
           color: themeObj.buttonTextColor,
           fontSize: themeObj.buttonTextFontSize,
           fontWeight: themeObj.buttonTextFontWeight,
-        }>
+        }
+      >
         {if showLoader {
           <Loader />
         } else {

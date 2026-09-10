@@ -64,6 +64,7 @@ let make = (
   let isManageModeActive = managePaymentMethod === paymentToken
 
   let handleOnClick = _ => {
+    SdkRuntimeLogger.logUser(~event=SavedMethodSelected)
     setPaymentTokenAtom(_ => {
       paymentToken,
       customerId,
@@ -93,14 +94,16 @@ let make = (
           boxShadow: "none",
           opacity: {isCardExpired ? "0.7" : "1"},
         }
-        onClick=handleOnClick>
+        onClick=handleOnClick
+      >
         <div className="w-full">
           <div>
             <div className="flex flex-row justify-between items-center">
               <div className="flex grow justify-between">
                 <div
                   className={`flex flex-row justify-center items-center`}
-                  style={columnGap: themeObj.spacingUnit}>
+                  style={columnGap: themeObj.spacingUnit}
+                >
                   <div style={color: isActive ? themeObj.colorPrimary : ""}>
                     <Radio
                       checked=isActive
@@ -129,7 +132,8 @@ let make = (
                           <RenderIf condition={!isManageModeActive}>
                             <div
                               className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                              style={fontSize: "14px", opacity: "0.5"}>
+                              style={fontSize: "14px", opacity: "0.5"}
+                            >
                               <div> {React.string(`Expiry`)} </div>
                               <div className="flex">
                                 {React.string(
@@ -152,8 +156,10 @@ let make = (
                   style={color: themeObj.colorPrimary}
                   onClick={event => {
                     ReactEvent.Mouse.stopPropagation(event)
+                    SdkRuntimeLogger.logUser(~event=SavedMethodUpdated)
                     handleUpdate(paymentItem)->ignore
-                  }}>
+                  }}
+                >
                   {React.string("Save")}
                 </div>
                 <Icon
@@ -163,6 +169,7 @@ let make = (
                   className="cursor-pointer ml-4 mb-[6px]"
                   onClick={event => {
                     ReactEvent.Mouse.stopPropagation(event)
+                    SdkRuntimeLogger.logUser(~event=SavedMethodDeleted)
                     handleDeleteV2(paymentItem)->ignore
                   }}
                 />
@@ -175,6 +182,7 @@ let make = (
                   className="cursor-pointer ml-4 mb-[6px]"
                   onClick={event => {
                     ReactEvent.Mouse.stopPropagation(event)
+                    SdkRuntimeLogger.logUser(~event=ViewToggled, ~message="Manage Saved Method")
                     handleManage()
                   }}
                 />
@@ -185,14 +193,16 @@ let make = (
                 <RenderIf condition=showCVCField>
                   <div
                     className={`flex flex-row items-start justify-start gap-2`}
-                    style={fontSize: "14px", opacity: "0.5"}>
+                    style={fontSize: "14px", opacity: "0.5"}
+                  >
                     <div className="tracking-widest w-12 mt-6">
                       {React.string(`${localeString.cvcTextLabel}:`)}
                     </div>
                     <div
                       className={`flex h mx-4 justify-start w-16 ${isActive
                           ? "opacity-1 mt-4"
-                          : "opacity-0"}`}>
+                          : "opacity-0"}`}
+                    >
                       <PaymentInputField
                         isValid=isCVCValid
                         setIsValid=setIsCVCValid
@@ -219,7 +229,8 @@ let make = (
                     style={
                       color: themeObj.colorDangerText,
                       fontSize: themeObj.fontSizeSm,
-                    }>
+                    }
+                  >
                     {React.string(cvcError)}
                   </div>
                 </RenderIf>

@@ -42,24 +42,26 @@ let fetchCountryStateFromS3 = endpoint => {
 
   let headers = [("Accept-Encoding", "br, gzip")]->Dict.fromArray
 
-  Utils.fetchApi(endpoint, ~method=#GET, ~headers)
-  ->Promise.then(resp => resp->Fetch.Response.json)
-  ->then(data => {
-    let val = decodeJsonTocountryStateData(data)
-    switch val {
-    | Some(res) => resolve(res)
-    | None => reject(Exn.anyToExnInternal("Failed to decode country state data"))
-    }
-  })
-  ->catch(_ => reject(Exn.anyToExnInternal("Failed to fetch country state data")))
+  CorePaymentLogger.observeApi(
+    ~event=S3CountryStateData,
+    ~details=[("url", endpoint->JSON.Encode.string), ("http_method", "GET"->JSON.Encode.string)],
+    ~call=() =>
+      Utils.fetchApi(endpoint, ~method=#GET, ~headers)
+      ->Promise.then(resp => resp->Fetch.Response.json)
+      ->then(data => {
+        let val = decodeJsonTocountryStateData(data)
+        switch val {
+        | Some(res) => resolve(res)
+        | None => reject(Exn.anyToExnInternal("Failed to decode country state data"))
+        }
+      })
+      ->catch(_ => reject(Exn.anyToExnInternal("Failed to fetch country state data"))),
+  )
 }
 
 let getBaseUrl = GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
 
-let getCountryStateData = async (
-  ~locale="en",
-  ~logger=HyperLogger.make(~source=Elements(Payment)),
-) => {
+let getCountryStateData = async (~locale="en") => {
   let normalizedLocale = getNormalizedLocale(locale)
   let timestamp = Date.now()->Float.toString
   let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
@@ -72,11 +74,9 @@ let getCountryStateData = async (
       await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
     } catch {
     | _ => {
-        logger.setLogError(
-          ~value="Failed to fetch country state data",
-          ~eventName=S3_API,
-          ~logType=ERROR,
-          ~logCategory=USER_ERROR,
+        SdkRuntimeLogger.logLifecycle(
+          ~event=S3DataFetchFailed,
+          ~message="Failed to fetch country state data",
         )
 
         let fallbackCountries = country
@@ -97,13 +97,10 @@ let getCountryStateData = async (
   }
 }
 
-let initializeCountryData = async (
-  ~locale="en",
-  ~logger=HyperLogger.make(~source=Elements(Payment)),
-) => {
+let initializeCountryData = async (~locale="en") => {
   try {
     open CountryStateDataRefs
-    let data = await getCountryStateData(~locale, ~logger)
+    let data = await getCountryStateData(~locale)
     countryDataRef.contents = data.countries
     stateDataRef.contents = data.states
     data

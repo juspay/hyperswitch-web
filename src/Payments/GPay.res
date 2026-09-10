@@ -14,19 +14,21 @@ let make = (
   let paymentMethodType = "google_pay"
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
   let isSDKHandleClick = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey} = Jotai.useAtomValue(keys)
   let updateSession = Jotai.useAtomValue(updateSession)
   let options = Jotai.useAtomValue(optionAtom)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Gpay)
+  let intent = PaymentHelpers.usePaymentIntent(Gpay)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Gpay)
+  let sync = PaymentHelpers.usePaymentSync(Gpay)
   let isGPayReady = Jotai.useAtomValue(isGooglePayReady)
   let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
-  let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
+  let status = CommonHooks.useScript(
+    "https://pay.google.com/gp/p/js/pay.js",
+    ~resourceProvider=SdkRuntimeLogger.GooglePayScript,
+  )
   let isGooglePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsGooglePayDelayedSessionFlow()
   let isGooglePaySDKFlow = React.useMemo(() => {
     sessionObj->Option.isSome
@@ -174,16 +176,16 @@ let make = (
   let onGooglePaymentButtonClicked = () => {
     if isTestMode {
       Console.warn("Google Pay button clicked in test mode - interaction disabled")
-      loggerState.setLogInfo(
-        ~value="Google Pay button clicked in test mode - interaction disabled",
-        ~eventName=GOOGLE_PAY_FLOW,
-        ~paymentMethod="GOOGLE_PAY",
+      SdkRuntimeLogger.logUser(
+        ~event=WalletButtonClicked,
+        ~paymentMethod=Wallet(GooglePay),
+        ~message="Google Pay button clicked in test mode - interaction disabled",
       )
     } else {
-      loggerState.setLogInfo(
-        ~value="GooglePay Button Clicked",
-        ~eventName=GOOGLE_PAY_FLOW,
-        ~paymentMethod="GOOGLE_PAY",
+      SdkRuntimeLogger.logUser(
+        ~event=WalletButtonClicked,
+        ~paymentMethod=Wallet(GooglePay),
+        ~message="GooglePay Button Clicked",
       )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,
@@ -307,11 +309,10 @@ let make = (
         }
       } catch {
       | _ =>
-        loggerState.setLogError(
-          ~value="Error in syncing GooglePay Payment",
-          ~eventName=GOOGLE_PAY_FLOW,
-          // ~internalMetadata=err->formatException->JSON.stringify,
-          ~paymentMethod="GOOGLE_PAY",
+        SdkRuntimeLogger.logLifecycle(
+          ~event=WalletInteractionFailed,
+          ~paymentMethod=Wallet(GooglePay),
+          ~message="Error in syncing GooglePay Payment",
         )
       }
     }

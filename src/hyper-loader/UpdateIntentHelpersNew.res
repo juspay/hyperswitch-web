@@ -4,7 +4,6 @@
 open Utils
 open Identity
 open EventListenerManager
-open HyperLoggerTypes
 
 // --- Iframe messaging helpers ---
 
@@ -281,112 +280,114 @@ let performUpdateIntent = async (
   ~isSdkParamsEnabled,
   ~selectorString,
   ~shouldWaitForReady,
-  ~logger: HyperLoggerTypes.loggerMake,
+  ~merchantEvent: SdkRuntimeLogger.merchantEvent=SdkRuntimeLogger.PaymentSession(UpdateIntent),
 ) => {
   if isUpdateIntentInProgress.contents {
     updateIntentInProgressResponse()
   } else {
     isUpdateIntentInProgress.contents = true
 
-    logger.setLogInfo(~value="Update Intent Initiated", ~eventName=UPDATE_INTENT)
+    let runUpdateIntent = async () =>
+      try {
+        // Get new credentials from merchant callback
+        let callbackResult = await callback()
+        let newSdkAuthorization = callbackResult->getDictFromJson->getString("sdkAuthorization", "")
 
-    let response = try {
-      // Get new credentials from merchant callback
-      let callbackResult = await callback()
-      let newSdkAuthorization = callbackResult->getDictFromJson->getString("sdkAuthorization", "")
-
-      // Mount new preMountLoader with new credentials (refs NOT updated yet —
-      // we validate all API responses before committing any state changes).
-      let (
-        newSessionTokensPromise,
-        newSdkConfigsDataPromise,
-        newClientListDataPromise,
-      ) = setupPreMountLoaderPromises(
-        ~publishableKey,
-        ~sdkSessionId,
-        ~endpoint,
-        ~customPodUri,
-        ~isTestMode,
-        ~isSdkParamsEnabled,
-        ~selectorString,
-        ~currentClientSecret=clientSecretRef.contents,
-        ~currentSdkAuthorization=newSdkAuthorization,
-      )
-
-      // Wait for ALL API responses before updating anything.
-      let results = await Promise.all([
-        newSessionTokensPromise,
-        newSdkConfigsDataPromise,
-        newClientListDataPromise,
-      ])
-
-      // Check if any API response indicates an error
-      let firstError = results->Array.find(isErrorResponse)
-
-      switch firstError {
-      | Some(errorJson) =>
-        // API call failed — don't update refs, clean up new preMountLoader, return error
-        unMountPreMountLoaderIframe(selectorString)
-        let errorMessage =
-          errorJson
-          ->getDictFromJson
-          ->getDictFromDict("error")
-          ->getString("message", "An API call failed during updateIntent.")
-        logger.setLogError(~value=errorMessage, ~eventName=UPDATE_INTENT)
-        getFailedSubmitResponse(~message=errorMessage, ~errorType="update_intent_error")
-
-      | None =>
-        // All API calls succeeded — now commit state changes
-
-        sdkAuthorizationRef.contents = newSdkAuthorization
-
-        sessionTokensDataPromise.contents = newSessionTokensPromise
-        sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
-        clientListDataPromise.contents = newClientListDataPromise
-
-        // Send ElementsUpdate to all inner iframes with new credentials
-        logger.setLogInfo(~value="Update SDK Sent to Iframes", ~eventName=UPDATE_SDK)
-        sendElementsUpdateToIframes(
-          iframes,
-          ~newSdkAuthorization,
-          ~newClientSecret=clientSecretRef.contents,
+        // Mount new preMountLoader with new credentials (refs NOT updated yet —
+        // we validate all API responses before committing any state changes).
+        let (
+          newSessionTokensPromise,
+          newSdkConfigsDataPromise,
+          newClientListDataPromise,
+        ) = setupPreMountLoaderPromises(
+          ~publishableKey,
+          ~sdkSessionId,
+          ~endpoint,
+          ~customPodUri,
+          ~isTestMode,
+          ~isSdkParamsEnabled,
+          ~selectorString,
+          ~currentClientSecret=clientSecretRef.contents,
+          ~currentSdkAuthorization=newSdkAuthorization,
         )
 
-        // Wait for the payment element to signal ready (only if a payment element is mounted)
-        let readyPromise = if shouldWaitForReady {
-          Some(waitForReady())
-        } else {
-          None
-        }
-
-        // Forward fresh data to all mounted iframes. clientList is the single
-        // source for both payment_methods and customer_payment_methods data,
-        // forwarded once under the "clientList" key (retired the separate
-        // "paymentMethodList"/"customerPaymentMethods" keys).
-        let _ = await Promise.all([
-          forwardPromiseToIframes(iframes, newSessionTokensPromise, "sessions"),
-          forwardPromiseToIframes(iframes, newSdkConfigsDataPromise, "sdkConfigs"),
-          forwardPromiseToIframes(iframes, newClientListDataPromise, "clientList"),
+        // Wait for ALL API responses before updating anything.
+        let results = await Promise.all([
+          newSessionTokensPromise,
+          newSdkConfigsDataPromise,
+          newClientListDataPromise,
         ])
 
-        switch readyPromise {
-        | Some(p) => await p
-        | None => ()
-        }
+        // Check if any API response indicates an error
+        let firstError = results->Array.find(isErrorResponse)
 
-        logger.setLogInfo(~value="Update Intent Completed Successfully", ~eventName=UPDATE_INTENT)
-        [("status", "succeeded"->JSON.Encode.string)]->getJsonFromArrayOfJson
+        switch firstError {
+        | Some(errorJson) =>
+          // API call failed — don't update refs, clean up new preMountLoader, return error
+          unMountPreMountLoaderIframe(selectorString)
+          let errorMessage =
+            errorJson
+            ->getDictFromJson
+            ->getDictFromDict("error")
+            ->getString("message", "An API call failed during updateIntent.")
+          getFailedSubmitResponse(~message=errorMessage, ~errorType="update_intent_error")
+
+        | None =>
+          // All API calls succeeded — now commit state changes
+
+          sdkAuthorizationRef.contents = newSdkAuthorization
+
+          sessionTokensDataPromise.contents = newSessionTokensPromise
+          sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
+          clientListDataPromise.contents = newClientListDataPromise
+
+          // Send ElementsUpdate to all inner iframes with new credentials
+          CorePaymentLogger.logLifecycle(~event=UpdateSdk, ~message="Update SDK Sent to Iframes")
+          sendElementsUpdateToIframes(
+            iframes,
+            ~newSdkAuthorization,
+            ~newClientSecret=clientSecretRef.contents,
+          )
+
+          // Wait for the payment element to signal ready (only if a payment element is mounted)
+          let readyPromise = if shouldWaitForReady {
+            Some(waitForReady())
+          } else {
+            None
+          }
+
+          // Forward fresh data to all mounted iframes. clientList is the single
+          // source for both payment_methods and customer_payment_methods data,
+          // forwarded once under the "clientList" key (retired the separate
+          // "paymentMethodList"/"customerPaymentMethods" keys).
+          let _ = await Promise.all([
+            forwardPromiseToIframes(iframes, newSessionTokensPromise, "sessions"),
+            forwardPromiseToIframes(iframes, newSdkConfigsDataPromise, "sdkConfigs"),
+            forwardPromiseToIframes(iframes, newClientListDataPromise, "clientList"),
+          ])
+
+          switch readyPromise {
+          | Some(p) => await p
+          | None => ()
+          }
+
+          [("status", "succeeded"->JSON.Encode.string)]->getJsonFromArrayOfJson
+        }
+      } catch {
+      | Exn.Error(e) =>
+        let msg = Exn.message(e)->Option.getOr("Something went wrong during updateIntent!")
+        getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
+      | _ =>
+        let msg = "An unexpected error occurred during updateIntent."
+        getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
       }
-    } catch {
-    | Exn.Error(e) =>
-      let msg = Exn.message(e)->Option.getOr("Something went wrong during updateIntent!")
-      logger.setLogError(~value=msg, ~eventName=UPDATE_INTENT)
-      getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
-    | _ =>
-      let msg = "An unexpected error occurred during updateIntent."
-      logger.setLogError(~value=msg, ~eventName=UPDATE_INTENT)
-      getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
-    }
+
+    let response = await SdkRuntimeLogger.observeMerchant(
+      ~event=merchantEvent,
+      ~timeoutMs=LoggerCommonHelpers.userGatedOperationTimeoutMs,
+      ~resultFailure=LoggerCommonHelpers.errorResponseSummary,
+      ~call=runUpdateIntent,
+    )
     isUpdateIntentInProgress.contents = false
     response
   }

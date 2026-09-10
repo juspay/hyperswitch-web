@@ -46,6 +46,11 @@ let make = (
     target["checked"]
   }
 
+  let getCheckedState = (ev): bool => {
+    let target = ev->ReactEvent.Form.target
+    target["checked"]
+  }
+
   let (
     isSaveDetailsCheckboxState,
     isSaveDetailsCheckedState,
@@ -85,7 +90,8 @@ let make = (
           {React.string(" ")}
           <span
             className="underline decoration-1 underline-offset-2 cursor-pointer"
-            onClick={handleLearnMore}>
+            onClick={handleLearnMore}
+          >
             {React.string("Learn more")}
           </span>
         </div>
@@ -94,20 +100,31 @@ let make = (
           <div className={`Checkbox ${isSaveDetailsCheckboxState} flex`}>
             <label
               className={`container CheckboxInput ${isSaveDetailsCheckedState}`}
-              style={width: "fit-content"}>
+              style={width: "fit-content"}
+            >
               <input
-                type_={`checkbox`} onChange={e => setIsSaveDetailsWithClickToPay(e->getIsChecked)}
+                type_={`checkbox`}
+                onChange={e => {
+                  SdkRuntimeLogger.logUser(
+                    ~event=InputFieldChanged,
+                    ~message="Click to Pay save details toggled",
+                    ~details=[("save_details", e->getCheckedState->JSON.Encode.bool)],
+                  )
+                  setIsSaveDetailsWithClickToPay(e->getIsChecked)
+                }}
               />
               <div className={`checkmark CheckboxInput ${isSaveDetailsCheckedState}`} />
             </label>
             <div
               className={`CheckboxLabel ${isSaveDetailsCheckBoxLabelState} ml-2 w-11/12 text-xs space-y-2`}
-              style={color: "#a9a9a9"}>
+              style={color: "#a9a9a9"}
+            >
               <div>
                 {React.string(`Save my information with ${formattedCardBrand} `)}
                 <span
                   className="underline decoration-1 underline-offset-2 cursor-pointer"
-                  onClick={handleLearnMore}>
+                  onClick={handleLearnMore}
+                >
                   {React.string("Click to Pay")}
                 </span>
                 {React.string(" ")}
@@ -122,27 +139,39 @@ let make = (
           <div className={`Checkbox ${isRememberMeCheckboxState} flex`}>
             <label
               className={`container CheckboxInput ${isRememberMeCheckedState}`}
-              style={width: "fit-content"}>
+              style={width: "fit-content"}
+            >
               <input
-                type_={`checkbox`} onChange={e => setIsClickToPayRememberMe(e->getIsChecked)}
+                type_={`checkbox`}
+                onChange={e => {
+                  SdkRuntimeLogger.logUser(
+                    ~event=InputFieldChanged,
+                    ~message="Click to Pay remember me toggled",
+                    ~details=[("remember_me", e->getCheckedState->JSON.Encode.bool)],
+                  )
+                  setIsClickToPayRememberMe(e->getIsChecked)
+                }}
               />
               <div className={`checkmark CheckboxInput ${isRememberMeCheckedState}`} />
             </label>
             <div
               className={`CheckboxLabel ${isRememberMeCheckBoxLabelState} ml-2 w-11/12 text-xs space-y-2`}
-              style={color: "#a9a9a9"}>
+              style={color: "#a9a9a9"}
+            >
               <div className="flex items-center">
                 {React.string("Remember me on this browser")}
                 <div className="relative inline-block ml-2">
                   <div className="group cursor-help">
                     <div
-                      className="w-4 h-4 rounded-full bg-[#4a4a4a] flex items-center justify-center cursor-help">
+                      className="w-4 h-4 rounded-full bg-[#4a4a4a] flex items-center justify-center cursor-help"
+                    >
                       <span className="text-white text-xs cursor-help" style={fontSize: "10px"}>
                         {React.string("i")}
                       </span>
                     </div>
                     <div
-                      className="invisible group-hover:visible absolute z-10 w-64 bg-white text-xs rounded-md p-2 left-1/2 transform -translate-x-1/2 bottom-[150%] shadow-md border border-gray-200 before:content-[''] before:absolute before:top-[100%] before:left-1/2 before:ml-[-5px] before:border-[5px] before:border-solid before:border-gray-200 before:border-b-transparent before:border-l-transparent before:border-r-transparent after:content-[''] after:absolute after:top-[100%] after:left-1/2 after:ml-[-4px] after:border-[4px] after:border-solid after:border-white after:border-b-transparent after:border-l-transparent after:border-r-transparent">
+                      className="invisible group-hover:visible absolute z-10 w-64 bg-white text-xs rounded-md p-2 left-1/2 transform -translate-x-1/2 bottom-[150%] shadow-md border border-gray-200 before:content-[''] before:absolute before:top-[100%] before:left-1/2 before:ml-[-5px] before:border-[5px] before:border-solid before:border-gray-200 before:border-b-transparent before:border-l-transparent before:border-r-transparent after:content-[''] after:absolute after:top-[100%] after:left-1/2 after:ml-[-4px] after:border-[4px] after:border-solid after:border-white after:border-b-transparent after:border-l-transparent after:border-r-transparent"
+                    >
                       //   {/* Content */}
                       <div className="flex flex-col space-y-2">
                         <span>
@@ -162,14 +191,16 @@ let make = (
                 {React.string(`By continuing, you agree to ${formattedCardBrand}'s `)}
                 <span
                   className="underline decoration-1 underline-offset-2 cursor-pointer"
-                  onClick={ev => handleOpenUrl(ev, getTermsUrl())}>
+                  onClick={ev => handleOpenUrl(ev, getTermsUrl())}
+                >
                   {React.string("Terms")}
                 </span>
                 {React.string(" ")}
                 {React.string("and understand your data will be processed according to the ")}
                 <span
                   className="underline decoration-1 underline-offset-2 cursor-pointer"
-                  onClick={ev => handleOpenUrl(ev, getPrivacyNoticeUrl())}>
+                  onClick={ev => handleOpenUrl(ev, getPrivacyNoticeUrl())}
+                >
                   {React.string("Privacy Notice")}
                 </span>
                 {React.string(".")}

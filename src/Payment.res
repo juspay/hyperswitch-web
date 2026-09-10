@@ -10,24 +10,21 @@ let setUserError = message => {
 }
 
 @react.component
-let make = (~paymentMode, ~integrateError, ~logger) => {
+let make = (~paymentMode, ~integrateError) => {
   let {localeString} = Jotai.useAtomValue(configAtom)
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
   let (isFocus, setIsFocus) = React.useState(_ => false)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(logger), Card)
+  let intent = PaymentHelpers.usePaymentIntent(Card)
 
   let paymentType = React.useMemo1(() => {
     paymentMode->getPaymentMode
   }, [paymentMode])
 
   let {cardProps, expiryProps, cvcProps, zipProps, blurState} = useCardForm(
-    ~logger,
     ~paymentType,
-    // The unified Card flow owns eligibility in ParentCardComponent. Keep the
-    // legacy hook enabled for the standalone card-number/expiry/CVC elements.
     ~runEligibility=paymentType !== Card,
   )
   let {

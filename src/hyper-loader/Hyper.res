@@ -1,6 +1,5 @@
 open Types
 open ErrorUtils
-open LoggerUtils
 open Utils
 open EventListenerManager
 open Identity
@@ -68,16 +67,10 @@ let handleHyperApplePayMounted = (event: Types.event) => {
     let publishableKey = dict->getString("publishableKey", "")
     let isTaxCalculationEnabled = dict->getBool("isTaxCalculationEnabled", false)
     let sdkSessionId = dict->getString("sdkSessionId", "")
-    let analyticsMetadata = dict->getJsonFromDict("analyticsMetadata", JSON.Encode.null)
+    let _analyticsMetadata = dict->getJsonFromDict("analyticsMetadata", JSON.Encode.null)
     let isSavedMethodsFlow = dict->getBool("isSavedMethodsFlow", false)
 
-    let logger = HyperLogger.make(
-      ~sessionId=sdkSessionId,
-      ~source=Loader,
-      ~merchantId=publishableKey,
-      ~metadata=analyticsMetadata,
-      ~clientSecret,
-    )
+    LoggerContext.setSessionData(~sessionId=sdkSessionId, ~merchantId=publishableKey, ())
 
     let callBackFunc = payment => {
       let msg =
@@ -108,7 +101,6 @@ let handleHyperApplePayMounted = (event: Types.event) => {
       ~paymentRequest,
       ~applePaySessionRef,
       ~applePayPresent,
-      ~logger,
       ~callBackFunc,
       ~clientSecret,
       ~publishableKey,
@@ -194,12 +186,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
     let sessionID = analyticsInfoDict->getString("sessionID", "hyp_" ++ generateRandomString(8))
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
-    let logger = HyperLogger.make(
-      ~sessionId=sessionID,
-      ~source=Loader,
-      ~merchantId=publishableKey,
-      ~metadata=analyticsMetadata,
-    )
+    LoggerRuntime.configure(~runtimeSource=HyperLoader)
+    LoggerContext.setSessionData(~sessionId=sessionID, ~merchantId=publishableKey, ())
 
     switch options {
     | Some(userOptions) =>
@@ -209,45 +197,68 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->Option.flatMap(x => x->Dict.get("customBackendUrl"))
         ->Option.flatMap(JSON.Decode.string)
         ->Option.getOr("")
+      if customBackendUrl !== "" {
+        SdkRuntimeLogger.logMerchantProps(
+          ~event=SdkRuntimeLogger.HyperProp(CustomBackendUrl),
+          ~details=[
+            ("url", customBackendUrl->LoggerCommonHelpers.sanitizedUrl->JSON.Encode.string),
+          ],
+        )
+      }
       customBackendUrl === "" ? () : ApiEndpoint.setApiEndPoint(customBackendUrl)
+    | None => ()
+    }
+
+    switch options->getOptionsDict->Dict.get("redirectionFlags") {
+    | Some(_) =>
+      SdkRuntimeLogger.logMerchantProps(
+        ~event=SdkRuntimeLogger.HyperProp(RedirectionFlags),
+        ~details=[
+          ("shouldUseTopRedirection", redirectionFlags.shouldUseTopRedirection->JSON.Encode.bool),
+          (
+            "shouldRemoveBeforeUnloadEvents",
+            redirectionFlags.shouldRemoveBeforeUnloadEvents->JSON.Encode.bool,
+          ),
+        ],
+      )
     | None => ()
     }
 
     {
       () => {
-        logger.setMerchantId(publishableKey)
-        logger.setSessionId(sessionID)
-        logger.setLogInfo(
-          ~value=Window.hrefWithoutSearch,
-          ~eventName=APP_INITIATED,
-          ~timestamp=sdkTimestamp,
+        LoggerContext.setSessionData(~sessionId=sessionID, ~merchantId=publishableKey, ())
+        SdkRuntimeLogger.observeMerchantSync(
+          ~event=SdkRuntimeLogger.Hyper(Init),
+          ~message=Window.hrefWithoutSearch,
+          ~details=[("timestamp", sdkTimestamp->JSON.Encode.string)],
+          ~call=() => (),
         )
       }
     }->Sentry.sentryLogger
     let isSecure = Window.isSecureContext
     if !isSecure {
-      manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.hrefWithoutSearch, ~logger)
+      manageErrorWarning(HttpNotAllowed, ~dynamicStr=Window.hrefWithoutSearch)
       Exn.raiseError("Insecure domain: " ++ Window.hrefWithoutSearch)
     }
     switch Window.getHyper->Nullable.toOption {
-    | Some(hyperMethod) if !isForceInit => {
-        logger.setLogInfo(
-          ~value="orca-sdk initiated",
-          ~eventName=APP_REINITIATED,
-          ~timestamp=sdkTimestamp,
-        )
-        hyperMethod
-      }
+    | Some(hyperMethod) if !isForceInit =>
+      SdkRuntimeLogger.observeMerchantSync(
+        ~event=SdkRuntimeLogger.Hyper(Reinit),
+        ~message="orca-sdk initiated",
+        ~details=[("timestamp", sdkTimestamp->JSON.Encode.string)],
+        ~call=() => hyperMethod,
+      )
     | Some(_)
     | None =>
       let loaderTimestamp = Date.now()->Float.toString
 
       {
         () => {
-          logger.setLogInfo(
-            ~value="loadHyper has been called",
-            ~eventName=LOADER_CALLED,
-            ~timestamp=loaderTimestamp,
+          SdkRuntimeLogger.observeMerchantSync(
+            ~event=SdkRuntimeLogger.Hyper(LoadHyper),
+            ~message="loadHyper has been called",
+            ~details=[("timestamp", loaderTimestamp->JSON.Encode.string)],
+            ~call=() => (),
           )
           if (
             publishableKey == "" ||
@@ -257,7 +268,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                 )
               )
           ) {
-            manageErrorWarning(INVALID_PK, ~logger)
+            manageErrorWarning(InvalidPublishableKey)
           }
 
           if (
@@ -265,10 +276,27 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ) {
             let scriptURL = "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"
             let script = Window.createElement("script")
+            SdkRuntimeLogger.logResource(
+              ~event=ScriptLoad(ApplePayScript, Init),
+              ~message="Apple Pay Script Loading",
+              ~paymentMethod=Wallet(ApplePay),
+            )
             script->Window.elementSrc(scriptURL)
             script->Window.elementOnerror(err => {
               Console.error2("ERROR DURING LOADING APPLE PAY", err)
+              SdkRuntimeLogger.logResource(
+                ~event=ScriptLoad(ApplePayScript, Failed),
+                ~message="ERROR DURING LOADING APPLE PAY SCRIPT",
+                ~paymentMethod=Wallet(ApplePay),
+              )
             })
+            script->Window.elementOnload(_ =>
+              SdkRuntimeLogger.logResource(
+                ~event=ScriptLoad(ApplePayScript, Done),
+                ~message="Apple Pay Script Loaded",
+                ~paymentMethod=Wallet(ApplePay),
+              )
+            )
             Window.body->Window.appendChild(script)
           }
         }
@@ -279,17 +307,27 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       ) {
         let googlePayScriptURL = "https://pay.google.com/gp/p/js/pay.js"
         let googlePayScript = Window.createElement("script")
+        SdkRuntimeLogger.logResource(
+          ~event=ScriptLoad(GooglePayScript, Init),
+          ~message="GooglePay Script Loading",
+          ~paymentMethod=Wallet(GooglePay),
+        )
         googlePayScript->Window.elementSrc(googlePayScriptURL)
         googlePayScript->Window.elementOnerror(_ => {
-          logger.setLogError(
-            ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT",
-            ~eventName=GOOGLE_PAY_SCRIPT,
-            // ~internalMetadata=err->formatException->JSON.stringify,
-            ~paymentMethod="GOOGLE_PAY",
+          SdkRuntimeLogger.logResource(
+            ~event=ScriptLoad(GooglePayScript, Failed),
+            ~message="ERROR DURING LOADING GOOGLE PAY SCRIPT",
+            ~paymentMethod=Wallet(GooglePay),
           )
         })
+        googlePayScript->Window.elementOnload(_ =>
+          SdkRuntimeLogger.logResource(
+            ~event=ScriptLoad(GooglePayScript, Done),
+            ~message="GooglePay Script Loaded",
+            ~paymentMethod=Wallet(GooglePay),
+          )
+        )
         Window.body->Window.appendChild(googlePayScript)
-        logger.setLogInfo(~value="GooglePay Script Loaded", ~eventName=GOOGLE_PAY_SCRIPT)
       }
 
       if (
@@ -297,18 +335,26 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       ) {
         let samsungPayScriptUrl = "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js"
         let samsungPayScript = Window.createElement("script")
+        SdkRuntimeLogger.logResource(
+          ~event=ScriptLoad(SamsungPayScript, Init),
+          ~message="SamsungPay Script Loading",
+          ~paymentMethod=Wallet(SamsungPay),
+        )
         samsungPayScript->Window.elementSrc(samsungPayScriptUrl)
         samsungPayScript->Window.elementOnerror(_ => {
-          logger.setLogError(
-            ~value="ERROR DURING LOADING SAMSUNG PAY SCRIPT",
-            ~eventName=SAMSUNG_PAY_SCRIPT,
-            // ~internalMetadata=err->formatException->JSON.stringify,
-            ~paymentMethod="SAMSUNG_PAY",
+          SdkRuntimeLogger.logResource(
+            ~event=ScriptLoad(SamsungPayScript, Failed),
+            ~message="ERROR DURING LOADING SAMSUNG PAY SCRIPT",
+            ~paymentMethod=Wallet(SamsungPay),
           )
         })
         Window.body->Window.appendChild(samsungPayScript)
         samsungPayScript->Window.elementOnload(_ =>
-          logger.setLogInfo(~value="SamsungPay Script Loaded", ~eventName=SAMSUNG_PAY_SCRIPT)
+          SdkRuntimeLogger.logResource(
+            ~event=ScriptLoad(SamsungPayScript, Done),
+            ~message="SamsungPay Script Loaded",
+            ~paymentMethod=Wallet(SamsungPay),
+          )
         )
       }
 
@@ -330,7 +376,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       // it at Hyper.init stage. sdk-configs could be prefetched early (before elements() is
       // called) for a latency optimisation. Currently deferred to PreMountLoader for consistency.
 
-      let retrievePaymentIntentFn = async clientSecretOrSdkAuth => {
+      let retrievePaymentIntentApiCall = async clientSecretOrSdkAuth => {
         // Try to decode as base64 — if decodable, it's an SDK authorization token.
         let (actualClientSecret, sdkAuthorizationValue) = try {
           clientSecretOrSdkAuth->Utils.getSdkAuthorizationData->ignore
@@ -359,8 +405,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         await fetchApiWithLogging(
           uri,
-          ~eventName=RETRIEVE_CALL,
-          ~logger,
+          ~event=RetrievePaymentIntent,
           ~method=#GET,
           ~customPodUri=None,
           ~publishableKey=Some(publishableKey),
@@ -369,6 +414,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sdkAuthorization=sdkAuthorizationValue,
         )
       }
+
+      let retrievePaymentIntentFn = clientSecretOrSdkAuth =>
+        SdkRuntimeLogger.observeMerchant(
+          ~event=SdkRuntimeLogger.Hyper(RetrievePaymentIntent),
+          ~call=() => retrievePaymentIntentApiCall(clientSecretOrSdkAuth),
+        )
 
       let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
         let confirmTimestamp = Date.now()
@@ -401,11 +452,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           Promise.resolve(errorResponse)
         } else {
           Promise.make((resolve1, _) => {
-            logger.setLogInfo(
-              ~value="isReadyPromise status: " ++ (
+            CorePaymentLogger.logLifecycle(
+              ~event=IsReadyStatusCheck,
+              ~message="isReadyPromise status: " ++ (
                 isReadyResolved.contents ? "resolved" : "pending"
               ),
-              ~eventName=IS_READY_STATUS_CHECK,
             )
             isReadyPromise
             ->Promise.then(readyTimestamp => {
@@ -414,13 +465,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                 let dict = json->getDictFromJson
                 switch dict->Dict.get("submitSuccessful") {
                 | Some(val) =>
-                  logApi(
-                    ~apiLogType=Method,
-                    ~optLogger=Some(logger),
-                    ~result=val,
-                    ~paymentMethod="confirmPayment",
-                    ~eventName=CONFIRM_PAYMENT,
-                  )
                   let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
                   let returnUrl =
                     dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
@@ -477,17 +521,26 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         }
       }
 
-      let confirmPayment = payload => {
-        if isUpdateIntentInProgress.contents {
-          Promise.resolve(UpdateIntentHelpersNew.confirmBlockedResponse())
-        } else {
-          confirmPaymentWrapper(payload, false, true)
-        }
-      }
+      let confirmPayment = payload =>
+        SdkRuntimeLogger.observeMerchant(
+          ~event=SdkRuntimeLogger.Hyper(ConfirmPayment),
+          ~timeoutMs=LoggerCommonHelpers.userGatedOperationTimeoutMs,
+          ~resultFailure=LoggerCommonHelpers.errorResponseSummary,
+          ~call=() =>
+            if isUpdateIntentInProgress.contents {
+              Promise.resolve(UpdateIntentHelpersNew.confirmBlockedResponse())
+            } else {
+              confirmPaymentWrapper(payload, false, true)
+            },
+        )
 
-      let confirmOneClickPayment = (payload, result: bool) => {
-        confirmPaymentWrapper(payload, true, result)
-      }
+      let confirmOneClickPayment = (payload, result: bool) =>
+        SdkRuntimeLogger.observeMerchant(
+          ~event=SdkRuntimeLogger.Hyper(ConfirmOneClickPayment),
+          ~timeoutMs=LoggerCommonHelpers.userGatedOperationTimeoutMs,
+          ~resultFailure=LoggerCommonHelpers.errorResponseSummary,
+          ~call=() => confirmPaymentWrapper(payload, true, result),
+        )
 
       let confirmPaymentViaSDKButton = payload => {
         confirmPaymentWrapper(payload, false, true, ~isSdkButton=true)
@@ -513,8 +566,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let elements = elementsOptions => {
-        open Promise
+      let makeElements = elementsOptions => {
         let elementsOptionsDict = elementsOptions->JSON.Decode.object
         elementsOptionsDict
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
@@ -531,24 +583,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         sdkAuthorization := sdkAuthorizationId
         clientSecret := clientSecretId
 
-        Promise.make((resolve, _) => {
-          logger.setClientSecret(clientSecretId)
-          logger.setSdkAuthorization(sdkAuthorizationId)
-          resolve(JSON.Encode.null)
-        })
-        ->then(_ => {
-          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=ORCA_ELEMENTS_CALLED)
-          resolve()
-        })
-        ->catch(_ => resolve())
-        ->ignore
-
         Elements.make(
           elementsOptions,
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
-          ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
           ->Option.getOr(JSON.Encode.null)
@@ -567,8 +606,21 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
+      let elements = elementsOptions =>
+        SdkRuntimeLogger.observeMerchantSync(
+          ~event=SdkRuntimeLogger.Hyper(CreateElements),
+          ~message=Window.hrefWithoutSearch,
+          ~call=() => makeElements(elementsOptions),
+        )
+
+      let widgets = elementsOptions =>
+        SdkRuntimeLogger.observeMerchantSync(
+          ~event=SdkRuntimeLogger.Hyper(CreateWidgets),
+          ~message=Window.hrefWithoutSearch,
+          ~call=() => makeElements(elementsOptions),
+        )
+
       let paymentMethodsManagementElements = pmManagementOptions => {
-        open Promise
         let pmManagementOptionsDict = pmManagementOptions->JSON.Decode.object
         pmManagementOptionsDict
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
@@ -582,40 +634,28 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
         pmSessionId := pmSessionIdVal
-        Promise.make((resolve, _) => {
-          resolve(JSON.Encode.null)
-        })
-        ->then(_ => {
-          logger.setLogInfo(
-            ~value=Window.hrefWithoutSearch,
-            ~eventName=PAYMENT_MANAGEMENT_ELEMENTS_CALLED,
-          )
-          resolve()
-        })
-        ->catch(_ => resolve())
-        ->ignore
 
-        PaymentMethodsManagementElements.make(
-          pmManagementOptions,
-          setIframeRef,
-          ~sdkSessionId=sessionID,
-          ~publishableKey,
-          ~pmSessionId={pmSessionIdVal},
-          ~sdkAuthorization=sdkAuthorizationId,
-          ~logger=Some(logger),
-          ~analyticsMetadata,
-          ~customBackendUrl=options
-          ->Option.getOr(JSON.Encode.null)
-          ->getDictFromJson
-          ->getString("customBackendUrl", ""),
+        SdkRuntimeLogger.observeMerchantSync(
+          ~event=SdkRuntimeLogger.Hyper(PaymentManagementElements),
+          ~message=Window.hrefWithoutSearch,
+          ~call=() =>
+            PaymentMethodsManagementElements.make(
+              pmManagementOptions,
+              setIframeRef,
+              ~sdkSessionId=sessionID,
+              ~publishableKey,
+              ~pmSessionId={pmSessionIdVal},
+              ~sdkAuthorization=sdkAuthorizationId,
+              ~analyticsMetadata,
+              ~customBackendUrl=options
+              ->Option.getOr(JSON.Encode.null)
+              ->getDictFromJson
+              ->getString("customBackendUrl", ""),
+            ),
         )
       }
 
-      let confirmCardPaymentFn = (
-        clientSecretId: string,
-        data: option<JSON.t>,
-        _options: option<JSON.t>,
-      ) => {
+      let confirmCardPaymentCall = (clientSecretId: string, data: option<JSON.t>) => {
         let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
         Promise.make((resolve, _) => {
           iframeRef.contents
@@ -636,13 +676,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
               let dict = json->getDictFromJson
               switch dict->Dict.get("submitSuccessful") {
               | Some(val) =>
-                logApi(
-                  ~apiLogType=Method,
-                  ~optLogger=Some(logger),
-                  ~result=val,
-                  ~paymentMethod="confirmCardPayment",
-                  ~eventName=CONFIRM_CARD_PAYMENT,
-                )
                 let url = decodedData->getString("return_url", "/")
                 if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
                   Utils.replaceRootHref(url, redirectionFlags)
@@ -658,6 +691,18 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         })
       }
 
+      let confirmCardPaymentFn = (
+        clientSecretId: string,
+        data: option<JSON.t>,
+        _options: option<JSON.t>,
+      ) =>
+        SdkRuntimeLogger.observeMerchant(
+          ~event=SdkRuntimeLogger.Hyper(ConfirmCardPayment),
+          ~timeoutMs=LoggerCommonHelpers.userGatedOperationTimeoutMs,
+          ~resultFailure=LoggerCommonHelpers.errorResponseSummary,
+          ~call=() => confirmCardPaymentCall(clientSecretId, data),
+        )
+
       let addAmountToDict = (dict, currency) => {
         if dict->Dict.get("amount")->Option.isNone {
           Console.error("Amount is not specified, please input an amount")
@@ -669,7 +714,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
         Some(dict->JSON.Encode.object)
       }
-      let paymentRequest = options => {
+      let makePaymentRequest = options => {
         let optionsDict = options->getDictFromJson
         let currency = optionsDict->getJsonStringFromDict("currency", "")
         let optionsTotal =
@@ -716,41 +761,37 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
 
-      let initPaymentSession = paymentSessionOptions => {
-        open Promise
+      let paymentRequest = options =>
+        SdkRuntimeLogger.observeMerchantSync(
+          ~event=SdkRuntimeLogger.Hyper(PaymentRequest),
+          ~call=() => makePaymentRequest(options),
+        )
 
+      let initPaymentSession = paymentSessionOptions => {
         let paymentSessionOptionsDict = paymentSessionOptions->JSON.Decode.object
 
         sdkAuthorization := paymentSessionOptionsDict->getStringFromDict("sdkAuthorization", "")
 
         clientSecret := paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
 
-        Promise.make((resolve, _) => {
-          logger.setClientSecret(clientSecret.contents)
-          logger.setSdkAuthorization(sdkAuthorization.contents)
-          resolve(JSON.Encode.null)
-        })
-        ->then(_ => {
-          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=PAYMENT_SESSION_INITIATED)
-          resolve()
-        })
-        ->catch(_ => resolve())
-        ->ignore
-
-        PaymentSession.make(
-          paymentSessionOptions,
-          ~publishableKey,
-          ~sdkSessionId=sessionID,
-          ~logger=Some(logger),
-          ~redirectionFlags,
-          ~iframeRef,
-          ~isTestMode,
-          ~isUpdateIntentInProgress,
-          ~clientSecretRef=clientSecret,
-          ~sdkAuthorizationRef=sdkAuthorization,
-          ~sessionTokensDataPromise,
-          ~sdkConfigsDataPromise,
-          ~clientListDataPromise,
+        SdkRuntimeLogger.observeMerchantSync(
+          ~event=SdkRuntimeLogger.Hyper(InitPaymentSession),
+          ~message=Window.hrefWithoutSearch,
+          ~call=() =>
+            PaymentSession.make(
+              paymentSessionOptions,
+              ~publishableKey,
+              ~sdkSessionId=sessionID,
+              ~redirectionFlags,
+              ~iframeRef,
+              ~isTestMode,
+              ~isUpdateIntentInProgress,
+              ~clientSecretRef=clientSecret,
+              ~sdkAuthorizationRef=sdkAuthorization,
+              ~sessionTokensDataPromise,
+              ~sdkConfigsDataPromise,
+              ~clientListDataPromise,
+            ),
         )
       }
 
@@ -760,7 +801,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           let session = await PaymentHelpers.fetchSessions(
             ~clientSecret,
             ~publishableKey,
-            ~logger,
             ~endpoint,
           )
           iframeRef.contents->Array.forEach(ifR => {
@@ -780,21 +820,37 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         }
       }
 
-      let completeUpdateIntent = clientSecret => {
-        sessionUpdate(clientSecret)
-      }
+      let completeUpdateIntent = clientSecret =>
+        SdkRuntimeLogger.observeMerchant(
+          ~event=SdkRuntimeLogger.Hyper(CompleteUpdateIntent),
+          ~resultFailure=result => {
+            let resultDict = result->getDictFromJson
+            resultDict->getBool("updateCompleted", false)
+              ? None
+              : Some({
+                  LoggerCommonHelpers.name: "UPDATE_INTENT_FAILED",
+                  message: Some(resultDict->getString("errorMessage", "")),
+                  details: [],
+                })
+          },
+          ~call=() => sessionUpdate(clientSecret),
+        )
 
-      let initiateUpdateIntent = () => {
-        iframeRef.contents->Array.forEach(ifR => {
-          ifR->Window.iframePostMessage([("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray)
-        })
-        let msg = [("updateInitiated", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
-        Promise.resolve(msg)
-      }
+      let initiateUpdateIntent = () =>
+        SdkRuntimeLogger.observeMerchant(
+          ~event=SdkRuntimeLogger.Hyper(InitiateUpdateIntent),
+          ~call=() => {
+            iframeRef.contents->Array.forEach(ifR => {
+              ifR->Window.iframePostMessage(
+                [("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray,
+              )
+            })
+            let msg = [("updateInitiated", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
+            Promise.resolve(msg)
+          },
+        )
 
       let initAuthenticationSession = authenticationSessionOptions => {
-        open Promise
-
         let clientSecretId =
           authenticationSessionOptions
           ->JSON.Decode.object
@@ -802,25 +858,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
         clientSecret := clientSecretId
-        Promise.make((resolve, _) => {
-          logger.setClientSecret(clientSecretId)
-          resolve(JSON.Encode.null)
-        })
-        ->then(_ => {
-          logger.setLogInfo(
-            ~value=Window.hrefWithoutSearch,
-            ~eventName=AUTHENTICATED_SESSION_INITIATED,
-          )
-          resolve()
-        })
-        ->catch(_ => resolve())
-        ->ignore
 
-        AuthenticationSession.make(
-          authenticationSessionOptions,
-          ~clientSecret={clientSecretId},
-          ~publishableKey,
-          ~logger=Some(logger),
+        ClickToPayLogger.observeMerchantSync(~event=InitAuthenticationSession, ~call=() =>
+          AuthenticationSession.make(
+            authenticationSessionOptions,
+            ~clientSecret={clientSecretId},
+            ~publishableKey,
+          )
         )
       }
 
@@ -828,7 +872,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         confirmOneClickPayment,
         confirmPayment,
         elements,
-        widgets: elements,
+        widgets,
         confirmCardPayment: confirmCardPaymentFn,
         retrievePaymentIntent: retrievePaymentIntentFn,
         paymentRequest,
@@ -838,7 +882,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         completeUpdateIntent,
         initiateUpdateIntent,
         confirmTokenization: confirmPayment,
-        paymentMethodsSession: options => PaymentMethodsSession.make(options, ~logger),
+        paymentMethodsSession: options => PaymentMethodsSession.make(options),
       }
       Window.setHyper(Window.window, returnObject)
       returnObject
@@ -846,6 +890,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   } catch {
   | e => {
       Sentry.captureException(e)
+      SdkRuntimeLogger.logCrash(
+        ~message="Hyper instance creation failed",
+        ~details=e
+        ->LoggerCommonHelpers.summarizeException
+        ->LoggerCommonHelpers.exceptionSummaryDetails,
+      )
       defaultHyperInstance
     }
   }

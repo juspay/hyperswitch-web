@@ -83,8 +83,8 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
   )
 
   let validateIdentifier = (value, identityType: identityType) => {
-    let emailRegex = %re("/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/")
-    let phoneRegex = %re("/^\d{6,14}$/")
+    let emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    let phoneRegex = /^\d{6,14}$/
 
     switch identityType {
     | EMAIL_ADDRESS => emailRegex->RegExp.test(value)
@@ -97,9 +97,9 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
       if String.includes(value, " ") {
         value
       } else {
-        String.replaceRegExp(value, %re("/^\+(\d{1,3})(\d+)$/"), "+$1 $2")
+        String.replaceRegExp(value, /^\+(\d{1,3})(\d+)$/, "+$1 $2")
       }
-    } else if String.match(value, %re("/^\d+$/"))->Option.isSome {
+    } else if String.match(value, /^\d+$/)->Option.isSome {
       `+${value}`
     } else {
       value
@@ -129,7 +129,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
 
   let handlePhoneInputChange = ev => {
     let target = ev->ReactEvent.Form.target
-    let newValue = target["value"]->String.replaceRegExp(%re("/\\D/g"), "") // Remove non-digit characters
+    let newValue = target["value"]->String.replaceRegExp(/\\D/g, "") // Remove non-digit characters
     setIdentifier(_ => newValue)
   }
 
@@ -140,6 +140,10 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
 
   let handleSubmit = e => {
     e->ReactEvent.Form.preventDefault
+    SdkRuntimeLogger.logUser(
+      ~event=PayButtonClicked,
+      ~message="Click to Pay switch identity submitted",
+    )
     if isValid {
       let country =
         countryCodes
@@ -156,7 +160,8 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
   let _maskedEmail = (~onNotYouClick) => {
     <div className="flex space-x-2 text-sm text-[#484848]">
       <button
-        onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]">
+        onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]"
+      >
         {React.string("Not you?")}
       </button>
     </div>
@@ -185,20 +190,23 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
       </p>
       <form
         onSubmit={handleSubmit}
-        className="w-full flex flex-col justify-center items-center space-y-4">
+        className="w-full flex flex-col justify-center items-center space-y-4"
+      >
         <div className="w-full flex space-x-2">
           <div className="relative w-1/3">
             <select
               value={identifierType->getIdentityType}
               onChange={handleTypeChange}
-              className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none">
+              className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none"
+            >
               <option value={EMAIL_ADDRESS->getIdentityType}> {React.string("Email")} </option>
               <option value={MOBILE_PHONE_NUMBER->getIdentityType}>
                 {React.string("Phone")}
               </option>
             </select>
             <div
-              className="absolute inset-y-0 right-4 flex items-center selection:pointer-events-none">
+              className="absolute inset-y-0 right-4 flex items-center selection:pointer-events-none"
+            >
               <Icon
                 className="absolute z-10 pointer pointer-events-none" name="arrow-down" size=10
               />
@@ -218,18 +226,21 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                   <select
                     value={countryCode}
                     onChange={handleCountryCodeChange}
-                    className="h-full p-3 appearance-none focus:outline-none">
+                    className="h-full p-3 appearance-none focus:outline-none"
+                  >
                     {countryCodes
                     ->Array.map(country =>
                       <option
-                        key={`${country.code}-${country.countryISO}`} value={country.countryISO}>
+                        key={`${country.code}-${country.countryISO}`} value={country.countryISO}
+                      >
                         {React.string(`${country.countryISO} ${country.code}`)}
                       </option>
                     )
                     ->React.array}
                   </select>
                   <div
-                    className="absolute inset-y-0 right-4 flex items-center selection:pointer-events-none">
+                    className="absolute inset-y-0 right-4 flex items-center selection:pointer-events-none"
+                  >
                     <Icon
                       className="absolute z-10 pointer pointer-events-none"
                       name="arrow-down"
@@ -256,7 +267,8 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
             borderRadius: themeObj.buttonBorderRadius,
             fontSize: themeObj.buttonTextFontSize,
           }
-          disabled={!isValid}>
+          disabled={!isValid}
+        >
           {React.string("Switch ID")}
         </button>
       </form>
@@ -268,12 +280,14 @@ module ClickToPayNotYouText = {
   @react.component
   let make = (~setIsShowClickToPayNotYou) => {
     let onNotYouClick = _ => {
+      SdkRuntimeLogger.logUser(~event=ViewToggled, ~message="Click to Pay not you clicked")
       setIsShowClickToPayNotYou(_ => true)
     }
 
     <div className="flex space-x-2 text-sm text-[#484848]">
       <button
-        onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]">
+        onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]"
+      >
         {React.string("Not you?")}
       </button>
     </div>

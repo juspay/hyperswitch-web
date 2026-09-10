@@ -1,4 +1,5 @@
 open Utils
+open LoggerCommonHelpers
 
 type surchargeType = {
   \"type": string,
@@ -138,7 +139,6 @@ let parseEligibilityResponse = json => {
 let performEligibilityCheck = async (
   ~clientSecret: string,
   ~publishableKey: string,
-  ~logger: HyperLoggerTypes.loggerMake,
   ~customPodUri,
   ~bodyArr,
   ~sdkAuthorization,
@@ -162,7 +162,6 @@ let performEligibilityCheck = async (
     let json = await fetchEligibility(
       ~clientSecret,
       ~publishableKey,
-      ~logger,
       ~customPodUri,
       ~bodyArr,
       ~sdkAuthorization,
@@ -176,14 +175,10 @@ let performEligibilityCheck = async (
     setIsEligibilityPending(_ => false)
   } catch {
   | exn =>
-    logger.setLogError(
-      ~value={
-        "message": errorLogMessage,
-        "error": exn->Identity.anyTypeToJson->JSON.stringify,
-      }
-      ->JSON.stringifyAny
-      ->Option.getOr(""),
-      ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
+    CorePaymentLogger.logLifecycle(
+      ~event=PaymentFailed,
+      ~message=errorLogMessage,
+      ~details=[("error", exn->Identity.anyTypeToJson->JSON.stringify->JSON.Encode.string)],
     )
     setEligibilityError->Option.forEach(setter => setter(_ => None))
     setIsEligibilityPending(_ => false)
@@ -194,7 +189,6 @@ let startEligibilityCheck = async (
   ~controllerRef: React.ref<option<Fetch.AbortController.t>>,
   ~clientSecret: option<string>,
   ~publishableKey,
-  ~logger,
   ~customPodUri,
   ~bodyArr,
   ~sdkAuthorization,
@@ -216,7 +210,6 @@ let startEligibilityCheck = async (
     await performEligibilityCheck(
       ~clientSecret,
       ~publishableKey,
-      ~logger,
       ~customPodUri,
       ~bodyArr,
       ~sdkAuthorization,

@@ -224,7 +224,7 @@ let normalizeCardBrand = brand => {
   let normalized =
     brand
     ->String.toLowerCase
-    ->String.replaceRegExp(%re("/[-_\s]/g"), "")
+    ->String.replaceRegExp(/[-_\s]/g, "")
   switch normalized {
   | "visa" => "Visa"
   | "mastercard" => "Mastercard"
@@ -324,7 +324,7 @@ let isExpiryComplete = val => {
 
 let getCardBrand = cardNumber => {
   try {
-    let card = cardNumber->String.replaceRegExp(%re("/[^\d]/g"), "")
+    let card = cardNumber->String.replaceRegExp(/[^\d]/g, "")
     let rupayRanges = [
       (508227, 508227),
       (508500, 508999),
@@ -348,7 +348,7 @@ let getCardBrand = cardNumber => {
     let doesFallInRange = (cardRanges, isin) => {
       let intIsin =
         isin
-        ->String.replaceRegExp(%re("/[^\d]/g"), "")
+        ->String.replaceRegExp(/[^\d]/g, "")
         ->String.substring(~start=0, ~end=6)
         ->Int.fromString
         ->Option.getOr(0)
@@ -521,10 +521,26 @@ let generateFontsLink = (fonts: array<CardThemeType.fonts>) => {
     fonts
     ->Array.map(item =>
       if item.cssSrc != "" {
-        let link = document["createElement"]("link")
-        link["href"] = item.cssSrc
-        link["rel"] = "stylesheet"
-        document["body"]["appendChild"](link)
+        let link = Window.createElement("link")
+        SdkRuntimeLogger.logResource(
+          ~event=ScriptLoad(FontStylesheet, Init),
+          ~message=`Font Stylesheet Loading: ${item.cssSrc}`,
+        )
+        link->Window.setAttribute("href", item.cssSrc)
+        link->Window.setAttribute("rel", "stylesheet")
+        link->Window.elementOnload(() =>
+          SdkRuntimeLogger.logResource(
+            ~event=ScriptLoad(FontStylesheet, Done),
+            ~message=`Font Stylesheet Loaded: ${item.cssSrc}`,
+          )
+        )
+        link->Window.elementOnerror(_ =>
+          SdkRuntimeLogger.logResource(
+            ~event=ScriptLoad(FontStylesheet, Failed),
+            ~message=`Error During Loading Font Stylesheet: ${item.cssSrc}`,
+          )
+        )
+        Window.body->Window.appendChild(link)
       } else if item.family != "" && item.src != "" {
         let newStyle = document["createElement"]("style")
         newStyle["appendChild"](

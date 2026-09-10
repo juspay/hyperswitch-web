@@ -273,6 +273,7 @@ let make = (
       }
       onClick={_ => {
         open JotaiAtomTypes
+        SdkRuntimeLogger.logUser(~event=SavedMethodSelected)
         setPaymentToken(_ => {
           paymentToken: paymentItem.paymentToken,
           customerId: paymentItem.customerId,

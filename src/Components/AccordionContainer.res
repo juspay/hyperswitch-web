@@ -36,7 +36,8 @@ module Loader = {
             width: "100%",
             marginBottom: layoutClass.spacedAccordionItems ? themeObj.spacingAccordionItem : "",
             cursor: "pointer",
-          }>
+          }
+        >
           <Shimmer classname="opacity-50 h-5 w-[10%] rounded-full">
             <div
               className="w-full h-full animate-pulse"
@@ -160,7 +161,8 @@ let make = (
         marginTop: themeObj.spacingAccordionItem,
         width: "-webkit-fill-available",
         marginBottom: themeObj.spacingAccordionItem,
-      }>
+      }
+    >
       {cardOptionDetails
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
@@ -199,7 +201,10 @@ let make = (
     <RenderIf condition={!showMore && dropDownOptionsDetails->Array.length > 0}>
       <button
         className="AccordionMore flex overflow-auto no-scrollbar"
-        onClick={_ => setShowMore(_ => !showMore)}
+        onClick={_ => {
+          SdkRuntimeLogger.logUser(~event=ViewToggled, ~message="More Payment Methods")
+          setShowMore(_ => !showMore)
+        }}
         style={
           borderRadius: themeObj.borderRadius,
           marginTop: themeObj.spacingUnit,
@@ -209,7 +214,8 @@ let make = (
           width: "100%",
           padding: "20px",
           cursor: "pointer",
-        }>
+        }
+      >
         <div className="flex flex-row" style={columnGap: themeObj.spacingUnit}>
           <div className="m-2">
             <Icon size=10 name="arrow-down" />

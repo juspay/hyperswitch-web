@@ -1,16 +1,17 @@
 module CoBadgeCardSchemeDropDown = {
   @react.component
   let make = (~eligibleCardSchemes, ~setCardBrand) => {
-    let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
     <select
       className="w-4"
       onClick={_ =>
-        loggerState.setLogInfo(~value="CardSchemeMenu expanded", ~eventName=CARD_SCHEME_SELECTION)}
+        SdkRuntimeLogger.logUser(~event=ViewToggled, ~message="Co-badged card scheme menu opened")}
       onChange={ev => {
         let target = ev->ReactEvent.Form.target
         let value = target["value"]
+        SdkRuntimeLogger.logUser(~event=CardSchemeSelected, ~message=value)
         setCardBrand(_ => value)
-      }}>
+      }}
+    >
       <option disabled=true> {"Select a card brand"->React.string} </option>
       {eligibleCardSchemes
       ->Array.mapWithIndex((item, i) => {
@@ -55,7 +56,6 @@ let make = (
 
   let marginLeft = isCardCoBadged ? "-ml-2" : ""
 
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let cardBrandIconSetting =
     Jotai.useAtomValue(JotaiAtoms.cardBrandIconOverride)->Option.getOr(
@@ -68,7 +68,6 @@ let make = (
   React.useEffect1(() => {
     if shouldShowCoBadgeCardSchemeDropDown && !isCoBadgedCardDetectedOnce.current {
       isCoBadgedCardDetectedOnce.current = true
-      loggerState.setLogInfo(~value="Card detected as co-badged", ~eventName=CARD_SCHEME_SELECTION)
     }
     None
   }, [shouldShowCoBadgeCardSchemeDropDown])

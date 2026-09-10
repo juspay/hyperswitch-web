@@ -8,7 +8,6 @@ let make = (
 ) => {
   let showPaymentMethodsScreen = Jotai.useAtomValue(JotaiAtoms.showPaymentMethodsScreen)
   let {business, customMessageForCardTerms} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customMessageConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
     ~paymentMethod,
     ~paymentMethodType,
@@ -16,7 +15,7 @@ let make = (
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   let handleChange = value => {
-    LoggerUtils.logInputChangeInfo("saveDetails", loggerState)
+    SdkRuntimeLogger.logUser(~event=InputFieldChanged, ~message="saveDetails")
     setIsChecked(_ => value)
   }
 

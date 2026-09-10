@@ -6,7 +6,14 @@ let make = (~isCollapsed, ~setIsCollapsed) => {
     style={
       color: themeObj.colorPrimary,
     }
-    onClick={_ => setIsCollapsed(prev => !prev)}>
+    onClick={_ => {
+      SdkRuntimeLogger.logUser(
+        ~event=ViewToggled,
+        ~message={isCollapsed ? localeString.showMore : localeString.showLess},
+      )
+      setIsCollapsed(prev => !prev)
+    }}
+  >
     {isCollapsed ? React.string(localeString.showMore) : React.string(localeString.showLess)}
     <div className="m-1">
       {isCollapsed ? <Icon name="arrow-down" size=10 /> : <Icon name="arrow-up" size=10 />}

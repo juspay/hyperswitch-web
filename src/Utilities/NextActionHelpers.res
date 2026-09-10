@@ -1,4 +1,5 @@
 open Utils
+open LoggerCommonHelpers
 
 let handleDDC = (
   ~ddcData: option<PaymentConfirmTypes.ddcData>,
@@ -6,12 +7,16 @@ let handleDDC = (
   ~isPaymentSession,
   ~resolve,
   ~data,
-  ~optLogger,
   ~paymentMethod,
 ) => {
   let {iframeUrl, timeoutMs} = ddcData->Option.getOr(PaymentConfirmTypes.defaultDdcData)
 
-  LoggerUtils.handleLogging(~optLogger, ~eventName=DDC_FLOW, ~value="DDC initiated", ~paymentMethod)
+  let loggedPaymentMethod = paymentMethod->LoggerTaxonomy.fromBackendValue
+  CorePaymentLogger.logLifecycle(
+    ~event=DdcFlow,
+    ~message="DDC initiated",
+    ~paymentMethod=?loggedPaymentMethod,
+  )
 
   messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
@@ -32,12 +37,10 @@ let handleDDC = (
   }
 
   if iframeUrl === "" {
-    LoggerUtils.handleLogging(
-      ~optLogger,
-      ~eventName=DDC_FLOW,
-      ~value="DDC failed: empty iframe URL",
-      ~paymentMethod,
-      ~logType=ERROR,
+    CorePaymentLogger.logLifecycle(
+      ~event=DdcFlowFailed,
+      ~message="DDC failed: empty iframe URL",
+      ~paymentMethod=?loggedPaymentMethod,
     )
     handleFailure()
   } else {
@@ -64,12 +67,10 @@ let handleDDC = (
           resolve(data)
         }
       | _ => {
-          LoggerUtils.handleLogging(
-            ~optLogger,
-            ~eventName=REDIRECTING_USER,
-            ~value="Post DDC redirection",
-            ~paymentMethod,
-            ~logType=INFO,
+          CorePaymentLogger.logLifecycle(
+            ~event=RedirectingUser,
+            ~message="Post DDC redirection",
+            ~paymentMethod=?loggedPaymentMethod,
           )
           openUrl(redirectUrl)
         }
@@ -88,20 +89,17 @@ let handleDDC = (
           let redirectMode = nextAction.redirectMode
           cleanup()
           if nextActionType === "redirect_to_url" && redirectUrl !== "" {
-            LoggerUtils.handleLogging(
-              ~optLogger,
-              ~eventName=DDC_FLOW,
-              ~value="DDC completed successfully",
-              ~paymentMethod,
+            CorePaymentLogger.logLifecycle(
+              ~event=DdcFlow,
+              ~message="DDC completed successfully",
+              ~paymentMethod=?loggedPaymentMethod,
             )
             handleRedirectToUrl(redirectUrl, redirectMode)
           } else {
-            LoggerUtils.handleLogging(
-              ~optLogger,
-              ~eventName=DDC_FLOW,
-              ~value=`DDC failed: invalid next action type - ${nextActionType}`,
-              ~paymentMethod,
-              ~logType=ERROR,
+            CorePaymentLogger.logLifecycle(
+              ~event=DdcFlowFailed,
+              ~message=`DDC failed: invalid next action type - ${nextActionType}`,
+              ~paymentMethod=?loggedPaymentMethod,
             )
             handleFailure()
           }
@@ -109,12 +107,10 @@ let handleDDC = (
       } catch {
       | exn =>
         let err = exn->Identity.anyTypeToJson->JSON.stringify
-        LoggerUtils.handleLogging(
-          ~optLogger,
-          ~eventName=DDC_FLOW,
-          ~value=`DDC failed: message parse error - ${err}`,
-          ~paymentMethod,
-          ~logType=ERROR,
+        CorePaymentLogger.logLifecycle(
+          ~event=DdcFlowFailed,
+          ~message=`DDC failed: message parse error - ${err}`,
+          ~paymentMethod=?loggedPaymentMethod,
         )
         cleanup()
         handleFailure()
@@ -128,12 +124,10 @@ let handleDDC = (
     iframeRef := Some(iframe)
 
     timeoutIdRef := Some(setTimeout(() => {
-          LoggerUtils.handleLogging(
-            ~optLogger,
-            ~eventName=DDC_FLOW,
-            ~value="DDC timed out",
-            ~paymentMethod,
-            ~logType=ERROR,
+          CorePaymentLogger.logLifecycle(
+            ~event=DdcFlowFailed,
+            ~message="DDC timed out",
+            ~paymentMethod=?loggedPaymentMethod,
           )
           cleanup()
           handleFailure()

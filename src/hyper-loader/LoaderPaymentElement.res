@@ -11,7 +11,7 @@ let isPaymentButtonHandlerProvided = ref(false)
 
 let currentOneClickHandler = ref((None: option<unit => Promise.t<unit>>))
 
-let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Types.event) => {
+let walletOneClickEventHandler = (event: Types.event) => {
   open Promise
   let json = try {
     event.data->anyTypeToJson
@@ -22,45 +22,33 @@ let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Ty
   let dict = json->getDictFromJson
   if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
     switch currentOneClickHandler.contents {
-    | Some(eH) => {
-        logger.setLogInfo(
-          ~value=`One click handler callback execution initiated`,
-          ~eventName=ONE_CLICK_HANDLER_CALLBACK,
-          ~logType=INFO,
-        )
-        eH()
-        ->then(_ => {
-          logger.setLogInfo(
-            ~value=`One click handler callback executed successfully`,
-            ~eventName=ONE_CLICK_HANDLER_CALLBACK,
-            ~logType=INFO,
-          )
-          let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
-          event.source->Window.sendPostMessage(msg)
-          resolve()
-        })
-        ->catch(_ => {
-          logger.setLogError(
-            ~value=`Error in one click handler callback`,
-            ~eventName=ONE_CLICK_HANDLER_CALLBACK,
-            ~logType=ERROR,
-          )
-          let msg = [("walletClickEvent", false->JSON.Encode.bool)]->Dict.fromArray
-          event.source->Window.sendPostMessage(msg)
-          resolve()
-        })
-        ->ignore
-      }
+    | Some(eH) =>
+      SdkRuntimeLogger.observeMerchant(
+        ~event=SdkRuntimeLogger.PaymentElement(OneClickHandler),
+        ~timeoutMs=LoggerCommonHelpers.userGatedOperationTimeoutMs,
+        ~call=() => eH(),
+      )
+      ->then(_ => {
+        let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
+        event.source->Window.sendPostMessage(msg)
+        resolve()
+      })
+      ->catch(_ => {
+        let msg = [("walletClickEvent", false->JSON.Encode.bool)]->Dict.fromArray
+        event.source->Window.sendPostMessage(msg)
+        resolve()
+      })
+      ->ignore
 
     | None => ()
     }
   }
 }
 
-let ensureWalletOneClickListener = logger => {
+let ensureWalletOneClickListener = () => {
   addSmartEventListener(
     "message",
-    event => walletOneClickEventHandler(logger, event),
+    event => walletOneClickEventHandler(event),
     "walletOneClickHandler",
   )
 }
@@ -103,14 +91,12 @@ let make = (
   ~animateResize=true,
   ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
-  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
 ) => {
   try {
-    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let mountId = ref("")
     let localSelectorRef = ref("")
     // Unique per-instance ID to scope event listener names and prevent collisions.
@@ -132,7 +118,7 @@ let make = (
         true,
       )
 
-    ensureWalletOneClickListener(logger)
+    ensureWalletOneClickListener()
 
     let onSDKHandleClick = eventHandler => {
       if eventHandler->Option.isSome {
@@ -141,7 +127,7 @@ let make = (
       }
     }
 
-    let on = (eventType, eventHandler) => {
+    let registerEventHandler = (eventType, eventHandler) => {
       // Multi-instance: if this C instance has no selector yet, try to claim
       // a pending mount selector.  If none is available, register self in the
       // pendingOnRefs queue so the next mount() can adopt us.
@@ -276,47 +262,81 @@ let make = (
       | _ => ()
       }
     }
-    let collapse = () => ()
-    let blur = () => {
-      iframeRef->Array.forEach(iframe => {
-        let message = [("doBlur", true->JSON.Encode.bool)]->Dict.fromArray
-        iframe->Window.iframePostMessage(message)
-      })
-    }
+    let collapse = () =>
+      SdkRuntimeLogger.observeMerchantSync(
+        ~event=SdkRuntimeLogger.PaymentElement(Collapse),
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~call=() => (),
+      )
+    let blur = () =>
+      SdkRuntimeLogger.observeMerchantSync(
+        ~event=SdkRuntimeLogger.PaymentElement(Blur),
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~call=() =>
+          iframeRef->Array.forEach(iframe => {
+            let message = [("doBlur", true->JSON.Encode.bool)]->Dict.fromArray
+            iframe->Window.iframePostMessage(message)
+          }),
+      )
 
-    let focus = () => {
-      iframeRef->Array.forEach(iframe => {
-        let message = [("doFocus", true->JSON.Encode.bool)]->Dict.fromArray
-        iframe->Window.iframePostMessage(message)
-      })
-    }
+    let focus = () =>
+      SdkRuntimeLogger.observeMerchantSync(
+        ~event=SdkRuntimeLogger.PaymentElement(Focus),
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~call=() =>
+          iframeRef->Array.forEach(iframe => {
+            let message = [("doFocus", true->JSON.Encode.bool)]->Dict.fromArray
+            iframe->Window.iframePostMessage(message)
+          }),
+      )
 
-    let clear = () => {
-      iframeRef->Array.forEach(iframe => {
-        let message = [("doClearValues", true->JSON.Encode.bool)]->Dict.fromArray
-        iframe->Window.iframePostMessage(message)
-      })
-    }
+    let clear = () =>
+      SdkRuntimeLogger.observeMerchantSync(
+        ~event=SdkRuntimeLogger.PaymentElement(Clear),
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~call=() =>
+          iframeRef->Array.forEach(iframe => {
+            let message = [("doClearValues", true->JSON.Encode.bool)]->Dict.fromArray
+            iframe->Window.iframePostMessage(message)
+          }),
+      )
 
     let unmount = () => {
       let id = mountId.contents
 
       let oElement = Window.querySelector(id)
-      switch oElement->Nullable.toOption {
-      | Some(elem) => elem->Window.innerHTML("")
-      | None =>
-        Console.warn(
-          "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
+      try {
+        SdkRuntimeLogger.observeMerchantSync(
+          ~event=SdkRuntimeLogger.PaymentElement(Unmount),
+          ~details=[("component_type", componentType->JSON.Encode.string)],
+          ~call=() =>
+            switch oElement->Nullable.toOption {
+            | Some(elem) => elem->Window.innerHTML("")
+            | None =>
+              Console.warn(
+                "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
+              )
+              Exn.raiseError(
+                "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
+              )
+            },
         )
+      } catch {
+      | _ => ()
       }
     }
 
-    let destroy = () => {
-      unmount()
-      mountId := ""
-    }
+    let destroy = () =>
+      SdkRuntimeLogger.observeMerchantSync(
+        ~event=SdkRuntimeLogger.PaymentElement(Destroy),
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~call=() => {
+          unmount()
+          mountId := ""
+        },
+      )
 
-    let update = newOptions => {
+    let updateElementOptions = newOptions => {
       let flatOption = options->flattenObject(true)
       let newFlatOption = newOptions->flattenObject(true)
 
@@ -346,7 +366,14 @@ let make = (
       })
     }
 
-    let mount = selector => {
+    let update = newOptions =>
+      SdkRuntimeLogger.observeMerchantSync(
+        ~event=SdkRuntimeLogger.PaymentElement(Update),
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~call=() => updateElementOptions(newOptions),
+      )
+
+    let mountElement = selector => {
       mountId := selector
       let localSelectorArr = selector->String.split("#")
       let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
@@ -595,6 +622,20 @@ let make = (
       }
     }
 
+    let mount = selector =>
+      SdkRuntimeLogger.observeMerchantSync(
+        ~event=SdkRuntimeLogger.PaymentElement(Mount),
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~call=() => mountElement(selector),
+      )
+
+    let on = (eventType, callback) =>
+      SdkRuntimeLogger.observeMerchantSync(
+        ~event=SdkRuntimeLogger.PaymentElement(On),
+        ~details=[("event_type", eventType->JSON.Encode.string)],
+        ~call=() => registerEventHandler(eventType, callback),
+      )
+
     {
       on,
       collapse,
@@ -611,6 +652,12 @@ let make = (
   } catch {
   | e => {
       Sentry.captureException(e)
+      SdkRuntimeLogger.logCrash(
+        ~message="Payment element creation failed",
+        ~details=e
+        ->LoggerCommonHelpers.summarizeException
+        ->LoggerCommonHelpers.exceptionSummaryDetails,
+      )
       defaultPaymentElement
     }
   }

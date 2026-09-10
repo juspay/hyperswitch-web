@@ -100,7 +100,6 @@ type fieldSnapshotEntry = {payload: JSON.t}
 @react.component
 let make = () => {
   let url = RescriptReactRouter.useUrl()
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let keys = Jotai.useAtomValue(keys)
   let sessions = Jotai.useAtomValue(sessions)
   let paymentMethodListValue = Jotai.useAtomValue(paymentMethodList)
@@ -139,7 +138,7 @@ let make = () => {
     Some(() => SadPortRegistry.removeChangeListener(onRegistryChange))
   })
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let intent = PaymentHelpers.usePaymentIntent(Card)
   let postConfirmResult = (~confirmId: string, result: JSON.t) => {
     messageParentWindow(
       [
@@ -551,7 +550,6 @@ let make = () => {
                     ),
                     ~pmSessionId=pmSessionIdCopy,
                     ~sdkAuthorization=vaultAuthCopy,
-                    ~logger=loggerState,
                   )
                   ->Promise.then(response => {
                     if response == JSON.Encode.null {
@@ -588,7 +586,6 @@ let make = () => {
                   PaymentHelpersV2.updatePaymentMethod(
                     ~bodyArr=PaymentManagementBody.vaultUpdateCVVBody(~cvcNumber),
                     ~pmSessionId=pmSessionIdCopy,
-                    ~logger=loggerState,
                     ~customPodUri,
                     ~sdkAuthorization=vaultAuthCopy,
                   )

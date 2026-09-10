@@ -168,7 +168,7 @@ let defaultJotaiConfig: jotaiConfig = {
   showLoader: false,
 }
 
-let getVariables = (str, dict, default, logger) => {
+let getVariables = (str, dict, default) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
@@ -222,171 +222,88 @@ let getVariables = (str, dict, default, logger) => {
     ]
     unknownKeysWarning(validKeys, json, "appearance.variables")
     {
-      fontFamily: getWarningString(json, "fontFamily", default.fontFamily, ~logger),
-      fontSizeBase: getWarningString(json, "fontSizeBase", default.fontSizeBase, ~logger),
-      colorPrimary: getWarningString(json, "colorPrimary", default.colorPrimary, ~logger),
-      colorBackground: getWarningString(json, "colorBackground", default.colorBackground, ~logger),
-      colorText: getWarningString(json, "colorText", default.colorText, ~logger),
-      colorDanger: getWarningString(json, "colorDanger", default.colorDanger, ~logger),
-      colorDangerText: getWarningString(json, "colorDangerText", default.colorDangerText, ~logger),
-      borderRadius: getWarningString(json, "borderRadius", default.borderRadius, ~logger),
+      fontFamily: getWarningString(json, "fontFamily", default.fontFamily),
+      fontSizeBase: getWarningString(json, "fontSizeBase", default.fontSizeBase),
+      colorPrimary: getWarningString(json, "colorPrimary", default.colorPrimary),
+      colorBackground: getWarningString(json, "colorBackground", default.colorBackground),
+      colorText: getWarningString(json, "colorText", default.colorText),
+      colorDanger: getWarningString(json, "colorDanger", default.colorDanger),
+      colorDangerText: getWarningString(json, "colorDangerText", default.colorDangerText),
+      borderRadius: getWarningString(json, "borderRadius", default.borderRadius),
       fontVariantLigatures: getWarningString(
         json,
         "fontVariantLigatures",
         default.fontVariantLigatures,
-        ~logger,
       ),
       fontVariationSettings: getWarningString(
         json,
         "fontVariationSettings",
         default.fontVariationSettings,
-        ~logger,
       ),
-      spacingUnit: getWarningString(json, "spacingUnit", default.spacingUnit, ~logger),
-      fontWeightLight: getWarningString(json, "fontWeightLight", default.fontWeightLight, ~logger),
-      fontWeightNormal: getWarningString(
-        json,
-        "fontWeightNormal",
-        default.fontWeightNormal,
-        ~logger,
-      ),
-      fontWeightMedium: getWarningString(
-        json,
-        "fontWeightMedium",
-        default.fontWeightMedium,
-        ~logger,
-      ),
-      fontWeightBold: getWarningString(json, "fontWeightBold", default.fontWeightBold, ~logger),
-      fontLineHeight: getWarningString(json, "fontLineHeight", default.fontLineHeight, ~logger),
-      fontSize2Xl: getWarningString(json, "fontSize2Xl", default.fontSize2Xl, ~logger),
-      fontSizeXl: getWarningString(json, "fontSizeXl", default.fontSizeXl, ~logger),
-      fontSizeLg: getWarningString(json, "fontSizeLg", default.fontSizeLg, ~logger),
-      fontSizeSm: getWarningString(json, "fontSizeSm", default.fontSizeSm, ~logger),
-      fontSizeXs: getWarningString(json, "fontSizeXs", default.fontSizeXs, ~logger),
-      fontSize2Xs: getWarningString(json, "fontSize2Xs", default.fontSize2Xs, ~logger),
-      fontSize3Xs: getWarningString(json, "fontSize3Xs", default.fontSize3Xs, ~logger),
-      colorSuccess: getWarningString(json, "colorSuccess", default.colorSuccess, ~logger),
-      colorWarning: getWarningString(json, "colorWarning", default.colorWarning, ~logger),
-      colorPrimaryText: getWarningString(
-        json,
-        "colorPrimaryText",
-        default.colorPrimaryText,
-        ~logger,
-      ),
+      spacingUnit: getWarningString(json, "spacingUnit", default.spacingUnit),
+      fontWeightLight: getWarningString(json, "fontWeightLight", default.fontWeightLight),
+      fontWeightNormal: getWarningString(json, "fontWeightNormal", default.fontWeightNormal),
+      fontWeightMedium: getWarningString(json, "fontWeightMedium", default.fontWeightMedium),
+      fontWeightBold: getWarningString(json, "fontWeightBold", default.fontWeightBold),
+      fontLineHeight: getWarningString(json, "fontLineHeight", default.fontLineHeight),
+      fontSize2Xl: getWarningString(json, "fontSize2Xl", default.fontSize2Xl),
+      fontSizeXl: getWarningString(json, "fontSizeXl", default.fontSizeXl),
+      fontSizeLg: getWarningString(json, "fontSizeLg", default.fontSizeLg),
+      fontSizeSm: getWarningString(json, "fontSizeSm", default.fontSizeSm),
+      fontSizeXs: getWarningString(json, "fontSizeXs", default.fontSizeXs),
+      fontSize2Xs: getWarningString(json, "fontSize2Xs", default.fontSize2Xs),
+      fontSize3Xs: getWarningString(json, "fontSize3Xs", default.fontSize3Xs),
+      colorSuccess: getWarningString(json, "colorSuccess", default.colorSuccess),
+      colorWarning: getWarningString(json, "colorWarning", default.colorWarning),
+      colorPrimaryText: getWarningString(json, "colorPrimaryText", default.colorPrimaryText),
       colorBackgroundText: getWarningString(
         json,
         "colorBackgroundText",
         default.colorBackgroundText,
-        ~logger,
       ),
-      colorSuccessText: getWarningString(
-        json,
-        "colorSuccessText",
-        default.colorSuccessText,
-        ~logger,
-      ),
-      colorWarningText: getWarningString(
-        json,
-        "colorWarningText",
-        default.colorWarningText,
-        ~logger,
-      ),
-      colorTextSecondary: getWarningString(
-        json,
-        "colorTextSecondary",
-        default.colorTextSecondary,
-        ~logger,
-      ),
+      colorSuccessText: getWarningString(json, "colorSuccessText", default.colorSuccessText),
+      colorWarningText: getWarningString(json, "colorWarningText", default.colorWarningText),
+      colorTextSecondary: getWarningString(json, "colorTextSecondary", default.colorTextSecondary),
       colorTextPlaceholder: getWarningString(
         json,
         "colorTextPlaceholder",
         default.colorTextPlaceholder,
-        ~logger,
       ),
-      spacingTab: getWarningString(json, "spacingTab", default.spacingTab, ~logger),
-      borderColor: getWarningString(json, "borderColor", default.borderColor, ~logger),
-      colorIconCardCvc: getWarningString(
-        json,
-        "colorIconCardCvc",
-        default.colorIconCardCvc,
-        ~logger,
-      ),
+      spacingTab: getWarningString(json, "spacingTab", default.spacingTab),
+      borderColor: getWarningString(json, "borderColor", default.borderColor),
+      colorIconCardCvc: getWarningString(json, "colorIconCardCvc", default.colorIconCardCvc),
       colorIconCardCvcError: getWarningString(
         json,
         "colorIconCardCvcError",
         default.colorIconCardCvcError,
-        ~logger,
       ),
-      colorIconCardError: getWarningString(
-        json,
-        "colorIconCardError",
-        default.colorIconCardError,
-        ~logger,
-      ),
+      colorIconCardError: getWarningString(json, "colorIconCardError", default.colorIconCardError),
       spacingAccordionItem: getWarningString(
         json,
         "spacingAccordionItem",
         default.spacingAccordionItem,
-        ~logger,
       ),
-      spacingGridColumn: getWarningString(
-        json,
-        "spacingGridColumn",
-        default.spacingGridColumn,
-        ~logger,
-      ),
-      spacingGridRow: getWarningString(json, "spacingGridRow", default.spacingGridRow, ~logger),
+      spacingGridColumn: getWarningString(json, "spacingGridColumn", default.spacingGridColumn),
+      spacingGridRow: getWarningString(json, "spacingGridRow", default.spacingGridRow),
       buttonBackgroundColor: getWarningString(
         json,
         "buttonBackgroundColor",
         default.buttonBackgroundColor,
-        ~logger,
       ),
-      buttonHeight: getWarningString(json, "buttonHeight", default.buttonHeight, ~logger),
-      buttonWidth: getWarningString(json, "buttonWidth", default.buttonWidth, ~logger),
-      buttonBorderRadius: getWarningString(
-        json,
-        "buttonBorderRadius",
-        default.buttonBorderRadius,
-        ~logger,
-      ),
-      buttonBorderColor: getWarningString(
-        json,
-        "buttonBorderColor",
-        default.buttonBorderColor,
-        ~logger,
-      ),
-      buttonTextColor: getWarningString(json, "buttonTextColor", default.buttonTextColor, ~logger),
-      buttonTextFontSize: getWarningString(
-        json,
-        "buttonTextFontSize",
-        default.buttonTextFontSize,
-        ~logger,
-      ),
+      buttonHeight: getWarningString(json, "buttonHeight", default.buttonHeight),
+      buttonWidth: getWarningString(json, "buttonWidth", default.buttonWidth),
+      buttonBorderRadius: getWarningString(json, "buttonBorderRadius", default.buttonBorderRadius),
+      buttonBorderColor: getWarningString(json, "buttonBorderColor", default.buttonBorderColor),
+      buttonTextColor: getWarningString(json, "buttonTextColor", default.buttonTextColor),
+      buttonTextFontSize: getWarningString(json, "buttonTextFontSize", default.buttonTextFontSize),
       buttonTextFontWeight: getWarningString(
         json,
         "buttonTextFontWeight",
         default.buttonTextFontWeight,
-        ~logger,
       ),
-      buttonBorderWidth: getWarningString(
-        json,
-        "buttonBorderWidth",
-        default.buttonBorderWidth,
-        ~logger,
-      ),
-      disabledFieldColor: getWarningString(
-        json,
-        "disabledFieldColor",
-        default.disabledFieldColor,
-        ~logger,
-      ),
-      inputFieldHeight: getWarningString(
-        json,
-        "inputFieldHeight",
-        default.inputFieldHeight,
-        ~logger,
-      ),
+      inputFieldHeight: getWarningString(json, "inputFieldHeight", default.inputFieldHeight),
+      buttonBorderWidth: getWarningString(json, "buttonBorderWidth", default.buttonBorderWidth),
+      disabledFieldColor: getWarningString(json, "disabledFieldColor", default.disabledFieldColor),
     }
   })
   ->Option.getOr(default)
@@ -397,7 +314,6 @@ let getAppearance = (
   dict,
   default: CardThemeType.themeClass,
   defaultRules: CardThemeType.themeClass => JSON.t,
-  logger,
 ) => {
   dict
   ->Dict.get(str)
@@ -409,15 +325,15 @@ let getAppearance = (
       "appearance",
     )
 
-    let rulesJson = defaultRules(getVariables("variables", json, default, logger))
+    let rulesJson = defaultRules(getVariables("variables", json, default))
 
     {
-      theme: getWarningString(json, "theme", "default", ~logger)->getTheme,
-      componentType: getWarningString(json, "componentType", "", ~logger),
-      variables: getVariables("variables", json, default, logger),
+      theme: getWarningString(json, "theme", "default")->getTheme,
+      componentType: getWarningString(json, "componentType", ""),
+      variables: getVariables("variables", json, default),
       rules: mergeJsons(rulesJson, getJsonObjectFromDict(json, "rules")),
-      innerLayout: getWarningString(json, "innerLayout", "spaced", ~logger)->getInnerLayout,
-      labels: switch getWarningString(json, "labels", "above", ~logger)->String.toLowerCase {
+      innerLayout: getWarningString(json, "innerLayout", "spaced")->getInnerLayout,
+      labels: switch getWarningString(json, "labels", "above")->String.toLowerCase {
       | "above" => Above
       | "floating" => Floating
       | "none" => Never
@@ -426,12 +342,12 @@ let getAppearance = (
           Above
         }
       },
-      colorScheme: getWarningString(json, "colorScheme", "light", ~logger)->getColorScheme,
+      colorScheme: getWarningString(json, "colorScheme", "light")->getColorScheme,
     }
   })
   ->Option.getOr(defaultAppearance)
 }
-let getFonts = (str, dict, logger) => {
+let getFonts = (str, dict) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
@@ -440,10 +356,10 @@ let getFonts = (str, dict, logger) => {
   ->Array.map(json => {
     unknownKeysWarning(["cssSrc", "family", "src", "weight"], json, "fonts")
     {
-      cssSrc: getWarningString(json, "cssSrc", "", ~logger),
-      family: getWarningString(json, "family", "", ~logger),
-      src: getWarningString(json, "src", "", ~logger),
-      weight: getWarningString(json, "weight", "", ~logger),
+      cssSrc: getWarningString(json, "cssSrc", ""),
+      family: getWarningString(json, "family", ""),
+      src: getWarningString(json, "src", ""),
+      weight: getWarningString(json, "weight", ""),
     }
   })
 }
@@ -451,7 +367,6 @@ let itemToObjMapper = (
   dict,
   default: CardThemeType.themeClass,
   defaultRules: CardThemeType.themeClass => JSON.t,
-  logger,
 ) => {
   unknownKeysWarning(
     ["appearance", "fonts", "locale", "clientSecret", "loader", "pmSessionId", "sdkAuthorization"],
@@ -459,12 +374,12 @@ let itemToObjMapper = (
     "elements",
   )
   {
-    appearance: getAppearance("appearance", dict, default, defaultRules, logger),
-    locale: getWarningString(dict, "locale", "auto", ~logger),
-    fonts: getFonts("fonts", dict, logger),
-    clientSecret: getWarningString(dict, "clientSecret", "", ~logger),
-    pmSessionId: getWarningString(dict, "pmSessionId", "", ~logger),
-    loader: getWarningString(dict, "loader", "auto", ~logger)->getShowLoader,
+    appearance: getAppearance("appearance", dict, default, defaultRules),
+    locale: getWarningString(dict, "locale", "auto"),
+    fonts: getFonts("fonts", dict),
+    clientSecret: getWarningString(dict, "clientSecret", ""),
+    pmSessionId: getWarningString(dict, "pmSessionId", ""),
+    loader: getWarningString(dict, "loader", "auto")->getShowLoader,
     sdkAuthorization: getString(dict, "sdkAuthorization", ""),
   }
 }

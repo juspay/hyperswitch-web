@@ -47,6 +47,7 @@ let make = (~cvcOnly=false) => {
     vgsScriptURL,
     ~integrity=vgsScriptIntegrity,
     ~crossorigin="anonymous",
+    ~resourceProvider=SdkRuntimeLogger.VgsScript,
   )
   // Guard so the VGS vault + its fields are created exactly once after load.
   let vaultInitializedRef = React.useRef(false)
@@ -377,7 +378,8 @@ let make = (~cvcOnly=false) => {
                 marginBottom: "5px",
                 fontSize: themeObj.fontSizeLg,
                 opacity: "0.6",
-              }>
+              }
+            >
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
@@ -391,7 +393,8 @@ let make = (~cvcOnly=false) => {
             className="flex flex-row w-full place-content-between"
             style={
               gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-            }>
+            }
+          >
             <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
               <VGSInputComponent
                 fieldName={localeString.validThruText}

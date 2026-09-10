@@ -2,11 +2,10 @@ open Utils
 
 @react.component
 let make = () => {
-  let logger = HyperLogger.make(~source=Elements(Payment))
   let isCompleteAuthorizeCalledRef = React.useRef(false)
   let timeoutRef = React.useRef(None)
   let eventsToSendToParent = ["confirmParams", "poll_status", "openurl_if_required"]
-  let completeAuthorize = PaymentHelpers.useRedsysCompleteAuthorize(Some(logger))
+  let completeAuthorize = PaymentHelpers.useRedsysCompleteAuthorize()
 
   let handleCompleteAuthorizeCall = (
     threeDsMethodComp,
@@ -51,9 +50,7 @@ let make = () => {
           let publishableKey = metaDataDict->getString("publishableKey", "")
           let sdkAuthorization = metaDataDict->getString("sdkAuthorization", "")
 
-          logger.setClientSecret(clientSecret)
-          logger.setSdkAuthorization(sdkAuthorization)
-          logger.setMerchantId(publishableKey)
+          LoggerContext.setSessionData(~merchantId=publishableKey, ())
 
           let headersDict = metaDataDict->getDictFromDict("headers")
 

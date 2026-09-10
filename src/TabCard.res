@@ -16,6 +16,7 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
     paymentOption.icon,
   )
   let onClick = _ => {
+    SdkRuntimeLogger.logUser(~event=PaymentMethodSelected, ~message=paymentOption.paymentMethodName)
     setSelectedOption(_ => paymentOption.paymentMethodName)
   }
   <button
@@ -29,7 +30,8 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
       padding: themeObj.spacingUnit,
       cursor: "pointer",
     }
-    onClick>
+    onClick
+  >
     <div className={`TabIcon ${tabIconClass} relative`}>
       {switch icon {
       | Some(ele) => ele

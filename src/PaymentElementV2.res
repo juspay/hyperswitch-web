@@ -24,7 +24,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (selectedOption, setSelectedOption) = Jotai.useAtom(selectedOptionAtom)
   let (dropDownOptions: array<string>, setDropDownOptions) = React.useState(_ => [])
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let setShowPaymentMethodsScreen = Jotai.useSetAtom(JotaiAtoms.showPaymentMethodsScreen)
 
   let (paymentOptionsList, actualList) = PaymentUtilsV2.useGetPaymentMethodListV2(~paymentOptions)
@@ -63,10 +62,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       }
     }
     if selectedOption !== "" {
-      loggerState.setLogInfo(
-        ~value="",
-        ~eventName=PAYMENT_METHOD_CHANGED,
-        ~paymentMethod=selectedOption->String.toUpperCase,
+      SdkRuntimeLogger.logUser(
+        ~event=PaymentMethodSelected,
+        ~paymentMethod=?selectedOption->LoggerTaxonomy.fromBackendValue,
       )
     }
     None

@@ -5,17 +5,19 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
 
   let url = RescriptReactRouter.useUrl()
   let isSamsungPayReady = Jotai.useAtomValue(isSamsungPayReady)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let options = Jotai.useAtomValue(optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let updateSession = Jotai.useAtomValue(updateSession)
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let areOneClickWalletsRendered = Jotai.useSetAtom(areOneClickWalletsRendered)
   let {iframeId} = Jotai.useAtomValue(keys)
-  let status = CommonHooks.useScript("https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js")
+  let status = CommonHooks.useScript(
+    "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js",
+    ~resourceProvider=SdkRuntimeLogger.SamsungPayScript,
+  )
   let isWallet = walletOptions->Array.includes("samsung_pay")
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Samsungpay)
+  let intent = PaymentHelpers.usePaymentIntent(Samsungpay)
   let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
@@ -35,16 +37,16 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let onSamsungPaymentButtonClick = _ => {
     if isTestMode {
       Console.warn("Samsung Pay button clicked in test mode - interaction disabled")
-      loggerState.setLogInfo(
-        ~value="Samsung Pay button clicked in test mode - interaction disabled",
-        ~eventName=SAMSUNG_PAY,
-        ~paymentMethod="SAMSUNG_PAY",
+      SdkRuntimeLogger.logUser(
+        ~event=WalletButtonClicked,
+        ~paymentMethod=Wallet(SamsungPay),
+        ~message="Samsung Pay button clicked in test mode - interaction disabled",
       )
     } else {
-      loggerState.setLogInfo(
-        ~value="SamsungPay Button Clicked",
-        ~eventName=SAMSUNG_PAY,
-        ~paymentMethod="SAMSUNG_PAY",
+      SdkRuntimeLogger.logUser(
+        ~event=WalletButtonClicked,
+        ~paymentMethod=Wallet(SamsungPay),
+        ~message="SamsungPay Button Clicked",
       )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod="wallet",

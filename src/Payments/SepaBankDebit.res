@@ -5,13 +5,12 @@ open Utils
 let make = () => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let {sdkAuthorization} = Jotai.useAtomValue(keys)
   let {config, themeObj} = Jotai.useAtomValue(configAtom)
   let {displaySavedPaymentMethods, layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHelpers.usePaymentIntent(BankDebits)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Jotai.useAtomValue(areRequiredFieldsEmpty)
@@ -73,7 +72,8 @@ let make = () => {
         className="flex flex-col animate-slowShow"
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
-        }>
+        }
+      >
         <RenderIf condition={layoutClass.\"type" === Accordion}>
           <Space height="0" />
         </RenderIf>
