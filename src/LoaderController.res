@@ -9,10 +9,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (keys, setKeys) = Jotai.useAtom(keys)
   let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
   let setSdkConfigs = Jotai.useSetAtom(sdkConfigs)
+  let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
   let setSdkConfigsValue = Jotai.useSetAtom(PaymentUtils.sdkConfigsValue)
   let setSessions = Jotai.useSetAtom(sessions)
   let (options, setOptions) = Jotai.useAtom(elementOptions)
   let (optionsPayment, setOptionsPayment) = Jotai.useAtom(optionAtom)
+  let getSdkPropsDefaults = SdkPropsConfigurationService.useSdkPropsDefaults(
+    ~rawConfigs=sdkConfigsValue.raw_configs,
+  )
+  let merchantOptionsRef: React.ref<option<Dict.t<JSON.t>>> = React.useRef(None)
   let setPaymentManagementList = Jotai.useSetAtom(paymentManagementList)
   let setSessionId = Jotai.useSetAtom(sessionId)
   let setBlockConfirm = Jotai.useSetAtom(isConfirmBlocked)
@@ -102,8 +107,28 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
-  let updateOptions = dict => {
-    let optionsDict = dict->getDictFromObj("options")
+  let (profileId, processorMerchantId, organizationId) = SdkConfigParser.getProfileContext(
+    sdkConfigsValue.context_used,
+  )
+
+  let sdkPropsContext: SuperpositionTypes.sdkPropsContext = {
+    platform: "web",
+    profile_id: ?profileId,
+    processor_merchant_id: ?processorMerchantId,
+    organization_id: ?organizationId,
+  }
+
+  let applyOptions = optionsDict => {
+    let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
+    let mergeFor = allowedKeys =>
+      CommonUtils.mergeDict(
+        superpositionDefaults
+        ->Dict.toArray
+        ->Array.filter(((key, _)) => allowedKeys->Array.includes(key))
+        ->Dict.fromArray,
+        optionsDict,
+      )
+
     setOptionsJson(_ => optionsDict->JSON.Encode.object)
 
     if isPaymentMethodsSDKSurface {
@@ -152,7 +177,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     switch optionsDict->Dict.get("subscriptionEvents") {
     | Some(_) => {
         let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(
-          optionsDict,
+          mergeFor(["subscriptionEvents"]),
           "subscriptionEvents",
         )
         setOptionsPayment(prev => {...prev, subscriptionEvents})
@@ -165,7 +190,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | CardExpiryElement
     | CardCVCElement
     | Card =>
-      setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+      setOptions(_ =>
+        ElementType.itemToObjMapper(mergeFor(ElementType.allowedCardElementOptions), logger)
+      )
     | PaymentMethodCollectElement => {
         let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
@@ -180,12 +207,21 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PaymentMethodsManagement
     | PaymentMethodsSDK
     | Payment => {
-        let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
+        let paymentOptions = PaymentType.itemToObjMapper(
+          mergeFor(PaymentType.allowedPaymentElementOptions),
+          logger,
+        )
         setOptionsPayment(prev => {...paymentOptions, subscriptionEvents: prev.subscriptionEvents})
         optionsCallback(paymentOptions)
       }
     | _ => ()
     }
+  }
+
+  let updateOptions = dict => {
+    let optionsDict = dict->getDictFromObj("options")
+    merchantOptionsRef.current = Some(optionsDict)
+    applyOptions(optionsDict)
   }
 
   let setConfigs = async (dict, themeValues: ThemeImporter.themeDataModule) => {
@@ -303,6 +339,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
     None
   }, [config])
+
+  React.useEffect(() => {
+    let hasSdkProps = getSdkPropsDefaults(sdkPropsContext)->Dict.keysToArray->Array.length > 0
+    switch merchantOptionsRef.current {
+    | Some(optionsDict) if hasSdkProps => applyOptions(optionsDict)
+    | _ => ()
+    }
+    None
+  }, [getSdkPropsDefaults])
 
   React.useEffect(() => {
     open Promise
