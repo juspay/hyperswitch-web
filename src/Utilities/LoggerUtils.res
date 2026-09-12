@@ -281,6 +281,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | LOG_INITIATED
   | LOADER_CALLED
   | ORCA_ELEMENTS_CALLED
+  | ORCA_ELEMENTS
   | PAYMENT_OPTIONS_PROVIDED
   | BLUR
   | FOCUS
