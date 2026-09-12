@@ -196,7 +196,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
 
   let sendLogsOverNetwork = async () => {
     try {
-      await sendCachedLogsFromIDB()
+      sendCachedLogsFromIDB()->ignore
       beaconApiCall(mainLogFile)
       clearLogFile(mainLogFile)
     } catch {
