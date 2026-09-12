@@ -13,6 +13,7 @@ let make = (
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
+  ~platformPublishableKey="",
 ) => {
   let hyperComponentName = PaymentMethodsManagementElements
   try {
@@ -22,6 +23,10 @@ let make = (
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
+    let confirmEndpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ~isConfirmCall=true)
+    let loggingEndpoint = ApiEndpoint.getLoggingEndPoint()
+    let assetsEndpoint = ApiEndpoint.getAssetsEndPoint()
+    let sdkConfigEndpoint = ApiEndpoint.getSdkConfigEndPoint(~publishableKey)
 
     let appearance =
       localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
@@ -54,7 +59,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&pmSessionId=${pmSessionId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}&sdkAuthorization=${sdkAuthorization}"
+          src="${ApiEndpoint.sdkDomainUrl}/${ApiEndpoint.indexPageName()}?fullscreenType=${componentType}&publishableKey=${publishableKey}&pmSessionId=${pmSessionId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}&sdkAuthorization=${sdkAuthorization}&platformPublishableKey=${platformPublishableKey}"
           allow="*"
           name="orca-payment"
           style="outline: none;"
@@ -212,12 +217,17 @@ let make = (
             ("iframeId", selectorString->JSON.Encode.string),
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
+            ("confirmEndpoint", confirmEndpoint->JSON.Encode.string),
+            ("loggingEndpoint", loggingEndpoint->JSON.Encode.string),
+            ("assetsEndpoint", assetsEndpoint->JSON.Encode.string),
+            ("sdkConfigEndpoint", sdkConfigEndpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
             ("customPodUri", customPodUri->JSON.Encode.string),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),
             ("customBackendUrl", customBackendUrl->JSON.Encode.string),
+            ("platformPublishableKey", platformPublishableKey->JSON.Encode.string),
           ]->Dict.fromArray
 
         preMountLoaderMountedPromise

@@ -134,6 +134,11 @@ const authorizedConnectSources = [
   // Add other trusted sources here
 ];
 
+const authorizedConnectSourcesCustomEndpoint = [
+  ...authorizedConnectSources,
+  "https:", // allow all https connections for merchant-configured custom endpoints
+];
+
 // Helper function to get environment variables with fallback
 const getEnvVariable = (variable, defaultValue) => {
   const value = process.env[variable];
@@ -153,7 +158,7 @@ const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
   "SDK_TAG_VERSION",
-  require("./package.json").version
+  require("./package.json").version,
 );
 
 /*
@@ -275,6 +280,27 @@ module.exports = (publicPath = "auto") => {
     visaAPICertificatePem: JSON.stringify(visaAPICertificatePem),
   };
 
+  // Builds the CSP meta option for an HtmlWebpackPlugin instance given a connect-src list.
+  const buildCspMeta = (connectSources) =>
+    DISABLE_CSP
+      ? {}
+      : {
+          "Content-Security-Policy": {
+            "http-equiv": "Content-Security-Policy",
+            content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+              " ",
+            )};
+                style-src ${authorizedStyleSources.join(" ")};
+                frame-src ${authorizedFrameSources.join(" ")};
+                img-src ${authorizedImageSources.join(" ")};
+                font-src ${authorizedFontSources.join(" ")};
+                connect-src ${connectSources.join(
+                  " ",
+                )} ${logEndpoint} ${backendEndPoint};
+      `,
+          },
+        };
+
   const plugins = [
     new MiniCssExtractPlugin(),
     new CopyPlugin({
@@ -286,50 +312,30 @@ module.exports = (publicPath = "auto") => {
       template: "./public/build.html",
       chunks: ["app"],
       scriptLoading: "blocking",
-      // Add CSP meta tag conditionally
-      meta: DISABLE_CSP
-        ? {}
-        : {
-            "Content-Security-Policy": {
-              "http-equiv": "Content-Security-Policy",
-              content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
-              )};
-                style-src ${authorizedStyleSources.join(" ")};
-                frame-src ${authorizedFrameSources.join(" ")};
-                img-src ${authorizedImageSources.join(" ")};
-                font-src ${authorizedFontSources.join(" ")};
-                connect-src ${authorizedConnectSources.join(
-                  " "
-                )} ${logEndpoint} ${backendEndPoint};
-      `,
-            },
-          },
+      meta: buildCspMeta(authorizedConnectSources),
     }),
     new HtmlWebpackPlugin({
-      // Also generate a test.html
       inject: true,
       filename: "fullscreenIndex.html",
       template: "./public/fullscreenIndexTemplate.html",
-      // Add CSP meta tag conditionally
-      meta: DISABLE_CSP
-        ? {}
-        : {
-            "Content-Security-Policy": {
-              "http-equiv": "Content-Security-Policy",
-              content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
-              )};
-          style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")};
-          img-src ${authorizedImageSources.join(" ")};
-          font-src ${authorizedFontSources.join(" ")};
-          connect-src ${authorizedConnectSources.join(
-            " "
-          )} ${logEndpoint} ${backendEndPoint};
-          `,
-            },
-          },
+      meta: buildCspMeta(authorizedConnectSources),
+    }),
+    // Relaxed-CSP variants served instead of the pages above only when the merchant
+    // has configured a custom backend/asset/confirm/logging endpoint (see
+    // ApiEndpoint.res hasCustomEndpointConfig / indexPageName / fullscreenIndexPageName).
+    new HtmlWebpackPlugin({
+      inject: true,
+      filename: "indexCustomEndpoint.html",
+      template: "./public/build.html",
+      chunks: ["app"],
+      scriptLoading: "blocking",
+      meta: buildCspMeta(authorizedConnectSourcesCustomEndpoint),
+    }),
+    new HtmlWebpackPlugin({
+      inject: true,
+      filename: "fullscreenIndexCustomEndpoint.html",
+      template: "./public/fullscreenIndexTemplate.html",
+      meta: buildCspMeta(authorizedConnectSourcesCustomEndpoint),
     }),
     new SubresourceIntegrityPlugin({
       hashFuncNames: ["sha384"],
@@ -348,7 +354,7 @@ module.exports = (publicPath = "auto") => {
         analyzerMode: "static",
         reportFilename: "bundle-report.html",
         openAnalyzer: false,
-      })
+      }),
     );
   }
 
@@ -368,7 +374,7 @@ module.exports = (publicPath = "auto") => {
             paths: ["dist"],
           },
         },
-      })
+      }),
     );
   }
 
@@ -382,7 +388,7 @@ module.exports = (publicPath = "auto") => {
             __dirname,
             "dist",
             isEUStack ? `${sdkEnv}_eu` : sdkEnv,
-            sdkVersionValue
+            sdkVersionValue,
           ),
       crossOriginLoading: "anonymous",
       clean: true,

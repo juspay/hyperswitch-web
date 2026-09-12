@@ -135,7 +135,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
   let beaconApiCall = data => {
     if data->Array.length > 0 {
       let logData = data->Array.map(logFileToObj)->JSON.Encode.array->JSON.stringify
-      Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
+      Window.Navigator.sendBeacon(ApiEndpoint.getLoggingEndPoint(), logData)
     }
   }
   let sendCachedLogsFromIDB = async () => {
