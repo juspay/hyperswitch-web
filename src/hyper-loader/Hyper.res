@@ -213,6 +213,49 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     | None => ()
     }
 
+    // Parse customEndpoints fields from first arg (HyperswitchConfiguration /
+    // HyperswitchPlatformConfiguration). Applied after customBackendUrl so they take precedence.
+    let customConfigDict = switch keys->JSON.Classify.classify {
+    | Object(json) => json->Dict.get("customEndpoints")->Option.flatMap(JSON.Decode.object)
+    | _ => None
+    }
+
+    switch customConfigDict {
+    | Some(config) =>
+      let getFieldStr = key =>
+        config->Dict.get(key)->Option.flatMap(JSON.Decode.string)->Option.getOr("")
+      let customBackendEndpoint = getFieldStr("customBackendEndpoint")
+      let customAssetEndpoint = getFieldStr("customAssetEndpoint")
+      let customSDKConfigEndpoint = getFieldStr("customSDKConfigEndpoint")
+      let customConfirmEndpoint = getFieldStr("customConfirmEndpoint")
+      let customLoggingEndpoint = getFieldStr("customLoggingEndpoint")
+      customBackendEndpoint === ""
+        ? ()
+        : ApiEndpoint.setBackendOverrideEndPoint(customBackendEndpoint)
+      customAssetEndpoint === ""
+        ? ()
+        : ApiEndpoint.setAssetsEndPoint(customAssetEndpoint)
+      customSDKConfigEndpoint === ""
+        ? ()
+        : ApiEndpoint.setSdkConfigEndPoint(customSDKConfigEndpoint)
+      customConfirmEndpoint === ""
+        ? ()
+        : ApiEndpoint.setConfirmOverrideEndPoint(customConfirmEndpoint)
+      customLoggingEndpoint === ""
+        ? ()
+        : ApiEndpoint.setLoggingOverrideEndPoint(customLoggingEndpoint)
+    | None => ()
+    }
+
+    // Parse platformPublishableKey (HyperswitchPlatformConfiguration)
+    let platformPublishableKeyVal = switch keys->JSON.Classify.classify {
+    | Object(json) => json->getString("platformPublishableKey", "")
+    | _ => ""
+    }
+    platformPublishableKeyVal === ""
+      ? ()
+      : ApiEndpoint.setPlatformPublishableKey(platformPublishableKeyVal)
+
     {
       () => {
         logger.setMerchantId(publishableKey)
@@ -554,6 +597,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.getOr(JSON.Encode.null)
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
+          ~platformPublishableKey=platformPublishableKeyVal,
           ~redirectionFlags,
           ~isTestMode,
           ~preloadSDKWithParams,
@@ -608,6 +652,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.getOr(JSON.Encode.null)
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
+          ~platformPublishableKey=platformPublishableKeyVal,
         )
       }
 
