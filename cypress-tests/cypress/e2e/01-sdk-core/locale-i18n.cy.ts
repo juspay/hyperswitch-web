@@ -38,7 +38,7 @@ const locales: LocaleExpectations[] = [
     direction: "ltr",
     cardNumberLabel: "Numéro de carte",
     validThruText: "Expiration",
-    cvcTextLabel: "Code CVC",
+    cvcTextLabel: "CVC",
     expiryPlaceholder: "MM / AA",
     cardNumberEmptyText: "Le numéro de carte ne peut pas être vide",
   },
@@ -102,6 +102,136 @@ const locales: LocaleExpectations[] = [
     expiryPlaceholder: "MM / YY",
     cardNumberEmptyText: "מספר הכרטיס אינו יכול להיות ריק",
   },
+  {
+    code: "lt",
+    name: "Lithuanian",
+    direction: "ltr",
+    cardNumberLabel: "Kortelės numeris",
+    validThruText: "Galiojimo pabaiga",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "MM / YY",
+    cardNumberEmptyText: "Kortelės numeris negali būti tuščias",
+  },
+  {
+    code: "cs",
+    name: "Czech",
+    direction: "ltr",
+    cardNumberLabel: "Číslo karty",
+    validThruText: "Datum ukončení platnosti",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "MM / RR",
+    cardNumberEmptyText: "Číslo karty nesmí být prázdné",
+  },
+  {
+    code: "sk",
+    name: "Slovak",
+    direction: "ltr",
+    cardNumberLabel: "Číslo karty",
+    validThruText: "Ukončenie platnosti",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "MM / RR",
+    cardNumberEmptyText: "Číslo karty nemôže byť prázdne",
+  },
+  {
+    code: "is",
+    name: "Icelandic",
+    direction: "ltr",
+    cardNumberLabel: "Kortanúmer",
+    validThruText: "Gildistími",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "MM / ÁÁ",
+    cardNumberEmptyText: "Kortanúmer má ekki vera autt.",
+  },
+  {
+    code: "cy",
+    name: "Welsh",
+    direction: "ltr",
+    cardNumberLabel: "Rhif y Cerdyn",
+    validThruText: "Daw i ben",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "MM / BB",
+    cardNumberEmptyText: "Ni all Rhif y Cerdyn fod yn wag",
+  },
+  {
+    code: "el",
+    name: "Greek",
+    direction: "ltr",
+    cardNumberLabel: "Αριθμός Κάρτας",
+    validThruText: "Λήξη",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "ΜΜ / ΕΕ",
+    cardNumberEmptyText: "Ο αριθμός κάρτας δεν μπορεί να είναι κενός",
+  },
+  {
+    code: "et",
+    name: "Estonian",
+    direction: "ltr",
+    cardNumberLabel: "Kaardi number",
+    validThruText: "Kehtivus",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "KK / AA",
+    cardNumberEmptyText: "Kaardi numbri väli peab olema täidetud",
+  },
+  {
+    code: "fi",
+    name: "Finnish",
+    direction: "ltr",
+    cardNumberLabel: "Kortin numero",
+    validThruText: "Voimassaolo",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "KK / VV",
+    cardNumberEmptyText: "Kortin numero ei voi olla tyhjä",
+  },
+  {
+    code: "nb",
+    name: "Norwegian",
+    direction: "ltr",
+    cardNumberLabel: "Kortnummer",
+    validThruText: "Utløp",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "MM / ÅÅ",
+    cardNumberEmptyText: "Kortnummer kan ikke stå tomt",
+  },
+  {
+    code: "bs",
+    name: "Bosnian",
+    direction: "ltr",
+    cardNumberLabel: "Broj kartice",
+    validThruText: "Istek",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "MM / GG",
+    cardNumberEmptyText: "Polje za broj kartice ne može biti prazno",
+  },
+  {
+    code: "da",
+    name: "Danish",
+    direction: "ltr",
+    cardNumberLabel: "Kortnummer",
+    validThruText: "Udløbsdato",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "MM / ÅÅ",
+    cardNumberEmptyText: "Kortnummeret kan ikke være tomt",
+  },
+  {
+    code: "ms",
+    name: "Malay",
+    direction: "ltr",
+    cardNumberLabel: "Nombor Kad",
+    validThruText: "Luput Pada",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "BB / TT",
+    cardNumberEmptyText: "Nombor Kad tidak boleh kosong",
+  },
+  {
+    code: "tr-CY",
+    name: "Turkish (Cyprus)",
+    direction: "ltr",
+    cardNumberLabel: "Kart Numarası",
+    validThruText: "Son kullanma tarihi",
+    cvcTextLabel: "CVC",
+    expiryPlaceholder: "AA / YY",
+    cardNumberEmptyText: "Kart Numarası boş olamaz",
+  },
 ];
 
 const setupWithLocale = (
@@ -114,11 +244,7 @@ const setupWithLocale = (
     "customer_id",
     `locale_test_${locale}`,
   );
-  changeObjectKeyValue(
-    createPaymentBody,
-    "authentication_type",
-    "no_three_ds",
-  );
+  changeObjectKeyValue(createPaymentBody, "authentication_type", "no_three_ds");
   changeObjectKeyValue(createPaymentBody, "capture_method", "automatic");
   changeObjectKeyValue(createPaymentBody, "currency", "USD");
 
@@ -157,13 +283,7 @@ describe("Locale / i18n Tests", () => {
 
   describe("Card Field Label Translations", () => {
     locales.forEach(
-      ({
-        code,
-        name,
-        cardNumberLabel,
-        validThruText,
-        cvcTextLabel,
-      }) => {
+      ({ code, name, cardNumberLabel, validThruText, cvcTextLabel }) => {
         it(`should display translated card labels in ${name} (${code})`, () => {
           setupWithLocale(code, secretKey, publishableKey);
 
@@ -182,6 +302,11 @@ describe("Locale / i18n Tests", () => {
       it(`should show expiry floating label "${validThruText}" in ${name} (${code})`, () => {
         setupWithLocale(code, secretKey, publishableKey);
 
+        // NOTE: the localised `expiryPlaceholder` is intentionally NOT asserted
+        // here. PaymentInputField renders the placeholder attribute only when
+        // appearance.labels === "above"; under the default floating-label
+        // appearance it is an empty string and `validThruText` is the visible
+        // localised text.
         getIframeBody()
           .find(`[data-testid=${testIds.expiryInputTestId}]`)
           .should("be.visible");
@@ -272,6 +397,43 @@ describe("Locale / i18n Tests", () => {
         billingDetailsText: "تفاصيل الفاتورة",
       },
       { code: "he", name: "Hebrew", billingDetailsText: "פרטי תשלום" },
+      {
+        code: "lt",
+        name: "Lithuanian",
+        billingDetailsText: "Atsiskaitymo informacija",
+      },
+      { code: "cs", name: "Czech", billingDetailsText: "Fakturační údaje" },
+      { code: "sk", name: "Slovak", billingDetailsText: "Fakturačné údaje" },
+      {
+        code: "is",
+        name: "Icelandic",
+        billingDetailsText: "Reikningsupplýsingar",
+      },
+      { code: "cy", name: "Welsh", billingDetailsText: "Manylion Bilio" },
+      { code: "el", name: "Greek", billingDetailsText: "Λεπτομέρειες χρέωσης" },
+      {
+        code: "et",
+        name: "Estonian",
+        billingDetailsText: "Arvelduse üksikasjad",
+      },
+      { code: "fi", name: "Finnish", billingDetailsText: "Laskutustiedot" },
+      {
+        code: "nb",
+        name: "Norwegian",
+        billingDetailsText: "Faktureringsopplysninger",
+      },
+      { code: "bs", name: "Bosnian", billingDetailsText: "Detalji naplate" },
+      {
+        code: "da",
+        name: "Danish",
+        billingDetailsText: "Faktureringsdetaljer",
+      },
+      { code: "ms", name: "Malay", billingDetailsText: "Butiran Pengebilan" },
+      {
+        code: "tr-CY",
+        name: "Turkish (Cyprus)",
+        billingDetailsText: "Fatura Detayları",
+      },
     ];
 
     billingLocales.forEach(({ code, name, billingDetailsText }) => {
@@ -350,6 +512,70 @@ describe("Locale / i18n Tests", () => {
       getIframeBody()
         .find(`[data-testid=${testIds.cardNoInputTestId}]`)
         .should("be.visible");
+    });
+  });
+
+  describe("Locale Code Aliases for Newly Added Locales", () => {
+    // LocaleStringHelper resolves these codes onto the newly added locale files:
+    // "no"/"nn" are aliases for Norwegian Bokmal, plain "tr" resolves to tr-CY,
+    // and any regional variant falls back to its base language.
+    const aliases: Array<{
+      requested: string;
+      resolvesTo: string;
+      cardNumberLabel: string;
+    }> = [
+      { requested: "no", resolvesTo: "nb", cardNumberLabel: "Kortnummer" },
+      { requested: "nn", resolvesTo: "nb", cardNumberLabel: "Kortnummer" },
+      { requested: "nb-NO", resolvesTo: "nb", cardNumberLabel: "Kortnummer" },
+      {
+        requested: "tr",
+        resolvesTo: "tr-CY",
+        cardNumberLabel: "Kart Numarası",
+      },
+      {
+        requested: "tr-TR",
+        resolvesTo: "tr-CY",
+        cardNumberLabel: "Kart Numarası",
+      },
+      { requested: "cs-CZ", resolvesTo: "cs", cardNumberLabel: "Číslo karty" },
+      { requested: "sk-SK", resolvesTo: "sk", cardNumberLabel: "Číslo karty" },
+      {
+        requested: "lt-LT",
+        resolvesTo: "lt",
+        cardNumberLabel: "Kortelės numeris",
+      },
+      { requested: "is-IS", resolvesTo: "is", cardNumberLabel: "Kortanúmer" },
+      {
+        requested: "cy-GB",
+        resolvesTo: "cy",
+        cardNumberLabel: "Rhif y Cerdyn",
+      },
+      {
+        requested: "el-GR",
+        resolvesTo: "el",
+        cardNumberLabel: "Αριθμός Κάρτας",
+      },
+      {
+        requested: "et-EE",
+        resolvesTo: "et",
+        cardNumberLabel: "Kaardi number",
+      },
+      {
+        requested: "fi-FI",
+        resolvesTo: "fi",
+        cardNumberLabel: "Kortin numero",
+      },
+      { requested: "bs-BA", resolvesTo: "bs", cardNumberLabel: "Broj kartice" },
+      { requested: "da-DK", resolvesTo: "da", cardNumberLabel: "Kortnummer" },
+      { requested: "ms-MY", resolvesTo: "ms", cardNumberLabel: "Nombor Kad" },
+    ];
+
+    aliases.forEach(({ requested, resolvesTo, cardNumberLabel }) => {
+      it(`should resolve locale "${requested}" to "${resolvesTo}"`, () => {
+        setupWithLocale(requested, secretKey, publishableKey);
+
+        getIframeBody().contains(cardNumberLabel).should("be.visible");
+      });
     });
   });
 
