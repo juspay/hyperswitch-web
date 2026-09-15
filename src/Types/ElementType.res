@@ -128,58 +128,53 @@ let defaultOptions = {
   placeholder: "",
   showError: true,
 }
-let getClasses = (str, dict, logger) => {
+let getClasses = (str, dict) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
-      base: getWarningString(json, "base", "OrcaElement", ~logger),
-      complete: getWarningString(json, "complete", "OrcaElement--complete", ~logger),
-      empty: getWarningString(json, "empty", "OrcaElement--empty", ~logger),
-      focus: getWarningString(json, "focus", "OrcaElement--focus", ~logger),
-      invalid: getWarningString(json, "invalid", "OrcaElement--invalid", ~logger),
-      valid: getWarningString(json, "valid", "OrcaElement--valid", ~logger),
-      webkitAutofill: getWarningString(
-        json,
-        "webkitAutofill",
-        "OrcaElement--webkit-autofill",
-        ~logger,
-      ),
+      base: getWarningString(json, "base", "OrcaElement"),
+      complete: getWarningString(json, "complete", "OrcaElement--complete"),
+      empty: getWarningString(json, "empty", "OrcaElement--empty"),
+      focus: getWarningString(json, "focus", "OrcaElement--focus"),
+      invalid: getWarningString(json, "invalid", "OrcaElement--invalid"),
+      valid: getWarningString(json, "valid", "OrcaElement--valid"),
+      webkitAutofill: getWarningString(json, "webkitAutofill", "OrcaElement--webkit-autofill"),
     }
   })
   ->Option.getOr(defaultClasses)
 }
 
-let rec getStyleObj = (dict, str, logger) => {
+let rec getStyleObj = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
-      backgroundColor: getWarningString(json, "backgroundColor", "", ~logger),
-      color: getWarningString(json, "color", "", ~logger),
-      fontFamily: getWarningString(json, "fontFamily", "", ~logger),
-      fontSize: getWarningString(json, "fontSize", "", ~logger),
-      fontSmoothing: getWarningString(json, "fontSmoothing", "", ~logger),
-      fontStyle: getWarningString(json, "fontStyle", "", ~logger),
-      fontVariant: getWarningString(json, "fontVariant", "", ~logger),
-      fontWeight: getWarningString(json, "fontWeight", "", ~logger),
-      iconColor: getWarningString(json, "iconColor", "", ~logger),
-      lineHeight: getWarningString(json, "lineHeight", "", ~logger),
-      letterSpacing: getWarningString(json, "letterSpacing", "", ~logger),
-      textAlign: getWarningString(json, "textAlign", "", ~logger),
-      padding: getWarningString(json, "padding", "", ~logger),
-      textDecoration: getWarningString(json, "textDecoration", "", ~logger),
-      textShadow: getWarningString(json, "textShadow", "", ~logger),
-      textTransform: getWarningString(json, "textTransform", "", ~logger),
-      placeholder: Some(getStyleObj(json, "::placeholder", logger)),
-      hover: Some(getStyleObj(json, ":hover", logger)),
-      focus: Some(getStyleObj(json, ":focus", logger)),
-      selection: Some(getStyleObj(json, "::selection", logger)),
-      webkitAutofill: Some(getStyleObj(json, ":-webkit-autofill", logger)),
-      disabled: Some(getStyleObj(json, ":disabled", logger)),
-      msClear: Some(getStyleObj(json, "::-ms-clear", logger)),
+      backgroundColor: getWarningString(json, "backgroundColor", ""),
+      color: getWarningString(json, "color", ""),
+      fontFamily: getWarningString(json, "fontFamily", ""),
+      fontSize: getWarningString(json, "fontSize", ""),
+      fontSmoothing: getWarningString(json, "fontSmoothing", ""),
+      fontStyle: getWarningString(json, "fontStyle", ""),
+      fontVariant: getWarningString(json, "fontVariant", ""),
+      fontWeight: getWarningString(json, "fontWeight", ""),
+      iconColor: getWarningString(json, "iconColor", ""),
+      lineHeight: getWarningString(json, "lineHeight", ""),
+      letterSpacing: getWarningString(json, "letterSpacing", ""),
+      textAlign: getWarningString(json, "textAlign", ""),
+      padding: getWarningString(json, "padding", ""),
+      textDecoration: getWarningString(json, "textDecoration", ""),
+      textShadow: getWarningString(json, "textShadow", ""),
+      textTransform: getWarningString(json, "textTransform", ""),
+      placeholder: Some(getStyleObj(json, "::placeholder")),
+      hover: Some(getStyleObj(json, ":hover")),
+      focus: Some(getStyleObj(json, ":focus")),
+      selection: Some(getStyleObj(json, "::selection")),
+      webkitAutofill: Some(getStyleObj(json, ":-webkit-autofill")),
+      disabled: Some(getStyleObj(json, ":disabled")),
+      msClear: Some(getStyleObj(json, "::-ms-clear")),
     }
   })
   ->Option.getOr(defaultStyleClass)
@@ -195,23 +190,23 @@ let getTheme = (str, key) => {
     }
   }
 }
-let getPaymentRequestButton = (dict, str, logger) => {
+let getPaymentRequestButton = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
-      type_: getWarningString(json, "type", "", ~logger),
-      theme: getWarningString(json, "theme", "dark", ~logger)->getTheme(
+      type_: getWarningString(json, "type", ""),
+      theme: getWarningString(json, "theme", "dark")->getTheme(
         "elements.options.style.paymentRequestButton.theme",
       ),
-      height: getWarningString(json, "height", "", ~logger),
+      height: getWarningString(json, "height", ""),
     }
   })
   ->Option.getOr(defaultPaymentRequestButton)
 }
 
-let getStyle = (dict, str, logger) => {
+let getStyle = (dict, str) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
@@ -221,12 +216,12 @@ let getStyle = (dict, str, logger) => {
       complete: getJsonObjectFromDict(json, "complete"),
       empty: getJsonObjectFromDict(json, "empty"),
       invalid: getJsonObjectFromDict(json, "invalid"),
-      paymentRequestButton: getPaymentRequestButton(json, "paymentRequestButton", logger),
+      paymentRequestButton: getPaymentRequestButton(json, "paymentRequestButton"),
     }
   })
   ->Option.getOr(defaultStyle)
 }
-let itemToObjMapper = (dict, logger) => {
+let itemToObjMapper = dict => {
   unknownKeysWarning(
     [
       "classes",
@@ -245,15 +240,15 @@ let itemToObjMapper = (dict, logger) => {
   )
 
   {
-    classes: getClasses("classes", dict, logger),
-    style: getStyle(dict, "style", logger),
-    value: getWarningString(dict, "value", "", ~logger),
-    hidePostalCode: getBoolWithWarning(dict, "hidePostalCode", false, ~logger),
-    iconStyle: getWarningString(dict, "iconStyle", "default", ~logger)->getIconStyle,
-    hideIcon: getBoolWithWarning(dict, "hideIcon", false, ~logger),
-    showIcon: getBoolWithWarning(dict, "showIcon", false, ~logger),
-    disabled: getBoolWithWarning(dict, "disabled", false, ~logger),
-    placeholder: getWarningString(dict, "placeholder", "", ~logger),
-    showError: getBoolWithWarning(dict, "showError", true, ~logger),
+    classes: getClasses("classes", dict),
+    style: getStyle(dict, "style"),
+    value: getWarningString(dict, "value", ""),
+    hidePostalCode: getBoolWithWarning(dict, "hidePostalCode", false),
+    iconStyle: getWarningString(dict, "iconStyle", "default")->getIconStyle,
+    hideIcon: getBoolWithWarning(dict, "hideIcon", false),
+    showIcon: getBoolWithWarning(dict, "showIcon", false),
+    disabled: getBoolWithWarning(dict, "disabled", false),
+    placeholder: getWarningString(dict, "placeholder", ""),
+    showError: getBoolWithWarning(dict, "showError", true),
   }
 }

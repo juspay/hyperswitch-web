@@ -66,7 +66,6 @@ let make = () => {
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (headers, setHeaders) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
     getPaymentMethodConfig(Other)
@@ -144,7 +143,6 @@ let make = () => {
               ~headers=headers->Dict.toArray->Dict.fromArray,
               paymentIntentId,
               ~publishableKey,
-              ~logger,
               ~customPodUri,
               ~sdkAuthorization=Some(sdkAuthorizationVal),
             )
@@ -168,7 +166,6 @@ let make = () => {
         clientSecret,
         ~headers=headers->Dict.fromArray,
         ~publishableKey,
-        ~logger,
         ~customPodUri,
         ~sdkAuthorization=Some(sdkAuthorization),
       )
@@ -233,7 +230,8 @@ let make = () => {
         </div>
       </RenderIf>
       <div
-        className="flex flex-row w-full justify-center items-start mb-8 font-medium text-2xl font-semibold text-[#151A1F] opacity-50">
+        className="flex flex-row w-full justify-center items-start mb-8 font-medium text-2xl font-semibold text-[#151A1F] opacity-50"
+      >
         {expiryString->React.string}
       </div>
       <div
@@ -241,28 +239,31 @@ let make = () => {
           borderColor: paymentMethodConfig.showBorder ? displayColor : "transparent",
           backgroundColor: paymentMethodConfig.showBorder ? displayColor : "transparent",
         }
-        className={paymentMethodConfig.showBorder ? "border-[1em] rounded-md" : ""}>
+        className={paymentMethodConfig.showBorder ? "border-[1em] rounded-md" : ""}
+      >
         <div
-          className={paymentMethodConfig.showBorder
-            ? "border-[0.5em] border-white rounded-md"
-            : ""}>
+          className={paymentMethodConfig.showBorder ? "border-[0.5em] border-white rounded-md" : ""}
+        >
           <img style={height: "13rem"} src=qrCode alt="" />
         </div>
         <RenderIf condition={paymentMethodConfig.footerText !== ""}>
           <div
             style={backgroundColor: displayColor}
-            className="font-bold flex justify-center items-end text-[1em] text-white h-[2em]">
+            className="font-bold flex justify-center items-end text-[1em] text-white h-[2em]"
+          >
             <p> {paymentMethodConfig.footerText->React.string} </p>
           </div>
         </RenderIf>
       </div>
       <div
-        className={`flex flex-col ${qrBottomSectionMarginClass} max-w-md justify-between items-center`}>
+        className={`flex flex-col ${qrBottomSectionMarginClass} max-w-md justify-between items-center`}
+      >
         <RenderIf condition={isRawQrDataAvailable}>
           <button
             className="button mb-6 p-2 h-[40px] border border-[#006DF9] rounded-md"
             style={color: "#006DF9", background: "transparent"}
-            onClick={handleCopyQrData}>
+            onClick={handleCopyQrData}
+          >
             {isCopied ? React.string("Copied!") : React.string("Copy QR Data")}
           </button>
         </RenderIf>
@@ -282,7 +283,8 @@ let make = () => {
               }
               onClick={_ => {
                 closeModal()->ignore
-              }}>
+              }}
+            >
               {React.string("Done")}
             </button>
           </div>

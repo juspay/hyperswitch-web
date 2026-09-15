@@ -10,14 +10,12 @@ let make = (
   ~sdkSessionId,
   ~publishableKey,
   ~sdkAuthorization,
-  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
 ) => {
   let hyperComponentName = PaymentMethodsManagementElements
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
@@ -171,7 +169,7 @@ let make = (
         ~legacyOptions,
         ~defaultComponentType="paymentMethodsManagement",
       )
-      componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
+      componentType == "" ? manageErrorWarning(RequiredParameter, ~dynamicStr="type") : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
       | "paymentMethodsManagement" => ()
@@ -253,7 +251,6 @@ let make = (
         ~appearance,
         ~isPaymentManagementElement=true,
         ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
-        ~logger=Some(logger),
         ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
@@ -270,6 +267,10 @@ let make = (
   } catch {
   | e => {
       Sentry.captureException(e)
+      HyperLoaderLogger.logCrash(
+        ~details=[("origin", "payment_management_elements_create"->JSON.Encode.string)],
+        ~exn=e,
+      )
       defaultElement
     }
   }

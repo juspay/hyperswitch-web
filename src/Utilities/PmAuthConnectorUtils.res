@@ -14,43 +14,35 @@ let pmAuthConnectorToScriptUrlMapper = authConnector => {
   }
 }
 
-let mountAuthConnectorScript = (
-  ~authConnector,
-  ~onScriptLoaded,
-  ~logger: HyperLoggerTypes.loggerMake,
-) => {
+let mountAuthConnectorScript = (~authConnector, ~onScriptLoaded) => {
   let authConnector = authConnector->Option.getOr("")
   let pmAuthConnectorScriptUrl =
     authConnector->pmAuthNameToTypeMapper->pmAuthConnectorToScriptUrlMapper
   let pmAuthConnectorScript = Window.createElement("script")
-  logger.setLogInfo(
-    ~value=`Pm Auth Connector ${authConnector} Script Loading`,
-    ~eventName=PM_AUTH_CONNECTOR_SCRIPT,
+  SdkLogger.logResource(
+    ~event=ScriptLoad(PmAuthConnectorScript, Init),
+    ~details=[("auth_connector", authConnector->JSON.Encode.string)],
   )
   pmAuthConnectorScript->Window.elementSrc(pmAuthConnectorScriptUrl)
   pmAuthConnectorScript->Window.elementOnerror(_ => {
-    logger.setLogInfo(
-      ~value=`Pm Auth Connector ${authConnector} Script Load Failure`,
-      ~eventName=PM_AUTH_CONNECTOR_SCRIPT,
+    SdkLogger.logResource(
+      ~event=ScriptLoad(PmAuthConnectorScript, Failed),
+      ~details=[("auth_connector", authConnector->JSON.Encode.string)],
     )
   })
   pmAuthConnectorScript->Window.elementOnload(_ => {
     onScriptLoaded(authConnector)
-    logger.setLogInfo(
-      ~value=`Pm Auth Connector ${authConnector} Script Loaded`,
-      ~eventName=PM_AUTH_CONNECTOR_SCRIPT,
+    SdkLogger.logResource(
+      ~event=ScriptLoad(PmAuthConnectorScript, Done),
+      ~details=[("auth_connector", authConnector->JSON.Encode.string)],
     )
   })
   Window.body->Window.appendChild(pmAuthConnectorScript)
 }
 
-let mountAllRequriedAuthConnectorScripts = (
-  ~pmAuthConnectorsArr,
-  ~onScriptLoaded,
-  ~logger: HyperLoggerTypes.loggerMake,
-) => {
+let mountAllRequriedAuthConnectorScripts = (~pmAuthConnectorsArr, ~onScriptLoaded) => {
   pmAuthConnectorsArr->Array.forEach(item => {
-    mountAuthConnectorScript(~authConnector=item, ~onScriptLoaded, ~logger)
+    mountAuthConnectorScript(~authConnector=item, ~onScriptLoaded)
   })
 }
 

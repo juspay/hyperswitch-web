@@ -2,7 +2,7 @@ open JotaiAtoms
 open Utils
 
 let cleanSocialSecurityNumber = socialSecurityNumber =>
-  socialSecurityNumber->String.replaceRegExp(%re("/\D+/g"), "")
+  socialSecurityNumber->String.replaceRegExp(/\D+/g, "")
 
 let formatSocialSecurityNumber = socialSecurityNumber => {
   let formatted = socialSecurityNumber->cleanSocialSecurityNumber
@@ -24,11 +24,10 @@ let formatSocialSecurityNumber = socialSecurityNumber => {
 
 @react.component
 let make = () => {
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let intent = PaymentHelpers.usePaymentIntent(Other)
   let setComplete = Jotai.useSetAtom(fieldsComplete)
   let (socialSecurityNumber, setSocialSecurityNumber) = React.useState(_ => "")
 
@@ -58,7 +57,7 @@ let make = () => {
     if confirm.doSubmit {
       if complete {
         let body = PaymentBody.boletoBody(
-          ~socialSecurityNumber=socialSecurityNumber->String.replaceRegExp(%re("/\D+/g"), ""),
+          ~socialSecurityNumber=socialSecurityNumber->String.replaceRegExp(/\D+/g, ""),
         )
         intent(
           ~bodyArr=body,

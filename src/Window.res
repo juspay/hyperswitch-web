@@ -122,7 +122,7 @@ module Navigator = {
   external userAgent: string = "userAgent"
 
   @val @scope("navigator")
-  external sendBeacon: (string, string) => unit = "sendBeacon"
+  external sendBeacon: (string, string) => bool = "sendBeacon"
 }
 
 module Location = {

@@ -30,7 +30,13 @@ external addEventListener: (element, string, event => unit) => unit = "addEventL
 @send
 external removeEventListener: (element, string, event => unit) => unit = "removeEventListener"
 
-let useScript = (src: string, ~\"type"="", ~integrity="", ~crossorigin="") => {
+let useScript = (
+  src: string,
+  ~\"type"="",
+  ~integrity="",
+  ~crossorigin="",
+  ~resourceProvider: option<SdkLogger.resourceProvider>=?,
+) => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
   React.useEffect(() => {
     if src == "" {
@@ -43,6 +49,12 @@ let useScript = (src: string, ~\"type"="", ~integrity="", ~crossorigin="") => {
       None
     | None =>
       let script = createElement("script")
+      resourceProvider->Option.forEach(provider =>
+        SdkLogger.logResource(
+          ~event=ScriptLoad(provider, Init),
+          ~details=[("url", src->JSON.Encode.string)],
+        )
+      )
       script.src = src
       if \"type" != "" {
         script.\"type" = \"type"
@@ -62,6 +74,15 @@ let useScript = (src: string, ~\"type"="", ~integrity="", ~crossorigin="") => {
       let setAttributeFromEvent = (event: event) => {
         setStatus(_ => event.\"type" === "load" ? "ready" : "error")
         script.setAttribute("data-status", event.\"type" === "load" ? "ready" : "error")
+        resourceProvider->Option.forEach(provider =>
+          SdkLogger.logResource(
+            ~event=ScriptLoad(
+              provider,
+              event.\"type" === "load" ? SdkLogger.Done : SdkLogger.Failed,
+            ),
+            ~details=[("url", src->JSON.Encode.string)],
+          )
+        )
       }
       script->addEventListener("load", setAttributeFromEvent)
       script->addEventListener("error", setAttributeFromEvent)
@@ -80,7 +101,7 @@ let useScript = (src: string, ~\"type"="", ~integrity="", ~crossorigin="") => {
   status
 }
 
-let useLink = (src: string) => {
+let useLink = (src: string, ~resourceProvider: option<SdkLogger.resourceProvider>=?) => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
   React.useEffect(() => {
     if src == "" {
@@ -93,6 +114,12 @@ let useLink = (src: string) => {
       None
     | None =>
       let link = createElement("link")
+      resourceProvider->Option.forEach(provider =>
+        SdkLogger.logResource(
+          ~event=ScriptLoad(provider, Init),
+          ~details=[("url", src->JSON.Encode.string)],
+        )
+      )
       link.href = src
       link.rel = "stylesheet"
       link.setAttribute("data-status", "loading")
@@ -100,6 +127,15 @@ let useLink = (src: string) => {
       let setAttributeFromEvent = (event: event) => {
         setStatus(_ => event.\"type" === "load" ? "ready" : "error")
         link.setAttribute("data-status", event.\"type" === "load" ? "ready" : "error")
+        resourceProvider->Option.forEach(provider =>
+          SdkLogger.logResource(
+            ~event=ScriptLoad(
+              provider,
+              event.\"type" === "load" ? SdkLogger.Done : SdkLogger.Failed,
+            ),
+            ~details=[("url", src->JSON.Encode.string)],
+          )
+        )
       }
       link->addEventListener("load", setAttributeFromEvent)
       link->addEventListener("error", setAttributeFromEvent)

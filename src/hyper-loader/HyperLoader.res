@@ -1,9 +1,58 @@
+let describeCrashText = text =>
+  text->LoggerCommonHelpers.truncateDiagnosticText(~maxLength=256)->JSON.Encode.string
+
+let describeCrashValue = value =>
+  switch value->JSON.Decode.string {
+  | Some(text) => text
+  | None =>
+    switch value->Utils.getDictFromJson->Utils.getOptionString("message") {
+    | Some(text) => text
+    | None => "UNKNOWN"
+    }
+  }
+
+let isLoggingGlobalCrash = ref(false)
+
+let logGlobalCrash = (~details) =>
+  if !isLoggingGlobalCrash.contents {
+    isLoggingGlobalCrash := true
+    LoggerCommonHelpers.safeRun(() => HyperLoaderLogger.logCrash(~details))
+    isLoggingGlobalCrash := false
+  }
+
+Window.addEventListener("error", (event: JSON.t) => {
+  let eventDict = event->Utils.getDictFromJson
+  logGlobalCrash(
+    ~details=[
+      ("origin", "uncaught_error"->JSON.Encode.string),
+      ("error_message", eventDict->Utils.getString("message", "UNKNOWN")->describeCrashText),
+      (
+        "error_source",
+        eventDict
+        ->Utils.getString("filename", "")
+        ->LoggerCommonHelpers.sanitizedUrl
+        ->describeCrashText,
+      ),
+    ],
+  )
+})
+
+Window.addEventListener("unhandledrejection", (event: JSON.t) => {
+  let reason = event->Utils.getDictFromJson->Utils.getJsonObjectFromDict("reason")
+  logGlobalCrash(
+    ~details=[
+      ("origin", "unhandled_rejection"->JSON.Encode.string),
+      ("error_message", reason->describeCrashValue->describeCrashText),
+    ],
+  )
+})
+
 let loadHyper = (str, option) => {
   Promise.resolve(Hyper.make(str, option, None))
 }
 
 let loadStripe = (str, option) => {
-  ErrorUtils.manageErrorWarning(DEPRECATED_LOADSTRIPE, ~logger=LoggerUtils.defaultLoggerConfig)
+  ErrorUtils.manageErrorWarning(DeprecatedLoadStripe)
   loadHyper(str, option)
 }
 

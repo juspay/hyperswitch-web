@@ -22,7 +22,6 @@ let make = (
   let {innerLayout} = config.appearance
   let keys = Jotai.useAtomValue(keys)
   let customPodUri = Jotai.useAtomValue(customPodUri)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
   // Vault credentials (pmSessionId / sdkAuthorization) for the saved-card tokenise
   // call; populated by PaymentMethodsSDK in the inner iframe. Only used in vault mode.
@@ -77,7 +76,6 @@ let make = (
             PaymentHelpersV2.updatePaymentMethod(
               ~bodyArr=PaymentManagementBody.vaultUpdateCVVBody(~cvcNumber),
               ~pmSessionId,
-              ~logger=loggerState,
               ~customPodUri,
               ~sdkAuthorization,
             )
@@ -158,7 +156,6 @@ let make = (
                     ~payload,
                     ~publishableKey=publishableKeyVal,
                     ~clientSecret=clientSecretVal,
-                    ~logger=loggerState,
                     ~customPodUri,
                     ~redirectionFlags,
                     ~sdkAuthorization=Some(sdkAuth),
@@ -242,7 +239,6 @@ let make = (
     cvcNumber,
     keys,
     paymentType,
-    loggerState,
     customPodUri,
     redirectionFlags,
     localeString,

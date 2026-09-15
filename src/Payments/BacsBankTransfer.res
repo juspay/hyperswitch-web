@@ -4,10 +4,9 @@ open Utils
 @react.component
 let default = () => {
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
+  let intent = PaymentHelpers.usePaymentIntent(BankTransfer)
   let email = Jotai.useAtomValue(userEmailAddress)
   let fullName = Jotai.useAtomValue(userFullName)
   let setComplete = Jotai.useSetAtom(fieldsComplete)

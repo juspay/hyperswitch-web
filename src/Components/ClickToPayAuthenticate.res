@@ -4,7 +4,6 @@ open Utils
 
 @react.component
 let make = (
-  ~loggerState,
   ~savedMethods,
   ~isClickToPayAuthenticateError,
   ~setIsClickToPayAuthenticateError,
@@ -64,7 +63,7 @@ let make = (
                     windowRef: iframeContentWindow,
                     consumerIdentity: authenticateConsumerIdentity,
                   }
-                  ClickToPayHelpers.authenticate(authenticatePayload, loggerState)
+                  ClickToPayHelpers.authenticate(authenticatePayload)
                   ->then(res => {
                     switch res {
                     | Ok(data) =>
@@ -91,14 +90,9 @@ let make = (
                       resolve()
                     | Error(err) => {
                         let errException = err->formatException
-                        loggerState.setLogError(
-                          ~value={
-                            "message": `Error authenticating consumer identity - ${errException->JSON.stringify}`,
-                            "scheme": clickToPayProvider,
-                          }
-                          ->JSON.stringifyAny
-                          ->Option.getOr(""),
-                          ~eventName=CLICK_TO_PAY_FLOW,
+                        ClickToPayLogger.logLifecycle(
+                          ~event=AuthenticationFailed({code: "EXCEPTION"}),
+                          ~exn=err,
                         )
                         let exceptionMessage =
                           errException
@@ -123,16 +117,9 @@ let make = (
                     }
                   })
                   ->catch(err => {
-                    loggerState.setLogError(
-                      ~value={
-                        "message": `Error authenticating consumer identity - ${err
-                          ->formatException
-                          ->JSON.stringify}`,
-                        "scheme": clickToPayProvider,
-                      }
-                      ->JSON.stringifyAny
-                      ->Option.getOr(""),
-                      ~eventName=CLICK_TO_PAY_FLOW,
+                    ClickToPayLogger.logLifecycle(
+                      ~event=AuthenticationFailed({code: "EXCEPTION"}),
+                      ~exn=err,
                     )
                     closeComponentIfSavedMethodsAreEmpty()
                     resolve()
@@ -146,14 +133,9 @@ let make = (
           }
         } catch {
         | err => {
-            loggerState.setLogError(
-              ~value={
-                "message": `Error - ${err->formatException->JSON.stringify}`,
-                "scheme": clickToPayProvider,
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
+            ClickToPayLogger.logLifecycle(
+              ~event=AuthenticationFailed({code: "EXCEPTION"}),
+              ~exn=err,
             )
             closeComponentIfSavedMethodsAreEmpty()
           }
@@ -204,6 +186,16 @@ let make = (
       ->Array.mapWithIndex((obj, i) => {
         let customerMethod =
           obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider)
+        let setPaymentToken = updater => {
+          SdkLogger.logUser(
+            ~event=PaymentMethodSelected({method: "click_to_pay_card"}),
+            ~details=[
+              ("card_brand", obj.paymentCardDescriptor->JSON.Encode.string),
+              ("card_index", i->JSON.Encode.int),
+            ],
+          )
+          setPaymentToken(updater)
+        }
         <SavedCardItem
           key={"ctp_" ++ i->Int.toString}
           setPaymentToken

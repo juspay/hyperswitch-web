@@ -30,17 +30,11 @@ let useHandlePostMessages = (
 ) => {
   open JotaiAtoms
 
-  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let {iframeId} = Jotai.useAtomValue(keys)
 
   React.useEffect(() => {
     if enabled {
-      Utils.handlePostMessageEvents(
-        ~complete,
-        ~empty,
-        ~paymentType,
-        ~loggerState,
-        ~savedMethod,
-      )
+      Utils.handlePostMessageEvents(~iframeId, ~complete, ~empty, ~paymentType, ~savedMethod)
     }
     None
   }, (complete, empty, paymentType, savedMethod, enabled))
