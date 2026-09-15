@@ -9,10 +9,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (keys, setKeys) = Jotai.useAtom(keys)
   let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
   let setSdkConfigs = Jotai.useSetAtom(sdkConfigs)
+  let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
   let setSdkConfigsValue = Jotai.useSetAtom(PaymentUtils.sdkConfigsValue)
   let setSessions = Jotai.useSetAtom(sessions)
   let (options, setOptions) = Jotai.useAtom(elementOptions)
   let (optionsPayment, setOptionsPayment) = Jotai.useAtom(optionAtom)
+  let getSdkPropsDefaults = SdkPropsConfigurationService.useSdkPropsDefaults(
+    ~rawConfigs=sdkConfigsValue.raw_configs,
+  )
+  let merchantOptionsRef = React.useRef(None)
+  let lastConfigDictRef = React.useRef(None)
   let setPaymentManagementList = Jotai.useSetAtom(paymentManagementList)
   let setSessionId = Jotai.useSetAtom(sessionId)
   let setBlockConfirm = Jotai.useSetAtom(isConfirmBlocked)
@@ -102,8 +108,28 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
-  let updateOptions = dict => {
-    let optionsDict = dict->getDictFromObj("options")
+  let (profileId, processorMerchantId, organizationId) = SdkConfigParser.getProfileContext(
+    sdkConfigsValue.context_used,
+  )
+
+  let sdkPropsContext: SuperpositionTypes.sdkPropsContext = {
+    platform: "web",
+    profile_id: ?profileId,
+    processor_merchant_id: ?processorMerchantId,
+    organization_id: ?organizationId,
+  }
+
+  let applyOptions = optionsDict => {
+    let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
+    let mergeFor = allowedKeys =>
+      CommonUtils.mergeDict(
+        superpositionDefaults
+        ->Dict.toArray
+        ->Array.filter(((key, _)) => allowedKeys->Array.includes(key))
+        ->Dict.fromArray,
+        optionsDict,
+      )
+
     setOptionsJson(_ => optionsDict->JSON.Encode.object)
 
     if isPaymentMethodsSDKSurface {
@@ -152,7 +178,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     switch optionsDict->Dict.get("subscriptionEvents") {
     | Some(_) => {
         let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(
-          optionsDict,
+          mergeFor(["subscriptionEvents"]),
           "subscriptionEvents",
         )
         setOptionsPayment(prev => {...prev, subscriptionEvents})
@@ -165,7 +191,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | CardExpiryElement
     | CardCVCElement
     | Card =>
-      setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+      setOptions(_ =>
+        ElementType.itemToObjMapper(mergeFor(ElementType.allowedCardElementOptions), logger)
+      )
     | PaymentMethodCollectElement => {
         let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
@@ -180,12 +208,28 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PaymentMethodsManagement
     | PaymentMethodsSDK
     | Payment => {
-        let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
+        let paymentOptions = PaymentType.itemToObjMapper(
+          mergeFor(PaymentType.allowedPaymentElementOptions),
+          logger,
+        )
         setOptionsPayment(prev => {...paymentOptions, subscriptionEvents: prev.subscriptionEvents})
         optionsCallback(paymentOptions)
       }
     | _ => ()
     }
+  }
+
+  let updateOptions = dict => {
+    let optionsDict = dict->getDictFromObj("options")
+    merchantOptionsRef.current = Some(optionsDict)
+    applyOptions(optionsDict)
+  }
+
+  let localeFromDict = dict => getString(dict, "locale", "")
+  let resolveAutoLocale = locale => locale === "auto" ? Window.Navigator.language : locale
+  let merchantLocaleFromDict = dict => {
+    let locale = localeFromDict(dict)
+    locale === "auto" ? "" : locale
   }
 
   let setConfigs = async (dict, themeValues: ThemeImporter.themeDataModule) => {
@@ -204,8 +248,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       )
       let appearance =
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-      let requestedLocale = optionsLocaleString == "" ? config.locale : optionsLocaleString
-      let resolvedLocale = requestedLocale === "auto" ? Window.Navigator.language : requestedLocale
+      let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
+      let superpositionLocale = localeFromDict(superpositionDefaults)
+      let paymentOptionsLocale = merchantLocaleFromDict(paymentOptions)
+      let requestedLocale =
+        [optionsLocaleString, paymentOptionsLocale, superpositionLocale]
+        ->Array.find(locale => locale != "")
+        ->Option.getOr(config.locale)
+      let resolvedLocale = resolveAutoLocale(requestedLocale)
       let localeString = await CardTheme.getLocaleObject(requestedLocale)
       let constantString = await CardTheme.getConstantStringsObject()
       let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
@@ -228,6 +278,22 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | _ => ()
     }
     setIsConfigReady(_ => true)
+  }
+
+  let applyConfigFromDict = (dict, themeSource) => {
+    open Promise
+    let defaultThemeValues: ThemeImporter.themeDataModule = {
+      default: DefaultTheme.default,
+      defaultRules: DefaultTheme.defaultRules,
+    }
+    lastConfigDictRef.current = Some((dict, themeSource))
+    switch getThemePromise(themeSource) {
+    | Some(promise) =>
+      promise
+      ->then(res => dict->setConfigs(res))
+      ->catch(_ => dict->setConfigs(defaultThemeValues))
+    | None => dict->setConfigs(defaultThemeValues)
+    }->ignore
   }
 
   let updateRedirectionFlags = UtilityHooks.useUpdateRedirectionFlags()
@@ -305,7 +371,20 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   }, [config])
 
   React.useEffect(() => {
-    open Promise
+    let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
+    let hasSdkProps = superpositionDefaults->Dict.keysToArray->Array.length > 0
+    switch merchantOptionsRef.current {
+    | Some(optionsDict) if hasSdkProps => applyOptions(optionsDict)
+    | _ => ()
+    }
+    switch lastConfigDictRef.current {
+    | Some((dict, themeSource)) if hasSdkProps => applyConfigFromDict(dict, themeSource)
+    | _ => ()
+    }
+    None
+  }, [getSdkPropsDefaults])
+
+  React.useEffect(() => {
     let handleFun = (ev: Window.event) => {
       let json = ev.data->safeParse
       try {
@@ -401,24 +480,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 // Update top redirection atom
                 updateRedirectionFlags(paymentOptions)
 
-                switch getThemePromise(paymentOptions) {
-                | Some(promise) =>
-                  promise
-                  ->then(res => {
-                    dict->setConfigs(res)
-                  })
-                  ->catch(_ => {
-                    dict->setConfigs({
-                      default: DefaultTheme.default,
-                      defaultRules: DefaultTheme.defaultRules,
-                    })
-                  })
-                | None =>
-                  dict->setConfigs({
-                    default: DefaultTheme.default,
-                    defaultRules: DefaultTheme.defaultRules,
-                  })
-                }->ignore
+                applyConfigFromDict(dict, paymentOptions)
               }
               let newLaunchTime = dict->getFloat("launchTime", 0.0)
               setLaunchTime(_ => newLaunchTime)
@@ -464,25 +526,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             // Update top redirection atom
             updateRedirectionFlags(paymentOptions)
 
-            switch getThemePromise(paymentOptions) {
-            | Some(promise) =>
-              promise
-              ->then(res => {
-                dict->setConfigs(res)
-              })
-              ->catch(_ => {
-                dict->setConfigs({
-                  default: DefaultTheme.default,
-                  defaultRules: DefaultTheme.defaultRules,
-                })
-              })
-
-            | None =>
-              dict->setConfigs({
-                default: DefaultTheme.default,
-                defaultRules: DefaultTheme.defaultRules,
-              })
-            }->ignore
+            applyConfigFromDict(dict, paymentOptions)
             if dict->getDictIsSome("options") {
               updateOptions(dict)
             }
@@ -536,25 +580,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           | None => ()
           }
           if optionsDict->Dict.keysToArray->Array.length > 0 {
-            switch getThemePromise(optionsDict) {
-            | Some(promise) =>
-              promise
-              ->then(res => {
-                dict->setConfigs(res)
-              })
-              ->catch(_ => {
-                dict->setConfigs({
-                  default: DefaultTheme.default,
-                  defaultRules: DefaultTheme.defaultRules,
-                })
-              })
-
-            | None =>
-              dict->setConfigs({
-                default: DefaultTheme.default,
-                defaultRules: DefaultTheme.defaultRules,
-              })
-            }->ignore
+            applyConfigFromDict(dict, optionsDict)
           }
         }
         if dict->Dict.get("isTestMode")->Option.isSome {
