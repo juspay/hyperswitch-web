@@ -38,6 +38,10 @@ type paymentElement = {
   clear: unit => unit,
   onSDKHandleClick: option<unit => Promise.t<unit>> => unit,
   confirmPayment: JSON.t => promise<JSON.t>,
+  // Only meaningful on the element returned by
+  // hyper.paymentMethodsManagementElements(...).create("paymentMethodsManagement");
+  // stubbed out on every other element type.
+  tokenize: JSON.t => promise<JSON.t>,
 }
 
 type fieldHandle = {
@@ -146,6 +150,9 @@ type hyperInstance = {
   paymentMethodsManagementElements: JSON.t => element,
   completeUpdateIntent: string => promise<JSON.t>,
   initiateUpdateIntent: unit => promise<JSON.t>,
+  tokenize: JSON.t => promise<JSON.t>,
+  // @deprecated Use `tokenize` instead. Kept for backward compatibility; internally
+  // delegates to `tokenize`.
   confirmTokenization: JSON.t => promise<JSON.t>,
   initPaymentMethodSession: JSON.t => initPaymentMethodSession,
 }
@@ -195,6 +202,7 @@ let defaultPaymentElement = {
   clear: () => (),
   onSDKHandleClick: _fnArgument => (),
   confirmPayment: _payload => Promise.resolve(Dict.make()->JSON.Encode.object),
+  tokenize: _payload => Promise.resolve(Dict.make()->JSON.Encode.object),
 }
 
 let create = (_options: JSON.t, _options2: Nullable.t<JSON.t>) => {
@@ -305,6 +313,7 @@ let defaultHyperInstance = {
   paymentMethodsManagementElements: _ev => defaultElement,
   completeUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   initiateUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
+  tokenize: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   confirmTokenization: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   initPaymentMethodSession: _ => defaultInitPaymentMethodSession,
 }

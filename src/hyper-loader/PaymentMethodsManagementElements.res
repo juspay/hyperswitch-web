@@ -13,6 +13,7 @@ let make = (
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
+  ~tokenize: JSON.t => promise<JSON.t>,
 ) => {
   let hyperComponentName = PaymentMethodsManagementElements
   try {
@@ -255,6 +256,7 @@ let make = (
         ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
         ~logger=Some(logger),
         ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
+        ~tokenize,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

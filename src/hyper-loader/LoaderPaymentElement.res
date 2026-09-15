@@ -105,6 +105,7 @@ let make = (
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  ~tokenize: option<JSON.t => promise<JSON.t>>=?,
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
@@ -607,6 +608,7 @@ let make = (
       mount,
       onSDKHandleClick,
       confirmPayment,
+      tokenize: tokenize->Option.getOr(_payload => Promise.resolve(Dict.make()->JSON.Encode.object)),
     }
   } catch {
   | e => {
