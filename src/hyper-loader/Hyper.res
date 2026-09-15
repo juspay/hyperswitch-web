@@ -489,6 +489,15 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         confirmPaymentWrapper(payload, true, result)
       }
 
+      let tokenize = payload => confirmPayment(payload)
+
+      let confirmTokenization = payload => {
+        Console.warn(
+          "confirmTokenization is deprecated and will be removed in a future release. Use tokenize instead.",
+        )
+        tokenize(payload)
+      }
+
       let confirmPaymentViaSDKButton = payload => {
         confirmPaymentWrapper(payload, false, true, ~isSdkButton=true)
       }
@@ -608,6 +617,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.getOr(JSON.Encode.null)
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
+          ~tokenize,
         )
       }
 
@@ -837,7 +847,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
-        confirmTokenization: confirmPayment,
+        tokenize,
+        confirmTokenization,
         initPaymentMethodSession: options => PaymentMethodSession.make(options, ~logger),
       }
       Window.setHyper(Window.window, returnObject)
