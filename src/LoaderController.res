@@ -17,7 +17,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let getSdkPropsDefaults = SdkPropsConfigurationService.useSdkPropsDefaults(
     ~rawConfigs=sdkConfigsValue.raw_configs,
   )
-  let merchantOptionsRef: React.ref<option<Dict.t<JSON.t>>> = React.useRef(None)
+  let merchantOptionsRef = React.useRef(None)
+  let lastConfigDictRef = React.useRef(None)
   let setPaymentManagementList = Jotai.useSetAtom(paymentManagementList)
   let setSessionId = Jotai.useSetAtom(sessionId)
   let setBlockConfirm = Jotai.useSetAtom(isConfirmBlocked)
@@ -224,6 +225,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     applyOptions(optionsDict)
   }
 
+  let localeFromDict = dict => getString(dict, "locale", "")
+  let resolveAutoLocale = locale => locale === "auto" ? Window.Navigator.language : locale
+  let merchantLocaleFromDict = dict => {
+    let locale = localeFromDict(dict)
+    locale === "auto" ? "" : locale
+  }
+
   let setConfigs = async (dict, themeValues: ThemeImporter.themeDataModule) => {
     try {
       let paymentOptions = dict->getDictFromObj("paymentOptions")
@@ -240,8 +248,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       )
       let appearance =
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-      let requestedLocale = optionsLocaleString == "" ? config.locale : optionsLocaleString
-      let resolvedLocale = requestedLocale === "auto" ? Window.Navigator.language : requestedLocale
+      let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
+      let superpositionLocale = localeFromDict(superpositionDefaults)
+      let paymentOptionsLocale = merchantLocaleFromDict(paymentOptions)
+      let requestedLocale =
+        [optionsLocaleString, paymentOptionsLocale, superpositionLocale]
+        ->Array.find(locale => locale != "")
+        ->Option.getOr(config.locale)
+      let resolvedLocale = resolveAutoLocale(requestedLocale)
       let localeString = await CardTheme.getLocaleObject(requestedLocale)
       let constantString = await CardTheme.getConstantStringsObject()
       let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
@@ -264,6 +278,22 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | _ => ()
     }
     setIsConfigReady(_ => true)
+  }
+
+  let applyConfigFromDict = (dict, themeSource) => {
+    open Promise
+    let defaultThemeValues: ThemeImporter.themeDataModule = {
+      default: DefaultTheme.default,
+      defaultRules: DefaultTheme.defaultRules,
+    }
+    lastConfigDictRef.current = Some((dict, themeSource))
+    switch getThemePromise(themeSource) {
+    | Some(promise) =>
+      promise
+      ->then(res => dict->setConfigs(res))
+      ->catch(_ => dict->setConfigs(defaultThemeValues))
+    | None => dict->setConfigs(defaultThemeValues)
+    }->ignore
   }
 
   let updateRedirectionFlags = UtilityHooks.useUpdateRedirectionFlags()
@@ -341,16 +371,20 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   }, [config])
 
   React.useEffect(() => {
-    let hasSdkProps = getSdkPropsDefaults(sdkPropsContext)->Dict.keysToArray->Array.length > 0
+    let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
+    let hasSdkProps = superpositionDefaults->Dict.keysToArray->Array.length > 0
     switch merchantOptionsRef.current {
     | Some(optionsDict) if hasSdkProps => applyOptions(optionsDict)
+    | _ => ()
+    }
+    switch lastConfigDictRef.current {
+    | Some((dict, themeSource)) if hasSdkProps => applyConfigFromDict(dict, themeSource)
     | _ => ()
     }
     None
   }, [getSdkPropsDefaults])
 
   React.useEffect(() => {
-    open Promise
     let handleFun = (ev: Window.event) => {
       let json = ev.data->safeParse
       try {
@@ -446,24 +480,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 // Update top redirection atom
                 updateRedirectionFlags(paymentOptions)
 
-                switch getThemePromise(paymentOptions) {
-                | Some(promise) =>
-                  promise
-                  ->then(res => {
-                    dict->setConfigs(res)
-                  })
-                  ->catch(_ => {
-                    dict->setConfigs({
-                      default: DefaultTheme.default,
-                      defaultRules: DefaultTheme.defaultRules,
-                    })
-                  })
-                | None =>
-                  dict->setConfigs({
-                    default: DefaultTheme.default,
-                    defaultRules: DefaultTheme.defaultRules,
-                  })
-                }->ignore
+                applyConfigFromDict(dict, paymentOptions)
               }
               let newLaunchTime = dict->getFloat("launchTime", 0.0)
               setLaunchTime(_ => newLaunchTime)
@@ -509,25 +526,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             // Update top redirection atom
             updateRedirectionFlags(paymentOptions)
 
-            switch getThemePromise(paymentOptions) {
-            | Some(promise) =>
-              promise
-              ->then(res => {
-                dict->setConfigs(res)
-              })
-              ->catch(_ => {
-                dict->setConfigs({
-                  default: DefaultTheme.default,
-                  defaultRules: DefaultTheme.defaultRules,
-                })
-              })
-
-            | None =>
-              dict->setConfigs({
-                default: DefaultTheme.default,
-                defaultRules: DefaultTheme.defaultRules,
-              })
-            }->ignore
+            applyConfigFromDict(dict, paymentOptions)
             if dict->getDictIsSome("options") {
               updateOptions(dict)
             }
@@ -581,25 +580,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           | None => ()
           }
           if optionsDict->Dict.keysToArray->Array.length > 0 {
-            switch getThemePromise(optionsDict) {
-            | Some(promise) =>
-              promise
-              ->then(res => {
-                dict->setConfigs(res)
-              })
-              ->catch(_ => {
-                dict->setConfigs({
-                  default: DefaultTheme.default,
-                  defaultRules: DefaultTheme.defaultRules,
-                })
-              })
-
-            | None =>
-              dict->setConfigs({
-                default: DefaultTheme.default,
-                defaultRules: DefaultTheme.defaultRules,
-              })
-            }->ignore
+            applyConfigFromDict(dict, optionsDict)
           }
         }
         if dict->Dict.get("isTestMode")->Option.isSome {
