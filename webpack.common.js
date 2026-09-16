@@ -248,26 +248,29 @@ module.exports = (publicPath = "auto") => {
       "./src/hyper-loader/AuthenticationSessionMethods.bs.js",
   };
 
-  const definePluginValues = {
-    repoName: JSON.stringify(repoName),
-    repoVersion: JSON.stringify(repoVersion),
-    publicPath: JSON.stringify(repoPublicPath),
-    sdkUrl: JSON.stringify(sdkUrl),
-    backendEndPoint: JSON.stringify(backendEndPoint),
-    confirmEndPoint: JSON.stringify(confirmEndPoint),
-    "globalThis.backendEndPoint": JSON.stringify(backendEndPoint),
-    "globalThis.confirmEndPoint": JSON.stringify(confirmEndPoint),
-    logEndpoint: JSON.stringify(logEndpoint),
-    sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
-    sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
+  const globalVars = {
+    repoName,
+    repoVersion,
+    publicPath: repoPublicPath,
+    sdkUrl,
+    backendEndPoint,
+    confirmEndPoint,
+    logEndpoint,
+    sentryDSN: process.env.SENTRY_DSN,
+    sentryScriptUrl: process.env.SENTRY_SCRIPT_URL,
     enableLogging: ENABLE_LOGGING,
-    loggingLevel: JSON.stringify(loggingLevel),
-    maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
+    loggingLevel,
+    maxLogsPushedPerEventName,
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
     isLocal,
     isPciCompliant,
+  };
+
+  const definePluginValues = {
+    __SDK_CONFIG__: JSON.stringify(globalVars),
+    publicPath: JSON.stringify(repoPublicPath),
     visaAPIKeyId: JSON.stringify(visaAPIKeyId),
     visaAPICertificatePem: JSON.stringify(visaAPICertificatePem),
   };
