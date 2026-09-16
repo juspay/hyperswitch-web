@@ -6,7 +6,7 @@ let make = () => {
   let isCompleteAuthorizeCalledRef = React.useRef(false)
   let timeoutRef = React.useRef(None)
   let eventsToSendToParent = ["confirmParams", "poll_status", "openurl_if_required"]
-  let completeAuthorize = PaymentHelpers.useRedsysCompleteAuthorize(Some(logger))
+  let completeAuthorize = PaymentHooks.useRedsysCompleteAuthorize(Some(logger))
 
   let handleCompleteAuthorizeCall = (
     threeDsMethodComp,
@@ -133,3 +133,5 @@ let make = () => {
     <iframe id="threeDsAuthFrame" name="threeDsAuthFrame" title="3D Secure Authentication Frame" />
   </div>
 }
+
+let default = make

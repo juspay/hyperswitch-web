@@ -20,9 +20,9 @@ let make = (
   let {publishableKey} = Jotai.useAtomValue(keys)
   let updateSession = Jotai.useAtomValue(updateSession)
   let options = Jotai.useAtomValue(optionAtom)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Gpay)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Gpay)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Gpay)
+  let sync = PaymentHooks.usePaymentSync(Some(loggerState), Gpay)
   let isGPayReady = Jotai.useAtomValue(isGooglePayReady)
   let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
@@ -339,7 +339,7 @@ let make = (
   }, [isRenderGooglePayButton])
 
   let submitCallback = GooglePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   if isWallet {
     <>

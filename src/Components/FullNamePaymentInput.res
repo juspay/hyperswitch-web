@@ -58,7 +58,7 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
       }
     }
   }, [fullName])
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField

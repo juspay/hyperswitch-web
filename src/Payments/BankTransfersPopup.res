@@ -148,3 +148,5 @@ let make = (~transferType) => {
     </div>
   </Modal>
 }
+
+let default = make

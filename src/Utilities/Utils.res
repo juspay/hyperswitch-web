@@ -7,9 +7,6 @@
 type event = {data: string}
 external dictToObj: Dict.t<'a> => {..} = "%identity"
 
-@module("./Phone_number.json")
-external phoneNumberJson: JSON.t = "default"
-
 type options = {timeZone: string}
 type dateTimeFormat = {resolvedOptions: unit => options}
 @val @scope("Intl") external dateTimeFormat: unit => dateTimeFormat = "DateTimeFormat"
@@ -335,34 +332,6 @@ let handleMessage = (fun, _errorMessage) => {
   Window.addEventListener("message", handle)
   Some(() => Window.removeEventListener("message", handle))
 }
-let useSubmitPaymentData = callback => {
-  React.useEffect(() => {handleMessage(callback, "")}, [callback])
-}
-
-// Nested SDK components must only accept confirm/control messages from their
-// direct host iframe. This keeps unrelated window messages from entering a
-// payment submit path while retaining the existing callback API.
-let useSubmitPaymentDataFromParent = (~parentOrigin="*", callback) => {
-  let parentCallback = React.useCallback((ev: Window.event) => {
-    if ev.source === iframeParent && (parentOrigin === "*" || ev.origin === parentOrigin) {
-      callback(ev)
-    }
-  }, (callback, parentOrigin))
-  useSubmitPaymentData(parentCallback)
-}
-
-let useWindowSize = () => {
-  let (size, setSize) = React.useState(_ => (0, 0))
-  React.useLayoutEffect1(() => {
-    let updateSize = () => {
-      setSize(_ => (Window.innerWidth, Window.innerHeight))
-    }
-    Window.addEventListener("resize", updateSize)
-    updateSize()
-    Some(_ => Window.removeEventListener("resize", updateSize))
-  }, [])
-  size
-}
 let mergeJsons = (json1, json2) => {
   let obj1 = json1->getDictFromJson
   let obj2 = json2->getDictFromJson
@@ -573,7 +542,7 @@ let rec transformKeysWithoutModifyingValue = (json: JSON.t, to: case) => {
 let getClientCountry = clientTimeZone => {
   CountryStateDataRefs.countryDataRef.contents
   ->Array.find(item => item.timeZones->Array.find(i => i == clientTimeZone)->Option.isSome)
-  ->Option.getOr(Country.defaultTimeZone)
+  ->Option.getOr(CountryDefault.defaultTimeZone)
 }
 
 let removeDuplicate = arr => {
@@ -618,30 +587,6 @@ let checkEmailValid = (
   }
 }
 
-let validatePhoneNumber = (countryCode, number) => {
-  let phoneNumberDict = phoneNumberJson->JSON.Decode.object->Option.getOr(Dict.make())
-  let countriesArr =
-    phoneNumberDict
-    ->Dict.get("countries")
-    ->Option.flatMap(JSON.Decode.array)
-    ->Option.getOr([])
-    ->Array.filterMap(JSON.Decode.object)
-
-  let filteredArr = countriesArr->Array.filter(countryObj => {
-    countryObj
-    ->Dict.get("phone_number_code")
-    ->Option.flatMap(JSON.Decode.string)
-    ->Option.getOr("") == countryCode
-  })
-  switch filteredArr[0] {
-  | Some(obj) =>
-    let regex =
-      obj->Dict.get("validation_regex")->Option.flatMap(JSON.Decode.string)->Option.getOr("")
-    RegExp.test(regex->RegExp.fromString, number)
-  | None => false
-  }
-}
-
 let sortBasedOnPriority = (sortArr: array<string>, priorityArr: array<string>) => {
   let finalPriorityArr = priorityArr->Array.filter(val => sortArr->Array.includes(val))
   sortArr
@@ -677,7 +622,7 @@ let getCountryPostal = (countryCode, postalCodes: array<PostalCodeType.postalCod
   ->Option.getOr(PostalCodeType.defaultPostalCode)
 }
 
-let getCountryNames = (list: array<Country.timezoneType>) => {
+let getCountryNames = (list: array<CountryDefault.timezoneType>) => {
   list->Array.reduce([], (arr, item) => {
     arr->Array.push(item.countryName)->ignore
     arr
@@ -869,7 +814,7 @@ let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
 let getCountryCode = country => {
   CountryStateDataRefs.countryDataRef.contents
   ->Array.find(item => item.countryName == country)
-  ->Option.getOr(Country.defaultTimeZone)
+  ->Option.getOr(CountryDefault.defaultTimeZone)
 }
 
 // Reverse of getCountryCode: given an ISO Alpha-2 code returns the country display name.
@@ -2031,7 +1976,25 @@ let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventNa
   }
 }
 
-let defaultCountryCode = {
+/*
+ The shopper's ISO Alpha-2 country code, resolved at CALL time, or "" when the country table
+ has not landed.
+
+ Never a module-level binding: `CountryStateDataRefs.countryDataRef` starts empty and is filled
+ asynchronously, so a top-level binding would freeze "" for the bundle's life - and "" is not
+ inert: it lands in `billing.phone.country_code` on the confirm request and in the required
+ `countryCode` member of `ApplePayPaymentRequest`, where `ApplePaySession` rejects it.
+
+ It deliberately does NOT guess from `navigator.language` when the table is missing
+ (language-derived guesses disagree with the table, and locales like `es-419` yield "419",
+ which is not alpha-2 at all). Every value returned comes from the table.
+
+ Callers must treat "" as "unknown", not a country. Note `HyperLoader` never calls
+ initializeCountryData, so in that bundle this is always "" - only
+ `ApplePayTypes.jsonToPaymentRequestDataType` is affected, and only when the backend session
+ token omits both `merchant_identifier` and `country_code`.
+ */
+let defaultCountryCode = () => {
   let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = getClientCountry(clientTimeZone)
   clientCountry.isoAlpha2

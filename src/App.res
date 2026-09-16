@@ -88,35 +88,66 @@ let make = () => {
     Some(() => Window.removeEventListener("message", handleMetaDataPostMessage))
   })
 
+  /*
+   Most branches below are reached through a `*Lazy.res` wrapper, so each route ships as its
+   own async chunk. Two branches stay eager: the default one (LoaderController -> Payment), the
+   only one on the first-paint path, and "preMountLoader", which exists to start API calls
+   early (see there).
+   */
+  let lazyRoute = (~componentName, ~loaderComponent=React.null, children) =>
+    <ReusableReactSuspense loaderComponent componentName> {children} </ReusableReactSuspense>
+
+  /*
+   Full-screen routes are all reached after the Pay click, so a blank frame while their chunk
+   is fetched reads as a stalled payment. This reuses each route's own loading visual: the four
+   <Modal> routes (3dsAuth, 3dsRedirectionPopup, qrData, voucherData) get Modal's own loading
+   state (Modal.res:47's loaderUI, showText=false - Loader's text, "You have been redirected
+   to new tab...", is untrue for a shopper about to scan a QR code), and 3ds renders
+   <PaymentLoader />. Only the visual is reused: PaymentLoader posts iframeMountedCallback from
+   an effect, and a Suspense fallback must not post messages the real route is about to post.
+   */
+  let fullScreenLoader =
+    <div className="h-screen w-screen bg-black/40 flex m-auto items-center backdrop-blur-sm">
+      <div className="flex justify-center m-auto"> <Loader showText=false /> </div>
+    </div>
+
+  let fullScreenRoute = (~componentName, children) =>
+    lazyRoute(~loaderComponent=fullScreenLoader, ~componentName, children)
+
   let renderFullscreen = switch paymentMode {
   | "paymentMethodCollect" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-      <PaymentMethodCollectElement integrateError logger />
+      {lazyRoute(
+        ~componentName="PaymentMethodCollectElementLazy",
+        <PaymentMethodCollectElementLazy integrateError logger />,
+      )}
     </LoaderController>
   | "paymentMethodsSDK" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-      <PaymentMethodsSDK />
+      {lazyRoute(~componentName="PaymentMethodsSDKLazy", <PaymentMethodsSDKLazy />)}
     </LoaderController>
   | "cardFormCoordinator" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-      <CardFormCoordinator />
+      {lazyRoute(~componentName="CardFormCoordinatorLazy", <CardFormCoordinatorLazy />)}
     </LoaderController>
   | _ =>
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
-    | "clickToPayLearnMore" => <ClickToPayLearnMore />
-    | "plaidSDK" => <PlaidSDKIframe />
-    | "pazeWallet" => <PazeWallet logger />
+    | "clickToPayLearnMore" =>
+      lazyRoute(~componentName="ClickToPayLearnMoreLazy", <ClickToPayLearnMoreLazy />)
+    | "plaidSDK" => lazyRoute(~componentName="PlaidSDKIframeLazy", <PlaidSDKIframeLazy />)
+    | "pazeWallet" => lazyRoute(~componentName="PazeWalletLazy", <PazeWalletLazy logger />)
     | "fullscreen" =>
       <div id="fullscreen">
-        <FullScreenDivDriver />
+        {lazyRoute(~componentName="FullScreenDivDriverLazy", <FullScreenDivDriverLazy />)}
       </div>
-    | "qrData" => <QRCodeDisplay />
-    | "3dsAuth" => <ThreeDSAuth />
-    | "redsys3ds" => <Redsys3ds />
-    | "3ds" => <ThreeDSMethod />
-    | "voucherData" => <VoucherDisplay />
-    | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
+    | "qrData" => fullScreenRoute(~componentName="QRCodeDisplayLazy", <QRCodeDisplayLazy />)
+    | "3dsAuth" => fullScreenRoute(~componentName="ThreeDSAuthLazy", <ThreeDSAuthLazy />)
+    | "redsys3ds" => lazyRoute(~componentName="Redsys3dsLazy", <Redsys3dsLazy />)
+    | "3ds" => fullScreenRoute(~componentName="ThreeDSMethodLazy", <ThreeDSMethodLazy />)
+    | "voucherData" => fullScreenRoute(~componentName="VoucherDisplayLazy", <VoucherDisplayLazy />)
+    | "3dsRedirectionPopup" =>
+      fullScreenRoute(~componentName="ThreeDSRedirectionModalLazy", <ThreeDSRedirectionModalLazy />)
     | "preMountLoader" => {
         let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
@@ -135,6 +166,13 @@ let make = () => {
         let isSdkParamsEnabled =
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
+        /*
+         Deliberately NOT lazy: this route exists only to start the payment-methods / session
+         API calls as early as possible, and the parent cannot begin until
+         preMountLoaderIframeMountedCallback arrives. Behind a chunk boundary that callback
+         costs a serial round trip that propagates to the visible checkout; the module is 1.1
+         KB gzip - a bad trade for an RTT on the warm-up path.
+         */
         <PreMountLoader
           publishableKey
           sessionId
@@ -152,7 +190,10 @@ let make = () => {
     | "achBankTransfer"
     | "bacsBankTransfer"
     | "sepaBankTransfer" =>
-      <BankTransfersPopup transferType=fullscreenMode />
+      lazyRoute(
+        ~componentName="BankTransfersPopupLazy",
+        <BankTransfersPopupLazy transferType=fullscreenMode />,
+      )
     | _ =>
       <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
         <Payment paymentMode integrateError logger />

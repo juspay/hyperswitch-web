@@ -291,3 +291,5 @@ let make = () => {
     </div>
   </Modal>
 }
+
+let default = make
