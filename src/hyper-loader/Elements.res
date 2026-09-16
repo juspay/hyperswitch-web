@@ -28,6 +28,9 @@ let make = (
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~clientListDataPromise: ref<promise<JSON.t>>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  /* Owned by ElementsLazy so the cardForm facade it returns synchronously and the real
+     cardForm this module builds later write to the same ref */
+  ~cardFormFields: ref<JSON.t>,
 ) => {
   try {
     let iframeRef = []
@@ -444,16 +447,11 @@ let make = (
           ->Dict.get("subscriptionEvents")
           ->Option.getOr(JSON.Encode.null)
 
-        let widgetAppearance = CardFormGroupShared.resolveFieldAppearance(
-          ~fieldOptionsDict=newOptions->getDictFromJson,
-          ~groupAppearance=appearance,
-        )
-
         let widgetOptions =
           [
             ("clientSecret", clientSecretRef.contents->JSON.Encode.string),
             ("sdkAuthorization", sdkAuthorizationRef.contents->JSON.Encode.string),
-            ("appearance", widgetAppearance),
+            ("appearance", appearance),
             ("locale", locale),
             ("loader", loader),
             ("fonts", fonts),
@@ -1597,6 +1595,7 @@ let make = (
       | Some(group) => group
       | None =>
         let group = PaymentsGroup.makeCardForm(
+          ~fields=cardFormFields,
           ~config={
             clientSecret: clientSecretRef.contents,
             sdkAuthorization: sdkAuthorizationRef.contents,

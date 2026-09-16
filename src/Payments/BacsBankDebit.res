@@ -28,7 +28,7 @@ let make = () => {
   let {displaySavedPaymentMethods, layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), BankDebits)
   let email = Jotai.useAtomValue(userEmailAddress)
   let line1 = Jotai.useAtomValue(userAddressline1)
   let line2 = Jotai.useAtomValue(userAddressline2)
@@ -116,7 +116,7 @@ let make = () => {
       }
     }
   }
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   let changeSortCode = ev => {
     let val = ReactEvent.Form.target(ev)["value"]

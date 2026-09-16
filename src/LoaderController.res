@@ -31,7 +31,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
-  let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
+  let setPaymentMethodCollectOptions = Jotai.useSetAtom(
+    PayoutJotaiAtoms.paymentMethodCollectOptionAtom,
+  )
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let isPaymentMethodsSDKSurface = componentName == "paymentMethodsSDK"
@@ -66,6 +68,28 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setOptionsJson = Jotai.useSetAtom(optionsJsonAtom)
   let setPaymentOptionsJson = Jotai.useSetAtom(paymentOptionsJsonAtom)
 
+  /*
+   The country table is no longer bundled: it arrives with the S3 country/state fetch, after
+   the first `options` message. A timezone lookup issued before then finds nothing, so remember
+   the timezone and derive the country again once the data lands.
+   */
+  let (pendingClientTimeZone, setPendingClientTimeZone) = React.useState(() => None)
+  let (isCountryDataReady, setIsCountryDataReady) = React.useState(() => false)
+
+  let applyClientCountry = clientTimeZone => {
+    let clientCountry = getClientCountry(clientTimeZone)
+    if clientCountry.countryName === CountryDefault.defaultTimeZone.countryName {
+      setPendingClientTimeZone(_ => Some(clientTimeZone))
+    } else {
+      setPendingClientTimeZone(_ => None)
+      setUserAddressCountry(prev => {
+        ...prev,
+        value: clientCountry.countryName,
+      })
+      setCountry(_ => clientCountry.countryName)
+    }
+  }
+
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
       (optionsPayment.defaultValues.billingDetails.name, setUserFullName),
@@ -86,13 +110,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     })
     if optionsPayment.defaultValues.billingDetails.address.country === "" {
-      let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
-      let clientCountry = getClientCountry(clientTimeZone)
-      setUserAddressCountry(prev => {
-        ...prev,
-        value: clientCountry.countryName,
-      })
-      setCountry(_ => clientCountry.countryName)
+      applyClientCountry(CardUtils.dateTimeFormat().resolvedOptions().timeZone)
     } else {
       setUserAddressCountry(prev => {
         ...prev,
@@ -206,11 +224,21 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
       let requestedLocale = optionsLocaleString == "" ? config.locale : optionsLocaleString
       let resolvedLocale = requestedLocale === "auto" ? Window.Navigator.language : requestedLocale
-      let localeString = await CardTheme.getLocaleObject(requestedLocale)
-      let constantString = await CardTheme.getConstantStringsObject()
-      let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
-      setConfig(_ => {
-        config: {
+      /* Both are cacheable same-origin chunk fetches - start them together so the default
+         config is on screen for one round trip rather than two */
+      let localePromise = CardTheme.getLocaleObject(requestedLocale)
+      let constantStringPromise = CardTheme.getConstantStringsObject()
+      /*
+       The country/state fetch is cache-busted (`?v=${Date.now()}` in S3Utils), hence always a
+       full round trip. Awaiting it before setConfig held every placeholder and label on screen
+       for that whole trip: kick it off here, publish config as soon as the locale chunk lands,
+       and await the country data afterwards.
+       */
+      let countryDataPromise = S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
+      let localeString = await localePromise
+      let constantString = await constantStringPromise
+      let resolvedConfig = {
+        CardTheme.config: {
           appearance,
           locale: resolvedLocale,
           fonts: config.fonts,
@@ -223,7 +251,17 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         localeString,
         constantString,
         showLoader: config.loader == Auto || config.loader == Always,
-      })
+      }
+      setConfig(_ => resolvedConfig)
+      let _ = await countryDataPromise
+      setIsCountryDataReady(_ => true)
+      /*
+       Consumers reading CountryStateDataRefs during render used to be re-rendered by the
+       configAtom update that landed after the country data. Re-publish the same record so that
+       render still happens; every nested field keeps its identity, so the `[config]` effect
+       below does not re-run.
+       */
+      setConfig(_ => {...resolvedConfig, localeString})
     } catch {
     | _ => ()
     }
@@ -275,6 +313,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       },
     )
   })
+
+  /*
+   Keyed on the country data rather than configAtom (which is now published before the fetch
+   resolves): this is where a timezone lookup deferred by applyClientCountry gets its second
+   chance.
+   */
+  React.useEffect(() => {
+    switch pendingClientTimeZone {
+    | Some(clientTimeZone) => applyClientCountry(clientTimeZone)
+    | None => ()
+    }
+    None
+  }, (isCountryDataReady, pendingClientTimeZone))
 
   React.useEffect(() => {
     CardUtils.generateFontsLink(config.fonts)

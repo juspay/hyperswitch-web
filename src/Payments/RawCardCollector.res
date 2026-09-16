@@ -117,7 +117,7 @@ let make = (
       }
     }
   }, (cardNumber, cardExpiry, cvcNumber, cardBrand, isCardDetailsValid, isBancontact, localeString))
-  useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
+  UtilsHooks.useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
 
   <div>
     <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>

@@ -10,7 +10,7 @@ let make = (~paymentMethodName: string) => {
   let phoneNumber = Jotai.useAtomValue(userPhoneNumber)
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Other)
   let {layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
@@ -133,7 +133,7 @@ let make = (~paymentMethodName: string) => {
     sdkAuthorization,
     shouldSendCustomerAcceptance,
   ))
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
   let paymentMethod = paymentMethodDetails.methodType
 
   <div

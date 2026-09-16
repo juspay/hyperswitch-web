@@ -351,7 +351,7 @@ let make = (~cvcOnly=false) => {
     }
   }, (form, localeString, cvcOnly, parentURL))
 
-  useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
+  UtilsHooks.useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
 
   <div className="animate-slowShow">
     <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>

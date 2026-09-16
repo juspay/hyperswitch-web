@@ -51,7 +51,7 @@ let make = () => {
       }
     }
   }, [blikCode])
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={true}>
     <PaymentField

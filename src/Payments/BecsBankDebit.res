@@ -19,7 +19,7 @@ let make = () => {
   let city = Jotai.useAtomValue(userAddressCity)
   let postalCode = Jotai.useAtomValue(userAddressPincode)
   let state = Jotai.useAtomValue(userAddressState)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), BankDebits)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let {sdkAuthorization} = Jotai.useAtomValue(keys)
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
@@ -83,7 +83,7 @@ let make = () => {
       }
     }
   }, (email, fullName, modalData, isManualRetryEnabled, sdkAuthorization))
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   let paymentMethod = "bank_debit"
   let paymentMethodType = "becs"

@@ -1,7 +1,11 @@
 %%raw(`require("tailwindcss/tailwind.css")`)
 %%raw("import './index.css'")
 
-Sentry.initiateSentry(~dsn=GlobalVars.sentryDSN)
+if GlobalVars.sentryDSN->typeof !== #undefined {
+  Sentry.initiateSentry(~dsn=GlobalVars.sentryDSN)->Option.forEach(
+    SentryReplayLoader.loadAfterPaint,
+  )
+}
 
 let app = switch ReactDOM.querySelector("#app") {
 | Some(container) =>
