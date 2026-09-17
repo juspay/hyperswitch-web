@@ -10,7 +10,7 @@ let make = () => {
   let {publishableKey} = Jotai.useAtomValue(keys)
   let options = Jotai.useAtomValue(optionAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Other)
   let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
   let (klarnaClicked, setKlarnaClicked) = React.useState(_ => false)
   let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)

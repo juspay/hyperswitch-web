@@ -352,7 +352,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
     }
   }, [selectedOption])
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
   React.useEffect(() => {
     let shouldAutoOpenSavedMethods =
       !layoutClass.savedMethodCustomization.defaultCollapsed &&

@@ -27,6 +27,8 @@ let preloadFile = (~type_, ~href=``) => {
 let preloader = () => {
   preloadFile(~type_="script", ~href=`${ApiEndpoint.sdkDomainUrl}/app.js`)
   preloadFile(~type_="style", ~href=`${ApiEndpoint.sdkDomainUrl}/app.css`)
+  /* Core sprite only - bank-redirect logos live in icons/banks.svg, fetched on demand by
+     BankLogoIcon; do not add them here */
   preloadFile(~type_="image", ~href=`${ApiEndpoint.sdkDomainUrl}/icons/orca.svg`)
   preloadFile(
     ~type_="style",
@@ -36,11 +38,16 @@ let preloader = () => {
     ~type_="style",
     ~href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Qwitcher+Grypen:wght@400;700&display=swap",
   )
-  preloadFile(
-    ~type_="script",
-    ~href="https://js.braintreegateway.com/web/3.92.1/js/paypal-checkout.min.js",
-  )
-  preloadFile(~type_="script", ~href="https://js.braintreegateway.com/web/3.92.1/js/client.min.js")
+  /*
+   Deliberately no warm-up for the Elements chunk. `ElementsLazy.prefetch()` routed through
+   webpack's chunk loader, which injects a normal-priority `<script crossorigin integrity>` and
+   *evaluates* the module graph - 14.7 KB gz downloaded and parsed on every merchant page,
+   including headless ones that only call initPaymentSession. A real `<link rel="prefetch">`
+   is not reachable from here: the content-hashed chunk filename is unknowable from source, and
+   webpack's `webpackPrefetch` magic comment cannot be attached to the `import()` ReScript
+   emits - and would ignore isPreloadEnabled if it could. The chunk is fetched when elements()
+   is actually called.
+   */
 }
 
 let handleHyperApplePayMounted = (event: Types.event) => {
@@ -543,7 +550,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->catch(_ => resolve())
         ->ignore
 
-        Elements.make(
+        ElementsLazy.make(
           elementsOptions,
           setIframeRef,
           ~sdkSessionId=sessionID,
@@ -737,7 +744,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->catch(_ => resolve())
         ->ignore
 
-        PaymentSession.make(
+        PaymentSessionLazy.make(
           paymentSessionOptions,
           ~publishableKey,
           ~sdkSessionId=sessionID,
@@ -816,7 +823,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->catch(_ => resolve())
         ->ignore
 
-        AuthenticationSession.make(
+        AuthenticationSessionLazy.make(
           authenticationSessionOptions,
           ~clientSecret={clientSecretId},
           ~publishableKey,
@@ -838,7 +845,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         completeUpdateIntent,
         initiateUpdateIntent,
         confirmTokenization: confirmPayment,
-        initPaymentMethodSession: options => PaymentMethodSession.make(options, ~logger),
+        initPaymentMethodSession: options => PaymentMethodSessionLazy.make(options, ~logger),
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

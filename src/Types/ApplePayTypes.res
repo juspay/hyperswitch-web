@@ -110,7 +110,7 @@ let getTotal = totalDict => {
 let jsonToPaymentRequestDataType = jsonDict => {
   if getString(jsonDict, "merchant_identifier", "") == "" {
     paymentRequestData(
-      ~countryCode=getString(jsonDict, "country_code", defaultCountryCode),
+      ~countryCode=getString(jsonDict, "country_code", defaultCountryCode()),
       ~currencyCode=getString(jsonDict, "currency_code", ""),
       ~merchantCapabilities=getStrArray(jsonDict, "merchant_capabilities"),
       ~supportedNetworks=getStrArray(jsonDict, "supported_networks"),

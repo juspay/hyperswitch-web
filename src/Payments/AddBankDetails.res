@@ -78,7 +78,7 @@ let make = (~paymentMethodType) => {
       )
     }
   }, [])
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   let onClickHandler = () => {
     setShowLoader(_ => true)

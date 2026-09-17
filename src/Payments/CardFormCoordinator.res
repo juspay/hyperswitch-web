@@ -93,7 +93,7 @@ let isErrorResult = (result: JSON.t): bool => {
   dict->Dict.get("error")->Option.flatMap(JSON.Decode.object)->Option.isSome
 }
 
-let portKey = (~groupId: string, ~fieldName: string): string => `${groupId}:${fieldName}`
+let portKey = CardFormPortKey.portKey
 
 type fieldSnapshotEntry = {payload: JSON.t}
 
@@ -139,7 +139,7 @@ let make = () => {
     Some(() => SadPortRegistry.removeChangeListener(onRegistryChange))
   })
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Card)
   let postConfirmResult = (~confirmId: string, result: JSON.t) => {
     messageParentWindow(
       [
@@ -635,3 +635,5 @@ let make = () => {
 
   React.null
 }
+
+let default = make

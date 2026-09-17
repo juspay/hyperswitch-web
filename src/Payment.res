@@ -17,7 +17,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
   let (isFocus, setIsFocus) = React.useState(_ => false)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(logger), Card)
+  let intent = PaymentHooks.usePaymentIntent(Some(logger), Card)
 
   let paymentType = React.useMemo1(() => {
     paymentMode->getPaymentMode

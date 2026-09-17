@@ -265,7 +265,7 @@ let make = (
     }
   }, [formRef])
 
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   let saveDetailsCheckbox = CustomPaymentMethodsConfig.useSaveDetailsCheckbox(
     ~paymentMethod,
@@ -275,7 +275,7 @@ let make = (
 
   let bottomElement = <InfoElement />
   let isInfoElementPresent = React.useMemo(() => {
-    PaymentMethodsRecord.getPaymentMethodsFields(~localeString)
+    PaymentMethodsFields.getPaymentMethodsFields(~localeString)
     ->Array.find(pm => pm.paymentMethodName === paymentMethodType)
     ->Option.map(pm => pm.fields->Array.includes(PaymentMethodsRecord.InfoElement))
     ->Option.getOr(false)

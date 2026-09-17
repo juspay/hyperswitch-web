@@ -38,7 +38,7 @@ let make = () => {
     }
   }, [giftCardPin.value])
 
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   <PaymentField
     fieldName={localeString.giftCardPinLabel}

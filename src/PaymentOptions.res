@@ -62,7 +62,7 @@ let make = (
   let layoutClass = CardUtils.getLayoutClass(layout)
   let payOptionsRef = React.useRef(Nullable.null)
   let selectRef = React.useRef(Nullable.null)
-  let (winW, winH) = Utils.useWindowSize()
+  let (winW, winH) = UtilsHooks.useWindowSize()
   let (selectedOption, setSelectedOption) = Jotai.useAtom(selectedOptionAtom)
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
@@ -83,10 +83,10 @@ let make = (
     CardUtils.blurRef(selectRef)
   }
 
-  let cardOptionDetails = cardOptions->PaymentMethodsRecord.getPaymentDetails(~localeString)
+  let cardOptionDetails = cardOptions->PaymentMethodsFields.getPaymentDetails(~localeString)
 
   let dropDownOptionsDetails =
-    dropDownOptions->PaymentMethodsRecord.getPaymentDetails(~localeString)
+    dropDownOptions->PaymentMethodsFields.getPaymentDetails(~localeString)
 
   let allOptions = cardOptionDetails->Array.concat(dropDownOptionsDetails)
 
