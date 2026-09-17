@@ -9,7 +9,7 @@ let make = (~fieldConfig: fieldConfig, ~options: array<DropdownField.optionType>
 
   let field = ReactFinalForm.useField(
     fieldConfig.confirmRequestWritePath,
-    ~config={validate, initialValue: Some(initialValue)},
+    ~config={validate, defaultValue: Some(initialValue)},
   )
   let value = field.input.value->Option.getOr(initialValue)
 
