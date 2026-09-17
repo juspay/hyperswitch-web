@@ -173,93 +173,97 @@ let make = (
         ~defaultComponentType="paymentMethodsManagement",
       )
       componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
-      let otherElements = componentType->isOtherElements
-      switch componentType {
-      | "paymentMethodsManagement" => ()
-      | str => Console.warn(`Unknown Key: ${str} type in create`)
-      }
 
-      let mountPostMessage = (
-        mountedIframeRef,
-        selectorString,
-        _sdkHandleOneClickConfirmPayment,
-      ) => {
-        open Promise
-
-        let widgetAppearance = CardFormGroupShared.resolveFieldAppearance(
-          ~fieldOptionsDict=newOptions->getDictFromJson,
-          ~groupAppearance=appearance,
+      if componentType !== "paymentMethodsManagement" {
+        Console.warn(
+          `Unknown Key: ${componentType} type in create — paymentMethodsManagementElements().create() only supports "paymentMethodsManagement"; nothing will be mounted.`,
         )
+        defaultPaymentElement
+      } else {
+        let otherElements = componentType->isOtherElements
 
-        let widgetOptions =
-          [
-            ("pmSessionId", pmSessionId->JSON.Encode.string),
-            ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
-            ("appearance", widgetAppearance),
-            ("locale", locale),
-            ("loader", loader),
-            ("fonts", fonts),
-          ]->getJsonFromArrayOfJson
-        let message =
-          [
-            (
-              "paymentElementCreate",
-              componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
-            ),
-            ("otherElements", otherElements->JSON.Encode.bool),
-            ("options", newOptions),
-            ("componentType", componentType->JSON.Encode.string),
-            ("paymentOptions", widgetOptions),
-            ("iframeId", selectorString->JSON.Encode.string),
-            ("publishableKey", publishableKey->JSON.Encode.string),
-            ("endpoint", endpoint->JSON.Encode.string),
-            ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-            ("customPodUri", customPodUri->JSON.Encode.string),
-            ("parentURL", "*"->JSON.Encode.string),
-            ("analyticsMetadata", analyticsMetadata),
-            ("launchTime", launchTime->JSON.Encode.float),
-            ("customBackendUrl", customBackendUrl->JSON.Encode.string),
-          ]->Dict.fromArray
+        let mountPostMessage = (
+          mountedIframeRef,
+          selectorString,
+          _sdkHandleOneClickConfirmPayment,
+        ) => {
+          open Promise
 
-        preMountLoaderMountedPromise
-        ->then(async _ => {
-          let disableSavedPaymentMethods =
-            newOptions
-            ->getDictFromJson
-            ->getBool("displaySavedPaymentMethods", true)
-          if (
-            disableSavedPaymentMethods &&
-            !(expressCheckoutComponents->Array.includes(componentType))
-          ) {
-            try {
-              await fetchPaymentManagementList(mountedIframeRef, false, componentType)
-              let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
-              preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-            } catch {
-            | _ => ()
+          let widgetAppearance = CardFormGroupShared.resolveFieldAppearance(
+            ~fieldOptionsDict=newOptions->getDictFromJson,
+            ~groupAppearance=appearance,
+          )
+
+          let widgetOptions =
+            [
+              ("pmSessionId", pmSessionId->JSON.Encode.string),
+              ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
+              ("appearance", widgetAppearance),
+              ("locale", locale),
+              ("loader", loader),
+              ("fonts", fonts),
+            ]->getJsonFromArrayOfJson
+          let message =
+            [
+              (
+                "paymentElementCreate",
+                componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
+              ),
+              ("otherElements", otherElements->JSON.Encode.bool),
+              ("options", newOptions),
+              ("componentType", componentType->JSON.Encode.string),
+              ("paymentOptions", widgetOptions),
+              ("iframeId", selectorString->JSON.Encode.string),
+              ("publishableKey", publishableKey->JSON.Encode.string),
+              ("endpoint", endpoint->JSON.Encode.string),
+              ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+              ("customPodUri", customPodUri->JSON.Encode.string),
+              ("parentURL", "*"->JSON.Encode.string),
+              ("analyticsMetadata", analyticsMetadata),
+              ("launchTime", launchTime->JSON.Encode.float),
+              ("customBackendUrl", customBackendUrl->JSON.Encode.string),
+            ]->Dict.fromArray
+
+          preMountLoaderMountedPromise
+          ->then(async _ => {
+            let disableSavedPaymentMethods =
+              newOptions
+              ->getDictFromJson
+              ->getBool("displaySavedPaymentMethods", true)
+            if (
+              disableSavedPaymentMethods &&
+              !(expressCheckoutComponents->Array.includes(componentType))
+            ) {
+              try {
+                await fetchPaymentManagementList(mountedIframeRef, false, componentType)
+                let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
+                preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+              } catch {
+              | _ => ()
+              }
             }
-          }
-        })
-        ->catch(_ => resolve())
-        ->ignore
-        mountedIframeRef->Window.iframePostMessage(message)
-      }
+          })
+          ->catch(_ => resolve())
+          ->ignore
+          mountedIframeRef->Window.iframePostMessage(message)
+        }
 
-      let paymentElement = LoaderPaymentElement.make(
-        componentType,
-        newOptions,
-        setElementIframeRef,
-        iframeRef,
-        mountPostMessage,
-        ~appearance,
-        ~isPaymentManagementElement=true,
-        ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
-        ~logger=Some(logger),
-        ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
-        ~tokenize,
-      )
-      savedPaymentElement->Dict.set(componentType, paymentElement)
-      paymentElement
+        let paymentElement = LoaderPaymentElement.make(
+          componentType,
+          newOptions,
+          setElementIframeRef,
+          iframeRef,
+          mountPostMessage,
+          ~appearance,
+          ~isPaymentManagementElement=true,
+          ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
+          ~logger=Some(logger),
+          ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
+          ~tokenize,
+        )
+        savedPaymentElement->Dict.set(componentType, paymentElement)
+        paymentElement
+      }
     }
     {
       getElement,
