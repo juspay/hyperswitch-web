@@ -25,7 +25,7 @@ let create = (
   parentContainer->Window.appendChild(container)
 
   let src =
-    `${sdkDomain}/index.html?componentName=cardFormCoordinator` ++
+    `${sdkDomain}/${ApiEndpoint.indexPageName()}?componentName=cardFormCoordinator` ++
     `&surfaceFamily=${surfaceFamily}` ++
     `&groupId=${groupId}`
   let iframe = Window.createElement("iframe")
@@ -117,8 +117,8 @@ let makeFullscreenFlows = (
       let paramType = dict->getString("param", "")
       let overlaySrc =
         paramType !== ""
-          ? `${sdkDomain}/fullscreenIndex.html?fullscreenType=${paramType}`
-          : `${sdkDomain}/fullscreenIndex.html?fullscreenType=fullscreen`
+          ? `${sdkDomain}/${ApiEndpoint.fullscreenIndexPageName()}?fullscreenType=${paramType}`
+          : `${sdkDomain}/${ApiEndpoint.fullscreenIndexPageName()}?fullscreenType=fullscreen`
       mount.fullscreenSlot->Utils.makeIframe(overlaySrc)->ignore
     } else if dict->Dict.get("fullscreen")->Option.isSome && !(dict->getBool("fullscreen", true)) {
       mount.fullscreenSlot->Window.innerHTML("")
