@@ -5,12 +5,11 @@ open Utils
 let cvcWidgetNotFoundErrorType = "cvc_widget_not_found"
 let cvcValidationErrorType = "cvc_validation"
 
-let getCustomerSavedPaymentMethods = (
+let fetchCustomerSavedPaymentMethods = (
   ~options: option<JSON.t>,
   ~clientSecretRef: ref<string>,
   ~publishableKey,
   ~endpoint,
-  ~logger,
   ~customPodUri,
   ~sdkAuthorizationRef: ref<string>,
   ~redirectionFlags,
@@ -31,7 +30,6 @@ let getCustomerSavedPaymentMethods = (
     ~publishableKey,
     ~endpoint,
     ~customPodUri,
-    ~logger,
     ~isPaymentSession=true,
     ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
   )
@@ -46,12 +44,10 @@ let getCustomerSavedPaymentMethods = (
       )
     } catch {
     | err =>
-      logger.setLogError(
-        ~value=`ERROR DURING LOADING GOOGLE PAY CLIENT - ${err
-          ->formatException
-          ->JSON.stringify}`,
-        ~eventName=GOOGLE_PAY_SCRIPT,
-        ~paymentMethod="GOOGLE_PAY",
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowFailed({reason: ClientCreationFailed}),
+        ~paymentMethod=Wallet(GooglePay),
+        ~exn=err,
       )
       None
     }
@@ -204,7 +200,7 @@ let getCustomerSavedPaymentMethods = (
       let hasCvc = payloadDict->Dict.get("cvc")
       if hasCvc->Option.isSome {
         let cvcString = hasCvc->getStringFromOptionalJson("")
-        let isValidCvc = %re("/^\d{3,4}$/")->RegExp.test(cvcString)
+        let isValidCvc = /^\d{3,4}$/->RegExp.test(cvcString)
         if !isValidCvc {
           handleFailureResponse(
             ~message="CVC must be a string of 3 to 4 numeric digits",
@@ -218,7 +214,6 @@ let getCustomerSavedPaymentMethods = (
             ~payload=updatedPayload,
             ~publishableKey,
             ~clientSecret=clientSecretRef.contents,
-            ~logger,
             ~customPodUri,
             ~redirectionFlags,
             ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
@@ -252,7 +247,6 @@ let getCustomerSavedPaymentMethods = (
           ~payload=updatedPayload,
           ~publishableKey,
           ~clientSecret=clientSecretRef.contents,
-          ~logger,
           ~customPodUri,
           ~redirectionFlags,
           ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
@@ -260,7 +254,7 @@ let getCustomerSavedPaymentMethods = (
       }
     }
 
-    let confirmWithCustomerDefaultPaymentMethod = payload => {
+    let confirmWithDefaultPaymentMethod = payload => {
       if isUpdateIntentInProgress.contents {
         UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
       } else {
@@ -298,6 +292,13 @@ let getCustomerSavedPaymentMethods = (
       }
     }
 
+    let confirmWithCustomerDefaultPaymentMethod = payload =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.PaymentSession(ConfirmWithCustomerDefaultPaymentMethod),
+        ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+        ~call=() => confirmWithDefaultPaymentMethod(payload),
+      )
+
     let handleApplePayConfirmPayment = (
       lastUsedPaymentMethod: PaymentType.customerMethods,
       payload,
@@ -333,7 +334,6 @@ let getCustomerSavedPaymentMethods = (
             ~payload,
             ~publishableKey,
             ~clientSecret=clientSecretRef.contents,
-            ~logger,
             ~customPodUri,
             ~redirectionFlags,
             ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
@@ -350,7 +350,6 @@ let getCustomerSavedPaymentMethods = (
         ~paymentRequest=applePayTokenRef.contents.paymentRequestData,
         ~applePaySessionRef,
         ~applePayPresent=applePayTokenRef.contents.sessionTokenData,
-        ~logger,
         ~callBackFunc=processPayment,
         ~clientSecret=clientSecretRef.contents,
         ~publishableKey,
@@ -370,8 +369,10 @@ let getCustomerSavedPaymentMethods = (
         ->then(json => {
           let metadata = json->Identity.anyTypeToJson
 
-          let value = "Payment Data Filled: New Payment Method"
-          logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="GOOGLE_PAY")
+          SdkLogger.logUser(
+            ~event=PaymentDetailsCompleted({savedMethod: false}),
+            ~paymentMethod=Wallet(GooglePay),
+          )
 
           let completeGooglePayPayment = () => {
             let body = GooglePayHelpers.getGooglePayBodyFromResponse(
@@ -390,7 +391,6 @@ let getCustomerSavedPaymentMethods = (
               ~payload,
               ~publishableKey,
               ~clientSecret=clientSecretRef.contents,
-              ~logger,
               ~customPodUri,
               ~redirectionFlags,
               ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
@@ -400,24 +400,20 @@ let getCustomerSavedPaymentMethods = (
           completeGooglePayPayment()
         })
         ->catch(err => {
-          logger.setLogInfo(
-            ~value=err->Identity.anyTypeToJson->JSON.stringify,
-            ~eventName=GOOGLE_PAY_FLOW,
-            ~paymentMethod="GOOGLE_PAY",
-            ~logType=DEBUG,
+          SdkLogger.logLifecycle(
+            ~event=WalletFlowFailed({reason: PaymentDataFailed}),
+            ~paymentMethod=Wallet(GooglePay),
+            ~exn=err,
           )
-
           handleFailureResponse(
             ~message=err->Identity.anyTypeToJson->JSON.stringify,
             ~errorType="google_pay",
           )->resolve
         })
       | None =>
-        logger.setLogInfo(
-          ~value="GooglePay client unavailable for loadPaymentData",
-          ~eventName=GOOGLE_PAY_FLOW,
-          ~paymentMethod="GOOGLE_PAY",
-          ~logType=DEBUG,
+        SdkLogger.logLifecycle(
+          ~event=WalletFlowFailed({reason: ClientUnavailable}),
+          ~paymentMethod=Wallet(GooglePay),
         )
         handleFailureResponse(
           ~message="Google Pay is not available",
@@ -426,7 +422,7 @@ let getCustomerSavedPaymentMethods = (
       }
     }
 
-    let confirmWithLastUsedPaymentMethod = payload => {
+    let confirmWithLastUsedMethod = payload => {
       if isUpdateIntentInProgress.contents {
         UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
       } else {
@@ -476,6 +472,13 @@ let getCustomerSavedPaymentMethods = (
       }
     }
 
+    let confirmWithLastUsedPaymentMethod = payload =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.PaymentSession(ConfirmWithLastUsedPaymentMethod),
+        ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+        ~call=() => confirmWithLastUsedMethod(payload),
+      )
+
     let updateCustomerPaymentMethodsRef = (~isFilterApplePay=false, ~isFilterGooglePay=false) => {
       let filterArray = []
       if isFilterApplePay {
@@ -504,7 +507,6 @@ let getCustomerSavedPaymentMethods = (
       PaymentHelpers.fetchSessions(
         ~clientSecret=clientSecretRef.contents,
         ~publishableKey,
-        ~logger,
         ~customPodUri,
         ~endpoint,
         ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
@@ -543,7 +545,11 @@ let getCustomerSavedPaymentMethods = (
         let isGooglePayReadyPromise = switch gPayClientOpt {
         | Some(client) =>
           try {
-            client.isReadyToPay(payRequest)
+            SdkLogger.observeFunction(
+              ~event=IsReadyToPay,
+              ~paymentMethod=Wallet(GooglePay),
+              ~call=() => client.isReadyToPay(payRequest),
+            )
             ->then(
               res => {
                 let dict = res->getDictFromJson
@@ -551,26 +557,12 @@ let getCustomerSavedPaymentMethods = (
               },
             )
             ->catch(
-              err => {
-                logger.setLogInfo(
-                  ~value=err->Identity.anyTypeToJson->JSON.stringify,
-                  ~eventName=GOOGLE_PAY_FLOW,
-                  ~paymentMethod="GOOGLE_PAY",
-                  ~logType=DEBUG,
-                )
+              _ => {
                 false->resolve
               },
             )
           } catch {
-          | exn => {
-              logger.setLogInfo(
-                ~value=exn->Identity.anyTypeToJson->JSON.stringify,
-                ~eventName=GOOGLE_PAY_FLOW,
-                ~paymentMethod="GOOGLE_PAY",
-                ~logType=DEBUG,
-              )
-              false->resolve
-            }
+          | _ => false->resolve
           }
         | None => false->resolve
         }
@@ -592,11 +584,10 @@ let getCustomerSavedPaymentMethods = (
         )
         ->catch(
           err => {
-            logger.setLogInfo(
-              ~value=err->Identity.anyTypeToJson->JSON.stringify,
-              ~eventName=GOOGLE_PAY_FLOW,
-              ~paymentMethod="GOOGLE_PAY",
-              ~logType=DEBUG,
+            SdkLogger.logLifecycle(
+              ~event=WalletFlowFailed({reason: PaymentDataFailed}),
+              ~paymentMethod=Wallet(GooglePay),
+              ~exn=err,
             )
             resolve()
           },
@@ -656,3 +647,30 @@ let getCustomerSavedPaymentMethods = (
     handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
   })
 }
+
+let getCustomerSavedPaymentMethods = (
+  ~options: option<JSON.t>,
+  ~clientSecretRef: ref<string>,
+  ~publishableKey,
+  ~endpoint,
+  ~customPodUri,
+  ~sdkAuthorizationRef: ref<string>,
+  ~redirectionFlags,
+  ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
+  ~isUpdateIntentInProgress: ref<bool>,
+) =>
+  HyperLoaderLogger.observeMerchantCall(
+    ~event=HyperLoaderLogger.PaymentSession(GetCustomerSavedPaymentMethods),
+    ~call=() =>
+      fetchCustomerSavedPaymentMethods(
+        ~options,
+        ~clientSecretRef,
+        ~publishableKey,
+        ~endpoint,
+        ~customPodUri,
+        ~sdkAuthorizationRef,
+        ~redirectionFlags,
+        ~iframeRef,
+        ~isUpdateIntentInProgress,
+      ),
+  )

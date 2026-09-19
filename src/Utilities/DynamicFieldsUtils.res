@@ -545,7 +545,6 @@ let useLogDynamicFieldsRendered = (
   ~resolutionContext,
   ~isSavedCardFlow=false,
 ) => {
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let lastLoggedKey = React.useRef("")
   let {
     rawConfigs,
@@ -554,10 +553,6 @@ let useLogDynamicFieldsRendered = (
     superpositionBaseContext,
   } = resolutionContext
 
-  // Log which dynamic fields are being rendered for the current payment method.
-  // Fires once per (paymentMethod, configPaymentMethodType) combination; the
-  // dedupeKey guard prevents re-logging when unrelated state (e.g. billingAddress
-  // toggle) causes the fields array to change identity.
   React.useEffect(() => {
     if !isSavedCardFlow && rawConfigs->Option.isSome {
       let dedupeKey = paymentMethod ++ "|" ++ configPaymentMethodType
@@ -591,20 +586,15 @@ let useLogDynamicFieldsRendered = (
             ->JSON.Encode.object
           )
           ->JSON.Encode.array
-        let payload =
-          [
+        SdkLogger.logState(
+          ~event=DynamicFieldsChanged,
+          ~paymentMethod=?paymentMethod->LoggerTaxonomy.fromBackendValue,
+          ~details=[
             ("superposition_base_context", superpositionBaseContext->Identity.anyTypeToJson),
             ("eligible_connectors", eligibleConnectors->JSON.Encode.array),
             ("field_count", fields->Array.length->JSON.Encode.int),
             ("fields", fieldsJson),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
-          ->JSON.stringify
-        loggerState.setLogInfo(
-          ~value=payload,
-          ~eventName=HyperLoggerTypes.DYNAMIC_FIELDS_RENDERED,
-          ~paymentMethod,
+          ],
         )
       }
     }
@@ -617,7 +607,6 @@ let useLogDynamicFieldsRendered = (
     isSavedCardFlow,
     eligibleConnectors,
     superpositionBaseContext,
-    loggerState,
   ))
 }
 

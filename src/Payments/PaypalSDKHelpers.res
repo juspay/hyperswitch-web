@@ -3,7 +3,6 @@ open Utils
 open TaxCalculation
 
 let loadPaypalSDK = (
-  ~loggerState: HyperLoggerTypes.loggerMake,
   ~sdkHandleOneClickConfirmPayment as _,
   ~buttonStyle: PaypalSDKTypes.style,
   ~iframeId,
@@ -58,10 +57,10 @@ let loadPaypalSDK = (
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: () => {
       if isTestMode {
-        loggerState.setLogInfo(
-          ~value="Paypal SDK createOrder called in test mode - interaction disabled",
-          ~eventName=PAYPAL_SDK_FLOW,
-          ~paymentMethod="PAYPAL",
+        SdkLogger.logLifecycle(
+          ~event=WalletStageReached({stage: SessionStarted}),
+          ~paymentMethod=Wallet(Paypal),
+          ~details=[("test_mode", true->JSON.Encode.bool)],
         )
         resolve("")
       } else {
@@ -127,10 +126,9 @@ let loadPaypalSDK = (
               }
             })
           } else {
-            loggerState.setLogInfo(
-              ~value="Paypal SDK oneClickDoSubmit - false",
-              ~eventName=PAYPAL_SDK_FLOW,
-              ~paymentMethod="PAYPAL",
+            SdkLogger.logLifecycle(
+              ~event=WalletStageReached({stage: OneClickDeclined}),
+              ~paymentMethod=Wallet(Paypal),
             )
             resolve("")
           }
@@ -156,7 +154,6 @@ let loadPaypalSDK = (
 
         calculateTax(
           ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
-          ~logger=loggerState,
           ~publishableKey,
           ~clientSecret=clientSecret->Option.getOr(""),
           ~paymentMethodType,
@@ -242,11 +239,7 @@ let loadPaypalSDK = (
       handleCloseLoader()
     },
     onClick: () => {
-      loggerState.setLogInfo(
-        ~value="Paypal SDK Button Clicked",
-        ~eventName=PAYPAL_SDK_FLOW,
-        ~paymentMethod="PAYPAL",
-      )
+      SdkLogger.logUser(~event=WalletButtonClicked, ~paymentMethod=Wallet(Paypal))
     },
   }).render("#paypal-button")
   areOneClickWalletsRendered(prev => {
@@ -256,7 +249,6 @@ let loadPaypalSDK = (
 }
 
 let loadBraintreePaypalSdk = (
-  ~loggerState: HyperLoggerTypes.loggerMake,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
   ~buttonStyle: PaypalSDKTypes.style,
@@ -349,11 +341,7 @@ let loadBraintreePaypalSdk = (
                     handleCloseLoader()
                   },
                   onClick: () => {
-                    loggerState.setLogInfo(
-                      ~value="Paypal Braintree SDK Button Clicked",
-                      ~eventName=PAYPAL_SDK_FLOW,
-                      ~paymentMethod="PAYPAL",
-                    )
+                    SdkLogger.logUser(~event=WalletButtonClicked, ~paymentMethod=Wallet(Paypal))
                   },
                 }).render("#paypal-button")
                 areOneClickWalletsRendered(

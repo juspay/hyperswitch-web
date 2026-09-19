@@ -12,7 +12,6 @@ let payPalIcon = <Icon size=35 width=90 name="paypal" />
 
 @react.component
 let make = (~walletOptions) => {
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey, sdkAuthorization} = Jotai.useAtomValue(keys)
@@ -62,7 +61,7 @@ let make = (~walletOptions) => {
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
+  let intent = PaymentHelpers.usePaymentIntent(Paypal)
   UtilityHooks.useHandlePostMessages(
     ~complete=paypalClicked,
     ~empty=!paypalClicked,
@@ -77,17 +76,13 @@ let make = (~walletOptions) => {
   let onPaypalClick = _ev => {
     if isTestMode {
       Console.warn("PayPal button clicked in test mode - interaction disabled")
-      loggerState.setLogInfo(
-        ~value="PayPal button clicked in test mode - interaction disabled",
-        ~eventName=PAYPAL_FLOW,
-        ~paymentMethod="PAYPAL",
+      SdkLogger.logUser(
+        ~event=WalletButtonClicked,
+        ~paymentMethod=Wallet(Paypal),
+        ~details=[("test_mode", true->JSON.Encode.bool)],
       )
     } else {
-      loggerState.setLogInfo(
-        ~value="Paypal Button Clicked",
-        ~eventName=PAYPAL_FLOW,
-        ~paymentMethod="PAYPAL",
-      )
+      SdkLogger.logUser(~event=WalletButtonClicked, ~paymentMethod=Wallet(Paypal))
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,
         ~paymentMethodType,
@@ -197,9 +192,11 @@ let make = (~walletOptions) => {
         pointerEvents: updateSession ? "none" : "auto",
         opacity: updateSession ? "0.5" : "1.0",
       }
-      onClick={_ => options.readOnly ? () : onPaypalClick()}>
+      onClick={_ => options.readOnly ? () : onPaypalClick()}
+    >
       <div
-        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
+        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}
+      >
         {if !paypalClicked {
           payPalIcon
         } else {

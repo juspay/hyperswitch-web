@@ -122,8 +122,15 @@ module Navigator = {
   external userAgent: string = "userAgent"
 
   @val @scope("navigator")
-  external sendBeacon: (string, string) => unit = "sendBeacon"
+  external sendBeacon: (string, string) => bool = "sendBeacon"
+
+  let hasSendBeacon: unit => bool = %raw(`function () {
+    return typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function"
+  }`)
 }
+
+@val @scope(("window", "document"))
+external visibilityState: string = "visibilityState"
 
 module Location = {
   @val @scope(("window", "location"))
