@@ -27,88 +27,33 @@ type event = {\"type": string}
 @send
 external addEventListener: (element, string, event => unit) => unit = "addEventListener"
 
-@send
-external removeEventListener: (element, string, event => unit) => unit = "removeEventListener"
-
-let useScript = (src: string, ~\"type"="", ~integrity="", ~crossorigin="") => {
+let useScript = (
+  src: string,
+  ~integrity="",
+  ~crossorigin="",
+  ~resourceEvent: SdkLogger.resourceEvent,
+) => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
   React.useEffect(() => {
     if src == "" {
       setStatus(_ => "idle")
-    }
-    let script = querySelector(`script[src="${src}"]`)
-    switch script->Nullable.toOption {
-    | Some(dom) =>
-      setStatus(_ => dom.getAttribute("data-status"))
       None
-    | None =>
-      let script = createElement("script")
-      script.src = src
-      if \"type" != "" {
-        script.\"type" = \"type"
-      }
-
-      // Set the subresource-integrity attributes (when provided) before the
-      // element is appended so the browser enforces SRI on the fetch.
-      if crossorigin != "" {
-        script.setAttribute("crossorigin", crossorigin)
-      }
-      if integrity != "" {
-        script.setAttribute("integrity", integrity)
-      }
-      script.async = true
-      script.setAttribute("data-status", "loading")
-      appendChild(script)
-      let setAttributeFromEvent = (event: event) => {
-        setStatus(_ => event.\"type" === "load" ? "ready" : "error")
-        script.setAttribute("data-status", event.\"type" === "load" ? "ready" : "error")
-      }
-      script->addEventListener("load", setAttributeFromEvent)
-      script->addEventListener("error", setAttributeFromEvent)
-      Some(
-        () => {
-          script->removeEventListener("load", setAttributeFromEvent)
-          script->removeEventListener("error", setAttributeFromEvent)
-
-          if script.getAttribute("data-status") !== "ready" {
-            script.remove()
-          }
-        },
+    } else {
+      let cancelled = ref(false)
+      let settle = value => cancelled.contents ? () : setStatus(_ => value)
+      setStatus(_ => "loading")
+      SdkLogger.observeResource(
+        ~event=resourceEvent,
+        ~url=src,
+        ~attributes=[("crossorigin", crossorigin), ("integrity", integrity)]
+        ->Array.filter(((_, value)) => value != "")
+        ->Array.concat([("async", "true")]),
+        ~matchQuery=true,
+        ~abandoned=() => cancelled.contents,
+        ~onLoad=() => settle("ready"),
+        ~onError=_ => settle("error"),
       )
-    }
-  }, [src])
-  status
-}
-
-let useLink = (src: string) => {
-  let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
-  React.useEffect(() => {
-    if src == "" {
-      setStatus(_ => "idle")
-    }
-    let link = querySelector(`link[href="${src}"]`)
-    switch link->Nullable.toOption {
-    | Some(dom) =>
-      setStatus(_ => dom.getAttribute("data-status"))
-      None
-    | None =>
-      let link = createElement("link")
-      link.href = src
-      link.rel = "stylesheet"
-      link.setAttribute("data-status", "loading")
-      appendChild(link)
-      let setAttributeFromEvent = (event: event) => {
-        setStatus(_ => event.\"type" === "load" ? "ready" : "error")
-        link.setAttribute("data-status", event.\"type" === "load" ? "ready" : "error")
-      }
-      link->addEventListener("load", setAttributeFromEvent)
-      link->addEventListener("error", setAttributeFromEvent)
-      Some(
-        () => {
-          link->removeEventListener("load", setAttributeFromEvent)
-          link->removeEventListener("error", setAttributeFromEvent)
-        },
-      )
+      Some(() => cancelled := true)
     }
   }, [src])
   status

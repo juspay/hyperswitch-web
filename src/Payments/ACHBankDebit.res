@@ -10,12 +10,10 @@ let make = () => {
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let {sdkAuthorization} = Jotai.useAtomValue(keys)
 
-  let loggerState = Jotai.useAtomValue(loggerAtom)
-
   let email = Jotai.useAtomValue(userEmailAddress)
   let fullName = Jotai.useAtomValue(userFullName)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHelpers.usePaymentIntent(BankDebits)
 
   let (bankError, setBankError) = React.useState(_ => "")
 
@@ -130,7 +128,8 @@ let make = () => {
                 fontSize: themeObj.fontSizeSm,
                 alignSelf: "start",
                 textAlign: "left",
-              }>
+              }
+            >
               {React.string(bankError)}
             </div>
           </RenderIf>

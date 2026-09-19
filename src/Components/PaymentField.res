@@ -29,7 +29,6 @@ let make = (
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let {readOnly} = Jotai.useAtomValue(optionAtom)
   let {parentURL, iframeId} = Jotai.useAtomValue(keys)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
@@ -95,13 +94,8 @@ let make = (
 
   let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
 
-  // Wrap onChange to include logging
   let wrappedOnChange = ev => {
-    // Log the input change using the name parameter
-    if name->String.length > 0 {
-      LoggerUtils.logInputChangeInfo(name, loggerState)
-    }
-    // Call the original onChange handler
+    SdkLogger.logUser(~event=FieldEdited({field: name}))
     onChange(ev)
   }
 
@@ -110,7 +104,8 @@ let make = (
       condition={name === "phone" &&
       fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
-      isSpacedInnerLayout}>
+      isSpacedInnerLayout}
+    >
       <div
         className={`Label ${labelClass}`}
         style={
@@ -119,7 +114,8 @@ let make = (
           marginBottom: "5px",
           opacity: "0.6",
         }
-        ariaHidden=true>
+        ariaHidden=true
+      >
         {React.string(fieldName)}
       </div>
     </RenderIf>
@@ -141,7 +137,8 @@ let make = (
         condition={name !== "phone" &&
         fieldName->String.length > 0 &&
         config.appearance.labels == Above &&
-        isSpacedInnerLayout}>
+        isSpacedInnerLayout}
+      >
         <div
           className={`Label ${labelClass}`}
           style={
@@ -150,7 +147,8 @@ let make = (
             marginBottom: "5px",
             opacity: "0.6",
           }
-          ariaHidden=true>
+          ariaHidden=true
+        >
           {React.string(fieldName)}
         </div>
       </RenderIf>
@@ -191,7 +189,8 @@ let make = (
                 },
                 opacity: "0.6",
               }
-              ariaHidden=true>
+              ariaHidden=true
+            >
               {React.string(fieldName)}
             </div>
           </RenderIf>
@@ -209,7 +208,8 @@ let make = (
             alignSelf: "start",
             textAlign: "left",
           }
-          ariaHidden=true>
+          ariaHidden=true
+        >
           {React.string(value.errorString)}
         </div>
       </RenderIf>

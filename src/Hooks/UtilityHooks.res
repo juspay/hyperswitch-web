@@ -30,20 +30,26 @@ let useHandlePostMessages = (
 ) => {
   open JotaiAtoms
 
-  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let {iframeId} = Jotai.useAtomValue(keys)
+  let wasComplete = React.useRef(false)
 
   React.useEffect(() => {
     if enabled {
-      Utils.handlePostMessageEvents(
-        ~complete,
-        ~empty,
-        ~paymentType,
-        ~loggerState,
-        ~savedMethod,
-      )
+      Utils.handlePostMessageEvents(~iframeId, ~complete, ~empty, ~paymentType)
     }
     None
-  }, (complete, empty, paymentType, savedMethod, enabled))
+  }, (complete, empty, paymentType, enabled))
+
+  React.useEffect(() => {
+    if enabled && complete && !wasComplete.current {
+      SdkLogger.logUser(
+        ~event=PaymentDetailsCompleted({savedMethod: savedMethod}),
+        ~paymentMethod=?paymentType->LoggerTaxonomy.fromBackendValue,
+      )
+    }
+    wasComplete.current = complete
+    None
+  }, (complete, paymentType, savedMethod, enabled))
 }
 
 let useIsCustomerAcceptanceRequired = (

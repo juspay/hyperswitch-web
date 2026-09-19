@@ -1,8 +1,6 @@
 open Utils
 @react.component
 let make = () => {
-  let logger = HyperLogger.make(~source=Elements(Payment))
-
   let stateMetadataRef = React.useRef(Dict.make()->JSON.Encode.object)
   let consumePostMessageForThreeDsMethodCompletionRef = React.useRef(false)
   let threeDsUrlRef = React.useRef("")
@@ -26,12 +24,7 @@ let make = () => {
     let iframeId = metadataDict->getString("iframeId", "")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
-      LoggerUtils.handleLogging(
-        ~optLogger=Some(logger),
-        ~eventName=THREE_DS_METHOD_RESULT,
-        ~value="Y",
-        ~paymentMethod="CARD",
-      )
+      SdkLogger.logLifecycle(~event=ThreeDsMethodCompleted, ~paymentMethod=Card(Unspecified))
 
       isThreeDSMethodCompletionFired.current = true
 
@@ -99,14 +92,8 @@ let make = () => {
     }
   }
 
-  let handleOnError = value => {
-    LoggerUtils.handleLogging(
-      ~optLogger=Some(logger),
-      ~eventName=THREE_DS_METHOD_RESULT,
-      ~value,
-      ~paymentMethod="CARD",
-      ~logType=ERROR,
-    )
+  let handleOnError = (event: SdkLogger.lifecycleEvent, ~exn=?) => {
+    SdkLogger.logLifecycle(~event, ~paymentMethod=Card(Unspecified), ~exn?)
     stateMetadataRef.current
     ->Utils.getDictFromJson
     ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
@@ -187,7 +174,7 @@ let make = () => {
   React.useEffect(() => {
     if isStartTimeout {
       let timeoutId = setTimeout(() => {
-        handleOnError("Timeout while waiting for ThreeDS Method completion")
+        handleOnError(ThreeDsMethodTimedOut)
       }, 15000) // 15 seconds timeout
 
       Some(
@@ -230,14 +217,6 @@ let make = () => {
               false,
             )
 
-          let paymentIntentId = metaDataDict->Utils.getString("paymentIntentId", "")
-          let publishableKey = metaDataDict->Utils.getString("publishableKey", "")
-          let sdkAuthorization = metaDataDict->Utils.getString("sdkAuthorization", "")
-
-          logger.setClientSecret(paymentIntentId)
-          logger.setSdkAuthorization(sdkAuthorization)
-          logger.setMerchantId(publishableKey)
-
           let ele = Window.querySelector("#threeDsInvisibleDiv")
 
           switch ele->Nullable.toOption {
@@ -263,13 +242,10 @@ let make = () => {
                 setIsStartTimeout(_ => true)
                 form.submit()
               } catch {
-              | err => {
-                  let exceptionMessage = err->Utils.formatException->JSON.stringify
-                  handleOnError(exceptionMessage)
-                }
+              | err => handleOnError(ThreeDsMethodFailed({reason: FormSubmitFailed}), ~exn=err)
               }
             }
-          | None => handleOnError("Unable to Locate threeDsInvisibleDiv")
+          | None => handleOnError(ThreeDsMethodFailed({reason: MissingContainer}))
           }
         }
       } catch {
@@ -305,7 +281,7 @@ let make = () => {
       ref={iframeRef->ReactDOM.Ref.domRef}
       style={outline: "none"}
       onLoad={handleOnLoad}
-      onError={_ => handleOnError("ThreeDS Method Iframe Load Error")}
+      onError={_ => handleOnError(ThreeDsMethodFailed({reason: IframeLoadFailed}))}
     />
   </>
 }

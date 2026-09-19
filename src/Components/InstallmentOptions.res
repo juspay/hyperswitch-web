@@ -102,6 +102,7 @@ let make = (
   }
 
   let handlePlanSelect = (plan: PaymentMethodsRecord.installmentPlan, index) => {
+    SdkLogger.logUser(~event=FieldEdited({field: "installment_plan"}))
     setSelectedInstallmentPlan(_ => Some(plan))
     setSelectedIndex(_ => Some(index))
     setErrorString(_ => "")
@@ -127,6 +128,7 @@ let make = (
   })
 
   let toggleDropdown = _ => {
+    SdkLogger.logUser(~event=ViewToggled({view: InstallmentOptions}))
     setIsDropdownOpen(prev => !prev)
   }
 

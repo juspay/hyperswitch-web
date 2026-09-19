@@ -23,7 +23,6 @@ module LoadingState = {
 module OtpInput = {
   @react.component
   let make = (~getCards: string => promise<unit>, ~setIsClickToPayRememberMe) => {
-    let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
     let (isOtpSubmitting, setIsOtpSubmitting) = React.useState(_ => false)
     let (clickToPayConfig, setClickToPayConfig) = Jotai.useAtom(JotaiAtoms.clickToPayConfig)
     let otpValueRef = React.useRef("")
@@ -33,6 +32,7 @@ module OtpInput = {
 
     let callBacks = {
       otpChanged: ev => {
+        SdkLogger.logUser(~event=FieldEdited({field: "click_to_pay_otp"}))
         setClickToPayConfig(prev => {
           ...prev,
           otpError: "",
@@ -47,27 +47,23 @@ module OtpInput = {
         })
       },
       continueClicked: _ => {
+        SdkLogger.logUser(
+          ~event=PayButtonClicked,
+          ~details=[("button", "ctp_otp_continue"->JSON.Encode.string)],
+        )
         let verifyUserAndGetCards = async () => {
           try {
             setIsOtpSubmitting(_ => true)
             await getCards(otpValueRef.current)
             setIsOtpSubmitting(_ => false)
           } catch {
-          | err =>
-            loggerState.setLogError(
-              ~value={
-                "message": `User validation failed - ${err->Utils.formatException->JSON.stringify}`,
-                "scheme": "VISA",
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
-            )
+          | err => ClickToPayLogger.logLifecycle(~event=OtpRejected, ~exn=err)
           }
         }
         verifyUserAndGetCards()->ignore
       },
       resendClicked: _ => {
+        SdkLogger.logUser(~event=ViewToggled({view: ClickToPayOtpResend}))
         setClickToPayConfig(prev => {
           ...prev,
           otpError: "",
@@ -78,16 +74,7 @@ module OtpInput = {
             await getCards("")
             setResendLoading(_ => false)
           } catch {
-          | err =>
-            loggerState.setLogError(
-              ~value={
-                "message": `resend otp failed - ${err->Utils.formatException->JSON.stringify}`,
-                "scheme": "VISA",
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
-            )
+          | _ => setResendLoading(_ => false)
           }
         }
         resendOtp()->ignore
@@ -98,6 +85,10 @@ module OtpInput = {
         ->Option.forEach(e => {
           let dict = e->getDictFromJson
           let rememberMe = dict->getDictFromDict("detail")->getBool("rememberMe", false)
+          SdkLogger.logUser(
+            ~event=FieldEdited({field: "click_to_pay_remember_me"}),
+            ~details=[("remember_me", rememberMe->JSON.Encode.bool)],
+          )
           setIsClickToPayRememberMe(_ => rememberMe)
         })
       },

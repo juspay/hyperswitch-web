@@ -7,16 +7,17 @@ let make = () => {
   let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   let eventsToSendToParent = ["openurl_if_required"]
   eventsToSendToParent->UtilityHooks.useSendEventsToParent
 
   let handleOnClose = () =>
     if redirectResponseUrl == "" {
+      SdkLogger.logLifecycle(~event=ThreeDsPopupFailed)
       messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
     } else {
+      SdkLogger.logLifecycle(~event=ThreeDsPopupClosed)
       let customEvent =
         {
           openurl_if_required: redirectResponseUrl,
@@ -44,8 +45,7 @@ let make = () => {
         }
       } catch {
       | err => {
-          let exceptionMessage = err->formatException->JSON.stringify
-          loggerState.setLogError(~value=exceptionMessage, ~eventName=THREE_DS_POPUP_REDIRECTION)
+          SdkLogger.logLifecycle(~event=ThreeDsPopupFailed, ~exn=err)
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
         }
       }
