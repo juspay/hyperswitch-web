@@ -119,7 +119,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     organization_id: ?organizationId,
   }
 
-  let applyOptions = optionsDict => {
+  let updateOptions = dict => {
+    let optionsDict = dict->getDictFromObj("options")
+    merchantOptionsRef.current = Some(dict)
     let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
     let mergeFor = allowedKeys =>
       CommonUtils.mergeDict(
@@ -217,12 +219,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     | _ => ()
     }
-  }
-
-  let updateOptions = dict => {
-    let optionsDict = dict->getDictFromObj("options")
-    merchantOptionsRef.current = Some(optionsDict)
-    applyOptions(optionsDict)
   }
 
   let localeFromDict = dict => getString(dict, "locale", "")
@@ -374,7 +370,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
     let hasSdkProps = superpositionDefaults->Dict.keysToArray->Array.length > 0
     switch merchantOptionsRef.current {
-    | Some(optionsDict) if hasSdkProps => applyOptions(optionsDict)
+    | Some(dict) if hasSdkProps => updateOptions(dict)
     | _ => ()
     }
     switch lastConfigDictRef.current {
