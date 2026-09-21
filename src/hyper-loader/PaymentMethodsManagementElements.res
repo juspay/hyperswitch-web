@@ -42,7 +42,18 @@ let make = (
       ->Option.flatMap(JSON.Decode.string)
       ->Option.getOr("")
 
-    let localSelectorString = "hyper-preMountLoader-iframe"
+    // Suffixed so this never collides with the regular Elements' own
+    // preMountLoader iframe when both are mounted on the same page — each
+    // type owns its own DOM id for this hidden bootstrap iframe.
+    let localSelectorString = "hyper-preMountLoader-iframe-pmm"
+    // Unique per call to `make`: this whole flow can run more than once for
+    // the same localSelectorString (e.g. React.StrictMode double-invoking
+    // the mounting effect in dev). addSmartEventListener replaces any
+    // listener already registered under the same name, so without this a
+    // stale invocation's (possibly slower under concurrent load) listener
+    // registration could silently steal the current invocation's response.
+    let invocationId = generateRandomString(8)
+    let listenerKey = `${localSelectorString}-${invocationId}`
     let mountPreMountLoaderIframe = () => {
       if (
         Window.querySelector(
@@ -83,23 +94,43 @@ let make = (
     }
 
     let preMountLoaderMountedPromise = Promise.make((resolve, _reject) => {
+      // Guards against cross-talk with the regular Elements flow's own
+      // preMountLoader (UpdateIntentHelpersNew.res) — both post the exact
+      // same message shape via the shared useMessageHandler code, and a
+      // plain window "message" listener receives every message regardless
+      // of sender, so without this the other flow's mount/unmount signal
+      // would tear this iframe down (or vice versa).
+      let isFromThisIframe = (ev: Types.event) =>
+        switch preMountLoaderIframeDiv->Nullable.toOption {
+        | Some(iframeEl) => iframeEl->Window.contentWindow === ev.source
+        | None => false
+        }
       let preMountLoaderIframeCallback = (ev: Types.event) => {
-        let json = ev.data->Identity.anyTypeToJson
-        let dict = json->getDictFromJson
-        if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
-          resolve(true->JSON.Encode.bool)
-        } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
-          unMountPreMountLoaderIframe()
+        if isFromThisIframe(ev) {
+          let json = ev.data->Identity.anyTypeToJson
+          let dict = json->getDictFromJson
+          if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
+            resolve(true->JSON.Encode.bool)
+          } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
+            unMountPreMountLoaderIframe()
+          }
         }
       }
       addSmartEventListener(
         "message",
         preMountLoaderIframeCallback,
-        "onPreMountLoaderIframeCallback",
+        "onPreMountLoaderIframeCallback-" ++ listenerKey,
       )
     })
 
     let fetchPaymentManagementList = (mountedIframeRef, disableSaveCards, componentType) => {
+      // Fresh per call: create()/mount() for this componentType can run more
+      // than once (e.g. React.StrictMode double-invoking the mount effect,
+      // or the render-time + effect-time create() calls in
+      // PaymentMethodsManagementElementWrapper.res both reaching this), and
+      // addSmartEventListener replaces any listener already registered
+      // under the same name.
+      let fetchInvocationId = generateRandomString(8)
       Promise.make((resolve, _) => {
         if !disableSaveCards {
           let handleSavedPaymentMethodsLoaded = (event: Types.event) => {
@@ -116,7 +147,7 @@ let make = (
           addSmartEventListener(
             "message",
             handleSavedPaymentMethodsLoaded,
-            `onAllPaymentMethodsLoaded-${componentType}`,
+            `onAllPaymentMethodsLoaded-${componentType}-${fetchInvocationId}`,
           )
         } else {
           resolve()

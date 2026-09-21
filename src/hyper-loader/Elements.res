@@ -76,7 +76,10 @@ let make = (
       ~eventName=PRELOAD_SDK_WITH_PARAMS,
     )
 
-    let localSelectorString = "hyper-preMountLoader-iframe"
+    // Suffixed so this never collides with PaymentMethodsManagementElements'
+    // own preMountLoader iframe when both are mounted on the same page —
+    // each type owns its own DOM id for this hidden bootstrap iframe.
+    let localSelectorString = "hyper-preMountLoader-iframe-elements"
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
