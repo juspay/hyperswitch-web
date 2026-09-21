@@ -312,12 +312,19 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let iframeRef = ref([])
+      // Two separate iframe registries so a broadcast aimed at one surface
+      // (confirmPayment -> payment elements, tokenize -> PMM elements) never
+      // reaches the other surface's iframes.
+      let paymentIframeRef = ref([])
+      let pmmIframeRef = ref([])
       let clientSecret = ref("")
       let sdkAuthorization = ref("")
       let pmSessionId = ref("")
       let setIframeRef = ref => {
-        iframeRef.contents->Array.push(ref)->ignore
+        paymentIframeRef.contents->Array.push(ref)->ignore
+      }
+      let setPmmIframeRef = ref => {
+        pmmIframeRef.contents->Array.push(ref)->ignore
       }
 
       // Shared refs for updateIntent — created once, passed to both Elements and PaymentSession.
@@ -370,7 +377,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
+      let confirmPaymentWrapper = (
+        payload,
+        isOneClick,
+        result,
+        ~isSdkButton=false,
+        ~targetIframeRef=paymentIframeRef,
+        ~flowName="payment",
+      ) => {
         let confirmTimestamp = Date.now()
         let confirmParams =
           payload
@@ -388,8 +402,21 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.getOr("")
 
         let postSubmitMessage = message => {
-          iframeRef.contents->Array.forEach(ifR => {
+          targetIframeRef.contents->Array.forEach(ifR => {
             ifR->Window.iframePostMessage(message)
+          })
+        }
+
+        // Guards the response listener so a message from an iframe outside
+        // this flow's own registry (e.g. a PMM iframe answering while a
+        // confirmPayment listener is still alive) can never be mistaken for
+        // this flow's response.
+        let isFromTargetIframe = (event: Types.event) => {
+          targetIframeRef.contents->Array.some(ifR => {
+            switch ifR->Nullable.toOption {
+            | Some(iframeEl) => iframeEl->Window.contentWindow === event.source
+            | None => false
+            }
           })
         }
 
@@ -413,7 +440,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                 let json = event.data->anyTypeToJson
                 let dict = json->getDictFromJson
                 switch dict->Dict.get("submitSuccessful") {
-                | Some(val) =>
+                | Some(val) if isFromTargetIframe(event) =>
                   logApi(
                     ~apiLogType=Method,
                     ~optLogger=Some(logger),
@@ -426,7 +453,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                     dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
 
                   if isOneClick {
-                    iframeRef.contents->Array.forEach(
+                    targetIframeRef.contents->Array.forEach(
                       ifR => {
                         // to unset one click button loader
                         ifR->Window.iframePostMessage(
@@ -448,6 +475,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                   } else {
                     resolve1(data)
                   }
+                | Some(_) => () // message from an iframe outside this flow's registry
                 | None => ()
                 }
               }
@@ -467,7 +495,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                       ]->getJsonFromArrayOfJson,
                     ),
                   ]->Dict.fromArray
-              addSmartEventListener("message", handleMessage, "onSubmit")
+              addSmartEventListener("message", handleMessage, "onSubmit-" ++ flowName)
               postSubmitMessage(message)
               Promise.resolve(JSON.Encode.null)
             })
@@ -487,6 +515,23 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let confirmOneClickPayment = (payload, result: bool) => {
         confirmPaymentWrapper(payload, true, result)
+      }
+
+      // Deliberately NOT an alias of confirmPayment: it must only broadcast
+      // to PMM iframes (pmmIframeRef), never to payment element iframes.
+      let tokenize = payload => {
+        if isUpdateIntentInProgress.contents {
+          Promise.resolve(UpdateIntentHelpersNew.confirmBlockedResponse())
+        } else {
+          confirmPaymentWrapper(payload, false, true, ~targetIframeRef=pmmIframeRef, ~flowName="pmm")
+        }
+      }
+
+      let confirmTokenization = payload => {
+        Console.warn(
+          "confirmTokenization is deprecated and will be removed in a future release. Use tokenize instead.",
+        )
+        tokenize(payload)
       }
 
       let confirmPaymentViaSDKButton = payload => {
@@ -597,7 +642,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         PaymentMethodsManagementElements.make(
           pmManagementOptions,
-          setIframeRef,
+          setPmmIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
           ~pmSessionId={pmSessionIdVal},
@@ -608,6 +653,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.getOr(JSON.Encode.null)
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
+          ~tokenize,
         )
       }
 
@@ -618,7 +664,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       ) => {
         let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
         Promise.make((resolve, _) => {
-          iframeRef.contents
+          paymentIframeRef.contents
           ->Array.map(iframe => {
             iframe->Window.iframePostMessage(
               [
@@ -743,7 +789,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sdkSessionId=sessionID,
           ~logger=Some(logger),
           ~redirectionFlags,
-          ~iframeRef,
+          ~iframeRef=paymentIframeRef,
           ~isTestMode,
           ~isUpdateIntentInProgress,
           ~clientSecretRef=clientSecret,
@@ -763,7 +809,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             ~logger,
             ~endpoint,
           )
-          iframeRef.contents->Array.forEach(ifR => {
+          paymentIframeRef.contents->Array.forEach(ifR => {
             ifR->Window.iframePostMessage([("sessions", session)]->Dict.fromArray)
             ifR->Window.iframePostMessage(
               [("sessionUpdate", false->JSON.Encode.bool)]->Dict.fromArray,
@@ -785,7 +831,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       let initiateUpdateIntent = () => {
-        iframeRef.contents->Array.forEach(ifR => {
+        paymentIframeRef.contents->Array.forEach(ifR => {
           ifR->Window.iframePostMessage([("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray)
         })
         let msg = [("updateInitiated", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
@@ -837,7 +883,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
-        confirmTokenization: confirmPayment,
+        tokenize,
+        confirmTokenization,
         initPaymentMethodSession: options => PaymentMethodSession.make(options, ~logger),
       }
       Window.setHyper(Window.window, returnObject)

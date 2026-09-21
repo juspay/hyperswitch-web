@@ -192,17 +192,49 @@ let setupPreMountLoaderPromises = (
     ~currentSdkAuthorization,
   )
 
+  // Unique per call, not just per selectorString: setupPreMountLoaderPromises
+  // itself gets invoked more than once for the same selectorString — e.g.
+  // React.StrictMode double-invoking the mounting effect in dev, or a fast
+  // re-render before the previous call's iframe has finished loading. Since
+  // addSmartEventListener replaces any listener already registered under the
+  // same name, reusing selectorString alone lets a stale invocation's
+  // (possibly slower, e.g. under concurrent load from another element type)
+  // listener registration silently steal the current invocation's response,
+  // leaving the current call's promises unresolved.
+  let invocationId = generateRandomString(8)
+  let listenerKey = selectorString ++ "-" ++ invocationId
+
   let preMountLoaderMountedPromise = Promise.make((resolve, _reject) => {
+    // Guards against cross-talk: PreMountLoaderForElements and
+    // PreMountLoaderForPMMElements (Payments/PreMountLoader.res) both post
+    // the exact same {preMountLoaderIframeMountedCallback}/
+    // {preMountLoaderIframeUnMount} message shape via the same shared
+    // useMessageHandler code. Without checking event.source, this
+    // "-elements" listener (a plain window "message" listener, which
+    // receives every message regardless of sender) would react to the PMM
+    // iframe's own mount/unmount signals and vice versa — e.g. tearing down
+    // this iframe because a completely different iframe unmounted.
+    let isFromThisIframe = (ev: Types.event) =>
+      switch preMountLoaderIframeDiv->Nullable.toOption {
+      | Some(iframeEl) => iframeEl->Window.contentWindow === ev.source
+      | None => false
+      }
     let preMountLoaderIframeCallback = (ev: Types.event) => {
-      let json = ev.data->anyTypeToJson
-      let dict = json->getDictFromJson
-      if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
-        resolve(true->JSON.Encode.bool)
-      } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
-        unMountPreMountLoaderIframe(selectorString)
+      if isFromThisIframe(ev) {
+        let json = ev.data->anyTypeToJson
+        let dict = json->getDictFromJson
+        if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
+          resolve(true->JSON.Encode.bool)
+        } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
+          unMountPreMountLoaderIframe(selectorString)
+        }
       }
     }
-    addSmartEventListener("message", preMountLoaderIframeCallback, "onPreMountLoaderIframeCallback")
+    addSmartEventListener(
+      "message",
+      preMountLoaderIframeCallback,
+      "onPreMountLoaderIframeCallback-" ++ listenerKey,
+    )
   })
 
   // Creates a promise that resolves when the preMountLoader sends back data for a given key.
@@ -211,9 +243,13 @@ let setupPreMountLoaderPromises = (
     preMountLoaderMountedPromise->Promise.then(_ => {
       Promise.make((resolve, _) => {
         let handleData = (event: Types.event) => {
+          let isFromThisIframe = switch preMountLoaderIframeDiv->Nullable.toOption {
+          | Some(iframeEl) => iframeEl->Window.contentWindow === event.source
+          | None => false
+          }
           let json = event.data->anyTypeToJson
           let dict = json->getDictFromJson
-          if dict->getString("data", "") === dataKey {
+          if isFromThisIframe && dict->getString("data", "") === dataKey {
             resolve(dict->getJsonFromDict("response", JSON.Encode.null))
           }
         }
@@ -226,19 +262,19 @@ let setupPreMountLoaderPromises = (
 
   let sessionTokensData = createDataPromise(
     ~dataKey="session_tokens",
-    ~listenerName="onSessionTokensData-shared",
+    ~listenerName="onSessionTokensData-" ++ listenerKey,
     ~sendKey="sendSessionTokensResponse",
   )
 
   let sdkConfigsData = createDataPromise(
     ~dataKey="sdk_configs",
-    ~listenerName="onSdkConfigsData-shared",
+    ~listenerName="onSdkConfigsData-" ++ listenerKey,
     ~sendKey="sendSdkConfigsResponse",
   )
 
   let clientListData = createDataPromise(
     ~dataKey="client_list",
-    ~listenerName="onClientListData-shared",
+    ~listenerName="onClientListData-" ++ listenerKey,
     ~sendKey="sendClientListResponse",
   )
 
