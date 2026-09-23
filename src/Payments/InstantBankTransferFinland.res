@@ -10,7 +10,7 @@ let make = () => {
   let areRequiredFieldsEmpty = Jotai.useAtomValue(areRequiredFieldsEmpty)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), BankTransfer)
   let {layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
 
@@ -58,7 +58,7 @@ let make = () => {
     iframeId,
     sdkAuthorization,
   ))
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <RenderIf condition={layoutClass.\"type" === Accordion}>

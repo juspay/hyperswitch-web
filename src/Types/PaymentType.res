@@ -663,7 +663,11 @@ let getAddress = (dict, str, logger) => {
       "options.defaultValues.billingDetails.address",
     )
     let country = getWarningString(json, "country", "", ~logger)
-    if country != "" {
+    /* getAddress runs synchronously while the `options` message is parsed, before
+       initializeCountryData resolves, so countryNames is [] at that point - warning then would
+       flag every correctly-integrated merchant */
+    let isCountryListLoaded = countryNames->Array.length > 0
+    if country != "" && isCountryListLoaded && !(countryNames->Array.includes(country)) {
       unknownPropValueWarning(
         country,
         countryNames,
@@ -1700,7 +1704,7 @@ let overrideFieldsToExcludeFromMasking = [
   "paymentMethodsConfig.paymentMethodTypes.message.value",
 ]
 
-let normalizePath = path => path->String.replaceRegExp(%re("/\[(\d+)\]/g"), "")
+let normalizePath = path => path->String.replaceRegExp(/\[(\d+)\]/g, "")
 
 let isPathStartsWithPattern = (normalizedPath, normalizedPattern) =>
   normalizedPath == normalizedPattern || normalizedPath->String.startsWith(normalizedPattern ++ ".")

@@ -34,7 +34,7 @@ let useCardFieldBase = (
   | _ => ""
   }
   let portKey = if dualPlane && groupIdFromUrl !== "" && elementNameForPortKey !== "" {
-    CardFormCoordinator.portKey(~groupId=groupIdFromUrl, ~fieldName=elementNameForPortKey)
+    CardFormPortKey.portKey(~groupId=groupIdFromUrl, ~fieldName=elementNameForPortKey)
   } else {
     ""
   }

@@ -14,7 +14,7 @@ let make = () => {
   let (displayValue, setDisplayValue) = React.useState(_ => "")
 
   let countryAndCodeCodeList =
-    phoneNumberJson
+    PhoneNumberUtils.phoneNumberJson
     ->JSON.Decode.object
     ->Option.getOr(Dict.make())
     ->getArray("countries")
@@ -102,3 +102,5 @@ let make = () => {
     />
   </RenderIf>
 }
+
+let default = make

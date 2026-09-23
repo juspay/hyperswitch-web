@@ -18,6 +18,12 @@ const devServer = {
   static: {
     directory: path.join(__dirname, "dist"),
   },
+  devMiddleware: {
+    /* `output.publicPath` is "auto" under the dev server, which webpack-dev-middleware reads
+       as "/" - restore the mount point or `npm run start:integ` stops serving
+       /web/<version>/<sdkVersion>/ */
+    publicPath: common.devMiddlewarePublicPath,
+  },
   hot: true,
   host: "0.0.0.0",
   port: process.env.PORT || 9050,

@@ -129,7 +129,13 @@ type fieldEntry = {
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
 
-let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentMethodSession => {
+/* `fields` is supplied by the caller rather than created here: PaymentMethodSessionLazy hands
+   the merchant a facade before this module has downloaded, and both must share one ref */
+let make = (
+  options: JSON.t,
+  ~logger: HyperLoggerTypes.loggerMake,
+  ~fields: ref<JSON.t>,
+): initPaymentMethodSession => {
   logger.setLogInfo(~value="Payment method session card form created", ~eventName=CARD_FORM_FLOW)
   let optionsDict = options->getDictFromJson
 
@@ -154,7 +160,6 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
 
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
-  let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
 
   let groupInstanceId = uniqueId(~prefix=`vault-${pmSessionId}`)
   let coordinator = makeCoordinatorChannel(~groupId=groupInstanceId)

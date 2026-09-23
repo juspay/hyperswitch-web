@@ -141,6 +141,13 @@ const getEnvVariable = (variable, defaultValue) => {
 };
 
 const sdkEnv = getEnvVariable("sdkEnv", "local");
+/*
+ Orthogonal to sdkEnv: webpack-dev-server sets this at module load and a plain build leaves it
+ unset. The dev server answers on its own host and port, so everything it serves is addressed
+ relative to that origin - without this, `start:integ` emits an index.html pointing at the
+ deployed CDN copy of app.js and the locally compiled one is never loaded.
+ */
+const isDevServer = process.env.WEBPACK_SERVE === "true";
 const hyperswitchStack = getEnvVariable("HYPERSWITCH_STACK", "");
 const isEUStack = hyperswitchStack === "eu";
 const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
@@ -153,7 +160,7 @@ const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
   "SDK_TAG_VERSION",
-  require("./package.json").version
+  require("./package.json").version,
 );
 
 /*
@@ -176,17 +183,31 @@ const repoPublicPath =
         isEUStack && sdkEnv === "prod" ? "/sdk" : ""
       }/web/${repoVersion}/${sdkVersionValue}`;
 
+const sdkUrls = {
+  prod: "https://checkout.hyperswitch.io",
+  sandbox: "https://beta.hyperswitch.io",
+  integ: "https://dev.hyperswitch.io",
+  local: "http://localhost:9050",
+};
+
+/*
+ Fail the build on an unknown sdkEnv rather than ship a production-shaped build whose
+ publicPath, index.html <script src> and ApiEndpoint.sdkDomainUrl all point at
+ http://localhost:9050 (the old fallback). ENV_SDK_URL is the supported escape hatch.
+ */
+if (!Object.prototype.hasOwnProperty.call(sdkUrls, sdkEnv) && !envSdkUrl) {
+  throw new Error(
+    `Unsupported sdkEnv "${sdkEnv}". Expected one of ${Object.keys(
+      sdkUrls,
+    ).join(", ")}, or set ENV_SDK_URL to build for another host.`,
+  );
+}
+
 // Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
   if (isEUStack && env === "prod") return "https://eu.hyperswitch.io";
-  const urls = {
-    prod: "https://checkout.hyperswitch.io",
-    sandbox: "https://beta.hyperswitch.io",
-    integ: "https://dev.hyperswitch.io",
-    local: "http://localhost:9050",
-  };
-  return urls[env] || urls.local;
+  return sdkUrls[env];
 };
 
 // Determine SDK URL
@@ -240,7 +261,7 @@ const getEnvironmentType = (env) => {
 const { isLocal, isIntegrationEnv, isProductionEnv, isSandboxEnv } =
   getEnvironmentType(sdkEnv);
 
-module.exports = (publicPath = "auto") => {
+module.exports = () => {
   const entries = {
     app: "./index.js",
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
@@ -293,14 +314,14 @@ module.exports = (publicPath = "auto") => {
             "Content-Security-Policy": {
               "http-equiv": "Content-Security-Policy",
               content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
+                " ",
               )};
                 style-src ${authorizedStyleSources.join(" ")};
                 frame-src ${authorizedFrameSources.join(" ")};
                 img-src ${authorizedImageSources.join(" ")};
                 font-src ${authorizedFontSources.join(" ")};
                 connect-src ${authorizedConnectSources.join(
-                  " "
+                  " ",
                 )} ${logEndpoint} ${backendEndPoint};
       `,
             },
@@ -318,14 +339,14 @@ module.exports = (publicPath = "auto") => {
             "Content-Security-Policy": {
               "http-equiv": "Content-Security-Policy",
               content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
+                " ",
               )};
           style-src ${authorizedStyleSources.join(" ")};
           frame-src ${authorizedFrameSources.join(" ")};
           img-src ${authorizedImageSources.join(" ")};
           font-src ${authorizedFontSources.join(" ")};
           connect-src ${authorizedConnectSources.join(
-            " "
+            " ",
           )} ${logEndpoint} ${backendEndPoint};
           `,
             },
@@ -348,7 +369,7 @@ module.exports = (publicPath = "auto") => {
         analyzerMode: "static",
         reportFilename: "bundle-report.html",
         openAnalyzer: false,
-      })
+      }),
     );
   }
 
@@ -368,13 +389,19 @@ module.exports = (publicPath = "auto") => {
             paths: ["dist"],
           },
         },
-      })
+      }),
     );
   }
 
   return {
     mode: isLocal ? "development" : "production",
-    devtool: isLocal ? "cheap-module-source-map" : "source-map",
+    /*
+     "hidden-source-map" still writes the .map files (the Sentry upload above keeps working)
+     but omits the sourceMappingURL comment so devtools do not fetch them. It is not access
+     control: aws/hyperswitch_web_aws_production_deployment.sh excludes *.map (and the bundle
+     report) from its S3 upload, and any other deployment path has to do the same.
+     */
+    devtool: isLocal ? "cheap-module-source-map" : "hidden-source-map",
     output: {
       path: isLocal
         ? path.resolve(__dirname, "dist")
@@ -382,11 +409,30 @@ module.exports = (publicPath = "auto") => {
             __dirname,
             "dist",
             isEUStack ? `${sdkEnv}_eu` : sdkEnv,
-            sdkVersionValue
+            sdkVersionValue,
           ),
       crossOriginLoading: "anonymous",
       clean: true,
-      publicPath: `${repoPublicPath}/`,
+      /*
+       Chunk URLs must carry the SDK's own origin: HyperLoader.js runs on the *merchant's*
+       origin, where a root-relative publicPath 404s. The `sdkUrl + repoPublicPath` base is the
+       same one ApiEndpoint.sdkDomainUrl builds for app.js, app.css and the icon sprite, so the
+       iframe entries keep resolving to the directory they load from today; crossOriginLoading
+       + SRI cover the cross-origin chunk fetches from the merchant page.
+       Under the dev server no origin is knowable at build time, so "auto" derives one per
+       entry at runtime from document.currentScript.src. A root-relative path 404s loader
+       chunks on the merchant's root (demo app :9060 vs dev server :9050), and sdkUrl is wrong
+       too - `start:integ` would load the *deployed* app.js, whose SRI hash differs from the
+       local build, so the browser blocks it. "auto" costs the served path: webpack-dev-
+       middleware reads it as "/", so webpack.dev.js re-pins the mount to
+       `devMiddlewarePublicPath` below. The DefinePlugin `publicPath` (read by Icon.res for the
+       sprite URL) is a separate value and must not move, or every logo 404s.
+       */
+      publicPath: isDevServer
+        ? "auto"
+        : isLocal
+          ? "/"
+          : `${sdkUrl}${repoPublicPath}/`,
       hashFunction: "sha384",
     },
     optimization: isLocal
@@ -401,8 +447,11 @@ module.exports = (publicPath = "auto") => {
                   drop_console: false,
                 },
                 mangle: {
-                  keep_fnames: true, // Prevent function names from being mangled
-                  keep_classnames: true, // Prevent class names from being mangled
+                  /* babel-plugin-add-react-displayname derives displayName from function
+                     names, and Sentry stack frames are only readable while they survive */
+                  keep_fnames: true,
+                  /* keep_classnames deliberately unset: ReScript emits no classes and there
+                     are no React class components, so it would only cost bytes */
                 },
               },
             }),
@@ -445,3 +494,11 @@ module.exports = (publicPath = "auto") => {
     },
   };
 };
+
+/*
+ The pathname webpack-dev-middleware mounts the compiled assets at - what `output.publicPath`
+ would have been if the origin were knowable at build time. "auto" alone would serve from "/"
+ and `start:integ` would stop answering on `/web/<version>/<sdkVersion>/`. Exported rather
+ than recomputed so repoPublicPath has one definition.
+ */
+module.exports.devMiddlewarePublicPath = `${repoPublicPath}/`;
