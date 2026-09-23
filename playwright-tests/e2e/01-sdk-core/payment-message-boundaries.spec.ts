@@ -9,6 +9,7 @@ import {
   testIds,
   PAYMENT_ELEMENT_IFRAME,
   CLIENT_BASE_URL,
+  HYPERSWITCH_API_URL,
   SDK_URL,
 } from "../../fixtures";
 
@@ -1494,7 +1495,10 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
       });
       for (const type of ["3ds", "3dsAuth"])
         await page.route(
-          `${SDK_URL}/fullscreenIndex.html?fullscreenType=${type}`,
+          (url) =>
+            url.origin === new URL(SDK_URL).origin &&
+            url.pathname === new URL(`${SDK_URL}/fullscreenIndex.html`).pathname &&
+            url.searchParams.get("fullscreenType") === type,
           (route) =>
             route.fulfill({
               contentType: "text/html",
@@ -1542,6 +1546,9 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
       const overlay = page
         .frames()
         .find((frame) => frame.url().includes("fullscreenType=3ds"))!;
+      expect(new URL(overlay.url()).searchParams.get("endpoint")).toBe(
+        HYPERSWITCH_API_URL,
+      );
       await sendFromSibling(page, {
         fullscreen: true,
         param: "3dsAuth",
@@ -1577,6 +1584,12 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
       await expect(
         page.frameLocator("#orca-fullscreen").locator("body"),
       ).toHaveText("3dsAuth");
+      const authenticationFrame = page
+        .frames()
+        .find((frame) => frame.url().includes("fullscreenType=3dsAuth"))!;
+      expect(new URL(authenticationFrame.url()).searchParams.get("endpoint")).toBe(
+        HYPERSWITCH_API_URL,
+      );
       await page
         .frameLocator("#orca-fullscreen")
         .locator("body")

@@ -166,10 +166,10 @@ let makeFullscreenFlows = (
       fullscreenActiveRef := true
       mount.fullscreenSlot->Window.innerHTML("")
       overlayRef := None
-      let overlaySrc =
-        paramType !== ""
-          ? `${sdkDomain}/fullscreenIndex.html?fullscreenType=${paramType}`
-          : `${sdkDomain}/fullscreenIndex.html?fullscreenType=fullscreen`
+      let overlaySrc = ApiEndpoint.getFullscreenIframeUrl(
+        ~sdkDomain,
+        ~fullscreenType=paramType,
+      )
       let colorScheme =
         appearance->CardTheme.getColorSchemeFromAppearance->CardTheme.getColorSchemeValue
       mount.fullscreenSlot

@@ -30,6 +30,11 @@ let make = () => {
 
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
 
+  switch getQueryParamsDictforKey(url.search, "endpoint") {
+  | "" => ()
+  | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+  }
+
   React.useEffect(() => {
     setLoggerState(_ => logger)
     None
