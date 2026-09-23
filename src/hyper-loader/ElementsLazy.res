@@ -26,7 +26,7 @@
  The import() lives here rather than in Hyper.res because a dynamic import taxes every entry
  whose graph contains the module holding it; only HyperLoader reaches this file.
  */
-module Q = LazyCallQueue
+module CallQueue = LazyCallQueue
 
 /* Reporting a replay failure must not itself throw - it runs inside promise handlers that
    would otherwise turn one failure into an unhandled rejection on the merchant's page */
@@ -75,8 +75,8 @@ let make = (
     noteFailure("Elements deferred call failed")
   }
 
-  let queue = Q.make(~onError=reportFailure)
-  let enqueue = step => queue->Q.push(step)
+  let queue = CallQueue.make(~onError=reportFailure)
+  let enqueue = step => queue->CallQueue.push(step)
 
   let elementsRef: ref<option<Types.element>> = ref(None)
 
@@ -118,7 +118,7 @@ let make = (
   })
   /* Draining after the catch, not inside the success branch, is what lets every queued call
      take its fallback branch when the chunk never arrives instead of waiting forever */
-  ->Promise.thenResolve(() => queue->Q.drain)
+  ->Promise.thenResolve(() => queue->CallQueue.drain)
   ->Promise.catch(err => {
     reportFailure(err)
     Promise.resolve()
@@ -141,20 +141,20 @@ let make = (
 
     let handle: Types.paymentElement = {
       on: (event, handler) =>
-        queue->Q.pushCall(elementRef, element => element.on(event, handler)),
-      collapse: () => queue->Q.pushCall(elementRef, element => element.collapse()),
-      blur: () => queue->Q.pushCall(elementRef, element => element.blur()),
+        queue->CallQueue.pushCall(elementRef, element => element.on(event, handler)),
+      collapse: () => queue->CallQueue.pushCall(elementRef, element => element.collapse()),
+      blur: () => queue->CallQueue.pushCall(elementRef, element => element.blur()),
       update: newOptions =>
-        queue->Q.pushCall(elementRef, element => element.update(newOptions)),
-      destroy: () => queue->Q.pushCall(elementRef, element => element.destroy()),
-      unmount: () => queue->Q.pushCall(elementRef, element => element.unmount()),
-      mount: selector => queue->Q.pushCall(elementRef, element => element.mount(selector)),
-      focus: () => queue->Q.pushCall(elementRef, element => element.focus()),
-      clear: () => queue->Q.pushCall(elementRef, element => element.clear()),
+        queue->CallQueue.pushCall(elementRef, element => element.update(newOptions)),
+      destroy: () => queue->CallQueue.pushCall(elementRef, element => element.destroy()),
+      unmount: () => queue->CallQueue.pushCall(elementRef, element => element.unmount()),
+      mount: selector => queue->CallQueue.pushCall(elementRef, element => element.mount(selector)),
+      focus: () => queue->CallQueue.pushCall(elementRef, element => element.focus()),
+      clear: () => queue->CallQueue.pushCall(elementRef, element => element.clear()),
       onSDKHandleClick: callback =>
-        queue->Q.pushCall(elementRef, element => element.onSDKHandleClick(callback)),
+        queue->CallQueue.pushCall(elementRef, element => element.onSDKHandleClick(callback)),
       confirmPayment: payload =>
-        queue->Q.pushPromiseCall(
+        queue->CallQueue.pushPromiseCall(
           elementRef,
           element => element.confirmPayment(payload),
           ~orElse=() => Types.defaultPaymentElement.confirmPayment(payload),
@@ -194,32 +194,32 @@ let make = (
           )
         )
         {
-          mount: selector => queue->Q.pushCall(fieldRef, handle => handle.mount(selector)),
-          unmount: () => queue->Q.pushCall(fieldRef, handle => handle.unmount()),
-          destroy: () => queue->Q.pushCall(fieldRef, handle => handle.destroy()),
+          mount: selector => queue->CallQueue.pushCall(fieldRef, handle => handle.mount(selector)),
+          unmount: () => queue->CallQueue.pushCall(fieldRef, handle => handle.unmount()),
+          destroy: () => queue->CallQueue.pushCall(fieldRef, handle => handle.destroy()),
           update: newOptions =>
-            queue->Q.pushCall(fieldRef, handle => handle.update(newOptions)),
-          focus: () => queue->Q.pushCall(fieldRef, handle => handle.focus()),
-          blur: () => queue->Q.pushCall(fieldRef, handle => handle.blur()),
-          clear: () => queue->Q.pushCall(fieldRef, handle => handle.clear()),
+            queue->CallQueue.pushCall(fieldRef, handle => handle.update(newOptions)),
+          focus: () => queue->CallQueue.pushCall(fieldRef, handle => handle.focus()),
+          blur: () => queue->CallQueue.pushCall(fieldRef, handle => handle.blur()),
+          clear: () => queue->CallQueue.pushCall(fieldRef, handle => handle.clear()),
           on: (event, callback) =>
-            queue->Q.pushCall(fieldRef, handle => handle.on(event, callback)),
+            queue->CallQueue.pushCall(fieldRef, handle => handle.on(event, callback)),
         }
       }
 
       let cardForm: Types.cardForm = {
         create: createField,
         on: (event, callback) =>
-          queue->Q.pushCall(realFormRef, form => form.on(event, callback)),
+          queue->CallQueue.pushCall(realFormRef, form => form.on(event, callback)),
         confirmPayment: () =>
-          queue->Q.pushPromiseCall(
+          queue->CallQueue.pushPromiseCall(
             realFormRef,
             form => form.confirmPayment(),
             ~orElse=() => Types.defaultCardForm.confirmPayment(),
           ),
-        deinit: () => queue->Q.pushCall(realFormRef, form => form.deinit()),
+        deinit: () => queue->CallQueue.pushCall(realFormRef, form => form.deinit()),
         update: newOptions =>
-          queue->Q.pushCall(realFormRef, form => form.update(newOptions)),
+          queue->CallQueue.pushCall(realFormRef, form => form.update(newOptions)),
         fields: cardFormFields,
       }
       cardFormRef := Some(cardForm)
@@ -229,16 +229,16 @@ let make = (
   {
     getElement,
     update: newOptions =>
-      queue->Q.pushCall(elementsRef, elements => elements.update(newOptions)),
+      queue->CallQueue.pushCall(elementsRef, elements => elements.update(newOptions)),
     fetchUpdates: () =>
-      queue->Q.pushPromiseCall(
+      queue->CallQueue.pushPromiseCall(
         elementsRef,
         elements => elements.fetchUpdates(),
         ~orElse=() => Types.defaultElement.fetchUpdates(),
       ),
     create,
     updateIntent: callback =>
-      queue->Q.pushPromiseCall(
+      queue->CallQueue.pushPromiseCall(
         elementsRef,
         elements => elements.updateIntent(callback),
         ~orElse=() => Types.defaultElement.updateIntent(callback),

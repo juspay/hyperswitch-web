@@ -133,5 +133,3 @@ let make = () => {
     <iframe id="threeDsAuthFrame" name="threeDsAuthFrame" title="3D Secure Authentication Frame" />
   </div>
 }
-
-let default = make

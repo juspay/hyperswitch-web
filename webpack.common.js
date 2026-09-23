@@ -393,11 +393,6 @@ module.exports = () => {
     );
   }
 
-  console.log(
-    "===> publicPath",
-    isDevServer ? "auto" : isLocal ? "/" : `${sdkUrl}${repoPublicPath}/`,
-  );
-
   return {
     mode: isLocal ? "development" : "production",
     /*
@@ -408,17 +403,14 @@ module.exports = () => {
      */
     devtool: isLocal ? "cheap-module-source-map" : "hidden-source-map",
     output: {
-      /* The dev server's static root is `dist` itself (webpack.dev.js), so a served build
-         belongs there whatever sdkEnv says */
-      path:
-        isLocal || isDevServer
-          ? path.resolve(__dirname, "dist")
-          : path.resolve(
-              __dirname,
-              "dist",
-              isEUStack ? `${sdkEnv}_eu` : sdkEnv,
-              sdkVersionValue,
-            ),
+      path: isLocal
+        ? path.resolve(__dirname, "dist")
+        : path.resolve(
+            __dirname,
+            "dist",
+            isEUStack ? `${sdkEnv}_eu` : sdkEnv,
+            sdkVersionValue,
+          ),
       crossOriginLoading: "anonymous",
       clean: true,
       /*

@@ -299,6 +299,7 @@ type options = {
   paymentMethodsConfig: paymentMethodsConfig,
   alwaysSendCustomerAcceptance: bool,
   redirectionInfo: redirectionInfo,
+  appearance: JSON.t,
 }
 
 type payerDetails = {
@@ -496,6 +497,7 @@ let defaultOptions = {
   paymentMethodsConfig: [],
   alwaysSendCustomerAcceptance: false,
   redirectionInfo: defaultRedirectionInfo,
+  appearance: Dict.make()->JSON.Encode.object,
 }
 
 let getMessageDisplayMode = (str, key) => {
@@ -1692,6 +1694,7 @@ let allowedPaymentElementOptions = [
   "paymentMethodsConfig",
   "alwaysSendCustomerAcceptance",
   "redirectionInfo",
+  "appearance",
 ]
 
 let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
@@ -1701,7 +1704,7 @@ let overrideFieldsToExcludeFromMasking = [
   "paymentMethodsConfig.paymentMethodTypes.message.value",
 ]
 
-let normalizePath = path => path->String.replaceRegExp(%re("/\[(\d+)\]/g"), "")
+let normalizePath = path => path->String.replaceRegExp(/\[(\d+)\]/g, "")
 
 let isPathStartsWithPattern = (normalizedPath, normalizedPattern) =>
   normalizedPath == normalizedPattern || normalizedPath->String.startsWith(normalizedPattern ++ ".")
@@ -1789,6 +1792,7 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     paymentMethodsConfig: getPaymentMethodsConfig(dict, "paymentMethodsConfig", logger),
     alwaysSendCustomerAcceptance: getBool(dict, "alwaysSendCustomerAcceptance", false),
     redirectionInfo: getRedirectionInfo(dict, "redirectionInfo", logger),
+    appearance: getJsonObjectFromDict(dict, "appearance"),
   }
 }
 

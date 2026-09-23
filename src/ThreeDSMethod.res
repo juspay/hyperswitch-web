@@ -309,5 +309,3 @@ let make = () => {
     />
   </>
 }
-
-let default = make

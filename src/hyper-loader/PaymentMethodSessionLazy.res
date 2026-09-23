@@ -14,7 +14,7 @@
  than rejecting: merchant code is `const r = await form.tokenize(); if (r.error) {...}`, and a
  rejection would throw instead of taking the error branch.
  */
-module Q = LazyCallQueue
+module CallQueue = LazyCallQueue
 
 let chunk = LazyChunk.make(~label="PaymentMethodSession")
 
@@ -38,8 +38,8 @@ let make = (
     | _ => ()
     }
 
-  let queue = Q.make(~onError=reportFailure)
-  let enqueue = step => queue->Q.push(step)
+  let queue = CallQueue.make(~onError=reportFailure)
+  let enqueue = step => queue->CallQueue.push(step)
 
   let sessionRef: ref<option<Types.initPaymentMethodSession>> = ref(None)
 
@@ -63,7 +63,7 @@ let make = (
   })
   /* Draining after the catch, not inside the success branch, is what lets every queued call
      take its fallback branch when the chunk never arrives instead of waiting forever */
-  ->Promise.thenResolve(() => queue->Q.drain)
+  ->Promise.thenResolve(() => queue->CallQueue.drain)
   ->Promise.catch(err => {
     reportFailure(err)
     Promise.resolve()
@@ -84,37 +84,42 @@ let make = (
         )
       )
       {
-        mount: selector => queue->Q.pushCall(fieldRef, handle => handle.mount(selector)),
-        unmount: () => queue->Q.pushCall(fieldRef, handle => handle.unmount()),
-        destroy: () => queue->Q.pushCall(fieldRef, handle => handle.destroy()),
-        update: newOptions => queue->Q.pushCall(fieldRef, handle => handle.update(newOptions)),
-        focus: () => queue->Q.pushCall(fieldRef, handle => handle.focus()),
-        blur: () => queue->Q.pushCall(fieldRef, handle => handle.blur()),
-        clear: () => queue->Q.pushCall(fieldRef, handle => handle.clear()),
-        on: (event, callback) => queue->Q.pushCall(fieldRef, handle => handle.on(event, callback)),
+        mount: selector => queue->CallQueue.pushCall(fieldRef, handle => handle.mount(selector)),
+        unmount: () => queue->CallQueue.pushCall(fieldRef, handle => handle.unmount()),
+        destroy: () => queue->CallQueue.pushCall(fieldRef, handle => handle.destroy()),
+        update: newOptions =>
+          queue->CallQueue.pushCall(fieldRef, handle => handle.update(newOptions)),
+        focus: () => queue->CallQueue.pushCall(fieldRef, handle => handle.focus()),
+        blur: () => queue->CallQueue.pushCall(fieldRef, handle => handle.blur()),
+        clear: () => queue->CallQueue.pushCall(fieldRef, handle => handle.clear()),
+        on: (event, callback) =>
+          queue->CallQueue.pushCall(fieldRef, handle => handle.on(event, callback)),
       }
     }
 
     {
       create,
-      on: (event, callback) => queue->Q.pushCall(realFormRef, form => form.on(event, callback)),
+      on: (event, callback) =>
+        queue->CallQueue.pushCall(realFormRef, form => form.on(event, callback)),
       tokenize: () =>
-        queue->Q.pushPromiseCall(
+        queue->CallQueue.pushPromiseCall(
           realFormRef,
           form => form.tokenize(),
           ~orElse=() => Types.defaultVaultCardForm.tokenize(),
         ),
-      deinit: () => queue->Q.pushCall(realFormRef, form => form.deinit()),
-      update: newOptions => queue->Q.pushCall(realFormRef, form => form.update(newOptions)),
+      deinit: () => queue->CallQueue.pushCall(realFormRef, form => form.deinit()),
+      update: newOptions => queue->CallQueue.pushCall(realFormRef, form => form.update(newOptions)),
       fields,
     }
   }
 
   {
     createCardForm,
-    update: newOptions => queue->Q.pushCall(sessionRef, session => session.update(newOptions)),
-    on: (event, callback) => queue->Q.pushCall(sessionRef, session => session.on(event, callback)),
-    deinit: () => queue->Q.pushCall(sessionRef, session => session.deinit()),
+    update: newOptions =>
+      queue->CallQueue.pushCall(sessionRef, session => session.update(newOptions)),
+    on: (event, callback) =>
+      queue->CallQueue.pushCall(sessionRef, session => session.on(event, callback)),
+    deinit: () => queue->CallQueue.pushCall(sessionRef, session => session.deinit()),
     fields,
   }
 }
