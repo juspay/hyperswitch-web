@@ -470,10 +470,9 @@ let make = (
             let mainElement = Window.querySelector(
               `#orca-${elementIframeId}-iframeRef-${localSelectorString}`,
             )
-            let iframeURL =
-              fullscreenParam.contents != ""
-                ? `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=${fullscreenParam.contents}`
-                : `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=fullscreen`
+            let iframeURL = ApiEndpoint.getFullscreenIframeUrl(
+              ~fullscreenType=fullscreenParam.contents,
+            )
             fullscreen.contents
               ? {
                   if iframeID == localSelectorString {
