@@ -13,4 +13,4 @@ webpack.common.js     @ArushKapoorJuspay @seekshiva
 src/                  @seekshiva @ArushKapoorJuspay @sakksham7 @aritro2002 @AbhishekChorotiya  
 src/hyper-log-catcher @Sanskar2001
 
-cypress-tests/        @Sanskar2001
+playwright-tests/     @Sanskar2001

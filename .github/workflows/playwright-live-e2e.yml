@@ -1,0 +1,167 @@
+name: Playwright Live E2E
+
+# Live-sandbox Playwright tier: real router, real connectors, redirects, 3DS
+# and popups. Runs on every pull request, in the merge queue and on every push
+# to main, against sandbox. The hermetic tier in playwright-pr-checks.yml runs
+# alongside it.
+#
+# One job. The `live-setup` project (a dependency of `live` and `live-webkit`)
+# creates the test merchant, profiles and connector accounts once per run with
+# playwright-tests/setup/merchant-setup.js, then the test projects run in
+# parallel Playwright workers against it. Nothing is handed between jobs, so the
+# merchant's keys never leave the runner as an artifact.
+#
+# WebKit (Safari engine) is added on the nightly schedule, or when a manual run
+# asks for it.
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
+  schedule:
+    # 21:30 UTC = 03:00 IST
+    - cron: "30 21 * * *"
+  workflow_dispatch:
+    inputs:
+      include_webkit:
+        description: "Also run the live-webkit project (Safari engine)"
+        type: boolean
+        default: false
+
+# Explicit least-privilege permissions
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  NODE_VERSION: "20"
+  TEST_ENV: sandbox
+  RUN_WEBKIT: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.include_webkit) }}
+
+jobs:
+  live:
+    name: live
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: Testing
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            Hyperswitch-React-Demo-App/package-lock.json
+            playwright-tests/package-lock.json
+
+      - name: Update git submodules
+        run: git submodule update --init --recursive
+
+      # --ignore-scripts: the root postinstall would pull shared-code to its
+      # latest main commit, overriding the pinned submodule checked out above.
+      - name: Install SDK dependencies
+        run: npm install --ignore-scripts
+
+      - name: Install demo app dependencies
+        working-directory: ./Hyperswitch-React-Demo-App
+        run: npm install
+
+      - name: Compile ReScript
+        run: npm run re:build
+
+      - name: Install Playwright test dependencies
+        working-directory: ./playwright-tests
+        run: npm ci
+
+      - name: Read Playwright version
+        id: playwright-version
+        working-directory: ./playwright-tests
+        run: |
+          version="$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      # Restore and save separately so the browsers are cached even when the
+      # tests fail (actions/cache only saves after a successful job).
+      - name: Restore Playwright browsers
+        id: browser-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-${{ env.RUN_WEBKIT == 'true' && 'chromium-webkit' || 'chromium' }}
+
+      - name: Install Playwright browsers
+        working-directory: ./playwright-tests
+        run: |
+          if [ "${RUN_WEBKIT}" = "true" ]; then
+            npx playwright install --with-deps chromium webkit
+          else
+            npx playwright install --with-deps chromium
+          fi
+
+      - name: Save Playwright browsers
+        if: ${{ steps.browser-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ steps.browser-cache.outputs.cache-primary-key }}
+
+      # Download the GPG-encrypted connector credentials from S3 and decrypt
+      # them outside the workspace.
+      - name: Download encrypted creds from S3 and decrypt
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONNECTOR_CREDS_AWS_ACCESS_KEY_ID }}
+          AWS_REGION: ${{ secrets.CONNECTOR_CREDS_AWS_REGION }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONNECTOR_CREDS_AWS_SECRET_ACCESS_KEY }}
+          CONNECTOR_AUTH_PASSPHRASE: ${{ secrets.CONNECTOR_AUTH_PASSPHRASE }}
+          CONNECTOR_CREDS_S3_BUCKET_URI: ${{ secrets.CONNECTOR_CREDS_S3_BUCKET_URI }}
+          S3_SOURCE_FILE_NAME: "f53aa14d-e544-48f1-ac4e-0200f65e0cb6.json.gpg"
+          CREDS_DIR: ${{ runner.temp }}/connector-creds
+        run: |
+          mkdir -p "${CREDS_DIR}"
+          aws s3 cp "${CONNECTOR_CREDS_S3_BUCKET_URI}/${S3_SOURCE_FILE_NAME}" "${CREDS_DIR}/creds.json.gpg"
+          gpg --quiet --batch --yes --decrypt \
+              --passphrase="${CONNECTOR_AUTH_PASSPHRASE}" \
+              --output "${CREDS_DIR}/creds.json" "${CREDS_DIR}/creds.json.gpg"
+          rm "${CREDS_DIR}/creds.json.gpg"
+
+      # live-setup creates the merchant first; retries (2) and
+      # trace: on-first-retry come from the live projects.
+      - name: Run live tests
+        working-directory: ./playwright-tests
+        env:
+          ADMIN_API_KEY: ${{ secrets.CYPRESS_ADMIN_KEY }}
+          CONNECTOR_AUTH_FILE_PATH: ${{ runner.temp }}/connector-creds/creds.json
+          # Outside the workspace, so the merchant's keys are never uploaded.
+          CREDENTIALS_OUTPUT_PATH: ${{ runner.temp }}/test-credentials.json
+        run: |
+          projects="--project=live"
+          if [ "${RUN_WEBKIT}" = "true" ]; then
+            projects="${projects} --project=live-webkit"
+          fi
+          # shellcheck disable=SC2086
+          npx playwright test ${projects}
+
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-live
+          path: playwright-tests/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload traces on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: traces-live
+          path: playwright-tests/test-results
+          if-no-files-found: ignore
+          retention-days: 7

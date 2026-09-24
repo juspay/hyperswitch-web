@@ -1,11 +1,11 @@
 export const getPaymentIntentData = async ({
   baseUrl,
-  isCypressTestMode,
+  isTestMode,
   clientSecretQueryParam,
   setError,
 }) => {
   try {
-    if (isCypressTestMode) {
+    if (isTestMode) {
       return { clientSecret: clientSecretQueryParam };
     }
 

@@ -8,12 +8,12 @@ const devServer = {
   },
   hot: true,
   host: "0.0.0.0",
-  port: 9060,
+  port: process.env.DEMO_PORT || 9060,
   historyApiFallback: true,
   proxy: [
     {
       context: ["/payments"],
-      target: "http://localhost:5252",
+      target: `http://localhost:${process.env.DEMO_SERVER_PORT || 5252}`,
       changeOrigin: true,
       secure: true,
       pathRewrite: { "^/payments": "" },

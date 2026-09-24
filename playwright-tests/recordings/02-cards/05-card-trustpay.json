@@ -1,0 +1,122 @@
+{
+  "_source": "synthetic",
+  "_note": "05-card-trustpay: confirm on the Trustpay profile. no_three_ds -> succeeded (connector trustpay); three_ds -> requires_customer_action + next_action.redirect_to_url on the router's /payments/redirect endpoint. The redirect page itself (the router's form to Trustpay's ACS) is not modelled: it is served as the hermetic blank-document stub, so the spec's conditional #tp-iframe check finds nothing, which the test tolerates.",
+  "routes": [
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "status": 200,
+      "intentPatch": {
+        "status": "{{response.status}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "net_amount": "{{intent.amount}}",
+        "amount_capturable": "{{intent.amount}}",
+        "amount_received": null,
+        "connector": "trustpay",
+        "client_secret": "{{intent.client_secret}}",
+        "created": "{{intent.created}}",
+        "currency": "{{intent.currency}}",
+        "customer_id": "{{intent.customer_id}}",
+        "description": "{{intent.description}}",
+        "capture_method": "{{intent.capture_method}}",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "payment_method_data": {
+          "card": {
+            "last4": "0067",
+            "card_type": "CREDIT",
+            "card_network": "Visa",
+            "card_issuer": null,
+            "card_issuing_country": null,
+            "card_isin": "420000",
+            "card_exp_month": "12",
+            "card_exp_year": "30",
+            "card_holder_name": null
+          },
+          "billing": null
+        },
+        "authentication_type": "three_ds",
+        "next_action": {
+          "type": "redirect_to_url",
+          "redirect_to_url": "{{api_url}}/payments/redirect/{{intent.payment_id}}/{{merchant_id}}/{{intent.payment_id}}_1"
+        },
+        "manual_retry_allowed": false,
+        "connector_transaction_id": "hermetic_synthetic_txn",
+        "error_code": null,
+        "error_message": null,
+        "profile_id": "{{intent.profile_id}}",
+        "billing": "{{intent.billing}}",
+        "shipping": "{{intent.shipping}}",
+        "email": "{{intent.email}}"
+      },
+      "match": {
+        "intent": {
+          "profile_id": "{{profiles.trustpay}}",
+          "authentication_type": "three_ds"
+        }
+      }
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "status": 200,
+      "intentPatch": {
+        "status": "{{response.status}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "succeeded",
+        "amount": "{{intent.amount}}",
+        "net_amount": "{{intent.amount}}",
+        "amount_capturable": 0,
+        "amount_received": "{{intent.amount}}",
+        "connector": "trustpay",
+        "client_secret": "{{intent.client_secret}}",
+        "created": "{{intent.created}}",
+        "currency": "{{intent.currency}}",
+        "customer_id": "{{intent.customer_id}}",
+        "description": "{{intent.description}}",
+        "capture_method": "{{intent.capture_method}}",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "payment_method_data": {
+          "card": {
+            "last4": "0000",
+            "card_type": "CREDIT",
+            "card_network": "Visa",
+            "card_issuer": null,
+            "card_issuing_country": null,
+            "card_isin": "420000",
+            "card_exp_month": "12",
+            "card_exp_year": "30",
+            "card_holder_name": null
+          },
+          "billing": null
+        },
+        "authentication_type": "no_three_ds",
+        "next_action": null,
+        "manual_retry_allowed": false,
+        "connector_transaction_id": "hermetic_synthetic_txn",
+        "error_code": null,
+        "error_message": null,
+        "profile_id": "{{intent.profile_id}}",
+        "billing": "{{intent.billing}}",
+        "shipping": "{{intent.shipping}}",
+        "email": "{{intent.email}}"
+      },
+      "match": {
+        "intent": {
+          "profile_id": "{{profiles.trustpay}}"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "_source": "synthetic",
+  "_note": "Fiuu DuitNow (real_time_payment / duit_now) on the Fiuu profile. confirm answers requires_customer_action + next_action qr_code_information (image_data_url is a 1x1 PNG standing in for the QR), which the SDK shows in the #orca-fullscreen QRCodeDisplay (src/Payments/QRCodeDisplay.res, footer 'MALAYSIA NATIONAL QR' for duit_now); the QR screen's status polling (GlobalVars.backendEndPoint, https://beta.hyperswitch.io/api) is answered by the base retrieve route with the intent status (requires_customer_action), so it keeps polling. A confirm whose body carries real_time_payment.duit_now_qr gets the router's serde 400 (message modelled on the live error the spec asserts).",
+  "routes": [
+    {
+      "name": "clientList",
+      "method": "GET",
+      "path": "/payments/:paymentId/client",
+      "status": 200,
+      "body": {
+        "payment_methods_enabled": [
+          {
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "card",
+            "payment_method_type": "debit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "real_time_payment",
+            "payment_method_type": "duit_now",
+            "payment_experience": [],
+            "customer_acceptance_support": false
+          }
+        ],
+        "customer_payment_methods": [],
+        "intent_data": {
+          "currency": "{{intent.currency}}",
+          "amount": "{{intent.amount}}",
+          "customer_id": "{{intent.customer_id}}",
+          "email": "{{intent.email}}",
+          "billing": "{{intent.billing}}",
+          "shipping": "{{intent.shipping}}",
+          "merchant_name": "Hermetic Test Merchant",
+          "payment_type": "normal",
+          "mandate_payment": null,
+          "setup_future_usage": "{{intent.setup_future_usage}}",
+          "is_tax_calculation_enabled": false,
+          "is_guest_customer": false,
+          "installment_options": null
+        },
+        "sdk_next_action": {
+          "next_action": null,
+          "should_block_confirm": false
+        }
+      }
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": {
+        "body": {
+          "payment_method_data": {
+            "real_time_payment": {
+              "duit_now_qr": {}
+            }
+          }
+        }
+      },
+      "status": 400,
+      "body": {
+        "error": {
+          "type": "invalid_request",
+          "message": "Json deserialize error: unknown variant `duit_now_qr`, expected one of `fps`, `duit_now`, `pay_now`, `viet_qr`",
+          "code": "IR_06"
+        }
+      }
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "status": 200,
+      "intentPatch": {
+        "status": "{{response.status}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "net_amount": "{{intent.amount}}",
+        "amount_capturable": "{{intent.amount}}",
+        "amount_received": null,
+        "connector": "fiuu",
+        "client_secret": "{{intent.client_secret}}",
+        "created": "{{intent.created}}",
+        "currency": "{{intent.currency}}",
+        "customer_id": "{{intent.customer_id}}",
+        "description": "{{intent.description}}",
+        "capture_method": "{{intent.capture_method}}",
+        "payment_method": "real_time_payment",
+        "payment_method_type": "duit_now",
+        "payment_method_data": null,
+        "payment_experience": null,
+        "authentication_type": "{{intent.authentication_type}}",
+        "next_action": {
+          "type": "qr_code_information",
+          "image_data_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+          "display_to_timestamp": null,
+          "qr_code_url": null,
+          "display_text": null,
+          "border_color": null
+        },
+        "manual_retry_allowed": null,
+        "connector_transaction_id": "hermetic_fiuu_txn",
+        "error_code": null,
+        "error_message": null,
+        "profile_id": "{{intent.profile_id}}",
+        "billing": "{{intent.billing}}",
+        "shipping": "{{intent.shipping}}",
+        "email": "{{intent.email}}"
+      }
+    }
+  ]
+}

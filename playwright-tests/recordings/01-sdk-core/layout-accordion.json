@@ -1,0 +1,90 @@
+{
+  "_source": "synthetic",
+  "_note": "Stripe profile (USD) offering card (credit/debit) plus Klarna, Affirm and Afterpay/Clearpay as redirect pay-later methods, so the tabs / accordion layouts have several payment methods to arrange and select. Modelled on base/client-list.json (PaymentMethodsRecord.itemToObjMapperFromClientList).",
+  "routes": [
+    {
+      "name": "clientList",
+      "method": "GET",
+      "path": "/payments/:paymentId/client",
+      "status": 200,
+      "body": {
+        "payment_methods_enabled": [
+          {
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "card",
+            "payment_method_type": "debit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "pay_later",
+            "payment_method_type": "klarna",
+            "payment_experience": [
+              "redirect_to_url"
+            ],
+            "customer_acceptance_support": false
+          },
+          {
+            "payment_method": "pay_later",
+            "payment_method_type": "affirm",
+            "payment_experience": [
+              "redirect_to_url"
+            ],
+            "customer_acceptance_support": false
+          },
+          {
+            "payment_method": "pay_later",
+            "payment_method_type": "afterpay_clearpay",
+            "payment_experience": [
+              "redirect_to_url"
+            ],
+            "customer_acceptance_support": false
+          }
+        ],
+        "customer_payment_methods": [],
+        "intent_data": {
+          "currency": "{{intent.currency}}",
+          "amount": "{{intent.amount}}",
+          "customer_id": "{{intent.customer_id}}",
+          "email": "{{intent.email}}",
+          "billing": "{{intent.billing}}",
+          "shipping": "{{intent.shipping}}",
+          "merchant_name": "Hermetic Test Merchant",
+          "payment_type": "normal",
+          "mandate_payment": null,
+          "setup_future_usage": "{{intent.setup_future_usage}}",
+          "is_tax_calculation_enabled": false,
+          "is_guest_customer": false,
+          "installment_options": null
+        },
+        "sdk_next_action": {
+          "next_action": null,
+          "should_block_confirm": false
+        }
+      }
+    }
+  ]
+}

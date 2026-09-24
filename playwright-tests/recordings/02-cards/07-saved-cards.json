@@ -1,0 +1,152 @@
+{
+  "_source": "synthetic",
+  "_note": "07-saved-cards: customer hyperswitch_sdk_demo_id already has one saved Amex card nicknamed \"4 digit\" (the label the test clicks; Amex takes the 4-digit CVC it types). Replaces relying on a card saved by an earlier run. Base confirm (succeeded) answers the saved-card payment.",
+  "routes": [
+    {
+      "name": "clientList",
+      "method": "GET",
+      "path": "/payments/:paymentId/client",
+      "status": 200,
+      "body": {
+        "payment_methods_enabled": [
+          {
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "card",
+            "payment_method_type": "debit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          }
+        ],
+        "customer_payment_methods": [
+          {
+            "payment_token": "token_hermetic_saved_amex",
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "payment_method_data": {
+              "card": {
+                "scheme": "AmericanExpress",
+                "last4_digits": "0005",
+                "expiry_month": "03",
+                "expiry_year": "2030",
+                "card_token": null,
+                "card_holder_name": "joseph Doe",
+                "card_fingerprint": null,
+                "nick_name": "4 digit",
+                "card_network": "AmericanExpress",
+                "card_isin": "378282",
+                "card_issuer": null,
+                "card_type": "CREDIT",
+                "saved_to_locker": true
+              }
+            },
+            "default_payment_method_set": true,
+            "requires_cvv": true,
+            "last_used_at": "2026-09-01T10:00:00.000Z",
+            "recurring_enabled": false
+          }
+        ],
+        "intent_data": {
+          "currency": "{{intent.currency}}",
+          "amount": "{{intent.amount}}",
+          "customer_id": "{{intent.customer_id}}",
+          "email": "{{intent.email}}",
+          "billing": "{{intent.billing}}",
+          "shipping": "{{intent.shipping}}",
+          "merchant_name": "Hermetic Test Merchant",
+          "payment_type": "normal",
+          "mandate_payment": null,
+          "setup_future_usage": "{{intent.setup_future_usage}}",
+          "is_tax_calculation_enabled": false,
+          "is_guest_customer": false,
+          "installment_options": null
+        },
+        "sdk_next_action": {
+          "next_action": null,
+          "should_block_confirm": false
+        }
+      },
+      "match": {
+        "intent": {
+          "customer_id": "hyperswitch_sdk_demo_id"
+        }
+      }
+    },
+    {
+      "name": "customerPaymentMethods",
+      "method": "GET",
+      "path": "/customers/payment_methods",
+      "match": {
+        "intent": {
+          "customer_id": "hyperswitch_sdk_demo_id"
+        }
+      },
+      "status": 200,
+      "body": {
+        "customer_payment_methods": [
+          {
+            "payment_token": "token_hermetic_saved_amex",
+            "payment_method_id": "pm_hermetic_saved_amex",
+            "customer_id": "{{intent.customer_id}}",
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "payment_method_issuer": null,
+            "payment_method_issuer_code": null,
+            "recurring_enabled": false,
+            "installment_payment_enabled": false,
+            "payment_experience": [
+              "redirect_to_url"
+            ],
+            "card": {
+              "scheme": "AmericanExpress",
+              "issuer_country": null,
+              "last4_digits": "0005",
+              "expiry_month": "03",
+              "expiry_year": "2030",
+              "card_token": null,
+              "card_holder_name": "joseph Doe",
+              "card_fingerprint": null,
+              "nick_name": "4 digit",
+              "card_network": "AmericanExpress",
+              "card_isin": "378282",
+              "card_issuer": null,
+              "card_type": "CREDIT",
+              "saved_to_locker": true
+            },
+            "metadata": null,
+            "created": "2026-09-01T10:00:00.000Z",
+            "bank": null,
+            "surcharge_details": null,
+            "requires_cvv": true,
+            "last_used_at": "2026-09-01T10:00:00.000Z",
+            "default_payment_method_set": true,
+            "billing": null
+          }
+        ],
+        "is_guest_customer": false
+      }
+    }
+  ]
+}

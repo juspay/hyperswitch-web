@@ -1,0 +1,20 @@
+{
+  "_source": "synthetic",
+  "_note": "The router rejects a client-list call whose client_secret doesn't belong to a payment. 'invalid_secret_format' passes the SDK's own format check (.+_secret_[A-Za-z0-9]+), so the SDK mounts and calls GET /payments/invalid/client; base clientList would answer any id with a card list. Body modelled on the router's HE_02 not-found error.",
+  "routes": [
+    {
+      "name": "clientList",
+      "method": "GET",
+      "path": "/payments/:paymentId/client",
+      "match": { "query": { "client_secret": "invalid_secret_format" } },
+      "status": 404,
+      "body": {
+        "error": {
+          "type": "invalid_request",
+          "message": "Payment does not exist in our records",
+          "code": "HE_02"
+        }
+      }
+    }
+  ]
+}

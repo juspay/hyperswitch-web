@@ -1,0 +1,376 @@
+{
+  "_source": "synthetic",
+  "_note": "Popup flows for e2e/04-alternative-payments/popups.spec.ts, hand-written from the SDK sources (no sandbox access). Each flow is keyed on the intent's customer_id (popups_paypal_user / popups_klarna_user / popups_plaid_user). PayPal: wallet/paypal with payment_experience invoke_sdk_client + a paypal session token makes the SDK load the PayPal JS (src/Payments/PaypalSDK.res) and wire paypal.Buttons (src/Payments/PaypalSDKHelpers.res); createOrder confirms and gets the order id from connector_transaction_id (next_action invoke_sdk_client). Klarna: pay_later/klarna with invoke_sdk_client + a klarna session token renders the Klarna Payments express button (src/Payments/KlarnaSDK.res). Plaid: open_banking/open_banking_pis; confirm answers next_action third_party_sdk_session_token (wallet_name open_banking) and the SDK opens the plaidSDK fullscreen frame (src/Payments/PlaidSDKIframe.res), which loads Plaid Link. The vendor scripts (paypalSdkScript, klarnaSdkScript, plaidLinkScript) are minimal stand-ins that reproduce only the vendor API shape and the window they open; the pages they open are stand-ins too. The plaidSDK fullscreen frame's force-sync retrieve goes to GlobalVars.backendEndPoint (https://beta.hyperswitch.io/api), not the merchant's custom backend; the engine strips that /api prefix, so the base retrieve route answers it.",
+  "routes": [
+    {
+      "name": "clientList",
+      "method": "GET",
+      "path": "/payments/:paymentId/client",
+      "match": {
+        "intent": {
+          "customer_id": "popups_paypal_user"
+        }
+      },
+      "body": {
+        "payment_methods_enabled": [
+          {
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "card",
+            "payment_method_type": "debit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "wallet",
+            "payment_method_type": "paypal",
+            "payment_experience": [
+              "invoke_sdk_client"
+            ]
+          }
+        ],
+        "customer_payment_methods": [],
+        "intent_data": {
+          "currency": "{{intent.currency}}",
+          "amount": "{{intent.amount}}",
+          "customer_id": "{{intent.customer_id}}",
+          "email": "{{intent.email}}",
+          "billing": "{{intent.billing}}",
+          "shipping": "{{intent.shipping}}",
+          "merchant_name": "Hermetic Test Merchant",
+          "payment_type": "normal",
+          "mandate_payment": null,
+          "setup_future_usage": "{{intent.setup_future_usage}}",
+          "is_tax_calculation_enabled": false,
+          "is_guest_customer": false,
+          "installment_options": null
+        },
+        "sdk_next_action": {
+          "next_action": null,
+          "should_block_confirm": false
+        }
+      }
+    },
+    {
+      "name": "sessionTokens",
+      "method": "POST",
+      "path": "/payments/session_tokens",
+      "match": {
+        "intent": {
+          "customer_id": "popups_paypal_user"
+        }
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "client_secret": "{{intent.client_secret}}",
+        "session_token": [
+          {
+            "wallet_name": "paypal",
+            "connector": "paypal",
+            "session_token": "hermetic-paypal-client-id",
+            "sdk_next_action": {
+              "next_action": "confirm"
+            },
+            "intent": "capture",
+            "currency": "USD"
+          }
+        ]
+      }
+    },
+    {
+      "name": "paypalSdkScript",
+      "method": "GET",
+      "url": "https://www.paypal.com/sdk/js**",
+      "contentType": "application/javascript",
+      "body": "/* Hermetic stand-in for https://www.paypal.com/sdk/js (see e2e/04-alternative-payments/popups.spec.ts).\n   Mirrors what the real PayPal JS does with the config the SDK passes to paypal.Buttons():\n   a click opens the checkout popup synchronously, createOrder() supplies the order id the popup\n   then navigates to, and closing the popup calls onCancel(). */\n(function () {\n  function Buttons(cfg) {\n    return {\n      isEligible: function () { return true; },\n      render: function (selector) {\n        var host = document.querySelector(selector);\n        var btn = document.createElement(\"button\");\n        btn.type = \"button\";\n        btn.setAttribute(\"data-hermetic\", \"paypal-button\");\n        btn.setAttribute(\"data-funding-source\", cfg.fundingSource || \"\");\n        btn.setAttribute(\"aria-label\", \"PayPal\");\n        btn.textContent = \"PayPal\";\n        btn.style.cssText = \"width:100%;height:\" + ((cfg.style && cfg.style.height) || 48) + \"px\";\n        btn.addEventListener(\"click\", function () {\n          if (cfg.onClick) cfg.onClick();\n          var popup = window.open(\"\", \"hermetic_paypal_checkout\", \"width=450,height=650\");\n          Promise.resolve(cfg.createOrder()).then(\n            function (orderId) {\n              if (popup && !popup.closed) {\n                popup.location.href = \"https://www.sandbox.paypal.com/checkoutnow?token=\" + encodeURIComponent(orderId);\n              }\n            },\n            function (err) {\n              if (popup) popup.close();\n              if (cfg.onError) cfg.onError(err);\n            }\n          );\n          var timer = setInterval(function () {\n            if (!popup || popup.closed) {\n              clearInterval(timer);\n              if (cfg.onCancel) cfg.onCancel({ orderID: null });\n            }\n          }, 100);\n        });\n        host.appendChild(btn);\n        return Promise.resolve();\n      },\n    };\n  }\n  window.paypal = { Buttons: Buttons, FUNDING: { PAYPAL: \"paypal\" }, version: \"hermetic\" };\n})();\n"
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": {
+        "body": {
+          "payment_method": "wallet",
+          "payment_method_type": "paypal",
+          "payment_experience": "invoke_sdk_client"
+        }
+      },
+      "intentPatch": {
+        "status": "{{response.status}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "currency": "{{intent.currency}}",
+        "client_secret": "{{intent.client_secret}}",
+        "connector": "paypal",
+        "payment_method": "wallet",
+        "payment_method_type": "paypal",
+        "profile_id": "{{intent.profile_id}}",
+        "manual_retry_allowed": false,
+        "next_action": {
+          "type": "invoke_sdk_client",
+          "next_action_data": {
+            "next_action": "confirm"
+          }
+        },
+        "connector_transaction_id": "HERMETIC5O190127TN364715T",
+        "payment_experience": "invoke_sdk_client"
+      }
+    },
+    {
+      "name": "paypalCheckoutPage",
+      "method": "GET",
+      "url": "https://www.sandbox.paypal.com/checkoutnow**",
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>PayPal Checkout (hermetic stand-in)</title></head><body><h1>PayPal</h1><p>Log in to your PayPal account</p></body></html>"
+    },
+    {
+      "name": "clientList",
+      "method": "GET",
+      "path": "/payments/:paymentId/client",
+      "match": {
+        "intent": {
+          "customer_id": "popups_klarna_user"
+        }
+      },
+      "body": {
+        "payment_methods_enabled": [
+          {
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "card",
+            "payment_method_type": "debit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "pay_later",
+            "payment_method_type": "klarna",
+            "payment_experience": [
+              "invoke_sdk_client"
+            ]
+          }
+        ],
+        "customer_payment_methods": [],
+        "intent_data": {
+          "currency": "{{intent.currency}}",
+          "amount": "{{intent.amount}}",
+          "customer_id": "{{intent.customer_id}}",
+          "email": "{{intent.email}}",
+          "billing": "{{intent.billing}}",
+          "shipping": "{{intent.shipping}}",
+          "merchant_name": "Hermetic Test Merchant",
+          "payment_type": "normal",
+          "mandate_payment": null,
+          "setup_future_usage": "{{intent.setup_future_usage}}",
+          "is_tax_calculation_enabled": false,
+          "is_guest_customer": false,
+          "installment_options": null
+        },
+        "sdk_next_action": {
+          "next_action": null,
+          "should_block_confirm": false
+        }
+      }
+    },
+    {
+      "name": "sessionTokens",
+      "method": "POST",
+      "path": "/payments/session_tokens",
+      "match": {
+        "intent": {
+          "customer_id": "popups_klarna_user"
+        }
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "client_secret": "{{intent.client_secret}}",
+        "session_token": [
+          {
+            "wallet_name": "klarna",
+            "session_token": "hermetic-klarna-client-token",
+            "session_id": "hermetic-klarna-session-id"
+          }
+        ]
+      }
+    },
+    {
+      "name": "klarnaSdkScript",
+      "method": "GET",
+      "url": "https://x.klarnacdn.net/kp/lib/v1/api.js",
+      "contentType": "application/javascript",
+      "body": "/* Hermetic stand-in for https://x.klarnacdn.net/kp/lib/v1/api.js (see e2e/04-alternative-payments/popups.spec.ts).\n   Mirrors the Klarna Payments express-button API the SDK uses (Klarna.Payments.Buttons.init/load):\n   load() renders the button and reports it loaded; a click calls the SDK's on_click with an\n   authorize() that opens Klarna's purchase popup and, when the shopper closes it without\n   finishing, calls back with approved:false (what Klarna reports for an abandoned purchase). */\n(function () {\n  var clientToken = \"\";\n  var Buttons = {\n    init: function (opts) {\n      clientToken = (opts && opts.client_token) || \"\";\n      return Buttons;\n    },\n    load: function (opts, onLoaded) {\n      var host = document.querySelector(opts.container);\n      var btn = document.createElement(\"button\");\n      btn.type = \"button\";\n      btn.setAttribute(\"data-hermetic\", \"klarna-button\");\n      btn.setAttribute(\"aria-label\", \"Klarna\");\n      btn.textContent = \"Pay with Klarna\";\n      btn.style.cssText = \"width:100%;height:48px\";\n      btn.addEventListener(\"click\", function () {\n        opts.on_click(function authorize(attrs, data, callback) {\n          var popup = window.open(\n            \"https://js.playground.klarna.com/eu/kp/checkout/hermetic?client_token=\" + encodeURIComponent(clientToken),\n            \"hermetic_klarna_checkout\",\n            \"width=450,height=650\"\n          );\n          var timer = setInterval(function () {\n            if (!popup || popup.closed) {\n              clearInterval(timer);\n              callback({ approved: false, show_form: true, authorization_token: \"\", finalize_required: false });\n            }\n          }, 100);\n        });\n      });\n      host.appendChild(btn);\n      if (onLoaded) onLoaded({ show_form: true });\n    },\n  };\n  window.Klarna = { Payments: { Buttons: Buttons } };\n})();\n"
+    },
+    {
+      "name": "klarnaCheckoutPage",
+      "method": "GET",
+      "url": "https://js.playground.klarna.com/eu/kp/checkout/hermetic**",
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>Klarna (hermetic stand-in)</title></head><body><h1>Klarna</h1><p>Pay later with Klarna</p></body></html>"
+    },
+    {
+      "name": "clientList",
+      "method": "GET",
+      "path": "/payments/:paymentId/client",
+      "match": {
+        "intent": {
+          "customer_id": "popups_plaid_user"
+        }
+      },
+      "body": {
+        "payment_methods_enabled": [
+          {
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "card",
+            "payment_method_type": "debit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "open_banking",
+            "payment_method_type": "open_banking_pis",
+            "payment_experience": []
+          }
+        ],
+        "customer_payment_methods": [],
+        "intent_data": {
+          "currency": "{{intent.currency}}",
+          "amount": "{{intent.amount}}",
+          "customer_id": "{{intent.customer_id}}",
+          "email": "{{intent.email}}",
+          "billing": "{{intent.billing}}",
+          "shipping": "{{intent.shipping}}",
+          "merchant_name": "Hermetic Test Merchant",
+          "payment_type": "normal",
+          "mandate_payment": null,
+          "setup_future_usage": "{{intent.setup_future_usage}}",
+          "is_tax_calculation_enabled": false,
+          "is_guest_customer": false,
+          "installment_options": null
+        },
+        "sdk_next_action": {
+          "next_action": null,
+          "should_block_confirm": false
+        }
+      }
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": {
+        "body": {
+          "payment_method": "open_banking",
+          "payment_method_type": "open_banking_pis"
+        }
+      },
+      "intentPatch": {
+        "status": "{{response.status}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "currency": "{{intent.currency}}",
+        "client_secret": "{{intent.client_secret}}",
+        "connector": "plaid",
+        "payment_method": "open_banking",
+        "payment_method_type": "open_banking_pis",
+        "profile_id": "{{intent.profile_id}}",
+        "manual_retry_allowed": false,
+        "next_action": {
+          "type": "third_party_sdk_session_token",
+          "session_token": {
+            "wallet_name": "open_banking",
+            "open_banking_session_token": "link-sandbox-hermetic-0000"
+          }
+        }
+      }
+    },
+    {
+      "name": "plaidLinkScript",
+      "method": "GET",
+      "url": "https://cdn.plaid.com/link/v2/stable/link-initialize.js",
+      "contentType": "application/javascript",
+      "body": "/* Hermetic stand-in for https://cdn.plaid.com/link/v2/stable/link-initialize.js (see e2e/04-alternative-payments/popups.spec.ts).\n   Like the real Link initializer, Plaid.create() injects the Link iframe (link.html?token=...)\n   into the page, open() shows it, and when the shopper closes Link the iframe posts a message\n   that makes the initializer hide it and call onExit(). */\n(function () {\n  var count = 0;\n  function create(cfg) {\n    count += 1;\n    var iframe = document.createElement(\"iframe\");\n    iframe.id = \"plaid-link-iframe-\" + count;\n    iframe.title = \"Plaid Link\";\n    iframe.src = \"https://cdn.plaid.com/link/v2/stable/link.html?isLinkInitialize=true&token=\" + encodeURIComponent(cfg.token);\n    iframe.style.cssText = \"display:none;position:fixed;top:0;left:0;width:100%;height:100%;border:0;z-index:2147483647\";\n    document.body.appendChild(iframe);\n    window.addEventListener(\"message\", function (ev) {\n      if (ev.source !== iframe.contentWindow || !ev.data || ev.data.hermetic_plaid_link !== \"exit\") return;\n      iframe.style.display = \"none\";\n      if (cfg.onExit) cfg.onExit(null, { status: null, link_session_id: \"hermetic-link-session\" });\n    });\n    if (cfg.onLoad) setTimeout(cfg.onLoad, 0);\n    return {\n      open: function () { iframe.style.display = \"block\"; },\n      exit: function () { iframe.style.display = \"none\"; if (cfg.onExit) cfg.onExit(null, {}); },\n      destroy: function () { iframe.remove(); },\n      submit: function () {},\n    };\n  }\n  window.Plaid = { create: create, version: \"hermetic\" };\n})();\n"
+    },
+    {
+      "name": "plaidLinkPage",
+      "method": "GET",
+      "url": "https://cdn.plaid.com/link/v2/stable/link.html**",
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>Plaid Link (hermetic stand-in)</title></head><body><div role=\"dialog\" aria-label=\"Plaid Link\"><h1>Select your bank</h1><button type=\"button\" id=\"hermetic-plaid-exit\" aria-label=\"Close\">Close</button></div><script>document.getElementById('hermetic-plaid-exit').onclick = function () { parent.postMessage({ hermetic_plaid_link: 'exit' }, '*'); };</script></body></html>"
+    }
+  ]
+}

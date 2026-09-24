@@ -1,0 +1,89 @@
+{
+  "_source": "synthetic",
+  "_note": "Multi-tab theme tests (setupMultiTabAndVisit in the spec): the TrustPay profile (EUR, NL billing) exposes card + bank_redirect, so the SDK renders several tabs with Card selected and at least one non-selected tab. Only intents on the TrustPay profile get this list; the Stripe-profile tests keep base/client-list.json (card only), as on integ.",
+  "routes": [
+    {
+      "name": "clientList",
+      "method": "GET",
+      "path": "/payments/:paymentId/client",
+      "status": 200,
+      "body": {
+        "payment_methods_enabled": [
+          {
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "card",
+            "payment_method_type": "debit",
+            "card_networks": [
+              "Visa",
+              "Mastercard",
+              "AmericanExpress",
+              "DinersClub",
+              "Discover",
+              "JCB",
+              "UnionPay"
+            ],
+            "payment_experience": [],
+            "customer_acceptance_support": true
+          },
+          {
+            "payment_method": "bank_redirect",
+            "payment_method_type": "ideal",
+            "payment_experience": [],
+            "customer_acceptance_support": false
+          },
+          {
+            "payment_method": "bank_redirect",
+            "payment_method_type": "eps",
+            "payment_experience": [],
+            "customer_acceptance_support": false
+          },
+          {
+            "payment_method": "bank_redirect",
+            "payment_method_type": "giropay",
+            "payment_experience": [],
+            "customer_acceptance_support": false
+          }
+        ],
+        "customer_payment_methods": [],
+        "intent_data": {
+          "currency": "{{intent.currency}}",
+          "amount": "{{intent.amount}}",
+          "customer_id": "{{intent.customer_id}}",
+          "email": "{{intent.email}}",
+          "billing": "{{intent.billing}}",
+          "shipping": "{{intent.shipping}}",
+          "merchant_name": "Hermetic Test Merchant",
+          "payment_type": "normal",
+          "mandate_payment": null,
+          "setup_future_usage": "{{intent.setup_future_usage}}",
+          "is_tax_calculation_enabled": false,
+          "is_guest_customer": false,
+          "installment_options": null
+        },
+        "sdk_next_action": {
+          "next_action": null,
+          "should_block_confirm": false
+        }
+      },
+      "match": {
+        "intent": {
+          "profile_id": "{{profiles.trustpay}}"
+        }
+      }
+    }
+  ]
+}
