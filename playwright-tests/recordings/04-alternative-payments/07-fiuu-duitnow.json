@@ -22,7 +22,7 @@
               "UnionPay"
             ],
             "payment_experience": [],
-            "customer_acceptance_support": true
+            "customer_acceptance_support": "supported"
           },
           {
             "payment_method": "card",
@@ -37,13 +37,13 @@
               "UnionPay"
             ],
             "payment_experience": [],
-            "customer_acceptance_support": true
+            "customer_acceptance_support": "supported"
           },
           {
             "payment_method": "real_time_payment",
             "payment_method_type": "duit_now",
             "payment_experience": [],
-            "customer_acceptance_support": false
+            "customer_acceptance_support": "unsupported"
           }
         ],
         "customer_payment_methods": [],

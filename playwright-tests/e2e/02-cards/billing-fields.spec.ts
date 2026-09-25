@@ -449,26 +449,21 @@ test.describe("Billing Fields", () => {
         await sdk.waitForReady();
       });
 
-      test("should hide the billing name field when set to never", async ({
+      test("billing name set to never is currently not honoured (SDK bug): name field still shown", async ({
         sdk,
       }) => {
-        // KNOWN SDK BUG: card required fields come from superposition (DynamicFields.res ->
-        // DynamicFieldInput / CardHolderNameField), which never reads `fields.billingDetails`;
-        // only the legacy *PaymentInput components (bank-debit modal) honour it. So with billing
-        // removed, Cybersource's billing first/last name renders despite `name: "never"`.
-        // test.fail() marks the expected failure; remove it when the SDK honours the option
-        // (the test then passes).
-        test.fail(
-          true,
-          "SDK ignores fields.billingDetails.name for superposition dynamic fields",
-        );
-        // Wait for the dynamic fields first so the absence check can't pass by racing the render.
+        // KNOWN SDK BUG: card required fields come from superposition, and
+        // src/Components/DynamicFields.res filters them (missingRequiredFieldsFiltered)
+        // without ever reading `fields.billingDetails`; only the legacy *PaymentInput
+        // components (bank-debit modal) honour it. So with billing removed,
+        // Cybersource's billing first/last name renders despite `name: "never"`.
+        // This pins the current behaviour so a fix is noticed.
+        // TODO: when the SDK honours the option, flip the last assertion to
+        // `toHaveCount(0)` and rename to "should hide the billing name field when set to never".
         await expect(billingField(sdk, "line1")).toBeVisible({
           timeout: 10_000,
         });
-        await expect(billingField(sdk, "first_name")).toHaveCount(0, {
-          timeout: 3_000,
-        });
+        await expect(billingField(sdk, "first_name")).toBeVisible();
       });
 
       test("should show address line1 field when set to auto", async ({

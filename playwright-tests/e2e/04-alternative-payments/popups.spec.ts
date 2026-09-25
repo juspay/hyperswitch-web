@@ -26,6 +26,8 @@
 //   @live           the real vendor JS and the real popup. The test merchant must offer the
 //                   method with the flow above; otherwise the test is skipped with the reason
 //                   (see LIVE_SETUP below: today none of the three is provisioned that way).
+//                   In the hermetic tier the recordings always offer it, so a missing method
+//                   fails the test instead.
 //   @hermetic-only  recordings/04-alternative-payments/popups.json routes the vendor script to a
 //                   minimal stand-in that reproduces only the vendor API shape and the window it
 //                   opens. Everything around it is real SDK code: parsing the session token and
@@ -69,9 +71,26 @@ const LIVE_SETUP = {
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
-/** Skips unless the router offers payment_method/type (optionally with `experience`) for this intent. */
+/**
+ * Live: skips with `reason` (the merchant isn't provisioned for it). Hermetic: fails, because the
+ * recordings and credentials are fixed, so a missing prerequisite is a fixture bug or an SDK regression.
+ */
+function skipLiveUnless(
+  hermetic: Hermetic,
+  condition: boolean,
+  reason: string,
+  detail = "",
+): void {
+  if (condition) return;
+  if (hermetic.enabled)
+    throw new Error(`Hermetic prerequisite missing: ${reason}${detail}`);
+  test.skip(true, reason);
+}
+
+/** Skips (live) or fails (hermetic) unless the router offers payment_method/type (optionally with `experience`). */
 async function requireOffered(
   api: HyperswitchApi,
+  hermetic: Hermetic,
   intent: OpenedCheckout,
   paymentMethod: string,
   paymentMethodType: string,
@@ -79,9 +98,10 @@ async function requireOffered(
   reason: string,
 ): Promise<void> {
   const list = await api.clientList(intent.paymentId, intent.clientSecret);
-  const offered = (
-    (list.payment_methods_enabled ?? []) as Array<Record<string, unknown>>
-  ).some(
+  const enabled = (list.payment_methods_enabled ?? []) as Array<
+    Record<string, unknown>
+  >;
+  const offered = enabled.some(
     (pm) =>
       pm.payment_method === paymentMethod &&
       pm.payment_method_type === paymentMethodType &&
@@ -90,7 +110,18 @@ async function requireOffered(
           experience,
         )),
   );
-  test.skip(!offered, reason);
+  skipLiveUnless(
+    hermetic,
+    offered,
+    reason,
+    `\npayment_methods_enabled: ${JSON.stringify(
+      enabled.map((pm) => [
+        pm.payment_method,
+        pm.payment_method_type,
+        pm.payment_experience,
+      ]),
+    )}`,
+  );
 }
 
 /** The SDK's payment loader (#orca-fullscreen) is gone and the demo shop's Pay button works again. */
@@ -147,9 +178,9 @@ const klarnaButton = (sdk: Sdk, hermetic: Hermetic) =>
 // ── PayPal ─────────────────────────────────────────────────────────────────
 
 test.describe("PayPal popup", () => {
-  test.beforeEach(async ({ checkout, credentials, api }) => {
+  test.beforeEach(async ({ checkout, credentials, api, hermetic }) => {
     const profileId = credentials.profileId(connectorEnum.PAYPAL);
-    test.skip(!profileId, LIVE_SETUP.paypalProfile);
+    skipLiveUnless(hermetic, !!profileId, LIVE_SETUP.paypalProfile);
     const opened = await checkout.open({
       body: paymentBody({
         profile_id: profileId,
@@ -158,6 +189,7 @@ test.describe("PayPal popup", () => {
     });
     await requireOffered(
       api,
+      hermetic,
       opened,
       "wallet",
       "paypal",
@@ -268,7 +300,7 @@ test.describe("PayPal popup", () => {
 // ── Klarna ─────────────────────────────────────────────────────────────────
 
 test.describe("Klarna popup", () => {
-  test.beforeEach(async ({ checkout, credentials, api }) => {
+  test.beforeEach(async ({ checkout, credentials, api, hermetic }) => {
     // Klarna runs on its own "klarna" profile, or on the Stripe profile when that is absent.
     const profileId =
       credentials.profileId(connectorEnum.KLARNA) ??
@@ -281,6 +313,7 @@ test.describe("Klarna popup", () => {
     });
     await requireOffered(
       api,
+      hermetic,
       opened,
       "pay_later",
       "klarna",
@@ -358,7 +391,7 @@ test.describe("Klarna popup", () => {
 // ── Plaid ──────────────────────────────────────────────────────────────────
 
 test.describe("Plaid (open banking) window", () => {
-  test.beforeEach(async ({ checkout, credentials, api }) => {
+  test.beforeEach(async ({ checkout, credentials, api, hermetic }) => {
     // A Plaid profile, once setup/merchant-setup.js provisions one; the Stripe profile until then.
     const profileId =
       credentials.profileId(connectorEnum.PLAID) ??
@@ -368,6 +401,7 @@ test.describe("Plaid (open banking) window", () => {
     });
     await requireOffered(
       api,
+      hermetic,
       opened,
       "open_banking",
       "open_banking_pis",

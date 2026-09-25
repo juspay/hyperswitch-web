@@ -1,7 +1,10 @@
 // Types for the hermetic tier's recorded / hand-authored router responses.
 // See playwright-tests/README.md ("Hermetic fixtures") for the full contract.
 
-/** Extra conditions a request must satisfy for a route to match. */
+/**
+ * Extra conditions a request must satisfy for a route to match. A placeholder
+ * that resolves to undefined makes the route never match.
+ */
 export interface HermeticMatch {
   /** Every listed query parameter must be present with this (templated) value. */
   query?: Record<string, string>;
@@ -26,10 +29,11 @@ export interface HermeticRoute {
   /**
    * Router path pattern, e.g. "/payments/:paymentId/client". Matched against the
    * request pathname with any API base path (e.g. integ's "/api") stripped; the
-   * host is ignored, so recordings replay regardless of TEST_ENV.
+   * host is ignored, so recordings replay regardless of TEST_ENV. Templated like
+   * `match`, e.g. "/payments/redirect/{{intent.payment_id}}/{{merchant_id}}/:attemptId".
    */
   path?: string;
-  /** Alternative to `path`: glob (`*`, `**`) matched against the full URL, for non-router hosts. */
+  /** Alternative to `path`: glob (`*`, `**`) matched against the full URL, for non-router hosts. Templated. */
   url?: string;
   match?: HermeticMatch;
   /** Response status, default 200. */
@@ -100,7 +104,9 @@ export interface HermeticCall {
   /**
    * The fixture layer that answered (e.g. "base/payments.json"), "stub" for the
    * built-in third-party stubs (blank documents, empty scripts/styles, location
-   * data 404), or "unmatched" for router calls nothing answered (404).
+   * data 404), "router-auth" for the router's 404 HE_02 / 400 IR_09 to a call for
+   * another payment or with the wrong client secret, or "unmatched" for router
+   * calls nothing answered (404).
    */
   source: string;
   at: number;

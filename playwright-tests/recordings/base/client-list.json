@@ -14,14 +14,14 @@
             "payment_method_type": "credit",
             "card_networks": ["Visa", "Mastercard", "AmericanExpress", "DinersClub", "Discover", "JCB", "UnionPay"],
             "payment_experience": [],
-            "customer_acceptance_support": true
+            "customer_acceptance_support": "supported"
           },
           {
             "payment_method": "card",
             "payment_method_type": "debit",
             "card_networks": ["Visa", "Mastercard", "AmericanExpress", "DinersClub", "Discover", "JCB", "UnionPay"],
             "payment_experience": [],
-            "customer_acceptance_support": true
+            "customer_acceptance_support": "supported"
           }
         ],
         "customer_payment_methods": [],

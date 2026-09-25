@@ -1,7 +1,7 @@
 // External 3DS on the Juspay 3DS-server profile. Like Netcetera, the challenge
-// renders in the SDK's fullscreen frame (#orca-fullscreen -> #threeDsAuthFrame);
-// unlike Netcetera, these tests assert the demo shop's outcome ("Thanks for your
-// order!" / "Payment failed…"), i.e. that the SDK resolved confirmPayment.
+// renders in the SDK's fullscreen frame (#orca-fullscreen -> #threeDsAuthFrame),
+// and the tests assert the demo shop's outcome ("Thanks for your order!" /
+// "Payment failed…"), i.e. that the SDK resolved confirmPayment.
 //
 // Skipped (with a reason) when the merchant has no Juspay profile: some creds.json
 // files don't carry juspay credentials.
@@ -35,7 +35,8 @@ test.describe("External 3DS using Juspay Checks", () => {
     const profileId = credentials.profileId(connectorEnum.JUSPAY);
     test.skip(
       !profileId,
-      "Juspay connector profile is not provisioned (no 'juspay' entry in creds.json) — add juspay credentials to run these tests",
+      "No juspay profile was provisioned — either creds.json has no juspay entry, or live-setup " +
+        'failed to create its profile/connector account (see the "[setup] Error setting up" log).',
     );
 
     await checkout.open({

@@ -9,7 +9,7 @@
 // Every `hermetic`-only check is a no-op on the live projects, so a spec can call
 // these unconditionally.
 // ---------------------------------------------------------------------------
-import { expect, type Page, type Response } from "@playwright/test";
+import { expect, type Page, type Response, type Route } from "@playwright/test";
 import { CLIENT_BASE_URL } from "./env";
 import { testIds } from "./test-ids";
 import type { CardDetails } from "./cards";
@@ -32,10 +32,12 @@ export async function typeCard(sdk: Sdk, card: CardDetails): Promise<void> {
   await sdk.type(testIds.cardCVVInputTestId, card.cvc);
 }
 
+const CONFIRM_PATH = /\/payments\/[^/]+\/confirm$/;
+
 /** True for the SDK's POST /payments/:id/confirm response. */
 export const isConfirmResponse = (r: Response): boolean =>
   r.request().method() === "POST" &&
-  /\/payments\/[^/]+\/confirm$/.test(new URL(r.url()).pathname);
+  CONFIRM_PATH.test(new URL(r.url()).pathname);
 
 /** Resolves with the SDK's POST /payments/:id/confirm response (both tiers). Start it before submitting. */
 export function waitForConfirm(
@@ -84,14 +86,14 @@ export interface ConfirmExchange {
   request: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   /** HTTP status of the router's answer. */
   status: number;
-  /** Parsed JSON response body (undefined if the browser discarded it). */
+  /** Parsed JSON response body (undefined if the router answered with non-JSON). */
   body: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 /**
  * Runs `submit` and returns the confirm call it triggers. Works in both tiers:
- * the request comes from the browser, the response body from the browser (live)
- * or from the hermetic engine's call log (hermetic).
+ * the request comes from the browser; the response body from the router via a
+ * pass-through route (live) or from the hermetic engine's call log (hermetic).
  */
 export async function submitAndCaptureConfirm(
   page: Page,
@@ -99,26 +101,37 @@ export async function submitAndCaptureConfirm(
   submit: () => Promise<void>,
   { timeout = 30_000 } = {},
 ): Promise<ConfirmExchange> {
-  let bodyPromise: Promise<unknown> = Promise.resolve(undefined);
-  const responsePromise = page.waitForResponse(
-    (r) => {
-      if (!isConfirmResponse(r)) return false;
-      // Start reading right away: the SDK navigates the page as soon as it has
-      // parsed the answer, after which the browser may drop the body.
-      bodyPromise = r.json().catch(() => undefined);
-      return true;
-    },
-    { timeout },
-  );
-  await submit();
-  const response = await responsePromise;
-  const request = response.request().postDataJSON();
-  let body = await bodyPromise;
-  if (hermetic.enabled) {
-    const call = await hermetic.waitForCall("confirm");
-    body ??= call?.responseBody;
+  // Live: the SDK navigates away as soon as it has parsed a redirect answer, and
+  // the browser may drop the response body by the time the test reads it. So
+  // fetch the confirm in Node, keep its body, and hand the same response to the
+  // browser unchanged.
+  let liveBody: unknown;
+  const context = page.context();
+  const isConfirmUrl = (url: URL) => CONFIRM_PATH.test(url.pathname);
+  const passThrough = async (route: Route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    const response = await route.fetch();
+    liveBody = await response.json().catch(() => undefined);
+    await route.fulfill({ response });
+  };
+  if (!hermetic.enabled) await context.route(isConfirmUrl, passThrough);
+
+  try {
+    const responsePromise = page.waitForResponse(isConfirmResponse, {
+      timeout,
+    });
+    await submit();
+    const response = await responsePromise;
+    const request = response.request().postDataJSON();
+    let body = liveBody;
+    if (hermetic.enabled) {
+      const call = await hermetic.waitForCall("confirm");
+      body = call?.responseBody;
+    }
+    return { request, status: response.status(), body };
+  } finally {
+    if (!hermetic.enabled) await context.unroute(isConfirmUrl, passThrough);
   }
-  return { request, status: response.status(), body };
 }
 
 /** Clicks the demo shop's "Pay now" and returns the confirm call. */

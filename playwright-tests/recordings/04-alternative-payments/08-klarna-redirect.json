@@ -22,7 +22,7 @@
               "UnionPay"
             ],
             "payment_experience": [],
-            "customer_acceptance_support": true
+            "customer_acceptance_support": "supported"
           },
           {
             "payment_method": "card",
@@ -37,7 +37,7 @@
               "UnionPay"
             ],
             "payment_experience": [],
-            "customer_acceptance_support": true
+            "customer_acceptance_support": "supported"
           },
           {
             "payment_method": "pay_later",
@@ -45,7 +45,7 @@
             "payment_experience": [
               "redirect_to_url"
             ],
-            "customer_acceptance_support": false
+            "customer_acceptance_support": "unsupported"
           }
         ],
         "customer_payment_methods": [],

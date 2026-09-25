@@ -22,7 +22,7 @@
               "UnionPay"
             ],
             "payment_experience": [],
-            "customer_acceptance_support": true
+            "customer_acceptance_support": "supported"
           },
           {
             "payment_method": "card",
@@ -37,13 +37,13 @@
               "UnionPay"
             ],
             "payment_experience": [],
-            "customer_acceptance_support": true
+            "customer_acceptance_support": "supported"
           },
           {
             "payment_method": "bank_redirect",
             "payment_method_type": "online_banking_fpx",
             "payment_experience": [],
-            "customer_acceptance_support": false
+            "customer_acceptance_support": "unsupported"
           }
         ],
         "customer_payment_methods": [],

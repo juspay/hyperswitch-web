@@ -9,9 +9,30 @@ import {
   testIds,
   paymentBody,
   PAYMENT_ELEMENT_IFRAME,
+  CARD_FIELDS_IFRAME,
+  type Sdk,
 } from "../../fixtures";
 
 const body = paymentBody({ customer_id: "element_lifecycle_test_user" });
+
+/**
+ * Card number inputs across the outer payment element and every card iframe
+ * inside it (visible or not), so a duplicate in any SDK frame is counted.
+ */
+const countCardNumberInputs = async (sdk: Sdk): Promise<number> => {
+  const cardFrames = sdk.paymentElement.locator(CARD_FIELDS_IFRAME);
+  let total = await sdk.paymentElement
+    .getByTestId(testIds.cardNoInputTestId)
+    .count();
+  for (let i = 0, n = await cardFrames.count(); i < n; i++) {
+    total += await cardFrames
+      .nth(i)
+      .contentFrame()
+      .getByTestId(testIds.cardNoInputTestId)
+      .count();
+  }
+  return total;
+};
 
 test.describe("Element Lifecycle Tests", () => {
   test.beforeEach(async ({ checkout }) => {
@@ -78,10 +99,11 @@ test.describe("Element Lifecycle Tests", () => {
     sdk,
   }) => {
     await expect(page.locator(PAYMENT_ELEMENT_IFRAME)).toBeVisible();
-
-    await expect(sdk.field(testIds.cardNoInputTestId)).toHaveCount(1, {
+    await expect(sdk.field(testIds.cardNoInputTestId)).toBeVisible({
       timeout: 10_000,
     });
+
+    await expect.poll(() => countCardNumberInputs(sdk)).toBe(1);
   });
 
   test("should validate card input on submit", async ({ page, sdk }) => {

@@ -115,13 +115,15 @@ test.describe("SDK Error Handling Tests", () => {
   test(
     "should handle 401 unauthorized error",
     { tag: "@live" },
-    async ({ api }) => {
+    async ({ api, credentials }) => {
       // @live: asserts the real router's auth check; a recording would only test itself.
       const invalidSecretKey = "invalid_key";
 
+      // The body must be valid JSON for the router: it rejects an empty
+      // profile_id with a 400 (IR_06) before it ever checks the API key.
       const response = await api.call("POST", "/payments", {
         apiKey: invalidSecretKey,
-        data: body,
+        data: { ...body, profile_id: credentials.defaultProfileId },
       });
       expect([401, 404]).toContain(response.status);
     },
@@ -241,7 +243,9 @@ test.describe("SDK Error Handling Tests", () => {
     test.skip(!sentryDsn, "SENTRY_DSN is not set");
 
     const sentryRequest = page.waitForRequest(
-      (r) => r.method() === "POST" && r.url().includes("sentry.io"),
+      (r) =>
+        r.method() === "POST" &&
+        /(^|\.)sentry\.io$/.test(new URL(r.url()).hostname),
       { timeout: 5_000 },
     );
 

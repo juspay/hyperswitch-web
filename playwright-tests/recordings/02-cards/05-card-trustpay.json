@@ -1,6 +1,6 @@
 {
   "_source": "synthetic",
-  "_note": "05-card-trustpay: confirm on the Trustpay profile. no_three_ds -> succeeded (connector trustpay); three_ds -> requires_customer_action + next_action.redirect_to_url on the router's /payments/redirect endpoint. The redirect page itself (the router's form to Trustpay's ACS) is not modelled: it is served as the hermetic blank-document stub, so the spec's conditional #tp-iframe check finds nothing, which the test tolerates.",
+  "_note": "05-card-trustpay: confirm on the Trustpay profile. no_three_ds -> succeeded (connector trustpay); three_ds -> requires_customer_action + next_action.redirect_to_url on the router's /payments/redirect endpoint. paymentRedirect answers that navigation with a static page standing in for the router's form to Trustpay's ACS (the ACS itself is not modelled, so the page has no #tp-iframe and the spec's conditional check finds nothing, which the test tolerates).",
   "routes": [
     {
       "name": "confirm",
@@ -117,6 +117,14 @@
           "profile_id": "{{profiles.trustpay}}"
         }
       }
+    },
+    {
+      "name": "paymentRedirect",
+      "method": "GET",
+      "path": "/payments/redirect/{{intent.payment_id}}/{{merchant_id}}/:attemptId",
+      "status": 200,
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>Redirecting</title></head><body data-hermetic=\"trustpay-3ds-redirect\">Redirecting to Trustpay 3D Secure</body></html>"
     }
   ]
 }

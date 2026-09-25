@@ -123,6 +123,9 @@ export default defineConfig<TestFixtures, WorkerFixtures>({
   // as an artifact, and GitHub annotations on failing lines.
   reporter: [
     ["list"],
+    // Cypress-style per-spec ✔/✖ table at the end of the run (and in the
+    // GitHub job summary on CI).
+    ["./reporters/summary-table.ts"],
     [
       "html",
       {
@@ -169,7 +172,10 @@ export default defineConfig<TestFixtures, WorkerFixtures>({
       grepInvert: /@hermetic-only\b/,
       fullyParallel: false,
       workers: liveWorkers,
-      retries: 1,
+      // Two retries, as the sandbox suite has always had: live tests depend on
+      // connector sandboxes that fail transiently. Traces are kept from the
+      // first retry, so a test that only passed on retry is still diagnosable.
+      retries: 2,
       timeout: 120_000,
       use: {
         ...devices["Desktop Chrome"],
@@ -186,7 +192,7 @@ export default defineConfig<TestFixtures, WorkerFixtures>({
       grepInvert: /@hermetic-only\b/,
       fullyParallel: false,
       workers: liveWorkers,
-      retries: 1,
+      retries: 2,
       timeout: 120_000,
       use: {
         ...devices["Desktop Safari"],

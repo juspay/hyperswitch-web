@@ -8,8 +8,10 @@
 // replays the router's side of the flow (three_ds_invoke, 3ds/authentication, the
 // authorize page) plus a stand-in ACS page, so the SDK's 3DS-method frame, the
 // 3dsAuth frame, the CReq form post into #threeDsAuthFrame and the
-// openurl_if_required -> force-sync hand-off all run for real. Live checks the
-// real Netcetera NDM simulator and the real payment status.
+// openurl_if_required -> force-sync hand-off all run for real. Every outcome is
+// checked twice: the demo shop's message ("Thanks for your order!" / "Payment
+// failed…"), i.e. that the SDK resolved confirmPayment, and the payment status
+// (the real one on live, where the challenge runs on the Netcetera NDM simulator).
 import {
   test,
   expect,
@@ -88,8 +90,12 @@ test.describe("External 3DS using Netcetera Checks", () => {
     await acs
       .locator("button[type='submit']")
       .filter({ hasText: "Pay" })
+      .first()
       .click();
 
+    await expect(page.getByText("Thanks for your order!")).toBeVisible({
+      timeout: 30_000,
+    });
     // Poll the payment status via API until succeeded
     await api.pollPaymentStatus(checkout.lastIntent!.paymentId, "succeeded", {
       timeoutMs: 30_000,
@@ -124,12 +130,16 @@ test.describe("External 3DS using Netcetera Checks", () => {
     // Find the Cancel button in NDM Simulator
     await acs.locator("button").filter({ hasText: "Cancel" }).first().click();
 
+    await expect(
+      page.getByText("Payment failed. Please check your payment method."),
+    ).toBeVisible({ timeout: 30_000 });
     // Poll the payment status via API until it reaches "failed"
     await api.pollPaymentStatus(checkout.lastIntent!.paymentId, "failed");
   });
 
   test("If the user enters a frictionless card, the payment should be successful without a challenge.", async ({
     sdk,
+    page,
     api,
     checkout,
     hermetic,
@@ -143,6 +153,9 @@ test.describe("External 3DS using Netcetera Checks", () => {
     });
     await sdk.submit();
 
+    await expect(page.getByText("Thanks for your order!")).toBeVisible({
+      timeout: 30_000,
+    });
     // Poll the payment status via Retrieve Payment Intent API until succeeded
     await api.pollPaymentStatus(checkout.lastIntent!.paymentId, "succeeded", {
       timeoutMs: 30_000,

@@ -40,6 +40,26 @@ export function render<T>(value: T, ctx: Record<string, unknown>): T {
   return value;
 }
 
+/**
+ * Placeholders in `value` (strings, arrays and objects, recursively) that resolve
+ * to `undefined` in `ctx`. render() drops or blanks those, which in a `match`
+ * would turn a condition into "matches anything", so the engine checks first.
+ */
+export function unresolvedPlaceholders(
+  value: unknown,
+  ctx: Record<string, unknown>,
+): string[] {
+  if (typeof value === "string")
+    return [...value.matchAll(PLACEHOLDER)]
+      .map((m) => m[1])
+      .filter((p) => getPath(ctx, p) === undefined);
+  if (Array.isArray(value))
+    return value.flatMap((v) => unresolvedPlaceholders(v, ctx));
+  if (value && typeof value === "object")
+    return Object.values(value).flatMap((v) => unresolvedPlaceholders(v, ctx));
+  return [];
+}
+
 /** True when every key in `expected` deep-equals (recursively partial for objects) `actual`. */
 export function partialMatch(actual: unknown, expected: unknown): boolean {
   if (expected === null || typeof expected !== "object")

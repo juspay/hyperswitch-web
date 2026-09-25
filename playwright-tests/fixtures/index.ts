@@ -120,17 +120,16 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 
     await use(new Hermetic(engine));
 
-    if (engine.unmatched.length > 0) {
-      const list = [...new Set(engine.unmatched)].join("\n");
-      console.warn(
-        `[hermetic] ${testInfo.title}: unmatched router requests (answered 404):\n${list}`,
-      );
+    // The recordings are the router: a call they don't answer means a missing
+    // fixture or an SDK call nobody expected, so it fails the test.
+    const unmatched = [...new Set(engine.unmatched)].join("\n");
+    if (unmatched) {
       await testInfo.attach("hermetic-unmatched.txt", {
-        body: list,
+        body: unmatched,
         contentType: "text/plain",
       });
     }
-    if (testInfo.status !== testInfo.expectedStatus) {
+    if (unmatched || testInfo.status !== testInfo.expectedStatus) {
       await testInfo.attach("hermetic-calls.json", {
         body: JSON.stringify(
           {
@@ -143,6 +142,12 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         ),
         contentType: "application/json",
       });
+    }
+    if (unmatched) {
+      throw new Error(
+        `[hermetic] router requests no fixture route answered (served 404):\n${unmatched}\n` +
+          `Add routes under playwright-tests/recordings/ (see README "Hermetic fixtures").`,
+      );
     }
   },
 
@@ -198,7 +203,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         return "(no payment created yet)";
       return api.describePaymentMethods(ids.paymentId, ids.clientSecret);
     };
-    await use(new Sdk(page, describe));
+    await use(new Sdk(page, describe, hermetic.enabled));
   },
 
   checkout: async ({ page, api, credentials, sdk }, use) => {

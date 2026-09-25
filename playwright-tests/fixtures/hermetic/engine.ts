@@ -9,11 +9,15 @@
 //   4. test.use({ hermeticFixtures: [...] })   explicit extra files
 //   5. hermetic.use(...) / hermetic.override() per-test, at runtime
 // A request is answered by the first matching route searching from the top
-// layer down. Anything not matched is answered by a built-in stub (third-party
-// scripts/styles/documents -> empty 200, logging/analytics -> 200 {}; recorded
-// in the call log with source "stub") or, for router calls, a 404 that is
-// recorded in `unmatched` and attached to the report.
+// layer down. Router calls that name a payment other than the hermetic intent,
+// or carry the wrong client secret, get the router's own 4xx instead (see
+// routerAuthError). Anything not matched is answered by a built-in stub
+// (third-party scripts/styles/documents -> empty 200, logging/analytics ->
+// 200 {}; recorded in the call log with source "stub") or, for router calls and
+// router-host navigations, a 404 that is recorded in `unmatched` and fails the
+// test in the fixture's teardown.
 // ---------------------------------------------------------------------------
+import { randomInt } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { BrowserContext, Request, Route } from "@playwright/test";
@@ -32,6 +36,7 @@ import {
   partialMatch,
   pathPatternToRegExp,
   render,
+  unresolvedPlaceholders,
 } from "./template";
 
 interface Layer {
@@ -58,12 +63,23 @@ const HYPERSWITCH_ROUTER_HOST = /(^|\.)hyperswitch\.io$/;
 const LOGGING_HINT =
   /(^|\.)(sentry\.io|scarf\.sh|google-analytics\.com|googletagmanager\.com)$|\/logs?(\/|$)|analytics/i;
 
+/**
+ * Placeholder roots whose values legitimately come and go (the intent's optional
+ * fields, the request). An unresolved placeholder under any other root (profiles,
+ * publishable_key, ...) is a typo, and is reported once per test.
+ */
+const DATA_PLACEHOLDER = /^(intent|request)\./;
+
+/** The router's error body (`{"error":{"type","message","code"}}`), which the SDK decodes. */
+const routerError = (message: string, code: string) => ({
+  error: { type: "invalid_request", message, code },
+});
+
 let intentCounter = 0;
 const rand = (n: number) =>
   Array.from(
     { length: n },
-    () =>
-      "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)],
+    () => "abcdefghijklmnopqrstuvwxyz0123456789"[randomInt(36)],
   ).join("");
 
 /** Reads a fixture file (JSON). `file` is absolute or relative to recordings/. */
@@ -87,9 +103,14 @@ export class HermeticEngine {
   private readonly localOrigins: Set<string>;
   private readonly apiUrl: string;
   private readonly apiBasePath: string;
+  private readonly apiOrigin: string;
+  private readonly warned = new Set<string>();
 
   readonly calls: HermeticCall[] = [];
-  /** "METHOD url" of router-looking requests no route matched (answered 404). */
+  /**
+   * "METHOD url" of router-looking requests no route matched (answered 404),
+   * browser and Node-side (api fixture). The fixture fails the test on any.
+   */
   readonly unmatched: string[] = [];
   intent: HermeticIntent | undefined;
 
@@ -101,6 +122,7 @@ export class HermeticEngine {
     this.apiBasePath = this.apiUrl
       ? new URL(this.apiUrl).pathname.replace(/\/+$/, "")
       : "";
+    this.apiOrigin = this.apiUrl ? new URL(this.apiUrl).origin : "";
   }
 
   // ── Fixture loading ──────────────────────────────────────────────────────
@@ -270,6 +292,13 @@ export class HermeticEngine {
     return this.localOrigins.has(u.origin);
   }
 
+  /** The router (HYPERSWITCH_API_URL) or a Hyperswitch-hosted backend (GlobalVars.backendEndPoint). */
+  private isRouterHost(u: URL): boolean {
+    return (
+      u.origin === this.apiOrigin || HYPERSWITCH_ROUTER_HOST.test(u.hostname)
+    );
+  }
+
   /** Installs the engine on `context`. Local SDK/demo requests go to the real servers. */
   async install(context: BrowserContext): Promise<void> {
     await context.route(
@@ -295,6 +324,28 @@ export class HermeticEngine {
     return paths;
   }
 
+  /**
+   * True when `value` (a route's path, url or match) has a placeholder that
+   * resolves to undefined. Such a route never matches: render() would drop or
+   * blank the placeholder and turn the condition into "matches anything".
+   */
+  private hasUnresolved(
+    route: HermeticRoute,
+    value: unknown,
+    ctx: Record<string, unknown>,
+  ): boolean {
+    const missing = unresolvedPlaceholders(value, ctx);
+    for (const p of missing) {
+      const key = `${route.name ?? route.path ?? route.url} {{${p}}}`;
+      if (DATA_PLACEHOLDER.test(p) || this.warned.has(key)) continue;
+      this.warned.add(key);
+      console.warn(
+        `[hermetic] route "${route.name ?? route.path ?? route.url}": {{${p}}} is undefined, so the route never matches`,
+      );
+    }
+    return missing.length > 0;
+  }
+
   private matches(
     route: HermeticRoute,
     method: string,
@@ -303,11 +354,15 @@ export class HermeticEngine {
   ): boolean {
     const wantMethod = (route.method || "GET").toUpperCase();
     if (wantMethod !== "*" && wantMethod !== method) return false;
+    const ctx = this.templateContext();
+    // path and url are templated too, e.g. "/payments/{{intent.payment_id}}/client".
     if (route.path) {
-      const re = pathPatternToRegExp(route.path);
+      if (this.hasUnresolved(route, route.path, ctx)) return false;
+      const re = pathPatternToRegExp(render(route.path, ctx));
       if (!this.candidatePaths(u).some((p) => re.test(p))) return false;
     } else if (route.url) {
-      if (!globToRegExp(route.url).test(u.href)) return false;
+      if (this.hasUnresolved(route, route.url, ctx)) return false;
+      if (!globToRegExp(render(route.url, ctx)).test(u.href)) return false;
     } else {
       return false;
     }
@@ -315,7 +370,7 @@ export class HermeticEngine {
     if (limit !== undefined && (this.served.get(route) ?? 0) >= limit)
       return false;
     if (route.match) {
-      const ctx = this.templateContext();
+      if (this.hasUnresolved(route, route.match, ctx)) return false;
       if (route.match.query) {
         const q = render(route.match.query, ctx);
         if (
@@ -361,9 +416,64 @@ export class HermeticEngine {
   }
 
   /**
+   * The router's client-secret authentication (authenticate_client_secret in the
+   * router's payments/helpers.rs). A router call that names a payment, by id in
+   * the path (/payments/pay_…/…), `payment_id` in the body, or through a
+   * `client_secret` in the query or JSON body, is only answered for the hermetic
+   * intent and only with its client secret. Otherwise the router's own error:
+   * 404 HE_02 for a payment that doesn't exist (any id but the intent's), 400
+   * IR_09 for a secret that doesn't belong to the payment. Undefined when the
+   * call is allowed or names no payment.
+   */
+  private routerAuthError(
+    u: URL,
+    requestBody: unknown,
+  ): { status: number; body: unknown } | undefined {
+    if (!this.isRouterHost(u)) return undefined;
+    const routerPath = this.candidatePaths(u).at(-1) ?? u.pathname;
+    const body =
+      requestBody && typeof requestBody === "object"
+        ? (requestBody as Record<string, unknown>)
+        : {};
+    const secret =
+      u.searchParams.get("client_secret") ??
+      (typeof body.client_secret === "string" ? body.client_secret : undefined);
+    const pathId = /^\/payments\/(pay_[^/]+)/.exec(routerPath)?.[1];
+    if (secret === undefined && !pathId) return undefined;
+
+    const at = secret?.lastIndexOf("_secret_") ?? -1;
+    const paymentId =
+      pathId ??
+      (typeof body.payment_id === "string" ? body.payment_id : undefined) ??
+      (secret && at > 0 ? secret.slice(0, at) : undefined);
+    const invalidSecret = {
+      status: 400,
+      body: routerError(
+        "The client_secret provided does not match the client_secret associated with the Payment",
+        "IR_09",
+      ),
+    };
+    if (!paymentId) return invalidSecret;
+    if (paymentId !== this.intent?.payment_id) {
+      return {
+        status: 404,
+        body: routerError("Payment does not exist in our records", "HE_02"),
+      };
+    }
+    if (secret !== undefined && secret !== this.intent.client_secret)
+      return invalidSecret;
+    return undefined;
+  }
+
+  /**
    * Resolves a request against the loaded routes without a browser (also used by
    * fixtures/api.ts so Node-side API calls replay the same fixtures). Records the
    * call and applies `intentPatch`. Returns undefined when no route matches.
+   *
+   * Router calls for another payment or with the wrong client secret are
+   * answered by routerAuthError, unless the matching route itself names the
+   * client_secret it expects (`match.query.client_secret` /
+   * `match.body.client_secret`), as a test of the SDK's error handling does.
    */
   async serve(
     method: string,
@@ -382,6 +492,32 @@ export class HermeticEngine {
     const u = new URL(url);
     const m = method.toUpperCase();
     const found = this.findRoute(m, u, requestBody);
+    const namesSecret =
+      found?.route.match?.query?.client_secret !== undefined ||
+      found?.route.match?.body?.client_secret !== undefined;
+    const denied = namesSecret
+      ? undefined
+      : this.routerAuthError(u, requestBody);
+    if (denied) {
+      this.record({
+        name: found?.route.name,
+        method: m,
+        url: u.href,
+        path: u.pathname,
+        requestBody,
+        status: denied.status,
+        responseBody: denied.body,
+        matched: false,
+        source: "router-auth",
+      });
+      return {
+        status: denied.status,
+        contentType: "application/json",
+        headers: { "access-control-allow-origin": "*" },
+        body: denied.body,
+        raw: JSON.stringify(denied.body),
+      };
+    }
     if (!found) return undefined;
     const { route: r, source } = found;
     this.served.set(r, (this.served.get(r) ?? 0) + 1);
@@ -493,6 +629,18 @@ export class HermeticEngine {
       // S3Utils never checks resp.ok, and the Country/State dropdowns would vanish.)
       return stub(404, "text/plain", "Not Found");
     }
+    if (type === "document" && this.isRouterHost(u)) {
+      // A navigation to a router path no route knows (a redirect or 3DS return
+      // URL the fixtures don't model) is a missing fixture, not a third-party page.
+      this.recordUnmatched(method, u, requestBody, 404);
+      return route
+        .fulfill({
+          status: 404,
+          contentType: "text/html",
+          body: `<!doctype html><html><body data-hermetic-unmatched>No hermetic fixture for ${method} ${u.pathname}</body></html>`,
+        })
+        .catch(() => {});
+    }
     // Third-party SDK scripts are sometimes fetched rather than loaded via <script>.
     const kind = /\.m?js$/.test(u.pathname) ? "script" : type;
     switch (kind) {
@@ -525,19 +673,7 @@ export class HermeticEngine {
       return stub(200, "application/json", "{}", { log: false });
     }
 
-    const entry = `${method} ${u.origin}${u.pathname}${u.search}`;
-    this.unmatched.push(entry);
-    this.record({
-      name: undefined,
-      method,
-      url: u.href,
-      path: u.pathname,
-      requestBody,
-      status: 404,
-      responseBody: undefined,
-      matched: false,
-      source: "unmatched",
-    });
+    this.recordUnmatched(method, u, requestBody, 404);
     return stub(
       404,
       "application/json",
@@ -548,6 +684,27 @@ export class HermeticEngine {
         },
       }),
     );
+  }
+
+  /** Logs a request no route answered in `unmatched` and the call log (source "unmatched"). */
+  recordUnmatched(
+    method: string,
+    u: URL,
+    requestBody: unknown,
+    status: number,
+  ): void {
+    this.unmatched.push(`${method} ${u.origin}${u.pathname}${u.search}`);
+    this.record({
+      name: undefined,
+      method,
+      url: u.href,
+      path: u.pathname,
+      requestBody,
+      status,
+      responseBody: undefined,
+      matched: false,
+      source: "unmatched",
+    });
   }
 
   /** Value lookup in the template context, e.g. engine.lookup("intent.status"). */

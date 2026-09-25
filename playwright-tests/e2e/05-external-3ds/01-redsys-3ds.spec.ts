@@ -59,12 +59,15 @@ const expectThreeDsMethodCompleted = async (hermetic: Hermetic) => {
 
 test.describe("External 3DS using Redsys flow test", () => {
   test.beforeEach(async ({ checkout, credentials }) => {
+    // Fail fast without a Redsys profile — the intent would otherwise silently
+    // fall back to Stripe. This is a config or provisioning problem (no 'redsys'
+    // entry in creds.json, or its connector account failed to create), not an
+    // intentional skip.
     const profileId = credentials.profileId(connectorEnum.REDSYS);
-    // Without a Redsys profile the intent would silently fall back to Stripe.
-    test.skip(
-      !profileId,
-      "Redsys connector profile is not provisioned (no 'redsys' entry in creds.json)",
-    );
+    expect(
+      profileId,
+      "Redsys connector profile is not provisioned — add redsys to creds.json (and check live-setup created its connector account) to run these tests.",
+    ).toBeTruthy();
 
     await checkout.open({
       body: paymentBody({
@@ -96,7 +99,11 @@ test.describe("External 3DS using Redsys flow test", () => {
     await typeCard(sdk, card);
     await sdk.submit();
 
-    await page.waitForURL(/sis-d\.redsys\.es/, { timeout: 20_000 });
+    // "commit": arriving on Redsys is the SDK's job; the third-party page need not finish loading.
+    await page.waitForURL(/sis-d\.redsys\.es/, {
+      timeout: 20_000,
+      waitUntil: "commit",
+    });
     await expectConfirmedWith(hermetic, card.cardNo);
     await expectThreeDsMethodCompleted(hermetic);
   });
@@ -122,7 +129,10 @@ test.describe("External 3DS using Redsys flow test", () => {
     await typeCard(sdk, card);
     await sdk.submit();
 
-    await page.waitForURL(/sis-d\.redsys\.es/, { timeout: 10_000 });
+    await page.waitForURL(/sis-d\.redsys\.es/, {
+      timeout: 10_000,
+      waitUntil: "commit",
+    });
     await expectConfirmedWith(hermetic, card.cardNo);
   });
 

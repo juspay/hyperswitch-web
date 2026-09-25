@@ -6,7 +6,8 @@ demo shop (`Hyperswitch-React-Demo-App`). The suite runs in two tiers:
 - **hermetic**: every router response is served from `recordings/`, so no sandbox, no keys and no
   network. Fast, deterministic, and the pull-request gate.
 - **live**: the same specs against a real router (sandbox, integ or a local one) with real
-  connectors, redirects, 3DS challenges and popups. Runs on `main` and nightly.
+  connectors, redirects, 3DS challenges and popups. Runs on every pull request, the merge queue
+  and `main` (plus WebKit nightly).
 
 One spec serves both tiers: tests are hermetic-capable unless tagged `@live`, and every hermetic
 mutator is a no-op on live.
@@ -132,13 +133,20 @@ ADMIN_API_KEY=... CONNECTOR_AUTH_FILE_PATH=./creds.json node setup/merchant-setu
 | `RECORD=1`                                  | off                                            | save router responses during live runs                                     |
 | `CI`                                        | none                                           | forbids `.only`, adds the GitHub reporter, disables server reuse           |
 
+### End-of-run summary
+
+Every run ends with a per-spec table (`reporters/summary-table.ts`): ✔ / ✖ per spec file, then Time,
+Tests, Passing, Failing, Flaky and Skipped, a totals row, and the full title of every failed test. On
+GitHub Actions the same table is also written to the job summary page. Time is the sum of every
+attempt's duration, so with parallel workers the total is test time, not wall-clock time.
+
 ## Projects, tags and parallelism
 
 | project       | browser                                                      | runs                                  | retries | trace               | parallelism                                                             |
 | ------------- | ------------------------------------------------------------ | ------------------------------------- | ------- | ------------------- | ----------------------------------------------------------------------- |
 | `hermetic`    | Chromium                                                     | all tests **except `@live`**          | 0       | `retain-on-failure` | `fullyParallel`: every test isolated                                    |
-| `live`        | Chromium with a desktop UA (Netcetera's ACS blocks headless) | all tests **except `@hermetic-only`** | 1       | `on-first-retry`    | files in parallel (`PW_LIVE_WORKERS`), tests in a file serial, in order |
-| `live-webkit` | WebKit                                                       | same as live                          | 1       | `on-first-retry`    | same as live                                                            |
+| `live`        | Chromium with a desktop UA (Netcetera's ACS blocks headless) | all tests **except `@hermetic-only`** | 2       | `on-first-retry`    | files in parallel (`PW_LIVE_WORKERS`), tests in a file serial, in order |
+| `live-webkit` | WebKit                                                       | same as live                          | 2       | `on-first-retry`    | same as live                                                            |
 
 **Tags.** Use Playwright's `tag` option, with a comment giving the reason:
 
@@ -167,13 +175,17 @@ ordered too — or better, give each test a fixture that already has the saved c
 
 Two workflows, one job each; parallelism comes from Playwright workers inside the job.
 
-| workflow                   | triggers                                                                                  | job                                                                                                                                                                                                                                                                                                            | artifacts                                                               |
-| -------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `playwright-pr-checks.yml` | pull requests, merge queue, pushes to `main`                                              | `hermetic`: `npx playwright test --project=hermetic --retries=0`. No secrets, no environment; superseded PR runs are cancelled                                                                                                                                                                                 | `playwright-report-hermetic` (14 days), `traces-hermetic` on failure    |
-| `playwright-live-e2e.yml`  | pushes to `main`, nightly 21:30 UTC, manual (`test_env`: sandbox/integ, `include_webkit`) | `live` (environment `Testing`): decrypts `creds.json` from S3 into the runner's temp dir, then runs `--project=live` (plus `--project=live-webkit` nightly or on request). `live-setup` creates a fresh merchant in-process; its credentials file is written outside the workspace, so keys are never uploaded | `playwright-report-live-<env>`, `traces-live-<env>` on failure (7 days) |
+| workflow                   | triggers                                                                                   | job                                                                                                                                                                                                                                                                                                                     | artifacts                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `playwright-pr-checks.yml` | pull requests, merge queue, pushes to `main`                                               | `hermetic`: `npx playwright test --project=hermetic --retries=0`. No secrets, no environment; superseded PR runs are cancelled                                                                                                                                                                                          | `playwright-report-hermetic` (14 days), `traces-hermetic` on failure |
+| `playwright-live-e2e.yml`  | pull requests, merge queue, pushes to `main`; nightly 21:30 UTC; manual (`include_webkit`) | `live` (environment `Testing`, sandbox): decrypts `creds.json` from S3 into the runner's temp dir, then runs `--project=live` (plus `--project=live-webkit` nightly or on request). `live-setup` creates a fresh merchant in-process; its credentials file is written outside the workspace, so keys are never uploaded | `playwright-report-live`, `traces-live` on failure (7 days)          |
 
-Both use Node 20, cache browsers keyed on the locked Playwright version, and compile ReScript in its
-own step. Live secrets: `CYPRESS_ADMIN_KEY` (passed as `ADMIN_API_KEY`), `CONNECTOR_CREDS_AWS_*`,
+Both use Node 20, install root dependencies with `--ignore-scripts` (so the postinstall can't move
+the pinned `shared-code` submodule), cache browsers keyed on the locked Playwright version (saved
+even when tests fail), and compile ReScript in its own step. Every non-PR hermetic run has its own
+concurrency group, and the live workflow has no concurrency limit, so no `main` or merge-queue run is
+ever cancelled. PRs from forks get no secrets, so the live job fails there; the hermetic job doesn't
+need any. Live secrets: `CYPRESS_ADMIN_KEY` (passed as `ADMIN_API_KEY`), `CONNECTOR_CREDS_AWS_*`,
 `CONNECTOR_CREDS_S3_BUCKET_URI`, `CONNECTOR_AUTH_PASSPHRASE`.
 
 ## Fixture API
@@ -215,23 +227,23 @@ page
 
 Playwright can't put frame locators inside `locator.or()`, so lookups are split by frame:
 
-| member                                                                      | notes                                                                                                                                                                                            |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `paymentElement`, `cardFields`                                              | the two `FrameLocator`s                                                                                                                                                                          |
-| `field(testId)`                                                             | **sync**. Card number / expiry / CVC resolve in `cardFields`, every other test id in `paymentElement` (`CARD_FRAME_TEST_IDS`)                                                                    |
-| `find(css)`, `findInCard(css)`, `text(textOrRegExp, {exact?})`              | outer frame / card frame / text in the outer frame                                                                                                                                               |
-| `await locate(css)`, `await locateTestId(id)`                               | **async** "either frame" lookup: polls both frames, returns whichever matches (the outer frame's after the timeout)                                                                              |
-| `cardErrors`, `formErrors`                                                  | `.Error.pt-1` in the card frame / outer frame                                                                                                                                                    |
-| `submitButton`, `submit()`                                                  | the demo shop's `#submit` ("Pay now"), top-level page                                                                                                                                            |
-| `waitForReady({timeout?})`                                                  | outer iframe, card iframe and card number input attached                                                                                                                                         |
-| `type(testId, text, {delay?})`                                              | key by key, no clearing                                                                                                                                                                          |
-| `safeType(testId, text, {delay = 50})`                                      | waits visible + enabled, clears, types                                                                                                                                                           |
-| `enterCardDetails(card)` / `payWithCard(card)`                              | number, `card_exp_month + card_exp_year`, CVC via `safeType` / plus `waitForReady` and `submit`. Assert the outcome yourself                                                                     |
-| `selectPaymentMethod(name)`                                                 | clicks "Add new card" if saved methods show, then `name`                                                                                                                                         |
-| `selectPaymentMethodOrSkip(name, {timeout = 15000, onMissing?})`            | waits for `name`; if it never appears, logs the router's `payment_methods_enabled` and **skips** the test. Otherwise clicks the tab or picks it in the dropdown (`PAYMENT_METHOD_SELECT_VALUES`) |
-| `clickAddNewCardIfPresent()`                                                | returns whether it clicked                                                                                                                                                                       |
-| `await nestedIFrame(selector)`                                              | a frame inside `#orca-fullscreen`, once visible and non-empty                                                                                                                                    |
-| `testDynamicFields(customerData, requiredFields, idsToRemove?, isThreeDS?)` | fills every required field; get `requiredFields` from `api.cardRequiredFields(clientSecret)`                                                                                                     |
+| member                                                                      | notes                                                                                                                                                                                                                                                               |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `paymentElement`, `cardFields`                                              | the two `FrameLocator`s                                                                                                                                                                                                                                             |
+| `field(testId)`                                                             | **sync**. Card number / expiry / CVC resolve in `cardFields`, every other test id in `paymentElement` (`CARD_FRAME_TEST_IDS`)                                                                                                                                       |
+| `find(css)`, `findInCard(css)`, `text(textOrRegExp, {exact?})`              | outer frame / card frame / text in the outer frame                                                                                                                                                                                                                  |
+| `await locate(css)`, `await locateTestId(id)`                               | **async** "either frame" lookup: polls both frames, returns whichever matches (the outer frame's after the timeout)                                                                                                                                                 |
+| `cardErrors`, `formErrors`                                                  | `.Error.pt-1` in the card frame / outer frame                                                                                                                                                                                                                       |
+| `submitButton`, `submit()`                                                  | the demo shop's `#submit` ("Pay now"), top-level page                                                                                                                                                                                                               |
+| `waitForReady({timeout?})`                                                  | outer iframe, card iframe and card number input attached                                                                                                                                                                                                            |
+| `type(testId, text, {delay?})`                                              | key by key, no clearing                                                                                                                                                                                                                                             |
+| `safeType(testId, text, {delay = 50})`                                      | waits visible + enabled, clears, types                                                                                                                                                                                                                              |
+| `enterCardDetails(card)` / `payWithCard(card)`                              | number, `card_exp_month + card_exp_year`, CVC via `safeType` / plus `waitForReady` and `submit`. Assert the outcome yourself                                                                                                                                        |
+| `selectPaymentMethod(name)`                                                 | clicks "Add new card" if saved methods show, then `name`                                                                                                                                                                                                            |
+| `selectPaymentMethodOrSkip(name, {timeout = 15000, onMissing?})`            | waits for `name`; if it never appears, logs the router's `payment_methods_enabled` and **skips** the test on live, **fails** it on hermetic (the recordings fix the methods). Otherwise clicks the tab or picks it in the dropdown (`PAYMENT_METHOD_SELECT_VALUES`) |
+| `clickAddNewCardIfPresent()`                                                | returns whether it clicked                                                                                                                                                                                                                                          |
+| `await nestedIFrame(selector)`                                              | a frame inside `#orca-fullscreen`, once visible and non-empty                                                                                                                                                                                                       |
+| `testDynamicFields(customerData, requiredFields, idsToRemove?, isThreeDS?)` | fills every required field; get `requiredFields` from `api.cardRequiredFields(clientSecret)`                                                                                                                                                                        |
 
 ### `api` (test): Node-side router calls
 
@@ -244,7 +256,7 @@ header included, in traces and the uploaded HTML report. A redacted `api.callLog
 | member                                                                                                              | notes                                                                               |
 | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `createPaymentIntent(body)`                                                                                         | what `checkout` uses                                                                |
-| `retrievePayment(paymentId, {forceSync = true})`                                                                    | `GET /payments/:id` with the secret key                                             |
+| `retrievePayment(paymentId, {forceSync = true})`                                                                    | `GET /payments/:id` with the secret key. Hermetic: throws if no route answers       |
 | `pollPaymentStatus(paymentId, expectedStatus, {timeoutMs = 20000, intervalMs = 2000})`                              | throws on timeout. Hermetic: reads the intent status set by confirm's `intentPatch` |
 | `clientList`, `accountPaymentMethods`, `cardRequiredFields(clientSecret, type = "debit")`, `describePaymentMethods` | debugging and dynamic-field helpers                                                 |
 | `call(method, path, {apiKey?, data?})`                                                                              | anything else                                                                       |
@@ -263,15 +275,15 @@ Every mutator is a **no-op on live**. The fixtures extend `context`, so every br
 uses (`page`, popups, `sdk`, `checkout`) gets the demo-shop config routes and, in hermetic mode, the
 engine. A test that only uses `api`, `hermetic` or `credentials` never creates a browser context.
 
-| member                                           | notes                                                                                                                                                                                                                                    |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enabled`                                        | `true` on the hermetic project                                                                                                                                                                                                           |
-| `use(...routes)`                                 | per-test routes with top priority                                                                                                                                                                                                        |
-| `override(name, patch \| (route) => route)`      | object: deep-merged into the effective route's `body` (arrays replaced, `undefined` deletes). Function: gets a clone, returns the new route                                                                                              |
-| `load(file)`                                     | extra fixture file (relative to `recordings/`) as a new top layer                                                                                                                                                                        |
-| `calls(nameOrRegExp?)`, `await waitForCall(...)` | requests the engine served: `{ name, method, url, path, requestBody, status, responseBody, matched, source }`. A string matches the route name, a RegExp matches `"METHOD url"`. `source` is the fixture file, `"stub"` or `"unmatched"` |
-| `intent`, `setIntent(patch)`                     | the fake payment (`payment_id`, `client_secret`, `status`, plus the create body)                                                                                                                                                         |
-| `unmatched`                                      | router requests nothing matched (answered 404)                                                                                                                                                                                           |
+| member                                           | notes                                                                                                                                                                                                                                                     |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`                                        | `true` on the hermetic project                                                                                                                                                                                                                            |
+| `use(...routes)`                                 | per-test routes with top priority                                                                                                                                                                                                                         |
+| `override(name, patch \| (route) => route)`      | object: deep-merged into the effective route's `body` (arrays replaced, `undefined` deletes). Function: gets a clone, returns the new route                                                                                                               |
+| `load(file)`                                     | extra fixture file (relative to `recordings/`) as a new top layer                                                                                                                                                                                         |
+| `calls(nameOrRegExp?)`, `await waitForCall(...)` | requests the engine served: `{ name, method, url, path, requestBody, status, responseBody, matched, source }`. A string matches the route name, a RegExp matches `"METHOD url"`. `source` is the fixture file, `"stub"`, `"router-auth"` or `"unmatched"` |
+| `intent`, `setIntent(patch)`                     | the fake payment (`payment_id`, `client_secret`, `status`, plus the create body)                                                                                                                                                                          |
+| `unmatched`                                      | router requests nothing matched (answered 404); any fails the test at teardown                                                                                                                                                                            |
 
 Spec-level extra files: `test.use({ hermeticFixtures: ["02-cards/saved-card-customer.json"] })`.
 
@@ -315,10 +327,20 @@ the page, all iframes and popups:
   (country/state data), which is served from a fixture if one matches and otherwise gets a plain-text
   404 so the SDK uses its bundled data. (A JSON 404 would be decoded as an empty country list.)
 - **Every other request** is matched against the loaded routes. Unmatched third-party scripts and
-  styles become empty 200s, documents a blank page (logged with `source: "stub"`, so a navigation can
-  be asserted without a route), images/fonts a 404, logging calls `200 {}`. Anything else — normally
-  a router call — gets `404 {"error":{"type":"hermetic_unmatched"}}`, a warning, and a
-  `hermetic-unmatched.txt` attachment. Failed tests also get `hermetic-calls.json`.
+  styles become empty 200s, third-party documents a blank page (logged with `source: "stub"`, so a
+  navigation can be asserted without a route), images/fonts a 404, logging calls `200 {}`. Anything
+  else — normally a router call, or a navigation to a router path — gets
+  `404 {"error":{"type":"hermetic_unmatched"}}` and a `hermetic-unmatched.txt` attachment, and
+  **fails the test** at teardown (browser and `api` calls alike). Failed tests also get
+  `hermetic-calls.json`.
+- **Client-secret authentication**, as the router does it: a router call that names a payment (an id
+  in `/payments/pay_…`, `payment_id` in the body, or a `client_secret` in the query or body) is
+  answered only for the hermetic intent and only with its client secret. Anything else gets the
+  router's error, `404 HE_02` ("Payment does not exist in our records") or `400 IR_09` (secret
+  doesn't match), logged with `source: "router-auth"`. This applies to every route in every layer;
+  a route that names the secret it expects (`match.query.client_secret` or
+  `match.body.client_secret`) takes over, which is how a test of the SDK's error handling feeds it
+  a bad secret (`recordings/01-sdk-core/sdk-error-handling-test.json`).
 - `path` routes ignore the host and strip the router base path (`/api` on integ). On
   `*.hyperswitch.io` `/api` is always stripped: the SDK's fullscreen frames call
   `GlobalVars.backendEndPoint`, not the merchant's backend, and base routes must still answer them.
@@ -350,7 +372,8 @@ need editing.
     {
       "name": "clientList",                        // stable name: override(), calls(), reports
       "method": "GET",                             // default GET; "*" = any
-      "path": "/payments/:paymentId/client",       // router path; host and /api ignored
+      "path": "/payments/:paymentId/client",       // router path; host and /api ignored; templated,
+                                                   // e.g. "/payments/{{intent.payment_id}}/client"
       // "url": "https://pay.example.com/**",      // alternative: full-URL glob for non-router hosts
       "match": {                                   // optional, all templated
         "query":  { "force_sync": "true" },
@@ -369,7 +392,9 @@ need editing.
 ```
 
 A string that is exactly `"{{path}}"` is replaced by the raw JSON value (dropped if `undefined`);
-placeholders inside longer strings are interpolated. Context: `intent.*`, `publishable_key`,
+placeholders inside longer strings are interpolated. In `path`, `url` and `match`, a placeholder
+that resolves to `undefined` makes the route never match (a typo such as `{{profiles.stripee}}` is
+also logged), rather than dropping the condition. Context: `intent.*`, `publishable_key`,
 `merchant_id`, `profiles.<connector>`, `api_url`, `now`, `request.body.*`, `request.query.*`, and
 `response.*` (in `intentPatch` only). Route names used by base and the recorder: `clientList`,
 `sdkConfigs`, `sessionTokens`, `confirm`, `completeAuthorize`, `eligibility`,
@@ -424,7 +449,9 @@ RECORD=1 npx playwright test --project=live e2e/02-cards/07-saved-cards.spec.ts
 
 Router responses (API origin only) of every test are written to
 `recordings/_recorded/<group>/<spec>/<test-title>.json` (gitignored), already in fixture format: ids
-templated (`{{intent.payment_id}}`, `{{profiles.<connector>}}`, …), secrets and tokens redacted,
+templated (`{{intent.payment_id}}`, `{{profiles.<connector>}}`, …), secrets and tokens redacted
+(secret-named keys, wallet `session_token`s, `ip_address`, and in every string — HTML pages
+included — other client secrets, `pk_`/`sk_`/`snd_`/`dev_` keys, JWTs and email addresses),
 known endpoints named, repeated calls ordered with `times`, and `confirm` given
 `intentPatch: {status: "{{response.status}}"}`. Review the file for anything the redactor missed,
 copy the routes you need into `recordings/<group>/<spec>.json`, set `"_source": "recorded"`, and run
@@ -440,8 +467,8 @@ All fixtures in `recordings/` are currently **synthetic** (hand-written from the
 2. Give the spec its own `customer_id` if it saves cards or creates mandates.
 3. Wait for conditions, never for time: locators and web-first assertions (`toBeVisible`,
    `toHaveValue`, `toHaveURL`, `expect.poll`) retry on their own.
-4. Run it hermetic first: `npx playwright test --project=hermetic <file>`. If a router call is
-   unmatched, add a route to `recordings/<group>/<spec>.json` (or record one, above).
+4. Run it hermetic first: `npx playwright test --project=hermetic <file>`. A router call no route
+   answers fails the test; add a route to `recordings/<group>/<spec>.json` (or record one, above).
 5. Tag it `@live` / `@hermetic-only` only when needed, with a comment saying why.
 6. Before pushing: `npx tsc --noEmit`, `npx playwright test --list`, `npm run format`.
 
@@ -467,8 +494,9 @@ Code goes where it is used: a helper for one spec stays in the spec, one for a g
   The `dir` attribute gets an invalid value, which browsers ignore, so it only looks right by accident.
 - **`fields.billingDetails` is ignored for card dynamic fields.** Superposition-driven required
   fields (`DynamicFields.res`) never read the option; only the legacy `*PaymentInput` components do.
-  `billing-fields.spec.ts` › "should hide the billing name field when set to never" is marked
-  `test.fail()`; remove that line when the SDK is fixed. A "field does not exist" check that runs
+  `billing-fields.spec.ts` › "billing name set to never is currently not honoured (SDK bug): name
+  field still shown" asserts the current behaviour (the name field IS shown); when the SDK is fixed
+  it fails, and the assertion and title should be flipped as its TODO says. A "field does not exist" check that runs
   before the fields render passes falsely, so the spec waits for them first.
 - **A failed payment-methods fetch is never retried.** After one network failure of
   `GET /payments/:id/client` the element stays on "Oops, something went wrong!" instead of recovering;
@@ -484,16 +512,15 @@ Code goes where it is used: a helper for one spec stays in the spec, one for a g
 
 ## Open follow-ups
 
-1. **First green live run on sandbox.** The live tier has never run yet: dispatch
-   `playwright-live-e2e.yml` manually. It needs the `CYPRESS_ADMIN_KEY` secret in the `Testing`
-   environment; the name is legacy and can be renamed in GitHub settings together with the workflow.
+1. **Keep the live tier green.** It runs on every pull request and needs the `CYPRESS_ADMIN_KEY`
+   secret in the `Testing` environment; the name is legacy and can be renamed in GitHub settings
+   together with the workflow.
 2. **Re-record the synthetic fixtures** with `RECORD=1` on sandbox, review, and flip `_source` to
    `"recorded"` (base first, then per spec).
 3. **Provision PayPal and Klarna with the SDK flow** (`invoke_sdk_client` + session tokens) and a
    Plaid open-banking connector in `setup/merchant-setup.js`, so the `@live` popup tests in
    `popups.spec.ts` stop skipping.
-4. **Make the Playwright checks required** in branch protection: `hermetic` on PRs; watch `live` on
-   `main`.
+4. **Make the Playwright checks required** in branch protection (`hermetic` and `live`).
 5. **Point the hyperswitch-demo-store Test Coverage tool** at this suite.
 
 ## Appendix: coming from Cypress

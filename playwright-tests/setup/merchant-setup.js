@@ -977,9 +977,10 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
           (profileKey !== connectorName ? ` (shared as "${profileKey}")` : ""),
       );
     } catch (err) {
-      // Log the error but continue with remaining connectors.
-      // Individual tests for the failed connector will fail at runtime
-      // when they can't find a profile_id — which is the desired behavior.
+      // Log the error but continue with remaining connectors. The failed
+      // connector gets no profile_id: specs that require it fail fast in
+      // their beforeEach (e.g. Redsys, Netcetera), while specs for optional
+      // connectors (e.g. Mifinity, Juspay) skip with a reason.
       console.error(
         `[setup] Error setting up "${connectorName}":`,
         err.message,

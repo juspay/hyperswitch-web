@@ -90,8 +90,38 @@ export const ROUTE_NAMES: Array<
 
 // Keys whose values are secrets. client_secret is templated instead (the SDK needs it to match).
 const SENSITIVE_KEY =
-  /^(api[-_]?key|secret[-_]?key|publishable[-_]?key|password|authorization|cookie|signature|ephemeral[-_]?key|client[-_]?token|access[-_]?token|refresh[-_]?token|session[-_]?token[-_]?data|merchant[-_]?secret|secret)$/i;
+  /^(api[-_]?key|secret[-_]?key|publishable[-_]?key|password|authorization|cookie|signature|ephemeral[-_]?key|client[-_]?token|access[-_]?token|refresh[-_]?token|session[-_]?token[-_]?data|merchant[-_]?secret|secret|ip[-_]?address)$/i;
 const HASHED_KEY = /^(payment_token|payment_method_id|card_token|token)$/i;
+/**
+ * Per-wallet `session_token` strings (e.g. Klarna's client token, SessionsType.res). The
+ * response's top-level `session_token` is the array of wallets, so only strings are redacted.
+ */
+const SESSION_TOKEN_KEY = /^session[-_]?token$/i;
+
+/**
+ * Secrets recognised by their shape, scrubbed from every recorded string (JSON values, HTML
+ * pages, paths) after the run's own ids were templated: other payments' client secrets
+ * (router redirect pages carry `payment_intent_client_secret`), Stripe-style and Hyperswitch
+ * API keys, JWTs and email addresses.
+ */
+const SECRET_PATTERNS: Array<[RegExp, string]> = [
+  [/(_secret_)[A-Za-z0-9]{8,}/g, "$1REDACTED"],
+  [/\b(pk|sk|rk)_(test|live|snd|prd)_[A-Za-z0-9]+/g, "$1_$2_REDACTED"],
+  [/\b(snd|dev|prd)_[A-Za-z0-9]{20,}\b/g, "$1_REDACTED"],
+  [
+    /\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g,
+    "REDACTED_JWT",
+  ],
+  [
+    /[A-Za-z0-9._%+-]+@[A-Za-z][A-Za-z0-9-]*(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g,
+    "redacted@example.com",
+  ],
+];
+
+/** Applies SECRET_PATTERNS to one string. */
+export function scrubSecrets(s: string): string {
+  return SECRET_PATTERNS.reduce((acc, [re, to]) => acc.replace(re, to), s);
+}
 
 /** Hyperswitch-hosted router ("/api" prefix); see HYPERSWITCH_ROUTER_HOST in engine.ts. */
 const HYPERSWITCH_ROUTER_HOST = /(^|\.)hyperswitch\.io$/;
@@ -103,19 +133,26 @@ export interface RedactionContext {
   replacements: Array<[from: string, to: string]>;
 }
 
-/** Recursively redacts secrets and replaces run-specific ids with {{placeholders}}. */
+/**
+ * Recursively redacts secrets and replaces run-specific ids with {{placeholders}}:
+ * the run's ids first (so the intent's own client secret stays usable as
+ * {{intent.client_secret}}), then secret-looking strings (scrubSecrets), and
+ * secret keys by name.
+ */
 export function redact(value: unknown, ctx: RedactionContext): unknown {
   if (typeof value === "string") {
     let s = value;
     for (const [from, to] of ctx.replacements)
       if (from) s = s.split(from).join(to);
-    return s;
+    return scrubSecrets(s);
   }
   if (Array.isArray(value)) return value.map((v) => redact(v, ctx));
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value)) {
       if (SENSITIVE_KEY.test(k) && v !== null && v !== "") out[k] = "REDACTED";
+      else if (SESSION_TOKEN_KEY.test(k) && typeof v === "string" && v)
+        out[k] = "REDACTED";
       else if (HASHED_KEY.test(k) && typeof v === "string" && v)
         out[k] = `redacted_${shortHash(v)}`;
       else out[k] = redact(v, ctx);
@@ -223,9 +260,9 @@ export class Recorder {
       const known = ROUTE_NAMES.find(([m, re]) => m === c.method && re.test(p));
       const templatePath = known
         ? known[3]
-        : ids.paymentId
-          ? p.split(ids.paymentId).join(":paymentId")
-          : p;
+        : scrubSecrets(
+            ids.paymentId ? p.split(ids.paymentId).join(":paymentId") : p,
+          );
       const body = redact(c.body, ctx);
       const route: HermeticRoute = {
         name: known?.[2] ?? `${c.method.toLowerCase()} ${templatePath}`,

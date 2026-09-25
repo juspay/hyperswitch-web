@@ -50,7 +50,10 @@ export class HyperswitchApi {
     readonly baseUrl: string = HYPERSWITCH_API_URL,
   ) {}
 
-  /** Low-level call. Hermetic: served from recordings (404 JSON if no route matches). */
+  /**
+   * Low-level call. Hermetic: served from recordings; no matching route answers
+   * 404 JSON and is logged in `hermetic.unmatched`, which fails the test.
+   */
   async call(
     method: "GET" | "POST",
     path: string,
@@ -61,8 +64,10 @@ export class HyperswitchApi {
   ): Promise<{ status: number; body: Json }> {
     const url = `${this.baseUrl}${path}`;
     if (this.hermetic.enabled) {
-      const served = await this.hermetic.engine!.serve(method, url, data);
+      const engine = this.hermetic.engine!;
+      const served = await engine.serve(method, url, data);
       if (!served) {
+        engine.recordUnmatched(method, new URL(url), data, 404);
         return {
           status: 404,
           body: {
@@ -158,12 +163,13 @@ export class HyperswitchApi {
     paymentId: string,
     { forceSync = true } = {},
   ): Promise<Json> {
-    const { body } = await this.call(
-      "GET",
-      `/payments/${paymentId}${forceSync ? "?force_sync=true" : ""}`,
-    );
-    if (this.hermetic.enabled && body?.error?.type === "hermetic_unmatched") {
-      return { ...(this.hermetic.intent ?? {}) };
+    const path = `/payments/${paymentId}${forceSync ? "?force_sync=true" : ""}`;
+    const { body } = await this.call("GET", path);
+    if (body?.error?.type === "hermetic_unmatched") {
+      throw new Error(
+        `[hermetic] GET ${path}: no fixture route answered (base "retrieve" is ` +
+          `GET /payments/:paymentId; check the spec's recordings)`,
+      );
     }
     return body;
   }

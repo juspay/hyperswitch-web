@@ -67,9 +67,9 @@ export const CARD_FRAME_TEST_IDS: ReadonlySet<string> = new Set([
 ]);
 
 export interface SelectOrSkipOptions {
-  /** How long to wait for the method to be offered before skipping. Default 15 s. */
+  /** How long to wait for the method to be offered before skipping (live) or failing (hermetic). Default 15 s. */
   timeout?: number;
-  /** Called before skipping, e.g. to log the payment_methods_enabled the router returned. */
+  /** Called before skipping or failing, e.g. to log the payment_methods_enabled the router returned. */
   onMissing?: (visibleText: string) => Promise<void> | void;
 }
 
@@ -83,10 +83,13 @@ export class Sdk {
    * @param debugPaymentMethods optional: returns a one-line summary of the router's
    *   payment_methods_enabled, logged when selectPaymentMethodOrSkip() skips
    *   (wired by the `sdk` fixture).
+   * @param hermetic true on the hermetic project: a payment method that is not
+   *   offered fails selectPaymentMethodOrSkip() instead of skipping.
    */
   constructor(
     readonly page: Page,
     private readonly debugPaymentMethods?: () => Promise<string>,
+    private readonly hermetic = false,
   ) {
     this.paymentElement = page.frameLocator(PAYMENT_ELEMENT_IFRAME);
     // First *visible* inner iframe: the new-card form, or the saved-card CVC
@@ -246,11 +249,13 @@ export class Sdk {
   }
 
   /**
-   * Waits up to 15 s for `methodName` to be
-   * offered; if it never appears the test is SKIPPED (not failed) with a named
-   * reason. When offered, clicks the tab (`button.Tab`) or, when the method sits
-   * in the "more" dropdown, selects it in `paymentMethodsSelect` via the
-   * display-name -> value map.
+   * Waits up to 15 s for `methodName` to be offered. If it never appears, a live
+   * test is SKIPPED with a named reason (the merchant may not have the method
+   * provisioned); a hermetic test FAILS, because the recordings fix the payment
+   * methods, so a missing one is an SDK regression or a fixture bug. When
+   * offered, clicks the tab (`button.Tab`) or, when the method sits in the
+   * "more" dropdown, selects it in `paymentMethodsSelect` via the display-name
+   * -> value map.
    */
   async selectPaymentMethodOrSkip(
     methodName: string,
@@ -291,16 +296,21 @@ export class Sdk {
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, 300);
+      const summary = this.debugPaymentMethods
+        ? await this.debugPaymentMethods().catch((e) => `(unavailable: ${e})`)
+        : "(unavailable)";
+      await opts.onMissing?.(visible);
+      if (this.hermetic) {
+        throw new Error(
+          `Payment method "${methodName}" is not offered after ${timeout}ms. The hermetic ` +
+            `recordings fix the payment methods, so this is an SDK regression or a fixture bug.\n` +
+            `payment_methods_enabled: ${summary}\nSDK iframe text: "${visible}"`,
+        );
+      }
       console.log(
         `[skip] "${methodName}" not found after ${timeout}ms. SDK iframe text: "${visible}"`,
       );
-      if (this.debugPaymentMethods) {
-        const summary = await this.debugPaymentMethods().catch(
-          (e) => `(unavailable: ${e})`,
-        );
-        console.log(`[debug] payment_methods_enabled: ${summary}`);
-      }
-      await opts.onMissing?.(visible);
+      console.log(`[debug] payment_methods_enabled: ${summary}`);
       test.skip(
         true,
         `Payment method "${methodName}" is not offered by the SDK for this profile/amount`,

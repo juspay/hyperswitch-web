@@ -26,7 +26,15 @@ const body = paymentBody({
  */
 const pasteIntoCardNumber = async (sdk: Sdk, text: string) => {
   const { page } = sdk;
-  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  // Chromium rejects clipboard.writeText() without the clipboard permissions.
+  // WebKit allows it in a secure context (the demo shop is on localhost) and
+  // has no "clipboard-write" permission at all: granting it there fails with
+  // "Unknown permission".
+  if (page.context().browser()?.browserType().name() === "chromium") {
+    await page
+      .context()
+      .grantPermissions(["clipboard-read", "clipboard-write"]);
+  }
   await page.evaluate((value) => navigator.clipboard.writeText(value), text);
   const input = sdk.field(testIds.cardNoInputTestId);
   await input.click();

@@ -289,7 +289,7 @@
               "UnionPay"
             ],
             "payment_experience": [],
-            "customer_acceptance_support": true
+            "customer_acceptance_support": "supported"
           },
           {
             "payment_method": "card",
@@ -304,7 +304,7 @@
               "UnionPay"
             ],
             "payment_experience": [],
-            "customer_acceptance_support": true
+            "customer_acceptance_support": "supported"
           }
         ],
         "customer_payment_methods": [],

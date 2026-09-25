@@ -18,7 +18,8 @@
     "playwright.config.ts",
     "fixtures/**/*.ts",
     "setup/**/*.ts",
-    "e2e/**/*.ts"
+    "e2e/**/*.ts",
+    "reporters/**/*.ts"
   ],
   "exclude": ["node_modules", "test-results", "playwright-report"]
 }

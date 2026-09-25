@@ -7,9 +7,11 @@
 // confirm redirects to a stubbed router /api/payments/redirect page. The check
 // on the real Mifinity iframe inside that page is live only.
 //
-// Live: when the merchant has no Mifinity connector (creds.json without a
-// mifinity entry, so setup/merchant-setup.js never provisions a profile for it)
-// every test is skipped with a named reason rather than failing.
+// Live: when the merchant has no Mifinity profile every test is skipped with a
+// named reason rather than failing. That happens when creds.json has no mifinity
+// entry (setup/merchant-setup.js never provisions it) and also when it has one
+// but setup failed to create the Mifinity profile or connector account (setup
+// logs "[setup] Error setting up "mifinity"" and carries on without it).
 import {
   test,
   expect,
@@ -24,8 +26,9 @@ import {
 } from "../../fixtures";
 
 const MIFINITY_NOT_PROVISIONED =
-  "Known environment failure: Mifinity connector credentials are missing — no mifinity profile " +
-  "was provisioned (add mifinity to creds.json to run these tests).";
+  "Known environment failure: no mifinity profile was provisioned — either creds.json has no " +
+  "mifinity entry, or live-setup failed to create its profile/connector account (see the " +
+  '"[setup] Error setting up" log).';
 
 test.describe("Mifinity wallet payment flow", () => {
   test.beforeEach(async ({ checkout, credentials }) => {
