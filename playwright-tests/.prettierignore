@@ -1,0 +1,12 @@
+# Generated output
+test-results/
+playwright-report/
+package-lock.json
+
+# Recordings are data written by the recorder (JSON.stringify, 2-space);
+# reformatting them would make every RECORD=1 run show up as a style diff.
+recordings/
+
+# Local secrets (also gitignored)
+creds.json
+test-credentials*.json

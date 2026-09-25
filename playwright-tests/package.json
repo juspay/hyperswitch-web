@@ -1,0 +1,28 @@
+{
+  "name": "playwright-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright end-to-end tests for hyperswitch-web (hermetic + live sandbox tiers)",
+  "scripts": {
+    "test": "playwright test --project=live",
+    "test:sandbox": "TEST_ENV=sandbox playwright test --project=live",
+    "test:integ": "TEST_ENV=integ playwright test --project=live",
+    "test:local": "TEST_ENV=local playwright test --project=live",
+    "test:webkit": "playwright test --project=live-webkit",
+    "test:hermetic": "playwright test --project=hermetic",
+    "test:record": "RECORD=1 playwright test --project=live",
+    "list": "playwright test --list",
+    "typecheck": "tsc --noEmit",
+    "show-report": "playwright show-report",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "author": "juspay/hyperswitch-web-sdk",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^20.19.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
+  }
+}
