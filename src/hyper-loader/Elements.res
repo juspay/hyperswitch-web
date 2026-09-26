@@ -15,7 +15,6 @@ let make = (
   setIframeRef,
   ~sdkSessionId,
   ~publishableKey,
-  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
   ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
@@ -31,7 +30,6 @@ let make = (
 ) => {
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
@@ -42,12 +40,12 @@ let make = (
       localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
     let launchTime = localOptions->getFloat("launchTime", 0.0)
 
-    let fonts =
+    let decodedFonts =
       localOptions
       ->Dict.get("fonts")
       ->Option.flatMap(JSON.Decode.array)
       ->Option.getOr([])
-      ->JSON.Encode.array
+    let fonts = decodedFonts->JSON.Encode.array
 
     let blockConfirm =
       GlobalVars.isInteg &&
@@ -63,28 +61,87 @@ let make = (
       ->Option.flatMap(JSON.Decode.string)
       ->Option.getOr("")
 
-    logger.setLogInfo(
-      ~value=`Initializing Elements SDK - isTestMode: ${isTestMode->getStringFromBool}`,
-      ~eventName=TEST_MODE,
-    )
+    let isSdkParamsEnabled = preloadSDKWithParams->Dict.toArray->Array.length > 0
 
-    logger.setLogInfo(
-      ~value=`Preloading SDK With Params: ${preloadSDKWithParams
-        ->PaymentType.sanitizePreloadSdkParms
-        ->Identity.anyTypeToJson
-        ->JSON.stringify}`,
-      ~eventName=PRELOAD_SDK_WITH_PARAMS,
-    )
+    if isSdkParamsEnabled {
+      HyperLoaderLogger.logMerchantProps(
+        ~event=HyperLoaderLogger.PreloadSdkWithParams({surface: Elements}),
+        ~details=[
+          (
+            "params",
+            preloadSDKWithParams->PaymentType.sanitizePreloadSdkParms->Identity.anyTypeToJson,
+          ),
+          ("keys", preloadSDKWithParams->Dict.keysToArray->Array.length->JSON.Encode.int),
+        ],
+      )
+    }
+
+    switch localOptions->Dict.get("appearance") {
+    | Some(appearanceValue) => {
+        let appearanceDict = appearanceValue->getDictFromJson
+        HyperLoaderLogger.logMerchantProps(
+          ~event=HyperLoaderLogger.Appearance({surface: Elements}),
+          ~details=[
+            ("theme", appearanceDict->getString("theme", "")->JSON.Encode.string),
+            ("keys", appearanceDict->Dict.keysToArray->Array.length->JSON.Encode.int),
+          ],
+        )
+      }
+    | None => ()
+    }
+
+    switch localOptions->Dict.get("fonts") {
+    | Some(_) =>
+      HyperLoaderLogger.logMerchantProps(
+        ~event=HyperLoaderLogger.Fonts({surface: Elements}),
+        ~details=[("count", decodedFonts->Array.length->JSON.Encode.int)],
+      )
+    | None => ()
+    }
+
+    if blockConfirm {
+      HyperLoaderLogger.logMerchantProps(
+        ~event=HyperLoaderLogger.BlockConfirm({surface: Elements}),
+        ~details=[("block_confirm", blockConfirm->JSON.Encode.bool)],
+      )
+    }
+
+    if customPodUri !== "" {
+      HyperLoaderLogger.logMerchantProps(
+        ~event=HyperLoaderLogger.CustomPodUri({surface: Elements}),
+        ~details=[("provided", true->JSON.Encode.bool)],
+      )
+    }
 
     let localSelectorString = "hyper-preMountLoader-iframe"
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
 
+    switch localOptions->Dict.get("locale") {
+    | Some(_) =>
+      HyperLoaderLogger.logMerchantProps(
+        ~event=HyperLoaderLogger.Locale({surface: Elements}),
+        ~details=[("locale", locale)],
+      )
+    | None => ()
+    }
+
+    switch localOptions->Dict.get("loader") {
+    | Some(_) =>
+      HyperLoaderLogger.logMerchantProps(
+        ~event=HyperLoaderLogger.Loader({surface: Elements}),
+        ~details=[("loader", loader)],
+      )
+    | None => ()
+    }
+
     let hasSdkAuthorization = sdkAuthorizationRef.contents !== ""
 
+    LoggerContext.setPaymentIdFromClientSecret(clientSecretRef.contents)
+
     if !isTestMode && !hasSdkAuthorization && clientSecretRef.contents === "" {
-      manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="clientSecret", ~logger)
+      manageErrorWarning(MissingParameter, ~dynamicStr="clientSecret")
     }
 
     let clientSecretReMatch = RegExp.test(
@@ -94,18 +151,8 @@ let make = (
 
     let isTaxCalculationEnabled = ref(false)
 
-    // Only payment element iframes — used for overlay during updateIntent.
-    // Other widgets (CVC, expressCheckout, etc.) don't handle overlay removal
-    // and don't send the "ready" signal, so they must be excluded.
     let paymentElementIframeRef: array<Nullable.t<Dom.element>> = []
 
-    let isSdkParamsEnabled = preloadSDKWithParams->Dict.toArray->Array.length > 0
-
-    // --- Initial preMountLoader setup ---
-    // TODO(sdk-configs): For consumers who provide profileId at Hyper.init time (before
-    // elements() is called), the sdk-configs API call could be prefetched early in Hyper.make()
-    // and the result passed in here, avoiding the round-trip through PreMountLoader.
-    // Currently deferred to PreMountLoader for consistency with the other 3 pre-mount calls.
     let (
       initialSessionTokensPromise,
       initialSdkConfigsPromise,
@@ -122,9 +169,6 @@ let make = (
       ~currentSdkAuthorization=sdkAuthorizationRef.contents,
     )
 
-    // Extract isTaxCalculationEnabled from the clientList response
-    // (Elements-specific). clientList nests this under intent_data, unlike
-    // the old paymentMethods response which had it at the top level.
     initialClientListPromise
     ->Promise.then(json => {
       isTaxCalculationEnabled.contents =
@@ -137,7 +181,6 @@ let make = (
     ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
     ->ignore
 
-    // Store initial data promises in shared refs so they're accessible during updateIntent
     sessionTokensDataPromise.contents = initialSessionTokensPromise
     sdkConfigsDataPromise.contents = initialSdkConfigsPromise
     clientListDataPromise.contents = initialClientListPromise
@@ -189,57 +232,27 @@ let make = (
         )->Option.isSome
 
         if isApplePayPresent || isGooglePayPresent {
-          // Install the ApplePaySession proxy and schedule the TrustPayApi patch
-          // BEFORE the TrustPay script tag is appended to the DOM.
           ApplePayInterceptor.initializeApplePayInterceptor()
 
-          if (
-            Window.querySelectorAll(`script[src="https://tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0 &&
-              Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0
-          ) {
-            let trustPayScriptURL =
-              publishableKey->String.startsWith("pk_prd_")
-                ? "https://tpgw.trustpay.eu/js/v1.js"
-                : "https://test-tpgw.trustpay.eu/js/v1.js"
-            let trustPayScript = Window.createElement("script")
-            logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT)
+          let trustPayScriptURL =
+            publishableKey->String.startsWith("pk_prd_")
+              ? "https://tpgw.trustpay.eu/js/v1.js"
+              : "https://test-tpgw.trustpay.eu/js/v1.js"
+          let postTrustPayStatus = status =>
             mountedIframeRef->Window.iframePostMessage(
-              [("trustPayScriptStatus", "loading"->JSON.Encode.string)]->Dict.fromArray,
+              [("trustPayScriptStatus", status->JSON.Encode.string)]->Dict.fromArray,
             )
-            trustPayScript->Window.elementSrc(trustPayScriptURL)
-            trustPayScript->Window.elementOnerror(_ => {
-              logger.setLogError(
-                ~value="ERROR DURING LOADING TRUSTPAY APPLE PAY",
-                ~eventName=TRUSTPAY_SCRIPT,
-                // ~internalMetadata=err->formatException->JSON.stringify,
-              )
-              mountedIframeRef->Window.iframePostMessage(
-                [("trustPayScriptStatus", "failed"->JSON.Encode.string)]->Dict.fromArray,
-              )
-            })
-            trustPayScript->Window.elementOnload(_ => {
-              logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT)
-              mountedIframeRef->Window.iframePostMessage(
-                [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
-              )
-            })
-            Window.body->Window.appendChild(trustPayScript)
-          } else {
-            mountedIframeRef->Window.iframePostMessage(
-              [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
-            )
-          }
+          postTrustPayStatus("loading")
+          SdkLogger.observeResource(
+            ~event=TrustpayScript,
+            ~url=trustPayScriptURL,
+            ~onLoad=() => postTrustPayStatus("loaded"),
+            ~onError=_ => postTrustPayStatus("failed"),
+          )->ignore
         }
 
-        // Dev/test preload override — reads against the clientList-shaped
-        // JSON now, keeping its own existing key name unchanged.
         let paymentMethodList = preloadSDKWithParams->getJsonFromDict("paymentMethodsList", json)
-        // When the merchant has disabled saved payment methods, strip
-        // customer_payment_methods from the outgoing payload before it ever
-        // reaches the iframe's JS runtime, so saved-card data is never sent
-        // at all in that case. A single "clientList" message is always sent
-        // (never a second, duplicate one) so the receiving handler only ever
-        // runs once per update.
+
         let outgoingPaymentMethodList = if disableSavedPaymentMethods {
           let strippedDict = paymentMethodList->getDictFromJson->Dict.copy
           strippedDict->Dict.set("customer_payment_methods", []->JSON.Encode.array)
@@ -253,8 +266,6 @@ let make = (
       })
     }
 
-    // Top-level session tokens forwarder for updateIntent use.
-    // The full forwardSessionTokensToIframe (with wallet client setup) is inside mountPostMessage.
     let forwardSessionTokensDataToIframe = mountedIframeRef => {
       sessionTokensDataPromise.contents->Promise.then(json => {
         let sessionTokens = preloadSDKWithParams->getJsonFromDict("sessionTokens", json)
@@ -275,9 +286,8 @@ let make = (
 
     if !isTestMode && !hasSdkAuthorization && !clientSecretReMatch {
       manageErrorWarning(
-        INVALID_FORMAT,
+        MalformedValue,
         ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
-        ~logger,
       )
     }
 
@@ -285,10 +295,13 @@ let make = (
       iframeRef->Array.push(ref)->ignore
       setIframeRef(ref)
     }
-    let getElement = componentName => {
-      savedPaymentElement->Dict.get(componentName)
-    }
-    let update = newOptions => {
+    let getElement = componentName =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=GetElement({surface: Elements}),
+        ~detailsOf=result => [("found", result->Option.isSome->JSON.Encode.bool)],
+        ~call=() => savedPaymentElement->Dict.get(componentName),
+      )
+    let updateElementsOptions = newOptions => {
       let newOptionsDict = newOptions->getDictFromJson
       switch newOptionsDict->Dict.get("locale") {
       | Some(val) => localOptions->Dict.set("locale", val)
@@ -316,7 +329,18 @@ let make = (
         iframe->Window.iframePostMessage(message)
       })
     }
+
+    let update = newOptions =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.Update({surface: Elements}),
+        ~call=() => updateElementsOptions(newOptions),
+      )
+
     let fetchUpdates = () => {
+      HyperLoaderLogger.logMerchantCall(
+        ~event=FetchUpdates({surface: Elements}),
+        ~details=[("implemented", false->JSON.Encode.bool)],
+      )
       Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
       })
@@ -328,7 +352,6 @@ let make = (
       if isUpdateIntentInProgress.contents {
         updateIntentInProgressResponse()
       } else {
-        // Show overlay only on payment element iframes (CVC/expressCheckout don't handle overlay)
         setOverlayLoading(paymentElementIframeRef, true)
 
         let response = await performUpdateIntent(
@@ -348,15 +371,12 @@ let make = (
           ~isSdkParamsEnabled,
           ~selectorString=localSelectorString,
           ~shouldWaitForReady=paymentElementIframeRef->Array.length > 0,
-          ~logger,
+          ~surface=Elements,
         )
 
-        // Only forward data and update tax calculation if updateIntent succeeded
         let isSuccess = response->getDictFromJson->getString("status", "") === "succeeded"
 
         if isSuccess {
-          // Extract isTaxCalculationEnabled from latest clientList response.
-          // clientList nests this under intent_data.
           clientListDataPromise.contents
           ->Promise.then(json => {
             isTaxCalculationEnabled.contents =
@@ -369,7 +389,6 @@ let make = (
           ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
           ->ignore
 
-          // Forward fresh data to all Elements iframes (reusing existing forward functions)
           let _ = await Promise.all(
             iframeRef->Array.map(iframe => {
               Promise.all([
@@ -381,20 +400,19 @@ let make = (
           )
         }
 
-        // Always hide overlay on payment element iframes
         setOverlayLoading(paymentElementIframeRef, false)
 
         response
       }
     }
 
-    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+    let createElement = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
       let (componentType, newOptions) = parseComponentTypeAndOptions(
         ~componentTypeOrOptions,
         ~legacyOptions,
         ~defaultComponentType="payment",
       )
-      componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
+      componentType == "" ? manageErrorWarning(MissingParameter, ~dynamicStr="type") : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
       | "card"
@@ -414,7 +432,6 @@ let make = (
       | str => Console.warn(`Unknown Key: ${str} type in create`)
       }
 
-      // Wrap setElementIframeRef so payment element iframes are also tracked separately
       let setIframeRefForComponent = ref => {
         setElementIframeRef(ref)
         if componentType === "payment" {
@@ -473,6 +490,7 @@ let make = (
           ("publishableKey", publishableKey->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+          LoggerContext.sharedContext(),
           ("blockConfirm", blockConfirm->JSON.Encode.bool),
           ("customPodUri", customPodUri->JSON.Encode.string),
           ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
@@ -494,7 +512,7 @@ let make = (
           ),
         ]->Dict.fromArray
 
-        let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)
+        let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets")
 
         let handleApplePayMounted = (event: Types.event) => {
           let json = event.data->anyTypeToJson
@@ -519,34 +537,35 @@ let make = (
                     messageTopWindow(msg)
                   } else {
                     Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
-                    logger.setLogInfo(
-                      ~value="CANNOT MAKE PAYMENT USING APPLE PAY",
-                      ~eventName=APPLE_PAY_FLOW,
-                      ~paymentMethod="APPLE_PAY",
-                      ~logType=ERROR,
+                    SdkLogger.logLifecycle(
+                      ~event=WalletFlowFailed({reason: PaymentsNotAllowed}),
+                      ~paymentMethod=Wallet(ApplePay),
                     )
                   }
                 } catch {
                 | exn => {
-                    let exnString = exn->anyTypeToJson->JSON.stringify
-                    Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
-                    logger.setLogInfo(
-                      ~value=exnString,
-                      ~eventName=APPLE_PAY_FLOW,
-                      ~paymentMethod="APPLE_PAY",
-                      ~logType=ERROR,
+                    Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
+                    SdkLogger.logLifecycle(
+                      ~event=WalletFlowFailed({reason: AvailabilityCheckFailed}),
+                      ~paymentMethod=Wallet(ApplePay),
+                      ~exn,
                     )
                   }
                 }
-              | None => ()
+              | None =>
+                SdkLogger.logLifecycle(
+                  ~event=WalletFlowFailed({reason: ClientUnavailable}),
+                  ~paymentMethod=Wallet(ApplePay),
+                  ~details=[
+                    ("stage", "availability_check"->JSON.Encode.string),
+                    ("apple_pay_display", "auto"->JSON.Encode.string),
+                    ("component_name", componentName->JSON.Encode.string),
+                    ("secure_context", Window.isSecureContext->JSON.Encode.bool),
+                    ("in_iframe", (Window.windowParent !== Window.window)->JSON.Encode.bool),
+                  ],
+                  ~message="window.ApplePaySession is not defined; the browser does not support Apple Pay",
+                )
               }
-            } else {
-              logger.setLogInfo(
-                ~value="ApplePay is set as 'never' by merchant",
-                ~eventName=APPLE_PAY_FLOW,
-                ~paymentMethod="APPLE_PAY",
-                ~logType=INFO,
-              )
             }
           } else if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
             let applePayCanMakePayments = getBool(dict, "applePayCanMakePayments", false)
@@ -558,13 +577,11 @@ let make = (
                 handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
               } catch {
               | exn => {
-                  let exnString = exn->anyTypeToJson->JSON.stringify
-                  Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
-                  logger.setLogInfo(
-                    ~value=exnString,
-                    ~eventName=APPLE_PAY_FLOW,
-                    ~paymentMethod="APPLE_PAY",
-                    ~logType=ERROR,
+                  Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
+                  SdkLogger.logLifecycle(
+                    ~event=WalletFlowFailed({reason: MessageHandlingFailed}),
+                    ~paymentMethod=Wallet(ApplePay),
+                    ~exn,
                   )
                 }
               }
@@ -619,15 +636,17 @@ let make = (
                           ~headers=Dict.make(),
                           clientSecretRef.contents,
                           ~publishableKey,
-                          ~logger,
                           ~customPodUri,
                           ~isForceSync=true,
                           ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
                         )
                       )
-                    let executeGooglePayment = trustpay.executeGooglePayment(
-                      payment,
-                      googlePayRequest,
+                    let executeGooglePayment = SdkLogger.observeFunction(
+                      ~event=ExecuteGooglePayment,
+                      ~paymentMethod=Wallet(GooglePay),
+                      ~details=[("connector", "trustpay"->JSON.Encode.string)],
+                      ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+                      ~call=() => trustpay.executeGooglePayment(payment, googlePayRequest),
                     )
                     let timeOut = delay(600000)->then(_ => {
                       let errorMsg =
@@ -635,55 +654,44 @@ let make = (
                       reject(JsExn.anyToExnInternal(errorMsg))
                     })
 
+                    let postGooglePaySync = () => {
+                      let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
+                      event.source->Window.sendPostMessage(msg)
+                    }
+
                     Promise.race([polling, executeGooglePayment, timeOut])
                     ->then(_ => {
-                      logger.setLogInfo(
-                        ~value="TrustPay GooglePay Response",
-                        // ~internalMetadata=res->JSON.stringify,
-                        ~eventName=GOOGLE_PAY_FLOW,
-                        ~paymentMethod="GOOGLE_PAY",
+                      SdkLogger.logLifecycle(
+                        ~event=WalletTokenReceived,
+                        ~paymentMethod=Wallet(GooglePay),
+                        ~details=[("flow", "third_party"->JSON.Encode.string)],
                       )
-                      let value = "Payment Data Filled: New Payment Method"
-                      logger.setLogInfo(
-                        ~value,
-                        ~eventName=PAYMENT_DATA_FILLED,
-                        ~paymentMethod="GOOGLE_PAY",
-                      )
-                      let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                      event.source->Window.sendPostMessage(msg)
+                      postGooglePaySync()
                       resolve()
                     })
-                    ->catch(err => {
-                      let exceptionMessage = err->formatException->JSON.stringify
-                      logger.setLogInfo(
-                        ~value=exceptionMessage,
-                        ~eventName=GOOGLE_PAY_FLOW,
-                        ~paymentMethod="GOOGLE_PAY",
-                        ~logType=ERROR,
-                        ~logCategory=USER_ERROR,
+                    ->catch(exn => {
+                      SdkLogger.logLifecycle(
+                        ~event=WalletFlowFailed({reason: PaymentDataFailed, connector}),
+                        ~paymentMethod=Wallet(GooglePay),
+                        ~exn,
                       )
-                      let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                      event.source->Window.sendPostMessage(msg)
+                      postGooglePaySync()
                       resolve()
                     })
                     ->ignore
                   }
                 | _ =>
-                  logger.setLogInfo(
-                    ~value="Connector Not Found",
-                    ~eventName=GOOGLE_PAY_FLOW,
-                    ~paymentMethod="GOOGLE_PAY",
+                  SdkLogger.logLifecycle(
+                    ~event=WalletFlowFailed({reason: ConnectorUnsupported, connector}),
+                    ~paymentMethod=Wallet(GooglePay),
                   )
                 }
               } catch {
               | err => {
-                  let exceptionMessage = err->formatException->JSON.stringify
-                  logger.setLogInfo(
-                    ~value=exceptionMessage,
-                    ~eventName=GOOGLE_PAY_FLOW,
-                    ~paymentMethod="GOOGLE_PAY",
-                    ~logType=ERROR,
-                    ~logCategory=USER_ERROR,
+                  SdkLogger.logLifecycle(
+                    ~event=WalletFlowFailed({reason: MessageHandlingFailed}),
+                    ~paymentMethod=Wallet(GooglePay),
+                    ~exn=err,
                   )
                   let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                   event.source->Window.sendPostMessage(msg)
@@ -714,12 +722,6 @@ let make = (
                 ->Option.getOr(false)
 
               if isDelayedSessionToken {
-                logger.setLogInfo(
-                  ~value="Delayed Session Token Flow",
-                  ~eventName=APPLE_PAY_FLOW,
-                  ~paymentMethod="APPLE_PAY",
-                )
-
                 let connector =
                   applePaySessionTokenData
                   ->Dict.get("connector")
@@ -729,14 +731,11 @@ let make = (
 
                 switch connector {
                 | "trustpay" =>
-                  logger.setLogInfo(
-                    ~value="TrustPay Connector Flow",
-                    ~eventName=APPLE_PAY_FLOW,
-                    ~paymentMethod="APPLE_PAY",
+                  SdkLogger.logLifecycle(
+                    ~event=WalletFlowResolved({flow: Delayed, connector}),
+                    ~paymentMethod=Wallet(ApplePay),
                   )
 
-                  // Bind a safe closure over mountedIframeRef so the interceptor can post
-                  // "applePayConfirmRequest" back to the iframe during onvalidatemerchant.
                   ApplePayInterceptor.setPostToIframe(msg =>
                     mountedIframeRef->Window.iframePostMessage(msg)
                   )
@@ -767,45 +766,32 @@ let make = (
                     ->Option.getOr("")
 
                   clientListDataPromise.contents
-                  ->then(paymentMethodsJson => {
-                    let pmDict = paymentMethodsJson->getDictFromJson
-                    let currencyCode =
-                      pmDict->getDictFromDict("intent_data")->getString("currency", "EUR")
-                    let amountInt = pmDict->getDictFromDict("intent_data")->getInt("amount", 0)
-                    let amountStr = amountInt->Int.toString //<...>//
+                  ->then(_ => {
                     try {
-                      let newSecrets = secrets //<...>//
-                      let newPaymentRequest = paymentRequest //<...>//
-                      let trustpay = trustPayApi(newSecrets)
-                      trustpay.finishApplePaymentV2(
-                        payment, //<...>//
-                        newPaymentRequest,
-                        Window.Location.hostname,
+                      let trustpay = trustPayApi(secrets)
+                      SdkLogger.observeFunction(
+                        ~event=FinishApplePaymentV2,
+                        ~paymentMethod=Wallet(ApplePay),
+                        ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+                        ~call=() =>
+                          trustpay.finishApplePaymentV2(
+                            payment,
+                            paymentRequest,
+                            Window.Location.hostname,
+                          ),
                       )
                       ->then(_ => {
-                        let value = "Payment Data Filled: New Payment Method"
-                        logger.setLogInfo(
-                          ~value,
-                          ~eventName=PAYMENT_DATA_FILLED,
-                          ~paymentMethod="APPLE_PAY",
-                        )
-                        logger.setLogInfo(
-                          ~value="TrustPay ApplePay Success Response",
-                          ~eventName=APPLE_PAY_FLOW,
-                          ~paymentMethod="APPLE_PAY",
+                        SdkLogger.logLifecycle(
+                          ~event=WalletTokenReceived,
+                          ~paymentMethod=Wallet(ApplePay),
+                          ~details=[("flow", "third_party"->JSON.Encode.string)],
                         )
                         let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg)
                         ApplePayInterceptor.clearPostToIframe()
                         resolve()
                       })
-                      ->catch(err => {
-                        let exceptionMessage = err->formatException->JSON.stringify
-                        logger.setLogInfo(
-                          ~eventName=APPLE_PAY_FLOW,
-                          ~paymentMethod="APPLE_PAY",
-                          ~value=exceptionMessage,
-                        )
+                      ->catch(_ => {
                         let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg)
                         ApplePayInterceptor.clearPostToIframe()
@@ -813,11 +799,13 @@ let make = (
                       })
                     } catch {
                     | exn => {
-                        let exnStr = exn->formatException->JSON.stringify
-                        logger.setLogInfo(
-                          ~value=exnStr,
-                          ~eventName=APPLE_PAY_FLOW,
-                          ~paymentMethod="APPLE_PAY",
+                        SdkLogger.logLifecycle(
+                          ~event=WalletFlowFailed({
+                            reason: ClientCreationFailed,
+                            connector: "trustpay",
+                          }),
+                          ~exn,
+                          ~paymentMethod=Wallet(ApplePay),
                         )
                         let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg)
@@ -829,40 +817,31 @@ let make = (
                   ->catch(_ => resolve())
                   ->ignore
                 | _ =>
-                  logger.setLogInfo(
-                    ~value="Connector Not Found",
-                    ~eventName=APPLE_PAY_FLOW,
-                    ~paymentMethod="APPLE_PAY",
+                  SdkLogger.logLifecycle(
+                    ~event=WalletFlowFailed({reason: ConnectorUnsupported, connector}),
+                    ~paymentMethod=Wallet(ApplePay),
                   )
                 }
               } else {
-                logger.setLogInfo(
-                  ~value="Third party ApplePay session token flow",
-                  ~eventName=APPLE_PAY_FLOW,
-                  ~paymentMethod="APPLE_PAY",
-                )
                 let connector = dict->Utils.getString("connector", "")
                 let authToken = dict->Utils.getString("authToken", "")
                 let applePayPaymentRequest = dict->Utils.getDictFromDict("applePayPaymentRequest")
                 switch connector {
                 | "braintree" =>
-                  logger.setLogInfo(
-                    ~value="Braintree Applepay Flow",
-                    ~eventName=APPLE_PAY_FLOW,
-                    ~paymentMethod="APPLE_PAY",
+                  SdkLogger.logLifecycle(
+                    ~event=WalletFlowResolved({flow: ThirdParty, connector}),
+                    ~paymentMethod=Wallet(ApplePay),
                   )
                   ApplePayHelpers.handleApplePayBraintreeClick(
                     authToken,
                     applePayPaymentRequest,
                     selectorString,
-                    logger,
                     event,
                   )
                 | _ =>
-                  logger.setLogInfo(
-                    ~value="Connector Not Found",
-                    ~eventName=APPLE_PAY_FLOW,
-                    ~paymentMethod="APPLE_PAY",
+                  SdkLogger.logLifecycle(
+                    ~event=WalletFlowFailed({reason: ConnectorUnsupported, connector}),
+                    ~paymentMethod=Wallet(ApplePay),
                   )
                 }
               }
@@ -886,6 +865,12 @@ let make = (
             let returnUrl = dict->getString("return_url", "")
             let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecretRef.contents}&status=${status}`
             if redirect.contents === "always" {
+              SdkLogger.logLifecycle(
+                ~event=CustomerRedirectStarted({
+                  nextAction: "poll_retrieve_redirect",
+                  redirectOrigin: "hyper_loader",
+                }),
+              )
               Utils.replaceRootHref(redirectUrl, redirectionFlags)
               resolve(JSON.Encode.null)
             } else {
@@ -907,6 +892,12 @@ let make = (
 
             let handleErrorResponse = err => {
               if redirect.contents === "always" {
+                SdkLogger.logLifecycle(
+                  ~event=CustomerRedirectStarted({
+                    nextAction: "poll_error_redirect",
+                    redirectOrigin: "hyper_loader",
+                  }),
+                )
                 Utils.replaceRootHref(url, redirectionFlags)
               }
               messageCurrentWindow([
@@ -923,14 +914,12 @@ let make = (
               ~interval,
               ~count,
               ~returnUrl=url,
-              ~logger,
               ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
             )
             ->then(_ => {
               PaymentHelpers.retrievePaymentIntent(
                 clientSecretRef.contents,
                 ~publishableKey,
-                ~logger,
                 ~customPodUri,
                 ~isForceSync=true,
                 ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
@@ -967,7 +956,6 @@ let make = (
             PaymentHelpers.retrievePaymentIntent(
               clientSecretRef.contents,
               ~publishableKey,
-              ~logger,
               ~customPodUri,
               ~isForceSync=true,
               ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
@@ -975,6 +963,12 @@ let make = (
             ->then(json => json->handleRetrievePaymentResponse)
             ->catch(err => {
               if redirect.contents === "always" {
+                SdkLogger.logLifecycle(
+                  ~event=CustomerRedirectStarted({
+                    nextAction: "openurl_error_redirect",
+                    redirectOrigin: "hyper_loader",
+                  }),
+                )
                 Utils.replaceRootHref(
                   redirectUrl->JSON.Decode.string->Option.getOr(""),
                   redirectionFlags,
@@ -1042,7 +1036,7 @@ let make = (
               let isApplePayBraintreePresent =
                 applePayPresent->getOptionsDict->getString("connector", "") === "braintree"
               if isApplePayBraintreePresent {
-                BraintreeHelpers.loadBraintreeApplePayScripts(logger)
+                BraintreeHelpers.loadBraintreeApplePayScripts()
               }
             }
             let googlePayPresent = sessionsArr->Array.find(item => {
@@ -1094,10 +1088,9 @@ let make = (
                       ->JSON.Decode.bool
                       ->Option.getOr(false)
                     if !isDelayedSessionToken && !isThirdPartyFlow {
-                      logger.setLogInfo(
-                        ~value="Normal Session Token Flow",
-                        ~eventName=APPLE_PAY_FLOW,
-                        ~paymentMethod="APPLE_PAY",
+                      SdkLogger.logLifecycle(
+                        ~event=WalletFlowResolved({flow: Normal}),
+                        ~paymentMethod=Wallet(ApplePay),
                       )
 
                       let isSavedMethodsFlow = dict->getBool("isSavedMethodsFlow", false)
@@ -1111,6 +1104,7 @@ let make = (
                         ("sdkAuthorization", sdkAuthorizationRef.contents->JSON.Encode.string),
                         ("isTaxCalculationEnabled", isTaxCalculationEnabled->JSON.Encode.bool),
                         ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+                        LoggerContext.sharedContext(),
                         ("analyticsMetadata", analyticsMetadata),
                         ("componentName", componentName->JSON.Encode.string),
                         ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
@@ -1227,7 +1221,6 @@ let make = (
                   if isTaxCalculationEnabled.contents {
                     TaxCalculation.calculateTax(
                       ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
-                      ~logger,
                       ~publishableKey,
                       ~clientSecret=clientSecretRef.contents,
                       ~paymentMethodType,
@@ -1271,7 +1264,11 @@ let make = (
                       ? "PRODUCTION"
                       : "TEST",
                     "paymentDataCallbacks": {
-                      "onPaymentDataChanged": onPaymentDataChanged,
+                      "onPaymentDataChanged": SdkLogger.observeFunctionCallback(
+                        ~event=OnPaymentDataChanged,
+                        ~paymentMethod=Wallet(GooglePay),
+                        ~callback=onPaymentDataChanged,
+                      ),
                     },
                   }->anyTypeToJson
                 } else {
@@ -1285,12 +1282,10 @@ let make = (
                   Some(GooglePayType.google(gpayClientRequest))
                 } catch {
                 | err =>
-                  logger.setLogError(
-                    ~value=`ERROR DURING LOADING GOOGLE PAY CLIENT - ${err
-                      ->formatException
-                      ->JSON.stringify}`,
-                    ~eventName=GOOGLE_PAY_SCRIPT,
-                    ~paymentMethod="GOOGLE_PAY",
+                  SdkLogger.logLifecycle(
+                    ~event=WalletFlowFailed({reason: ClientCreationFailed}),
+                    ~paymentMethod=Wallet(GooglePay),
+                    ~exn=err,
                   )
                   let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
                   mountedIframeRef->Window.iframePostMessage(msg)
@@ -1300,7 +1295,11 @@ let make = (
                 switch gPayClient {
                 | Some(client) =>
                   try {
-                    client.isReadyToPay(payRequest)
+                    SdkLogger.observeFunction(
+                      ~event=IsReadyToPay,
+                      ~paymentMethod=Wallet(GooglePay),
+                      ~call=() => client.isReadyToPay(payRequest),
+                    )
                     ->then(res => {
                       let dict = res->getDictFromJson
                       let isReadyToPay = getBool(dict, "result", false)
@@ -1308,26 +1307,14 @@ let make = (
                       mountedIframeRef->Window.iframePostMessage(msg)
                       resolve()
                     })
-                    ->catch(err => {
-                      logger.setLogInfo(
-                        ~value=err->anyTypeToJson->JSON.stringify,
-                        ~eventName=GOOGLE_PAY_FLOW,
-                        ~paymentMethod="GOOGLE_PAY",
-                        ~logType=DEBUG,
-                      )
+                    ->catch(_ => {
                       let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
                       mountedIframeRef->Window.iframePostMessage(msg)
                       resolve()
                     })
                     ->ignore
                   } catch {
-                  | exn =>
-                    logger.setLogInfo(
-                      ~value=exn->Identity.anyTypeToJson->JSON.stringify,
-                      ~eventName=GOOGLE_PAY_FLOW,
-                      ~paymentMethod="GOOGLE_PAY",
-                      ~logType=DEBUG,
-                    )
+                  | _ =>
                     let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
                     mountedIframeRef->Window.iframePostMessage(msg)
                     Promise.resolve()->catch(_ => resolve())->ignore
@@ -1356,7 +1343,12 @@ let make = (
                   if gpayClicked && paymentDataRequest !== JSON.Encode.null {
                     switch gPayClient {
                     | Some(client) => setTimeout(() => {
-                        client.loadPaymentData(paymentDataRequest)
+                        SdkLogger.observeFunction(
+                          ~event=LoadPaymentData,
+                          ~paymentMethod=Wallet(GooglePay),
+                          ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+                          ~call=() => client.loadPaymentData(paymentDataRequest),
+                        )
                         ->then(
                           json => {
                             let msg =
@@ -1365,24 +1357,15 @@ let make = (
                                 ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                               ]->Dict.fromArray
                             event.source->Window.sendPostMessage(msg)
-                            let value = "Payment Data Filled: New Payment Method"
-                            logger.setLogInfo(
-                              ~value,
-                              ~eventName=PAYMENT_DATA_FILLED,
-                              ~paymentMethod="GOOGLE_PAY",
+                            SdkLogger.logLifecycle(
+                              ~event=WalletTokenReceived,
+                              ~paymentMethod=Wallet(GooglePay),
                             )
                             resolve()
                           },
                         )
                         ->catch(
                           err => {
-                            logger.setLogInfo(
-                              ~value=err->anyTypeToJson->JSON.stringify,
-                              ~eventName=GOOGLE_PAY_FLOW,
-                              ~paymentMethod="GOOGLE_PAY",
-                              ~logType=DEBUG,
-                            )
-
                             let msg = [("gpayError", err->anyTypeToJson)]->Dict.fromArray
                             event.source->Window.sendPostMessage(msg)
                             resolve()
@@ -1391,11 +1374,9 @@ let make = (
                         ->ignore
                       }, 0)->ignore
                     | None =>
-                      logger.setLogInfo(
-                        ~value="GooglePay client unavailable for loadPaymentData",
-                        ~eventName=GOOGLE_PAY_FLOW,
-                        ~paymentMethod="GOOGLE_PAY",
-                        ~logType=DEBUG,
+                      SdkLogger.logLifecycle(
+                        ~event=WalletFlowFailed({reason: ClientUnavailable}),
+                        ~paymentMethod=Wallet(GooglePay),
                       )
                       let msg =
                         [
@@ -1409,26 +1390,12 @@ let make = (
                 addSmartEventListener("message", handleGooglePayMessages, "onGooglePayMessages")
               } catch {
               | err =>
-                logger.setLogError(
-                  ~value=`ERROR DURING LOADING GOOGLE PAY SCRIPT - ${err
-                    ->formatException
-                    ->JSON.stringify}`,
-                  ~eventName=GOOGLE_PAY_SCRIPT,
-                  ~paymentMethod="GOOGLE_PAY",
+                SdkLogger.logLifecycle(
+                  ~event=WalletFlowFailed({reason: ListenerSetupFailed}),
+                  ~paymentMethod=Wallet(GooglePay),
+                  ~exn=err,
                 )
               }
-            } else if (
-              switch wallets.googlePay {
-              | GooglePayConfigString(Never) | GooglePayConfigObj({display: Never}) => true
-              | _ => false
-              }
-            ) {
-              logger.setLogInfo(
-                ~value="GooglePay is set as never by merchant",
-                ~eventName=GOOGLE_PAY_FLOW,
-                ~paymentMethod="GOOGLE_PAY",
-                ~logType=INFO,
-              )
             }
             if (
               componentType->getIsComponentTypeForPaymentElementCreate &&
@@ -1467,7 +1434,11 @@ let make = (
                 let samsungPayClient = SamsungPayType.samsung({
                   environment: "PRODUCTION",
                 })
-                samsungPayClient.isReadyToPay(payRequest)
+                SdkLogger.observeFunction(
+                  ~event=IsReadyToPay,
+                  ~paymentMethod=Wallet(SamsungPay),
+                  ~call=() => samsungPayClient.isReadyToPay(payRequest),
+                )
                 ->then(res => {
                   let dict = res->getDictFromJson
                   let isReadyToPay = dict->getBool("result", false)
@@ -1475,15 +1446,7 @@ let make = (
                   mountedIframeRef->Window.iframePostMessage(msg)
                   resolve()
                 })
-                ->catch(err => {
-                  logger.setLogError(
-                    ~value=`SAMSUNG PAY not ready ${err
-                      ->formatException
-                      ->JSON.stringify}`,
-                    ~eventName=SAMSUNG_PAY,
-                    ~paymentMethod="SAMSUNG_PAY",
-                    ~logType=ERROR,
-                  )
+                ->catch(_ => {
                   resolve()
                 })
                 ->ignore
@@ -1506,7 +1469,12 @@ let make = (
                     ->getBoolFromOptionalJson(false)
 
                   if samsungPayClicked && paymentDataRequest !== JSON.Encode.null {
-                    samsungPayClient.loadPaymentSheet(payRequest, paymentDataRequest)
+                    SdkLogger.observeFunction(
+                      ~event=LoadPaymentSheet,
+                      ~paymentMethod=Wallet(SamsungPay),
+                      ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+                      ~call=() => samsungPayClient.loadPaymentSheet(payRequest, paymentDataRequest),
+                    )
                     ->then(json => {
                       let msg =
                         [
@@ -1517,14 +1485,6 @@ let make = (
                       resolve()
                     })
                     ->catch(err => {
-                      logger.setLogError(
-                        ~value=`SAMSUNG PAY Initialization fail ${err
-                          ->formatException
-                          ->JSON.stringify}`,
-                        ~eventName=SAMSUNG_PAY,
-                        ~paymentMethod="SAMSUNG_PAY",
-                        ~logType=ERROR,
-                      )
                       event.source->Window.sendPostMessage(
                         [("samsungPayError", err->anyTypeToJson)]->Dict.fromArray,
                       )
@@ -1536,21 +1496,13 @@ let make = (
                 addSmartEventListener("message", handleSamsungPayMessages, "onSamsungPayMessages")
               } catch {
               | err =>
-                logger.setLogError(
-                  ~value=`SAMSUNG PAY Not Ready - ${err->formatException->JSON.stringify}`,
-                  ~eventName=SAMSUNG_PAY,
-                  ~paymentMethod="SAMSUNG_PAY",
-                  ~logType=ERROR,
+                SdkLogger.logLifecycle(
+                  ~event=WalletFlowFailed({reason: ListenerSetupFailed}),
+                  ~paymentMethod=Wallet(SamsungPay),
+                  ~exn=err,
                 )
                 Console.error("Error loading Samsung Pay")
               }
-            } else if wallets.samsungPay === Never {
-              logger.setLogInfo(
-                ~value="SAMSUNG PAY is set as never by merchant",
-                ~eventName=SAMSUNG_PAY,
-                ~paymentMethod="SAMSUNG_PAY",
-                ~logType=INFO,
-              )
             }
 
             let sessionTokens = preloadSDKWithParams->getJsonFromDict("sessionTokens", json)
@@ -1582,34 +1534,57 @@ let make = (
         mountPostMessage,
         ~appearance,
         ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
-        ~logger=Some(logger),
         ~confirmPayment,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
+
+    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+      let (componentType, _) = parseComponentTypeAndOptions(
+        ~componentTypeOrOptions,
+        ~legacyOptions,
+        ~defaultComponentType="payment",
+      )
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.Create({surface: Elements}),
+        ~details=[
+          ("component_type", componentType->JSON.Encode.string),
+          (
+            "replaces_existing",
+            savedPaymentElement->Dict.get(componentType)->Option.isSome->JSON.Encode.bool,
+          ),
+        ],
+        ~call=() => createElement(componentTypeOrOptions, legacyOptions),
+      )
+    }
+
     module StdOption = {
       let none: option<'a> = None
     }
     let cardFormRef: ref<option<Types.cardForm>> = ref(StdOption.none)
     let createCardForm = (): Types.cardForm =>
-      switch cardFormRef.contents {
-      | Some(group) => group
-      | None =>
-        let group = PaymentsGroup.makeCardForm(
-          ~config={
-            clientSecret: clientSecretRef.contents,
-            sdkAuthorization: sdkAuthorizationRef.contents,
-            publishableKey: Some(publishableKey),
-            endpoint: Some(endpoint),
-            appearance: Some(appearance),
-            locale: locale->JSON.Decode.string,
-            logger,
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.CreateCardForm({surface: Elements}),
+        ~call=() =>
+          switch cardFormRef.contents {
+          | Some(group) => group
+          | None =>
+            let group = PaymentsGroup.makeCardForm(
+              ~config={
+                clientSecret: clientSecretRef.contents,
+                sdkAuthorization: sdkAuthorizationRef.contents,
+                publishableKey: Some(publishableKey),
+                endpoint: Some(endpoint),
+                appearance: Some(appearance),
+                locale: locale->JSON.Decode.string,
+                sdkSessionId: Some(sdkSessionId),
+              },
+            )
+            cardFormRef := Some(group)
+            group
           },
-        )
-        cardFormRef := Some(group)
-        group
-      }
+      )
     {
       getElement,
       update,
@@ -1621,6 +1596,11 @@ let make = (
   } catch {
   | e => {
       Sentry.captureException(e)
+      SdkLogger.logCrash(
+        ~origin=EntryPoint,
+        ~details=[("entry_point", "elements_create"->JSON.Encode.string)],
+        ~exn=e,
+      )
       defaultElement
     }
   }

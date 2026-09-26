@@ -4,9 +4,8 @@ open Utils
 
 @react.component
 let make = () => {
-  let cleanBSB = str => str->String.replaceRegExp(%re("/-/g"), "")
+  let cleanBSB = str => str->String.replaceRegExp(/-/g, "")
 
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let setComplete = Jotai.useSetAtom(fieldsComplete)
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let (modalData, setModalData) = React.useState(_ => None)
@@ -19,7 +18,7 @@ let make = () => {
   let city = Jotai.useAtomValue(userAddressCity)
   let postalCode = Jotai.useAtomValue(userAddressPincode)
   let state = Jotai.useAtomValue(userAddressState)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHelpers.usePaymentIntent(BankDebits)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let {sdkAuthorization} = Jotai.useAtomValue(keys)
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
@@ -43,7 +42,12 @@ let make = () => {
     | None => true
     }
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="becs_bank_debit")
+  UtilityHooks.useHandlePostMessages(
+    ~complete,
+    ~empty,
+    ~paymentType="becs_bank_debit",
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(~method="bank_debit", ~methodType="becs"),
+  )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
   React.useEffect(() => {
@@ -51,6 +55,8 @@ let make = () => {
     None
   }, [complete])
 
+  let paymentMethod = "bank_debit"
+  let paymentMethodType = "becs"
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
@@ -79,14 +85,20 @@ let make = () => {
         | None => ()
         }
       } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+        let message = "Please enter all fields"
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: "Please enter all fields"}),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethodType,
+          ),
+          ~message,
+        )
+        postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
   }, (email, fullName, modalData, isManualRetryEnabled, sdkAuthorization))
   useSubmitPaymentData(submitCallback)
-
-  let paymentMethod = "bank_debit"
-  let paymentMethodType = "becs"
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <EmailPaymentInput />

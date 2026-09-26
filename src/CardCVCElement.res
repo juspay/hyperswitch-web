@@ -22,7 +22,6 @@ let make = (
   let {innerLayout} = config.appearance
   let keys = Jotai.useAtomValue(keys)
   let customPodUri = Jotai.useAtomValue(customPodUri)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let redirectionFlags = Jotai.useAtomValue(JotaiAtoms.redirectionFlagsAtom)
   // Vault credentials (pmSessionId / sdkAuthorization) for the saved-card tokenise
   // call; populated by PaymentMethodsSDK in the inner iframe. Only used in vault mode.
@@ -77,7 +76,6 @@ let make = (
             PaymentHelpersV2.updatePaymentMethod(
               ~bodyArr=PaymentManagementBody.vaultUpdateCVVBody(~cvcNumber),
               ~pmSessionId,
-              ~logger=loggerState,
               ~customPodUri,
               ~sdkAuthorization,
             )
@@ -92,12 +90,26 @@ let make = (
                   ~targetOrigin=keys.parentURL,
                 )
               } else {
-                postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+                let message = "Something went wrong"
+                SdkLogger.logLifecycle(
+                  ~event=VaultFlowFailed({reason: TokenizationFailed}),
+                  ~failure=res,
+                  ~paymentMethod=Card,
+                  ~message,
+                )
+                postFailedSubmitResponse(~errortype="server_error", ~message)
               }
               resolve()
             })
-            ->catch(_ => {
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            ->catch(err => {
+              let message = "Something went wrong"
+              SdkLogger.logLifecycle(
+                ~event=VaultFlowFailed({reason: TokenizationFailed}),
+                ~exn=err,
+                ~paymentMethod=Card,
+                ~message,
+              )
+              postFailedSubmitResponse(~errortype="server_error", ~message)
               resolve()
             })
             ->ignore
@@ -116,6 +128,10 @@ let make = (
               ? localeString.cvcNumberEmptyText
               : localeString.inCompleteCVCErrorText
           setCvcError(_ => errorMsg)
+          SdkLogger.logLifecycle(
+            ~event=FormValidationFailed({reason: errorMsg}),
+            ~paymentMethod=Card,
+          )
           if isOuterValid {
             postFailedSubmitResponse(~errortype="validation_error", ~message=errorMsg)
           }
@@ -158,7 +174,6 @@ let make = (
                     ~payload,
                     ~publishableKey=publishableKeyVal,
                     ~clientSecret=clientSecretVal,
-                    ~logger=loggerState,
                     ~customPodUri,
                     ~redirectionFlags,
                     ~sdkAuthorization=Some(sdkAuth),
@@ -242,7 +257,6 @@ let make = (
     cvcNumber,
     keys,
     paymentType,
-    loggerState,
     customPodUri,
     redirectionFlags,
     localeString,
@@ -318,6 +332,7 @@ let make = (
     // saved-card re-collect input is a different form and must not answer to it.
     id=?{isSavedCardCvcFlow ? None : Some("card-cvc")}
     name=TestUtils.cardCVVInputTestId
+    logInputChange=false
     autocomplete="cc-csc"
   />
 }

@@ -84,8 +84,7 @@ let openFieldPort = (
   let epoch = channel.portEpochCounterRef.contents
   let messageChannel = MessageChannelBinding.makeChannel()
   let portKey = CardFormCoordinator.portKey(~groupId=channel.groupId, ~fieldName)
-  channel.installedPortKeysRef :=
-    channel.installedPortKeysRef.contents->Array.concat([portKey])
+  channel.installedPortKeysRef := channel.installedPortKeysRef.contents->Array.concat([portKey])
   CoordinatorMount.postFieldMountConfigWithPort(
     ~fieldIframe,
     ~mountConfig,
@@ -94,15 +93,10 @@ let openFieldPort = (
     ~port=messageChannel.port2,
   )
   channel.pendingPortsRef :=
-    channel.pendingPortsRef.contents->Array.concat([
-      {fieldName, epoch, port: messageChannel.port1},
-    ])
+    channel.pendingPortsRef.contents->Array.concat([{fieldName, epoch, port: messageChannel.port1}])
   flushPendingPorts(channel)
 }
 
-// Merges a field's `create()` subscriptionEvents into the group-level union.
-// Returns true when the union actually grew, so the caller can re-post the
-// coordinator's options for fields created after the coordinator was configured.
 let mergeSubscriptionEvents = (
   ~subscriptionEventsRef: ref<array<string>>,
   ~fieldOptions: JSON.t,
@@ -114,9 +108,10 @@ let mergeSubscriptionEvents = (
     ->Option.flatMap(JSON.Decode.array)
     ->Option.getOr([])
     ->Array.filterMap(JSON.Decode.string)
-  let merged = incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
-    acc->Array.includes(event) ? acc : acc->Array.concat([event])
-  )
+  let merged =
+    incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
+      acc->Array.includes(event) ? acc : acc->Array.concat([event])
+    )
   if merged->Array.length > subscriptionEventsRef.contents->Array.length {
     subscriptionEventsRef := merged
     true
@@ -196,6 +191,7 @@ let buildFieldMountConfig = (
   ->Array.concat(credentialKeys)
   ->Array.concat([
     ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+    LoggerContext.sharedContext(),
     ("customPodUri", ""->JSON.Encode.string),
     ("parentURL", "*"->JSON.Encode.string),
     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
@@ -217,21 +213,30 @@ let buildFieldMountConfig = (
   ->Dict.fromArray
 }
 
+// Shared failure summariser for merchant-facing confirm/tokenize calls:
+// reports the error code of an error-shaped result, or None on success.
+let errorCodeFailureSummary = (result: JSON.t): option<LoggerTypes.errorSummary> =>
+  result
+  ->getDictFromJson
+  ->getDictFromDict("error")
+  ->Dict.get("code")
+  ->Option.map(code => {
+    LoggerTypes.name: code->JSON.Decode.string->Option.getOr("RETURNED_ERROR_RESPONSE"),
+    message: None,
+    details: [],
+  })
+
 let savedCardNetwork = (savedCardDict: Dict.t<JSON.t>): string =>
   savedCardDict
   ->getDictFromDict("paymentMethodData")
   ->getDictFromDict("card")
   ->getString("cardNetwork", "")
 
-let postFieldUpdate = (
-  ~iframeRef: ref<Nullable.t<Dom.element>>,
-  ~newOptions: JSON.t,
-): Dict.t<JSON.t> => {
+let postFieldUpdate = (~iframeRef: ref<Nullable.t<Dom.element>>, ~newOptions: JSON.t): Dict.t<
+  JSON.t,
+> => {
   iframeRef.contents->Window.iframePostMessage(
-    [
-      ("paymentElementsUpdate", true->JSON.Encode.bool),
-      ("options", newOptions),
-    ]->Dict.fromArray,
+    [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", newOptions)]->Dict.fromArray,
   )
   let savedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
   let brand = savedCardDict->savedCardNetwork
@@ -255,7 +260,8 @@ let makeFieldElementAndHandle = (
   ~listenerName: string,
   ~eventHandlersRef: ref<Dict.t<JSON.t => unit>>,
   ~update: JSON.t => unit,
-  ~logger: HyperLoggerTypes.loggerMake,
+  ~scope: SdkLogger.cardFormScope,
+  ~vaultProvider: string,
 ): Types.fieldHandle => {
   let element = LoaderPaymentElement.make(
     "paymentMethodsSDK",
@@ -266,7 +272,6 @@ let makeFieldElementAndHandle = (
     ~appearance,
     ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
     ~sdkDomainUrl,
-    ~logger=Some(logger),
     ~confirmPayment=_json => Promise.resolve(JSON.Encode.null),
     ~fieldName,
     ~surfaceFamily,
@@ -274,31 +279,31 @@ let makeFieldElementAndHandle = (
   )
   let postToOwnIframe = fields =>
     iframeRef.contents->Window.iframePostMessage(fields->Dict.fromArray)
-  // Card values never leave the field iframes, so every log here carries the field name only.
-  let logField = (action: string) =>
-    logger.setLogInfo(~value=`${fieldName} ${action}`, ~eventName=CARD_FORM_FLOW)
+  let fieldDetails = [
+    ("field", fieldName->JSON.Encode.string),
+    ("vault", vaultProvider->JSON.Encode.string),
+  ]
   {
-    mount: selector => {
-      logField("mounted")
-      element.mount(selector)
-    },
+    mount: selector => element.mount(selector),
     unmount: () => {
-      logField("unmounted")
       element.unmount()
+      SdkLogger.logState(~event=CardFieldUnmounted({scope, field: fieldName}))
     },
     destroy: () => {
-      logField("destroyed")
       element.destroy()
       iframeRef := Nullable.null
       EventListenerManager.removeSmartEventListener("message", listenerName)
+      SdkLogger.logState(~event=CardFieldUnmounted({scope, field: fieldName}))
     },
-    update,
+    update: newOptions =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.Update({surface: CardField}),
+        ~details=fieldDetails,
+        ~call=() => update(newOptions),
+      ),
     focus: () => postToOwnIframe([("doFocus", true->JSON.Encode.bool)]),
     blur: () => postToOwnIframe([("doBlur", true->JSON.Encode.bool)]),
-    clear: () => {
-      logger.setLogInfo(~value=fieldName, ~eventName=CLEAR)
-      postToOwnIframe([("doClearValues", true->JSON.Encode.bool)])
-    },
+    clear: () => postToOwnIframe([("doClearValues", true->JSON.Encode.bool)]),
     on: (event, cb) => eventHandlersRef.contents->Dict.set(event, cb),
   }
 }
@@ -311,10 +316,7 @@ let registerField = (
 ): unit => {
   let fieldsDict = fields.contents->getDictFromJson
   let fieldMeta =
-    [
-      ("id", fieldId->JSON.Encode.string),
-      ("type", fieldType->JSON.Encode.string),
-    ]
+    [("id", fieldId->JSON.Encode.string), ("type", fieldType->JSON.Encode.string)]
     ->Array.concat(extraMeta)
     ->Dict.fromArray
     ->JSON.Encode.object

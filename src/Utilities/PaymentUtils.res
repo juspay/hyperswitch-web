@@ -155,6 +155,21 @@ let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
   }
 }
 
+let loggerPaymentMethodOf = (
+  ~paymentMethodName,
+  ~paymentMethods: array<PaymentMethodsRecord.methods>,
+) =>
+  switch paymentMethodName {
+  | "card" => Some(LoggerPaymentMethod.Card)
+  | _ =>
+    paymentMethods->Array.findMap(({payment_method, payment_method_types}) => {
+      let methodType = getPaymentMethodName(~paymentMethodType=payment_method, ~paymentMethodName)
+      payment_method_types
+      ->Array.find(entry => entry.payment_method_type === methodType)
+      ->Option.flatMap(_ => LoggerPaymentMethod.fromPair(~method=payment_method, ~methodType))
+    })
+  }
+
 let isAppendingCustomerAcceptance = (
   ~isGuestCustomer,
   ~paymentType: PaymentMethodsRecord.payment_type,
@@ -598,7 +613,6 @@ let useEmitPaymentMethodInfo = (
   ~cvcProps: CardUtils.cvcProps,
   ~skipCard=false,
 ) => {
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let {country, state, pinCode} = useNonPiiAddressData()
 
   let {cardNumber, cardBrand} = cardProps
@@ -664,11 +678,7 @@ let useEmitPaymentMethodInfo = (
           ~paymentMethod=finalPaymentMethodType.payment_method,
           ~paymentMethodType=paymentMethodName,
         )
-      | None =>
-        loggerState.setLogError(
-          ~value="Payment method type not found",
-          ~eventName=PAYMENT_METHOD_TYPE_DETECTION_FAILED,
-        )
+      | None => SdkLogger.logLifecycle(~event=PaymentMethodUnresolved({value: paymentMethodName}))
       }
     }
 

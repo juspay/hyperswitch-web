@@ -11,7 +11,6 @@ let make = (
   ~cvcProps: CardUtils.cvcProps,
 ) => {
   let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
   let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
 
@@ -70,7 +69,6 @@ let make = (
         ~bodyArr=PaymentBody.cardTokenizationBody(~cardNumber, ~cvcNumber, ~month, ~year),
         ~pmSessionId,
         ~sdkAuthorization,
-        ~logger=loggerState,
       )
       messageParentWindow(
         [("cardTokenEvent", true->JSON.Encode.bool), ("vaultResponse", response)],
@@ -78,6 +76,14 @@ let make = (
       )
     } catch {
     | error =>
+      SdkLogger.logLifecycle(
+        ~event=VaultFlowFailed({reason: FormCreationFailed}),
+        ~details=[
+          ("vault", "hyperswitch"->JSON.Encode.string),
+          ("operation", "save_card"->JSON.Encode.string),
+        ],
+        ~exn=error,
+      )
       messageParentWindow([("cardTokenFail", true->JSON.Encode.bool)], ~targetOrigin=parentURL)
       Console.error2("Unable to Save Card ", error->formatException->JSON.stringify)
     }
@@ -94,16 +100,7 @@ let make = (
         reportCardFieldErrors()
       }
     }
-  }, (
-    cardNumber,
-    cardExpiry,
-    cvcNumber,
-    cardBrand,
-    complete,
-    vaultCredentials,
-    loggerState,
-    localeString,
-  ))
+  }, (cardNumber, cardExpiry, cvcNumber, cardBrand, complete, vaultCredentials, localeString))
   useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
 
   <div className="animate-slowShow">
