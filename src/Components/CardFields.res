@@ -57,7 +57,8 @@ let make = (
           marginBottom: "5px",
           fontSize: themeObj.fontSizeLg,
           opacity: "0.6",
-        }>
+        }
+      >
         {React.string(localeString.cardHeader)}
       </div>
     </RenderIf>
@@ -77,13 +78,15 @@ let make = (
         placeholder="1234 1234 1234 1234"
         className={innerLayout === Compressed && cardError->String.length > 0 ? "border-b-0" : ""}
         name=TestUtils.cardNoInputTestId
+        logInputChange=false
         autocomplete="cc-number"
       />
       <div
         className="flex flex-row w-full place-content-between"
         style={
           gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-        }>
+        }
+      >
         <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
           <PaymentInputField
             fieldName=localeString.validThruText
@@ -98,6 +101,7 @@ let make = (
             inputRef=expiryRef
             placeholder=localeString.expiryPlaceholder
             name=TestUtils.expiryInputTestId
+            logInputChange=false
             autocomplete="cc-exp"
           />
         </div>
@@ -123,6 +127,7 @@ let make = (
             inputRef=cvcRef
             placeholder="123"
             name=TestUtils.cardCVVInputTestId
+            logInputChange=false
             autocomplete="cc-csc"
           />
         </div>
@@ -131,7 +136,8 @@ let make = (
         condition={innerLayout === Compressed &&
           (cardError->String.length > 0 ||
           cvcError->String.length > 0 ||
-          expiryError->String.length > 0)}>
+          expiryError->String.length > 0)}
+      >
         <div
           className="Error pt-1"
           style={
@@ -139,7 +145,8 @@ let make = (
             fontSize: themeObj.fontSizeSm,
             alignSelf: "start",
             textAlign: "left",
-          }>
+          }
+        >
           {React.string("Invalid input")}
         </div>
       </RenderIf>

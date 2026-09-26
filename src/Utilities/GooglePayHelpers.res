@@ -125,9 +125,15 @@ let useHandleGooglePayResponse = (
         )
       }
       if dict->Dict.get("gpayError")->Option.isSome {
+        let message = "Something went wrong"
+        SdkLogger.logLifecycle(
+          ~event=WalletFlowFailed({reason: SheetFailed}),
+          ~paymentMethod=Wallet(GooglePay),
+          ~message,
+        )
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         if isSavedMethodsFlow || !isWallet {
-          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+          postFailedSubmitResponse(~errortype="server_error", ~message)
         }
       }
     }
@@ -179,11 +185,19 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
         handleGooglePayClicked(~sessionObj, ~componentName, ~iframeId, ~readOnly=options.readOnly)
       } else if areRequiredFieldsEmpty {
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: localeString.enterFieldsText}),
+          ~paymentMethod=Wallet(GooglePay),
+        )
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterFieldsText,
         )
       } else if !areRequiredFieldsValid {
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: localeString.enterValidDetailsText}),
+          ~paymentMethod=Wallet(GooglePay),
+        )
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterValidDetailsText,

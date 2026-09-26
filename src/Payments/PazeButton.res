@@ -12,9 +12,8 @@ let make = (~token: SessionsType.token) => {
   let options = Jotai.useAtomValue(optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
+  let intent = PaymentHelpers.usePaymentIntent(Paze)
   let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
     ~clientSecret=clientSecret->Option.getOr(""),
     ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
@@ -24,19 +23,14 @@ let make = (~token: SessionsType.token) => {
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onClick = _ => {
+    SdkLogger.logUser(
+      ~event=ExpressCheckoutClicked,
+      ~paymentMethod=Wallet(Paze),
+      ~details=isTestMode ? [("test_mode", true->JSON.Encode.bool)] : [],
+    )
     if isTestMode {
       Console.warn("Paze button clicked in test mode - interaction disabled")
-      loggerState.setLogInfo(
-        ~value="Paze button clicked in test mode - interaction disabled",
-        ~eventName=PAZE_SDK_FLOW,
-        ~paymentMethod="PAZE",
-      )
     } else {
-      loggerState.setLogInfo(
-        ~value="Paze SDK Button Clicked",
-        ~eventName=PAZE_SDK_FLOW,
-        ~paymentMethod="PAZE",
-      )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod="wallet",
         ~paymentMethodType="paze",
@@ -60,6 +54,7 @@ let make = (~token: SessionsType.token) => {
           ("clientName", token.clientName->JSON.Encode.string),
           ("clientProfileId", token.clientProfileId->JSON.Encode.string),
           ("sessionId", paymentIntentId->JSON.Encode.string),
+          ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
           ("emailAddress", token.email_address->JSON.Encode.string),
           ("transactionAmount", token.transaction_amount->JSON.Encode.string),
@@ -118,7 +113,8 @@ let make = (~token: SessionsType.token) => {
       border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
       pointerEvents: updateSession ? "none" : "auto",
       opacity: showLoader || updateSession ? "0.5" : "1.0",
-    }>
+    }
+  >
     {showLoader ? <Spinner /> : <Icon name="paze" size=55 />}
   </button>
 }

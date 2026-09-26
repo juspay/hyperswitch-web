@@ -12,7 +12,6 @@ let payPalIcon = <Icon size=35 width=90 name="paypal" />
 
 @react.component
 let make = (~walletOptions) => {
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey, sdkAuthorization} = Jotai.useAtomValue(keys)
@@ -62,11 +61,12 @@ let make = (~walletOptions) => {
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
+  let intent = PaymentHelpers.usePaymentIntent(Paypal)
   UtilityHooks.useHandlePostMessages(
     ~complete=paypalClicked,
     ~empty=!paypalClicked,
     ~paymentType=paymentMethodType,
+    ~loggedPaymentMethod=Wallet(Paypal),
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   SubscriptionEventHooks.useEmitFormStatus(
@@ -74,20 +74,19 @@ let make = (~walletOptions) => {
     ~complete=paypalClicked,
     ~isOneClickWallet=isWallet,
   )
-  let onPaypalClick = _ev => {
-    if isTestMode {
-      Console.warn("PayPal button clicked in test mode - interaction disabled")
-      loggerState.setLogInfo(
-        ~value="PayPal button clicked in test mode - interaction disabled",
-        ~eventName=PAYPAL_FLOW,
-        ~paymentMethod="PAYPAL",
+  let onPaypalClick = (~fromExpressButton=true, _ev) => {
+    if fromExpressButton {
+      SdkLogger.logUser(
+        ~event=ExpressCheckoutClicked,
+        ~paymentMethod=Wallet(Paypal),
+        ~details=isTestMode ? [("test_mode", true->JSON.Encode.bool)] : [],
       )
     } else {
-      loggerState.setLogInfo(
-        ~value="Paypal Button Clicked",
-        ~eventName=PAYPAL_FLOW,
-        ~paymentMethod="PAYPAL",
-      )
+      SdkLogger.logUser(~event=PaymentSubmitted({source: PayButton}), ~paymentMethod=Wallet(Paypal))
+    }
+    if isTestMode {
+      Console.warn("PayPal button clicked in test mode - interaction disabled")
+    } else {
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,
         ~paymentMethodType,
@@ -159,13 +158,27 @@ let make = (~walletOptions) => {
         let json = ev.data->Utils.safeParse
         let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
         if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-          onPaypalClick(ev)
+          onPaypalClick(~fromExpressButton=false, ev)
         } else if areRequiredFieldsEmpty {
+          SdkLogger.logLifecycle(
+            ~event=FormValidationFailed({reason: localeString.enterFieldsText}),
+            ~paymentMethod=?LoggerPaymentMethod.fromPair(
+              ~method=paymentMethod,
+              ~methodType=paymentMethodType,
+            ),
+          )
           Utils.postFailedSubmitResponse(
             ~errortype="validation_error",
             ~message=localeString.enterFieldsText,
           )
         } else if !areRequiredFieldsValid {
+          SdkLogger.logLifecycle(
+            ~event=FormValidationFailed({reason: localeString.enterValidDetailsText}),
+            ~paymentMethod=?LoggerPaymentMethod.fromPair(
+              ~method=paymentMethod,
+              ~methodType=paymentMethodType,
+            ),
+          )
           Utils.postFailedSubmitResponse(
             ~errortype="validation_error",
             ~message=localeString.enterValidDetailsText,
@@ -197,9 +210,11 @@ let make = (~walletOptions) => {
         pointerEvents: updateSession ? "none" : "auto",
         opacity: updateSession ? "0.5" : "1.0",
       }
-      onClick={_ => options.readOnly ? () : onPaypalClick()}>
+      onClick={_ => options.readOnly ? () : onPaypalClick()}
+    >
       <div
-        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
+        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}
+      >
         {if !paypalClicked {
           payPalIcon
         } else {

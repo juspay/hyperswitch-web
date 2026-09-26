@@ -5,13 +5,12 @@ open Utils
 let make = () => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let {sdkAuthorization} = Jotai.useAtomValue(keys)
   let {config, themeObj} = Jotai.useAtomValue(configAtom)
   let {displaySavedPaymentMethods, layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHelpers.usePaymentIntent(BankDebits)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Jotai.useAtomValue(areRequiredFieldsEmpty)
@@ -32,6 +31,10 @@ let make = () => {
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="sepa_bank_debit",
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(
+      ~method=paymentMethod,
+      ~methodType=paymentMethodType,
+    ),
   )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
@@ -54,7 +57,16 @@ let make = () => {
           ~manualRetry=isManualRetryEnabled,
         )
       } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+        let message = "Please enter all fields"
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: "Please enter all fields"}),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethodType,
+          ),
+          ~message,
+        )
+        postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
   }, (
@@ -73,7 +85,8 @@ let make = () => {
         className="flex flex-col animate-slowShow"
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
-        }>
+        }
+      >
         <RenderIf condition={layoutClass.\"type" === Accordion}>
           <Space height="0" />
         </RenderIf>

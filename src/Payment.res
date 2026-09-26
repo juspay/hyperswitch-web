@@ -6,28 +6,29 @@ open PaymentTypeContext
 open CommonCardProps
 
 let setUserError = message => {
+  SdkLogger.logLifecycle(
+    ~event=FormValidationFailed({reason: message}),
+    ~paymentMethod=Card,
+  )
   Utils.postFailedSubmitResponse(~errortype="validation_error", ~message)
 }
 
 @react.component
-let make = (~paymentMode, ~integrateError, ~logger) => {
+let make = (~paymentMode, ~integrateError) => {
   let {localeString} = Jotai.useAtomValue(configAtom)
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
   let (isFocus, setIsFocus) = React.useState(_ => false)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(logger), Card)
+  let intent = PaymentHelpers.usePaymentIntent(Card)
 
   let paymentType = React.useMemo1(() => {
     paymentMode->getPaymentMode
   }, [paymentMode])
 
   let {cardProps, expiryProps, cvcProps, zipProps, blurState} = useCardForm(
-    ~logger,
     ~paymentType,
-    // The unified Card flow owns eligibility in ParentCardComponent. Keep the
-    // legacy hook enabled for the standalone card-number/expiry/CVC elements.
     ~runEligibility=paymentType !== Card,
   )
   let {
@@ -126,29 +127,39 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       | _ => ()
       }
     } else {
+      let userError = ref(None)
+      let noteUserError = message =>
+        switch userError.contents {
+        | None => userError := Some(message)
+        | Some(_) => ()
+        }
       if cardNumber === "" {
         setCardError(_ => localeString.cardNumberEmptyText)
-        setUserError(localeString.enterFieldsText)
+        noteUserError(localeString.enterFieldsText)
       } else if cardEligibilityError->Option.isSome {
         let msg = EligibilityHelpers.getCardEligibilityErrorText(
           ~cardEligibilityError,
           ~localeString,
         )
         setCardError(_ => msg)
-        setUserError(msg)
+        noteUserError(msg)
       } else if isEligibilityPending {
-        setUserError(localeString.paymentDetailsBeingCheckedText)
+        noteUserError(localeString.paymentDetailsBeingCheckedText)
       }
       if cardExpiry === "" {
         setExpiryError(_ => localeString.cardExpiryDateEmptyText)
-        setUserError(localeString.enterFieldsText)
+        noteUserError(localeString.enterFieldsText)
       }
       if cvcNumber === "" {
         setCvcError(_ => localeString.cvcNumberEmptyText)
-        setUserError(localeString.enterFieldsText)
+        noteUserError(localeString.enterFieldsText)
       }
       if !validFormat {
-        setUserError(localeString.enterValidDetailsText)
+        noteUserError(localeString.enterValidDetailsText)
+      }
+      switch userError.contents {
+      | Some(message) => setUserError(message)
+      | None => ()
       }
     }
   }

@@ -22,7 +22,6 @@ let make = (~paymentMethodType) => {
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let setShowPaymentMethodsScreen = Jotai.useSetAtom(JotaiAtoms.showPaymentMethodsScreen)
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
 
@@ -46,7 +45,6 @@ let make = (~paymentMethodType) => {
             ~paymentMethodType,
             ~publishableKey,
             ~setOptionValue,
-            ~logger,
             ~sdkAuthorization,
           )
           ->then(_ => {
@@ -72,10 +70,18 @@ let make = (~paymentMethodType) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      postFailedSubmitResponse(
-        ~errortype="validation_error",
-        ~message="Please add Bank Details and then confirm payment with the added payment methods.",
+      let message = "Please add Bank Details and then confirm payment with the added payment methods."
+      SdkLogger.logLifecycle(
+        ~event=FormValidationFailed({
+          reason: "Please add Bank Details and then confirm payment with the added payment methods.",
+        }),
+        ~paymentMethod=?LoggerPaymentMethod.fromPair(
+          ~method="bank_debit",
+          ~methodType=paymentMethodType,
+        ),
+        ~message,
       )
+      postFailedSubmitResponse(~errortype="validation_error", ~message)
     }
   }, [])
   useSubmitPaymentData(submitCallback)
@@ -88,7 +94,6 @@ let make = (~paymentMethodType) => {
       ~iframeId,
       ~paymentMethodType,
       ~pmAuthConnectorsArr,
-      ~logger,
       ~sdkAuthorization,
     )->ignore
   }
@@ -104,7 +109,8 @@ let make = (~paymentMethodType) => {
         borderRadius: themeObj.borderRadius,
         borderColor: themeObj.borderColor,
         borderWidth: "2px",
-      }>
+      }
+    >
       {if showLoader {
         <Loader />
       } else {

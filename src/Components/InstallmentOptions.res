@@ -102,6 +102,10 @@ let make = (
   }
 
   let handlePlanSelect = (plan: PaymentMethodsRecord.installmentPlan, index) => {
+    SdkLogger.logUser(
+      ~event=FieldEdited({field: "installment_plan"}),
+      ~details=[("plan_index", index->JSON.Encode.int)],
+    )
     setSelectedInstallmentPlan(_ => Some(plan))
     setSelectedIndex(_ => Some(index))
     setErrorString(_ => "")
@@ -127,6 +131,7 @@ let make = (
   })
 
   let toggleDropdown = _ => {
+    SdkLogger.logUser(~event=ViewToggled({view: InstallmentOptions, expanded: !isDropdownOpen}))
     setIsDropdownOpen(prev => !prev)
   }
 
@@ -152,7 +157,8 @@ let make = (
         style={
           fontSize: themeObj.fontSizeLg,
           color: themeObj.colorText,
-        }>
+        }
+      >
         {localeString.installmentSelectPlanPlaceholder->React.string}
       </span>
     }
@@ -165,7 +171,8 @@ let make = (
         color: themeObj.colorText,
         fontWeight: themeObj.fontWeightNormal,
         fontSize: themeObj.fontSizeLg,
-      }>
+      }
+    >
       <div className="flex items-center">
         <Checkbox
           isChecked=showInstallments
@@ -180,14 +187,16 @@ let make = (
             border: `1px solid ${themeObj.borderColor}`,
             borderRadius: themeObj.borderRadius,
           }
-          className="overflow-hidden">
+          className="overflow-hidden"
+        >
           <div
             onClick=toggleDropdown
             style={
               padding: `calc(${themeObj.spacingUnit} * 0.8) ${themeObj.spacingUnit}`,
               backgroundColor: themeObj.colorBackground,
             }
-            className="flex items-center gap-2 cursor-pointer w-full">
+            className="flex items-center gap-2 cursor-pointer w-full"
+          >
             {renderDropdownTrigger()}
             <div
               style={
@@ -195,7 +204,8 @@ let make = (
               }
               className={`shrink-0 flex items-center ml-0.5 transition-transform duration-200 ease-in-out ${isDropdownOpen
                   ? "rotate-180"
-                  : "rotate-0"}`}>
+                  : "rotate-0"}`}
+            >
               <Icon name="arrow-down" size=12 />
             </div>
           </div>
@@ -205,13 +215,15 @@ let make = (
                 borderTop: `1px solid ${themeObj.borderColor}`,
                 backgroundColor: themeObj.colorBackground,
               }
-              className="relative">
+              className="relative"
+            >
               <div
                 ref={scrollContainerRef->ReactDOM.Ref.domRef}
                 style={
                   maxHeight: scrollContainerMaxHeight,
                 }
-                className={`flex flex-col ${needsScroll ? "overflow-y-auto no-scrollbar" : ""}`}>
+                className={`flex flex-col ${needsScroll ? "overflow-y-auto no-scrollbar" : ""}`}
+              >
                 {allPlans
                 ->Array.mapWithIndex((plan, i) => {
                   let isLastItem = allPlans->Array.length - 1 == i
@@ -240,7 +252,8 @@ let make = (
                     width: "3px",
                     borderRadius: themeObj.borderRadius,
                   }
-                  className="absolute top-0 bottom-0 right-0 pointer-events-none mr-px">
+                  className="absolute top-0 bottom-0 right-0 pointer-events-none mr-px"
+                >
                   <div
                     style={
                       top: `${thumbTop->Float.toString}%`,
@@ -264,7 +277,8 @@ let make = (
             fontSize: themeObj.fontSizeSm,
             alignSelf: "start",
             textAlign: "left",
-          }>
+          }
+        >
           {React.string(errorString)}
         </div>
       </RenderIf>

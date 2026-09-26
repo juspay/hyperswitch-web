@@ -8,19 +8,20 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   let nickName = Jotai.useAtomValue(userCardNickName)
   let fullName = Jotai.useAtomValue(userFullName)
   let {localeString} = Jotai.useAtomValue(configAtom)
-  let logger = Jotai.useAtomValue(loggerAtom)
   let customPodUri = Jotai.useAtomValue(customPodUri)
   let (savedMethodsV2, setSavedMethodsV2) = Jotai.useAtom(JotaiAtomsV2.savedMethodsV2)
   let setManagePaymentMethod = Jotai.useSetAtom(JotaiAtomsV2.managePaymentMethod)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
-  let updateCard = PaymentHelpersV2.useUpdateCard(Some(loggerState), Card)
+  let updateCard = PaymentHelpersV2.useUpdateCard(Card)
   let {iframeId, sdkAuthorization} = keys
   let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
   let {isCVCValid, cvcNumber, setCvcError} = cvcProps
   let complete = isCVCValid->Option.getOr(false) && paymentTokenAtom.paymentToken !== ""
   let isEmpty = cvcNumber == ""
 
-  let setUserError = message => postFailedSubmitResponse(~errortype="validation_error", ~message)
+  let setUserError = message => {
+    SdkLogger.logLifecycle(~event=FormValidationFailed({reason: message}))
+    postFailedSubmitResponse(~errortype="validation_error", ~message)
+  }
 
   let updateSavedMethodV2 = (
     savedMethods: array<UnifiedPaymentsTypesV2.customerMethods>,
@@ -59,7 +60,6 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
       let res = await PaymentHelpersV2.updatePaymentMethod(
         ~bodyArr,
         ~pmSessionId=keys.pmSessionId->Option.getOr(""),
-        ~logger,
         ~customPodUri,
         ~sdkAuthorization=sdkAuthorization->Option.getOr(""),
       )
@@ -99,7 +99,6 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
       let res = await PaymentHelpersV2.deletePaymentMethodV2(
         ~paymentMethodToken=paymentItem.paymentToken,
         ~pmSessionId=keys.pmSessionId->Option.getOr(""),
-        ~logger,
         ~customPodUri,
         ~sdkAuthorization=sdkAuthorization->Option.getOr(""),
       )

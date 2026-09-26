@@ -188,9 +188,10 @@ let useEmitBillingAddress = () => {
 let getPaymentMethodAndType = (
   ~paymentMethodName: string,
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
-  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
-  if paymentMethodName->String.includes("_debit") {
+  if paymentMethodName->String.trim === "" {
+    None
+  } else if paymentMethodName->String.includes("_debit") {
     Some(("bank_debit", paymentMethodName))
   } else if paymentMethodName->String.includes("_transfer") {
     Some(("bank_transfer", paymentMethodName))
@@ -209,10 +210,9 @@ let getPaymentMethodAndType = (
     switch found {
     | Some(pm) => Some((pm.payment_method, paymentMethodName))
     | None =>
-      logger.setLogError(
-        ~value="Payment method type not found",
-        ~eventName=PAYMENT_METHOD_TYPE_DETECTION_FAILED,
-      )
+      if paymentMethods->Array.length > 0 {
+        SdkLogger.logLifecycle(~event=PaymentMethodUnresolved({value: paymentMethodName}))
+      }
       None
     }
   }
@@ -228,7 +228,6 @@ let useEmitPaymentMethodStatus = (
   ~isSavedPaymentMethod: bool,
   ~isOneClickWallet: bool,
 ) => {
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
@@ -239,7 +238,7 @@ let useEmitPaymentMethodStatus = (
         ~eventType=PaymentMethodChange,
       )
     ) {
-      switch getPaymentMethodAndType(~paymentMethodName, ~paymentMethods, ~logger=loggerState) {
+      switch getPaymentMethodAndType(~paymentMethodName, ~paymentMethods) {
       | Some((paymentMethod, paymentMethodType)) =>
         Utils.messageParentWindow(
           createPaymentMethodStatusPayload(

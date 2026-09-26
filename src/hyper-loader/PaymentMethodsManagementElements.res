@@ -10,14 +10,12 @@ let make = (
   ~sdkSessionId,
   ~publishableKey,
   ~sdkAuthorization,
-  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
 ) => {
   let hyperComponentName = PaymentMethodsManagementElements
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
@@ -132,10 +130,12 @@ let make = (
       iframeRef->Array.push(ref)->ignore
       setIframeRef(ref)
     }
-    let getElement = componentName => {
-      savedPaymentElement->Dict.get(componentName)
-    }
-    let update = newOptions => {
+    let getElement = componentName =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.GetElement({surface: Elements}),
+        ~call=() => savedPaymentElement->Dict.get(componentName),
+      )
+    let updateInternal = newOptions => {
       let newOptionsDict = newOptions->getDictFromJson
       switch newOptionsDict->Dict.get("locale") {
       | Some(val) => localOptions->Dict.set("locale", val)
@@ -159,19 +159,28 @@ let make = (
         iframe->Window.iframePostMessage(message)
       })
     }
+    let update = newOptions =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.Update({surface: Elements}),
+        ~call=() => updateInternal(newOptions),
+      )
     let fetchUpdates = () => {
+      HyperLoaderLogger.logMerchantCall(
+        ~event=HyperLoaderLogger.FetchUpdates({surface: Elements}),
+        ~details=[("implemented", false->JSON.Encode.bool)],
+      )
       Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
       })
     }
 
-    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+    let createInternal = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
       let (componentType, newOptions) = parseComponentTypeAndOptions(
         ~componentTypeOrOptions,
         ~legacyOptions,
         ~defaultComponentType="paymentMethodsManagement",
       )
-      componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
+      componentType == "" ? manageErrorWarning(MissingParameter, ~dynamicStr="type") : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
       | "paymentMethodsManagement" => ()
@@ -213,6 +222,7 @@ let make = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+            LoggerContext.sharedContext(),
             ("customPodUri", customPodUri->JSON.Encode.string),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
@@ -253,23 +263,37 @@ let make = (
         ~appearance,
         ~isPaymentManagementElement=true,
         ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
-        ~logger=Some(logger),
         ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
+    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.Create({surface: Elements}),
+        ~call=() => createInternal(componentTypeOrOptions, legacyOptions),
+      )
     {
       getElement,
       update,
       fetchUpdates,
       create,
-      updateIntent: _ => Promise.resolve(JSON.Encode.null),
+      updateIntent: _ =>
+        HyperLoaderLogger.observeMerchantCall(
+          ~event=HyperLoaderLogger.UpdateIntent({surface: Elements}),
+          ~details=[("supported", false->JSON.Encode.bool)],
+          ~call=() => Promise.resolve(JSON.Encode.null),
+        ),
       createCardForm: () => defaultCardForm,
     }
   } catch {
   | e => {
       Sentry.captureException(e)
+      SdkLogger.logCrash(
+        ~origin=EntryPoint,
+        ~details=[("entry_point", "payment_management_elements_create"->JSON.Encode.string)],
+        ~exn=e,
+      )
       defaultElement
     }
   }

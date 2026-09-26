@@ -20,7 +20,6 @@ type callback = Nullable.t<JSON.t> => unit
 type options = {signal: unit}
 
 type element = {
-  mutable getAttribute: string => string,
   mutable src: string,
   mutable async: bool,
   mutable rel: string,
@@ -31,16 +30,13 @@ type element = {
   mutable id: string,
   mutable width: string,
   mutable height: string,
-  remove: unit => unit,
   contentWindow: option<window>,
-  setAttribute: (string, string) => unit,
   addEventListener?: (string, callback, option<options>) => unit,
 }
 
 type elementRef
 @val external myDocument: elementRef = "document"
 
-/* External Declarations */
 @val external window: window = "window"
 @val @scope("window") external innerHeight: int = "innerHeight"
 @val @scope("window") external innerWidth: int = "innerWidth"
@@ -67,7 +63,6 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @new external date: date = "Date"
 @get external value: Dom.element => 'a = "value"
 
-/* External Methods */
 @scope("window") @get external cardNumberElement: window => option<window> = "cardNumber"
 @get external cardCVCElement: window => option<window> = "cardCvc"
 @get external cardExpiryElement: window => option<window> = "cardExpiry"
@@ -87,24 +82,26 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @send external preventDefault: (event, unit) => unit = "preventDefault"
 @send external appendChild: (body, Dom.element) => unit = "appendChild"
 @send external remove: Dom.element => unit = "remove"
-@send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
+
+@new @scope("window")
+external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
+@val @scope("window") external paymentRequestSupported: option<JSON.t> = "PaymentRequest"
 @send external click: Dom.element => unit = "click"
 @set external innerHTML: (Dom.element, string) => unit = "innerHTML"
 @set external className: (Dom.element, string) => unit = "className"
 @set external id: (Dom.element, string) => unit = "id"
-@set external elementSrc: (Dom.element, string) => unit = "src"
-@set external elementOnload: (Dom.element, unit => unit) => unit = "onload"
-@set external elementOnerror: (Dom.element, exn => unit) => unit = "onerror"
+@send
+external addLoadListener: (Dom.element, @as("load") _, unit => unit) => unit = "addEventListener"
+@send
+external addErrorListener: (Dom.element, @as("error") _, exn => unit) => unit = "addEventListener"
 @set external setTransition: (style, string) => unit = "transition"
 @set external setHeight: (style, string) => unit = "height"
-@set external windowOnload: (window, unit => unit) => unit = "onload"
 @set external setHyper: (window, Types.hyperInstance) => unit = "HyperMethod"
 
 @send external closeWindow: window => unit = "close"
 @val external windowOpen: (string, string, string) => Nullable.t<window> = "open"
 @val external isSecureContext: bool = "isSecureContext"
 
-/* Module Definitions */
 module Navigator = {
   @val @scope("navigator")
   external browserName: string = "appName"
@@ -122,8 +119,15 @@ module Navigator = {
   external userAgent: string = "userAgent"
 
   @val @scope("navigator")
-  external sendBeacon: (string, string) => unit = "sendBeacon"
+  external sendBeacon: (string, string) => bool = "sendBeacon"
+
+  let hasSendBeacon: unit => bool = %raw(`function () {
+    return typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function"
+  }`)
 }
+
+@val @scope(("window", "document"))
+external visibilityState: string = "visibilityState"
 
 module Location = {
   @val @scope(("window", "location"))
@@ -195,7 +199,6 @@ module Element = {
     "removeEventListener"
 }
 
-/* Helper Functions */
 let sendPostMessage = (element, message) => {
   element->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
 }
@@ -220,13 +223,10 @@ let iframePostMessage = (
   }
 }
 
-/* Version Handling */
 let version = packageJson.version
 
-/* URL Handling */
 let hrefWithoutSearch = Location.origin ++ Location.pathname
 
-/* iFrame Detection */
 let isIframed = () =>
   try {
     Location.href !== Top.Location.href
@@ -242,7 +242,6 @@ let isIframed = () =>
     }
   }
 
-/* Root Hostname Retrieval */
 let getRootHostName = () =>
   switch isIframed() {
   | true =>

@@ -1,15 +1,31 @@
-// VGSVault
-// Rendered inside the Cards SDK iframe (via <CardsSDK />) when the session's vault
-// provider is VGS.  It loads the VGS Collect.js SDK, mounts three secure fields
-// (card / expiry / cvc) styled to match the native Hyperswitch fields, and on
-// submit tokenises the card.  The resulting aliases are posted back to
-// ParentCardComponent (via `vgsTokenEvent`), which confirms the payment with the
-// full business-logic body — exactly mirroring the Hyperswitch `cardTokenEvent`
-// path so required fields / installments / customer-acceptance are preserved.
 open Utils
 open VGSTypes
 open VGSHelpers
 open VGSConstants
+
+let submitVaultTokenization = (vault: returnValue, ~scope, ~onData) => {
+  let startedAt = Date.now()
+  let event = SdkLogger.VaultTokenization({scope: scope})
+  let details = [("vault", "vgs"->JSON.Encode.string)]
+  let paymentMethod = LoggerPaymentMethod.Card
+  SdkLogger.logApi(~event, ~outcome=Started, ~details, ~paymentMethod)
+  let onSuccess = (_, data) => {
+    SdkLogger.logApi(~event, ~outcome=Done, ~details, ~startedAt, ~paymentMethod)
+    onData(data)
+  }
+  let onError = err => {
+    SdkLogger.logApi(
+      ~event,
+      ~outcome=Failed,
+      ~details,
+      ~startedAt,
+      ~exn=err->Identity.anyTypeToJson,
+      ~paymentMethod,
+    )
+    postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+  }
+  vault.submit("/post", JSON.Encode.object(Dict.make()), onSuccess, onError)
+}
 
 @react.component
 let make = (~cvcOnly=false) => {
@@ -39,22 +55,15 @@ let make = (~cvcOnly=false) => {
   let (vgsExpiryError, setVgsExpiryError) = React.useState(() => "")
   let (vgsCVCError, setVgsCVCError) = React.useState(() => "")
 
-  // Load the VGS Collect.js script once. useScript dedupes across re-renders /
-  // StrictMode (it reuses an existing <script> by data-status instead of
-  // re-appending) so the script never loads multiple times within a document.
-  // SRI is preserved via integrity + crossorigin.
   let vgsScriptStatus = CommonHooks.useScript(
     vgsScriptURL,
     ~integrity=vgsScriptIntegrity,
     ~crossorigin="anonymous",
+    ~resourceEvent=SdkLogger.VaultScript,
   )
-  // Guard so the VGS vault + its fields are created exactly once after load.
+
   let vaultInitializedRef = React.useRef(false)
 
-  // Latest VGS form-state snapshot (per-field isEmpty/isValid/isFocused), kept in
-  // a ref so the submit handler can validate synchronously — without depending on
-  // VGS's async submit error callback, whose blur-driven state change used to race
-  // with and swallow the first submit's errors.
   let formStateRef = React.useRef(Dict.make())
   let savedCvcStatusRef = React.useRef(None)
 
@@ -80,10 +89,6 @@ let make = (~cvcOnly=false) => {
     )
   }
 
-  // Register each field's focus/blur listeners exactly once — when that field is
-  // first created (None → Some) — rather than on every render, which would stack
-  // duplicate `on` listeners. One effect per field so each registers exactly once
-  // regardless of how the field state updates are batched.
   React.useEffect(() => {
     handleVGSField(
       cardField,
@@ -125,34 +130,23 @@ let make = (~cvcOnly=false) => {
   }, (cvcOnly, cvcField, savedCardBrand))
 
   let initializeVGSFields = (vault: returnValue) => {
-    // Saved-card (return user) flow only collects the CVC; the card number and
-    // expiry fields are neither mounted nor rendered.
     if !cvcOnly {
       setCardField(_ => Some(vault.field("#vgs-cc-number", cardNumberOptions)))
       setExpiryField(_ => Some(
         vault.field("#vgs-cc-expiry", cardExpiryOptions(localeString.expiryPlaceholder)),
       ))
     }
-    // Saved-card cvc uses compact, icon-less options so the field matches the
-    // native (non-vault) saved-card cvc input.
+
     setCVCField(_ => Some(
       vault.field("#vgs-cc-cvc", cvcOnly ? savedCardCvcOptions(savedCardBrand) : cardCvcOptions),
     ))
     setForm(_ => Some(vault))
   }
 
-  // Live form-state callback — keeps the inline field errors in sync as the user
-  // types.  It only *surfaces* errors, never clears them: clearing is owned by the
-  // field focus handler.  This stops a blur-triggered state change (e.g. the Pay
-  // button stealing focus on click) from wiping an error the submit handler just
-  // set — the bug where the first Pay click showed no error.
   let handleVGSErrors = vgsState => {
     let dict = vgsState->getDictFromJson
     formStateRef.current = dict
 
-    // VGS keeps values inside its own secure field iframes. Only mirror the
-    // boolean state needed by ParentCardComponent to reproduce the public card
-    // event contract; no PAN, expiry, or CVC value crosses this boundary.
     let fieldState = fieldName =>
       dict
       ->Dict.get(fieldName)
@@ -232,8 +226,6 @@ let make = (~cvcOnly=false) => {
         initializeVGSFields(vault)
       }
     | "error" =>
-      // Card payment can't work without VGS — tell the outer iframe so it can drop
-      // the card method from the payment methods list.
       messageParentWindow(
         [("vgsScriptLoadFailed", true->JSON.Encode.bool)],
         ~targetOrigin=parentURL,
@@ -252,21 +244,13 @@ let make = (~cvcOnly=false) => {
     if confirm.doSubmit {
       switch form {
       | Some(vault) =>
-        // Validate synchronously from the latest tracked field state (mirroring
-        // the native Hyperswitch vault collector submit path) instead of relying on VGS's async
-        // submit error callback, which raced with the focus-blur state change.
         let stateDict = formStateRef.current
         if cvcOnly {
-          // Saved-card (return user) flow: only the CVC field is present. Validate
-          // it, then tokenise just the CVC. The aliased CVC is forwarded to the
-          // saved-card submit owner (SavedMethods), which builds the
-          // vault_card_token_data confirm body with the already-known payment_token.
           let cvcErr = vgsErrorHandler(stateDict, "card_cvc", ~isSubmit=true, localeString)
           setVgsCVCError(_ => cvcErr)
           emitSavedCardCvcStatus(~dict=stateDict, ~error=cvcErr)
           if cvcErr == "" && isOuterValid {
-            let emptyPayload = JSON.Encode.object(Dict.make())
-            let onSuccess = (_, data) => {
+            vault->submitVaultTokenization(~scope=SaveCardCvc, ~onData=data => {
               let cvcToken = data->getDictFromJson->getString("card_cvc", "")
               messageParentWindow(
                 [
@@ -275,10 +259,7 @@ let make = (~cvcOnly=false) => {
                 ],
                 ~targetOrigin=parentURL,
               )
-            }
-            let onError = _ =>
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-            vault.submit("/post", emptyPayload, onSuccess, onError)
+            })
           } else if cvcErr != "" {
             submitUserError(
               isFieldEmpty(stateDict, "card_cvc")
@@ -297,16 +278,7 @@ let make = (~cvcOnly=false) => {
           let cardFieldsValid = cardErr == "" && expiryErr == "" && cvcErr == ""
 
           if cardFieldsValid && isOuterValid {
-            // Card fields AND outer required fields are valid → tokenise with VGS.
-            // Gating on isOuterValid here (rather than inside onSuccess) means we
-            // never send card data to VGS when the outer fields are invalid:
-            // ParentCardComponent has already reported that error and isn't
-            // listening for the token. Mirrors the Hyperswitch vault collector's submit gate.
-            let emptyPayload = JSON.Encode.object(Dict.make())
-
-            // Tokenisation succeeded — forward the aliases to ParentCardComponent so
-            // it can build the confirm body and call intent.
-            let onSuccess = (_, data) => {
+            vault->submitVaultTokenization(~scope=FullCard, ~onData=data => {
               let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
               messageParentWindow(
                 [
@@ -323,19 +295,8 @@ let make = (~cvcOnly=false) => {
                 ],
                 ~targetOrigin=parentURL,
               )
-            }
-
-            // Fields are valid, so onError here is a genuine tokenisation/network
-            // failure (not a validation error) — reject the merchant promise.
-            let onError = _ =>
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-
-            vault.submit("/post", emptyPayload, onSuccess, onError)
+            })
           } else if !cardFieldsValid {
-            // Card fields invalid → reject the merchant's confirm promise once, with
-            // the message that matches the failure (missing field vs. invalid
-            // details). When only the outer fields are invalid, ParentCardComponent
-            // has already reported it, so there is nothing to do here.
             let anyEmpty =
               isFieldEmpty(stateDict, "card_number") ||
               isFieldEmpty(stateDict, "card_exp") ||
@@ -346,7 +307,12 @@ let make = (~cvcOnly=false) => {
           }
         }
 
-      | None => Console.error("VGS Vault not initialized for submission")
+      | None =>
+        SdkLogger.logLifecycle(
+          ~event=VaultFlowFailed({reason: FormCreationFailed}),
+          ~details=[("vault", "vgs"->JSON.Encode.string)],
+        )
+        Console.error("VGS Vault not initialized for submission")
       }
     }
   }, (form, localeString, cvcOnly, parentURL))
@@ -356,10 +322,6 @@ let make = (~cvcOnly=false) => {
   <div className="animate-slowShow">
     <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>
       {if cvcOnly {
-        // Saved-card (return user) flow: render ONLY the secure CVC input field.
-        // The "CVC" header/label is rendered outside the iframe by SavedCardItem
-        // (same as the non-vault saved-card UI), so fieldName is empty here to avoid
-        // a duplicate header inside the iframe.
         <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
           <VGSInputComponent
             fieldName=""
@@ -377,7 +339,8 @@ let make = (~cvcOnly=false) => {
                 marginBottom: "5px",
                 fontSize: themeObj.fontSizeLg,
                 opacity: "0.6",
-              }>
+              }
+            >
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
@@ -391,7 +354,8 @@ let make = (~cvcOnly=false) => {
             className="flex flex-row w-full place-content-between"
             style={
               gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-            }>
+            }
+          >
             <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
               <VGSInputComponent
                 fieldName={localeString.validThruText}
