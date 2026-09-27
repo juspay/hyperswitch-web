@@ -4,7 +4,6 @@ open Utils
 
 @react.component
 let make = (
-  ~loggerState,
   ~savedMethods,
   ~isClickToPayAuthenticateError,
   ~setIsClickToPayAuthenticateError,
@@ -64,7 +63,7 @@ let make = (
                     windowRef: iframeContentWindow,
                     consumerIdentity: authenticateConsumerIdentity,
                   }
-                  ClickToPayHelpers.authenticate(authenticatePayload, loggerState)
+                  ClickToPayHelpers.authenticate(authenticatePayload)
                   ->then(res => {
                     switch res {
                     | Ok(data) =>
@@ -91,15 +90,6 @@ let make = (
                       resolve()
                     | Error(err) => {
                         let errException = err->formatException
-                        loggerState.setLogError(
-                          ~value={
-                            "message": `Error authenticating consumer identity - ${errException->JSON.stringify}`,
-                            "scheme": clickToPayProvider,
-                          }
-                          ->JSON.stringifyAny
-                          ->Option.getOr(""),
-                          ~eventName=CLICK_TO_PAY_FLOW,
-                        )
                         let exceptionMessage =
                           errException
                           ->getDictFromJson
@@ -110,9 +100,17 @@ let make = (
                         let isNotYouClicked = exceptionMessage->String.includes("Not you clicked")
 
                         if isNotYouClicked {
+                          SdkLogger.logUser(
+                            ~event=ViewOpened({view: ClickToPayIdentityChange}),
+                            ~paymentMethod=Card,
+                          )
                           setIsCTPAuthenticateNotYouClicked(_ => true)
                           setIsShowClickToPayNotYou(_ => true)
                         } else {
+                          ClickToPayLogger.logLifecycle(
+                            ~event=AuthenticationFailed({provider: MastercardUctp}),
+                            ~exn=err,
+                          )
                           setIsClickToPayAuthenticateError(_ => true)
                         }
 
@@ -123,16 +121,10 @@ let make = (
                     }
                   })
                   ->catch(err => {
-                    loggerState.setLogError(
-                      ~value={
-                        "message": `Error authenticating consumer identity - ${err
-                          ->formatException
-                          ->JSON.stringify}`,
-                        "scheme": clickToPayProvider,
-                      }
-                      ->JSON.stringifyAny
-                      ->Option.getOr(""),
-                      ~eventName=CLICK_TO_PAY_FLOW,
+                    ClickToPayLogger.logLifecycle(
+                      ~event=AuthenticationFailed({provider: MastercardUctp}),
+                      ~exn=err,
+                      ~message="Exception while handling authenticate result",
                     )
                     closeComponentIfSavedMethodsAreEmpty()
                     resolve()
@@ -145,18 +137,13 @@ let make = (
           | None => ()
           }
         } catch {
-        | err => {
-            loggerState.setLogError(
-              ~value={
-                "message": `Error - ${err->formatException->JSON.stringify}`,
-                "scheme": clickToPayProvider,
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
-            )
-            closeComponentIfSavedMethodsAreEmpty()
-          }
+        | exn =>
+          ClickToPayLogger.logLifecycle(
+            ~event=AuthenticationFailed({provider: MastercardUctp}),
+            ~exn,
+            ~message="Exception while mounting Mastercard verification iframe",
+          )
+          closeComponentIfSavedMethodsAreEmpty()
         }
       } else if isClickToPayAuthenticateError {
         closeComponentIfSavedMethodsAreEmpty()
@@ -204,9 +191,15 @@ let make = (
       ->Array.mapWithIndex((obj, i) => {
         let customerMethod =
           obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider)
+        let logSelectionDetails = [
+          ("card_brand", obj.paymentCardDescriptor->JSON.Encode.string),
+          ("card_index", i->JSON.Encode.int),
+          ("list_source", "click_to_pay"->JSON.Encode.string),
+        ]
         <SavedCardItem
           key={"ctp_" ++ i->Int.toString}
           setPaymentToken
+          logSelectionDetails
           isActive={paymentTokenVal == customerMethod.paymentToken}
           paymentItem=customerMethod
           brandIcon={customerMethod->CardUtils.getPaymentMethodBrand}

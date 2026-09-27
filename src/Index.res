@@ -3,6 +3,8 @@
 
 Sentry.initiateSentry(~dsn=GlobalVars.sentryDSN)
 
+SdkLogger.catchGlobalCrashes(~ownsDocument=true)
+
 let app = switch ReactDOM.querySelector("#app") {
 | Some(container) =>
   let root = ReactDOM.Client.createRoot(container)
