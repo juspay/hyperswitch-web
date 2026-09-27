@@ -25,7 +25,8 @@ module TabLoader = {
             width: "100%",
             padding: themeObj.spacingUnit,
             cursor: "pointer",
-          }>
+          }
+        >
           <Shimmer classname="opacity-50 w-1/3">
             <div
               className="w-full h-3 animate-pulse"
@@ -79,6 +80,13 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
+    SdkLogger.logUser(
+      ~event=PaymentMethodSelected({method: value}),
+      ~paymentMethod=?PaymentUtils.loggerPaymentMethodOf(
+        ~paymentMethodName=value,
+        ~paymentMethods=paymentMethodListValue.payment_methods,
+      ),
+    )
     setSelectedOption(_ => value)
     CardUtils.blurRef(selectRef)
   }
@@ -163,7 +171,8 @@ let make = (
       ref={payOptionsRef->ReactDOM.Ref.domRef}
       className
       dataTestId={TestUtils.paymentMethodListTestId}
-      style>
+      style
+    >
       {cardOptionDetails
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
@@ -204,7 +213,8 @@ let make = (
               borderRadius: themeObj.borderRadius,
               appearance: "none",
               color: "transparent",
-            }>
+            }
+          >
             <option value=selectedPaymentOption.paymentMethodName disabled={true}>
               {
                 let (name, _) = PaymentUtils.getDisplayNameAndIcon(
@@ -221,7 +231,8 @@ let make = (
               <option
                 key={Int.toString(i)}
                 value=item.paymentMethodName
-                style={color: themeObj.colorPrimary}>
+                style={color: themeObj.colorPrimary}
+              >
                 {
                   let (name, _) = PaymentUtils.getDisplayNameAndIcon(
                     customMethodNames,
