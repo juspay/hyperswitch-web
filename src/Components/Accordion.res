@@ -9,6 +9,7 @@ let make = (
 ) => {
   let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
   let {layout, customMethodNames} = Jotai.useAtomValue(optionAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (selectedOption, setSelectedOption) = Jotai.useAtom(selectedOptionAtom)
   let (
@@ -45,10 +46,21 @@ let make = (
       borderRadius: {borderRadiusStyle},
       borderBottomStyle: borderBottom ? "solid" : "hidden",
     }
-    onClick={_ => setSelectedOption(_ => paymentOption.paymentMethodName)}>
+    onClick={_ => {
+      SdkLogger.logUser(
+        ~event=PaymentMethodSelected({method: paymentOption.paymentMethodName}),
+        ~paymentMethod=?PaymentUtils.loggerPaymentMethodOf(
+          ~paymentMethodName=paymentOption.paymentMethodName,
+          ~paymentMethods=paymentMethodListValue.payment_methods,
+        ),
+      )
+      setSelectedOption(_ => paymentOption.paymentMethodName)
+    }}
+  >
     <div
       className={`flex flex-row items-center ${accordionClass}`}
-      style={columnGap: themeObj.spacingUnit}>
+      style={columnGap: themeObj.spacingUnit}
+    >
       <RenderIf condition=layoutClass.radios>
         <Radio checked=radioClass />
       </RenderIf>

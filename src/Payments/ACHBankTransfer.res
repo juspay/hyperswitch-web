@@ -4,23 +4,29 @@ open Utils
 @react.component
 let make = () => {
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let {layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Jotai.useAtomValue(areRequiredFieldsEmpty)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
+  let intent = PaymentHelpers.usePaymentIntent(BankTransfer)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let complete = areRequiredFieldsValid && !areRequiredFieldsEmpty
   let empty = areRequiredFieldsEmpty
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
+  UtilityHooks.useHandlePostMessages(
+    ~complete,
+    ~empty,
+    ~paymentType="bank_transfer",
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(~method="bank_transfer", ~methodType="ach"),
+  )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
+  let paymentMethodType = "ach"
+  let paymentMethod = "bank_transfer"
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
@@ -38,7 +44,16 @@ let make = () => {
           ~manualRetry=isManualRetryEnabled,
         )
       } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+        let message = "Please enter all fields"
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: "Please enter all fields"}),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethodType,
+          ),
+          ~message,
+        )
+        postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
   }, (
@@ -49,9 +64,6 @@ let make = () => {
     sdkAuthorization,
   ))
   useSubmitPaymentData(submitCallback)
-
-  let paymentMethodType = "ach"
-  let paymentMethod = "bank_transfer"
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <RenderIf condition={layoutClass.\"type" === Accordion}>

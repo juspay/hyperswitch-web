@@ -4,23 +4,34 @@ let make = () => {
 
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
-  let setLoggerState = Jotai.useSetAtom(JotaiAtoms.loggerAtom)
 
   let paymentMode = getQueryParamsDictforKey(url.search, "componentName")
   let paymentType = paymentMode->CardThemeType.getPaymentMode
 
   let networkStatus = NetworkInformation.useNetworkInformation()
-  let (logger, initTimestamp) = React.useMemo0(() => {
-    (HyperLogger.make(~source=Elements(paymentType)), Date.now())
-  })
+  React.useMemo0(() =>
+    SdkLogger.adoptSessionFromParent(
+      ~source=switch (paymentMode, getQueryParamsDictforKey(url.search, "fullscreenType")) {
+      | ("", "preMountLoader") => PreMountLoader
+      | ("", overlay) => Fullscreen(overlay)
+      | _ => Elements(paymentType)
+      },
+    )
+  )
 
+  let lastOnline = React.useRef(None)
   React.useEffect1(() => {
     switch networkStatus {
+    | Value(val) if lastOnline.current === Some(val.isOnline) => ()
+    | Value(val) if lastOnline.current === None && val.isOnline => lastOnline.current = Some(true)
     | Value(val) =>
-      logger.setLogInfo(
-        ~value=val->Identity.anyTypeToJson->JSON.stringify,
-        ~eventName=NETWORK_STATE,
-        ~logType=DEBUG,
+      lastOnline.current = Some(val.isOnline)
+      SdkLogger.logState(
+        ~event=NetworkStatusChanged({online: val.isOnline}),
+        ~details=[
+          ("effective_type", val.effectiveType->JSON.Encode.string),
+          ("downlink", val.downlink->JSON.Encode.float),
+        ],
       )
     | NOT_AVAILABLE => ()
     }
@@ -29,11 +40,6 @@ let make = () => {
   }, [networkStatus])
 
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
-
-  React.useEffect(() => {
-    setLoggerState(_ => logger)
-    None
-  }, [logger])
 
   React.useEffect0(() => {
     let handleMetaDataPostMessage = (ev: Window.event) => {
@@ -50,7 +56,6 @@ let make = () => {
               config->Utils.getDictFromJson,
               DefaultTheme.default,
               DefaultTheme.defaultRules,
-              logger,
             )
 
             generateFontsLink(config.fonts)
@@ -90,15 +95,15 @@ let make = () => {
 
   let renderFullscreen = switch paymentMode {
   | "paymentMethodCollect" =>
-    <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-      <PaymentMethodCollectElement integrateError logger />
+    <LoaderController paymentMode setIntegrateErrorError>
+      <PaymentMethodCollectElement integrateError />
     </LoaderController>
   | "paymentMethodsSDK" =>
-    <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
+    <LoaderController paymentMode setIntegrateErrorError>
       <PaymentMethodsSDK />
     </LoaderController>
   | "cardFormCoordinator" =>
-    <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
+    <LoaderController paymentMode setIntegrateErrorError>
       <CardFormCoordinator />
     </LoaderController>
   | _ =>
@@ -106,7 +111,7 @@ let make = () => {
     | "paymentloader" => <PaymentLoader />
     | "clickToPayLearnMore" => <ClickToPayLearnMore />
     | "plaidSDK" => <PlaidSDKIframe />
-    | "pazeWallet" => <PazeWallet logger />
+    | "pazeWallet" => <PazeWallet />
     | "fullscreen" =>
       <div id="fullscreen">
         <FullScreenDivDriver />
@@ -135,6 +140,16 @@ let make = () => {
         let isSdkParamsEnabled =
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
+        LoggerContext.setSessionData(
+          ~sessionId,
+          ~merchantId=publishableKey,
+          ~paymentId=switch clientSecret->LoggerContext.paymentIdOfClientSecret {
+          | "" => pmSessionId
+          | paymentId => paymentId
+          },
+          (),
+        )
+
         <PreMountLoader
           publishableKey
           sessionId
@@ -154,8 +169,8 @@ let make = () => {
     | "sepaBankTransfer" =>
       <BankTransfersPopup transferType=fullscreenMode />
     | _ =>
-      <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-        <Payment paymentMode integrateError logger />
+      <LoaderController paymentMode setIntegrateErrorError>
+        <Payment paymentMode integrateError />
       </LoaderController>
     }
   }
