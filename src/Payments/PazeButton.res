@@ -14,7 +14,7 @@ let make = (~token: SessionsType.token) => {
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let loggerState = Jotai.useAtomValue(loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Paze)
   let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
     ~clientSecret=clientSecret->Option.getOr(""),
     ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,

@@ -219,3 +219,5 @@ let make = (
     <PreMountLoaderForPMMElements logger endpoint customPodUri pmSessionId sdkAuthorization />
   }
 }
+
+let default = make

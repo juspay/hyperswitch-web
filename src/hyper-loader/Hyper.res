@@ -27,6 +27,8 @@ let preloadFile = (~type_, ~href=``) => {
 let preloader = () => {
   preloadFile(~type_="script", ~href=`${ApiEndpoint.sdkDomainUrl}/app.js`)
   preloadFile(~type_="style", ~href=`${ApiEndpoint.sdkDomainUrl}/app.css`)
+  /* Core sprite only - bank-redirect logos live in icons/banks.svg, fetched on demand by
+     BankLogoIcon; do not add them here */
   preloadFile(~type_="image", ~href=`${ApiEndpoint.sdkDomainUrl}/icons/orca.svg`)
   preloadFile(
     ~type_="style",
@@ -36,11 +38,6 @@ let preloader = () => {
     ~type_="style",
     ~href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Qwitcher+Grypen:wght@400;700&display=swap",
   )
-  preloadFile(
-    ~type_="script",
-    ~href="https://js.braintreegateway.com/web/3.92.1/js/paypal-checkout.min.js",
-  )
-  preloadFile(~type_="script", ~href="https://js.braintreegateway.com/web/3.92.1/js/client.min.js")
 }
 
 let handleHyperApplePayMounted = (event: Types.event) => {

@@ -139,7 +139,7 @@ let make = () => {
     Some(() => SadPortRegistry.removeChangeListener(onRegistryChange))
   })
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Card)
   let postConfirmResult = (~confirmId: string, result: JSON.t) => {
     messageParentWindow(
       [

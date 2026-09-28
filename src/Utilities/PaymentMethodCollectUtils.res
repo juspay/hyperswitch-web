@@ -690,7 +690,7 @@ let defaultPaymentMethodCollectOptions = {
 let defaultStatusInfo = {
   status: Success,
   payoutId: "",
-  message: EnglishLocale.localeStrings.payoutStatusSuccessMessage,
+  message: `Your payout was successful. Funds were deposited in your selected payment mode.`,
   code: None,
   errorMessage: None,
   reason: None,

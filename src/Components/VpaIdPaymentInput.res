@@ -43,7 +43,7 @@ let make = () => {
       }
     }
   }, [vpaId])
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   <PaymentField
     fieldName=localeString.vpaIdLabel

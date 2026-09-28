@@ -6,3 +6,5 @@ let make = () => {
   })
   <div />
 }
+
+let default = make

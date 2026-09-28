@@ -94,7 +94,19 @@ echo "Enter the folder name you want to push the assets to"
 read AWS_DESTINATION_KEY </dev/tty
 
 echo "Uploading files to S3"
-echo $( (aws s3 cp "./dist" "s3://$MY_AWS_S3_BUCKET_NAME/$AWS_DESTINATION_KEY" --recursive))
+# The bucket policy above grants s3:GetObject to "*", so everything copied here is
+# published at a guessable URL. Two build artifacts must not be: the .map files (9.7 MB
+# for a production build, app.js.map alone carrying full sourcesContent for 285 modules
+# - "hidden-source-map" stops devtools fetching them automatically, it does not stop
+# anyone requesting them), and bundle-report.html (554 KB of full module-graph analysis).
+# Sentry already has the maps: sentryWebpackPlugin uploads them during `npm run build`
+# above, so excluding them here costs nothing.
+#
+# Both patterns need a leading "*": the CLI joins each pattern onto the source root and
+# fnmatches the whole path, and "*" crosses "/" while a bare filename does not. A plain
+# "bundle-report.html" would only ever match ./dist/bundle-report.html and would miss the
+# real ./dist/<sdkEnv>/<sdkVersion>/bundle-report.html that a production build emits.
+echo $( (aws s3 cp "./dist" "s3://$MY_AWS_S3_BUCKET_NAME/$AWS_DESTINATION_KEY" --recursive --exclude "*.map" --exclude "*bundle-report.html"))
 echo "Uploaded files "
 
 echo "Hurray! You now have hosted your Hyperswitch Web to S3! You can use this URL for your integrations : $AWS_BUCKET_LOCATION$AWS_DESTINATION_KEY/HyperLoader.js"

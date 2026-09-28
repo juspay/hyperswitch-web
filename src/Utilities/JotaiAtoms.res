@@ -40,13 +40,8 @@ let cvcIconOverride = Jotai.atom((None: option<PaymentType.cvcIconStyle>))
 let cardNumberPlaceholder = Jotai.atom((None: option<string>))
 let cardExpiryPlaceholder = Jotai.atom((None: option<string>))
 let cardCvcPlaceholder = Jotai.atom((None: option<string>))
-let paymentMethodCollectOptionAtom = Jotai.atom(
-  PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
-)
-let payoutDynamicFieldsAtom = Jotai.atom(PaymentMethodCollectUtils.defaultPayoutDynamicFields())
-let paymentMethodTypeAtom = Jotai.atom(PaymentMethodCollectUtils.defaultPmt())
-let formDataAtom = Jotai.atom(PaymentMethodCollectUtils.defaultFormDataDict)
-let validityDictAtom = Jotai.atom(PaymentMethodCollectUtils.defaultValidityDict)
+/* The payout widget's atoms live in PayoutJotaiAtoms - their initial values import
+   PaymentMethodCollectUtils, which no other surface needs */
 
 let defaultFieldValues = {
   value: "",

@@ -1,4 +1,4 @@
-open Country
+open CountryDefault
 
 let decodeCountryArray = data => {
   open Utils
@@ -79,7 +79,9 @@ let getCountryStateData = async (
           ~logCategory=USER_ERROR,
         )
 
-        let fallbackCountries = country
+        /* The bundled table is the offline fallback only - pulled in on demand rather than
+           shipped in the entry bundles */
+        let fallbackCountries = await import(Country.country)
         try {
           let fallbackStates = await Utils.importStates("./../States.json")
           {
@@ -101,13 +103,31 @@ let initializeCountryData = async (
   ~locale="en",
   ~logger=HyperLogger.make(~source=Elements(Payment)),
 ) => {
+  open CountryStateDataRefs
   try {
-    open CountryStateDataRefs
     let data = await getCountryStateData(~locale, ~logger)
     countryDataRef.contents = data.countries
     stateDataRef.contents = data.states
     data
   } catch {
-  | _ => {countries: country, states: JSON.Encode.null}
+  /*
+   Seed only when nothing has filled the refs yet. setConfigs has nine call sites in
+   LoaderController, so an elements.update({locale}) during a network drop reaches this path
+   with good data already in the refs - overwriting that with the bundled table (or []) would
+   empty every country and state dropdown mid-session.
+   */
+  | _ =>
+    if countryDataRef.contents->Array.length > 0 {
+      {countries: countryDataRef.contents, states: stateDataRef.contents}
+    } else {
+      let fallbackCountries = try {
+        await import(Country.country)
+      } catch {
+      | _ => []
+      }
+      countryDataRef.contents = fallbackCountries
+      stateDataRef.contents = JSON.Encode.null
+      {countries: fallbackCountries, states: JSON.Encode.null}
+    }
   }
 }

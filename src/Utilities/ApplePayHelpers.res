@@ -427,7 +427,7 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
 
 let createApplePayTransactionInfo = jsonDict =>
   paymentRequestData(
-    ~countryCode=getString(jsonDict, "countryCode", defaultCountryCode),
+    ~countryCode=getString(jsonDict, "countryCode", defaultCountryCode()),
     ~currencyCode=getString(jsonDict, "currencyCode", ""),
     ~merchantCapabilities=getStrArray(jsonDict, "merchantCapabilities"),
     ~supportedNetworks=getStrArray(jsonDict, "supportedNetworks"),

@@ -185,7 +185,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
       }
     }
   }, (areRequiredFieldsValid, isEmpty, complete, customerMethod, isManualRetryEnabled))
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   savedMethodsV2
   ->Array.map(obj => {

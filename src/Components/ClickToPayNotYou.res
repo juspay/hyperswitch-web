@@ -66,7 +66,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
   }
 
   let countryAndCodeCodeList =
-    phoneNumberJson
+    PhoneNumberUtils.phoneNumberJson
     ->JSON.Decode.object
     ->Option.getOr(Dict.make())
     ->getArray("countries")
