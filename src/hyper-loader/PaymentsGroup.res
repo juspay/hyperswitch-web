@@ -55,9 +55,7 @@ let groupFailureResponse = (~code: string, ~errorType: string, ~message: string)
   envelopeDict->JSON.Encode.object
 }
 
-/* `fields` is supplied by the caller rather than created here: ElementsLazy hands the merchant
-   a cardForm facade before this module has downloaded, and both must share one ref */
-let makeCardForm = (~config: groupConfig, ~fields: ref<JSON.t>): Types.cardForm => {
+let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let clientSecret = config.clientSecret
   let sdkAuthorization = config.sdkAuthorization
   let publishableKey = config.publishableKey->Option.getOr("")
@@ -71,6 +69,7 @@ let makeCardForm = (~config: groupConfig, ~fields: ref<JSON.t>): Types.cardForm 
   logger.setLogInfo(~value="Card form created", ~eventName=CARD_FORM_FLOW)
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
+  let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
   let eventCallbacksRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
   let deinitCallbacksRef: ref<array<unit => unit>> = ref([])
 

@@ -71,17 +71,17 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   /*
    The country table is no longer bundled: it arrives with the S3 country/state fetch, after
    the first `options` message. A timezone lookup issued before then finds nothing, so remember
-   the timezone and derive the country again once the data lands.
+   the timezone and derive the country again once the data lands (in setConfigs, below). A ref,
+   not state: setConfigs is an async closure and must see the value set after it started.
    */
-  let (pendingClientTimeZone, setPendingClientTimeZone) = React.useState(() => None)
-  let (isCountryDataReady, setIsCountryDataReady) = React.useState(() => false)
+  let pendingClientTimeZone = React.useRef(None)
 
   let applyClientCountry = clientTimeZone => {
     let clientCountry = getClientCountry(clientTimeZone)
     if clientCountry.countryName === CountryDefault.defaultTimeZone.countryName {
-      setPendingClientTimeZone(_ => Some(clientTimeZone))
+      pendingClientTimeZone.current = Some(clientTimeZone)
     } else {
-      setPendingClientTimeZone(_ => None)
+      pendingClientTimeZone.current = None
       setUserAddressCountry(prev => {
         ...prev,
         value: clientCountry.countryName,
@@ -254,7 +254,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
       setConfig(_ => resolvedConfig)
       let _ = await countryDataPromise
-      setIsCountryDataReady(_ => true)
+      /*
+       Apply the deferred timezone country before the re-publish below, in the same tick, so
+       both land in the one render that first shows the Country field. Applied any later, the
+       field has already frozen its default to the first option (AF) and keeps it.
+       */
+      pendingClientTimeZone.current->Option.forEach(applyClientCountry)
       /*
        Consumers reading CountryStateDataRefs during render used to be re-rendered by the
        configAtom update that landed after the country data. Re-publish the same record so that
@@ -313,19 +318,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       },
     )
   })
-
-  /*
-   Keyed on the country data rather than configAtom (which is now published before the fetch
-   resolves): this is where a timezone lookup deferred by applyClientCountry gets its second
-   chance.
-   */
-  React.useEffect(() => {
-    switch pendingClientTimeZone {
-    | Some(clientTimeZone) => applyClientCountry(clientTimeZone)
-    | None => ()
-    }
-    None
-  }, (isCountryDataReady, pendingClientTimeZone))
 
   React.useEffect(() => {
     CardUtils.generateFontsLink(config.fonts)

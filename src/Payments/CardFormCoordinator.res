@@ -93,7 +93,7 @@ let isErrorResult = (result: JSON.t): bool => {
   dict->Dict.get("error")->Option.flatMap(JSON.Decode.object)->Option.isSome
 }
 
-let portKey = CardFormPortKey.portKey
+let portKey = (~groupId: string, ~fieldName: string): string => `${groupId}:${fieldName}`
 
 type fieldSnapshotEntry = {payload: JSON.t}
 
@@ -635,5 +635,3 @@ let make = () => {
 
   React.null
 }
-
-let default = make

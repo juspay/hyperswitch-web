@@ -141,13 +141,6 @@ const getEnvVariable = (variable, defaultValue) => {
 };
 
 const sdkEnv = getEnvVariable("sdkEnv", "local");
-/*
- Orthogonal to sdkEnv: webpack-dev-server sets this at module load and a plain build leaves it
- unset. The dev server answers on its own host and port, so everything it serves is addressed
- relative to that origin - without this, `start:integ` emits an index.html pointing at the
- deployed CDN copy of app.js and the locally compiled one is never loaded.
- */
-const isDevServer = process.env.WEBPACK_SERVE === "true";
 const hyperswitchStack = getEnvVariable("HYPERSWITCH_STACK", "");
 const isEUStack = hyperswitchStack === "eu";
 const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
@@ -192,7 +185,7 @@ const sdkUrls = {
 
 /*
  Fail the build on an unknown sdkEnv rather than ship a production-shaped build whose
- publicPath, index.html <script src> and ApiEndpoint.sdkDomainUrl all point at
+ ApiEndpoint.sdkDomainUrl - the iframe and asset URLs the loader builds - points at
  http://localhost:9050 (the old fallback). ENV_SDK_URL is the supported escape hatch.
  */
 if (!Object.prototype.hasOwnProperty.call(sdkUrls, sdkEnv) && !envSdkUrl) {
@@ -261,7 +254,7 @@ const getEnvironmentType = (env) => {
 const { isLocal, isIntegrationEnv, isProductionEnv, isSandboxEnv } =
   getEnvironmentType(sdkEnv);
 
-module.exports = () => {
+module.exports = (publicPath = "auto") => {
   const entries = {
     app: "./index.js",
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
@@ -414,25 +407,13 @@ module.exports = () => {
       crossOriginLoading: "anonymous",
       clean: true,
       /*
-       Chunk URLs must carry the SDK's own origin: HyperLoader.js runs on the *merchant's*
-       origin, where a root-relative publicPath 404s. The `sdkUrl + repoPublicPath` base is the
-       same one ApiEndpoint.sdkDomainUrl builds for app.js, app.css and the icon sprite, so the
-       iframe entries keep resolving to the directory they load from today; crossOriginLoading
-       + SRI cover the cross-origin chunk fetches from the merchant page.
-       Under the dev server no origin is knowable at build time, so "auto" derives one per
-       entry at runtime from document.currentScript.src. A root-relative path 404s loader
-       chunks on the merchant's root (demo app :9060 vs dev server :9050), and sdkUrl is wrong
-       too - `start:integ` would load the *deployed* app.js, whose SRI hash differs from the
-       local build, so the browser blocks it. "auto" costs the served path: webpack-dev-
-       middleware reads it as "/", so webpack.dev.js re-pins the mount to
-       `devMiddlewarePublicPath` below. The DefinePlugin `publicPath` (read by Icon.res for the
-       sprite URL) is a separate value and must not move, or every logo 404s.
+       Host-less, so it resolves against whichever server delivered the page: the iframe
+       documents and their chunks are always served from the SDK's own origin - the CDN, a
+       self-hosted server or the dev server. HyperLoader.js runs on the merchant's page and must
+       stay self-contained: a chunk it requested would be a cross-origin `crossorigin` script,
+       which the prod and sandbox CDNs block (they send no Access-Control-Allow-Origin).
        */
-      publicPath: isDevServer
-        ? "auto"
-        : isLocal
-          ? "/"
-          : `${sdkUrl}${repoPublicPath}/`,
+      publicPath: `${repoPublicPath}/`,
       hashFunction: "sha384",
     },
     optimization: isLocal
@@ -494,11 +475,3 @@ module.exports = () => {
     },
   };
 };
-
-/*
- The pathname webpack-dev-middleware mounts the compiled assets at - what `output.publicPath`
- would have been if the origin were knowable at build time. "auto" alone would serve from "/"
- and `start:integ` would stop answering on `/web/<version>/<sdkVersion>/`. Exported rather
- than recomputed so repoPublicPath has one definition.
- */
-module.exports.devMiddlewarePublicPath = `${repoPublicPath}/`;

@@ -98,10 +98,14 @@ let make = () => {
      iframe and then waits, with no timeout, for the route itself to post back - so a chunk
      that failed to load would leave the payment stuck mid-flow with nothing able to end it.
      Eager, they come from app.js, which the payment form has already loaded (about 5 KB gzip).
+   - "cardFormCoordinator". LoaderController posts iframeMounted from its first effect and the
+     loader then flushes queued commands (initiateConfirm) at once, with no timeout. The
+     coordinator's command listener has to be registered by then, which only holds when it
+     renders in the same commit - React runs the child's effects before LoaderController's.
 
    `loaderComponent` has no default, so every lazy route states what shows while its chunk
    loads. `React.null` is only for routes with nothing on screen at that point:
-   CardFormCoordinator and FullScreenDivDriver render no UI, PaymentMethodsSDK renders nothing
+   FullScreenDivDriver renders no UI, PaymentMethodsSDK renders nothing
    until its config is ready, and Plaid and Paze hand over to third-party UI that has its own
    loading state.
    */
@@ -144,11 +148,7 @@ let make = () => {
     </LoaderController>
   | "cardFormCoordinator" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-      {lazyRoute(
-        ~componentName="CardFormCoordinatorLazy",
-        ~loaderComponent=React.null,
-        <CardFormCoordinatorLazy />,
-      )}
+      <CardFormCoordinator />
     </LoaderController>
   | _ =>
     switch fullscreenMode {
