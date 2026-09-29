@@ -66,35 +66,27 @@ let make = (
     if isSdkParamsEnabled {
       HyperLoaderLogger.logMerchantProps(
         ~event=HyperLoaderLogger.PreloadSdkWithParams({surface: Elements}),
-        ~details=[
-          (
-            "params",
-            preloadSDKWithParams->PaymentType.sanitizePreloadSdkParms->Identity.anyTypeToJson,
-          ),
-          ("keys", preloadSDKWithParams->Dict.keysToArray->Array.length->JSON.Encode.int),
-        ],
+        ~config=preloadSDKWithParams->JSON.Encode.object,
       )
     }
 
     switch localOptions->Dict.get("appearance") {
-    | Some(appearanceValue) => {
-        let appearanceDict = appearanceValue->getDictFromJson
-        HyperLoaderLogger.logMerchantProps(
-          ~event=HyperLoaderLogger.Appearance({surface: Elements}),
-          ~details=[
-            ("theme", appearanceDict->getString("theme", "")->JSON.Encode.string),
-            ("keys", appearanceDict->Dict.keysToArray->Array.length->JSON.Encode.int),
-          ],
-        )
-      }
+    | Some(appearanceValue) =>
+      HyperLoaderLogger.logMerchantProps(
+        ~event=HyperLoaderLogger.Appearance({surface: Elements}),
+        ~config=appearanceValue,
+        ~isSensitive=LoggerUtils.maskNone,
+      )
     | None => ()
     }
 
     switch localOptions->Dict.get("fonts") {
-    | Some(_) =>
+    | Some(fontsValue) =>
       HyperLoaderLogger.logMerchantProps(
         ~event=HyperLoaderLogger.Fonts({surface: Elements}),
         ~details=[("count", decodedFonts->Array.length->JSON.Encode.int)],
+        ~config=fontsValue,
+        ~isSensitive=LoggerUtils.maskNone,
       )
     | None => ()
     }
@@ -122,7 +114,8 @@ let make = (
     | Some(_) =>
       HyperLoaderLogger.logMerchantProps(
         ~event=HyperLoaderLogger.Locale({surface: Elements}),
-        ~details=[("locale", locale)],
+        ~config=locale,
+        ~isSensitive=LoggerUtils.maskNone,
       )
     | None => ()
     }
@@ -131,7 +124,8 @@ let make = (
     | Some(_) =>
       HyperLoaderLogger.logMerchantProps(
         ~event=HyperLoaderLogger.Loader({surface: Elements}),
-        ~details=[("loader", loader)],
+        ~config=loader,
+        ~isSensitive=LoggerUtils.maskNone,
       )
     | None => ()
     }
@@ -645,7 +639,7 @@ let make = (
                       ~event=ExecuteGooglePayment,
                       ~paymentMethod=Wallet(GooglePay),
                       ~details=[("connector", "trustpay"->JSON.Encode.string)],
-                      ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+                      ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
                       ~call=() => trustpay.executeGooglePayment(payment, googlePayRequest),
                     )
                     let timeOut = delay(600000)->then(_ => {
@@ -781,7 +775,7 @@ let make = (
                       SdkLogger.observeFunction(
                         ~event=FinishApplePaymentV2,
                         ~paymentMethod=Wallet(ApplePay),
-                        ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+                        ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
                         ~call=() =>
                           trustpay.finishApplePaymentV2(
                             payment,
@@ -1355,7 +1349,7 @@ let make = (
                         SdkLogger.observeFunction(
                           ~event=LoadPaymentData,
                           ~paymentMethod=Wallet(GooglePay),
-                          ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+                          ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
                           ~call=() => client.loadPaymentData(paymentDataRequest),
                         )
                         ->then(
@@ -1482,7 +1476,7 @@ let make = (
                     SdkLogger.observeFunction(
                       ~event=LoadPaymentSheet,
                       ~paymentMethod=Wallet(SamsungPay),
-                      ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+                      ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
                       ~call=() => samsungPayClient.loadPaymentSheet(payRequest, paymentDataRequest),
                     )
                     ->then(json => {

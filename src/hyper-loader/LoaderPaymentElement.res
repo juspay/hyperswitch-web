@@ -114,7 +114,7 @@ let make = (
           Some(
             HyperLoaderLogger.observeMerchantCallback(
               ~event=OnSdkHandleClick(surfaceData),
-              ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+              ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
               ~callback=handler,
             ),
           )

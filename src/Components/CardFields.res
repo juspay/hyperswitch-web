@@ -78,7 +78,6 @@ let make = (
         placeholder="1234 1234 1234 1234"
         className={innerLayout === Compressed && cardError->String.length > 0 ? "border-b-0" : ""}
         name=TestUtils.cardNoInputTestId
-        logInputChange=false
         autocomplete="cc-number"
       />
       <div
@@ -101,7 +100,6 @@ let make = (
             inputRef=expiryRef
             placeholder=localeString.expiryPlaceholder
             name=TestUtils.expiryInputTestId
-            logInputChange=false
             autocomplete="cc-exp"
           />
         </div>
@@ -127,7 +125,6 @@ let make = (
             inputRef=cvcRef
             placeholder="123"
             name=TestUtils.cardCVVInputTestId
-            logInputChange=false
             autocomplete="cc-csc"
           />
         </div>

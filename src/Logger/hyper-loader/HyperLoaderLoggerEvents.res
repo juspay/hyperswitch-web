@@ -85,7 +85,7 @@ let merchantCallSeverity = event =>
   | UpdateIntent(_)
   | InitiateUpdateIntent(_)
   | CompleteUpdateIntent(_)
-  | FetchUpdates(_) => {...defaultSeverity, success: Debug}
+  | FetchUpdates(_) => quietSuccess
   }
 
 // Merchant prop
@@ -128,7 +128,7 @@ type merchantCallbackEvent =
 let merchantCallbackSeverity = event =>
   switch event {
   | OnSdkHandleClick(_)
-  | UpdateIntent(_) => {...defaultSeverity, success: Debug, failure: Warning}
+  | UpdateIntent(_) => quietSuccessSoftFailure
   }
 
 // Merchant issue

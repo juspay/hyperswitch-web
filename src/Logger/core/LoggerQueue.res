@@ -1,143 +1,140 @@
-let flushDelayMs = 2000
-
-let maxBatchBytes = 30000
-
-let maxQueuedRows = 100
-
-type t = {
-  rows: array<JSON.t>,
-  mutable queuedBytes: int,
-  mutable flushTimer: option<timeoutId>,
-  mutable errorPending: bool,
-  mutable droppedRows: int,
-  mutable failures: int,
-  mutable sendFailures: int,
+type entry = {
+  row: LoggerTypes.row,
+  mutable text: string,
+  mutable bytes: int,
 }
 
-let queue = {
-  rows: [],
-  queuedBytes: 0,
-  flushTimer: None,
-  errorPending: false,
-  droppedRows: 0,
-  failures: 0,
-  sendFailures: 0,
-}
+let rows: array<entry> = []
+let queuedBytes = ref(0)
+let flushTimer = ref(None)
+let errorPending = ref(false)
+let droppedRows = ref(0)
+let failures = ref(0)
+let sendFailures = ref(0)
+
+let sendPayload = payload =>
+  LoggerConfig.endpoint !== "" && Window.Navigator.hasSendBeacon()
+    ? try Window.Navigator.sendBeacon(LoggerConfig.endpoint, payload) catch {
+      | _ => false
+      }
+    : false
 
 let clearTimer = () =>
-  switch queue.flushTimer {
-  | Some(timer) => {
-      clearTimeout(timer)
-      queue.flushTimer = None
-    }
-  | None => ()
-  }
+  flushTimer.contents->Option.forEach(timer => {
+    clearTimeout(timer)
+    flushTimer := None
+  })
 
-let take = count => {
-  let taken = queue.rows->Array.slice(~start=0, ~end=count)
-  queue.rows->Array.splice(~start=0, ~remove=count, ~insert=[])
-  taken
+let serialize = entry => {
+  let text = entry.row->JSON.stringifyAny->Option.getOr("")
+  entry.text = text
+  entry.bytes = text->LoggerUtils.utf8Length + 1
 }
 
-let rowBytes = row => row->JSON.stringify->LoggerUtils.utf8Length + 1
-
-let recountBytes = () =>
-  queue.queuedBytes = queue.rows->Array.reduce(0, (total, row) => total + row->rowBytes)
+let recountBytes = () => queuedBytes := rows->Array.reduce(0, (total, entry) => total + entry.bytes)
 
 let batchSize = () => {
   let bytes = ref(2)
   let count = ref(0)
-  let rows = queue.rows
-  let continue = ref(true)
-  while continue.contents && count.contents < rows->Array.length {
-    let next = rows->Array.getUnsafe(count.contents)->rowBytes
-    if count.contents === 0 || bytes.contents + next <= maxBatchBytes {
-      bytes := bytes.contents + next
-      count := count.contents + 1
-    } else {
-      continue := false
-    }
+  while (
+    count.contents < rows->Array.length &&
+      (count.contents === 0 ||
+        bytes.contents + (rows->Array.getUnsafe(count.contents)).bytes <=
+          LoggerConfig.maxBatchBytes)
+  ) {
+    bytes := bytes.contents + (rows->Array.getUnsafe(count.contents)).bytes
+    count := count.contents + 1
   }
   count.contents
 }
 
-let retryDelayMs = () =>
-  switch queue.failures {
-  | 0 => flushDelayMs
-  | failures => Math.Int.min(flushDelayMs * Math.Int.pow(2, ~exp=failures), 60000)
-  }
+let sendNext = () => {
+  let count = batchSize()
+  let batch = rows->Array.slice(~start=0, ~end=count)
+  rows->Array.splice(~start=0, ~remove=count, ~insert=[])
+  count === 0 || sendPayload(`[${batch->Array.map(entry => entry.text)->Array.join(",")}]`)
+    ? None
+    : Some(batch)
+}
 
 let requeue = batch => {
-  queue.rows->Array.splice(~start=0, ~remove=0, ~insert=batch)
-  let overflow = queue.rows->Array.length - maxQueuedRows
+  rows->Array.splice(~start=0, ~remove=0, ~insert=batch)
+  let overflow = rows->Array.length - LoggerConfig.maxQueuedRows
   if overflow > 0 {
-    queue.rows->Array.splice(~start=maxQueuedRows, ~remove=overflow, ~insert=[])
-    queue.droppedRows = queue.droppedRows + overflow
+    rows->Array.splice(~start=LoggerConfig.maxQueuedRows, ~remove=overflow, ~insert=[])
+    droppedRows := droppedRows.contents + overflow
   }
 }
 
-let maxSendAttemptsPerBatch = 4
-
 let rec flush = () => {
   clearTimer()
-  queue.errorPending = false
-  switch batchSize() {
-  | 0 => queue.queuedBytes = 0
-  | size => {
-      let batch = size->take
-      if batch->LoggerTransport.send {
-        queue.failures = 0
-      } else {
-        queue.failures = queue.failures + 1
-        queue.sendFailures = queue.sendFailures + 1
-        if queue.failures >= maxSendAttemptsPerBatch {
-          queue.failures = 0
-          queue.droppedRows = queue.droppedRows + batch->Array.length
+  errorPending := false
+  if rows->Array.length > 0 {
+    switch sendNext() {
+    | None => failures := 0
+    | Some(batch) => {
+        failures := failures.contents + 1
+        sendFailures := sendFailures.contents + 1
+        if failures.contents >= LoggerConfig.maxSendAttemptsPerBatch {
+          failures := 0
+          droppedRows := droppedRows.contents + batch->Array.length
         } else {
           batch->requeue
         }
       }
-      recountBytes()
-      queue.rows->Array.length > 0 ? scheduleFlush() : ()
     }
+    recountBytes()
+    if rows->Array.length > 0 {
+      scheduleFlush()
+    }
+  } else {
+    queuedBytes := 0
   }
 }
 and scheduleFlush = () =>
-  switch queue.flushTimer {
-  | Some(_) => ()
-  | None => queue.flushTimer = Some(setTimeout(flush, retryDelayMs()))
+  if flushTimer.contents->Option.isNone {
+    let delay = switch failures.contents {
+    | 0 => LoggerConfig.flushDelayMs
+    | failures =>
+      Math.Int.min(
+        LoggerConfig.flushDelayMs * Math.Int.pow(2, ~exp=failures),
+        LoggerConfig.maxFlushBackoffMs,
+      )
+    }
+    flushTimer := Some(setTimeout(flush, delay))
   }
 
 let drain = () =>
   LoggerUtils.safeRun(() => {
     clearTimer()
-    queue.errorPending = false
-    let continue = ref(true)
-    while continue.contents {
-      switch batchSize() {
-      | 0 => continue := false
-      | size => {
-          let batch = size->take
-          if !(batch->LoggerTransport.send) {
-            batch->requeue
-            continue := false
-          }
+    errorPending := false
+    let failed = ref(false)
+    while !failed.contents && rows->Array.length > 0 {
+      switch sendNext() {
+      | None => ()
+      | Some(batch) => {
+          batch->requeue
+          failed := true
         }
       }
     }
     recountBytes()
-    queue.rows->Array.length > 0 ? scheduleFlush() : ()
+    if rows->Array.length > 0 {
+      scheduleFlush()
+    }
   })
 
 let push = (row, ~isError) => {
-  queue.rows->Array.push(row)
-  queue.queuedBytes = queue.queuedBytes + row->rowBytes
+  let entry = {row, text: "", bytes: 0}
+  entry->serialize
+  rows->Array.push(entry)
+  queuedBytes := queuedBytes.contents + entry.bytes
   if isError {
-    if !queue.errorPending {
-      queue.errorPending = true
-      setTimeout(() => queue.errorPending ? flush() : (), 0)->ignore
+    if !errorPending.contents {
+      errorPending := true
+      setTimeout(() => errorPending.contents ? flush() : (), 0)->ignore
     }
-  } else if queue.queuedBytes >= maxBatchBytes {
+  } else if queuedBytes.contents >= LoggerConfig.maxBatchBytes {
     flush()
   } else {
     scheduleFlush()
@@ -147,39 +144,27 @@ let push = (row, ~isError) => {
 // Early rows (e.g. iframe mount events) can be emitted before the parent
 // window shares the session context. They wait in the flush debounce window,
 // so stamp any still-queued rows once the identifiers become known.
-let backfillContext = (~sessionId, ~merchantId, ~paymentId, ~authenticationId) => {
-  queue.rows->Array.forEach(row =>
-    row
-    ->JSON.Decode.object
-    ->Option.forEach(object => {
-      let fill = (key, value) =>
-        if (
-          value !== "" &&
-            object->Dict.get(key)->Option.flatMap(JSON.Decode.string)->Option.getOr("") === ""
-        ) {
-          object->Dict.set(key, value->JSON.Encode.string)
-        }
-      fill("session_id", sessionId)
-      fill("merchant_id", merchantId)
-      fill("payment_id", paymentId)
-      fill("authentication_id", authenticationId)
-    })
-  )
-  recountBytes()
-}
-
-let takeDroppedRows = () => {
-  let dropped = queue.droppedRows
-  queue.droppedRows = 0
-  dropped
-}
-
-let takeSendFailures = () => {
-  let failures = queue.sendFailures
-  queue.sendFailures = 0
-  failures
-}
+let backfillContext = (context: LoggerTypes.context) =>
+  rows->Array.forEach(entry => {
+    let row = entry.row
+    let changed = ref(false)
+    let fill = (current, value) =>
+      if current === "" && value !== "" {
+        changed := true
+        value
+      } else {
+        current
+      }
+    row.sessionId = fill(row.sessionId, context.sessionId)
+    row.merchantId = fill(row.merchantId, context.merchantId)
+    row.paymentId = fill(row.paymentId, context.paymentId)
+    row.authenticationId = fill(row.authenticationId, context.authenticationId)
+    if changed.contents {
+      let before = entry.bytes
+      entry->serialize
+      queuedBytes := queuedBytes.contents - before + entry.bytes
+    }
+  })
 
 Window.addEventListener("visibilitychange", _ => Window.visibilityState === "hidden" ? drain() : ())
 Window.addEventListener("pagehide", _ => drain())
-Window.addEventListener("beforeunload", _ => drain())

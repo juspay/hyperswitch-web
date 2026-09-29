@@ -225,6 +225,7 @@ const logEndpoint = envLoggingUrl;
 
 const loggingLevel = "DEBUG";
 const maxLogsPushedPerEventName = 100;
+const maxUserEventsPerName = 20;
 
 // Function to determine the current environment type
 const getEnvironmentType = (env) => {
@@ -261,6 +262,7 @@ module.exports = (publicPath = "auto") => {
     enableLogging: ENABLE_LOGGING,
     loggingLevel,
     maxLogsPushedPerEventName,
+    maxUserEventsPerName,
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,

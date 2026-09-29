@@ -332,7 +332,6 @@ let make = (
     // saved-card re-collect input is a different form and must not answer to it.
     id=?{isSavedCardCvcFlow ? None : Some("card-cvc")}
     name=TestUtils.cardCVVInputTestId
-    logInputChange=false
     autocomplete="cc-csc"
   />
 }

@@ -34,14 +34,11 @@ let fromRequestBody = bodyStr =>
   | exception _ => None
   }
 
-let qualifiedName = value => {
-  let family = value->LoggerUtils.variantName
-  let qualify = subtype => `${family}.${subtype->LoggerUtils.variantName}`
+let qualifiedName = value =>
   switch value {
   | Dynamic(raw) => raw->LoggerUtils.snakeCase
-  | Card => family
-  | Wallet(subtype) => subtype->qualify
-  | PayLater(subtype) => subtype->qualify
-  | OpenBanking(subtype) => subtype->qualify
+  | Card => "card"
+  | Wallet(subtype) => "wallet." ++ subtype->LoggerUtils.variantName
+  | PayLater(subtype) => "pay_later." ++ subtype->LoggerUtils.variantName
+  | OpenBanking(subtype) => "open_banking." ++ subtype->LoggerUtils.variantName
   }
-}

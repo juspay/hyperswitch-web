@@ -1,10 +1,5 @@
 open LoggerTypes
 
-let maxTextLength = 256
-let maxRowTextLength = 1024
-let maxDetailBytes = 8192
-let maxPayloadFields = 120
-
 let snakeCase = value =>
   value
   ->String.replaceRegExp(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
@@ -17,8 +12,6 @@ let screamingSnakeCase = value =>
   ->String.replaceRegExp(/[^a-zA-Z0-9]+/g, "_")
   ->String.replaceRegExp(/^_+|_+$/g, "")
   ->String.toUpperCase
-
-let isVariantConstructor = value => value->String.match(/^[A-Z][A-Za-z0-9]*$/)->Option.isSome
 
 let variantConstructor = value => {
   let json = value->Identity.anyTypeToJson
@@ -35,57 +28,37 @@ let variantConstructor = value => {
 
 let variantName = value => value->variantConstructor->snakeCase
 
-let variantValue = value => value->variantConstructor->screamingSnakeCase
-
 let spec = (event, ~action=Fact, ~outcome=?): eventSpec => {
   action,
   subject: event->variantName,
   outcome,
 }
 
-let categorySegment = category => category->categoryName->String.toLowerCase
-
-let eventName = (~category, ~action, ~subject, ~outcome) => {
-  let step = switch (action->actionWord, outcome) {
-  | (Some(action), Some(outcome)) => Some(`${action}_${outcome->outcomeName}`)
-  | (Some(action), None) => Some(action)
-  | (None, Some(outcome)) => Some(outcome->outcomeName)
-  | (None, None) => None
+let eventName = (~category: category, ~action: action, ~subject, ~outcome: option<outcome>) => {
+  let word = switch (action, outcome) {
+  | (Fact, Some(outcome)) => (outcome :> string)
+  | (Fact, None) => ""
+  | (action, Some(outcome)) => `${(action :> string)}_${(outcome :> string)}`
+  | (action, None) => (action :> string)
   }
-  [Some(category->categorySegment), step, Some(subject)]
-  ->Array.filterMap(segment => segment)
-  ->Array.join(".")
+  let prefix = (category :> string)->String.toLowerCase
+  word === "" ? `${prefix}.${subject}` : `${prefix}.${word}.${subject}`
 }
 
 let truncateTo = (value, limit) =>
   value->String.length > limit ? value->String.slice(~start=0, ~end=limit) : value
 
-let truncate = value => value->truncateTo(maxTextLength)
+let truncate = value => value->truncateTo(LoggerConfig.maxTextLength)
 
-let utf8Length = value => {
-  let bytes = ref(0)
-  for index in 0 to value->String.length - 1 {
-    let code = value->String.charCodeAt(index)
-    bytes :=
-      bytes.contents + if code < 128. {
-        1
-      } else if code < 2048. || (code >= 55296. && code < 57344.) {
-        2
-      } else {
-        3
-      }
-  }
-  bytes.contents
-}
+type textEncoder
+@new external makeTextEncoder: unit => textEncoder = "TextEncoder"
+@send external encode: (textEncoder, string) => Uint8Array.t = "encode"
+
+let encoder = makeTextEncoder()
+
+let utf8Length = text => encoder->encode(text)->TypedArray.length
 
 let sanitizeUrl = url => url->String.replaceRegExp(/[?#].*$/, "")
-
-let isUrlKey = key =>
-  ["url", "href", "uri"]->Array.some(suffix =>
-    key === suffix || key->String.endsWith("_" ++ suffix)
-  )
-
-let isFreeTextKey = key => key === "message" || key->String.endsWith("_message")
 
 let redact = text =>
   text
@@ -97,56 +70,152 @@ let safeRun = action =>
   | error => Console.error2("hyper logging internals failed:", error)
   }
 
-let stringOfBool = value => value ? "true" : "false"
+let jsonKind: JSON.t => int = %raw(`
+  (v) => {
+    var t = Object.prototype.toString.call(v);
+    return t == "[object Undefined]" ? 1 : t == "[object Array]" ? 2
+      : t == "[object Null]" || t == "[object Number]" || t == "[object Boolean]" || t == "[object String]" ? 0 : 3;
+  }
+`)
+external asArray: JSON.t => array<JSON.t> = "%identity"
+external asDict: JSON.t => Dict.t<JSON.t> = "%identity"
 
-let rec normalizeJson = json =>
-  switch Type.Classify.classify(json) {
-  | Undefined => JSON.Encode.null
-  | _ =>
-    switch JSON.Classify.classify(json) {
-    | String(value) => value->truncate->JSON.Encode.string
-    | Array(values) => values->Array.map(normalizeJson)->JSON.Encode.array
-    | Object(object) =>
-      object
+let rec normalize = (key, value) =>
+  switch value->JSON.Decode.string {
+  | Some(text) =>
+    if key === "" {
+      text->truncate
+    } else if (
+      key === "url" || key === "href" || key === "uri" || /_(?:url|href|uri)$/->RegExp.test(key)
+    ) {
+      text->sanitizeUrl->truncate
+    } else if key === "message" || key->String.endsWith("_message") {
+      text->redact->truncate
+    } else if /^[A-Z][A-Za-z0-9]*$/->RegExp.test(text) {
+      text->screamingSnakeCase
+    } else {
+      text->truncate
+    }->JSON.Encode.string
+  | None =>
+    switch value->jsonKind {
+    | 1 => JSON.Encode.null
+    | 2 => value->asArray->Array.map(item => normalize("", item))->JSON.Encode.array
+    | 3 =>
+      value
+      ->asDict
       ->Dict.toArray
       ->Array.filterMap(((key, value)) =>
-        switch Type.Classify.classify(value) {
-        | Undefined => None
-        | _ => {
-            let key = key->snakeCase
-            Some((key, normalizeValue(key, value)))
-          }
-        }
+        value->jsonKind === 1
+          ? None
+          : {
+              let key = key->snakeCase
+              Some((key, normalize(key, value)))
+            }
       )
       ->Dict.fromArray
       ->JSON.Encode.object
-    | _ => json
+    | _ => value
     }
-  }
-and normalizeValue = (key, value) =>
-  switch (key, value->JSON.Decode.string) {
-  | (key, Some(text)) if key->isUrlKey => text->sanitizeUrl->truncate->JSON.Encode.string
-  | (key, Some(text)) if key->isFreeTextKey => text->redact->truncate->JSON.Encode.string
-  | (_, Some(text)) if text->isVariantConstructor => text->screamingSnakeCase->JSON.Encode.string
-  | _ => value->normalizeJson
   }
 
 let normalizeDetails = (entries: details): details =>
   entries->Array.map(((key, value)) => {
     let key = key->snakeCase
-    (key, normalizeValue(key, value))
+    (key, normalize(key, value))
   })
 
 let eventDetails = (event): details =>
-  switch event->Identity.anyTypeToJson->JSON.Decode.object {
-  | None => []
-  | Some(object) =>
-    object
-    ->Dict.get("_0")
-    ->Option.flatMap(payload => payload->normalizeJson->JSON.Decode.object)
-    ->Option.map(Dict.toArray)
-    ->Option.getOr([])
+  event
+  ->Identity.anyTypeToJson
+  ->JSON.Decode.object
+  ->Option.flatMap(object => object->Dict.get("_0"))
+  ->Option.flatMap(payload => normalize("", payload)->JSON.Decode.object)
+  ->Option.mapOr([], Dict.toArray)
+
+let maskAll = (_: string) => true
+let maskNone = (_: string) => false
+
+let redactedValue = text => (text === "" ? "***EMPTY***" : "***REDACTED***")->JSON.Encode.string
+
+let configSnapshot = (
+  config: JSON.t,
+  ~isSensitive: string => bool,
+  ~maxBytes=LoggerConfig.maxConfigBytes,
+): details => {
+  let budget = ref(maxBytes)
+  let truncated = ref(false)
+  let omitted = []
+  let charge = cost =>
+    cost <= budget.contents
+      ? {
+          budget := budget.contents - cost
+          true
+        }
+      : false
+  let omit = path => {
+    truncated := true
+    if omitted->Array.length < LoggerConfig.maxConfigOmitted {
+      omitted->Array.push(path->JSON.Encode.string)
+    }
+    None
   }
+  let rec walk = (value, path, depth) =>
+    switch value->JSON.Decode.string {
+    | Some(text) => {
+        let text = isSensitive(path) ? redactedValue(text) : text->truncate->JSON.Encode.string
+        charge(text->JSON.Decode.string->Option.getOr("")->String.length + 2)
+          ? Some(text)
+          : omit(path)
+      }
+    | None =>
+      switch value->jsonKind {
+      | 1 => None
+      | 0 => charge(value->JSON.stringify->String.length) ? Some(value) : omit(path)
+      | _ if typeof(value) === #function => None
+      | _ if depth >= LoggerConfig.maxConfigDepth =>
+        charge(9) ? Some("[depth]"->JSON.Encode.string) : omit(path)
+      | 2 if charge(2) => {
+          let items = value->asArray
+          let out = []
+          items->Array.forEachWithIndex((item, index) =>
+            if index < LoggerConfig.maxConfigArrayItems && charge(1) {
+              walk(item, path, depth + 1)->Option.forEach(item => out->Array.push(item))
+            }
+          )
+          if items->Array.length > LoggerConfig.maxConfigArrayItems {
+            omit(
+              `${path}[${(items->Array.length - LoggerConfig.maxConfigArrayItems)
+                  ->Int.toString} more]`,
+            )->ignore
+          }
+          Some(out->JSON.Encode.array)
+        }
+      | 3 if charge(2) => {
+          let out = Dict.make()
+          value
+          ->asDict
+          ->Dict.forEachWithKey((item, key) => {
+            let itemPath = path === "" ? key : `${path}.${key}`
+            if charge(key->String.length + 4) {
+              walk(item, itemPath, depth + 1)->Option.forEach(item => out->Dict.set(key, item))
+            } else {
+              omit(itemPath)->ignore
+            }
+          })
+          Some(out->JSON.Encode.object)
+        }
+      | _ => omit(path)
+      }
+    }
+  let snapshot = walk(config, "", 0)->Option.getOr(JSON.Encode.null)
+  truncated.contents
+    ? [
+        ("config", snapshot),
+        ("config_truncated", true->JSON.Encode.bool),
+        ("config_omitted", omitted->JSON.Encode.array),
+      ]
+    : [("config", snapshot)]
+}
 
 let mergeDetails = (~data: details, ~details: details): details => {
   let typedKeys = data->Array.map(((key, _)) => key)
@@ -160,19 +229,18 @@ let mergeDetails = (~data: details, ~details: details): details => {
 let fitToBudget = (entries: details): details => {
   let sizeOf = (entries: details) =>
     entries->Dict.fromArray->JSON.Encode.object->JSON.stringify->String.length
-  let valueSize = ((_, value)) => value->JSON.stringify->String.length
-  if entries->sizeOf <= maxDetailBytes {
+  if entries->sizeOf <= LoggerConfig.maxDetailBytes {
     entries
   } else {
     let remaining = entries->Array.copy
     let dropped = []
-    while remaining->Array.length > 0 && remaining->sizeOf > maxDetailBytes {
+    while remaining->Array.length > 0 && remaining->sizeOf > LoggerConfig.maxDetailBytes {
       let (largest, _) = remaining->Array.reduceWithIndex((0, -1), (
         (largest, largestSize),
-        entry,
+        (_, value),
         index,
       ) => {
-        let size = entry->valueSize
+        let size = value->JSON.stringify->String.length
         size > largestSize ? (index, size) : (largest, largestSize)
       })
       remaining
@@ -185,65 +253,58 @@ let fitToBudget = (entries: details): details => {
 }
 
 let rec collectFields = (json, ~prefix, ~into) =>
-  switch JSON.Classify.classify(json) {
-  | Object(object) =>
-    object
+  switch json->jsonKind {
+  | 3 =>
+    json
+    ->asDict
     ->Dict.toArray
     ->Array.forEach(((key, value)) => {
       let path = prefix === "" ? key->snakeCase : prefix ++ "." ++ key->snakeCase
-      switch JSON.Classify.classify(value) {
-      | Object(_) | Array(_) => value->collectFields(~prefix=path, ~into)
-      | _ => into->Array.push(path)
-      }
+      value->jsonKind >= 2 ? value->collectFields(~prefix=path, ~into) : into->Array.push(path)
     })
-  | Array(values) =>
-    values->Array.forEach(value => value->collectFields(~prefix=prefix ++ "[]", ~into))
+  | 2 => json->asArray->Array.forEach(value => value->collectFields(~prefix=prefix ++ "[]", ~into))
   | _ => prefix === "" ? () : into->Array.push(prefix)
   }
 
-let payloadFields = body =>
+let payloadDetails = body =>
   switch body->JSON.parseExn {
-  | json => {
-      let into = []
-      json->collectFields(~prefix="", ~into)
-      let unique =
-        into->Array.reduce([], (acc, path) =>
-          acc->Array.includes(path) ? acc : acc->Array.concat([path])
-        )
-      unique->Array.length > maxPayloadFields
-        ? unique->Array.slice(~start=0, ~end=maxPayloadFields)
-        : unique
+  | json =>
+    let into = []
+    json->collectFields(~prefix="", ~into)
+    switch into
+    ->Set.fromArray
+    ->Set.values
+    ->Iterator.toArray
+    ->Array.slice(~start=0, ~end=LoggerConfig.maxPayloadFields) {
+    | [] => []
+    | fields => [
+        ("request_fields", fields->Array.map(JSON.Encode.string)->JSON.Encode.array),
+        ("request_field_count", fields->Array.length->JSON.Encode.int),
+      ]
     }
   | exception _ => []
-  }
-
-let payloadDetails = body =>
-  switch body->payloadFields {
-  | [] => []
-  | fields => [
-      ("request_fields", fields->Array.map(JSON.Encode.string)->JSON.Encode.array),
-      ("request_field_count", fields->Array.length->JSON.Encode.int),
-    ]
   }
 
 let firstString = (object, keys) =>
   keys->Array.findMap(key => object->Dict.get(key)->Option.flatMap(JSON.Decode.string))
 
+let summary = (~name, ~message=?, ~details=[]) => {name, message, details}
+
 let summarizeValue = value => {
   let json = value->Identity.anyTypeToJson
   switch JSON.Classify.classify(json) {
-  | String(value) => {name: "THROWN_VALUE", message: Some(value->truncate), details: []}
-  | Object(object) => {
-      name: object
+  | String(value) => summary(~name="THROWN_VALUE", ~message=value->truncate)
+  | Object(object) =>
+    summary(
+      ~name=object
       ->firstString(["name", "code", "type", "reason", "statusCode"])
       ->Option.getOr("UNKNOWN_ERROR")
       ->screamingSnakeCase,
-      message: object
+      ~message=?object
       ->firstString(["message", "description", "statusMessage"])
       ->Option.map(truncate),
-      details: [],
-    }
-  | _ => {name: "UNKNOWN_ERROR", message: None, details: []}
+    )
+  | _ => summary(~name="UNKNOWN_ERROR")
   }
 }
 
@@ -251,17 +312,22 @@ let summarizeExn = error =>
   switch error {
   | JsExn(jsError) =>
     switch jsError->JsExn.name {
-    | Some(name) => {
-        name: name->screamingSnakeCase,
-        message: jsError->JsExn.message->Option.map(truncate),
-        details: [],
-      }
+    | Some(name) =>
+      summary(
+        ~name=name->screamingSnakeCase,
+        ~message=?jsError->JsExn.message->Option.map(truncate),
+      )
     | None => jsError->summarizeValue
     }
   | _ => error->summarizeValue
   }
 
 let summarizeUnknown = value => value->JsExn.anyToExnInternal->summarizeExn
+
+let stringDetails = pairs =>
+  pairs->Array.filterMap(((key, value)) =>
+    value->Option.map(value => (key, value->JSON.Encode.string))
+  )
 
 let summarizeErrorResponse = result =>
   result
@@ -271,49 +337,36 @@ let summarizeErrorResponse = result =>
   ->Option.flatMap(json =>
     switch JSON.Classify.classify(json) {
     | Null => None
-    | String(message) =>
-      Some({name: "ERROR_RESPONSE", message: Some(message->truncate), details: []})
+    | String(message) => Some(summary(~name="ERROR_RESPONSE", ~message=message->truncate))
     | Object(object) =>
-      Some({
-        name: object
-        ->firstString(["type", "code", "reason"])
-        ->Option.getOr("ERROR_RESPONSE")
-        ->screamingSnakeCase,
-        message: object->firstString(["message"])->Option.map(truncate),
-        details: [
-          ("error_code", object->firstString(["code"])),
-          ("error_reason", object->firstString(["reason"])),
-        ]->Array.filterMap(((key, value)) =>
-          value->Option.map(value => (key, value->JSON.Encode.string))
+      Some(
+        summary(
+          ~name=object
+          ->firstString(["type", "code", "reason"])
+          ->Option.getOr("ERROR_RESPONSE")
+          ->screamingSnakeCase,
+          ~message=?object->firstString(["message"])->Option.map(truncate),
+          ~details=[
+            ("error_code", object->firstString(["code"])),
+            ("error_reason", object->firstString(["reason"])),
+          ]->stringDetails,
         ),
-      })
-    | _ => Some({name: "ERROR_RESPONSE", message: None, details: []})
+      )
+    | _ => Some(summary(~name="ERROR_RESPONSE"))
     }
   )
 
-let httpFailure = response =>
-  response->Fetch.Response.ok
-    ? None
-    : Some({
-        name: "HTTP_ERROR",
-        message: Some(response->Fetch.Response.status->Int.toString),
-        details: [],
-      })
-
 let httpDetails = response => [("status_code", response->Fetch.Response.status->JSON.Encode.int)]
+
+let httpError = response =>
+  summary(~name="HTTP_ERROR", ~message=response->Fetch.Response.status->Int.toString)
+
+let httpFailure = response => response->Fetch.Response.ok ? None : Some(response->httpError)
 
 let httpBodyFailure = ((response, data)) =>
   response->Fetch.Response.ok
     ? None
-    : Some(
-        data
-        ->summarizeErrorResponse
-        ->Option.getOr({
-          name: "HTTP_ERROR",
-          message: Some(response->Fetch.Response.status->Int.toString),
-          details: [],
-        }),
-      )
+    : Some(data->summarizeErrorResponse->Option.getOr(response->httpError))
 
 let httpBodyDetails = ((response, _)) => response->httpDetails
 
@@ -321,13 +374,9 @@ let intentErrorDetails = value =>
   switch value->Identity.anyTypeToJson->JSON.Decode.object {
   | None => []
   | Some(object) =>
-    [
-      ("error_message", object->firstString(["error_message"])),
-      ("error_code", object->firstString(["error_code"])),
-      ("error_reason", object->firstString(["error_reason"])),
-    ]->Array.filterMap(((key, value)) =>
-      value->Option.map(value => (key, value->truncate->JSON.Encode.string))
-    )
+    ["error_message", "error_code", "error_reason"]
+    ->Array.map(key => (key, object->firstString([key])->Option.map(truncate)))
+    ->stringDetails
   }
 
 let intentResponseDetails = ((response, data)) =>
@@ -346,10 +395,8 @@ let intentResponseDetails = ((response, data)) =>
         ->Option.flatMap(action => action->Dict.get("type"))
         ->Option.getOr(JSON.Encode.null)
       }
-      switch object->firstString(["status"]) {
-      | Some(status) => [("payment_status", status->JSON.Encode.string)]
-      | None => []
-      }
+      [("payment_status", object->firstString(["status"]))]
+      ->stringDetails
       ->Array.concat([("next_action_type", nextActionType)])
       ->Array.concat(data->intentErrorDetails)
     },
@@ -357,38 +404,7 @@ let intentResponseDetails = ((response, data)) =>
 
 let errorDetails = summary =>
   [("error_type", summary.name->JSON.Encode.string)]
-  ->Array.concat(
-    summary.message
-    ->Option.map(message => [("error_message", message->JSON.Encode.string)])
-    ->Option.getOr([]),
-  )
+  ->Array.concat([("error_message", summary.message)]->stringDetails)
   ->Array.concat(summary.details)
 
 let isAborted = summary => summary.name === "ABORT_ERROR"
-
-let outcomeDetails = operationOutcome => {
-  let duration =
-    operationOutcome
-    ->durationOf
-    ->Option.map(durationMs => [("duration_ms", durationMs->JSON.Encode.float)])
-    ->Option.getOr([])
-  duration->Array.concat(
-    switch operationOutcome {
-    | OpStarted | OpDone(_) | OpReturned(_) | OpTriggered(_) | OpReused(_) => []
-    | OpFailed({class, error}) =>
-      [("failure_class", class->variantValue->JSON.Encode.string)]->Array.concat(
-        error->Option.map(errorDetails)->Option.getOr([]),
-      )
-    | OpTimedOut({timeoutMs}) => timeoutMs > 0 ? [("timeout_ms", timeoutMs->JSON.Encode.int)] : []
-    },
-  )
-}
-
-let outcomeSeverity = (operationOutcome, ~severity) =>
-  severity->operationSeverityOf(
-    ~outcome=operationOutcome,
-    ~isAborted=switch operationOutcome {
-    | OpFailed({error: Some(error)}) => error->isAborted
-    | _ => false
-    },
-  )

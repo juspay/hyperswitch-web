@@ -99,13 +99,6 @@ let make = (
 
   let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
 
-  let wrappedOnChange = ev => {
-    if name->String.length > 0 {
-      SdkLogger.logUser(~event=FieldEdited({field: name}))
-    }
-    onChange(ev)
-  }
-
   <div className="flex flex-col w-full">
     <RenderIf
       condition={name === "phone" &&
@@ -179,7 +172,7 @@ let make = (
               : ""}
             value={value.value}
             autoComplete="on"
-            onChange=wrappedOnChange
+            onChange
             onBlur=handleBlur
             onFocus=handleFocus
             ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}

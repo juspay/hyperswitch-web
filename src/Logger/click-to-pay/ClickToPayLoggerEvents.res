@@ -79,11 +79,11 @@ let functionSeverity = event =>
   | GetCards(_)
   | Authenticate(_)
   | UnbindAppInstance(_)
-  | SignOut(_) => {...defaultSeverity, success: Debug, failure: Warning}
+  | SignOut(_) => quietSuccessSoftFailure
   | EncryptCard(_)
   | Checkout(_)
   | CheckoutWithCard(_)
-  | CheckoutWithNewCard(_) => {...defaultSeverity, success: Debug}
+  | CheckoutWithNewCard(_) => quietSuccess
   }
 
 // Merchant call
@@ -107,7 +107,7 @@ let merchantCallSeverity = (method: merchantMethod) =>
   | GetUserType
   | GetRecognizedCards
   | ValidateAuthentication
-  | SignOut => {...defaultSeverity, success: Debug, failure: Warning}
+  | SignOut => quietSuccessSoftFailure
   }
 
 // Api
@@ -137,7 +137,7 @@ let resourceSeverity = event =>
   | VisaSdkScript
   | MastercardSdkScript
   | UiKitScript
-  | UiKitStylesheet => {...defaultSeverity, success: Debug, failure: Warning}
+  | UiKitStylesheet => quietSuccessSoftFailure
   }
 
 let resourceKind = (value): ResourceLoader.resource =>

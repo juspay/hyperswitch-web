@@ -323,7 +323,7 @@ let fetchCustomerSavedPaymentMethods = (
       HyperLoaderLogger.observeMerchantCall(
         ~source=Headless,
         ~event=HyperLoaderLogger.ConfirmWithCustomerDefaultPaymentMethod({surface: PaymentSession}),
-        ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+        ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
         ~call=() => confirmWithDefaultPaymentMethod(payload),
       )
 
@@ -397,7 +397,7 @@ let fetchCustomerSavedPaymentMethods = (
           ~source=Headless,
           ~event=LoadPaymentData,
           ~paymentMethod=Wallet(GooglePay),
-          ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+          ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
           ~call=() => client.loadPaymentData(paymentDataRequest),
         )
         ->then(json => {
@@ -506,7 +506,7 @@ let fetchCustomerSavedPaymentMethods = (
       HyperLoaderLogger.observeMerchantCall(
         ~source=Headless,
         ~event=HyperLoaderLogger.ConfirmWithLastUsedPaymentMethod({surface: PaymentSession}),
-        ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+        ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
         ~call=() => confirmWithLastUsedMethod(payload),
       )
 

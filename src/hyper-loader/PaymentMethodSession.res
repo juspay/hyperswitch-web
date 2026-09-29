@@ -133,7 +133,7 @@ let make = (options: JSON.t): initPaymentMethodSession => {
   let sdkAuth = sdkAuthorizationRaw->getSdkAuthorizationData
   let publishableKey = sdkAuth.publishableKey->Option.getOr("")
   let pmSessionId = sdkAuth.pmSessionId->Option.getOr("")
-  LoggerContext.setPmSessionId(pmSessionId)
+  LoggerContext.setPaymentId(pmSessionId)
   let customerId = sdkAuth.customerId->Option.getOr("")
 
   let locale = optionsDict->getString("locale", "auto")
@@ -967,7 +967,7 @@ let make = (options: JSON.t): initPaymentMethodSession => {
   let tokenize = (): promise<JSON.t> =>
     HyperLoaderLogger.observeMerchantCall(
       ~event=HyperLoaderLogger.Tokenize({surface: PaymentMethodsSession}),
-      ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+      ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
       ~details=[("vault", detectVaultType()->JSON.Encode.string)],
       ~failureOf=errorCodeFailureSummary,
       ~call=() =>
