@@ -152,7 +152,6 @@ let useCardForm = (
 
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    SdkLogger.logUser(~event=FieldEdited({field: "card_number"}))
     let card = val->formatCardNumber(cardType)
     let clearValue = card->CardValidations.clearSpaces
     let isCardSupportedAndValid = if enableExternalCardSupport {
@@ -187,7 +186,6 @@ let useCardForm = (
 
   let changeCardExpiry = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    SdkLogger.logUser(~event=FieldEdited({field: "card_expiry"}))
     let formattedExpiry = val->CardValidations.formatCardExpiryNumber
     if isExipryValid(formattedExpiry) {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
@@ -199,7 +197,6 @@ let useCardForm = (
 
   let changeCVCNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    SdkLogger.logUser(~event=FieldEdited({field: "card_cvc"}))
     let cvc = val->CardValidations.formatCVCNumber(cardBrandForCvc)
     setCvcNumber(_ => cvc)
     if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrandForCvc)->Array.includes(true) {
@@ -215,7 +212,6 @@ let useCardForm = (
 
   let changeZipCode = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    SdkLogger.logUser(~event=FieldEdited({field: "zip_code"}))
     setZipCode(_ => val)
   }
 

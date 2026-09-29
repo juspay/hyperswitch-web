@@ -7,38 +7,38 @@ type errorSummary = {
 }
 
 type severity =
-  | Debug
-  | Info
-  | Warning
-  | Error
+  | @as("DEBUG") Debug
+  | @as("INFO") Info
+  | @as("WARNING") Warning
+  | @as("ERROR") Error
 
 type category =
-  | Api
-  | State
-  | User
-  | Crash
-  | Resource
-  | Merchant
-  | Function
-  | Lifecycle
+  | @as("API") Api
+  | @as("STATE") State
+  | @as("USER") User
+  | @as("CRASH") Crash
+  | @as("RESOURCE") Resource
+  | @as("MERCHANT") Merchant
+  | @as("FUNCTION") Function
+  | @as("LIFECYCLE") Lifecycle
 
 type outcome =
-  | Started
-  | Done
-  | Returned
-  | Triggered
-  | Reused
-  | Failed
-  | TimedOut
+  | @as("init") Started
+  | @as("done") Done
+  | @as("returned") Returned
+  | @as("triggered") Triggered
+  | @as("reused") Reused
+  | @as("failed") Failed
+  | @as("timed_out") TimedOut
 
 type action =
-  | Fact
-  | Call
-  | Callback
-  | Load
-  | Request
-  | Prop
-  | IntegrationIssue
+  | @as("") Fact
+  | @as("call") Call
+  | @as("callback") Callback
+  | @as("load") Load
+  | @as("request") Request
+  | @as("prop") Prop
+  | @as("integration_issue") IntegrationIssue
 
 type eventSpec = {
   action: action,
@@ -47,53 +47,19 @@ type eventSpec = {
 }
 
 type failureClass =
-  | Rejected
-  | Threw
-  | ReturnedFailure
-  | Aborted
-  | LoadFailed
+  | @as("REJECTED") Rejected
+  | @as("THREW") Threw
+  | @as("RETURNED_FAILURE") ReturnedFailure
+  | @as("ABORTED") Aborted
+  | @as("LOAD_FAILED") LoadFailed
 
-type timing = {durationMs: float}
-
-type failure = {
-  durationMs: float,
-  class: failureClass,
+type step = {
+  outcome: outcome,
+  durationMs: option<float>,
+  failureClass: option<failureClass>,
   error: option<errorSummary>,
+  timeoutMs: int,
 }
-
-type timeout = {durationMs: float, timeoutMs: int}
-
-type operationOutcome =
-  | OpStarted
-  | OpDone(timing)
-  | OpReturned(timing)
-  | OpTriggered(timing)
-  | OpReused(timing)
-  | OpFailed(failure)
-  | OpTimedOut(timeout)
-
-let outcomeOf = operationOutcome =>
-  switch operationOutcome {
-  | OpStarted => Started
-  | OpDone(_) => Done
-  | OpReturned(_) => Returned
-  | OpTriggered(_) => Triggered
-  | OpReused(_) => Reused
-  | OpFailed(_) => Failed
-  | OpTimedOut(_) => TimedOut
-  }
-
-let durationOf = operationOutcome =>
-  switch operationOutcome {
-  | OpStarted => None
-  | OpDone({durationMs})
-  | OpReturned({durationMs})
-  | OpTriggered({durationMs})
-  | OpReused({durationMs}) =>
-    Some(durationMs)
-  | OpFailed({durationMs}) => Some(durationMs)
-  | OpTimedOut({durationMs}) => Some(durationMs)
-  }
 
 type operationSeverity = {
   start: severity,
@@ -103,65 +69,56 @@ type operationSeverity = {
   aborted: severity,
 }
 
-let defaultSeverity = {
+let severities = (~success, ~failure) => {
   start: Debug,
-  success: Info,
-  failure: Error,
+  success,
+  failure,
   reused: Debug,
   aborted: Debug,
 }
 
-let operationSeverityOf = (
-  {start, success, failure, reused, aborted},
-  ~outcome: operationOutcome,
-  ~isAborted,
-) =>
-  switch outcome {
-  | OpStarted => start
-  | OpDone(_) | OpReturned(_) | OpTriggered(_) => success
-  | OpReused(_) => reused
-  | OpFailed(_) if isAborted => aborted
-  | OpFailed(_) | OpTimedOut(_) => failure
-  }
+let defaultSeverity = severities(~success=Info, ~failure=Error)
+let quietSuccess = severities(~success=Debug, ~failure=Error)
+let softFailure = severities(~success=Info, ~failure=Warning)
+let quietSuccessSoftFailure = severities(~success=Debug, ~failure=Warning)
+let quietAll = severities(~success=Debug, ~failure=Debug)
 
-let severityName = severity =>
-  switch severity {
-  | Debug => "DEBUG"
-  | Info => "INFO"
-  | Warning => "WARNING"
-  | Error => "ERROR"
-  }
+type context = {
+  sessionId: string,
+  merchantId: string,
+  paymentId: string,
+  authenticationId: string,
+}
 
-let categoryName = category =>
-  switch category {
-  | Api => "API"
-  | State => "STATE"
-  | User => "USER"
-  | Crash => "CRASH"
-  | Resource => "RESOURCE"
-  | Merchant => "MERCHANT"
-  | Function => "FUNCTION"
-  | Lifecycle => "LIFECYCLE"
-  }
+type row = {
+  timestamp: string,
+  @as("log_type") logType: string,
+  component: string,
+  category: string,
+  source: string,
+  version: string,
+  value: string,
+  @as("session_id") mutable sessionId: string,
+  @as("merchant_id") mutable merchantId: string,
+  @as("payment_id") mutable paymentId: string,
+  @as("authentication_id") mutable authenticationId: string,
+  @as("app_id") appId: string,
+  platform: string,
+  @as("user_agent") userAgent: string,
+  @as("event_name") eventName: string,
+  @as("browser_name") browserName: string,
+  @as("browser_version") browserVersion: string,
+  latency: string,
+  @as("first_event") firstEvent: string,
+  @as("payment_method") paymentMethod: string,
+}
 
-let actionWord = action =>
-  switch action {
-  | Fact => None
-  | Call => Some("call")
-  | Callback => Some("callback")
-  | Load => Some("load")
-  | Request => Some("request")
-  | Prop => Some("prop")
-  | IntegrationIssue => Some("integration_issue")
-  }
+type rowValue = {
+  @as("schema_version") schemaVersion: int,
+  href: string,
+  occurrence: int,
+  message?: string,
+  details: Dict.t<JSON.t>,
+}
 
-let outcomeName = outcome =>
-  switch outcome {
-  | Started => "init"
-  | Done => "done"
-  | Returned => "returned"
-  | Triggered => "triggered"
-  | Reused => "reused"
-  | Failed => "failed"
-  | TimedOut => "timed_out"
-  }
+external rowValueToJson: rowValue => JSON.t = "%identity"

@@ -234,7 +234,7 @@ let startApplePaySession = (
   let validateMerchant = SdkLogger.observeFunctionCallback(
     ~event=OnValidateMerchant,
     ~paymentMethod=Wallet(ApplePay),
-    ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+    ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
     ~callback=handleValidateMerchant,
   )
   ssn.onvalidatemerchant = event => validateMerchant(event)->ignore

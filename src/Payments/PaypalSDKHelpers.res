@@ -70,7 +70,7 @@ let loadPaypalSDK = (
     createOrder: SdkLogger.observeFunctionCallback(
       ~event=CreateOrder,
       ~paymentMethod=Wallet(PaypalSdk),
-      ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+      ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
       ~callback=() =>
         if isTestMode {
           resolve("")

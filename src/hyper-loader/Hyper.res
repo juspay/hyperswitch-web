@@ -213,19 +213,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     }
 
     switch options->getOptionsDict->Dict.get("redirectionFlags") {
-    | Some(_) =>
+    | Some(redirectionFlagsValue) =>
       HyperLoaderLogger.logMerchantProps(
         ~event=HyperLoaderLogger.RedirectionFlags({surface: Hyper}),
-        ~details=[
-          (
-            "should_use_top_redirection",
-            redirectionFlags.shouldUseTopRedirection->JSON.Encode.bool,
-          ),
-          (
-            "should_remove_before_unload_events",
-            redirectionFlags.shouldRemoveBeforeUnloadEvents->JSON.Encode.bool,
-          ),
-        ],
+        ~config=redirectionFlagsValue,
+        ~isSensitive=LoggerUtils.maskNone,
       )
     | None => ()
     }
@@ -466,7 +458,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         HyperLoaderLogger.observeMerchantCall(
           ~event=HyperLoaderLogger.ConfirmPayment({surface: Hyper}),
           ~details=[("iframe_ready", isReadyResolved.contents->JSON.Encode.bool)],
-          ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+          ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
           ~call=() => gatedConfirmCall(payload),
         )
 
@@ -474,14 +466,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         HyperLoaderLogger.observeMerchantCall(
           ~event=HyperLoaderLogger.ConfirmTokenization({surface: Hyper}),
           ~details=[("iframe_ready", isReadyResolved.contents->JSON.Encode.bool)],
-          ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+          ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
           ~call=() => gatedConfirmCall(payload),
         )
 
       let confirmOneClickPayment = (payload, result: bool) =>
         HyperLoaderLogger.observeMerchantCall(
           ~event=HyperLoaderLogger.ConfirmOneClickPayment({surface: Hyper}),
-          ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+          ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
           ~call=() => confirmPaymentWrapper(payload, true, result),
         )
 
@@ -491,7 +483,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~details=[("iframe_ready", isReadyResolved.contents->JSON.Encode.bool)]->Array.concat([
             ("source", "sdk_button"->JSON.Encode.string),
           ]),
-          ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+          ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
           ~call=() => confirmPaymentWrapper(payload, false, true, ~isSdkButton=true),
         )
 
@@ -581,7 +573,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
         pmSessionId := pmSessionIdVal
-        LoggerContext.setPmSessionId(pmSessionIdVal)
+        LoggerContext.setPaymentId(pmSessionIdVal)
 
         HyperLoaderLogger.observeMerchantCall(
           ~event=HyperLoaderLogger.PaymentMethodsManagementElements({surface: Hyper}),
@@ -645,7 +637,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       ) =>
         HyperLoaderLogger.observeMerchantCall(
           ~event=HyperLoaderLogger.ConfirmCardPayment({surface: Hyper}),
-          ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+          ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
           ~call=() => confirmCardPaymentCall(clientSecretId, data),
         )
 

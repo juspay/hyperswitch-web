@@ -363,7 +363,6 @@ type userEvent =
   | QrCodeCopyRequested
   | ThreeDsPopupDismissed
   | ClickToPayOtpResendRequested
-  | FieldEdited(fieldData)
   | FieldToggled(fieldToggleData)
   | FieldFocused(fieldData)
   | FieldBlurred(fieldData)
@@ -386,7 +385,6 @@ let userSeverity = value =>
   | BankDetailsConfirmed
   | ClickToPayOtpResendRequested =>
     Info
-  | FieldEdited(_)
   | FieldToggled(_)
   | FieldFocused(_)
   | FieldBlurred(_)
@@ -430,7 +428,7 @@ let apiSeverity = value =>
   | Sessions
   | TaxCalculation
   | PaymentMethodEligibility
-  | PollStatus => {...defaultSeverity, failure: Warning}
+  | PollStatus => softFailure
   | RetrievePaymentIntent
   | ConfirmCall
   | ConfirmPayoutCall
@@ -467,7 +465,7 @@ type functionEvent =
 
 let functionSeverity = value =>
   switch value {
-  | IsReadyToPay => {...defaultSeverity, success: Debug, failure: Warning}
+  | IsReadyToPay => quietSuccessSoftFailure
   | LoadPaymentSheet
   | LoadPaymentData
   | FinishApplePaymentV2
@@ -478,7 +476,7 @@ let functionSeverity = value =>
   | KlarnaLoad
   | PaypalButtonsRender
   | PlaidCreate
-  | VaultFormCreate => {...defaultSeverity, success: Debug}
+  | VaultFormCreate => quietSuccess
   }
 
 // Function callback
@@ -498,25 +496,23 @@ type functionCallbackEvent =
   | OnLoad
   | OnSuccess
   | OnExit
-  | OnFormStateChange
 
 let functionCallbackSeverity = value =>
   switch value {
-  | OnFormStateChange
   | OnShippingContactSelected
   | OnShippingAddressChange
   | OnPaymentDataChanged
   | OnClick
   | OnCancel
   | OnExit
-  | OnLoad => {...defaultSeverity, success: Debug, failure: Warning}
+  | OnLoad => quietSuccessSoftFailure
   | OnValidateMerchant
   | OnPaymentAuthorized
   | CreateOrder
   | CreateBillingAgreement
   | OnApprove
   | OnSuccess
-  | OnError => {...defaultSeverity, success: Debug}
+  | OnError => quietSuccess
   }
 
 // Resource
@@ -537,7 +533,7 @@ type resourceEvent =
 
 let resourceSeverity = value =>
   switch value {
-  | VaultScript => {...defaultSeverity, success: Debug}
+  | VaultScript => quietSuccess
   | GooglePayScript
   | SamsungPayScript
   | ApplePayScript
@@ -548,7 +544,7 @@ let resourceSeverity = value =>
   | BraintreeClientScript
   | BraintreeApplePayScript
   | PmAuthConnectorScript
-  | FontStylesheet => {...defaultSeverity, success: Debug, failure: Warning}
+  | FontStylesheet => quietSuccessSoftFailure
   }
 
 let resourceKind = (value): ResourceLoader.resource =>
@@ -577,9 +573,9 @@ type staticAssetEvent =
 
 let staticAssetSeverity = value =>
   switch value {
-  | SdkConfigs => {...defaultSeverity, success: Debug}
-  | CountryStateData => {...defaultSeverity, success: Debug, failure: Debug}
-  | CountryStateDataFallback => {...defaultSeverity, success: Debug, failure: Warning}
+  | SdkConfigs => quietSuccess
+  | CountryStateData => quietAll
+  | CountryStateDataFallback => quietSuccessSoftFailure
   }
 
 // Crash

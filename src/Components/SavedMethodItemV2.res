@@ -227,7 +227,6 @@ let make = (
                         placeholder="123"
                         height=SavedCardCvcStyles.fieldHeight
                         name={TestUtils.cardCVVInputTestId}
-                        logInputChange=false
                         autocomplete="cc-csc"
                       />
                     </div>

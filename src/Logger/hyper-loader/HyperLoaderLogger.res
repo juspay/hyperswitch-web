@@ -3,7 +3,7 @@ include HyperLoaderLoggerEvents
 
 let observeMerchantCall = (
   ~event: merchantCallEvent,
-  ~details=[],
+  ~details=?,
   ~timeoutMs=?,
   ~failureOf=LoggerUtils.summarizeErrorResponse,
   ~detailsOf=?,
@@ -16,7 +16,7 @@ let observeMerchantCall = (
     ~spec=event->LoggerUtils.spec(~action=Call),
     ~severity=event->merchantCallSeverity,
     ~data=event->LoggerUtils.eventDetails,
-    ~details,
+    ~details?,
     ~timeoutMs?,
     ~failureOf,
     ~detailsOf?,
@@ -42,37 +42,44 @@ let observeMerchantCallback = (
     ~callback,
   )
 
-let logMerchantCall = (~event: merchantCallEvent, ~details=[], ~message=?) =>
+let logMerchantCall = (~event: merchantCallEvent, ~details=?, ~message=?) =>
   LoggerRuntime.emit(
     ~category=Merchant,
     ~spec=event->LoggerUtils.spec(~action=Call, ~outcome=Returned),
     ~severity=(event->merchantCallSeverity).success,
     ~data=event->LoggerUtils.eventDetails,
-    ~details,
+    ~details?,
     ~message?,
   )
 
-let logMerchantProps = (~event: merchantPropEvent, ~details=[], ~message=?) =>
-  if !LoggerRuntime.isNestedElement() {
+let logMerchantProps = (
+  ~event: merchantPropEvent,
+  ~details=?,
+  ~config: option<JSON.t>=?,
+  ~isSensitive=LoggerUtils.maskAll,
+  ~message=?,
+) =>
+  if !LoggerRuntime.isNestedElement() && event->merchantPropSeverity->LoggerRuntime.isEnabled {
     LoggerRuntime.emit(
       ~category=Merchant,
       ~spec=event->LoggerUtils.spec(~action=Prop),
       ~severity=event->merchantPropSeverity,
       ~data=event->LoggerUtils.eventDetails,
-      ~details,
+      ~details?,
+      ~verbatim=?config->Option.map(config => config->LoggerUtils.configSnapshot(~isSensitive)),
       ~message?,
       ~once=true,
     )
   }
 
-let logMerchantIssue = (~issue: merchantIssue, ~details=[], ~message=?) =>
+let logMerchantIssue = (~issue: merchantIssue, ~details=?, ~message=?) =>
   if !LoggerRuntime.isNestedElement() {
     LoggerRuntime.emit(
       ~category=Merchant,
       ~spec=issue->LoggerUtils.spec(~action=IntegrationIssue),
       ~severity=issue->merchantIssueSeverity,
       ~data=issue->LoggerUtils.eventDetails,
-      ~details,
+      ~details?,
       ~message?,
       ~once=true,
     )

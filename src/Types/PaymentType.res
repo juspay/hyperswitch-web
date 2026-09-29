@@ -1653,26 +1653,13 @@ let shouldMaskField = path => {
   isOverridden || !isExcluded
 }
 
-let sanitizePaymentElementOptions = dict => {
-  dict
-  ->JSON.Encode.object
-  ->Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField)
-  ->getDictFromJson
-}
-
-let sanitizePreloadSdkParms = dict => {
-  dict
-  ->JSON.Encode.object
-  ->Utils.maskStringValuesInJson(~value=_, ~currentPath="", ~depth=0, ~shouldMaskField=_ => true)
-  ->getDictFromJson
-}
-
 let itemToObjMapper = dict => {
   unknownKeysWarning(allowedPaymentElementOptions, dict, "options")
 
   HyperLoaderLogger.logMerchantProps(
     ~event=PaymentElementOptions({surface: PaymentElement}),
-    ~details=[("options", dict->sanitizePaymentElementOptions->JSON.Encode.object)],
+    ~config=dict->JSON.Encode.object,
+    ~isSensitive=shouldMaskField,
   )
 
   {

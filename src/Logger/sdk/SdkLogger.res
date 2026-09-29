@@ -3,7 +3,7 @@ include SdkLoggerEvents
 
 let logLifecycle = (
   ~event: lifecycleEvent,
-  ~details=[],
+  ~details=?,
   ~exn=?,
   ~failure=?,
   ~durationMs=?,
@@ -16,7 +16,7 @@ let logLifecycle = (
     ~spec=event->LoggerUtils.spec,
     ~severity=event->lifecycleSeverity,
     ~data=event->LoggerUtils.eventDetails,
-    ~details,
+    ~details?,
     ~exn?,
     ~failure?,
     ~durationMs?,
@@ -27,7 +27,7 @@ let logLifecycle = (
 
 let logState = (
   ~event: stateEvent,
-  ~details=[],
+  ~details=?,
   ~failure=?,
   ~durationMs=?,
   ~paymentMethod=?,
@@ -38,7 +38,7 @@ let logState = (
     ~spec=event->LoggerUtils.spec,
     ~severity=event->stateSeverity,
     ~data=event->LoggerUtils.eventDetails,
-    ~details,
+    ~details?,
     ~failure?,
     ~durationMs?,
     ~paymentMethod?,
@@ -54,136 +54,103 @@ let namedField = field =>
   | field => field->LoggerUtils.snakeCase
   }
 
-let identify = event =>
-  switch event {
-  | FieldEdited({field}) => FieldEdited({field: field->namedField})
-  | FieldToggled({field, enabled}) => FieldToggled({field: field->namedField, enabled})
+let logUser = (~event: userEvent, ~details=?, ~paymentMethod=?, ~message=?) => {
+  let event = switch event {
   | FieldFocused({field}) => FieldFocused({field: field->namedField})
   | FieldBlurred({field}) => FieldBlurred({field: field->namedField})
+  | FieldToggled({field, enabled}) => FieldToggled({field: field->namedField, enabled})
   | event => event
-  }
-
-let logUser = (~event: userEvent, ~details=[], ~paymentMethod=?, ~message=?) => {
-  let event = event->identify
-  let rateKey = switch event {
-  | FieldEdited({field}) | FieldFocused({field}) | FieldBlurred({field}) => Some(field)
-  | _ => None
   }
   LoggerRuntime.emit(
     ~category=User,
     ~spec=event->LoggerUtils.spec,
     ~severity=event->userSeverity,
     ~data=event->LoggerUtils.eventDetails,
-    ~details,
+    ~details?,
     ~paymentMethod?,
-    ~rateKey?,
     ~message?,
   )
 }
 
-let logCrash = (~origin: crashOrigin, ~exn=?, ~details=[], ~message=?) =>
+let logCrash = (~origin: crashOrigin, ~exn=?, ~details=?, ~message=?) =>
   LoggerRuntime.emit(
     ~category=Crash,
     ~spec=origin->LoggerUtils.spec,
     ~severity=origin->crashSeverity,
-    ~details,
+    ~details?,
     ~exn?,
     ~message?,
   )
-
-let sdkOrigins = [GlobalVars.sdkUrl, GlobalVars.repoPublicPath]->Array.filterMap(value =>
-  switch value->String.trim {
-  | "" => None
-  | value => Some(value)
-  }
-)
-
-let firstStackUrl = stack =>
-  stack
-  ->String.match(/(?:https?|blob|file):\/\/[^\s)]+/)
-  ->Option.flatMap(matches => matches->Array.get(0)->Option.flatMap(match => match))
-  ->Option.getOr("")
-
-let isSdkFrame = source =>
-  switch source->String.trim {
-  | "" => false
-  | source => sdkOrigins->Array.some(origin => source->String.startsWith(origin))
-  }
 
 @val @scope("window") external parentWindow: Dom.element = "parent"
 
 let adoptSessionFromParent = (~source) => {
   LoggerRuntime.configure(~source)
   Window.addEventListener("message", (ev: Window.event) =>
-    if ev.source === parentWindow {
-      let message = try JSON.parseExn(ev.data) catch {
-      | _ => JSON.Encode.null
+    if ev.source === parentWindow && ev.data->LoggerContext.mayCarryContext {
+      switch JSON.parseExn(ev.data)->JSON.Decode.object {
+      | Some(message) => message->LoggerContext.startSessionFromMessage
+      | None => ()
+      | exception _ => ()
       }
-      message
-      ->JSON.Decode.object
-      ->Option.forEach(LoggerContext.startSessionFromMessage)
     }
   )
 }
 
+type crashEvent = {message?: JSON.t, filename?: JSON.t, reason?: JSON.t}
+
+let describe: option<JSON.t> => string = %raw(`
+  (v) => typeof v == "string" ? v : (v && typeof v.message == "string" ? v.message : "UNKNOWN")
+`)
+
+let stackUrl: option<JSON.t> => string = %raw(`
+  (v) => (v && typeof v.stack == "string" && /(?:https?|blob|file):\/\/[^\s)]+/.exec(v.stack) || [""])[0]
+`)
+
 let catchGlobalCrashes = (~ownsDocument) => {
+  let sdkOrigins =
+    [GlobalVars.sdkUrl, GlobalVars.repoPublicPath]->Array.filter(value => value->String.trim !== "")
   let reporting = ref(false)
-  let report = (~origin, ~details) =>
-    if !reporting.contents {
+
+  let report = (~origin, ~message, ~source) =>
+    if (
+      !reporting.contents &&
+      (ownsDocument ||
+      (source->String.trim !== "" &&
+        sdkOrigins->Array.some(origin => source->String.startsWith(origin))))
+    ) {
       reporting := true
-      logCrash(~origin, ~details)
-      reporting := false
-    }
-
-  let field = (json, key) =>
-    json
-    ->JSON.Decode.object
-    ->Option.flatMap(object => object->Dict.get(key))
-    ->Option.getOr(JSON.Encode.null)
-
-  let text = (json, key) => json->field(key)->JSON.Decode.string->Option.getOr("")
-
-  let describe = json =>
-    switch json->JSON.Decode.string {
-    | Some(text) => text
-    | None => json->field("message")->JSON.Decode.string->Option.getOr("UNKNOWN")
-    }
-
-  let isOurs = source => ownsDocument || source->isSdkFrame
-
-  let reportIfOurs = (~origin, ~message, ~source) =>
-    if source->isOurs {
-      report(
+      logCrash(
         ~origin,
         ~details=[
           ("error_message", message->JSON.Encode.string),
           ("error_source", source->LoggerUtils.sanitizeUrl->JSON.Encode.string),
         ],
       )
+      reporting := false
     }
 
-  Window.addEventListener("error", (event: JSON.t) =>
-    reportIfOurs(
+  Window.addEventListener("error", (event: crashEvent) =>
+    report(
       ~origin=UncaughtError,
-      ~message=event->field("message")->describe,
-      ~source=event->text("filename"),
+      ~message=event.message->describe,
+      ~source=event.filename->Option.flatMap(JSON.Decode.string)->Option.getOr(""),
     )
   )
 
-  Window.addEventListener("unhandledrejection", (event: JSON.t) => {
-    let reason = event->field("reason")
-    reportIfOurs(
+  Window.addEventListener("unhandledrejection", (event: crashEvent) =>
+    report(
       ~origin=UnhandledRejection,
-      ~message=reason->describe,
-      ~source=reason->text("stack")->firstStackUrl,
+      ~message=event.reason->describe,
+      ~source=event.reason->stackUrl,
     )
-  })
+  )
 }
 
 let observeApi = (
   ~event: apiEvent,
   ~url,
-  ~details=[],
+  ~details=?,
   ~failureOf,
   ~detailsOf,
   ~paymentMethod=?,
@@ -195,7 +162,7 @@ let observeApi = (
     ~spec=event->LoggerUtils.spec(~action=Request),
     ~severity=event->apiSeverity,
     ~data=event->LoggerUtils.eventDetails->Array.concat([("url", url->JSON.Encode.string)]),
-    ~details,
+    ~details?,
     ~failureOf,
     ~detailsOf,
     ~paymentMethod?,
@@ -203,10 +170,10 @@ let observeApi = (
     ~call,
   )
 
-let observeStaticAsset = (~event: staticAssetEvent, ~url, ~details=[], ~message=?, ~call) =>
+let observeStaticAsset = (~event: staticAssetEvent, ~url, ~details=?, ~message=?, ~call) =>
   LoggerRuntime.observe(
     ~category=Resource,
-    ~details,
+    ~details?,
     ~spec=event->LoggerUtils.spec(~action=Load),
     ~severity=event->staticAssetSeverity,
     ~data=event
@@ -224,7 +191,7 @@ let observeStaticAsset = (~event: staticAssetEvent, ~url, ~details=[], ~message=
 let logApi = (
   ~event: apiEvent,
   ~outcome,
-  ~details=[],
+  ~details=?,
   ~startedAt=?,
   ~exn=?,
   ~paymentMethod=?,
@@ -236,7 +203,7 @@ let logApi = (
     ~severity=event->apiSeverity,
     ~outcome,
     ~data=event->LoggerUtils.eventDetails,
-    ~details,
+    ~details?,
     ~startedAt?,
     ~exn?,
     ~paymentMethod?,
@@ -246,7 +213,7 @@ let logApi = (
 let logFunction = (
   ~event: functionEvent,
   ~outcome,
-  ~details=[],
+  ~details=?,
   ~startedAt=?,
   ~exn=?,
   ~paymentMethod=?,
@@ -258,7 +225,7 @@ let logFunction = (
     ~severity=event->functionSeverity,
     ~outcome,
     ~data=event->LoggerUtils.eventDetails,
-    ~details,
+    ~details?,
     ~startedAt?,
     ~exn?,
     ~paymentMethod?,
@@ -267,7 +234,7 @@ let logFunction = (
 
 let observeFunction = (
   ~event: functionEvent,
-  ~details=[],
+  ~details=?,
   ~timeoutMs=?,
   ~paymentMethod=?,
   ~source=?,
@@ -279,7 +246,7 @@ let observeFunction = (
     ~spec=event->LoggerUtils.spec(~action=Call),
     ~severity=event->functionSeverity,
     ~data=event->LoggerUtils.eventDetails,
-    ~details,
+    ~details?,
     ~timeoutMs?,
     ~paymentMethod?,
     ~source?,
@@ -289,7 +256,7 @@ let observeFunction = (
 
 let observeFunctionCallback = (
   ~event: functionCallbackEvent,
-  ~details=[],
+  ~details=?,
   ~timeoutMs=?,
   ~paymentMethod=?,
   ~message=?,
@@ -300,7 +267,7 @@ let observeFunctionCallback = (
     ~spec=event->LoggerUtils.spec(~action=Callback),
     ~severity=event->functionCallbackSeverity,
     ~data=event->LoggerUtils.eventDetails,
-    ~details,
+    ~details?,
     ~timeoutMs?,
     ~paymentMethod?,
     ~message?,
@@ -310,24 +277,24 @@ let observeFunctionCallback = (
 let observeResource = (
   ~event: resourceEvent,
   ~url,
-  ~attributes=[],
-  ~matchQuery=false,
+  ~attributes=?,
+  ~matchQuery=?,
   ~paymentMethod=?,
-  ~abandoned=() => false,
+  ~abandoned=?,
   ~message=?,
-  ~onLoad=() => (),
-  ~onError=_ => (),
+  ~onLoad=?,
+  ~onError=?,
 ) =>
   LoggerRuntime.observeResource(
     ~spec=event->LoggerUtils.spec(~action=Load),
     ~severity=event->resourceSeverity,
     ~url,
     ~resource=event->resourceKind,
-    ~attributes,
-    ~matchQuery,
+    ~attributes?,
+    ~matchQuery?,
     ~paymentMethod?,
-    ~abandoned,
+    ~abandoned?,
     ~message?,
-    ~onLoad,
-    ~onError,
+    ~onLoad?,
+    ~onError?,
   )

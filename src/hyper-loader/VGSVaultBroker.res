@@ -479,15 +479,11 @@ let make = (
         let createFormPromise =
           loadVGSScript()
           ->Promise.then(_ => {
-            let onFormStateChange: JSON.t => unit = SdkLogger.observeFunctionCallback(
-              ~event=OnFormStateChange,
-              ~paymentMethod=Card,
-              ~callback=state => {
-                formStateRef := state->getDictFromJson
-                publishFieldStates()
-                clearDependentFieldsOnEmptiedCardNumber()
-              },
-            )
+            let onFormStateChange: JSON.t => unit = state => {
+              formStateRef := state->getDictFromJson
+              publishFieldStates()
+              clearDependentFieldsOnEmptiedCardNumber()
+            }
             let startedAt = Date.now()
             SdkLogger.logFunction(~event=VaultFormCreate, ~outcome=Started, ~paymentMethod=Card)
             let form: JSON.t = switch vgsCollect->Nullable.toOption {
