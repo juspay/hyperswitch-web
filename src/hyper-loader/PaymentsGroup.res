@@ -608,7 +608,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let confirmPayment = (): promise<JSON.t> =>
     HyperLoaderLogger.observeMerchantCall(
       ~event=HyperLoaderLogger.ConfirmPayment({surface: CardForm}),
-      ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+      ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
       ~failureOf=errorCodeFailureSummary,
       ~call=() =>
         if confirmingRef.contents {

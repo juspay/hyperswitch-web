@@ -59,10 +59,6 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
-
-    if fieldName->String.length > 0 {
-      SdkLogger.logUser(~event=FieldEdited({field: fieldName}))
-    }
     setValue(_ => {
       isValid: Some(true),
       value,

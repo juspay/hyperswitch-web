@@ -85,7 +85,7 @@ let make = (~sessionObj: SessionsType.token) => {
           on_click: SdkLogger.observeFunctionCallback(
             ~event=OnClick,
             ~paymentMethod=PayLater(Klarna),
-            ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+            ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
             ~callback=authorize => {
               if isTestMode {
                 Console.warn("Klarna SDK button clicked in test mode - interaction disabled")

@@ -293,7 +293,7 @@ let performUpdateIntent = async (
 ) => {
   let callback = HyperLoaderLogger.observeMerchantCallback(
     ~event=UpdateIntent({surface: surface}),
-    ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+    ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
     ~callback,
   )
   if isUpdateIntentInProgress.contents {
@@ -399,7 +399,7 @@ let performUpdateIntent = async (
 
     let response = await HyperLoaderLogger.observeMerchantCall(
       ~event=UpdateIntent({surface: surface}),
-      ~timeoutMs=LoggerRuntime.userGatedTimeoutMs,
+      ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
       ~call=runUpdateIntent,
     )
     isUpdateIntentInProgress.contents = false

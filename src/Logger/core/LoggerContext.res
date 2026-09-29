@@ -1,16 +1,6 @@
-type t = {
-  sessionId: string,
-  merchantId: string,
-  paymentId: string,
-  authenticationId: string,
-}
+type t = LoggerTypes.context
 
-let empty = {
-  sessionId: "",
-  merchantId: "",
-  paymentId: "",
-  authenticationId: "",
-}
+let empty: t = {sessionId: "", merchantId: "", paymentId: "", authenticationId: ""}
 
 let context = ref(empty)
 
@@ -19,16 +9,12 @@ let onSessionChange = ref(_ => ())
 let current = () => context.contents
 
 let keep = (existing, incoming) =>
-  switch incoming {
-  | Some(value) =>
-    switch value->String.trim {
-    | "" => existing
-    | value => value
-    }
-  | None => existing
+  switch incoming->Option.map(String.trim) {
+  | Some("") | None => existing
+  | Some(value) => value
   }
 
-let fillFrom = (started, latest) =>
+let fillFrom = (started: t, latest: t): t =>
   started.sessionId !== "" && started.sessionId !== latest.sessionId
     ? started
     : {
@@ -40,41 +26,33 @@ let fillFrom = (started, latest) =>
 
 let setSessionData = (~sessionId=?, ~merchantId=?, ~paymentId=?, ~authenticationId=?, ()) => {
   let previous = context.contents
-
   let base = switch sessionId->Option.map(String.trim) {
   | Some(sessionId) if sessionId !== "" && sessionId !== previous.sessionId => {...empty, sessionId}
   | _ => previous
   }
-  context := {
-      sessionId: base.sessionId->keep(sessionId),
-      merchantId: base.merchantId->keep(merchantId),
-      paymentId: base.paymentId->keep(paymentId),
-      authenticationId: base.authenticationId->keep(authenticationId),
-    }
-  if context.contents.sessionId !== previous.sessionId {
+  let next: t = {
+    sessionId: base.sessionId->keep(sessionId),
+    merchantId: base.merchantId->keep(merchantId),
+    paymentId: base.paymentId->keep(paymentId),
+    authenticationId: base.authenticationId->keep(authenticationId),
+  }
+  context := next
+  if next.sessionId !== previous.sessionId {
     LoggerUtils.safeRun(() => onSessionChange.contents())
   }
-  let current = context.contents
   if (
-    current.sessionId !== previous.sessionId ||
-    current.merchantId !== previous.merchantId ||
-    current.paymentId !== previous.paymentId ||
-    current.authenticationId !== previous.authenticationId
+    next.sessionId !== previous.sessionId ||
+    next.merchantId !== previous.merchantId ||
+    next.paymentId !== previous.paymentId ||
+    next.authenticationId !== previous.authenticationId
   ) {
-    LoggerUtils.safeRun(() =>
-      LoggerQueue.backfillContext(
-        ~sessionId=current.sessionId,
-        ~merchantId=current.merchantId,
-        ~paymentId=current.paymentId,
-        ~authenticationId=current.authenticationId,
-      )
-    )
+    LoggerUtils.safeRun(() => LoggerQueue.backfillContext(next))
   }
 }
 
 let paymentIdOfClientSecret = clientSecret =>
   switch clientSecret->String.split("_secret_") {
-  | parts if parts->Array.length >= 2 => parts->Array.get(0)->Option.getOr("")
+  | parts if parts->Array.length >= 2 => parts->Array.getUnsafe(0)
   | _ => ""
   }
 
@@ -102,28 +80,20 @@ let paymentIdOfSdkAuthorization = sdkAuthorization =>
   | None => sdkAuthorization->sdkAuthorizationValue("payment_method_session_id")
   }
 
-let setPaymentIdFromCredentials = (~clientSecret="", ~sdkAuthorization=?) => {
-  let paymentId = switch sdkAuthorization->Option.flatMap(paymentIdOfSdkAuthorization) {
-  | Some(paymentId) => paymentId
-  | None => clientSecret->paymentIdOfClientSecret
-  }
+let setPaymentId = paymentId =>
   switch paymentId->String.trim {
   | "" => ()
   | paymentId => setSessionData(~paymentId, ())
   }
-}
+
+let setPaymentIdFromCredentials = (~clientSecret="", ~sdkAuthorization=?) =>
+  sdkAuthorization
+  ->Option.flatMap(paymentIdOfSdkAuthorization)
+  ->Option.getOr(clientSecret->paymentIdOfClientSecret)
+  ->setPaymentId
 
 let setPaymentIdFromClientSecret = clientSecret =>
-  switch clientSecret->paymentIdOfClientSecret->String.trim {
-  | "" => ()
-  | paymentId => setSessionData(~paymentId, ())
-  }
-
-let setPmSessionId = pmSessionId =>
-  switch pmSessionId->String.trim {
-  | "" => ()
-  | paymentId => setSessionData(~paymentId, ())
-  }
+  clientSecret->paymentIdOfClientSecret->setPaymentId
 
 let setAuthenticationId = authenticationId =>
   switch authenticationId->String.trim {
@@ -131,49 +101,50 @@ let setAuthenticationId = authenticationId =>
   | authenticationId => setSessionData(~authenticationId, ())
   }
 
-let stringField = (source, key) =>
-  source->Dict.get(key)->Option.flatMap(JSON.Decode.string)->Option.getOr("")
-
-let nestedDict = (source, key) =>
-  source->Dict.get(key)->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-
-let readField = (message, key) =>
-  [
-    message,
-    message->nestedDict("loggerContext"),
-    message->nestedDict("metadata"),
-    message->nestedDict("paymentOptions"),
-    message->nestedDict("options"),
-  ]
-  ->Array.findMap(source =>
-    switch source->stringField(key)->String.trim {
-    | "" => None
-    | value => Some(value)
-    }
-  )
-  ->Option.getOr("")
+let mayCarryContext: 'data => bool = %raw(`
+  function (d) {
+    return typeof d == "string" &&
+      /"(?:sdkSessionId|publishableKey|sdkAuthorization|paymentId|clientSecret|pmSessionId|authenticationId)"\s*:/.test(d);
+  }
+`)
 
 let startSessionFromMessage = message =>
   LoggerUtils.safeRun(() => {
-    let paymentId = switch message
-    ->readField("sdkAuthorization")
-    ->paymentIdOfSdkAuthorization {
+    let nested = key =>
+      message->Dict.get(key)->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
+    let sources = [
+      message,
+      nested("loggerContext"),
+      nested("metadata"),
+      nested("paymentOptions"),
+      nested("options"),
+    ]
+    let readField = key =>
+      sources
+      ->Array.findMap(source =>
+        switch source->Dict.get(key)->Option.flatMap(JSON.Decode.string)->Option.map(String.trim) {
+        | Some("") | None => None
+        | value => value
+        }
+      )
+      ->Option.getOr("")
+    let paymentId = switch readField("sdkAuthorization")->paymentIdOfSdkAuthorization {
     | Some(paymentId) => paymentId
     | None =>
-      switch message->readField("paymentId") {
+      switch readField("paymentId") {
       | "" =>
-        switch message->readField("clientSecret")->paymentIdOfClientSecret {
-        | "" => message->readField("pmSessionId")
+        switch readField("clientSecret")->paymentIdOfClientSecret {
+        | "" => readField("pmSessionId")
         | paymentId => paymentId
         }
       | paymentId => paymentId
       }
     }
     setSessionData(
-      ~sessionId=message->readField("sdkSessionId"),
-      ~merchantId=message->readField("publishableKey"),
+      ~sessionId=readField("sdkSessionId"),
+      ~merchantId=readField("publishableKey"),
       ~paymentId,
-      ~authenticationId=message->readField("authenticationId"),
+      ~authenticationId=readField("authenticationId"),
       (),
     )
   })

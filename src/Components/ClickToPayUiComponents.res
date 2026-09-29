@@ -32,7 +32,6 @@ module OtpInput = {
 
     let callBacks = {
       otpChanged: ev => {
-        SdkLogger.logUser(~event=FieldEdited({field: "click_to_pay_otp"}), ~paymentMethod=Card)
         setClickToPayConfig(prev => {
           ...prev,
           otpError: "",

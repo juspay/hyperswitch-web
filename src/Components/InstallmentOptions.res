@@ -102,10 +102,6 @@ let make = (
   }
 
   let handlePlanSelect = (plan: PaymentMethodsRecord.installmentPlan, index) => {
-    SdkLogger.logUser(
-      ~event=FieldEdited({field: "installment_plan"}),
-      ~details=[("plan_index", index->JSON.Encode.int)],
-    )
     setSelectedInstallmentPlan(_ => Some(plan))
     setSelectedIndex(_ => Some(index))
     setErrorString(_ => "")

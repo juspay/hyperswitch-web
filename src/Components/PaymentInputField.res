@@ -28,7 +28,6 @@ let make = (
   ~paymentType=?,
   ~isDisabled=false,
   ~autocomplete="on",
-  ~logInputChange=true,
 ) => {
   let {themeObj, config} = Jotai.useAtomValue(configAtom)
   let {innerLayout} = config.appearance
@@ -67,13 +66,6 @@ let make = (
     | None => ()
     }
     Utils.handleOnBlurPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
-  }
-
-  let wrappedOnChange = ev => {
-    if logInputChange && name->String.length > 0 {
-      SdkLogger.logUser(~event=FieldEdited({field: name}))
-    }
-    onChange(ev)
   }
 
   let backgroundClass = switch paymentType {
@@ -149,7 +141,7 @@ let make = (
           placeholder={config.appearance.labels == Above ? placeholder : ""}
           value
           autoComplete={autocomplete}
-          onChange=wrappedOnChange
+          onChange
           onBlur=handleBlur
           onFocus=handleFocus
           ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}

@@ -9,7 +9,6 @@
 @scope("__SDK_CONFIG__") @val external sentryScriptUrl: string = "sentryScriptUrl"
 @scope("__SDK_CONFIG__") @val external enableLogging: bool = "enableLogging"
 @scope("__SDK_CONFIG__") @val external loggingLevelStr: string = "loggingLevel"
-@scope("__SDK_CONFIG__") @val external maxLogsPushedPerEventName: int = "maxLogsPushedPerEventName"
 let targetOrigin: string = "*"
 @scope("__SDK_CONFIG__") @val external isInteg: bool = "isIntegrationEnv"
 @scope("__SDK_CONFIG__") @val external isSandbox: bool = "isSandboxEnv"
