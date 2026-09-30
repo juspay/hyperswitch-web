@@ -32,10 +32,7 @@ let create = (
   iframe->Window.setAttribute("id", `orca-coordinator-${localSelectorString}`)
   iframe->Window.setAttribute("src", src)
   iframe->Window.setAttribute("allow", "payment *")
-  iframe->Window.setAttribute(
-    "sandbox",
-    "allow-scripts allow-popups allow-same-origin allow-forms",
-  )
+  iframe->Window.setAttribute("sandbox", "allow-scripts allow-popups allow-same-origin allow-forms")
   iframe->Window.setAttribute(
     "style",
     "position: absolute; width: 0; height: 0; border: none; overflow: hidden; left: -9999px; top: -9999px;",
@@ -107,7 +104,9 @@ let makeFullscreenFlows = (
   let fullscreenActiveRef = ref(false)
 
   let router = (ev: Window.event) => {
-    let json = try ev.data->Identity.anyTypeToJson catch { | _ => JSON.Encode.null }
+    let json = try ev.data->Identity.anyTypeToJson catch {
+    | _ => JSON.Encode.null
+    }
     let dict = json->getDictFromJson
     let iframeId = dict->getString("iframeId", "")
     if dict->getBool("fullscreen", false) && iframeId === localSelectorString {
@@ -123,16 +122,20 @@ let makeFullscreenFlows = (
     } else if dict->Dict.get("fullscreen")->Option.isSome && !(dict->getBool("fullscreen", true)) {
       mount.fullscreenSlot->Window.innerHTML("")
       fullscreenActiveRef := false
-      mount.iframe->Nullable.make->Window.iframePostMessage(
-        [("fullScreenIframeMounted", false->JSON.Encode.bool), ("options", options)]->Dict.fromArray,
+      mount.iframe
+      ->Nullable.make
+      ->Window.iframePostMessage(
+        [
+          ("fullScreenIframeMounted", false->JSON.Encode.bool),
+          ("options", options),
+        ]->Dict.fromArray,
       )
     } else if (
-      fullscreenActiveRef.contents && (
-        dict->Dict.get("confirmParams")->Option.isSome ||
-        dict->Dict.get("poll_status")->Option.isSome ||
-        dict->Dict.get("openurl_if_required")->Option.isSome ||
-        dict->Dict.get("submitSuccessful")->Option.isSome
-      )
+      fullscreenActiveRef.contents &&
+      (dict->Dict.get("confirmParams")->Option.isSome ||
+      dict->Dict.get("poll_status")->Option.isSome ||
+      dict->Dict.get("openurl_if_required")->Option.isSome ||
+      dict->Dict.get("submitSuccessful")->Option.isSome)
     ) {
       mount.iframe->Nullable.make->Window.iframePostMessage(dict)
     } else {
@@ -141,7 +144,9 @@ let makeFullscreenFlows = (
   }
 
   let answerer = (ev: Window.event) => {
-    let json = try ev.data->Identity.anyTypeToJson catch { | _ => JSON.Encode.null }
+    let json = try ev.data->Identity.anyTypeToJson catch {
+    | _ => JSON.Encode.null
+    }
     let dict = json->getDictFromJson
     let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
     if fullscreenActiveRef.contents && dict->Dict.get("iframeMountedCallback")->Option.isSome {
@@ -151,11 +156,14 @@ let makeFullscreenFlows = (
           ("metadata", metadataRef.contents),
           ("options", options),
           ("appearance", appearance),
+          LoggerContext.sharedContext(),
         ]->Dict.fromArray,
       )
     }
     if fullscreenActiveRef.contents && dict->Dict.get("driverMounted")->Option.isSome {
-      mount.iframe->Nullable.make->Window.iframePostMessage(
+      mount.iframe
+      ->Nullable.make
+      ->Window.iframePostMessage(
         [
           ("fullScreenIframeMounted", true->JSON.Encode.bool),
           ("metadata", metadataRef.contents),
@@ -163,7 +171,7 @@ let makeFullscreenFlows = (
         ]->Dict.fromArray,
       )
       fullScreenEle->Window.iframePostMessage(
-        [("metadata", metadataRef.contents)]->Dict.fromArray,
+        [("metadata", metadataRef.contents), LoggerContext.sharedContext()]->Dict.fromArray,
       )
     }
   }

@@ -43,6 +43,10 @@ let getErrorStr = (fieldname, ~empty=false, localeString: LocaleStringTypes.loca
 }
 
 let submitUserError = message => {
+  SdkLogger.logLifecycle(
+    ~event=FormValidationFailed({reason: message}),
+    ~paymentMethod=Card,
+  )
   postFailedSubmitResponse(~errortype="validation_error", ~message)
 }
 

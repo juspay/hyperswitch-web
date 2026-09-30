@@ -57,7 +57,8 @@ let make = (
           marginBottom: "5px",
           fontSize: themeObj.fontSizeLg,
           opacity: "0.6",
-        }>
+        }
+      >
         {React.string(localeString.cardHeader)}
       </div>
     </RenderIf>
@@ -83,7 +84,8 @@ let make = (
         className="flex flex-row w-full place-content-between"
         style={
           gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-        }>
+        }
+      >
         <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
           <PaymentInputField
             fieldName=localeString.validThruText
@@ -131,7 +133,8 @@ let make = (
         condition={innerLayout === Compressed &&
           (cardError->String.length > 0 ||
           cvcError->String.length > 0 ||
-          expiryError->String.length > 0)}>
+          expiryError->String.length > 0)}
+      >
         <div
           className="Error pt-1"
           style={
@@ -139,7 +142,8 @@ let make = (
             fontSize: themeObj.fontSizeSm,
             alignSelf: "start",
             textAlign: "left",
-          }>
+          }
+        >
           {React.string("Invalid input")}
         </div>
       </RenderIf>

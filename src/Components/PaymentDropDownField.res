@@ -11,7 +11,6 @@ let make = (
   let {config} = Jotai.useAtomValue(configAtom)
   let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
   let {readOnly} = Jotai.useAtomValue(optionAtom)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
   let {parentURL, iframeId} = Jotai.useAtomValue(keys)
@@ -41,6 +40,9 @@ let make = (
   }, [options])
   let handleFocus = _ => {
     setInputFocused(_ => true)
+    if fieldName->String.length > 0 {
+      SdkLogger.logUser(~event=FieldFocused({field: fieldName}))
+    }
     Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
   let focusClass = if inputFocused || value.value->String.length > 0 {
@@ -57,11 +59,6 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
-
-    // Log the dropdown change using fieldName
-    if fieldName->String.length > 0 {
-      LoggerUtils.logInputChangeInfo(fieldName, loggerState)
-    }
     setValue(_ => {
       isValid: Some(true),
       value,
@@ -77,7 +74,8 @@ let make = (
       <RenderIf
         condition={fieldName->String.length > 0 &&
         config.appearance.labels == Above &&
-        isSpacedInnerLayout}>
+        isSpacedInnerLayout}
+      >
         <div
           className={`Label ${labelClass} `}
           style={
@@ -86,7 +84,8 @@ let make = (
             marginBottom: "5px",
             opacity: "0.6",
           }
-          ariaHidden=true>
+          ariaHidden=true
+        >
           {React.string(fieldName)}
         </div>
       </RenderIf>
@@ -105,7 +104,8 @@ let make = (
           onFocus={handleFocus}
           onChange=handleChange
           className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
-          ariaLabel={`${fieldName} option tab`}>
+          ariaLabel={`${fieldName} option tab`}
+        >
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>
@@ -124,7 +124,8 @@ let make = (
               },
               opacity: "0.6",
             }
-            ariaHidden=true>
+            ariaHidden=true
+          >
             {React.string(fieldName)}
           </div>
         </RenderIf>
@@ -136,7 +137,8 @@ let make = (
             left: localeString.localeDirection == "rtl" ? "1%" : "97%",
             top: "42%",
             marginLeft: localeString.localeDirection == "rtl" ? "1rem" : "-1rem",
-          }>
+          }
+        >
           <Icon size=10 name={"arrow-down"} />
         </div>
         <RenderIf condition={value.errorString->String.length > 0}>
@@ -147,7 +149,8 @@ let make = (
               fontSize: themeObj.fontSizeSm,
               alignSelf: "start",
               textAlign: "left",
-            }>
+            }
+          >
             {React.string(value.errorString)}
           </div>
         </RenderIf>

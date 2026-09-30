@@ -3,6 +3,7 @@ open JotaiAtoms
 let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: bool) => {
   let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
   let {readOnly, customMethodNames, layout} = Jotai.useAtomValue(optionAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let setSelectedOption = Jotai.useSetAtom(selectedOptionAtom)
   let (tabClass, tabLabelClass, tabIconClass) = React.useMemo(
@@ -16,6 +17,13 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
     paymentOption.icon,
   )
   let onClick = _ => {
+    SdkLogger.logUser(
+      ~event=PaymentMethodSelected({method: paymentOption.paymentMethodName}),
+      ~paymentMethod=?PaymentUtils.loggerPaymentMethodOf(
+        ~paymentMethodName=paymentOption.paymentMethodName,
+        ~paymentMethods=paymentMethodListValue.payment_methods,
+      ),
+    )
     setSelectedOption(_ => paymentOption.paymentMethodName)
   }
   <button
@@ -29,7 +37,8 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
       padding: themeObj.spacingUnit,
       cursor: "pointer",
     }
-    onClick>
+    onClick
+  >
     <div className={`TabIcon ${tabIconClass} relative`}>
       {switch icon {
       | Some(ele) => ele
