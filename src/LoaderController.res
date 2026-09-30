@@ -28,6 +28,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setCardNumberPlaceholder = Jotai.useSetAtom(cardNumberPlaceholder)
   let setCardExpiryPlaceholder = Jotai.useSetAtom(cardExpiryPlaceholder)
   let setCardCvcPlaceholder = Jotai.useSetAtom(cardCvcPlaceholder)
+  let setCardFieldLabel = Jotai.useSetAtom(cardFieldLabel)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
@@ -123,6 +124,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             ErrorUtils.unknownPropValueWarning(value, allowedList, warnPath)
           }
         )
+      let applyLabel = () =>
+        optionsDict
+        ->Dict.get("label")
+        ->Option.flatMap(JSON.Decode.string)
+        ->Option.forEach(value => setCardFieldLabel(_ => Some(value)))
       switch fieldName {
       | "cardNumber" => {
           applyIconStyle(
@@ -133,8 +139,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             setCardBrandIconOverride,
           )
           applyPlaceholder("placeholder", setCardNumberPlaceholder)
+          applyLabel()
         }
-      | "cardExpiry" => applyPlaceholder("placeholder", setCardExpiryPlaceholder)
+      | "cardExpiry" => {
+          applyPlaceholder("placeholder", setCardExpiryPlaceholder)
+          applyLabel()
+        }
       | "cardCvc" => {
           applyIconStyle(
             "cvcIcon",
@@ -144,6 +154,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             setCvcIconOverride,
           )
           applyPlaceholder("placeholder", setCardCvcPlaceholder)
+          applyLabel()
         }
       | _ => ()
       }

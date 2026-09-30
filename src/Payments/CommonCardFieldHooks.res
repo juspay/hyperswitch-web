@@ -120,18 +120,24 @@ let useCardFieldBase = (
           let frameJson: JSON.t = ev.data->Identity.anyTypeToJson
           switch CardFormPortProtocol.decodePortFrame(frameJson) {
           | Some({kind, payload}) =>
-            if kind === CardFormPortProtocol.kindDoFocus &&
-              payload->JSON.Decode.bool->Option.getOr(false) {
+            if (
+              kind === CardFormPortProtocol.kindDoFocus &&
+                payload->JSON.Decode.bool->Option.getOr(false)
+            ) {
               CardUtils.focusRef(focusTarget)
             } else if kind === CardFormPortProtocol.kindDetectedCardBrand {
               setPortBrandOverride(_ => payload->JSON.Decode.string->Option.getOr(""))
             } else if kind === CardFormPortProtocol.kindClearField {
               clearFieldValue()
             } else {
-              Console.warn(`[CommonCardFieldHooks] dropped port frame on unknown kind "${kind}" (portKey "${portKey}")`)
+              Console.warn(
+                `[CommonCardFieldHooks] dropped port frame on unknown kind "${kind}" (portKey "${portKey}")`,
+              )
             }
           | None =>
-            Console.warn(`[CommonCardFieldHooks] dropped un-decodable port frame (portKey "${portKey}")`)
+            Console.warn(
+              `[CommonCardFieldHooks] dropped un-decodable port frame (portKey "${portKey}")`,
+            )
           }
         })
       | None => ()
@@ -162,8 +168,7 @@ let useCardFieldBase = (
     expiryProps.cardExpiry->CardValidations.clearSpaces->String.length == 4 &&
       expiryProps.isExpiryValid == Some(true)
   | CardThemeType.CardCVCElement =>
-    cvcProps.cvcNumber->String.length == cvcProps.maxCVCLength &&
-      cvcProps.isCVCValid == Some(true)
+    cvcProps.cvcNumber->String.length == cvcProps.maxCVCLength && cvcProps.isCVCValid == Some(true)
   | _ => false
   }
   let _ = CardCollectorBridge.useEmitCardState(
@@ -191,12 +196,7 @@ let useCardNumberField = (
   ~dualPlane=false,
   (),
 ): cardFieldState => {
-  useCardFieldBase(
-    ~logger,
-    ~paymentType=CardThemeType.CardNumberElement,
-    ~dualPlane,
-    (),
-  )
+  useCardFieldBase(~logger, ~paymentType=CardThemeType.CardNumberElement, ~dualPlane, ())
 }
 
 let useCardExpiryField = (
@@ -204,12 +204,7 @@ let useCardExpiryField = (
   ~dualPlane=false,
   (),
 ): cardFieldState => {
-  useCardFieldBase(
-    ~logger,
-    ~paymentType=CardThemeType.CardExpiryElement,
-    ~dualPlane,
-    (),
-  )
+  useCardFieldBase(~logger, ~paymentType=CardThemeType.CardExpiryElement, ~dualPlane, ())
 }
 
 let useCardCvcField = (
@@ -227,18 +222,52 @@ let useCardCvcField = (
   )
 }
 
+type cardFieldLabelProps = {
+  label: string,
+  isLabelHidden: bool,
+  labels: CardThemeType.label,
+}
+
+// Card fields follow appearance.labels but only float or hide the label; "above" renders like
+// "never". PaymentInputField drops the placeholder under Never, so a hidden label renders as Above
+// with the label hidden.
+let useCardFieldLabel = (~defaultLabel): cardFieldLabelProps => {
+  let {config} = Jotai.useAtomValue(configAtom)
+  let label = Jotai.useAtomValue(cardFieldLabel)->Option.getOr(defaultLabel)
+  let isFloating = config.appearance.labels === CardThemeType.Floating
+  {
+    label,
+    isLabelHidden: !isFloating,
+    labels: isFloating ? CardThemeType.Floating : CardThemeType.Above,
+  }
+}
+
 module RenderCardNumber = {
   @react.component
   let make = (~state: cardFieldState) => {
     let {themeObj} = Jotai.useAtomValue(configAtom)
     let numberPlaceholder =
       Jotai.useAtomValue(cardNumberPlaceholder)->Option.getOr("1234 1234 1234 1234")
-    let {isCardValid, cardNumber, changeCardNumber, handleCardBlur, cardRef, cardError, maxCardLength, icon, setIsCardValid} = state.cardProps
+    let {
+      isCardValid,
+      cardNumber,
+      changeCardNumber,
+      handleCardBlur,
+      cardRef,
+      cardError,
+      maxCardLength,
+      icon,
+      setIsCardValid,
+    } = state.cardProps
+    let {label, isLabelHidden, labels} = useCardFieldLabel(
+      ~defaultLabel=state.localeString.cardNumberLabel,
+    )
     <div
       className="animate-slowShow flex flex-col"
-      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}>
+      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}
+    >
       <PaymentInputField
-        fieldName=state.localeString.cardNumberLabel
+        fieldName=label
         isValid=isCardValid
         setIsValid=setIsCardValid
         value=cardNumber
@@ -255,7 +284,8 @@ module RenderCardNumber = {
         paymentType=CardThemeType.CardNumberElement
         id="card-number"
         autocomplete="cc-number"
-        isLabelHidden=true
+        isLabelHidden
+        labels
         isErrorHidden=true
       />
     </div>
@@ -268,12 +298,24 @@ module RenderCardExpiry = {
     let {themeObj} = Jotai.useAtomValue(configAtom)
     let expiryPlaceholder =
       Jotai.useAtomValue(cardExpiryPlaceholder)->Option.getOr(state.localeString.expiryPlaceholder)
-    let {isExpiryValid, cardExpiry, changeCardExpiry, handleExpiryBlur, expiryRef, expiryError, setIsExpiryValid} = state.expiryProps
+    let {
+      isExpiryValid,
+      cardExpiry,
+      changeCardExpiry,
+      handleExpiryBlur,
+      expiryRef,
+      expiryError,
+      setIsExpiryValid,
+    } = state.expiryProps
+    let {label, isLabelHidden, labels} = useCardFieldLabel(
+      ~defaultLabel=state.localeString.validThruText,
+    )
     <div
       className="animate-slowShow flex flex-col"
-      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}>
+      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}
+    >
       <PaymentInputField
-        fieldName=state.localeString.validThruText
+        fieldName=label
         isValid=isExpiryValid
         setIsValid=setIsExpiryValid
         value=cardExpiry
@@ -289,7 +331,8 @@ module RenderCardExpiry = {
         paymentType=CardThemeType.CardExpiryElement
         id="card-expiry"
         autocomplete="cc-exp"
-        isLabelHidden=true
+        isLabelHidden
+        labels
         isErrorHidden=true
       />
     </div>
@@ -302,7 +345,19 @@ module RenderCardCvc = {
     let {themeObj} = Jotai.useAtomValue(configAtom)
     let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
     let cvcPlaceholder = Jotai.useAtomValue(cardCvcPlaceholder)->Option.getOr("123")
-    let {isCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef, cvcError, maxCVCLength, setIsCVCValid} = state.cvcProps
+    let {
+      isCVCValid,
+      cvcNumber,
+      changeCVCNumber,
+      handleCVCBlur,
+      cvcRef,
+      cvcError,
+      maxCVCLength,
+      setIsCVCValid,
+    } = state.cvcProps
+    let {label, isLabelHidden, labels} = useCardFieldLabel(
+      ~defaultLabel=state.localeString.cvcTextLabel,
+    )
     let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
     let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
       ~cvcNumber,
@@ -311,9 +366,10 @@ module RenderCardCvc = {
     )
     <div
       className="animate-slowShow flex flex-col"
-      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}>
+      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}
+    >
       <PaymentInputField
-        fieldName=state.localeString.cvcTextLabel
+        fieldName=label
         isValid=isCVCValid
         setIsValid=setIsCVCValid
         value=cvcNumber
@@ -338,7 +394,8 @@ module RenderCardCvc = {
         paymentType=CardThemeType.CardCVCElement
         id="card-cvc"
         autocomplete="cc-csc"
-        isLabelHidden=true
+        isLabelHidden
+        labels
         isErrorHidden=true
       />
     </div>
