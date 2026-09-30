@@ -311,7 +311,10 @@ let initializeApplePayInterceptor = () => {
 
   // In third-party browsers (e.g. Chrome) ApplePaySession only exists once Apple's JS SDK has
   // loaded, so install the proxy again around the SDK's class.
-  ApplePayHelpers.loadApplePaySdk()->Promise.thenResolve(_ => installProxy())->ignore
+  ApplePayHelpers.loadApplePaySdk()
+  ->Promise.thenResolve(_ => installProxy())
+  ->Promise.catch(_ => Promise.resolve())
+  ->ignore
   // TrustPayApi isn't on window yet — use a MutationObserver to patch it once
   // the TrustPay script tag finishes loading.
   let _ = %raw(`(function() {
