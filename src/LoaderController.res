@@ -125,7 +125,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     organization_id: ?organizationId,
   }
 
-  let updateOptions = (dict, ~isReplay=false) => {
+  let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
     merchantOptionsRef.current = Some(dict)
     let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
@@ -229,9 +229,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           business: paymentOptions.business.name === "" ? prev.business : paymentOptions.business,
         })
 
-        if !isReplay {
-          optionsCallback(paymentOptions)
-        }
+        optionsCallback(paymentOptions)
       }
     | _ => ()
     }
@@ -400,7 +398,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   React.useEffect(() => {
     if canApplyConfig() {
       switch merchantOptionsRef.current {
-      | Some(dict) => updateOptions(dict, ~isReplay=true)
+      | Some(dict) => updateOptions(dict)
       | None => ()
       }
       switch lastConfigDictRef.current {
