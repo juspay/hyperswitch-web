@@ -73,7 +73,7 @@ Google Pay integration allows for fast, secure mobile payments for Android users
 
 #### Scripts:
 
-- `https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js`
+- `https://applepay.cdn-apple.com/jsapi/1.latest/apple-pay-sdk.js`
 - `https://apple.com/apple-pay`
 
 #### Justification:
@@ -84,6 +84,17 @@ Apple Pay integration enables seamless payments for iOS users. This script is ne
 - Providing a streamlined checkout experience
 - Leveraging Apple's secure enclave and biometric authentication
 - Meeting customer expectations for modern payment options
+- Rendering the official Apple Pay button (`<apple-pay-button>`) in all browsers
+- Supporting Apple Pay in third-party browsers such as Chrome, where the customer completes the payment by scanning a QR code with their iPhone
+
+#### Merchant requirements:
+
+The Apple Pay JS SDK is loaded on the merchant's page as well as inside the payment iframe. For Apple Pay to be offered, merchants need to:
+
+- Allow `https://applepay.cdn-apple.com` in `script-src`, `font-src` and `frame-src` of their Content Security Policy (the SDK loads its modules and button fonts from this origin, and opens its QR code modal in an iframe from it)
+- Allow `https://smp-paymentservices.apple.com` in `connect-src`, so the SDK can check whether the domain is registered for the merchant identifier (if this request is blocked, the check is skipped and the button is still shown)
+- Serve the checkout page over HTTPS; the SDK does not offer Apple Pay on insecure pages
+- Register and verify the checkout domain for their Apple Pay merchant identifier, and use the same domain in the Apple Pay connector configuration, so that the merchant session is created for that domain
 
 ### TrustPay
 
