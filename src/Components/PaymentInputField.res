@@ -16,6 +16,7 @@ let make = (
   ~onFocus=?,
   ~fieldName="",
   ~isLabelHidden=false,
+  ~labels: option<CardThemeType.label>=?,
   ~isErrorHidden=false,
   ~id=?,
   ~name="",
@@ -31,6 +32,7 @@ let make = (
 ) => {
   let {themeObj, config} = Jotai.useAtomValue(configAtom)
   let {innerLayout} = config.appearance
+  let labels = labels->Option.getOr(config.appearance.labels)
   let {readOnly} = Jotai.useAtomValue(optionAtom)
   let {parentURL, iframeId} = Jotai.useAtomValue(keys)
   let contextPaymentType = usePaymentType()
@@ -99,8 +101,9 @@ let make = (
     <RenderIf
       condition={!isLabelHidden &&
       fieldName->String.length > 0 &&
-      config.appearance.labels == Above &&
-      innerLayout === Spaced}>
+      labels == Above &&
+      innerLayout === Spaced}
+    >
       <div
         className={`Label ${labelClass}`}
         style={
@@ -109,7 +112,8 @@ let make = (
           marginBottom: "5px",
           opacity: "0.6",
         }
-        ariaHidden=true>
+        ariaHidden=true
+      >
         {React.string(fieldName)}
       </div>
     </RenderIf>
@@ -131,7 +135,7 @@ let make = (
           ?maxLength
           ?pattern
           className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
-          placeholder={config.appearance.labels == Above ? placeholder : ""}
+          placeholder={labels == Above ? placeholder : ""}
           value
           autoComplete={autocomplete}
           onChange
@@ -139,7 +143,7 @@ let make = (
           onFocus=handleFocus
           ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
         />
-        <RenderIf condition={!isLabelHidden && config.appearance.labels == Floating}>
+        <RenderIf condition={!isLabelHidden && labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} pointer-events-none`}
             style={
@@ -149,7 +153,8 @@ let make = (
               fontSize: {inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""},
               opacity: "0.6",
             }
-            ariaHidden=true>
+            ariaHidden=true
+          >
             {React.string(fieldName)}
           </div>
         </RenderIf>
@@ -169,7 +174,8 @@ let make = (
               fontSize: themeObj.fontSizeSm,
               alignSelf: "start",
               textAlign: "left",
-            }>
+            }
+          >
             {React.string(val)}
           </div>
         </RenderIf>

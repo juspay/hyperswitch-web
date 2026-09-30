@@ -420,7 +420,7 @@ let getAppearance = (
       labels: switch getWarningString(json, "labels", "above", ~logger)->String.toLowerCase {
       | "above" => Above
       | "floating" => Floating
-      | "none" => Never
+      | "none" | "never" => Never
       | str => {
           str->unknownPropValueWarning(["above", "floating", "never"], "appearance.labels")
           Above

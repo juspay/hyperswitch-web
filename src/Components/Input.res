@@ -91,7 +91,8 @@ let make = (
     | Some(val) =>
       <RenderIf condition={val->String.length > 0}>
         <div
-          className="py-1 text-xs text-red-600 transition-colors transition-border ease-out duration-200">
+          className="py-1 text-xs text-red-600 transition-colors transition-border ease-out duration-200"
+        >
           {React.string(val)}
         </div>
       </RenderIf>
