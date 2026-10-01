@@ -290,7 +290,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         themeObj: appearance.variables,
         localeString,
         constantString,
-        showLoader: config.loader == Auto || config.loader == Always,
+        showLoader: config.loader->CardTheme.shouldShowLoader,
       })
     } catch {
     | _ => ()
@@ -309,6 +309,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
     if dict->getDictIsSome("paymentOptions") {
       lastConfigDictRef.current = Some((dict, themeSource))
+      let showLoader =
+        getString(dict->getDictFromObj("paymentOptions"), "loader", "auto")
+        ->CardTheme.getShowLoader
+        ->CardTheme.shouldShowLoader
+      setConfig(prev => prev.showLoader == showLoader ? prev : {...prev, showLoader})
     }
     if canApplyConfig() {
       switch getThemePromise(themeSource) {
