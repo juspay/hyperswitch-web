@@ -28,6 +28,7 @@ let make = (
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~clientListDataPromise: ref<promise<JSON.t>>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  ~intentVersion: ref<int>,
 ) => {
   try {
     let iframeRef = []
@@ -349,6 +350,7 @@ let make = (
           ~selectorString=localSelectorString,
           ~shouldWaitForReady=paymentElementIframeRef->Array.length > 0,
           ~logger,
+          ~intentVersion,
         )
 
         // Only forward data and update tax calculation if updateIntent succeeded

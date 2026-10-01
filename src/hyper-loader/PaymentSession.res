@@ -14,6 +14,7 @@ let make = (
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~clientListDataPromise: ref<promise<JSON.t>>,
+  ~intentVersion: ref<int>,
 ) => {
   let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =
@@ -45,8 +46,23 @@ let make = (
       ~selectorString=localSelectorString,
       ~shouldWaitForReady=false,
       ~logger,
+      ~intentVersion,
     )
   }
+
+  let savedPaymentMethods = SavedPaymentMethodsSession.make(
+    ~publishableKey,
+    ~endpoint,
+    ~customPodUri,
+    ~logger,
+    ~clientSecretRef,
+    ~sdkAuthorizationRef,
+    ~redirectionFlags,
+    ~iframeRef,
+    ~isUpdateIntentInProgress,
+    ~intentVersion,
+    ~isTestMode,
+  )
 
   let defaultInitPaymentSession = {
     getCustomerSavedPaymentMethods: options =>
@@ -63,6 +79,8 @@ let make = (
         ~isUpdateIntentInProgress,
       ),
     updateIntent,
+    listSavedPaymentMethods: savedPaymentMethods.listSavedPaymentMethods,
+    confirmWithSavedPaymentMethod: savedPaymentMethods.confirmWithSavedPaymentMethod,
   }
 
   defaultInitPaymentSession

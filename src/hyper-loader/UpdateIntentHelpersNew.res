@@ -282,6 +282,7 @@ let performUpdateIntent = async (
   ~selectorString,
   ~shouldWaitForReady,
   ~logger: HyperLoggerTypes.loggerMake,
+  ~intentVersion: option<ref<int>>=?,
 ) => {
   if isUpdateIntentInProgress.contents {
     updateIntentInProgressResponse()
@@ -343,6 +344,8 @@ let performUpdateIntent = async (
         sessionTokensDataPromise.contents = newSessionTokensPromise
         sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
         clientListDataPromise.contents = newClientListDataPromise
+
+        intentVersion->Option.forEach(version => version := version.contents + 1)
 
         // Send ElementsUpdate to all inner iframes with new credentials
         logger.setLogInfo(~value="Update SDK Sent to Iframes", ~eventName=UPDATE_SDK)
