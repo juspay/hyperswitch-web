@@ -322,6 +322,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       // Shared refs for updateIntent — created once, passed to both Elements and PaymentSession.
       let isUpdateIntentInProgress = ref(false)
+      let intentVersion = ref(0)
       let emptyJsonPromise = Promise.resolve(JSON.Encode.null)
       let sessionTokensDataPromise = ref(emptyJsonPromise)
       let sdkConfigsDataPromise = ref(emptyJsonPromise)
@@ -564,6 +565,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sdkConfigsDataPromise,
           ~clientListDataPromise,
           ~confirmPayment,
+          ~intentVersion,
         )
       }
 
@@ -751,6 +753,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sessionTokensDataPromise,
           ~sdkConfigsDataPromise,
           ~clientListDataPromise,
+          ~intentVersion,
         )
       }
 

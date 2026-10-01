@@ -387,6 +387,7 @@ let rec intentCall = (
       openUrl(url)
     }
   }
+  let isHeadlessSession = isPaymentSession && mode != CardCVCElement
   fetchApi(
     uri,
     ~method=fetchMethod,
@@ -630,12 +631,16 @@ let rec intentCall = (
                   ("popupUrl", popupUrl->JSON.Encode.string),
                   ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
                 ]
-                messageParentWindow([
-                  ("fullscreen", true->JSON.Encode.bool),
-                  ("param", `3dsRedirectionPopup`->JSON.Encode.string),
-                  ("iframeId", iframeId->JSON.Encode.string),
-                  ("metadata", metaData->getJsonFromArrayOfJson),
-                ])
+                if isHeadlessSession {
+                  resolve(data)
+                } else {
+                  messageParentWindow([
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `3dsRedirectionPopup`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData->getJsonFromArrayOfJson),
+                  ])
+                }
               } else if intent.nextAction.type_ == "display_bank_transfer_information" {
                 let metadata = switch intent.nextAction.bank_transfer_steps_and_charges_details {
                 | Some(obj) => obj->getDictFromJson
@@ -733,7 +738,9 @@ let rec intentCall = (
                   ~paymentMethod,
                 )
 
-                if do3dsMethodCall {
+                if isHeadlessSession {
+                  resolve(data)
+                } else if do3dsMethodCall {
                   messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `3ds`->JSON.Encode.string),
@@ -769,12 +776,16 @@ let rec intentCall = (
                     ("confirmParams", confirmParam->anyTypeToJson),
                   ]->Dict.fromArray
 
-                messageParentWindow([
-                  ("fullscreen", true->JSON.Encode.bool),
-                  ("param", `redsys3ds`->JSON.Encode.string),
-                  ("iframeId", iframeId->JSON.Encode.string),
-                  ("metadata", metaData->JSON.Encode.object),
-                ])
+                if isHeadlessSession {
+                  resolve(data)
+                } else {
+                  messageParentWindow([
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `redsys3ds`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData->JSON.Encode.object),
+                  ])
+                }
               } else if intent.nextAction.type_ === "invoke_ddc" {
                 NextActionHelpers.handleDDC(
                   ~ddcData=intent.nextAction.ddc_data,
@@ -807,12 +818,16 @@ let rec intentCall = (
                   ~eventName=DISPLAY_VOUCHER,
                   ~paymentMethod,
                 )
-                messageParentWindow([
-                  ("fullscreen", true->JSON.Encode.bool),
-                  ("param", `voucherData`->JSON.Encode.string),
-                  ("iframeId", iframeId->JSON.Encode.string),
-                  ("metadata", metaData->JSON.Encode.object),
-                ])
+                if isHeadlessSession {
+                  resolve(data)
+                } else {
+                  messageParentWindow([
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `voucherData`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData->JSON.Encode.object),
+                  ])
+                }
               } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
                 | Some(token) => token->getDictFromJson
@@ -909,6 +924,8 @@ let rec intentCall = (
                     ("nextActionData", nextActionData),
                   ]->getJsonFromArrayOfJson
                 resolve(response)
+              } else if isHeadlessSession {
+                resolve(data)
               }
             } else if intent.status == "processing" {
               if intent.nextAction.type_ == "third_party_sdk_session_token" {
