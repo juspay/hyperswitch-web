@@ -1,0 +1,129 @@
+name: Playwright PR Checks
+
+# Hermetic Playwright tier: the pull-request gate.
+#
+# Runs `--project=hermetic` in a single job: the SDK and demo shop are served
+# locally by Playwright's `webServer` (ports 9150/9160) and every router call is
+# answered from playwright-tests/recordings/ via context.route(). No sandbox, no
+# secrets, no GitHub environment, and no retries, so a red run means a real
+# regression. Parallelism comes from Playwright workers inside the job; the
+# suite is small enough that sharding across jobs would cost more in repeated
+# installs and builds than it saves.
+#
+# The live-sandbox tier runs alongside it in playwright-live-e2e.yml.
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
+
+# Explicit least-privilege permissions
+permissions:
+  contents: read
+
+# Cancel superseded runs for the same PR. Every other run (main pushes, merge
+# queue) gets a group of its own, so none of them is ever cancelled or dropped.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CI: "true"
+  NODE_VERSION: "20"
+
+jobs:
+  hermetic:
+    name: hermetic
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            Hyperswitch-React-Demo-App/package-lock.json
+            playwright-tests/package-lock.json
+
+      - name: Update git submodules
+        run: git submodule update --init --recursive
+
+      # --ignore-scripts: the root postinstall would pull shared-code to its
+      # latest main commit, overriding the pinned submodule checked out above.
+      - name: Install SDK dependencies
+        run: npm install --ignore-scripts
+
+      - name: Install demo app dependencies
+        working-directory: ./Hyperswitch-React-Demo-App
+        run: npm install
+
+      # playwright.config.ts would run this itself on load when
+      # src/Utilities/TestUtils.bs.js is missing; doing it here keeps the
+      # compile time and any ReScript errors in their own step.
+      - name: Compile ReScript
+        run: npm run re:build
+
+      - name: Install Playwright test dependencies
+        working-directory: ./playwright-tests
+        run: npm ci
+
+      - name: Read Playwright version
+        id: playwright-version
+        working-directory: ./playwright-tests
+        run: |
+          version="$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      # Restore and save separately so the browsers are cached even when the
+      # tests fail (actions/cache only saves after a successful job).
+      - name: Restore Playwright browsers
+        id: browser-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-chromium
+
+      # On a cache hit this only installs the OS dependencies.
+      - name: Install Playwright Chromium
+        working-directory: ./playwright-tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Save Playwright browsers
+        if: ${{ steps.browser-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ steps.browser-cache.outputs.cache-primary-key }}
+
+      # CI=true: forbids test.only, adds the GitHub reporter and makes the
+      # webServer entries start fresh servers instead of reusing any.
+      - name: Run hermetic tests
+        working-directory: ./playwright-tests
+        run: npx playwright test --project=hermetic --retries=0
+
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-hermetic
+          path: playwright-tests/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Traces (trace: retain-on-failure), screenshots and error context.
+      - name: Upload traces on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: traces-hermetic
+          path: playwright-tests/test-results
+          if-no-files-found: ignore
+          retention-days: 7

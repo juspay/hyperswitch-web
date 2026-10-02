@@ -1,0 +1,906 @@
+{
+  "_source": "synthetic",
+  "_note": "Superposition sdk_config (raw_configs) per profile, so the SDK derives card required fields the way it does on sandbox: stripe = card only; cybersource = card + billing name + billing email + billing address; bankofamerica = card + email + name + billing address (field sets from hyperswitch payment_connector_required_fields.rs). Metadata keys follow SuperpositionHelper.convertConfigurationToRequiredFields.",
+  "routes": [
+    {
+      "name": "sdkConfigs",
+      "method": "GET",
+      "path": "/v1/sdk/configs/web/sdk_config.json",
+      "match": {
+        "intent": {
+          "profile_id": "{{profiles.cybersource}}"
+        }
+      },
+      "status": 200,
+      "body": {
+        "raw_configs": {
+          "default_configs": {
+            "payment_method_data.card.card_number._confirm_request_write_path": "payment_method_data.card.card_number",
+            "payment_method_data.card.card_number._is_required": false,
+            "payment_method_data.card.card_number._field_render_type": "CardNumber",
+            "payment_method_data.card.card_number._field_display_order": 1,
+            "payment_method_data.card.card_number._default_label_text": "Card Number",
+            "payment_method_data.card.card_number._label_localization_key": "cardNumberLabel",
+            "payment_method_data.card.card_number._html_autocomplete_attribute": "cc-number",
+            "payment_method_data.card.card_number._keyboard_type": "numeric",
+            "payment_method_data.card.card_exp_month._confirm_request_write_path": "payment_method_data.card.card_exp_month",
+            "payment_method_data.card.card_exp_month._is_required": false,
+            "payment_method_data.card.card_exp_month._field_render_type": "CardExpiryMonth",
+            "payment_method_data.card.card_exp_month._field_display_order": 2,
+            "payment_method_data.card.card_exp_month._default_label_text": "Expiry Month",
+            "payment_method_data.card.card_exp_month._html_autocomplete_attribute": "cc-exp-month",
+            "payment_method_data.card.card_exp_month._keyboard_type": "numeric",
+            "payment_method_data.card.card_exp_year._confirm_request_write_path": "payment_method_data.card.card_exp_year",
+            "payment_method_data.card.card_exp_year._is_required": false,
+            "payment_method_data.card.card_exp_year._field_render_type": "CardExpiryYear",
+            "payment_method_data.card.card_exp_year._field_display_order": 3,
+            "payment_method_data.card.card_exp_year._default_label_text": "Expiry Year",
+            "payment_method_data.card.card_exp_year._html_autocomplete_attribute": "cc-exp-year",
+            "payment_method_data.card.card_exp_year._keyboard_type": "numeric",
+            "payment_method_data.card.card_cvc._confirm_request_write_path": "payment_method_data.card.card_cvc",
+            "payment_method_data.card.card_cvc._is_required": false,
+            "payment_method_data.card.card_cvc._field_render_type": "Cvc",
+            "payment_method_data.card.card_cvc._field_display_order": 4,
+            "payment_method_data.card.card_cvc._default_label_text": "CVC",
+            "payment_method_data.card.card_cvc._label_localization_key": "cvcTextLabel",
+            "payment_method_data.card.card_cvc._html_autocomplete_attribute": "cc-csc",
+            "payment_method_data.card.card_cvc._keyboard_type": "numeric",
+            "payment_method_data.billing.address.first_name._confirm_request_write_path": "payment_method_data.billing.address.first_name",
+            "payment_method_data.billing.address.first_name._is_required": false,
+            "payment_method_data.billing.address.first_name._field_render_type": "CardHolderName",
+            "payment_method_data.billing.address.first_name._field_display_order": 5,
+            "payment_method_data.billing.address.first_name._default_label_text": "Card Holder Name",
+            "payment_method_data.billing.address.first_name._label_localization_key": "cardHolderName",
+            "payment_method_data.billing.address.first_name._default_placeholder_text": "First and last name",
+            "payment_method_data.billing.address.first_name._intent_data_read_path": "billing.address.first_name",
+            "payment_method_data.billing.address.first_name._html_autocomplete_attribute": "cc-name",
+            "payment_method_data.billing.address.last_name._confirm_request_write_path": "payment_method_data.billing.address.last_name",
+            "payment_method_data.billing.address.last_name._is_required": false,
+            "payment_method_data.billing.address.last_name._field_render_type": "CardHolderName",
+            "payment_method_data.billing.address.last_name._field_display_order": 6,
+            "payment_method_data.billing.address.last_name._default_label_text": "Card Holder Name",
+            "payment_method_data.billing.address.last_name._label_localization_key": "cardHolderName",
+            "payment_method_data.billing.address.last_name._default_placeholder_text": "First and last name",
+            "payment_method_data.billing.address.last_name._intent_data_read_path": "billing.address.last_name",
+            "payment_method_data.billing.address.last_name._html_autocomplete_attribute": "cc-name",
+            "email._confirm_request_write_path": "email",
+            "email._is_required": false,
+            "email._field_render_type": "Email",
+            "email._field_display_order": 7,
+            "email._default_label_text": "Email",
+            "email._label_localization_key": "emailLabel",
+            "email._default_placeholder_text": "Your Email",
+            "email._intent_data_read_path": "email",
+            "email._validation_rule_type": "email",
+            "email._html_autocomplete_attribute": "email",
+            "email._keyboard_type": "email",
+            "payment_method_data.billing.email._confirm_request_write_path": "payment_method_data.billing.email",
+            "payment_method_data.billing.email._is_required": false,
+            "payment_method_data.billing.email._field_render_type": "Email",
+            "payment_method_data.billing.email._field_display_order": 8,
+            "payment_method_data.billing.email._default_label_text": "Email",
+            "payment_method_data.billing.email._label_localization_key": "emailLabel",
+            "payment_method_data.billing.email._default_placeholder_text": "Your Email",
+            "payment_method_data.billing.email._intent_data_read_path": "billing.email",
+            "payment_method_data.billing.email._validation_rule_type": "email",
+            "payment_method_data.billing.email._html_autocomplete_attribute": "email",
+            "payment_method_data.billing.email._keyboard_type": "email",
+            "payment_method_data.billing.address.line1._confirm_request_write_path": "payment_method_data.billing.address.line1",
+            "payment_method_data.billing.address.line1._is_required": false,
+            "payment_method_data.billing.address.line1._field_render_type": "Generic",
+            "payment_method_data.billing.address.line1._field_display_order": 10,
+            "payment_method_data.billing.address.line1._default_label_text": "Address line 1",
+            "payment_method_data.billing.address.line1._label_localization_key": "line1Label",
+            "payment_method_data.billing.address.line1._placeholder_localization_key": "line1Placeholder",
+            "payment_method_data.billing.address.line1._intent_data_read_path": "billing.address.line1",
+            "payment_method_data.billing.address.line1._html_autocomplete_attribute": "address-line1",
+            "payment_method_data.billing.address.city._confirm_request_write_path": "payment_method_data.billing.address.city",
+            "payment_method_data.billing.address.city._is_required": false,
+            "payment_method_data.billing.address.city._field_render_type": "Generic",
+            "payment_method_data.billing.address.city._field_display_order": 12,
+            "payment_method_data.billing.address.city._default_label_text": "City",
+            "payment_method_data.billing.address.city._label_localization_key": "cityLabel",
+            "payment_method_data.billing.address.city._intent_data_read_path": "billing.address.city",
+            "payment_method_data.billing.address.city._html_autocomplete_attribute": "address-level2",
+            "payment_method_data.billing.address.country._confirm_request_write_path": "payment_method_data.billing.address.country",
+            "payment_method_data.billing.address.country._is_required": false,
+            "payment_method_data.billing.address.country._field_render_type": "Country",
+            "payment_method_data.billing.address.country._field_display_order": 13,
+            "payment_method_data.billing.address.country._default_label_text": "Country",
+            "payment_method_data.billing.address.country._label_localization_key": "countryLabel",
+            "payment_method_data.billing.address.country._intent_data_read_path": "billing.address.country",
+            "payment_method_data.billing.address.country._dropdown_options": [
+              "US",
+              "GB",
+              "CA",
+              "AU",
+              "DE",
+              "FR",
+              "ES",
+              "IT",
+              "NL",
+              "IE",
+              "IN",
+              "SG",
+              "JP",
+              "BR",
+              "MX"
+            ],
+            "payment_method_data.billing.address.country._html_autocomplete_attribute": "country",
+            "payment_method_data.billing.address.state._confirm_request_write_path": "payment_method_data.billing.address.state",
+            "payment_method_data.billing.address.state._is_required": false,
+            "payment_method_data.billing.address.state._field_render_type": "State",
+            "payment_method_data.billing.address.state._field_display_order": 14,
+            "payment_method_data.billing.address.state._default_label_text": "State",
+            "payment_method_data.billing.address.state._label_localization_key": "stateLabel",
+            "payment_method_data.billing.address.state._intent_data_read_path": "billing.address.state",
+            "payment_method_data.billing.address.state._html_autocomplete_attribute": "address-level1",
+            "payment_method_data.billing.address.zip._confirm_request_write_path": "payment_method_data.billing.address.zip",
+            "payment_method_data.billing.address.zip._is_required": false,
+            "payment_method_data.billing.address.zip._field_render_type": "Generic",
+            "payment_method_data.billing.address.zip._field_display_order": 15,
+            "payment_method_data.billing.address.zip._default_label_text": "Postal Code",
+            "payment_method_data.billing.address.zip._label_localization_key": "postalCodeLabel",
+            "payment_method_data.billing.address.zip._intent_data_read_path": "billing.address.zip",
+            "payment_method_data.billing.address.zip._html_autocomplete_attribute": "postal-code",
+            "payment_method_data.billing.address.zip._max_input_length": 10
+          },
+          "contexts": [
+            {
+              "id": "ctx_card_stripe",
+              "condition": {
+                "connector": "stripe",
+                "payment_method": "Card"
+              },
+              "priority": 1,
+              "override_with_keys": [
+                "ovr_card_stripe"
+              ]
+            },
+            {
+              "id": "ctx_card_cybersource",
+              "condition": {
+                "connector": "cybersource",
+                "payment_method": "Card"
+              },
+              "priority": 1,
+              "override_with_keys": [
+                "ovr_card_cybersource"
+              ]
+            },
+            {
+              "id": "ctx_card_bankofamerica",
+              "condition": {
+                "connector": "bankofamerica",
+                "payment_method": "Card"
+              },
+              "priority": 1,
+              "override_with_keys": [
+                "ovr_card_bankofamerica"
+              ]
+            }
+          ],
+          "overrides": {
+            "ovr_card_stripe": {
+              "payment_method_data.card.card_number._is_required": true,
+              "payment_method_data.card.card_exp_month._is_required": true,
+              "payment_method_data.card.card_exp_year._is_required": true,
+              "payment_method_data.card.card_cvc._is_required": true
+            },
+            "ovr_card_cybersource": {
+              "payment_method_data.card.card_number._is_required": true,
+              "payment_method_data.card.card_exp_month._is_required": true,
+              "payment_method_data.card.card_exp_year._is_required": true,
+              "payment_method_data.card.card_cvc._is_required": true,
+              "payment_method_data.billing.address.first_name._is_required": true,
+              "payment_method_data.billing.address.last_name._is_required": true,
+              "payment_method_data.billing.email._is_required": true,
+              "payment_method_data.billing.address.line1._is_required": true,
+              "payment_method_data.billing.address.city._is_required": true,
+              "payment_method_data.billing.address.country._is_required": true,
+              "payment_method_data.billing.address.state._is_required": true,
+              "payment_method_data.billing.address.zip._is_required": true
+            },
+            "ovr_card_bankofamerica": {
+              "payment_method_data.card.card_number._is_required": true,
+              "payment_method_data.card.card_exp_month._is_required": true,
+              "payment_method_data.card.card_exp_year._is_required": true,
+              "payment_method_data.card.card_cvc._is_required": true,
+              "email._is_required": true,
+              "payment_method_data.billing.address.first_name._is_required": true,
+              "payment_method_data.billing.address.last_name._is_required": true,
+              "payment_method_data.billing.address.line1._is_required": true,
+              "payment_method_data.billing.address.city._is_required": true,
+              "payment_method_data.billing.address.country._is_required": true,
+              "payment_method_data.billing.address.state._is_required": true,
+              "payment_method_data.billing.address.zip._is_required": true
+            }
+          }
+        },
+        "payment_methods": [
+          {
+            "payment_method": "card",
+            "payment_method_types": [
+              {
+                "payment_method_type": "credit",
+                "payment_method_criteria": "connector",
+                "criteria_rules": [
+                  {
+                    "criteria_value": "default",
+                    "eligible_connectors": [
+                      "cybersource"
+                    ]
+                  }
+                ]
+              },
+              {
+                "payment_method_type": "debit",
+                "payment_method_criteria": "connector",
+                "criteria_rules": [
+                  {
+                    "criteria_value": "default",
+                    "eligible_connectors": [
+                      "cybersource"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "account_config": {
+          "profile": {
+            "vaulting_action": "skip",
+            "collect_shipping_details_from_wallet_connector": false,
+            "collect_billing_details_from_wallet_connector": false,
+            "always_collect_shipping_details_from_wallet_connector": false,
+            "always_collect_billing_details_from_wallet_connector": false
+          }
+        },
+        "context_used": {
+          "profile_id": "{{intent.profile_id}}",
+          "processor_merchant_id": "{{merchant_id}}",
+          "organization_id": "org_hermetic"
+        }
+      }
+    },
+    {
+      "name": "sdkConfigs",
+      "method": "GET",
+      "path": "/v1/sdk/configs/web/sdk_config.json",
+      "match": {
+        "intent": {
+          "profile_id": "{{profiles.bankofamerica}}"
+        }
+      },
+      "status": 200,
+      "body": {
+        "raw_configs": {
+          "default_configs": {
+            "payment_method_data.card.card_number._confirm_request_write_path": "payment_method_data.card.card_number",
+            "payment_method_data.card.card_number._is_required": false,
+            "payment_method_data.card.card_number._field_render_type": "CardNumber",
+            "payment_method_data.card.card_number._field_display_order": 1,
+            "payment_method_data.card.card_number._default_label_text": "Card Number",
+            "payment_method_data.card.card_number._label_localization_key": "cardNumberLabel",
+            "payment_method_data.card.card_number._html_autocomplete_attribute": "cc-number",
+            "payment_method_data.card.card_number._keyboard_type": "numeric",
+            "payment_method_data.card.card_exp_month._confirm_request_write_path": "payment_method_data.card.card_exp_month",
+            "payment_method_data.card.card_exp_month._is_required": false,
+            "payment_method_data.card.card_exp_month._field_render_type": "CardExpiryMonth",
+            "payment_method_data.card.card_exp_month._field_display_order": 2,
+            "payment_method_data.card.card_exp_month._default_label_text": "Expiry Month",
+            "payment_method_data.card.card_exp_month._html_autocomplete_attribute": "cc-exp-month",
+            "payment_method_data.card.card_exp_month._keyboard_type": "numeric",
+            "payment_method_data.card.card_exp_year._confirm_request_write_path": "payment_method_data.card.card_exp_year",
+            "payment_method_data.card.card_exp_year._is_required": false,
+            "payment_method_data.card.card_exp_year._field_render_type": "CardExpiryYear",
+            "payment_method_data.card.card_exp_year._field_display_order": 3,
+            "payment_method_data.card.card_exp_year._default_label_text": "Expiry Year",
+            "payment_method_data.card.card_exp_year._html_autocomplete_attribute": "cc-exp-year",
+            "payment_method_data.card.card_exp_year._keyboard_type": "numeric",
+            "payment_method_data.card.card_cvc._confirm_request_write_path": "payment_method_data.card.card_cvc",
+            "payment_method_data.card.card_cvc._is_required": false,
+            "payment_method_data.card.card_cvc._field_render_type": "Cvc",
+            "payment_method_data.card.card_cvc._field_display_order": 4,
+            "payment_method_data.card.card_cvc._default_label_text": "CVC",
+            "payment_method_data.card.card_cvc._label_localization_key": "cvcTextLabel",
+            "payment_method_data.card.card_cvc._html_autocomplete_attribute": "cc-csc",
+            "payment_method_data.card.card_cvc._keyboard_type": "numeric",
+            "payment_method_data.billing.address.first_name._confirm_request_write_path": "payment_method_data.billing.address.first_name",
+            "payment_method_data.billing.address.first_name._is_required": false,
+            "payment_method_data.billing.address.first_name._field_render_type": "CardHolderName",
+            "payment_method_data.billing.address.first_name._field_display_order": 5,
+            "payment_method_data.billing.address.first_name._default_label_text": "Card Holder Name",
+            "payment_method_data.billing.address.first_name._label_localization_key": "cardHolderName",
+            "payment_method_data.billing.address.first_name._default_placeholder_text": "First and last name",
+            "payment_method_data.billing.address.first_name._intent_data_read_path": "billing.address.first_name",
+            "payment_method_data.billing.address.first_name._html_autocomplete_attribute": "cc-name",
+            "payment_method_data.billing.address.last_name._confirm_request_write_path": "payment_method_data.billing.address.last_name",
+            "payment_method_data.billing.address.last_name._is_required": false,
+            "payment_method_data.billing.address.last_name._field_render_type": "CardHolderName",
+            "payment_method_data.billing.address.last_name._field_display_order": 6,
+            "payment_method_data.billing.address.last_name._default_label_text": "Card Holder Name",
+            "payment_method_data.billing.address.last_name._label_localization_key": "cardHolderName",
+            "payment_method_data.billing.address.last_name._default_placeholder_text": "First and last name",
+            "payment_method_data.billing.address.last_name._intent_data_read_path": "billing.address.last_name",
+            "payment_method_data.billing.address.last_name._html_autocomplete_attribute": "cc-name",
+            "email._confirm_request_write_path": "email",
+            "email._is_required": false,
+            "email._field_render_type": "Email",
+            "email._field_display_order": 7,
+            "email._default_label_text": "Email",
+            "email._label_localization_key": "emailLabel",
+            "email._default_placeholder_text": "Your Email",
+            "email._intent_data_read_path": "email",
+            "email._validation_rule_type": "email",
+            "email._html_autocomplete_attribute": "email",
+            "email._keyboard_type": "email",
+            "payment_method_data.billing.email._confirm_request_write_path": "payment_method_data.billing.email",
+            "payment_method_data.billing.email._is_required": false,
+            "payment_method_data.billing.email._field_render_type": "Email",
+            "payment_method_data.billing.email._field_display_order": 8,
+            "payment_method_data.billing.email._default_label_text": "Email",
+            "payment_method_data.billing.email._label_localization_key": "emailLabel",
+            "payment_method_data.billing.email._default_placeholder_text": "Your Email",
+            "payment_method_data.billing.email._intent_data_read_path": "billing.email",
+            "payment_method_data.billing.email._validation_rule_type": "email",
+            "payment_method_data.billing.email._html_autocomplete_attribute": "email",
+            "payment_method_data.billing.email._keyboard_type": "email",
+            "payment_method_data.billing.address.line1._confirm_request_write_path": "payment_method_data.billing.address.line1",
+            "payment_method_data.billing.address.line1._is_required": false,
+            "payment_method_data.billing.address.line1._field_render_type": "Generic",
+            "payment_method_data.billing.address.line1._field_display_order": 10,
+            "payment_method_data.billing.address.line1._default_label_text": "Address line 1",
+            "payment_method_data.billing.address.line1._label_localization_key": "line1Label",
+            "payment_method_data.billing.address.line1._placeholder_localization_key": "line1Placeholder",
+            "payment_method_data.billing.address.line1._intent_data_read_path": "billing.address.line1",
+            "payment_method_data.billing.address.line1._html_autocomplete_attribute": "address-line1",
+            "payment_method_data.billing.address.city._confirm_request_write_path": "payment_method_data.billing.address.city",
+            "payment_method_data.billing.address.city._is_required": false,
+            "payment_method_data.billing.address.city._field_render_type": "Generic",
+            "payment_method_data.billing.address.city._field_display_order": 12,
+            "payment_method_data.billing.address.city._default_label_text": "City",
+            "payment_method_data.billing.address.city._label_localization_key": "cityLabel",
+            "payment_method_data.billing.address.city._intent_data_read_path": "billing.address.city",
+            "payment_method_data.billing.address.city._html_autocomplete_attribute": "address-level2",
+            "payment_method_data.billing.address.country._confirm_request_write_path": "payment_method_data.billing.address.country",
+            "payment_method_data.billing.address.country._is_required": false,
+            "payment_method_data.billing.address.country._field_render_type": "Country",
+            "payment_method_data.billing.address.country._field_display_order": 13,
+            "payment_method_data.billing.address.country._default_label_text": "Country",
+            "payment_method_data.billing.address.country._label_localization_key": "countryLabel",
+            "payment_method_data.billing.address.country._intent_data_read_path": "billing.address.country",
+            "payment_method_data.billing.address.country._dropdown_options": [
+              "US",
+              "GB",
+              "CA",
+              "AU",
+              "DE",
+              "FR",
+              "ES",
+              "IT",
+              "NL",
+              "IE",
+              "IN",
+              "SG",
+              "JP",
+              "BR",
+              "MX"
+            ],
+            "payment_method_data.billing.address.country._html_autocomplete_attribute": "country",
+            "payment_method_data.billing.address.state._confirm_request_write_path": "payment_method_data.billing.address.state",
+            "payment_method_data.billing.address.state._is_required": false,
+            "payment_method_data.billing.address.state._field_render_type": "State",
+            "payment_method_data.billing.address.state._field_display_order": 14,
+            "payment_method_data.billing.address.state._default_label_text": "State",
+            "payment_method_data.billing.address.state._label_localization_key": "stateLabel",
+            "payment_method_data.billing.address.state._intent_data_read_path": "billing.address.state",
+            "payment_method_data.billing.address.state._html_autocomplete_attribute": "address-level1",
+            "payment_method_data.billing.address.zip._confirm_request_write_path": "payment_method_data.billing.address.zip",
+            "payment_method_data.billing.address.zip._is_required": false,
+            "payment_method_data.billing.address.zip._field_render_type": "Generic",
+            "payment_method_data.billing.address.zip._field_display_order": 15,
+            "payment_method_data.billing.address.zip._default_label_text": "Postal Code",
+            "payment_method_data.billing.address.zip._label_localization_key": "postalCodeLabel",
+            "payment_method_data.billing.address.zip._intent_data_read_path": "billing.address.zip",
+            "payment_method_data.billing.address.zip._html_autocomplete_attribute": "postal-code",
+            "payment_method_data.billing.address.zip._max_input_length": 10
+          },
+          "contexts": [
+            {
+              "id": "ctx_card_stripe",
+              "condition": {
+                "connector": "stripe",
+                "payment_method": "Card"
+              },
+              "priority": 1,
+              "override_with_keys": [
+                "ovr_card_stripe"
+              ]
+            },
+            {
+              "id": "ctx_card_cybersource",
+              "condition": {
+                "connector": "cybersource",
+                "payment_method": "Card"
+              },
+              "priority": 1,
+              "override_with_keys": [
+                "ovr_card_cybersource"
+              ]
+            },
+            {
+              "id": "ctx_card_bankofamerica",
+              "condition": {
+                "connector": "bankofamerica",
+                "payment_method": "Card"
+              },
+              "priority": 1,
+              "override_with_keys": [
+                "ovr_card_bankofamerica"
+              ]
+            }
+          ],
+          "overrides": {
+            "ovr_card_stripe": {
+              "payment_method_data.card.card_number._is_required": true,
+              "payment_method_data.card.card_exp_month._is_required": true,
+              "payment_method_data.card.card_exp_year._is_required": true,
+              "payment_method_data.card.card_cvc._is_required": true
+            },
+            "ovr_card_cybersource": {
+              "payment_method_data.card.card_number._is_required": true,
+              "payment_method_data.card.card_exp_month._is_required": true,
+              "payment_method_data.card.card_exp_year._is_required": true,
+              "payment_method_data.card.card_cvc._is_required": true,
+              "payment_method_data.billing.address.first_name._is_required": true,
+              "payment_method_data.billing.address.last_name._is_required": true,
+              "payment_method_data.billing.email._is_required": true,
+              "payment_method_data.billing.address.line1._is_required": true,
+              "payment_method_data.billing.address.city._is_required": true,
+              "payment_method_data.billing.address.country._is_required": true,
+              "payment_method_data.billing.address.state._is_required": true,
+              "payment_method_data.billing.address.zip._is_required": true
+            },
+            "ovr_card_bankofamerica": {
+              "payment_method_data.card.card_number._is_required": true,
+              "payment_method_data.card.card_exp_month._is_required": true,
+              "payment_method_data.card.card_exp_year._is_required": true,
+              "payment_method_data.card.card_cvc._is_required": true,
+              "email._is_required": true,
+              "payment_method_data.billing.address.first_name._is_required": true,
+              "payment_method_data.billing.address.last_name._is_required": true,
+              "payment_method_data.billing.address.line1._is_required": true,
+              "payment_method_data.billing.address.city._is_required": true,
+              "payment_method_data.billing.address.country._is_required": true,
+              "payment_method_data.billing.address.state._is_required": true,
+              "payment_method_data.billing.address.zip._is_required": true
+            }
+          }
+        },
+        "payment_methods": [
+          {
+            "payment_method": "card",
+            "payment_method_types": [
+              {
+                "payment_method_type": "credit",
+                "payment_method_criteria": "connector",
+                "criteria_rules": [
+                  {
+                    "criteria_value": "default",
+                    "eligible_connectors": [
+                      "bankofamerica"
+                    ]
+                  }
+                ]
+              },
+              {
+                "payment_method_type": "debit",
+                "payment_method_criteria": "connector",
+                "criteria_rules": [
+                  {
+                    "criteria_value": "default",
+                    "eligible_connectors": [
+                      "bankofamerica"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "account_config": {
+          "profile": {
+            "vaulting_action": "skip",
+            "collect_shipping_details_from_wallet_connector": false,
+            "collect_billing_details_from_wallet_connector": false,
+            "always_collect_shipping_details_from_wallet_connector": false,
+            "always_collect_billing_details_from_wallet_connector": false
+          }
+        },
+        "context_used": {
+          "profile_id": "{{intent.profile_id}}",
+          "processor_merchant_id": "{{merchant_id}}",
+          "organization_id": "org_hermetic"
+        }
+      }
+    },
+    {
+      "name": "sdkConfigs",
+      "method": "GET",
+      "path": "/v1/sdk/configs/web/sdk_config.json",
+      "match": {
+        "intent": {
+          "profile_id": "{{profiles.stripe}}"
+        }
+      },
+      "status": 200,
+      "body": {
+        "raw_configs": {
+          "default_configs": {
+            "payment_method_data.card.card_number._confirm_request_write_path": "payment_method_data.card.card_number",
+            "payment_method_data.card.card_number._is_required": false,
+            "payment_method_data.card.card_number._field_render_type": "CardNumber",
+            "payment_method_data.card.card_number._field_display_order": 1,
+            "payment_method_data.card.card_number._default_label_text": "Card Number",
+            "payment_method_data.card.card_number._label_localization_key": "cardNumberLabel",
+            "payment_method_data.card.card_number._html_autocomplete_attribute": "cc-number",
+            "payment_method_data.card.card_number._keyboard_type": "numeric",
+            "payment_method_data.card.card_exp_month._confirm_request_write_path": "payment_method_data.card.card_exp_month",
+            "payment_method_data.card.card_exp_month._is_required": false,
+            "payment_method_data.card.card_exp_month._field_render_type": "CardExpiryMonth",
+            "payment_method_data.card.card_exp_month._field_display_order": 2,
+            "payment_method_data.card.card_exp_month._default_label_text": "Expiry Month",
+            "payment_method_data.card.card_exp_month._html_autocomplete_attribute": "cc-exp-month",
+            "payment_method_data.card.card_exp_month._keyboard_type": "numeric",
+            "payment_method_data.card.card_exp_year._confirm_request_write_path": "payment_method_data.card.card_exp_year",
+            "payment_method_data.card.card_exp_year._is_required": false,
+            "payment_method_data.card.card_exp_year._field_render_type": "CardExpiryYear",
+            "payment_method_data.card.card_exp_year._field_display_order": 3,
+            "payment_method_data.card.card_exp_year._default_label_text": "Expiry Year",
+            "payment_method_data.card.card_exp_year._html_autocomplete_attribute": "cc-exp-year",
+            "payment_method_data.card.card_exp_year._keyboard_type": "numeric",
+            "payment_method_data.card.card_cvc._confirm_request_write_path": "payment_method_data.card.card_cvc",
+            "payment_method_data.card.card_cvc._is_required": false,
+            "payment_method_data.card.card_cvc._field_render_type": "Cvc",
+            "payment_method_data.card.card_cvc._field_display_order": 4,
+            "payment_method_data.card.card_cvc._default_label_text": "CVC",
+            "payment_method_data.card.card_cvc._label_localization_key": "cvcTextLabel",
+            "payment_method_data.card.card_cvc._html_autocomplete_attribute": "cc-csc",
+            "payment_method_data.card.card_cvc._keyboard_type": "numeric",
+            "payment_method_data.billing.address.first_name._confirm_request_write_path": "payment_method_data.billing.address.first_name",
+            "payment_method_data.billing.address.first_name._is_required": false,
+            "payment_method_data.billing.address.first_name._field_render_type": "CardHolderName",
+            "payment_method_data.billing.address.first_name._field_display_order": 5,
+            "payment_method_data.billing.address.first_name._default_label_text": "Card Holder Name",
+            "payment_method_data.billing.address.first_name._label_localization_key": "cardHolderName",
+            "payment_method_data.billing.address.first_name._default_placeholder_text": "First and last name",
+            "payment_method_data.billing.address.first_name._intent_data_read_path": "billing.address.first_name",
+            "payment_method_data.billing.address.first_name._html_autocomplete_attribute": "cc-name",
+            "payment_method_data.billing.address.last_name._confirm_request_write_path": "payment_method_data.billing.address.last_name",
+            "payment_method_data.billing.address.last_name._is_required": false,
+            "payment_method_data.billing.address.last_name._field_render_type": "CardHolderName",
+            "payment_method_data.billing.address.last_name._field_display_order": 6,
+            "payment_method_data.billing.address.last_name._default_label_text": "Card Holder Name",
+            "payment_method_data.billing.address.last_name._label_localization_key": "cardHolderName",
+            "payment_method_data.billing.address.last_name._default_placeholder_text": "First and last name",
+            "payment_method_data.billing.address.last_name._intent_data_read_path": "billing.address.last_name",
+            "payment_method_data.billing.address.last_name._html_autocomplete_attribute": "cc-name",
+            "email._confirm_request_write_path": "email",
+            "email._is_required": false,
+            "email._field_render_type": "Email",
+            "email._field_display_order": 7,
+            "email._default_label_text": "Email",
+            "email._label_localization_key": "emailLabel",
+            "email._default_placeholder_text": "Your Email",
+            "email._intent_data_read_path": "email",
+            "email._validation_rule_type": "email",
+            "email._html_autocomplete_attribute": "email",
+            "email._keyboard_type": "email",
+            "payment_method_data.billing.email._confirm_request_write_path": "payment_method_data.billing.email",
+            "payment_method_data.billing.email._is_required": false,
+            "payment_method_data.billing.email._field_render_type": "Email",
+            "payment_method_data.billing.email._field_display_order": 8,
+            "payment_method_data.billing.email._default_label_text": "Email",
+            "payment_method_data.billing.email._label_localization_key": "emailLabel",
+            "payment_method_data.billing.email._default_placeholder_text": "Your Email",
+            "payment_method_data.billing.email._intent_data_read_path": "billing.email",
+            "payment_method_data.billing.email._validation_rule_type": "email",
+            "payment_method_data.billing.email._html_autocomplete_attribute": "email",
+            "payment_method_data.billing.email._keyboard_type": "email",
+            "payment_method_data.billing.address.line1._confirm_request_write_path": "payment_method_data.billing.address.line1",
+            "payment_method_data.billing.address.line1._is_required": false,
+            "payment_method_data.billing.address.line1._field_render_type": "Generic",
+            "payment_method_data.billing.address.line1._field_display_order": 10,
+            "payment_method_data.billing.address.line1._default_label_text": "Address line 1",
+            "payment_method_data.billing.address.line1._label_localization_key": "line1Label",
+            "payment_method_data.billing.address.line1._placeholder_localization_key": "line1Placeholder",
+            "payment_method_data.billing.address.line1._intent_data_read_path": "billing.address.line1",
+            "payment_method_data.billing.address.line1._html_autocomplete_attribute": "address-line1",
+            "payment_method_data.billing.address.city._confirm_request_write_path": "payment_method_data.billing.address.city",
+            "payment_method_data.billing.address.city._is_required": false,
+            "payment_method_data.billing.address.city._field_render_type": "Generic",
+            "payment_method_data.billing.address.city._field_display_order": 12,
+            "payment_method_data.billing.address.city._default_label_text": "City",
+            "payment_method_data.billing.address.city._label_localization_key": "cityLabel",
+            "payment_method_data.billing.address.city._intent_data_read_path": "billing.address.city",
+            "payment_method_data.billing.address.city._html_autocomplete_attribute": "address-level2",
+            "payment_method_data.billing.address.country._confirm_request_write_path": "payment_method_data.billing.address.country",
+            "payment_method_data.billing.address.country._is_required": false,
+            "payment_method_data.billing.address.country._field_render_type": "Country",
+            "payment_method_data.billing.address.country._field_display_order": 13,
+            "payment_method_data.billing.address.country._default_label_text": "Country",
+            "payment_method_data.billing.address.country._label_localization_key": "countryLabel",
+            "payment_method_data.billing.address.country._intent_data_read_path": "billing.address.country",
+            "payment_method_data.billing.address.country._dropdown_options": [
+              "US",
+              "GB",
+              "CA",
+              "AU",
+              "DE",
+              "FR",
+              "ES",
+              "IT",
+              "NL",
+              "IE",
+              "IN",
+              "SG",
+              "JP",
+              "BR",
+              "MX"
+            ],
+            "payment_method_data.billing.address.country._html_autocomplete_attribute": "country",
+            "payment_method_data.billing.address.state._confirm_request_write_path": "payment_method_data.billing.address.state",
+            "payment_method_data.billing.address.state._is_required": false,
+            "payment_method_data.billing.address.state._field_render_type": "State",
+            "payment_method_data.billing.address.state._field_display_order": 14,
+            "payment_method_data.billing.address.state._default_label_text": "State",
+            "payment_method_data.billing.address.state._label_localization_key": "stateLabel",
+            "payment_method_data.billing.address.state._intent_data_read_path": "billing.address.state",
+            "payment_method_data.billing.address.state._html_autocomplete_attribute": "address-level1",
+            "payment_method_data.billing.address.zip._confirm_request_write_path": "payment_method_data.billing.address.zip",
+            "payment_method_data.billing.address.zip._is_required": false,
+            "payment_method_data.billing.address.zip._field_render_type": "Generic",
+            "payment_method_data.billing.address.zip._field_display_order": 15,
+            "payment_method_data.billing.address.zip._default_label_text": "Postal Code",
+            "payment_method_data.billing.address.zip._label_localization_key": "postalCodeLabel",
+            "payment_method_data.billing.address.zip._intent_data_read_path": "billing.address.zip",
+            "payment_method_data.billing.address.zip._html_autocomplete_attribute": "postal-code",
+            "payment_method_data.billing.address.zip._max_input_length": 10
+          },
+          "contexts": [
+            {
+              "id": "ctx_card_stripe",
+              "condition": {
+                "connector": "stripe",
+                "payment_method": "Card"
+              },
+              "priority": 1,
+              "override_with_keys": [
+                "ovr_card_stripe"
+              ]
+            },
+            {
+              "id": "ctx_card_cybersource",
+              "condition": {
+                "connector": "cybersource",
+                "payment_method": "Card"
+              },
+              "priority": 1,
+              "override_with_keys": [
+                "ovr_card_cybersource"
+              ]
+            },
+            {
+              "id": "ctx_card_bankofamerica",
+              "condition": {
+                "connector": "bankofamerica",
+                "payment_method": "Card"
+              },
+              "priority": 1,
+              "override_with_keys": [
+                "ovr_card_bankofamerica"
+              ]
+            }
+          ],
+          "overrides": {
+            "ovr_card_stripe": {
+              "payment_method_data.card.card_number._is_required": true,
+              "payment_method_data.card.card_exp_month._is_required": true,
+              "payment_method_data.card.card_exp_year._is_required": true,
+              "payment_method_data.card.card_cvc._is_required": true
+            },
+            "ovr_card_cybersource": {
+              "payment_method_data.card.card_number._is_required": true,
+              "payment_method_data.card.card_exp_month._is_required": true,
+              "payment_method_data.card.card_exp_year._is_required": true,
+              "payment_method_data.card.card_cvc._is_required": true,
+              "payment_method_data.billing.address.first_name._is_required": true,
+              "payment_method_data.billing.address.last_name._is_required": true,
+              "payment_method_data.billing.email._is_required": true,
+              "payment_method_data.billing.address.line1._is_required": true,
+              "payment_method_data.billing.address.city._is_required": true,
+              "payment_method_data.billing.address.country._is_required": true,
+              "payment_method_data.billing.address.state._is_required": true,
+              "payment_method_data.billing.address.zip._is_required": true
+            },
+            "ovr_card_bankofamerica": {
+              "payment_method_data.card.card_number._is_required": true,
+              "payment_method_data.card.card_exp_month._is_required": true,
+              "payment_method_data.card.card_exp_year._is_required": true,
+              "payment_method_data.card.card_cvc._is_required": true,
+              "email._is_required": true,
+              "payment_method_data.billing.address.first_name._is_required": true,
+              "payment_method_data.billing.address.last_name._is_required": true,
+              "payment_method_data.billing.address.line1._is_required": true,
+              "payment_method_data.billing.address.city._is_required": true,
+              "payment_method_data.billing.address.country._is_required": true,
+              "payment_method_data.billing.address.state._is_required": true,
+              "payment_method_data.billing.address.zip._is_required": true
+            }
+          }
+        },
+        "payment_methods": [
+          {
+            "payment_method": "card",
+            "payment_method_types": [
+              {
+                "payment_method_type": "credit",
+                "payment_method_criteria": "connector",
+                "criteria_rules": [
+                  {
+                    "criteria_value": "default",
+                    "eligible_connectors": [
+                      "stripe"
+                    ]
+                  }
+                ]
+              },
+              {
+                "payment_method_type": "debit",
+                "payment_method_criteria": "connector",
+                "criteria_rules": [
+                  {
+                    "criteria_value": "default",
+                    "eligible_connectors": [
+                      "stripe"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "account_config": {
+          "profile": {
+            "vaulting_action": "skip",
+            "collect_shipping_details_from_wallet_connector": false,
+            "collect_billing_details_from_wallet_connector": false,
+            "always_collect_shipping_details_from_wallet_connector": false,
+            "always_collect_billing_details_from_wallet_connector": false
+          }
+        },
+        "context_used": {
+          "profile_id": "{{intent.profile_id}}",
+          "processor_merchant_id": "{{merchant_id}}",
+          "organization_id": "org_hermetic"
+        }
+      }
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": {
+        "intent": {
+          "profile_id": "{{profiles.cybersource}}"
+        }
+      },
+      "status": 200,
+      "intentPatch": {
+        "status": "{{response.status}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "succeeded",
+        "amount": "{{intent.amount}}",
+        "net_amount": "{{intent.amount}}",
+        "amount_capturable": 0,
+        "amount_received": "{{intent.amount}}",
+        "connector": "cybersource",
+        "client_secret": "{{intent.client_secret}}",
+        "created": "{{intent.created}}",
+        "currency": "{{intent.currency}}",
+        "customer_id": "{{intent.customer_id}}",
+        "description": "{{intent.description}}",
+        "capture_method": "{{intent.capture_method}}",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "payment_method_data": {
+          "card": {
+            "last4": "4242",
+            "card_type": "CREDIT",
+            "card_network": "Visa",
+            "card_issuer": null,
+            "card_issuing_country": "UNITEDSTATES",
+            "card_isin": "424242",
+            "card_exp_month": "12",
+            "card_exp_year": "30",
+            "card_holder_name": null
+          },
+          "billing": null
+        },
+        "authentication_type": "no_three_ds",
+        "next_action": null,
+        "manual_retry_allowed": false,
+        "connector_transaction_id": "hermetic_cybersource_txn",
+        "error_code": null,
+        "error_message": null,
+        "setup_future_usage": "{{intent.setup_future_usage}}",
+        "profile_id": "{{intent.profile_id}}",
+        "billing": "{{intent.billing}}",
+        "shipping": "{{intent.shipping}}",
+        "email": "{{intent.email}}"
+      }
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": {
+        "intent": {
+          "profile_id": "{{profiles.bankofamerica}}"
+        }
+      },
+      "status": 200,
+      "intentPatch": {
+        "status": "{{response.status}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "succeeded",
+        "amount": "{{intent.amount}}",
+        "net_amount": "{{intent.amount}}",
+        "amount_capturable": 0,
+        "amount_received": "{{intent.amount}}",
+        "connector": "bankofamerica",
+        "client_secret": "{{intent.client_secret}}",
+        "created": "{{intent.created}}",
+        "currency": "{{intent.currency}}",
+        "customer_id": "{{intent.customer_id}}",
+        "description": "{{intent.description}}",
+        "capture_method": "{{intent.capture_method}}",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "payment_method_data": {
+          "card": {
+            "last4": "4242",
+            "card_type": "CREDIT",
+            "card_network": "Visa",
+            "card_issuer": null,
+            "card_issuing_country": "UNITEDSTATES",
+            "card_isin": "424242",
+            "card_exp_month": "12",
+            "card_exp_year": "30",
+            "card_holder_name": null
+          },
+          "billing": null
+        },
+        "authentication_type": "no_three_ds",
+        "next_action": null,
+        "manual_retry_allowed": false,
+        "connector_transaction_id": "hermetic_bankofamerica_txn",
+        "error_code": null,
+        "error_message": null,
+        "setup_future_usage": "{{intent.setup_future_usage}}",
+        "profile_id": "{{intent.profile_id}}",
+        "billing": "{{intent.billing}}",
+        "shipping": "{{intent.shipping}}",
+        "email": "{{intent.email}}"
+      }
+    }
+  ]
+}
