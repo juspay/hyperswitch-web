@@ -40,12 +40,14 @@ type applePayTokenizeResponse = {nonce: string}
 
 type shippingAddressChangeEvent = {shippingContact: JSON.t}
 type orderDetails = {newTotal: lineItem, newLineItems: array<lineItem>}
-type innerSession
+type applePayCapabilitiesResponse = {paymentCredentialStatus?: string}
 type session = {
   begin: unit => unit,
   abort: unit => unit,
   mutable oncancel: unit => unit,
   canMakePayments: unit => bool,
+  // Static on the ApplePaySession class; not present on older Safari versions.
+  applePayCapabilities: string => promise<applePayCapabilitiesResponse>,
   mutable onvalidatemerchant: event => unit,
   completeMerchantValidation: JSON.t => unit,
   mutable onpaymentauthorized: event => unit,
@@ -55,14 +57,42 @@ type session = {
   \"STATUS_SUCCESS": string,
   \"STATUS_FAILURE": string,
 }
-type applePaySession
-type window = {\"ApplePaySession": applePaySession}
-
-@val external window: window = "window"
-
+// Read on every access, so it also reflects the class installed later by Apple's JS SDK.
 @scope("window") @val external sessionForApplePay: Nullable.t<session> = "ApplePaySession"
 
 @new external applePaySession: (int, JSON.t) => session = "ApplePaySession"
+
+// Status constants are static on the ApplePaySession class. Safari also exposes them on
+// instances, but Apple's JS SDK (used in third-party browsers like Chrome) does not.
+@scope(("window", "ApplePaySession")) @val
+external statusSuccess: Nullable.t<int> = "STATUS_SUCCESS"
+let getStatusSuccess = () => statusSuccess->Nullable.toOption->Option.getOr(0)
+
+type paymentCredentialStatus =
+  | @as("paymentCredentialsAvailable") PaymentCredentialsAvailable
+  | @as("paymentCredentialsUnavailable") PaymentCredentialsUnavailable
+  | @as("paymentCredentialStatusUnknown") PaymentCredentialStatusUnknown
+  | @as("applePayUnsupported") ApplePayUnsupported
+
+let paymentCredentialStatusFromString = str =>
+  switch str {
+  | "paymentCredentialsAvailable" => PaymentCredentialsAvailable
+  | "paymentCredentialsUnavailable" => PaymentCredentialsUnavailable
+  | "applePayUnsupported" => ApplePayUnsupported
+  | _ => PaymentCredentialStatusUnknown
+  }
+
+let shouldShowApplePay = status => status !== ApplePayUnsupported
+
+type customElementRegistry
+@scope("window") @val
+external customElements: Nullable.t<customElementRegistry> = "customElements"
+@send external getCustomElement: (customElementRegistry, string) => Nullable.t<unknown> = "get"
+@send external whenDefined: (customElementRegistry, string) => promise<unit> = "whenDefined"
+
+@set external setScriptAsync: (Dom.element, bool) => unit = "async"
+@set external setCrossOrigin: (Dom.element, string) => unit = "crossOrigin"
+@send external addScriptEventListener: (Dom.element, string, unit => unit) => unit = "addEventListener"
 
 @deriving(abstract)
 type total = {
