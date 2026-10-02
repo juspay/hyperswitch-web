@@ -466,6 +466,7 @@ let make = (
             componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
           ),
           ("otherElements", otherElements->JSON.Encode.bool),
+          ("expectsSdkConfigs", true->JSON.Encode.bool),
           ("options", newOptions),
           ("componentType", componentType->JSON.Encode.string),
           ("paymentOptions", widgetOptions),

@@ -69,6 +69,12 @@ let getShowLoader = str => {
   }
 }
 
+let shouldShowLoader = (loader: CardThemeType.showLoader) =>
+  switch loader {
+  | Auto | Always => true
+  | Never => false
+  }
+
 let defaultAppearance = {
   theme: Default,
   variables: DefaultTheme.default,

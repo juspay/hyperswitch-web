@@ -9,10 +9,22 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (keys, setKeys) = Jotai.useAtom(keys)
   let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
   let setSdkConfigs = Jotai.useSetAtom(sdkConfigs)
+  let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
   let setSdkConfigsValue = Jotai.useSetAtom(PaymentUtils.sdkConfigsValue)
   let setSessions = Jotai.useSetAtom(sessions)
   let (options, setOptions) = Jotai.useAtom(elementOptions)
   let (optionsPayment, setOptionsPayment) = Jotai.useAtom(optionAtom)
+  let getSdkPropsDefaults = SdkPropsConfigurationService.useSdkPropsDefaults(
+    ~rawConfigs=sdkConfigsValue.raw_configs,
+  )
+  let merchantOptionsRef = React.useRef(None)
+  let lastConfigDictRef = React.useRef(None)
+  let canApplyConfigRef = React.useRef(true)
+  let (canApplyConfigState, setCanApplyConfigState) = React.useState(_ => true)
+  let setCanApplyConfig = canApply => {
+    canApplyConfigRef.current = canApply
+    setCanApplyConfigState(_ => canApply)
+  }
   let setPaymentManagementList = Jotai.useSetAtom(paymentManagementList)
   let setSessionId = Jotai.useSetAtom(sessionId)
   let setBlockConfirm = Jotai.useSetAtom(isConfirmBlocked)
@@ -103,9 +115,32 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
+  let (profileId, processorMerchantId, organizationId) = SdkConfigParser.getProfileContext(
+    sdkConfigsValue.context_used,
+  )
+
+  let sdkPropsContext: SuperpositionTypes.sdkPropsContext = {
+    platform: "web",
+    profile_id: ?profileId,
+    processor_merchant_id: ?processorMerchantId,
+    organization_id: ?organizationId,
+  }
+
   let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
-    setOptionsJson(_ => optionsDict->JSON.Encode.object)
+    merchantOptionsRef.current = Some(dict)
+    let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
+    let mergeFor = allowedKeys =>
+      CommonUtils.mergeDict(
+        superpositionDefaults
+        ->Dict.toArray
+        ->Array.filter(((key, _)) => allowedKeys->Array.includes(key))
+        ->Dict.fromArray,
+        optionsDict,
+      )
+
+    let mergedPaymentElementOptions = mergeFor(PaymentType.allowedPaymentElementOptions)
+    setOptionsJson(_ => mergedPaymentElementOptions->JSON.Encode.object)
 
     if isPaymentMethodsSDKSurface {
       let applyPlaceholder = (key, setter) =>
@@ -151,10 +186,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     }
 
-    switch optionsDict->Dict.get("subscriptionEvents") {
+    let mergedSubscriptionEventsDict = mergeFor(["subscriptionEvents"])
+    switch mergedSubscriptionEventsDict->Dict.get("subscriptionEvents") {
     | Some(_) => {
         let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(
-          optionsDict,
+          mergedSubscriptionEventsDict,
           "subscriptionEvents",
         )
         setOptionsPayment(prev => {...prev, subscriptionEvents})
@@ -167,7 +203,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | CardExpiryElement
     | CardCVCElement
     | Card =>
-      setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+      setOptions(_ =>
+        ElementType.itemToObjMapper(mergeFor(ElementType.allowedCardElementOptions), logger)
+      )
     | PaymentMethodCollectElement => {
         let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
@@ -182,13 +220,25 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PaymentMethodsManagement
     | PaymentMethodsSDK
     | Payment => {
-        let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
-        setOptionsPayment(prev => {...paymentOptions, subscriptionEvents: prev.subscriptionEvents})
+        let paymentOptions = PaymentType.itemToObjMapper(mergedPaymentElementOptions, logger)
+        setOptionsPayment(prev => {
+          ...paymentOptions,
+          subscriptionEvents: prev.subscriptionEvents,
+          customerPaymentMethods: switch paymentOptions.customerPaymentMethods {
+          | LoadingSavedCards => prev.customerPaymentMethods
+          | merchantSupplied => merchantSupplied
+          },
+          business: paymentOptions.business.name === "" ? prev.business : paymentOptions.business,
+        })
+
         optionsCallback(paymentOptions)
       }
     | _ => ()
     }
   }
+
+  let localeFromDict = dict => getString(dict, "locale", "")
+  let resolveAutoLocale = locale => locale === "auto" ? Window.Navigator.language : locale
 
   let setConfigs = async (dict, themeValues: ThemeImporter.themeDataModule) => {
     try {
@@ -206,8 +256,26 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       )
       let appearance =
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-      let requestedLocale = optionsLocaleString == "" ? config.locale : optionsLocaleString
-      let resolvedLocale = requestedLocale === "auto" ? Window.Navigator.language : requestedLocale
+      let superpositionDefaults = getSdkPropsDefaults(sdkPropsContext)
+      let requestedLocale =
+        [
+          optionsLocaleString,
+          localeFromDict(paymentOptions),
+          localeFromDict(superpositionDefaults),
+        ]
+        ->Array.find(locale => locale != "")
+        ->Option.getOr("auto")
+      let resolvedLocale = resolveAutoLocale(requestedLocale)
+      setPaymentOptionsJson(prev => {
+        let prevDict = prev->getDictFromJson
+        if prevDict->getString("locale", "") === resolvedLocale {
+          prev
+        } else {
+          let updated = prevDict->Dict.copy
+          updated->Dict.set("locale", resolvedLocale->JSON.Encode.string)
+          updated->JSON.Encode.object
+        }
+      })
       let localeString = await CardTheme.getLocaleObject(requestedLocale)
       let constantString = await CardTheme.getConstantStringsObject()
       let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
@@ -224,12 +292,40 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         themeObj: appearance.variables,
         localeString,
         constantString,
-        showLoader: config.loader == Auto || config.loader == Always,
+        showLoader: config.loader->CardTheme.shouldShowLoader,
       })
     } catch {
     | _ => ()
     }
     setIsConfigReady(_ => true)
+  }
+
+  let canApplyConfig = () => canApplyConfigRef.current
+
+  let applyConfigFromDict = (dict, themeSource) => {
+    open Promise
+    let defaultThemeValues: ThemeImporter.themeDataModule = {
+      default: DefaultTheme.default,
+      defaultRules: DefaultTheme.defaultRules,
+    }
+
+    if dict->getDictIsSome("paymentOptions") {
+      lastConfigDictRef.current = Some((dict, themeSource))
+      let showLoader =
+        getString(dict->getDictFromObj("paymentOptions"), "loader", "auto")
+        ->CardTheme.getShowLoader
+        ->CardTheme.shouldShowLoader
+      setConfig(prev => prev.showLoader == showLoader ? prev : {...prev, showLoader})
+    }
+    if canApplyConfig() {
+      switch getThemePromise(themeSource) {
+      | Some(promise) =>
+        promise
+        ->then(res => dict->setConfigs(res))
+        ->catch(_ => dict->setConfigs(defaultThemeValues))
+      | None => dict->setConfigs(defaultThemeValues)
+      }->ignore
+    }
   }
 
   let updateRedirectionFlags = UtilityHooks.useUpdateRedirectionFlags()
@@ -307,7 +403,20 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   }, [config])
 
   React.useEffect(() => {
-    open Promise
+    if canApplyConfig() {
+      switch merchantOptionsRef.current {
+      | Some(dict) => updateOptions(dict)
+      | None => ()
+      }
+      switch lastConfigDictRef.current {
+      | Some((dict, themeSource)) => applyConfigFromDict(dict, themeSource)
+      | None => ()
+      }
+    }
+    None
+  }, (getSdkPropsDefaults, canApplyConfigState))
+
+  React.useEffect(() => {
     let handleFun = (ev: Window.event) => {
       let json = ev.data->safeParse
       try {
@@ -316,6 +425,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         let pinnedParentURL = keys.parentURL
         let isFromHostWindow =
           ev.source === iframeParent && (pinnedParentURL === "*" || ev.origin === pinnedParentURL)
+
+        if isFromHostWindow {
+          switch dict->getOptionBool("expectsSdkConfigs") {
+          | Some(value) => setCanApplyConfig(!value)
+          | None => ()
+          }
+        }
+
         let ports = ev->MessageChannelBinding.eventPorts
         if isFromHostWindow && ports->Array.length > 0 {
           let handshakeShaped =
@@ -403,24 +520,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 // Update top redirection atom
                 updateRedirectionFlags(paymentOptions)
 
-                switch getThemePromise(paymentOptions) {
-                | Some(promise) =>
-                  promise
-                  ->then(res => {
-                    dict->setConfigs(res)
-                  })
-                  ->catch(_ => {
-                    dict->setConfigs({
-                      default: DefaultTheme.default,
-                      defaultRules: DefaultTheme.defaultRules,
-                    })
-                  })
-                | None =>
-                  dict->setConfigs({
-                    default: DefaultTheme.default,
-                    defaultRules: DefaultTheme.defaultRules,
-                  })
-                }->ignore
+                applyConfigFromDict(dict, paymentOptions)
               }
               let newLaunchTime = dict->getFloat("launchTime", 0.0)
               setLaunchTime(_ => newLaunchTime)
@@ -466,25 +566,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             // Update top redirection atom
             updateRedirectionFlags(paymentOptions)
 
-            switch getThemePromise(paymentOptions) {
-            | Some(promise) =>
-              promise
-              ->then(res => {
-                dict->setConfigs(res)
-              })
-              ->catch(_ => {
-                dict->setConfigs({
-                  default: DefaultTheme.default,
-                  defaultRules: DefaultTheme.defaultRules,
-                })
-              })
-
-            | None =>
-              dict->setConfigs({
-                default: DefaultTheme.default,
-                defaultRules: DefaultTheme.defaultRules,
-              })
-            }->ignore
+            applyConfigFromDict(dict, paymentOptions)
             if dict->getDictIsSome("options") {
               updateOptions(dict)
             }
@@ -538,25 +620,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           | None => ()
           }
           if optionsDict->Dict.keysToArray->Array.length > 0 {
-            switch getThemePromise(optionsDict) {
-            | Some(promise) =>
-              promise
-              ->then(res => {
-                dict->setConfigs(res)
-              })
-              ->catch(_ => {
-                dict->setConfigs({
-                  default: DefaultTheme.default,
-                  defaultRules: DefaultTheme.defaultRules,
-                })
-              })
-
-            | None =>
-              dict->setConfigs({
-                default: DefaultTheme.default,
-                defaultRules: DefaultTheme.defaultRules,
-              })
-            }->ignore
+            applyConfigFromDict(dict, optionsDict)
           }
         }
         if dict->Dict.get("isTestMode")->Option.isSome {
@@ -648,16 +712,18 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         if dict->getDictIsSome("clientList") {
           let clientListJson = dict->getJsonObjectFromDict("clientList")
           let listDict = clientListJson->getDictFromJson
-          if optionsPayment.business.name === "" {
-            setOptionsPayment(prev => {
-              ...prev,
-              business: {
-                name: listDict
-                ->getDictFromDict("intent_data")
-                ->getString("merchant_name", ""),
-              },
-            })
-          }
+          setOptionsPayment(prev =>
+            prev.business.name === ""
+              ? {
+                  ...prev,
+                  business: {
+                    name: listDict
+                    ->getDictFromDict("intent_data")
+                    ->getString("merchant_name", ""),
+                  },
+                }
+              : prev
+          )
           let finalLoadLatency = if launchTime <= 0.0 {
             0.0
           } else {
@@ -762,6 +828,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           if !isSdkConfigsError {
             setSdkConfigsValue(_ => sdkConfigsJson->SdkConfigParser.itemToObjMapper)
           }
+          setCanApplyConfig(true)
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
           setIsApplePayReady(_ => true)
