@@ -171,6 +171,7 @@ let getPaymentMethodDataFieldKey = (key): string =>
     | BacsBankCity => "bacs.bankCity"
     | SepaIban => "sepa.iban"
     | SepaBic => "sepa.bic"
+    | SepaAccountHolderName => "sepa.accountHolderName"
     | SepaBankName => "sepa.bankName"
     | SepaBankCity => "sepa.bankCity"
     | SepaCountryCode => "sepa.countryCode"
@@ -209,6 +210,7 @@ let getPaymentMethodDataFieldLabel = (key, localeString: LocaleStringTypes.local
   | PayoutMethodData(BacsSortCode) => localeString.sortCodeText
   | PayoutMethodData(SepaIban) => localeString.formFieldSepaIbanLabel
   | PayoutMethodData(SepaBic) => localeString.formFieldSepaBicLabel
+  | PayoutMethodData(SepaAccountHolderName) => localeString.fullNameLabel
   | PayoutMethodData(PixKey) => localeString.formFieldPixIdLabel
   | PayoutMethodData(PixBankAccountNumber) => localeString.formFieldBankAccountNumberLabel
   | PayoutMethodData(InteracEmail)
@@ -257,6 +259,7 @@ let getPaymentMethodDataFieldPlaceholder = (
   | PayoutMethodData(BacsAccountNumber) => constant.formFieldAccountNumberPlaceholder
   | PayoutMethodData(SepaIban) => constant.formFieldSepaIbanPlaceholder
   | PayoutMethodData(SepaBic) => constant.formFieldSepaBicPlaceholder
+  | PayoutMethodData(SepaAccountHolderName) => locale.fullNamePlaceholder
   | PayoutMethodData(SepaCountryCode) => locale.countryLabel
   | PayoutMethodData(PixKey) => constant.formFieldPixIdPlaceholder
   | PayoutMethodData(PixBankAccountNumber) => constant.formFieldBankAccountNumberPlaceholder
