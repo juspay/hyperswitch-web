@@ -948,19 +948,20 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
           ),
         )
       if detectVaultType() == "vgs" {
-        let (numberMounted, cvcMounted) = switch vgsBrokerRef.contents {
+        let (numberMounted, cvcMounted, nameMounted) = switch vgsBrokerRef.contents {
         | Some(broker) => {
             let entries = broker.fieldsRef.contents->Dict.valuesToArray
             (
               entries->Array.some(e => e.fieldType === "cardNumber" && e.fieldHandle->Option.isSome),
               entries->Array.some(e => e.fieldType === "cardCvc" && e.fieldHandle->Option.isSome),
+              entries->Array.some(e => e.fieldType === "cardholderName" && e.fieldHandle->Option.isSome),
             )
           }
-        | None => (false, false)
+        | None => (false, false, false)
         }
         if numberMounted {
           tokenizeVgsFlowA()
-        } else if cvcMounted {
+        } else if cvcMounted && !nameMounted {
           tokenizeVgsFlowB()
         } else {
           incompleteFieldSet()
@@ -972,6 +973,8 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
           tokenizingRef := true
           runCoordinatorRelay(~flow="save")
         | (None, Some(_), _) =>
+          incompleteFieldSet()
+        | (None, None, Some(_)) if findFieldOfType("cardholderName")->Option.isSome =>
           incompleteFieldSet()
         | (None, None, Some(field)) =>
           tokenizingRef := true

@@ -271,6 +271,9 @@ let computeVGSBaseOptions = (~fieldType: string, ~options: JSON.t): JSON.t => {
     } else {
       VGSConstants.cardCvcOptions->Identity.anyTypeToJson
     }
+  | "cardholderName" =>
+    let placeholder = optionsDict->getString("placeholder", "")
+    VGSConstants.cardHolderNameOptions(placeholder)->Identity.anyTypeToJson
   | _ =>
     VGSConstants.cardNumberOptions->Identity.anyTypeToJson
   }
@@ -359,12 +362,14 @@ let vgsFieldBrand = (state: JSON.t): string => {
 let buildFieldEventPayload = (~fieldType: string, ~state: JSON.t): JSON.t => {
   let stateDict = state->getDictFromJson
   let empty = stateDict->getBool("isEmpty", true)
-  let valid = stateDict->getBool("isValid", false)
+  let isCardholderName = fieldType === "cardholderName"
+  let valid = isCardholderName || stateDict->getBool("isValid", false)
   let errorMessage = switch stateDict->getOptionString("error")->getNonEmptyOption {
+  | _ if isCardholderName => ""
   | Some(message) => message
   | None => state->vgsFieldErrorMessage->Option.getOr("")
   }
-  let brand = state->vgsFieldBrand
+  let brand = isCardholderName ? "" : state->vgsFieldBrand
   let payloadDict = Dict.make()
   payloadDict->Dict.set("empty", empty->JSON.Encode.bool)
   payloadDict->Dict.set("complete", (!empty && valid)->JSON.Encode.bool)
@@ -546,6 +551,7 @@ let make = (
       ->Array.forEach(({fieldType, vgsName, fieldHandle}) =>
         switch fieldHandle {
         | None => ()
+        | Some(_) if fieldType === "cardholderName" => ()
         | Some(_) =>
           describeInvalidField(~state=formStateRef.contents->Dict.get(vgsName))->Option.forEach(
             message => {
