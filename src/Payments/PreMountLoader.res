@@ -151,7 +151,12 @@ module PreMountLoaderForElements = {
     ~customPodUri,
     ~isTestMode=false,
     ~isSdkParamsEnabled=false,
+    ~platformPublishableKey="",
   ) => {
+    // Always set the platform key (even empty string clears a stale value from a previous
+    // platform instance), before the eager API calls inside getMessageHandlerV1Elements fire.
+    ApiEndpoint.setPlatformPublishableKey(platformPublishableKey)
+
     useMessageHandler(() =>
       getMessageHandlerV1Elements(
         ~sdkAuthorization,
@@ -172,7 +177,16 @@ module PreMountLoaderForElements = {
 
 module PreMountLoaderForPMMElements = {
   @react.component
-  let make = (~logger, ~endpoint, ~customPodUri, ~pmSessionId, ~sdkAuthorization) => {
+  let make = (
+    ~logger,
+    ~endpoint,
+    ~customPodUri,
+    ~pmSessionId,
+    ~sdkAuthorization,
+    ~platformPublishableKey="",
+  ) => {
+    ApiEndpoint.setPlatformPublishableKey(platformPublishableKey)
+
     useMessageHandler(() =>
       getMessageHandlerV2PMM(~pmSessionId, ~sdkAuthorization, ~logger, ~customPodUri, ~endpoint)
     )
@@ -194,6 +208,7 @@ let make = (
   ~customPodUri,
   ~isTestMode=false,
   ~isSdkParamsEnabled=false,
+  ~platformPublishableKey="",
 ) => {
   let logger = HyperLogger.make(
     ~sessionId,
@@ -214,8 +229,11 @@ let make = (
       customPodUri
       isTestMode
       isSdkParamsEnabled
+      platformPublishableKey
     />
   | PaymentMethodsManagementElements =>
-    <PreMountLoaderForPMMElements logger endpoint customPodUri pmSessionId sdkAuthorization />
+    <PreMountLoaderForPMMElements
+      logger endpoint customPodUri pmSessionId sdkAuthorization platformPublishableKey
+    />
   }
 }
