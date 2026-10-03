@@ -131,7 +131,7 @@ module ErrorCard = {
   ) => {
     let beaconApiCall = data => {
       if data->Array.length > 0 {
-        let logData = data->Array.map(HyperLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
+        let logData = data->Array.map(LoggerUtils.logFileToObj)->JSON.Encode.array->JSON.stringify
         Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
       }
     }
