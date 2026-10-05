@@ -129,13 +129,17 @@ type fieldEntry = {
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
 
-let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentMethodSession => {
-  logger.setLogInfo(~value="Payment method session card form created", ~eventName=CARD_FORM_FLOW)
+let make = (
+  options: JSON.t,
+  ~publishableKey: string,
+  ~sdkSessionId: string,
+  ~logger: HyperLoggerTypes.loggerMake,
+): initPaymentMethodSession => {
   let optionsDict = options->getDictFromJson
 
   let sdkAuthorizationRaw = optionsDict->getString("sdkAuthorization", "")
   let sdkAuth = sdkAuthorizationRaw->getSdkAuthorizationData
-  let publishableKey = sdkAuth.publishableKey->Option.getOr("")
+  let publishableKey = sdkAuth.publishableKey->Option.getOr(publishableKey)
   let pmSessionId = sdkAuth.pmSessionId->Option.getOr("")
   let customerId = sdkAuth.customerId->Option.getOr("")
 
@@ -156,6 +160,66 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
 
+  // Mounted fields as fieldId -> (fieldType, mount timestamp). Drives the mount-to-render
+  // latency and decides when every mounted field is complete. Only field names are logged.
+  let mountedFieldsRef: ref<Dict.t<(string, float)>> = ref(Dict.make())
+  let fieldCompleteRef: ref<Dict.t<bool>> = ref(Dict.make())
+  let dataFilledLoggedRef = ref(false)
+  let cardholderNameFilledLoggedRef = ref(false)
+
+  let logFieldMounted = (~fieldId: string, ~fieldType: string) => {
+    mountedFieldsRef.contents->Dict.set(fieldId, (fieldType, Date.now()))
+    logger.setLogInfo(~value=fieldType, ~eventName=PAYMENT_METHOD_SESSION_FIELD_MOUNTED)
+  }
+
+  let logFieldRendered = (~fieldId: string, ~fieldType: string) =>
+    logger.setLogInfo(
+      ~value=fieldType,
+      ~eventName=PAYMENT_METHOD_SESSION_FIELD_RENDERED,
+      ~latency=?mountedFieldsRef.contents
+      ->Dict.get(fieldId)
+      ->Option.map(((_, mountedAt)) => Date.now() -. mountedAt),
+    )
+
+  let forgetMountedField = (fieldId: string) => {
+    mountedFieldsRef.contents->Dict.delete(fieldId)
+    fieldCompleteRef.contents->Dict.delete(fieldId)
+  }
+
+  let recordFieldComplete = (~fieldId: string, ~complete: bool) => {
+    fieldCompleteRef.contents->Dict.set(fieldId, complete)
+    let isComplete = id => fieldCompleteRef.contents->Dict.get(id)->Option.getOr(false)
+    let mountedFields = mountedFieldsRef.contents->Dict.toArray
+    let isNameField = ((_, (fieldType, _))) => fieldType === "cardholderName"
+    let nameFields = mountedFields->Array.filter(isNameField)
+    let requiredFields = mountedFields->Array.filter(field => !isNameField(field))
+    let requiredComplete =
+      requiredFields->Array.length > 0 && requiredFields->Array.every(((id, _)) => isComplete(id))
+    let nameComplete =
+      nameFields->Array.length > 0 && nameFields->Array.every(((id, _)) => isComplete(id))
+    let logDataFilled = () => {
+      let requiredTypes = requiredFields->Array.map(((_, (fieldType, _))) => fieldType)
+      let filledTypes =
+        ["cardNumber", "cardExpiry", "cardCvc"]->Array.filter(fieldType =>
+          requiredTypes->Array.includes(fieldType)
+        )
+      logger.setLogInfo(
+        ~value=(nameComplete ? filledTypes->Array.concat(["cardholderName"]) : filledTypes)
+        ->Array.join(","),
+        ~eventName=PAYMENT_METHOD_SESSION_DATA_FILLED,
+      )
+      if nameComplete {
+        cardholderNameFilledLoggedRef := true
+      }
+    }
+    if requiredComplete && !dataFilledLoggedRef.contents {
+      dataFilledLoggedRef := true
+      logDataFilled()
+    } else if requiredComplete && nameComplete && !cardholderNameFilledLoggedRef.contents {
+      logDataFilled()
+    }
+  }
+
   let groupInstanceId = uniqueId(~prefix=`vault-${pmSessionId}`)
   let coordinator = makeCoordinatorChannel(~groupId=groupInstanceId)
   let coordinatorListenerName = `onVaultCoordinator-${groupInstanceId}`
@@ -172,6 +236,37 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
     ]
     ->Dict.fromArray
     ->JSON.Encode.object
+
+  // Gives the coordinator's logger the merchant and session, so its vault API logs can be joined
+  // with the loader's. Kept to the keys that matter: endpoint/isSavedCardCvcFlow would re-point
+  // the coordinator's API endpoint.
+  let postCoordinatorLoggerConfig = () =>
+    coordinator.mountRef.contents->Option.forEach(mount =>
+      mount.iframe->Nullable.make->Window.iframePostMessage(
+        [
+          ("paymentElementCreate", true->JSON.Encode.bool),
+          ("otherElements", false->JSON.Encode.bool),
+          ("componentType", "payment"->JSON.Encode.string),
+          (
+            "paymentOptions",
+            buildPaymentOptions(
+              ~appearance=groupAppearance,
+              ~locale,
+              ~credentialKeys=[
+                ("sdkAuthorization", sdkAuthorizationRaw->JSON.Encode.string),
+                ("pmSessionId", pmSessionId->JSON.Encode.string),
+              ],
+            ),
+          ),
+          ("options", coordinatorOptions()),
+          ("iframeId", groupInstanceId->JSON.Encode.string),
+          ("publishableKey", publishableKey->JSON.Encode.string),
+          ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+          ("parentURL", "*"->JSON.Encode.string),
+          ("launchTime", Date.now()->JSON.Encode.float),
+        ]->Dict.fromArray,
+      )
+    )
 
   let postCoordinatorOptions = () =>
     postCoordinatorCommand(
@@ -205,6 +300,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
           if dict->getBool("iframeMounted", false) {
             coordinator.readyRef := true
             flushPendingPorts(coordinator)
+            postCoordinatorLoggerConfig()
             syncCoordinatorSessions()
             postCoordinatorOptions()
             flushPendingCoordinatorCommands(coordinator)
@@ -294,6 +390,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
         ~endpoint,
         ~customPodUri="",
         ~sdkAuthorization=sdkAuthorizationRaw,
+        ~logger,
       )
       ->Promise.then(retrievedSessionJson => {
         if retrievedSessionJson !== JSON.Encode.null {
@@ -363,7 +460,17 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
       if vaultId->String.length == 0 || environment->String.length == 0 {
         None
       } else {
-        let broker = VGSVaultBroker.make(~vaultId, ~environment, ~eventCallbacksRef, ~logger)
+        let broker = VGSVaultBroker.make(
+          ~vaultId,
+          ~environment,
+          ~eventCallbacksRef,
+          ~logger,
+          ~onFieldChange=(fieldId, payload) =>
+            recordFieldComplete(
+              ~fieldId,
+              ~complete=payload->getDictFromJson->getBool("complete", false),
+            ),
+        )
         vgsBrokerRef := Some(broker)
         Some(broker)
       }
@@ -390,7 +497,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
       ~credentialKeys=[
         ("endpoint", ApiEndpoint.getVaultEndPoint(~publishableKey)->JSON.Encode.string),
       ],
-      ~sdkSessionId=pmSessionId,
+      ~sdkSessionId,
       ~loggerSource="hyper_vault",
       ~savedCardBrand,
     )
@@ -448,6 +555,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
                 ("iframeId", fieldId->JSON.Encode.string),
               ]->Dict.fromArray->JSON.Encode.object
             if isReady {
+              logFieldRendered(~fieldId, ~fieldType)
               eventHandlersRef.contents->Dict.get("ready")->Option.forEach(cb => cb(payload))
             } else if isFocus {
               eventHandlersRef.contents->Dict.get("focus")->Option.forEach(cb => cb(payload))
@@ -461,6 +569,10 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
                 let changePayload = reshapeCardStateUpdateToChangePayload(
                   ~fieldType,
                   ~stateJson,
+                )
+                recordFieldComplete(
+                  ~fieldId,
+                  ~complete=changePayload->getDictFromJson->getBool("complete", false),
                 )
                 eventHandlersRef.contents
                 ->Dict.get("change")
@@ -478,7 +590,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
     let appearanceJson = resolveFieldAppearance(~fieldOptionsDict, ~groupAppearance)
     let optionsForElement = optionsWithAppearance(~fieldOptionsDict, ~appearance=appearanceJson)
 
-    let handle: fieldHandle = makeFieldElementAndHandle(
+    let elementHandle: fieldHandle = makeFieldElementAndHandle(
       ~optionsForElement,
       ~appearance=appearanceJson,
       ~iframeRef,
@@ -498,6 +610,21 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
       },
       ~logger,
     )
+    let handle: fieldHandle = {
+      ...elementHandle,
+      mount: selector => {
+        logFieldMounted(~fieldId, ~fieldType)
+        elementHandle.mount(selector)
+      },
+      unmount: () => {
+        forgetMountedField(fieldId)
+        elementHandle.unmount()
+      },
+      destroy: () => {
+        forgetMountedField(fieldId)
+        elementHandle.destroy()
+      },
+    }
 
     attachFieldListener()
 
@@ -555,9 +682,11 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
 
               let handle: fieldHandle = {
                 mount: selector => {
+                  logFieldMounted(~fieldId, ~fieldType)
                   uniqueSelectorRef := Some(selector)
                   broker
                   .mountField(~fieldId, ~fieldType, ~selector, ~options=optionsForBroker)
+                  ->Promise.thenResolve(_ => logFieldRendered(~fieldId, ~fieldType))
                   ->Promise.catch(err => {
                     Console.error2(
                       `[PaymentMethodSession] VGS mountField(${fieldType}, ${selector}) failed`,
@@ -568,10 +697,12 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
                   ->ignore
                 },
                 unmount: () => {
+                  forgetMountedField(fieldId)
                   broker.unmountField(~fieldId)
                   uniqueSelectorRef := None
                 },
                 destroy: () => {
+                  forgetMountedField(fieldId)
                   broker.unmountField(~fieldId)
                   uniqueSelectorRef := None
                 },
@@ -912,22 +1043,35 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
     }
   }
 
-  // Only the outcome and its error code are logged — never the card values.
-  let logTokenizeOutcome = (result: JSON.t) =>
-    switch result->getDictFromJson->getDictFromDict("error")->Dict.get("code") {
+  // One outcome event per tokenize; its latency comes from PAYMENT_METHOD_SESSION_TOKENIZE_INIT.
+  // Only the outcome and error code are logged — never the card values. The message is kept
+  // for the Hyperswitch vault only: its messages are fixed strings and field names, while VGS
+  // messages can embed the raw VGS response or field state.
+  let logTokenizeOutcome = (result: JSON.t) => {
+    let errorDict = result->getDictFromJson->getDictFromDict("error")
+    let vaultType = detectVaultType()
+    let vaultTypeEntry = ("vaultType", vaultType->JSON.Encode.string)
+    switch errorDict->Dict.get("code") {
     | Some(code) =>
-      logger.setLogInfo(
-        ~value=`tokenize failed: ${code->JSON.Decode.string->Option.getOr("")}`,
-        ~eventName=CARD_FORM_FLOW,
-        ~logType=ERROR,
+      let message = vaultType === vaultTypeHyperswitch ? errorDict->getString("message", "") : ""
+      logger.setLogError(
+        ~value=[vaultTypeEntry, ("code", code), ("message", message->JSON.Encode.string)]
+        ->getJsonFromArrayOfJson
+        ->JSON.stringify,
+        ~eventName=PAYMENT_METHOD_SESSION_TOKENIZE,
       )
-    | None => logger.setLogInfo(~value="tokenize succeeded", ~eventName=CARD_FORM_FLOW)
+    | None =>
+      logger.setLogInfo(
+        ~value=[vaultTypeEntry]->getJsonFromArrayOfJson->JSON.stringify,
+        ~eventName=PAYMENT_METHOD_SESSION_TOKENIZE,
+      )
     }
+  }
 
   let tokenize = (): promise<JSON.t> => {
     logger.setLogInfo(
-      ~value=`tokenize initiated: ${detectVaultType()} vault`,
-      ~eventName=CARD_FORM_FLOW,
+      ~value=detectVaultType(),
+      ~eventName=PAYMENT_METHOD_SESSION_TOKENIZE_INIT,
     )
     let outcome = if sessionStateRef.contents != Active {
       Promise.resolve(sessionConsumedResult(~locale, ()))
