@@ -51,6 +51,9 @@ let make = () => {
       | (PaymentSurfaceFamily.VaultFamily, Some("cardCvc"))
       | (PaymentSurfaceFamily.PaymentsFamily, Some("cardCvc")) =>
         <SecureCardCvcField />
+      | (PaymentSurfaceFamily.VaultFamily, Some("cardholderName"))
+      | (PaymentSurfaceFamily.PaymentsFamily, Some("cardholderName")) =>
+        <SecureCardholderNameField />
       | (PaymentSurfaceFamily.VaultFamily, None) => <CardsSDK cvcOnly=isSavedCardCvcFlow />
 
       | (PaymentSurfaceFamily.VaultFamily, Some(unknownField))
