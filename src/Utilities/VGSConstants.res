@@ -60,3 +60,16 @@ let savedCardCvcOptions = savedCardBrand => {
   showCardIcon: false,
   css: savedCardCvcCss,
 }
+
+type cardHolderNameFieldOptions = {
+  ...fieldOptions,
+  autoComplete: string,
+}
+
+let cardHolderNameOptions = (placeholder): cardHolderNameFieldOptions => {
+  \"type": "text",
+  name: "card_holder",
+  placeholder,
+  validations: [],
+  autoComplete: "cc-name",
+}
