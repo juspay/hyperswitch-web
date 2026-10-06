@@ -67,7 +67,7 @@ let getApplePayFromResponse = (
 let applePaySdkUrl = "https://applepay.cdn-apple.com/jsapi/1.latest/apple-pay-sdk.js"
 let applePayButtonTag = "apple-pay-button"
 let applePaySdkLoadTimeout = 3000
-let applePayButtonLoadTimeout = 5000
+let applePayCapabilitiesTimeout = 3000
 let merchantIdentifierTimeout = 1500
 
 let getOrCreateApplePaySdkScript = () =>
@@ -85,6 +85,31 @@ let getOrCreateApplePaySdkScript = () =>
 let supportsApplePayCapabilities = (session: session) =>
   Type.typeof(session.applePayCapabilities) === #function
 
+// Safari draws the Apple Pay button natively, without Apple's JS SDK.
+let isNativeApplePayButtonSupported = () =>
+  try {
+    cssSupports("-webkit-appearance", "-apple-pay-button")
+  } catch {
+  | _ => false
+  }
+
+// Apple's JS SDK cannot offer Apple Pay in mobile third-party browsers (e.g. Android Chrome),
+// so it is not loaded there.
+let isMobileThirdPartyBrowser = () =>
+  userAgentData->Nullable.toOption->Option.mapOr(false, data => data.mobile)
+
+// Apple's JS SDK sets `window.onbeforeunload` (to close its QR code window); keep the
+// merchant's handler running as well.
+let keepMerchantBeforeUnload = merchantBeforeUnload =>
+  switch (merchantBeforeUnload->Nullable.toOption, onBeforeUnload->Nullable.toOption) {
+  | (Some(merchantHandler), Some(sdkHandler)) if merchantHandler !== sdkHandler =>
+    Window.window->setOnBeforeUnload(event => {
+      sdkHandler(event)->ignore
+      merchantHandler(event)
+    })
+  | _ => ()
+  }
+
 let applePaySdkLoadPromiseRef: ref<option<promise<unit>>> = ref(None)
 
 // Makes `window.ApplePaySession` available: native in Safari, provided by Apple's JS SDK in
@@ -94,11 +119,18 @@ let loadApplePaySdk = () =>
   | Some(loadPromise) => loadPromise
   | None =>
     let loadPromise = Promise.make((resolve, _) =>
-      if sessionForApplePay->Nullable.toOption->Option.mapOr(false, supportsApplePayCapabilities) {
+      if (
+        sessionForApplePay->Nullable.toOption->Option.mapOr(false, supportsApplePayCapabilities) ||
+          isMobileThirdPartyBrowser()
+      ) {
         resolve()
       } else {
+        let merchantBeforeUnload = onBeforeUnload
         let script = getOrCreateApplePaySdkScript()
-        script->addScriptEventListener("load", resolve)
+        script->addScriptEventListener("load", () => {
+          keepMerchantBeforeUnload(merchantBeforeUnload)
+          resolve()
+        })
         script->addScriptEventListener("error", resolve)
         setTimeout(resolve, applePaySdkLoadTimeout)->ignore
       }
@@ -107,28 +139,16 @@ let loadApplePaySdk = () =>
     loadPromise
   }
 
-// Ensures the `<apple-pay-button>` web component is registered in the current window.
-// Unlike `loadApplePaySdk`, this does not short-circuit on a native ApplePaySession (Safari),
-// since the custom element is only defined by Apple's JS SDK.
+// Resolves to true once the `<apple-pay-button>` web component is registered in the current
+// window, however long Apple's JS SDK takes to load.
 let loadApplePayButton = () =>
   switch customElements->Nullable.toOption {
   | None => Promise.resolve(false)
   | Some(registry) =>
-    let isButtonDefined = () =>
-      registry->getCustomElement(applePayButtonTag)->Nullable.toOption->Option.isSome
-
-    if isButtonDefined() {
-      Promise.resolve(true)
-    } else {
-      let script = getOrCreateApplePaySdkScript()
-      Promise.race([
-        registry->whenDefined(applePayButtonTag)->Promise.thenResolve(_ => true),
-        Promise.make((resolve, _) => {
-          script->addScriptEventListener("error", () => resolve(false))
-          setTimeout(() => resolve(isButtonDefined()), applePayButtonLoadTimeout)->ignore
-        }),
-      ])
+    if registry->getCustomElement(applePayButtonTag)->Nullable.toOption->Option.isNone {
+      getOrCreateApplePaySdkScript()->ignore
     }
+    registry->whenDefined(applePayButtonTag)->Promise.thenResolve(_ => true)
   }
 
 let getStatusFromCanMakePayments = (session: session) =>
@@ -150,13 +170,22 @@ let getPaymentCredentialStatus = (~merchantIdentifier) => {
     | Some(session) if merchantIdentifier === "" || !supportsApplePayCapabilities(session) =>
       resolve(getStatusFromCanMakePayments(session))
     | Some(session) =>
-      session.applePayCapabilities(merchantIdentifier)
-      ->thenResolve(response =>
-        response.paymentCredentialStatus->Option.mapOr(
-          getStatusFromCanMakePayments(session),
-          paymentCredentialStatusFromString,
-        )
-      )
+      // In third-party browsers this calls Apple's servers, so bound it with a timeout.
+      [
+        session.applePayCapabilities(merchantIdentifier)->thenResolve(response =>
+          response.paymentCredentialStatus->Option.mapOr(
+            getStatusFromCanMakePayments(session),
+            paymentCredentialStatusFromString,
+          )
+        ),
+        Promise.make((resolve, _) =>
+          setTimeout(
+            () => resolve(getStatusFromCanMakePayments(session)),
+            applePayCapabilitiesTimeout,
+          )->ignore
+        ),
+      ]
+      ->Promise.race
       ->catch(err => {
         Console.warn2("[ApplePay] applePayCapabilities failed:", err)
         resolve(getStatusFromCanMakePayments(session))
@@ -226,6 +255,7 @@ let startApplePaySession = (
           ->Dict.get("session_token_data")
           ->Option.getOr(Dict.make()->JSON.Encode.object)
           ->transformKeysWithoutModifyingValue(CamelCase)
+          Js.log2("merchant session", merchantSession)
         ssn.completeMerchantValidation(merchantSession)
       } else {
         ssn.completeMerchantValidation(Dict.make()->JSON.Encode.object)
@@ -559,36 +589,6 @@ let createApplePayTransactionInfo = jsonDict =>
   )
 
 let thirdPartyApplePayConnectors = ["braintree"]
-
-// TrustPay's delayed session token comes without `payment_request_data`, and ApplePaySession
-// rejects a request without currency or amount (Apple's JS SDK in Chrome throws synchronously),
-// so any missing fields are filled from the payment intent.
-let getTrustPayPaymentRequest = (~paymentRequestDict, ~intentDataDict) => {
-  let totalDict = paymentRequestDict->getDictFromDict("total")
-  let currencyCode = paymentRequestDict->getString("currency_code", "")
-  let merchantCapabilities = paymentRequestDict->getStrArray("merchant_capabilities")
-  let supportedNetworks = paymentRequestDict->getStrArray("supported_networks")
-  let merchantName = intentDataDict->getString("merchant_name", "")
-
-  paymentRequestData(
-    ~countryCode=paymentRequestDict->getString("country_code", defaultCountryCode),
-    ~currencyCode=currencyCode !== "" ? currencyCode : intentDataDict->getString("currency", ""),
-    ~merchantCapabilities=merchantCapabilities->Array.length > 0
-      ? merchantCapabilities
-      : ["supports3DS"],
-    ~supportedNetworks=supportedNetworks->Array.length > 0
-      ? supportedNetworks
-      : ["visa", "masterCard"],
-    ~total=totalDict->getString("amount", "") !== ""
-      ? getTotal(totalDict)
-      : total(
-          ~label=merchantName !== "" ? merchantName : "Total",
-          ~amount=intentDataDict->getInt("amount", 0)->minorUnitToString,
-          (),
-        ),
-    (),
-  )
-}
 
 let handleApplePayBraintreePaymentSession = (
   applePayPaymentRequest,

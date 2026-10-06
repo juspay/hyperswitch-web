@@ -90,6 +90,15 @@ external customElements: Nullable.t<customElementRegistry> = "customElements"
 @send external getCustomElement: (customElementRegistry, string) => Nullable.t<unknown> = "get"
 @send external whenDefined: (customElementRegistry, string) => promise<unit> = "whenDefined"
 
+@scope("CSS") @val external cssSupports: (string, string) => bool = "supports"
+
+type userAgentData = {mobile: bool}
+@scope("navigator") @val external userAgentData: Nullable.t<userAgentData> = "userAgentData"
+
+type beforeUnloadHandler = Dom.event => unknown
+@scope("window") @val external onBeforeUnload: Nullable.t<beforeUnloadHandler> = "onbeforeunload"
+@set external setOnBeforeUnload: (Types.window, beforeUnloadHandler) => unit = "onbeforeunload"
+
 @set external setScriptAsync: (Dom.element, bool) => unit = "async"
 @set external setCrossOrigin: (Dom.element, string) => unit = "crossOrigin"
 @send external addScriptEventListener: (Dom.element, string, unit => unit) => unit = "addEventListener"

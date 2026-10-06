@@ -156,9 +156,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   | Dark => "#828282"
   }
 
-  // Apple's `<apple-pay-button>` web component (from the Apple Pay JS SDK) renders the
-  // official button in Safari and in third-party browsers like Chrome, where the
-  // `-webkit-appearance: -apple-pay-button` CSS is not supported.
+  // Safari renders the Apple Pay button natively (`-webkit-appearance: -apple-pay-button`).
+  // Third-party browsers like Chrome use Apple's `<apple-pay-button>` web component from the
+  // Apple Pay JS SDK instead.
   let css = `
     .apple-pay-loader-div {
       background-color: ${loaderDivBackgroundColor};
@@ -197,15 +197,34 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       --apple-pay-button-border-radius: ${buttonRadius->Int.toString}px;
       --apple-pay-button-padding: 0px 0px;
       --apple-pay-button-box-sizing: border-box;
+    }
+    @supports (-webkit-appearance: -apple-pay-button) {
+      .apple-pay-native-button {
+        display: block;
+        width: 100%;
+        height: ${height->Int.toString}px;
+        border-radius: ${buttonRadius->Int.toString}px;
+        cursor: pointer;
+        -webkit-appearance: -apple-pay-button;
+        -apple-pay-button-type: ${buttonType};
+        -apple-pay-button-style: ${buttonColor};
+      }
     }`
 
-  let (isApplePayButtonLoaded, setIsApplePayButtonLoaded) = React.useState(_ => false)
+  let isNativeApplePayButton = React.useMemo0(() =>
+    ApplePayHelpers.isNativeApplePayButtonSupported()
+  )
+  let (isApplePayButtonLoaded, setIsApplePayButtonLoaded) = React.useState(_ =>
+    isNativeApplePayButton
+  )
 
   React.useEffect0(() => {
-    ApplePayHelpers.loadApplePayButton()
-    ->thenResolve(loaded => setIsApplePayButtonLoaded(_ => loaded))
-    ->catch(_ => resolve())
-    ->ignore
+    if !isNativeApplePayButton {
+      ApplePayHelpers.loadApplePayButton()
+      ->thenResolve(loaded => setIsApplePayButtonLoaded(_ => loaded))
+      ->catch(_ => resolve())
+      ->ignore
+    }
     None
   })
 
@@ -326,11 +345,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
 
   // When an Apple Pay session token is present and not delayed, it must carry the merchant
   // session (`session_token_data`); without it merchant validation cannot complete (e.g. in
-  // Chrome via Apple's JS SDK), so the button is not shown.
+  // Chrome via Apple's JS SDK), so the button is not shown. Delayed session tokens (TrustPay)
+  // are only supported where Apple Pay is native (Safari).
   let hasApplePaySessionTokenData =
     sessionObj->getOptionsDict->getDictFromDict("session_token_data")->Dict.keysToArray->Array.length > 0
   let isApplePaySessionTokenValid =
-    !isApplePaySDKFlow || isApplePayDelayedSessionFlow || hasApplePaySessionTokenData
+    !isApplePaySDKFlow ||
+    (isApplePayDelayedSessionFlow ? isNativeApplePayButton : hasApplePaySessionTokenData)
 
   React.useEffect(() => {
     let isApplePayEligible =
@@ -365,7 +386,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   useSubmitPaymentData(submitCallback)
 
   let shouldShowWalletShimmer =
-    isApplePayDelayedSessionFlow && isApplePayReady && trustPayScriptStatus === Loading
+    isApplePayDelayedSessionFlow &&
+    isNativeApplePayButton &&
+    isApplePayReady &&
+    trustPayScriptStatus === Loading
 
   if isWallet {
     <>
@@ -379,6 +403,17 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
             <div className="apple-pay-loader-div">
               <div className="apple-pay-loader" />
             </div>
+          } else if isNativeApplePayButton {
+            <button
+              disabled=applePayClicked
+              style={
+                opacity: updateSession ? "0.5" : "1.0",
+                pointerEvents: updateSession ? "none" : "auto",
+              }
+              className="apple-pay-native-button"
+              ariaLabel="Apple Pay"
+              onClick={_ => onApplePayButtonClicked()}
+            />
           } else {
             ReactDOM.createDOMElementVariadic(
               "apple-pay-button",

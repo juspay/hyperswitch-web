@@ -205,7 +205,7 @@ function initApplePaySessionProxy(waitForConfirmResponse, enableFetchInterceptio
     console.warn("[ApplePayInterceptor] ApplePaySession not available, skipping proxy.");
     return;
   }
-  if (window.__applePayProxy && window.ApplePaySession === window.__applePayProxy) {
+  if (window.__applePayProxyInstalled) {
     return;
   }
 
@@ -272,7 +272,7 @@ function initApplePaySessionProxy(waitForConfirmResponse, enableFetchInterceptio
   });
 
   window.ApplePaySession = ProxyApplePaySession;
-  window.__applePayProxy = ProxyApplePaySession;
+  window.__applePayProxyInstalled = true;
 }
 `)
 
@@ -299,22 +299,12 @@ let initializeApplePayInterceptor = () => {
   // Install ApplePaySession proxy now (native browser API, always present on Safari).
   // Pass isInterceptModeActive so Braintree sessions are not intercepted (B-1),
   // and sendShowApplePayButtonToIframe so the loader resets on failure (H-6).
-  let installProxy = () =>
-    initApplePaySessionProxy(
-      waitForConfirmResponse,
-      enableFetchInterception,
-      () => postToIframeRef.contents->Option.isSome,
-      sendShowApplePayButtonToIframe,
-    )
-
-  installProxy()
-
-  // In third-party browsers (e.g. Chrome) ApplePaySession only exists once Apple's JS SDK has
-  // loaded, so install the proxy again around the SDK's class.
-  ApplePayHelpers.loadApplePaySdk()
-  ->Promise.thenResolve(_ => installProxy())
-  ->Promise.catch(_ => Promise.resolve())
-  ->ignore
+  initApplePaySessionProxy(
+    waitForConfirmResponse,
+    enableFetchInterception,
+    () => postToIframeRef.contents->Option.isSome,
+    sendShowApplePayButtonToIframe,
+  )
   // TrustPayApi isn't on window yet — use a MutationObserver to patch it once
   // the TrustPay script tag finishes loading.
   let _ = %raw(`(function() {

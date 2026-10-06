@@ -10,9 +10,6 @@ type trustPayFunctions = {
 }
 @new external trustPayApi: JSON.t => trustPayFunctions = "TrustPayApi"
 
-// TrustPay's `ResultCode.ABORTED`: the customer closed the Apple Pay sheet.
-let trustPayAbortedStatus = -4
-
 let make = (
   options,
   setIframeRef,
@@ -761,11 +758,12 @@ let make = (
                     ->Dict.get("secrets")
                     ->Option.getOr(Dict.make()->JSON.Encode.object)
 
-                  let paymentRequestDict =
+                  let paymentRequest =
                     applePaySessionTokenData
                     ->Dict.get("payment_request_data")
                     ->Option.flatMap(JSON.Decode.object)
                     ->Option.getOr(Dict.make())
+                    ->ApplePayTypes.jsonToPaymentRequestDataType
 
                   let payment =
                     secrets
@@ -778,62 +776,36 @@ let make = (
 
                   clientListDataPromise.contents
                   ->then(paymentMethodsJson => {
-                    let intentDataDict =
-                      paymentMethodsJson->getDictFromJson->getDictFromDict("intent_data")
+                    let pmDict = paymentMethodsJson->getDictFromJson
+                    let currencyCode =
+                      pmDict->getDictFromDict("intent_data")->getString("currency", "EUR")
+                    let amountInt = pmDict->getDictFromDict("intent_data")->getInt("amount", 0)
+                    let amountStr = amountInt->Int.toString //<...>//
                     try {
-                      // TrustPay requires `display` and `payment` secrets to be strings. With a
-                      // delayed session token they only come from the confirm call, which
-                      // ApplePayInterceptor swaps into TrustPay's requests, so use placeholders.
-                      let newSecrets =
-                        [
-                          (
-                            "display",
-                            secrets->getDictFromJson->getString("display", "")->JSON.Encode.string,
-                          ),
-                          ("payment", payment->JSON.Encode.string),
-                        ]->getJsonFromArrayOfJson
-                      let newPaymentRequest = ApplePayHelpers.getTrustPayPaymentRequest(
-                        ~paymentRequestDict,
-                        ~intentDataDict,
-                      )
+                      let newSecrets = secrets //<...>//
+                      let newPaymentRequest = paymentRequest //<...>//
                       let trustpay = trustPayApi(newSecrets)
                       trustpay.finishApplePaymentV2(
                         payment, //<...>//
                         newPaymentRequest,
                         Window.Location.hostname,
                       )
-                      ->then(result => {
-                        // TrustPay resolves (does not reject) when the customer closes the
-                        // payment sheet; nothing was paid, so reset the Apple Pay button in the
-                        // iframe instead of syncing the payment.
-                        if result->getDictFromJson->getInt("status", 0) === trustPayAbortedStatus {
-                          logger.setLogInfo(
-                            ~value="TrustPay ApplePay Session Aborted",
-                            ~eventName=APPLE_PAY_FLOW,
-                            ~paymentMethod="APPLE_PAY",
-                          )
-                          let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
-                          mountedIframeRef->Window.iframePostMessage(msg)
-                          ApplePayInterceptor.clearPostToIframe()
-                          resolve()
-                        } else {
-                          let value = "Payment Data Filled: New Payment Method"
-                          logger.setLogInfo(
-                            ~value,
-                            ~eventName=PAYMENT_DATA_FILLED,
-                            ~paymentMethod="APPLE_PAY",
-                          )
-                          logger.setLogInfo(
-                            ~value="TrustPay ApplePay Success Response",
-                            ~eventName=APPLE_PAY_FLOW,
-                            ~paymentMethod="APPLE_PAY",
-                          )
-                          let msg =
-                            [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                          mountedIframeRef->Window.iframePostMessage(msg)
-                          ApplePayInterceptor.clearPostToIframe()
-                          resolve()
-                        }
+                      ->then(_ => {
+                        let value = "Payment Data Filled: New Payment Method"
+                        logger.setLogInfo(
+                          ~value,
+                          ~eventName=PAYMENT_DATA_FILLED,
+                          ~paymentMethod="APPLE_PAY",
+                        )
+                        logger.setLogInfo(
+                          ~value="TrustPay ApplePay Success Response",
+                          ~eventName=APPLE_PAY_FLOW,
+                          ~paymentMethod="APPLE_PAY",
+                        )
+                        let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
+                        mountedIframeRef->Window.iframePostMessage(msg)
+                        ApplePayInterceptor.clearPostToIframe()
+                        resolve()
                       })
                       ->catch(err => {
                         let exceptionMessage = err->formatException->JSON.stringify

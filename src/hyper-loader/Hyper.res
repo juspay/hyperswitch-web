@@ -260,9 +260,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             manageErrorWarning(INVALID_PK, ~logger)
           }
 
-          // Warm up Apple's JS SDK so ApplePaySession is ready in browsers without native
-          // Apple Pay; a no-op when Safari already provides it.
-          ApplePayHelpers.loadApplePaySdk()->ignore
         }
       }->Sentry.sentryLogger
 
