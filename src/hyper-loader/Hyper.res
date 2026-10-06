@@ -821,6 +821,34 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
+      // Deliberately leaves the shared sdkAuthorization ref and the logger's auth alone: they
+      // belong to elements/paymentSession on this instance, and a vault session token would
+      // overwrite theirs.
+      let initPaymentMethodSession = paymentMethodSessionOptions => {
+        let pmSessionIdVal = (
+          paymentMethodSessionOptions
+          ->getDictFromJson
+          ->getString("sdkAuthorization", "")
+          ->Utils.getSdkAuthorizationData
+        ).pmSessionId->Option.getOr("")
+        logger.setLogInfo(
+          ~value=[
+            ("url", Window.hrefWithoutSearch->JSON.Encode.string),
+            ("pmSessionId", pmSessionIdVal->JSON.Encode.string),
+          ]
+          ->getJsonFromArrayOfJson
+          ->JSON.stringify,
+          ~eventName=PAYMENT_METHOD_SESSION_INITIATED,
+        )
+
+        PaymentMethodSession.make(
+          paymentMethodSessionOptions,
+          ~publishableKey,
+          ~sdkSessionId=sessionID,
+          ~logger,
+        )
+      }
+
       let returnObject: hyperInstance = {
         confirmOneClickPayment,
         confirmPayment,
@@ -835,7 +863,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         completeUpdateIntent,
         initiateUpdateIntent,
         confirmTokenization: confirmPayment,
-        initPaymentMethodSession: options => PaymentMethodSession.make(options, ~logger),
+        initPaymentMethodSession,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

@@ -176,6 +176,11 @@ let make = () => {
   let aggregatedCardExpiry = () => aggregateRawValue(d => d->getString("rawCardExpiry", ""))
   let aggregatedCvcNumber = () => aggregateRawValue(d => d->getString("rawCvc", ""))
   let aggregatedCardBrand = () => aggregateRawValue(d => d->getString("cardBrand", ""))
+  let aggregatedCardholderName = () =>
+    switch aggregateRawValue(d => d->getString("rawCardholderName", ""))->String.trim {
+    | "" => None
+    | name => Some(name)
+    }
 
   let snapshotFieldStatus = fieldName =>
     fieldSnapshotsRef.current
@@ -422,7 +427,7 @@ let make = () => {
                     ~cardNumber,
                     ~month,
                     ~year,
-                    ~cardHolderName=None,
+                    ~cardHolderName=aggregatedCardholderName(),
                     ~cvcNumber,
                     ~cardBrand=cardNetwork,
                   )
@@ -548,6 +553,7 @@ let make = () => {
                       ~cvcNumber,
                       ~month,
                       ~year,
+                      ~cardHolderName=aggregatedCardholderName(),
                     ),
                     ~pmSessionId=pmSessionIdCopy,
                     ~sdkAuthorization=vaultAuthCopy,

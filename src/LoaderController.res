@@ -28,6 +28,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setCardNumberPlaceholder = Jotai.useSetAtom(cardNumberPlaceholder)
   let setCardExpiryPlaceholder = Jotai.useSetAtom(cardExpiryPlaceholder)
   let setCardCvcPlaceholder = Jotai.useSetAtom(cardCvcPlaceholder)
+  let setCardholderNamePlaceholder = Jotai.useSetAtom(cardholderNamePlaceholder)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
@@ -163,6 +164,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           )
           applyPlaceholder("placeholder", setCardCvcPlaceholder)
         }
+      | "cardholderName" => applyPlaceholder("placeholder", setCardholderNamePlaceholder)
       | _ => ()
       }
     }

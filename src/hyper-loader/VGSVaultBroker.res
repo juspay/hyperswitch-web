@@ -271,6 +271,9 @@ let computeVGSBaseOptions = (~fieldType: string, ~options: JSON.t): JSON.t => {
     } else {
       VGSConstants.cardCvcOptions->Identity.anyTypeToJson
     }
+  | "cardholderName" =>
+    let placeholder = optionsDict->getString("placeholder", "")
+    VGSConstants.cardHolderNameOptions(placeholder)->Identity.anyTypeToJson
   | _ =>
     VGSConstants.cardNumberOptions->Identity.anyTypeToJson
   }
@@ -359,12 +362,14 @@ let vgsFieldBrand = (state: JSON.t): string => {
 let buildFieldEventPayload = (~fieldType: string, ~state: JSON.t): JSON.t => {
   let stateDict = state->getDictFromJson
   let empty = stateDict->getBool("isEmpty", true)
-  let valid = stateDict->getBool("isValid", false)
+  let isCardholderName = fieldType === "cardholderName"
+  let valid = isCardholderName || stateDict->getBool("isValid", false)
   let errorMessage = switch stateDict->getOptionString("error")->getNonEmptyOption {
+  | _ if isCardholderName => ""
   | Some(message) => message
   | None => state->vgsFieldErrorMessage->Option.getOr("")
   }
-  let brand = state->vgsFieldBrand
+  let brand = isCardholderName ? "" : state->vgsFieldBrand
   let payloadDict = Dict.make()
   payloadDict->Dict.set("empty", empty->JSON.Encode.bool)
   payloadDict->Dict.set("complete", (!empty && valid)->JSON.Encode.bool)
@@ -408,6 +413,7 @@ let make = (
   ~environment: string,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
   ~logger: HyperLoggerTypes.loggerMake,
+  ~onFieldChange: (string, JSON.t) => unit,
 ): vgsBrokerHandle => {
   let formRef: ref<option<JSON.t>> = ref(None)
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
@@ -438,6 +444,7 @@ let make = (
         }
         if changed {
           lastFieldPayloadRef.contents->Dict.set(fieldId, fingerprint)
+          onFieldChange(fieldId, payload)
           dispatchFieldEvent(~eventCallbacksRef, ~fieldId, ~event="change", ~payload)
         }
       }
@@ -546,6 +553,7 @@ let make = (
       ->Array.forEach(({fieldType, vgsName, fieldHandle}) =>
         switch fieldHandle {
         | None => ()
+        | Some(_) if fieldType === "cardholderName" => ()
         | Some(_) =>
           describeInvalidField(~state=formStateRef.contents->Dict.get(vgsName))->Option.forEach(
             message => {
@@ -579,8 +587,15 @@ let make = (
             )
           // VGS routes a transport failure through this SUCCESS callback as (status=null, data="Network Error").
           let onSuccess: (JSON.t, JSON.t) => unit = (status, data) => {
-            switch (status->httpStatusCode, data->JSON.Decode.object) {
-            | (Some(code), Some(vaultResponse)) if code >= 200. && code < 300. =>
+            let isSuccessStatus =
+              status->httpStatusCode->Option.mapOr(false, code => code >= 200. && code < 300.)
+            logger.setLogInfo(
+              ~value=`VGS submit status: ${status->describeJson}`,
+              ~eventName=VGS_VAULT_FLOW,
+              ~logType=isSuccessStatus ? INFO : ERROR,
+            )
+            switch (isSuccessStatus, data->JSON.Decode.object) {
+            | (true, Some(vaultResponse)) =>
               let resultDict = Dict.make()
               resultDict->Dict.set("status", "success"->JSON.Encode.string)
               resultDict->Dict.set("vaultResponse", vaultResponse->JSON.Encode.object)

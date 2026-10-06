@@ -16,6 +16,7 @@ type fieldStateSnapshot = {
   rawCardNumber: option<string>,
   rawCardExpiry: option<string>,
   rawCvc: option<string>,
+  rawCardholderName?: string,
 }
 
 type dualPlanePayload = {
@@ -41,6 +42,7 @@ let encodeFieldStateUpdate = (snapshot: fieldStateSnapshot): dualPlanePayload =>
         snapshot.rawCardNumber->Option.map(v => ("rawCardNumber", v->JSON.Encode.string)),
         snapshot.rawCardExpiry->Option.map(v => ("rawCardExpiry", v->JSON.Encode.string)),
         snapshot.rawCvc->Option.map(v => ("rawCvc", v->JSON.Encode.string)),
+        snapshot.rawCardholderName->Option.map(v => ("rawCardholderName", v->JSON.Encode.string)),
       ]->Array.filterMap(entry => entry),
     )
 
