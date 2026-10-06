@@ -101,6 +101,7 @@ type beforeUnloadHandler = Dom.event => unknown
 
 @set external setScriptAsync: (Dom.element, bool) => unit = "async"
 @set external setCrossOrigin: (Dom.element, string) => unit = "crossOrigin"
+@set external setIntegrity: (Dom.element, string) => unit = "integrity"
 @send external addScriptEventListener: (Dom.element, string, unit => unit) => unit = "addEventListener"
 
 @deriving(abstract)

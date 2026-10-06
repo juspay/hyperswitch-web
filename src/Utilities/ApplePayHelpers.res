@@ -64,7 +64,11 @@ let getApplePayFromResponse = (
   bodyDict->mergeAndFlattenToTuples(requiredFieldsBody)
 }
 
-let applePaySdkUrl = "https://applepay.cdn-apple.com/jsapi/1.latest/apple-pay-sdk.js"
+// A pinned version of Apple's JS SDK with Subresource Integrity: the auto-updating `1.latest`
+// URL cannot be integrity-checked. The SDK loads its modules and fonts from the same versioned
+// path. When upgrading, update both the version and the hash Apple publishes for it.
+let applePaySdkUrl = "https://applepay.cdn-apple.com/jsapi/v1.3.8/apple-pay-sdk.js"
+let applePaySdkIntegrity = "sha384-u/9mOkmShCO0v+dqCAZFhiutJuORfzvuyM5i+676iy7mLSWS6rlllHrIt15f/mqH"
 let applePayButtonTag = "apple-pay-button"
 let applePaySdkLoadTimeout = 3000
 let applePayCapabilitiesTimeout = 3000
@@ -78,6 +82,7 @@ let getOrCreateApplePaySdkScript = () =>
     script->Window.elementSrc(applePaySdkUrl)
     script->setScriptAsync(true)
     script->setCrossOrigin("anonymous")
+    script->setIntegrity(applePaySdkIntegrity)
     Window.head->Window.appendChildElement(script)
     script
   }
@@ -255,7 +260,6 @@ let startApplePaySession = (
           ->Dict.get("session_token_data")
           ->Option.getOr(Dict.make()->JSON.Encode.object)
           ->transformKeysWithoutModifyingValue(CamelCase)
-          Js.log2("merchant session", merchantSession)
         ssn.completeMerchantValidation(merchantSession)
       } else {
         ssn.completeMerchantValidation(Dict.make()->JSON.Encode.object)
