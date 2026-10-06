@@ -27,8 +27,6 @@ let preloadFile = (~type_, ~href=``) => {
 let preloader = () => {
   preloadFile(~type_="script", ~href=`${ApiEndpoint.sdkDomainUrl}/app.js`)
   preloadFile(~type_="style", ~href=`${ApiEndpoint.sdkDomainUrl}/app.css`)
-  /* Core sprite only - bank-redirect logos live in icons/banks.svg, fetched on demand by
-     BankLogoIcon; do not add them here */
   preloadFile(~type_="image", ~href=`${ApiEndpoint.sdkDomainUrl}/icons/orca.svg`)
   preloadFile(
     ~type_="style",

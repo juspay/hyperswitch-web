@@ -107,15 +107,10 @@ let getLocaleObject = async string => {
   } else {
     string
   }
-  /* Neither can throw: `language` is a plain property read and `mapLocalStringToTypeLocale` is
-     total */
   let localeType = locale->LocaleStringHelper.mapLocalStringToTypeLocale
 
   try {
     let promiseLocale = switch localeType {
-    /* English is the terminal fallback for every other locale and the synchronous default in
-       `defaultJotaiConfig`, so it is compiled into the entry bundles rather than code-split -
-       no chunk, no round trip */
     | EN => Promise.resolve(EnglishLocale.localeStrings)
     | HE => import(HebrewLocale.localeStrings)
     | FR => import(FrenchLocale.localeStrings)
@@ -153,12 +148,6 @@ let getLocaleObject = async string => {
     let awaitedLocaleValue = await promiseLocale
     awaitedLocaleValue
   } catch {
-  /*
-   Only reached when the import() itself rejects: a blocked CDN, an offline tab, a deploy that
-   rotated chunk hashes mid-session. English is compiled into the entry bundles, so this
-   fallback needs no chunk and cannot itself fail - whatever happens to the network, the form
-   renders in English and the payment completes.
-   */
   | _ => EnglishLocale.localeStrings
   }
 }
@@ -175,8 +164,6 @@ let getConstantStringsObject = async () => {
 let defaultJotaiConfig: jotaiConfig = {
   config: defaultConfig,
   themeObj: defaultConfig.appearance.variables,
-  /* English is compiled in, so a card form can never paint with unlabelled fields.
-     LoaderController publishes the merchant's locale over it as soon as that chunk lands */
   localeString: EnglishLocale.localeStrings,
   constantString: ConstantStrings.constantStrings,
   showLoader: false,

@@ -1,8 +1,4 @@
-/*
- Phone_number.json (62 KB raw) and the helpers that read it, split out of Utils.res: Utils.res
- is imported by ~80 modules, so a static @module import there put the table in every bundle.
- Only the three phone fields read it, and they sit behind lazy boundaries.
- */@module("./Phone_number.json")
+@module("./Phone_number.json")
 external phoneNumberJson: JSON.t = "default"
 
 let validatePhoneNumber = (countryCode, number) => {

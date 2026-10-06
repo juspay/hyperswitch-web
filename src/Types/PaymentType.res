@@ -663,9 +663,6 @@ let getAddress = (dict, str, logger) => {
       "options.defaultValues.billingDetails.address",
     )
     let country = getWarningString(json, "country", "", ~logger)
-    /* getAddress runs synchronously while the `options` message is parsed, before
-       initializeCountryData resolves, so countryNames is [] at that point - warning then would
-       flag every correctly-integrated merchant */
     let isCountryListLoaded = countryNames->Array.length > 0
     if country != "" && isCountryListLoaded && !(countryNames->Array.includes(country)) {
       unknownPropValueWarning(

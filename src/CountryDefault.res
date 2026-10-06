@@ -1,9 +1,4 @@
-/*
- The country/timezone *shapes* and the empty default row, split out of Country.res: real
- country/state data is fetched from S3 at runtime and the bundled 25.8 KB table is only its
- offline fallback, so everything needing the types or the "-" placeholder row imports this
- module instead and the table is pulled in by a dynamic import only when the S3 fetch fails.
- */type windowsTimeZones = {
+type windowsTimeZones = {
   id: string,
   name: string,
 }

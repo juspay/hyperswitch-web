@@ -18,29 +18,14 @@ let checkIsSafari = () => {
   !chromeAgent && safariAgent
 }
 
-/*
- Minimal user-agent sniff. Only three parsed values ever reach a payment request - os_type,
- os_version and device_model - so the fields below are the whole contract. Names and versions
- follow ua-parser-js 2.0.0 so the values merchants already receive do not change.
- */
 type userAgentInfo = {
   osName: option<string>,
   osVersion: option<string>,
   deviceModel: option<string>,
 }
 
-/*
- navigator.userAgent is attacker-controlled and ends up in the confirm request body and the
- stored payment record, so the bounds are explicit: 500 is ua-parser-js's own UA_MAX_LENGTH
- (the limit this field already had in production), and it caps the input every regex below sees.
- */
 let maxUserAgentLength = 500
 
-/*
- The longest real corpus value is "moto g stylus 5G" at 16 characters. An over-long value is by
- construction not a real model, so it is dropped rather than truncated - a prefix of an attack
- string is worse than "Unknown Device".
- */
 let maxFieldLength = 64
 
 let bounded = value => value->String.length > maxFieldLength ? None : Some(value)
@@ -57,7 +42,6 @@ let firstGroup = (regex, str) =>
 
 let underscoresToDots = version => version->String.replaceRegExp(%re("/_/g"), ".")
 
-/* `Windows NT <n>` is a kernel version, not the version the payment API expects */
 let windowsVersion = ntVersion =>
   switch ntVersion {
   | "10.0" | "6.4" => "10"
@@ -70,19 +54,6 @@ let windowsVersion = ntVersion =>
   | other => other
   }
 
-/*
- Android and Windows Phone put the device model in the parenthesised comment, after the
- platform, locale and build segments. Drop every segment known not to be a model; of what
- remains, the last one is the model.
-
- The last two rules matter because the model is *not* always last: Huawei appends
- `HMSCore <version>`, Opera appends `Opera Mini/7.5.33361/28.2555` or
- `Opera Mobi/ADR-1305251841` - library tokens, not devices. A `<name>/<version>` product token
- is recognised by the *version*, not the slash: matching the bare slash would take out every
- dual-SIM/variant model (`SM-G998B/DS`, `SM-A515F/DS`, `INE-LX2r/DS`, `LG-D855/V20c`), which
- dominate India, Brazil, SE Asia and MENA. The dotted-version rule does NOT cover
- `Opera Mini/7.5.33361/28.2555`: it ends in `28.2555`, only two components.
- */
 let isNotDeviceModel = segment =>
   segment == "" ||
   %re("/^(u|wv|phone|mobile|tablet|tv|vr|khtml, like gecko)$/i")->RegExp.test(segment) ||
@@ -94,12 +65,6 @@ let isNotDeviceModel = segment =>
   %re("/^[\d.]+$/")->RegExp.test(segment) ||
   %re("/\/(?:\d|[^\/]*\d{4,})/")->RegExp.test(segment) ||
   %re("/\d+(\.\d+){2,}$/")->RegExp.test(segment) ||
-  /*
-   Shape guards, for the same reason as the length cap: a Build.MODEL is never pure punctuation
-   and never contains a control, bidi/zero-width or angle-bracket character. These narrow the
-   *shape* of the field - they are not sanitisation; device_model stays untrusted client text
-   and must be escaped wherever rendered.
-   */
   !(%re("/[a-z\d]/i")->RegExp.test(segment)) ||
   %re("/[\x00-\x1f\x7f-\x9f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff<>]/")->RegExp.test(
     segment,
@@ -117,8 +82,6 @@ let deviceModelFromComment = userAgent =>
   | None => None
   }
 
-/* Order matters: iOS carries "like Mac OS X", Android and Ubuntu carry "Linux", Windows Phone
-   carries "Android", and HarmonyOS carries "Android" *and* "Linux" */
 let parseTruncatedUserAgent = userAgent =>
   if %re("/windows phone/i")->RegExp.test(userAgent) {
     {
@@ -137,10 +100,6 @@ let parseTruncatedUserAgent = userAgent =>
       deviceModel: %re("/\((ip(?:hone|ad|od)[\w ]*)\s*[;)]/i")->firstGroup(userAgent),
     }
   } else if %re("/\b(?:harmonyos|openharmony)\b/i")->RegExp.test(userAgent) {
-    /* HarmonyOS reports as a comment segment *alongside* its compatible Android version
-       (`(Linux; Android 10; HarmonyOS; JEF-AN00; …)`), so it must be tested before /android/i.
-       ua-parser-js took the version from the Android token here, so keep doing that.
-       OpenHarmony (NEXT) carries no Android token. */
     let version = switch %re("/android[ \/-]?([\d.]+)/i")->firstGroup(userAgent) {
     | Some(version) => Some(version)
     | None => %re("/\b(?:harmonyos|openharmony)[ \/-]?([\d.]+)/i")->firstGroup(userAgent)
@@ -186,8 +145,6 @@ let parseTruncatedUserAgent = userAgent =>
     {osName: None, osVersion: None, deviceModel: None}
   }
 
-/* The one choke point for both bounds: truncate before any regex sees the agent, and drop any
-   value that comes back longer than a real one could be */
 let parseUserAgent = userAgent => {
   let truncated =
     userAgent->String.length > maxUserAgentLength
@@ -203,12 +160,6 @@ let parseUserAgent = userAgent => {
 
 let date = date()
 
-/*
- The bounds above cover the three *parsed* values only. `user_agent` below is emitted whole
- and untruncated, deliberately: EMVCo 3DS browser info carries it verbatim and ACS device
- fingerprinting hashes it, so truncating it would break authentication outright. `language` is
- likewise raw - both stay client-controlled and unbounded.
- */
 let broswerInfo = () => {
   let data = parseUserAgent(navigator.userAgent)
   let osType = data.osName->Option.getOr("Unknown")

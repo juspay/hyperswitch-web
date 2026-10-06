@@ -88,39 +88,9 @@ let make = () => {
     Some(() => Window.removeEventListener("message", handleMetaDataPostMessage))
   })
 
-  /*
-   Most branches below are reached through a `*Lazy.res` wrapper, so each route ships as its
-   own async chunk. These stay eager on purpose:
-   - the default branch (LoaderController -> Payment), the only one on the first-paint path;
-   - "preMountLoader", which exists to start API calls early (see there);
-   - every route that opens after the Pay click: 3ds, 3dsAuth, 3dsRedirectionPopup, redsys3ds,
-     qrData, voucherData and the three bank-transfer popups. The loader opens their full-screen
-     iframe and then waits, with no timeout, for the route itself to post back - so a chunk
-     that failed to load would leave the payment stuck mid-flow with nothing able to end it.
-     Eager, they come from app.js, which the payment form has already loaded (about 5 KB gzip).
-   - "cardFormCoordinator". LoaderController posts iframeMounted from its first effect and the
-     loader then flushes queued commands (initiateConfirm) at once, with no timeout. The
-     coordinator's command listener has to be registered by then, which only holds when it
-     renders in the same commit - React runs the child's effects before LoaderController's.
-
-   `loaderComponent` has no default, so every lazy route states what shows while its chunk
-   loads. `React.null` is only for routes with nothing on screen at that point:
-   FullScreenDivDriver renders no UI, PaymentMethodsSDK renders nothing
-   until its config is ready, and Plaid and Paze hand over to third-party UI that has its own
-   loading state.
-   */
   let lazyRoute = (~componentName, ~loaderComponent, children) =>
     <ReusableReactSuspense loaderComponent componentName> {children} </ReusableReactSuspense>
 
-  /*
-   Each fallback copies the first frame of the route it stands in for, so the swap from
-   fallback to route is not visible:
-   - modalLoader is Modal's loading state (Modal.res `loaderUI` on the Modal backdrop, minus the
-     `overflow-scroll` that only matters once there is content), for clickToPayLearnMore,
-     which renders a <Modal>.
-   - collectLoader is a centred Loader for PaymentMethodCollect, which has no loading frame of
-     its own to copy.
-   */
   let modalLoader =
     <div className="h-screen w-screen bg-black/40 flex m-auto items-center backdrop-blur-sm">
       <div className="flex justify-center m-auto"> <Loader showText=false /> </div>
@@ -203,13 +173,6 @@ let make = () => {
         let isSdkParamsEnabled =
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
-        /*
-         Deliberately NOT lazy: this route exists only to start the payment-methods / session
-         API calls as early as possible, and the parent cannot begin until
-         preMountLoaderIframeMountedCallback arrives. Behind a chunk boundary that callback
-         costs a serial round trip that propagates to the visible checkout; the module is 1.1
-         KB gzip - a bad trade for an RTT on the warm-up path.
-         */
         <PreMountLoader
           publishableKey
           sessionId

@@ -218,8 +218,6 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
 }
 
 let getOptionsFromPaymentMethodFieldType = (dict, key, ~isAddressCountry=true) => {
-  /* Read at call time, like every other consumer of this ref: the list is filled in by
-     S3Utils.initializeCountryData, which LoaderController awaits before render */
   let countryData = CountryStateDataRefs.countryDataRef.contents
   let options = dict->getArrayValFromJsonDict(key, "options")
   switch options->Array.get(0)->Option.getOr("") {

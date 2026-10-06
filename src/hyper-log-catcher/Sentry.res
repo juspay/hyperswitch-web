@@ -92,8 +92,6 @@ let initiateSentry = (~dsn) => {
     })
     getCurrentScope()->setClient(browserClient)
     browserClient->init()
-    /* Session Replay is deliberately absent: SentryReplayLoader adds it after first paint, so
-       rrweb never competes with the bytes the payment form needs to render */
     Some(browserClient)
   } catch {
   | err =>
@@ -109,10 +107,6 @@ let initiateSentryJs = (~dsn) => {
       environment: GlobalVars.isProd ? "production" : "development",
       transport: makeFetchTransport,
       stackParser: defaultStackParser,
-      /* Error capture only: this client runs on the *merchant's* page - its Replay recorded a
-         third party's DOM, and its tracing produced pageload spans about a third party's site
-         at 100% sampling, propagating to nobody. The sample rates below are inert with no
-         tracing or replay integration registered. */
       integrations: [],
       tracesSampleRate: 1.0,
       tracePropagationTargets: ["localhost"],

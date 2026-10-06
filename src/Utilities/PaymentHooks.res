@@ -1,8 +1,3 @@
-/*
- React hooks over the payment API in `PaymentHelpers`, in their own module so `PaymentHelpers`
- stays hook-free: the loader calls plain async functions from it, and when the hooks shared that
- file their `JotaiAtoms` references pulled the whole atoms module into the loader bundle.
- */
 open Utils
 open PaymentHelpersTypes
 open LoggerUtils

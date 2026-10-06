@@ -772,9 +772,6 @@ let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
   switch customerMethod.paymentMethod {
   | "wallet" => getWalletBrandIcon(customerMethod)
   | "bank_redirect" =>
-    /* BankLogoIconLazy fetches its chunk and banks.svg mid-checkout, in a list the shopper is
-       reading: a React.null fallback would mean seconds of nothing then a reflow, so reserve
-       exactly the box <Icon> will occupy (Utils.brandIconSize square) */
     <React.Suspense
       fallback={<div
         className="animate-pulse rounded bg-slate-200"

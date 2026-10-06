@@ -1,9 +1,3 @@
-/*
- The payment-method field table, split out of PaymentMethodsRecord.res: PaymentMethodsRecord is
- imported by the loader entry, but these two fields are only called app-side (DynamicFields,
- PaymentOptions, AccordionContainer), so the lazy phone field - and with it Phone_number.json -
- never enters the loader's runtime.
- */
 open PaymentMethodsRecord
 
 let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) => [

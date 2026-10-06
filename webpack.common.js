@@ -183,11 +183,6 @@ const sdkUrls = {
   local: "http://localhost:9050",
 };
 
-/*
- Fail the build on an unknown sdkEnv rather than ship a production-shaped build whose
- ApiEndpoint.sdkDomainUrl - the iframe and asset URLs the loader builds - points at
- http://localhost:9050 (the old fallback). ENV_SDK_URL is the supported escape hatch.
- */
 if (!Object.prototype.hasOwnProperty.call(sdkUrls, sdkEnv) && !envSdkUrl) {
   throw new Error(
     `Unsupported sdkEnv "${sdkEnv}". Expected one of ${Object.keys(
@@ -388,12 +383,6 @@ module.exports = (publicPath = "auto") => {
 
   return {
     mode: isLocal ? "development" : "production",
-    /*
-     "hidden-source-map" still writes the .map files (the Sentry upload above keeps working)
-     but omits the sourceMappingURL comment so devtools do not fetch them. It is not access
-     control: aws/hyperswitch_web_aws_production_deployment.sh excludes *.map (and the bundle
-     report) from its S3 upload, and any other deployment path has to do the same.
-     */
     devtool: isLocal ? "cheap-module-source-map" : "hidden-source-map",
     output: {
       path: isLocal
@@ -406,13 +395,6 @@ module.exports = (publicPath = "auto") => {
           ),
       crossOriginLoading: "anonymous",
       clean: true,
-      /*
-       Host-less, so it resolves against whichever server delivered the page: the iframe
-       documents and their chunks are always served from the SDK's own origin - the CDN, a
-       self-hosted server or the dev server. HyperLoader.js runs on the merchant's page and must
-       stay self-contained: a chunk it requested would be a cross-origin `crossorigin` script,
-       which the prod and sandbox CDNs block (they send no Access-Control-Allow-Origin).
-       */
       publicPath: `${repoPublicPath}/`,
       hashFunction: "sha384",
     },
@@ -428,11 +410,7 @@ module.exports = (publicPath = "auto") => {
                   drop_console: false,
                 },
                 mangle: {
-                  /* babel-plugin-add-react-displayname derives displayName from function
-                     names, and Sentry stack frames are only readable while they survive */
-                  keep_fnames: true,
-                  /* keep_classnames deliberately unset: ReScript emits no classes and there
-                     are no React class components, so it would only cost bytes */
+                  keep_fnames: true, // Prevent function names from being mangled
                 },
               },
             }),
