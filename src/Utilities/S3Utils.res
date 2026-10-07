@@ -29,14 +29,6 @@ let decodeJsonTocountryStateData = jsonData => {
   }
 }
 
-let getNormalizedLocale = locale => {
-  switch locale {
-  | "auto" => Window.Navigator.language
-  | "" => "en"
-  | _ => locale
-  }
-}
-
 let fetchCountryStateFromS3 = endpoint => {
   open Promise
 
@@ -56,20 +48,16 @@ let fetchCountryStateFromS3 = endpoint => {
 
 let getBaseUrl = GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
 
-let getCountryStateData = async (
-  ~locale="en",
-  ~logger=HyperLogger.make(~source=Elements(Payment)),
-) => {
-  let normalizedLocale = getNormalizedLocale(locale)
+let getCountryStateData = async (~logger=HyperLogger.make(~source=Elements(Payment))) => {
   let timestamp = Date.now()->Float.toString
-  let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
+  let endpoint = `${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`
 
   try {
     await fetchCountryStateFromS3(endpoint)
   } catch {
   | _ =>
     try {
-      await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
+      await fetchCountryStateFromS3(endpoint)
     } catch {
     | _ => {
         logger.setLogError(
@@ -97,13 +85,10 @@ let getCountryStateData = async (
   }
 }
 
-let initializeCountryData = async (
-  ~locale="en",
-  ~logger=HyperLogger.make(~source=Elements(Payment)),
-) => {
+let initializeCountryData = async (~logger=HyperLogger.make(~source=Elements(Payment))) => {
   open CountryStateDataRefs
   try {
-    let data = await getCountryStateData(~locale, ~logger)
+    let data = await getCountryStateData(~logger)
     countryDataRef.contents = data.countries
     stateDataRef.contents = data.states
     data

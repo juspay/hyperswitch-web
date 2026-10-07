@@ -222,7 +222,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       let resolvedLocale = requestedLocale === "auto" ? Window.Navigator.language : requestedLocale
       let localePromise = CardTheme.getLocaleObject(requestedLocale)
       let constantStringPromise = CardTheme.getConstantStringsObject()
-      let countryDataPromise = S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
+      let countryDataPromise = S3Utils.initializeCountryData(~logger)
       let localeString = await localePromise
       let constantString = await constantStringPromise
       let resolvedConfig = {
