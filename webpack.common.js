@@ -383,7 +383,7 @@ module.exports = (publicPath = "auto") => {
 
   return {
     mode: isLocal ? "development" : "production",
-    devtool: isLocal ? "cheap-module-source-map" : "hidden-source-map",
+    devtool: isLocal ? "cheap-module-source-map" : "source-map",
     output: {
       path: isLocal
         ? path.resolve(__dirname, "dist")

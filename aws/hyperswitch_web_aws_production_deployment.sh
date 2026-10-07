@@ -94,7 +94,7 @@ echo "Enter the folder name you want to push the assets to"
 read AWS_DESTINATION_KEY </dev/tty
 
 echo "Uploading files to S3"
-echo $( (aws s3 cp "./dist" "s3://$MY_AWS_S3_BUCKET_NAME/$AWS_DESTINATION_KEY" --recursive --exclude "*.map" --exclude "*bundle-report.html"))
+echo $( (aws s3 cp "./dist" "s3://$MY_AWS_S3_BUCKET_NAME/$AWS_DESTINATION_KEY" --recursive))
 echo "Uploaded files "
 
 echo "Hurray! You now have hosted your Hyperswitch Web to S3! You can use this URL for your integrations : $AWS_BUCKET_LOCATION$AWS_DESTINATION_KEY/HyperLoader.js"
