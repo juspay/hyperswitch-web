@@ -328,6 +328,8 @@ let make = (
         // Sepa
         | (SepaIban, _) => PayoutMethodData(SepaIban)->renderInputTemplate
         | (SepaBic, _) => PayoutMethodData(SepaBic)->renderInputTemplate
+        | (SepaAccountHolderName, None) =>
+          PayoutMethodData(SepaAccountHolderName)->renderInputTemplate
         // Paypal
         | (PaypalMail, _) => PayoutMethodData(PaypalMail)->renderInputTemplate
         | (PaypalMobNumber, _) => PayoutMethodData(PaypalMobNumber)->renderInputTemplate
@@ -349,7 +351,8 @@ let make = (
         | (SepaCountryCode, _)
         | (PixBankAccountNumber, _)
         | (PixBankName, _)
-        | (CardHolderName, Some(_)) => React.null
+        | (CardHolderName, Some(_))
+        | (SepaAccountHolderName, Some(_)) => React.null
         }}
       </React.Fragment>
     )
