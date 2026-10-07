@@ -40,6 +40,7 @@ let cvcIconOverride = Jotai.atom((None: option<PaymentType.cvcIconStyle>))
 let cardNumberPlaceholder = Jotai.atom((None: option<string>))
 let cardExpiryPlaceholder = Jotai.atom((None: option<string>))
 let cardCvcPlaceholder = Jotai.atom((None: option<string>))
+let cardholderNamePlaceholder = Jotai.atom((None: option<string>))
 let paymentMethodCollectOptionAtom = Jotai.atom(
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
 )
