@@ -441,6 +441,14 @@ let make = (
         currentFlowType,
       ) = mountConfigRef.current
       let endpoint = ApiEndpoint.getVaultEndPoint(~publishableKey=currentPublishableKey)
+      // Forwarded alongside `endpoint` so this iframe's own ApiEndpoint module (a separate
+      // JS realm from the parent) picks up the same overrides Elements.res sends — this
+      // iframe still runs setConfigs -> S3Utils country/state fetch, sdk-config fetch, etc.
+      let confirmEndpoint =
+        ApiEndpoint.getApiEndPoint(~publishableKey=currentPublishableKey, ~isConfirmCall=true)
+      let loggingEndpoint = ApiEndpoint.getLoggingEndPoint()
+      let assetsEndpoint = ApiEndpoint.getAssetsEndPoint()
+      let sdkConfigEndpoint = ApiEndpoint.getSdkConfigEndPoint(~publishableKey=currentPublishableKey)
       lastPostedOptionsRef.current = currentOptionsJson->JSON.stringify
       let supportedCardBrandEntries = switch supportedCardBrandsRef.current {
       | Some(brands) => [
@@ -456,6 +464,10 @@ let make = (
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", currentPublishableKey->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
+          ("confirmEndpoint", confirmEndpoint->JSON.Encode.string),
+          ("loggingEndpoint", loggingEndpoint->JSON.Encode.string),
+          ("assetsEndpoint", assetsEndpoint->JSON.Encode.string),
+          ("sdkConfigEndpoint", sdkConfigEndpoint->JSON.Encode.string),
           ("sdkSessionId", currentSessionId->JSON.Encode.string),
           ("customPodUri", currentCustomPodUri->JSON.Encode.string),
           ("paymentId", currentPaymentId->JSON.Encode.string),

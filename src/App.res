@@ -134,6 +134,14 @@ let make = () => {
         let isTestMode = getQueryParamsDictforKey(url.search, "isTestMode") === "true"
         let isSdkParamsEnabled =
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
+        let platformPublishableKey = getQueryParamsDictforKey(url.search, "platformPublishableKey")
+        let sdkConfigEndpoint = getQueryParamsDictforKey(url.search, "sdkConfigEndpoint")
+
+        // Set the sdkConfigEndPoint ref immediately so fetchSdkConfigs (called during
+        // PreMountLoader's first render) resolves to the correct URL before any postMessage arrives.
+        if sdkConfigEndpoint !== "" {
+          ApiEndpoint.setSdkConfigEndPoint(sdkConfigEndpoint)
+        }
 
         <PreMountLoader
           publishableKey
@@ -147,6 +155,7 @@ let make = () => {
           customPodUri
           isTestMode
           isSdkParamsEnabled
+          platformPublishableKey
         />
       }
     | "achBankTransfer"

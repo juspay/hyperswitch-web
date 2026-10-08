@@ -472,8 +472,8 @@ let make = (
             )
             let iframeURL =
               fullscreenParam.contents != ""
-                ? `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=${fullscreenParam.contents}`
-                : `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=fullscreen`
+                ? `${ApiEndpoint.sdkDomainUrl}/${ApiEndpoint.fullscreenIndexPageName()}?fullscreenType=${fullscreenParam.contents}`
+                : `${ApiEndpoint.sdkDomainUrl}/${ApiEndpoint.fullscreenIndexPageName()}?fullscreenType=fullscreen`
             fullscreen.contents
               ? {
                   if iframeID == localSelectorString {
@@ -564,7 +564,7 @@ let make = (
             | None => url
             }
           let iframeSrc =
-            `${sdkDomainUrl}/index.html?componentName=${componentType}`
+            `${sdkDomainUrl}/${ApiEndpoint.indexPageName()}?componentName=${componentType}`
             ->appendParam("fieldName", fieldName)
             ->appendParam("surfaceFamily", surfaceFamily)
             ->appendParam("groupId", groupId)
