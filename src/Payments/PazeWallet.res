@@ -142,3 +142,5 @@ let make = (~logger: HyperLoggerTypes.loggerMake) => {
 
   <div id="paze-button" className="w-full flex flex-row justify-center rounded-md h-auto" />
 }
+
+let default = make

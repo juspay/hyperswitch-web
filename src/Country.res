@@ -1,30 +1,25 @@
-type windowsTimeZones = {
+type windowsTimeZones = CountryDefault.windowsTimeZones = {
   id: string,
   name: string,
 }
-type timezoneType = {
+type timezoneType = CountryDefault.timezoneType = {
   isoAlpha3?: string,
   timeZones: array<string>,
   countryName: string,
   isoAlpha2: string,
 }
 
-type state = {
+type state = CountryDefault.state = {
   name: string,
   code: string,
 }
 
-type countryStateData = {
+type countryStateData = CountryDefault.countryStateData = {
   countries: array<timezoneType>,
   states: JSON.t,
 }
 
-let defaultTimeZone = {
-  isoAlpha3: "",
-  timeZones: [],
-  countryName: "-",
-  isoAlpha2: "",
-}
+let defaultTimeZone = CountryDefault.defaultTimeZone
 
 let country = [
   {

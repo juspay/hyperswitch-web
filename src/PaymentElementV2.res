@@ -98,7 +98,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
   }, [selectedOption])
 
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   React.useEffect(() => {
     setSelectedOption(prev =>

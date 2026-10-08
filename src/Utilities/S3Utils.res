@@ -1,4 +1,4 @@
-open Country
+open CountryDefault
 
 let decodeCountryArray = data => {
   open Utils
@@ -29,14 +29,6 @@ let decodeJsonTocountryStateData = jsonData => {
   }
 }
 
-let getNormalizedLocale = locale => {
-  switch locale {
-  | "auto" => Window.Navigator.language
-  | "" => "en"
-  | _ => locale
-  }
-}
-
 let fetchCountryStateFromS3 = endpoint => {
   open Promise
 
@@ -56,20 +48,16 @@ let fetchCountryStateFromS3 = endpoint => {
 
 let getBaseUrl = GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
 
-let getCountryStateData = async (
-  ~locale="en",
-  ~logger=HyperLogger.make(~source=Elements(Payment)),
-) => {
-  let normalizedLocale = getNormalizedLocale(locale)
+let getCountryStateData = async (~logger=HyperLogger.make(~source=Elements(Payment))) => {
   let timestamp = Date.now()->Float.toString
-  let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
+  let endpoint = `${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`
 
   try {
     await fetchCountryStateFromS3(endpoint)
   } catch {
   | _ =>
     try {
-      await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
+      await fetchCountryStateFromS3(endpoint)
     } catch {
     | _ => {
         logger.setLogError(
@@ -79,7 +67,7 @@ let getCountryStateData = async (
           ~logCategory=USER_ERROR,
         )
 
-        let fallbackCountries = country
+        let fallbackCountries = await import(Country.country)
         try {
           let fallbackStates = await Utils.importStates("./../States.json")
           {
@@ -97,17 +85,26 @@ let getCountryStateData = async (
   }
 }
 
-let initializeCountryData = async (
-  ~locale="en",
-  ~logger=HyperLogger.make(~source=Elements(Payment)),
-) => {
+let initializeCountryData = async (~logger=HyperLogger.make(~source=Elements(Payment))) => {
+  open CountryStateDataRefs
   try {
-    open CountryStateDataRefs
-    let data = await getCountryStateData(~locale, ~logger)
+    let data = await getCountryStateData(~logger)
     countryDataRef.contents = data.countries
     stateDataRef.contents = data.states
     data
   } catch {
-  | _ => {countries: country, states: JSON.Encode.null}
+  | _ =>
+    if countryDataRef.contents->Array.length > 0 {
+      {countries: countryDataRef.contents, states: stateDataRef.contents}
+    } else {
+      let fallbackCountries = try {
+        await import(Country.country)
+      } catch {
+      | _ => []
+      }
+      countryDataRef.contents = fallbackCountries
+      stateDataRef.contents = JSON.Encode.null
+      {countries: fallbackCountries, states: JSON.Encode.null}
+    }
   }
 }

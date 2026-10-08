@@ -32,7 +32,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
-  let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
+  let setPaymentMethodCollectOptions = Jotai.useSetAtom(
+    PayoutJotaiAtoms.paymentMethodCollectOptionAtom,
+  )
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let isPaymentMethodsSDKSurface = componentName == "paymentMethodsSDK"
@@ -67,6 +69,22 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setOptionsJson = Jotai.useSetAtom(optionsJsonAtom)
   let setPaymentOptionsJson = Jotai.useSetAtom(paymentOptionsJsonAtom)
 
+  let pendingClientTimeZone = React.useRef(None)
+
+  let applyClientCountry = clientTimeZone => {
+    let clientCountry = getClientCountry(clientTimeZone)
+    if clientCountry.countryName === CountryDefault.defaultTimeZone.countryName {
+      pendingClientTimeZone.current = Some(clientTimeZone)
+    } else {
+      pendingClientTimeZone.current = None
+      setUserAddressCountry(prev => {
+        ...prev,
+        value: clientCountry.countryName,
+      })
+      setCountry(_ => clientCountry.countryName)
+    }
+  }
+
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
       (optionsPayment.defaultValues.billingDetails.name, setUserFullName),
@@ -87,13 +105,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     })
     if optionsPayment.defaultValues.billingDetails.address.country === "" {
-      let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
-      let clientCountry = getClientCountry(clientTimeZone)
-      setUserAddressCountry(prev => {
-        ...prev,
-        value: clientCountry.countryName,
-      })
-      setCountry(_ => clientCountry.countryName)
+      applyClientCountry(CardUtils.dateTimeFormat().resolvedOptions().timeZone)
     } else {
       setUserAddressCountry(prev => {
         ...prev,
@@ -208,11 +220,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
       let requestedLocale = optionsLocaleString == "" ? config.locale : optionsLocaleString
       let resolvedLocale = requestedLocale === "auto" ? Window.Navigator.language : requestedLocale
-      let localeString = await CardTheme.getLocaleObject(requestedLocale)
-      let constantString = await CardTheme.getConstantStringsObject()
-      let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
-      setConfig(_ => {
-        config: {
+      let localePromise = CardTheme.getLocaleObject(requestedLocale)
+      let constantStringPromise = CardTheme.getConstantStringsObject()
+      let countryDataPromise = S3Utils.initializeCountryData(~logger)
+      let localeString = await localePromise
+      let constantString = await constantStringPromise
+      let resolvedConfig = {
+        CardTheme.config: {
           appearance,
           locale: resolvedLocale,
           fonts: config.fonts,
@@ -225,7 +239,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         localeString,
         constantString,
         showLoader: config.loader == Auto || config.loader == Always,
-      })
+      }
+      setConfig(_ => resolvedConfig)
+      let _ = await countryDataPromise
+      pendingClientTimeZone.current->Option.forEach(applyClientCountry)
+      setConfig(_ => {...resolvedConfig, localeString})
     } catch {
     | _ => ()
     }

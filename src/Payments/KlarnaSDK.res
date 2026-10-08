@@ -18,7 +18,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let {publishableKey, iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
   let options = Jotai.useAtomValue(optionAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Other)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)

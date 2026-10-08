@@ -41,13 +41,6 @@ let cardNumberPlaceholder = Jotai.atom((None: option<string>))
 let cardExpiryPlaceholder = Jotai.atom((None: option<string>))
 let cardCvcPlaceholder = Jotai.atom((None: option<string>))
 let cardholderNamePlaceholder = Jotai.atom((None: option<string>))
-let paymentMethodCollectOptionAtom = Jotai.atom(
-  PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
-)
-let payoutDynamicFieldsAtom = Jotai.atom(PaymentMethodCollectUtils.defaultPayoutDynamicFields())
-let paymentMethodTypeAtom = Jotai.atom(PaymentMethodCollectUtils.defaultPmt())
-let formDataAtom = Jotai.atom(PaymentMethodCollectUtils.defaultFormDataDict)
-let validityDictAtom = Jotai.atom(PaymentMethodCollectUtils.defaultValidityDict)
 
 let defaultFieldValues = {
   value: "",

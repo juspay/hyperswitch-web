@@ -102,15 +102,16 @@ type jotaiConfig = {
 }
 
 let getLocaleObject = async string => {
-  try {
-    let locale = if string == "auto" {
-      Window.Navigator.language
-    } else {
-      string
-    }
+  let locale = if string == "auto" {
+    Window.Navigator.language
+  } else {
+    string
+  }
+  let localeType = locale->LocaleStringHelper.mapLocalStringToTypeLocale
 
-    let promiseLocale = switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
-    | EN => import(EnglishLocale.localeStrings)
+  try {
+    let promiseLocale = switch localeType {
+    | EN => Promise.resolve(EnglishLocale.localeStrings)
     | HE => import(HebrewLocale.localeStrings)
     | FR => import(FrenchLocale.localeStrings)
     | EN_GB => import(EnglishGBLocale.localeStrings)

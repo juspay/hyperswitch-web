@@ -248,7 +248,7 @@ let make = (
     localeString,
     vaultCredentials,
   ))
-  useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=keys.parentURL)
+  UtilsHooks.useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=keys.parentURL)
 
   React.useEffect(() => {
     SubscriptionEventHooks.emitReady(

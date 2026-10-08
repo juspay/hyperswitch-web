@@ -49,7 +49,7 @@ const devServer = {
   ],
   headers: {
     "Cache-Control": "must-revalidate",
-    "Access-Control-Allow-Origin": "*"
+    "Access-Control-Allow-Origin": "*",
   },
 };
 

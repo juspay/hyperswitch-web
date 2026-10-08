@@ -27,15 +27,6 @@ external initSentry: sentryInitArg => unit = "init"
 @module("@sentry/react")
 external newBrowserTracing: unit => integration = "browserTracingIntegration"
 
-type reactRouterV6BrowserTracingIntegrationArg = {useEffect: (unit => option<unit => unit>) => unit}
-
-@module("@sentry/react")
-external reactRouterV6BrowserTracingIntegration: reactRouterV6BrowserTracingIntegrationArg => integration =
-  "reactRouterV6BrowserTracingIntegration"
-
-@module("@sentry/react")
-external newSentryReplay: unit => integration = "replayIntegration"
-
 @module("@sentry/react")
 external capture: Exn.t => unit = "captureException"
 
@@ -88,11 +79,7 @@ let initiateSentry = (~dsn) => {
       environment: GlobalVars.isProd ? "production" : "development",
       transport: makeFetchTransport,
       stackParser: defaultStackParser,
-      integrations: [
-        newBrowserTracing(),
-        reactRouterV6BrowserTracingIntegration({useEffect: React.useEffect0}),
-        newSentryReplay(),
-      ],
+      integrations: [newBrowserTracing()],
       tracesSampleRate: 0.1,
       tracePropagationTargets: [
         "localhost",
@@ -105,8 +92,11 @@ let initiateSentry = (~dsn) => {
     })
     getCurrentScope()->setClient(browserClient)
     browserClient->init()
+    Some(browserClient)
   } catch {
-  | err => Console.error(err)
+  | err =>
+    Console.error(err)
+    None
   }
 }
 
@@ -117,7 +107,7 @@ let initiateSentryJs = (~dsn) => {
       environment: GlobalVars.isProd ? "production" : "development",
       transport: makeFetchTransport,
       stackParser: defaultStackParser,
-      integrations: [newBrowserTracing(), newSentryReplay()],
+      integrations: [],
       tracesSampleRate: 1.0,
       tracePropagationTargets: ["localhost"],
       replaysSessionSampleRate: 0.1,

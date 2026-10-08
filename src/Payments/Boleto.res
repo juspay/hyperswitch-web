@@ -28,7 +28,7 @@ let make = () => {
   let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Other)
   let setComplete = Jotai.useSetAtom(fieldsComplete)
   let (socialSecurityNumber, setSocialSecurityNumber) = React.useState(_ => "")
 
@@ -72,7 +72,7 @@ let make = () => {
       }
     }
   }, (socialSecurityNumber, isManualRetryEnabled, sdkAuthorization))
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   let changeSocialSecurityNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]

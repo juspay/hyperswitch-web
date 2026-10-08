@@ -95,11 +95,11 @@ let make = (
 
   let cardOptionDetails =
     paymentOptions
-    ->PaymentMethodsRecord.getPaymentDetails(~localeString)
+    ->PaymentMethodsFields.getPaymentDetails(~localeString)
     ->Array.slice(~start=0, ~end=layoutClass.maxAccordionItems)
   let dropDownOptionsDetails =
     paymentOptions
-    ->PaymentMethodsRecord.getPaymentDetails(~localeString)
+    ->PaymentMethodsFields.getPaymentDetails(~localeString)
     ->Array.sliceToEnd(~start=layoutClass.maxAccordionItems)
 
   let getBorderRadiusStyleForCardOptionDetails = index => {

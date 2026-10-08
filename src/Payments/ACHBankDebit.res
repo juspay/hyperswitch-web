@@ -15,7 +15,7 @@ let make = () => {
   let email = Jotai.useAtomValue(userEmailAddress)
   let fullName = Jotai.useAtomValue(userFullName)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), BankDebits)
 
   let (bankError, setBankError) = React.useState(_ => "")
 
@@ -104,7 +104,7 @@ let make = () => {
       }
     }
   }, (email, modalData, fullName, isManualRetryEnabled, sdkAuthorization))
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"
   let paymentMethod = "bank_debit"

@@ -57,3 +57,5 @@ let make = () => {
     </div>
   </RenderIf>
 }
+
+let default = make

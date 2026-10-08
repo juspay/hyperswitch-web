@@ -88,14 +88,33 @@ let make = () => {
     Some(() => Window.removeEventListener("message", handleMetaDataPostMessage))
   })
 
+  let lazyRoute = (~componentName, ~loaderComponent, children) =>
+    <ReusableReactSuspense loaderComponent componentName> {children} </ReusableReactSuspense>
+
+  let modalLoader =
+    <div className="h-screen w-screen bg-black/40 flex m-auto items-center backdrop-blur-sm">
+      <div className="flex justify-center m-auto"> <Loader showText=false /> </div>
+    </div>
+
+  let collectLoader =
+    <div className="flex justify-center items-center m-auto"> <Loader showText=false /> </div>
+
   let renderFullscreen = switch paymentMode {
   | "paymentMethodCollect" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-      <PaymentMethodCollectElement integrateError logger />
+      {lazyRoute(
+        ~componentName="PaymentMethodCollectElementLazy",
+        ~loaderComponent=collectLoader,
+        <PaymentMethodCollectElementLazy integrateError logger />,
+      )}
     </LoaderController>
   | "paymentMethodsSDK" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-      <PaymentMethodsSDK />
+      {lazyRoute(
+        ~componentName="PaymentMethodsSDKLazy",
+        ~loaderComponent=React.null,
+        <PaymentMethodsSDKLazy />,
+      )}
     </LoaderController>
   | "cardFormCoordinator" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
@@ -104,12 +123,31 @@ let make = () => {
   | _ =>
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
-    | "clickToPayLearnMore" => <ClickToPayLearnMore />
-    | "plaidSDK" => <PlaidSDKIframe />
-    | "pazeWallet" => <PazeWallet logger />
+    | "clickToPayLearnMore" =>
+      lazyRoute(
+        ~componentName="ClickToPayLearnMoreLazy",
+        ~loaderComponent=modalLoader,
+        <ClickToPayLearnMoreLazy />,
+      )
+    | "plaidSDK" =>
+      lazyRoute(
+        ~componentName="PlaidSDKIframeLazy",
+        ~loaderComponent=React.null,
+        <PlaidSDKIframeLazy />,
+      )
+    | "pazeWallet" =>
+      lazyRoute(
+        ~componentName="PazeWalletLazy",
+        ~loaderComponent=React.null,
+        <PazeWalletLazy logger />,
+      )
     | "fullscreen" =>
       <div id="fullscreen">
-        <FullScreenDivDriver />
+        {lazyRoute(
+          ~componentName="FullScreenDivDriverLazy",
+          ~loaderComponent=React.null,
+          <FullScreenDivDriverLazy />,
+        )}
       </div>
     | "qrData" => <QRCodeDisplay />
     | "3dsAuth" => <ThreeDSAuth />

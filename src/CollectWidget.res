@@ -2,6 +2,7 @@ open CardUtils
 open PaymentMethodCollectTypes
 open PaymentMethodCollectUtils
 open JotaiAtoms
+open PayoutJotaiAtoms
 
 @react.component
 let make = (
