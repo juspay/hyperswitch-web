@@ -487,13 +487,7 @@ let make = (
               ~isSavedMethodsFlow=true,
             )
           | _ =>
-            // TODO - To be replaced with proper error message
-            intent(
-              ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
-              ~confirmParam=confirm.confirmParams,
-              ~handleUserError=false,
-              ~manualRetry=isManualRetryEnabled,
-            )
+            setUserError(localeString.selectPaymentMethodText)
           }
         | Some("apple_pay") =>
           switch applePayToken {
@@ -505,13 +499,7 @@ let make = (
               ~isSavedMethodsFlow=true,
             )
           | _ =>
-            // TODO - To be replaced with proper error message
-            intent(
-              ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
-              ~confirmParam=confirm.confirmParams,
-              ~handleUserError=false,
-              ~manualRetry=isManualRetryEnabled,
-            )
+            setUserError(localeString.selectPaymentMethodText)
           }
         | Some("samsung_pay") =>
           switch samsungPayToken {
@@ -524,13 +512,7 @@ let make = (
               ~isSavedMethodsFlow=true,
             )
           | _ =>
-            // TODO - To be replaced with proper error message
-            intent(
-              ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
-              ~confirmParam=confirm.confirmParams,
-              ~handleUserError=false,
-              ~manualRetry=isManualRetryEnabled,
-            )
+            setUserError(localeString.selectPaymentMethodText)
           }
         | _ =>
           if isSavedCardCvcFlow {
