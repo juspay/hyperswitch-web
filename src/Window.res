@@ -56,7 +56,8 @@ type elementRef
 @send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
 @send external removeAttribute: (Dom.element, string) => unit = "removeAttribute"
 @send external showPopover: Dom.element => unit = "showPopover"
-@send external setStyleProperty: (style, string, string, string) => unit = "setProperty"
+@send
+external setStylePropertyImportant: (style, string, string, string) => unit = "setProperty"
 type cssStyleSheet
 @new external makeCssStyleSheet: unit => cssStyleSheet = "CSSStyleSheet"
 @send external replaceSync: (cssStyleSheet, string) => unit = "replaceSync"

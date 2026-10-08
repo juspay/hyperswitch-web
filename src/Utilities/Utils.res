@@ -1634,7 +1634,7 @@ let makeIframe = (element, url) => {
     iframe->Window.setAttribute("src", url)
     iframe->Window.setAttribute("name", "fullscreen")
     fullscreenOverlayStyle->Array.forEach(((property, value)) =>
-      iframe->Window.style->Window.setStyleProperty(property, value, "important")
+      iframe->Window.style->Window.setStylePropertyImportant(property, value, "important")
     )
     iframe->Window.elementOnload(() => {
       resolve(Dict.make())
