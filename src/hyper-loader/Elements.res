@@ -508,38 +508,46 @@ let make = (
               | _ => false
               }
             ) {
-              switch ApplePayTypes.sessionForApplePay->Nullable.toOption {
-              | Some(session) =>
-                try {
-                  if session.canMakePayments() {
-                    let msg = [
-                      ("hyperApplePayCanMakePayments", true->JSON.Encode.bool),
-                      ("componentName", componentName->JSON.Encode.string),
-                    ]
-                    messageTopWindow(msg)
-                  } else {
-                    Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
-                    logger.setLogInfo(
-                      ~value="CANNOT MAKE PAYMENT USING APPLE PAY",
-                      ~eventName=APPLE_PAY_FLOW,
-                      ~paymentMethod="APPLE_PAY",
-                      ~logType=ERROR,
-                    )
-                  }
-                } catch {
-                | exn => {
-                    let exnString = exn->anyTypeToJson->JSON.stringify
-                    Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
-                    logger.setLogInfo(
-                      ~value=exnString,
-                      ~eventName=APPLE_PAY_FLOW,
-                      ~paymentMethod="APPLE_PAY",
-                      ~logType=ERROR,
-                    )
-                  }
+              sessionTokensDataPromise.contents
+              ->ApplePayHelpers.getMerchantIdentifierFromSessions
+              ->Promise.then(merchantIdentifier =>
+                ApplePayHelpers.getPaymentCredentialStatus(~merchantIdentifier)
+              )
+              ->Promise.thenResolve(status => {
+                let statusString = (status :> string)
+                if status->ApplePayTypes.shouldShowApplePay {
+                  logger.setLogInfo(
+                    ~value=`APPLE PAY AVAILABLE: ${statusString}`,
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                  )
+                  let msg = [
+                    ("hyperApplePayCanMakePayments", true->JSON.Encode.bool),
+                    ("componentName", componentName->JSON.Encode.string),
+                  ]
+                  messageTopWindow(msg)
+                } else {
+                  Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
+                  logger.setLogInfo(
+                    ~value=`CANNOT MAKE PAYMENT USING APPLE PAY: ${statusString}`,
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                    ~logType=ERROR,
+                  )
                 }
-              | None => ()
-              }
+              })
+              ->Promise.catch(exn => {
+                let exnString = exn->anyTypeToJson->JSON.stringify
+                Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
+                logger.setLogInfo(
+                  ~value=exnString,
+                  ~eventName=APPLE_PAY_FLOW,
+                  ~paymentMethod="APPLE_PAY",
+                  ~logType=ERROR,
+                )
+                Promise.resolve()
+              })
+              ->ignore
             } else {
               logger.setLogInfo(
                 ~value="ApplePay is set as 'never' by merchant",

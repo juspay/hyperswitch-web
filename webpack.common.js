@@ -29,7 +29,7 @@ const authorizedScriptSources = [
   "https://js.braintreegateway.com",
   "https://tpgw.trustpay.eu/js/v1.js",
   "https://test-tpgw.trustpay.eu/js/v1.js",
-  "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js",
+  "https://applepay.cdn-apple.com",
   "https://pay.google.com",
   "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js",
   "https://apple.com/apple-pay",
@@ -68,6 +68,7 @@ const authorizedFontSources = [
   "'self'",
   "https://fonts.gstatic.com",
   "http://fonts.gstatic.com",
+  "https://applepay.cdn-apple.com",
   // Add other trusted sources here
 ];
 

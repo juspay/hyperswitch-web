@@ -156,7 +156,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   | Dark => "#828282"
   }
 
-  let css = `@supports (-webkit-appearance: -apple-pay-button) {
+  // Safari renders the Apple Pay button natively (`-webkit-appearance: -apple-pay-button`).
+  // Third-party browsers like Chrome use Apple's `<apple-pay-button>` web component from the
+  // Apple Pay JS SDK instead.
+  let css = `
     .apple-pay-loader-div {
       background-color: ${loaderDivBackgroundColor};
       height: ${height->Int.toString}px;
@@ -185,87 +188,46 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    .apple-pay-button-with-text {
-        display: inline-block;
-        -webkit-appearance: -apple-pay-button;
-        -apple-pay-button-type: ${buttonType};
+    apple-pay-button {
+      display: block;
+      width: 100%;
+      cursor: pointer;
+      --apple-pay-button-width: 100%;
+      --apple-pay-button-height: ${height->Int.toString}px;
+      --apple-pay-button-border-radius: ${buttonRadius->Int.toString}px;
+      --apple-pay-button-padding: 0px 0px;
+      --apple-pay-button-box-sizing: border-box;
     }
-    .apple-pay-button-with-text > * {
-        display: none;
-    }
-    .apple-pay-button-black-with-text {
-        -apple-pay-button-style: ${buttonColor};
+    @supports (-webkit-appearance: -apple-pay-button) {
+      .apple-pay-native-button {
+        display: block;
         width: 100%;
         height: ${height->Int.toString}px;
-        display: flex;
-        cursor: pointer;
         border-radius: ${buttonRadius->Int.toString}px;
-    }
-    .apple-pay-button-white-with-text {
-        -apple-pay-button-style: white;
-        display: flex;
         cursor: pointer;
-    }
-    .apple-pay-button-white-with-line-with-text {
-        -apple-pay-button-style: white-outline;
-    }
-  }
+        -webkit-appearance: -apple-pay-button;
+        -apple-pay-button-type: ${buttonType};
+        -apple-pay-button-style: ${buttonColor};
+      }
+    }`
 
-  @supports not (-webkit-appearance: -apple-pay-button) {
-      .apple-pay-button-with-text {
-          --apple-pay-scale: 2; /* (height / 32) */
-          display: inline-flex;
-          justify-content: center;
-          font-size: 12px;
-          border-radius: ${buttonRadius->Int.toString}px;
-          padding: 0px;
-          box-sizing: border-box;
-          min-width: 200px;
-          min-height: 32px;
-          max-height: 64px;
-      }
-      .apple-pay-button-black-with-text {
-          background-color: black;
-          color: white;
-      }
-      .apple-pay-button-white-with-text {
-          background-color: white;
-          color: black;
-      }
-      .apple-pay-button-white-with-line-with-text {
-          background-color: white;
-          color: black;
-          border: .5px solid black;
-      }
-      .apple-pay-button-with-text.apple-pay-button-black-with-text > .logo {
-          background-image: -webkit-named-image(apple-pay-logo-white);
-          background-color: black;
-      }
-      .apple-pay-button-with-text.apple-pay-button-white-with-text > .logo {
-          background-image: -webkit-named-image(apple-pay-logo-black);
-          background-color: white;
-      }
-      .apple-pay-button-with-text.apple-pay-button-white-with-line-with-text > .logo {
-          background-image: -webkit-named-image(apple-pay-logo-black);
-          background-color: black;
-      }
-      .apple-pay-button-with-text > .text {
-          font-family: -apple-system;
-          font-size: calc(1em * var(--apple-pay-scale));
-          font-weight: 300;
-          align-self: center;
-          margin-right: calc(2px * var(--apple-pay-scale));
-      }
-      .apple-pay-button-with-text > .logo {
-          width: calc(35px * var(--scale));
-          height: 100%;
-          background-size: 100% 60%;
-          background-repeat: no-repeat;
-          background-position: 0 50%;
-          margin-left: calc(2px * var(--apple-pay-scale));
-          border: none;
-      }
-  }`
+  let isNativeApplePayButton = React.useMemo0(() =>
+    ApplePayHelpers.isNativeApplePayButtonSupported()
+  )
+  let (isApplePayButtonLoaded, setIsApplePayButtonLoaded) = React.useState(_ =>
+    isNativeApplePayButton
+  )
+
+  React.useEffect0(() => {
+    if !isNativeApplePayButton {
+      ApplePayHelpers.loadApplePayButton()
+      ->thenResolve(loaded => setIsApplePayButtonLoaded(_ => loaded))
+      ->catch(_ => resolve())
+      ->ignore
+    }
+    None
+  })
+
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onApplePayButtonClicked = () => {
@@ -341,6 +303,22 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     }
   }
 
+  // `<apple-pay-button>` is a custom element, so a native listener is attached (as per
+  // Apple's docs) instead of relying on React's synthetic onClick.
+  let applePayButtonRef = React.useRef(Nullable.null)
+  let onApplePayButtonClickedRef = React.useRef(onApplePayButtonClicked)
+  onApplePayButtonClickedRef.current = onApplePayButtonClicked
+
+  React.useEffect(() => {
+    switch applePayButtonRef.current->Nullable.toOption {
+    | Some(button) =>
+      let handleClick = _ => onApplePayButtonClickedRef.current()
+      button->CommonHooks.addEventListener("click", handleClick)
+      Some(() => button->CommonHooks.removeEventListener("click", handleClick))
+    | None => None
+    }
+  }, (showApplePay, isApplePayButtonLoaded, showApplePayLoader))
+
   let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
@@ -365,15 +343,26 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~sdkAuthorization,
   )
 
+  // When an Apple Pay session token is present and not delayed, it must carry the merchant
+  // session (`session_token_data`); without it merchant validation cannot complete (e.g. in
+  // Chrome via Apple's JS SDK), so the button is not shown. Delayed session tokens (TrustPay)
+  // are only supported where Apple Pay is native (Safari).
+  let hasApplePaySessionTokenData =
+    sessionObj->getOptionsDict->getDictFromDict("session_token_data")->Dict.keysToArray->Array.length > 0
+  let isApplePaySessionTokenValid =
+    !isApplePaySDKFlow ||
+    (isApplePayDelayedSessionFlow ? isNativeApplePayButton : hasApplePaySessionTokenData)
+
   React.useEffect(() => {
     let isApplePayEligible =
       (isInvokeSDKFlow || paymentExperience === PaymentMethodsRecord.RedirectToURL) &&
       isApplePayReady &&
-      isWallet
+      isWallet &&
+      isApplePaySessionTokenValid
 
     let isApplePaySessionReady = !isApplePayDelayedSessionFlow || trustPayScriptStatus === Loaded
 
-    if isApplePayEligible && isApplePaySessionReady {
+    if isApplePayEligible && isApplePaySessionReady && isApplePayButtonLoaded {
       setShowApplePay(_ => true)
       areOneClickWalletsRendered(prev => {
         ...prev,
@@ -389,13 +378,18 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     isWallet,
     isApplePayDelayedSessionFlow,
     trustPayScriptStatus,
+    isApplePayButtonLoaded,
+    isApplePaySessionTokenValid,
   ))
 
   let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
   useSubmitPaymentData(submitCallback)
 
   let shouldShowWalletShimmer =
-    isApplePayDelayedSessionFlow && isApplePayReady && trustPayScriptStatus === Loading
+    isApplePayDelayedSessionFlow &&
+    isNativeApplePayButton &&
+    isApplePayReady &&
+    trustPayScriptStatus === Loading
 
   if isWallet {
     <>
@@ -409,18 +403,31 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
             <div className="apple-pay-loader-div">
               <div className="apple-pay-loader" />
             </div>
-          } else {
+          } else if isNativeApplePayButton {
             <button
               disabled=applePayClicked
               style={
                 opacity: updateSession ? "0.5" : "1.0",
                 pointerEvents: updateSession ? "none" : "auto",
               }
-              className="apple-pay-button-with-text apple-pay-button-black-with-text"
-              onClick={_ => onApplePayButtonClicked()}>
-              <span className="text"> {React.string("Pay with")} </span>
-              <span className="logo" />
-            </button>
+              className="apple-pay-native-button"
+              ariaLabel="Apple Pay"
+              onClick={_ => onApplePayButtonClicked()}
+            />
+          } else {
+            ReactDOM.createDOMElementVariadic(
+              "apple-pay-button",
+              ~props={
+                "buttonstyle": buttonColor,
+                "type": buttonType,
+                "style": {
+                  "opacity": updateSession || applePayClicked ? "0.5" : "1.0",
+                  "pointerEvents": updateSession || applePayClicked ? "none" : "auto",
+                },
+                "ref": applePayButtonRef,
+              }->Obj.magic,
+              [],
+            )
           }}
         </div>
       </RenderIf>
