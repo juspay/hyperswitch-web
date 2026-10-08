@@ -54,6 +54,15 @@ type elementRef
 @val @scope("document") external head: Dom.element = "head"
 @send external appendChildElement: (Dom.element, Dom.element) => unit = "appendChild"
 @send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
+@send external removeAttribute: (Dom.element, string) => unit = "removeAttribute"
+@send external showPopover: Dom.element => unit = "showPopover"
+@send
+external setStylePropertyImportant: (style, string, string, string) => unit = "setProperty"
+type cssStyleSheet
+@new external makeCssStyleSheet: unit => cssStyleSheet = "CSSStyleSheet"
+@send external replaceSync: (cssStyleSheet, string) => unit = "replaceSync"
+@get external adoptedStyleSheets: document => array<cssStyleSheet> = "adoptedStyleSheets"
+@set external setAdoptedStyleSheets: (document, array<cssStyleSheet>) => unit = "adoptedStyleSheets"
 
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"

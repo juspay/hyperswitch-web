@@ -1580,18 +1580,73 @@ let eventHandlerFunc = (
   EventListenerManager.addSmartEventListener("message", changeHandler, activity)
 }
 
-let makeIframe = (element, url) => {
-  open Types
-  Promise.make((resolve, _) => {
-    let iframe = createElement("iframe")
-    iframe.id = "orca-fullscreen"
-    iframe.src = url
-    iframe.name = "fullscreen"
-    iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
-    iframe.onload = () => {
-      resolve(Dict.make())
+let fullscreenOverlayStyle = [
+  ("position", "fixed"),
+  ("inset", "0"),
+  ("width", "100vw"),
+  ("height", "100vh"),
+  ("min-width", "0"),
+  ("min-height", "0"),
+  ("max-width", "none"),
+  ("max-height", "none"),
+  ("margin", "0"),
+  ("padding", "0"),
+  ("border", "0"),
+  ("border-radius", "0"),
+  ("box-shadow", "none"),
+  ("background", "transparent"),
+  ("display", "block"),
+  ("visibility", "visible"),
+  ("opacity", "1"),
+  ("pointer-events", "auto"),
+  ("transform", "none"),
+  ("translate", "none"),
+  ("scale", "none"),
+  ("rotate", "none"),
+  ("filter", "none"),
+  ("clip-path", "none"),
+  ("mask", "none"),
+  ("transition", "none"),
+  ("animation", "none"),
+  ("z-index", "2147483647"),
+]
+
+let fullscreenBackdropHidden = ref(false)
+let hideFullscreenBackdrop = () =>
+  if !fullscreenBackdropHidden.contents {
+    fullscreenBackdropHidden := true
+    try {
+      let sheet = Window.makeCssStyleSheet()
+      sheet->Window.replaceSync("#orca-fullscreen::backdrop { display: none !important; }")
+      let document = Window.window->Window.document
+      document->Window.setAdoptedStyleSheets(
+        document->Window.adoptedStyleSheets->Array.concat([sheet]),
+      )
+    } catch {
+    | _ => ()
     }
-    element->appendChild(iframe)
+  }
+
+let makeIframe = (element, url) => {
+  Promise.make((resolve, _) => {
+    let iframe = Window.createElement("iframe")
+    iframe->Window.setAttribute("id", "orca-fullscreen")
+    iframe->Window.setAttribute("src", url)
+    iframe->Window.setAttribute("name", "fullscreen")
+    fullscreenOverlayStyle->Array.forEach(((property, value)) =>
+      iframe->Window.style->Window.setStylePropertyImportant(property, value, "important")
+    )
+    iframe->Window.elementOnload(() => {
+      resolve(Dict.make())
+    })
+    element->Window.appendChildElement(iframe)
+    try {
+      hideFullscreenBackdrop()
+      iframe->Window.setAttribute("popover", "manual")
+      iframe->Window.showPopover
+    } catch {
+    | _ => iframe->Window.removeAttribute("popover")
+    }
   })
 }
 let makeHiddenIframe = (element, ~src, ~id) => {
