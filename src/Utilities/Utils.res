@@ -1581,17 +1581,25 @@ let eventHandlerFunc = (
 }
 
 let makeIframe = (element, url) => {
-  open Types
   Promise.make((resolve, _) => {
-    let iframe = createElement("iframe")
-    iframe.id = "orca-fullscreen"
-    iframe.src = url
-    iframe.name = "fullscreen"
-    iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
-    iframe.onload = () => {
+    let iframe = Window.createElement("iframe")
+    iframe->Window.setAttribute("id", "orca-fullscreen")
+    iframe->Window.setAttribute("src", url)
+    iframe->Window.setAttribute("name", "fullscreen")
+    iframe->Window.setAttribute(
+      "style",
+      "position: fixed; inset: 0; width: 100vw; height: 100vh; margin: 0; padding: 0; border: 0; background: transparent; z-index: 422222133323; ",
+    )
+    iframe->Window.elementOnload(() => {
       resolve(Dict.make())
+    })
+    element->Window.appendChildElement(iframe)
+    try {
+      iframe->Window.setAttribute("popover", "manual")
+      iframe->Window.showPopover
+    } catch {
+    | _ => iframe->Window.removeAttribute("popover")
     }
-    element->appendChild(iframe)
   })
 }
 let makeHiddenIframe = (element, ~src, ~id) => {
