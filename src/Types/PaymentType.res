@@ -1691,6 +1691,10 @@ let allowedPaymentElementOptions = [
   "alwaysSendCustomerAcceptance",
   "redirectionInfo",
   "appearance",
+  "billingAddress",
+  "customMethodNames",
+  "payButtonStyle",
+  "subscriptionEvents",
 ]
 
 let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
