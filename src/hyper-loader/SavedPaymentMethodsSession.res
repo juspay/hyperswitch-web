@@ -32,6 +32,7 @@ let make = (
 ) => {
   let savedMethodsStateRef = ref(None)
   let isConfirmInProgress = ref(false)
+  let manualRetryRef = ref((-1, false))
   let applePaySessionRef = ref(Nullable.null)
   let componentName = "headless"
 
@@ -210,7 +211,40 @@ let make = (
       handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
     })
 
-  let confirmPaymentIntent = (~body, ~paymentType, ~confirmPayload) =>
+  let isManualRetryEnabled = () => {
+    let (version, isEnabled) = manualRetryRef.contents
+    version === intentVersion.contents && isEnabled
+  }
+
+  let updateManualRetry = response => {
+    let dict = response->getDictFromJson
+    if dict->getString("status", "") === "failed" {
+      manualRetryRef := (intentVersion.contents, dict->getBool("manual_retry_allowed", false))
+    } else if dict->Dict.get("status")->Option.isSome {
+      manualRetryRef := (intentVersion.contents, false)
+    }
+    response
+  }
+
+  let getOutcomeContext = (): ConfirmOutcome.context => {
+    publishableKey,
+    clientSecret: clientSecretRef.contents,
+    sdkAuthorization: getSdkAuthorization(),
+    customPodUri,
+    logger,
+    redirectionFlags,
+  }
+
+  let handleNextAction = (result, ~confirmPayload, ~paymentMethod) =>
+    NextActionHandler.handle(
+      ~result,
+      ~redirect=confirmPayload.redirect,
+      ~returnUrl=confirmPayload.returnUrl,
+      ~ctx=getOutcomeContext(),
+      ~paymentMethod,
+    )->then(response => response->updateManualRetry->resolve)
+
+  let confirmPaymentIntent = (~body, ~paymentType, ~confirmPayload, ~paymentMethod) =>
     PaymentHelpers.paymentIntentForPaymentSession(
       ~body,
       ~paymentType,
@@ -221,7 +255,9 @@ let make = (
       ~customPodUri,
       ~redirectionFlags,
       ~sdkAuthorization=getSdkAuthorization(),
-    )
+      ~shouldResolveNextAction=true,
+      ~manualRetry=isManualRetryEnabled(),
+    )->then(handleNextAction(_, ~confirmPayload, ~paymentMethod))
 
   let handleApplePayConfirmPayment = (
     ~state,
@@ -245,7 +281,12 @@ let make = (
           )
           ->addMandateBody(~paymentMethodList=state.paymentMethodList)
 
-        confirmPaymentIntent(~body, ~paymentType=Applepay, ~confirmPayload)
+        confirmPaymentIntent(
+          ~body,
+          ~paymentType=Applepay,
+          ~confirmPayload,
+          ~paymentMethod="apple_pay",
+        )
         ->then(response => resolve(response)->Promise.resolve)
         ->catch(err =>
           resolve(
@@ -282,7 +323,7 @@ let make = (
           ~connectors=[],
           ~isPaymentSession=true,
         )->addMandateBody(~paymentMethodList=state.paymentMethodList)
-      confirmPaymentIntent(~body, ~paymentType=Gpay, ~confirmPayload)
+      confirmPaymentIntent(~body, ~paymentType=Gpay, ~confirmPayload, ~paymentMethod="google_pay")
     })
     ->catch(err =>
       handleFailureResponse(
@@ -307,12 +348,18 @@ let make = (
         ) {
         | (Some(responseData), _) =>
           let responseDataDict = responseData->getDictFromJson
+          let hasFullscreenRequest = responseDataDict->Dict.get("fullscreenRequest")->Option.isSome
           switch responseDataDict->Dict.get("data") {
-          | Some(_) if confirmPayload.redirect === "always" =>
+          | Some(_) if !hasFullscreenRequest && confirmPayload.redirect === "always" =>
             EventListenerManager.removeSmartEventListener("message", listenerKey)
             replaceRootHref(responseDataDict->getString("returnUrl", ""), redirectionFlags)
-          | Some(data) => resolveAndCleanup(data)
-          | None => resolveAndCleanup(responseData)
+          | Some(data) if !hasFullscreenRequest => resolveAndCleanup(data->updateManualRetry)
+          | _ =>
+            EventListenerManager.removeSmartEventListener("message", listenerKey)
+            responseData
+            ->handleNextAction(~confirmPayload, ~paymentMethod="CARD")
+            ->then(response => resolve(response)->Promise.resolve)
+            ->ignore
           }
         | (None, Some(errorResponseData)) =>
           switch errorResponseData->JSON.Decode.string {
@@ -340,6 +387,7 @@ let make = (
           ("sdkAuthorization", sdkAuthorizationRef.contents->JSON.Encode.string),
           ("requiresCvv", true->JSON.Encode.bool),
           ("redirect", confirmPayload.redirect->JSON.Encode.string),
+          ("shouldResolveNextAction", true->JSON.Encode.bool),
         ]->getJsonFromArrayOfJson
       cvcWidgetIframe->Window.iframePostMessage(
         [("requestCVCConfirm", confirmParams)]->Dict.fromArray,
@@ -362,9 +410,22 @@ let make = (
         ~message="Wallet is not available.",
         ~errorType="wallet_unavailable",
       )->resolve
-    | (TokenFlow, _, _) => confirmPaymentIntent(~body=getBody(), ~paymentType=Card, ~confirmPayload)
+    | (TokenFlow, _, _) =>
+      confirmPaymentIntent(
+        ~body=getBody(),
+        ~paymentType=Card,
+        ~confirmPayload,
+        ~paymentMethod=savedMethod.paymentMethodType
+        ->getNonEmptyOption
+        ->Option.getOr(savedMethod.paymentMethod),
+      )
     | (CardFlow(cvc), _, _) =>
-      confirmPaymentIntent(~body=getBody(~cvc), ~paymentType=Card, ~confirmPayload)
+      confirmPaymentIntent(
+        ~body=getBody(~cvc),
+        ~paymentType=Card,
+        ~confirmPayload,
+        ~paymentMethod="CARD",
+      )
     | (CvcWidgetFlow(cvcElementId), _, _) =>
       switch (getWidgetIframe(~iframeRef, ~id=cvcElementId), getSdkAuthorization()) {
       | (None, _) =>

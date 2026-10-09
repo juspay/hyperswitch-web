@@ -129,6 +129,8 @@ let make = (
         | Some(confirmParams) => {
             let confirmParamsDict = confirmParams->getDictFromJson
             let requiresCvv = confirmParamsDict->getBool("requiresCvv", true)
+            let shouldResolveNextAction =
+              confirmParamsDict->getBool("shouldResolveNextAction", false)
             if paymentType === CardCVCElement {
               let body = confirmParamsDict->getJsonObjectFromDict("body")
               let bodyArr = body->JSON.Decode.object->Option.getOr(Dict.make())->Dict.toArray
@@ -163,6 +165,7 @@ let make = (
                     ~redirectionFlags,
                     ~sdkAuthorization=Some(sdkAuth),
                     ~mode=CardCVCElement,
+                    ~shouldResolveNextAction,
                   )
                   ->then(response => {
                     messageParentWindow([("cvcWidgetConfirmResponse", response)])

@@ -201,7 +201,7 @@ let getCustomerSavedPaymentMethods = (
 
       let updatedPayload = payloadDict->JSON.Encode.object
       let id = payloadDict->Dict.get("id")->Option.flatMap(JSON.Decode.string)
-      let hasCvc = requiresCvv ? payloadDict->Dict.get("cvc") : None
+      let hasCvc = payloadDict->Dict.get("cvc")
       if hasCvc->Option.isSome {
         let cvcString = hasCvc->getStringFromOptionalJson("")
         let isValidCvc = %re("/^\d{3,4}$/")->RegExp.test(cvcString)
@@ -286,7 +286,7 @@ let getCustomerSavedPaymentMethods = (
               ~body,
               ~payload,
               ~paymentType,
-              ~requiresCvv=paymentMethod === "card" && defaultPaymentMethod.requiresCvv,
+              ~requiresCvv=defaultPaymentMethod.requiresCvv,
             )
           }
         | None =>
@@ -464,7 +464,7 @@ let getCustomerSavedPaymentMethods = (
               ~body,
               ~payload,
               ~paymentType,
-              ~requiresCvv=paymentMethod === "card" && lastUsedPaymentMethod.requiresCvv,
+              ~requiresCvv=lastUsedPaymentMethod.requiresCvv,
             )
           }
         | None =>

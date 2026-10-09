@@ -138,8 +138,7 @@ let getSavedMethodBody = (savedMethod: PaymentType.customerMethods, ~cvc=None) =
   let {paymentToken, customerId, paymentMethod} = savedMethod
   let isCustomerAcceptanceRequired =
     paymentMethod !== "bank_redirect" && !savedMethod.recurringEnabled
-  let paymentMethodType = savedMethod.paymentMethodType->getNonEmptyOption
-  let body = if paymentMethod === "card" {
+  if paymentMethod === "card" {
     PaymentBody.savedCardBody(
       ~paymentToken,
       ~customerId,
@@ -152,17 +151,12 @@ let getSavedMethodBody = (savedMethod: PaymentType.customerMethods, ~cvc=None) =
       ~paymentToken,
       ~customerId,
       ~paymentMethod,
-      ~paymentMethodType=paymentMethodType->Option.mapOr(JSON.Encode.null, JSON.Encode.string),
+      ~paymentMethodType=savedMethod.paymentMethodType
+      ->getNonEmptyOption
+      ->Option.mapOr(JSON.Encode.null, JSON.Encode.string),
       ~isCustomerAcceptanceRequired,
     )
   }
-  body->Array.filter(((key, _)) =>
-    switch key {
-    | "customer_id" => customerId !== ""
-    | "payment_method_type" => paymentMethodType->Option.isSome
-    | _ => true
-    }
-  )
 }
 
 let addMandateBody = (body, ~paymentMethodList: PaymentMethodsRecord.paymentMethodList) => {
