@@ -696,6 +696,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     miniIcon: None,
   },
   {
+    paymentMethodName: "alfamart",
+    icon: Some(icon("cash_voucher", ~size=19, ~width=50)),
+    displayName: "Alfamart",
+    fields: [InfoElement],
+    miniIcon: Some(icon("cash_voucher", ~size=19)),
+  },
+  {
     paymentMethodName: "open_banking",
     icon: Some(icon("bank", ~size=19)),
     displayName: localeString.payment_methods_pay_by_bank,
