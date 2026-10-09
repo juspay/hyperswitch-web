@@ -262,6 +262,20 @@ const CONNECTOR_PAYMENT_METHODS = {
         },
       ],
     },
+    // Voucher method — exercised by 04-alternative-payments/09-alfamart-voucher.cy.ts
+    {
+      payment_method: "voucher",
+      payment_method_types: [
+        {
+          payment_method_type: "alfamart",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
   ],
 
   // ── Cybersource ─────────────────────────────────────────────────────────
