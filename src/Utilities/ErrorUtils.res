@@ -79,6 +79,15 @@ let errorWarning = [
     ),
   ),
   (
+    DYNAMIC_FIELDS_CONFIG_WARNING,
+    Warning,
+    Dynamic(
+      str => {
+        `CONFIGURATION WARNING: ${str}`
+      },
+    ),
+  ),
+  (
     INTERNAL_API_DOWN,
     Warning,
     Static(

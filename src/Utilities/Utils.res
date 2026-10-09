@@ -890,24 +890,23 @@ let isoOptionsToCountryNames = (isoOptions: array<string>): array<string> =>
     ->Option.map(item => item.countryName)
   )
 
-let getStateNames = (country: JotaiAtomTypes.field) => {
-  let options =
-    CountryStateDataRefs.stateDataRef.contents
-    ->getDictFromJson
-    ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
-    ->Option.getOr([])
-
-  options->Array.reduce([], (arr, item) => {
-    arr
-    ->Array.push(
-      item
-      ->getDictFromJson
-      ->getString("value", ""),
-    )
-    ->ignore
-    arr
+/*
+ * Display names of a country's states, in the state data's own (alphabetical) order.
+ * A non-empty `allowedStateCodes` is an allowlist of state codes.
+ */
+let getStateNamesForCountry = (~countryIso, ~allowedStateCodes=[]) =>
+  CountryStateDataRefs.stateDataRef.contents
+  ->getDictFromJson
+  ->getArray(countryIso)
+  ->Array.filterMap(item => {
+    let state = item->getDictFromJson
+    allowedStateCodes->Array.length === 0 || allowedStateCodes->Array.includes(state->getString("code", ""))
+      ? Some(state->getString("value", ""))
+      : None
   })
-}
+
+let getStateNames = (country: JotaiAtomTypes.field) =>
+  getStateNamesForCountry(~countryIso=getCountryCode(country.value).isoAlpha2)
 
 let isAddressComplete = (
   line1: JotaiAtomTypes.field,

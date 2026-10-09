@@ -3,19 +3,44 @@ open SuperpositionTypes
 @react.component
 let make = (~fieldConfig: fieldConfig) => {
   let {config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let {label} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
   let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
   let countryName = Jotai.useAtomValue(JotaiAtoms.userCountry)
   let countryIso = Utils.getCountryCode(countryName).isoAlpha2
 
-  let stateDisplayNames = Utils.getStateNames({
-    value: countryName,
-    isValid: None,
-    errorString: "",
-  })
+  /*
+   * `_dropdown_options` is the merchant's state allowlist; empty means no restriction.
+   * When it matches no state of the selected country, fall back to the full list so the
+   * field stays fillable.
+   */
+  let allowedStateCodes = fieldConfig.dropdownOptions->Option.getOr([])
+  let allowedStateNames = Utils.getStateNamesForCountry(~countryIso, ~allowedStateCodes)
+  let shouldFallbackToAllStates =
+    allowedStateCodes->Array.length > 0 && allowedStateNames->Array.length === 0
+
+  let stateDisplayNames = shouldFallbackToAllStates
+    ? Utils.getStateNamesForCountry(~countryIso)
+    : allowedStateNames
   let stateOptions = stateDisplayNames->DropdownField.updateArrayOfStringToOptionsTypeArray
   let hasStates = stateOptions->Array.length > 0
+
+  // The merchant's allowlist was discarded and the field is showing the full list in its place.
+  let isShowingFallbackStateList = shouldFallbackToAllStates && hasStates
+
+  React.useEffect(() => {
+    if isShowingFallbackStateList {
+      ErrorUtils.manageErrorWarning(
+        DYNAMIC_FIELDS_CONFIG_WARNING,
+        ~dynamicStr=`None of the configured state options [${allowedStateCodes->Array.join(
+            ", ",
+          )}] for '${fieldConfig.confirmRequestWritePath}' are valid states of country '${countryIso}'. Falling back to the complete state list.`,
+        ~logger=loggerState,
+      )
+    }
+    None
+  }, (isShowingFallbackStateList, countryIso))
 
   let stateField = ReactFinalForm.useField(
     fieldConfig.confirmRequestWritePath,
