@@ -892,9 +892,7 @@ let isoOptionsToCountryNames = (isoOptions: array<string>): array<string> =>
 
 /*
  * Display names of a country's states, in the state data's own (alphabetical) order.
- * A non-empty `allowedCodes` is a merchant-configured allowlist of state codes from
- * Superposition overrides; codes outside the country drop out, so an allowlist spanning
- * multiple countries resolves to the relevant subset.
+ * A non-empty `allowedStateCodes` is an allowlist of state codes.
  */
 let getStateNamesForCountry = (~countryIso, ~allowedStateCodes=[]) =>
   CountryStateDataRefs.stateDataRef.contents
