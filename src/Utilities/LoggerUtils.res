@@ -354,6 +354,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | UPDATE_INTENT
   | UPDATE_SDK
   | DYNAMIC_FIELDS_RENDERED
+  | DYNAMIC_FIELDS_CONFIG_WARNING
   | CLIENT_LIST_CALL_INIT =>
     None
   }

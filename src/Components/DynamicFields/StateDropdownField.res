@@ -32,7 +32,7 @@ let make = (~fieldConfig: fieldConfig) => {
   React.useEffect(() => {
     if isShowingFallbackStateList {
       ErrorUtils.manageErrorWarning(
-        SDK_CONNECTOR_WARNING,
+        DYNAMIC_FIELDS_CONFIG_WARNING,
         ~dynamicStr=`None of the configured state options [${allowedStateCodes->Array.join(
             ", ",
           )}] for '${fieldConfig.confirmRequestWritePath}' are valid states of country '${countryIso}'. Falling back to the complete state list.`,
