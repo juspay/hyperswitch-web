@@ -17,17 +17,20 @@ let make = (~fieldConfig: fieldConfig) => {
    */
   let allowedStateCodes = fieldConfig.dropdownOptions->Option.getOr([])
   let allowedStateNames = Utils.getStateNamesForCountry(~countryIso, ~allowedStateCodes)
-  let isAllowlistUnusable =
+  let shouldFallbackToAllStates =
     allowedStateCodes->Array.length > 0 && allowedStateNames->Array.length === 0
 
-  let stateDisplayNames = isAllowlistUnusable
+  let stateDisplayNames = shouldFallbackToAllStates
     ? Utils.getStateNamesForCountry(~countryIso)
     : allowedStateNames
   let stateOptions = stateDisplayNames->DropdownField.updateArrayOfStringToOptionsTypeArray
   let hasStates = stateOptions->Array.length > 0
 
+  // The merchant's allowlist was discarded and the field is showing the full list in its place.
+  let isShowingFallbackStateList = shouldFallbackToAllStates && hasStates
+
   React.useEffect(() => {
-    if isAllowlistUnusable && hasStates {
+    if isShowingFallbackStateList {
       ErrorUtils.manageErrorWarning(
         SDK_CONNECTOR_WARNING,
         ~dynamicStr=`None of the configured state options [${allowedStateCodes->Array.join(
@@ -37,7 +40,7 @@ let make = (~fieldConfig: fieldConfig) => {
       )
     }
     None
-  }, (isAllowlistUnusable, hasStates, countryIso))
+  }, (isShowingFallbackStateList, countryIso))
 
   let stateField = ReactFinalForm.useField(
     fieldConfig.confirmRequestWritePath,
