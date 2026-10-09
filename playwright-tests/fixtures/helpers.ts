@@ -110,9 +110,18 @@ export async function submitAndCaptureConfirm(
   const isConfirmUrl = (url: URL) => CONFIRM_PATH.test(url.pathname);
   const passThrough = async (route: Route) => {
     if (route.request().method() !== "POST") return route.fallback();
-    const response = await route.fetch();
-    liveBody = await response.json().catch(() => undefined);
-    await route.fulfill({ response });
+    try {
+      const response = await route.fetch();
+      liveBody = await response.json().catch(() => undefined);
+      await route.fulfill({ response });
+    } catch (err) {
+      // Router unreachable or the page closed: fail the confirm request now
+      // instead of leaving it pending until waitForResponse times out.
+      console.warn(
+        `[submitAndCaptureConfirm] confirm pass-through failed: ${err}`,
+      );
+      await route.abort("failed").catch(() => {});
+    }
   };
   if (!hermetic.enabled) await context.route(isConfirmUrl, passThrough);
 
@@ -268,18 +277,23 @@ export async function captureConsoleErrors(
     const errors: string[] = [];
     window.__pwConsoleErrors = errors;
     const original = console.error.bind(console);
+    // Must never throw: this runs inside the page's own error paths.
+    const stringify = (a: unknown): string => {
+      if (a instanceof Error) return a.message;
+      if (typeof a === "string") return a;
+      try {
+        return JSON.stringify(a) ?? String(a);
+      } catch {
+        // Circular structures, BigInt, ...
+        try {
+          return String(a);
+        } catch {
+          return Object.prototype.toString.call(a);
+        }
+      }
+    };
     console.error = (...args: unknown[]) => {
-      errors.push(
-        args
-          .map((a) =>
-            a instanceof Error
-              ? a.message
-              : typeof a === "string"
-                ? a
-                : JSON.stringify(a),
-          )
-          .join(" "),
-      );
+      errors.push(args.map(stringify).join(" "));
       original(...args);
     };
   });

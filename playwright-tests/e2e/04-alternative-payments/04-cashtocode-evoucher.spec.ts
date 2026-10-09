@@ -45,13 +45,13 @@ test.describe("CashtoCode E-Voucher payment flow", () => {
       payment_method: "reward",
       payment_method_type: "evoucher",
     });
-    // CashtoCode now serves E-voucher from the same WCL sandbox host as the
-    // Cash / Voucher flow. The cluster number is assigned per request, so match
-    // the host pattern rather than a fixed cluster.
+    // CashtoCode has switched E-voucher between its WCL sandbox host (shared
+    // with Cash / Voucher, cluster number assigned per request) and
+    // dev.evoucher.cashtocode.com, so accept either.
     await expectRedirectedTo(
       page,
       hermetic,
-      /^https:\/\/cluster\d+\.wcl-test\.cashtocode\.com\//,
+      /^https:\/\/(cluster\d+\.wcl-test|dev\.evoucher)\.cashtocode\.com\//,
       confirm,
     );
   });
