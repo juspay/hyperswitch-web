@@ -32,6 +32,10 @@ module WalletsSaveDetailsText = {
     let walletMessageConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
       ~paymentMethod="wallet",
     )
+    let walletMessageSegments = CustomMessageText.useSegments(~message=walletMessageConfig)
+    // The wallet consent line covers every rendered one-click wallet, so there
+    // is no single selected payment method type to report.
+    let walletPaymentMethodType = ""
 
     let shouldRender =
       PaymentUtils.isAppendingCustomerAcceptance(
@@ -45,15 +49,22 @@ module WalletsSaveDetailsText = {
     <RenderIf condition={shouldRender}>
       {switch walletMessageConfig.displayMode {
       | CustomMessage =>
-        let msg = walletMessageConfig.value->Option.getOr("")->String.trim
+        let msg = walletMessageSegments->CustomMessageUtils.segmentsToPlainText
         <RenderIf condition={msg->String.length > 0}>
           <div className="SaveWalletDetailsLabel text-xs mt-2 text-left text-gray-400">
-            <em> {msg->React.string} </em>
+            <em>
+              <CustomMessageText
+                message=walletMessageConfig
+                paymentMethod="wallet"
+                paymentMethodType=walletPaymentMethodType
+              />
+            </em>
           </div>
         </RenderIf>
       | _ =>
         <div
-          className="SaveWalletDetailsLabel flex items-center text-xs mt-2 text-left text-gray-400">
+          className="SaveWalletDetailsLabel flex items-center text-xs mt-2 text-left text-gray-400"
+        >
           <Icon name="lock" size=10 className="mr-1" />
           <em> {localeString.saveWalletDetails->React.string} </em>
         </div>
@@ -133,11 +144,13 @@ let make = (~sessions, ~walletOptions) => {
       <ErrorBoundary
         level={ErrorBoundary.RequestButton}
         key={`${item}-${i->Int.toString}-request-button`}
-        componentName="PaymentRequestButtonElement">
+        componentName="PaymentRequestButtonElement"
+      >
         <ReusableReactSuspense
           loaderComponent={<WalletShimmer />}
           componentName="PaymentRequestButtonElement"
-          key={i->Int.toString}>
+          key={i->Int.toString}
+        >
           <RenderIf condition={clientSecret->Option.isSome || isTestMode}>
             {switch item->paymentMode {
             | GPayWallet =>

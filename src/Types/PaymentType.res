@@ -249,6 +249,8 @@ type messageDisplayMode = DefaultSdkMessage | CustomMessage | Hidden
 type paymentMethodMessage = {
   value: option<string>,
   displayMode: messageDisplayMode,
+  elementStyles: CustomMessageUtils.elementStyles,
+  elements: Dict.t<CustomMessageUtils.element>,
 }
 
 type paymentMethodTypeConfig = {
@@ -515,33 +517,62 @@ let getMessageDisplayMode = (str, key) => {
 let defaultPaymentMethodMessage = {
   value: None,
   displayMode: DefaultSdkMessage,
+  elementStyles: CustomMessageUtils.defaultElementStyles,
+  elements: Dict.make(),
 }
 
-let getPaymentMethodMessage = (dict, logger, context) => {
+let getPaymentMethodMessage = (dict, logger, context, ~isElementClickSubscribed=false) => {
   let messageDict = dict->getDictFromDict("message")
   if messageDict->Dict.toArray->Array.length > 0 {
-    unknownKeysWarning(["value", "displayMode"], messageDict, context ++ ".message")
+    let messageContext = context ++ ".message"
+    unknownKeysWarning(
+      ["value", "displayMode", "elementStyles", "elements"],
+      messageDict,
+      messageContext,
+    )
     let value = messageDict->getOptionString("value")
     let displayMode = if messageDict->Dict.get("displayMode")->Option.isSome {
       messageDict
       ->getWarningString("displayMode", "default_sdk_message", ~logger)
-      ->getMessageDisplayMode(context ++ ".message.displayMode")
+      ->getMessageDisplayMode(messageContext ++ ".displayMode")
     } else {
       switch value {
       | Some(_) => CustomMessage
       | None => DefaultSdkMessage
       }
     }
+    // Elements only matter for custom messages; for the other display modes
+    // they are ignored (and not validated) as documented.
+    let (elementStyles, elements) = switch displayMode {
+    | CustomMessage =>
+      let elementStyles =
+        messageDict->CustomMessageUtils.parseElementStyles(~context=messageContext)
+      let elements = messageDict->CustomMessageUtils.parseElements(~context=messageContext)
+      let valueStr = value->Option.getOr("")
+      CustomMessageUtils.validatePlaceholders(~value=valueStr, ~elements, ~context=messageContext)
+      if (
+        !isElementClickSubscribed &&
+        CustomMessageUtils.hasInteractiveElements(~value=valueStr, ~elements)
+      ) {
+        Console.warn(
+          `${messageContext} contains link elements, but 'customMessageElementClicked' is not in options.subscriptionEvents. Links are shown as plain text. Add 'customMessageElementClicked' to subscriptionEvents to make them tappable.`,
+        )
+      }
+      (elementStyles, elements)
+    | DefaultSdkMessage | Hidden => (CustomMessageUtils.defaultElementStyles, Dict.make())
+    }
     {
       value,
       displayMode,
+      elementStyles,
+      elements,
     }
   } else {
     defaultPaymentMethodMessage
   }
 }
 
-let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
+let getPaymentMethodTypeConfig = (json, logger, paymentMethod, ~isElementClickSubscribed) => {
   let context = "options.paymentMethodsConfig." ++ paymentMethod
   unknownKeysWarning(
     [
@@ -555,7 +586,7 @@ let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
   )
   {
     paymentMethodType: json->getWarningString("paymentMethodType", "", ~logger),
-    message: getPaymentMethodMessage(json, logger, context),
+    message: getPaymentMethodMessage(json, logger, context, ~isElementClickSubscribed),
     displaySavedPaymentMethodsCheckbox: getOptionBool(json, "displaySavedPaymentMethodsCheckbox"),
     savedPaymentMethodsCheckboxCheckedByDefault: getOptionBool(
       json,
@@ -564,7 +595,7 @@ let getPaymentMethodTypeConfig = (json, logger, paymentMethod) => {
   }
 }
 
-let getPaymentMethodConfig = (json, logger) => {
+let getPaymentMethodConfig = (json, logger, ~isElementClickSubscribed) => {
   unknownKeysWarning(
     [
       "paymentMethod",
@@ -583,6 +614,7 @@ let getPaymentMethodConfig = (json, logger) => {
       json,
       logger,
       "options.paymentMethodsConfig." ++ paymentMethod,
+      ~isElementClickSubscribed,
     ),
     displaySavedPaymentMethodsCheckbox: getOptionBool(json, "displaySavedPaymentMethodsCheckbox"),
     savedPaymentMethodsCheckboxCheckedByDefault: getOptionBool(
@@ -591,14 +623,25 @@ let getPaymentMethodConfig = (json, logger) => {
     ),
     paymentMethodTypes: json
     ->getArrayOfObjectsFromDict("paymentMethodTypes")
-    ->Array.map(pmTypeJson => getPaymentMethodTypeConfig(pmTypeJson, logger, paymentMethod)),
+    ->Array.map(pmTypeJson =>
+      getPaymentMethodTypeConfig(pmTypeJson, logger, paymentMethod, ~isElementClickSubscribed)
+    ),
   }
 }
 
-let getPaymentMethodsConfig = (dict, str, logger) => {
+let getPaymentMethodsConfig = (
+  dict,
+  str,
+  logger,
+  ~subscriptionEvents: option<array<PaymentEventTypes.events>>=None,
+) => {
+  let isElementClickSubscribed = PaymentEventData.shouldEmitEvent(
+    ~subscribedEvents=subscriptionEvents->Option.getOr([]),
+    ~eventType=CustomMessageElementClicked,
+  )
   dict
   ->getArrayOfObjectsFromDict(str)
-  ->Array.map(json => getPaymentMethodConfig(json, logger))
+  ->Array.map(json => getPaymentMethodConfig(json, logger, ~isElementClickSubscribed))
 }
 
 let getLayout = str => {
@@ -1697,17 +1740,29 @@ let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "
 
 let overrideFieldsToExcludeFromMasking = [
   "wallets.walletReturnUrl",
+  "paymentMethodsConfig.message.value",
   "paymentMethodsConfig.paymentMethodTypes.message.value",
 ]
 
-let normalizePath = path => path->String.replaceRegExp(%re("/\[(\d+)\]/g"), "")
+// Merchant-authored message copy under dynamic keys (custom message element
+// labels) must be masked even though `paymentMethodsConfig` is otherwise
+// logged in the clear.
+let overridePatternsToExcludeFromMasking = [
+  /^paymentMethodsConfig(\.paymentMethodTypes)?\.message\.elements\.[^.]+\.config\.label$/,
+]
+
+let normalizePath = path => path->String.replaceRegExp(/\[(\d+)\]/g, "")
 
 let isPathStartsWithPattern = (normalizedPath, normalizedPattern) =>
   normalizedPath == normalizedPattern || normalizedPath->String.startsWith(normalizedPattern ++ ".")
 
 let shouldMaskField = path => {
   let normalizedPath = normalizePath(path)
-  let isOverridden = overrideFieldsToExcludeFromMasking->Array.includes(normalizedPath)
+  let isOverridden =
+    overrideFieldsToExcludeFromMasking->Array.includes(normalizedPath) ||
+      overridePatternsToExcludeFromMasking->Array.some(pattern =>
+        pattern->RegExp.test(normalizedPath)
+      )
   let isExcluded =
     fieldsToExcludeFromMasking->Array.some(pattern =>
       isPathStartsWithPattern(normalizedPath, normalizePath(pattern))
@@ -1738,13 +1793,15 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     ~logType=INFO,
   )
 
+  let subscriptionEvents = SubscriptionEventTypes.getSubscriptionEvents(dict, "subscriptionEvents")
+
   {
     defaultValues: getDefaultValues(dict, "defaultValues", logger),
     business: getBusiness(dict, "business", logger),
     layout: getLayout(dict, "layout", logger),
     customerPaymentMethods: getCustomerMethods(dict, "customerPaymentMethods"),
     paymentMethodOrder: getOptionalStrArray(dict, "paymentMethodOrder"),
-    subscriptionEvents: SubscriptionEventTypes.getSubscriptionEvents(dict, "subscriptionEvents"),
+    subscriptionEvents,
     fields: getFields(dict, "fields", logger),
     branding: getWarningString(dict, "branding", "auto", ~logger)->getShowType("options.branding"),
     displaySavedPaymentMethodsCheckbox: getBoolWithWarning(
@@ -1785,7 +1842,12 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
-    paymentMethodsConfig: getPaymentMethodsConfig(dict, "paymentMethodsConfig", logger),
+    paymentMethodsConfig: getPaymentMethodsConfig(
+      dict,
+      "paymentMethodsConfig",
+      logger,
+      ~subscriptionEvents,
+    ),
     alwaysSendCustomerAcceptance: getBool(dict, "alwaysSendCustomerAcceptance", false),
     redirectionInfo: getRedirectionInfo(dict, "redirectionInfo", logger),
     appearance: getJsonObjectFromDict(dict, "appearance"),

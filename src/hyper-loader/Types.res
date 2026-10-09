@@ -320,6 +320,7 @@ type eventType =
   | ConfirmPayment
   | OneClickConfirmPayment
   | SurchargeInfo
+  | CustomMessageElementClicked
   | None
 
 let eventTypeMapper = event => {
@@ -334,6 +335,7 @@ let eventTypeMapper = event => {
   | "confirmTriggered" => ConfirmPayment
   | "oneClickConfirmTriggered" => OneClickConfirmPayment
   | "surchargeInfo" => SurchargeInfo
+  | "customMessageElementClicked" => CustomMessageElementClicked
   | _ => None
   }
 }

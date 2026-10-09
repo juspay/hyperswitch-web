@@ -34,7 +34,14 @@ let checkboxCssStyle = (themeObj: CardThemeType.themeClass) => {
 }
 
 @react.component
-let make = (~isChecked, ~onChange, ~label, ~ariaLabelChecked="", ~ariaLabelUnchecked="") => {
+let make = (
+  ~isChecked,
+  ~onChange,
+  ~label,
+  ~labelContent: option<React.element>=?,
+  ~ariaLabelChecked="",
+  ~ariaLabelUnchecked="",
+) => {
   let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   let css = checkboxCssStyle(themeObj)
@@ -66,14 +73,24 @@ let make = (~isChecked, ~onChange, ~label, ~ariaLabelChecked="", ~ariaLabelUnche
     }}
     role="checkbox"
     ariaChecked={isChecked ? #"true" : #"false"}
-    ariaLabel={ariaLabel->String.length > 0 ? ariaLabel : label}>
+    ariaLabel={ariaLabel->String.length > 0 ? ariaLabel : label}
+  >
     <style> {React.string(css)} </style>
     <label className={`container CheckboxInput ${checkedState}`}>
       <input tabIndex={-1} type_={`checkbox`} checked={isChecked} onChange={handleChange} />
       <div className={`checkmark CheckboxInput ${checkedState}`} />
-      <div className={`CheckboxLabel ${checkBoxLabelState} ml-2 opacity-50 text-xs select-none`}>
-        {React.string(label)}
-      </div>
+      {switch labelContent {
+      | Some(content) =>
+        // Rich content (e.g. tappable links) manages its own dimming so that
+        // interactive children are not rendered at reduced opacity.
+        <div className={`CheckboxLabel ${checkBoxLabelState} ml-2 text-xs select-none`}>
+          content
+        </div>
+      | None =>
+        <div className={`CheckboxLabel ${checkBoxLabelState} ml-2 opacity-50 text-xs select-none`}>
+          {React.string(label)}
+        </div>
+      }}
     </label>
   </div>
 }

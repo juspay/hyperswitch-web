@@ -22,6 +22,12 @@ type emitter = {
     ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   ) => unit,
   emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
+  emitCustomMessageElementClicked: (
+    ~key: string,
+    ~elementType: string,
+    ~paymentMethod: string,
+    ~paymentMethodType: string,
+  ) => unit,
 }
 
 let useSubscriptionEventEmitter = (): emitter => {
@@ -108,6 +114,29 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
+  let emitCustomMessageElementClicked = (
+    ~key,
+    ~elementType,
+    ~paymentMethod,
+    ~paymentMethodType,
+  ) => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=CustomMessageElementClicked,
+      )
+    ) {
+      Utils.messageParentWindow(
+        createCustomMessageElementClickedPayload(
+          ~key,
+          ~elementType,
+          ~paymentMethod,
+          ~paymentMethodType,
+        ),
+      )
+    }
+  }
+
   {
     emitCardInfo,
     emitPaymentMethodStatus,
@@ -115,7 +144,18 @@ let useSubscriptionEventEmitter = (): emitter => {
     emitCvcStatus,
     emitSurcharge,
     emitOffers,
+    emitCustomMessageElementClicked,
   }
+}
+
+// Whether the merchant subscribed to `customMessageElementClicked`. Custom
+// message elements are only interactive when this is true.
+let useIsSubscribedTo = (~eventType) => {
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  PaymentEventData.shouldEmitEvent(
+    ~subscribedEvents=options.subscriptionEvents->Option.getOr([]),
+    ~eventType,
+  )
 }
 
 // ---------------------------------------------------------------------------

@@ -34,21 +34,39 @@ let make = (~styles: JsxDOMStyle.t={}, ~paymentMethod, ~paymentMethodType) => {
     ~paymentMethod,
     ~paymentMethodType,
   )
+  let customMessageSegments = CustomMessageText.useSegments(~message=customMessageConfig)
 
   let (termsText, showTerm) = switch customMessageConfig.displayMode {
   | DefaultSdkMessage => paymentMethodTermsDefaults
   | CustomMessage => {
-      let customMessage = customMessageConfig.value->Option.getOr("")->String.trim
+      let customMessage = customMessageSegments->CustomMessageUtils.segmentsToPlainText
       (customMessage, customMessage->String.length > 0 ? Always : Never)
     }
   | Hidden => ("", Never)
   }
 
+  // A dimmed container would also dim nested links (contrast risk on an
+  // interactive element), so when links are present the dimming moves from
+  // the container onto the plain-text runs only.
+  let hasLinks =
+    customMessageConfig.displayMode == CustomMessage &&
+      customMessageSegments->CustomMessageText.hasElementSegment
+  let containerClassName = hasLinks
+    ? "TermsTextLabel text-xs mb-2 text-left"
+    : "TermsTextLabel opacity-50 text-xs mb-2 text-left"
+
   <RenderIf condition={showTerm == Auto || showTerm == Always}>
-    <div
-      className="TermsTextLabel opacity-50 text-xs mb-2 text-left"
-      style={...styles, color: themeObj.colorText}>
-      {React.string(termsText)}
+    <div className=containerClassName style={...styles, color: themeObj.colorText}>
+      {switch customMessageConfig.displayMode {
+      | CustomMessage =>
+        <CustomMessageText
+          message=customMessageConfig
+          paymentMethod
+          paymentMethodType
+          textClassName={hasLinks ? "opacity-50" : ""}
+        />
+      | DefaultSdkMessage | Hidden => React.string(termsText)
+      }}
     </div>
   </RenderIf>
 }

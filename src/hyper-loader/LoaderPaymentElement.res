@@ -273,6 +273,11 @@ let make = (
           "surchargeInfo",
           `onSurchargeInfo-${componentType}-${elementInstanceId}`,
         )
+      | CustomMessageElementClicked =>
+        addSubscriptionEventListener(
+          "customMessageElementClicked",
+          `onCustomMessageElementClicked-${componentType}-${elementInstanceId}`,
+        )
       | _ => ()
       }
     }
