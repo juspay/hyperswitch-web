@@ -186,6 +186,9 @@ test.describe("Card Number Validation", () => {
         "maxlength",
         "3",
       );
+      // The limit applies to typing: extra digits are dropped.
+      await sdk.type(testIds.cardCVVInputTestId, "12345");
+      await expect(sdk.field(testIds.cardCVVInputTestId)).toHaveValue("123");
     });
 
     test("should size the CVC to 4 for an American Express", async ({
@@ -199,6 +202,9 @@ test.describe("Card Number Validation", () => {
         "maxlength",
         "4",
       );
+      // The limit applies to typing: extra digits are dropped.
+      await sdk.type(testIds.cardCVVInputTestId, "12345");
+      await expect(sdk.field(testIds.cardCVVInputTestId)).toHaveValue("1234");
     });
   });
 
