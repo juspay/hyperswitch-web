@@ -1,0 +1,176 @@
+{
+  "_source": "synthetic",
+  "_note": "Redsys external 3DS, hand-written from the SDK's next-action handling (src/Utilities/PaymentHelpers.res: invoke_hidden_iframe -> fullscreen 'redsys3ds' (src/Redsys3ds.res) -> 3DS method form POSTed into #threeDsAuthFrame -> POST /payments/:id/complete_authorize with threeds_method_comp_ind; redirect_to_url -> top-level navigation). Outcomes are keyed on the Redsys test card the SDK sends to /confirm, mirroring the Redsys simulator: 4918019199883839 = 3DS method + challenge, 4918019160034602 = 3DS method + frictionless, 4548817212493017 = challenge redirect (no 3DS method), 4548814479727229 = frictionless. Confirm stores the scenario on the hermetic intent (hermetic_redsys) so complete_authorize (whose body has no card) can answer per card. The Redsys simulator pages themselves (sis-d.redsys.es) are stand-ins; the live tier hits the real ones.",
+  "routes": [
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": { "body": { "payment_method_data": { "card": { "card_number": "4918019199883839" } } } },
+      "intentPatch": { "status": "{{response.status}}", "hermetic_redsys": "invoke_challenge" },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "currency": "{{intent.currency}}",
+        "client_secret": "{{intent.client_secret}}",
+        "connector": "redsys",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "authentication_type": "three_ds",
+        "profile_id": "{{intent.profile_id}}",
+        "manual_retry_allowed": false,
+        "next_action": {
+          "type": "invoke_hidden_iframe",
+          "iframe_data": {
+            "method_key": "threeDSMethodData",
+            "three_ds_method_data_submission": true,
+            "three_ds_method_data": "eyJ0aHJlZURTU2VydmVyVHJhbnNJRCI6Imhlcm1ldGljLXJlZHN5cy0zZHMtbWV0aG9kIn0",
+            "three_ds_method_url": "https://sis-d.redsys.es/sis-simulador-web/threeDsMethod.jsp",
+            "directory_server_id": "A000000003",
+            "message_version": "2.2.0"
+          }
+        }
+      }
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": { "body": { "payment_method_data": { "card": { "card_number": "4918019160034602" } } } },
+      "intentPatch": { "status": "{{response.status}}", "hermetic_redsys": "invoke_frictionless" },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "currency": "{{intent.currency}}",
+        "client_secret": "{{intent.client_secret}}",
+        "connector": "redsys",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "authentication_type": "three_ds",
+        "profile_id": "{{intent.profile_id}}",
+        "manual_retry_allowed": false,
+        "next_action": {
+          "type": "invoke_hidden_iframe",
+          "iframe_data": {
+            "method_key": "threeDSMethodData",
+            "three_ds_method_data_submission": true,
+            "three_ds_method_data": "eyJ0aHJlZURTU2VydmVyVHJhbnNJRCI6Imhlcm1ldGljLXJlZHN5cy0zZHMtbWV0aG9kIn0",
+            "three_ds_method_url": "https://sis-d.redsys.es/sis-simulador-web/threeDsMethod.jsp",
+            "directory_server_id": "A000000003",
+            "message_version": "2.2.0"
+          }
+        }
+      }
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": { "body": { "payment_method_data": { "card": { "card_number": "4548817212493017" } } } },
+      "intentPatch": { "status": "{{response.status}}", "hermetic_redsys": "challenge" },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "currency": "{{intent.currency}}",
+        "client_secret": "{{intent.client_secret}}",
+        "connector": "redsys",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "authentication_type": "three_ds",
+        "profile_id": "{{intent.profile_id}}",
+        "manual_retry_allowed": false,
+        "next_action": {
+          "type": "redirect_to_url",
+          "redirect_to_url": "https://sis-d.redsys.es/sis-simulador-web/authenticationRequest.jsp?hermetic_payment={{intent.payment_id}}"
+        }
+      }
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": { "body": { "payment_method_data": { "card": { "card_number": "4548814479727229" } } } },
+      "intentPatch": { "status": "{{response.status}}", "hermetic_redsys": "frictionless" },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "succeeded",
+        "amount": "{{intent.amount}}",
+        "amount_received": "{{intent.amount}}",
+        "currency": "{{intent.currency}}",
+        "client_secret": "{{intent.client_secret}}",
+        "connector": "redsys",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "authentication_type": "three_ds",
+        "profile_id": "{{intent.profile_id}}",
+        "manual_retry_allowed": false,
+        "next_action": null
+      }
+    },
+    {
+      "name": "redsysThreeDsMethod",
+      "method": "POST",
+      "url": "https://sis-d.redsys.es/sis-simulador-web/threeDsMethod.jsp",
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>Redsys 3DS method (hermetic stand-in)</title></head><body>3DS method</body></html>"
+    },
+    {
+      "name": "completeAuthorize",
+      "method": "POST",
+      "path": "/payments/:paymentId/complete_authorize",
+      "match": { "intent": { "hermetic_redsys": "invoke_challenge" } },
+      "intentPatch": { "status": "{{response.status}}" },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "currency": "{{intent.currency}}",
+        "client_secret": "{{intent.client_secret}}",
+        "connector": "redsys",
+        "payment_method": "card",
+        "authentication_type": "three_ds",
+        "profile_id": "{{intent.profile_id}}",
+        "next_action": {
+          "type": "redirect_to_url",
+          "redirect_to_url": "https://sis-d.redsys.es/sis-simulador-web/authenticationRequest.jsp?hermetic_payment={{intent.payment_id}}"
+        }
+      }
+    },
+    {
+      "name": "completeAuthorize",
+      "method": "POST",
+      "path": "/payments/:paymentId/complete_authorize",
+      "match": { "intent": { "hermetic_redsys": "invoke_frictionless" } },
+      "intentPatch": { "status": "{{response.status}}" },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "succeeded",
+        "amount": "{{intent.amount}}",
+        "amount_received": "{{intent.amount}}",
+        "currency": "{{intent.currency}}",
+        "client_secret": "{{intent.client_secret}}",
+        "connector": "redsys",
+        "payment_method": "card",
+        "authentication_type": "three_ds",
+        "profile_id": "{{intent.profile_id}}",
+        "next_action": null
+      }
+    },
+    {
+      "name": "redsysChallengePage",
+      "method": "*",
+      "url": "https://sis-d.redsys.es/sis-simulador-web/authenticationRequest.jsp**",
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>Redsys simulator (hermetic stand-in)</title></head><body><h1>Redsys 3DS challenge</h1></body></html>"
+    }
+  ]
+}

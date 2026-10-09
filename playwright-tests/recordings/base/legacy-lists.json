@@ -1,0 +1,69 @@
+{
+  "_source": "synthetic",
+  "_note": "Legacy list endpoints. The current SDK renders from /payments/:id/client, but api.accountPaymentMethods()/cardRequiredFields() (input for sdk.testDynamicFields()) and older flows read these.",
+  "routes": [
+    {
+      "name": "accountPaymentMethods",
+      "method": "GET",
+      "path": "/account/payment_methods",
+      "status": 200,
+      "body": {
+        "redirect_url": null,
+        "currency": "{{intent.currency}}",
+        "payment_methods": [
+          {
+            "payment_method": "card",
+            "payment_method_types": [
+              {
+                "payment_method_type": "credit",
+                "payment_experience": null,
+                "card_networks": [
+                  { "card_network": "Visa", "surcharge_details": null, "eligible_connectors": ["stripe"] },
+                  { "card_network": "Mastercard", "surcharge_details": null, "eligible_connectors": ["stripe"] }
+                ],
+                "bank_names": null,
+                "bank_debits": null,
+                "bank_transfers": null,
+                "required_fields": {},
+                "surcharge_details": null,
+                "pm_auth_connector": null
+              },
+              {
+                "payment_method_type": "debit",
+                "payment_experience": null,
+                "card_networks": [
+                  { "card_network": "Visa", "surcharge_details": null, "eligible_connectors": ["stripe"] },
+                  { "card_network": "Mastercard", "surcharge_details": null, "eligible_connectors": ["stripe"] }
+                ],
+                "bank_names": null,
+                "bank_debits": null,
+                "bank_transfers": null,
+                "required_fields": {},
+                "surcharge_details": null,
+                "pm_auth_connector": null
+              }
+            ]
+          }
+        ],
+        "mandate_payment": null,
+        "merchant_name": "Hermetic Test Merchant",
+        "show_surcharge_breakup_screen": false,
+        "payment_type": "normal",
+        "request_external_three_ds_authentication": false,
+        "collect_shipping_details_from_wallets": false,
+        "collect_billing_details_from_wallets": false,
+        "is_tax_calculation_enabled": false
+      }
+    },
+    {
+      "name": "customerPaymentMethods",
+      "method": "GET",
+      "path": "/customers/payment_methods",
+      "status": 200,
+      "body": {
+        "customer_payment_methods": [],
+        "is_guest_customer": false
+      }
+    }
+  ]
+}

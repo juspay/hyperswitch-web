@@ -1,0 +1,73 @@
+{
+  "_source": "synthetic",
+  "_note": "02-card-3ds-stripe: Stripe 3DS. confirm (only for intents created with authentication_type three_ds) returns requires_customer_action + next_action.redirect_to_url on the router's /payments/redirect endpoint, like the real router. That endpoint is answered with an auto-submitting GET form to hooks.stripe.com/3d_secure_2/hosted (modelled on the router's RedirectForm::Form page); the Stripe page itself is the hermetic blank-document stub. The challenge is never interacted with, so nothing Stripe-side is faked beyond the URL.",
+  "routes": [
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "status": 200,
+      "intentPatch": {
+        "status": "{{response.status}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "net_amount": "{{intent.amount}}",
+        "amount_capturable": "{{intent.amount}}",
+        "amount_received": null,
+        "connector": "stripe",
+        "client_secret": "{{intent.client_secret}}",
+        "created": "{{intent.created}}",
+        "currency": "{{intent.currency}}",
+        "customer_id": "{{intent.customer_id}}",
+        "description": "{{intent.description}}",
+        "capture_method": "{{intent.capture_method}}",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "payment_method_data": {
+          "card": {
+            "last4": "3220",
+            "card_type": "CREDIT",
+            "card_network": "Visa",
+            "card_issuer": null,
+            "card_issuing_country": "UNITEDSTATES",
+            "card_isin": "400000",
+            "card_exp_month": "12",
+            "card_exp_year": "30",
+            "card_holder_name": null
+          },
+          "billing": null
+        },
+        "authentication_type": "three_ds",
+        "next_action": {
+          "type": "redirect_to_url",
+          "redirect_to_url": "{{api_url}}/payments/redirect/{{intent.payment_id}}/{{merchant_id}}/{{intent.payment_id}}_1"
+        },
+        "manual_retry_allowed": false,
+        "connector_transaction_id": "pi_hermetic_synthetic",
+        "error_code": null,
+        "error_message": null,
+        "profile_id": "{{intent.profile_id}}",
+        "billing": "{{intent.billing}}",
+        "shipping": "{{intent.shipping}}",
+        "email": "{{intent.email}}"
+      },
+      "match": {
+        "intent": {
+          "authentication_type": "three_ds"
+        }
+      }
+    },
+    {
+      "name": "paymentRedirect",
+      "method": "GET",
+      "path": "/payments/redirect/:paymentId/:merchantId/:attemptId",
+      "status": 200,
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>Redirecting</title></head><body><form id=\"payment_form\" method=\"GET\" action=\"https://hooks.stripe.com/3d_secure_2/hosted\"><input type=\"hidden\" name=\"merchant\" value=\"acct_hermetic\"><input type=\"hidden\" name=\"payment_intent\" value=\"pi_hermetic_synthetic\"><input type=\"hidden\" name=\"payment_intent_client_secret\" value=\"pi_hermetic_synthetic_secret_redacted\"><input type=\"hidden\" name=\"publishable_key\" value=\"pk_test_redacted\"><input type=\"hidden\" name=\"source\" value=\"payatt_hermetic\"></form><script>document.getElementById(\"payment_form\").submit();</script></body></html>"
+    }
+  ]
+}

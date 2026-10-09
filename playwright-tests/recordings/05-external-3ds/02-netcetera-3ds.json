@@ -1,0 +1,192 @@
+{
+  "_source": "synthetic",
+  "_note": "Netcetera (authentication) + Cybersource (payment) profile. Hand-written from the SDK's external-3DS handling: /confirm answers requires_customer_action + next_action three_ds_invoke (src/Utilities/PaymentHelpers.res) -> fullscreen '3ds' (src/ThreeDSMethod.res, only when three_ds_method_data_submission) -> fullscreen '3dsAuth' (src/ThreeDSAuth.res) -> POST /payments/:id/3ds/authentication. trans_status C: the SDK POSTs the CReq to acs_url inside #threeDsAuthFrame (acsChallenge = stand-in ACS page with an OTP field, Pay and Cancel); trans_status Y: the SDK POSTs to three_ds_authorize_url. The router's authorize page (threeDsAuthorize) postMessages openurl_if_required, which the SDK turns into a force-sync retrieve and resolves confirmPayment; it also moves the hermetic intent to succeeded / failed (cancel). Outcomes are keyed on the test card sent to /confirm (the scenario is stored on the intent as hermetic_3ds). The fullscreen iframes call GlobalVars.backendEndPoint (https://beta.hyperswitch.io/api) rather than the merchant's custom backend; the engine strips that /api prefix, so plain router paths match. The challenge card also gets a 3DS method URL, so the ThreeDSMethod frame runs and 3ds/authentication is called with threeds_method_comp_ind=Y; the frictionless card has no 3DS method (comp_ind U).",
+  "routes": [
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": {
+        "body": {
+          "payment_method_data": {
+            "card": {
+              "card_number": "348638267931507"
+            }
+          }
+        }
+      },
+      "intentPatch": {
+        "status": "{{response.status}}",
+        "hermetic_3ds": "challenge"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "currency": "{{intent.currency}}",
+        "client_secret": "{{intent.client_secret}}",
+        "connector": "cybersource",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "authentication_type": "three_ds",
+        "profile_id": "{{intent.profile_id}}",
+        "manual_retry_allowed": false,
+        "external_3ds_authentication_attempted": true,
+        "next_action": {
+          "type": "three_ds_invoke",
+          "three_ds_data": {
+            "three_ds_authentication_url": "https://beta.hyperswitch.io/api/payments/{{intent.payment_id}}/3ds/authentication",
+            "three_ds_authorize_url": "https://beta.hyperswitch.io/api/payments/{{intent.payment_id}}/{{merchant_id}}/authorize/cybersource",
+            "three_ds_method_details": {
+              "three_ds_method_key": "threeDSMethodData",
+              "three_ds_method_data_submission": true,
+              "three_ds_method_data": "eyJ0aHJlZURTU2VydmVyVHJhbnNJRCI6Imhlcm1ldGljLTNkcy1tZXRob2QiLCJ0aHJlZURTTWV0aG9kTm90aWZpY2F0aW9uVVJMIjoiaGVybWV0aWMifQ",
+              "three_ds_method_url": "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/acs/3ds-method"
+            },
+            "poll_config": {
+              "poll_id": "external_authentication_{{intent.payment_id}}",
+              "delay_in_secs": 2,
+              "frequency": 5
+            },
+            "message_version": "2.2.0",
+            "directory_server_id": "A000000004"
+          }
+        }
+      }
+    },
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "match": {
+        "body": {
+          "payment_method_data": {
+            "card": {
+              "card_number": "4929251897047956"
+            }
+          }
+        }
+      },
+      "intentPatch": {
+        "status": "{{response.status}}",
+        "hermetic_3ds": "frictionless"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "currency": "{{intent.currency}}",
+        "client_secret": "{{intent.client_secret}}",
+        "connector": "cybersource",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "authentication_type": "three_ds",
+        "profile_id": "{{intent.profile_id}}",
+        "manual_retry_allowed": false,
+        "external_3ds_authentication_attempted": true,
+        "next_action": {
+          "type": "three_ds_invoke",
+          "three_ds_data": {
+            "three_ds_authentication_url": "https://beta.hyperswitch.io/api/payments/{{intent.payment_id}}/3ds/authentication",
+            "three_ds_authorize_url": "https://beta.hyperswitch.io/api/payments/{{intent.payment_id}}/{{merchant_id}}/authorize/cybersource",
+            "three_ds_method_details": {
+              "three_ds_method_key": "threeDSMethodData",
+              "three_ds_method_data_submission": false
+            },
+            "poll_config": {
+              "poll_id": "external_authentication_{{intent.payment_id}}",
+              "delay_in_secs": 2,
+              "frequency": 5
+            },
+            "message_version": "2.2.0",
+            "directory_server_id": "A000000004"
+          }
+        }
+      }
+    },
+    {
+      "name": "threeDsMethod",
+      "method": "POST",
+      "url": "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/acs/3ds-method",
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>3DS method (hermetic stand-in)</title></head><body></body></html>"
+    },
+    {
+      "name": "threeDsAuthentication",
+      "method": "POST",
+      "path": "/payments/:paymentId/3ds/authentication",
+      "match": {
+        "intent": {
+          "hermetic_3ds": "challenge"
+        }
+      },
+      "body": {
+        "trans_status": "C",
+        "acs_url": "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/acs/challenge",
+        "challenge_request": "eyJtZXNzYWdlVHlwZSI6IkNSZXEiLCJtZXNzYWdlVmVyc2lvbiI6IjIuMi4wIiwiY2hhbGxlbmdlV2luZG93U2l6ZSI6IjA1In0",
+        "challenge_request_key": "creq",
+        "acs_reference_number": "3DS_LOA_ACS_HERMETIC_020200_00000",
+        "acs_trans_id": "00000000-0000-4000-8000-00000000acs1",
+        "three_dsserver_trans_id": "00000000-0000-4000-8000-000000003ds1",
+        "acs_signed_content": null,
+        "three_ds_requestor_url": "https://sandbox.hyperswitch.io"
+      }
+    },
+    {
+      "name": "threeDsAuthentication",
+      "method": "POST",
+      "path": "/payments/:paymentId/3ds/authentication",
+      "match": {
+        "intent": {
+          "hermetic_3ds": "frictionless"
+        }
+      },
+      "body": {
+        "trans_status": "Y",
+        "acs_url": null,
+        "challenge_request": null,
+        "acs_reference_number": "3DS_LOA_ACS_HERMETIC_020200_00000",
+        "acs_trans_id": "00000000-0000-4000-8000-00000000acs2",
+        "three_dsserver_trans_id": "00000000-0000-4000-8000-000000003ds2",
+        "acs_signed_content": null,
+        "three_ds_requestor_url": "https://sandbox.hyperswitch.io"
+      }
+    },
+    {
+      "name": "acsChallenge",
+      "method": "POST",
+      "url": "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/acs/challenge",
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>NDM ACS Simulator (hermetic stand-in)</title></head><body><h3>NDM ACS Simulator</h3><p>Enter the one-time password.</p><form id=\"challengeForm\" method=\"POST\" action=\"https://beta.hyperswitch.io/api/payments/{{intent.payment_id}}/{{merchant_id}}/authorize/cybersource\"><input type=\"hidden\" name=\"cres\" value=\"hermetic-cres-transStatus-Y\"><input type=\"text\" name=\"otp\" required><button type=\"submit\">Pay</button></form><form id=\"cancelForm\" method=\"POST\" action=\"https://beta.hyperswitch.io/api/payments/{{intent.payment_id}}/{{merchant_id}}/authorize/cybersource?hermetic_trans_status=N\"><input type=\"hidden\" name=\"cres\" value=\"hermetic-cres-transStatus-N\"><button type=\"submit\">Cancel</button></form></body></html>"
+    },
+    {
+      "name": "threeDsAuthorize",
+      "method": "POST",
+      "path": "/payments/:paymentId/:merchantId/authorize/cybersource",
+      "match": {
+        "query": {
+          "hermetic_trans_status": "N"
+        }
+      },
+      "contentType": "text/html",
+      "intentPatch": {
+        "status": "failed",
+        "error_code": "IR_17",
+        "error_message": "Authentication failed: challenge cancelled by the cardholder"
+      },
+      "body": "<!doctype html><html><head><title>Hyperswitch redirect (hermetic stand-in)</title></head><body><script>window.parent.postMessage({ openurl_if_required: 'https://hermetic.invalid/return_url?payment_intent_client_secret={{intent.client_secret}}' }, '*');</script></body></html>"
+    },
+    {
+      "name": "threeDsAuthorize",
+      "method": "POST",
+      "path": "/payments/:paymentId/:merchantId/authorize/cybersource",
+      "contentType": "text/html",
+      "intentPatch": {
+        "status": "succeeded"
+      },
+      "body": "<!doctype html><html><head><title>Hyperswitch redirect (hermetic stand-in)</title></head><body><script>window.parent.postMessage({ openurl_if_required: 'https://hermetic.invalid/return_url?payment_intent_client_secret={{intent.client_secret}}' }, '*');</script></body></html>"
+    }
+  ]
+}
