@@ -292,28 +292,25 @@ let fetchPaymentManagementList = (
   })
 }
 
-let retrievePaymentMethodSession = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAuthorization) => {
-  open Promise
+let retrievePaymentMethodSession = (
+  ~pmSessionId,
+  ~endpoint,
+  ~customPodUri,
+  ~sdkAuthorization,
+  ~logger,
+) => {
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
 
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(res => {
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
+  fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHOD_SESSION_RETRIEVE_CALL,
+    ~logger,
+    ~method=#GET,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~onSuccess=data => data,
+    ~onFailure=_ => JSON.Encode.null,
+  )
 }
 
 let deletePaymentMethodV2 = (
@@ -353,40 +350,21 @@ let deletePaymentMethodV2 = (
   })
 }
 
-let updatePaymentMethod = (
-  ~bodyArr,
-  ~pmSessionId,
-  ~logger as _,
-  ~customPodUri,
-  ~sdkAuthorization,
-) => {
-  open Promise
+let updatePaymentMethod = (~bodyArr, ~pmSessionId, ~logger, ~customPodUri, ~sdkAuthorization) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
-  fetchApi(
+  fetchApiWithLogging(
     uri,
+    ~eventName=PAYMENT_METHOD_SESSION_UPDATE_CALL,
+    ~logger,
     ~method=#PUT,
     ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~onSuccess=data => data,
+    ~onFailure=_ => JSON.Encode.null,
   )
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
 }
 
 let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
@@ -505,32 +483,19 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
   }
 }
 
-let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization, ~logger as _) => {
-  open Promise
+let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization, ~logger) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/confirm`
 
-  fetchApi(
+  fetchApiWithLogging(
     uri,
+    ~eventName=PAYMENT_METHOD_SESSION_CONFIRM_CALL,
+    ~logger,
     ~method=#POST,
     ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri=""),
+    ~onSuccess=data => data,
+    ~onFailure=_ => JSON.Encode.null,
   )
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
 }
