@@ -46,17 +46,22 @@ type session = {
   abort: unit => unit,
   mutable oncancel: unit => unit,
   canMakePayments: unit => bool,
-  // Static on the ApplePaySession class; not present on older Safari versions.
-  applePayCapabilities: string => promise<applePayCapabilitiesResponse>,
+  // Static on the ApplePaySession class; not present on older Safari versions. Call it through
+  // `callApplePayCapabilities` so that `this` stays bound to the class.
+  applePayCapabilities: Nullable.t<string => promise<applePayCapabilitiesResponse>>,
   mutable onvalidatemerchant: event => unit,
   completeMerchantValidation: JSON.t => unit,
   mutable onpaymentauthorized: event => unit,
   mutable onshippingcontactselected: shippingAddressChangeEvent => promise<unit>,
   completeShippingContactSelection: orderDetails => unit,
   completePayment: JSON.t => unit,
-  \"STATUS_SUCCESS": string,
-  \"STATUS_FAILURE": string,
+  \"STATUS_SUCCESS": int,
+  \"STATUS_FAILURE": int,
 }
+
+@send
+external callApplePayCapabilities: (session, string) => promise<applePayCapabilitiesResponse> =
+  "applePayCapabilities"
 // Read on every access, so it also reflects the class installed later by Apple's JS SDK.
 @scope("window") @val external sessionForApplePay: Nullable.t<session> = "ApplePaySession"
 
@@ -87,7 +92,6 @@ let shouldShowApplePay = status => status !== ApplePayUnsupported
 type customElementRegistry
 @scope("window") @val
 external customElements: Nullable.t<customElementRegistry> = "customElements"
-@send external getCustomElement: (customElementRegistry, string) => Nullable.t<unknown> = "get"
 @send external whenDefined: (customElementRegistry, string) => promise<unit> = "whenDefined"
 
 @scope("CSS") @val external cssSupports: (string, string) => bool = "supports"

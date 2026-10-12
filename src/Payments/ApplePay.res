@@ -50,7 +50,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       }
     }
     let typeStr = switch cfg.buttonType {
-    | Default => "default"
+    // Not an Apple Pay button type: `<apple-pay-button>` would draw "Buy with", while Safari
+    // ignores it and draws the plain button, so map it to "plain" for both.
+    | Default => "plain"
     | Plain => "plain"
     | Buy => "buy"
     | Donate => "donate"
@@ -218,16 +220,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     isNativeApplePayButton
   )
 
-  React.useEffect0(() => {
-    if !isNativeApplePayButton {
-      ApplePayHelpers.loadApplePayButton()
-      ->thenResolve(loaded => setIsApplePayButtonLoaded(_ => loaded))
-      ->catch(_ => resolve())
-      ->ignore
-    }
-    None
-  })
-
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onApplePayButtonClicked = () => {
@@ -307,7 +299,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   // Apple's docs) instead of relying on React's synthetic onClick.
   let applePayButtonRef = React.useRef(Nullable.null)
   let onApplePayButtonClickedRef = React.useRef(onApplePayButtonClicked)
-  onApplePayButtonClickedRef.current = onApplePayButtonClicked
+  React.useEffect(() => {
+    onApplePayButtonClickedRef.current = onApplePayButtonClicked
+    None
+  }, [onApplePayButtonClicked])
 
   React.useEffect(() => {
     switch applePayButtonRef.current->Nullable.toOption {
@@ -348,18 +343,35 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   // Chrome via Apple's JS SDK), so the button is not shown. Delayed session tokens (TrustPay)
   // are only supported where Apple Pay is native (Safari).
   let hasApplePaySessionTokenData =
-    sessionObj->getOptionsDict->getDictFromDict("session_token_data")->Dict.keysToArray->Array.length > 0
+    sessionObj
+    ->getOptionsDict
+    ->getDictFromDict("session_token_data")
+    ->Dict.keysToArray
+    ->Array.length > 0
   let isApplePaySessionTokenValid =
-    !isApplePaySDKFlow ||
-    (isApplePayDelayedSessionFlow ? isNativeApplePayButton : hasApplePaySessionTokenData)
+    !isApplePaySDKFlow || (
+      isApplePayDelayedSessionFlow ? isNativeApplePayButton : hasApplePaySessionTokenData
+    )
+
+  let isApplePayEligible =
+    (isInvokeSDKFlow || paymentExperience === PaymentMethodsRecord.RedirectToURL) &&
+    isApplePayReady &&
+    isWallet &&
+    isApplePaySessionTokenValid
+
+  // Apple's JS SDK (for `<apple-pay-button>`) is only loaded into the iframe once the button can
+  // actually be shown, and never in Safari, which draws the button natively.
+  React.useEffect(() => {
+    if isApplePayEligible && !isApplePayButtonLoaded {
+      ApplePayHelpers.loadApplePayButton()
+      ->thenResolve(loaded => setIsApplePayButtonLoaded(_ => loaded))
+      ->catch(_ => resolve())
+      ->ignore
+    }
+    None
+  }, [isApplePayEligible])
 
   React.useEffect(() => {
-    let isApplePayEligible =
-      (isInvokeSDKFlow || paymentExperience === PaymentMethodsRecord.RedirectToURL) &&
-      isApplePayReady &&
-      isWallet &&
-      isApplePaySessionTokenValid
-
     let isApplePaySessionReady = !isApplePayDelayedSessionFlow || trustPayScriptStatus === Loaded
 
     if isApplePayEligible && isApplePaySessionReady && isApplePayButtonLoaded {
@@ -372,14 +384,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     }
     None
   }, (
-    isApplePayReady,
-    isInvokeSDKFlow,
-    paymentExperience,
-    isWallet,
+    isApplePayEligible,
     isApplePayDelayedSessionFlow,
     trustPayScriptStatus,
     isApplePayButtonLoaded,
-    isApplePaySessionTokenValid,
   ))
 
   let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)

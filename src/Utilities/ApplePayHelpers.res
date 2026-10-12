@@ -88,7 +88,7 @@ let getOrCreateApplePaySdkScript = () =>
   }
 
 let supportsApplePayCapabilities = (session: session) =>
-  Type.typeof(session.applePayCapabilities) === #function
+  session.applePayCapabilities->Nullable.toOption->Option.isSome
 
 // Safari draws the Apple Pay button natively, without Apple's JS SDK.
 let isNativeApplePayButtonSupported = () =>
@@ -119,15 +119,14 @@ let applePaySdkLoadPromiseRef: ref<option<promise<unit>>> = ref(None)
 
 // Makes `window.ApplePaySession` available: native in Safari, provided by Apple's JS SDK in
 // third-party browsers like Chrome. Resolves once loaded, failed or timed out; shared across callers.
+// Not loaded when a native ApplePaySession already exists (older Safari versions without
+// `applePayCapabilities` fall back to `canMakePayments`) or in mobile third-party browsers.
 let loadApplePaySdk = () =>
   switch applePaySdkLoadPromiseRef.contents {
   | Some(loadPromise) => loadPromise
   | None =>
     let loadPromise = Promise.make((resolve, _) =>
-      if (
-        sessionForApplePay->Nullable.toOption->Option.mapOr(false, supportsApplePayCapabilities) ||
-          isMobileThirdPartyBrowser()
-      ) {
+      if sessionForApplePay->Nullable.toOption->Option.isSome || isMobileThirdPartyBrowser() {
         resolve()
       } else {
         let merchantBeforeUnload = onBeforeUnload
@@ -145,15 +144,14 @@ let loadApplePaySdk = () =>
   }
 
 // Resolves to true once the `<apple-pay-button>` web component is registered in the current
-// window, however long Apple's JS SDK takes to load.
+// window, however long Apple's JS SDK takes to load. Loads the SDK through `loadApplePaySdk`.
 let loadApplePayButton = () =>
   switch customElements->Nullable.toOption {
   | None => Promise.resolve(false)
   | Some(registry) =>
-    if registry->getCustomElement(applePayButtonTag)->Nullable.toOption->Option.isNone {
-      getOrCreateApplePaySdkScript()->ignore
-    }
-    registry->whenDefined(applePayButtonTag)->Promise.thenResolve(_ => true)
+    loadApplePaySdk()->Promise.then(_ =>
+      registry->whenDefined(applePayButtonTag)->Promise.thenResolve(_ => true)
+    )
   }
 
 let getStatusFromCanMakePayments = (session: session) =>
@@ -177,7 +175,7 @@ let getPaymentCredentialStatus = (~merchantIdentifier) => {
     | Some(session) =>
       // In third-party browsers this calls Apple's servers, so bound it with a timeout.
       [
-        session.applePayCapabilities(merchantIdentifier)->thenResolve(response =>
+        session->callApplePayCapabilities(merchantIdentifier)->thenResolve(response =>
           response.paymentCredentialStatus->Option.mapOr(
             getStatusFromCanMakePayments(session),
             paymentCredentialStatusFromString,
@@ -635,11 +633,11 @@ let handleApplePayBraintreePaymentSession = (
           | Some(ssn) =>
             switch err->Nullable.toOption {
             | None => {
-                sessions.completePayment(ssn.\"STATUS_SUCCESS"->JSON.Encode.string)
+                sessions.completePayment(ssn.\"STATUS_SUCCESS"->JSON.Encode.int)
                 onSuccess(payload.nonce)
               }
             | Some(_) => {
-                sessions.completePayment(ssn.\"STATUS_FAILURE"->JSON.Encode.string)
+                sessions.completePayment(ssn.\"STATUS_FAILURE"->JSON.Encode.int)
                 onError("ApplePay Tokenization Failed"->JSON.Encode.string)
               }
             }
