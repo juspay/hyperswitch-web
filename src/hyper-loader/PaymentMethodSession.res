@@ -70,6 +70,30 @@ let buildSyntheticSession = (
 let vaultTypeHyperswitch = "hyperswitch"
 let vaultTypeVGS = "vgs"
 
+let resolveSdkAuthorization = (optionsDict: Dict.t<JSON.t>): string => {
+  // An empty camelCase value counts as absent, so it never hides a populated snake_case one.
+  let getDictEither = (dict, camelKey, snakeKey) =>
+    switch dict->getOptionalDict(camelKey) {
+    | Some(camelDict) if camelDict->Dict.keysToArray->Array.length > 0 => camelDict
+    | _ => dict->getDictFromDict(snakeKey)
+    }
+  let getStringEither = (dict, camelKey, snakeKey) =>
+    dict
+    ->getOptionString(camelKey)
+    ->getNonEmptyOption
+    ->Option.getOr(dict->getString(snakeKey, ""))
+
+  let topLevel = optionsDict->getString("sdkAuthorization", "")
+  let vaultDetails = optionsDict->getDictEither("vaultDetails", "vault_details")
+  let isHyperswitchVault =
+    vaultDetails->getStringEither("vaultType", "vault_type") === vaultTypeHyperswitch
+  topLevel === "" && isHyperswitchVault
+    ? vaultDetails
+      ->getDictEither("vaultData", "vault_data")
+      ->getStringEither("sdkAuthorization", "sdk_authorization")
+    : topLevel
+}
+
 let adaptRetrievedSessionToVaultDetails = (
   retrievedSessionJson: JSON.t,
   ~sdkAuthorization: string,
@@ -137,7 +161,7 @@ let make = (
 ): initPaymentMethodSession => {
   let optionsDict = options->getDictFromJson
 
-  let sdkAuthorizationRaw = optionsDict->getString("sdkAuthorization", "")
+  let sdkAuthorizationRaw = optionsDict->resolveSdkAuthorization
   let sdkAuth = sdkAuthorizationRaw->getSdkAuthorizationData
   let publishableKey = sdkAuth.publishableKey->Option.getOr(publishableKey)
   let pmSessionId = sdkAuth.pmSessionId->Option.getOr("")
@@ -262,6 +286,7 @@ let make = (
           ("iframeId", groupInstanceId->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+          ("loggerPaymentId", pmSessionId->JSON.Encode.string),
           ("parentURL", "*"->JSON.Encode.string),
           ("launchTime", Date.now()->JSON.Encode.float),
         ]->Dict.fromArray,
@@ -500,6 +525,7 @@ let make = (
       ~sdkSessionId,
       ~loggerSource="hyper_vault",
       ~savedCardBrand,
+      ~tailKeys=[("loggerPaymentId", pmSessionId->JSON.Encode.string)],
     )
   }
 

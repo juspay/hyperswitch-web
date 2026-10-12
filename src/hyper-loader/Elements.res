@@ -1588,10 +1588,7 @@ let make = (
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
-    module StdOption = {
-      let none: option<'a> = None
-    }
-    let cardFormRef: ref<option<Types.cardForm>> = ref(StdOption.none)
+    let cardFormRef = ref((None: option<Types.cardForm>))
     let createCardForm = (): Types.cardForm =>
       switch cardFormRef.contents {
       | Some(group) => group
