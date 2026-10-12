@@ -17,7 +17,7 @@ let make = (~networkField: fieldConfig, ~currencyField: fieldConfig) => {
   let currencyFieldProps = ReactFinalForm.useField(currencyFieldPath)
   let currencyVal = currencyFieldProps.input.value->Option.getOr("")
 
-  let dropdownOptions =
+  let dropdownOptions = React.useMemo(() =>
     Utils.currencyNetworksDict
     ->Dict.get(currencyVal)
     ->Option.getOr([])
@@ -27,22 +27,26 @@ let make = (~networkField: fieldConfig, ~currencyField: fieldConfig) => {
         value: item,
       }
     })
+  , [currencyVal])
 
   let initialNetwork = dropdownOptions->Array.get(0)->Option.map(opt => opt.value)->Option.getOr("")
 
   let field = ReactFinalForm.useField(
     networkPath,
-    ~config={validate, initialValue: Some(initialNetwork)},
+    ~config={validate, defaultValue: Some(initialNetwork)},
   )
 
+  let storedNetwork = field.input.value->Option.getOr("")
+  let isStoredNetworkValid = dropdownOptions->Array.some(opt => opt.value === storedNetwork)
+
   React.useEffect(() => {
-    if initialNetwork !== "" {
+    if !isStoredNetworkValid && initialNetwork !== "" {
       field.input.onChange(initialNetwork)
     }
     None
-  }, [initialNetwork])
+  }, (dropdownOptions, initialNetwork, isStoredNetworkValid))
 
-  let value = field.input.value->Option.getOr(initialNetwork)
+  let value = isStoredNetworkValid ? storedNetwork : initialNetwork
 
   <DropdownField
     appearance=config.appearance
