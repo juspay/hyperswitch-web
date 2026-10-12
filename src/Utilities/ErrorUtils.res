@@ -79,7 +79,7 @@ let errorWarning = [
     ),
   ),
   (
-    DYNAMIC_FIELDS_CONFIG_WARNING,
+    DYNAMIC_FIELDS_CONFIG,
     Warning,
     Dynamic(
       str => {

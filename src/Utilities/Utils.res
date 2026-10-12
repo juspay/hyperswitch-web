@@ -900,9 +900,9 @@ let getStateNamesForCountry = (~countryIso, ~allowedStateCodes=[]) =>
   ->getArray(countryIso)
   ->Array.filterMap(item => {
     let state = item->getDictFromJson
-    allowedStateCodes->Array.length === 0 || allowedStateCodes->Array.includes(state->getString("code", ""))
-      ? Some(state->getString("value", ""))
-      : None
+    let isStateCodeIncluded = allowedStateCodes->Array.includes(state->getString("code", ""))
+    let isStateAllowed = allowedStateCodes->Array.length === 0 || isStateCodeIncluded
+    isStateAllowed ? Some(state->getString("value", "")) : None
   })
 
 let getStateNames = (country: JotaiAtomTypes.field) =>

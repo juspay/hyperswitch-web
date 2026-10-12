@@ -121,7 +121,7 @@ type eventName =
   | UPDATE_INTENT
   | UPDATE_SDK
   | DYNAMIC_FIELDS_RENDERED
-  | DYNAMIC_FIELDS_CONFIG_WARNING
+  | DYNAMIC_FIELDS_CONFIG
   | CARD_FORM_FLOW
 
 type maskableDetails = Email | CardDetails

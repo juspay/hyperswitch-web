@@ -31,11 +31,10 @@ let make = (~fieldConfig: fieldConfig) => {
 
   React.useEffect(() => {
     if isShowingFallbackStateList {
+      let configuredStateCodes = allowedStateCodes->Array.join(", ")
       ErrorUtils.manageErrorWarning(
-        DYNAMIC_FIELDS_CONFIG_WARNING,
-        ~dynamicStr=`None of the configured state options [${allowedStateCodes->Array.join(
-            ", ",
-          )}] for '${fieldConfig.confirmRequestWritePath}' are valid states of country '${countryIso}'. Falling back to the complete state list.`,
+        DYNAMIC_FIELDS_CONFIG,
+        ~dynamicStr=`None of the configured state options [${configuredStateCodes}] for '${fieldConfig.confirmRequestWritePath}' are valid states of country '${countryIso}'. Falling back to the complete state list.`,
         ~logger=loggerState,
       )
     }
