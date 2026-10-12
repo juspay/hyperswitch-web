@@ -184,6 +184,7 @@ type loggerMake = {
   setSessionId: string => unit,
   setClientSecret: string => unit,
   setSdkAuthorization: string => unit,
+  setPaymentId: string => unit,
   setMerchantId: string => unit,
   setMetadata: JSON.t => unit,
   setSource: string => unit,

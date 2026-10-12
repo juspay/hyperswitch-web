@@ -47,10 +47,11 @@
     "start": "npm run update:submodules && cross-env sdkEnv=local webpack serve --config webpack.dev.js",
     "start:integ": "npm run update:submodules && cross-env sdkEnv=integ webpack serve --config webpack.dev.js",
     "start:playground": "npm run setup:playground && npm run start",
-    "test": "cd cypress-tests && npm run test",
-    "test:sandbox": "cd cypress-tests && npm run test:sandbox",
-    "test:integ": "cd cypress-tests && npm run test:integ",
-    "test:local": "cd cypress-tests && npm run test:local",
+    "test": "cd playwright-tests && npm run test",
+    "test:sandbox": "cd playwright-tests && npm run test:sandbox",
+    "test:integ": "cd playwright-tests && npm run test:integ",
+    "test:local": "cd playwright-tests && npm run test:local",
+    "test:hermetic": "cd playwright-tests && npm run test:hermetic",
     "test:hooks": "eslint src/"
   },
   "husky": {

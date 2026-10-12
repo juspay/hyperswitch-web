@@ -360,6 +360,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               if dict->Dict.get("loggerSource")->Option.isSome {
                 logger.setSource(dict->getString("loggerSource", "hyper_payment"))
               }
+              if dict->Dict.get("loggerPaymentId")->Option.isSome {
+                logger.setPaymentId(dict->getString("loggerPaymentId", ""))
+              }
               if GlobalVars.isInteg {
                 setBlockConfirm(_ => dict->getBool("blockConfirm", false))
               }
