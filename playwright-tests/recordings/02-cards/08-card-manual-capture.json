@@ -1,0 +1,62 @@
+{
+  "_source": "synthetic",
+  "_note": "08-card-manual-capture: for intents created with capture_method manual, confirm authorises without capturing (status requires_capture, amount_capturable = amount) and moves the hermetic intent to requires_capture, so retrieve/pollPaymentStatus report it too.",
+  "routes": [
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "status": 200,
+      "intentPatch": {
+        "status": "{{response.status}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_capture",
+        "amount": "{{intent.amount}}",
+        "net_amount": "{{intent.amount}}",
+        "amount_capturable": "{{intent.amount}}",
+        "amount_received": null,
+        "connector": "stripe",
+        "client_secret": "{{intent.client_secret}}",
+        "created": "{{intent.created}}",
+        "currency": "{{intent.currency}}",
+        "customer_id": "{{intent.customer_id}}",
+        "description": "{{intent.description}}",
+        "capture_method": "manual",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "payment_method_data": {
+          "card": {
+            "last4": "4242",
+            "card_type": "CREDIT",
+            "card_network": "Visa",
+            "card_issuer": null,
+            "card_issuing_country": "UNITEDSTATES",
+            "card_isin": "424242",
+            "card_exp_month": "12",
+            "card_exp_year": "30",
+            "card_holder_name": null
+          },
+          "billing": null
+        },
+        "authentication_type": "no_three_ds",
+        "next_action": null,
+        "manual_retry_allowed": false,
+        "connector_transaction_id": "pi_hermetic_synthetic",
+        "error_code": null,
+        "error_message": null,
+        "profile_id": "{{intent.profile_id}}",
+        "billing": "{{intent.billing}}",
+        "shipping": "{{intent.shipping}}",
+        "email": "{{intent.email}}"
+      },
+      "match": {
+        "intent": {
+          "capture_method": "manual"
+        }
+      }
+    }
+  ]
+}

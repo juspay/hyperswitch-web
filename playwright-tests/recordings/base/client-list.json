@@ -1,0 +1,50 @@
+{
+  "_source": "synthetic",
+  "_note": "Hand-authored from the SDK decoders (PaymentMethodsRecord.itemToObjMapperFromClientList, PaymentType.itemToCustomerObjMapperFromClientList) — no sandbox access when written. Stripe profile, card only, no saved methods. Replace with a RECORD=1 capture when credentials are available.",
+  "routes": [
+    {
+      "name": "clientList",
+      "method": "GET",
+      "path": "/payments/:paymentId/client",
+      "status": 200,
+      "body": {
+        "payment_methods_enabled": [
+          {
+            "payment_method": "card",
+            "payment_method_type": "credit",
+            "card_networks": ["Visa", "Mastercard", "AmericanExpress", "DinersClub", "Discover", "JCB", "UnionPay"],
+            "payment_experience": [],
+            "customer_acceptance_support": "supported"
+          },
+          {
+            "payment_method": "card",
+            "payment_method_type": "debit",
+            "card_networks": ["Visa", "Mastercard", "AmericanExpress", "DinersClub", "Discover", "JCB", "UnionPay"],
+            "payment_experience": [],
+            "customer_acceptance_support": "supported"
+          }
+        ],
+        "customer_payment_methods": [],
+        "intent_data": {
+          "currency": "{{intent.currency}}",
+          "amount": "{{intent.amount}}",
+          "customer_id": "{{intent.customer_id}}",
+          "email": "{{intent.email}}",
+          "billing": "{{intent.billing}}",
+          "shipping": "{{intent.shipping}}",
+          "merchant_name": "Hermetic Test Merchant",
+          "payment_type": "normal",
+          "mandate_payment": null,
+          "setup_future_usage": "{{intent.setup_future_usage}}",
+          "is_tax_calculation_enabled": false,
+          "is_guest_customer": false,
+          "installment_options": null
+        },
+        "sdk_next_action": {
+          "next_action": null,
+          "should_block_confirm": false
+        }
+      }
+    }
+  ]
+}

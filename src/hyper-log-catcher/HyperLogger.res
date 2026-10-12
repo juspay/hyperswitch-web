@@ -166,11 +166,22 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       }
   }
 
+  // Flows without a payment (e.g. payment method session) report their own id as payment_id.
+  let paymentIdOverride = ref(None)
+
+  let setPaymentId = value => {
+    paymentIdOverride := Some(value)->Utils.getNonEmptyOption
+  }
+
   let getPaymentId = () =>
-    Utils.getPaymentIdOrExtractFromSdkAuth(
-      ~clientSecret=clientSecret.contents,
-      ~sdkAuthorization=sdkAuthorization.contents,
-    )
+    switch paymentIdOverride.contents {
+    | Some(paymentId) => paymentId
+    | None =>
+      Utils.getPaymentIdOrExtractFromSdkAuth(
+        ~clientSecret=clientSecret.contents,
+        ~sdkAuthorization=sdkAuthorization.contents,
+      )
+    }
 
   let sourceRef = ref(source->getSourceString)
 
@@ -566,6 +577,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     setSessionId,
     setClientSecret,
     setSdkAuthorization,
+    setPaymentId,
     setMerchantId,
     setMetadata,
     setLogApi,

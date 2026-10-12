@@ -1,0 +1,62 @@
+{
+  "_source": "synthetic",
+  "_note": "06-card-bank-of-america: base confirm (succeeded, no 3DS) re-labelled with connector \"bankofamerica\" for intents on the bankofamerica profile. The SDK doesn't branch on the connector; this only keeps the call log honest.",
+  "routes": [
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "status": 200,
+      "intentPatch": {
+        "status": "{{response.status}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "succeeded",
+        "amount": "{{intent.amount}}",
+        "net_amount": "{{intent.amount}}",
+        "amount_capturable": 0,
+        "amount_received": "{{intent.amount}}",
+        "connector": "bankofamerica",
+        "client_secret": "{{intent.client_secret}}",
+        "created": "{{intent.created}}",
+        "currency": "{{intent.currency}}",
+        "customer_id": "{{intent.customer_id}}",
+        "description": "{{intent.description}}",
+        "capture_method": "{{intent.capture_method}}",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "payment_method_data": {
+          "card": {
+            "last4": "4242",
+            "card_type": "CREDIT",
+            "card_network": "Visa",
+            "card_issuer": null,
+            "card_issuing_country": "UNITEDSTATES",
+            "card_isin": "424242",
+            "card_exp_month": "12",
+            "card_exp_year": "30",
+            "card_holder_name": null
+          },
+          "billing": null
+        },
+        "authentication_type": "no_three_ds",
+        "next_action": null,
+        "manual_retry_allowed": false,
+        "connector_transaction_id": "hermetic_synthetic_txn",
+        "error_code": null,
+        "error_message": null,
+        "profile_id": "{{intent.profile_id}}",
+        "billing": "{{intent.billing}}",
+        "shipping": "{{intent.shipping}}",
+        "email": "{{intent.email}}"
+      },
+      "match": {
+        "intent": {
+          "profile_id": "{{profiles.bankofamerica}}"
+        }
+      }
+    }
+  ]
+}
