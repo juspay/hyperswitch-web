@@ -88,6 +88,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   sendLogs: () => (),
   setClientSecret: _x => (),
   setSdkAuthorization: _x => (),
+  setPaymentId: _x => (),
   setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
   setLogError: (
     ~value as _,
@@ -354,6 +355,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | UPDATE_INTENT
   | UPDATE_SDK
   | DYNAMIC_FIELDS_RENDERED
+  | DYNAMIC_FIELDS_CONFIG
   | CLIENT_LIST_CALL_INIT =>
     None
   }

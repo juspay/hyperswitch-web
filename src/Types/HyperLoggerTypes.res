@@ -121,6 +121,7 @@ type eventName =
   | UPDATE_INTENT
   | UPDATE_SDK
   | DYNAMIC_FIELDS_RENDERED
+  | DYNAMIC_FIELDS_CONFIG
   | CARD_FORM_FLOW
 
 type maskableDetails = Email | CardDetails
@@ -184,6 +185,7 @@ type loggerMake = {
   setSessionId: string => unit,
   setClientSecret: string => unit,
   setSdkAuthorization: string => unit,
+  setPaymentId: string => unit,
   setMerchantId: string => unit,
   setMetadata: JSON.t => unit,
   setSource: string => unit,
