@@ -29,6 +29,15 @@ on:
         description: "Also run the live-webkit project (Safari engine)"
         type: boolean
         default: false
+      runner:
+        description: "Runner image to run on"
+        type: choice
+        default: ubuntu-latest
+        options:
+          - ubuntu-latest
+          - ubuntu-26.04
+          - ubuntu-24.04
+          - ubuntu-22.04
 
 # Explicit least-privilege permissions
 permissions:
@@ -43,7 +52,7 @@ env:
 jobs:
   live:
     name: live
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     timeout-minutes: 60
     environment: Testing
 

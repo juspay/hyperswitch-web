@@ -12,6 +12,21 @@ on:
   merge_group:
     types:
       - checks_requested
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner image to run on"
+        type: choice
+        default: ubuntu-latest
+        options:
+          - ubuntu-latest
+          - ubuntu-26.04
+          - ubuntu-24.04
+          - ubuntu-22.04
+      pr_number:
+        description: "Pull request number to run against"
+        required: true
+        type: number
 
 permissions:
   pull-requests: write
@@ -19,19 +34,26 @@ permissions:
 jobs:
   pr_title_check:
     name: Verify PR title follows conventional commit standards
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
 
     steps:
       - name: Verify PR title follows conventional commit standards
         id: pr_title_check
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name != 'merge_group' }}
         uses: actions/github-script@v7
         continue-on-error: true
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         with:
           script: |
-            const title = process.env.PR_TITLE;
+            const title =
+              process.env.PR_TITLE ||
+              (await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: Number(process.env.PR_NUMBER),
+              })).data.title;
 
             const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert|release)(\(.+\))?!?: .+/;
 
@@ -83,19 +105,21 @@ jobs:
             return true;
 
       - name: Attach 'S-conventions-not-followed' label if PR title check failed
-        if: ${{ github.event_name == 'pull_request' && steps.pr_title_check.outcome == 'failure' }}
+        if: ${{ github.event_name != 'merge_group' && steps.pr_title_check.outcome == 'failure' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         run: |
-          gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --add-label 'S-conventions-not-followed'
+          gh pr edit "$PR_NUMBER" --repo ${{ github.repository }} --add-label 'S-conventions-not-followed'
           echo "::error::PR title does not follow conventional commit standards"
           exit 1
 
       - name: Remove 'S-conventions-not-followed' label if PR title check succeeded
-        if: ${{ github.event_name == 'pull_request' && steps.pr_title_check.outcome == 'success' }}
+        if: ${{ github.event_name != 'merge_group' && steps.pr_title_check.outcome == 'success' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         run: |
-          gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --remove-label 'S-conventions-not-followed'
+          gh pr edit "$PR_NUMBER" --repo ${{ github.repository }} --remove-label 'S-conventions-not-followed'

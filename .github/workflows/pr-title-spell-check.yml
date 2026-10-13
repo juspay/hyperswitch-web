@@ -7,6 +7,21 @@ on:
       - opened
       - edited
       - synchronize
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner image to run on"
+        type: choice
+        default: ubuntu-latest
+        options:
+          - ubuntu-latest
+          - ubuntu-26.04
+          - ubuntu-24.04
+          - ubuntu-22.04
+      pr_number:
+        description: "Pull request number to run against"
+        required: true
+        type: number
 
 permissions:
   contents: read
@@ -15,16 +30,27 @@ permissions:
 jobs:
   typos:
     name: Spell check PR title
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Store PR title in a file
+        id: pr
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
-          echo "${{ github.event.pull_request.title }}" > pr_title.txt
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PR_TITLE=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}" --jq .title)
+            PR_AUTHOR=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}" --jq .user.login)
+          fi
+          echo "$PR_TITLE" > pr_title.txt
+          echo "author=$PR_AUTHOR" >> "$GITHUB_OUTPUT"
 
       - name: Spell check
         uses: crate-ci/typos@master
@@ -32,13 +58,14 @@ jobs:
           files: ./pr_title.txt
 
       - name: Assign to author
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          PR_AUTHOR: ${{ steps.pr.outputs.author }}
         run: |
-          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-
           curl -L \
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/assignees \
-            -d '{"assignees":["${{ github.event.pull_request.user.login }}"]}'
+            -d "{\"assignees\":[\"${PR_AUTHOR}\"]}"
