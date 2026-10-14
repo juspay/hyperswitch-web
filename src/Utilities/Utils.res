@@ -1579,72 +1579,59 @@ let eventHandlerFunc = (
   EventListenerManager.addSmartEventListener("message", changeHandler, activity)
 }
 
-let fullscreenOverlayStyle = [
+let getFullscreenOverlayStyle = appearance => [
+  ("all", "initial"),
   ("position", "fixed"),
   ("inset", "0"),
-  ("width", "100vw"),
-  ("height", "100vh"),
-  ("min-width", "0"),
-  ("min-height", "0"),
-  ("max-width", "none"),
-  ("max-height", "none"),
-  ("margin", "0"),
-  ("padding", "0"),
-  ("border", "0"),
-  ("border-radius", "0"),
-  ("box-shadow", "none"),
-  ("background", "transparent"),
+  ("width", "100%"),
+  ("height", "100%"),
   ("display", "block"),
-  ("visibility", "visible"),
-  ("opacity", "1"),
-  ("pointer-events", "auto"),
-  ("transform", "none"),
-  ("translate", "none"),
-  ("scale", "none"),
-  ("rotate", "none"),
-  ("filter", "none"),
-  ("clip-path", "none"),
-  ("mask", "none"),
-  ("transition", "none"),
-  ("animation", "none"),
   ("z-index", "2147483647"),
+  (
+    "color-scheme",
+    appearance
+    ->getDictFromJson
+    ->getString("colorScheme", "light")
+    ->CardThemeType.getColorSchemeFromString
+    ->CardThemeType.getColorSchemeValue,
+  ),
 ]
+
+let supportsPopover = !(Window.showPopoverFn->Nullable.isNullable)
 
 let fullscreenBackdropHidden = ref(false)
 let hideFullscreenBackdrop = () =>
   if !fullscreenBackdropHidden.contents {
+    let sheet = Window.makeCssStyleSheet()
+    sheet->Window.replaceSync("#orca-fullscreen::backdrop { display: none !important; }")
+    let document = Window.window->Window.document
+    document->Window.setAdoptedStyleSheets(
+      document->Window.adoptedStyleSheets->Array.concat([sheet]),
+    )
     fullscreenBackdropHidden := true
-    try {
-      let sheet = Window.makeCssStyleSheet()
-      sheet->Window.replaceSync("#orca-fullscreen::backdrop { display: none !important; }")
-      let document = Window.window->Window.document
-      document->Window.setAdoptedStyleSheets(
-        document->Window.adoptedStyleSheets->Array.concat([sheet]),
-      )
-    } catch {
-    | _ => ()
-    }
   }
 
-let makeIframe = (element, url) => {
+let makeIframe = (element, url, ~appearance) => {
   Promise.make((resolve, _) => {
     let iframe = Window.createElement("iframe")
     iframe->Window.setAttribute("id", "orca-fullscreen")
     iframe->Window.setAttribute("src", url)
     iframe->Window.setAttribute("name", "fullscreen")
-    fullscreenOverlayStyle->Array.forEach(((property, value)) =>
+    appearance
+    ->getFullscreenOverlayStyle
+    ->Array.forEach(((property, value)) =>
       iframe->Window.style->Window.setStylePropertyImportant(property, value, "important")
     )
     iframe->Window.elementOnload(() => {
       resolve(Dict.make())
     })
     element->Window.appendChildElement(iframe)
-    try {
+    if supportsPopover {
       hideFullscreenBackdrop()
       iframe->Window.setAttribute("popover", "manual")
       iframe->Window.showPopover
-    } catch {
-    | _ => iframe->Window.removeAttribute("popover")
+    } else {
+      Console.warn("Popover API unavailable: fullscreen overlay shown as a plain fixed iframe")
     }
   })
 }

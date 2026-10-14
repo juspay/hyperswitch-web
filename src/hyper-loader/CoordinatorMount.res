@@ -119,7 +119,7 @@ let makeFullscreenFlows = (
         paramType !== ""
           ? `${sdkDomain}/fullscreenIndex.html?fullscreenType=${paramType}`
           : `${sdkDomain}/fullscreenIndex.html?fullscreenType=fullscreen`
-      mount.fullscreenSlot->Utils.makeIframe(overlaySrc)->ignore
+      mount.fullscreenSlot->Utils.makeIframe(overlaySrc, ~appearance)->ignore
     } else if dict->Dict.get("fullscreen")->Option.isSome && !(dict->getBool("fullscreen", true)) {
       mount.fullscreenSlot->Window.innerHTML("")
       fullscreenActiveRef := false

@@ -510,7 +510,7 @@ let make = (
                       handleFullScreenCallback,
                       "onFullScreenCallback",
                     )
-                    ele->makeIframe(iframeURL)->ignore
+                    ele->makeIframe(iframeURL, ~appearance)->ignore
                   }
                 }
               : {

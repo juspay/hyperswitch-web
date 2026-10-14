@@ -49,12 +49,7 @@ let setColorSchemeMeta = (colorScheme: colorScheme) => {
     head->appendChildElement(el)
     el
   }
-  let colorSchemeVal = switch colorScheme {
-  | Auto => "light dark"
-  | Dark => "dark"
-  | Light => "light"
-  }
-  meta->setAttribute("content", colorSchemeVal)
+  meta->setAttribute("content", colorScheme->getColorSchemeValue)
 }
 
 let getShowLoader = str => {
