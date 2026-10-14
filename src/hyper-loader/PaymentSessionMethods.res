@@ -594,9 +594,6 @@ let getCustomerSavedPaymentMethods = (
         )
         ->ignore
 
-        // Apple Pay availability is resolved asynchronously (Apple's JS SDK may need to load),
-        // so wait for it before handing back the methods; otherwise they could still return
-        // Apple Pay on a browser/device that cannot use it.
         let applePayAvailabilityPromise = switch applePayToken {
         | ApplePayTokenOptional(optToken) => {
             let paymentRequest = ApplePayTypes.getPaymentRequestFromSession(

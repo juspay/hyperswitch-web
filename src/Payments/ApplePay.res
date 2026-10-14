@@ -50,8 +50,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       }
     }
     let typeStr = switch cfg.buttonType {
-    // Not an Apple Pay button type: `<apple-pay-button>` would draw "Buy with", while Safari
-    // ignores it and draws the plain button, so map it to "plain" for both.
     | Default => "plain"
     | Plain => "plain"
     | Buy => "buy"
@@ -158,9 +156,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   | Dark => "#828282"
   }
 
-  // Safari renders the Apple Pay button natively (`-webkit-appearance: -apple-pay-button`).
-  // Third-party browsers like Chrome use Apple's `<apple-pay-button>` web component from the
-  // Apple Pay JS SDK instead.
   let css = `
     .apple-pay-loader-div {
       background-color: ${loaderDivBackgroundColor};
@@ -295,8 +290,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     }
   }
 
-  // `<apple-pay-button>` is a custom element, so a native listener is attached (as per
-  // Apple's docs) instead of relying on React's synthetic onClick.
   let applePayButtonRef = React.useRef(Nullable.null)
   let onApplePayButtonClickedRef = React.useRef(onApplePayButtonClicked)
   React.useEffect(() => {
@@ -338,10 +331,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~sdkAuthorization,
   )
 
-  // When an Apple Pay session token is present and not delayed, it must carry the merchant
-  // session (`session_token_data`); without it merchant validation cannot complete (e.g. in
-  // Chrome via Apple's JS SDK), so the button is not shown. Delayed session tokens (TrustPay)
-  // are only supported where Apple Pay is native (Safari).
   let hasApplePaySessionTokenData =
     sessionObj
     ->getOptionsDict
@@ -359,8 +348,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     isWallet &&
     isApplePaySessionTokenValid
 
-  // Apple's JS SDK (for `<apple-pay-button>`) is only loaded into the iframe once the button can
-  // actually be shown, and never in Safari, which draws the button natively.
   React.useEffect(() => {
     if isApplePayEligible && !isApplePayButtonLoaded {
       ApplePayHelpers.loadApplePayButton()

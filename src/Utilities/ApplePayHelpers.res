@@ -64,9 +64,6 @@ let getApplePayFromResponse = (
   bodyDict->mergeAndFlattenToTuples(requiredFieldsBody)
 }
 
-// A pinned version of Apple's JS SDK with Subresource Integrity: the auto-updating `1.latest`
-// URL cannot be integrity-checked. The SDK loads its modules and fonts from the same versioned
-// path. When upgrading, update both the version and the hash Apple publishes for it.
 let applePaySdkUrl = "https://applepay.cdn-apple.com/jsapi/v1.3.8/apple-pay-sdk.js"
 let applePaySdkIntegrity = "sha384-u/9mOkmShCO0v+dqCAZFhiutJuORfzvuyM5i+676iy7mLSWS6rlllHrIt15f/mqH"
 let applePayButtonTag = "apple-pay-button"
@@ -80,9 +77,9 @@ let getOrCreateApplePaySdkScript = () =>
   | None =>
     let script = Window.createElement("script")
     script->Window.elementSrc(applePaySdkUrl)
-    script->setScriptAsync(true)
-    script->setCrossOrigin("anonymous")
-    script->setIntegrity(applePaySdkIntegrity)
+    script->Window.setScriptAsync(true)
+    script->Window.setCrossOrigin("anonymous")
+    script->Window.setIntegrity(applePaySdkIntegrity)
     Window.head->Window.appendChildElement(script)
     script
   }
@@ -90,25 +87,20 @@ let getOrCreateApplePaySdkScript = () =>
 let supportsApplePayCapabilities = (session: session) =>
   session.applePayCapabilities->Nullable.toOption->Option.isSome
 
-// Safari draws the Apple Pay button natively, without Apple's JS SDK.
 let isNativeApplePayButtonSupported = () =>
   try {
-    cssSupports("-webkit-appearance", "-apple-pay-button")
+    Window.cssSupports("-webkit-appearance", "-apple-pay-button")
   } catch {
   | _ => false
   }
 
-// Apple's JS SDK cannot offer Apple Pay in mobile third-party browsers (e.g. Android Chrome),
-// so it is not loaded there.
 let isMobileThirdPartyBrowser = () =>
-  userAgentData->Nullable.toOption->Option.mapOr(false, data => data.mobile)
+  Window.userAgentData->Nullable.toOption->Option.mapOr(false, data => data.mobile)
 
-// Apple's JS SDK sets `window.onbeforeunload` (to close its QR code window); keep the
-// merchant's handler running as well.
 let keepMerchantBeforeUnload = merchantBeforeUnload =>
-  switch (merchantBeforeUnload->Nullable.toOption, onBeforeUnload->Nullable.toOption) {
+  switch (merchantBeforeUnload->Nullable.toOption, Window.onBeforeUnload->Nullable.toOption) {
   | (Some(merchantHandler), Some(sdkHandler)) if merchantHandler !== sdkHandler =>
-    Window.window->setOnBeforeUnload(event => {
+    Window.window->Window.setOnBeforeUnload(event => {
       sdkHandler(event)->ignore
       merchantHandler(event)
     })
@@ -117,10 +109,6 @@ let keepMerchantBeforeUnload = merchantBeforeUnload =>
 
 let applePaySdkLoadPromiseRef: ref<option<promise<unit>>> = ref(None)
 
-// Makes `window.ApplePaySession` available: native in Safari, provided by Apple's JS SDK in
-// third-party browsers like Chrome. Resolves once loaded, failed or timed out; shared across callers.
-// Not loaded when a native ApplePaySession already exists (older Safari versions without
-// `applePayCapabilities` fall back to `canMakePayments`) or in mobile third-party browsers.
 let loadApplePaySdk = () =>
   switch applePaySdkLoadPromiseRef.contents {
   | Some(loadPromise) => loadPromise
@@ -129,13 +117,13 @@ let loadApplePaySdk = () =>
       if sessionForApplePay->Nullable.toOption->Option.isSome || isMobileThirdPartyBrowser() {
         resolve()
       } else {
-        let merchantBeforeUnload = onBeforeUnload
+        let merchantBeforeUnload = Window.onBeforeUnload
         let script = getOrCreateApplePaySdkScript()
-        script->addScriptEventListener("load", () => {
+        script->Window.addScriptEventListener("load", () => {
           keepMerchantBeforeUnload(merchantBeforeUnload)
           resolve()
         })
-        script->addScriptEventListener("error", resolve)
+        script->Window.addScriptEventListener("error", resolve)
         setTimeout(resolve, applePaySdkLoadTimeout)->ignore
       }
     )
@@ -143,14 +131,12 @@ let loadApplePaySdk = () =>
     loadPromise
   }
 
-// Resolves to true once the `<apple-pay-button>` web component is registered in the current
-// window, however long Apple's JS SDK takes to load. Loads the SDK through `loadApplePaySdk`.
 let loadApplePayButton = () =>
-  switch customElements->Nullable.toOption {
+  switch Window.customElements->Nullable.toOption {
   | None => Promise.resolve(false)
   | Some(registry) =>
     loadApplePaySdk()->Promise.then(_ =>
-      registry->whenDefined(applePayButtonTag)->Promise.thenResolve(_ => true)
+      registry->Window.whenDefined(applePayButtonTag)->Promise.thenResolve(_ => true)
     )
   }
 
@@ -159,7 +145,6 @@ let getStatusFromCanMakePayments = (session: session) =>
     session.canMakePayments() ? PaymentCredentialStatusUnknown : ApplePayUnsupported
   } catch {
   | err =>
-    // e.g. Apple's JS SDK throws "InvalidAccessError" on non-https pages
     Console.warn2("[ApplePay] canMakePayments failed:", err)
     ApplePayUnsupported
   }
@@ -173,7 +158,6 @@ let getPaymentCredentialStatus = (~merchantIdentifier) => {
     | Some(session) if merchantIdentifier === "" || !supportsApplePayCapabilities(session) =>
       resolve(getStatusFromCanMakePayments(session))
     | Some(session) =>
-      // In third-party browsers this calls Apple's servers, so bound it with a timeout.
       [
         session->callApplePayCapabilities(merchantIdentifier)->thenResolve(response =>
           response.paymentCredentialStatus->Option.mapOr(

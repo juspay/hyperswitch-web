@@ -46,8 +46,6 @@ type session = {
   abort: unit => unit,
   mutable oncancel: unit => unit,
   canMakePayments: unit => bool,
-  // Static on the ApplePaySession class; not present on older Safari versions. Call it through
-  // `callApplePayCapabilities` so that `this` stays bound to the class.
   applePayCapabilities: Nullable.t<string => promise<applePayCapabilitiesResponse>>,
   mutable onvalidatemerchant: event => unit,
   completeMerchantValidation: JSON.t => unit,
@@ -62,13 +60,10 @@ type session = {
 @send
 external callApplePayCapabilities: (session, string) => promise<applePayCapabilitiesResponse> =
   "applePayCapabilities"
-// Read on every access, so it also reflects the class installed later by Apple's JS SDK.
 @scope("window") @val external sessionForApplePay: Nullable.t<session> = "ApplePaySession"
 
 @new external applePaySession: (int, JSON.t) => session = "ApplePaySession"
 
-// Status constants are static on the ApplePaySession class. Safari also exposes them on
-// instances, but Apple's JS SDK (used in third-party browsers like Chrome) does not.
 @scope(("window", "ApplePaySession")) @val
 external statusSuccess: Nullable.t<int> = "STATUS_SUCCESS"
 let getStatusSuccess = () => statusSuccess->Nullable.toOption->Option.getOr(0)
@@ -88,25 +83,6 @@ let paymentCredentialStatusFromString = str =>
   }
 
 let shouldShowApplePay = status => status !== ApplePayUnsupported
-
-type customElementRegistry
-@scope("window") @val
-external customElements: Nullable.t<customElementRegistry> = "customElements"
-@send external whenDefined: (customElementRegistry, string) => promise<unit> = "whenDefined"
-
-@scope("CSS") @val external cssSupports: (string, string) => bool = "supports"
-
-type userAgentData = {mobile: bool}
-@scope("navigator") @val external userAgentData: Nullable.t<userAgentData> = "userAgentData"
-
-type beforeUnloadHandler = Dom.event => unknown
-@scope("window") @val external onBeforeUnload: Nullable.t<beforeUnloadHandler> = "onbeforeunload"
-@set external setOnBeforeUnload: (Types.window, beforeUnloadHandler) => unit = "onbeforeunload"
-
-@set external setScriptAsync: (Dom.element, bool) => unit = "async"
-@set external setCrossOrigin: (Dom.element, string) => unit = "crossOrigin"
-@set external setIntegrity: (Dom.element, string) => unit = "integrity"
-@send external addScriptEventListener: (Dom.element, string, unit => unit) => unit = "addEventListener"
 
 @deriving(abstract)
 type total = {
