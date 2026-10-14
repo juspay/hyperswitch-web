@@ -104,6 +104,7 @@ let make = () => {
   | _ =>
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
+    | "headlessConfirm" => <HeadlessConfirm />
     | "clickToPayLearnMore" => <ClickToPayLearnMore />
     | "plaidSDK" => <PlaidSDKIframe />
     | "pazeWallet" => <PazeWallet logger />

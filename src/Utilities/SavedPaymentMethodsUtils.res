@@ -104,11 +104,14 @@ let isValidUrl = url =>
   | _ => false
   }
 
-let isValidCvc = (cvc, savedMethod: PaymentType.customerMethods) =>
-  switch savedMethod.card.scheme->getNonEmptyOption {
+let isValidCvcForBrand = (cvc, brand) =>
+  switch brand->getNonEmptyOption {
   | Some(brand) => CardUtils.checkCardCVC(cvc, brand->CardUtils.normalizeCardBrand)
   | None => %re("/^\d{3,4}$/")->RegExp.test(cvc)
   }
+
+let isValidCvc = (cvc, savedMethod: PaymentType.customerMethods) =>
+  cvc->isValidCvcForBrand(savedMethod.card.scheme)
 
 let getConfirmFlow = (
   savedMethod: PaymentType.customerMethods,

@@ -354,7 +354,6 @@ let rec intentCall = (
   ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
   ~isTrustpayInterceptorConfirm=false,
-  ~shouldResolveNextAction=false,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -388,7 +387,6 @@ let rec intentCall = (
       openUrl(url)
     }
   }
-  let isHeadlessSession = shouldResolveNextAction && isPaymentSession
   fetchApi(
     uri,
     ~method=fetchMethod,
@@ -557,19 +555,6 @@ let rec intentCall = (
             | Card => "CARD"
             | _ => intent.payment_method_type
             }
-            let resolveFullscreen = (param, metadata) =>
-              resolve(
-                [
-                  (
-                    "fullscreenRequest",
-                    [
-                      ("param", param->JSON.Encode.string),
-                      ("metadata", metadata),
-                    ]->getJsonFromArrayOfJson,
-                  ),
-                  ("data", data),
-                ]->getJsonFromArrayOfJson,
-              )
 
             let url = makeUrl(confirmParam.return_url)
             if isLegacyClientSecretFlow {
@@ -645,16 +630,12 @@ let rec intentCall = (
                   ("popupUrl", popupUrl->JSON.Encode.string),
                   ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
                 ]
-                if isHeadlessSession {
-                  resolveFullscreen(`3dsRedirectionPopup`, metaData->getJsonFromArrayOfJson)
-                } else {
-                  messageParentWindow([
-                    ("fullscreen", true->JSON.Encode.bool),
-                    ("param", `3dsRedirectionPopup`->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                    ("metadata", metaData->getJsonFromArrayOfJson),
-                  ])
-                }
+                messageParentWindow([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", `3dsRedirectionPopup`->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                  ("metadata", metaData->getJsonFromArrayOfJson),
+                ])
               } else if intent.nextAction.type_ == "display_bank_transfer_information" {
                 let metadata = switch intent.nextAction.bank_transfer_steps_and_charges_details {
                 | Some(obj) => obj->getDictFromJson
@@ -678,14 +659,7 @@ let rec intentCall = (
                     ("metadata", dict->JSON.Encode.object),
                   ])
                 }
-                if isHeadlessSession {
-                  resolveFullscreen(
-                    `${intent.payment_method_type}BankTransfer`,
-                    dict->JSON.Encode.object,
-                  )
-                } else {
-                  resolve(data)
-                }
+                resolve(data)
               } else if intent.nextAction.type_ === "qr_code_information" {
                 let qrData = intent.nextAction.image_data_url->Option.getOr("")
                 let rawQrData = intent.nextAction.raw_qr_data->Option.getOr("")
@@ -723,11 +697,7 @@ let rec intentCall = (
                     ("metadata", metaData),
                   ])
                 }
-                if isHeadlessSession {
-                  resolveFullscreen(`qrData`, metaData)
-                } else {
-                  resolve(data)
-                }
+                resolve(data)
               } else if intent.nextAction.type_ === "three_ds_invoke" {
                 let threeDsData =
                   intent.nextAction.three_ds_data
@@ -763,15 +733,7 @@ let rec intentCall = (
                   ~paymentMethod,
                 )
 
-                if isHeadlessSession {
-                  if !do3dsMethodCall {
-                    metaData->Dict.set("3dsMethodComp", "U"->JSON.Encode.string)
-                  }
-                  resolveFullscreen(
-                    do3dsMethodCall ? `3ds` : `3dsAuth`,
-                    metaData->JSON.Encode.object,
-                  )
-                } else if do3dsMethodCall {
+                if do3dsMethodCall {
                   messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `3ds`->JSON.Encode.string),
@@ -807,18 +769,12 @@ let rec intentCall = (
                     ("confirmParams", confirmParam->anyTypeToJson),
                   ]->Dict.fromArray
 
-                if isHeadlessSession {
-                  resolveFullscreen(`redsys3ds`, metaData->JSON.Encode.object)
-                } else {
-                  messageParentWindow([
-                    ("fullscreen", true->JSON.Encode.bool),
-                    ("param", `redsys3ds`->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                    ("metadata", metaData->JSON.Encode.object),
-                  ])
-                }
-              } else if intent.nextAction.type_ === "invoke_ddc" && isHeadlessSession {
-                resolve(data)
+                messageParentWindow([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", `redsys3ds`->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                  ("metadata", metaData->JSON.Encode.object),
+                ])
               } else if intent.nextAction.type_ === "invoke_ddc" {
                 NextActionHelpers.handleDDC(
                   ~ddcData=intent.nextAction.ddc_data,
@@ -851,16 +807,12 @@ let rec intentCall = (
                   ~eventName=DISPLAY_VOUCHER,
                   ~paymentMethod,
                 )
-                if isHeadlessSession {
-                  resolveFullscreen(`voucherData`, metaData->JSON.Encode.object)
-                } else {
-                  messageParentWindow([
-                    ("fullscreen", true->JSON.Encode.bool),
-                    ("param", `voucherData`->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                    ("metadata", metaData->JSON.Encode.object),
-                  ])
-                }
+                messageParentWindow([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", `voucherData`->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                  ("metadata", metaData->JSON.Encode.object),
+                ])
               } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
                 | Some(token) => token->getDictFromJson
@@ -957,8 +909,6 @@ let rec intentCall = (
                     ("nextActionData", nextActionData),
                   ]->getJsonFromArrayOfJson
                 resolve(response)
-              } else if isHeadlessSession {
-                resolve(data)
               }
             } else if intent.status == "processing" {
               if intent.nextAction.type_ == "third_party_sdk_session_token" {
@@ -1098,7 +1048,6 @@ let rec intentCall = (
             ~componentName,
             ~redirectionFlags,
             ~sdkAuthorization,
-            ~shouldResolveNextAction,
           )
           ->then(
             res => {
@@ -1768,8 +1717,6 @@ let paymentIntentForPaymentSession = (
   ~isPaymentSession=true,
   ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
-  ~shouldResolveNextAction=false,
-  ~manualRetry=false,
 ) => {
   let confirmParams =
     payload
@@ -1812,12 +1759,7 @@ let paymentIntentForPaymentSession = (
 
   let bodyStr =
     body
-    ->Array.concatMany([
-      broswerInfo,
-      clientSecretArr,
-      returnUrlArr,
-      manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : [],
-    ])
+    ->Array.concatMany([broswerInfo, clientSecretArr, returnUrlArr])
     ->getJsonFromArrayOfJson
     ->JSON.stringify
 
@@ -1841,7 +1783,6 @@ let paymentIntentForPaymentSession = (
     ~redirectionFlags,
     ~sdkAuthorization,
     ~mode,
-    ~shouldResolveNextAction,
   )
 }
 

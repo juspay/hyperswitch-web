@@ -35,6 +35,7 @@ let make = (
   let manualRetryRef = ref((-1, false))
   let applePaySessionRef = ref(Nullable.null)
   let componentName = "headless"
+  let confirmHost = HeadlessConfirmHost.make(~id=`headless-${generateRandomString(8)}`)
 
   let getSdkAuthorization = () => Some(sdkAuthorizationRef.contents)->getNonEmptyOption
 
@@ -189,6 +190,7 @@ let make = (
           intentVersion: currentIntentVersion,
         })
 
+      confirmHost.prepare()
       logger.setLogInfo(
         ~value=`Saved payment methods listed: ${savedMethods->Array.length->Int.toString}`,
         ~eventName=SAVED_PAYMENT_METHODS_FLOW,
@@ -226,7 +228,7 @@ let make = (
     response
   }
 
-  let getOutcomeContext = (): ConfirmOutcome.context => {
+  let getConfirmContext = (): HeadlessConfirmHost.context => {
     publishableKey,
     clientSecret: clientSecretRef.contents,
     sdkAuthorization: getSdkAuthorization(),
@@ -235,29 +237,25 @@ let make = (
     redirectionFlags,
   }
 
-  let handleNextAction = (result, ~confirmPayload, ~paymentMethod) =>
-    NextActionHandler.handle(
-      ~result,
-      ~redirect=confirmPayload.redirect,
-      ~returnUrl=confirmPayload.returnUrl,
-      ~ctx=getOutcomeContext(),
-      ~paymentMethod,
+  let confirmPaymentIntent = (~body, ~paymentType, ~confirmPayload, ~cvcWidget=None) => {
+    let ctx = getConfirmContext()
+    confirmHost.confirm(
+      ~request={
+        body,
+        paymentType,
+        returnUrl: confirmPayload.returnUrl,
+        redirect: confirmPayload.redirect,
+        publishableKey,
+        clientSecret: ctx.clientSecret,
+        sdkAuthorization: ctx.sdkAuthorization,
+        customPodUri,
+        endpoint: ApiEndpoint.apiEndPoint.contents,
+        manualRetry: isManualRetryEnabled(),
+        cvcWidget,
+      },
+      ~ctx,
     )->then(response => response->updateManualRetry->resolve)
-
-  let confirmPaymentIntent = (~body, ~paymentType, ~confirmPayload, ~paymentMethod) =>
-    PaymentHelpers.paymentIntentForPaymentSession(
-      ~body,
-      ~paymentType,
-      ~payload=confirmPayload->getIntentPayload,
-      ~publishableKey,
-      ~clientSecret=clientSecretRef.contents,
-      ~logger,
-      ~customPodUri,
-      ~redirectionFlags,
-      ~sdkAuthorization=getSdkAuthorization(),
-      ~shouldResolveNextAction=true,
-      ~manualRetry=isManualRetryEnabled(),
-    )->then(handleNextAction(_, ~confirmPayload, ~paymentMethod))
+  }
 
   let handleApplePayConfirmPayment = (
     ~state,
@@ -281,12 +279,7 @@ let make = (
           )
           ->addMandateBody(~paymentMethodList=state.paymentMethodList)
 
-        confirmPaymentIntent(
-          ~body,
-          ~paymentType=Applepay,
-          ~confirmPayload,
-          ~paymentMethod="apple_pay",
-        )
+        confirmPaymentIntent(~body, ~paymentType="apple_pay", ~confirmPayload)
         ->then(response => resolve(response)->Promise.resolve)
         ->catch(err =>
           resolve(
@@ -323,7 +316,7 @@ let make = (
           ~connectors=[],
           ~isPaymentSession=true,
         )->addMandateBody(~paymentMethodList=state.paymentMethodList)
-      confirmPaymentIntent(~body, ~paymentType=Gpay, ~confirmPayload, ~paymentMethod="google_pay")
+      confirmPaymentIntent(~body, ~paymentType="google_pay", ~confirmPayload)
     })
     ->catch(err =>
       handleFailureResponse(
@@ -331,68 +324,6 @@ let make = (
         ~errorType="google_pay",
       )->resolve
     )
-
-  let handleCvcWidgetConfirmPayment = (~body, ~confirmPayload, ~cvcWidgetIframe) =>
-    Promise.make((resolve, _) => {
-      let listenerKey = "onSavedPaymentMethodCvcConfirmResponse"
-      let resolveAndCleanup = response => {
-        EventListenerManager.removeSmartEventListener("message", listenerKey)
-        resolve(response)
-      }
-
-      let handleCvcWidgetConfirmResponse = (event: Types.event) => {
-        let eventDataDict = event.data->Identity.anyTypeToJson->getDictFromJson
-        switch (
-          eventDataDict->Dict.get("cvcWidgetConfirmResponse"),
-          eventDataDict->Dict.get("cvcWidgetConfirmErrorResponse"),
-        ) {
-        | (Some(responseData), _) =>
-          let responseDataDict = responseData->getDictFromJson
-          let hasFullscreenRequest = responseDataDict->Dict.get("fullscreenRequest")->Option.isSome
-          switch responseDataDict->Dict.get("data") {
-          | Some(_) if !hasFullscreenRequest && confirmPayload.redirect === "always" =>
-            EventListenerManager.removeSmartEventListener("message", listenerKey)
-            replaceRootHref(responseDataDict->getString("returnUrl", ""), redirectionFlags)
-          | Some(data) if !hasFullscreenRequest => resolveAndCleanup(data->updateManualRetry)
-          | _ =>
-            EventListenerManager.removeSmartEventListener("message", listenerKey)
-            responseData
-            ->handleNextAction(~confirmPayload, ~paymentMethod="CARD")
-            ->then(response => resolve(response)->Promise.resolve)
-            ->ignore
-          }
-        | (None, Some(errorResponseData)) =>
-          switch errorResponseData->JSON.Decode.string {
-          | Some(message) =>
-            resolveAndCleanup(handleFailureResponse(~message, ~errorType="server_error"))
-          | None => resolveAndCleanup(errorResponseData)
-          }
-        | (None, None) => ()
-        }
-      }
-
-      EventListenerManager.addSmartEventListener(
-        "message",
-        handleCvcWidgetConfirmResponse,
-        listenerKey,
-      )
-
-      let confirmParams =
-        [
-          ("body", body->getJsonFromArrayOfJson),
-          ("payload", confirmPayload->getIntentPayload),
-          ("paymentType", "card"->JSON.Encode.string),
-          ("publishableKey", publishableKey->JSON.Encode.string),
-          ("clientSecret", clientSecretRef.contents->JSON.Encode.string),
-          ("sdkAuthorization", sdkAuthorizationRef.contents->JSON.Encode.string),
-          ("requiresCvv", true->JSON.Encode.bool),
-          ("redirect", confirmPayload.redirect->JSON.Encode.string),
-          ("shouldResolveNextAction", true->JSON.Encode.bool),
-        ]->getJsonFromArrayOfJson
-      cvcWidgetIframe->Window.iframePostMessage(
-        [("requestCVCConfirm", confirmParams)]->Dict.fromArray,
-      )
-    })
 
   let confirmWithFlow = (~state, ~savedMethod, ~confirmFlow, ~confirmPayload) => {
     let getBody = (~cvc=None) =>
@@ -411,21 +342,9 @@ let make = (
         ~errorType="wallet_unavailable",
       )->resolve
     | (TokenFlow, _, _) =>
-      confirmPaymentIntent(
-        ~body=getBody(),
-        ~paymentType=Card,
-        ~confirmPayload,
-        ~paymentMethod=savedMethod.paymentMethodType
-        ->getNonEmptyOption
-        ->Option.getOr(savedMethod.paymentMethod),
-      )
+      confirmPaymentIntent(~body=getBody(), ~paymentType=savedMethod.paymentMethod, ~confirmPayload)
     | (CardFlow(cvc), _, _) =>
-      confirmPaymentIntent(
-        ~body=getBody(~cvc),
-        ~paymentType=Card,
-        ~confirmPayload,
-        ~paymentMethod="CARD",
-      )
+      confirmPaymentIntent(~body=getBody(~cvc), ~paymentType="card", ~confirmPayload)
     | (CvcWidgetFlow(cvcElementId), _, _) =>
       switch (getWidgetIframe(~iframeRef, ~id=cvcElementId), getSdkAuthorization()) {
       | (None, _) =>
@@ -439,7 +358,18 @@ let make = (
           ~errorType="sdk_authorization_missing",
         )->resolve
       | (Some(cvcWidgetIframe), Some(_)) =>
-        handleCvcWidgetConfirmPayment(~body=getBody(), ~confirmPayload, ~cvcWidgetIframe)
+        confirmPaymentIntent(
+          ~body=getBody(),
+          ~paymentType="card",
+          ~confirmPayload,
+          ~cvcWidget=Some({
+            frameName: cvcWidgetIframe
+            ->Nullable.toOption
+            ->Option.flatMap(frame => frame->Window.getAttribute("name")->Nullable.toOption)
+            ->Option.getOr(""),
+            cardBrand: savedMethod.card.scheme->Option.getOr(""),
+          }),
+        )
       }
     }
   }
