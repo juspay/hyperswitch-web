@@ -293,13 +293,20 @@ let fetchPaymentManagementList = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAu
   )
 }
 
-let retrievePaymentMethodSession = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAuthorization) => {
+let retrievePaymentMethodSession = (
+  ~pmSessionId,
+  ~endpoint,
+  ~customPodUri,
+  ~sdkAuthorization,
+  ~context=?,
+) => {
   let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
 
   fetchApiWithLogging(
     uri,
     ~event=RetrievePaymentMethodSession,
+    ~context?,
     ~method=#GET,
     ~headers,
     ~customPodUri=Some(customPodUri),

@@ -145,6 +145,7 @@ type merchantIssue =
   | ExpectedNumber
   | ValueOutOfRange
   | ConnectorMisconfigured
+  | DynamicFieldsConfig
   | UnsupportedOptionValue
   | UnknownOptionKey
   | DeprecatedMethod
@@ -163,6 +164,7 @@ let merchantIssueSeverity = (issue): severity =>
   | ExpectedNumber
   | ValueOutOfRange
   | ConnectorMisconfigured
+  | DynamicFieldsConfig
   | UnsupportedOptionValue
   | UnknownOptionKey
   | DeprecatedMethod =>

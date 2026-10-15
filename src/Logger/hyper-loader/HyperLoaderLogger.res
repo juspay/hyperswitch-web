@@ -8,6 +8,7 @@ let observeMerchantCall = (
   ~failureOf=LoggerUtils.summarizeErrorResponse,
   ~detailsOf=?,
   ~source=?,
+  ~context=?,
   ~message=?,
   ~call,
 ) =>
@@ -21,12 +22,14 @@ let observeMerchantCall = (
     ~failureOf,
     ~detailsOf?,
     ~source?,
+    ~context?,
     ~message?,
     ~call,
   )
 
 let observeMerchantCallback = (
   ~event: merchantCallbackEvent,
+  ~context=?,
   ~timeoutMs=?,
   ~message=?,
   ~callback,
@@ -34,6 +37,7 @@ let observeMerchantCallback = (
   LoggerRuntime.observeCallback(
     ~category=Merchant,
     ~spec=event->LoggerUtils.spec(~action=Callback),
+    ~context?,
     ~severity=event->merchantCallbackSeverity,
     ~data=event->LoggerUtils.eventDetails,
     ~timeoutMs?,
@@ -72,11 +76,12 @@ let logMerchantProps = (
     )
   }
 
-let logMerchantIssue = (~issue: merchantIssue, ~details=?, ~message=?) =>
+let logMerchantIssue = (~issue: merchantIssue, ~details=?, ~context=?, ~message=?) =>
   if !LoggerRuntime.isNestedElement() {
     LoggerRuntime.emit(
       ~category=Merchant,
       ~spec=issue->LoggerUtils.spec(~action=IntegrationIssue),
+      ~context?,
       ~severity=issue->merchantIssueSeverity,
       ~data=issue->LoggerUtils.eventDetails,
       ~details?,

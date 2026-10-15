@@ -262,6 +262,7 @@ let makeFieldElementAndHandle = (
   ~update: JSON.t => unit,
   ~scope: SdkLogger.cardFormScope,
   ~vaultProvider: string,
+  ~context=?,
 ): Types.fieldHandle => {
   let element = LoaderPaymentElement.make(
     "paymentMethodsSDK",
@@ -276,6 +277,7 @@ let makeFieldElementAndHandle = (
     ~fieldName,
     ~surfaceFamily,
     ~groupId,
+    ~context?,
   )
   let postToOwnIframe = fields =>
     iframeRef.contents->Window.iframePostMessage(fields->Dict.fromArray)
@@ -287,17 +289,18 @@ let makeFieldElementAndHandle = (
     mount: selector => element.mount(selector),
     unmount: () => {
       element.unmount()
-      SdkLogger.logState(~event=CardFieldUnmounted({scope, field: fieldName}))
+      SdkLogger.logState(~event=CardFieldUnmounted({scope, field: fieldName}), ~context?)
     },
     destroy: () => {
       element.destroy()
       iframeRef := Nullable.null
       EventListenerManager.removeSmartEventListener("message", listenerName)
-      SdkLogger.logState(~event=CardFieldUnmounted({scope, field: fieldName}))
+      SdkLogger.logState(~event=CardFieldUnmounted({scope, field: fieldName}), ~context?)
     },
     update: newOptions =>
       HyperLoaderLogger.observeMerchantCall(
         ~event=HyperLoaderLogger.Update({surface: CardField}),
+        ~context?,
         ~details=fieldDetails,
         ~call=() => update(newOptions),
       ),

@@ -848,13 +848,23 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         initiateUpdateIntent,
         confirmTokenization,
         initPaymentMethodSession: options => {
-          let sdkAuthorizationValue = options->getDictFromJson->getString("sdkAuthorization", "")
-          LoggerContext.setPaymentIdFromCredentials(
-            ~sdkAuthorization=?Some(sdkAuthorizationValue)->getNonEmptyOption,
-          )
+          let sdkAuth =
+            options
+            ->getDictFromJson
+            ->PaymentMethodSession.resolveSdkAuthorization
+            ->getSdkAuthorizationData
+          // A vault session must not replace the active payment's logging identity.
+          let context: LoggerContext.t = {
+            sessionId: sessionID,
+            merchantId: sdkAuth.publishableKey->Option.getOr(publishableKey),
+            paymentId: sdkAuth.pmSessionId->Option.getOr(""),
+            authenticationId: "",
+            scoped: true,
+          }
           HyperLoaderLogger.observeMerchantCall(
             ~event=HyperLoaderLogger.InitPaymentMethodSession({surface: Hyper}),
-            ~call=() => PaymentMethodSession.make(options),
+            ~context,
+            ~call=() => PaymentMethodSession.make(options, ~context),
           )
         },
       }

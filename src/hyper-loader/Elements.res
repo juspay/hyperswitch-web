@@ -1564,10 +1564,7 @@ let make = (
       )
     }
 
-    module StdOption = {
-      let none: option<'a> = None
-    }
-    let cardFormRef: ref<option<Types.cardForm>> = ref(StdOption.none)
+    let cardFormRef = ref((None: option<Types.cardForm>))
     let createCardForm = (): Types.cardForm =>
       HyperLoaderLogger.observeMerchantCall(
         ~event=HyperLoaderLogger.CreateCardForm({surface: Elements}),

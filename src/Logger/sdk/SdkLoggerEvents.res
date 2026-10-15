@@ -260,6 +260,7 @@ type networkData = {online: bool}
 type cardFormData = {scope: cardFormScope}
 
 type cardFieldData = {scope: cardFormScope, field: string}
+type cardFormCompletionData = {scope: cardFormScope, fields: array<string>}
 
 type loaderSource = IframeMount | PaymentMethodsList | SdkConfigs
 
@@ -280,6 +281,9 @@ type stateEvent =
   | CardFormCreated(cardFormData)
   | CardFormDestroyed(cardFormData)
   | CardFieldCreated(cardFieldData)
+  | CardFieldMounted(cardFieldData)
+  | CardFieldRendered(cardFieldData)
+  | CardFormCompleted(cardFormCompletionData)
   | CardFieldUnmounted(cardFieldData)
   | CardCoBadgeDetected
   | MerchantControlReceived(merchantControlData)
@@ -298,6 +302,9 @@ let stateSeverity = value =>
   | CardFormCreated(_)
   | CardFormDestroyed(_)
   | CardFieldCreated(_)
+  | CardFieldMounted(_)
+  | CardFieldRendered(_)
+  | CardFormCompleted(_)
   | CardFieldUnmounted(_)
   | CardCoBadgeDetected
   | MerchantControlReceived(_)

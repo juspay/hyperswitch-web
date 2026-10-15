@@ -1,5 +1,6 @@
 type entry = {
   row: LoggerTypes.row,
+  backfill: bool,
   mutable text: string,
   mutable bytes: int,
 }
@@ -124,8 +125,8 @@ let drain = () =>
     }
   })
 
-let push = (row, ~isError) => {
-  let entry = {row, text: "", bytes: 0}
+let push = (row, ~isError, ~backfill=true) => {
+  let entry = {row, backfill, text: "", bytes: 0}
   entry->serialize
   rows->Array.push(entry)
   queuedBytes := queuedBytes.contents + entry.bytes
@@ -149,7 +150,7 @@ let backfillContext = (context: LoggerTypes.context) =>
     let row = entry.row
     let changed = ref(false)
     let fill = (current, value) =>
-      if current === "" && value !== "" {
+      if entry.backfill && current === "" && value !== "" {
         changed := true
         value
       } else {
