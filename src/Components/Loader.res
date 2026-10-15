@@ -20,17 +20,10 @@ let make = (~branding="auto", ~showText=true) => {
         ->React.array}
       </RenderIf>
       <RenderIf condition={branding === "never"}>
-        <div
-          className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#0069FD] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
-          role="status">
-          <span
-            className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-            {"Loading..."->React.string}
-          </span>
-        </div>
+        <GenericLoader />
       </RenderIf>
     </div>
-    <RenderIf condition={showText}>
+    <RenderIf condition={showText && branding === "auto"}>
       <div className="flex flex-col gap-5">
         <div className="font-semibold text-sm text-gray-200 self-center ">
           {React.string("We are processing your payment...")}
