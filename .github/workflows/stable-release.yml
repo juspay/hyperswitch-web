@@ -24,10 +24,19 @@ on:
         description: "Custom version number (e.g., 1.2.3) (only used in custom mode)"
         required: false
         type: string
+      runner:
+        description: "Runner image to run on"
+        type: choice
+        default: ubuntu-latest
+        options:
+          - ubuntu-latest
+          - ubuntu-26.04
+          - ubuntu-24.04
+          - ubuntu-22.04
 
 jobs:
   create-version-bump-pr:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     name: Create Version Bump PR
     permissions:
       contents: write

@@ -4,10 +4,25 @@ on:
   pull_request:
     types:
       - closed
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner image to run on"
+        type: choice
+        default: ubuntu-latest
+        options:
+          - ubuntu-latest
+          - ubuntu-26.04
+          - ubuntu-24.04
+          - ubuntu-22.04
+      pr_number:
+        description: "Pull request number to run against"
+        required: true
+        type: number
 
 jobs:
   pr-label:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
 
     steps:
       - name: Checkout repository
@@ -16,9 +31,8 @@ jobs:
       - name: Remove all labels and add 'closed'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         run: |
-          echo "Reading PR number..."
-          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
           echo "PR number: $PR_NUMBER"
 
           echo "Fetching current labels..."
