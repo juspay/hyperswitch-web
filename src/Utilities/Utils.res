@@ -1579,7 +1579,7 @@ let eventHandlerFunc = (
   EventListenerManager.addSmartEventListener("message", changeHandler, activity)
 }
 
-let getFullscreenOverlayStyle = appearance => [
+let getFullscreenOverlayStyle = colorScheme => [
   ("all", "initial"),
   ("position", "fixed"),
   ("inset", "0"),
@@ -1587,14 +1587,7 @@ let getFullscreenOverlayStyle = appearance => [
   ("height", "100%"),
   ("display", "block"),
   ("z-index", "2147483647"),
-  (
-    "color-scheme",
-    appearance
-    ->getDictFromJson
-    ->getString("colorScheme", "light")
-    ->CardThemeType.getColorSchemeFromString
-    ->CardThemeType.getColorSchemeValue,
-  ),
+  ("color-scheme", colorScheme),
 ]
 
 let supportsPopover = !(Window.showPopoverFn->Nullable.isNullable)
@@ -1604,20 +1597,17 @@ let hideFullscreenBackdrop = () =>
   if !fullscreenBackdropHidden.contents {
     let sheet = Window.makeCssStyleSheet()
     sheet->Window.replaceSync("#orca-fullscreen::backdrop { display: none !important; }")
-    let document = Window.window->Window.document
-    document->Window.setAdoptedStyleSheets(
-      document->Window.adoptedStyleSheets->Array.concat([sheet]),
-    )
+    Window.window->Window.document->Window.adoptedStyleSheets->Array.push(sheet)
     fullscreenBackdropHidden := true
   }
 
-let makeIframe = (element, url, ~appearance) => {
+let makeIframe = (element, url, ~colorScheme) => {
   Promise.make((resolve, _) => {
     let iframe = Window.createElement("iframe")
     iframe->Window.setAttribute("id", "orca-fullscreen")
     iframe->Window.setAttribute("src", url)
     iframe->Window.setAttribute("name", "fullscreen")
-    appearance
+    colorScheme
     ->getFullscreenOverlayStyle
     ->Array.forEach(((property, value)) =>
       iframe->Window.style->Window.setStylePropertyImportant(property, value, "important")

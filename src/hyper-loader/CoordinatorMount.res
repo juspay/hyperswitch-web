@@ -119,7 +119,9 @@ let makeFullscreenFlows = (
         paramType !== ""
           ? `${sdkDomain}/fullscreenIndex.html?fullscreenType=${paramType}`
           : `${sdkDomain}/fullscreenIndex.html?fullscreenType=fullscreen`
-      mount.fullscreenSlot->Utils.makeIframe(overlaySrc, ~appearance)->ignore
+      let colorScheme =
+        appearance->CardTheme.getColorSchemeFromAppearance->CardTheme.getColorSchemeValue
+      mount.fullscreenSlot->Utils.makeIframe(overlaySrc, ~colorScheme)->ignore
     } else if dict->Dict.get("fullscreen")->Option.isSome && !(dict->getBool("fullscreen", true)) {
       mount.fullscreenSlot->Window.innerHTML("")
       fullscreenActiveRef := false

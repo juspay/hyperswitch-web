@@ -63,7 +63,6 @@ type cssStyleSheet
 @new external makeCssStyleSheet: unit => cssStyleSheet = "CSSStyleSheet"
 @send external replaceSync: (cssStyleSheet, string) => unit = "replaceSync"
 @get external adoptedStyleSheets: document => array<cssStyleSheet> = "adoptedStyleSheets"
-@set external setAdoptedStyleSheets: (document, array<cssStyleSheet>) => unit = "adoptedStyleSheets"
 
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"

@@ -144,17 +144,3 @@ let getPaymentModeToString = val => {
 }
 
 let getPaymentModeToStrMapper = (val: mode) => (val :> string)
-
-let getColorSchemeFromString = (str): colorScheme =>
-  switch str->String.toLowerCase {
-  | "auto" => Auto
-  | "dark" => Dark
-  | _ => Light
-  }
-
-let getColorSchemeValue = (colorScheme: colorScheme) =>
-  switch colorScheme {
-  | Auto => "light dark"
-  | Dark => "dark"
-  | Light => "light"
-  }
