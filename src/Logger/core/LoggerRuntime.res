@@ -217,6 +217,7 @@ let emit = (
             paymentMethod: paymentMethod->Option.mapOr("", LoggerPaymentMethod.qualifiedName),
           },
           ~isError=severity === Error,
+          ~backfill=!context.scoped,
         )
       }
     })
@@ -286,6 +287,7 @@ let emitPhase = (
   ~startedAt=?,
   ~exn=?,
   ~paymentMethod=?,
+  ~context=?,
   ~message=?,
 ) => {
   let durationMs = startedAt->Option.mapOr(0., startedAt => Date.now() -. startedAt)
@@ -299,7 +301,7 @@ let emitPhase = (
       ~error=?exn->Option.map(LoggerUtils.summarizeUnknown),
     )
   | outcome => step(~outcome, ~durationMs)
-  }->emitStep(~category, ~spec, ~severity, ~data?, ~details?, ~paymentMethod?, ~message?)
+  }->emitStep(~category, ~spec, ~severity, ~data?, ~details?, ~paymentMethod?, ~context?, ~message?)
 }
 
 type tracker = {
@@ -345,12 +347,12 @@ let observe = (
   ~failureOf: option<'result => option<errorSummary>>=?,
   ~detailsOf: option<'result => details>=?,
   ~paymentMethod=?,
+  ~context=LoggerContext.current(),
   ~source=?,
   ~syncOutcome=Returned,
   ~message=?,
   ~call: unit => 'value,
 ): 'value => {
-  let context = LoggerContext.current()
   let base = LoggerUtils.mergeDetails(
     ~data=data->Option.getOr([]),
     ~details=details->Option.getOr([]),
@@ -464,6 +466,7 @@ let observeCallback = (
   ~timeoutMs=?,
   ~failureOf=?,
   ~paymentMethod=?,
+  ~context=?,
   ~source=?,
   ~message=?,
   ~callback: 'fn,
@@ -478,6 +481,7 @@ let observeCallback = (
       ~timeoutMs?,
       ~failureOf?,
       ~paymentMethod?,
+      ~context?,
       ~source?,
       ~syncOutcome=Triggered,
       ~message?,
@@ -493,6 +497,7 @@ let observeResource = (
   ~attributes=?,
   ~matchQuery=?,
   ~paymentMethod=?,
+  ~context=LoggerContext.current(),
   ~source=?,
   ~abandoned=?,
   ~message=?,
@@ -501,7 +506,6 @@ let observeResource = (
 ) => {
   let onLoad = onLoad->Option.getOr(() => ())
   let onError = onError->Option.getOr(_ => ())
-  let context = LoggerContext.current()
   let tracker = makeTracker()
   let started = ref(false)
 

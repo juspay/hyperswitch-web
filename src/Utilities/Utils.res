@@ -1132,6 +1132,7 @@ let fetchApi = (
 let fetchApiWithLogging = async (
   uri,
   ~event: SdkLogger.apiEvent,
+  ~context=?,
   ~onSuccess,
   ~onFailure,
   ~bodyStr="",
@@ -1146,6 +1147,7 @@ let fetchApiWithLogging = async (
   try {
     let (response, data) = await SdkLogger.observeApi(
       ~event,
+      ~context?,
       ~url=uri,
       ~failureOf=LoggerUtils.httpBodyFailure,
       ~detailsOf=LoggerUtils.httpBodyDetails,

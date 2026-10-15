@@ -130,12 +130,14 @@ let describeJson = (value: JSON.t): string =>
   }
 
 let notifyBrokerError = (
+  ~context: LoggerContext.t,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
   ~reason: SdkLogger.vaultFailure,
   ~code: string,
   ~message: string,
 ): unit => {
   SdkLogger.logLifecycle(
+    ~context,
     ~event=VaultFlowFailed({reason: reason}),
     ~details=[("code", code->JSON.Encode.string)],
     ~paymentMethod=Card,
@@ -151,6 +153,7 @@ let notifyBrokerError = (
         exn->Identity.anyTypeToJson,
       )
       SdkLogger.logCrash(
+        ~context,
         ~origin=MerchantCallback,
         ~exn,
         ~details=[("callback", "error"->JSON.Encode.string)],
@@ -198,7 +201,7 @@ let scriptElementStillPresent = (): bool =>
 
 let inFlightScriptPromise: ref<option<Promise.t<unit>>> = ref(None)
 
-let loadVGSScript = (): Promise.t<unit> => {
+let loadVGSScript = (~context): Promise.t<unit> => {
   switch (inFlightScriptPromise.contents, scriptElementStillPresent()) {
   | (Some(_), false) => inFlightScriptPromise := None
   | _ => ()
@@ -208,6 +211,7 @@ let loadVGSScript = (): Promise.t<unit> => {
   | None => {
       let scriptLoadPromise = Promise.make((resolve, reject) =>
         SdkLogger.observeResource(
+          ~context,
           ~event=VaultScript,
           ~url=VGSConstants.vgsScriptURL,
           ~attributes=[
@@ -244,6 +248,9 @@ let computeVGSBaseOptions = (~fieldType: string, ~options: JSON.t): JSON.t => {
     } else {
       VGSConstants.cardCvcOptions->Identity.anyTypeToJson
     }
+  | "cardholderName" =>
+    let placeholder = optionsDict->getString("placeholder", "")
+    VGSConstants.cardHolderNameOptions(placeholder)->Identity.anyTypeToJson
   | _ => VGSConstants.cardNumberOptions->Identity.anyTypeToJson
   }
 }
@@ -329,12 +336,14 @@ let vgsFieldBrand = (state: JSON.t): string => {
 let buildFieldEventPayload = (~fieldType: string, ~state: JSON.t): JSON.t => {
   let stateDict = state->getDictFromJson
   let empty = stateDict->getBool("isEmpty", true)
-  let valid = stateDict->getBool("isValid", false)
+  let isCardholderName = fieldType === "cardholderName"
+  let valid = isCardholderName || stateDict->getBool("isValid", false)
   let errorMessage = switch stateDict->getOptionString("error")->getNonEmptyOption {
+  | _ if isCardholderName => ""
   | Some(message) => message
   | None => state->vgsFieldErrorMessage->Option.getOr("")
   }
-  let brand = state->vgsFieldBrand
+  let brand = isCardholderName ? "" : state->vgsFieldBrand
   let payloadDict = Dict.make()
   payloadDict->Dict.set("empty", empty->JSON.Encode.bool)
   payloadDict->Dict.set("complete", (!empty && valid)->JSON.Encode.bool)
@@ -355,6 +364,7 @@ let fieldFingerprint = (payload: JSON.t): string =>
   payload->stringifyNullable->Nullable.toOption->Option.getOr("")
 
 let dispatchFieldEvent = (
+  ~context: LoggerContext.t,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
   ~fieldId: string,
   ~event: string,
@@ -370,6 +380,7 @@ let dispatchFieldEvent = (
         exn->Identity.anyTypeToJson,
       )
       SdkLogger.logCrash(
+        ~context,
         ~origin=MerchantCallback,
         ~exn,
         ~details=[("callback", event->JSON.Encode.string)],
@@ -379,9 +390,11 @@ let dispatchFieldEvent = (
 }
 
 let make = (
+  ~context: LoggerContext.t,
   ~vaultId: string,
   ~environment: string,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
+  ~onFieldChange: (string, JSON.t) => unit,
 ): vgsBrokerHandle => {
   let formRef: ref<option<JSON.t>> = ref(None)
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
@@ -412,7 +425,8 @@ let make = (
         }
         if changed {
           lastFieldPayloadRef.contents->Dict.set(fieldId, fingerprint)
-          dispatchFieldEvent(~eventCallbacksRef, ~fieldId, ~event="change", ~payload)
+          onFieldChange(fieldId, payload)
+          dispatchFieldEvent(~context, ~eventCallbacksRef, ~fieldId, ~event="change", ~payload)
         }
       }
     )
@@ -437,6 +451,7 @@ let make = (
           exn->Identity.anyTypeToJson,
         )
         SdkLogger.logLifecycle(
+          ~context,
           ~event=VaultFlowFailed({reason: FieldUpdateFailed}),
           ~exn,
           ~details=[("field", entry.fieldType->JSON.Encode.string)],
@@ -477,7 +492,7 @@ let make = (
       | Some(createFormPromise) => createFormPromise
       | None =>
         let createFormPromise =
-          loadVGSScript()
+          loadVGSScript(~context)
           ->Promise.then(_ => {
             let onFormStateChange: JSON.t => unit = state => {
               formStateRef := state->getDictFromJson
@@ -485,12 +500,18 @@ let make = (
               clearDependentFieldsOnEmptiedCardNumber()
             }
             let startedAt = Date.now()
-            SdkLogger.logFunction(~event=VaultFormCreate, ~outcome=Started, ~paymentMethod=Card)
+            SdkLogger.logFunction(
+              ~context,
+              ~event=VaultFormCreate,
+              ~outcome=Started,
+              ~paymentMethod=Card,
+            )
             let form: JSON.t = switch vgsCollect->Nullable.toOption {
             | Some(collect) =>
               try collect.create(vaultId, environment, onFormStateChange) catch {
               | err => {
                   SdkLogger.logFunction(
+                    ~context,
                     ~event=VaultFormCreate,
                     ~outcome=Failed,
                     ~startedAt,
@@ -502,6 +523,7 @@ let make = (
               }
             | None =>
               SdkLogger.logFunction(
+                ~context,
                 ~event=VaultFormCreate,
                 ~outcome=Failed,
                 ~startedAt,
@@ -512,6 +534,7 @@ let make = (
             }
             formRef := Some(form)
             SdkLogger.logFunction(
+              ~context,
               ~event=VaultFormCreate,
               ~outcome=Done,
               ~startedAt,
@@ -522,6 +545,7 @@ let make = (
           ->Promise.catch(err => {
             createFormInFlightRef := None
             SdkLogger.logLifecycle(
+              ~context,
               ~event=VaultFlowFailed({reason: FormCreationFailed}),
               ~exn=err,
               ~paymentMethod=Card,
@@ -552,6 +576,7 @@ let make = (
       ->Array.forEach(({fieldType, vgsName, fieldHandle}) =>
         switch fieldHandle {
         | None => ()
+        | Some(_) if fieldType === "cardholderName" => ()
         | Some(_) =>
           describeInvalidField(
             ~state=formStateRef.contents->Dict.get(vgsName),
@@ -585,6 +610,7 @@ let make = (
             if !settled.contents {
               settled := true
               SdkLogger.logApi(
+                ~context,
                 ~event,
                 ~outcome,
                 ~details=[("vault", "vgs"->JSON.Encode.string)]->Array.concat(details),
@@ -595,6 +621,7 @@ let make = (
             }
 
           SdkLogger.logApi(
+            ~context,
             ~event,
             ~outcome=Started,
             ~details=[("vault", "vgs"->JSON.Encode.string)],
@@ -608,10 +635,8 @@ let make = (
             )
           }
 
-          let onSuccess: (
-            JSON.t,
-            JSON.t,
-          ) => unit = SdkLogger.observeFunctionCallback(
+          let onSuccess: (JSON.t, JSON.t) => unit = SdkLogger.observeFunctionCallback(
+            ~context,
             ~event=OnSuccess,
             ~paymentMethod=Card,
             ~callback=(status, data) =>
@@ -633,6 +658,7 @@ let make = (
           )
 
           let onError: JSON.t => unit = SdkLogger.observeFunctionCallback(
+            ~context,
             ~event=OnError,
             ~paymentMethod=Card,
             ~callback=errors => {
@@ -776,7 +802,7 @@ let make = (
           try {
             let handleFieldEvent: JSON.t => unit = _domEvent => {
               let payload = fieldPayload(~fieldType, ~vgsName)
-              dispatchFieldEvent(~eventCallbacksRef, ~fieldId, ~event, ~payload)
+              dispatchFieldEvent(~context, ~eventCallbacksRef, ~fieldId, ~event, ~payload)
             }
             fieldHandle->fieldOn(event, handleFieldEvent)
           } catch {
@@ -784,6 +810,7 @@ let make = (
             let message = `field.on("${event}") could not be wired for fieldId=${fieldId} — ${event} events will never fire: ${exn->exceptionMessage}`
             Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
             notifyBrokerError(
+              ~context,
               ~eventCallbacksRef,
               ~reason=FieldBindingFailed,
               ~code="vgs_field_event_binding_failed",
@@ -796,7 +823,13 @@ let make = (
 
         let readyPayload = fieldPayload(~fieldType, ~vgsName)
         lastFieldPayloadRef.contents->Dict.set(fieldId, readyPayload->fieldFingerprint)
-        dispatchFieldEvent(~eventCallbacksRef, ~fieldId, ~event="ready", ~payload=readyPayload)
+        dispatchFieldEvent(
+          ~context,
+          ~eventCallbacksRef,
+          ~fieldId,
+          ~event="ready",
+          ~payload=readyPayload,
+        )
 
         Promise.resolve()
       }
@@ -805,6 +838,7 @@ let make = (
       let message = `mountField(${fieldType}, ${selector}) failed: ${err->exceptionMessage}`
       Console.error2(`[VGSVaultBroker] ${message}`, err->Identity.anyTypeToJson)
       notifyBrokerError(
+        ~context,
         ~eventCallbacksRef,
         ~reason=FieldMountFailed,
         ~code=err->exceptionCodeOr(~fallback="vgs_mount_failed"),
@@ -828,6 +862,7 @@ let make = (
         let message = `updateField(${fieldId}) threw — the requested options were not applied: ${exn->exceptionMessage}`
         Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
         notifyBrokerError(
+          ~context,
           ~eventCallbacksRef,
           ~reason=FieldUpdateFailed,
           ~code="vgs_field_update_failed",
@@ -862,6 +897,7 @@ let make = (
         let message = `unmountField(${fieldId}) threw — the secure field may still be in the DOM: ${exn->exceptionMessage}`
         Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
         notifyBrokerError(
+          ~context,
           ~eventCallbacksRef,
           ~reason=FieldUnmountFailed,
           ~code="vgs_field_unmount_failed",

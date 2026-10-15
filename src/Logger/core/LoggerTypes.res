@@ -88,6 +88,8 @@ type context = {
   merchantId: string,
   paymentId: string,
   authenticationId: string,
+  // Independent flows (e.g. vault sessions) never adopt the shared payment identity.
+  scoped: bool,
 }
 
 type row = {

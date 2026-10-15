@@ -35,7 +35,9 @@ let computeGroupReadiness = (fieldsRef: ref<Dict.t<fieldEntry>>): bool => {
   if !hasAllFields {
     false
   } else {
-    entries->Array.every(entry =>
+    entries
+    ->Array.filter(entry => entry.fieldType !== "cardholderName")
+    ->Array.every(entry =>
       switch entry.lastStateRef.contents {
       | Some(stateJson) =>
         let stateDict = stateJson->getDictFromJson
@@ -473,6 +475,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                 ("flow", "payments"->JSON.Encode.string),
               ],
             )
+          | None if findFieldOfType("cardholderName")->Option.isSome => ()
           | None =>
             findFieldOfType("cardCvc")->Option.forEach(entry => {
               let paymentToken = entry.savedCardTokenRef.contents
@@ -622,6 +625,14 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         } else {
           switch (findFieldOfType("cardNumber"), findFieldOfType("cardCvc")) {
           | (Some(_entry), _) => dispatchConfirm(~flow="payments", ~paymentToken=None)
+          | (None, _) if findFieldOfType("cardholderName")->Option.isSome =>
+            Promise.resolve(
+              groupFailureResponse(
+                ~code="validation_error",
+                ~errorType="validation_error",
+                ~message="The cardholderName field needs the cardNumber field in the same card form",
+              ),
+            )
           | (None, Some(entry)) =>
             let paymentToken = entry.savedCardTokenRef.contents
             if paymentToken === "" {

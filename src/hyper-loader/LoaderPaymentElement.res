@@ -75,6 +75,7 @@ let make = (
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
+  ~context=?,
 ) => {
   try {
     let surfaceData: HyperLoaderLogger.surfaceData = {
@@ -113,6 +114,7 @@ let make = (
         currentOneClickHandler :=
           Some(
             HyperLoaderLogger.observeMerchantCallback(
+              ~context?,
               ~event=OnSdkHandleClick(surfaceData),
               ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
               ~callback=handler,
@@ -248,6 +250,7 @@ let make = (
         )
       | _ =>
         HyperLoaderLogger.logMerchantIssue(
+          ~context?,
           ~issue=UnknownOptionKey,
           ~details=[("event", eventType->JSON.Encode.string)],
         )
@@ -287,6 +290,7 @@ let make = (
 
     let unmount = () =>
       HyperLoaderLogger.observeMerchantCall(
+        ~context?,
         ~event=Unmount(surfaceData),
         ~details=surfaceDetails->Array.concat(containerPresentDetail()),
         ~call=clearMountedContainer,
@@ -294,6 +298,7 @@ let make = (
 
     let destroy = () =>
       HyperLoaderLogger.observeMerchantCall(
+        ~context?,
         ~event=Destroy(surfaceData),
         ~details=surfaceDetails->Array.concat(containerPresentDetail()),
         ~call=() => {
@@ -334,6 +339,7 @@ let make = (
 
     let update = newOptions =>
       HyperLoaderLogger.observeMerchantCall(
+        ~context?,
         ~event=HyperLoaderLogger.Update({surface: PaymentElement}),
         ~details=[("component_type", componentType->JSON.Encode.string)],
         ~call=() => updateElementOptions(newOptions),
@@ -477,7 +483,7 @@ let make = (
                             ("metadata", fullscreenMetadata.contents),
                             ("options", options),
                             ("appearance", appearance),
-                            LoggerContext.sharedContext(),
+                            LoggerContext.sharedContext(~context?, ()),
                           ]->Dict.fromArray,
                         )
                       }
@@ -493,7 +499,7 @@ let make = (
                         fullScreenEle->Window.iframePostMessage(
                           [
                             ("metadata", fullscreenMetadata.contents),
-                            LoggerContext.sharedContext(),
+                            LoggerContext.sharedContext(~context?, ()),
                           ]->Dict.fromArray,
                         )
                       }
@@ -586,6 +592,7 @@ let make = (
 
       | None =>
         HyperLoaderLogger.logMerchantIssue(
+          ~context?,
           ~issue=MissingParameter,
           ~details=[("selector", selector->JSON.Encode.string)],
           ~message="Mount selector did not match any element",
@@ -595,6 +602,7 @@ let make = (
 
     let mount = selector =>
       HyperLoaderLogger.observeMerchantCall(
+        ~context?,
         ~event=Mount(surfaceData),
         ~details=surfaceDetails,
         ~call=() => mountElement(selector),
@@ -620,6 +628,7 @@ let make = (
       Sentry.captureException(e)
 
       SdkLogger.logCrash(
+        ~context?,
         ~origin=ElementConstructor,
         ~details=[("component_type", componentType->JSON.Encode.string)],
         ~exn=e,

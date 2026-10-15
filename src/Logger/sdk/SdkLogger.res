@@ -9,6 +9,7 @@ let logLifecycle = (
   ~durationMs=?,
   ~paymentMethod=?,
   ~source=?,
+  ~context=?,
   ~message=?,
 ) =>
   LoggerRuntime.emit(
@@ -22,6 +23,7 @@ let logLifecycle = (
     ~durationMs?,
     ~paymentMethod?,
     ~source?,
+    ~context?,
     ~message?,
   )
 
@@ -31,6 +33,7 @@ let logState = (
   ~failure=?,
   ~durationMs=?,
   ~paymentMethod=?,
+  ~context=?,
   ~message=?,
 ) =>
   LoggerRuntime.emit(
@@ -42,6 +45,7 @@ let logState = (
     ~failure?,
     ~durationMs?,
     ~paymentMethod?,
+    ~context?,
     ~message?,
   )
 
@@ -72,13 +76,14 @@ let logUser = (~event: userEvent, ~details=?, ~paymentMethod=?, ~message=?) => {
   )
 }
 
-let logCrash = (~origin: crashOrigin, ~exn=?, ~details=?, ~message=?) =>
+let logCrash = (~origin: crashOrigin, ~exn=?, ~details=?, ~context=?, ~message=?) =>
   LoggerRuntime.emit(
     ~category=Crash,
     ~spec=origin->LoggerUtils.spec,
     ~severity=origin->crashSeverity,
     ~details?,
     ~exn?,
+    ~context?,
     ~message?,
   )
 
@@ -154,6 +159,7 @@ let observeApi = (
   ~failureOf,
   ~detailsOf,
   ~paymentMethod=?,
+  ~context=?,
   ~message=?,
   ~call,
 ) =>
@@ -166,6 +172,7 @@ let observeApi = (
     ~failureOf,
     ~detailsOf,
     ~paymentMethod?,
+    ~context?,
     ~message?,
     ~call,
   )
@@ -195,6 +202,7 @@ let logApi = (
   ~startedAt=?,
   ~exn=?,
   ~paymentMethod=?,
+  ~context=?,
   ~message=?,
 ) =>
   LoggerRuntime.emitPhase(
@@ -207,6 +215,7 @@ let logApi = (
     ~startedAt?,
     ~exn?,
     ~paymentMethod?,
+    ~context?,
     ~message?,
   )
 
@@ -217,6 +226,7 @@ let logFunction = (
   ~startedAt=?,
   ~exn=?,
   ~paymentMethod=?,
+  ~context=?,
   ~message=?,
 ) =>
   LoggerRuntime.emitPhase(
@@ -229,6 +239,7 @@ let logFunction = (
     ~startedAt?,
     ~exn?,
     ~paymentMethod?,
+    ~context?,
     ~message?,
   )
 
@@ -238,6 +249,7 @@ let observeFunction = (
   ~timeoutMs=?,
   ~paymentMethod=?,
   ~source=?,
+  ~context=?,
   ~message=?,
   ~call,
 ) =>
@@ -250,6 +262,7 @@ let observeFunction = (
     ~timeoutMs?,
     ~paymentMethod?,
     ~source?,
+    ~context?,
     ~message?,
     ~call,
   )
@@ -259,6 +272,7 @@ let observeFunctionCallback = (
   ~details=?,
   ~timeoutMs=?,
   ~paymentMethod=?,
+  ~context=?,
   ~message=?,
   ~callback,
 ) =>
@@ -270,6 +284,7 @@ let observeFunctionCallback = (
     ~details?,
     ~timeoutMs?,
     ~paymentMethod?,
+    ~context?,
     ~message?,
     ~callback,
   )
@@ -280,6 +295,7 @@ let observeResource = (
   ~attributes=?,
   ~matchQuery=?,
   ~paymentMethod=?,
+  ~context=?,
   ~abandoned=?,
   ~message=?,
   ~onLoad=?,
@@ -290,6 +306,7 @@ let observeResource = (
     ~severity=event->resourceSeverity,
     ~url,
     ~resource=event->resourceKind,
+    ~context?,
     ~attributes?,
     ~matchQuery?,
     ~paymentMethod?,

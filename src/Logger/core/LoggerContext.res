@@ -1,6 +1,6 @@
 type t = LoggerTypes.context
 
-let empty: t = {sessionId: "", merchantId: "", paymentId: "", authenticationId: ""}
+let empty: t = {sessionId: "", merchantId: "", paymentId: "", authenticationId: "", scoped: false}
 
 let context = ref(empty)
 
@@ -15,13 +15,14 @@ let keep = (existing, incoming) =>
   }
 
 let fillFrom = (started: t, latest: t): t =>
-  started.sessionId !== "" && started.sessionId !== latest.sessionId
+  started.scoped || (started.sessionId !== "" && started.sessionId !== latest.sessionId)
     ? started
     : {
         sessionId: latest.sessionId->keep(Some(started.sessionId)),
         merchantId: latest.merchantId->keep(Some(started.merchantId)),
         paymentId: latest.paymentId->keep(Some(started.paymentId)),
         authenticationId: latest.authenticationId->keep(Some(started.authenticationId)),
+        scoped: false,
       }
 
 let setSessionData = (~sessionId=?, ~merchantId=?, ~paymentId=?, ~authenticationId=?, ()) => {
@@ -35,6 +36,7 @@ let setSessionData = (~sessionId=?, ~merchantId=?, ~paymentId=?, ~authentication
     merchantId: base.merchantId->keep(merchantId),
     paymentId: base.paymentId->keep(paymentId),
     authenticationId: base.authenticationId->keep(authenticationId),
+    scoped: false,
   }
   context := next
   if next.sessionId !== previous.sessionId {
@@ -149,8 +151,8 @@ let startSessionFromMessage = message =>
     )
   })
 
-let sharedContext = () => {
-  let {sessionId, merchantId, paymentId, authenticationId} = context.contents
+let sharedContext = (~context=context.contents, ()) => {
+  let {sessionId, merchantId, paymentId, authenticationId} = context
   (
     "loggerContext",
     [

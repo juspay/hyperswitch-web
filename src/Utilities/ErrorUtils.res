@@ -40,6 +40,7 @@ let describe = (issue: HyperLoaderLogger.merchantIssue) =>
       Dynamic(value => `Value out of range: '${value}'. Please provide a value inside the range`),
     )
   | ConnectorMisconfigured => (Recoverable, Dynamic(value => `INTEGRATION ERROR: ${value}`))
+  | DynamicFieldsConfig => (Recoverable, Dynamic(value => `CONFIGURATION WARNING: ${value}`))
   | DeprecatedMethod => (
       Recoverable,
       Static("loadStripe is deprecated. Please use loadHyper instead."),
