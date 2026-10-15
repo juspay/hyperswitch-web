@@ -122,8 +122,8 @@ let make = () => {
   // parent's options message lands, which is after the ports are wired up.
   let emitterRef = React.useRef(emitter)
   emitterRef.current = emitter
-  let subscribedEventsRef = React.useRef([])
-  subscribedEventsRef.current = optionsPayment.subscriptionEvents->Option.getOr([])
+  let subscriptionEventsRef = React.useRef([])
+  subscriptionEventsRef.current = optionsPayment.subscriptionEvents->Option.getOr([])
   // The handler fires on every keystroke of every field; only forward real changes.
   let lastEmittedCardInfoRef = React.useRef("")
 
@@ -262,7 +262,7 @@ let make = () => {
                 fieldSnapshotsRef.current->Dict.set(fieldName, {payload: payload})
                 if (
                   PaymentEventData.shouldEmitEvent(
-                    ~subscribedEvents=subscribedEventsRef.current,
+                    ~subscriptionEvents=subscriptionEventsRef.current,
                     ~eventType=PaymentEventTypes.CardDetailsChange,
                   )
                 ) {
