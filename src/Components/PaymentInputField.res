@@ -41,6 +41,9 @@ let make = (
 
   let handleFocus = ev => {
     setInputFocused(_ => true)
+    if name->String.length > 0 {
+      SdkLogger.logUser(~event=FieldFocused({field: name}))
+    }
     switch setIsValid {
     | Some(fn) => fn(_ => None)
     | None => ()
@@ -55,7 +58,9 @@ let make = (
 
   let handleBlur = ev => {
     setInputFocused(_ => false)
-
+    if name->String.length > 0 {
+      SdkLogger.logUser(~event=FieldBlurred({field: name}))
+    }
     switch onBlur {
     | Some(fn) => fn(ev)
     | None => ()
@@ -100,7 +105,8 @@ let make = (
       condition={!isLabelHidden &&
       fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
-      innerLayout === Spaced}>
+      innerLayout === Spaced}
+    >
       <div
         className={`Label ${labelClass}`}
         style={
@@ -109,7 +115,8 @@ let make = (
           marginBottom: "5px",
           opacity: "0.6",
         }
-        ariaHidden=true>
+        ariaHidden=true
+      >
         {React.string(fieldName)}
       </div>
     </RenderIf>
@@ -149,7 +156,8 @@ let make = (
               fontSize: {inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""},
               opacity: "0.6",
             }
-            ariaHidden=true>
+            ariaHidden=true
+          >
             {React.string(fieldName)}
           </div>
         </RenderIf>
@@ -169,7 +177,8 @@ let make = (
               fontSize: themeObj.fontSizeSm,
               alignSelf: "start",
               textAlign: "left",
-            }>
+            }
+          >
             {React.string(val)}
           </div>
         </RenderIf>

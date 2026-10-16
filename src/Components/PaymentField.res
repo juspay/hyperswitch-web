@@ -29,7 +29,6 @@ let make = (
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let {readOnly} = Jotai.useAtomValue(optionAtom)
   let {parentURL, iframeId} = Jotai.useAtomValue(keys)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
@@ -39,6 +38,9 @@ let make = (
 
   let handleFocus = _ => {
     setInputFocused(_ => true)
+    if name->String.length > 0 {
+      SdkLogger.logUser(~event=FieldFocused({field: name}))
+    }
     switch setValue {
     | Some(fn) =>
       fn(prev => {
@@ -53,7 +55,9 @@ let make = (
 
   let handleBlur = ev => {
     setInputFocused(_ => false)
-
+    if name->String.length > 0 {
+      SdkLogger.logUser(~event=FieldBlurred({field: name}))
+    }
     switch onBlur {
     | Some(fn) => fn(ev)
     | None => ()
@@ -95,22 +99,13 @@ let make = (
 
   let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
 
-  // Wrap onChange to include logging
-  let wrappedOnChange = ev => {
-    // Log the input change using the name parameter
-    if name->String.length > 0 {
-      LoggerUtils.logInputChangeInfo(name, loggerState)
-    }
-    // Call the original onChange handler
-    onChange(ev)
-  }
-
   <div className="flex flex-col w-full">
     <RenderIf
       condition={name === "phone" &&
       fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
-      isSpacedInnerLayout}>
+      isSpacedInnerLayout}
+    >
       <div
         className={`Label ${labelClass}`}
         style={
@@ -119,7 +114,8 @@ let make = (
           marginBottom: "5px",
           opacity: "0.6",
         }
-        ariaHidden=true>
+        ariaHidden=true
+      >
         {React.string(fieldName)}
       </div>
     </RenderIf>
@@ -141,7 +137,8 @@ let make = (
         condition={name !== "phone" &&
         fieldName->String.length > 0 &&
         config.appearance.labels == Above &&
-        isSpacedInnerLayout}>
+        isSpacedInnerLayout}
+      >
         <div
           className={`Label ${labelClass}`}
           style={
@@ -150,7 +147,8 @@ let make = (
             marginBottom: "5px",
             opacity: "0.6",
           }
-          ariaHidden=true>
+          ariaHidden=true
+        >
           {React.string(fieldName)}
         </div>
       </RenderIf>
@@ -174,7 +172,7 @@ let make = (
               : ""}
             value={value.value}
             autoComplete="on"
-            onChange=wrappedOnChange
+            onChange
             onBlur=handleBlur
             onFocus=handleFocus
             ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
@@ -191,7 +189,8 @@ let make = (
                 },
                 opacity: "0.6",
               }
-              ariaHidden=true>
+              ariaHidden=true
+            >
               {React.string(fieldName)}
             </div>
           </RenderIf>
@@ -209,7 +208,8 @@ let make = (
             alignSelf: "start",
             textAlign: "left",
           }
-          ariaHidden=true>
+          ariaHidden=true
+        >
           {React.string(value.errorString)}
         </div>
       </RenderIf>
