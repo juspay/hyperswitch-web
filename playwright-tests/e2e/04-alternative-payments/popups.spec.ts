@@ -47,11 +47,21 @@ import {
   type HyperswitchApi,
   type OpenedCheckout,
   type Sdk,
+  defaultBillingAddress,
+  payAndCaptureConfirm,
+  submitAndCaptureConfirm,
+  expectRedirectedTo,
+  CLIENT_BASE_URL,
 } from "../../fixtures";
 
 const PAYPAL_CUSTOMER = "popups_paypal_user";
 const KLARNA_CUSTOMER = "popups_klarna_user";
 const PLAID_CUSTOMER = "popups_plaid_user";
+const PAYPAL_REDIRECT_TRUELAYER_CUSTOMER =
+  "popups_paypal_redirect_truelayer_user";
+// TrueLayer sandbox mock-bank user whose payments execute.
+const TRUELAYER_SANDBOX_USER = "test_executed";
+const DEMO_SHOP_ORIGIN = new URL(CLIENT_BASE_URL).origin;
 
 /** Why the live variants skip on the merchant provisioned by setup/merchant-setup.js. */
 const LIVE_SETUP = {
@@ -64,6 +74,14 @@ const LIVE_SETUP = {
   klarnaSdkFlow:
     "Klarna is provisioned only with payment_experience redirect_to_url (Stripe and Klarna MCAs in " +
     "setup/merchant-setup.js); the Klarna Payments popup needs invoke_sdk_client and a Klarna session token",
+  truelayerProfile:
+    "TrueLayer connector profile is not provisioned: setup/merchant-setup.js creates it (with a PayPal " +
+    "redirect MCA on it) only when creds.json has a 'truelayer' entry",
+  paypalRedirect:
+    "PayPal (redirect_to_url) is not offered on the TrueLayer profile: merchant-setup.js " +
+    "EXTRA_CONNECTORS_FOR_PROFILE adds it from creds.json's 'paypal' entry",
+  truelayer:
+    "TrueLayer Pay by Bank (open_banking / open_banking, redirect_to_url) is not offered on the TrueLayer profile",
   plaid:
     "Plaid open banking (open_banking/open_banking_pis) is not provisioned: setup/merchant-setup.js creates " +
     "no Plaid connector, so the SDK offers no 'Open Banking' method",
@@ -387,6 +405,169 @@ test.describe("Klarna popup", () => {
     },
   );
 });
+
+// ── PayPal redirect cancelled, then TrueLayer ──────────────────────────────
+
+// Regression (SG go-live): a shopper pays with PayPal (redirect flow), cancels on PayPal's page
+// and comes back, then pays with another redirect method (TrueLayer Pay by Bank) on the same
+// payment. The router answered that second confirm with next_action invoke_sdk_client instead of
+// redirect_to_url, so the shopper was never sent to the bank. Any redirect method on any merchant
+// was affected. setup/merchant-setup.js puts a PayPal redirect MCA on the TrueLayer profile.
+test.describe("PayPal redirect cancelled, then TrueLayer", () => {
+  let opened: OpenedCheckout;
+
+  test.beforeEach(async ({ checkout, credentials, api, hermetic }) => {
+    const profileId = credentials.profileId(connectorEnum.TRUELAYER);
+    skipLiveUnless(hermetic, !!profileId, LIVE_SETUP.truelayerProfile);
+    const address = {
+      ...defaultBillingAddress,
+      country: "GB",
+      state: "England",
+      city: "London",
+      zip: "SW1A 1AA",
+    };
+    const base = paymentBody();
+    opened = await checkout.open({
+      body: paymentBody({
+        profile_id: profileId,
+        customer_id: PAYPAL_REDIRECT_TRUELAYER_CUSTOMER,
+        currency: "GBP",
+        // Where PayPal's cancel and TrueLayer's completion send the shopper back to.
+        return_url: `${CLIENT_BASE_URL}/completion`,
+        billing: { ...base.billing, address },
+        shipping: { ...base.shipping, address },
+      }),
+    });
+    await requireOffered(
+      api,
+      hermetic,
+      opened,
+      "wallet",
+      "paypal",
+      "redirect_to_url",
+      LIVE_SETUP.paypalRedirect,
+    );
+    await requireOffered(
+      api,
+      hermetic,
+      opened,
+      "open_banking",
+      "open_banking",
+      "redirect_to_url",
+      LIVE_SETUP.truelayer,
+    );
+  });
+
+  test("after cancelling PayPal on its page, TrueLayer confirms with redirect_to_url and completes", async ({
+    page,
+    sdk,
+    hermetic,
+    api,
+  }) => {
+    // 1. PayPal (redirect flow): its wallet button confirms straight away; land on PayPal's page.
+    const paypalRedirectButton = sdk.paymentElement.locator(
+      "xpath=//button[.//*[local-name()='use' and contains(@*[local-name()='href'], '#paypal')]]",
+    );
+    await expect(paypalRedirectButton).toBeVisible({ timeout: 20_000 });
+    const paypalConfirm = await submitAndCaptureConfirm(page, hermetic, () =>
+      paypalRedirectButton.click(),
+    );
+    expect(paypalConfirm.request).toMatchObject({
+      payment_method: "wallet",
+      payment_method_type: "paypal",
+      payment_experience: "redirect_to_url",
+    });
+    expect(paypalConfirm.body?.next_action?.type).toBe("redirect_to_url");
+    await page.waitForURL(/paypal\.com/, {
+      timeout: 30_000,
+      waitUntil: "commit",
+    });
+
+    // 2. Cancel on PayPal's page: PayPal sends the shopper back through the router to return_url.
+    await page
+      .getByRole("link", { name: /cancel and return/i })
+      .first()
+      .click({ timeout: 30_000 });
+    await page.waitForURL((url) => url.origin === DEMO_SHOP_ORIGIN, {
+      timeout: 30_000,
+      waitUntil: "commit",
+    });
+
+    // 3. Back on the checkout for the same payment (as the merchant re-mounts it with the same
+    // client secret): pay with TrueLayer.
+    await page.goto(opened.url);
+    await sdk.selectPaymentMethod("Pay by Bank");
+    const confirm = await payAndCaptureConfirm(page, sdk, hermetic);
+
+    // The SDK asked for a redirect…
+    expect(confirm.request).toMatchObject({
+      payment_method: "open_banking",
+      payment_method_type: "open_banking",
+    });
+    // …and the router must not answer with an SDK flow left over from the cancelled PayPal attempt.
+    expect(confirm.status).toBe(200);
+    expect(confirm.body?.next_action?.type).not.toBe("invoke_sdk_client");
+    expect(confirm.body?.payment_experience).not.toBe("invoke_sdk_client");
+    expect(confirm.body?.next_action?.type).toBe("redirect_to_url");
+    expect(typeof confirm.body?.next_action?.redirect_to_url).toBe("string");
+
+    // 4. The shopper lands on TrueLayer's hosted payment page.
+    await expectRedirectedTo(page, hermetic, /truelayer/, confirm);
+    const pending = await api.retrievePayment(opened.paymentId, {
+      forceSync: false,
+    });
+    expect(pending.payment_method_type).toBe("open_banking");
+    expect(pending.payment_experience).not.toBe("invoke_sdk_client");
+
+    // 5. Live: authorise with TrueLayer's mock bank and come back paid. (Hermetic serves a stub
+    // TrueLayer page with nothing to complete.)
+    if (hermetic.enabled) return;
+    await completeTrueLayerSandboxPayment(page);
+    const payment = await api.pollPaymentStatus(opened.paymentId, "succeeded", {
+      timeoutMs: 90_000,
+      intervalMs: 3_000,
+    });
+    expect(payment.payment_method_type).toBe("open_banking");
+  });
+});
+
+/**
+ * Live only: drives TrueLayer's sandbox hosted payment page until it hands the shopper back to
+ * the demo shop: pick the "Mock UK Payments - Redirect Flow" bank, log in to the mock bank as
+ * `test_executed` (TrueLayer's sandbox user whose payments execute), and accept each
+ * continue/confirm step on the way.
+ */
+async function completeTrueLayerSandboxPayment(page: Page): Promise<void> {
+  const deadline = Date.now() + 120_000;
+  const visible = (l: Locator) =>
+    l
+      .first()
+      .isVisible()
+      .catch(() => false);
+  while (new URL(page.url()).origin !== DEMO_SHOP_ORIGIN) {
+    if (Date.now() > deadline) {
+      throw new Error(
+        `TrueLayer sandbox flow did not return to the demo shop; stuck on ${page.url()}`,
+      );
+    }
+    const mockBank = page.getByText(/mock uk payments.*redirect/i);
+    const username = page.getByRole("textbox", { name: /user ?name/i });
+    const password = page.getByLabel(/password/i);
+    const next = page.getByRole("button", {
+      name: /^(continue|allow|confirm|approve|submit|log ?in|sign ?in|authori[sz]e|pay)/i,
+    });
+    if (await visible(mockBank)) {
+      await mockBank.first().click();
+    } else if (await visible(username)) {
+      await username.first().fill(TRUELAYER_SANDBOX_USER);
+      if (await visible(password)) await password.first().fill("password");
+      await next.first().click();
+    } else if (await visible(next)) {
+      await next.first().click();
+    }
+    await page.waitForTimeout(1_000);
+  }
+}
 
 // ── Plaid ──────────────────────────────────────────────────────────────────
 
