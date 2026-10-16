@@ -12,6 +12,7 @@ let make = (
   let {showLoader} = Jotai.useAtomValue(configAtom)
   let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
   let sdkConfigs = Jotai.useAtomValue(sdkConfigs)
+  let isConfigReady = Jotai.useAtomValue(isConfigReady)
   let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let setFullName = Jotai.useSetAtom(userFullName)
@@ -28,12 +29,16 @@ let make = (
 
   let divRef = React.useRef(Nullable.null)
 
-  let isLoading = switch (paymentType, paymentMethodList, sdkConfigs, paymentManagementList) {
-  | (Payment, Loading, _, _)
-  | (Payment, _, Loading, _)
-  | (PaymentMethodsManagement, _, _, LoadingV2) => true
-  | _ => false
-  }
+  // sdkConfigs flips to Loaded one commit before the merged options + resolved
+  // appearance/locale are committed, so isConfigReady is what actually says "safe to paint".
+  let isLoading =
+    !isConfigReady ||
+    switch (paymentType, paymentMethodList, sdkConfigs, paymentManagementList) {
+    | (Payment, Loading, _, _)
+    | (Payment, _, Loading, _)
+    | (PaymentMethodsManagement, _, _, LoadingV2) => true
+    | _ => false
+    }
 
   let isWalletElement = paymentType->Utils.checkIsWalletElement
 
