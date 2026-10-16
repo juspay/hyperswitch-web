@@ -12,20 +12,28 @@ let make = () => {
         if dict->getDictFromDict("options")->getOptionString("branding")->Option.isSome {
           setBranding(_ => dict->getDictFromDict("options")->getString("branding", "auto"))
         }
+        let rules = dict->getDictFromDict("appearance")->getDictFromDict("rules")
+        if rules->Dict.toArray->Array.length > 0 {
+          generateStyleSheet("", rules, "loaderstyle")
+        }
       }
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
   })
 
-  let styles =
-    branding === "auto"
-      ? "backdrop-blur-md bg-black/80"
-      : "backdrop-contrast-125 backdrop-blur-2xl opacity-70 bg-black/80"
-
-  <div className={`h-screen w-screen flex m-auto items-center ${styles}`}>
-    <div className={`flex flex-col justify-center m-auto visible`}>
-      <Loader branding />
-    </div>
-  </div>
+  <>
+    <RenderIf condition={branding === "auto"}>
+      <div className="h-screen w-screen flex m-auto items-center backdrop-blur-md bg-black/80">
+        <div className={`flex flex-col justify-center m-auto visible`}>
+          <Loader branding />
+        </div>
+      </div>
+    </RenderIf>
+    <RenderIf condition={branding !== "auto"}>
+      <GenericLoader
+        className="Loader--fullscreen h-screen w-screen backdrop-contrast-125 backdrop-blur-2xl opacity-70 bg-black/80"
+      />
+    </RenderIf>
+  </>
 }

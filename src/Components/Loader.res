@@ -19,9 +19,6 @@ let make = (~branding="auto", ~showText=true) => {
         })
         ->React.array}
       </RenderIf>
-      <RenderIf condition={branding === "never"}>
-        <GenericLoader />
-      </RenderIf>
     </div>
     <RenderIf condition={showText && branding === "auto"}>
       <div className="flex flex-col gap-5">
