@@ -51,7 +51,7 @@ let make = () => {
       }
     }
   }, [email])
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.email == Auto}>
     <PaymentField

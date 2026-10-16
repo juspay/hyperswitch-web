@@ -57,8 +57,9 @@ const cardThemeSrc = fs.readFileSync(
 );
 const MODULE_BY_ENUM: Record<string, string> = Object.fromEntries(
   [
+    // Match lazy imports and the eagerly bundled English locale.
     ...cardThemeSrc.matchAll(
-      /\|\s*([A-Z_]+)\s*=>\s*import\((\w+)\.localeStrings\)/g,
+      /\|\s*([A-Z_]+)\s*=>\s*(?:import|Promise\.resolve)\((\w+)\.localeStrings\)/g,
     ),
   ].map((m) => [m[1], m[2]]),
 );

@@ -10,7 +10,7 @@ let make = (~fieldConfig: fieldConfig, ~isLabelHidden=false) => {
   let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
   let countryAndCodeList = React.useMemo0(() =>
-    phoneNumberJson
+    PhoneNumberUtils.phoneNumberJson
     ->getDictFromJson
     ->getArray("countries")
   )
@@ -33,25 +33,37 @@ let make = (~fieldConfig: fieldConfig, ~isLabelHidden=false) => {
 
   let firstOptionValue =
     phoneNumberCodeOptions->Array.get(0)->Option.map(o => o.value)->Option.getOr("")
-  let defaultDropdownValue =
+  let shopperCountryCode = defaultCountryCode()
+  let resolvedDropdownValue =
     countryAndCodeList
-    ->Array.find(c => c->getDictFromJson->getString("country_code", "") === defaultCountryCode)
+    ->Array.find(c => c->getDictFromJson->getString("country_code", "") === shopperCountryCode)
     ->Option.map(c => {
       let countryDict = c->getDictFromJson
       let flag = countryDict->getString("country_flag", "")
       let code = countryDict->getString("phone_number_code", "")
       `${flag}#${code}`
     })
-    ->Option.getOr(firstOptionValue)
 
-  let defaultCode = defaultDropdownValue->getPhoneCode
+  let initialDropdownValue = React.useRef(resolvedDropdownValue->Option.getOr(firstOptionValue))
+  let defaultCode = initialDropdownValue.current->getPhoneCode
   let field = ReactFinalForm.useField(
     fieldConfig.confirmRequestWritePath,
     ~config={validate, initialValue: Some(defaultCode)},
   )
 
-  let (valueDropDown, setValueDropDown) = React.useState(_ => defaultDropdownValue)
+  let (valueDropDown, setValueDropDown) = React.useState(_ => initialDropdownValue.current)
   let (displayValue, setDisplayValue) = React.useState(_ => "")
+
+  let hasShopperPickedCode = React.useRef(false)
+
+  React.useEffect(() => {
+    switch resolvedDropdownValue {
+    | Some(resolved) if !hasShopperPickedCode.current =>
+      setValueDropDown(prev => prev === resolved ? prev : resolved)
+    | _ => ()
+    }
+    None
+  }, [resolvedDropdownValue])
 
   React.useEffect(() => {
     let found =
@@ -72,7 +84,10 @@ let make = (~fieldConfig: fieldConfig, ~isLabelHidden=false) => {
     fieldName={label}
     isLabelHidden
     value=valueDropDown
-    setValue={setter => setValueDropDown(prev => setter(prev))}
+    setValue={setter => {
+      hasShopperPickedCode.current = true
+      setValueDropDown(prev => setter(prev))
+    }}
     disabled=false
     options=phoneNumberCodeOptions
     width="w-full min-w-24"

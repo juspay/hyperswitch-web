@@ -79,7 +79,7 @@ let make = (
   let (isEligibilityPending, setIsEligibilityPending) = React.useState(_ => false)
   let eligibilityControllerRef = React.useRef(None)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Card)
   let savedCardlength = savedMethods->Array.length
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
@@ -679,7 +679,7 @@ let make = (
     paymentTokenVal,
     customerId,
   ))
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
     !isGuestCustomer &&

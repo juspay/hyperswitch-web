@@ -15,7 +15,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let status = CommonHooks.useScript("https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js")
   let isWallet = walletOptions->Array.includes("samsung_pay")
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Samsungpay)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Samsungpay)
   let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 

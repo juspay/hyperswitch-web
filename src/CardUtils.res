@@ -772,10 +772,16 @@ let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
   switch customerMethod.paymentMethod {
   | "wallet" => getWalletBrandIcon(customerMethod)
   | "bank_redirect" =>
-    <Icon
-      size=Utils.brandIconSize
-      name={BankLogoResolver.resolveIconName(~bankName=customerMethod.bankRedirect.bankName)}
-    />
+    <React.Suspense
+      fallback={<div
+        className="animate-pulse rounded bg-slate-200"
+        style={
+          width: `${Utils.brandIconSize->Int.toString}px`,
+          height: `${Utils.brandIconSize->Int.toString}px`,
+        }
+      />}>
+      <BankLogoIconLazy bankName=customerMethod.bankRedirect.bankName />
+    </React.Suspense>
   | _ =>
     getCardBrandIcon(
       switch customerMethod.card.scheme {

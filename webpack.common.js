@@ -153,7 +153,7 @@ const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
   "SDK_TAG_VERSION",
-  require("./package.json").version
+  require("./package.json").version,
 );
 
 /*
@@ -176,17 +176,26 @@ const repoPublicPath =
         isEUStack && sdkEnv === "prod" ? "/sdk" : ""
       }/web/${repoVersion}/${sdkVersionValue}`;
 
+const sdkUrls = {
+  prod: "https://checkout.hyperswitch.io",
+  sandbox: "https://beta.hyperswitch.io",
+  integ: "https://dev.hyperswitch.io",
+  local: "http://localhost:9050",
+};
+
+if (!Object.prototype.hasOwnProperty.call(sdkUrls, sdkEnv) && !envSdkUrl) {
+  throw new Error(
+    `Unsupported sdkEnv "${sdkEnv}". Expected one of ${Object.keys(
+      sdkUrls,
+    ).join(", ")}, or set ENV_SDK_URL to build for another host.`,
+  );
+}
+
 // Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
   if (isEUStack && env === "prod") return "https://eu.hyperswitch.io";
-  const urls = {
-    prod: "https://checkout.hyperswitch.io",
-    sandbox: "https://beta.hyperswitch.io",
-    integ: "https://dev.hyperswitch.io",
-    local: "http://localhost:9050",
-  };
-  return urls[env] || urls.local;
+  return sdkUrls[env];
 };
 
 // Determine SDK URL
@@ -293,14 +302,14 @@ module.exports = (publicPath = "auto") => {
             "Content-Security-Policy": {
               "http-equiv": "Content-Security-Policy",
               content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
+                " ",
               )};
                 style-src ${authorizedStyleSources.join(" ")};
                 frame-src ${authorizedFrameSources.join(" ")};
                 img-src ${authorizedImageSources.join(" ")};
                 font-src ${authorizedFontSources.join(" ")};
                 connect-src ${authorizedConnectSources.join(
-                  " "
+                  " ",
                 )} ${logEndpoint} ${backendEndPoint};
       `,
             },
@@ -318,14 +327,14 @@ module.exports = (publicPath = "auto") => {
             "Content-Security-Policy": {
               "http-equiv": "Content-Security-Policy",
               content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
+                " ",
               )};
           style-src ${authorizedStyleSources.join(" ")};
           frame-src ${authorizedFrameSources.join(" ")};
           img-src ${authorizedImageSources.join(" ")};
           font-src ${authorizedFontSources.join(" ")};
           connect-src ${authorizedConnectSources.join(
-            " "
+            " ",
           )} ${logEndpoint} ${backendEndPoint};
           `,
             },
@@ -348,7 +357,7 @@ module.exports = (publicPath = "auto") => {
         analyzerMode: "static",
         reportFilename: "bundle-report.html",
         openAnalyzer: false,
-      })
+      }),
     );
   }
 
@@ -368,7 +377,7 @@ module.exports = (publicPath = "auto") => {
             paths: ["dist"],
           },
         },
-      })
+      }),
     );
   }
 
@@ -382,7 +391,7 @@ module.exports = (publicPath = "auto") => {
             __dirname,
             "dist",
             isEUStack ? `${sdkEnv}_eu` : sdkEnv,
-            sdkVersionValue
+            sdkVersionValue,
           ),
       crossOriginLoading: "anonymous",
       clean: true,
@@ -402,7 +411,6 @@ module.exports = (publicPath = "auto") => {
                 },
                 mangle: {
                   keep_fnames: true, // Prevent function names from being mangled
-                  keep_classnames: true, // Prevent class names from being mangled
                 },
               },
             }),

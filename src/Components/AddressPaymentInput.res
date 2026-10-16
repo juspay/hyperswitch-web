@@ -145,7 +145,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
       }
     }
   }, (line1, line2, country, state, city, postalCode))
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   let hasDefaulltValues =
     line2.value !== "" || city.value !== "" || postalCode.value !== "" || state.value !== ""

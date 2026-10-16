@@ -11,7 +11,7 @@ let make = () => {
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Jotai.useAtomValue(areRequiredFieldsEmpty)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), BankTransfer)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
@@ -48,7 +48,7 @@ let make = () => {
     requiredFieldsBody,
     sdkAuthorization,
   ))
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"
   let paymentMethod = "bank_transfer"

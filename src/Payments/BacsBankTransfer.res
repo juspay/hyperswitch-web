@@ -7,7 +7,7 @@ let default = () => {
   let loggerState = Jotai.useAtomValue(loggerAtom)
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), BankTransfer)
   let email = Jotai.useAtomValue(userEmailAddress)
   let fullName = Jotai.useAtomValue(userFullName)
   let setComplete = Jotai.useSetAtom(fieldsComplete)
@@ -51,7 +51,7 @@ let default = () => {
       }
     }
   }, (isManualRetryEnabled, email, fullName, sdkAuthorization, requiredFieldsBody))
-  useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <RenderIf condition={layoutClass.\"type" === Accordion}>

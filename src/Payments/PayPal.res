@@ -62,7 +62,7 @@ let make = (~walletOptions) => {
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Paypal)
   UtilityHooks.useHandlePostMessages(
     ~complete=paypalClicked,
     ~empty=!paypalClicked,
@@ -183,7 +183,7 @@ let make = (~walletOptions) => {
   }
 
   let submitCallback = useSubmitCallback(~isWallet)
-  Utils.useSubmitPaymentData(submitCallback)
+  UtilsHooks.useSubmitPaymentData(submitCallback)
 
   if isWallet {
     <button

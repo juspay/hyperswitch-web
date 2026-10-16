@@ -68,7 +68,7 @@ let make = (
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let intent = PaymentHooks.usePaymentIntent(Some(loggerState), Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
@@ -1026,7 +1026,7 @@ let make = (
     fullName,
     clientSecret,
   ))
-  useSubmitPaymentDataFromParent(submitCallback)
+  UtilsHooks.useSubmitPaymentDataFromParent(submitCallback)
 
   let accordionMarginClass = layoutClass.\"type" === Accordion ? "mt-4" : ""
   let showNickname = (!hideCardNicknameField && isCustomerAcceptanceRequired) || isPMMFlow
