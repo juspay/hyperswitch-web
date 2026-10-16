@@ -85,15 +85,6 @@ let getCustomerSavedPaymentMethods = (
       )
       ->Option.isSome
 
-    let canMakePayments = try {
-      switch sessionForApplePay->Nullable.toOption {
-      | Some(session) => session.canMakePayments()
-      | _ => false
-      }
-    } catch {
-    | _ => false
-    }
-
     let customerDefaultPaymentMethodRef = ref(
       customerPaymentMethodsRef.contents
       ->Array.filter(customerPaymentMethod => {
@@ -500,7 +491,7 @@ let getCustomerSavedPaymentMethods = (
 
     let isGooglePayUsable = isGooglePayPresent && gPayClientOpt->Option.isSome
 
-    if (isApplePayPresent && canMakePayments) || isGooglePayUsable {
+    if isApplePayPresent || isGooglePayUsable {
       PaymentHelpers.fetchSessions(
         ~clientSecret=clientSecretRef.contents,
         ~publishableKey,
@@ -603,7 +594,7 @@ let getCustomerSavedPaymentMethods = (
         )
         ->ignore
 
-        switch applePayToken {
+        let applePayAvailabilityPromise = switch applePayToken {
         | ApplePayTokenOptional(optToken) => {
             let paymentRequest = ApplePayTypes.getPaymentRequestFromSession(
               ~sessionObj=optToken,
@@ -613,18 +604,52 @@ let getCustomerSavedPaymentMethods = (
                 paymentRequestData: paymentRequest,
                 sessionTokenData: optToken,
               }
+
+            let merchantIdentifier =
+              paymentRequest->getDictFromJson->getString("merchantIdentifier", "")
+
+            ApplePayHelpers.getPaymentCredentialStatus(~merchantIdentifier)
+            ->thenResolve(
+              status =>
+                if !(status->ApplePayTypes.shouldShowApplePay) {
+                  logger.setLogInfo(
+                    ~value=`CANNOT MAKE PAYMENT USING APPLE PAY: ${(status :> string)}`,
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                    ~logType=ERROR,
+                  )
+                  updateCustomerPaymentMethodsRef(~isFilterApplePay=true)
+                },
+            )
+            ->catch(
+              err => {
+                logger.setLogInfo(
+                  ~value=`CANNOT MAKE PAYMENT USING APPLE PAY: ${err
+                    ->Identity.anyTypeToJson
+                    ->JSON.stringify}`,
+                  ~eventName=APPLE_PAY_FLOW,
+                  ~paymentMethod="APPLE_PAY",
+                  ~logType=ERROR,
+                )
+                updateCustomerPaymentMethodsRef(~isFilterApplePay=true)
+                resolve()
+              },
+            )
           }
-        | _ => updateCustomerPaymentMethodsRef(~isFilterApplePay=true)
+        | _ =>
+          updateCustomerPaymentMethodsRef(~isFilterApplePay=true)
+          resolve()
         }
 
-        {
-          getCustomerDefaultSavedPaymentMethodData,
-          getCustomerLastUsedPaymentMethodData,
-          confirmWithCustomerDefaultPaymentMethod,
-          confirmWithLastUsedPaymentMethod,
-        }
-        ->Identity.anyTypeToJson
-        ->resolve
+        applePayAvailabilityPromise->thenResolve(
+          _ =>
+            {
+              getCustomerDefaultSavedPaymentMethodData,
+              getCustomerLastUsedPaymentMethodData,
+              confirmWithCustomerDefaultPaymentMethod,
+              confirmWithLastUsedPaymentMethod,
+            }->Identity.anyTypeToJson,
+        )
       })
       ->catch(_ => {
         updateCustomerPaymentMethodsRef(~isFilterApplePay=true, ~isFilterGooglePay=true)

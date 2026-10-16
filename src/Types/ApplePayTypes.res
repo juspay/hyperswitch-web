@@ -40,29 +40,49 @@ type applePayTokenizeResponse = {nonce: string}
 
 type shippingAddressChangeEvent = {shippingContact: JSON.t}
 type orderDetails = {newTotal: lineItem, newLineItems: array<lineItem>}
-type innerSession
+type applePayCapabilitiesResponse = {paymentCredentialStatus?: string}
 type session = {
   begin: unit => unit,
   abort: unit => unit,
   mutable oncancel: unit => unit,
   canMakePayments: unit => bool,
+  applePayCapabilities: Nullable.t<string => promise<applePayCapabilitiesResponse>>,
   mutable onvalidatemerchant: event => unit,
   completeMerchantValidation: JSON.t => unit,
   mutable onpaymentauthorized: event => unit,
   mutable onshippingcontactselected: shippingAddressChangeEvent => promise<unit>,
   completeShippingContactSelection: orderDetails => unit,
   completePayment: JSON.t => unit,
-  \"STATUS_SUCCESS": string,
-  \"STATUS_FAILURE": string,
+  \"STATUS_SUCCESS": int,
+  \"STATUS_FAILURE": int,
 }
-type applePaySession
-type window = {\"ApplePaySession": applePaySession}
 
-@val external window: window = "window"
-
+@send
+external callApplePayCapabilities: (session, string) => promise<applePayCapabilitiesResponse> =
+  "applePayCapabilities"
 @scope("window") @val external sessionForApplePay: Nullable.t<session> = "ApplePaySession"
 
 @new external applePaySession: (int, JSON.t) => session = "ApplePaySession"
+
+@scope(("window", "ApplePaySession")) @val
+external statusSuccess: Nullable.t<int> = "STATUS_SUCCESS"
+let getStatusSuccess = () => statusSuccess->Nullable.toOption->Option.getOr(0)
+
+type paymentCredentialStatus =
+  | @as("paymentCredentialsAvailable") PaymentCredentialsAvailable
+  | @as("paymentCredentialsUnavailable") PaymentCredentialsUnavailable
+  | @as("paymentCredentialStatusUnknown") PaymentCredentialStatusUnknown
+  | @as("applePayUnsupported") ApplePayUnsupported
+
+let paymentCredentialStatusFromString = str =>
+  switch str {
+  | "paymentCredentialsAvailable" => PaymentCredentialsAvailable
+  | "paymentCredentialsUnavailable" => PaymentCredentialsUnavailable
+  | "applePayUnsupported" => ApplePayUnsupported
+  | _ => PaymentCredentialStatusUnknown
+  }
+
+let shouldShowApplePay = status => status !== ApplePayUnsupported
 
 @deriving(abstract)
 type total = {

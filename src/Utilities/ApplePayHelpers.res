@@ -64,6 +64,145 @@ let getApplePayFromResponse = (
   bodyDict->mergeAndFlattenToTuples(requiredFieldsBody)
 }
 
+let applePaySdkUrl = "https://applepay.cdn-apple.com/jsapi/v1.3.8/apple-pay-sdk.js"
+let applePaySdkIntegrity = "sha384-u/9mOkmShCO0v+dqCAZFhiutJuORfzvuyM5i+676iy7mLSWS6rlllHrIt15f/mqH"
+let applePayButtonTag = "apple-pay-button"
+let applePaySdkLoadTimeout = 3000
+let applePayCapabilitiesTimeout = 3000
+let merchantIdentifierTimeout = 1500
+
+let getOrCreateApplePaySdkScript = () =>
+  switch Window.querySelector(`script[src="${applePaySdkUrl}"]`)->Nullable.toOption {
+  | Some(script) => script
+  | None =>
+    let script = Window.createElement("script")
+    script->Window.elementSrc(applePaySdkUrl)
+    script->Window.setScriptAsync(true)
+    script->Window.setCrossOrigin("anonymous")
+    script->Window.setIntegrity(applePaySdkIntegrity)
+    Window.head->Window.appendChildElement(script)
+    script
+  }
+
+let supportsApplePayCapabilities = (session: session) =>
+  session.applePayCapabilities->Nullable.toOption->Option.isSome
+
+let isNativeApplePayButtonSupported = () =>
+  try {
+    Window.cssSupports("-webkit-appearance", "-apple-pay-button")
+  } catch {
+  | _ => false
+  }
+
+let isMobileThirdPartyBrowser = () =>
+  Window.userAgentData->Nullable.toOption->Option.mapOr(false, data => data.mobile)
+
+let keepMerchantBeforeUnload = merchantBeforeUnload =>
+  switch (merchantBeforeUnload->Nullable.toOption, Window.onBeforeUnload->Nullable.toOption) {
+  | (Some(merchantHandler), Some(sdkHandler)) if merchantHandler !== sdkHandler =>
+    Window.window->Window.setOnBeforeUnload(event => {
+      sdkHandler(event)->ignore
+      merchantHandler(event)
+    })
+  | _ => ()
+  }
+
+let applePaySdkLoadPromiseRef: ref<option<promise<unit>>> = ref(None)
+
+let loadApplePaySdk = () =>
+  switch applePaySdkLoadPromiseRef.contents {
+  | Some(loadPromise) => loadPromise
+  | None =>
+    let loadPromise = Promise.make((resolve, _) =>
+      if sessionForApplePay->Nullable.toOption->Option.isSome || isMobileThirdPartyBrowser() {
+        resolve()
+      } else {
+        let merchantBeforeUnload = Window.onBeforeUnload
+        let script = getOrCreateApplePaySdkScript()
+        script->Window.addScriptEventListener("load", () => {
+          keepMerchantBeforeUnload(merchantBeforeUnload)
+          resolve()
+        })
+        script->Window.addScriptEventListener("error", resolve)
+        setTimeout(resolve, applePaySdkLoadTimeout)->ignore
+      }
+    )
+    applePaySdkLoadPromiseRef := Some(loadPromise)
+    loadPromise
+  }
+
+let loadApplePayButton = () =>
+  switch Window.customElements->Nullable.toOption {
+  | None => Promise.resolve(false)
+  | Some(registry) =>
+    loadApplePaySdk()->Promise.then(_ =>
+      registry->Window.whenDefined(applePayButtonTag)->Promise.thenResolve(_ => true)
+    )
+  }
+
+let getStatusFromCanMakePayments = (session: session) =>
+  try {
+    session.canMakePayments() ? PaymentCredentialStatusUnknown : ApplePayUnsupported
+  } catch {
+  | err =>
+    Console.warn2("[ApplePay] canMakePayments failed:", err)
+    ApplePayUnsupported
+  }
+
+let getPaymentCredentialStatus = (~merchantIdentifier) => {
+  open Promise
+  loadApplePaySdk()
+  ->then(_ =>
+    switch sessionForApplePay->Nullable.toOption {
+    | None => resolve(ApplePayUnsupported)
+    | Some(session) if merchantIdentifier === "" || !supportsApplePayCapabilities(session) =>
+      resolve(getStatusFromCanMakePayments(session))
+    | Some(session) =>
+      [
+        session->callApplePayCapabilities(merchantIdentifier)->thenResolve(response =>
+          response.paymentCredentialStatus->Option.mapOr(
+            getStatusFromCanMakePayments(session),
+            paymentCredentialStatusFromString,
+          )
+        ),
+        Promise.make((resolve, _) =>
+          setTimeout(
+            () => resolve(getStatusFromCanMakePayments(session)),
+            applePayCapabilitiesTimeout,
+          )->ignore
+        ),
+      ]
+      ->Promise.race
+      ->catch(err => {
+        Console.warn2("[ApplePay] applePayCapabilities failed:", err)
+        resolve(getStatusFromCanMakePayments(session))
+      })
+    }
+  )
+  ->catch(_ => resolve(ApplePayUnsupported))
+}
+
+let getMerchantIdentifierFromSessions = sessionsPromise =>
+  [
+    sessionsPromise->Promise.thenResolve(sessionsJson =>
+      sessionsJson
+      ->getDictFromJson
+      ->getArray("session_token")
+      ->Array.find(token => token->getDictFromJson->getString("wallet_name", "") === "apple_pay")
+      ->Option.mapOr("", token =>
+        token
+        ->getDictFromJson
+        ->getDictFromDict("payment_request_data")
+        ->getString("merchant_identifier", "")
+      )
+    ),
+    Promise.make((resolve, _) => {
+      let _ = setTimeout(() => resolve(""), merchantIdentifierTimeout)
+    }),
+  ]
+  ->Promise.race
+  ->Promise.catch(_ => Promise.resolve(""))
+
 let startApplePaySession = (
   ~paymentRequest,
   ~applePaySessionRef,
@@ -206,7 +345,7 @@ let startApplePaySession = (
   }
 
   ssn.onpaymentauthorized = event => {
-    ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson)
+    ssn.completePayment({"status": getStatusSuccess()}->Identity.anyTypeToJson)
     applePaySessionRef := Nullable.null
     let value = "Payment Data Filled: New Payment Method"
     logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="APPLE_PAY")
@@ -478,11 +617,11 @@ let handleApplePayBraintreePaymentSession = (
           | Some(ssn) =>
             switch err->Nullable.toOption {
             | None => {
-                sessions.completePayment(ssn.\"STATUS_SUCCESS"->JSON.Encode.string)
+                sessions.completePayment(ssn.\"STATUS_SUCCESS"->JSON.Encode.int)
                 onSuccess(payload.nonce)
               }
             | Some(_) => {
-                sessions.completePayment(ssn.\"STATUS_FAILURE"->JSON.Encode.string)
+                sessions.completePayment(ssn.\"STATUS_FAILURE"->JSON.Encode.int)
                 onError("ApplePay Tokenization Failed"->JSON.Encode.string)
               }
             }
