@@ -64,16 +64,17 @@ let useOutsideClick = (
         }
       }
 
-      setTimeout(() => {
+      let timerId = setTimeout(() => {
         events->Array.forEach(
           event => {
             Window.addEventListener(event, handleClick)
           },
         )
-      }, 50)->ignore
+      }, 50)
 
       Some(
         () => {
+          clearTimeout(timerId)
           events->Array.forEach(event => {
             Window.removeEventListener(event, handleClick)
           })
