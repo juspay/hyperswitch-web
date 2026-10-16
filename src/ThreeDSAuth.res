@@ -6,18 +6,21 @@ let make = () => {
   let (loader, setloader) = React.useState(_ => true)
 
   let threeDsAuthoriseUrl = React.useRef("")
+  let hasAuthenticationFailedRef = React.useRef(false)
   let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
   let logger = HyperLogger.make(~source=Elements(Payment))
 
   let handleFrictionLess = () => {
-    let ele = Window.querySelector("#threeDsAuthDiv")
-    switch ele->Nullable.toOption {
-    | Some(elem) => {
-        let form1 = elem->makeForm(threeDsAuthoriseUrl.current, "3dsFrictionLess")
-        form1.submit()
+    if !hasAuthenticationFailedRef.current {
+      let ele = Window.querySelector("#threeDsAuthDiv")
+      switch ele->Nullable.toOption {
+      | Some(elem) => {
+          let form1 = elem->makeForm(threeDsAuthoriseUrl.current, "3dsFrictionLess")
+          form1.submit()
+        }
+      | None => ()
       }
-    | None => ()
     }
   }
 
@@ -63,7 +66,11 @@ let make = () => {
         )
         ->then(json => {
           let dict = json->getDictFromJson
-          if dict->Dict.get("error")->Option.isSome {
+          if json === JSON.Encode.null {
+            hasAuthenticationFailedRef.current = true
+            JSON.Encode.null->resolve
+          } else if dict->Dict.get("error")->Option.isSome {
+            hasAuthenticationFailedRef.current = true
             let errorObj = PaymentError.itemToObjMapper(dict)
             messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
             postFailedSubmitResponse(
@@ -106,6 +113,7 @@ let make = () => {
           }
         })
         ->catch(err => {
+          hasAuthenticationFailedRef.current = true
           let exceptionMessage = err->formatException
           LoggerUtils.handleLogging(
             ~optLogger=Some(logger),
