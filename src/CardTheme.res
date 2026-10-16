@@ -39,6 +39,16 @@ let getColorScheme = (str): colorScheme => {
   }
 }
 
+let getColorSchemeFromAppearance = appearance =>
+  appearance->getDictFromJson->getString("colorScheme", "light")->getColorScheme
+
+let getColorSchemeValue = (colorScheme: colorScheme) =>
+  switch colorScheme {
+  | Auto => "light dark"
+  | Dark => "dark"
+  | Light => "light"
+  }
+
 let setColorSchemeMeta = (colorScheme: colorScheme) => {
   open Window
   let meta = switch querySelector(`meta[name="color-scheme"]`)->Nullable.toOption {
@@ -49,12 +59,7 @@ let setColorSchemeMeta = (colorScheme: colorScheme) => {
     head->appendChildElement(el)
     el
   }
-  let colorSchemeVal = switch colorScheme {
-  | Auto => "light dark"
-  | Dark => "dark"
-  | Light => "light"
-  }
-  meta->setAttribute("content", colorSchemeVal)
+  meta->setAttribute("content", colorScheme->getColorSchemeValue)
 }
 
 let getShowLoader = str => {

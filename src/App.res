@@ -75,12 +75,7 @@ let make = () => {
 
       switch appearanceJson {
       | Some(appearanceJson) =>
-        let colorScheme =
-          appearanceJson
-          ->Utils.getDictFromJson
-          ->Utils.getString("colorScheme", "light")
-          ->CardTheme.getColorScheme
-        CardTheme.setColorSchemeMeta(colorScheme)
+        appearanceJson->CardTheme.getColorSchemeFromAppearance->CardTheme.setColorSchemeMeta
       | None => ()
       }
     }

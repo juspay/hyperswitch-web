@@ -510,7 +510,11 @@ let make = (
                       handleFullScreenCallback,
                       "onFullScreenCallback",
                     )
-                    ele->makeIframe(iframeURL)->ignore
+                    let colorScheme =
+                      appearance
+                      ->CardTheme.getColorSchemeFromAppearance
+                      ->CardTheme.getColorSchemeValue
+                    ele->makeIframe(iframeURL, ~colorScheme)->ignore
                   }
                 }
               : {
