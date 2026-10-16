@@ -23,8 +23,6 @@ external addElementEventListener: (Dom.element, string, 'ev => unit, eventListen
 @send
 external elementQuerySelector: (Dom.element, string) => Nullable.t<Dom.element> = "querySelector"
 @send external setStyleProperty: (Window.style, string, string) => unit = "setProperty"
-@send
-external setStylePropertyImportant: (Window.style, string, string, string) => unit = "setProperty"
 
 type mutationObserver
 type mutationObserverInit = {childList: bool, subtree: bool}
@@ -719,9 +717,9 @@ let make = (
               switch container->elementQuerySelector("iframe")->Nullable.toOption {
               | Some(iframe) =>
                 let iframeStyle = iframe->Window.style
-                iframeStyle->setStylePropertyImportant("width", "100%", "important")
-                iframeStyle->setStylePropertyImportant("height", "100%", "important")
-                iframeStyle->setStylePropertyImportant("display", "block", "important")
+                iframeStyle->Window.setStylePropertyImportant("width", "100%", "important")
+                iframeStyle->Window.setStylePropertyImportant("height", "100%", "important")
+                iframeStyle->Window.setStylePropertyImportant("display", "block", "important")
                 true
               | None => false
               }
