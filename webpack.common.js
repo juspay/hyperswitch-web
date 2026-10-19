@@ -109,7 +109,6 @@ const authorizedConnectSources = [
   "https://integ-api.hyperswitch.io",
   "https://app.hyperswitch.io",
   "https://sandbox.hyperswitch.io",
-  "https://api.hyperswitch.io",
   "https://www.google.com/pay",
   "https://pay.google.com",
   "https://google.com/pay",

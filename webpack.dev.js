@@ -6,7 +6,7 @@ const common = require("./webpack.common.js");
 const sdkEnv = process.env.sdkEnv ?? "local";
 
 const endpointMap = {
-  prod: "https://api.hyperswitch.io/payments",
+  prod: "https://live.hyperswitch.io/payments",
   sandbox: "https://sandbox.hyperswitch.io/payments",
   integ: "https://integ.hyperswitch.io/api/payments",
   local: "https://sandbox.hyperswitch.io/payments", // Default or local environment endpoint
