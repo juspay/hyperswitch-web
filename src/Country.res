@@ -1335,7 +1335,7 @@ let country = [
   },
   {
     isoAlpha2: "US",
-    countryName: "United States",
+    countryName: "United States of America",
     timeZones: [
       "America/Adak",
       "America/Anchorage",
@@ -1483,4 +1483,47 @@ let getCountry = (paymentMethodName, countryList: array<timezoneType>) => {
   | "sofort" => sofortCountries
   | _ => countryList
   }
+}
+
+let getCountryNameFromAlpha2Robust = (alpha2Code: string) => {
+  let normalizedCode = alpha2Code->String.toUpperCase
+  country
+  ->Array.find(item => item.isoAlpha2->String.toUpperCase === normalizedCode)
+  ->Option.map(item => item.countryName)
+  ->Option.getOr(alpha2Code) // fallback to original code if not found
+}
+
+let getCountryNameFromAlpha2 = (alpha2Code: string) => {
+  // Use robust version by default for better error handling
+  getCountryNameFromAlpha2Robust(alpha2Code)
+}
+
+let getAlpha2FromCountryNameRobust = (countryName: string) => {
+  let normalizedName = countryName->String.trim
+  // First try exact match
+  switch country->Array.find(item => item.countryName === normalizedName) {
+  | Some(item) => item.isoAlpha2
+  | None =>
+    // Fallback to case-insensitive match
+    switch country->Array.find(item =>
+      item.countryName->String.toUpperCase === normalizedName->String.toUpperCase
+    ) {
+    | Some(item) => item.isoAlpha2
+    | None => countryName // final fallback to original name
+    }
+  }
+}
+
+let getAlpha2FromCountryName = (countryName: string) => {
+  // Use robust version by default for better error handling
+  getAlpha2FromCountryNameRobust(countryName)
+}
+
+// Utility function to get all countries with both alpha2 codes and human-readable names
+let getAllCountriesWithMapping = () => {
+  country->Array.map(item => {
+    isoAlpha2: item.isoAlpha2,
+    countryName: item.countryName,
+    timeZones: item.timeZones,
+  })
 }
