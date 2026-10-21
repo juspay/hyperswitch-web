@@ -410,19 +410,15 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
               onClick={_ => onApplePayButtonClicked()}
             />
           } else {
-            ReactDOM.createDOMElementVariadic(
-              "apple-pay-button",
-              ~props={
-                "buttonstyle": buttonColor,
-                "type": buttonType,
-                "style": {
-                  "opacity": updateSession || applePayClicked ? "0.5" : "1.0",
-                  "pointerEvents": updateSession || applePayClicked ? "none" : "auto",
-                },
-                "ref": applePayButtonRef,
-              }->Obj.magic,
-              [],
-            )
+            ApplePayTypes.makeApplePayButton({
+              buttonstyle: buttonColor,
+              type_: buttonType,
+              style: {
+                opacity: updateSession || applePayClicked ? "0.5" : "1.0",
+                pointerEvents: updateSession || applePayClicked ? "none" : "auto",
+              },
+              ref: applePayButtonRef,
+            })
           }}
         </div>
       </RenderIf>

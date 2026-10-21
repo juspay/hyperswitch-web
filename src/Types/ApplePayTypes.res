@@ -68,6 +68,17 @@ external callApplePayCapabilities: (session, string) => promise<applePayCapabili
 external statusSuccess: Nullable.t<int> = "STATUS_SUCCESS"
 let getStatusSuccess = () => statusSuccess->Nullable.toOption->Option.getOr(0)
 
+type applePayButtonProps = {
+  buttonstyle: string,
+  @as("type") type_: string,
+  style: JsxDOM.style,
+  ref: React.ref<Nullable.t<Window.element>>,
+}
+
+@module("react")
+external makeApplePayButton: (@as("apple-pay-button") _, applePayButtonProps) => React.element =
+  "createElement"
+
 type paymentCredentialStatus =
   | PaymentCredentialsAvailable
   | PaymentCredentialsUnavailable
