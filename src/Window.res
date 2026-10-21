@@ -99,6 +99,7 @@ external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
 @set external innerHTML: (Dom.element, string) => unit = "innerHTML"
 @set external className: (Dom.element, string) => unit = "className"
 @set external id: (Dom.element, string) => unit = "id"
+@set external elementOnload: (Dom.element, unit => unit) => unit = "onload"
 @send
 external addLoadListener: (Dom.element, @as("load") _, unit => unit) => unit = "addEventListener"
 @send
