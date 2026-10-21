@@ -3,7 +3,7 @@ open JotaiAtomTypes
 open Utils
 
 let formatSortCode = sortcode => {
-  let formatted = sortcode->String.replaceRegExp(%re("/\D+/g"), "")
+  let formatted = sortcode->String.replaceRegExp(/\D+/g, "")
   let firstPart = formatted->String.slice(~start=0, ~end=2)
   let secondPart = formatted->String.slice(~start=2, ~end=4)
   let thirdpart = formatted->String.slice(~start=4, ~end=6)
@@ -18,17 +18,16 @@ let formatSortCode = sortcode => {
     formatted
   }
 }
-let cleanSortCode = str => str->String.replaceRegExp(%re("/-/g"), "")
+let cleanSortCode = str => str->String.replaceRegExp(/-/g, "")
 
 @react.component
 let make = () => {
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
   let {displaySavedPaymentMethods, layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHelpers.usePaymentIntent(BankDebits)
   let email = Jotai.useAtomValue(userEmailAddress)
   let line1 = Jotai.useAtomValue(userAddressline1)
   let line2 = Jotai.useAtomValue(userAddressline2)
@@ -78,7 +77,12 @@ let make = () => {
     country.value == "" ||
     state.value == ""
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bacs_bank_debit")
+  UtilityHooks.useHandlePostMessages(
+    ~complete,
+    ~empty,
+    ~paymentType="bacs_bank_debit",
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(~method="bank_debit", ~methodType="bacs"),
+  )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
   React.useEffect(() => {
@@ -86,6 +90,8 @@ let make = () => {
     None
   }, [complete])
 
+  let paymentMethodType = "bacs"
+  let paymentMethod = "bank_debit"
   let submitCallback = (ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
@@ -112,7 +118,16 @@ let make = () => {
         )
         ()
       } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+        let message = "Please enter all fields"
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: "Please enter all fields"}),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethodType,
+          ),
+          ~message,
+        )
+        postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
   }
@@ -133,9 +148,6 @@ let make = () => {
       setSortCodeError(_ => "Your sort code is invalid.")
     }
   }
-
-  let paymentMethodType = "bacs"
-  let paymentMethod = "bank_debit"
 
   <>
     <RenderIf condition={isVerifyPMAuthConnectorConfigured}>
