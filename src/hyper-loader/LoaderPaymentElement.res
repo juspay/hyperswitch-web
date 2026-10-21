@@ -206,6 +206,7 @@ let make = (
         )
       | CompleteDoThis =>
         if eventHandler->Option.isSome {
+          onCompleteDoThisUsed := true
           eventHandlerFunc(
             ev => ev.data.completeDoThis,
             eventHandler,
