@@ -12,10 +12,15 @@ let make = () => {
         if dict->getDictFromDict("options")->getOptionString("branding")->Option.isSome {
           setBranding(_ => dict->getDictFromDict("options")->getString("branding", "auto"))
         }
-        let rules = dict->getDictFromDict("appearance")->getDictFromDict("rules")
-        if rules->Dict.toArray->Array.length > 0 {
-          generateStyleSheet("", rules, "loaderstyle")
-        }
+        let rules = dict->getDictFromDict("appearance")->getJsonObjectFromDict("rules")
+        dict->loadTheme(theme => {
+          generateStyleSheet(
+            "",
+            mergeJsons(theme.defaultRules(theme.default), rules)->getDictFromJson,
+            "loaderstyle",
+          )
+          Promise.resolve()
+        })
       }
     }
     Window.addEventListener("message", handle)
@@ -26,14 +31,12 @@ let make = () => {
     <RenderIf condition={branding === "auto"}>
       <div className="h-screen w-screen flex m-auto items-center backdrop-blur-md bg-black/80">
         <div className={`flex flex-col justify-center m-auto visible`}>
-          <Loader branding />
+          <HyperswitchLoader branding />
         </div>
       </div>
     </RenderIf>
     <RenderIf condition={branding !== "auto"}>
-      <GenericLoader
-        className="Loader--fullscreen h-screen w-screen backdrop-contrast-125 backdrop-blur-2xl opacity-70 bg-black/80"
-      />
+      <Loader className="Loader--fullscreen h-screen w-screen" />
     </RenderIf>
   </>
 }

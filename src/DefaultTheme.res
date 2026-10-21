@@ -228,6 +228,15 @@ let defaultRules = theme =>
       "fontWeight": theme.fontWeightMedium,
       "marginBottom": "1.5rem",
     },
+    ".Loader--fullscreen": {
+      "backgroundColor": "rgba(0, 0, 0, 0.8)",
+      "backdropFilter": "blur(40px) contrast(1.25)",
+      "opacity": "0.7",
+    },
+    ".Loader--overlay": {
+      "backgroundColor": "rgba(255, 255, 255, 0.4)",
+      "backdropFilter": "blur(4px)",
+    },
   }->Identity.anyTypeToJson
 
 let default = default
