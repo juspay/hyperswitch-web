@@ -19,7 +19,7 @@ let sourceName = source =>
   | Fullscreen(overlay) => `FULLSCREEN_${overlay->LoggerUtils.screamingSnakeCase}`
   }
 
-let currentSource = ref("HYPER_LOADER")
+let currentSource = ref("UNKNOWN")
 
 let configure = (~source) => currentSource := source->sourceName
 
@@ -218,6 +218,7 @@ let emit = (
           },
           ~isError=severity === Error,
           ~backfill=!context.scoped,
+          ~pmSessionId=context.pmSessionId,
         )
       }
     })
@@ -288,6 +289,7 @@ let emitPhase = (
   ~exn=?,
   ~paymentMethod=?,
   ~context=?,
+  ~source=?,
   ~message=?,
 ) => {
   let durationMs = startedAt->Option.mapOr(0., startedAt => Date.now() -. startedAt)
@@ -301,7 +303,17 @@ let emitPhase = (
       ~error=?exn->Option.map(LoggerUtils.summarizeUnknown),
     )
   | outcome => step(~outcome, ~durationMs)
-  }->emitStep(~category, ~spec, ~severity, ~data?, ~details?, ~paymentMethod?, ~context?, ~message?)
+  }->emitStep(
+    ~category,
+    ~spec,
+    ~severity,
+    ~data?,
+    ~details?,
+    ~paymentMethod?,
+    ~context?,
+    ~source?,
+    ~message?,
+  )
 }
 
 type tracker = {

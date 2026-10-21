@@ -291,8 +291,10 @@ let performUpdateIntent = async (
   ~shouldWaitForReady,
   ~surface: HyperLoaderLogger.surface=PaymentSession,
 ) => {
+  let source = surface === PaymentSession ? Some(LoggerRuntime.Headless) : None
   let callback = HyperLoaderLogger.observeMerchantCallback(
     ~event=UpdateIntent({surface: surface}),
+    ~source?,
     ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
     ~callback,
   )
@@ -350,6 +352,10 @@ let performUpdateIntent = async (
           // All API calls succeeded — now commit state changes
 
           sdkAuthorizationRef.contents = newSdkAuthorization
+          LoggerContext.setPaymentIdFromCredentials(
+            ~clientSecret=clientSecretRef.contents,
+            ~sdkAuthorization=?Some(newSdkAuthorization)->getNonEmptyOption,
+          )
 
           sessionTokensDataPromise.contents = newSessionTokensPromise
           sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
@@ -362,7 +368,7 @@ let performUpdateIntent = async (
             ~newClientSecret=clientSecretRef.contents,
           )
 
-          SdkLogger.logState(~event=UpdateIntentProgressChanged({inProgress: true}))
+          SdkLogger.logState(~source?, ~event=UpdateIntentProgressChanged({inProgress: true}))
 
           // Wait for the payment element to signal ready (only if a payment element is mounted)
           let readyPromise = if shouldWaitForReady {
@@ -399,11 +405,12 @@ let performUpdateIntent = async (
 
     let response = await HyperLoaderLogger.observeMerchantCall(
       ~event=UpdateIntent({surface: surface}),
+      ~source?,
       ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
       ~call=runUpdateIntent,
     )
     isUpdateIntentInProgress.contents = false
-    SdkLogger.logState(~event=UpdateIntentProgressChanged({inProgress: false}))
+    SdkLogger.logState(~source?, ~event=UpdateIntentProgressChanged({inProgress: false}))
     response
   }
 }

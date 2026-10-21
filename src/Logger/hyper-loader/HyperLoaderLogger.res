@@ -30,6 +30,7 @@ let observeMerchantCall = (
 let observeMerchantCallback = (
   ~event: merchantCallbackEvent,
   ~context=?,
+  ~source=?,
   ~timeoutMs=?,
   ~message=?,
   ~callback,
@@ -38,6 +39,7 @@ let observeMerchantCallback = (
     ~category=Merchant,
     ~spec=event->LoggerUtils.spec(~action=Callback),
     ~context?,
+    ~source?,
     ~severity=event->merchantCallbackSeverity,
     ~data=event->LoggerUtils.eventDetails,
     ~timeoutMs?,
@@ -91,6 +93,5 @@ let logMerchantIssue = (~issue: merchantIssue, ~details=?, ~context=?, ~message=
   }
 
 let startSession = (~sessionId=?, ~merchantId=?) => {
-  LoggerRuntime.configure(~source=HyperLoader)
   LoggerContext.setSessionData(~sessionId?, ~merchantId?, ())
 }

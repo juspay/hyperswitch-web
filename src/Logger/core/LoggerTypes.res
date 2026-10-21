@@ -87,6 +87,7 @@ type context = {
   sessionId: string,
   merchantId: string,
   paymentId: string,
+  pmSessionId: string,
   authenticationId: string,
   // Independent flows (e.g. vault sessions) never adopt the shared payment identity.
   scoped: bool,

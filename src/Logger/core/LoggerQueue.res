@@ -1,7 +1,7 @@
 type entry = {
   row: LoggerTypes.row,
   backfill: bool,
-  mutable text: string,
+  mutable pmSessionId: string,
   mutable bytes: int,
 }
 
@@ -27,9 +27,7 @@ let clearTimer = () =>
   })
 
 let serialize = entry => {
-  let text = entry.row->JSON.stringifyAny->Option.getOr("")
-  entry.text = text
-  entry.bytes = text->LoggerUtils.utf8Length + 1
+  entry.bytes = entry.row->JSON.stringifyAny->Option.getOr("")->LoggerUtils.utf8Length + 1
 }
 
 let recountBytes = () => queuedBytes := rows->Array.reduce(0, (total, entry) => total + entry.bytes)
@@ -53,7 +51,16 @@ let sendNext = () => {
   let count = batchSize()
   let batch = rows->Array.slice(~start=0, ~end=count)
   rows->Array.splice(~start=0, ~remove=count, ~insert=[])
-  count === 0 || sendPayload(`[${batch->Array.map(entry => entry.text)->Array.join(",")}]`)
+  // Keep both identifiers distinct in the queue; the log API currently only accepts payment_id.
+  count === 0 ||
+    sendPayload(
+      `[${batch
+        ->Array.map(entry => {
+          let paymentId = entry.row.paymentId !== "" ? entry.row.paymentId : entry.pmSessionId
+          {...entry.row, paymentId}->JSON.stringifyAny->Option.getOr("")
+        })
+        ->Array.join(",")}]`,
+    )
     ? None
     : Some(batch)
 }
@@ -125,8 +132,8 @@ let drain = () =>
     }
   })
 
-let push = (row, ~isError, ~backfill=true) => {
-  let entry = {row, backfill, text: "", bytes: 0}
+let push = (row, ~isError, ~backfill=true, ~pmSessionId="") => {
+  let entry = {row, backfill, pmSessionId, bytes: 0}
   entry->serialize
   rows->Array.push(entry)
   queuedBytes := queuedBytes.contents + entry.bytes
@@ -159,6 +166,7 @@ let backfillContext = (context: LoggerTypes.context) =>
     row.sessionId = fill(row.sessionId, context.sessionId)
     row.merchantId = fill(row.merchantId, context.merchantId)
     row.paymentId = fill(row.paymentId, context.paymentId)
+    entry.pmSessionId = fill(entry.pmSessionId, context.pmSessionId)
     row.authenticationId = fill(row.authenticationId, context.authenticationId)
     if changed.contents {
       let before = entry.bytes

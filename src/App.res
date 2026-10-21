@@ -138,10 +138,8 @@ let make = () => {
         LoggerContext.setSessionData(
           ~sessionId,
           ~merchantId=publishableKey,
-          ~paymentId=switch clientSecret->LoggerContext.paymentIdOfClientSecret {
-          | "" => pmSessionId
-          | paymentId => paymentId
-          },
+          ~paymentId=clientSecret->LoggerContext.paymentIdOfClientSecret,
+          ~pmSessionId,
           (),
         )
 

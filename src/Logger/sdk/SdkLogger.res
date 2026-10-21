@@ -34,6 +34,7 @@ let logState = (
   ~durationMs=?,
   ~paymentMethod=?,
   ~context=?,
+  ~source=?,
   ~message=?,
 ) =>
   LoggerRuntime.emit(
@@ -46,6 +47,7 @@ let logState = (
     ~durationMs?,
     ~paymentMethod?,
     ~context?,
+    ~source?,
     ~message?,
   )
 
@@ -160,6 +162,7 @@ let observeApi = (
   ~detailsOf,
   ~paymentMethod=?,
   ~context=?,
+  ~source=?,
   ~message=?,
   ~call,
 ) =>
@@ -173,6 +176,7 @@ let observeApi = (
     ~detailsOf,
     ~paymentMethod?,
     ~context?,
+    ~source?,
     ~message?,
     ~call,
   )

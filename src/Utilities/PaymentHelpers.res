@@ -367,12 +367,13 @@ let rec intentCall = (
     }
   }
 
-  LoggerContext.setSessionData(
-    ~paymentId=Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
-    (),
+  LoggerContext.setPaymentIdFromCredentials(
+    ~clientSecret,
+    ~sdkAuthorization=?sdkAuthorization->Utils.getNonEmptyOption,
   )
   SdkLogger.observeApi(
     ~event=apiEvent,
+    ~source=?isPaymentSession ? Some(LoggerRuntime.Headless) : None,
     ~url=uri,
     ~failureOf=LoggerUtils.httpBodyFailure,
     ~detailsOf=LoggerUtils.intentResponseDetails,
@@ -493,6 +494,7 @@ let rec intentCall = (
                 ~componentName,
                 ~redirectionFlags,
                 ~sdkAuthorization,
+                ~isPaymentSession,
               )
               ->then(
                 res => {
@@ -585,6 +587,7 @@ let rec intentCall = (
                     nextAction: intent.nextAction.type_,
                     redirectOrigin,
                   }),
+                  ~source=?isPaymentSession ? Some(LoggerRuntime.Headless) : None,
                   ~paymentMethod=?loggedPaymentMethod,
                 )
                 handleOpenUrl(intent.nextAction.redirectToUrl)
@@ -1454,7 +1457,7 @@ let fetchSessions = async (
   ~isDelayedSessionToken=false,
   ~customPodUri=?,
   ~endpoint,
-  ~isPaymentSession as _=false,
+  ~isPaymentSession=false,
   ~merchantHostname=Window.getRootHostName(),
   ~sdkAuthorization=None,
 ) => {
@@ -1498,6 +1501,7 @@ let fetchSessions = async (
   await fetchApiWithLogging(
     uri,
     ~event=Sessions,
+    ~source=?isPaymentSession ? Some(LoggerRuntime.Headless) : None,
     ~bodyStr=body->JSON.stringify,
     ~headers,
     ~method=#POST,
@@ -1597,7 +1601,7 @@ let fetchClientList = async (
   ~publishableKey,
   ~customPodUri,
   ~endpoint,
-  ~isPaymentSession as _=false,
+  ~isPaymentSession=false,
   ~sdkAuthorization=None,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
@@ -1619,6 +1623,7 @@ let fetchClientList = async (
   await fetchApiWithLogging(
     uri,
     ~event=ClientList,
+    ~source=?isPaymentSession ? Some(LoggerRuntime.Headless) : None,
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),

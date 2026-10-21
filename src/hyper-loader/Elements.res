@@ -132,7 +132,10 @@ let make = (
 
     let hasSdkAuthorization = sdkAuthorizationRef.contents !== ""
 
-    LoggerContext.setPaymentIdFromClientSecret(clientSecretRef.contents)
+    LoggerContext.setPaymentIdFromCredentials(
+      ~clientSecret=clientSecretRef.contents,
+      ~sdkAuthorization=?Some(sdkAuthorizationRef.contents)->getNonEmptyOption,
+    )
 
     if !isTestMode && !hasSdkAuthorization && clientSecretRef.contents === "" {
       manageErrorWarning(MissingParameter, ~dynamicStr="clientSecret")

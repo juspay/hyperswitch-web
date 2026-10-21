@@ -547,6 +547,7 @@ let fetchCustomerSavedPaymentMethods = (
         ~publishableKey,
         ~customPodUri,
         ~endpoint,
+        ~isPaymentSession=true,
         ~sdkAuthorization={Some(sdkAuthorizationRef.contents)->getNonEmptyOption},
       )
       ->then(sessionDetails => {
