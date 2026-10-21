@@ -75,11 +75,9 @@ const LIVE_SETUP = {
     "Klarna is provisioned only with payment_experience redirect_to_url (Stripe and Klarna MCAs in " +
     "setup/merchant-setup.js); the Klarna Payments popup needs invoke_sdk_client and a Klarna session token",
   truelayerProfile:
-    "TrueLayer connector profile is not provisioned: setup/merchant-setup.js creates it (with a PayPal " +
-    "redirect MCA on it) only when creds.json has a 'truelayer' entry",
+    "TrueLayer connector profile is not provisioned: setup/merchant-setup.js creates it (with a PayPal redirect MCA on it) only when creds.json has a 'truelayer' entry",
   paypalRedirect:
-    "PayPal (redirect_to_url) is not offered on the TrueLayer profile: merchant-setup.js " +
-    "EXTRA_CONNECTORS_FOR_PROFILE adds it from creds.json's 'paypal' entry",
+    "PayPal (redirect_to_url) is not offered on the TrueLayer profile: merchant-setup.js EXTRA_CONNECTORS_FOR_PROFILE adds it from creds.json's 'paypal' entry",
   truelayer:
     "TrueLayer Pay by Bank (open_banking / open_banking, redirect_to_url) is not offered on the TrueLayer profile",
   plaid:
