@@ -613,7 +613,7 @@ let getCustomerSavedPaymentMethods = (
               status =>
                 if !(status->ApplePayTypes.shouldShowApplePay) {
                   logger.setLogInfo(
-                    ~value=`CANNOT MAKE PAYMENT USING APPLE PAY: ${(status :> string)}`,
+                    ~value=`CANNOT MAKE PAYMENT USING APPLE PAY: ${status->ApplePayTypes.paymentCredentialStatusToString}`,
                     ~eventName=APPLE_PAY_FLOW,
                     ~paymentMethod="APPLE_PAY",
                     ~logType=ERROR,

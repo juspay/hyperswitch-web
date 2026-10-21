@@ -69,10 +69,10 @@ external statusSuccess: Nullable.t<int> = "STATUS_SUCCESS"
 let getStatusSuccess = () => statusSuccess->Nullable.toOption->Option.getOr(0)
 
 type paymentCredentialStatus =
-  | @as("paymentCredentialsAvailable") PaymentCredentialsAvailable
-  | @as("paymentCredentialsUnavailable") PaymentCredentialsUnavailable
-  | @as("paymentCredentialStatusUnknown") PaymentCredentialStatusUnknown
-  | @as("applePayUnsupported") ApplePayUnsupported
+  | PaymentCredentialsAvailable
+  | PaymentCredentialsUnavailable
+  | PaymentCredentialStatusUnknown
+  | ApplePayUnsupported
 
 let paymentCredentialStatusFromString = str =>
   switch str {
@@ -80,6 +80,14 @@ let paymentCredentialStatusFromString = str =>
   | "paymentCredentialsUnavailable" => PaymentCredentialsUnavailable
   | "applePayUnsupported" => ApplePayUnsupported
   | _ => PaymentCredentialStatusUnknown
+  }
+
+let paymentCredentialStatusToString = status =>
+  switch status {
+  | PaymentCredentialsAvailable => "paymentCredentialsAvailable"
+  | PaymentCredentialsUnavailable => "paymentCredentialsUnavailable"
+  | PaymentCredentialStatusUnknown => "paymentCredentialStatusUnknown"
+  | ApplePayUnsupported => "applePayUnsupported"
   }
 
 let shouldShowApplePay = status => status !== ApplePayUnsupported

@@ -97,15 +97,20 @@ let isNativeApplePayButtonSupported = () =>
 let isMobileThirdPartyBrowser = () =>
   Window.userAgentData->Nullable.toOption->Option.mapOr(false, data => data.mobile)
 
-let keepMerchantBeforeUnload = merchantBeforeUnload =>
-  switch (merchantBeforeUnload->Nullable.toOption, Window.onBeforeUnload->Nullable.toOption) {
-  | (Some(merchantHandler), Some(sdkHandler)) if merchantHandler !== sdkHandler =>
-    Window.window->Window.setOnBeforeUnload(event => {
-      sdkHandler(event)->ignore
-      merchantHandler(event)
-    })
+let keepMerchantBeforeUnload = merchantBeforeUnload => {
+  let sdkBeforeUnload = Window.onBeforeUnload
+  switch (merchantBeforeUnload->Nullable.toOption, sdkBeforeUnload->Nullable.toOption) {
+  | (Some(merchantHandler), Some(sdkHandler)) =>
+    if merchantHandler !== sdkHandler {
+      let combinedBeforeUnload = event => {
+        sdkHandler(event)->ignore
+        merchantHandler(event)
+      }
+      Window.window->Window.setOnBeforeUnload(combinedBeforeUnload)
+    }
   | _ => ()
   }
+}
 
 let applePaySdkLoadPromiseRef: ref<option<promise<unit>>> = ref(None)
 
