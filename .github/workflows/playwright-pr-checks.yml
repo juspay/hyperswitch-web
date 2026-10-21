@@ -18,6 +18,17 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner image to run on"
+        type: choice
+        default: ubuntu-latest
+        options:
+          - ubuntu-latest
+          - ubuntu-26.04
+          - ubuntu-24.04
+          - ubuntu-22.04
 
 # Explicit least-privilege permissions
 permissions:
@@ -36,7 +47,7 @@ env:
 jobs:
   hermetic:
     name: hermetic
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     timeout-minutes: 20
 
     steps:

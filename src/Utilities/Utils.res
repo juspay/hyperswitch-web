@@ -1579,18 +1579,50 @@ let eventHandlerFunc = (
   EventListenerManager.addSmartEventListener("message", changeHandler, activity)
 }
 
-let makeIframe = (element, url) => {
-  open Types
+let getFullscreenOverlayStyle = colorScheme => [
+  ("all", "initial"),
+  ("position", "fixed"),
+  ("inset", "0"),
+  ("width", "100%"),
+  ("height", "100%"),
+  ("display", "block"),
+  ("z-index", "2147483647"),
+  ("color-scheme", colorScheme),
+]
+
+let supportsPopover = !(Window.showPopoverFn->Nullable.isNullable)
+
+let fullscreenBackdropHidden = ref(false)
+let hideFullscreenBackdrop = () =>
+  if !fullscreenBackdropHidden.contents {
+    let sheet = Window.makeCssStyleSheet()
+    sheet->Window.replaceSync("#orca-fullscreen::backdrop { display: none !important; }")
+    Window.window->Window.document->Window.adoptedStyleSheets->Array.push(sheet)
+    fullscreenBackdropHidden := true
+  }
+
+let makeIframe = (element, url, ~colorScheme) => {
   Promise.make((resolve, _) => {
-    let iframe = createElement("iframe")
-    iframe.id = "orca-fullscreen"
-    iframe.src = url
-    iframe.name = "fullscreen"
-    iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
-    iframe.onload = () => {
+    let iframe = Window.createElement("iframe")
+    iframe->Window.setAttribute("id", "orca-fullscreen")
+    iframe->Window.setAttribute("src", url)
+    iframe->Window.setAttribute("name", "fullscreen")
+    colorScheme
+    ->getFullscreenOverlayStyle
+    ->Array.forEach(((property, value)) =>
+      iframe->Window.style->Window.setStylePropertyImportant(property, value, "important")
+    )
+    iframe->Window.elementOnload(() => {
       resolve(Dict.make())
+    })
+    element->Window.appendChildElement(iframe)
+    if supportsPopover {
+      hideFullscreenBackdrop()
+      iframe->Window.setAttribute("popover", "manual")
+      iframe->Window.showPopover
+    } else {
+      Console.warn("Popover API unavailable: fullscreen overlay shown as a plain fixed iframe")
     }
-    element->appendChild(iframe)
   })
 }
 let makeHiddenIframe = (element, ~src, ~id) => {
