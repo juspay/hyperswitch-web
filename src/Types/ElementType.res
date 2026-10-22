@@ -226,23 +226,21 @@ let getStyle = (dict, str, logger) => {
   })
   ->Option.getOr(defaultStyle)
 }
+let allowedCardElementOptions = [
+  "classes",
+  "style",
+  "value",
+  "hidePostalCode",
+  "iconStyle",
+  "hideIcon",
+  "showIcon",
+  "disabled",
+  "placeholder",
+  "showError",
+]
+
 let itemToObjMapper = (dict, logger) => {
-  unknownKeysWarning(
-    [
-      "classes",
-      "style",
-      "value",
-      "hidePostalCode",
-      "iconStyle",
-      "hideIcon",
-      "showIcon",
-      "disabled",
-      "placeholder",
-      "showError",
-    ],
-    dict,
-    "options",
-  )
+  unknownKeysWarning(allowedCardElementOptions, dict, "options")
 
   {
     classes: getClasses("classes", dict, logger),
