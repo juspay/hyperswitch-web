@@ -41,7 +41,7 @@ let make = (
   let animate = contentVisibility == "visible" ? "animate-zoomIn" : "animate-zoomOut"
   let loaderUI =
     <div className={`flex justify-center m-auto ${loaderVisibility}`}>
-      <HyperswitchLoader showText=false />
+      <Loader showText=false />
     </div>
   <div
     className="h-screen w-screen bg-black/40 flex m-auto items-center backdrop-blur-sm overflow-scroll"

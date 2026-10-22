@@ -86,7 +86,7 @@ let make = () => {
       }}>
     <div className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
       {if klarnaClicked {
-        <HyperswitchLoader />
+        <Loader />
       } else {
         klarnaIcon
       }}

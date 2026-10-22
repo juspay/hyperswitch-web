@@ -27,16 +27,10 @@ let make = () => {
     Some(() => {Window.removeEventListener("message", handle)})
   })
 
-  <>
-    <RenderIf condition={branding === "auto"}>
-      <div className="h-screen w-screen flex m-auto items-center backdrop-blur-md bg-black/80">
-        <div className={`flex flex-col justify-center m-auto visible`}>
-          <HyperswitchLoader branding />
-        </div>
-      </div>
-    </RenderIf>
-    <RenderIf condition={branding !== "auto"}>
-      <Loader className="Loader--fullscreen h-screen w-screen" />
-    </RenderIf>
-  </>
+  let className =
+    branding === "auto"
+      ? "h-screen w-screen backdrop-blur-md bg-black/80"
+      : "Loader--fullscreen h-screen w-screen"
+
+  <Loader branding className />
 }
