@@ -1564,7 +1564,7 @@ let eventHandlerFunc = (
       | Click
       | Ready
       | Focus
-      | CompleteDoThis
+      | PaymentComplete
       | ConfirmPayment
       | OneClickConfirmPayment
       | Blur =>

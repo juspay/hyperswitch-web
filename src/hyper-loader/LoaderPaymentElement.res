@@ -204,13 +204,13 @@ let make = (
           },
           `onEscape-${componentType}-${elementInstanceId}`,
         )
-      | CompleteDoThis | PaymentComplete =>
+      | PaymentComplete =>
         if eventHandler->Option.isSome {
           onCompleteDoThisUsed := true
           eventHandlerFunc(
             ev => ev.data.completeDoThis,
             eventHandler,
-            CompleteDoThis,
+            PaymentComplete,
             `onCompleteDoThis-${componentType}-${elementInstanceId}`,
           )
         }

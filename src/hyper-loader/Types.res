@@ -316,7 +316,6 @@ type eventType =
   | Ready
   | Focus
   | Blur
-  | CompleteDoThis
   | PaymentComplete
   | ConfirmPayment
   | OneClickConfirmPayment
@@ -329,8 +328,7 @@ let eventTypeMapper = event => {
   | "change" => Change
   | "clickTriggered" => Click
   | "ready" => Ready
-  | "completeDoThis" => CompleteDoThis
-  | "paymentComplete" => PaymentComplete
+  | "completeDoThis" | "paymentComplete" => PaymentComplete
   | "focus" => Focus
   | "blur" => Blur
   | "confirmTriggered" => ConfirmPayment
