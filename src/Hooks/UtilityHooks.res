@@ -34,13 +34,7 @@ let useHandlePostMessages = (
 
   React.useEffect(() => {
     if enabled {
-      Utils.handlePostMessageEvents(
-        ~complete,
-        ~empty,
-        ~paymentType,
-        ~loggerState,
-        ~savedMethod,
-      )
+      Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod)
     }
     None
   }, (complete, empty, paymentType, savedMethod, enabled))
@@ -73,13 +67,17 @@ let useSendEventsToParent = eventsToSendToParent => {
       let eventDataObject = ev.data->Identity.anyTypeToJson
       let eventsDict = eventDataObject->Utils.getDictFromJson
 
-      let events = eventsDict->Dict.keysToArray
+      let isFromChildFrame =
+        Window.querySelectorAll("iframe")->Array.some(iframe =>
+          ev.source === iframe->Window.contentWindow
+        )
+      let allowedEvents =
+        eventsDict
+        ->Dict.toArray
+        ->Array.filter(((key, _)) => eventsToSendToParent->Array.includes(key))
 
-      let shouldSendToParent =
-        events->Array.some(event => eventsToSendToParent->Array.includes(event))
-
-      if shouldSendToParent {
-        Utils.messageParentWindow(eventsDict->Dict.toArray)
+      if isFromChildFrame && allowedEvents->Array.length > 0 {
+        Utils.messageParentWindow(allowedEvents)
       }
     }
     Window.addEventListener("message", handle)

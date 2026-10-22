@@ -342,9 +342,9 @@ let useSubmitPaymentData = callback => {
 // Nested SDK components must only accept confirm/control messages from their
 // direct host iframe. This keeps unrelated window messages from entering a
 // payment submit path while retaining the existing callback API.
-let useSubmitPaymentDataFromParent = (~parentOrigin="*", callback) => {
+let useSubmitPaymentDataFromParent = (~parentOrigin, callback) => {
   let parentCallback = React.useCallback((ev: Window.event) => {
-    if ev.source === iframeParent && (parentOrigin === "*" || ev.origin === parentOrigin) {
+    if ev.source === iframeParent && ev.origin === parentOrigin {
       callback(ev)
     }
   }, (callback, parentOrigin))
@@ -1604,7 +1604,7 @@ let hideFullscreenBackdrop = () =>
     fullscreenBackdropHidden := true
   }
 
-let makeIframe = (element, url, ~colorScheme) => {
+let makeIframe = (element, url, ~colorScheme, ~onCreate=_ => ()) => {
   Promise.make((resolve, _) => {
     let iframe = Window.createElement("iframe")
     iframe->Window.setAttribute("id", "orca-fullscreen")
@@ -1619,6 +1619,7 @@ let makeIframe = (element, url, ~colorScheme) => {
       resolve(Dict.make())
     })
     element->Window.appendChildElement(iframe)
+    onCreate(iframe)
     if supportsPopover {
       hideFullscreenBackdrop()
       iframe->Window.setAttribute("popover", "manual")

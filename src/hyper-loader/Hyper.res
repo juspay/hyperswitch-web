@@ -5,6 +5,11 @@ open Utils
 open EventListenerManager
 open Identity
 
+type fullscreenMessageSource = {
+  source: Dom.element,
+  redirectOrigin: option<string>,
+}
+
 let checkAndAppend = (selector, child) => {
   if Nullable.toOption(CommonHooks.querySelector(selector)) == None {
     CommonHooks.appendChild(child)
@@ -319,6 +324,48 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let setIframeRef = ref => {
         iframeRef.contents->Array.push(ref)->ignore
       }
+      let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+      let fullscreenSources = ref([])
+      let onFullscreenCreated = (iframe, metadata) => {
+        let redirectOrigin = try {
+          let authorizeUrl =
+            metadata
+            ->getDictFromJson
+            ->getDictFromDict("threeDSData")
+            ->getString("three_ds_authorize_url", "")
+          Some(URLModule.makeUrl(authorizeUrl).origin)
+        } catch {
+        | _ => None
+        }
+        fullscreenSources.contents
+        ->Array.push({
+          // Keep the WindowProxy for terminal messages queued just before the overlay closes.
+          source: iframe->Window.contentWindow,
+          redirectOrigin,
+        })
+        ->ignore
+      }
+      let submitResponseHandler = ref((_json: JSON.t) => ())
+      let isFromPaymentIframe = (event: Types.event) =>
+        iframeRef.contents->Array.some(iframeRef =>
+          iframeRef
+          ->Nullable.toOption
+          ->Option.map(iframe =>
+            iframe->Window.Element.isConnected &&
+              CardFormGroupShared.isFromIframe(~ev=event, ~iframe=Some(iframe), ~origin=sdkOrigin)
+          )
+          ->Option.getOr(false)
+        )
+      let isTrustedPaymentMessage = (event: Types.event) =>
+        isFromPaymentIframe(event) ||
+        (event.origin === sdkOrigin &&
+          fullscreenSources.contents->Array.some(entry => entry.source === event.source))
+      let isTrustedRedirectMessage = (event: Types.event) =>
+        isTrustedPaymentMessage(event) ||
+        // A frictionless 3DS form navigates this overlay to its configured authorize URL.
+        fullscreenSources.contents->Array.some(entry =>
+          entry.source === event.source && entry.redirectOrigin === Some(event.origin)
+        )
 
       // Shared refs for updateIntent — created once, passed to both Elements and PaymentSession.
       let isUpdateIntentInProgress = ref(false)
@@ -371,6 +418,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
+        fullscreenSources := []
         let confirmTimestamp = Date.now()
         let confirmParams =
           payload
@@ -389,7 +437,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let postSubmitMessage = message => {
           iframeRef.contents->Array.forEach(ifR => {
-            ifR->Window.iframePostMessage(message)
+            ifR->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
           })
         }
 
@@ -409,8 +457,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             )
             isReadyPromise
             ->Promise.then(readyTimestamp => {
-              let handleMessage = (event: Types.event) => {
-                let json = event.data->anyTypeToJson
+              let handleSubmitResponse = json => {
                 let dict = json->getDictFromJson
                 switch dict->Dict.get("submitSuccessful") {
                 | Some(val) =>
@@ -449,6 +496,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                     resolve1(data)
                   }
                 | None => ()
+                }
+              }
+              submitResponseHandler := handleSubmitResponse
+              let handleMessage = (event: Types.event) => {
+                if isTrustedPaymentMessage(event) {
+                  handleSubmitResponse(event.data->anyTypeToJson)
                 }
               }
               let message = isOneClick
@@ -494,11 +547,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       let handleSdkConfirm = (event: Types.event) => {
-        let json = event.data->anyTypeToJson
-        let dict = json->getDictFromJson
-        switch dict->Dict.get("handleSdkConfirm") {
-        | Some(payload) => confirmPaymentViaSDKButton(payload)->ignore
-        | None => ()
+        if isFromPaymentIframe(event) {
+          let json = event.data->anyTypeToJson
+          let dict = json->getDictFromJson
+          switch dict->Dict.get("handleSdkConfirm") {
+          | Some(payload) => confirmPaymentViaSDKButton(payload)->ignore
+          | None => ()
+          }
         }
       }
 
@@ -564,6 +619,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sdkConfigsDataPromise,
           ~clientListDataPromise,
           ~confirmPayment,
+          ~onSubmitResponse=json => submitResponseHandler.contents(json),
+          ~isTrustedPaymentMessage,
+          ~isTrustedRedirectMessage,
+          ~onFullscreenCreated,
         )
       }
 
@@ -616,6 +675,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         data: option<JSON.t>,
         _options: option<JSON.t>,
       ) => {
+        fullscreenSources := []
         let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
         Promise.make((resolve, _) => {
           iframeRef.contents
@@ -631,8 +691,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
               ]->Dict.fromArray,
             )
 
-            let handleMessage = (event: Types.event) => {
-              let json = event.data->anyTypeToJson
+            let handleSubmitResponse = json => {
               let dict = json->getDictFromJson
               switch dict->Dict.get("submitSuccessful") {
               | Some(val) =>
@@ -650,6 +709,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                   resolve(json)
                 }
               | None => resolve(json)
+              }
+            }
+            submitResponseHandler := handleSubmitResponse
+            let handleMessage = (event: Types.event) => {
+              if isTrustedPaymentMessage(event) {
+                handleSubmitResponse(event.data->anyTypeToJson)
               }
             }
             addSmartEventListener("message", handleMessage, "")

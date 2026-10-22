@@ -28,6 +28,10 @@ let make = (
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~clientListDataPromise: ref<promise<JSON.t>>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  ~onSubmitResponse: JSON.t => unit,
+  ~isTrustedPaymentMessage: Types.event => bool,
+  ~isTrustedRedirectMessage: Types.event => bool,
+  ~onFullscreenCreated: (Dom.element, JSON.t) => unit,
 ) => {
   try {
     let iframeRef = []
@@ -872,7 +876,7 @@ let make = (
           }
         }
 
-        let handlePollStatusMessage = (ev: Types.event) => {
+        let processPollStatusMessage = (ev: Types.event) => {
           let eventDataObject = ev.data->anyTypeToJson
           switch eventDataObject->getOptionalJsonFromJson("confirmParams") {
           | Some(obj) => redirect := obj->getDictFromJson->getString("redirect", "if_required")
@@ -888,11 +892,13 @@ let make = (
               Utils.replaceRootHref(redirectUrl, redirectionFlags)
               resolve(JSON.Encode.null)
             } else {
-              messageCurrentWindow([
-                ("submitSuccessful", true->JSON.Encode.bool),
-                ("data", json),
-                ("url", redirectUrl->JSON.Encode.string),
-              ])
+              onSubmitResponse(
+                [
+                  ("submitSuccessful", true->JSON.Encode.bool),
+                  ("data", json),
+                  ("url", redirectUrl->JSON.Encode.string),
+                ]->getJsonFromArrayOfJson,
+              )
               resolve(json)
             }
           }
@@ -908,11 +914,13 @@ let make = (
               if redirect.contents === "always" {
                 Utils.replaceRootHref(url, redirectionFlags)
               }
-              messageCurrentWindow([
-                ("submitSuccessful", false->JSON.Encode.bool),
-                ("error", err->anyTypeToJson),
-                ("url", url->JSON.Encode.string),
-              ])
+              onSubmitResponse(
+                [
+                  ("submitSuccessful", false->JSON.Encode.bool),
+                  ("error", err->anyTypeToJson),
+                  ("url", url->JSON.Encode.string),
+                ]->getJsonFromArrayOfJson,
+              )
             }
 
             PaymentHelpers.pollStatus(
@@ -980,11 +988,13 @@ let make = (
                 )
                 resolve(JSON.Encode.null)
               } else {
-                messageCurrentWindow([
-                  ("submitSuccessful", false->JSON.Encode.bool),
-                  ("error", err->anyTypeToJson),
-                  ("url", redirectUrl),
-                ])
+                onSubmitResponse(
+                  [
+                    ("submitSuccessful", false->JSON.Encode.bool),
+                    ("error", err->anyTypeToJson),
+                    ("url", redirectUrl),
+                  ]->getJsonFromArrayOfJson,
+                )
                 resolve(err->anyTypeToJson)
               }
             })
@@ -1007,6 +1017,11 @@ let make = (
           }
         }
 
+        let handlePollStatusMessage = (ev: Types.event) => {
+          if isTrustedRedirectMessage(ev) {
+            processPollStatusMessage(ev)
+          }
+        }
         addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
         addSmartEventListener("message", handlePollStatusMessage, "onPollStatusMsg")
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
@@ -1586,6 +1601,8 @@ let make = (
         ~logger=Some(logger),
         ~confirmPayment,
         ~eventListenerTracker,
+        ~isTrustedPaymentMessage,
+        ~onFullscreenCreated,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

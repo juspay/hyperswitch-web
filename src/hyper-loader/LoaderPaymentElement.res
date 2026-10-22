@@ -107,6 +107,8 @@ let make = (
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
   ~eventListenerTracker=LoggerUtils.defaultEventListenerTracker,
+  ~isTrustedPaymentMessage: option<Types.event => bool>=?,
+  ~onFullscreenCreated: (Dom.element, JSON.t) => unit=(_, _) => (),
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
@@ -117,10 +119,36 @@ let make = (
     let localSelectorRef = ref("")
     let eventListenerSelectorRef =
       componentType->Utils.canHaveMultipleInstances ? localSelectorRef : ref(componentType)
+    let mountedIframeRef = ref(Nullable.null)
+    let fullscreenIframeRef = ref(Nullable.null)
+    let iframeOrigin = URLModule.makeUrl(sdkDomainUrl).origin
+    let fullscreenOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+
+    let isFromFrame = (ev: Types.event, iframe, origin) =>
+      iframe
+      ->Nullable.toOption
+      ->Option.map(iframe =>
+        iframe->Window.Element.isConnected &&
+        ev.source === iframe->Window.contentWindow &&
+        ev.origin === origin
+      )
+      ->Option.getOr(false)
+
+    let isTrustedMessage = (ev: Types.event) => {
+      let trusted = switch isTrustedPaymentMessage {
+      | Some(check) => check(ev)
+      | None =>
+        isFromFrame(ev, mountedIframeRef.contents, iframeOrigin) ||
+        isFromFrame(ev, fullscreenIframeRef.contents, fullscreenOrigin)
+      }
+      trusted || (ev.source === window && ev.origin === Window.Location.origin)
+    }
+
     // Unique per-instance ID to scope event listener names and prevent collisions.
     let elementInstanceId = generateRandomString(8)
 
     let setPaymentIframeRef = ref => {
+      mountedIframeRef := ref
       setIframeRef(ref)
     }
 
@@ -311,6 +339,8 @@ let make = (
 
     let unmount = () => {
       let id = mountId.contents
+      mountedIframeRef := Nullable.null
+      fullscreenIframeRef := Nullable.null
 
       let oElement = Window.querySelector(id)
       switch oElement->Nullable.toOption {
@@ -480,6 +510,7 @@ let make = (
 
           switch fullscreenElem->Nullable.toOption {
           | Some(ele) =>
+            fullscreenIframeRef := Nullable.null
             ele->Window.innerHTML("")
             let mainElement = Window.querySelector(
               `#orca-${elementIframeId}-iframeRef-${localSelectorString}`,
@@ -492,31 +523,33 @@ let make = (
               ? {
                   if iframeID == localSelectorString {
                     let handleFullScreenCallback = (ev: Types.event) => {
-                      let json = ev.data->anyTypeToJson
-                      let dict = json->Utils.getDictFromJson
-                      if dict->Dict.get("iframeMountedCallback")->Option.isSome {
-                        let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
-                        fullScreenEle->Window.iframePostMessage(
-                          [
-                            ("fullScreenIframeMounted", true->JSON.Encode.bool),
-                            ("metadata", fullscreenMetadata.contents),
-                            ("options", options),
-                            ("appearance", appearance),
-                          ]->Dict.fromArray,
-                        )
-                      }
-                      if dict->Dict.get("driverMounted")->Option.isSome {
-                        mainElement->Window.iframePostMessage(
-                          [
-                            ("fullScreenIframeMounted", true->JSON.Encode.bool),
-                            ("metadata", fullscreenMetadata.contents),
-                            ("options", options),
-                          ]->Dict.fromArray,
-                        )
-                        let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
-                        fullScreenEle->Window.iframePostMessage(
-                          [("metadata", fullscreenMetadata.contents)]->Dict.fromArray,
-                        )
+                      if isTrustedMessage(ev) {
+                        let json = ev.data->anyTypeToJson
+                        let dict = json->Utils.getDictFromJson
+                        if dict->Dict.get("iframeMountedCallback")->Option.isSome {
+                          let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
+                          fullScreenEle->Window.iframePostMessage(
+                            [
+                              ("fullScreenIframeMounted", true->JSON.Encode.bool),
+                              ("metadata", fullscreenMetadata.contents),
+                              ("options", options),
+                              ("appearance", appearance),
+                            ]->Dict.fromArray,
+                          )
+                        }
+                        if dict->Dict.get("driverMounted")->Option.isSome {
+                          mainElement->Window.iframePostMessage(
+                            [
+                              ("fullScreenIframeMounted", true->JSON.Encode.bool),
+                              ("metadata", fullscreenMetadata.contents),
+                              ("options", options),
+                            ]->Dict.fromArray,
+                          )
+                          let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
+                          fullScreenEle->Window.iframePostMessage(
+                            [("metadata", fullscreenMetadata.contents)]->Dict.fromArray,
+                          )
+                        }
                       }
                     }
                     addSmartEventListener(
@@ -528,7 +561,12 @@ let make = (
                       appearance
                       ->CardTheme.getColorSchemeFromAppearance
                       ->CardTheme.getColorSchemeValue
-                    ele->makeIframe(iframeURL, ~colorScheme)->ignore
+                    ele
+                    ->makeIframe(iframeURL, ~colorScheme, ~onCreate=iframe => {
+                      fullscreenIframeRef := Nullable.make(iframe)
+                      onFullscreenCreated(iframe, fullscreenMetadata.contents)
+                    })
+                    ->ignore
                   }
                 }
               : {
@@ -564,7 +602,12 @@ let make = (
       } else {
         `onMount-${componentType}`
       }
-      addSmartEventListener("message", handle, eventListenerActivityName)
+      let handleIfTrusted = (ev: Types.event) => {
+        if isTrustedMessage(ev) {
+          handle(ev)
+        }
+      }
+      addSmartEventListener("message", handleIfTrusted, eventListenerActivityName)
 
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->getClasses("base")
