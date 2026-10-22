@@ -204,7 +204,7 @@ let make = (
           },
           `onEscape-${componentType}-${elementInstanceId}`,
         )
-      | CompleteDoThis =>
+      | CompleteDoThis | PaymentComplete =>
         if eventHandler->Option.isSome {
           onCompleteDoThisUsed := true
           eventHandlerFunc(
