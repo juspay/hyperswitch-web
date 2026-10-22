@@ -6,7 +6,7 @@ open Identity
 @val @scope(("navigator", "clipboard"))
 external writeText: string => promise<'a> = "writeText"
 
-let onCompleteDoThisUsed = ref(false)
+let isPaymentCompleteHandlerProvided = ref(false)
 let isPaymentButtonHandlerProvided = ref(false)
 
 let currentOneClickHandler = ref((None: option<unit => Promise.t<unit>>))
@@ -205,13 +205,14 @@ let make = (
           },
           `onEscape-${componentType}-${elementInstanceId}`,
         )
-      | CompleteDoThis =>
+      | PaymentComplete =>
         if eventHandler->Option.isSome {
+          isPaymentCompleteHandlerProvided := true
           eventHandlerFunc(
-            ev => ev.data.completeDoThis,
-            eventHandler,
-            CompleteDoThis,
-            `onCompleteDoThis-${componentType}-${elementInstanceId}`,
+            ev => ev.data.paymentComplete,
+            eventHandler->Option.map(eH => _ => eH(Some(eventType->getPaymentCompleteEventData))),
+            PaymentComplete,
+            `onPaymentComplete-${componentType}-${elementInstanceId}`,
           )
         }
       | Change =>
