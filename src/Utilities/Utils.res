@@ -1727,10 +1727,13 @@ let expressCheckoutComponents = [
 
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
 
+let otherElementsComponents = ["cardCvc"]
+
 let componentsForPaymentElementCreate =
-  ["payment", "paymentMethodCollect", "paymentMethodsManagement"]->Array.concat(
+  ["payment", "paymentMethodCollect", "paymentMethodsManagement"]->Array.concatMany([
     expressCheckoutComponents,
-  )
+    otherElementsComponents,
+  ])
 
 let getIsExpressCheckoutComponent = componentType => {
   expressCheckoutComponents->Array.includes(componentType)
