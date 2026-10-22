@@ -379,8 +379,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 logger.setMetadata(metadata)
               }
 
-              if dict->getDictIsSome("onCompleteDoThisUsed") {
-                let isCallbackUsedVal = dict->Utils.getBool("onCompleteDoThisUsed", false)
+              if dict->getDictIsSome("isPaymentCompleteHandlerProvided") {
+                let isCallbackUsedVal =
+                  dict->Utils.getBool("isPaymentCompleteHandlerProvided", false)
                 setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
               }
               if dict->getDictIsSome("isPaymentButtonHandlerProvided") {

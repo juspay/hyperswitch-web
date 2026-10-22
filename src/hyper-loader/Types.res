@@ -8,7 +8,7 @@ type eventData = {
   blur: bool,
   ready: bool,
   clickTriggered: bool,
-  completeDoThis: bool,
+  paymentComplete: bool,
   elementType: string,
   iframeId: string,
   classChange: bool,

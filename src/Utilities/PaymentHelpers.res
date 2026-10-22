@@ -574,7 +574,7 @@ let rec intentCall = (
               | (Paypal, false, _) =>
                 if !isPaymentSession {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnCompleteDoThisMessage()
+                    handleOnPaymentCompleteMessage()
                   } else {
                     closePaymentLoaderIfAny()
                   }
@@ -582,7 +582,7 @@ let rec intentCall = (
                   postSubmitResponse(~jsonData=data, ~url=url.href)
                 } else if confirmParam.redirect === Some("always") {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnCompleteDoThisMessage()
+                    handleOnPaymentCompleteMessage()
                   } else {
                     handleOpenUrl(url.href)
                   }
@@ -599,7 +599,7 @@ let rec intentCall = (
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
                   closePaymentLoaderIfAny()
-                  handleOnCompleteDoThisMessage()
+                  handleOnPaymentCompleteMessage()
                 } else {
                   handleOpenUrl(url.href)
                 }

@@ -79,8 +79,8 @@ let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
   )
 }
 
-let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
-  messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
+let handleOnPaymentCompleteMessage = (~targetOrigin="*") => {
+  messageParentWindow([("paymentComplete", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
@@ -1550,6 +1550,9 @@ let sanitizeEventData = (data: Types.eventData): Types.eventData => {
   ->JSON.Encode.object
   ->eventDataFromJson
 }
+
+let getPaymentCompleteEventData = eventName =>
+  [(eventName, true->JSON.Encode.bool)]->getJsonFromArrayOfJson->eventDataFromJson
 
 let eventHandlerFunc = (
   condition: Types.event => bool,
