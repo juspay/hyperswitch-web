@@ -1,7 +1,7 @@
 @react.component
 let make = () => {
   open Utils
-  let (branding, setBranding) = React.useState(_ => "auto")
+  let (branding, setBranding) = React.useState(_ => PaymentType.Auto)
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -10,7 +10,12 @@ let make = () => {
       let dict = json->getDictFromJson
       if dict->Utils.getBool("fullScreenIframeMounted", false) {
         if dict->getDictFromDict("options")->getOptionString("branding")->Option.isSome {
-          setBranding(_ => dict->getDictFromDict("options")->getString("branding", "auto"))
+          setBranding(_ =>
+            dict
+            ->getDictFromDict("options")
+            ->getString("branding", "auto")
+            ->PaymentType.getShowType("options.branding")
+          )
         }
         let rules = dict->getDictFromDict("appearance")->getJsonObjectFromDict("rules")
         dict->loadTheme(theme => {
@@ -28,8 +33,8 @@ let make = () => {
   })
 
   let className =
-    branding === "auto"
-      ? "h-screen w-screen backdrop-blur-md bg-black/80"
+    branding == Auto
+      ?"h-screen w-screen backdrop-blur-md bg-black/80"
       : "Loader--fullscreen h-screen w-screen"
 
   <Loader branding className />
