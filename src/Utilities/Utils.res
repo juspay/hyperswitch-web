@@ -1671,6 +1671,21 @@ let getThemePromise = dict => {
   }
 }
 
+let loadTheme = (dict, onLoad: ThemeImporter.themeDataModule => promise<unit>) => {
+  let defaultTheme: ThemeImporter.themeDataModule = {
+    default: DefaultTheme.default,
+    defaultRules: DefaultTheme.defaultRules,
+  }
+  switch getThemePromise(dict) {
+  | Some(promise) =>
+    promise
+    ->Promise.then(onLoad)
+    ->Promise.catch(_ => onLoad(defaultTheme))
+    ->ignore
+  | None => onLoad(defaultTheme)->ignore
+  }
+}
+
 let makeOneClickHandlerPromise = sdkHandleIsThere => {
   Promise.make((resolve, _) => {
     if !sdkHandleIsThere {

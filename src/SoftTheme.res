@@ -217,6 +217,15 @@ let softRules = theme =>
       "fontWeight": theme.fontWeightMedium,
       "marginBottom": "1.5rem",
     },
+    ".Loader--fullscreen": {
+      "backgroundColor": "rgba(60, 61, 62, 0.8)",
+      "backdropFilter": "blur(40px) contrast(1.25)",
+      "opacity": "0.7",
+    },
+    ".Loader--overlay": {
+      "backgroundColor": "rgba(60, 61, 62, 0.6)",
+      "backdropFilter": "blur(4px)",
+    },
   }->Identity.anyTypeToJson
 
 let default = soft
