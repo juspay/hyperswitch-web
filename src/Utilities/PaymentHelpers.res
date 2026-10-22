@@ -1164,7 +1164,7 @@ let rec maskPayload = payloadJson => {
   }
 }
 
-let useCompleteAuthorizeHandler = (~isOneClickWallet=false, ()) => {
+let useCompleteAuthorizeHandler = (~isOneClickWallet=false) => {
   open JotaiAtoms
 
   let customPodUri = Jotai.useAtomValue(customPodUri)
@@ -1258,7 +1258,7 @@ let useCompleteAuthorizeHandler = (~isOneClickWallet=false, ()) => {
 }
 
 let useCompleteAuthorize = (~isOneClickWallet=false, optLogger, paymentType) => {
-  let completeAuthorizeHandler = useCompleteAuthorizeHandler(~isOneClickWallet, ())
+  let completeAuthorizeHandler = useCompleteAuthorizeHandler(~isOneClickWallet)
   let keys = Jotai.useAtomValue(JotaiAtoms.keys)
   let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
   let url = RescriptReactRouter.useUrl()
