@@ -106,6 +106,7 @@ let make = (
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  ~eventListenerLogger=LoggerUtils.defaultEventListenerLogger,
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
@@ -143,6 +144,10 @@ let make = (
     }
 
     let on = (eventType, eventHandler) => {
+      if eventHandler->Option.isSome {
+        eventListenerLogger.track(eventType)
+      }
+
       // Multi-instance: if this C instance has no selector yet, try to claim
       // a pending mount selector.  If none is available, register self in the
       // pendingOnRefs queue so the next mount() can adopt us.
@@ -535,6 +540,7 @@ let make = (
         }
 
         if iframeMounted->Option.isSome {
+          eventListenerLogger.logOnMount()
           mountPostMessage(
             Window.querySelector(`#orca-${elementIframeId}-iframeRef-${localSelectorString}`),
             localSelectorString,
@@ -613,7 +619,12 @@ let make = (
       destroy,
       update,
       mount,
-      onSDKHandleClick,
+      onSDKHandleClick: eventHandler => {
+        if eventHandler->Option.isSome {
+          eventListenerLogger.track("onSDKHandleClick")
+        }
+        onSDKHandleClick(eventHandler)
+      },
       confirmPayment,
     }
   } catch {

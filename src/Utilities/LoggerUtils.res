@@ -72,14 +72,54 @@ let handleLogging = (
   }
 }
 
+type eventListenerLogger = {
+  track: string => unit,
+  logOnMount: unit => unit,
+}
+
+let makeEventListenerLogger = (~logger: HyperLoggerTypes.loggerMake, ~componentType) => {
+  let eventListeners = []
+  let hasMounted = ref(false)
+
+  let log = () => {
+    let value =
+      [
+        ("componentType", componentType->JSON.Encode.string),
+        ("eventListeners", eventListeners->Array.map(JSON.Encode.string)->JSON.Encode.array),
+      ]
+      ->Dict.fromArray
+      ->JSON.Encode.object
+      ->JSON.stringify
+    logger.setLogInfo(~value, ~eventName=PAYMENT_ELEMENT_EVENT_LISTENERS, ~logType=INFO)
+  }
+
+  let logOnMount = () =>
+    if !hasMounted.contents {
+      hasMounted := true
+      log()
+    }
+
+  let track = name =>
+    if !(eventListeners->Array.includes(name)) {
+      eventListeners->Array.push(name)->ignore
+      if hasMounted.contents {
+        log()
+      }
+    }
+
+  {track, logOnMount}
+}
+
+let defaultEventListenerLogger = {track: _ => (), logOnMount: () => ()}
+
 let eventNameToStrMapper = (eventName: HyperLoggerTypes.eventName) => (eventName :> string)
 
 let convertToScreamingSnakeCase = text => {
-  text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
+  text->String.trim->String.replaceRegExp(/ /g, "_")->String.toUpperCase
 }
 
 let toSnakeCaseWithSeparator = (str, separator) => {
-  str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
+  str->Js.String2.unsafeReplaceBy0(/[A-Z]/g, (letter, _, _) =>
     `${separator}${letter->String.toLowerCase}`
   )
 }
@@ -348,6 +388,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | AUTHENTICATED_SESSION_INITIATED
   | ONE_CLICK_HANDLER_CALLBACK
   | PAYMENT_ELEMENT_OPTIONS
+  | PAYMENT_ELEMENT_EVENT_LISTENERS
   | TEST_MODE
   | DDC_FLOW
   | CARD_FORM_FLOW
