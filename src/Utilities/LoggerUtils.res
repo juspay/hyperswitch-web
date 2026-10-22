@@ -112,6 +112,165 @@ let makeEventListenerLogger = (~logger: HyperLoggerTypes.loggerMake, ~componentT
 
 let defaultEventListenerLogger = {track: _ => (), logOnMount: () => ()}
 
+type eventListenerTracker = {
+  logger: eventListenerLogger,
+  register: ref<string> => unit,
+  onMount: string => unit,
+  destroy: unit => unit,
+}
+
+type eventListenerScope = {
+  logger: eventListenerLogger,
+  mutable mountedSelector: option<string>,
+  mutable isDestroyed: bool,
+}
+
+type eventListenerHandle = {
+  scope: ref<eventListenerScope>,
+  listeners: array<string>,
+  mutable selectorRef: ref<string>,
+  mutable hasRegistration: bool,
+  mutable mountSelector: option<string>,
+  mutable isPaired: bool,
+}
+
+@val external deferEventListenerPairing: (unit => unit) => unit = "queueMicrotask"
+
+let makeEventListenerTrackerFactory = (~logger) => {
+  let handlesByType: Dict.t<array<eventListenerHandle>> = Dict.make()
+  componentType => {
+    let makeScope = () => {
+      logger: makeEventListenerLogger(~logger, ~componentType),
+      mountedSelector: None,
+      isDestroyed: false,
+    }
+    let handle = {
+      scope: ref(makeScope()),
+      listeners: [],
+      selectorRef: ref(""),
+      hasRegistration: false,
+      mountSelector: None,
+      isPaired: false,
+    }
+    let handles = () => handlesByType->Dict.get(componentType)->Option.getOr([])
+    let prune = () =>
+      handlesByType->Dict.set(
+        componentType,
+        handles()->Array.filter(h =>
+          !h.scope.contents.isDestroyed && (!h.isPaired || h.mountSelector->Option.isSome)
+        ),
+      )
+    let enqueue = () => {
+      prune()
+      if !handle.isPaired || handle.mountSelector->Option.isSome {
+        let handles = handles()
+        if !(handles->Array.includes(handle)) {
+          handles->Array.push(handle)->ignore
+          handlesByType->Dict.set(componentType, handles)
+        }
+      }
+    }
+    let connect = (registration, mounting) => {
+      if registration.scope.contents.mountedSelector->Option.isSome {
+        mounting.listeners->Array.forEach(registration.scope.contents.logger.track)
+        mounting.scope := registration.scope.contents
+      } else {
+        registration.listeners->Array.forEach(mounting.scope.contents.logger.track)
+        registration.scope := mounting.scope.contents
+      }
+
+      registration.scope.contents.mountedSelector = mounting.mountSelector
+      registration.isPaired = true
+      mounting.isPaired = true
+      prune()
+    }
+    let pairRegistration = () => {
+      if !handle.scope.contents.isDestroyed && handle.mountSelector->Option.isNone {
+        let sibling =
+          handles()->Array.find(h =>
+            !h.scope.contents.isDestroyed &&
+            handle.selectorRef.contents !== "" &&
+            h.mountSelector === Some(handle.selectorRef.contents)
+          )
+        sibling->Option.forEach(mounting => connect(handle, mounting))
+      }
+    }
+    let pairMount = () => {
+      handles()
+      ->Array.filter(h =>
+        !h.scope.contents.isDestroyed &&
+        h.hasRegistration &&
+        h.mountSelector->Option.isNone &&
+        h.selectorRef.contents !== "" &&
+        handle.mountSelector === Some(h.selectorRef.contents)
+      )
+      ->Array.forEach(registration => connect(registration, handle))
+    }
+    let register = selectorRef => {
+      if !handle.scope.contents.isDestroyed {
+        handle.selectorRef = selectorRef
+        handle.hasRegistration = true
+        enqueue()
+        deferEventListenerPairing(pairRegistration)
+      }
+    }
+    {
+      register,
+      logger: {
+        track: name => {
+          if !(handle.listeners->Array.includes(name)) {
+            handle.listeners->Array.push(name)->ignore
+          }
+          if !handle.scope.contents.isDestroyed {
+            handle.scope.contents.logger.track(name)
+          }
+        },
+        logOnMount: () => {
+          if !handle.scope.contents.isDestroyed {
+            pairMount()
+            handle.scope.contents.mountedSelector = handle.mountSelector
+            handle.scope.contents.logger.logOnMount()
+          }
+        },
+      },
+      onMount: selector => {
+        if (
+          handle.isPaired &&
+          handle.mountSelector->Option.isNone &&
+          (handle.scope.contents.isDestroyed ||
+          handle.scope.contents.mountedSelector !== Some(selector))
+        ) {
+          handle.scope := makeScope()
+          handle.listeners->Array.forEach(handle.scope.contents.logger.track)
+          handle.isPaired = false
+        }
+        handle.mountSelector = Some(selector)
+        handlesByType->Dict.set(
+          componentType,
+          handles()->Array.filter(h => h === handle || h.mountSelector !== Some(selector)),
+        )
+        enqueue()
+      },
+      destroy: () => {
+        if handle.mountSelector->Option.isSome {
+          pairMount()
+        } else if handle.hasRegistration {
+          pairRegistration()
+        }
+        handle.scope.contents.isDestroyed = true
+        prune()
+      },
+    }
+  }
+}
+
+let defaultEventListenerTracker = {
+  logger: defaultEventListenerLogger,
+  register: _ => (),
+  onMount: _ => (),
+  destroy: () => (),
+}
+
 let eventNameToStrMapper = (eventName: HyperLoggerTypes.eventName) => (eventName :> string)
 
 let convertToScreamingSnakeCase = text => {
@@ -119,9 +278,11 @@ let convertToScreamingSnakeCase = text => {
 }
 
 let toSnakeCaseWithSeparator = (str, separator) => {
-  str->Js.String2.unsafeReplaceBy0(/[A-Z]/g, (letter, _, _) =>
-    `${separator}${letter->String.toLowerCase}`
-  )
+  str->Stdlib.String.replaceRegExpBy0Unsafe(/[A-Z]/g, (
+    ~match as letter,
+    ~offset as _,
+    ~input as _,
+  ) => `${separator}${letter->String.toLowerCase}`)
 }
 
 let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {

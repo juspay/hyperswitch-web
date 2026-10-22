@@ -1143,7 +1143,7 @@ let usePaymentSync = (
   }
 }
 
-let maskStr = str => str->Js.String2.replaceByRe(/\S/g, "x")
+let maskStr = str => str->String.replaceRegExp(/\S/g, "x")
 
 let rec maskPayload = payloadJson => {
   switch payloadJson->JSON.Classify.classify {

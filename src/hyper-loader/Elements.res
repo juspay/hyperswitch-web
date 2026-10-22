@@ -33,7 +33,7 @@ let make = (
     let iframeRef = []
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
-    let eventListenerLoggers = Dict.make()
+    let makeEventListenerTracker = LoggerUtils.makeEventListenerTrackerFactory(~logger)
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
@@ -1573,13 +1573,7 @@ let make = (
         mountedIframeRef->Window.iframePostMessage(message)
       }
 
-      let eventListenerLogger = switch eventListenerLoggers->Dict.get(componentType) {
-      | Some(eventListenerLogger) => eventListenerLogger
-      | None =>
-        let eventListenerLogger = LoggerUtils.makeEventListenerLogger(~logger, ~componentType)
-        eventListenerLoggers->Dict.set(componentType, eventListenerLogger)
-        eventListenerLogger
-      }
+      let eventListenerTracker = makeEventListenerTracker(componentType)
 
       let paymentElement = LoaderPaymentElement.make(
         componentType,
@@ -1591,7 +1585,7 @@ let make = (
         ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
         ~logger=Some(logger),
         ~confirmPayment,
-        ~eventListenerLogger,
+        ~eventListenerTracker,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
