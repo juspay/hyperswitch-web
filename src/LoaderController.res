@@ -307,7 +307,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   }, [config])
 
   React.useEffect(() => {
-    open Promise
     let handleFun = (ev: Window.event) => {
       let json = ev.data->safeParse
       try {
@@ -407,24 +406,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 // Update top redirection atom
                 updateRedirectionFlags(paymentOptions)
 
-                switch getThemePromise(paymentOptions) {
-                | Some(promise) =>
-                  promise
-                  ->then(res => {
-                    dict->setConfigs(res)
-                  })
-                  ->catch(_ => {
-                    dict->setConfigs({
-                      default: DefaultTheme.default,
-                      defaultRules: DefaultTheme.defaultRules,
-                    })
-                  })
-                | None =>
-                  dict->setConfigs({
-                    default: DefaultTheme.default,
-                    defaultRules: DefaultTheme.defaultRules,
-                  })
-                }->ignore
+                paymentOptions->loadTheme(res => dict->setConfigs(res))
               }
               let newLaunchTime = dict->getFloat("launchTime", 0.0)
               setLaunchTime(_ => newLaunchTime)
@@ -470,25 +452,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             // Update top redirection atom
             updateRedirectionFlags(paymentOptions)
 
-            switch getThemePromise(paymentOptions) {
-            | Some(promise) =>
-              promise
-              ->then(res => {
-                dict->setConfigs(res)
-              })
-              ->catch(_ => {
-                dict->setConfigs({
-                  default: DefaultTheme.default,
-                  defaultRules: DefaultTheme.defaultRules,
-                })
-              })
-
-            | None =>
-              dict->setConfigs({
-                default: DefaultTheme.default,
-                defaultRules: DefaultTheme.defaultRules,
-              })
-            }->ignore
+            paymentOptions->loadTheme(res => dict->setConfigs(res))
             if dict->getDictIsSome("options") {
               updateOptions(dict)
             }
@@ -542,25 +506,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           | None => ()
           }
           if optionsDict->Dict.keysToArray->Array.length > 0 {
-            switch getThemePromise(optionsDict) {
-            | Some(promise) =>
-              promise
-              ->then(res => {
-                dict->setConfigs(res)
-              })
-              ->catch(_ => {
-                dict->setConfigs({
-                  default: DefaultTheme.default,
-                  defaultRules: DefaultTheme.defaultRules,
-                })
-              })
-
-            | None =>
-              dict->setConfigs({
-                default: DefaultTheme.default,
-                defaultRules: DefaultTheme.defaultRules,
-              })
-            }->ignore
+            optionsDict->loadTheme(res => dict->setConfigs(res))
           }
         }
         if dict->Dict.get("isTestMode")->Option.isSome {
