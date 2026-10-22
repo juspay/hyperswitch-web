@@ -28,7 +28,8 @@ let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Ty
           ~eventName=ONE_CLICK_HANDLER_CALLBACK,
           ~logType=INFO,
         )
-        eH()
+        resolve()
+        ->then(() => eH())
         ->then(_ => {
           logger.setLogInfo(
             ~value=`One click handler callback executed successfully`,
@@ -268,6 +269,8 @@ let make = (
           OneClickConfirmPayment,
           `onHelpOneClickConfirmPayment-${componentType}-${elementInstanceId}`,
         )
+      | PaymentButtonClick =>
+        onSDKHandleClick(eventHandler->Option.map(eH => () => Promise.resolve(eH(None))))
       | SurchargeInfo =>
         addSubscriptionEventListener(
           "surchargeInfo",
@@ -510,7 +513,11 @@ let make = (
                       handleFullScreenCallback,
                       "onFullScreenCallback",
                     )
-                    ele->makeIframe(iframeURL)->ignore
+                    let colorScheme =
+                      appearance
+                      ->CardTheme.getColorSchemeFromAppearance
+                      ->CardTheme.getColorSchemeValue
+                    ele->makeIframe(iframeURL, ~colorScheme)->ignore
                   }
                 }
               : {
