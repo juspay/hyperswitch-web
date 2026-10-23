@@ -12,6 +12,7 @@ let make = (
 ) => {
   let paymentMethod = "wallet"
   let paymentMethodType = "google_pay"
+  let isWallet = walletOptions->Array.includes(paymentMethodType)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Jotai.useAtomValue(loggerAtom)
@@ -20,9 +21,9 @@ let make = (
   let {publishableKey} = Jotai.useAtomValue(keys)
   let updateSession = Jotai.useAtomValue(updateSession)
   let options = Jotai.useAtomValue(optionAtom)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Gpay)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=isWallet, Some(loggerState), Gpay)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Gpay)
+  let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Some(loggerState), Gpay)
   let isGPayReady = Jotai.useAtomValue(isGooglePayReady)
   let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
@@ -42,7 +43,6 @@ let make = (
   let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let isWallet = walletOptions->Array.includes(paymentMethodType)
   let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
 
   UtilityHooks.useHandlePostMessages(

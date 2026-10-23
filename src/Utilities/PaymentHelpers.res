@@ -1073,11 +1073,15 @@ let rec intentCall = (
   })
 }
 
-let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
+let usePaymentSync = (
+  ~isOneClickWallet=false,
+  optLogger: option<HyperLoggerTypes.loggerMake>,
+  paymentType: payment,
+) => {
   open JotaiAtoms
   let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
   let keys = Jotai.useAtomValue(keys)
-  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed) && isOneClickWallet
   let customPodUri = Jotai.useAtomValue(customPodUri)
   let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
   let setIsManualRetryEnabled = Jotai.useSetAtom(isManualRetryEnabled)
@@ -1139,7 +1143,7 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
   }
 }
 
-let maskStr = str => str->Js.String2.replaceByRe(%re(`/\S/g`), "x")
+let maskStr = str => str->String.replaceRegExp(/\S/g, "x")
 
 let rec maskPayload = payloadJson => {
   switch payloadJson->JSON.Classify.classify {
@@ -1160,12 +1164,12 @@ let rec maskPayload = payloadJson => {
   }
 }
 
-let useCompleteAuthorizeHandler = () => {
+let useCompleteAuthorizeHandler = (~isOneClickWallet=false) => {
   open JotaiAtoms
 
   let customPodUri = Jotai.useAtomValue(customPodUri)
   let setIsManualRetryEnabled = Jotai.useSetAtom(isManualRetryEnabled)
-  let isCallbackUsedVal = Jotai.useAtomValue(isCompleteCallbackUsed)
+  let isCallbackUsedVal = Jotai.useAtomValue(isCompleteCallbackUsed) && isOneClickWallet
   let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
   let keys = Jotai.useAtomValue(keys)
 
@@ -1253,8 +1257,8 @@ let useCompleteAuthorizeHandler = () => {
     }
 }
 
-let useCompleteAuthorize = (optLogger, paymentType) => {
-  let completeAuthorizeHandler = useCompleteAuthorizeHandler()
+let useCompleteAuthorize = (~isOneClickWallet=false, optLogger, paymentType) => {
+  let completeAuthorizeHandler = useCompleteAuthorizeHandler(~isOneClickWallet)
   let keys = Jotai.useAtomValue(JotaiAtoms.keys)
   let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
   let url = RescriptReactRouter.useUrl()
@@ -1307,7 +1311,7 @@ let useRedsysCompleteAuthorize = optLogger => {
     )
 }
 
-let usePaymentIntent = (optLogger, paymentType) => {
+let usePaymentIntent = (~isOneClickWallet=false, optLogger, paymentType) => {
   open JotaiAtoms
   open Promise
   let url = RescriptReactRouter.useUrl()
@@ -1317,7 +1321,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let customPodUri = Jotai.useAtomValue(customPodUri)
   let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
   let keys = Jotai.useAtomValue(keys)
-  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed) && isOneClickWallet
   let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
 
   let setIsManualRetryEnabled = Jotai.useSetAtom(isManualRetryEnabled)
