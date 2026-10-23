@@ -813,6 +813,50 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
+      // Deliberately leaves the shared sdkAuthorization ref and the logger's auth alone: they
+      // belong to elements/paymentSession on this instance, and a vault session token would
+      // overwrite theirs. Payment method sessions log through a separate logger instead, so
+      // payment_id stays scoped to them. Every session on this instance shares that one logger,
+      // created on first use, since each logger keeps a flush timer alive.
+      let paymentMethodSessionLoggerRef = ref((None: option<HyperLoggerTypes.loggerMake>))
+      let initPaymentMethodSession = paymentMethodSessionOptions => {
+        let pmSessionIdVal = (
+          paymentMethodSessionOptions
+          ->getDictFromJson
+          ->PaymentMethodSession.resolveSdkAuthorization
+          ->Utils.getSdkAuthorizationData
+        ).pmSessionId->Option.getOr("")
+        let sessionLogger = switch paymentMethodSessionLoggerRef.contents {
+        | Some(existingLogger) => existingLogger
+        | None =>
+          let newLogger = HyperLogger.make(
+            ~sessionId=sessionID,
+            ~source=Loader,
+            ~merchantId=publishableKey,
+            ~metadata=analyticsMetadata,
+          )
+          paymentMethodSessionLoggerRef := Some(newLogger)
+          newLogger
+        }
+        sessionLogger.setPaymentId(pmSessionIdVal)
+        sessionLogger.setLogInfo(
+          ~value=[
+            ("url", Window.hrefWithoutSearch->JSON.Encode.string),
+            ("pmSessionId", pmSessionIdVal->JSON.Encode.string),
+          ]
+          ->getJsonFromArrayOfJson
+          ->JSON.stringify,
+          ~eventName=PAYMENT_METHOD_SESSION_INITIATED,
+        )
+
+        PaymentMethodSession.make(
+          paymentMethodSessionOptions,
+          ~publishableKey,
+          ~sdkSessionId=sessionID,
+          ~logger=sessionLogger,
+        )
+      }
+
       let returnObject: hyperInstance = {
         confirmOneClickPayment,
         confirmPayment,
@@ -827,7 +871,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         completeUpdateIntent,
         initiateUpdateIntent,
         confirmTokenization: confirmPayment,
-        initPaymentMethodSession: options => PaymentMethodSession.make(options, ~logger),
+        initPaymentMethodSession,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

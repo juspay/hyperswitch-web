@@ -1,7 +1,7 @@
 @react.component
 let make = () => {
   open Utils
-  let (branding, setBranding) = React.useState(_ => "auto")
+  let (branding, setBranding) = React.useState(_ => PaymentType.Auto)
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -10,22 +10,32 @@ let make = () => {
       let dict = json->getDictFromJson
       if dict->Utils.getBool("fullScreenIframeMounted", false) {
         if dict->getDictFromDict("options")->getOptionString("branding")->Option.isSome {
-          setBranding(_ => dict->getDictFromDict("options")->getString("branding", "auto"))
+          setBranding(_ =>
+            dict
+            ->getDictFromDict("options")
+            ->getString("branding", "auto")
+            ->PaymentType.getShowType("options.branding")
+          )
         }
+        let rules = dict->getDictFromDict("appearance")->getJsonObjectFromDict("rules")
+        dict->loadTheme(theme => {
+          generateStyleSheet(
+            "",
+            mergeJsons(theme.defaultRules(theme.default), rules)->getDictFromJson,
+            "loaderstyle",
+          )
+          Promise.resolve()
+        })
       }
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
   })
 
-  let styles =
-    branding === "auto"
-      ? "backdrop-blur-md bg-black/80"
-      : "backdrop-contrast-125 backdrop-blur-2xl opacity-70 bg-black/80"
+  let className =
+    branding == Auto
+      ?"h-screen w-screen backdrop-blur-md bg-black/80"
+      : "Loader--fullscreen h-screen w-screen"
 
-  <div className={`h-screen w-screen flex m-auto items-center ${styles}`}>
-    <div className={`flex flex-col justify-center m-auto visible`}>
-      <Loader branding />
-    </div>
-  </div>
+  <Loader branding className />
 }

@@ -171,6 +171,7 @@ let getPaymentMethodDataFieldKey = (key): string =>
     | BacsBankCity => "bacs.bankCity"
     | SepaIban => "sepa.iban"
     | SepaBic => "sepa.bic"
+    | SepaAccountHolderName => "sepa.accountHolderName"
     | SepaBankName => "sepa.bankName"
     | SepaBankCity => "sepa.bankCity"
     | SepaCountryCode => "sepa.countryCode"
@@ -209,6 +210,7 @@ let getPaymentMethodDataFieldLabel = (key, localeString: LocaleStringTypes.local
   | PayoutMethodData(BacsSortCode) => localeString.sortCodeText
   | PayoutMethodData(SepaIban) => localeString.formFieldSepaIbanLabel
   | PayoutMethodData(SepaBic) => localeString.formFieldSepaBicLabel
+  | PayoutMethodData(SepaAccountHolderName) => localeString.fullNameLabel
   | PayoutMethodData(PixKey) => localeString.formFieldPixIdLabel
   | PayoutMethodData(PixBankAccountNumber) => localeString.formFieldBankAccountNumberLabel
   | PayoutMethodData(InteracEmail)
@@ -257,6 +259,7 @@ let getPaymentMethodDataFieldPlaceholder = (
   | PayoutMethodData(BacsAccountNumber) => constant.formFieldAccountNumberPlaceholder
   | PayoutMethodData(SepaIban) => constant.formFieldSepaIbanPlaceholder
   | PayoutMethodData(SepaBic) => constant.formFieldSepaBicPlaceholder
+  | PayoutMethodData(SepaAccountHolderName) => locale.fullNamePlaceholder
   | PayoutMethodData(SepaCountryCode) => locale.countryLabel
   | PayoutMethodData(PixKey) => constant.formFieldPixIdPlaceholder
   | PayoutMethodData(PixBankAccountNumber) => constant.formFieldBankAccountNumberPlaceholder
@@ -308,7 +311,8 @@ let getPaymentMethodDataFieldCharacterPattern = (key): option<Js.Re.t> =>
   | PayoutMethodData(ACHRoutingNumber) => Some(%re("/^\d{1,9}$/"))
   | PayoutMethodData(BacsAccountNumber) => Some(%re("/^\d{1,18}$/"))
   | PayoutMethodData(BacsSortCode) => Some(%re("/^\d{1,6}$/"))
-  | PayoutMethodData(CardHolderName) => Some(%re("/^([a-zA-Z]| ){1,32}$/"))
+  | PayoutMethodData(CardHolderName | SepaAccountHolderName) =>
+    Some(%re("/^([a-zA-Z]| ){1,32}$/"))
   | PayoutMethodData(CardNumber) => Some(%re("/^\d{1,18}$/"))
   | PayoutMethodData(PaypalMobNumber) => Some(%re("/^[0-9]{1,12}$/"))
   | PayoutMethodData(SepaBic) => Some(%re("/^([A-Z0-9]| ){1,11}$/"))
@@ -443,11 +447,12 @@ let getPaymentMethodDataErrorString = (
     } else {
       localeString.emailInvalidText
     }
-  | (PayoutMethodData(CardHolderName), _) =>
+  | (PayoutMethodData(CardHolderName | SepaAccountHolderName), _) =>
+    let fieldLabel = getPaymentMethodDataFieldLabel(key, localeString)
     if value->String.trim->String.length === 0 {
-      localeString.cardHolderName->localeString.nameEmptyText
+      fieldLabel->localeString.nameEmptyText
     } else {
-      localeString.cardHolderName->localeString.completeNameEmptyText
+      fieldLabel->localeString.completeNameEmptyText
     }
   | (PayoutMethodData(SepaIban), _) =>
     if value->String.trim->String.length === 0 {
@@ -758,7 +763,7 @@ let calculateValidity = (key, value, cardBrand, ~default=None) => {
     } else {
       Some(false)
     }
-  | PayoutMethodData(CardHolderName) =>
+  | PayoutMethodData(CardHolderName | SepaAccountHolderName) =>
     if value->String.trim->String.includes(" ") {
       Some(true)
     } else if value->String.length == 0 {

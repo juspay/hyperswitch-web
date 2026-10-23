@@ -79,8 +79,8 @@ let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
   )
 }
 
-let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
-  messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
+let handleOnPaymentCompleteMessage = (~targetOrigin="*") => {
+  messageParentWindow([("paymentComplete", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
@@ -890,24 +890,23 @@ let isoOptionsToCountryNames = (isoOptions: array<string>): array<string> =>
     ->Option.map(item => item.countryName)
   )
 
-let getStateNames = (country: JotaiAtomTypes.field) => {
-  let options =
-    CountryStateDataRefs.stateDataRef.contents
-    ->getDictFromJson
-    ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
-    ->Option.getOr([])
-
-  options->Array.reduce([], (arr, item) => {
-    arr
-    ->Array.push(
-      item
-      ->getDictFromJson
-      ->getString("value", ""),
-    )
-    ->ignore
-    arr
+/*
+ * Display names of a country's states, in the state data's own (alphabetical) order.
+ * A non-empty `allowedStateCodes` is an allowlist of state codes.
+ */
+let getStateNamesForCountry = (~countryIso, ~allowedStateCodes=[]) =>
+  CountryStateDataRefs.stateDataRef.contents
+  ->getDictFromJson
+  ->getArray(countryIso)
+  ->Array.filterMap(item => {
+    let state = item->getDictFromJson
+    let isStateCodeIncluded = allowedStateCodes->Array.includes(state->getString("code", ""))
+    let isStateAllowed = allowedStateCodes->Array.length === 0 || isStateCodeIncluded
+    isStateAllowed ? Some(state->getString("value", "")) : None
   })
-}
+
+let getStateNames = (country: JotaiAtomTypes.field) =>
+  getStateNamesForCountry(~countryIso=getCountryCode(country.value).isoAlpha2)
 
 let isAddressComplete = (
   line1: JotaiAtomTypes.field,
@@ -1552,6 +1551,9 @@ let sanitizeEventData = (data: Types.eventData): Types.eventData => {
   ->eventDataFromJson
 }
 
+let getPaymentCompleteEventData = eventName =>
+  [(eventName, true->JSON.Encode.bool)]->getJsonFromArrayOfJson->eventDataFromJson
+
 let eventHandlerFunc = (
   condition: Types.event => bool,
   eventHandler,
@@ -1565,7 +1567,7 @@ let eventHandlerFunc = (
       | Click
       | Ready
       | Focus
-      | CompleteDoThis
+      | PaymentComplete
       | ConfirmPayment
       | OneClickConfirmPayment
       | Blur =>
@@ -1580,18 +1582,50 @@ let eventHandlerFunc = (
   EventListenerManager.addSmartEventListener("message", changeHandler, activity)
 }
 
-let makeIframe = (element, url) => {
-  open Types
+let getFullscreenOverlayStyle = colorScheme => [
+  ("all", "initial"),
+  ("position", "fixed"),
+  ("inset", "0"),
+  ("width", "100%"),
+  ("height", "100%"),
+  ("display", "block"),
+  ("z-index", "2147483647"),
+  ("color-scheme", colorScheme),
+]
+
+let supportsPopover = !(Window.showPopoverFn->Nullable.isNullable)
+
+let fullscreenBackdropHidden = ref(false)
+let hideFullscreenBackdrop = () =>
+  if !fullscreenBackdropHidden.contents {
+    let sheet = Window.makeCssStyleSheet()
+    sheet->Window.replaceSync("#orca-fullscreen::backdrop { display: none !important; }")
+    Window.window->Window.document->Window.adoptedStyleSheets->Array.push(sheet)
+    fullscreenBackdropHidden := true
+  }
+
+let makeIframe = (element, url, ~colorScheme) => {
   Promise.make((resolve, _) => {
-    let iframe = createElement("iframe")
-    iframe.id = "orca-fullscreen"
-    iframe.src = url
-    iframe.name = "fullscreen"
-    iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
-    iframe.onload = () => {
+    let iframe = Window.createElement("iframe")
+    iframe->Window.setAttribute("id", "orca-fullscreen")
+    iframe->Window.setAttribute("src", url)
+    iframe->Window.setAttribute("name", "fullscreen")
+    colorScheme
+    ->getFullscreenOverlayStyle
+    ->Array.forEach(((property, value)) =>
+      iframe->Window.style->Window.setStylePropertyImportant(property, value, "important")
+    )
+    iframe->Window.elementOnload(() => {
       resolve(Dict.make())
+    })
+    element->Window.appendChildElement(iframe)
+    if supportsPopover {
+      hideFullscreenBackdrop()
+      iframe->Window.setAttribute("popover", "manual")
+      iframe->Window.showPopover
+    } else {
+      Console.warn("Popover API unavailable: fullscreen overlay shown as a plain fixed iframe")
     }
-    element->appendChild(iframe)
   })
 }
 let makeHiddenIframe = (element, ~src, ~id) => {
@@ -1634,6 +1668,21 @@ let getThemePromise = dict => {
   | "bubblegum" => Some(ThemeImporter.importTheme("../BubblegumTheme.bs.js"))
   | "none" => Some(ThemeImporter.importTheme("../NoTheme.bs.js"))
   | _ => None
+  }
+}
+
+let loadTheme = (dict, onLoad: ThemeImporter.themeDataModule => promise<unit>) => {
+  let defaultTheme: ThemeImporter.themeDataModule = {
+    default: DefaultTheme.default,
+    defaultRules: DefaultTheme.defaultRules,
+  }
+  switch getThemePromise(dict) {
+  | Some(promise) =>
+    promise
+    ->Promise.then(onLoad)
+    ->Promise.catch(_ => onLoad(defaultTheme))
+    ->ignore
+  | None => onLoad(defaultTheme)->ignore
   }
 }
 

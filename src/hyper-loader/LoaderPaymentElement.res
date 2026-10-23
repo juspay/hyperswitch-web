@@ -6,7 +6,7 @@ open Identity
 @val @scope(("navigator", "clipboard"))
 external writeText: string => promise<'a> = "writeText"
 
-let onCompleteDoThisUsed = ref(false)
+let isPaymentCompleteHandlerProvided = ref(false)
 let isPaymentButtonHandlerProvided = ref(false)
 
 let currentOneClickHandler = ref((None: option<unit => Promise.t<unit>>))
@@ -28,7 +28,8 @@ let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Ty
           ~eventName=ONE_CLICK_HANDLER_CALLBACK,
           ~logType=INFO,
         )
-        eH()
+        resolve()
+        ->then(() => eH())
         ->then(_ => {
           logger.setLogInfo(
             ~value=`One click handler callback executed successfully`,
@@ -105,6 +106,7 @@ let make = (
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  ~eventListenerTracker=LoggerUtils.defaultEventListenerTracker,
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
@@ -113,6 +115,8 @@ let make = (
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let mountId = ref("")
     let localSelectorRef = ref("")
+    let eventListenerSelectorRef =
+      componentType->Utils.canHaveMultipleInstances ? localSelectorRef : ref(componentType)
     // Unique per-instance ID to scope event listener names and prevent collisions.
     let elementInstanceId = generateRandomString(8)
 
@@ -164,6 +168,10 @@ let make = (
           }
         }
       }
+      eventListenerTracker.register(eventListenerSelectorRef)
+      if eventHandler->Option.isSome {
+        eventListenerTracker.logger.track(eventType)
+      }
       let matchesInstance = (ev: Types.event) => {
         // Multi-instance: match by elementType + iframeId so events route to the correct instance.
         if componentType->Utils.canHaveMultipleInstances {
@@ -204,13 +212,14 @@ let make = (
           },
           `onEscape-${componentType}-${elementInstanceId}`,
         )
-      | CompleteDoThis =>
+      | PaymentComplete =>
         if eventHandler->Option.isSome {
+          isPaymentCompleteHandlerProvided := true
           eventHandlerFunc(
-            ev => ev.data.completeDoThis,
-            eventHandler,
-            CompleteDoThis,
-            `onCompleteDoThis-${componentType}-${elementInstanceId}`,
+            ev => ev.data.paymentComplete,
+            eventHandler->Option.map(eH => _ => eH(Some(eventType->getPaymentCompleteEventData))),
+            PaymentComplete,
+            `onPaymentComplete-${componentType}-${elementInstanceId}`,
           )
         }
       | Change =>
@@ -268,6 +277,8 @@ let make = (
           OneClickConfirmPayment,
           `onHelpOneClickConfirmPayment-${componentType}-${elementInstanceId}`,
         )
+      | PaymentButtonClick =>
+        onSDKHandleClick(eventHandler->Option.map(eH => () => Promise.resolve(eH(None))))
       | SurchargeInfo =>
         addSubscriptionEventListener(
           "surchargeInfo",
@@ -312,6 +323,7 @@ let make = (
     }
 
     let destroy = () => {
+      eventListenerTracker.destroy()
       unmount()
       mountId := ""
     }
@@ -370,11 +382,13 @@ let make = (
           pendingMountSelectorsByType->Dict.set(componentType, mounts)
         }
       }
+      eventListenerTracker.onMount(eventListenerSelectorRef.contents)
       let iframeHeightRef = ref(25.0)
       let currentClass = ref("base")
       let fullscreen = ref(false)
       let fullscreenParam = ref("")
       let fullscreenMetadata = ref(Dict.make()->JSON.Encode.object)
+      let mountedWindow = ref((Nullable.null: Nullable.t<Dom.element>))
       let optionsDict = options->getDictFromJson
       let handle = (ev: Types.event) => {
         let eventDataObject = ev.data->anyTypeToJson
@@ -510,7 +524,11 @@ let make = (
                       handleFullScreenCallback,
                       "onFullScreenCallback",
                     )
-                    ele->makeIframe(iframeURL)->ignore
+                    let colorScheme =
+                      appearance
+                      ->CardTheme.getColorSchemeFromAppearance
+                      ->CardTheme.getColorSchemeValue
+                    ele->makeIframe(iframeURL, ~colorScheme)->ignore
                   }
                 }
               : {
@@ -527,11 +545,17 @@ let make = (
         }
 
         if iframeMounted->Option.isSome {
-          mountPostMessage(
-            Window.querySelector(`#orca-${elementIframeId}-iframeRef-${localSelectorString}`),
-            localSelectorString,
-            sdkHandleOneClickConfirmPayment,
+          let mountedIframe = Window.querySelector(
+            `#orca-${elementIframeId}-iframeRef-${localSelectorString}`,
           )
+
+          if (
+            !(mountedWindow.contents->Nullable.isNullable) &&
+            ev.source === mountedWindow.contents->Nullable.getUnsafe
+          ) {
+            eventListenerTracker.logger.logOnMount()
+          }
+          mountPostMessage(mountedIframe, localSelectorString, sdkHandleOneClickConfirmPayment)
         }
       }
       // Multi-instance elements need unique listener names per instance.
@@ -582,6 +606,7 @@ let make = (
           let elem = Window.querySelector(`#${iframeElementId}`)
           switch elem->Nullable.toOption {
           | Some(ele) =>
+            mountedWindow := ele->Window.contentWindow->Nullable.make
             ele
             ->Window.style
             ->Window.setTransition(
@@ -605,7 +630,13 @@ let make = (
       destroy,
       update,
       mount,
-      onSDKHandleClick,
+      onSDKHandleClick: eventHandler => {
+        eventListenerTracker.register(eventListenerSelectorRef)
+        if eventHandler->Option.isSome {
+          eventListenerTracker.logger.track("onSDKHandleClick")
+        }
+        onSDKHandleClick(eventHandler)
+      },
       confirmPayment,
     }
   } catch {

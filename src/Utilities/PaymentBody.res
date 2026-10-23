@@ -991,13 +991,17 @@ let vgsVaultCardBody = (~cardNumber, ~month, ~year, ~cvcNumber, ~last4Digits, ~b
   ]
 }
 
-let cardTokenizationBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {
+let cardTokenizationBody = (~cardNumber, ~month, ~year, ~cvcNumber, ~cardHolderName=None) => {
   let cardBody = [
     ("card_number", cardNumber->CardValidations.clearSpaces->JSON.Encode.string),
     ("card_exp_month", month->JSON.Encode.string),
     ("card_exp_year", year->JSON.Encode.string),
     ("card_cvc", cvcNumber->JSON.Encode.string),
   ]
+
+  cardHolderName
+  ->Option.map(name => cardBody->Array.push(("card_holder_name", name->JSON.Encode.string))->ignore)
+  ->ignore
 
   [
     ("payment_method_type", "card"->JSON.Encode.string),

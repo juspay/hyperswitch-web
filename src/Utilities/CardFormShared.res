@@ -4,7 +4,8 @@ let mapFieldTypeToInternalFieldName = (fieldType: string): string =>
   switch fieldType {
   | "cardNumber"
   | "cardExpiry"
-  | "cardCvc" => fieldType
+  | "cardCvc"
+  | "cardholderName" => fieldType
   | _ => ""
   }
 
@@ -27,6 +28,7 @@ let reshapeCardStateUpdateToChangePayload = (
   | "cardNumber" => fieldStatus->getBool("isCardValid", false)
   | "cardExpiry" => fieldStatus->getBool("isExpiryValid", false)
   | "cardCvc" => fieldStatus->getBool("isCvcValid", false)
+  | "cardholderName" => true
   | _ => false
   }
   let brand = stateDict->getString("cardBrand", "")

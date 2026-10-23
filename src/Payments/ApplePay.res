@@ -4,6 +4,7 @@ open Promise
 let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let paymentMethod = "wallet"
   let paymentMethodType = "apple_pay"
+  let isWallet = walletOptions->Array.includes(paymentMethodType)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
@@ -14,9 +15,13 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let setIsShowOrPayUsing = Jotai.useSetAtom(JotaiAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Applepay)
+  let intent = PaymentHelpers.usePaymentIntent(
+    ~isOneClickWallet=isWallet,
+    Some(loggerState),
+    Applepay,
+  )
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Applepay)
+  let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Some(loggerState), Applepay)
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
   let isApplePaySDKFlow = sessionObj->Option.isSome
@@ -28,7 +33,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let isWallet = walletOptions->Array.includes(paymentMethodType)
   let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
 
   let (heightType, _, _, _, _) = options.wallets.style.height

@@ -17,7 +17,7 @@ function Payment() {
   const [error, setError] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
-  const isCypressTestMode = getQueryParam("isCypressTestMode") === "true";
+  const isTestMode = getQueryParam("isTestMode") === "true";
   const publishableKeyQueryParam = getQueryParam("publishableKey");
   const clientSecretQueryParam = getQueryParam("clientSecret");
   const profileIdQueryParam = getQueryParam("profileId");
@@ -35,17 +35,17 @@ function Payment() {
       try {
         const { configData, urlsData } = await fetchConfigAndUrls(baseUrl);
 
-        const publishableKey = isCypressTestMode
+        const publishableKey = isTestMode
           ? publishableKeyQueryParam
           : configData.publishableKey;
 
-        const profileId = isCypressTestMode
+        const profileId = isTestMode
           ? profileIdQueryParam
           : configData?.profileId;
 
         const paymentIntentData = await getPaymentIntentData({
           baseUrl,
-          isCypressTestMode,
+          isTestMode,
           clientSecretQueryParam,
           setError,
         });

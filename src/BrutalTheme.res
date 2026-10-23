@@ -212,6 +212,13 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
       "fontWeight": theme.fontWeightMedium,
       "marginBottom": "1.5rem",
     },
+    ".Loader--fullscreen": {
+      "backgroundColor": "rgba(0, 0, 0, 0.8)",
+      "opacity": "0.7",
+    },
+    ".Loader--overlay": {
+      "backgroundColor": "rgba(255, 255, 255, 0.6)",
+    },
   }->Identity.anyTypeToJson
 
 let default = brutal

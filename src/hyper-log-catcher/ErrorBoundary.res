@@ -136,6 +136,11 @@ module ErrorCard = {
       }
     }
 
+    // Crash logs are beaconed outside the logger, so carry the session and merchant
+    // across by hand or they cannot be attributed to the flow that crashed.
+    let keys = Jotai.useAtomValue(JotaiAtoms.keys)
+    let sessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
+
     React.useEffect0(() => {
       let loggingLevel = GlobalVars.loggingLevelStr
       let enableLogging = GlobalVars.enableLogging
@@ -150,14 +155,14 @@ module ErrorCard = {
         let errorLog: HyperLoggerTypes.logFile = {
           logType: ERROR,
           timestamp: Date.now()->Float.toString,
-          sessionId: "",
+          sessionId,
           source: "orca-elements",
           version: GlobalVars.repoVersion,
           value: errorDict->JSON.Encode.object->JSON.stringify,
           // internalMetadata: "",
           category: USER_ERROR,
           paymentId: "",
-          merchantId: publishableKey,
+          merchantId: publishableKey !== "" ? publishableKey : keys.publishableKey,
           browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
           browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
           platform: Window.Navigator.platform,
@@ -175,7 +180,6 @@ module ErrorCard = {
     })
 
     let (divH, setDivH) = React.useState(_ => 0.0)
-    let keys = Jotai.useAtomValue(JotaiAtoms.keys)
     let {iframeId} = keys
     let divRef = React.useRef(Nullable.null)
 
