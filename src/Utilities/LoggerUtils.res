@@ -134,7 +134,13 @@ type eventListenerHandle = {
   mutable isPaired: bool,
 }
 
-@val external deferEventListenerPairing: (unit => unit) => unit = "queueMicrotask"
+let ignoreErrors = (fn, arg) =>
+  try fn(arg) catch {
+  | _ => ()
+  }
+
+let deferEventListenerPairing = fn =>
+  Promise.resolve()->Promise.thenResolve(() => ignoreErrors(fn, ()))->ignore
 
 let makeEventListenerTrackerFactory = (~logger) => {
   let handlesByType: Dict.t<array<eventListenerHandle>> = Dict.make()
@@ -214,52 +220,56 @@ let makeEventListenerTrackerFactory = (~logger) => {
         deferEventListenerPairing(pairRegistration)
       }
     }
+    let track = name => {
+      if !(handle.listeners->Array.includes(name)) {
+        handle.listeners->Array.push(name)->ignore
+      }
+      if !handle.scope.contents.isDestroyed {
+        handle.scope.contents.logger.track(name)
+      }
+    }
+    let logOnMount = () => {
+      if !handle.scope.contents.isDestroyed {
+        pairMount()
+        handle.scope.contents.mountedSelector = handle.mountSelector
+        handle.scope.contents.logger.logOnMount()
+      }
+    }
+    let onMount = selector => {
+      if (
+        handle.isPaired &&
+        handle.mountSelector->Option.isNone &&
+        (handle.scope.contents.isDestroyed ||
+        handle.scope.contents.mountedSelector !== Some(selector))
+      ) {
+        handle.scope := makeScope()
+        handle.listeners->Array.forEach(handle.scope.contents.logger.track)
+        handle.isPaired = false
+      }
+      handle.mountSelector = Some(selector)
+      handlesByType->Dict.set(
+        componentType,
+        handles()->Array.filter(h => h === handle || h.mountSelector !== Some(selector)),
+      )
+      enqueue()
+    }
+    let destroy = () => {
+      if handle.mountSelector->Option.isSome {
+        pairMount()
+      } else if handle.hasRegistration {
+        pairRegistration()
+      }
+      handle.scope.contents.isDestroyed = true
+      prune()
+    }
     {
-      register,
+      register: selectorRef => ignoreErrors(register, selectorRef),
       logger: {
-        track: name => {
-          if !(handle.listeners->Array.includes(name)) {
-            handle.listeners->Array.push(name)->ignore
-          }
-          if !handle.scope.contents.isDestroyed {
-            handle.scope.contents.logger.track(name)
-          }
-        },
-        logOnMount: () => {
-          if !handle.scope.contents.isDestroyed {
-            pairMount()
-            handle.scope.contents.mountedSelector = handle.mountSelector
-            handle.scope.contents.logger.logOnMount()
-          }
-        },
+        track: name => ignoreErrors(track, name),
+        logOnMount: () => ignoreErrors(logOnMount, ()),
       },
-      onMount: selector => {
-        if (
-          handle.isPaired &&
-          handle.mountSelector->Option.isNone &&
-          (handle.scope.contents.isDestroyed ||
-          handle.scope.contents.mountedSelector !== Some(selector))
-        ) {
-          handle.scope := makeScope()
-          handle.listeners->Array.forEach(handle.scope.contents.logger.track)
-          handle.isPaired = false
-        }
-        handle.mountSelector = Some(selector)
-        handlesByType->Dict.set(
-          componentType,
-          handles()->Array.filter(h => h === handle || h.mountSelector !== Some(selector)),
-        )
-        enqueue()
-      },
-      destroy: () => {
-        if handle.mountSelector->Option.isSome {
-          pairMount()
-        } else if handle.hasRegistration {
-          pairRegistration()
-        }
-        handle.scope.contents.isDestroyed = true
-        prune()
-      },
+      onMount: selector => ignoreErrors(onMount, selector),
+      destroy: () => ignoreErrors(destroy, ()),
     }
   }
 }
