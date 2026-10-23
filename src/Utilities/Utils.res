@@ -79,8 +79,8 @@ let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
   )
 }
 
-let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
-  messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
+let handleOnPaymentCompleteMessage = (~targetOrigin="*") => {
+  messageParentWindow([("paymentComplete", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
@@ -1551,6 +1551,9 @@ let sanitizeEventData = (data: Types.eventData): Types.eventData => {
   ->eventDataFromJson
 }
 
+let getPaymentCompleteEventData = eventName =>
+  [(eventName, true->JSON.Encode.bool)]->getJsonFromArrayOfJson->eventDataFromJson
+
 let eventHandlerFunc = (
   condition: Types.event => bool,
   eventHandler,
@@ -1564,7 +1567,7 @@ let eventHandlerFunc = (
       | Click
       | Ready
       | Focus
-      | CompleteDoThis
+      | PaymentComplete
       | ConfirmPayment
       | OneClickConfirmPayment
       | Blur =>
@@ -1665,6 +1668,21 @@ let getThemePromise = dict => {
   | "bubblegum" => Some(ThemeImporter.importTheme("../BubblegumTheme.bs.js"))
   | "none" => Some(ThemeImporter.importTheme("../NoTheme.bs.js"))
   | _ => None
+  }
+}
+
+let loadTheme = (dict, onLoad: ThemeImporter.themeDataModule => promise<unit>) => {
+  let defaultTheme: ThemeImporter.themeDataModule = {
+    default: DefaultTheme.default,
+    defaultRules: DefaultTheme.defaultRules,
+  }
+  switch getThemePromise(dict) {
+  | Some(promise) =>
+    promise
+    ->Promise.then(onLoad)
+    ->Promise.catch(_ => onLoad(defaultTheme))
+    ->ignore
+  | None => onLoad(defaultTheme)->ignore
   }
 }
 

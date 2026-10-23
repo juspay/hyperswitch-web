@@ -33,6 +33,7 @@ let make = (
     let iframeRef = []
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
+    let makeEventListenerTracker = LoggerUtils.makeEventListenerTrackerFactory(~logger)
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
@@ -460,39 +461,37 @@ let make = (
             ("redirectionFlags", redirectionFlagsDict->JSON.Encode.object),
             ("subscriptionEvents", subscriptionEventsVal),
           ]->getJsonFromArrayOfJson
-        let message = [
-          (
-            "paymentElementCreate",
-            componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
-          ),
-          ("otherElements", otherElements->JSON.Encode.bool),
-          ("options", newOptions),
-          ("componentType", componentType->JSON.Encode.string),
-          ("paymentOptions", widgetOptions),
-          ("iframeId", selectorString->JSON.Encode.string),
-          ("publishableKey", publishableKey->JSON.Encode.string),
-          ("endpoint", endpoint->JSON.Encode.string),
-          ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-          ("blockConfirm", blockConfirm->JSON.Encode.bool),
-          ("customPodUri", customPodUri->JSON.Encode.string),
-          ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
-          ("parentURL", "*"->JSON.Encode.string),
-          ("analyticsMetadata", analyticsMetadata),
-          ("launchTime", launchTime->JSON.Encode.float),
-          ("customBackendUrl", customBackendUrl->JSON.Encode.string),
-          ("isTestMode", isTestMode->JSON.Encode.bool),
-          (
-            "isPaymentButtonHandlerProvided",
-            LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
-          ),
-          (
-            "onCompleteDoThisUsed",
-            EventListenerManager.eventListenerMap
-            ->Dict.get("onCompleteDoThis")
-            ->Option.isSome
-            ->JSON.Encode.bool,
-          ),
-        ]->Dict.fromArray
+        let message =
+          [
+            (
+              "paymentElementCreate",
+              componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
+            ),
+            ("otherElements", otherElements->JSON.Encode.bool),
+            ("options", newOptions),
+            ("componentType", componentType->JSON.Encode.string),
+            ("paymentOptions", widgetOptions),
+            ("iframeId", selectorString->JSON.Encode.string),
+            ("publishableKey", publishableKey->JSON.Encode.string),
+            ("endpoint", endpoint->JSON.Encode.string),
+            ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+            ("blockConfirm", blockConfirm->JSON.Encode.bool),
+            ("customPodUri", customPodUri->JSON.Encode.string),
+            ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
+            ("parentURL", "*"->JSON.Encode.string),
+            ("analyticsMetadata", analyticsMetadata),
+            ("launchTime", launchTime->JSON.Encode.float),
+            ("customBackendUrl", customBackendUrl->JSON.Encode.string),
+            ("isTestMode", isTestMode->JSON.Encode.bool),
+            (
+              "isPaymentButtonHandlerProvided",
+              LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
+            ),
+            (
+              "isPaymentCompleteHandlerProvided",
+              LoaderPaymentElement.isPaymentCompleteHandlerProvided.contents->JSON.Encode.bool,
+            ),
+          ]->Dict.fromArray
 
         let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)
 
@@ -1574,6 +1573,8 @@ let make = (
         mountedIframeRef->Window.iframePostMessage(message)
       }
 
+      let eventListenerTracker = makeEventListenerTracker(componentType)
+
       let paymentElement = LoaderPaymentElement.make(
         componentType,
         newOptions,
@@ -1584,6 +1585,7 @@ let make = (
         ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
         ~logger=Some(logger),
         ~confirmPayment,
+        ~eventListenerTracker,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
