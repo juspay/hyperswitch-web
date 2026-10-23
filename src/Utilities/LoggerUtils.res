@@ -140,7 +140,10 @@ let ignoreErrors = (fn, arg) =>
   }
 
 let deferEventListenerPairing = fn =>
-  Promise.resolve()->Promise.thenResolve(() => ignoreErrors(fn, ()))->ignore
+  Promise.resolve()
+  ->Promise.thenResolve(() => ignoreErrors(fn, ()))
+  ->Promise.catch(_ => Promise.resolve())
+  ->ignore
 
 let makeEventListenerTrackerFactory = (~logger) => {
   let handlesByType: Dict.t<array<eventListenerHandle>> = Dict.make()
