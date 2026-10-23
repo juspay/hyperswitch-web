@@ -179,6 +179,7 @@ let make = (
   let eventCallbacksRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
 
   let vgsBrokerRef: ref<option<VGSVaultBroker.vgsBrokerHandle>> = ref(None)
+  let vgsSubmitPendingRef: ref<option<JSON.t => unit>> = ref(None)
 
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
@@ -849,6 +850,52 @@ let make = (
     eventCallbacksRef.contents->Dict.set(event, cb)
   }
 
+  let interruptedTokenizationResult = () =>
+    makeErrorResult(
+      ~code="tokenization_failed",
+      ~message="deinit() was called while a tokenization was in flight — the card may still have been saved",
+      ~locale,
+      ~typeOverride=ApiError,
+      (),
+    )
+
+  // Keep vendor work behind one settlement so deinit can finish the public
+  // tokenization promise even when VGS never calls back. Late vendor callbacks
+  // must not reach the flow handlers and consume a deinitialized session.
+  let submitVgsForm = (broker: VGSVaultBroker.vgsBrokerHandle): promise<JSON.t> =>
+    Promise.make((resolve, reject) => {
+      let settledRef = ref(false)
+      let settle = result => {
+        if !settledRef.contents {
+          settledRef := true
+          vgsSubmitPendingRef := None
+          resolve(result)
+        }
+      }
+      let fail = err => {
+        if !settledRef.contents {
+          settledRef := true
+          vgsSubmitPendingRef := None
+          reject(err)
+        }
+      }
+      vgsSubmitPendingRef := Some(settle)
+      try {
+        broker.submitForm()
+        ->Promise.then(result => {
+          settle(result)
+          Promise.resolve()
+        })
+        ->Promise.catch(err => {
+          fail(err)
+          Promise.resolve()
+        })
+        ->ignore
+      } catch {
+      | err => fail(err)
+      }
+    })
+
   let tokenizeVgsFlowA = (): promise<JSON.t> => {
     switch getOrCreateVgsBroker() {
     | None =>
@@ -882,9 +929,11 @@ let make = (
         )
       } else {
         tokenizingRef := true
-        broker
-        .submitForm()
+        submitVgsForm(broker)
         ->Promise.then(result => {
+          let result = sessionStateRef.contents === Deinitialized
+            ? interruptedTokenizationResult()
+            : result
           let resultDict = result->getDictFromJson
           if isErrorResult(result) {
             tokenizingRef := false
@@ -960,9 +1009,11 @@ let make = (
         )
       } else {
         tokenizingRef := true
-        broker
-        .submitForm()
+        submitVgsForm(broker)
         ->Promise.then(result => {
+          let result = sessionStateRef.contents === Deinitialized
+            ? interruptedTokenizationResult()
+            : result
           let resultDict = result->getDictFromJson
           if isErrorResult(result) {
             tokenizingRef := false
@@ -1199,6 +1250,9 @@ let make = (
       fields := Dict.make()->JSON.Encode.object
       sessionStateRef := Deinitialized
       tokenizingRef := false
+      vgsSubmitPendingRef.contents->Option.forEach(settle =>
+        settle(interruptedTokenizationResult())
+      )
 
       closeInstalledPorts(coordinator)
       coordinator.mountRef.contents->Option.forEach(

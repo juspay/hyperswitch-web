@@ -40,3 +40,7 @@ playwright-tests/blob-report/
 playwright-tests/all-blob-reports/
 playwright-tests/recordings/_recorded/
 Hyperswitch-React-Demo-App/.env
+
+# Unit-test coverage and Vitest cache
+/coverage/
+/.vitest/

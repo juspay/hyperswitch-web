@@ -4,7 +4,7 @@
   "main": "index.js",
   "private": true,
   "engines": {
-    "node": ">=20.11.0"
+    "node": ">=24.15.0 <25 || >=26"
   },
   "dependencies": {
     "@glennsl/rescript-fetch": "^0.2.0",
@@ -52,7 +52,11 @@
     "test:integ": "cd playwright-tests && npm run test:integ",
     "test:local": "cd playwright-tests && npm run test:local",
     "test:hermetic": "cd playwright-tests && npm run test:hermetic",
-    "test:hooks": "eslint src/"
+    "test:hooks": "eslint src/",
+    "test:unit": "npm run re:build && vitest run",
+    "test:unit:coverage": "npm run re:build && vitest run --coverage",
+    "test:unit:watch": "vitest",
+    "test:unit:typecheck": "npm run re:build && tsc -p tsconfig.unit.json"
   },
   "husky": {
     "hooks": {
@@ -81,6 +85,14 @@
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.3",
     "@babel/preset-react": "^7.24.7",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.8",
+    "@types/node": "24.19.2",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "@vitest/coverage-v8": "5.0.5",
     "autoprefixer": "^10.4.8",
     "babel-loader": "^10.0.0",
     "babel-plugin-add-react-displayname": "^0.0.5",
@@ -93,12 +105,16 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "html-webpack-plugin": "^5.6.0",
     "husky": "^9.1.7",
+    "jsdom": "30.1.3",
     "mini-css-extract-plugin": "^2.9.2",
     "postcss": "^8.4.16",
     "postcss-loader": "^8.1.1",
     "rescript": "^12.3.0",
     "tailwindcss": "^3.1.8",
     "terser-webpack-plugin": "^5.3.10",
+    "typescript": "5.9.3",
+    "vite": "8.3.4",
+    "vitest": "5.0.5",
     "webpack": "^5.94.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1",

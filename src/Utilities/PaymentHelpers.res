@@ -520,6 +520,7 @@ let rec intentCall = (
                 ~customPodUri,
                 ~sdkHandleOneClickConfirmPayment,
                 ~counter=counter + 1,
+                ~isPaymentSession,
                 ~componentName,
                 ~redirectionFlags,
                 ~sdkAuthorization,

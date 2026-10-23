@@ -45,7 +45,6 @@ permissions:
 
 env:
   CI: "true"
-  NODE_VERSION: "20"
   TEST_ENV: sandbox
   RUN_WEBKIT: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.include_webkit) }}
 
@@ -63,7 +62,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: |
             package-lock.json

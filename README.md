@@ -21,6 +21,7 @@ Web unified checkout SDK is an inclusive, consistent and blended payment experie
 <p align="center">
   <a href="#%EF%B8%8F-quick-start-guide">Quick Start Guide</a> •
   <a href="#%EF%B8%8F-try-it-in-local">Local Setup Instructions</a> •
+  <a href="#unit-and-component-tests">Unit Tests</a> •
   <a href="#-backend-server">Backend Server</a> •
   <a href="#-faqs">FAQs</a>
   <br>
@@ -88,13 +89,13 @@ Ways to get started with Hyperswitch:
 
   ### Setup Node
 
-  Node.js 20.11.0 or newer is required. Check the installed version by running:
+  Use Node.js 24.x (24.15.0 or newer), as pinned in [`.nvmrc`](./.nvmrc). Check the installed version by running:
 
   ```bash
   node -v
   ```
 
-  If Node.js is not installed, or the installed version is older than 20.11.0, install a supported version from [nodejs.org](https://nodejs.org/en/download).
+  Run `nvm install && nvm use` if you use nvm, or install the supported version from [nodejs.org](https://nodejs.org/en/download).
 
     <h3>Clone the repo</h3>
 
@@ -168,6 +169,142 @@ Ways to get started with Hyperswitch:
 
   > 💡 Alternatively, you can update `.env` file and use the commands
   > above
+
+## Unit and component tests
+
+Vitest runs focused SDK tests alongside the existing Webpack build and Playwright suites. Tests are authored in TypeScript (`.ts` and `.tsx`) and import ReScript's compiled `.bs.js` modules, so they exercise the SDK implementation. The `unit` project runs pure logic in Node; the `dom` project runs components, hooks, and browser-dependent utilities in jsdom. Discovery is limited to `tests/`, excluding Playwright specs.
+
+### Install from a clean checkout
+
+Use Node 24.x, at least 24.15.0. [`.nvmrc`](./.nvmrc) pins the development and CI version. With nvm installed:
+
+```bash
+nvm install
+nvm use
+git submodule update --init --recursive
+npm ci --ignore-scripts
+npm run test:unit:typecheck
+npm run test:unit
+```
+
+Keep `shared-code` at the revision committed by this repository; do not use `git submodule update --remote` for this setup. Root `postinstall` invokes [update-submodules.sh](./scripts/update-submodules.sh), which pulls the submodule's branch tip and installs demo dependencies. `--ignore-scripts` skips that behavior. Unit tests require no demo app, backend, payment credentials, browser installation, or running server.
+
+The tracked `package-lock.json` is the reproducible install source for this workflow. `package.json` still declares Yarn in `packageManager`, while Yarn's lockfile is ignored. This testing setup uses npm without migrating the repository's package-manager declaration.
+
+### Run tests
+
+| Command | Behavior |
+| --- | --- |
+| `npm run test:unit` | Compile ReScript, then run all unit/component tests once |
+| `npm run test:unit:coverage` | Compile, run once, and write coverage reports |
+| `npm run test:unit:typecheck` | Compile ReScript, then strictly type-check tests, helpers and setup without emitting JavaScript |
+| `npm run test:unit:watch` | Watch generated JavaScript and tests; does not compile ReScript |
+| `npm test` | Run the existing Playwright suite |
+| `npm run test:hooks` | Run the existing React hooks lint checks |
+
+One-shot commands stop if compilation fails. Filter by file, project, or test name by passing Vitest arguments through npm:
+
+```bash
+npm run test:unit -- tests/unit/PaymentSurfaceFamily.test.ts
+npm run test:unit -- --project=unit
+npm run test:unit -- --project=dom
+npm run test:unit -- -t "Checkbox"
+```
+
+For watch development, use two terminals. In the first:
+
+```bash
+npm run re:start
+```
+
+Wait for successful compilation, then in the second:
+
+```bash
+npm run test:unit:watch
+```
+
+Editing a `.res` file must compile successfully before its generated JavaScript can trigger a meaningful rerun. A compiler error is a failed development check even if Vitest still shows passing results from older `.bs.js` output.
+
+### Add a test
+
+Put pure logic tests in `tests/unit/*.test.ts` and DOM-dependent tests in `tests/dom/*.test.ts`, `tests/components/*.test.tsx`, or `tests/hooks/*.test.tsx`, following [the project configuration](./vitest.config.mjs). Transitive imports matter: a utility that imports browser globals belongs in the `dom` project even if its exported function looks pure. Keep shared-code tests here to exercise this checkout's pinned submodule; implementation fixes belong in the shared repository.
+
+For example, [PaymentSurfaceFamily.test.ts](./tests/unit/PaymentSurfaceFamily.test.ts) imports the generated classifier directly:
+
+```ts
+import { expect, it } from "vitest";
+import { classifyFromUrlParams } from "../../src/Utilities/PaymentSurfaceFamily.bs.js";
+
+it("classifies payments and rejects an unknown family", () => {
+  expect(classifyFromUrlParams("paymentMethodsSDK", "payments")).toBe("PaymentsFamily");
+  expect(classifyFromUrlParams("paymentMethodsSDK", "unknown")).toBe("OtherFamily");
+});
+```
+
+Use small typed synthetic fixtures for ReScript variants and records. Copy their runtime representation from generated code or an existing passing test. Prefer behavior assertions over broad snapshots.
+
+### Type checking and ReScript interoperability
+
+[`tsconfig.unit.json`](./tsconfig.unit.json) enables strict checking for authored tests, helpers, and setup. `allowJs: true` allows direct imports of generated `.bs.js` modules; `checkJs: false` leaves generated JavaScript diagnostics to the ReScript compiler. `noEmit: true` makes this a checking step; Vitest handles test execution.
+
+Run `npm run test:unit:typecheck` before submitting changes. `test:unit` and watch mode run runtime assertions and do not replace this check. CI runs both type checking and coverage. Generated JavaScript must exist for either command, so the type-check script compiles ReScript first.
+
+Type fixture parameters, mock callbacks, React props, DOM handles and reusable helpers. Use generics for deferred promises and state helpers, and `unknown` for unconstrained external data. Narrow nullable DOM values before using them. Avoid blanket `any` module declarations, `@ts-nocheck`, and disabling strict checks to make a migration pass.
+
+For SDK atoms whose generated defaults infer an incomplete type, use the named adapters in [`sdk-atoms.ts`](./tests/helpers/sdk-atoms.ts). These preserve the real atom identity and widen only the documented fields. Ordinary atoms use `initialValue` directly, which checks the atom/value relationship.
+
+TypeScript infers some types from compiled JavaScript, but this does not preserve every ReScript contract. Use small, documented boundary assertions where generated inference is inaccurate or a test deliberately supplies malformed input. Such assertions are not runtime validation. Generated TypeScript bindings could improve the SDK boundary later; the current test types do not establish complete SDK API type safety.
+
+### Isolate SDK state and external effects
+
+Use [`renderWithSdk`](./tests/helpers/render.tsx) for SDK components. Every call creates a fresh Jotai store and clones the existing default configuration into `configAtom`. Seed scenario-specific state with `initialValues: [initialValue(atom, value)]`. The typed entry constructor rejects mismatched values and read-only atoms before the helper combines heterogeneous entries. The optional `paymentType` is the compiled ReScript mode value (for example, `"Payment"`); the helper wraps it in `{ paymentType }` for the real payment context. Omit it when the component can use its default. The helper returns React Testing Library's render result plus `store`, allowing assertions on real atom state after an interaction.
+
+The component pattern in [Checkbox.test.tsx](./tests/components/Checkbox.test.tsx) connects a controlled component to a real atom, then checks both its accessible state and the updated store:
+
+```tsx
+import React from "react";
+import { atom, useAtom, type PrimitiveAtom } from "jotai";
+import { expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { make as Checkbox } from "../../src/Components/Checkbox.bs.js";
+import { initialValue, renderWithSdk, within } from "../helpers/render";
+
+function BoundCheckbox({ checkedAtom }: { checkedAtom: PrimitiveAtom<boolean> }) {
+  const [checked, setChecked] = useAtom(checkedAtom);
+  return <Checkbox label="Save card" isChecked={checked} onChange={setChecked}
+    ariaLabelChecked="Card will be saved" ariaLabelUnchecked="Save this card" />;
+}
+
+it("updates checkbox state", async () => {
+  const user = userEvent.setup();
+  const checkedAtom = atom(false);
+  const view = renderWithSdk(<BoundCheckbox checkedAtom={checkedAtom} />,
+    { initialValues: [initialValue(checkedAtom, false)] });
+  const checkbox = within(view.container).getByRole("checkbox", { name: "Save this card" });
+
+  await user.click(within(view.container).getByText("Save card"));
+  expect(view.store.get(checkedAtom)).toBe(true);
+  expect(checkbox).toHaveAttribute("aria-checked", "true");
+});
+```
+
+Pass `paymentType: "Payment"` in the render options when the scenario needs an explicit payment mode; use another valid compiled mode only when the component requires it. Do not reuse a store between scenarios. Keep fixture-owned objects local so mutation cannot leak between tests.
+
+The DOM setup supplies deterministic SDK build constants and a stable URL. Cleanup unmounts rendered components and resets shared test effects. Tests that create event listeners, message ports, registries, or other resources must still release those resources explicitly. Restore timers and stubbed globals after each test; advance pending fake timers when the behavior requires them, then return to real timers. With user-event and fake timers, supply the timer advancement callback to `userEvent.setup`.
+
+Mock external boundaries instead of replacing SDK atoms or core logic. Unexpected network traffic must fail tests. For an expected request, stub that specific boundary and assert its arguments; never depend on a live payment endpoint. Use fixed clocks for date-sensitive logic, deterministic identifiers, and synthetic card/payment data. Add browser capability stubs only when a tested behavior needs them.
+
+### Coverage and CI
+
+Coverage uses V8 and reports text, HTML, and LCOV under `coverage/unit/`. Open `coverage/unit/index.html` after `npm run test:unit:coverage`. The report includes untested generated SDK modules and shared-code modules. There is currently no repository-wide percentage gate.
+
+Coverage is measured against generated `.bs.js` and applicable handwritten JavaScript. This ReScript setup has no original-source maps; the report does not promise `.res` line coverage. Review branch behavior and test assertions alongside the percentages.
+
+The [Unit Tests workflow](./.github/workflows/unit-tests.yml) runs on pull requests, merge queues, main pushes, and manual dispatch. It checks out pinned public submodules, installs with `npm ci --ignore-scripts`, and runs the compiling type-check and coverage commands. It needs only read access to the repository. Coverage artifacts are uploaded even when tests fail, if reports were produced. CI rejects TypeScript errors, assertion failures, unhandled errors, focused tests, and empty discovery, without retries.
+
+### When to use Playwright
+
+Keep real browser checks for iframe navigation, transferred message ports, wallet SDK integration, 3DS, layout, and fullscreen/top-layer behavior. jsdom does not establish real layout or navigation. Unit tests can verify encoding, state transitions, and handlers; [Playwright](./playwright-tests/README.md) verifies the browser integration and full payment flows.
 
 ## ⛁ Backend Server
 
