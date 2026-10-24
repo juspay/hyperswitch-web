@@ -108,6 +108,24 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @set external setHeight: (style, string) => unit = "height"
 @set external windowOnload: (window, unit => unit) => unit = "onload"
 @set external setHyper: (window, Types.hyperInstance) => unit = "HyperMethod"
+@set external setScriptAsync: (Dom.element, bool) => unit = "async"
+@set external setCrossOrigin: (Dom.element, string) => unit = "crossOrigin"
+@set external setIntegrity: (Dom.element, string) => unit = "integrity"
+@send external addScriptEventListener: (Dom.element, string, unit => unit) => unit = "addEventListener"
+
+type beforeUnloadHandler = Dom.event => unknown
+@scope("window") @val external onBeforeUnload: Nullable.t<beforeUnloadHandler> = "onbeforeunload"
+@set external setOnBeforeUnload: (window, beforeUnloadHandler) => unit = "onbeforeunload"
+
+type customElementRegistry
+@scope("window") @val
+external customElements: Nullable.t<customElementRegistry> = "customElements"
+@send external whenDefined: (customElementRegistry, string) => promise<unit> = "whenDefined"
+
+@scope("CSS") @val external cssSupports: (string, string) => bool = "supports"
+
+type userAgentData = {mobile: bool}
+@scope("navigator") @val external userAgentData: Nullable.t<userAgentData> = "userAgentData"
 
 @send external closeWindow: window => unit = "close"
 @val external windowOpen: (string, string, string) => Nullable.t<window> = "open"

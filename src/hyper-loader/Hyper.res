@@ -260,17 +260,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             manageErrorWarning(INVALID_PK, ~logger)
           }
 
-          if (
-            Window.querySelectorAll(`script[src="https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"]`)->Array.length === 0
-          ) {
-            let scriptURL = "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"
-            let script = Window.createElement("script")
-            script->Window.elementSrc(scriptURL)
-            script->Window.elementOnerror(err => {
-              Console.error2("ERROR DURING LOADING APPLE PAY", err)
-            })
-            Window.body->Window.appendChild(script)
-          }
         }
       }->Sentry.sentryLogger
 
