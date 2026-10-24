@@ -110,7 +110,10 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   )
 
   let groupInstanceId = uniqueId(~prefix="payments")
-  let coordinator = makeCoordinatorChannel(~groupId=groupInstanceId)
+  let coordinator = makeCoordinatorChannel(
+    ~groupId=groupInstanceId,
+    ~origin=ApiEndpoint.sdkOrigin,
+  )
   let coordinatorListenerName = `onPaymentsCoordinator-${groupInstanceId}`
 
   let paymentsPaymentOptions = (~appearance: JSON.t) =>
@@ -131,7 +134,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         let isOurCoordinator = isFromIframe(
           ~ev,
           ~iframe=coordinator.mountRef.contents->Option.map(mount => mount.iframe),
-          ~origin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+          ~origin=ApiEndpoint.sdkOrigin,
         )
         if isOurCoordinator {
           let json = eventDataJson(ev)
@@ -141,28 +144,31 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             flushPendingPorts(coordinator)
             switch coordinator.mountRef.contents {
             | Some(mount) => {
-              let coordinatorPaymentOptions = paymentsPaymentOptions(~appearance)
-              let coordinatorConfig =
-                [
-                  ("paymentElementCreate", true->JSON.Encode.bool),
-                  ("otherElements", false->JSON.Encode.bool),
-                  ("componentType", "payment"->JSON.Encode.string),
-                  ("paymentOptions", coordinatorPaymentOptions),
-                  ("options", coordinatorOptions()),
-                  ("iframeId", groupInstanceId->JSON.Encode.string),
-                  ("publishableKey", publishableKey->JSON.Encode.string),
-                  ("endpoint", endpoint->JSON.Encode.string),
-                  ("clientSecret", clientSecret->JSON.Encode.string),
-                  ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
-                  ("sdkSessionId", ""->JSON.Encode.string),
-                  ("customPodUri", ""->JSON.Encode.string),
-                  ("parentURL", "*"->JSON.Encode.string),
-                  ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
-                  ("launchTime", Date.now()->JSON.Encode.float),
-                  ("loggerSource", "hyper_payments_coordinator"->JSON.Encode.string),
-                ]
-                ->Dict.fromArray
-              mount.iframe->Nullable.make->Window.iframePostMessage(coordinatorConfig)
+                let coordinatorPaymentOptions = paymentsPaymentOptions(~appearance)
+                let coordinatorConfig =
+                  [
+                    ("paymentElementCreate", true->JSON.Encode.bool),
+                    ("otherElements", false->JSON.Encode.bool),
+                    ("componentType", "payment"->JSON.Encode.string),
+                    ("paymentOptions", coordinatorPaymentOptions),
+                    ("options", coordinatorOptions()),
+                    ("iframeId", groupInstanceId->JSON.Encode.string),
+                    ("publishableKey", publishableKey->JSON.Encode.string),
+                    ("endpoint", endpoint->JSON.Encode.string),
+                    ("clientSecret", clientSecret->JSON.Encode.string),
+                    ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
+                    ("sdkSessionId", ""->JSON.Encode.string),
+                    ("customPodUri", ""->JSON.Encode.string),
+                    ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
+                    ("launchTime", Date.now()->JSON.Encode.float),
+                    ("loggerSource", "hyper_payments_coordinator"->JSON.Encode.string),
+                  ]->Dict.fromArray
+                mount.iframe
+                ->Nullable.make
+                ->Window.iframePostMessage(
+                  coordinatorConfig,
+                  ~targetOrigin=ApiEndpoint.sdkOrigin,
+                )
               }
             | None => ()
             }
@@ -171,8 +177,11 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             ->Promise.then(json => {
               switch coordinator.mountRef.contents {
               | Some(mount) =>
-                mount.iframe->Nullable.make->Window.iframePostMessage(
+                mount.iframe
+                ->Nullable.make
+                ->Window.iframePostMessage(
                   [("clientList", json)]->Dict.fromArray,
+                  ~targetOrigin=ApiEndpoint.sdkOrigin,
                 )
               | None => ()
               }
@@ -321,6 +330,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       ->Promise.then(json => {
         mountedIframeRef->Window.iframePostMessage(
           [("clientList", json)]->Dict.fromArray,
+          ~targetOrigin=ApiEndpoint.sdkOrigin,
         )
         Promise.resolve()
       })
@@ -332,7 +342,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     }
 
     let attachFieldListener = () => {
-      let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+      let innerIframeOrigin = ApiEndpoint.sdkOrigin
       EventListenerManager.addSmartEventListener(
         "message",
         (ev: Types.event) => {
@@ -419,7 +429,11 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       ~eventHandlersRef,
       ~update=newOptions => {
         let savedCardToken =
-          postFieldUpdate(~iframeRef, ~newOptions)->getString("paymentToken", "")
+          postFieldUpdate(
+            ~iframeRef,
+            ~newOptions,
+            ~targetOrigin=ApiEndpoint.sdkOrigin,
+          )->getString("paymentToken", "")
         if savedCardToken !== "" {
           savedCardTokenRef := savedCardToken
         }
@@ -444,7 +458,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
 
   let doSubmitListenerName = uniqueId(~prefix="onPaymentsV2DoSubmit")
   let isFromOurFrames = (ev: Types.event): bool => {
-    let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+    let sdkOrigin = ApiEndpoint.sdkOrigin
     isFromIframe(
       ~ev,
       ~iframe=coordinator.mountRef.contents->Option.map(mount => mount.iframe),
@@ -537,6 +551,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             ("paymentElementsUpdate", true->JSON.Encode.bool),
             ("options", newOptions),
           ]->Dict.fromArray,
+          ~targetOrigin=ApiEndpoint.sdkOrigin,
         )
       })
     }

@@ -31,7 +31,8 @@ let handleDDC = (
     resolve(failedSubmitResponse)
   }
 
-  if iframeUrl === "" {
+  let expectedOrigin = PaymentMessageSecurity.originOf(iframeUrl)
+  if expectedOrigin->Option.isNone {
     LoggerUtils.handleLogging(
       ~optLogger,
       ~eventName=DDC_FLOW,
@@ -76,7 +77,7 @@ let handleDDC = (
       }
     }
 
-    let handleMessage = (ev: Window.event) => {
+    let processMessage = (ev: Window.event) => {
       try {
         let json = ev.data->Identity.anyTypeToJson
         let dict = json->getDictFromJson
@@ -87,7 +88,10 @@ let handleDDC = (
           let redirectUrl = nextAction.postDdcRedirectUrl
           let redirectMode = nextAction.redirectMode
           cleanup()
-          if nextActionType === "redirect_to_url" && redirectUrl !== "" {
+          if (
+            nextActionType === "redirect_to_url" &&
+              PaymentMessageSecurity.httpUrl(redirectUrl)->Option.isSome
+          ) {
             LoggerUtils.handleLogging(
               ~optLogger,
               ~eventName=DDC_FLOW,
@@ -121,6 +125,15 @@ let handleDDC = (
       }
     }
 
+    let handleMessage = (ev: Window.event) => {
+      let isExpectedFrame =
+        iframeRef.contents
+        ->Option.map(iframe => ev.source === iframe->Window.contentWindow)
+        ->Option.getOr(false)
+      if isExpectedFrame && expectedOrigin === Some(ev.origin) {
+        processMessage(ev)
+      }
+    }
     messageHandlerRef := Some(handleMessage)
     Window.addEventListener("message", handleMessage)
 

@@ -16,7 +16,7 @@ let make = (
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Jotai.useAtomValue(loggerAtom)
-  let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let {iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
   let isSDKHandleClick = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey} = Jotai.useAtomValue(keys)
   let updateSession = Jotai.useAtomValue(updateSession)
@@ -199,7 +199,7 @@ let make = (
         ~isOneClickWallet=isWallet,
       )
       emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
-      makeOneClickHandlerPromise(isSDKHandleClick)
+      makeOneClickHandlerPromise(isSDKHandleClick, ~parentOrigin=parentURL)
       ->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
@@ -297,12 +297,15 @@ let make = (
     isGooglePayDelayedSessionFlow,
   ))
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
       try {
-        if dict->Dict.get("googlePaySyncPayment")->Option.isSome {
+        if (
+          Utils.isParentMessage(~parentOrigin=parentURL, ev) &&
+          dict->Dict.get("googlePaySyncPayment")->Option.isSome
+        ) {
           syncPayment()
         }
       } catch {
@@ -321,7 +324,7 @@ let make = (
         Window.removeEventListener("message", handleGooglePayMessages)
       },
     )
-  })
+  }, [parentURL])
 
   let isRenderGooglePayButton =
     (isGPayReady ||
@@ -339,7 +342,7 @@ let make = (
   }, [isRenderGooglePayButton])
 
   let submitCallback = GooglePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   if isWallet {
     <>

@@ -10,6 +10,9 @@ import * as LoggerUtils from "../../src/Utilities/LoggerUtils.bs.js";
 import * as PaymentHelpers from "../../src/Utilities/PaymentHelpers.bs.js";
 import clientList from "../recordings/base/client-list.json";
 
+export { makeOneClickHandlerPromise as requestOneClickDecision } from "../../src/Utilities/Utils.bs.js";
+export { handleApplePayBraintreePaymentSession as startBraintreeApplePay } from "../../src/Utilities/ApplePayHelpers.bs.js";
+
 export interface EventListenerLog {
   componentType: string;
   eventListeners: string[];
@@ -65,6 +68,17 @@ declare global {
 
 export function makeElements() {
   const logs: EventListenerLog[] = [];
+  const ownedFrames: HTMLIFrameElement[] = [];
+  const registerFrame = (iframe: HTMLIFrameElement | null) => {
+    if (iframe) ownedFrames.push(iframe);
+  };
+  const isTrustedMessage = (event: MessageEvent) =>
+    ownedFrames.some(
+      (iframe) =>
+        iframe.isConnected &&
+        event.source === iframe.contentWindow &&
+        event.origin === new URL(iframe.src).origin,
+    );
   const logger = {
     ...LoggerUtils.defaultLoggerConfig,
     setLogInfo(value: string, eventName: string) {
@@ -75,7 +89,7 @@ export function makeElements() {
   };
   const elements = Elements.make(
     {},
-    () => {},
+    registerFrame,
     "test-session",
     "pk_snd_test",
     logger,
@@ -91,19 +105,35 @@ export function makeElements() {
     { contents: Promise.resolve({}) },
     { contents: Promise.resolve({}) },
     () => Promise.resolve({}),
+    () => ({
+      isCurrent: () => true,
+      onSubmitResponse: () => {},
+      hasConfirmation: false,
+    }),
+    isTrustedMessage,
+    isTrustedMessage,
+    registerFrame,
   );
   return { elements, logs };
 }
 
 export function notifyMounted(id: string): void {
+  notifyElementMessage(id, { iframeMounted: true });
+}
+
+export function notifyElementMessage(
+  id: string,
+  data: Record<string, unknown>,
+): void {
   const iframe = document.querySelector<HTMLIFrameElement>(
     `#orca-payment-element-iframeRef-${id}`,
   );
   if (!iframe) throw new Error(`Missing mounted iframe: ${id}`);
   window.dispatchEvent(
     new MessageEvent("message", {
-      data: { iframeMounted: true },
+      data,
       source: iframe.contentWindow,
+      origin: new URL(iframe.src).origin,
     }),
   );
 }
@@ -121,6 +151,7 @@ function paymentStore({
     clientSecret,
     publishableKey,
     iframeId: "test-payment",
+    parentURL: window.location.origin,
   });
   store.set(paymentMethodsAtom, {
     TAG: "Loaded",

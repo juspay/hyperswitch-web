@@ -90,144 +90,180 @@ let startApplePaySession = (
   }
 
   applePaySessionRef := ssn->Js.Nullable.return
+  let finished = ref(false)
+  let finish = callback => {
+    if !finished.contents {
+      finished := true
+      applePaySessionRef := Nullable.null
+      callback()
+    }
+  }
+  let failValidation = message => {
+    finish(() => {
+      handleFailureResponse(~message, ~errorType="apple_pay")->resolvePromise
+      try {
+        ssn.abort()
+      } catch {
+      | error => Console.error2("Abort fail", error)
+      }
+    })
+  }
 
   ssn.onvalidatemerchant = _event => {
-    makeOneClickHandlerPromise(sdkHandleIsThere)
-    ->then(result => {
-      let result = result->JSON.Decode.bool->Option.getOr(false)
-      if result {
-        let merchantSession =
-          applePayPresent
-          ->Belt.Option.flatMap(JSON.Decode.object)
-          ->Option.getOr(Dict.make())
-          ->Dict.get("session_token_data")
-          ->Option.getOr(Dict.make()->JSON.Encode.object)
-          ->transformKeysWithoutModifyingValue(CamelCase)
-        ssn.completeMerchantValidation(merchantSession)
-      } else {
-        ssn.completeMerchantValidation(Dict.make()->JSON.Encode.object)
-        handleFailureResponse(
-          ~message="ApplePay Merchant Validation Cancelled",
-          ~errorType="apple_pay",
-        )->resolvePromise
-      }
-      resolve()
-    })
-    ->catch(_ => {
-      ssn.completeMerchantValidation(Dict.make()->JSON.Encode.object)
-      handleFailureResponse(
-        ~message="ApplePay Merchant Validation failed",
-        ~errorType="apple_pay",
-      )->resolvePromise
-      resolve()
-    })
-    ->ignore
+    if !finished.contents {
+      makeOneClickHandlerPromise(
+        sdkHandleIsThere,
+        ~parentOrigin=Window.Location.origin,
+        ~parentWindow=window,
+      )
+      ->then(result => {
+        let result = result->JSON.Decode.bool->Option.getOr(false)
+        if finished.contents {
+          ()
+        } else if result {
+          let merchantSession =
+            applePayPresent
+            ->Belt.Option.flatMap(JSON.Decode.object)
+            ->Option.getOr(Dict.make())
+            ->Dict.get("session_token_data")
+            ->Option.getOr(Dict.make()->JSON.Encode.object)
+            ->transformKeysWithoutModifyingValue(CamelCase)
+          ssn.completeMerchantValidation(merchantSession)
+        } else {
+          failValidation("ApplePay Merchant Validation Cancelled")
+        }
+        resolve()
+      })
+      ->catch(_ => {
+        failValidation("ApplePay Merchant Validation failed")
+        resolve()
+      })
+      ->ignore
+    }
   }
 
   ssn.onshippingcontactselected = shippingAddressChangeEvent => {
-    let currentTotal = paymentRequest->getDictFromJson->getDictFromDict("total")
-    let label = currentTotal->getString("label", "apple")
-    let currentAmount = currentTotal->getString("amount", "0.00")
-    let \"type" = currentTotal->getString("type", "final")
+    if !finished.contents {
+      let currentTotal = paymentRequest->getDictFromJson->getDictFromDict("total")
+      let label = currentTotal->getString("label", "apple")
+      let currentAmount = currentTotal->getString("amount", "0.00")
+      let \"type" = currentTotal->getString("type", "final")
 
-    let oldTotal: lineItem = {
-      label,
-      amount: currentAmount,
-      \"type",
-    }
-    let currentOrderDetails: orderDetails = {
-      newTotal: oldTotal,
-      newLineItems: [oldTotal],
-    }
-    if isTaxCalculationEnabled {
-      let newShippingContact =
-        shippingAddressChangeEvent.shippingContact
-        ->getDictFromJson
-        ->shippingContactItemToObjMapper
-      let newShippingAddress =
-        [
-          ("state", newShippingContact.administrativeArea->JSON.Encode.string),
-          ("country", newShippingContact.countryCode->JSON.Encode.string),
-          ("zip", newShippingContact.postalCode->JSON.Encode.string),
-        ]->getJsonFromArrayOfJson
+      let oldTotal: lineItem = {
+        label,
+        amount: currentAmount,
+        \"type",
+      }
+      let currentOrderDetails: orderDetails = {
+        newTotal: oldTotal,
+        newLineItems: [oldTotal],
+      }
+      if isTaxCalculationEnabled {
+        let newShippingContact =
+          shippingAddressChangeEvent.shippingContact
+          ->getDictFromJson
+          ->shippingContactItemToObjMapper
+        let newShippingAddress =
+          [
+            ("state", newShippingContact.administrativeArea->JSON.Encode.string),
+            ("country", newShippingContact.countryCode->JSON.Encode.string),
+            ("zip", newShippingContact.postalCode->JSON.Encode.string),
+          ]->getJsonFromArrayOfJson
 
-      let paymentMethodType = "apple_pay"->JSON.Encode.string
+        let paymentMethodType = "apple_pay"->JSON.Encode.string
 
-      calculateTax(
-        ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
-        ~logger,
-        ~publishableKey,
-        ~clientSecret,
-        ~paymentMethodType,
-        ~sdkAuthorization,
-      )->thenResolve(response => {
-        switch response->taxResponseToObjMapper {
-        | Some(taxCalculationResponse) => {
-            let (netAmount, ordertaxAmount, shippingCost) = (
-              taxCalculationResponse.net_amount,
-              taxCalculationResponse.order_tax_amount,
-              taxCalculationResponse.shipping_cost,
-            )
-            let newTotal: lineItem = {
-              label,
-              amount: netAmount->minorUnitToString,
-              \"type",
+        calculateTax(
+          ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
+          ~logger,
+          ~publishableKey,
+          ~clientSecret,
+          ~paymentMethodType,
+          ~sdkAuthorization,
+        )->thenResolve(response => {
+          if !finished.contents {
+            switch response->taxResponseToObjMapper {
+            | Some(taxCalculationResponse) => {
+                let (netAmount, ordertaxAmount, shippingCost) = (
+                  taxCalculationResponse.net_amount,
+                  taxCalculationResponse.order_tax_amount,
+                  taxCalculationResponse.shipping_cost,
+                )
+                let newTotal: lineItem = {
+                  label,
+                  amount: netAmount->minorUnitToString,
+                  \"type",
+                }
+                let newLineItems: array<lineItem> = [
+                  {
+                    label: "Subtotal",
+                    amount: (netAmount - ordertaxAmount - shippingCost)->minorUnitToString,
+                    \"type": "final",
+                  },
+                  {
+                    label: "Order Tax Amount",
+                    amount: ordertaxAmount->minorUnitToString,
+                    \"type": "final",
+                  },
+                  {
+                    label: "Shipping Cost",
+                    amount: shippingCost->minorUnitToString,
+                    \"type": "final",
+                  },
+                ]
+                let updatedOrderDetails: orderDetails = {
+                  newTotal,
+                  newLineItems,
+                }
+                ssn.completeShippingContactSelection(updatedOrderDetails)
+              }
+            | None => ssn.completeShippingContactSelection(currentOrderDetails)
             }
-            let newLineItems: array<lineItem> = [
-              {
-                label: "Subtotal",
-                amount: (netAmount - ordertaxAmount - shippingCost)->minorUnitToString,
-                \"type": "final",
-              },
-              {
-                label: "Order Tax Amount",
-                amount: ordertaxAmount->minorUnitToString,
-                \"type": "final",
-              },
-              {
-                label: "Shipping Cost",
-                amount: shippingCost->minorUnitToString,
-                \"type": "final",
-              },
-            ]
-            let updatedOrderDetails: orderDetails = {
-              newTotal,
-              newLineItems,
-            }
-            ssn.completeShippingContactSelection(updatedOrderDetails)
           }
-        | None => ssn.completeShippingContactSelection(currentOrderDetails)
-        }
-      })
+        })
+      } else {
+        ssn.completeShippingContactSelection(currentOrderDetails)
+        resolve()
+      }
     } else {
-      ssn.completeShippingContactSelection(currentOrderDetails)
       resolve()
     }
   }
 
   ssn.onpaymentauthorized = event => {
-    ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson)
-    applePaySessionRef := Nullable.null
-    let value = "Payment Data Filled: New Payment Method"
-    logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="APPLE_PAY")
-
-    let payment = event.payment
-    payment->callBackFunc
+    finish(() => {
+      try {
+        ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson)
+        let value = "Payment Data Filled: New Payment Method"
+        logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="APPLE_PAY")
+        event.payment->callBackFunc
+      } catch {
+      | _ =>
+        handleFailureResponse(
+          ~message="ApplePay authorization failed",
+          ~errorType="apple_pay",
+        )->resolvePromise
+      }
+    })
   }
   ssn.oncancel = _ => {
-    applePaySessionRef := Nullable.null
-    logger.setLogError(
-      ~value="Apple Pay Payment Cancelled",
-      ~eventName=APPLE_PAY_FLOW,
-      ~paymentMethod="APPLE_PAY",
-    )
-    handleFailureResponse(
-      ~message="ApplePay Session Cancelled",
-      ~errorType="apple_pay",
-    )->resolvePromise
+    finish(() => {
+      logger.setLogError(
+        ~value="Apple Pay Payment Cancelled",
+        ~eventName=APPLE_PAY_FLOW,
+        ~paymentMethod="APPLE_PAY",
+      )
+      handleFailureResponse(
+        ~message="ApplePay Session Cancelled",
+        ~errorType="apple_pay",
+      )->resolvePromise
+    })
   }
 
-  ssn.begin()
+  try {
+    ssn.begin()
+  } catch {
+  | _ => failValidation("ApplePay Session failed to start")
+  }
 }
 
 let useHandleApplePayResponse = (
@@ -244,7 +280,7 @@ let useHandleApplePayResponse = (
   ~sdkAuthorization,
 ) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let {parentURL, publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
@@ -292,12 +328,14 @@ let useHandleApplePayResponse = (
             ~publishableKey,
             ~isManualRetryEnabled,
           )
-        } else if dict->Dict.get("showApplePayButton")->Option.isSome {
+        } else if (
+          dict->Dict.get("showApplePayButton")->Option.isSome &&
+            dict->getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
+        ) {
           setApplePayClicked(_ => false)
           setShowApplePayLoader(_ => false)
-          if isSavedMethodsFlow || !isWallet {
-            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-          }
+          // A canceled one-click sheet must settle the merchant's pending confirmation.
+          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
         } else if dict->Dict.get("applePaySyncPayment")->Option.isSome {
           syncPayment()
         } else if dict->Dict.get("applePayBraintreeSuccess")->Option.isSome {
@@ -346,11 +384,16 @@ let useHandleApplePayResponse = (
         )
       }
     }
-    Window.addEventListener("message", handleApplePayMessages)
+    let handleTrusted = (ev: Window.event) => {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) {
+        handleApplePayMessages(ev)
+      }
+    }
+    Window.addEventListener("message", handleTrusted)
     Some(
       () => {
         messageParentWindow([("applePaySessionAbort", true->JSON.Encode.bool)])
-        Window.removeEventListener("message", handleApplePayMessages)
+        Window.removeEventListener("message", handleTrusted)
       },
     )
   }, (
@@ -362,6 +405,7 @@ let useHandleApplePayResponse = (
     requiredFields,
     isSavedMethodsFlow,
     sdkAuthorization,
+    parentURL,
   ))
 }
 
@@ -443,60 +487,85 @@ let handleApplePayBraintreePaymentSession = (
   onError,
   onSuccess,
 ) => {
+  let finished = ref(false)
+  let finish = callback => {
+    if !finished.contents {
+      finished := true
+      callback()
+    }
+  }
+  let fail = error => finish(() => onError(error))
   try {
     let transactionInfo = applePayPaymentRequest->createApplePayTransactionInfo
     let paymentRequest = transactionInfo->applePayInstance.createPaymentRequest
     let sessions = applePaySession(3, paymentRequest)
 
     sessions.onvalidatemerchant = event => {
-      applePayInstance.performValidation(
-        {
-          validationURL: event.validationURL,
-          displayName: transactionInfo->totalGet->labelGet,
-        },
-        (err, merchantSession) => {
-          switch err->Nullable.toOption {
-          | None => sessions.completeMerchantValidation(merchantSession)
-          | Some(err) => {
-              onError(err)
-              sessions.abort()
+      if !finished.contents {
+        applePayInstance.performValidation(
+          {
+            validationURL: event.validationURL,
+            displayName: transactionInfo->totalGet->labelGet,
+          },
+          (err, merchantSession) => {
+            if !finished.contents {
+              try {
+                switch err->Nullable.toOption {
+                | None => sessions.completeMerchantValidation(merchantSession)
+                | Some(err) => {
+                    fail(err)
+                    sessions.abort()
+                  }
+                }
+              } catch {
+              | err => fail(err->formatException)
+              }
             }
-          }
-        },
-      )
+          },
+        )
+      }
     }
 
     sessions.onpaymentauthorized = event => {
-      applePayInstance.tokenize(
-        {
-          token: event.payment.token,
-          billingContact: JSON.Encode.null,
-          shippingContact: JSON.Encode.null,
-        },
-        (err, payload) => {
-          switch sessionForApplePay->Nullable.toOption {
-          | Some(ssn) =>
-            switch err->Nullable.toOption {
-            | None => {
-                sessions.completePayment(ssn.\"STATUS_SUCCESS"->JSON.Encode.string)
-                onSuccess(payload.nonce)
+      if !finished.contents {
+        applePayInstance.tokenize(
+          {
+            token: event.payment.token,
+            billingContact: JSON.Encode.null,
+            shippingContact: JSON.Encode.null,
+          },
+          (err, payload) => {
+            finish(() => {
+              try {
+                switch sessionForApplePay->Nullable.toOption {
+                | Some(ssn) =>
+                  switch err->Nullable.toOption {
+                  | None => {
+                      sessions.completePayment(ssn.\"STATUS_SUCCESS"->JSON.Encode.string)
+                      onSuccess(payload.nonce)
+                    }
+                  | Some(_) => {
+                      sessions.completePayment(ssn.\"STATUS_FAILURE"->JSON.Encode.string)
+                      onError("ApplePay Tokenization Failed"->JSON.Encode.string)
+                    }
+                  }
+                | None =>
+                  onError("ApplePay session is null in onpaymentauthorized."->JSON.Encode.string)
+                }
+              } catch {
+              | err => onError(err->formatException)
               }
-            | Some(_) => {
-                sessions.completePayment(ssn.\"STATUS_FAILURE"->JSON.Encode.string)
-                onError("ApplePay Tokenization Failed"->JSON.Encode.string)
-              }
-            }
-          | None => onError("ApplePay session is null in onpaymentauthorized."->JSON.Encode.string)
-          }
-        },
-      )
+            })
+          },
+        )
+      }
     }
 
-    sessions.oncancel = _ => onError("Apple Pay Payment Cancelled."->JSON.Encode.string)
+    sessions.oncancel = _ => fail("Apple Pay Payment Cancelled."->JSON.Encode.string)
 
     sessions.begin()
   } catch {
-  | err => onError(err->formatException)
+  | err => fail(err->formatException)
   }
 }
 
@@ -535,11 +604,11 @@ let handleApplePayBraintreeClick = (
         ~eventName=APPLE_PAY_FLOW,
         ~paymentMethod="APPLE_PAY",
       )
-      event.source->Window.sendPostMessage(
-        [
-          ("applePayBraintreeSuccess", true->JSON.Encode.bool),
-          ("token", token->JSON.Encode.string),
-        ]->Dict.fromArray,
+      event.source->Window.postMessage(
+        [("applePayBraintreeSuccess", true->JSON.Encode.bool), ("token", token->JSON.Encode.string)]
+        ->getJsonFromArrayOfJson
+        ->JSON.stringify,
+        event.origin,
       )
     }
   }
@@ -555,8 +624,21 @@ let handleApplePayBraintreeClick = (
       ("param", "paymentloader"->JSON.Encode.string),
       ("iframeId", selectorString->JSON.Encode.string),
     ])
-    event.source->Window.sendPostMessage(
-      [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray,
+    event.source->Window.postMessage(
+      [
+        ("showApplePayButton", true->JSON.Encode.bool),
+        (
+          "isSavedMethodsFlow",
+          event.data
+          ->Identity.anyTypeToJson
+          ->getDictFromJson
+          ->getBool("isSavedMethodsFlow", false)
+          ->JSON.Encode.bool,
+        ),
+      ]
+      ->getJsonFromArrayOfJson
+      ->JSON.stringify,
+      event.origin,
     )
   }
   try {

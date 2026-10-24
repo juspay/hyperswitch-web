@@ -7,6 +7,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (configAtom, setConfig) = Jotai.useAtom(configAtom)
   let setIsConfigReady = Jotai.useSetAtom(isConfigReady)
   let (keys, setKeys) = Jotai.useAtom(keys)
+  let parentOriginRef = React.useRef(None)
   let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
   let setSdkConfigs = Jotai.useSetAtom(sdkConfigs)
   let setSdkConfigsValue = Jotai.useSetAtom(PaymentUtils.sdkConfigsValue)
@@ -312,11 +313,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       try {
         let dict = json->getDictFromJson
 
-        let pinnedParentURL = keys.parentURL
-        let isFromHostWindow =
-          ev.source === iframeParent && (pinnedParentURL === "*" || ev.origin === pinnedParentURL)
         let ports = ev->MessageChannelBinding.eventPorts
-        if isFromHostWindow && ports->Array.length > 0 {
+        if ports->Array.length > 0 {
           let handshakeShaped =
             dict->getDictIsSome("paymentElementCreate") || dict->getDictIsSome("cardFieldPort")
           if handshakeShaped {
@@ -336,6 +334,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
 
         if dict->getDictIsSome("paymentElementCreate") {
+          // Pin the browser-provided origin of the direct host, never a payload's wildcard.
+          parentOriginRef.current = Some(ev.origin)
+          dict->Dict.set("parentURL", ev.origin->JSON.Encode.string)
+          setKeys(prev => {...prev, parentURL: ev.origin})
+
           // Set iframeId for ALL elements including individual card elements (cardNumber, cardExpiry, cardCvc)
           if dict->getDictIsSome("iframeId") {
             setKeys(prev => {
@@ -420,7 +423,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
                 ("paymentId", ""->JSON.Encode.string),
-                ("parentURL", "*"->JSON.Encode.string),
                 ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
               ]->Array.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)
@@ -732,7 +734,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       | _ => setIntegrateErrorError(_ => true)
       }
     }
-    handleMessage(handleFun, "Error in parsing sent Data")
+    let handleHostMessage = (ev: Window.event) => {
+      let isExpectedOrigin =
+        parentOriginRef.current
+        ->Option.map(origin => ev.origin === origin)
+        ->Option.getOr(true)
+      if ev.source === iframeParent && ev.origin !== "null" && isExpectedOrigin {
+        handleFun(ev)
+      }
+    }
+    handleMessage(handleHostMessage, "Error in parsing sent Data")
   }, (paymentMethodOrder, optionsPayment))
 
   let observer = ResizeObserver.newResizerObserver(entries => {

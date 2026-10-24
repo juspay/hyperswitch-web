@@ -20,6 +20,7 @@ let make = (
   let {
     clientSecret,
     publishableKey,
+    parentURL,
     iframeId,
     paymentId,
     sdkHandleOneClickConfirmPayment,
@@ -56,7 +57,7 @@ let make = (
   } = options
   let layoutClass = CardUtils.getLayoutClass(layout)
   let {themeObj, localeString} = config
-  let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin
+  let innerIframeOrigin = ApiEndpoint.vaultSdkOrigin
   let isRawMode = cardCollectionMode === "raw"
   let isRawNewCardFlow = isRawMode && !isSavedCardFlow
   let isPMMFlow = flowType === CardThemeType.PaymentMethodsManagement
@@ -585,6 +586,7 @@ let make = (
         ->Option.getOr(false)
       if (
         ev.source === iframeParent &&
+        ev.origin === parentURL &&
         iframeMounted &&
         (dict->Dict.get("doBlur")->Option.isSome ||
         dict->Dict.get("doFocus")->Option.isSome ||
@@ -648,7 +650,7 @@ let make = (
     }
     Window.addEventListener("message", handleMessage)
     Some(() => Window.removeEventListener("message", handleMessage))
-  }, (iframeMounted, isRawMode, isSavedCardFlow, flowType, iframeId))
+  }, (iframeMounted, isRawMode, isSavedCardFlow, flowType, iframeId, parentURL))
 
   let confirmBody = (
     baseBody,
@@ -1026,7 +1028,7 @@ let make = (
     fullName,
     clientSecret,
   ))
-  useSubmitPaymentDataFromParent(submitCallback)
+  useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=parentURL)
 
   let accordionMarginClass = layoutClass.\"type" === Accordion ? "mt-4" : ""
   let showNickname = (!hideCardNicknameField && isCustomerAcceptanceRequired) || isPMMFlow

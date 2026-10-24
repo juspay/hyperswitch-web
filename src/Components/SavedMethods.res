@@ -55,7 +55,7 @@ let make = (
   )
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
-  let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin
+  let innerIframeOrigin = ApiEndpoint.vaultSdkOrigin
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
@@ -401,7 +401,9 @@ let make = (
           ~cvcNumber=cvc,
           ~requiresCvv=customerMethod.requiresCvv,
           ~isCustomerAcceptanceRequired,
-        )->Array.concat(installmentBody)->Array.concat(offerDetailsBody)
+        )
+        ->Array.concat(installmentBody)
+        ->Array.concat(offerDetailsBody)
       | _ => {
           let paymentMethodType = switch customerMethod.paymentMethodType {
           | Some("")
@@ -576,7 +578,8 @@ let make = (
                         ~cvcToken,
                         ~isCustomerAcceptanceRequired,
                       )
-                let vaultBody = cvcConfirmBody->Array.concat(installmentBody)->Array.concat(offerDetailsBody)
+                let vaultBody =
+                  cvcConfirmBody->Array.concat(installmentBody)->Array.concat(offerDetailsBody)
                 intent(
                   ~bodyArr=vaultBody->mergeAndFlattenToTuples(requiredFieldsBody),
                   ~confirmParam=confirm.confirmParams,
@@ -679,7 +682,7 @@ let make = (
     paymentTokenVal,
     customerId,
   ))
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
     !isGuestCustomer &&

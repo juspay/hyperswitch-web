@@ -12,11 +12,19 @@ let eventDataJson = (ev: Types.event): JSON.t =>
 
 let isFromIframe = (~ev: Types.event, ~iframe: option<Dom.element>, ~origin: string): bool =>
   iframe
-  ->Option.map(iframe => ev.source === iframe->Window.contentWindow && ev.origin === origin)
+  ->Option.map(iframe =>
+    PaymentMessageSecurity.isExpectedFrame(
+      ~frame=iframe,
+      ~origin,
+      ~eventSource=ev.source,
+      ~eventOrigin=ev.origin,
+    )
+  )
   ->Option.getOr(false)
 
 type coordinatorChannel = {
   groupId: string,
+  origin: string,
   mountRef: ref<option<CoordinatorMount.coordinatorMount>>,
   readyRef: ref<bool>,
   pendingPortsRef: ref<array<CoordinatorMount.pendingPort>>,
@@ -25,8 +33,9 @@ type coordinatorChannel = {
   portEpochCounterRef: ref<int>,
 }
 
-let makeCoordinatorChannel = (~groupId: string): coordinatorChannel => {
+let makeCoordinatorChannel = (~groupId: string, ~origin: string): coordinatorChannel => {
   groupId,
+  origin,
   mountRef: ref(None),
   readyRef: ref(false),
   pendingPortsRef: ref([]),
@@ -39,7 +48,9 @@ let postToCoordinator = (
   mount: CoordinatorMount.coordinatorMount,
   fields: array<(string, JSON.t)>,
 ) =>
-  try mount.iframe->Nullable.make->Window.iframePostMessage(fields->Dict.fromArray) catch {
+  try mount.iframe
+  ->Nullable.make
+  ->Window.iframePostMessage(fields->Dict.fromArray, ~targetOrigin=mount.origin) catch {
   | _ => ()
   }
 
@@ -68,6 +79,7 @@ let flushPendingPorts = (channel: coordinatorChannel) =>
         ~fieldName,
         ~portEpoch=epoch,
         ~port,
+        ~targetOrigin=channel.origin,
       )
     )
     channel.pendingPortsRef := []
@@ -84,19 +96,17 @@ let openFieldPort = (
   let epoch = channel.portEpochCounterRef.contents
   let messageChannel = MessageChannelBinding.makeChannel()
   let portKey = CardFormCoordinator.portKey(~groupId=channel.groupId, ~fieldName)
-  channel.installedPortKeysRef :=
-    channel.installedPortKeysRef.contents->Array.concat([portKey])
+  channel.installedPortKeysRef := channel.installedPortKeysRef.contents->Array.concat([portKey])
   CoordinatorMount.postFieldMountConfigWithPort(
     ~fieldIframe,
     ~mountConfig,
     ~portKey,
     ~portEpoch=epoch,
     ~port=messageChannel.port2,
+    ~targetOrigin=channel.origin,
   )
   channel.pendingPortsRef :=
-    channel.pendingPortsRef.contents->Array.concat([
-      {fieldName, epoch, port: messageChannel.port1},
-    ])
+    channel.pendingPortsRef.contents->Array.concat([{fieldName, epoch, port: messageChannel.port1}])
   flushPendingPorts(channel)
 }
 
@@ -114,9 +124,10 @@ let mergeSubscriptionEvents = (
     ->Option.flatMap(JSON.Decode.array)
     ->Option.getOr([])
     ->Array.filterMap(JSON.Decode.string)
-  let merged = incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
-    acc->Array.includes(event) ? acc : acc->Array.concat([event])
-  )
+  let merged =
+    incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
+      acc->Array.includes(event) ? acc : acc->Array.concat([event])
+    )
   if merged->Array.length > subscriptionEventsRef.contents->Array.length {
     subscriptionEventsRef := merged
     true
@@ -197,7 +208,6 @@ let buildFieldMountConfig = (
   ->Array.concat([
     ("sdkSessionId", sdkSessionId->JSON.Encode.string),
     ("customPodUri", ""->JSON.Encode.string),
-    ("parentURL", "*"->JSON.Encode.string),
     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
     ("launchTime", Date.now()->JSON.Encode.float),
     ("loggerSource", loggerSource->JSON.Encode.string),
@@ -226,18 +236,18 @@ let savedCardNetwork = (savedCardDict: Dict.t<JSON.t>): string =>
 let postFieldUpdate = (
   ~iframeRef: ref<Nullable.t<Dom.element>>,
   ~newOptions: JSON.t,
+  ~targetOrigin: string,
 ): Dict.t<JSON.t> => {
   iframeRef.contents->Window.iframePostMessage(
-    [
-      ("paymentElementsUpdate", true->JSON.Encode.bool),
-      ("options", newOptions),
-    ]->Dict.fromArray,
+    [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", newOptions)]->Dict.fromArray,
+    ~targetOrigin,
   )
   let savedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
   let brand = savedCardDict->savedCardNetwork
   if brand !== "" {
     iframeRef.contents->Window.iframePostMessage(
       [("savedCardBrand", brand->JSON.Encode.string)]->Dict.fromArray,
+      ~targetOrigin,
     )
   }
   savedCardDict
@@ -273,7 +283,10 @@ let makeFieldElementAndHandle = (
     ~groupId,
   )
   let postToOwnIframe = fields =>
-    iframeRef.contents->Window.iframePostMessage(fields->Dict.fromArray)
+    iframeRef.contents->Window.iframePostMessage(
+      fields->Dict.fromArray,
+      ~targetOrigin=URLModule.makeUrl(sdkDomainUrl).origin,
+    )
   // Card values never leave the field iframes, so every log here carries the field name only.
   let logField = (action: string) =>
     logger.setLogInfo(~value=`${fieldName} ${action}`, ~eventName=CARD_FORM_FLOW)
@@ -311,10 +324,7 @@ let registerField = (
 ): unit => {
   let fieldsDict = fields.contents->getDictFromJson
   let fieldMeta =
-    [
-      ("id", fieldId->JSON.Encode.string),
-      ("type", fieldType->JSON.Encode.string),
-    ]
+    [("id", fieldId->JSON.Encode.string), ("type", fieldType->JSON.Encode.string)]
     ->Array.concat(extraMeta)
     ->Dict.fromArray
     ->JSON.Encode.object

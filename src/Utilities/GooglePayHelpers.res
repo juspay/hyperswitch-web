@@ -83,7 +83,7 @@ let useHandleGooglePayResponse = (
   ~sdkAuthorization,
 ) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let {parentURL, publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
@@ -124,15 +124,22 @@ let useHandleGooglePayResponse = (
           ~isManualRetryEnabled,
         )
       }
-      if dict->Dict.get("gpayError")->Option.isSome {
+      if (
+        dict->Dict.get("gpayError")->Option.isSome &&
+          dict->getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
+      ) {
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-        if isSavedMethodsFlow || !isWallet {
-          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-        }
+        // One-click confirmations also await a terminal result when the sheet closes.
+        postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
       }
     }
-    Window.addEventListener("message", handle)
-    Some(() => {Window.removeEventListener("message", handle)})
+    let handleTrusted = (ev: Window.event) => {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) {
+        handle(ev)
+      }
+    }
+    Window.addEventListener("message", handleTrusted)
+    Some(() => {Window.removeEventListener("message", handleTrusted)})
   }, (
     requiredFields,
     isManualRetryEnabled,
@@ -140,6 +147,7 @@ let useHandleGooglePayResponse = (
     isWallet,
     isSavedMethodsFlow,
     sdkAuthorization,
+    parentURL,
   ))
 }
 

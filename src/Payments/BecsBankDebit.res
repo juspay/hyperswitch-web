@@ -83,7 +83,7 @@ let make = () => {
       }
     }
   }, (email, fullName, modalData, isManualRetryEnabled, sdkAuthorization))
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let paymentMethod = "bank_debit"
   let paymentMethodType = "becs"

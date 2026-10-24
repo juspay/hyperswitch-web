@@ -35,8 +35,12 @@ let make = () => {
     None
   }, [logger])
 
+  let isParentMessage = PaymentMessageHooks.useParentMessageCheck(~isInitialization=dict =>
+    dict->Utils.getDictIsSome("paymentElementCreate") ||
+      dict->Utils.getBool("fullScreenIframeMounted", false)
+  )
   React.useEffect0(() => {
-    let handleMetaDataPostMessage = (ev: Window.event) => {
+    let processMetaDataPostMessage = (ev: Window.event) => {
       let json = ev.data->Utils.safeParse
       let dict = json->Utils.getDictFromJson
 
@@ -77,6 +81,11 @@ let make = () => {
       | Some(appearanceJson) =>
         appearanceJson->CardTheme.getColorSchemeFromAppearance->CardTheme.setColorSchemeMeta
       | None => ()
+      }
+    }
+    let handleMetaDataPostMessage = (ev: Window.event) => {
+      if isParentMessage(ev) {
+        processMetaDataPostMessage(ev)
       }
     }
     Window.addEventListener("message", handleMetaDataPostMessage)

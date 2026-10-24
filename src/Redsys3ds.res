@@ -2,6 +2,7 @@ open Utils
 
 @react.component
 let make = () => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let logger = HyperLogger.make(~source=Elements(Payment))
   let isCompleteAuthorizeCalledRef = React.useRef(false)
   let timeoutRef = React.useRef(None)
@@ -36,7 +37,24 @@ let make = () => {
     )
   }
 
-  eventsToSendToParent->UtilityHooks.useSendEventsToParent
+  let responseOrigins = React.useRef([])
+  let isTrustedChild = React.useCallback0((ev: Window.event) =>
+    Window.querySelector("#threeDsAuthFrame")
+    ->Nullable.toOption
+    ->Option.map(iframe =>
+      responseOrigins.current->Array.some(
+        origin =>
+          PaymentMessageSecurity.isExpectedFrame(
+            ~frame=iframe,
+            ~origin,
+            ~eventSource=ev.source,
+            ~eventOrigin=ev.origin,
+          ),
+      )
+    )
+    ->Option.getOr(false)
+  )
+  eventsToSendToParent->UtilityHooks.useSendEventsToParent(~isTrustedChild)
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -44,7 +62,7 @@ let make = () => {
       try {
         let json = ev.data->safeParse
         let dict = json->getDictFromJson
-        if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+        if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
           let metadata = dict->getJsonObjectFromDict("metadata")
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
           let clientSecret = metaDataDict->getString("clientSecret", "")
@@ -65,6 +83,12 @@ let make = () => {
           let methodKey = iframeDataDict->getString("method_key", "threeDSMethodData")
           let threeDsMethodUrl = iframeDataDict->getString("three_ds_method_url", "")
           let threeDsMethodData = iframeDataDict->getString("three_ds_method_data", "")
+          responseOrigins.current =
+            [
+              threeDsMethodUrl,
+              ApiEndpoint.getApiEndPoint(~publishableKey),
+              GlobalVars.backendEndPoint,
+            ]->Array.filterMap(PaymentMessageSecurity.originOf)
           let threeDsIframe = CommonHooks.querySelector("#threeDsAuthFrame")
 
           switch Window.querySelector("#threeDsDiv")->Nullable.toOption {

@@ -231,10 +231,10 @@ let useCardForm = (
   let onExpiryKeyDown = ev => {
     commonKeyDownEvent(ev, expiryRef, cardRef, cardExpiry, cardNumber, setCardNumber)
   }
-  React.useEffect0(() => {
+  React.useEffect(() => {
     open Utils
     let handleFun = (ev: Window.event) => {
-      if ev.source === iframeParent && (parentURL === "*" || ev.origin === parentURL) {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) {
         let json = ev.data->safeParse
         let dict = json->Utils.getDictFromJson
         if dict->Dict.get("doBlur")->Option.isSome {
@@ -266,7 +266,7 @@ let useCardForm = (
       }
     }
     handleMessage(handleFun, "Error in parsing sent Data")
-  })
+  }, [parentURL])
 
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]

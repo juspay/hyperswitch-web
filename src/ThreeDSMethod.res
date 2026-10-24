@@ -1,6 +1,7 @@
 open Utils
 @react.component
 let make = () => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let logger = HyperLogger.make(~source=Elements(Payment))
 
   let stateMetadataRef = React.useRef(Dict.make()->JSON.Encode.object)
@@ -206,8 +207,9 @@ let make = () => {
         let json = ev.data->safeParse
         let dict = json->Utils.getDictFromJson
         if (
+          isTrustedParent(ev) &&
           dict->Dict.get("fullScreenIframeMounted")->Option.isSome &&
-            !isThreeDSMethodFlowStarted.current
+          !isThreeDSMethodFlowStarted.current
         ) {
           isThreeDSMethodFlowStarted.current = true
           let metadata = dict->getJsonObjectFromDict("metadata")
@@ -277,8 +279,25 @@ let make = () => {
       }
 
       if consumePostMessageForThreeDsMethodCompletionRef.current && threeDsUrlRef.current !== "" {
-        let url = URLModule.makeUrl(threeDsUrlRef.current)
-        if url.origin === ev.origin {
+        if (
+          threeDsUrlRef.current
+          ->PaymentMessageSecurity.originOf
+          ->Option.map(origin =>
+            Window.querySelector("#threeDsInvisibleIframe")
+            ->Nullable.toOption
+            ->Option.map(
+              iframe =>
+                PaymentMessageSecurity.isExpectedFrame(
+                  ~frame=iframe,
+                  ~origin,
+                  ~eventSource=ev.source,
+                  ~eventOrigin=ev.origin,
+                ),
+            )
+            ->Option.getOr(false)
+          )
+          ->Option.getOr(false)
+        ) {
           handleIframeContentLoaded()
         }
       }
