@@ -4,6 +4,12 @@ open Identity
 open Utils
 open EventListenerManager
 
+type confirmationContext = {
+  isCurrent: unit => bool,
+  onSubmitResponse: JSON.t => unit,
+  hasConfirmation: bool,
+}
+
 type trustPayFunctions = {
   finishApplePaymentV2: (string, ApplePayTypes.paymentRequestData, string) => promise<JSON.t>,
   executeGooglePayment: (string, GooglePayType.paymentDataRequest) => promise<JSON.t>,
@@ -28,7 +34,7 @@ let make = (
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~clientListDataPromise: ref<promise<JSON.t>>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
-  ~onSubmitResponse: JSON.t => unit,
+  ~getConfirmationContext: unit => confirmationContext,
   ~isTrustedPaymentMessage: Types.event => bool,
   ~isTrustedRedirectMessage: Types.event => bool,
   ~onFullscreenCreated: (Dom.element, JSON.t) => unit,
@@ -36,6 +42,22 @@ let make = (
   try {
     let iframeRef = []
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
+    let reportedCrossOriginApplePay = ref(false)
+    let messageApplePayTopWindow = message => {
+      let sameOriginTop = try {
+        Window.Top.Location.origin === Window.Location.origin
+      } catch {
+      | _ => false
+      }
+      if sameOriginTop {
+        messageTopWindow(message, ~targetOrigin=Window.Location.origin)
+      } else if !reportedCrossOriginApplePay.contents {
+        reportedCrossOriginApplePay := true
+        let reason = "Apple Pay top-window relay requires the checkout and top window to have the same origin."
+        Console.error(reason)
+        logger.setLogError(~value=reason, ~eventName=APPLE_PAY_FLOW, ~paymentMethod="APPLE_PAY")
+      }
+    }
     let savedPaymentElement = Dict.make()
     let makeEventListenerTracker = LoggerUtils.makeEventListenerTrackerFactory(~logger)
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
@@ -147,7 +169,7 @@ let make = (
     sdkConfigsDataPromise.contents = initialSdkConfigsPromise
     clientListDataPromise.contents = initialClientListPromise
 
-    let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+    let sdkOrigin = ApiEndpoint.sdkOrigin
     // A merchant can reuse a container id after unmounting. Correlate top-window
     // wallet replies with the actual iframe, so an old session cannot reach its replacement.
     let walletRoutes: WeakMap.t<Dom.element, string> = WeakMap.make()
@@ -178,13 +200,12 @@ let make = (
           mountedIframeRef
           ->Nullable.toOption
           ->Option.map(iframe =>
-            iframe->Window.Element.isConnected &&
-              PaymentMessageSecurity.isExpectedSender(
-                ~source=iframe->Window.contentWindow,
-                ~origin=sdkOrigin,
-                ~eventSource=ev.source,
-                ~eventOrigin=ev.origin,
-              )
+            PaymentMessageSecurity.isExpectedFrame(
+              ~frame=iframe,
+              ~origin=sdkOrigin,
+              ~eventSource=ev.source,
+              ~eventOrigin=ev.origin,
+            )
           )
           ->Option.getOr(false)
         let fromSelf =
@@ -365,7 +386,10 @@ let make = (
     }
 
     let setElementIframeRef = ref => {
-      iframeRef->Array.push(ref)->ignore
+      PaymentMessageSecurity.pruneDisconnectedFrames(iframeRef)
+      if !(ref->Nullable.isNullable) {
+        iframeRef->Array.push(ref)->ignore
+      }
       setIframeRef(ref)
     }
     let getElement = componentName => {
@@ -472,6 +496,8 @@ let make = (
     }
 
     let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+      let pollListenerId = `onPollStatusMsg-${generateRandomString(16)}`
+      let fullscreenWindows = ref([])
       let (componentType, newOptions) = parseComponentTypeAndOptions(
         ~componentTypeOrOptions,
         ~legacyOptions,
@@ -501,7 +527,10 @@ let make = (
       let setIframeRefForComponent = ref => {
         setElementIframeRef(ref)
         if componentType === "payment" {
-          paymentElementIframeRef->Array.push(ref)->ignore
+          PaymentMessageSecurity.pruneDisconnectedFrames(paymentElementIframeRef)
+          if !(ref->Nullable.isNullable) {
+            paymentElementIframeRef->Array.push(ref)->ignore
+          }
         }
       }
 
@@ -560,7 +589,6 @@ let make = (
             ("blockConfirm", blockConfirm->JSON.Encode.bool),
             ("customPodUri", customPodUri->JSON.Encode.string),
             ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
-            ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),
             ("customBackendUrl", customBackendUrl->JSON.Encode.string),
@@ -598,7 +626,7 @@ let make = (
                       ("walletRoutingId", walletRouteId(mountedIframeRef)->JSON.Encode.string),
                       ("componentName", componentName->JSON.Encode.string),
                     ]
-                    messageTopWindow(msg, ~targetOrigin=Window.Location.origin)
+                    messageApplePayTopWindow(msg)
                   } else {
                     Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
                     logger.setLogInfo(
@@ -841,7 +869,13 @@ let make = (
                         )
                       )
                       ->Option.getOr(false),
-                    msg => mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin),
+                    msg => {
+                      msg->Dict.set(
+                        "isSavedMethodsFlow",
+                        dict->getBool("isSavedMethodsFlow", false)->JSON.Encode.bool,
+                      )
+                      mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
+                    },
                   )
 
                   let secrets =
@@ -983,46 +1017,63 @@ let make = (
           | None => ()
           }
 
+          // Capture this attempt before starting asynchronous work. A later mount or
+          // confirmation must not receive its result, redirect, or overlay cleanup.
+          let context = getConfirmationContext()
+          let responseRedirect = redirect.contents
+          let isCurrent = () =>
+            context.isCurrent() &&
+            mountedIframeRef
+            ->Nullable.toOption
+            ->Option.map(Window.Element.isConnected)
+            ->Option.getOr(false)
+          let complete = (response, url, successful) => {
+            if isCurrent() {
+              context.onSubmitResponse(response)
+
+              // Hyper owns successful navigation when it has an explicit confirmation.
+              if responseRedirect === "always" && (!successful || !context.hasConfirmation) {
+                Utils.replaceRootHref(url, redirectionFlags)
+              }
+            }
+          }
+          let closeOverlay = () => {
+            if isCurrent() {
+              messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)])
+            }
+          }
           let handleRetrievePaymentResponse = json => {
             let dict = json->getDictFromJson
             let status = dict->getString("status", "")
             let returnUrl = dict->getString("return_url", "")
             let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecretRef.contents}&status=${status}`
-            if redirect.contents === "always" {
-              Utils.replaceRootHref(redirectUrl, redirectionFlags)
-              resolve(JSON.Encode.null)
-            } else {
-              onSubmitResponse(
-                [
-                  ("submitSuccessful", true->JSON.Encode.bool),
-                  ("data", json),
-                  ("url", redirectUrl->JSON.Encode.string),
-                ]->getJsonFromArrayOfJson,
-              )
-              resolve(json)
-            }
+            complete(
+              [
+                ("submitSuccessful", true->JSON.Encode.bool),
+                ("data", json),
+                ("url", redirectUrl->JSON.Encode.string),
+              ]->getJsonFromArrayOfJson,
+              redirectUrl,
+              true,
+            )
+            resolve(json)
           }
-
+          let handleErrorResponse = (err, url) =>
+            complete(
+              [
+                ("submitSuccessful", false->JSON.Encode.bool),
+                ("error", err->anyTypeToJson),
+                ("url", url->JSON.Encode.string),
+              ]->getJsonFromArrayOfJson,
+              url,
+              false,
+            )
           let pollStatusWrapper = dict => {
             let pollId = dict->getString("poll_id", "")
             let interval =
               dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
             let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
             let url = dict->getString("return_url_with_query_params", "")
-
-            let handleErrorResponse = err => {
-              if redirect.contents === "always" {
-                Utils.replaceRootHref(url, redirectionFlags)
-              }
-              onSubmitResponse(
-                [
-                  ("submitSuccessful", false->JSON.Encode.bool),
-                  ("error", err->anyTypeToJson),
-                  ("url", url->JSON.Encode.string),
-                ]->getJsonFromArrayOfJson,
-              )
-            }
-
             PaymentHelpers.pollStatus(
               ~publishableKey,
               ~customPodUri,
@@ -1034,27 +1085,24 @@ let make = (
               ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
             )
             ->then(_ => {
-              PaymentHelpers.retrievePaymentIntent(
-                clientSecretRef.contents,
-                ~publishableKey,
-                ~logger,
-                ~customPodUri,
-                ~isForceSync=true,
-                ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
-              )
-              ->then(json => json->handleRetrievePaymentResponse)
-              ->catch(err => {
-                err->handleErrorResponse
-                resolve(err->anyTypeToJson)
-              })
-              ->ignore
-              ->resolve
+              if isCurrent() {
+                PaymentHelpers.retrievePaymentIntent(
+                  clientSecretRef.contents,
+                  ~publishableKey,
+                  ~logger,
+                  ~customPodUri,
+                  ~isForceSync=true,
+                  ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
+                )->then(handleRetrievePaymentResponse)
+              } else {
+                resolve(JSON.Encode.null)
+              }
             })
             ->catch(err => {
-              err->handleErrorResponse
-              resolve()
+              handleErrorResponse(err, url)
+              resolve(JSON.Encode.null)
             })
-            ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+            ->finally(closeOverlay)
           }
 
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
@@ -1081,24 +1129,10 @@ let make = (
             )
             ->then(json => json->handleRetrievePaymentResponse)
             ->catch(err => {
-              if redirect.contents === "always" {
-                Utils.replaceRootHref(
-                  redirectUrl->JSON.Decode.string->Option.getOr(""),
-                  redirectionFlags,
-                )
-                resolve(JSON.Encode.null)
-              } else {
-                onSubmitResponse(
-                  [
-                    ("submitSuccessful", false->JSON.Encode.bool),
-                    ("error", err->anyTypeToJson),
-                    ("url", redirectUrl),
-                  ]->getJsonFromArrayOfJson,
-                )
-                resolve(err->anyTypeToJson)
-              }
+              handleErrorResponse(err, redirectUrl->JSON.Decode.string->Option.getOr(""))
+              resolve(err->anyTypeToJson)
             })
-            ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+            ->finally(closeOverlay)
           }
 
           switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
@@ -1118,7 +1152,16 @@ let make = (
         }
 
         let handlePollStatusMessage = (ev: Types.event) => {
-          if isTrustedRedirectMessage(ev) {
+          let fromOwnedWindow =
+            mountedIframeRef
+            ->Nullable.toOption
+            ->Option.map(iframe =>
+              iframe->Window.Element.isConnected &&
+                (ev.source === iframe->Window.contentWindow ||
+                  fullscreenWindows.contents->Array.includes(ev.source))
+            )
+            ->Option.getOr(false)
+          if fromOwnedWindow && isTrustedRedirectMessage(ev) {
             processPollStatusMessage(ev)
           }
         }
@@ -1128,7 +1171,7 @@ let make = (
           "onApplePayMount",
           ~allowSelf=true,
         )
-        addSmartEventListener("message", handlePollStatusMessage, "onPollStatusMsg")
+        addSmartEventListener("message", handlePollStatusMessage, pollListenerId)
         addWalletMessageListener(
           mountedIframeRef,
           handleGooglePayThirdPartyFlow,
@@ -1243,7 +1286,7 @@ let make = (
                         ("componentName", componentName->JSON.Encode.string),
                         ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                       ]
-                      messageTopWindow(msg, ~targetOrigin=Window.Location.origin)
+                      messageApplePayTopWindow(msg)
                     }
                   }
                 | _ => ()
@@ -1269,7 +1312,14 @@ let make = (
                 }
 
                 if dict->Dict.get("showApplePayButton")->Option.isSome {
-                  let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
+                  let msg =
+                    [
+                      ("showApplePayButton", true->JSON.Encode.bool),
+                      (
+                        "isSavedMethodsFlow",
+                        dict->getBool("isSavedMethodsFlow", false)->JSON.Encode.bool,
+                      ),
+                    ]->Dict.fromArray
 
                   mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                 }
@@ -1519,7 +1569,11 @@ let make = (
                               ~logType=DEBUG,
                             )
 
-                            let msg = [("gpayError", err->anyTypeToJson)]->Dict.fromArray
+                            let msg =
+                              [
+                                ("gpayError", err->anyTypeToJson),
+                                ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+                              ]->Dict.fromArray
                             event.source->Window.postMessage(
                               msg->JSON.Encode.object->JSON.stringify,
                               event.origin,
@@ -1539,6 +1593,7 @@ let make = (
                       let msg =
                         [
                           ("gpayError", "GooglePay client unavailable"->JSON.Encode.string),
+                          ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                         ]->Dict.fromArray
                       event.source->Window.postMessage(
                         msg->JSON.Encode.object->JSON.stringify,
@@ -1744,7 +1799,14 @@ let make = (
         ~confirmPayment,
         ~eventListenerTracker,
         ~isTrustedPaymentMessage,
-        ~onFullscreenCreated,
+        ~onFullscreenCreated=(iframe, metadata) => {
+          fullscreenWindows.contents->Array.push(iframe->Window.contentWindow)->ignore
+          onFullscreenCreated(iframe, metadata)
+        },
+        ~onUnmount=() => {
+          removeSmartEventListener("message", pollListenerId)
+          fullscreenWindows := []
+        },
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

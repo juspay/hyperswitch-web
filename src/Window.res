@@ -209,14 +209,6 @@ module Element = {
 }
 
 /* Helper Functions */
-let sendPostMessage = (element, message) => {
-  element->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
-}
-
-let sendPostMessageJSON = (element, message) => {
-  element->postMessageJSON(message, GlobalVars.targetOrigin)
-}
-
 let iframePostMessage = (
   iframeRef: nullable<Dom.element>,
   message,

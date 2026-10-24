@@ -4,6 +4,34 @@ let isConcreteOrigin = origin => origin !== "" && origin !== "*" && origin !== "
 let isExpectedSender = (~source, ~origin, ~eventSource, ~eventOrigin) =>
   isConcreteOrigin(origin) && eventSource === source && eventOrigin === origin
 
+@get external frameWindow: Dom.element => Dom.element = "contentWindow"
+@get external isConnected: Dom.element => bool = "isConnected"
+@get external sourceTop: Dom.element => Dom.element = "top"
+
+let isExpectedFrame = (~frame, ~origin, ~eventSource, ~eventOrigin) =>
+  isConnected(frame) &&
+  isExpectedSender(~source=frameWindow(frame), ~origin, ~eventSource, ~eventOrigin)
+
+// Same-origin descendants share the merchant's principal. A popup does not
+// belong to its frame tree, even if it has the same origin.
+let isSameOriginDescendant = (~window, ~origin, ~eventSource, ~eventOrigin) => {
+  try {
+    isConcreteOrigin(origin) && eventOrigin === origin && sourceTop(eventSource) === window
+  } catch {
+  | _ => false
+  }
+}
+
+// Keep the array identity: updateIntent and element owners share this registry.
+let pruneDisconnectedFrames = frames =>
+  frames->Array.splice(
+    ~start=0,
+    ~remove=frames->Array.length,
+    ~insert=frames->Array.filter(frame =>
+      frame->Nullable.toOption->Option.map(isConnected)->Option.getOr(false)
+    ),
+  )
+
 type queryParams
 @send external getAll: (queryParams, string) => array<string> = "getAll"
 @send external forEachParam: (queryParams, (string, string) => unit) => unit = "forEach"

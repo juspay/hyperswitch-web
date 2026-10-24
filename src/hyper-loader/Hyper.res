@@ -6,6 +6,7 @@ open EventListenerManager
 open Identity
 
 type fullscreenMessageSource = {
+  iframe: Dom.element,
   source: Dom.element,
   redirectOrigin: option<string>,
 }
@@ -105,6 +106,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
       let msg =
         [
           ("showApplePayButton", true->JSON.Encode.bool),
+          ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
           ("componentName", componentName->JSON.Encode.string),
           ("walletRoutingId", walletRoutingId->JSON.Encode.string),
         ]
@@ -133,11 +135,12 @@ addSmartEventListener(
   ev => {
     // Same-origin merchant intermediaries share the top window's security
     // principal. Foreign embedded frames must not drive its Apple Pay session.
-    let fromMerchantChild =
-      ev.origin === Window.Location.origin &&
-        Window.querySelectorAll("iframe")->Array.some(iframe =>
-          ev.source === iframe->Window.contentWindow
-        )
+    let fromMerchantChild = PaymentMessageSecurity.isSameOriginDescendant(
+      ~window,
+      ~origin=Window.Location.origin,
+      ~eventSource=ev.source,
+      ~eventOrigin=ev.origin,
+    )
     if (
       fromMerchantChild ||
       PaymentMessageSecurity.isExpectedSender(
@@ -334,24 +337,31 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let clientSecret = ref("")
       let sdkAuthorization = ref("")
       let pmSessionId = ref("")
+      let cancelConfirmation = ref(() => ())
+      let confirmationGeneration = ref(0)
       let setIframeRef = ref => {
-        iframeRef.contents->Array.push(ref)->ignore
+        PaymentMessageSecurity.pruneDisconnectedFrames(iframeRef.contents)
+        if ref->Nullable.isNullable {
+          if iframeRef.contents->Array.length === 0 {
+            cancelConfirmation.contents()
+            confirmationGeneration := confirmationGeneration.contents + 1
+          }
+        } else {
+          iframeRef.contents->Array.push(ref)->ignore
+        }
       }
-      let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+      let sdkOrigin = ApiEndpoint.sdkOrigin
       let fullscreenSources = ref([])
       let onFullscreenCreated = (iframe, metadata) => {
-        let redirectOrigin = try {
-          let authorizeUrl =
-            metadata
-            ->getDictFromJson
-            ->getDictFromDict("threeDSData")
-            ->getString("three_ds_authorize_url", "")
-          Some(URLModule.makeUrl(authorizeUrl).origin)
-        } catch {
-        | _ => None
-        }
+        let redirectOrigin =
+          metadata
+          ->getDictFromJson
+          ->getDictFromDict("threeDSData")
+          ->getString("three_ds_authorize_url", "")
+          ->PaymentMessageSecurity.originOf
         fullscreenSources.contents
         ->Array.push({
+          iframe,
           // Keep the WindowProxy for terminal messages queued just before the overlay closes.
           source: iframe->Window.contentWindow,
           redirectOrigin,
@@ -359,6 +369,56 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->ignore
       }
       let submitResponseHandler = ref((_json: JSON.t) => ())
+      let confirmationInProgress = ref(false)
+      let confirmationListenerId = `onSubmit-${generateRandomString(16)}`
+      let runConfirmation = operation => {
+        if confirmationInProgress.contents {
+          Promise.resolve(
+            getFailedSubmitResponse(
+              ~errorType="confirmation_in_progress",
+              ~message="A payment confirmation is already in progress. Wait for it to finish before retrying.",
+            ),
+          )
+        } else {
+          confirmationInProgress := true
+          confirmationGeneration := confirmationGeneration.contents + 1
+          let generation = confirmationGeneration.contents
+          let isCurrent = () =>
+            confirmationInProgress.contents && confirmationGeneration.contents === generation
+          // Retain open overlays, and queued terminal messages throughout this attempt.
+          fullscreenSources :=
+            fullscreenSources.contents->Array.filter(entry =>
+              entry.iframe->Window.Element.isConnected
+            )
+          PaymentMessageSecurity.pruneDisconnectedFrames(iframeRef.contents)
+          let cancelled = Promise.make((resolve, _) => {
+            cancelConfirmation :=
+              (
+                () => {
+                  if isCurrent() {
+                    resolve(
+                      getFailedSubmitResponse(
+                        ~errorType="payment_element_unmounted",
+                        ~message="The payment element was unmounted before confirmation completed.",
+                      ),
+                    )
+                  }
+                }
+              )
+          })
+          Promise.race([
+            cancelled,
+            Promise.resolve()->Promise.then(() =>
+              isCurrent() ? operation(isCurrent) : Promise.resolve(JSON.Encode.null)
+            ),
+          ])->Promise.finally(() => {
+            removeSmartEventListener("message", confirmationListenerId)
+            submitResponseHandler := (_ => ())
+            cancelConfirmation := (() => ())
+            confirmationInProgress := false
+          })
+        }
+      }
       let isFromPaymentIframe = (event: Types.event) =>
         iframeRef.contents->Array.some(iframeRef =>
           iframeRef
@@ -385,13 +445,28 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let isTrustedPaymentMessage = (event: Types.event) =>
         isFromPaymentIframe(event) ||
-        (event.origin === sdkOrigin &&
-          fullscreenSources.contents->Array.some(entry => entry.source === event.source))
+        fullscreenSources.contents->Array.some(entry =>
+          PaymentMessageSecurity.isExpectedSender(
+            ~source=entry.source,
+            ~origin=sdkOrigin,
+            ~eventSource=event.source,
+            ~eventOrigin=event.origin,
+          )
+        )
       let isTrustedRedirectMessage = (event: Types.event) =>
         isTrustedPaymentMessage(event) ||
         // A frictionless 3DS form navigates this overlay to its configured authorize URL.
         fullscreenSources.contents->Array.some(entry =>
-          entry.source === event.source && entry.redirectOrigin === Some(event.origin)
+          entry.redirectOrigin
+          ->Option.map(origin =>
+            PaymentMessageSecurity.isExpectedSender(
+              ~source=entry.source,
+              ~origin,
+              ~eventSource=event.source,
+              ~eventOrigin=event.origin,
+            )
+          )
+          ->Option.getOr(false)
         )
 
       // Shared refs for updateIntent — created once, passed to both Elements and PaymentSession.
@@ -444,119 +519,136 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
-        fullscreenSources := []
-        let confirmTimestamp = Date.now()
-        let confirmParams =
-          payload
-          ->JSON.Decode.object
-          ->Option.flatMap(x => x->Dict.get("confirmParams"))
-          ->Option.getOr(Dict.make()->JSON.Encode.object)
+      let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) =>
+        runConfirmation(isCurrent => {
+          let confirmTimestamp = Date.now()
+          let confirmParams =
+            payload
+            ->JSON.Decode.object
+            ->Option.flatMap(x => x->Dict.get("confirmParams"))
+            ->Option.getOr(Dict.make()->JSON.Encode.object)
 
-        let redirect = payload->getDictFromJson->getString("redirect", "if_required")
+          let redirect = payload->getDictFromJson->getString("redirect", "if_required")
 
-        let url =
-          confirmParams
-          ->JSON.Decode.object
-          ->Option.flatMap(x => x->Dict.get("return_url"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
+          let url =
+            confirmParams
+            ->JSON.Decode.object
+            ->Option.flatMap(x => x->Dict.get("return_url"))
+            ->Option.flatMap(JSON.Decode.string)
+            ->Option.getOr("")
 
-        let postSubmitMessage = message => {
-          iframeRef.contents->Array.forEach(ifR => {
-            ifR->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
-          })
-        }
-
-        if isTestMode {
-          let errorResponse = getFailedSubmitResponse(
-            ~errorType="test_mode_bypass",
-            ~message="Confirm Payment called in test mode - API call bypassed",
-          )
-          Promise.resolve(errorResponse)
-        } else {
-          Promise.make((resolve1, _) => {
-            logger.setLogInfo(
-              ~value="isReadyPromise status: " ++ (
-                isReadyResolved.contents ? "resolved" : "pending"
-              ),
-              ~eventName=IS_READY_STATUS_CHECK,
-            )
-            isReadyPromise
-            ->Promise.then(readyTimestamp => {
-              let handleSubmitResponse = json => {
-                let dict = json->getDictFromJson
-                switch dict->Dict.get("submitSuccessful") {
-                | Some(val) =>
-                  logApi(
-                    ~apiLogType=Method,
-                    ~optLogger=Some(logger),
-                    ~result=val,
-                    ~paymentMethod="confirmPayment",
-                    ~eventName=CONFIRM_PAYMENT,
-                  )
-                  let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
-                  let returnUrl =
-                    dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
-
-                  if isOneClick {
-                    iframeRef.contents->Array.forEach(
-                      ifR => {
-                        // to unset one click button loader
-                        ifR->Window.iframePostMessage(
-                          [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
-                          ~targetOrigin=sdkOrigin,
-                        )
-                      },
-                    )
-                  }
-                  postSubmitMessage(dict)
-
-                  let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
-
-                  if isSdkButton && submitSuccessfulValue {
-                    Utils.replaceRootHref(returnUrl, redirectionFlags)
-                  } else if submitSuccessfulValue && redirect === "always" {
-                    Utils.replaceRootHref(returnUrl, redirectionFlags)
-                  } else if !submitSuccessfulValue {
-                    resolve1(json)
-                  } else {
-                    resolve1(data)
-                  }
-                | None => ()
-                }
-              }
-              submitResponseHandler := handleSubmitResponse
-              let handleMessage = (event: Types.event) => {
-                if isTrustedPaymentMessage(event) {
-                  handleSubmitResponse(event.data->anyTypeToJson)
-                }
-              }
-              let message = isOneClick
-                ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
-                : [
-                    ("doSubmit", true->JSON.Encode.bool),
-                    ("clientSecret", clientSecret.contents->JSON.Encode.string),
-                    ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
-                    ("readyTimestamp", readyTimestamp->JSON.Encode.float),
-                    (
-                      "confirmParams",
-                      [
-                        ("return_url", url->JSON.Encode.string),
-                        ("publishableKey", publishableKey->JSON.Encode.string),
-                        ("redirect", redirect->JSON.Encode.string),
-                      ]->getJsonFromArrayOfJson,
-                    ),
-                  ]->Dict.fromArray
-              addSmartEventListener("message", handleMessage, "onSubmit")
-              postSubmitMessage(message)
-              Promise.resolve(JSON.Encode.null)
+          let postSubmitMessage = message => {
+            iframeRef.contents->Array.forEach(ifR => {
+              ifR->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
             })
-            ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
-            ->ignore
-          })
-        }
-      }
+          }
+
+          if isTestMode {
+            let errorResponse = getFailedSubmitResponse(
+              ~errorType="test_mode_bypass",
+              ~message="Confirm Payment called in test mode - API call bypassed",
+            )
+            Promise.resolve(errorResponse)
+          } else {
+            Promise.make((resolve1, reject) => {
+              logger.setLogInfo(
+                ~value="isReadyPromise status: " ++ (
+                  isReadyResolved.contents ? "resolved" : "pending"
+                ),
+                ~eventName=IS_READY_STATUS_CHECK,
+              )
+              isReadyPromise
+              ->Promise.then(
+                readyTimestamp => {
+                  if isCurrent() {
+                    let settled = ref(false)
+                    let handleSubmitResponse = json => {
+                      let dict = json->getDictFromJson
+                      switch (
+                        isCurrent() && !settled.contents,
+                        dict->Dict.get("submitSuccessful"),
+                      ) {
+                      | (true, Some(val)) =>
+                        settled := true
+                        logApi(
+                          ~apiLogType=Method,
+                          ~optLogger=Some(logger),
+                          ~result=val,
+                          ~paymentMethod="confirmPayment",
+                          ~eventName=CONFIRM_PAYMENT,
+                        )
+                        let data =
+                          dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
+                        let returnUrl =
+                          dict
+                          ->Dict.get("url")
+                          ->Option.flatMap(JSON.Decode.string)
+                          ->Option.getOr(url)
+
+                        if isOneClick {
+                          iframeRef.contents->Array.forEach(
+                            ifR => {
+                              // to unset one click button loader
+                              ifR->Window.iframePostMessage(
+                                [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
+                                ~targetOrigin=sdkOrigin,
+                              )
+                            },
+                          )
+                        }
+                        postSubmitMessage(dict)
+
+                        let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
+
+                        if submitSuccessfulValue {
+                          resolve1(data)
+                          if isSdkButton || redirect === "always" {
+                            Utils.replaceRootHref(returnUrl, redirectionFlags)
+                          }
+                        } else {
+                          resolve1(json)
+                        }
+                      | _ => ()
+                      }
+                    }
+                    submitResponseHandler := handleSubmitResponse
+                    let handleMessage = (event: Types.event) => {
+                      if isTrustedPaymentMessage(event) {
+                        handleSubmitResponse(event.data->anyTypeToJson)
+                      }
+                    }
+                    let message = isOneClick
+                      ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
+                      : [
+                          ("doSubmit", true->JSON.Encode.bool),
+                          ("clientSecret", clientSecret.contents->JSON.Encode.string),
+                          ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
+                          ("readyTimestamp", readyTimestamp->JSON.Encode.float),
+                          (
+                            "confirmParams",
+                            [
+                              ("return_url", url->JSON.Encode.string),
+                              ("publishableKey", publishableKey->JSON.Encode.string),
+                              ("redirect", redirect->JSON.Encode.string),
+                            ]->getJsonFromArrayOfJson,
+                          ),
+                        ]->Dict.fromArray
+                    addSmartEventListener("message", handleMessage, confirmationListenerId)
+                    postSubmitMessage(message)
+                  }
+                  Promise.resolve(JSON.Encode.null)
+                },
+              )
+              ->Promise.catch(
+                error => {
+                  reject(error)
+                  Promise.resolve(JSON.Encode.null)
+                },
+              )
+              ->ignore
+            })
+          }
+        })
 
       let confirmPayment = payload => {
         if isUpdateIntentInProgress.contents {
@@ -567,7 +659,19 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       let confirmOneClickPayment = (payload, result: bool) => {
-        confirmPaymentWrapper(payload, true, result)
+        if result {
+          confirmPaymentWrapper(payload, true, result)
+        } else {
+          // Legacy loader reset: no payment is started and no terminal response is expected.
+          // It must not replace an active attempt's response handler or lock.
+          iframeRef.contents->Array.forEach(iframe =>
+            iframe->Window.iframePostMessage(
+              [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
+              ~targetOrigin=sdkOrigin,
+            )
+          )
+          Promise.resolve(Dict.make()->JSON.Encode.object)
+        }
       }
 
       let confirmPaymentViaSDKButton = payload => {
@@ -647,7 +751,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sdkConfigsDataPromise,
           ~clientListDataPromise,
           ~confirmPayment,
-          ~onSubmitResponse=json => submitResponseHandler.contents(json),
+          ~getConfirmationContext=() => {
+            let generation = confirmationGeneration.contents
+            {
+              Elements.isCurrent: () => generation === confirmationGeneration.contents,
+              onSubmitResponse: submitResponseHandler.contents,
+              hasConfirmation: confirmationInProgress.contents,
+            }
+          },
           ~isTrustedPaymentMessage,
           ~isTrustedRedirectMessage,
           ~onFullscreenCreated,
@@ -702,28 +813,16 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         clientSecretId: string,
         data: option<JSON.t>,
         _options: option<JSON.t>,
-      ) => {
-        fullscreenSources := []
-        let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-        Promise.make((resolve, _) => {
-          iframeRef.contents
-          ->Array.map(iframe => {
-            iframe->Window.iframePostMessage(
-              [
-                ("doSubmit", true->JSON.Encode.bool),
-                ("clientSecret", clientSecretId->JSON.Encode.string),
-                (
-                  "confirmParams",
-                  [("publishableKey", publishableKey->JSON.Encode.string)]->getJsonFromArrayOfJson,
-                ),
-              ]->Dict.fromArray,
-              ~targetOrigin=sdkOrigin,
-            )
-
+      ) =>
+        runConfirmation(isCurrent => {
+          let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
+          Promise.make((resolve, _) => {
+            let settled = ref(false)
             let handleSubmitResponse = json => {
               let dict = json->getDictFromJson
-              switch dict->Dict.get("submitSuccessful") {
-              | Some(val) =>
+              switch (isCurrent() && !settled.contents, dict->Dict.get("submitSuccessful")) {
+              | (true, Some(val)) =>
+                settled := true
                 logApi(
                   ~apiLogType=Method,
                   ~optLogger=Some(logger),
@@ -732,12 +831,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                   ~eventName=CONFIRM_CARD_PAYMENT,
                 )
                 let url = decodedData->getString("return_url", "/")
+                resolve(json)
                 if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
                   Utils.replaceRootHref(url, redirectionFlags)
-                } else {
-                  resolve(json)
                 }
-              | None => resolve(json)
+              | _ => ()
               }
             }
             submitResponseHandler := handleSubmitResponse
@@ -746,11 +844,26 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                 handleSubmitResponse(event.data->anyTypeToJson)
               }
             }
-            addSmartEventListener("message", handleMessage, "")
+            addSmartEventListener("message", handleMessage, confirmationListenerId)
+            iframeRef.contents->Array.forEach(
+              iframe => {
+                iframe->Window.iframePostMessage(
+                  [
+                    ("doSubmit", true->JSON.Encode.bool),
+                    ("clientSecret", clientSecretId->JSON.Encode.string),
+                    (
+                      "confirmParams",
+                      [
+                        ("publishableKey", publishableKey->JSON.Encode.string),
+                      ]->getJsonFromArrayOfJson,
+                    ),
+                  ]->Dict.fromArray,
+                  ~targetOrigin=sdkOrigin,
+                )
+              },
+            )
           })
-          ->ignore
         })
-      }
 
       let addAmountToDict = (dict, currency) => {
         if dict->Dict.get("amount")->Option.isNone {

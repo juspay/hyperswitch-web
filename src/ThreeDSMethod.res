@@ -279,13 +279,24 @@ let make = () => {
       }
 
       if consumePostMessageForThreeDsMethodCompletionRef.current && threeDsUrlRef.current !== "" {
-        let url = URLModule.makeUrl(threeDsUrlRef.current)
         if (
-          url.origin === ev.origin &&
+          threeDsUrlRef.current
+          ->PaymentMessageSecurity.originOf
+          ->Option.map(origin =>
             Window.querySelector("#threeDsInvisibleIframe")
             ->Nullable.toOption
-            ->Option.map(iframe => ev.source === iframe->Window.contentWindow)
+            ->Option.map(
+              iframe =>
+                PaymentMessageSecurity.isExpectedFrame(
+                  ~frame=iframe,
+                  ~origin,
+                  ~eventSource=ev.source,
+                  ~eventOrigin=ev.origin,
+                ),
+            )
             ->Option.getOr(false)
+          )
+          ->Option.getOr(false)
         ) {
           handleIframeContentLoaded()
         }

@@ -136,7 +136,7 @@ let getCustomerSavedPaymentMethods = (
       let expectedReturnUrl =
         payloadDict->getDictFromDict("confirmParams")->getString("return_url", "")
       let widget = getWidgetIframe(~iframeRef, ~id)
-      let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+      let sdkOrigin = ApiEndpoint.sdkOrigin
       let requestId = generateRandomString(16)
       let responseActivity = `onCVCWidgetConfirmResponse-${requestId}`
       Promise.make((resolve, _) => {
@@ -250,7 +250,7 @@ let getCustomerSavedPaymentMethods = (
       let hasCvc = payloadDict->Dict.get("cvc")
       if hasCvc->Option.isSome {
         let cvcString = hasCvc->getStringFromOptionalJson("")
-        let isValidCvc = %re("/^\d{3,4}$/")->RegExp.test(cvcString)
+        let isValidCvc = /^\d{3,4}$/->RegExp.test(cvcString)
         if !isValidCvc {
           handleFailureResponse(
             ~message="CVC must be a string of 3 to 4 numeric digits",

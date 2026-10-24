@@ -80,7 +80,13 @@ let ensureWalletOneClickListener = (logger, ~ownerId, ~isTrustedMessage) => {
     event => {
       // The merchant callback is intentionally global. Retain each SDK
       // owner's live sender check, and invoke the callback only once.
-      if oneClickSources->Dict.valuesToArray->Array.some(check => check(event)) {
+      if (
+        event.data
+        ->anyTypeToJson
+        ->getDictFromJson
+        ->Dict.get("oneClickConfirmTriggered")
+        ->Option.isSome && oneClickSources->Dict.valuesToArray->Array.some(check => check(event))
+      ) {
         walletOneClickEventHandler(logger, event)
       }
     },
@@ -131,6 +137,7 @@ let make = (
   ~eventListenerTracker=LoggerUtils.defaultEventListenerTracker,
   ~isTrustedPaymentMessage: option<Types.event => bool>=?,
   ~onFullscreenCreated: (Dom.element, JSON.t) => unit=(_, _) => (),
+  ~onUnmount: unit => unit=() => (),
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
@@ -144,15 +151,18 @@ let make = (
     let mountedIframeRef = ref(Nullable.null)
     let fullscreenIframeRef = ref(Nullable.null)
     let iframeOrigin = URLModule.makeUrl(sdkDomainUrl).origin
-    let fullscreenOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+    let fullscreenOrigin = ApiEndpoint.sdkOrigin
 
     let isFromFrame = (ev: Types.event, iframe, origin) =>
       iframe
       ->Nullable.toOption
       ->Option.map(iframe =>
-        iframe->Window.Element.isConnected &&
-        ev.source === iframe->Window.contentWindow &&
-        ev.origin === origin
+        PaymentMessageSecurity.isExpectedFrame(
+          ~frame=iframe,
+          ~origin,
+          ~eventSource=ev.source,
+          ~eventOrigin=ev.origin,
+        )
       )
       ->Option.getOr(false)
 
@@ -379,6 +389,9 @@ let make = (
           "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
         )
       }
+      // Notify the owner after removal so it can prune registrations and settle pending work.
+      onUnmount()
+      setIframeRef(Nullable.null)
     }
 
     let destroy = () => {
@@ -579,7 +592,10 @@ let make = (
                           )
                           let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                           fullScreenEle->Window.iframePostMessage(
-                            [("metadata", fullscreenMetadata.contents)]->Dict.fromArray,
+                            [
+                              ("fullScreenIframeMounted", true->JSON.Encode.bool),
+                              ("metadata", fullscreenMetadata.contents),
+                            ]->Dict.fromArray,
                             ~targetOrigin=fullscreenOrigin,
                           )
                         }

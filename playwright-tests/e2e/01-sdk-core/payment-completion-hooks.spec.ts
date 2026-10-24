@@ -34,6 +34,193 @@ const scenarios: {
 ];
 
 test.describe("Payment completion hooks @hermetic-only", () => {
+  test("an authenticated merchant refusal settles an iframe wallet request only once", async ({
+    runtimePage,
+    runtimeBundle,
+  }) => {
+    await runtimePage.evaluate(() => {
+      window.paymentMessages = [];
+      const iframe = document.createElement("iframe");
+      iframe.id = "wallet-decision";
+      iframe.srcdoc = "<html></html>";
+      document.body.appendChild(iframe);
+      addEventListener("message", (event) => {
+        if (
+          event.source !== iframe.contentWindow ||
+          event.origin !== location.origin
+        )
+          return;
+        if (event.data?.oneClickConfirmTriggered) {
+          const reply = {
+            walletClickEvent: false,
+            walletClickRequestId: event.data.walletClickRequestId,
+          };
+          iframe.contentWindow?.postMessage(
+            JSON.stringify(reply),
+            location.origin,
+          );
+          iframe.contentWindow?.postMessage(
+            JSON.stringify(reply),
+            location.origin,
+          );
+        }
+        if (event.data?.submitSuccessful !== undefined)
+          window.paymentMessages.push(event.data);
+      });
+    });
+    const child = await (await runtimePage
+      .locator("#wallet-decision")
+      .elementHandle())!.contentFrame();
+    if (!child) throw new Error("Missing wallet frame");
+    await child.addScriptTag({ content: runtimeBundle });
+    expect(
+      await child.evaluate(() =>
+        window.sdkTest.requestOneClickDecision(
+          true,
+          parent.location.origin,
+          parent,
+        ),
+      ),
+    ).toBe(false);
+    await expect
+      .poll(() => runtimePage.evaluate(() => window.paymentMessages))
+      .toMatchObject([
+        { submitSuccessful: false, error: { type: "payment_canceled" } },
+      ]);
+    // Both identical decisions were queued before this round trip; only one terminal result is allowed.
+    expect(
+      await runtimePage.evaluate(() => window.paymentMessages.length),
+    ).toBe(1);
+  });
+
+  for (const outcome of [
+    "validation failure",
+    "late tokenization after cancel",
+  ] as const) {
+    test(`Braintree Apple Pay reports one terminal result on ${outcome}`, async ({
+      runtimePage,
+    }) => {
+      const result = await runtimePage.evaluate((outcome) => {
+        const errors: unknown[] = [];
+        const successes: unknown[] = [];
+        let completeCount = 0;
+        let tokenized:
+          ((error: unknown, payload: { nonce: string }) => void) | undefined;
+        Object.defineProperty(window, "ApplePaySession", {
+          configurable: true,
+          writable: true,
+          value: class {
+            onvalidatemerchant?: (event: object) => void;
+            onpaymentauthorized?: (event: object) => void;
+            oncancel?: (event: object) => void;
+            begin() {
+              if (outcome === "validation failure")
+                this.onvalidatemerchant?.({
+                  validationURL: "https://apple.invalid/validate",
+                });
+              else {
+                this.onpaymentauthorized?.({ payment: { token: {} } });
+                this.oncancel?.({});
+                tokenized?.(null, { nonce: "late-token" });
+              }
+            }
+            abort() {
+              this.oncancel?.({});
+            }
+            completeMerchantValidation() {
+              completeCount++;
+            }
+            completePayment() {
+              completeCount++;
+            }
+          },
+        });
+        window.sdkTest.startBraintreeApplePay(
+          {
+            countryCode: "US",
+            currencyCode: "USD",
+            total: { label: "Test", amount: "1.00" },
+          },
+          {
+            createPaymentRequest: (request: object) => request,
+            performValidation: (
+              _request: object,
+              callback: (error: unknown, session: object) => void,
+            ) => callback({ message: "Validation failed" }, {}),
+            tokenize: (_request: object, callback: typeof tokenized) => {
+              tokenized = callback;
+            },
+          },
+          (error: unknown) => errors.push(error),
+          (nonce: unknown) => successes.push(nonce),
+        );
+        return { errors, successes, completeCount };
+      }, outcome);
+      expect(result.errors).toHaveLength(1);
+      expect(result.successes).toEqual([]);
+      expect(result.completeCount).toBe(0);
+    });
+  }
+
+  test("Google Pay one-click cancellation reports one terminal failure for its own flow", async ({
+    runtimePage,
+    api,
+    credentials,
+  }) => {
+    const intent = await api.createPaymentIntent(paymentBody());
+    await runtimePage.evaluate(
+      async (options) => {
+        window.paymentMessages = [];
+        addEventListener("message", ({ data }) => {
+          if (data?.submitSuccessful !== undefined)
+            window.paymentMessages.push(data);
+        });
+        await window.sdkTest.mountGooglePay(options);
+      },
+      {
+        button: true,
+        clientSecret: intent.clientSecret,
+        publishableKey: credentials.publishableKey,
+        returnUrl: CLIENT_BASE_URL,
+      },
+    );
+    await expect(runtimePage.locator("#google-pay-button")).toHaveCount(1);
+    const unrelated = await runtimePage.evaluate(async () => {
+      const delivered = new Promise<void>((resolve) => {
+        const barrier = (event: MessageEvent) => {
+          if (event.data?.cancelBarrier) {
+            removeEventListener("message", barrier);
+            resolve();
+          }
+        };
+        addEventListener("message", barrier);
+      });
+      postMessage(
+        JSON.stringify({
+          gpayError: { statusCode: "CANCELED" },
+          isSavedMethodsFlow: true,
+        }),
+        location.origin,
+      );
+      postMessage({ cancelBarrier: true }, location.origin);
+      await delivered;
+      return window.paymentMessages;
+    });
+    expect(unrelated).toEqual([]);
+    await runtimePage.evaluate(() =>
+      postMessage(
+        JSON.stringify({
+          gpayError: { statusCode: "CANCELED" },
+          isSavedMethodsFlow: false,
+        }),
+        location.origin,
+      ),
+    );
+    await expect
+      .poll(() => runtimePage.evaluate(() => window.paymentMessages))
+      .toMatchObject([{ submitSuccessful: false }]);
+  });
+
   for (const hook of ["intent", "sync"]) {
     for (const button of [true, false]) {
       test(`Google Pay component ${hook}: ${button ? "button" : "tab"} context`, async ({

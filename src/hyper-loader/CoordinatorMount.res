@@ -33,10 +33,7 @@ let create = (
   iframe->Window.setAttribute("id", `orca-coordinator-${localSelectorString}`)
   iframe->Window.setAttribute("src", src)
   iframe->Window.setAttribute("allow", "payment *")
-  iframe->Window.setAttribute(
-    "sandbox",
-    "allow-scripts allow-popups allow-same-origin allow-forms",
-  )
+  iframe->Window.setAttribute("sandbox", "allow-scripts allow-popups allow-same-origin allow-forms")
   iframe->Window.setAttribute(
     "style",
     "position: absolute; width: 0; height: 0; border: none; overflow: hidden; left: -9999px; top: -9999px;",
@@ -112,13 +109,12 @@ let makeFullscreenFlows = (
   let overlayRef: ref<option<(Dom.element, Dom.element)>> = ref(None)
   let origin = URLModule.makeUrl(sdkDomain).origin
   let fromCoordinator = (ev: Window.event) =>
-    mount.iframe->Window.Element.isConnected &&
-      PaymentMessageSecurity.isExpectedSender(
-        ~source=mount.iframe->Window.contentWindow,
-        ~origin,
-        ~eventSource=ev.source,
-        ~eventOrigin=ev.origin,
-      )
+    PaymentMessageSecurity.isExpectedFrame(
+      ~frame=mount.iframe,
+      ~origin,
+      ~eventSource=ev.source,
+      ~eventOrigin=ev.origin,
+    )
   let fromOverlay = (ev: Window.event, ~allowRedirect=false) => {
     let redirectOrigin =
       metadataRef.contents
@@ -127,10 +123,17 @@ let makeFullscreenFlows = (
       ->getString("three_ds_authorize_url", "")
       ->PaymentMessageSecurity.originOf
     overlayRef.contents
-    ->Option.map(((_, source)) =>
-      ev.source === source &&
-        (ev.origin === origin || (allowRedirect && redirectOrigin === Some(ev.origin)))
-    )
+    ->Option.map(((_, source)) => {
+      let fromOrigin = origin =>
+        PaymentMessageSecurity.isExpectedSender(
+          ~source,
+          ~origin,
+          ~eventSource=ev.source,
+          ~eventOrigin=ev.origin,
+        )
+      fromOrigin(origin) ||
+      (allowRedirect && redirectOrigin->Option.map(fromOrigin)->Option.getOr(false))
+    })
     ->Option.getOr(false)
   }
   let postToCoordinator = fields =>
@@ -241,7 +244,10 @@ let makeFullscreenFlows = (
           iframe
           ->Nullable.make
           ->Window.iframePostMessage(
-            [("metadata", metadataRef.contents)]->Dict.fromArray,
+            [
+              ("fullScreenIframeMounted", true->JSON.Encode.bool),
+              ("metadata", metadataRef.contents),
+            ]->Dict.fromArray,
             ~targetOrigin=origin,
           )
         }

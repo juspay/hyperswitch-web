@@ -11,14 +11,24 @@ let make = () => {
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   let eventsToSendToParent = ["openurl_if_required"]
-  let isTrustedChild = (ev: Window.event) =>
-    [popupUrl, redirectResponseUrl]
-    ->Array.filterMap(PaymentMessageSecurity.originOf)
-    ->Array.includes(ev.origin) &&
-      Window.querySelector("#threeDsRedirectFrame")
-      ->Nullable.toOption
-      ->Option.map(iframe => ev.source === iframe->Window.contentWindow)
-      ->Option.getOr(false)
+  let isTrustedChild = React.useCallback((ev: Window.event) =>
+    Window.querySelector("#threeDsRedirectFrame")
+    ->Nullable.toOption
+    ->Option.map(iframe =>
+      [popupUrl, redirectResponseUrl]
+      ->Array.filterMap(PaymentMessageSecurity.originOf)
+      ->Array.some(
+        origin =>
+          PaymentMessageSecurity.isExpectedFrame(
+            ~frame=iframe,
+            ~origin,
+            ~eventSource=ev.source,
+            ~eventOrigin=ev.origin,
+          ),
+      )
+    )
+    ->Option.getOr(false)
+  , (popupUrl, redirectResponseUrl))
   eventsToSendToParent->UtilityHooks.useSendEventsToParent(~isTrustedChild)
 
   let handleOnClose = () =>

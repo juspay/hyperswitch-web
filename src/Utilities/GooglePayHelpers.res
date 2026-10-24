@@ -124,11 +124,13 @@ let useHandleGooglePayResponse = (
           ~isManualRetryEnabled,
         )
       }
-      if dict->Dict.get("gpayError")->Option.isSome {
+      if (
+        dict->Dict.get("gpayError")->Option.isSome &&
+          dict->getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
+      ) {
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-        if isSavedMethodsFlow || !isWallet {
-          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-        }
+        // One-click confirmations also await a terminal result when the sheet closes.
+        postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
       }
     }
     let handleTrusted = (ev: Window.event) => {

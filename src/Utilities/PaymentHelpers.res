@@ -357,6 +357,19 @@ let rec intentCall = (
   ~parentOrigin: option<string>=?,
 ) => {
   open Promise
+  let sendSessionTokenToParent = (message, walletName) => {
+    switch parentOrigin->Option.filter(PaymentMessageSecurity.isConcreteOrigin) {
+    | Some(origin) => messageParentWindow(message, ~targetOrigin=origin)
+    | None =>
+      handleLogging(
+        ~optLogger,
+        ~value="Cannot deliver third-party SDK session token: trusted parent origin is unavailable.",
+        ~eventName=SDK_SESSION_TOKEN_DELIVERY_FAILED,
+        ~paymentMethod=walletName,
+        ~logType=ERROR,
+      )
+    }
+  }
   let isConfirm = uri->String.includes("/confirm")
   let isLegacyClientSecretFlow = sdkAuthorization->Utils.getNonEmptyOption->Option.isNone
 
@@ -865,9 +878,7 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  parentOrigin
-                  ->Option.filter(PaymentMessageSecurity.isConcreteOrigin)
-                  ->Option.forEach(origin => messageParentWindow(message, ~targetOrigin=origin))
+                  sendSessionTokenToParent(message, walletName)
                 }
                 resolve(data)
               } else if intent.nextAction.type_ === "invoke_sdk_client" {
@@ -942,9 +953,7 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  parentOrigin
-                  ->Option.filter(PaymentMessageSecurity.isConcreteOrigin)
-                  ->Option.forEach(origin => messageParentWindow(message, ~targetOrigin=origin))
+                  sendSessionTokenToParent(message, walletName)
                 }
               } else {
                 handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)

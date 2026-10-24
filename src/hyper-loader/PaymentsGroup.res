@@ -112,7 +112,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let groupInstanceId = uniqueId(~prefix="payments")
   let coordinator = makeCoordinatorChannel(
     ~groupId=groupInstanceId,
-    ~origin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+    ~origin=ApiEndpoint.sdkOrigin,
   )
   let coordinatorListenerName = `onPaymentsCoordinator-${groupInstanceId}`
 
@@ -134,7 +134,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         let isOurCoordinator = isFromIframe(
           ~ev,
           ~iframe=coordinator.mountRef.contents->Option.map(mount => mount.iframe),
-          ~origin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+          ~origin=ApiEndpoint.sdkOrigin,
         )
         if isOurCoordinator {
           let json = eventDataJson(ev)
@@ -159,7 +159,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                     ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
                     ("sdkSessionId", ""->JSON.Encode.string),
                     ("customPodUri", ""->JSON.Encode.string),
-                    ("parentURL", "*"->JSON.Encode.string),
                     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
                     ("launchTime", Date.now()->JSON.Encode.float),
                     ("loggerSource", "hyper_payments_coordinator"->JSON.Encode.string),
@@ -168,7 +167,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                 ->Nullable.make
                 ->Window.iframePostMessage(
                   coordinatorConfig,
-                  ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+                  ~targetOrigin=ApiEndpoint.sdkOrigin,
                 )
               }
             | None => ()
@@ -182,7 +181,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                 ->Nullable.make
                 ->Window.iframePostMessage(
                   [("clientList", json)]->Dict.fromArray,
-                  ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+                  ~targetOrigin=ApiEndpoint.sdkOrigin,
                 )
               | None => ()
               }
@@ -331,7 +330,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       ->Promise.then(json => {
         mountedIframeRef->Window.iframePostMessage(
           [("clientList", json)]->Dict.fromArray,
-          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+          ~targetOrigin=ApiEndpoint.sdkOrigin,
         )
         Promise.resolve()
       })
@@ -343,7 +342,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     }
 
     let attachFieldListener = () => {
-      let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+      let innerIframeOrigin = ApiEndpoint.sdkOrigin
       EventListenerManager.addSmartEventListener(
         "message",
         (ev: Types.event) => {
@@ -433,7 +432,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           postFieldUpdate(
             ~iframeRef,
             ~newOptions,
-            ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+            ~targetOrigin=ApiEndpoint.sdkOrigin,
           )->getString("paymentToken", "")
         if savedCardToken !== "" {
           savedCardTokenRef := savedCardToken
@@ -459,7 +458,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
 
   let doSubmitListenerName = uniqueId(~prefix="onPaymentsV2DoSubmit")
   let isFromOurFrames = (ev: Types.event): bool => {
-    let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+    let sdkOrigin = ApiEndpoint.sdkOrigin
     isFromIframe(
       ~ev,
       ~iframe=coordinator.mountRef.contents->Option.map(mount => mount.iframe),
@@ -552,7 +551,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             ("paymentElementsUpdate", true->JSON.Encode.bool),
             ("options", newOptions),
           ]->Dict.fromArray,
-          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+          ~targetOrigin=ApiEndpoint.sdkOrigin,
         )
       })
     }

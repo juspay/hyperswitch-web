@@ -1420,6 +1420,15 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
       request,
     );
     await expect(page.locator("#orca-fullscreen")).toBeAttached();
+    await expect
+      .poll(() =>
+        page
+          .frames()
+          .some((frame) =>
+            frame.url().includes("fullscreenType=paymentloader"),
+          ),
+      )
+      .toBe(true);
     const overlay = page
       .frames()
       .find((frame) => frame.url().includes("fullscreenType=paymentloader"))!;

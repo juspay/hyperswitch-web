@@ -19,21 +19,33 @@ let make = (
   let hyperComponentName = PaymentMethodsManagementElements
   try {
     let iframeRef = []
-    let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+    let sdkOrigin = ApiEndpoint.sdkOrigin
     let fullscreenSources = []
     let onFullscreenCreated = (iframe, _metadata) => {
       fullscreenSources->Array.push({source: iframe->Window.contentWindow})->ignore
     }
     let isTrustedPaymentMessage = (event: Types.event) =>
-      event.origin === sdkOrigin &&
-        (iframeRef->Array.some(iframe =>
-          iframe
-          ->Nullable.toOption
-          ->Option.map(element =>
-            element->Window.Element.isConnected && event.source === element->Window.contentWindow
+      iframeRef->Array.some(iframe =>
+        iframe
+        ->Nullable.toOption
+        ->Option.map(element =>
+          PaymentMessageSecurity.isExpectedFrame(
+            ~frame=element,
+            ~origin=sdkOrigin,
+            ~eventSource=event.source,
+            ~eventOrigin=event.origin,
           )
-          ->Option.getOr(false)
-        ) || fullscreenSources->Array.some(entry => event.source === entry.source))
+        )
+        ->Option.getOr(false)
+      ) ||
+        fullscreenSources->Array.some(entry =>
+          PaymentMessageSecurity.isExpectedSender(
+            ~source=entry.source,
+            ~origin=sdkOrigin,
+            ~eventSource=event.source,
+            ~eventOrigin=event.origin,
+          )
+        )
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
@@ -164,7 +176,10 @@ let make = (
     }
 
     let setElementIframeRef = ref => {
-      iframeRef->Array.push(ref)->ignore
+      PaymentMessageSecurity.pruneDisconnectedFrames(iframeRef)
+      if !(ref->Nullable.isNullable) {
+        iframeRef->Array.push(ref)->ignore
+      }
       setIframeRef(ref)
     }
     let getElement = componentName => {
@@ -249,7 +264,6 @@ let make = (
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
             ("customPodUri", customPodUri->JSON.Encode.string),
-            ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),
             ("customBackendUrl", customBackendUrl->JSON.Encode.string),

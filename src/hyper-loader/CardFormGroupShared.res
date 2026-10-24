@@ -12,7 +12,14 @@ let eventDataJson = (ev: Types.event): JSON.t =>
 
 let isFromIframe = (~ev: Types.event, ~iframe: option<Dom.element>, ~origin: string): bool =>
   iframe
-  ->Option.map(iframe => ev.source === iframe->Window.contentWindow && ev.origin === origin)
+  ->Option.map(iframe =>
+    PaymentMessageSecurity.isExpectedFrame(
+      ~frame=iframe,
+      ~origin,
+      ~eventSource=ev.source,
+      ~eventOrigin=ev.origin,
+    )
+  )
   ->Option.getOr(false)
 
 type coordinatorChannel = {
@@ -89,8 +96,7 @@ let openFieldPort = (
   let epoch = channel.portEpochCounterRef.contents
   let messageChannel = MessageChannelBinding.makeChannel()
   let portKey = CardFormCoordinator.portKey(~groupId=channel.groupId, ~fieldName)
-  channel.installedPortKeysRef :=
-    channel.installedPortKeysRef.contents->Array.concat([portKey])
+  channel.installedPortKeysRef := channel.installedPortKeysRef.contents->Array.concat([portKey])
   CoordinatorMount.postFieldMountConfigWithPort(
     ~fieldIframe,
     ~mountConfig,
@@ -118,9 +124,10 @@ let mergeSubscriptionEvents = (
     ->Option.flatMap(JSON.Decode.array)
     ->Option.getOr([])
     ->Array.filterMap(JSON.Decode.string)
-  let merged = incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
-    acc->Array.includes(event) ? acc : acc->Array.concat([event])
-  )
+  let merged =
+    incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
+      acc->Array.includes(event) ? acc : acc->Array.concat([event])
+    )
   if merged->Array.length > subscriptionEventsRef.contents->Array.length {
     subscriptionEventsRef := merged
     true
@@ -201,7 +208,6 @@ let buildFieldMountConfig = (
   ->Array.concat([
     ("sdkSessionId", sdkSessionId->JSON.Encode.string),
     ("customPodUri", ""->JSON.Encode.string),
-    ("parentURL", "*"->JSON.Encode.string),
     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
     ("launchTime", Date.now()->JSON.Encode.float),
     ("loggerSource", loggerSource->JSON.Encode.string),
@@ -318,10 +324,7 @@ let registerField = (
 ): unit => {
   let fieldsDict = fields.contents->getDictFromJson
   let fieldMeta =
-    [
-      ("id", fieldId->JSON.Encode.string),
-      ("type", fieldType->JSON.Encode.string),
-    ]
+    [("id", fieldId->JSON.Encode.string), ("type", fieldType->JSON.Encode.string)]
     ->Array.concat(extraMeta)
     ->Dict.fromArray
     ->JSON.Encode.object

@@ -57,7 +57,7 @@ let make = (
   } = options
   let layoutClass = CardUtils.getLayoutClass(layout)
   let {themeObj, localeString} = config
-  let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin
+  let innerIframeOrigin = ApiEndpoint.vaultSdkOrigin
   let isRawMode = cardCollectionMode === "raw"
   let isRawNewCardFlow = isRawMode && !isSavedCardFlow
   let isPMMFlow = flowType === CardThemeType.PaymentMethodsManagement

@@ -9,7 +9,7 @@ open HyperLoggerTypes
 // --- Iframe messaging helpers ---
 
 let postMessageToIframes = (iframes: array<Nullable.t<Dom.element>>, message) => {
-  let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+  let sdkOrigin = ApiEndpoint.sdkOrigin
   iframes->Array.forEach(ifR => ifR->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin))
 }
 
@@ -24,7 +24,7 @@ let setOverlayLoading = (iframes, isLoading) => {
 // --- Ready signal listener ---
 
 let waitForReady = iframes => {
-  let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+  let sdkOrigin = ApiEndpoint.sdkOrigin
   Promise.make((resolve, _) => {
     let onMessage = (event: Types.event) => {
       let dict = event.data->anyTypeToJson->getDictFromJson
@@ -33,13 +33,12 @@ let waitForReady = iframes => {
         ->Nullable.toOption
         ->Option.map(
           element =>
-            element->Window.Element.isConnected &&
-              PaymentMessageSecurity.isExpectedSender(
-                ~source=element->Window.contentWindow,
-                ~origin=sdkOrigin,
-                ~eventSource=event.source,
-                ~eventOrigin=event.origin,
-              ),
+            PaymentMessageSecurity.isExpectedFrame(
+              ~frame=element,
+              ~origin=sdkOrigin,
+              ~eventSource=event.source,
+              ~eventOrigin=event.origin,
+            ),
         )
         ->Option.getOr(false)
       )
@@ -210,13 +209,13 @@ let setupPreMountLoaderPromises = (
     ~currentSdkAuthorization,
   )
 
-  let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+  let sdkOrigin = ApiEndpoint.sdkOrigin
   let isFromPreMountLoader = (event: Types.event) =>
     preMountLoaderIframeDiv
     ->Nullable.toOption
     ->Option.map(iframe =>
-      PaymentMessageSecurity.isExpectedSender(
-        ~source=iframe->Window.contentWindow,
+      PaymentMessageSecurity.isExpectedFrame(
+        ~frame=iframe,
         ~origin=sdkOrigin,
         ~eventSource=event.source,
         ~eventOrigin=event.origin,

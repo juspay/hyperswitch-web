@@ -100,11 +100,6 @@ let handleOnClickPostMessage = (~targetOrigin="*", ev) => {
     ~targetOrigin,
   )
 }
-let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false) => {
-  let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
-  messageParentWindow([(message, true->JSON.Encode.bool)], ~targetOrigin)
-}
-
 let handleBeforeRedirectPostMessage = (~targetOrigin="*") => {
   messageTopWindow([("disableBeforeUnloadEventListener", true->JSON.Encode.bool)], ~targetOrigin)
 }
@@ -1720,6 +1715,14 @@ let makeOneClickHandlerPromise = (sdkHandleIsThere, ~parentOrigin, ~parentWindow
             | Some(accepted) =>
               settled := true
               EventListenerManager.removeSmartEventListener("message", `walletClick-${requestId}`)
+              if !accepted && parentWindow !== window {
+                let error = getFailedSubmitResponse(
+                  ~errorType="payment_canceled",
+                  ~message="The merchant declined the wallet payment request.",
+                )->getDictFromJson
+                error->Dict.set("submitSuccessful", false->JSON.Encode.bool)
+                parentWindow->messageWindow(error->Dict.toArray, ~targetOrigin=parentOrigin)
+              }
               resolve(accepted->JSON.Encode.bool)
             | None => ()
             }

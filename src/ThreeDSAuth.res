@@ -25,12 +25,22 @@ let make = () => {
   let eventsToSendToParent = ["confirmParams", "poll_status", "openurl_if_required"]
 
   let responseOrigins = React.useRef([])
-  let isTrustedChild = (ev: Window.event) =>
-    responseOrigins.current->Array.includes(ev.origin) &&
-      Window.querySelector("#threeDsAuthFrame")
-      ->Nullable.toOption
-      ->Option.map(iframe => ev.source === iframe->Window.contentWindow)
-      ->Option.getOr(false)
+  let isTrustedChild = React.useCallback0((ev: Window.event) =>
+    Window.querySelector("#threeDsAuthFrame")
+    ->Nullable.toOption
+    ->Option.map(iframe =>
+      responseOrigins.current->Array.some(
+        origin =>
+          PaymentMessageSecurity.isExpectedFrame(
+            ~frame=iframe,
+            ~origin,
+            ~eventSource=ev.source,
+            ~eventOrigin=ev.origin,
+          ),
+      )
+    )
+    ->Option.getOr(false)
+  )
   eventsToSendToParent->UtilityHooks.useSendEventsToParent(~isTrustedChild)
 
   React.useEffect0(() => {

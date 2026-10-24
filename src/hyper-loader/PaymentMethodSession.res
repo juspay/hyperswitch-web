@@ -247,7 +247,7 @@ let make = (
   let groupInstanceId = uniqueId(~prefix=`vault-${pmSessionId}`)
   let coordinator = makeCoordinatorChannel(
     ~groupId=groupInstanceId,
-    ~origin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+    ~origin=ApiEndpoint.vaultSdkOrigin,
   )
   let coordinatorListenerName = `onVaultCoordinator-${groupInstanceId}`
   let coordinatorTokenizePendingRef: ref<option<(string, JSON.t => unit)>> = ref(None)
@@ -290,10 +290,9 @@ let make = (
           ("publishableKey", publishableKey->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
           ("loggerPaymentId", pmSessionId->JSON.Encode.string),
-          ("parentURL", "*"->JSON.Encode.string),
           ("launchTime", Date.now()->JSON.Encode.float),
         ]->Dict.fromArray,
-        ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+        ~targetOrigin=ApiEndpoint.vaultSdkOrigin,
       )
     )
 
@@ -310,14 +309,14 @@ let make = (
         ->Nullable.make
         ->Window.iframePostMessage(
           [("sessions", sessionsDataRef.contents)]->Dict.fromArray,
-          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+          ~targetOrigin=ApiEndpoint.vaultSdkOrigin,
         )
       )
     }
   }
 
   let attachCoordinatorListener = () => {
-    let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin
+    let innerIframeOrigin = ApiEndpoint.vaultSdkOrigin
     EventListenerManager.addSmartEventListener(
       "message",
       (ev: Types.event) => {
@@ -558,13 +557,13 @@ let make = (
       if sessionsDataRef.contents != JSON.Encode.null {
         mountedIframeRef->Window.iframePostMessage(
           [("sessions", sessionsDataRef.contents)]->Dict.fromArray,
-          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+          ~targetOrigin=ApiEndpoint.vaultSdkOrigin,
         )
       }
     }
 
     let attachFieldListener = () => {
-      let innerIframeOrigin = URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin
+      let innerIframeOrigin = ApiEndpoint.vaultSdkOrigin
       EventListenerManager.addSmartEventListener(
         "message",
         (ev: Types.event) => {
@@ -639,7 +638,7 @@ let make = (
         let newSavedCardDict = postFieldUpdate(
           ~iframeRef,
           ~newOptions,
-          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+          ~targetOrigin=ApiEndpoint.vaultSdkOrigin,
         )
         let brand = newSavedCardDict->savedCardNetwork
         if brand !== "" {

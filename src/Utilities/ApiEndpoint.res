@@ -1,6 +1,7 @@
 let switchToInteg = false
 let isLocal = false
 let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
+let sdkOrigin = URLModule.makeUrl(sdkDomainUrl).origin
 
 let apiEndPoint: ref<option<string>> = ref(None)
 
@@ -62,6 +63,7 @@ let vaultSdkDomainUrl =
   GlobalVars.isPciCompliant || GlobalVars.isLocal
     ? sdkDomainUrl
     : `${hyperswitchVaultSdkUrl}${GlobalVars.repoPublicPath}`
+let vaultSdkOrigin = URLModule.makeUrl(vaultSdkDomainUrl).origin
 
 let addCustomPodHeader = (arr: array<(string, string)>, ~customPodUri=?) => {
   switch customPodUri {

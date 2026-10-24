@@ -64,20 +64,16 @@ let useIsCustomerAcceptanceRequired = (
 let useSendEventsToParent = (~isTrustedChild, eventsToSendToParent) => {
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
-      let eventDataObject = ev.data->Identity.anyTypeToJson
-      let eventsDict = eventDataObject->Utils.getDictFromJson
-
-      let isFromChildFrame =
-        Window.querySelectorAll("iframe")->Array.some(iframe =>
-          ev.source === iframe->Window.contentWindow
-        )
-      let allowedEvents =
-        eventsDict
-        ->Dict.toArray
-        ->Array.filter(((key, _)) => eventsToSendToParent->Array.includes(key))
-
-      if isFromChildFrame && isTrustedChild(ev) && allowedEvents->Array.length > 0 {
-        Utils.messageParentWindow(allowedEvents)
+      if isTrustedChild(ev) {
+        let allowedEvents =
+          ev.data
+          ->Identity.anyTypeToJson
+          ->Utils.getDictFromJson
+          ->Dict.toArray
+          ->Array.filter(((key, _)) => eventsToSendToParent->Array.includes(key))
+        if allowedEvents->Array.length > 0 {
+          Utils.messageParentWindow(allowedEvents)
+        }
       }
     }
     Window.addEventListener("message", handle)

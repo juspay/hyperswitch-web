@@ -10,6 +10,9 @@ import * as LoggerUtils from "../../src/Utilities/LoggerUtils.bs.js";
 import * as PaymentHelpers from "../../src/Utilities/PaymentHelpers.bs.js";
 import clientList from "../recordings/base/client-list.json";
 
+export { makeOneClickHandlerPromise as requestOneClickDecision } from "../../src/Utilities/Utils.bs.js";
+export { handleApplePayBraintreePaymentSession as startBraintreeApplePay } from "../../src/Utilities/ApplePayHelpers.bs.js";
+
 export interface EventListenerLog {
   componentType: string;
   eventListeners: string[];
@@ -102,7 +105,11 @@ export function makeElements() {
     { contents: Promise.resolve({}) },
     { contents: Promise.resolve({}) },
     () => Promise.resolve({}),
-    () => {},
+    () => ({
+      isCurrent: () => true,
+      onSubmitResponse: () => {},
+      hasConfirmation: false,
+    }),
     isTrustedMessage,
     isTrustedMessage,
     registerFrame,
