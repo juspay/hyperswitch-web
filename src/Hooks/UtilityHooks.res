@@ -61,8 +61,8 @@ let useIsCustomerAcceptanceRequired = (
   ))
 }
 
-let useSendEventsToParent = eventsToSendToParent => {
-  React.useEffect0(() => {
+let useSendEventsToParent = (~isTrustedChild, eventsToSendToParent) => {
+  React.useEffect(() => {
     let handle = (ev: Window.event) => {
       let eventDataObject = ev.data->Identity.anyTypeToJson
       let eventsDict = eventDataObject->Utils.getDictFromJson
@@ -76,13 +76,13 @@ let useSendEventsToParent = eventsToSendToParent => {
         ->Dict.toArray
         ->Array.filter(((key, _)) => eventsToSendToParent->Array.includes(key))
 
-      if isFromChildFrame && allowedEvents->Array.length > 0 {
+      if isFromChildFrame && isTrustedChild(ev) && allowedEvents->Array.length > 0 {
         Utils.messageParentWindow(allowedEvents)
       }
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  })
+  }, [isTrustedChild])
 }
 
 let useUpdateRedirectionFlags = () => {

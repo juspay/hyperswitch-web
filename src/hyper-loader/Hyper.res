@@ -55,16 +55,18 @@ let handleHyperApplePayMounted = (event: Types.event) => {
   let applePaySessionRef = ref(Nullable.null)
 
   let componentName = dict->getString("componentName", "payment")
+  let walletRoutingId = dict->getString("walletRoutingId", "")
 
   if dict->Dict.get("hyperApplePayCanMakePayments")->Option.isSome {
     let msg =
       [
         ("applePayCanMakePayments", true->JSON.Encode.bool),
         ("componentName", componentName->JSON.Encode.string),
+        ("walletRoutingId", walletRoutingId->JSON.Encode.string),
       ]
       ->Dict.fromArray
       ->JSON.Encode.object
-    event.source->Window.sendPostMessageJSON(msg)
+    event.source->Utils.postMessage(msg, event.origin)
   } else if dict->Dict.get("hyperApplePayButtonClicked")->Option.isSome {
     let paymentRequest = dict->Dict.get("paymentRequest")->Option.getOr(JSON.Encode.null)
     let applePayPresent = dict->Dict.get("applePayPresent")
@@ -91,11 +93,12 @@ let handleHyperApplePayMounted = (event: Types.event) => {
           ("applePayBillingContact", payment.billingContact),
           ("applePayShippingContact", payment.shippingContact),
           ("componentName", componentName->JSON.Encode.string),
+          ("walletRoutingId", walletRoutingId->JSON.Encode.string),
           ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
         ]
         ->Dict.fromArray
         ->JSON.Encode.object
-      event.source->Window.sendPostMessageJSON(msg)
+      event.source->Utils.postMessage(msg, event.origin)
     }
 
     let resolvePromise = _ => {
@@ -103,10 +106,11 @@ let handleHyperApplePayMounted = (event: Types.event) => {
         [
           ("showApplePayButton", true->JSON.Encode.bool),
           ("componentName", componentName->JSON.Encode.string),
+          ("walletRoutingId", walletRoutingId->JSON.Encode.string),
         ]
         ->Dict.fromArray
         ->JSON.Encode.object
-      event.source->Window.sendPostMessageJSON(msg)
+      event.source->Utils.postMessage(msg, event.origin)
     }
 
     ApplePayHelpers.startApplePaySession(
@@ -124,21 +128,30 @@ let handleHyperApplePayMounted = (event: Types.event) => {
   }
 }
 
-addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMount")
-
-let isReadyResolved = ref(false)
-
-let isReadyPromise = Promise.make((resolve, _) => {
-  let handleOnReady = (event: Types.event) => {
-    let json = event.data->anyTypeToJson
-    let dict = json->getDictFromJson
-    if dict->getBool("ready", false) {
-      isReadyResolved := true
-      resolve(Date.now())
+addSmartEventListener(
+  "message",
+  ev => {
+    // Same-origin merchant intermediaries share the top window's security
+    // principal. Foreign embedded frames must not drive its Apple Pay session.
+    let fromMerchantChild =
+      ev.origin === Window.Location.origin &&
+        Window.querySelectorAll("iframe")->Array.some(iframe =>
+          ev.source === iframe->Window.contentWindow
+        )
+    if (
+      fromMerchantChild ||
+      PaymentMessageSecurity.isExpectedSender(
+        ~source=window,
+        ~origin=Window.Location.origin,
+        ~eventSource=ev.source,
+        ~eventOrigin=ev.origin,
+      )
+    ) {
+      handleHyperApplePayMounted(ev)
     }
-  }
-  addSmartEventListener("message", handleOnReady, "handleOnReady")
-})
+  },
+  "onHyperApplePayMount",
+)
 
 let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
@@ -356,6 +369,20 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           )
           ->Option.getOr(false)
         )
+      let isReadyResolved = ref(false)
+      let isReadyPromise = Promise.make((resolve, _) => {
+        let activity = `handleOnReady-${generateRandomString(16)}`
+        let handleOnReady = (event: Types.event) => {
+          let dict = event.data->anyTypeToJson->getDictFromJson
+          if isFromPaymentIframe(event) && dict->getBool("ready", false) {
+            isReadyResolved := true
+            removeSmartEventListener("message", activity)
+            resolve(Date.now())
+          }
+        }
+        addSmartEventListener("message", handleOnReady, activity)
+      })
+
       let isTrustedPaymentMessage = (event: Types.event) =>
         isFromPaymentIframe(event) ||
         (event.origin === sdkOrigin &&
@@ -478,6 +505,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                         // to unset one click button loader
                         ifR->Window.iframePostMessage(
                           [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
+                          ~targetOrigin=sdkOrigin,
                         )
                       },
                     )
@@ -689,6 +717,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                   [("publishableKey", publishableKey->JSON.Encode.string)]->getJsonFromArrayOfJson,
                 ),
               ]->Dict.fromArray,
+              ~targetOrigin=sdkOrigin,
             )
 
             let handleSubmitResponse = json => {
@@ -829,9 +858,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             ~endpoint,
           )
           iframeRef.contents->Array.forEach(ifR => {
-            ifR->Window.iframePostMessage([("sessions", session)]->Dict.fromArray)
+            ifR->Window.iframePostMessage(
+              [("sessions", session)]->Dict.fromArray,
+              ~targetOrigin=sdkOrigin,
+            )
             ifR->Window.iframePostMessage(
               [("sessionUpdate", false->JSON.Encode.bool)]->Dict.fromArray,
+              ~targetOrigin=sdkOrigin,
             )
           })
           [("updateCompleted", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
@@ -851,7 +884,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let initiateUpdateIntent = () => {
         iframeRef.contents->Array.forEach(ifR => {
-          ifR->Window.iframePostMessage([("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray)
+          ifR->Window.iframePostMessage(
+            [("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray,
+            ~targetOrigin=sdkOrigin,
+          )
         })
         let msg = [("updateInitiated", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
         Promise.resolve(msg)

@@ -513,6 +513,35 @@ test.describe("Payment message sender validation @hermetic-only", () => {
         });
       }, probeUrl);
 
+      await page
+        .frameLocator("#orca-fullscreen")
+        .locator("body")
+        .evaluate(async (_el, probeUrl) => {
+          const child =
+            document.querySelector<HTMLIFrameElement>("#threeDsAuthFrame")!;
+          window.dispatchEvent(
+            new MessageEvent("message", {
+              source: child.contentWindow,
+              origin: "https://untrusted.example.test",
+              data: { openurl_if_required: probeUrl },
+            }),
+          );
+          const channel = new MessageChannel();
+          const delivered = new Promise<void>((resolve) => {
+            channel.port1.onmessage = () => {
+              channel.port1.close();
+              resolve();
+            };
+          });
+          window.parent.postMessage({ paymentSecurityBarrier: true }, "*", [
+            channel.port2,
+          ]);
+          await delivered;
+        }, probeUrl);
+      expect(
+        await page.evaluate(() => window.paymentSecurityRelayedFields),
+      ).toEqual([]);
+
       await acs.locator("body").evaluate((_el, probeUrl) => {
         window.parent.postMessage(
           {

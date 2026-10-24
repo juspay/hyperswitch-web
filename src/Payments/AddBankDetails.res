@@ -14,7 +14,7 @@ module Loader = {
 let make = (~paymentMethodType) => {
   open Utils
   open Promise
-  let {publishableKey, clientSecret, iframeId, sdkAuthorization} = Jotai.useAtomValue(
+  let {publishableKey, clientSecret, iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(
     JotaiAtoms.keys,
   )
   let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
@@ -31,11 +31,11 @@ let make = (~paymentMethodType) => {
       paymentMethodListValue.payment_methods,
     )->PmAuthConnectorUtils.getAllRequiredPmAuthConnectors
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     let onPlaidCallback = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson
-      if dict->getBool("isPlaid", false) {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) && dict->getBool("isPlaid", false) {
         let publicToken = dict->getDictFromDict("data")->getString("publicToken", "")
         let isExited = dict->getDictFromDict("data")->getBool("isExited", false)
         setShowLoader(_ => !isExited)
@@ -63,10 +63,10 @@ let make = (~paymentMethodType) => {
     Window.addEventListener("message", onPlaidCallback)
     Some(
       () => {
-        Window.removeEventListener("message", ev => onPlaidCallback(ev))
+        Window.removeEventListener("message", onPlaidCallback)
       },
     )
-  })
+  }, (parentURL, clientSecret, sdkAuthorization))
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -78,7 +78,7 @@ let make = (~paymentMethodType) => {
       )
     }
   }, [])
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let onClickHandler = () => {
     setShowLoader(_ => true)

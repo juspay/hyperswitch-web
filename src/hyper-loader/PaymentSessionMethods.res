@@ -133,37 +133,83 @@ let getCustomerSavedPaymentMethods = (
     ) => {
       let payloadDict = payload->getDictFromJson
       let redirect = payloadDict->getString("redirect", "if_required")
+      let expectedReturnUrl =
+        payloadDict->getDictFromDict("confirmParams")->getString("return_url", "")
+      let widget = getWidgetIframe(~iframeRef, ~id)
+      let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+      let requestId = generateRandomString(16)
+      let responseActivity = `onCVCWidgetConfirmResponse-${requestId}`
       Promise.make((resolve, _) => {
+        let settled = ref(false)
+        let finish = data => {
+          settled := true
+          EventListenerManager.removeSmartEventListener("message", responseActivity)
+          resolve(data)
+        }
         let handleCVCWidgetConfirmResponse = (event: Types.event) => {
-          let eventDataDict = event.data->Identity.anyTypeToJson->getDictFromJson
-          switch eventDataDict->Dict.get("cvcWidgetConfirmResponse") {
-          | Some(responseData) =>
-            let responseDataDict = responseData->getDictFromJson
-            let returnUrl = responseDataDict->getString("returnUrl", "")
-            switch responseDataDict->Dict.get("data") {
-            | Some(data) =>
-              if redirect == "always" {
-                Window.Location.replace(returnUrl)
-              } else {
-                resolve(data)
+          let trusted =
+            widget
+            ->Option.flatMap(Nullable.toOption)
+            ->Option.map(
+              iframe =>
+                iframe->Window.Element.isConnected &&
+                  PaymentMessageSecurity.isExpectedSender(
+                    ~source=iframe->Window.contentWindow,
+                    ~origin=sdkOrigin,
+                    ~eventSource=event.source,
+                    ~eventOrigin=event.origin,
+                  ),
+            )
+            ->Option.getOr(false)
+          if trusted && !settled.contents {
+            let eventDataDict = event.data->Identity.anyTypeToJson->getDictFromJson
+            if eventDataDict->getString("cvcWidgetRequestId", "") === requestId {
+              switch eventDataDict->Dict.get("cvcWidgetConfirmResponse") {
+              | Some(responseData) =>
+                let responseDataDict = responseData->getDictFromJson
+                let returnUrl = responseDataDict->getString("returnUrl", "")
+                switch responseDataDict->Dict.get("data") {
+                | Some(data) =>
+                  if redirect == "always" {
+                    if (
+                      PaymentMessageSecurity.isReturnDestination(
+                        ~url=returnUrl,
+                        ~returnUrl=expectedReturnUrl,
+                      )
+                    ) {
+                      finish(data)
+                      Window.Location.replace(returnUrl)
+                    } else {
+                      finish(
+                        handleFailureResponse(
+                          ~message="Invalid CVC confirmation return URL",
+                          ~errorType="invalid_request",
+                        ),
+                      )
+                    }
+                  } else {
+                    finish(data)
+                  }
+                | None => finish(responseData)
+                }
+              | None =>
+                switch eventDataDict->Dict.get("cvcWidgetConfirmErrorResponse") {
+                | Some(errorResponseData) => finish(errorResponseData)
+                | None => ()
+                }
               }
-            | None => resolve(responseData)
-            }
-          | None =>
-            switch eventDataDict->Dict.get("cvcWidgetConfirmErrorResponse") {
-            | Some(errorResponseData) => resolve(errorResponseData)
-            | None => ()
             }
           }
         }
         EventListenerManager.addSmartEventListener(
           "message",
           handleCVCWidgetConfirmResponse,
-          "onCVCWidgetConfirmResponse",
+          responseActivity,
         )
         let confirmParams =
           [
             ("body", body->getJsonFromArrayOfJson),
+            ("requestId", requestId->JSON.Encode.string),
             ("payload", payload),
             ("paymentType", (paymentType :> string)->JSON.Encode.string),
             ("publishableKey", publishableKey->JSON.Encode.string),
@@ -173,10 +219,10 @@ let getCustomerSavedPaymentMethods = (
             ("redirect", redirect->JSON.Encode.string),
           ]->getJsonFromArrayOfJson
         let message = [("requestCVCConfirm", confirmParams)]->Dict.fromArray
-        switch getWidgetIframe(~iframeRef, ~id) {
-        | Some(iframe) => iframe->Window.iframePostMessage(message)
+        switch widget {
+        | Some(iframe) => iframe->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
         | None =>
-          resolve(
+          finish(
             handleFailureResponse(
               ~message="INTEGRATION ERROR: Mount the CVC widget with a valid ID or pass the required CVC value.",
               ~errorType=cvcWidgetNotFoundErrorType,

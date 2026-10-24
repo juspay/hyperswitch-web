@@ -10,6 +10,7 @@ let isPaymentCompleteHandlerProvided = ref(false)
 let isPaymentButtonHandlerProvided = ref(false)
 
 let currentOneClickHandler = ref((None: option<unit => Promise.t<unit>>))
+let oneClickSources: Dict.t<Types.event => bool> = Dict.make()
 
 let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Types.event) => {
   open Promise
@@ -36,8 +37,15 @@ let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Ty
             ~eventName=ONE_CLICK_HANDLER_CALLBACK,
             ~logType=INFO,
           )
-          let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
-          event.source->Window.sendPostMessage(msg)
+          let msg =
+            [
+              ("walletClickEvent", true->JSON.Encode.bool),
+              (
+                "walletClickRequestId",
+                dict->getJsonFromDict("walletClickRequestId", JSON.Encode.null),
+              ),
+            ]->Dict.fromArray
+          event.source->Window.postMessage(msg->JSON.Encode.object->JSON.stringify, event.origin)
           resolve()
         })
         ->catch(_ => {
@@ -46,8 +54,15 @@ let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Ty
             ~eventName=ONE_CLICK_HANDLER_CALLBACK,
             ~logType=ERROR,
           )
-          let msg = [("walletClickEvent", false->JSON.Encode.bool)]->Dict.fromArray
-          event.source->Window.sendPostMessage(msg)
+          let msg =
+            [
+              ("walletClickEvent", false->JSON.Encode.bool),
+              (
+                "walletClickRequestId",
+                dict->getJsonFromDict("walletClickRequestId", JSON.Encode.null),
+              ),
+            ]->Dict.fromArray
+          event.source->Window.postMessage(msg->JSON.Encode.object->JSON.stringify, event.origin)
           resolve()
         })
         ->ignore
@@ -58,10 +73,17 @@ let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Ty
   }
 }
 
-let ensureWalletOneClickListener = logger => {
+let ensureWalletOneClickListener = (logger, ~ownerId, ~isTrustedMessage) => {
+  oneClickSources->Dict.set(ownerId, isTrustedMessage)
   addSmartEventListener(
     "message",
-    event => walletOneClickEventHandler(logger, event),
+    event => {
+      // The merchant callback is intentionally global. Retain each SDK
+      // owner's live sender check, and invoke the callback only once.
+      if oneClickSources->Dict.valuesToArray->Array.some(check => check(event)) {
+        walletOneClickEventHandler(logger, event)
+      }
+    },
     "walletOneClickHandler",
   )
 }
@@ -164,8 +186,6 @@ let make = (
         true,
       )
 
-    ensureWalletOneClickListener(logger)
-
     let onSDKHandleClick = eventHandler => {
       if eventHandler->Option.isSome {
         currentOneClickHandler := eventHandler
@@ -216,7 +236,7 @@ let make = (
           (ev: Types.event) => {
             let json = ev.data->anyTypeToJson
             let name = json->getOptionalJsonFromJson("eventName")->getStringFromOptionalJson("")
-            if name === subscriptionEventName && matchesInstance(ev) {
+            if isTrustedMessage(ev) && name === subscriptionEventName && matchesInstance(ev) {
               switch eventHandler {
               | Some(eH) => eH(Some(sanitizeEventData(ev.data)))
               | None => ()
@@ -248,6 +268,7 @@ let make = (
             eventHandler->Option.map(eH => _ => eH(Some(eventType->getPaymentCompleteEventData))),
             PaymentComplete,
             `onPaymentComplete-${componentType}-${elementInstanceId}`,
+            ~isTrustedMessage,
           )
         }
       | Change =>
@@ -262,6 +283,7 @@ let make = (
           eventHandler,
           Change,
           `onChange-${componentType}-${elementInstanceId}`,
+          ~isTrustedMessage,
         )
       | Click =>
         eventHandlerFunc(
@@ -269,6 +291,7 @@ let make = (
           eventHandler,
           Click,
           `onClick-${componentType}-${elementInstanceId}`,
+          ~isTrustedMessage,
         )
       | Ready =>
         eventHandlerFunc(
@@ -276,6 +299,7 @@ let make = (
           eventHandler,
           Ready,
           `onReady-${componentType}-${elementInstanceId}`,
+          ~isTrustedMessage,
         )
       | Focus =>
         eventHandlerFunc(
@@ -283,6 +307,7 @@ let make = (
           eventHandler,
           Focus,
           `onFocus-${componentType}-${elementInstanceId}`,
+          ~isTrustedMessage,
         )
       | Blur =>
         eventHandlerFunc(
@@ -290,6 +315,7 @@ let make = (
           eventHandler,
           Blur,
           `onBlur-${componentType}-${elementInstanceId}`,
+          ~isTrustedMessage,
         )
       | ConfirmPayment =>
         eventHandlerFunc(
@@ -297,6 +323,7 @@ let make = (
           eventHandler,
           ConfirmPayment,
           `onHelpConfirmPayment-${componentType}-${elementInstanceId}`,
+          ~isTrustedMessage,
         )
       | OneClickConfirmPayment =>
         eventHandlerFunc(
@@ -304,6 +331,7 @@ let make = (
           eventHandler,
           OneClickConfirmPayment,
           `onHelpOneClickConfirmPayment-${componentType}-${elementInstanceId}`,
+          ~isTrustedMessage,
         )
       | PaymentButtonClick =>
         onSDKHandleClick(eventHandler->Option.map(eH => () => Promise.resolve(eH(None))))
@@ -319,25 +347,26 @@ let make = (
     let blur = () => {
       iframeRef->Array.forEach(iframe => {
         let message = [("doBlur", true->JSON.Encode.bool)]->Dict.fromArray
-        iframe->Window.iframePostMessage(message)
+        iframe->Window.iframePostMessage(message, ~targetOrigin=iframeOrigin)
       })
     }
 
     let focus = () => {
       iframeRef->Array.forEach(iframe => {
         let message = [("doFocus", true->JSON.Encode.bool)]->Dict.fromArray
-        iframe->Window.iframePostMessage(message)
+        iframe->Window.iframePostMessage(message, ~targetOrigin=iframeOrigin)
       })
     }
 
     let clear = () => {
       iframeRef->Array.forEach(iframe => {
         let message = [("doClearValues", true->JSON.Encode.bool)]->Dict.fromArray
-        iframe->Window.iframePostMessage(message)
+        iframe->Window.iframePostMessage(message, ~targetOrigin=iframeOrigin)
       })
     }
 
     let unmount = () => {
+      oneClickSources->Dict.delete(elementInstanceId)
       let id = mountId.contents
       mountedIframeRef := Nullable.null
       fullscreenIframeRef := Nullable.null
@@ -384,11 +413,12 @@ let make = (
             ("paymentElementsUpdate", true->JSON.Encode.bool),
             ("options", flatOption->JSON.Encode.object->unflattenObject->JSON.Encode.object),
           ]->Dict.fromArray
-        iframe->Window.iframePostMessage(message)
+        iframe->Window.iframePostMessage(message, ~targetOrigin=iframeOrigin)
       })
     }
 
     let mount = selector => {
+      ensureWalletOneClickListener(logger, ~ownerId=elementInstanceId, ~isTrustedMessage)
       mountId := selector
       let localSelectorArr = selector->String.split("#")
       let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
@@ -535,6 +565,7 @@ let make = (
                               ("options", options),
                               ("appearance", appearance),
                             ]->Dict.fromArray,
+                            ~targetOrigin=fullscreenOrigin,
                           )
                         }
                         if dict->Dict.get("driverMounted")->Option.isSome {
@@ -544,10 +575,12 @@ let make = (
                               ("metadata", fullscreenMetadata.contents),
                               ("options", options),
                             ]->Dict.fromArray,
+                            ~targetOrigin=iframeOrigin,
                           )
                           let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                           fullScreenEle->Window.iframePostMessage(
                             [("metadata", fullscreenMetadata.contents)]->Dict.fromArray,
+                            ~targetOrigin=fullscreenOrigin,
                           )
                         }
                       }
@@ -576,6 +609,7 @@ let make = (
                       ("fullScreenIframeMounted", false->JSON.Encode.bool),
                       ("options", options),
                     ]->Dict.fromArray,
+                    ~targetOrigin=iframeOrigin,
                   )
                 }
           | None => ()

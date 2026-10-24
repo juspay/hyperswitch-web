@@ -116,7 +116,7 @@ let make = () => {
       }
     }
   }
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let changeSortCode = ev => {
     let val = ReactEvent.Form.target(ev)["value"]

@@ -1,5 +1,6 @@
 @react.component
 let make = () => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   open Utils
   let (branding, setBranding) = React.useState(_ => PaymentType.Auto)
 
@@ -8,7 +9,7 @@ let make = () => {
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
-      if dict->Utils.getBool("fullScreenIframeMounted", false) {
+      if isTrustedParent(ev) && dict->Utils.getBool("fullScreenIframeMounted", false) {
         if dict->getDictFromDict("options")->getOptionString("branding")->Option.isSome {
           setBranding(_ =>
             dict

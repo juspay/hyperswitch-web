@@ -245,7 +245,10 @@ let make = (
   }
 
   let groupInstanceId = uniqueId(~prefix=`vault-${pmSessionId}`)
-  let coordinator = makeCoordinatorChannel(~groupId=groupInstanceId)
+  let coordinator = makeCoordinatorChannel(
+    ~groupId=groupInstanceId,
+    ~origin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+  )
   let coordinatorListenerName = `onVaultCoordinator-${groupInstanceId}`
   let coordinatorTokenizePendingRef: ref<option<(string, JSON.t => unit)>> = ref(None)
 
@@ -290,6 +293,7 @@ let make = (
           ("parentURL", "*"->JSON.Encode.string),
           ("launchTime", Date.now()->JSON.Encode.float),
         ]->Dict.fromArray,
+        ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
       )
     )
 
@@ -302,8 +306,11 @@ let make = (
   let syncCoordinatorSessions = () => {
     if sessionsDataRef.contents != JSON.Encode.null && coordinator.readyRef.contents {
       coordinator.mountRef.contents->Option.forEach(mount =>
-        mount.iframe->Nullable.make->Window.iframePostMessage(
+        mount.iframe
+        ->Nullable.make
+        ->Window.iframePostMessage(
           [("sessions", sessionsDataRef.contents)]->Dict.fromArray,
+          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
         )
       )
     }
@@ -551,6 +558,7 @@ let make = (
       if sessionsDataRef.contents != JSON.Encode.null {
         mountedIframeRef->Window.iframePostMessage(
           [("sessions", sessionsDataRef.contents)]->Dict.fromArray,
+          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
         )
       }
     }
@@ -628,7 +636,11 @@ let make = (
       ~listenerName=`onVaultField-${fieldId}`,
       ~eventHandlersRef,
       ~update=newOptions => {
-        let newSavedCardDict = postFieldUpdate(~iframeRef, ~newOptions)
+        let newSavedCardDict = postFieldUpdate(
+          ~iframeRef,
+          ~newOptions,
+          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+        )
         let brand = newSavedCardDict->savedCardNetwork
         if brand !== "" {
           savedCardBrandRef := brand

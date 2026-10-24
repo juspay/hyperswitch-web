@@ -4,6 +4,7 @@ external getElementById: string => Dom.element = "getElementById"
 
 @react.component
 let make = (~children) => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (fullScreenIframeNode, setFullScreenIframeNode) = React.useState(() => Nullable.null)
 
   React.useEffectOnEveryRender(() => {
@@ -12,7 +13,7 @@ let make = (~children) => {
         let json = ev.data->safeParse
         let dict = json->getDictFromJson
 
-        if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+        if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
           if dict->getBool("fullScreenIframeMounted", false) {
             setFullScreenIframeNode(_ =>
               switch Window.windowParent->Window.fullscreen {

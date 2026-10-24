@@ -1,33 +1,57 @@
-let sendPromiseData = (promise, key) => {
+let sendPromiseData = (promise, key, ~targetOrigin) => {
   let executePromise = async () => {
     let response = try {
       await promise
     } catch {
     | _ => JSON.Encode.null
     }
-    Utils.messageParentWindow([("response", response), ("data", key->JSON.Encode.string)])
+    Utils.messageParentWindow(
+      [("response", response), ("data", key->JSON.Encode.string)],
+      ~targetOrigin,
+    )
   }
   executePromise()->ignore
 }
 
 let useMessageHandler = getMessageHandler => {
   React.useEffect(_ => {
-    let messageHandler = getMessageHandler()
+    let processMessage = getMessageHandler()
+    let parentOrigin = ref(None)
+    let isFromParent = (ev: Window.event) => {
+      if ev.source !== Utils.iframeParent || !PaymentMessageSecurity.isConcreteOrigin(ev.origin) {
+        false
+      } else {
+        switch parentOrigin.contents {
+        | Some(expected) => ev.origin === expected
+        | None =>
+          parentOrigin := Some(ev.origin)
+          true
+        }
+      }
+    }
+    let messageHandler = (ev: Window.event) => {
+      if isFromParent(ev) {
+        processMessage(ev)
+      }
+    }
+    let sendLifecycleMessage = message => {
+      Utils.messageParentWindow(message, ~targetOrigin=parentOrigin.contents->Option.getOr("*"))
+    }
 
     let setupMessageListener = _ => {
       Window.addEventListener("message", messageHandler)
-      Utils.messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
+      sendLifecycleMessage([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
     }
 
     let cleanupMessageListener = _ => {
       Window.removeEventListener("message", messageHandler)
-      Utils.messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
+      sendLifecycleMessage([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
     }
 
     let handleCleanUpEventListener = (ev: Window.event) => {
       open Utils
       let dict = ev.data->safeParse->getDictFromJson
-      if dict->Dict.get("cleanUpPreMountLoaderIframe")->Option.isSome {
+      if isFromParent(ev) && dict->Dict.get("cleanUpPreMountLoaderIframe")->Option.isSome {
         cleanupMessageListener()
       }
     }
@@ -35,8 +59,8 @@ let useMessageHandler = getMessageHandler => {
     let handleResendMountedCallback = (ev: Window.event) => {
       open Utils
       let dict = ev.data->safeParse->getDictFromJson
-      if dict->Dict.get("requestPreMountLoaderMountedCallback")->Option.isSome {
-        messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
+      if isFromParent(ev) && dict->Dict.get("requestPreMountLoaderMountedCallback")->Option.isSome {
+        sendLifecycleMessage([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
       }
     }
 
@@ -102,15 +126,15 @@ let getMessageHandlerV1Elements = (
     )
   }
 
-  ev => {
+  (ev: Window.event) => {
     open Utils
     let dict = ev.data->safeParse->getDictFromJson
     if dict->isKeyPresentInDict("sendSessionTokensResponse") {
-      sessionTokensPromise->sendPromiseData("session_tokens")
+      sessionTokensPromise->sendPromiseData("session_tokens", ~targetOrigin=ev.origin)
     } else if dict->isKeyPresentInDict("sendSdkConfigsResponse") {
-      sdkConfigsPromise->sendPromiseData("sdk_configs")
+      sdkConfigsPromise->sendPromiseData("sdk_configs", ~targetOrigin=ev.origin)
     } else if dict->isKeyPresentInDict("sendClientListResponse") {
-      clientListPromise->sendPromiseData("client_list")
+      clientListPromise->sendPromiseData("client_list", ~targetOrigin=ev.origin)
     }
   }
 }
@@ -130,11 +154,11 @@ let getMessageHandlerV2PMM = (
     ~sdkAuthorization,
   )
 
-  ev => {
+  (ev: Window.event) => {
     open Utils
     let dict = ev.data->safeParse->getDictFromJson
     if dict->isKeyPresentInDict("sendPaymentManagementListResponse") {
-      listPromise->sendPromiseData("payment_management_list")
+      listPromise->sendPromiseData("payment_management_list", ~targetOrigin=ev.origin)
     }
   }
 }

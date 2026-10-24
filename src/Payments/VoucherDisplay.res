@@ -1,6 +1,7 @@
 open Utils
 @react.component
 let make = () => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (returnUrl, setReturnUrl) = React.useState(_ => "")
   let (downloadUrl, setDownloadUrl) = React.useState(_ => "")
@@ -25,7 +26,7 @@ let make = () => {
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson
-      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+      if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         setReturnUrl(_ => metaDataDict->getString("returnUrl", ""))
