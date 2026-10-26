@@ -84,12 +84,12 @@ let useCardEligibility = (~logger, ~runEligibility=true): eligibilityState => {
     let shouldRunEligibility = paymentMethodListValue.sdk_next_action === Some("eligibility_check")
     if runEligibility && shouldRunEligibility {
       cancelEligibilityDebounce()
+      eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
+      eligibilityControllerRef.current = None
       setCardEligibilityError(_ => None)
       setEligibilitySurchargeDetails(_ => None)
       setEligibilityOfferDetails(_ => None)
       if !isCardSupportedAndValid {
-        eligibilityControllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
-        eligibilityControllerRef.current = None
         setIsEligibilityPending(_ => false)
       } else {
         startEligibilityDebounce(() => {

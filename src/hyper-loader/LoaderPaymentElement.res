@@ -311,14 +311,15 @@ let make = (
 
     let unmount = () => {
       let id = mountId.contents
-
-      let oElement = Window.querySelector(id)
-      switch oElement->Nullable.toOption {
-      | Some(elem) => elem->Window.innerHTML("")
-      | None =>
-        Console.warn(
-          "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
-        )
+      if id !== "" {
+        let oElement = Window.querySelector(id)
+        switch oElement->Nullable.toOption {
+        | Some(elem) => elem->Window.innerHTML("")
+        | None =>
+          Console.warn(
+            "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
+          )
+        }
       }
     }
 

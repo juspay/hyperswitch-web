@@ -169,24 +169,28 @@ let performEligibilityCheck = async (
       ~endpoint,
       ~signal,
     )
-    let {eligibilityError, surchargeDetails, offerDetails} = parseEligibilityResponse(json)
-    setEligibilityError->Option.forEach(setter => setter(_ => eligibilityError))
-    setEligibilitySurchargeDetails(_ => surchargeDetails)
-    setEligibilityOfferDetails(_ => offerDetails)
-    setIsEligibilityPending(_ => false)
+    if !Fetch.AbortSignal.aborted(signal) {
+      let {eligibilityError, surchargeDetails, offerDetails} = parseEligibilityResponse(json)
+      setEligibilityError->Option.forEach(setter => setter(_ => eligibilityError))
+      setEligibilitySurchargeDetails(_ => surchargeDetails)
+      setEligibilityOfferDetails(_ => offerDetails)
+      setIsEligibilityPending(_ => false)
+    }
   } catch {
   | exn =>
-    logger.setLogError(
-      ~value={
-        "message": errorLogMessage,
-        "error": exn->Identity.anyTypeToJson->JSON.stringify,
-      }
-      ->JSON.stringifyAny
-      ->Option.getOr(""),
-      ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
-    )
-    setEligibilityError->Option.forEach(setter => setter(_ => None))
-    setIsEligibilityPending(_ => false)
+    if !Fetch.AbortSignal.aborted(signal) {
+      logger.setLogError(
+        ~value={
+          "message": errorLogMessage,
+          "error": exn->Identity.anyTypeToJson->JSON.stringify,
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
+      )
+      setEligibilityError->Option.forEach(setter => setter(_ => None))
+      setIsEligibilityPending(_ => false)
+    }
   }
 }
 
