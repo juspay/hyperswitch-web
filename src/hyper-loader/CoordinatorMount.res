@@ -42,6 +42,7 @@ let create = (
     "position: absolute; width: 0; height: 0; border: none; overflow: hidden; left: -9999px; top: -9999px;",
   )
   container->Window.appendChildElement(iframe)
+  SdkMessageSources.register(~frame=iframe, ~origin=URLModule.makeUrl(sdkDomain).origin)
 
   let fullscreenSlot = Window.createElement("div")
   fullscreenSlot->Window.setAttribute("id", `orca-fullscreen-iframeRef-${localSelectorString}`)
@@ -174,6 +175,7 @@ let makeFullscreenFlows = (
       mount.fullscreenSlot
       ->Utils.makeIframe(overlaySrc, ~colorScheme, ~onCreate=iframe => {
         overlayRef := Some((iframe, iframe->Window.contentWindow))
+        SdkMessageSources.register(~frame=iframe, ~origin)
       })
       ->ignore
     } else if (
@@ -241,7 +243,10 @@ let makeFullscreenFlows = (
           iframe
           ->Nullable.make
           ->Window.iframePostMessage(
-            [("metadata", metadataRef.contents)]->Dict.fromArray,
+            [
+              ("fullScreenIframeMounted", true->JSON.Encode.bool),
+              ("metadata", metadataRef.contents),
+            ]->Dict.fromArray,
             ~targetOrigin=origin,
           )
         }

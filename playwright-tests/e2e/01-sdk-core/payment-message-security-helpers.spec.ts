@@ -94,4 +94,36 @@ test.describe("Payment message security helpers @hermetic-only", () => {
       ),
     ).toBe(true);
   });
+
+  test("CVC completion keeps configured app deep links and rejects executable schemes", () => {
+    const configured = "myapp://checkout/done?order=123";
+    expect(
+      isReturnDestination(
+        "myapp://checkout/done?order=123&payment_id=pay_1&status=succeeded",
+        configured,
+      ),
+    ).toBe(true);
+    for (const url of [
+      "otherapp://checkout/done?order=123",
+      "myapp://attacker/done?order=123",
+      "myapp://checkout/other?order=123",
+      "https://checkout/done?order=123",
+    ]) {
+      expect(isReturnDestination(url, configured), url).toBe(false);
+    }
+    const withCredentials = "https://user:pw@merchant.example/return";
+    expect(isReturnDestination(withCredentials, withCredentials)).toBe(true);
+    expect(
+      isReturnDestination(withCredentials, "https://merchant.example/return"),
+    ).toBe(false);
+    for (const url of [
+      "javascript:alert(1)",
+      "data:text/html,hello",
+      "vbscript:msgbox(1)",
+      "blob:https://merchant.example/id",
+      "file:///etc/passwd",
+    ]) {
+      expect(isReturnDestination(url, url), url).toBe(false);
+    }
+  });
 });

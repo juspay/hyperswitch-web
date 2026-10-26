@@ -141,9 +141,12 @@ let getCustomerSavedPaymentMethods = (
       let responseActivity = `onCVCWidgetConfirmResponse-${requestId}`
       Promise.make((resolve, _) => {
         let settled = ref(false)
-        let finish = data => {
+        let stopListening = () => {
           settled := true
           EventListenerManager.removeSmartEventListener("message", responseActivity)
+        }
+        let finish = data => {
+          stopListening()
           resolve(data)
         }
         let handleCVCWidgetConfirmResponse = (event: Types.event) => {
@@ -177,7 +180,8 @@ let getCustomerSavedPaymentMethods = (
                         ~returnUrl=expectedReturnUrl,
                       )
                     ) {
-                      finish(data)
+                      // As before, a redirecting confirmation navigates without resolving.
+                      stopListening()
                       Window.Location.replace(returnUrl)
                     } else {
                       finish(

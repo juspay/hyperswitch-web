@@ -507,7 +507,6 @@ let rec intentCall = (
               let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
               intentCall(
                 ~parentOrigin?,
-                ~isTrustpayInterceptorConfirm,
                 ~fetchApi,
                 ~uri=retrieveUri,
                 ~headers,
@@ -1037,7 +1036,6 @@ let rec intentCall = (
           let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
           intentCall(
             ~parentOrigin?,
-            ~isTrustpayInterceptorConfirm,
             ~fetchApi,
             ~uri=retrieveUri,
             ~headers,

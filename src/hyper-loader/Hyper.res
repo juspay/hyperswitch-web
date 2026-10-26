@@ -6,6 +6,7 @@ open EventListenerManager
 open Identity
 
 type fullscreenMessageSource = {
+  iframe: Dom.element,
   source: Dom.element,
   redirectOrigin: option<string>,
 }
@@ -133,11 +134,12 @@ addSmartEventListener(
   ev => {
     // Same-origin merchant intermediaries share the top window's security
     // principal. Foreign embedded frames must not drive its Apple Pay session.
-    let fromMerchantChild =
-      ev.origin === Window.Location.origin &&
-        Window.querySelectorAll("iframe")->Array.some(iframe =>
-          ev.source === iframe->Window.contentWindow
-        )
+    let fromMerchantChild = PaymentMessageSecurity.isSameOriginDescendant(
+      ~window,
+      ~origin=Window.Location.origin,
+      ~eventSource=ev.source,
+      ~eventOrigin=ev.origin,
+    )
     if (
       fromMerchantChild ||
       PaymentMessageSecurity.isExpectedSender(
@@ -340,18 +342,15 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
       let fullscreenSources = ref([])
       let onFullscreenCreated = (iframe, metadata) => {
-        let redirectOrigin = try {
-          let authorizeUrl =
-            metadata
-            ->getDictFromJson
-            ->getDictFromDict("threeDSData")
-            ->getString("three_ds_authorize_url", "")
-          Some(URLModule.makeUrl(authorizeUrl).origin)
-        } catch {
-        | _ => None
-        }
+        let redirectOrigin =
+          metadata
+          ->getDictFromJson
+          ->getDictFromDict("threeDSData")
+          ->getString("three_ds_authorize_url", "")
+          ->PaymentMessageSecurity.originOf
         fullscreenSources.contents
         ->Array.push({
+          iframe,
           // Keep the WindowProxy for terminal messages queued just before the overlay closes.
           source: iframe->Window.contentWindow,
           redirectOrigin,
@@ -444,8 +443,15 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
+      // Overlays still on the page may belong to an in-flight confirmation.
+      let pruneRemovedOverlays = () =>
+        fullscreenSources :=
+          fullscreenSources.contents->Array.filter(entry =>
+            entry.iframe->Window.Element.isConnected
+          )
+
       let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
-        fullscreenSources := []
+        pruneRemovedOverlays()
         let confirmTimestamp = Date.now()
         let confirmParams =
           payload
@@ -703,7 +709,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         data: option<JSON.t>,
         _options: option<JSON.t>,
       ) => {
-        fullscreenSources := []
+        pruneRemovedOverlays()
         let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
         Promise.make((resolve, _) => {
           iframeRef.contents

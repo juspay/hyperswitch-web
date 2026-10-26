@@ -172,6 +172,9 @@ let make = (
     let setPaymentIframeRef = ref => {
       mountedIframeRef := ref
       setIframeRef(ref)
+      ref->Nullable.toOption->Option.forEach(frame =>
+        SdkMessageSources.register(~frame, ~origin=iframeOrigin)
+      )
     }
 
     let (elementIframeWrapperDivId, elementIframeId) = if isPaymentManagementElement {
@@ -579,7 +582,10 @@ let make = (
                           )
                           let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                           fullScreenEle->Window.iframePostMessage(
-                            [("metadata", fullscreenMetadata.contents)]->Dict.fromArray,
+                            [
+                              ("fullScreenIframeMounted", true->JSON.Encode.bool),
+                              ("metadata", fullscreenMetadata.contents),
+                            ]->Dict.fromArray,
                             ~targetOrigin=fullscreenOrigin,
                           )
                         }
@@ -597,6 +603,7 @@ let make = (
                     ele
                     ->makeIframe(iframeURL, ~colorScheme, ~onCreate=iframe => {
                       fullscreenIframeRef := Nullable.make(iframe)
+                      SdkMessageSources.register(~frame=iframe, ~origin=fullscreenOrigin)
                       onFullscreenCreated(iframe, fullscreenMetadata.contents)
                     })
                     ->ignore

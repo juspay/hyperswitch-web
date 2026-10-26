@@ -66,7 +66,7 @@ let make = (~paymentMethodType) => {
         Window.removeEventListener("message", onPlaidCallback)
       },
     )
-  }, (parentURL, clientSecret, sdkAuthorization))
+  }, [parentURL])
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
