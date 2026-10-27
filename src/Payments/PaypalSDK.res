@@ -11,6 +11,7 @@ let make = (~sessionObj: SessionsType.token) => {
     sdkHandleOneClickConfirmPayment,
     clientSecret,
     sdkAuthorization,
+    parentURL,
   } = Jotai.useAtomValue(JotaiAtoms.keys)
   let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
@@ -178,6 +179,7 @@ let make = (~sessionObj: SessionsType.token) => {
     paypalScript->Window.elementOnload(_ => {
       loggerState.setLogInfo(~value="PayPal SDK Script Loaded", ~eventName=PAYPAL_SDK_FLOW)
       PaypalSDKHelpers.loadPaypalSDK(
+        ~parentOrigin=parentURL,
         ~loggerState,
         ~sdkHandleOneClickConfirmPayment,
         ~buttonStyle,
@@ -216,6 +218,7 @@ let make = (~sessionObj: SessionsType.token) => {
         switch (checkoutScript, clientScript) {
         | (Some(_), Some(_)) =>
           PaypalSDKHelpers.loadBraintreePaypalSdk(
+            ~parentOrigin=parentURL,
             ~loggerState,
             ~sdkHandleOneClickConfirmPayment,
             ~token,

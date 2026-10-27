@@ -10,7 +10,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
   let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
-  let {publishableKey, sdkAuthorization} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let {publishableKey, sdkAuthorization, parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
   let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
   let setIsShowOrPayUsing = Jotai.useSetAtom(JotaiAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
@@ -318,7 +318,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           )
         }
       } else {
-        makeOneClickHandlerPromise(sdkHandleIsThere)
+        makeOneClickHandlerPromise(sdkHandleIsThere, ~parentOrigin=parentURL)
         ->then(result => {
           let result = result->JSON.Decode.bool->Option.getOr(false)
           if result {
@@ -396,7 +396,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   ))
 
   let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let shouldShowWalletShimmer =
     isApplePayDelayedSessionFlow && isApplePayReady && trustPayScriptStatus === Loading

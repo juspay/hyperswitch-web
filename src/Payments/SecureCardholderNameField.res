@@ -36,7 +36,7 @@ let make = () => {
 
   React.useEffect(() => {
     let handleParentMessage = (ev: Window.event) => {
-      if ev.source === iframeParent && (parentURL === "*" || ev.origin === parentURL) {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) {
         let dict = ev.data->safeParse->getDictFromJson
         if dict->Dict.get("doFocus")->Option.isSome {
           CardUtils.focusRef(nameRef)

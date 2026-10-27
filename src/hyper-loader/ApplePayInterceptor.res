@@ -14,7 +14,10 @@ open Identity
 //   that uses `mountedIframeRef->Window.iframePostMessage(...)` is the safe alternative.
 let postToIframeRef: ref<option<Dict.t<JSON.t> => unit>> = ref(None)
 
-let setPostToIframe = (fn: Dict.t<JSON.t> => unit) => {
+let trustedResponseRef = ref((_ev: Types.event) => false)
+
+let setPostToIframe = (~isTrustedResponse, fn: Dict.t<JSON.t> => unit) => {
+  trustedResponseRef := isTrustedResponse
   postToIframeRef := Some(fn)
 }
 
@@ -26,6 +29,7 @@ let setPostToIframe = (fn: Dict.t<JSON.t> => unit) => {
 // intercepted, have the confirm request time out (8 s), and abort.
 let clearPostToIframe = () => {
   postToIframeRef := None
+  trustedResponseRef := (_ => false)
 }
 
 // Guards against two concurrent waitForConfirmResponse() invocations.
@@ -77,16 +81,20 @@ let waitForConfirmResponse = (): promise<JSON.t> => {
       }
 
       let handler = (ev: Types.event) => {
-        let dict = ev.data->anyTypeToJson->getDictFromJson
-        switch dict->Dict.get("applePayConfirmSecrets") {
-        | Some(secrets) =>
-          cleanup()
-          if secrets == JSON.Encode.null {
-            reject(Exn.anyToExnInternal("[ApplePayInterceptor] Confirm call returned null secrets"))
-          } else {
-            resolve(secrets)
+        if trustedResponseRef.contents(ev) {
+          let dict = ev.data->anyTypeToJson->getDictFromJson
+          switch dict->Dict.get("applePayConfirmSecrets") {
+          | Some(secrets) =>
+            cleanup()
+            if secrets == JSON.Encode.null {
+              reject(
+                Exn.anyToExnInternal("[ApplePayInterceptor] Confirm call returned null secrets"),
+              )
+            } else {
+              resolve(secrets)
+            }
+          | None => ()
           }
-        | None => ()
         }
       }
       handlerRef := Some(handler)

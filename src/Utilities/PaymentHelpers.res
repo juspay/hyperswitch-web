@@ -354,6 +354,7 @@ let rec intentCall = (
   ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
   ~isTrustpayInterceptorConfirm=false,
+  ~parentOrigin: option<string>=?,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -505,6 +506,7 @@ let rec intentCall = (
                 : ""
               let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
               intentCall(
+                ~parentOrigin?,
                 ~fetchApi,
                 ~uri=retrieveUri,
                 ~headers,
@@ -862,7 +864,9 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  messageParentWindow(message)
+                  parentOrigin
+                  ->Option.filter(PaymentMessageSecurity.isConcreteOrigin)
+                  ->Option.forEach(origin => messageParentWindow(message, ~targetOrigin=origin))
                 }
                 resolve(data)
               } else if intent.nextAction.type_ === "invoke_sdk_client" {
@@ -937,7 +941,9 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  messageParentWindow(message)
+                  parentOrigin
+                  ->Option.filter(PaymentMessageSecurity.isConcreteOrigin)
+                  ->Option.forEach(origin => messageParentWindow(message, ~targetOrigin=origin))
                 }
               } else {
                 handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
@@ -1029,6 +1035,7 @@ let rec intentCall = (
           let clientSecretParam = isLegacyClientSecretFlow ? `?client_secret=${clientSecret}` : ""
           let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
           intentCall(
+            ~parentOrigin?,
             ~fetchApi,
             ~uri=retrieveUri,
             ~headers,
@@ -1110,6 +1117,7 @@ let usePaymentSync = (
 
       let paymentSync = () => {
         intentCall(
+          ~parentOrigin=keys.parentURL,
           ~fetchApi,
           ~uri,
           ~headers,
@@ -1230,6 +1238,7 @@ let useCompleteAuthorizeHandler = (~isOneClickWallet=false) => {
         ->JSON.stringify
 
       intentCall(
+        ~parentOrigin=keys.parentURL,
         ~fetchApi,
         ~uri,
         ~headers=finalHeaders,
@@ -1439,6 +1448,7 @@ let usePaymentIntent = (~isOneClickWallet=false, optLogger, paymentType) => {
             ~redirectionFlags,
             ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
             ~isTrustpayInterceptorConfirm,
+            ~parentOrigin=keys.parentURL,
           )
           ->then(val => {
             intentCallback(val)
@@ -2107,6 +2117,7 @@ let usePostSessionTokens = (
         }
 
         intentCall(
+          ~parentOrigin=keys.parentURL,
           ~fetchApi,
           ~uri,
           ~headers,
