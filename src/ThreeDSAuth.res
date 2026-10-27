@@ -73,11 +73,11 @@ let make = () => {
           let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
-            messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
             postFailedSubmitResponse(
               ~errortype=errorObj.error.type_,
               ~message=errorObj.error.message,
             )
+            closePaymentLoaderIfAny()
             JSON.Encode.null->resolve
           } else {
             let creq = dict->getString("challenge_request", "")
@@ -128,6 +128,7 @@ let make = () => {
           )
           let errorObj = PaymentError.itemToObjMapper(dict)
           postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
+          closePaymentLoaderIfAny()
           JSON.Encode.null->resolve
         })
         ->ignore
