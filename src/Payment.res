@@ -12,7 +12,7 @@ let setUserError = message => {
 @react.component
 let make = (~paymentMode, ~integrateError, ~logger) => {
   let {localeString} = Jotai.useAtomValue(configAtom)
-  let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let {iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
   let (isFocus, setIsFocus) = React.useState(_ => false)
@@ -159,7 +159,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       let json = ev.data->safeParse
       let jsonDict = json->getDictFromJson
       let confirm = jsonDict->ConfirmType.itemToObjMapper
-      if confirm.doSubmit {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) && confirm.doSubmit {
         submitValue(ev, confirm.confirmParams)
       }
     }
@@ -175,6 +175,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     eligibilityOfferDetails,
     isEligibilityPending,
     sdkAuthorization,
+    parentURL,
   ))
 
   React.useEffect(() => {

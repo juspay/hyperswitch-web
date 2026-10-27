@@ -10,22 +10,30 @@ let loadStripe = (str, option) => {
 let removeBeforeUnloadEventListeners: array<'ev => unit> => unit = handlers => {
   let iframeMessageHandler = (ev: Types.event) => {
     let dict = ev.data->Identity.anyTypeToJson->Utils.getDictFromJson
-    dict
-    ->Dict.get("disableBeforeUnloadEventListener")
-    ->Option.map(shouldRemove => {
-      if shouldRemove->JSON.Decode.bool->Option.getOr(false) {
-        try {
-          handlers
-          ->Array.map(handler => {
-            Window.removeEventListener("beforeunload", handler)
-          })
-          ->ignore
-        } catch {
-        | err => Js.Console.error2("Incorrect usage of removeBeforeUnloadEventListeners hook", err)
-        }
+    if (
+      dict->Utils.getBool("disableBeforeUnloadEventListener", false) &&
+        (PaymentMessageSecurity.isExpectedSender(
+          ~source=Utils.window,
+          ~origin=Window.Location.origin,
+          ~eventSource=ev.source,
+          ~eventOrigin=ev.origin,
+        ) ||
+        // A same-origin merchant wrapper can call Hyper.confirmPayment and
+        // redirect the top window. It shares the top document's principal.
+        PaymentMessageSecurity.isSameOriginDescendant(
+          ~window=Utils.window,
+          ~origin=Window.Location.origin,
+          ~eventSource=ev.source,
+          ~eventOrigin=ev.origin,
+        ) ||
+        SdkMessageSources.isRegisteredSender(ev))
+    ) {
+      try {
+        handlers->Array.forEach(handler => Window.removeEventListener("beforeunload", handler))
+      } catch {
+      | err => Console.error2("Incorrect usage of removeBeforeUnloadEventListeners hook", err)
       }
-    })
-    ->ignore
+    }
   }
 
   // Subscribe to postMessage event

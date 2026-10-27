@@ -7,7 +7,7 @@ let klarnaIcon = <Icon size=35 width=90 name="klarna" />
 let make = () => {
   let loggerState = Jotai.useAtomValue(loggerAtom)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
-  let {publishableKey} = Jotai.useAtomValue(keys)
+  let {publishableKey, parentURL} = Jotai.useAtomValue(keys)
   let options = Jotai.useAtomValue(optionAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Some(loggerState), Other)
@@ -41,7 +41,10 @@ let make = () => {
 
         setKlarnaClicked(_ => true)
 
-        let result = await Utils.makeOneClickHandlerPromise(sdkHandleIsThere)
+        let result = await Utils.makeOneClickHandlerPromise(
+          sdkHandleIsThere,
+          ~parentOrigin=parentURL,
+        )
         let decodedResult = result->JSON.Decode.bool->Option.getOr(false)
 
         if decodedResult {
