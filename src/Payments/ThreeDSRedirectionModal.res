@@ -23,8 +23,8 @@ let make = () => {
 
   let handleOnClose = () =>
     if redirectResponseUrl == "" {
-      messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
+      closePaymentLoaderIfAny()
     } else {
       let customEvent =
         {
