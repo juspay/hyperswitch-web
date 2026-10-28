@@ -8,6 +8,7 @@ type groupConfig = {
   sdkAuthorization: string,
   publishableKey: option<string>,
   endpoint: option<string>,
+  customBackendUrl: option<string>,
   appearance: option<JSON.t>,
   locale: option<string>,
   logger: HyperLoggerTypes.loggerMake,
@@ -65,6 +66,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   | Some(e) => e
   | None => ApiEndpoint.getApiEndPoint(~publishableKey)
   }
+  let customBackendUrl = config.customBackendUrl->Option.getOr("")
   let appearance = config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
   let locale = config.locale->Option.getOr("en")
   let logger = config.logger
@@ -155,6 +157,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                     ("iframeId", groupInstanceId->JSON.Encode.string),
                     ("publishableKey", publishableKey->JSON.Encode.string),
                     ("endpoint", endpoint->JSON.Encode.string),
+                    ("customBackendUrl", customBackendUrl->JSON.Encode.string),
                     ("clientSecret", clientSecret->JSON.Encode.string),
                     ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
                     ("sdkSessionId", ""->JSON.Encode.string),
