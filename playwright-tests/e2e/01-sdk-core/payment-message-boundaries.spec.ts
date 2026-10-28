@@ -9,6 +9,7 @@ import {
   testIds,
   PAYMENT_ELEMENT_IFRAME,
   CLIENT_BASE_URL,
+  HYPERSWITCH_API_URL,
   SDK_URL,
 } from "../../fixtures";
 
@@ -1494,7 +1495,10 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
       });
       for (const type of ["3ds", "3dsAuth"])
         await page.route(
-          `${SDK_URL}/fullscreenIndex.html?fullscreenType=${type}`,
+          (url) =>
+            url.origin === new URL(SDK_URL).origin &&
+            url.pathname === new URL(`${SDK_URL}/fullscreenIndex.html`).pathname &&
+            url.searchParams.get("fullscreenType") === type,
           (route) =>
             route.fulfill({
               contentType: "text/html",
@@ -1542,6 +1546,9 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
       const overlay = page
         .frames()
         .find((frame) => frame.url().includes("fullscreenType=3ds"))!;
+      expect(new URL(overlay.url()).searchParams.get("endpoint")).toBe(
+        HYPERSWITCH_API_URL,
+      );
       await sendFromSibling(page, {
         fullscreen: true,
         param: "3dsAuth",
@@ -1577,6 +1584,12 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
       await expect(
         page.frameLocator("#orca-fullscreen").locator("body"),
       ).toHaveText("3dsAuth");
+      const authenticationFrame = page
+        .frames()
+        .find((frame) => frame.url().includes("fullscreenType=3dsAuth"))!;
+      expect(new URL(authenticationFrame.url()).searchParams.get("endpoint")).toBe(
+        HYPERSWITCH_API_URL,
+      );
       await page
         .frameLocator("#orca-fullscreen")
         .locator("body")
@@ -1615,6 +1628,146 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
         });
     });
   }
+
+  test("forwards the custom backend endpoint to the card form coordinator", async ({
+    checkout,
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      if (!location.href.includes("componentName=cardFormCoordinator")) return;
+      window.addEventListener("message", (ev) => {
+        let data = ev.data;
+        if (typeof data === "string") {
+          try {
+            data = JSON.parse(data);
+          } catch {
+            return;
+          }
+        }
+        if (data?.paymentElementCreate === true)
+          Object.assign(window, { boundaryCoordinatorCreate: data });
+      });
+    });
+    const intent = await checkout.open({
+      body: paymentBody(),
+      waitForReady: true,
+    });
+    await page.evaluate((clientSecret) => {
+      const node = document.createElement("div");
+      node.id = "boundary-coordinator-backend";
+      document.body.appendChild(node);
+      (window as unknown as { HyperMethod: SessionHyper }).HyperMethod.elements(
+        { clientSecret },
+      )
+        .createCardForm()
+        .create("cardNumber", {})
+        .mount("#boundary-coordinator-backend");
+    }, intent.clientSecret);
+    await expect(
+      page
+        .frameLocator(
+          "#orca-payment-element-iframeRef-boundary-coordinator-backend",
+        )
+        .locator("#card-number"),
+    ).toBeVisible();
+    const coordinator = page
+      .frames()
+      .find((frame) =>
+        frame.url().includes("componentName=cardFormCoordinator"),
+      )!;
+    // LoaderController only adopts `endpoint` when `customBackendUrl` is present.
+    await expect
+      .poll(() =>
+        coordinator.evaluate(
+          () =>
+            (window as unknown as { boundaryCoordinatorCreate?: unknown })
+              .boundaryCoordinatorCreate,
+        ),
+      )
+      .toMatchObject({
+        endpoint: HYPERSWITCH_API_URL,
+        customBackendUrl: HYPERSWITCH_API_URL,
+      });
+  });
+
+  test("leaves the endpoint off coordinator overlays without a custom backend", async ({
+    checkout,
+    credentials,
+    page,
+  }) => {
+    const intent = await checkout.createPaymentIntent();
+    await page.route(`${SDK_URL}/**`, async (route) => {
+      if (route.request().url().includes("/assets/v1/jsons/location/")) {
+        await route.fallback();
+      } else {
+        await route.fulfill({ response: await route.fetch() });
+      }
+    });
+    await page.route(
+      (url) =>
+        url.origin === new URL(SDK_URL).origin &&
+        url.pathname === new URL(`${SDK_URL}/fullscreenIndex.html`).pathname,
+      (route) =>
+        route.fulfill({ contentType: "text/html", body: "<body>3ds</body>" }),
+    );
+    await page.route(`${CLIENT_BASE_URL}/default-backend-checkout`, (route) =>
+      route.fulfill({
+        contentType: "text/html",
+        body: '<div id="boundary-default-backend"></div>',
+      }),
+    );
+    await page.goto(`${CLIENT_BASE_URL}/default-backend-checkout`);
+    await page.addScriptTag({ url: `${SDK_URL}/HyperLoader.js` });
+    await page.evaluate(
+      ({ clientSecret, publishableKey }) => {
+        (
+          window as unknown as {
+            Hyper: (
+              key: { publishableKey: string },
+              options: { isPreloadEnabled: boolean },
+            ) => SessionHyper;
+          }
+        )
+          .Hyper({ publishableKey }, { isPreloadEnabled: false })
+          .elements({ clientSecret })
+          .createCardForm()
+          .create("cardNumber", {})
+          .mount("#boundary-default-backend");
+      },
+      {
+        clientSecret: intent.clientSecret,
+        publishableKey: credentials.publishableKey,
+      },
+    );
+    await expect(
+      page
+        .frameLocator(
+          "#orca-payment-element-iframeRef-boundary-default-backend",
+        )
+        .locator("#card-number"),
+    ).toBeVisible();
+    const coordinator = page
+      .frames()
+      .find((frame) =>
+        frame.url().includes("componentName=cardFormCoordinator"),
+      )!;
+    const iframeId = new URL(coordinator.url()).searchParams.get("groupId")!;
+    await coordinator.evaluate(
+      (iframeId) =>
+        parent.postMessage(
+          { fullscreen: true, param: "3ds", iframeId, metadata: { iframeId } },
+          "*",
+        ),
+      iframeId,
+    );
+    await expect(
+      page.frameLocator("#orca-fullscreen").locator("body"),
+    ).toHaveText("3ds");
+    const overlay = page
+      .frames()
+      .find((frame) => frame.url().includes("fullscreenType=3ds"))!;
+    expect(new URL(overlay.url()).searchParams.has("endpoint")).toBe(false);
+  });
 
   test("ignores forged CVC widget success and error responses", async ({
     checkout,
