@@ -1,6 +1,7 @@
 open Utils
 @react.component
 let make = () => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let logger = HyperLogger.make(~source=Elements(Payment))
 
   let stateMetadataRef = React.useRef(Dict.make()->JSON.Encode.object)
@@ -35,12 +36,8 @@ let make = () => {
 
       isThreeDSMethodCompletionFired.current = true
 
-      messageParentWindow([
-        ("fullscreen", false->JSON.Encode.bool),
-        ("param", "paymentloader"->JSON.Encode.string),
-        ("iframeId", iframeId->JSON.Encode.string),
-      ])
-
+      // Let the parent replace this frame in one transition. Closing it first
+      // can leave the authentication message without a source across sites.
       messageParentWindow([
         ("fullscreen", true->JSON.Encode.bool),
         ("param", `3dsAuth`->JSON.Encode.string),
@@ -206,8 +203,9 @@ let make = () => {
         let json = ev.data->safeParse
         let dict = json->Utils.getDictFromJson
         if (
+          isTrustedParent(ev) &&
           dict->Dict.get("fullScreenIframeMounted")->Option.isSome &&
-            !isThreeDSMethodFlowStarted.current
+          !isThreeDSMethodFlowStarted.current
         ) {
           isThreeDSMethodFlowStarted.current = true
           let metadata = dict->getJsonObjectFromDict("metadata")
@@ -278,7 +276,13 @@ let make = () => {
 
       if consumePostMessageForThreeDsMethodCompletionRef.current && threeDsUrlRef.current !== "" {
         let url = URLModule.makeUrl(threeDsUrlRef.current)
-        if url.origin === ev.origin {
+        if (
+          url.origin === ev.origin &&
+            Window.querySelector("#threeDsInvisibleIframe")
+            ->Nullable.toOption
+            ->Option.map(iframe => ev.source === iframe->Window.contentWindow)
+            ->Option.getOr(false)
+        ) {
           handleIframeContentLoaded()
         }
       }

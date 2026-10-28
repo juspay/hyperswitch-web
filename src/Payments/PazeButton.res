@@ -6,7 +6,9 @@ let make = (~token: SessionsType.token) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
-  let {iframeId, publishableKey, clientSecret, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let {iframeId, publishableKey, clientSecret, sdkAuthorization, parentURL} = Jotai.useAtomValue(
+    keys,
+  )
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let updateSession = Jotai.useAtomValue(updateSession)
   let options = Jotai.useAtomValue(optionAtom)
@@ -76,10 +78,10 @@ let make = (~token: SessionsType.token) => {
   }
 
   React.useEffect(() => {
-    let handlePazeCallback = ev => {
+    let handlePazeCallback = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson->getDictFromDict("data")
-      if dict->getBool("isPaze", false) {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) && dict->getBool("isPaze", false) {
         setShowLoader(_ => false)
         messageParentWindow([
           ("fullscreen", true->JSON.Encode.bool),
@@ -104,7 +106,7 @@ let make = (~token: SessionsType.token) => {
     setIsShowOrPayUsing(_ => true)
     Window.addEventListener("message", handlePazeCallback)
     Some(() => Window.removeEventListener("message", handlePazeCallback))
-  }, [sdkAuthorization])
+  }, (sdkAuthorization, parentURL))
   <button
     disabled={showLoader}
     onClick

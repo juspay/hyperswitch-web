@@ -17,6 +17,7 @@ let isFromIframe = (~ev: Types.event, ~iframe: option<Dom.element>, ~origin: str
 
 type coordinatorChannel = {
   groupId: string,
+  origin: string,
   mountRef: ref<option<CoordinatorMount.coordinatorMount>>,
   readyRef: ref<bool>,
   pendingPortsRef: ref<array<CoordinatorMount.pendingPort>>,
@@ -25,8 +26,9 @@ type coordinatorChannel = {
   portEpochCounterRef: ref<int>,
 }
 
-let makeCoordinatorChannel = (~groupId: string): coordinatorChannel => {
+let makeCoordinatorChannel = (~groupId: string, ~origin: string): coordinatorChannel => {
   groupId,
+  origin,
   mountRef: ref(None),
   readyRef: ref(false),
   pendingPortsRef: ref([]),
@@ -39,7 +41,9 @@ let postToCoordinator = (
   mount: CoordinatorMount.coordinatorMount,
   fields: array<(string, JSON.t)>,
 ) =>
-  try mount.iframe->Nullable.make->Window.iframePostMessage(fields->Dict.fromArray) catch {
+  try mount.iframe
+  ->Nullable.make
+  ->Window.iframePostMessage(fields->Dict.fromArray, ~targetOrigin=mount.origin) catch {
   | _ => ()
   }
 
@@ -68,6 +72,7 @@ let flushPendingPorts = (channel: coordinatorChannel) =>
         ~fieldName,
         ~portEpoch=epoch,
         ~port,
+        ~targetOrigin=channel.origin,
       )
     )
     channel.pendingPortsRef := []
@@ -92,11 +97,10 @@ let openFieldPort = (
     ~portKey,
     ~portEpoch=epoch,
     ~port=messageChannel.port2,
+    ~targetOrigin=channel.origin,
   )
   channel.pendingPortsRef :=
-    channel.pendingPortsRef.contents->Array.concat([
-      {fieldName, epoch, port: messageChannel.port1},
-    ])
+    channel.pendingPortsRef.contents->Array.concat([{fieldName, epoch, port: messageChannel.port1}])
   flushPendingPorts(channel)
 }
 
@@ -226,18 +230,18 @@ let savedCardNetwork = (savedCardDict: Dict.t<JSON.t>): string =>
 let postFieldUpdate = (
   ~iframeRef: ref<Nullable.t<Dom.element>>,
   ~newOptions: JSON.t,
+  ~targetOrigin: string,
 ): Dict.t<JSON.t> => {
   iframeRef.contents->Window.iframePostMessage(
-    [
-      ("paymentElementsUpdate", true->JSON.Encode.bool),
-      ("options", newOptions),
-    ]->Dict.fromArray,
+    [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", newOptions)]->Dict.fromArray,
+    ~targetOrigin,
   )
   let savedCardDict = newOptions->getDictFromJson->getDictFromDict("savedCard")
   let brand = savedCardDict->savedCardNetwork
   if brand !== "" {
     iframeRef.contents->Window.iframePostMessage(
       [("savedCardBrand", brand->JSON.Encode.string)]->Dict.fromArray,
+      ~targetOrigin,
     )
   }
   savedCardDict
@@ -273,7 +277,10 @@ let makeFieldElementAndHandle = (
     ~groupId,
   )
   let postToOwnIframe = fields =>
-    iframeRef.contents->Window.iframePostMessage(fields->Dict.fromArray)
+    iframeRef.contents->Window.iframePostMessage(
+      fields->Dict.fromArray,
+      ~targetOrigin=URLModule.makeUrl(sdkDomainUrl).origin,
+    )
   // Card values never leave the field iframes, so every log here carries the field name only.
   let logField = (action: string) =>
     logger.setLogInfo(~value=`${fieldName} ${action}`, ~eventName=CARD_FORM_FLOW)

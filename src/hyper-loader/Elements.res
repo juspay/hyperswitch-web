@@ -28,6 +28,10 @@ let make = (
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~clientListDataPromise: ref<promise<JSON.t>>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  ~onSubmitResponse: JSON.t => unit,
+  ~isTrustedPaymentMessage: Types.event => bool,
+  ~isTrustedRedirectMessage: Types.event => bool,
+  ~onFullscreenCreated: (Dom.element, JSON.t) => unit,
 ) => {
   try {
     let iframeRef = []
@@ -142,14 +146,82 @@ let make = (
     sdkConfigsDataPromise.contents = initialSdkConfigsPromise
     clientListDataPromise.contents = initialClientListPromise
 
+    let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+    // A merchant can reuse a container id after unmounting. Correlate top-window
+    // wallet replies with the actual iframe, so an old session cannot reach its replacement.
+    let walletRoutes: WeakMap.t<Dom.element, string> = WeakMap.make()
+    let walletRouteId = iframe =>
+      iframe
+      ->Nullable.toOption
+      ->Option.map(element => {
+        switch walletRoutes->WeakMap.get(element) {
+        | Some(routeId) => routeId
+        | None =>
+          let routeId = generateRandomString(16)
+          walletRoutes->WeakMap.set(element, routeId)->ignore
+          routeId
+        }
+      })
+      ->Option.getOr("")
+    let addWalletMessageListener = (mountedIframeRef, handler, activity, ~allowSelf=false) => {
+      let routeId = walletRouteId(mountedIframeRef)
+      let listenerId =
+        mountedIframeRef
+        ->Nullable.toOption
+        ->Option.map(element =>
+          element->Window.getAttribute("id")->Nullable.toOption->Option.getOr("")
+        )
+        ->Option.getOr("")
+      let handleTrusted = (ev: Types.event) => {
+        let fromWidget =
+          mountedIframeRef
+          ->Nullable.toOption
+          ->Option.map(iframe =>
+            iframe->Window.Element.isConnected &&
+              PaymentMessageSecurity.isExpectedSender(
+                ~source=iframe->Window.contentWindow,
+                ~origin=sdkOrigin,
+                ~eventSource=ev.source,
+                ~eventOrigin=ev.origin,
+              )
+          )
+          ->Option.getOr(false)
+        let fromSelf =
+          allowSelf &&
+          routeId !== "" &&
+          ev.data->anyTypeToJson->getDictFromJson->getString("walletRoutingId", "") === routeId &&
+          mountedIframeRef
+          ->Nullable.toOption
+          ->Option.map(Window.Element.isConnected)
+          ->Option.getOr(false) &&
+          ev.origin === Window.Location.origin &&
+          (ev.source === window || ev.source === topParent)
+        if fromWidget || fromSelf {
+          handler(ev)
+        }
+      }
+
+      // A delayed session response from a removed widget must not replace a
+      // new widget's listener when the merchant reuses the same container id.
+      if (
+        mountedIframeRef
+        ->Nullable.toOption
+        ->Option.map(Window.Element.isConnected)
+        ->Option.getOr(false)
+      ) {
+        addSmartEventListener("message", handleTrusted, `${activity}-${listenerId}`)
+      }
+    }
+
     let onPlaidCallback = mountedIframeRef => {
       (ev: Types.event) => {
         let json = ev.data->anyTypeToJson
         let dict = json->getDictFromJson
         let isPlaidExist = dict->getBool("isPlaid", false)
-        if isPlaidExist {
+        if isTrustedPaymentMessage(ev) && isPlaidExist {
           mountedIframeRef->Window.iframePostMessage(
             [("isPlaid", true->JSON.Encode.bool), ("data", json)]->Dict.fromArray,
+            ~targetOrigin=sdkOrigin,
           )
         }
       }
@@ -159,10 +231,16 @@ let make = (
       (event: Types.event) => {
         let json = event.data->anyTypeToJson
         let dict = json->getDictFromJson
-        if dict->getBool("isPaze", false) {
+        if isTrustedPaymentMessage(event) && dict->getBool("isPaze", false) {
           let componentName = dict->getString("componentName", "payment")
           let msg = [("data", json)]->Dict.fromArray
-          handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
+          handleIframePostMessageForWallets(
+            msg,
+            componentName,
+            mountedIframeRef,
+            ~iframes=iframeRef,
+            ~targetOrigin=sdkOrigin,
+          )
         }
       }
     }
@@ -205,6 +283,7 @@ let make = (
             logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT)
             mountedIframeRef->Window.iframePostMessage(
               [("trustPayScriptStatus", "loading"->JSON.Encode.string)]->Dict.fromArray,
+              ~targetOrigin=sdkOrigin,
             )
             trustPayScript->Window.elementSrc(trustPayScriptURL)
             trustPayScript->Window.elementOnerror(_ => {
@@ -215,18 +294,21 @@ let make = (
               )
               mountedIframeRef->Window.iframePostMessage(
                 [("trustPayScriptStatus", "failed"->JSON.Encode.string)]->Dict.fromArray,
+                ~targetOrigin=sdkOrigin,
               )
             })
             trustPayScript->Window.elementOnload(_ => {
               logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT)
               mountedIframeRef->Window.iframePostMessage(
                 [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
+                ~targetOrigin=sdkOrigin,
               )
             })
             Window.body->Window.appendChild(trustPayScript)
           } else {
             mountedIframeRef->Window.iframePostMessage(
               [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
+              ~targetOrigin=sdkOrigin,
             )
           }
         }
@@ -248,7 +330,7 @@ let make = (
           paymentMethodList
         }
         let msg = [("clientList", outgoingPaymentMethodList)]->Dict.fromArray
-        mountedIframeRef->Window.iframePostMessage(msg)
+        mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
         Promise.resolve()
       })
     }
@@ -259,7 +341,7 @@ let make = (
       sessionTokensDataPromise.contents->Promise.then(json => {
         let sessionTokens = preloadSDKWithParams->getJsonFromDict("sessionTokens", json)
         let msg = [("sessions", sessionTokens)]->Dict.fromArray
-        mountedIframeRef->Window.iframePostMessage(msg)
+        mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
         Promise.resolve()
       })
     }
@@ -268,7 +350,7 @@ let make = (
       sdkConfigsDataPromise.contents->Promise.then(json => {
         let sdkConfigs = preloadSDKWithParams->getJsonFromDict("sdkConfigs", json)
         let msg = [("sdkConfigs", sdkConfigs)]->Dict.fromArray
-        mountedIframeRef->Window.iframePostMessage(msg)
+        mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
         Promise.resolve()
       })
     }
@@ -313,7 +395,7 @@ let make = (
             ("ElementsUpdate", true->JSON.Encode.bool),
             ("options", newOptionsDict->JSON.Encode.object),
           ]->Dict.fromArray
-        iframe->Window.iframePostMessage(message)
+        iframe->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
       })
     }
     let fetchUpdates = () => {
@@ -514,9 +596,10 @@ let make = (
                   if session.canMakePayments() {
                     let msg = [
                       ("hyperApplePayCanMakePayments", true->JSON.Encode.bool),
+                      ("walletRoutingId", walletRouteId(mountedIframeRef)->JSON.Encode.string),
                       ("componentName", componentName->JSON.Encode.string),
                     ]
-                    messageTopWindow(msg)
+                    messageTopWindow(msg, ~targetOrigin=Window.Location.origin)
                   } else {
                     Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
                     logger.setLogInfo(
@@ -555,7 +638,7 @@ let make = (
               try {
                 let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
 
-                handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
+                mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
               } catch {
               | exn => {
                   let exnString = exn->anyTypeToJson->JSON.stringify
@@ -650,7 +733,10 @@ let make = (
                         ~paymentMethod="GOOGLE_PAY",
                       )
                       let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                      event.source->Window.sendPostMessage(msg)
+                      event.source->Window.postMessage(
+                        msg->JSON.Encode.object->JSON.stringify,
+                        event.origin,
+                      )
                       resolve()
                     })
                     ->catch(err => {
@@ -663,7 +749,10 @@ let make = (
                         ~logCategory=USER_ERROR,
                       )
                       let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                      event.source->Window.sendPostMessage(msg)
+                      event.source->Window.postMessage(
+                        msg->JSON.Encode.object->JSON.stringify,
+                        event.origin,
+                      )
                       resolve()
                     })
                     ->ignore
@@ -686,7 +775,10 @@ let make = (
                     ~logCategory=USER_ERROR,
                   )
                   let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                  event.source->Window.sendPostMessage(msg)
+                  event.source->Window.postMessage(
+                    msg->JSON.Encode.object->JSON.stringify,
+                    event.origin,
+                  )
                 }
               }
             }
@@ -737,8 +829,20 @@ let make = (
 
                   // Bind a safe closure over mountedIframeRef so the interceptor can post
                   // "applePayConfirmRequest" back to the iframe during onvalidatemerchant.
-                  ApplePayInterceptor.setPostToIframe(msg =>
-                    mountedIframeRef->Window.iframePostMessage(msg)
+                  ApplePayInterceptor.setPostToIframe(
+                    ~isTrustedResponse=ev =>
+                      mountedIframeRef
+                      ->Nullable.toOption
+                      ->Option.map(iframe =>
+                        PaymentMessageSecurity.isExpectedSender(
+                          ~source=iframe->Window.contentWindow,
+                          ~origin=sdkOrigin,
+                          ~eventSource=ev.source,
+                          ~eventOrigin=ev.origin,
+                        )
+                      )
+                      ->Option.getOr(false),
+                    msg => mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin),
                   )
 
                   let secrets =
@@ -795,7 +899,7 @@ let make = (
                           ~paymentMethod="APPLE_PAY",
                         )
                         let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                        mountedIframeRef->Window.iframePostMessage(msg)
+                        mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                         ApplePayInterceptor.clearPostToIframe()
                         resolve()
                       })
@@ -807,7 +911,7 @@ let make = (
                           ~value=exceptionMessage,
                         )
                         let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                        mountedIframeRef->Window.iframePostMessage(msg)
+                        mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                         ApplePayInterceptor.clearPostToIframe()
                         resolve()
                       })
@@ -820,7 +924,7 @@ let make = (
                           ~paymentMethod="APPLE_PAY",
                         )
                         let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                        mountedIframeRef->Window.iframePostMessage(msg)
+                        mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                         ApplePayInterceptor.clearPostToIframe()
                         resolve()
                       }
@@ -873,7 +977,7 @@ let make = (
           }
         }
 
-        let handlePollStatusMessage = (ev: Types.event) => {
+        let processPollStatusMessage = (ev: Types.event) => {
           let eventDataObject = ev.data->anyTypeToJson
           switch eventDataObject->getOptionalJsonFromJson("confirmParams") {
           | Some(obj) => redirect := obj->getDictFromJson->getString("redirect", "if_required")
@@ -889,11 +993,13 @@ let make = (
               Utils.replaceRootHref(redirectUrl, redirectionFlags)
               resolve(JSON.Encode.null)
             } else {
-              messageCurrentWindow([
-                ("submitSuccessful", true->JSON.Encode.bool),
-                ("data", json),
-                ("url", redirectUrl->JSON.Encode.string),
-              ])
+              onSubmitResponse(
+                [
+                  ("submitSuccessful", true->JSON.Encode.bool),
+                  ("data", json),
+                  ("url", redirectUrl->JSON.Encode.string),
+                ]->getJsonFromArrayOfJson,
+              )
               resolve(json)
             }
           }
@@ -909,11 +1015,13 @@ let make = (
               if redirect.contents === "always" {
                 Utils.replaceRootHref(url, redirectionFlags)
               }
-              messageCurrentWindow([
-                ("submitSuccessful", false->JSON.Encode.bool),
-                ("error", err->anyTypeToJson),
-                ("url", url->JSON.Encode.string),
-              ])
+              onSubmitResponse(
+                [
+                  ("submitSuccessful", false->JSON.Encode.bool),
+                  ("error", err->anyTypeToJson),
+                  ("url", url->JSON.Encode.string),
+                ]->getJsonFromArrayOfJson,
+              )
             }
 
             PaymentHelpers.pollStatus(
@@ -981,11 +1089,13 @@ let make = (
                 )
                 resolve(JSON.Encode.null)
               } else {
-                messageCurrentWindow([
-                  ("submitSuccessful", false->JSON.Encode.bool),
-                  ("error", err->anyTypeToJson),
-                  ("url", redirectUrl),
-                ])
+                onSubmitResponse(
+                  [
+                    ("submitSuccessful", false->JSON.Encode.bool),
+                    ("error", err->anyTypeToJson),
+                    ("url", redirectUrl),
+                  ]->getJsonFromArrayOfJson,
+                )
                 resolve(err->anyTypeToJson)
               }
             })
@@ -1008,10 +1118,28 @@ let make = (
           }
         }
 
-        addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
+        let handlePollStatusMessage = (ev: Types.event) => {
+          if isTrustedRedirectMessage(ev) {
+            processPollStatusMessage(ev)
+          }
+        }
+        addWalletMessageListener(
+          mountedIframeRef,
+          handleApplePayMounted,
+          "onApplePayMount",
+          ~allowSelf=true,
+        )
         addSmartEventListener("message", handlePollStatusMessage, "onPollStatusMsg")
-        addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
-        addSmartEventListener("message", handleApplePayThirdPartyFlow, "onApplePayThirdParty")
+        addWalletMessageListener(
+          mountedIframeRef,
+          handleGooglePayThirdPartyFlow,
+          "onGooglePayThirdParty",
+        )
+        addWalletMessageListener(
+          mountedIframeRef,
+          handleApplePayThirdPartyFlow,
+          "onApplePayThirdParty",
+        )
 
         let forwardSessionTokensToIframe = mountedIframeRef => {
           sessionTokensDataPromise.contents
@@ -1037,7 +1165,7 @@ let make = (
             })
             if !(applePayPresent->Option.isSome) {
               let msg = [("applePaySessionObjNotPresent", true->JSON.Encode.bool)]->Dict.fromArray
-              mountedIframeRef->Window.iframePostMessage(msg)
+              mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
             } else {
               let isApplePayBraintreePresent =
                 applePayPresent->getOptionsDict->getString("connector", "") === "braintree"
@@ -1104,6 +1232,7 @@ let make = (
 
                       let msg = [
                         ("hyperApplePayButtonClicked", true->JSON.Encode.bool),
+                        ("walletRoutingId", walletRouteId(mountedIframeRef)->JSON.Encode.string),
                         ("paymentRequest", paymentRequest),
                         ("applePayPresent", applePayPresent->Option.getOr(JSON.Encode.null)),
                         ("clientSecret", clientSecretRef.contents->JSON.Encode.string),
@@ -1115,7 +1244,7 @@ let make = (
                         ("componentName", componentName->JSON.Encode.string),
                         ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                       ]
-                      messageTopWindow(msg)
+                      messageTopWindow(msg, ~targetOrigin=Window.Location.origin)
                     }
                   }
                 | _ => ()
@@ -1137,17 +1266,22 @@ let make = (
                       ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                     ]->Dict.fromArray
 
-                  handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
+                  mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                 }
 
                 if dict->Dict.get("showApplePayButton")->Option.isSome {
                   let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
 
-                  handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
+                  mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                 }
               }
 
-              addSmartEventListener("message", handleApplePayMessages, "onApplePayMessages")
+              addWalletMessageListener(
+                mountedIframeRef,
+                handleApplePayMessages,
+                "onApplePayMessages",
+                ~allowSelf=true,
+              )
             }
             if (
               componentType->getIsComponentTypeForPaymentElementCreate &&
@@ -1293,7 +1427,7 @@ let make = (
                     ~paymentMethod="GOOGLE_PAY",
                   )
                   let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
-                  mountedIframeRef->Window.iframePostMessage(msg)
+                  mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                   None
                 }
 
@@ -1305,7 +1439,7 @@ let make = (
                       let dict = res->getDictFromJson
                       let isReadyToPay = getBool(dict, "result", false)
                       let msg = [("isReadyToPay", isReadyToPay->JSON.Encode.bool)]->Dict.fromArray
-                      mountedIframeRef->Window.iframePostMessage(msg)
+                      mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                       resolve()
                     })
                     ->catch(err => {
@@ -1316,7 +1450,7 @@ let make = (
                         ~logType=DEBUG,
                       )
                       let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
-                      mountedIframeRef->Window.iframePostMessage(msg)
+                      mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                       resolve()
                     })
                     ->ignore
@@ -1329,7 +1463,7 @@ let make = (
                       ~logType=DEBUG,
                     )
                     let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
-                    mountedIframeRef->Window.iframePostMessage(msg)
+                    mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                     Promise.resolve()->catch(_ => resolve())->ignore
                   }
                 | None => Promise.resolve()->catch(_ => resolve())->ignore
@@ -1364,7 +1498,10 @@ let make = (
                                 ("gpayResponse", json->anyTypeToJson),
                                 ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                               ]->Dict.fromArray
-                            event.source->Window.sendPostMessage(msg)
+                            event.source->Window.postMessage(
+                              msg->JSON.Encode.object->JSON.stringify,
+                              event.origin,
+                            )
                             let value = "Payment Data Filled: New Payment Method"
                             logger.setLogInfo(
                               ~value,
@@ -1384,7 +1521,10 @@ let make = (
                             )
 
                             let msg = [("gpayError", err->anyTypeToJson)]->Dict.fromArray
-                            event.source->Window.sendPostMessage(msg)
+                            event.source->Window.postMessage(
+                              msg->JSON.Encode.object->JSON.stringify,
+                              event.origin,
+                            )
                             resolve()
                           },
                         )
@@ -1401,12 +1541,19 @@ let make = (
                         [
                           ("gpayError", "GooglePay client unavailable"->JSON.Encode.string),
                         ]->Dict.fromArray
-                      event.source->Window.sendPostMessage(msg)
+                      event.source->Window.postMessage(
+                        msg->JSON.Encode.object->JSON.stringify,
+                        event.origin,
+                      )
                       Promise.resolve()->then(_ => resolve())->catch(_ => resolve())->ignore
                     }
                   }
                 }
-                addSmartEventListener("message", handleGooglePayMessages, "onGooglePayMessages")
+                addWalletMessageListener(
+                  mountedIframeRef,
+                  handleGooglePayMessages,
+                  "onGooglePayMessages",
+                )
               } catch {
               | err =>
                 logger.setLogError(
@@ -1472,7 +1619,7 @@ let make = (
                   let dict = res->getDictFromJson
                   let isReadyToPay = dict->getBool("result", false)
                   let msg = [("isSamsungPayReady", isReadyToPay->JSON.Encode.bool)]->Dict.fromArray
-                  mountedIframeRef->Window.iframePostMessage(msg)
+                  mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                   resolve()
                 })
                 ->catch(err => {
@@ -1513,7 +1660,10 @@ let make = (
                           ("samsungPayResponse", json->anyTypeToJson),
                           ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                         ]->Dict.fromArray
-                      event.source->Window.sendPostMessage(msg)
+                      event.source->Window.postMessage(
+                        msg->JSON.Encode.object->JSON.stringify,
+                        event.origin,
+                      )
                       resolve()
                     })
                     ->catch(err => {
@@ -1525,15 +1675,22 @@ let make = (
                         ~paymentMethod="SAMSUNG_PAY",
                         ~logType=ERROR,
                       )
-                      event.source->Window.sendPostMessage(
-                        [("samsungPayError", err->anyTypeToJson)]->Dict.fromArray,
+                      event.source->Window.postMessage(
+                        [("samsungPayError", err->anyTypeToJson)]
+                        ->getJsonFromArrayOfJson
+                        ->JSON.stringify,
+                        event.origin,
                       )
                       resolve()
                     })
                     ->ignore
                   }
                 }
-                addSmartEventListener("message", handleSamsungPayMessages, "onSamsungPayMessages")
+                addWalletMessageListener(
+                  mountedIframeRef,
+                  handleSamsungPayMessages,
+                  "onSamsungPayMessages",
+                )
               } catch {
               | err =>
                 logger.setLogError(
@@ -1555,7 +1712,7 @@ let make = (
 
             let sessionTokens = preloadSDKWithParams->getJsonFromDict("sessionTokens", json)
             let msg = [("sessions", sessionTokens)]->Dict.fromArray
-            mountedIframeRef->Window.iframePostMessage(msg)
+            mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
             resolve()
           })
           ->catch(_ => resolve())
@@ -1571,7 +1728,7 @@ let make = (
         ->ignore
         forwardSessionTokensToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
         forwardSdkConfigsDataToIframe(mountedIframeRef)->catch(_ => resolve())->ignore
-        mountedIframeRef->Window.iframePostMessage(message)
+        mountedIframeRef->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
       }
 
       let paymentElement = LoaderPaymentElement.make(
@@ -1584,6 +1741,8 @@ let make = (
         ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
         ~logger=Some(logger),
         ~confirmPayment,
+        ~isTrustedPaymentMessage,
+        ~onFullscreenCreated,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

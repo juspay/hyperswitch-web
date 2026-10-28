@@ -325,7 +325,7 @@ let make = () => {
 
   React.useEffect(() => {
     let handleCommand = (ev: Window.event) => {
-      if ev.source === iframeParent && (keys.parentURL === "*" || ev.origin === keys.parentURL) {
+      if Utils.isParentMessage(~parentOrigin=keys.parentURL, ev) {
         let json = ev.data->safeParse
         let dict = json->getDictFromJson
         let command = dict->getString("cardFormCoordinatorCommand", "")

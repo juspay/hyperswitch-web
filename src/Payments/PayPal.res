@@ -15,7 +15,7 @@ let make = (~walletOptions) => {
   let loggerState = Jotai.useAtomValue(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
-  let {publishableKey, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let {publishableKey, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
   let options = Jotai.useAtomValue(optionAtom)
   let areOneClickWalletsRendered = Jotai.useSetAtom(areOneClickWalletsRendered)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
@@ -104,7 +104,7 @@ let make = (~walletOptions) => {
       emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
       setPaypalClicked(_ => true)
       open Promise
-      Utils.makeOneClickHandlerPromise(sdkHandleIsThere)
+      Utils.makeOneClickHandlerPromise(sdkHandleIsThere, ~parentOrigin=parentURL)
       ->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
@@ -183,7 +183,7 @@ let make = (~walletOptions) => {
   }
 
   let submitCallback = useSubmitCallback(~isWallet)
-  Utils.useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   if isWallet {
     <button

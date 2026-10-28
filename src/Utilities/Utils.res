@@ -335,20 +335,24 @@ let handleMessage = (fun, _errorMessage) => {
   Window.addEventListener("message", handle)
   Some(() => Window.removeEventListener("message", handle))
 }
-let useSubmitPaymentData = callback => {
-  React.useEffect(() => {handleMessage(callback, "")}, [callback])
-}
-
 // Nested SDK components must only accept confirm/control messages from their
 // direct host iframe. This keeps unrelated window messages from entering a
 // payment submit path while retaining the existing callback API.
-let useSubmitPaymentDataFromParent = (~parentOrigin="*", callback) => {
+let isParentMessage = (~parentOrigin, ev: Window.event) =>
+  PaymentMessageSecurity.isExpectedSender(
+    ~source=iframeParent,
+    ~origin=parentOrigin,
+    ~eventSource=ev.source,
+    ~eventOrigin=ev.origin,
+  )
+
+let useSubmitPaymentDataFromParent = (~parentOrigin, callback) => {
   let parentCallback = React.useCallback((ev: Window.event) => {
-    if ev.source === iframeParent && (parentOrigin === "*" || ev.origin === parentOrigin) {
+    if isParentMessage(~parentOrigin, ev) {
       callback(ev)
     }
   }, (callback, parentOrigin))
-  useSubmitPaymentData(parentCallback)
+  React.useEffect(() => {handleMessage(parentCallback, "")}, [parentCallback])
 }
 
 let useWindowSize = () => {
@@ -1557,9 +1561,10 @@ let eventHandlerFunc = (
   eventHandler,
   evType: Types.eventType,
   activity,
+  ~isTrustedMessage,
 ) => {
   let changeHandler = ev => {
-    if ev->condition {
+    if isTrustedMessage(ev) && ev->condition {
       switch evType {
       | Change
       | Click
@@ -1580,18 +1585,21 @@ let eventHandlerFunc = (
   EventListenerManager.addSmartEventListener("message", changeHandler, activity)
 }
 
-let makeIframe = (element, url) => {
-  open Types
+let makeIframe = (element, url, ~onCreate=_ => ()) => {
   Promise.make((resolve, _) => {
-    let iframe = createElement("iframe")
-    iframe.id = "orca-fullscreen"
-    iframe.src = url
-    iframe.name = "fullscreen"
-    iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
-    iframe.onload = () => {
+    let iframe = Window.createElement("iframe")
+    iframe->Window.setAttribute("id", "orca-fullscreen")
+    iframe->Window.setAttribute("src", url)
+    iframe->Window.setAttribute("name", "fullscreen")
+    iframe->Window.setAttribute(
+      "style",
+      "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; ",
+    )
+    iframe->Window.elementOnload(() => {
       resolve(Dict.make())
-    }
-    element->appendChild(iframe)
+    })
+    element->Window.appendChildElement(iframe)
+    onCreate(iframe)
   })
 }
 let makeHiddenIframe = (element, ~src, ~id) => {
@@ -1637,26 +1645,52 @@ let getThemePromise = dict => {
   }
 }
 
-let makeOneClickHandlerPromise = sdkHandleIsThere => {
+let oneClickRequestCounter = ref(0)
+
+let makeOneClickHandlerPromise = (sdkHandleIsThere, ~parentOrigin, ~parentWindow=iframeParent) => {
   Promise.make((resolve, _) => {
     if !sdkHandleIsThere {
       resolve(JSON.Encode.bool(true))
+    } else if !PaymentMessageSecurity.isConcreteOrigin(parentOrigin) {
+      resolve(JSON.Encode.bool(false))
     } else {
+      oneClickRequestCounter := oneClickRequestCounter.contents + 1
+      let requestId = `${Date.now()->Float.toString}-${oneClickRequestCounter.contents->Int.toString}`
+      let settled = ref(false)
       let handleMessage = (event: Window.event) => {
-        let json = try {
-          event.data->safeParse
-        } catch {
-        | _ => JSON.Encode.null
-        }
-
-        let dict = json->getDictFromJson
-
-        if dict->Dict.get("walletClickEvent")->Option.isSome {
-          resolve(dict->Dict.get("walletClickEvent")->Option.getOr(true->JSON.Encode.bool))
+        if (
+          !settled.contents &&
+          PaymentMessageSecurity.isExpectedSender(
+            ~source=parentWindow,
+            ~origin=parentOrigin,
+            ~eventSource=event.source,
+            ~eventOrigin=event.origin,
+          )
+        ) {
+          let dict = event.data->safeParse->getDictFromJson
+          if dict->getString("walletClickRequestId", "") === requestId {
+            switch dict->Dict.get("walletClickEvent")->Option.flatMap(JSON.Decode.bool) {
+            | Some(accepted) =>
+              settled := true
+              EventListenerManager.removeSmartEventListener("message", `walletClick-${requestId}`)
+              resolve(accepted->JSON.Encode.bool)
+            | None => ()
+            }
+          }
         }
       }
-      Window.addEventListener("message", handleMessage)
-      handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true)
+      EventListenerManager.addSmartEventListener(
+        "message",
+        event => handleMessage(event->eventToWindowEvent),
+        `walletClick-${requestId}`,
+      )
+      parentWindow->messageWindow(
+        [
+          ("oneClickConfirmTriggered", true->JSON.Encode.bool),
+          ("walletClickRequestId", requestId->JSON.Encode.string),
+        ],
+        ~targetOrigin=parentOrigin,
+      )
     }
   })
 }
@@ -1890,20 +1924,41 @@ let mergeAndFlattenToTuples = (body, requiredFieldsBody) =>
   ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
   ->getArrayOfTupleFromDict
 
-let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) => {
+let handleIframePostMessageForWallets = (
+  msg,
+  componentName,
+  mountedIframeRef,
+  ~iframes,
+  ~targetOrigin,
+) => {
   let isMessageSent = ref(false)
-  let iframes = Window.querySelectorAll("iframe")
-
+  // Route only to widgets registered by this Elements instance. A matching URL
+  // on an unrelated merchant iframe does not make it a trusted recipient.
   iframes->Array.forEach(iframe => {
-    let iframeSrc = iframe->Window.getAttribute("src")->Nullable.toOption->Option.getOr("")
-    if iframeSrc->String.includes(`componentName=${componentName}`) {
-      iframe->Nullable.make->Window.iframePostMessage(msg)
-      isMessageSent := true
+    switch iframe->Nullable.toOption {
+    | Some(element) if element->Window.Element.isConnected =>
+      let iframeSrc = element->Window.getAttribute("src")->Nullable.toOption->Option.getOr("")
+      switch PaymentMessageSecurity.httpUrl(iframeSrc) {
+      | Some(url)
+        if url.origin === targetOrigin &&
+          url.searchParams
+          ->PaymentMessageSecurity.getAll("componentName")
+          ->Array.includes(componentName) =>
+        iframe->Window.iframePostMessage(msg, ~targetOrigin)
+        isMessageSent := true
+      | _ => ()
+      }
+    | _ => ()
     }
   })
 
-  if !isMessageSent.contents {
-    mountedIframeRef->Window.iframePostMessage(msg)
+  if !isMessageSent.contents && iframes->Array.includes(mountedIframeRef) {
+    switch mountedIframeRef->Nullable.toOption {
+    | Some(element) if element->Window.Element.isConnected =>
+      // The browsing context may have navigated since the wallet was opened.
+      mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin)
+    | _ => ()
+    }
   }
 }
 

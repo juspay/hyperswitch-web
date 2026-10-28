@@ -2,6 +2,7 @@ open Utils
 
 @react.component
 let make = () => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (cardBrand, setCardBrand) = React.useState(_ => "")
 
@@ -17,7 +18,7 @@ let make = () => {
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
-      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+      if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")->getDictFromJson
         let cardBrands =
           metadata

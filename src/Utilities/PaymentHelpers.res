@@ -149,13 +149,14 @@ let threeDsAuth = async (
   let onFailure = data => {
     let dict = data->getDictFromJson
     let errorObj = PaymentError.itemToObjMapper(dict)
-    closePaymentLoaderIfAny()
+    // Deliver the result before removing a cross-site fullscreen sender.
     postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
+    closePaymentLoaderIfAny()
     JSON.Encode.null
   }
 
   let onCatchCallback = err => {
-    closePaymentLoaderIfAny()
+    // The caller reports the error before closing its fullscreen frame.
     Js.Exn.raiseError(err->JSON.stringify)
   }
 
@@ -354,6 +355,7 @@ let rec intentCall = (
   ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
   ~isTrustpayInterceptorConfirm=false,
+  ~parentOrigin: option<string>=?,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -444,11 +446,11 @@ let rec intentCall = (
             let dict = data->getDictFromJson
             let errorObj = PaymentError.itemToObjMapper(dict)
             if !isPaymentSession {
-              closePaymentLoaderIfAny()
               postFailedSubmitResponse(
                 ~errortype=errorObj.error.type_,
                 ~message=errorObj.error.message,
               )
+              closePaymentLoaderIfAny()
             }
             if handleUserError {
               handleOpenUrl(url.href)
@@ -479,8 +481,8 @@ let rec intentCall = (
             )
             if counter >= 5 {
               if !isPaymentSession {
-                closePaymentLoaderIfAny()
                 postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+                closePaymentLoaderIfAny()
               }
               if handleUserError {
                 handleOpenUrl(url.href)
@@ -505,6 +507,7 @@ let rec intentCall = (
                 : ""
               let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
               intentCall(
+                ~parentOrigin?,
                 ~fetchApi,
                 ~uri=retrieveUri,
                 ~headers,
@@ -575,11 +578,12 @@ let rec intentCall = (
                 if !isPaymentSession {
                   if isCallbackUsedVal->Option.getOr(false) {
                     handleOnCompleteDoThisMessage()
-                  } else {
-                    closePaymentLoaderIfAny()
                   }
 
                   postSubmitResponse(~jsonData=data, ~url=url.href)
+                  if !(isCallbackUsedVal->Option.getOr(false)) {
+                    closePaymentLoaderIfAny()
+                  }
                 } else if confirmParam.redirect === Some("always") {
                   if isCallbackUsedVal->Option.getOr(false) {
                     handleOnCompleteDoThisMessage()
@@ -862,7 +866,9 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  messageParentWindow(message)
+                  parentOrigin
+                  ->Option.filter(PaymentMessageSecurity.isConcreteOrigin)
+                  ->Option.forEach(origin => messageParentWindow(message, ~targetOrigin=origin))
                 }
                 resolve(data)
               } else if intent.nextAction.type_ === "invoke_sdk_client" {
@@ -937,7 +943,9 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  messageParentWindow(message)
+                  parentOrigin
+                  ->Option.filter(PaymentMessageSecurity.isConcreteOrigin)
+                  ->Option.forEach(origin => messageParentWindow(message, ~targetOrigin=origin))
                 }
               } else {
                 handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
@@ -1005,8 +1013,8 @@ let rec intentCall = (
         )
         if counter >= 5 {
           if !isPaymentSession {
-            closePaymentLoaderIfAny()
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            closePaymentLoaderIfAny()
           }
           if handleUserError {
             handleOpenUrl(url.href)
@@ -1029,6 +1037,7 @@ let rec intentCall = (
           let clientSecretParam = isLegacyClientSecretFlow ? `?client_secret=${clientSecret}` : ""
           let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
           intentCall(
+            ~parentOrigin?,
             ~fetchApi,
             ~uri=retrieveUri,
             ~headers,
@@ -1106,6 +1115,7 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
 
       let paymentSync = () => {
         intentCall(
+          ~parentOrigin=keys.parentURL,
           ~fetchApi,
           ~uri,
           ~headers,
@@ -1226,6 +1236,7 @@ let useCompleteAuthorizeHandler = () => {
         ->JSON.stringify
 
       intentCall(
+        ~parentOrigin=keys.parentURL,
         ~fetchApi,
         ~uri,
         ~headers=finalHeaders,
@@ -1435,6 +1446,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~redirectionFlags,
             ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
             ~isTrustpayInterceptorConfirm,
+            ~parentOrigin=keys.parentURL,
           )
           ->then(val => {
             intentCallback(val)
@@ -2103,6 +2115,7 @@ let usePostSessionTokens = (
         }
 
         intentCall(
+          ~parentOrigin=keys.parentURL,
           ~fetchApi,
           ~uri,
           ~headers,

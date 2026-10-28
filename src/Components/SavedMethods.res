@@ -679,7 +679,7 @@ let make = (
     paymentTokenVal,
     customerId,
   ))
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
     !isGuestCustomer &&

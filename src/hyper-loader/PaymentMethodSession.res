@@ -157,7 +157,10 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
 
   let groupInstanceId = uniqueId(~prefix=`vault-${pmSessionId}`)
-  let coordinator = makeCoordinatorChannel(~groupId=groupInstanceId)
+  let coordinator = makeCoordinatorChannel(
+    ~groupId=groupInstanceId,
+    ~origin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+  )
   let coordinatorListenerName = `onVaultCoordinator-${groupInstanceId}`
   let coordinatorTokenizePendingRef: ref<option<(string, JSON.t => unit)>> = ref(None)
 
@@ -173,6 +176,19 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
     ->Dict.fromArray
     ->JSON.Encode.object
 
+  // This tag predates the coordinator logger setup that sends this handshake upstream.
+  // Initialize the parent's origin without adding that logging setup.
+  let initializeCoordinator = () =>
+    postCoordinatorCommand(
+      coordinator,
+      [
+        ("paymentElementCreate", true->JSON.Encode.bool),
+        ("otherElements", true->JSON.Encode.bool),
+        ("iframeId", groupInstanceId->JSON.Encode.string),
+        ("options", coordinatorOptions()),
+      ],
+    )
+
   let postCoordinatorOptions = () =>
     postCoordinatorCommand(
       coordinator,
@@ -182,8 +198,11 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
   let syncCoordinatorSessions = () => {
     if sessionsDataRef.contents != JSON.Encode.null && coordinator.readyRef.contents {
       coordinator.mountRef.contents->Option.forEach(mount =>
-        mount.iframe->Nullable.make->Window.iframePostMessage(
+        mount.iframe
+        ->Nullable.make
+        ->Window.iframePostMessage(
           [("sessions", sessionsDataRef.contents)]->Dict.fromArray,
+          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
         )
       )
     }
@@ -205,6 +224,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
           if dict->getBool("iframeMounted", false) {
             coordinator.readyRef := true
             flushPendingPorts(coordinator)
+            initializeCoordinator()
             syncCoordinatorSessions()
             postCoordinatorOptions()
             flushPendingCoordinatorCommands(coordinator)
@@ -418,6 +438,7 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
       if sessionsDataRef.contents != JSON.Encode.null {
         mountedIframeRef->Window.iframePostMessage(
           [("sessions", sessionsDataRef.contents)]->Dict.fromArray,
+          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
         )
       }
     }
@@ -490,7 +511,11 @@ let make = (options: JSON.t, ~logger: HyperLoggerTypes.loggerMake): initPaymentM
       ~listenerName=`onVaultField-${fieldId}`,
       ~eventHandlersRef,
       ~update=newOptions => {
-        let newSavedCardDict = postFieldUpdate(~iframeRef, ~newOptions)
+        let newSavedCardDict = postFieldUpdate(
+          ~iframeRef,
+          ~newOptions,
+          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+        )
         let brand = newSavedCardDict->savedCardNetwork
         if brand !== "" {
           savedCardBrandRef := brand
