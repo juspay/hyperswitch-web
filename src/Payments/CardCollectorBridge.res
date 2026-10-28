@@ -20,6 +20,7 @@ let useEmitCardState = (
   ~portKey="",
 ) => {
   let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let postPortFrame = CardFormPortHandshake.useFieldStatePoster(~portKey)
   let cardInfo = React.useMemo(() => {
     PaymentEventData.buildCardInfo(
       ~cardNumber,
@@ -54,9 +55,7 @@ let useEmitCardState = (
         rawCvc: emitRawCvc && cvcNumber !== "" ? Some(cvcNumber) : None,
       })
       messageParentWindow([("cardStateUpdate", windowPayload)], ~targetOrigin=parentURL)
-      if !SadPortRegistry.postFrame(~key=portKey, portPayload) {
-        Console.warn(`[CardCollectorBridge] dropped port frame for unregistered portKey "${portKey}"`)
-      }
+      postPortFrame(portPayload)
     } else {
       let stateEntries = [
         ("cardBrand", cardBrand->JSON.Encode.string),

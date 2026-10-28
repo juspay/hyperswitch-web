@@ -18,31 +18,6 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
-@send
-external postMessageWithTransfer: (
-  Dom.element,
-  string,
-  string,
-  array<MessageChannelBinding.port>,
-) => unit = "postMessage"
-
-let iframePostMessageWithTransfer = (
-  iframeRef: nullable<Dom.element>,
-  message: string,
-  ~targetOrigin=GlobalVars.targetOrigin,
-  ~transfer,
-) => {
-  switch iframeRef->Nullable.toOption {
-  | Some(ref) =>
-    try {
-      ref->Window.contentWindow->postMessageWithTransfer(message, targetOrigin, transfer)
-    } catch {
-    | _ => ()
-    }
-  | None => Console.error("This element does not exist or is not mounted yet.")
-  }
-}
-
 type dataModule = {states: JSON.t}
 
 @val

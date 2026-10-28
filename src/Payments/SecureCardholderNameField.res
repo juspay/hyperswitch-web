@@ -26,6 +26,7 @@ let make = () => {
   } else {
     ""
   }
+  let postPortFrame = CardFormPortHandshake.useFieldStatePoster(~portKey)
 
   React.useEffect(() => {
     if keys.iframeId !== "" && keys.iframeId !== "no-element" {
@@ -70,10 +71,8 @@ let make = () => {
       rawCardholderName: ?(empty ? None : Some(cardholderName)),
     })
     messageParentWindow([("cardStateUpdate", windowPayload)], ~targetOrigin=parentURL)
-    if portKey !== "" && !SadPortRegistry.postFrame(~key=portKey, portPayload) {
-      Console.warn(
-        `[SecureCardholderNameField] dropped port frame for unregistered portKey "${portKey}"`,
-      )
+    if portKey !== "" {
+      postPortFrame(portPayload)
     }
     None
   }, (cardholderName, portKey))
