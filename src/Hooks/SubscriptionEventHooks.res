@@ -141,7 +141,6 @@ let useIsReadyEmitted = () => {
   let (isReady, setIsReady) = React.useState(_ => isReadyEmitted.contents)
   React.useEffect0(() => {
     let listener = () => setIsReady(_ => true)
-    // ready may have gone out between the first render and this effect.
     if isReadyEmitted.contents {
       listener()
       None

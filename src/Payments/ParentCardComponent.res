@@ -111,13 +111,6 @@ let make = (
   let isCardFormReady =
     hasCardFieldStatus && (isBancontact || innerIframeHeight > CardIframeProtocol.emptyFrameHeight)
   let setIsVgsScriptReady = Jotai.useSetAtom(JotaiAtoms.isVgsScriptReady)
-  let setIsCardFormReadyAtom = Jotai.useSetAtom(JotaiAtoms.isCardFormReady)
-  React.useEffect(() => {
-    setIsCardFormReadyAtom(_ => isCardFormReady)
-    None
-  }, [isCardFormReady])
-  // A remount (e.g. cardCollectionMode changing) loads a new card iframe.
-  React.useEffect0(() => Some(() => setIsCardFormReadyAtom(_ => false)))
 
   let mountConfigRef = React.useRef((
     optionsJson,
@@ -399,12 +392,12 @@ let make = (
   }, (isSavedCardFlow, savedCardCvcState, iframeId))
 
   React.useEffect(() => {
-    if !isSavedCardFlow && hasCardFieldStatus {
+    if !isSavedCardFlow && isActive && hasCardFieldStatus {
       setComplete(_ => cardFieldsComplete && isInstallmentValid)
       setShowPaymentMethodsScreen(_ => true)
     }
     None
-  }, (isSavedCardFlow, hasCardFieldStatus, cardFieldsComplete, isInstallmentValid))
+  }, (isSavedCardFlow, isActive, hasCardFieldStatus, cardFieldsComplete, isInstallmentValid))
 
   // The legacy direct Card flow emitted this only after all three validation
   // states had resolved. Preserve that timing at the public iframe boundary.

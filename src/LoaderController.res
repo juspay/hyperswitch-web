@@ -767,9 +767,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     None
   }, (iframeHeight, iframeId))
 
-  // resize: { height, isReady } for the merchant, from the same measured iframeHeight, sent once
-  // it settles. A hidden container measures 0, so 0 is never sent; the first height after ready
-  // is always sent, even if unchanged.
+  // A hidden container measures 0, so 0 is never sent.
   let resizeSettleDelayMs = 100
   let isReady = SubscriptionEventHooks.useIsReadyEmitted()
   let lastSentHeightRef = React.useRef(None)

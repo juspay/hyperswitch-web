@@ -62,8 +62,6 @@ let userPhoneNumber = Jotai.atom({
   countryCode: "",
 })
 let userCardNickName = Jotai.atom(defaultFieldValues)
-// Whether the mounted card form has rendered its fields; part of the ready check.
-let isCardFormReady = Jotai.atom(false)
 let isGooglePayReady = Jotai.atom(false)
 let trustPayScriptStatus = Jotai.atom(NotLoaded)
 let isApplePayReady = Jotai.atom(false)

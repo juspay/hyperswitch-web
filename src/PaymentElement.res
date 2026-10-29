@@ -394,11 +394,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (cardMounted, selectedOption))
 
+  let isPaymentMethodsScreenVisible =
+    groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately || showPaymentMethodsScreen
+
   let paymentFormElement = {
-    let cardIsActive = selectedOption->PaymentModeType.paymentMode == Card
+    let isCardSelected = selectedOption->PaymentModeType.paymentMode == Card
+    let cardIsActive = isCardSelected && isPaymentMethodsScreenVisible
     <>
       <RenderIf condition=cardMounted>
-        <div style={display: cardIsActive ? "" : "none"} ariaHidden={!cardIsActive}>
+        <div style={display: isCardSelected ? "" : "none"} ariaHidden={!isCardSelected}>
           <ParentCardComponent
             key={`card-${cardCollectionMode}`} cardCollectionMode isActive=cardIsActive
           />
@@ -591,8 +595,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let hasPaymentOrWalletOptions =
     paymentOptions->Array.length > 0 || walletOptions->Array.length > 0
 
-  let shouldDisplayPaymentMethodsScreen =
-    groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately || showPaymentMethodsScreen
+  let shouldDisplayPaymentMethodsScreen = isPaymentMethodsScreenVisible
 
   let shouldShowShimmer = clickToPayConfig.isReady->Option.isNone || isLoadingGroupedSavedMethods
 
@@ -602,43 +605,58 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     shouldDisplayPaymentMethodsScreen &&
     clickToPayConfig.isReady->Option.isSome
 
-  // Two sections: payment methods (from the payment method list) and wallets (which also
-  // need the sessions call). Progressive loading is ready when either is, otherwise both.
-  let isCardFormReady = Jotai.useAtomValue(JotaiAtoms.isCardFormReady)
-  let isPaymentMethodsSectionReady = {
-    let isCardSelected = selectedOption->PaymentModeType.paymentMode == Card
-    let isSelectionReady = isCardSelected ? isCardFormReady : true
-    if shouldShowShimmer {
-      false
-    } else if shouldShowSavedMethodsScreen {
-      customerPaymentMethods != LoadingSavedCards
-    } else {
-      switch paymentMethodList {
-      | Loading => false
-      | SemiLoaded => isCardSelected && isCardFormReady
-      | LoadError(_) => isSelectionReady
-      | Loaded(_) =>
-        if paymentOptions->Array.length == 0 {
-          // Options are derived in an effect; an empty array with a non-empty list means not yet.
-          walletOptions->Array.length > 0 ||
-            paymentMethodListValue.payment_methods->Array.length == 0
-        } else if selectedOption == "" {
-          layoutClass.defaultCollapsed
-        } else {
-          isSelectionReady
-        }
-      }
-    }
-  }
-  let hasWalletsSection = shouldRenderPaymentSection && walletOptions->Array.length > 0
-  let isWalletsSectionReady = hasWalletsSection && sessionToken != Loading
-  let isElementReady = if optionAtomValue.enableProgressiveLoading {
-    isPaymentMethodsSectionReady || isWalletsSectionReady
-  } else {
-    isPaymentMethodsSectionReady && (!hasWalletsSection || isWalletsSectionReady)
+  // Preloads the payment methods section behind the saved methods screen.
+  let isPaymentSectionPreloaded =
+    !optionAtomValue.enableProgressiveLoading &&
+    shouldShowSavedMethodsScreen &&
+    !isLoadingGroupedSavedMethods &&
+    hasPaymentOrWalletOptions &&
+    clickToPayConfig.isReady->Option.isSome
+  let shouldMountPaymentSection = shouldRenderPaymentSection || isPaymentSectionPreloaded
+
+  let savedMethodsSectionRef = React.useRef(Nullable.null)
+  let paymentMethodsSectionRef = React.useRef(Nullable.null)
+  let walletsSectionRef = React.useRef(Nullable.null)
+  let isSavedMethodsScreenShown = !shouldShowShimmer && shouldShowSavedMethodsScreen
+  let isSavedMethodsLoaded = ReadyHooks.useIsSectionLoaded(
+    savedMethodsSectionRef,
+    ~isMounted=isSavedMethodsScreenShown,
+  )
+  let isPaymentMethodsLoaded = ReadyHooks.useIsSectionLoaded(
+    paymentMethodsSectionRef,
+    ~isMounted=shouldMountPaymentSection,
+  )
+  let isWalletsLoaded = ReadyHooks.useIsSectionLoaded(
+    walletsSectionRef,
+    ~isMounted=shouldMountPaymentSection,
+  )
+
+  let hasPaymentMethodsSection = shouldMountPaymentSection && paymentOptions->Array.length > 0
+  let hasWalletsSection = shouldMountPaymentSection && walletOptions->Array.length > 0
+  let isPaymentMethodsReady = hasPaymentMethodsSection && isPaymentMethodsLoaded
+  let isWalletsReady = hasWalletsSection && isWalletsLoaded && sessionToken != Loading
+  let isPaymentSectionReady =
+    (hasPaymentMethodsSection || hasWalletsSection) &&
+    (!hasPaymentMethodsSection || isPaymentMethodsReady) &&
+    (!hasWalletsSection || isWalletsReady)
+  let hasNothingToLoad = switch paymentMethodList {
+  | LoadError(_) => !hasPaymentOrWalletOptions
+  | Loaded(_) => paymentMethodListValue.payment_methods->Array.length == 0
+  | Loading | SemiLoaded => false
   }
 
-  // Options and the selected method are derived in effects; let them settle before emitting.
+  let isElementReady = if shouldShowShimmer {
+    false
+  } else if optionAtomValue.enableProgressiveLoading {
+    isSavedMethodsScreenShown
+      ? isSavedMethodsLoaded
+      : isPaymentMethodsReady || isWalletsReady || hasNothingToLoad
+  } else {
+    let isPaymentSideReady = isPaymentSectionReady || hasNothingToLoad
+    isSavedMethodsScreenShown ? isSavedMethodsLoaded && isPaymentSideReady : isPaymentSideReady
+  }
+
+  // Lets options and selection derived in effects settle before emitting.
   let readySettleDelayMs = 50
   React.useEffect(() => {
     let timeoutId = if isElementReady {
@@ -656,22 +674,23 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     Some(() => timeoutId->Option.forEach(clearTimeout))
   }, [isElementReady])
 
-  // Without progressive loading, show one shimmer until ready and reveal everything together.
-  // The content stays mounted, out of flow, so the card iframe and wallets keep loading.
   let isReadyEmitted = SubscriptionEventHooks.useIsReadyEmitted()
   let isContentGated = !optionAtomValue.enableProgressiveLoading && !isReadyEmitted
+  // Wallet SDK iframes override visibility, so hide with opacity and block interaction with inert.
+  let hiddenMountedStyle: JsxDOMStyle.t = {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    right: "0",
+    opacity: "0",
+  }
 
   <>
     <RenderIf condition=isContentGated>
       <PaymentElementShimmer />
     </RenderIf>
     <div
-      // opacity, unlike visibility, can't be overridden by wallet SDK iframes (e.g. PayPal);
-      // inert keeps the hidden content out of focus, clicks and the accessibility tree.
-      style={isContentGated
-        ? {position: "absolute", top: "0", left: "0", right: "0", opacity: "0"}
-        : {display: "contents"}}
-      inert=isContentGated>
+      style={isContentGated ? hiddenMountedStyle : {display: "contents"}} inert=isContentGated>
       <RenderIf condition={paymentLabel->Option.isSome}>
         <div
           className="PaymentLabel text-2xl font-semibold text-[#151619] mb-6"
@@ -690,53 +709,61 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         }
       } else {
         <RenderIf condition=shouldShowSavedMethodsScreen>
-          <SavedMethods
-            paymentToken
-            setPaymentToken
-            savedMethods
-            loadSavedCards
-            cvcProps
-            sessions
-            isClickToPayAuthenticateError
-            setIsClickToPayAuthenticateError
-            getVisaCards
-            closeComponentIfSavedMethodsAreEmpty
-          />
+          <div ref={savedMethodsSectionRef->ReactDOM.Ref.domRef} style={display: "contents"}>
+            <SavedMethods
+              paymentToken
+              setPaymentToken
+              savedMethods
+              loadSavedCards
+              cvcProps
+              sessions
+              isClickToPayAuthenticateError
+              setIsClickToPayAuthenticateError
+              getVisaCards
+              closeComponentIfSavedMethodsAreEmpty
+            />
+          </div>
         </RenderIf>
       }}
-      <RenderIf condition=shouldRenderPaymentSection>
+      <RenderIf condition=shouldMountPaymentSection>
         <div
           className="flex flex-col place-items-center"
           role="region"
           ariaLabel="Payment Section"
-          tabIndex={0}>
-          <ErrorBoundary
-            key="payment_request_buttons_all"
-            level={ErrorBoundary.RequestButton}
-            componentName="PaymentRequestButtonElement">
-            <PaymentRequestButtonElement sessions walletOptions />
-          </ErrorBoundary>
+          tabIndex={0}
+          style=?{isPaymentSectionPreloaded ? Some(hiddenMountedStyle) : None}
+          inert=isPaymentSectionPreloaded>
+          <div ref={walletsSectionRef->ReactDOM.Ref.domRef} style={display: "contents"}>
+            <ErrorBoundary
+              key="payment_request_buttons_all"
+              level={ErrorBoundary.RequestButton}
+              componentName="PaymentRequestButtonElement">
+              <PaymentRequestButtonElement sessions walletOptions />
+            </ErrorBoundary>
+          </div>
           <RenderIf
             condition={paymentOptions->Array.length > 0 &&
             walletOptions->Array.length > 0 &&
             checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}>
             <Or separatorText={layoutClass.separatorText} />
           </RenderIf>
-          {switch layoutClass.\"type" {
-          | Tabs =>
-            <PaymentOptions
-              setCardsContainerWidth
-              cardOptions
-              dropDownOptions
-              checkoutEle
-              cardShimmerCount
-              cardProps
-              expiryProps
-              cvcProps
-            />
-          | Accordion =>
-            <AccordionContainer paymentOptions checkoutEle cardProps expiryProps cvcProps />
-          }}
+          <div ref={paymentMethodsSectionRef->ReactDOM.Ref.domRef} style={display: "contents"}>
+            {switch layoutClass.\"type" {
+            | Tabs =>
+              <PaymentOptions
+                setCardsContainerWidth
+                cardOptions
+                dropDownOptions
+                checkoutEle
+                cardShimmerCount
+                cardProps
+                expiryProps
+                cvcProps
+              />
+            | Accordion =>
+              <AccordionContainer paymentOptions checkoutEle cardProps expiryProps cvcProps />
+            }}
+          </div>
         </div>
       </RenderIf>
       <RenderIf condition={shouldShowUseExistingMethodsButton}>
