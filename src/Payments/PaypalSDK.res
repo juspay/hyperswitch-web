@@ -121,6 +121,10 @@ let make = (~sessionObj: SessionsType.token) => {
     style
   }
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+  let handleCancel = () => {
+    handleCloseLoader()
+    emitter.emitPaymentFlowCancel(~step=Sheet, ~paymentMethod, ~paymentMethodType)
+  }
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
@@ -195,6 +199,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~confirm,
         ~completeAuthorize,
         ~handleCloseLoader,
+        ~handleCancel,
         ~areOneClickWalletsRendered,
         ~setIsCompleted,
         ~isCallbackUsedVal,
@@ -233,6 +238,7 @@ let make = (~sessionObj: SessionsType.token) => {
             ~publishableKey,
             ~requiredFields,
             ~handleCloseLoader,
+            ~handleCancel,
             ~areOneClickWalletsRendered,
             ~isManualRetryEnabled,
           )

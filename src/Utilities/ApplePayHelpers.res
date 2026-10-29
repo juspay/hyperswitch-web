@@ -75,6 +75,7 @@ let startApplePaySession = (
   ~publishableKey,
   ~isTaxCalculationEnabled=false,
   ~sdkAuthorization=None,
+  ~onCancel=?,
 ) => {
   open Promise
   let sdkHandleIsThere = LoaderPaymentElement.isPaymentButtonHandlerProvided.contents
@@ -225,10 +226,14 @@ let startApplePaySession = (
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
     )
-    handleFailureResponse(
-      ~message="ApplePay Session Cancelled",
-      ~errorType="apple_pay",
-    )->resolvePromise
+    switch onCancel {
+    | Some(onCancel) => onCancel()
+    | None =>
+      handleFailureResponse(
+        ~message="ApplePay Session Cancelled",
+        ~errorType="apple_pay",
+      )->resolvePromise
+    }
   }
 
   ssn.begin()
@@ -251,6 +256,7 @@ let useHandleApplePayResponse = (
   let {parentURL, publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
@@ -297,6 +303,16 @@ let useHandleApplePayResponse = (
             ~isManualRetryEnabled,
           )
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
+          if (
+            dict->Utils.getBool("isApplePaySheetCancelled", false) &&
+              dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
+          ) {
+            emitter.emitPaymentFlowCancel(
+              ~step=Sheet,
+              ~paymentMethod="wallet",
+              ~paymentMethodType="apple_pay",
+            )
+          }
           setApplePayClicked(_ => false)
           setShowApplePayLoader(_ => false)
           if isSavedMethodsFlow || !isWallet {

@@ -1269,7 +1269,18 @@ let make = (
                 }
 
                 if dict->Dict.get("showApplePayButton")->Option.isSome {
-                  let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
+                  let msg =
+                    [
+                      ("showApplePayButton", true->JSON.Encode.bool),
+                      (
+                        "isApplePaySheetCancelled",
+                        dict->getBool("isApplePaySheetCancelled", false)->JSON.Encode.bool,
+                      ),
+                      (
+                        "isSavedMethodsFlow",
+                        dict->getBool("isSavedMethodsFlow", false)->JSON.Encode.bool,
+                      ),
+                    ]->Dict.fromArray
 
                   mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                 }
@@ -1519,7 +1530,16 @@ let make = (
                               ~logType=DEBUG,
                             )
 
-                            let msg = [("gpayError", err->anyTypeToJson)]->Dict.fromArray
+                            // Unwrap the ReScript exn so the iframe can read Google's statusCode.
+                            let gpayError = switch err->JsExn.fromException {
+                            | Some(jsError) => jsError->anyTypeToJson
+                            | None => err->anyTypeToJson
+                            }
+                            let msg =
+                              [
+                                ("gpayError", gpayError),
+                                ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
+                              ]->Dict.fromArray
                             event.source->Window.postMessage(
                               msg->JSON.Encode.object->JSON.stringify,
                               event.origin,

@@ -102,17 +102,21 @@ let handleHyperApplePayMounted = (event: Types.event) => {
       event.source->Utils.postMessage(msg, event.origin)
     }
 
-    let resolvePromise = _ => {
+    let postShowApplePayButton = (~isApplePaySheetCancelled) => {
       let msg =
         [
           ("showApplePayButton", true->JSON.Encode.bool),
           ("componentName", componentName->JSON.Encode.string),
           ("walletRoutingId", walletRoutingId->JSON.Encode.string),
+          ("isApplePaySheetCancelled", isApplePaySheetCancelled->JSON.Encode.bool),
+          ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
         ]
         ->Dict.fromArray
         ->JSON.Encode.object
       event.source->Utils.postMessage(msg, event.origin)
     }
+
+    let resolvePromise = _ => postShowApplePayButton(~isApplePaySheetCancelled=false)
 
     ApplePayHelpers.startApplePaySession(
       ~paymentRequest,
@@ -125,6 +129,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
       ~isTaxCalculationEnabled,
       ~resolvePromise,
       ~sdkAuthorization=Some(sdkAuthorization),
+      ~onCancel=() => postShowApplePayButton(~isApplePaySheetCancelled=true),
     )
   }
 }

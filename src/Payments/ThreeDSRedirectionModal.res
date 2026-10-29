@@ -6,6 +6,7 @@ let make = () => {
   let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (popupUrl, setPopupUrl) = React.useState(_ => "")
   let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
+  let (paymentFlowCancelMetadata, setPaymentFlowCancelMetadata) = React.useState(_ => Dict.make())
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
@@ -26,6 +27,11 @@ let make = () => {
       messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
     } else {
+      // Emitted before openurl_if_required so the merchant's handler runs before the redirect.
+      SubscriptionEventHooks.emitFullscreenPaymentFlowCancel(
+        ~paymentFlowCancelMetadata,
+        ~step=ThreeDsChallenge,
+      )
       let customEvent =
         {
           openurl_if_required: redirectResponseUrl,
@@ -49,6 +55,7 @@ let make = () => {
           let redirectResponseUrl = metaDataDict->getString("redirectResponseUrl", "")
           setPopupUrl(_ => popupUrl)
           setRedirectResponseUrl(_ => redirectResponseUrl)
+          setPaymentFlowCancelMetadata(_ => metaDataDict->getDictFromDict("paymentFlowCancel"))
           setloader(_ => false)
         }
       } catch {

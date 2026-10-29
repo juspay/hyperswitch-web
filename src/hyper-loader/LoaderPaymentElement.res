@@ -172,9 +172,9 @@ let make = (
     let setPaymentIframeRef = ref => {
       mountedIframeRef := ref
       setIframeRef(ref)
-      ref->Nullable.toOption->Option.forEach(frame =>
-        SdkMessageSources.register(~frame, ~origin=iframeOrigin)
-      )
+      ref
+      ->Nullable.toOption
+      ->Option.forEach(frame => SdkMessageSources.register(~frame, ~origin=iframeOrigin))
     }
 
     let (elementIframeWrapperDivId, elementIframeId) = if isPaymentManagementElement {
@@ -275,6 +275,19 @@ let make = (
           )
         }
       | Change =>
+        // The fullscreen iframe cannot read subscriptionEvents, so it emits
+        // paymentFlowCancel unconditionally; drop it here unless subscribed.
+        let isPaymentFlowCancelSubscribed =
+          options
+          ->getDictFromJson
+          ->getStrArray("subscriptionEvents")
+          ->Array.includes("paymentFlowCancel")
+        let isUnsubscribedPaymentFlowCancel = (ev: Types.event) =>
+          !isPaymentFlowCancelSubscribed &&
+          ev.data
+          ->anyTypeToJson
+          ->getOptionalJsonFromJson("eventName")
+          ->getStringFromOptionalJson("") === "paymentFlowCancel"
         eventHandlerFunc(
           ev =>
             !ev.data.focus &&
@@ -282,6 +295,7 @@ let make = (
             !ev.data.ready &&
             !ev.data.confirmTriggered &&
             !ev.data.oneClickConfirmTriggered &&
+            !isUnsubscribedPaymentFlowCancel(ev) &&
             matchesInstance(ev),
           eventHandler,
           Change,

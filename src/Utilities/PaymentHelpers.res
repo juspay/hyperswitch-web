@@ -608,6 +608,17 @@ let rec intentCall = (
               }
             }
 
+            // Context for the fullscreen iframe to emit paymentFlowCancel with.
+            let paymentFlowCancelMetadata =
+              [
+                ("elementType", componentName->JSON.Encode.string),
+                (
+                  "paymentMethod",
+                  data->getDictFromJson->getString("payment_method", "")->JSON.Encode.string,
+                ),
+                ("paymentMethodType", intent.payment_method_type->JSON.Encode.string),
+              ]->getJsonFromArrayOfJson
+
             if intent.status == "requires_customer_action" {
               if intent.nextAction.type_ == "redirect_to_url" {
                 handleLogging(
@@ -631,6 +642,7 @@ let rec intentCall = (
                 let metaData = [
                   ("popupUrl", popupUrl->JSON.Encode.string),
                   ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
+                  ("paymentFlowCancel", paymentFlowCancelMetadata),
                 ]
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
@@ -683,6 +695,7 @@ let rec intentCall = (
                     ("paymentMethod", paymentMethod->JSON.Encode.string),
                     ("display_text", displayText->JSON.Encode.string),
                     ("border_color", borderColor->JSON.Encode.string),
+                    ("paymentFlowCancel", paymentFlowCancelMetadata),
                   ]->getJsonFromArrayOfJson
                 handleLogging(
                   ~optLogger,

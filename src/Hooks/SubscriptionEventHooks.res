@@ -22,6 +22,11 @@ type emitter = {
     ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   ) => unit,
   emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
+  emitPaymentFlowCancel: (
+    ~step: PaymentEventTypes.paymentFlowStep,
+    ~paymentMethod: string,
+    ~paymentMethodType: string,
+  ) => unit,
 }
 
 let useSubscriptionEventEmitter = (): emitter => {
@@ -108,6 +113,19 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
+  let emitPaymentFlowCancel = (~step, ~paymentMethod, ~paymentMethodType) => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=PaymentFlowCancel,
+      )
+    ) {
+      Utils.messageParentWindow(
+        createPaymentFlowCancelPayload(~step, ~paymentMethod, ~paymentMethodType),
+      )
+    }
+  }
+
   {
     emitCardInfo,
     emitPaymentMethodStatus,
@@ -115,8 +133,27 @@ let useSubscriptionEventEmitter = (): emitter => {
     emitCvcStatus,
     emitSurcharge,
     emitOffers,
+    emitPaymentFlowCancel,
   }
 }
+
+// ---------------------------------------------------------------------------
+// emitFullscreenPaymentFlowCancel
+// ---------------------------------------------------------------------------
+// For steps rendered in the fullscreen iframe (3DS challenge, QR code modal).
+// That iframe never receives the element options, so it cannot read
+// subscriptionEvents; the loader drops the event for merchants who did not subscribe.
+// paymentFlowCancelMetadata is the "paymentFlowCancel" dict the element iframe
+// puts in the fullscreen metadata (see PaymentHelpers.intentCall).
+let emitFullscreenPaymentFlowCancel = (~paymentFlowCancelMetadata: Dict.t<JSON.t>, ~step) =>
+  Utils.messageParentWindow(
+    createPaymentFlowCancelPayload(
+      ~elementType=paymentFlowCancelMetadata->Utils.getString("elementType", "payment"),
+      ~step,
+      ~paymentMethod=paymentFlowCancelMetadata->Utils.getString("paymentMethod", ""),
+      ~paymentMethodType=paymentFlowCancelMetadata->Utils.getString("paymentMethodType", ""),
+    ),
+  )
 
 // ---------------------------------------------------------------------------
 // emitReady
