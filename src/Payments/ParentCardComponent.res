@@ -111,6 +111,13 @@ let make = (
   let isCardFormReady =
     hasCardFieldStatus && (isBancontact || innerIframeHeight > CardIframeProtocol.emptyFrameHeight)
   let setIsVgsScriptReady = Jotai.useSetAtom(JotaiAtoms.isVgsScriptReady)
+  let setIsCardFormReadyAtom = Jotai.useSetAtom(JotaiAtoms.isCardFormReady)
+  React.useEffect(() => {
+    setIsCardFormReadyAtom(_ => isCardFormReady)
+    None
+  }, [isCardFormReady])
+  // A remount (e.g. cardCollectionMode changing) loads a new card iframe.
+  React.useEffect0(() => Some(() => setIsCardFormReadyAtom(_ => false)))
 
   let mountConfigRef = React.useRef((
     optionsJson,

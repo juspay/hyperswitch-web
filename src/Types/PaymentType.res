@@ -300,6 +300,7 @@ type options = {
   alwaysSendCustomerAcceptance: bool,
   redirectionInfo: redirectionInfo,
   appearance: JSON.t,
+  enableProgressiveLoading: bool,
 }
 
 type payerDetails = {
@@ -498,6 +499,7 @@ let defaultOptions = {
   alwaysSendCustomerAcceptance: false,
   redirectionInfo: defaultRedirectionInfo,
   appearance: Dict.make()->JSON.Encode.object,
+  enableProgressiveLoading: true,
 }
 
 let getMessageDisplayMode = (str, key) => {
@@ -1691,6 +1693,7 @@ let allowedPaymentElementOptions = [
   "alwaysSendCustomerAcceptance",
   "redirectionInfo",
   "appearance",
+  "enableProgressiveLoading",
 ]
 
 let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
@@ -1789,6 +1792,11 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     alwaysSendCustomerAcceptance: getBool(dict, "alwaysSendCustomerAcceptance", false),
     redirectionInfo: getRedirectionInfo(dict, "redirectionInfo", logger),
     appearance: getJsonObjectFromDict(dict, "appearance"),
+    enableProgressiveLoading: getBool(
+      dict,
+      "enableProgressiveLoading",
+      defaultOptions.enableProgressiveLoading,
+    ),
   }
 }
 
