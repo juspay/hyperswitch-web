@@ -1631,27 +1631,12 @@ let allowedPaymentElementOptions = [
   "appearance",
 ]
 
-let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
-
-let overrideFieldsToExcludeFromMasking = [
-  "wallets.walletReturnUrl",
-  "paymentMethodsConfig.paymentMethodTypes.message.value",
-]
-
-let normalizePath = path => path->String.replaceRegExp(/\[(\d+)\]/g, "")
-
-let isPathStartsWithPattern = (normalizedPath, normalizedPattern) =>
-  normalizedPath == normalizedPattern || normalizedPath->String.startsWith(normalizedPattern ++ ".")
-
-let shouldMaskField = path => {
-  let normalizedPath = normalizePath(path)
-  let isOverridden = overrideFieldsToExcludeFromMasking->Array.includes(normalizedPath)
-  let isExcluded =
-    fieldsToExcludeFromMasking->Array.some(pattern =>
-      isPathStartsWithPattern(normalizedPath, normalizePath(pattern))
-    )
-  isOverridden || !isExcluded
-}
+let fieldsToExcludeFromMasking = SharedLoggerConfig.Web.fieldsToExcludeFromMasking
+let overrideFieldsToExcludeFromMasking =
+  SharedLoggerConfig.Web.overrideFieldsToExcludeFromMasking
+let normalizePath = SharedLoggerConfig.normalizePath
+let isPathStartsWithPattern = SharedLoggerConfig.isPathStartsWithPattern
+let shouldMaskField = SharedLoggerConfig.Web.shouldMaskField
 
 let itemToObjMapper = dict => {
   unknownKeysWarning(allowedPaymentElementOptions, dict, "options")

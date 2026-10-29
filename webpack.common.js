@@ -1,4 +1,5 @@
 const webpack = require("webpack");
+const loggerDefaults = require("./shared-code/sdk-utils/logging/LoggerDefaults.json");
 const path = require("path");
 const dotenv = require("dotenv").config();
 const tailwindcss = require("tailwindcss");
@@ -143,12 +144,12 @@ const getEnvVariable = (variable, defaultValue) => {
 const sdkEnv = getEnvVariable("sdkEnv", "local");
 const hyperswitchStack = getEnvVariable("HYPERSWITCH_STACK", "");
 const isEUStack = hyperswitchStack === "eu";
-const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
+const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", String(loggerDefaults.enableLogging)) === "true";
 const DISABLE_CSP = getEnvVariable("DISABLE_CSP", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const isPciCompliant = getEnvVariable("IS_PCI_COMPLIANT", "true") === "true";
-const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
+const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", loggerDefaults.endpoint);
 const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
@@ -223,9 +224,9 @@ const confirmEndPoint =
 
 const logEndpoint = envLoggingUrl;
 
-const loggingLevel = "DEBUG";
-const maxLogsPushedPerEventName = 100;
-const maxUserEventsPerName = 20;
+const loggingLevel = loggerDefaults.loggingLevel;
+const maxLogsPushedPerEventName = loggerDefaults.maxRowsPerEventName;
+const maxUserEventsPerName = loggerDefaults.maxUserEventsPerName;
 
 // Function to determine the current environment type
 const getEnvironmentType = (env) => {
