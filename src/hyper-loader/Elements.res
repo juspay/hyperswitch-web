@@ -32,6 +32,7 @@ let make = (
   ~isTrustedPaymentMessage: Types.event => bool,
   ~isTrustedRedirectMessage: Types.event => bool,
   ~onFullscreenCreated: (Dom.element, JSON.t) => unit,
+  ~intentVersion: ref<int>,
 ) => {
   try {
     let iframeRef = []
@@ -432,6 +433,7 @@ let make = (
           ~selectorString=localSelectorString,
           ~shouldWaitForReady=paymentElementIframeRef->Array.length > 0,
           ~logger,
+          ~intentVersion,
         )
 
         // Only forward data and update tax calculation if updateIntent succeeded

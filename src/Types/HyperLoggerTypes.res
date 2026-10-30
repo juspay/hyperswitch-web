@@ -124,6 +124,7 @@ type eventName =
   | DYNAMIC_FIELDS_RENDERED
   | DYNAMIC_FIELDS_CONFIG
   | CARD_FORM_FLOW
+  | SAVED_PAYMENT_METHODS_FLOW
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
