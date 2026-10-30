@@ -24,8 +24,8 @@ let make = () => {
 
   let handleOnClose = () =>
     if redirectResponseUrl == "" {
-      messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
+      closePaymentLoaderIfAny()
     } else {
       // Emitted before openurl_if_required so the merchant's handler runs before the redirect.
       SubscriptionEventHooks.emitFullscreenPaymentFlowCancel(

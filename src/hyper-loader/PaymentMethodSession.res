@@ -331,7 +331,6 @@ let make = (
           let dict = json->getDictFromJson
           if dict->getBool("iframeMounted", false) {
             coordinator.readyRef := true
-            flushPendingPorts(coordinator)
             postCoordinatorLoggerConfig()
             syncCoordinatorSessions()
             postCoordinatorOptions()
@@ -550,10 +549,9 @@ let make = (
     let savedCardBrandRef = ref(savedCardDict->savedCardNetwork)
 
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
-      coordinator->openFieldPort(
+      coordinator->postFieldMountConfig(
         ~fieldIframe=mountedIframeRef,
-        ~mountConfig=buildMountConfig(~options, ~fieldId)->JSON.Encode.object,
-        ~fieldName=mapFieldTypeToInternalFieldName(fieldType),
+        ~mountConfig=buildMountConfig(~options, ~fieldId),
       )
       if sessionsDataRef.contents != JSON.Encode.null {
         mountedIframeRef->Window.iframePostMessage(
@@ -1212,11 +1210,7 @@ let make = (
       sessionStateRef := Deinitialized
       tokenizingRef := false
 
-      closeInstalledPorts(coordinator)
-      coordinator.mountRef.contents->Option.forEach(
-        mount => CoordinatorMount.teardown(~mount, ~pendingPorts=coordinator.pendingPortsRef.contents),
-      )
-      coordinator.pendingPortsRef := []
+      coordinator.mountRef.contents->Option.forEach(mount => CoordinatorMount.teardown(~mount))
       coordinator.mountRef := None
       coordinator.readyRef := false
       coordinator.pendingCommandsRef := []

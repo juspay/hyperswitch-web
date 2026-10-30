@@ -36,12 +36,8 @@ let make = () => {
 
       isThreeDSMethodCompletionFired.current = true
 
-      messageParentWindow([
-        ("fullscreen", false->JSON.Encode.bool),
-        ("param", "paymentloader"->JSON.Encode.string),
-        ("iframeId", iframeId->JSON.Encode.string),
-      ])
-
+      // Let the parent replace this frame in one transition. Closing it first
+      // can leave the authentication message without a source across sites.
       messageParentWindow([
         ("fullscreen", true->JSON.Encode.bool),
         ("param", `3dsAuth`->JSON.Encode.string),

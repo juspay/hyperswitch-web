@@ -8,6 +8,7 @@ type groupConfig = {
   sdkAuthorization: string,
   publishableKey: option<string>,
   endpoint: option<string>,
+  customBackendUrl: option<string>,
   appearance: option<JSON.t>,
   locale: option<string>,
   logger: HyperLoggerTypes.loggerMake,
@@ -65,6 +66,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   | Some(e) => e
   | None => ApiEndpoint.getApiEndPoint(~publishableKey)
   }
+  let customBackendUrl = config.customBackendUrl->Option.getOr("")
   let appearance = config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
   let locale = config.locale->Option.getOr("en")
   let logger = config.logger
@@ -141,7 +143,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           let dict = json->getDictFromJson
           if dict->getBool("iframeMounted", false) {
             coordinator.readyRef := true
-            flushPendingPorts(coordinator)
             switch coordinator.mountRef.contents {
             | Some(mount) => {
                 let coordinatorPaymentOptions = paymentsPaymentOptions(~appearance)
@@ -155,6 +156,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                     ("iframeId", groupInstanceId->JSON.Encode.string),
                     ("publishableKey", publishableKey->JSON.Encode.string),
                     ("endpoint", endpoint->JSON.Encode.string),
+                    ("customBackendUrl", customBackendUrl->JSON.Encode.string),
                     ("clientSecret", clientSecret->JSON.Encode.string),
                     ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
                     ("sdkSessionId", ""->JSON.Encode.string),
@@ -279,7 +281,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           "message",
           CoordinatorMount.fullscreenAnswerListenerName(groupInstanceId),
         )
-        CoordinatorMount.teardown(~mount, ~pendingPorts=coordinator.pendingPortsRef.contents)
+        CoordinatorMount.teardown(~mount)
         coordinator.mountRef := None
         coordinator.readyRef := false
       })
@@ -322,10 +324,9 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       options->getDictFromJson->getDictFromDict("savedCard")->getString("paymentToken", ""),
     )
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
-      coordinator->openFieldPort(
+      coordinator->postFieldMountConfig(
         ~fieldIframe=mountedIframeRef,
-        ~mountConfig=buildMountConfig(~options, ~fieldId)->JSON.Encode.object,
-        ~fieldName=mapFieldTypeToInternalFieldName(fieldType),
+        ~mountConfig=buildMountConfig(~options, ~fieldId),
       )
       clientListDataPromise
       ->Promise.then(json => {
@@ -672,10 +673,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     confirmingRef := false
     coordinator.pendingCommandsRef := []
     coordinatorConfirmPendingRef := None
-    closeInstalledPorts(coordinator)
     deinitCallbacksRef.contents->Array.forEach(cb => cb())
     deinitCallbacksRef := []
-    coordinator.pendingPortsRef := []
     coordinator.mountRef := None
     coordinator.readyRef := false
   }
