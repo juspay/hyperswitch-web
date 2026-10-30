@@ -67,7 +67,9 @@ let make = () => {
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (headers, setHeaders) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
-  let (paymentFlowCancelMetadata, setPaymentFlowCancelMetadata) = React.useState(_ => Dict.make())
+  let (paymentMethodFlowCancelMetadata, setPaymentMethodFlowCancelMetadata) = React.useState(_ =>
+    Dict.make()
+  )
   let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
@@ -94,7 +96,9 @@ let make = () => {
           let rawQrData = metaDataDict->getString("rawQrData", "")
           let publishableKey = metaDataDict->getString("publishableKey", "")
           setPublishableKey(_ => publishableKey)
-          setPaymentFlowCancelMetadata(_ => metaDataDict->getDictFromDict("paymentFlowCancel"))
+          setPaymentMethodFlowCancelMetadata(_ =>
+            metaDataDict->getDictFromDict("paymentMethodFlowCancel")
+          )
           setQrCode(_ => qrData)
           setRawQrData(_ => rawQrData)
 
@@ -180,9 +184,11 @@ let make = () => {
       let isPaymentPending =
         json->getDictFromJson->getString("status", "") === "requires_customer_action"
       if isShopperClose && isPaymentPending {
-        SubscriptionEventHooks.emitFullscreenPaymentFlowCancel(
-          ~paymentFlowCancelMetadata,
+        SubscriptionEventHooks.emitFullscreenPaymentMethodFlowCancel(
+          ~paymentMethodFlowCancelMetadata,
           ~step=QrCode,
+          // The attempt is still in progress, so retrying could charge the shopper twice.
+          ~canRetryPayment=false,
         )
       }
       postSubmitResponse(~jsonData=json, ~url=return_url)

@@ -138,10 +138,11 @@ let useHandleGooglePayResponse = (
           statusCode === "CANCELED" &&
             dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
         ) {
-          emitter.emitPaymentFlowCancel(
-            ~step=Sheet,
+          emitter.emitPaymentMethodFlowCancel(
+            ~step=PaymentSheet,
             ~paymentMethod="wallet",
             ~paymentMethodType="google_pay",
+            ~canRetryPayment=true,
           )
         }
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])

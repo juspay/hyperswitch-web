@@ -307,10 +307,11 @@ let useHandleApplePayResponse = (
             dict->Utils.getBool("isApplePaySheetCancelled", false) &&
               dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
           ) {
-            emitter.emitPaymentFlowCancel(
-              ~step=Sheet,
+            emitter.emitPaymentMethodFlowCancel(
+              ~step=PaymentSheet,
               ~paymentMethod="wallet",
               ~paymentMethodType="apple_pay",
+              ~canRetryPayment=true,
             )
           }
           setApplePayClicked(_ => false)

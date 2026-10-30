@@ -22,10 +22,11 @@ type emitter = {
     ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   ) => unit,
   emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
-  emitPaymentFlowCancel: (
-    ~step: PaymentEventTypes.paymentFlowStep,
+  emitPaymentMethodFlowCancel: (
+    ~step: PaymentEventTypes.paymentMethodFlowStep,
     ~paymentMethod: string,
     ~paymentMethodType: string,
+    ~canRetryPayment: bool,
   ) => unit,
 }
 
@@ -113,15 +114,25 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
-  let emitPaymentFlowCancel = (~step, ~paymentMethod, ~paymentMethodType) => {
+  let emitPaymentMethodFlowCancel = (
+    ~step,
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~canRetryPayment,
+  ) => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentFlowCancel,
+        ~eventType=PaymentMethodFlowCancel,
       )
     ) {
       Utils.messageParentWindow(
-        createPaymentFlowCancelPayload(~step, ~paymentMethod, ~paymentMethodType),
+        createPaymentMethodFlowCancelPayload(
+          ~step,
+          ~paymentMethod,
+          ~paymentMethodType,
+          ~canRetryPayment,
+        ),
       )
     }
   }
@@ -133,25 +144,31 @@ let useSubscriptionEventEmitter = (): emitter => {
     emitCvcStatus,
     emitSurcharge,
     emitOffers,
-    emitPaymentFlowCancel,
+    emitPaymentMethodFlowCancel,
   }
 }
 
 // ---------------------------------------------------------------------------
-// emitFullscreenPaymentFlowCancel
+// emitFullscreenPaymentMethodFlowCancel
 // ---------------------------------------------------------------------------
 // For steps rendered in the fullscreen iframe (3DS challenge, QR code modal).
 // That iframe never receives the element options, so it cannot read
 // subscriptionEvents; the loader drops the event for merchants who did not subscribe.
-// paymentFlowCancelMetadata is the "paymentFlowCancel" dict the element iframe
-// puts in the fullscreen metadata (see PaymentHelpers.intentCall).
-let emitFullscreenPaymentFlowCancel = (~paymentFlowCancelMetadata: Dict.t<JSON.t>, ~step) =>
+// paymentMethodFlowCancelMetadata is the "paymentMethodFlowCancel" dict the element iframe
+// puts in the fullscreen metadata (see PaymentHelpers.intentCall). canRetryPayment defaults
+// to the manual_retry_allowed value carried in that metadata.
+let emitFullscreenPaymentMethodFlowCancel = (
+  ~paymentMethodFlowCancelMetadata: Dict.t<JSON.t>,
+  ~step,
+  ~canRetryPayment=paymentMethodFlowCancelMetadata->Utils.getBool("canRetryPayment", false),
+) =>
   Utils.messageParentWindow(
-    createPaymentFlowCancelPayload(
-      ~elementType=paymentFlowCancelMetadata->Utils.getString("elementType", "payment"),
+    createPaymentMethodFlowCancelPayload(
+      ~elementType=paymentMethodFlowCancelMetadata->Utils.getString("elementType", "payment"),
       ~step,
-      ~paymentMethod=paymentFlowCancelMetadata->Utils.getString("paymentMethod", ""),
-      ~paymentMethodType=paymentFlowCancelMetadata->Utils.getString("paymentMethodType", ""),
+      ~paymentMethod=paymentMethodFlowCancelMetadata->Utils.getString("paymentMethod", ""),
+      ~paymentMethodType=paymentMethodFlowCancelMetadata->Utils.getString("paymentMethodType", ""),
+      ~canRetryPayment,
     ),
   )
 

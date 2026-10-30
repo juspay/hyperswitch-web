@@ -610,8 +610,8 @@ let rec intentCall = (
               }
             }
 
-            // Context for the fullscreen iframe to emit paymentFlowCancel with.
-            let paymentFlowCancelMetadata =
+            // Context for the fullscreen iframe to emit paymentMethodFlowCancel with.
+            let paymentMethodFlowCancelMetadata =
               [
                 ("elementType", componentName->JSON.Encode.string),
                 (
@@ -619,6 +619,7 @@ let rec intentCall = (
                   data->getDictFromJson->getString("payment_method", "")->JSON.Encode.string,
                 ),
                 ("paymentMethodType", intent.payment_method_type->JSON.Encode.string),
+                ("canRetryPayment", intent.manualRetryAllowed->JSON.Encode.bool),
               ]->getJsonFromArrayOfJson
 
             if intent.status == "requires_customer_action" {
@@ -644,7 +645,7 @@ let rec intentCall = (
                 let metaData = [
                   ("popupUrl", popupUrl->JSON.Encode.string),
                   ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
-                  ("paymentFlowCancel", paymentFlowCancelMetadata),
+                  ("paymentMethodFlowCancel", paymentMethodFlowCancelMetadata),
                 ]
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
@@ -697,7 +698,7 @@ let rec intentCall = (
                     ("paymentMethod", paymentMethod->JSON.Encode.string),
                     ("display_text", displayText->JSON.Encode.string),
                     ("border_color", borderColor->JSON.Encode.string),
-                    ("paymentFlowCancel", paymentFlowCancelMetadata),
+                    ("paymentMethodFlowCancel", paymentMethodFlowCancelMetadata),
                   ]->getJsonFromArrayOfJson
                 handleLogging(
                   ~optLogger,
@@ -741,6 +742,7 @@ let rec intentCall = (
                     ("headers", headerObj->JSON.Encode.object),
                     ("url", url.href->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
+                    ("paymentMethodFlowCancel", paymentMethodFlowCancelMetadata),
                   ]->Dict.fromArray
 
                 handleLogging(

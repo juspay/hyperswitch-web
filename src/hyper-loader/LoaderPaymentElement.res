@@ -276,18 +276,19 @@ let make = (
         }
       | Change =>
         // The fullscreen iframe cannot read subscriptionEvents, so it emits
-        // paymentFlowCancel unconditionally; drop it here unless subscribed.
-        let isPaymentFlowCancelSubscribed =
+        // paymentMethodFlowCancel unconditionally; drop it here unless subscribed.
+        let isPaymentMethodFlowCancelSubscribed =
           options
           ->getDictFromJson
           ->getStrArray("subscriptionEvents")
-          ->Array.includes("paymentFlowCancel")
-        let isUnsubscribedPaymentFlowCancel = (ev: Types.event) =>
-          !isPaymentFlowCancelSubscribed &&
+          ->Array.includes("paymentMethodFlowCancel")
+
+        let isUnsubscribedPaymentMethodFlowCancel = (ev: Types.event) =>
+          !isPaymentMethodFlowCancelSubscribed &&
           ev.data
           ->anyTypeToJson
           ->getOptionalJsonFromJson("eventName")
-          ->getStringFromOptionalJson("") === "paymentFlowCancel"
+          ->getStringFromOptionalJson("") === "paymentMethodFlowCancel"
         eventHandlerFunc(
           ev =>
             !ev.data.focus &&
@@ -295,7 +296,7 @@ let make = (
             !ev.data.ready &&
             !ev.data.confirmTriggered &&
             !ev.data.oneClickConfirmTriggered &&
-            !isUnsubscribedPaymentFlowCancel(ev) &&
+            !isUnsubscribedPaymentMethodFlowCancel(ev) &&
             matchesInstance(ev),
           eventHandler,
           Change,
