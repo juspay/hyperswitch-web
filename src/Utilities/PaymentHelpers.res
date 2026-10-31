@@ -2217,10 +2217,9 @@ let usePostSessionTokens = (
 let fetchEnabledAuthnMethodsToken = async (
   ~clientSecret,
   ~publishableKey,
-  ~logger,
   ~customPodUri,
   ~endpoint,
-  ~isPaymentSession=false,
+  ~isPaymentSession as _=false,
   ~profileId,
   ~authenticationId,
 ) => {
@@ -2242,32 +2241,33 @@ let fetchEnabledAuthnMethodsToken = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=ENABLED_AUTHN_METHODS_TOKEN_CALL,
-    ~logger,
-    ~method=#POST,
-    ~bodyStr=body->JSON.stringify,
-    ~headers,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(publishableKey),
-    ~onSuccess,
-    ~onFailure,
-    ~isPaymentSession,
+  let response = await ClickToPayLogger.observeApi(
+    ~event=EnabledAuthnMethodsToken,
+    ~url=uri,
+    ~call=() =>
+      Fetch.fetch(
+        uri,
+        {
+          method: #POST,
+          body: Fetch.Body.string(body->JSON.stringify),
+          headers: getHeaders(
+            ~headers,
+            ~uri,
+            ~customPodUri=Some(customPodUri),
+            ~publishableKey=Some(publishableKey),
+          ),
+        },
+      ),
   )
+  await response->Fetch.Response.json
 }
 
 let fetchEligibilityCheck = async (
   ~clientSecret,
   ~publishableKey,
-  ~logger,
   ~customPodUri,
   ~endpoint,
-  ~isPaymentSession=false,
+  ~isPaymentSession as _=false,
   ~profileId,
   ~authenticationId,
   ~bodyArr: array<(string, Core__JSON.t)>,
@@ -2293,32 +2293,30 @@ let fetchEligibilityCheck = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
-  let onSuccess = data => data
-
-  let onFailure = _ => JSON.Encode.null
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=ELIGIBILITY_CHECK_CALL,
-    ~logger,
-    ~method=#POST,
-    ~bodyStr=body->JSON.stringify,
-    ~headers,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(publishableKey),
-    ~onSuccess,
-    ~onFailure,
-    ~isPaymentSession,
+  let response = await ClickToPayLogger.observeApi(~event=EligibilityCheck, ~url=uri, ~call=() =>
+    Fetch.fetch(
+      uri,
+      {
+        method: #POST,
+        body: Fetch.Body.string(body->JSON.stringify),
+        headers: getHeaders(
+          ~headers,
+          ~uri,
+          ~customPodUri=Some(customPodUri),
+          ~publishableKey=Some(publishableKey),
+        ),
+      },
+    )
   )
+  await response->Fetch.Response.json
 }
 
 let fetchAuthenticationSync = async (
   ~clientSecret,
   ~publishableKey,
-  ~logger,
   ~customPodUri,
   ~endpoint,
-  ~isPaymentSession=false,
+  ~isPaymentSession as _=false,
   ~profileId,
   ~authenticationId,
   ~merchantId,
@@ -2346,23 +2344,22 @@ let fetchAuthenticationSync = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
-  let onSuccess = data => data
-
-  let onFailure = err => err
-
-  await fetchApiWithLogging(
-    uri,
-    ~eventName=AUTHENTICATION_SYNC_CALL,
-    ~logger,
-    ~method=#POST,
-    ~bodyStr=body->JSON.stringify,
-    ~headers,
-    ~customPodUri=Some(customPodUri),
-    ~publishableKey=Some(publishableKey),
-    ~onSuccess,
-    ~onFailure,
-    ~isPaymentSession,
+  let response = await ClickToPayLogger.observeApi(~event=AuthenticationSync, ~url=uri, ~call=() =>
+    Fetch.fetch(
+      uri,
+      {
+        method: #POST,
+        body: Fetch.Body.string(body->JSON.stringify),
+        headers: getHeaders(
+          ~headers,
+          ~uri,
+          ~customPodUri=Some(customPodUri),
+          ~publishableKey=Some(publishableKey),
+        ),
+      },
+    )
   )
+  await response->Fetch.Response.json
 }
 
 let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {

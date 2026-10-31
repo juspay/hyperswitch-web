@@ -131,53 +131,28 @@ module ErrorCard = {
     ~componentName,
     ~publishableKey,
   ) => {
-    let beaconApiCall = data => {
-      if data->Array.length > 0 {
-        let logData = data->Array.map(HyperLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
-        Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
-      }
-    }
-
-    // Crash logs are beaconed outside the logger, so carry the session and merchant
-    // across by hand or they cannot be attributed to the flow that crashed.
     let keys = Jotai.useAtomValue(JotaiAtoms.keys)
     let sessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
-
     React.useEffect0(() => {
-      let loggingLevel = GlobalVars.loggingLevelStr
-      let enableLogging = GlobalVars.enableLogging
-      if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Array.includes(loggingLevel) {
-        let errorDict =
-          error
+      LoggerContext.setSessionData(
+        ~sessionId,
+        ~merchantId=publishableKey !== "" ? publishableKey : keys.publishableKey,
+        (),
+      )
+      let details = [
+        ("component", componentName->JSON.Encode.string),
+        ("boundary_level", level->WebLoggerUtils.variantName->JSON.Encode.string),
+        (
+          "component_stack",
+          error.componentStack
           ->Identity.anyTypeToJson
-          ->Utils.getDictFromJson
-
-        errorDict->Dict.set("componentName", componentName->JSON.Encode.string)
-
-        let errorLog: HyperLoggerTypes.logFile = {
-          logType: ERROR,
-          timestamp: Date.now()->Float.toString,
-          sessionId,
-          source: "orca-elements",
-          version: GlobalVars.repoVersion,
-          value: errorDict->JSON.Encode.object->JSON.stringify,
-          // internalMetadata: "",
-          category: USER_ERROR,
-          paymentId: "",
-          merchantId: publishableKey !== "" ? publishableKey : keys.publishableKey,
-          browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-          browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
-          platform: Window.Navigator.platform,
-          userAgent: Window.Navigator.userAgent,
-          appId: "",
-          eventName: SDK_CRASH,
-          latency: "",
-          paymentMethod: "",
-          firstEvent: false,
-          metadata: JSON.Encode.null,
-        }
-        beaconApiCall([errorLog])
-      }
+          ->JSON.stringify
+          ->String.slice(~start=0, ~end=2048)
+          ->JSON.Encode.string,
+        ),
+      ]
+      let exn = error.error->JsExn.anyToExnInternal
+      SdkLogger.logCrash(~origin=ErrorBoundary, ~details, ~exn)
       None
     })
 
