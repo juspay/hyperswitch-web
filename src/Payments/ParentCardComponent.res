@@ -27,7 +27,6 @@ let make = (
   } = Jotai.useAtomValue(JotaiAtoms.keys)
   let sessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
@@ -65,12 +64,12 @@ let make = (
     "hyper_" ++
     flowType
     ->CardThemeType.getPaymentModeToStrMapper
-    ->LoggerUtils.toSnakeCaseWithSeparator("_")
+    ->WebLoggerUtils.snakeCase
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
-  let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
+  let intent = PaymentHelpers.usePaymentIntent(Card)
+  let saveCard = PaymentHelpersV2.useSaveCard(Card)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
@@ -198,10 +197,7 @@ let make = (
     isEligibilityPending,
     triggerOnCardNumberChange,
     resetEligibilityState: _,
-  } = UseCardEligibility.useCardEligibility(
-    ~logger=loggerState,
-    ~runEligibility=isRawNewCardFlow && !isBancontact,
-  )
+  } = UseCardEligibility.useCardEligibility(~runEligibility=isRawNewCardFlow && !isBancontact)
 
   let selectedOfferQuoteIds =
     eligibilityOfferDetails
@@ -300,9 +296,6 @@ let make = (
   | None => ("", "", cardBrand, "", "")
   }
 
-  // Preserve the pre-split, unconditional `paymentMethodInfo` message. The
-  // legacy top-level hook cannot observe nested card state, so Card now emits
-  // it here while all non-card methods continue using that hook.
   React.useEffect(() => {
     if !isSavedCardFlow && !isBancontact {
       switch cardInfo {
@@ -354,6 +347,9 @@ let make = (
     ~empty=cardFieldsEmpty,
     ~paymentType="card",
     ~enabled=!isSavedCardFlow && isActive,
+    ~loggedPaymentMethod=?isBancontact
+      ? LoggerPaymentMethod.fromPair(~method=paymentMethod, ~methodType=paymentMethodType)
+      : Some(LoggerPaymentMethod.Card),
   )
   SubscriptionEventHooks.useEmitFormStatus(
     ~empty=cardFieldsEmpty,
@@ -399,8 +395,6 @@ let make = (
     None
   }, (isSavedCardFlow, hasCardFieldStatus, cardFieldsComplete, isInstallmentValid))
 
-  // The legacy direct Card flow emitted this only after all three validation
-  // states had resolved. Preserve that timing at the public iframe boundary.
   React.useEffect(() => {
     if (
       !isSavedCardFlow &&
@@ -458,6 +452,7 @@ let make = (
           ("publishableKey", currentPublishableKey->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
           ("sdkSessionId", currentSessionId->JSON.Encode.string),
+          LoggerContext.sharedContext(),
           ("customPodUri", currentCustomPodUri->JSON.Encode.string),
           ("paymentId", currentPaymentId->JSON.Encode.string),
           ("parentURL", Window.Location.origin->JSON.Encode.string),
@@ -502,7 +497,6 @@ let make = (
         ~appearance=Dict.make()->JSON.Encode.object,
         ~redirectionFlags,
         ~sdkDomainUrl=ApiEndpoint.vaultSdkDomainUrl,
-        ~logger=Some(loggerState),
         ~confirmPayment=_json => Promise.resolve(JSON.Encode.null),
         ~animateResize=false,
         ~surfaceFamily="vault",
@@ -641,10 +635,6 @@ let make = (
         messageParentWindow([("expiryDate", dict->getString("expiryDate", "")->JSON.Encode.string)])
       }
       if isInnerCardMessage && dict->Dict.get("vgsScriptLoadFailed")->Option.isSome {
-        loggerState.setLogError(
-          ~value=`Error during loading VGS script`->Identity.anyTypeToJson->JSON.stringify,
-          ~eventName=VGS_VAULT_FLOW,
-        )
         setIsVgsScriptReady(_ => false)
       }
     }
@@ -805,9 +795,12 @@ let make = (
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && !hasCardFieldStatus {
-        // The public Payment Element can become ready before the nested collector has
-        // installed its submit listener. Settle the merchant promise instead of posting a
-        // message that could be dropped during that startup window.
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: localeString.enterFieldsText}),
+          ~paymentMethod=?isBancontact
+            ? LoggerPaymentMethod.fromPair(~method=paymentMethod, ~methodType=paymentMethodType)
+            : Some(LoggerPaymentMethod.Card),
+        )
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterFieldsText,
@@ -929,7 +922,18 @@ let make = (
                 ~confirmParams=confirm.confirmParams,
               )
             } else if dict->Dict.get("cardTokenFail")->Option.isSome {
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+              let message = "Something went wrong"
+              SdkLogger.logLifecycle(
+                ~event=VaultFlowFailed({reason: TokenizationFailed}),
+                ~paymentMethod=?isBancontact
+                  ? LoggerPaymentMethod.fromPair(
+                      ~method=paymentMethod,
+                      ~methodType=paymentMethodType,
+                    )
+                  : Some(LoggerPaymentMethod.Card),
+                ~message,
+              )
+              postFailedSubmitResponse(~errortype="server_error", ~message)
             }
             if isInnerCardMessage && dict->Dict.get("submitSuccessful")->Option.isSome {
               messageParentWindow(dict->Dict.toArray)
@@ -957,8 +961,15 @@ let make = (
 
         iframeRef.current->Window.iframePostMessage(innerMessage, ~targetOrigin=innerIframeOrigin)
         if !outerValid {
-          let setUserError = message =>
+          let setUserError = message => {
+            SdkLogger.logLifecycle(
+              ~event=FormValidationFailed({reason: message}),
+              ~paymentMethod=?isBancontact
+                ? LoggerPaymentMethod.fromPair(~method=paymentMethod, ~methodType=paymentMethodType)
+                : Some(LoggerPaymentMethod.Card),
+            )
             postFailedSubmitResponse(~errortype="validation_error", ~message)
+          }
           if !areRequiredFieldsValid || !isNicknameValid {
             setUserError(localeString.enterValidDetailsText)
           } else if !isInstallmentValid {

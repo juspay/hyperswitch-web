@@ -2,8 +2,6 @@ open Utils
 @react.component
 let make = () => {
   let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
-  let logger = HyperLogger.make(~source=Elements(Payment))
-
   let stateMetadataRef = React.useRef(Dict.make()->JSON.Encode.object)
   let consumePostMessageForThreeDsMethodCompletionRef = React.useRef(false)
   let threeDsUrlRef = React.useRef("")
@@ -18,7 +16,7 @@ let make = () => {
   let (isStartTimeout, setIsStartTimeout) = React.useState(_ => false)
   let (isStartPolling, setIsStartPolling) = React.useState(_ => false)
 
-  let handleIframeContentLoaded = () => {
+  let handleIframeContentLoaded = (~inferred=false) => {
     stateMetadataRef.current
     ->Utils.getDictFromJson
     ->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
@@ -27,14 +25,14 @@ let make = () => {
     let iframeId = metadataDict->getString("iframeId", "")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
-      LoggerUtils.handleLogging(
-        ~optLogger=Some(logger),
-        ~eventName=THREE_DS_METHOD_RESULT,
-        ~value="Y",
-        ~paymentMethod="CARD",
+      SdkLogger.logLifecycle(
+        ~event=ThreeDsMethodCompleted,
+        ~details=[("inferred", inferred->JSON.Encode.bool)],
+        ~paymentMethod=Card,
       )
 
       isThreeDSMethodCompletionFired.current = true
+      setIsStartTimeout(_ => false)
 
       // Let the parent replace this frame in one transition. Closing it first
       // can leave the authentication message without a source across sites.
@@ -89,29 +87,24 @@ let make = () => {
             ->Utils.getString("type", "")
 
           if errorName === "SecurityError" {
-            handleIframeContentLoaded()
+            handleIframeContentLoaded(~inferred=true)
           }
         }
       }
     }
   }
 
-  let handleOnError = value => {
-    LoggerUtils.handleLogging(
-      ~optLogger=Some(logger),
-      ~eventName=THREE_DS_METHOD_RESULT,
-      ~value,
-      ~paymentMethod="CARD",
-      ~logType=ERROR,
-    )
-    stateMetadataRef.current
-    ->Utils.getDictFromJson
-    ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
-
+  let handleOnError = (event: SdkLogger.lifecycleEvent, ~exn=?) => {
     let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
     let iframeId = metadataDict->getString("iframeId", "")
 
+    SdkLogger.logLifecycle(~event, ~paymentMethod=Card, ~exn?)
+
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
+      stateMetadataRef.current
+      ->Utils.getDictFromJson
+      ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
+
       isThreeDSMethodCompletionFired.current = true
 
       messageParentWindow([
@@ -184,7 +177,7 @@ let make = () => {
   React.useEffect(() => {
     if isStartTimeout {
       let timeoutId = setTimeout(() => {
-        handleOnError("Timeout while waiting for ThreeDS Method completion")
+        handleOnError(ThreeDsMethodTimedOut)
       }, 15000) // 15 seconds timeout
 
       Some(
@@ -228,14 +221,6 @@ let make = () => {
               false,
             )
 
-          let paymentIntentId = metaDataDict->Utils.getString("paymentIntentId", "")
-          let publishableKey = metaDataDict->Utils.getString("publishableKey", "")
-          let sdkAuthorization = metaDataDict->Utils.getString("sdkAuthorization", "")
-
-          logger.setClientSecret(paymentIntentId)
-          logger.setSdkAuthorization(sdkAuthorization)
-          logger.setMerchantId(publishableKey)
-
           let ele = Window.querySelector("#threeDsInvisibleDiv")
 
           switch ele->Nullable.toOption {
@@ -261,17 +246,19 @@ let make = () => {
                 setIsStartTimeout(_ => true)
                 form.submit()
               } catch {
-              | err => {
-                  let exceptionMessage = err->Utils.formatException->JSON.stringify
-                  handleOnError(exceptionMessage)
-                }
+              | err => handleOnError(ThreeDsMethodFailed({reason: FormSubmitFailed}), ~exn=err)
               }
             }
-          | None => handleOnError("Unable to Locate threeDsInvisibleDiv")
+          | None => handleOnError(ThreeDsMethodFailed({reason: MissingContainer}))
           }
         }
       } catch {
-      | _err => ()
+      | exn =>
+        SdkLogger.logCrash(
+          ~origin=ParentWindowMessage,
+          ~exn,
+          ~message="3DS method setup from parent message threw; method form not submitted",
+        )
       }
 
       if consumePostMessageForThreeDsMethodCompletionRef.current && threeDsUrlRef.current !== "" {
@@ -309,7 +296,7 @@ let make = () => {
       ref={iframeRef->ReactDOM.Ref.domRef}
       style={outline: "none"}
       onLoad={handleOnLoad}
-      onError={_ => handleOnError("ThreeDS Method Iframe Load Error")}
+      onError={_ => handleOnError(ThreeDsMethodFailed({reason: IframeLoadFailed}))}
     />
   </>
 }

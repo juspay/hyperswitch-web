@@ -6,16 +6,20 @@ let make = () => {
   let (returnUrl, setReturnUrl) = React.useState(_ => "")
   let (downloadUrl, setDownloadUrl) = React.useState(_ => "")
   let (reference, setReference) = React.useState(_ => "")
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
-  let (downloadCounter, setDownloadCounter) = React.useState(_ => 0)
   let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
+  let (paymentMethodFamily, setPaymentMethodFamily) = React.useState(_ => "")
   let (paymentIntent, setPaymentIntent) = React.useState(_ => JSON.Encode.null)
   let (loader, setLoader) = React.useState(_ => true)
   let linkRef = React.useRef(Nullable.null)
+  let autoDownloading = React.useRef(false)
 
   React.useEffect(() => {
     switch linkRef.current->Nullable.toOption {
-    | Some(link) => link->Window.click
+    | Some(link) => {
+        autoDownloading.current = true
+        link->Window.click
+        autoDownloading.current = false
+      }
     | None => ()
     }
     None
@@ -33,6 +37,7 @@ let make = () => {
         setDownloadUrl(_ => metaDataDict->getString("voucherUrl", ""))
         setReference(_ => metaDataDict->getString("reference", ""))
         setPaymentMethod(_ => metaDataDict->getString("paymentMethod", ""))
+        setPaymentMethodFamily(_ => metaDataDict->getString("paymentMethodFamily", ""))
         setPaymentIntent(_ => metaDataDict->getJsonObjectFromDict("payment_intent_data"))
         setLoader(_ => false)
       }
@@ -59,12 +64,13 @@ let make = () => {
               href=downloadUrl
               ref={linkRef->ReactDOM.Ref.domRef}
               onClick={_ => {
-                setDownloadCounter(c => c + 1)
-                LoggerUtils.handleLogging(
-                  ~optLogger=Some(logger),
-                  ~value=downloadCounter->Int.toString,
-                  ~eventName=DISPLAY_VOUCHER,
-                  ~paymentMethod,
+                SdkLogger.logUser(
+                  ~event=VoucherDownloadRequested,
+                  ~details=autoDownloading.current ? [("auto", true->JSON.Encode.bool)] : [],
+                  ~paymentMethod=?LoggerPaymentMethod.fromPair(
+                    ~method=paymentMethodFamily,
+                    ~methodType=paymentMethod,
+                  ),
                 )
               }}
             >

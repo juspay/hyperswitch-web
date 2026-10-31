@@ -8,7 +8,7 @@ let make = () => {
   let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let (loggedPaymentMethod, setLoggedPaymentMethod) = React.useState(_ => None)
 
   let eventsToSendToParent = ["openurl_if_required"]
   let isTrustedChild = (ev: Window.event) =>
@@ -21,7 +21,12 @@ let make = () => {
       ->Option.getOr(false)
   eventsToSendToParent->UtilityHooks.useSendEventsToParent(~isTrustedChild)
 
-  let handleOnClose = () =>
+  let handleOnClose = () => {
+    SdkLogger.logUser(
+      ~event=ThreeDsPopupDismissed,
+      ~details=[("redirect_url_received", (redirectResponseUrl != "")->JSON.Encode.bool)],
+      ~paymentMethod=?loggedPaymentMethod,
+    )
     if redirectResponseUrl == "" {
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
       closePaymentLoaderIfAny()
@@ -34,6 +39,7 @@ let make = () => {
         ->getDictFromJson
       messageParentWindow(customEvent->Dict.toArray)
     }
+  }
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -49,13 +55,23 @@ let make = () => {
           let redirectResponseUrl = metaDataDict->getString("redirectResponseUrl", "")
           setPopupUrl(_ => popupUrl)
           setRedirectResponseUrl(_ => redirectResponseUrl)
+          setLoggedPaymentMethod(_ =>
+            LoggerPaymentMethod.fromPair(
+              ~method=metaDataDict->getString("paymentMethodFamily", ""),
+              ~methodType=metaDataDict->getString("paymentMethod", ""),
+            )
+          )
           setloader(_ => false)
         }
       } catch {
       | err => {
-          let exceptionMessage = err->formatException->JSON.stringify
-          loggerState.setLogError(~value=exceptionMessage, ~eventName=THREE_DS_POPUP_REDIRECTION)
-          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
+          let message = "Something went wrong."
+          SdkLogger.logLifecycle(
+            ~event=ThreeDsPopupFailed({reason: MessageHandlingFailed}),
+            ~exn=err,
+            ~message,
+          )
+          postFailedSubmitResponse(~errortype="error", ~message)
         }
       }
     }

@@ -18,6 +18,31 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
+@send
+external postMessageWithTransfer: (
+  Dom.element,
+  string,
+  string,
+  array<MessageChannelBinding.port>,
+) => unit = "postMessage"
+
+let iframePostMessageWithTransfer = (
+  iframeRef: nullable<Dom.element>,
+  message: string,
+  ~targetOrigin=GlobalVars.targetOrigin,
+  ~transfer,
+) => {
+  switch iframeRef->Nullable.toOption {
+  | Some(ref) =>
+    try {
+      ref->Window.contentWindow->postMessageWithTransfer(message, targetOrigin, transfer)
+    } catch {
+    | _ => ()
+    }
+  | None => Console.error("This element does not exist or is not mounted yet.")
+  }
+}
+
 type dataModule = {states: JSON.t}
 
 @val
@@ -168,27 +193,27 @@ let getDecodedBoolFromJson = (json, callbackFunc, defaultValue) => {
   ->Option.getOr(defaultValue)
 }
 
-let getRequiredString = (dict, key, default, ~logger) => {
+let getRequiredString = (dict, key, default) => {
   let optionalStr = getOptionString(dict, key)
   switch optionalStr {
   | Some(val) => {
-      val == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr=key, ~logger) : ()
+      val == "" ? manageErrorWarning(MissingParameter, ~dynamicStr=key) : ()
       val
     }
   | None => {
-      manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr=key, ~logger)
+      manageErrorWarning(MissingParameter, ~dynamicStr=key)
       optionalStr->Option.getOr(default)
     }
   }
 }
 
-let getWarningString = (dict, key, default, ~logger) => {
+let getWarningString = (dict, key, default) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.string {
     | Some(val) => val
     | None =>
-      manageErrorWarning(TYPE_STRING_ERROR, ~dynamicStr=key, ~logger)
+      manageErrorWarning(ExpectedString, ~dynamicStr=key)
       default
     }
   | None => default
@@ -232,25 +257,25 @@ let getBool = (dict, key, default) => {
 
 let getOptionsDict = options => options->Option.getOr(JSON.Encode.null)->getDictFromJson
 
-let getBoolWithWarning = (dict, key, default, ~logger) => {
+let getBoolWithWarning = (dict, key, default) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.bool {
     | Some(val) => val
     | None =>
-      manageErrorWarning(TYPE_BOOL_ERROR, ~dynamicStr=key, ~logger)
+      manageErrorWarning(ExpectedBoolean, ~dynamicStr=key)
       default
     }
   | None => default
   }
 }
-let getNumberWithWarning = (dict, key, ~logger, default) => {
+let getNumberWithWarning = (dict, key, default) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.float {
     | Some(val) => val->Float.toInt
     | None =>
-      manageErrorWarning(TYPE_INT_ERROR, ~dynamicStr=key, ~logger)
+      manageErrorWarning(ExpectedNumber, ~dynamicStr=key)
       default
     }
   | None => default
@@ -1110,8 +1135,9 @@ let fetchApi = (
 
 let fetchApiWithLogging = async (
   uri,
-  ~eventName,
-  ~logger,
+  ~event: SdkLogger.apiEvent,
+  ~context=?,
+  ~source=?,
   ~onSuccess,
   ~onFailure,
   ~bodyStr="",
@@ -1119,69 +1145,44 @@ let fetchApiWithLogging = async (
   ~method,
   ~customPodUri=None,
   ~publishableKey=None,
-  ~isPaymentSession=false,
   ~onCatchCallback=None,
   ~sdkAuthorization=None,
   ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
-  open LoggerUtils
-
-  // * Log request initiation
-  LogAPIResponse.logApiResponse(
-    ~logger,
-    ~uri,
-    ~eventName=apiEventInitMapper(eventName),
-    ~status=Request,
-  )
-
   try {
-    let body = switch method {
-    | #GET => None
-    | _ => Some(Fetch.Body.string(bodyStr))
-    }
-
-    let resp = await Fetch.fetch(
-      uri,
-      {
-        method,
-        ?body,
-        ?signal,
-        headers: getHeaders(
-          ~headers=headers->Option.getOr(Dict.make()),
-          ~uri,
-          ~customPodUri,
-          ~publishableKey,
-          ~sdkAuthorization,
-        ),
+    let (response, data) = await SdkLogger.observeApi(
+      ~event,
+      ~context?,
+      ~source?,
+      ~url=uri,
+      ~failureOf=WebLoggerUtils.httpBodyFailure,
+      ~detailsOf=WebLoggerUtils.httpBodyDetails,
+      ~details=bodyStr->WebLoggerUtils.payloadDetails,
+      ~call=async () => {
+        let body = switch method {
+        | #GET => None
+        | _ => Some(Fetch.Body.string(bodyStr))
+        }
+        let response = await Fetch.fetch(
+          uri,
+          {
+            method,
+            ?body,
+            ?signal,
+            headers: getHeaders(
+              ~headers=headers->Option.getOr(Dict.make()),
+              ~uri,
+              ~customPodUri,
+              ~publishableKey,
+              ~sdkAuthorization,
+            ),
+          },
+        )
+        let data = await response->Fetch.Response.json
+        (response, data)
       },
     )
-
-    let statusCode = resp->Fetch.Response.status
-
-    if resp->Fetch.Response.ok {
-      let data = await Fetch.Response.json(resp)
-      LogAPIResponse.logApiResponse(
-        ~logger,
-        ~uri,
-        ~eventName=Some(eventName),
-        ~status=Success,
-        ~statusCode,
-        ~isPaymentSession,
-      )
-      onSuccess(data)
-    } else {
-      let data = await resp->Fetch.Response.json
-      LogAPIResponse.logApiResponse(
-        ~logger,
-        ~uri,
-        ~eventName=Some(eventName),
-        ~status=Error,
-        ~statusCode,
-        ~data,
-        ~isPaymentSession,
-      )
-      onFailure(data)
-    }
+    response->Fetch.Response.ok ? onSuccess(data) : onFailure(data)
   } catch {
   | err => {
       let exceptionMessage = err->formatException
@@ -1189,17 +1190,8 @@ let fetchApiWithLogging = async (
         "Unexpected error while making request:",
         {
           "uri": uri,
-          "event": eventName,
           "error": exceptionMessage,
         },
-      )
-      LogAPIResponse.logApiResponse(
-        ~logger,
-        ~uri,
-        ~eventName=Some(eventName),
-        ~status=Exception,
-        ~data=exceptionMessage,
-        ~isPaymentSession,
       )
       switch onCatchCallback {
       | Some(fun) => fun(exceptionMessage)
@@ -1699,13 +1691,13 @@ let makeOneClickHandlerPromise = (sdkHandleIsThere, ~parentOrigin, ~parentWindow
 }
 
 let generateRandomString = length => {
-  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-  let result = ref("")
+  let characters = "abcdefghijklmnopqrstuvwxyz0123456789"
   let charactersLength = characters->String.length
-  Int.range(0, length)->Array.forEach(_ => {
-    let charIndex = mod((Math.random() *. 100.0)->Float.toInt, charactersLength)
-    result := result.contents ++ characters->String.charAt(charIndex)
-  })
+  let result = ref("")
+  for _ in 1 to length {
+    let index = (Math.random() *. charactersLength->Int.toFloat)->Float.toInt
+    result := result.contents ++ characters->String.charAt(index)
+  }
   result.contents
 }
 
@@ -2075,67 +2067,11 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
 }
 
 let getStringFromBool = val => val ? "true" : "false"
-let loadScriptIfNotExist = (~url, ~logger: HyperLoggerTypes.loggerMake, ~eventName) => {
-  if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
-    let script = Window.createElement("script")
-    script->Window.elementSrc(url)
-    script->Window.elementOnerror(_ => {
-      logger.setLogError(~value="Script failed to load", ~eventName)
-    })
-    script->Window.elementOnload(() => {
-      logger.setLogInfo(~value="Script loaded successfully", ~eventName)
-    })
-    Window.body->Window.appendChild(script)
-  }
-}
 
 let defaultCountryCode = {
   let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = getClientCountry(clientTimeZone)
   clientCountry.isoAlpha2
-}
-
-let rec maskStringValuesInJson = (~value, ~currentPath, ~depth, ~shouldMaskField) => {
-  if depth > 10 {
-    "***MAX_DEPTH_REACHED***"->JSON.Encode.string
-  } else {
-    switch value->JSON.Classify.classify {
-    | String(str) =>
-      currentPath->shouldMaskField
-        ? (str->String.length > 0 ? "***REDACTED***" : "***EMPTY***")->JSON.Encode.string
-        : value
-
-    | Object(dict) =>
-      dict
-      ->Dict.toArray
-      ->Array.map(((key, val)) => {
-        let newPath = currentPath == "" ? key : `${currentPath}.${key}`
-        (
-          key,
-          maskStringValuesInJson(
-            ~value=val,
-            ~currentPath=newPath,
-            ~depth=depth + 1,
-            ~shouldMaskField,
-          ),
-        )
-      })
-      ->getJsonFromArrayOfJson
-    | Array(arr) =>
-      arr
-      ->Array.mapWithIndex((item, index) => {
-        let newPath = `${currentPath}[${index->Int.toString}]`
-        maskStringValuesInJson(
-          ~value=item,
-          ~currentPath=newPath,
-          ~depth=depth + 1,
-          ~shouldMaskField,
-        )
-      })
-      ->JSON.Encode.array
-    | _ => value
-    }
-  }
 }
 
 let getSdkAuthorizationData = sdkAuthorization => {
