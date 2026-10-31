@@ -74,8 +74,7 @@ let make = () => {
 
       | (PaymentSurfaceFamily.PaymentsFamily, None) =>
         Console.warn(
-          "[PaymentMethodsSDK] PaymentsFamily with no fieldName — " ++
-          "bundled payments surface is not wired. Treat as a bug.",
+          "[PaymentMethodsSDK] PaymentsFamily with no fieldName — " ++ "bundled payments surface is not wired. Treat as a bug.",
         )
         React.null
 

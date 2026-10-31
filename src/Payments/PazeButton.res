@@ -120,7 +120,8 @@ let make = (~token: SessionsType.token) => {
       border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
       pointerEvents: updateSession ? "none" : "auto",
       opacity: showLoader || updateSession ? "0.5" : "1.0",
-    }>
+    }
+  >
     {showLoader ? <Spinner /> : <Icon name="paze" size=55 />}
   </button>
 }

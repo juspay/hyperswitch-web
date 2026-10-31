@@ -10,7 +10,8 @@ module CoBadgeCardSchemeDropDown = {
         let target = ev->ReactEvent.Form.target
         let value = target["value"]
         setCardBrand(_ => value)
-      }}>
+      }}
+    >
       <option disabled=true> {"Select a card brand"->React.string} </option>
       {eligibleCardSchemes
       ->Array.mapWithIndex((item, i) => {

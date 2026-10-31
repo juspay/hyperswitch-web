@@ -130,7 +130,8 @@ let make = () => {
                 fontSize: themeObj.fontSizeSm,
                 alignSelf: "start",
                 textAlign: "left",
-              }>
+              }
+            >
               {React.string(bankError)}
             </div>
           </RenderIf>

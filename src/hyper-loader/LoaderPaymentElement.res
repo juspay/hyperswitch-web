@@ -172,9 +172,9 @@ let make = (
     let setPaymentIframeRef = ref => {
       mountedIframeRef := ref
       setIframeRef(ref)
-      ref->Nullable.toOption->Option.forEach(frame =>
-        SdkMessageSources.register(~frame, ~origin=iframeOrigin)
-      )
+      ref
+      ->Nullable.toOption
+      ->Option.forEach(frame => SdkMessageSources.register(~frame, ~origin=iframeOrigin))
     }
 
     let (elementIframeWrapperDivId, elementIframeId) = if isPaymentManagementElement {

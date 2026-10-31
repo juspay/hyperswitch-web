@@ -3,7 +3,7 @@ open JotaiAtomTypes
 open Utils
 
 let formatSortCode = sortcode => {
-  let formatted = sortcode->String.replaceRegExp(%re("/\D+/g"), "")
+  let formatted = sortcode->String.replaceRegExp(/\D+/g, "")
   let firstPart = formatted->String.slice(~start=0, ~end=2)
   let secondPart = formatted->String.slice(~start=2, ~end=4)
   let thirdpart = formatted->String.slice(~start=4, ~end=6)
@@ -18,7 +18,7 @@ let formatSortCode = sortcode => {
     formatted
   }
 }
-let cleanSortCode = str => str->String.replaceRegExp(%re("/-/g"), "")
+let cleanSortCode = str => str->String.replaceRegExp(/-/g, "")
 
 @react.component
 let make = () => {

@@ -79,9 +79,10 @@ let mergeSubscriptionEvents = (
     ->Option.flatMap(JSON.Decode.array)
     ->Option.getOr([])
     ->Array.filterMap(JSON.Decode.string)
-  let merged = incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
-    acc->Array.includes(event) ? acc : acc->Array.concat([event])
-  )
+  let merged =
+    incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
+      acc->Array.includes(event) ? acc : acc->Array.concat([event])
+    )
   if merged->Array.length > subscriptionEventsRef.contents->Array.length {
     subscriptionEventsRef := merged
     true
@@ -274,10 +275,7 @@ let registerField = (
 ): unit => {
   let fieldsDict = fields.contents->getDictFromJson
   let fieldMeta =
-    [
-      ("id", fieldId->JSON.Encode.string),
-      ("type", fieldType->JSON.Encode.string),
-    ]
+    [("id", fieldId->JSON.Encode.string), ("type", fieldType->JSON.Encode.string)]
     ->Array.concat(extraMeta)
     ->Dict.fromArray
     ->JSON.Encode.object

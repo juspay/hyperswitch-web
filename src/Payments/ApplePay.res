@@ -421,7 +421,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
                 pointerEvents: updateSession ? "none" : "auto",
               }
               className="apple-pay-button-with-text apple-pay-button-black-with-text"
-              onClick={_ => onApplePayButtonClicked()}>
+              onClick={_ => onApplePayButtonClicked()}
+            >
               <span className="text"> {React.string("Pay with")} </span>
               <span className="logo" />
             </button>

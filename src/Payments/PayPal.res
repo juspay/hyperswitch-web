@@ -201,9 +201,11 @@ let make = (~walletOptions) => {
         pointerEvents: updateSession ? "none" : "auto",
         opacity: updateSession ? "0.5" : "1.0",
       }
-      onClick={_ => options.readOnly ? () : onPaypalClick()}>
+      onClick={_ => options.readOnly ? () : onPaypalClick()}
+    >
       <div
-        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
+        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}
+      >
         {if !paypalClicked {
           payPalIcon
         } else {

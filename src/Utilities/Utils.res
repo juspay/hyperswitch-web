@@ -423,14 +423,14 @@ let toCamelCase = str => {
   } else {
     str
     ->String.toLowerCase
-    ->String.unsafeReplaceRegExpBy0(%re(`/([-_][a-z])/g`), (
+    ->String.unsafeReplaceRegExpBy0(/([-_][a-z])/g, (
       ~match as letter,
       ~offset as _,
       ~input as _,
     ) => {
       letter->String.toUpperCase
     })
-    ->String.replaceRegExp(%re(`/[^a-zA-Z]/g`), "")
+    ->String.replaceRegExp(/[^a-zA-Z]/g, "")
   }
 }
 
@@ -440,25 +440,23 @@ let toCamelCaseWithNumberSupport = str => {
   } else if str->String.includes("_") {
     str
     ->String.toLowerCase
-    ->String.unsafeReplaceRegExpBy0(%re(`/([-_][a-z])/g`), (
+    ->String.unsafeReplaceRegExpBy0(/([-_][a-z])/g, (
       ~match as letter,
       ~offset as _,
       ~input as _,
     ) => {
       letter->String.toUpperCase
     })
-    ->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+    ->String.replaceRegExp(/[^a-zA-Z0-9]/g, "")
   } else {
-    str->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+    str->String.replaceRegExp(/[^a-zA-Z0-9]/g, "")
   }
 }
 
 let toSnakeCase = str => {
-  str->String.unsafeReplaceRegExpBy0(%re("/[A-Z]/g"), (
-    ~match as letter,
-    ~offset as _,
-    ~input as _,
-  ) => `_${letter->String.toLowerCase}`)
+  str->String.unsafeReplaceRegExpBy0(/[A-Z]/g, (~match as letter, ~offset as _, ~input as _) =>
+    `_${letter->String.toLowerCase}`
+  )
 }
 type case = CamelCase | SnakeCase | KebabCase
 let rec transformKeys = (json: JSON.t, to: case) => {
@@ -562,9 +560,7 @@ let removeDuplicate = arr => {
 }
 
 let isVpaIdValid = vpaId => {
-  switch vpaId->String.match(
-    %re("/^[a-zA-Z0-9]([a-zA-Z0-9.-]{1,50})[a-zA-Z0-9]@[a-zA-Z0-9]{2,}$/"),
-  ) {
+  switch vpaId->String.match(/^[a-zA-Z0-9]([a-zA-Z0-9.-]{1,50})[a-zA-Z0-9]@[a-zA-Z0-9]{2,}$/) {
   | Some(_match) => Some(true)
   | None => vpaId->String.length > 0 ? Some(false) : None
   }
@@ -575,9 +571,7 @@ let checkEmailValid = (
   fn: (JotaiAtomTypes.field => JotaiAtomTypes.field) => unit,
 ) => {
   switch email.value->String.match(
-    %re(
-      "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/"
-    ),
+    /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   ) {
   | Some(_match) =>
     fn(prev => {
@@ -685,8 +679,7 @@ let constructClass = (~classname, ~dict) => {
   ->Array.map(entry => {
     let (key, value) = entry
 
-    let toKebabCaseIfNeeded = key =>
-      key->String.includes("-") ? key : key->toKebabCase
+    let toKebabCaseIfNeeded = key => key->String.includes("-") ? key : key->toKebabCase
 
     let class = if !(key->String.startsWith(":")) && !(key->String.startsWith(".")) {
       switch value->JSON.Decode.string {
@@ -843,7 +836,7 @@ let handlePostMessageEvents = (
   ])
 }
 
-let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
+let onlyDigits = str => str->String.replaceRegExp(/\D/g, "")
 
 let getCountryCode = country => {
   CountryStateDataRefs.countryDataRef.contents
@@ -922,12 +915,12 @@ let snakeToTitleCase = str => {
 }
 
 let formatIBAN = iban => {
-  let formatted = iban->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+  let formatted = iban->String.replaceRegExp(/[^a-zA-Z0-9]/g, "")
   let countryCode = formatted->String.substring(~start=0, ~end=2)->String.toUpperCase
   let codeLastTwo = formatted->String.substring(~start=2, ~end=4)
   let remaining = formatted->String.substringToEnd(~start=4)
 
-  let chunks = switch remaining->String.match(%re(`/(.{1,4})/g`)) {
+  let chunks = switch remaining->String.match(/(.{1,4})/g) {
   | Some(matches) => matches->Array.filterMap(x => x)
   | None => []
   }
@@ -936,7 +929,7 @@ let formatIBAN = iban => {
 }
 
 let formatBSB = bsb => {
-  let formatted = bsb->String.replaceRegExp(%re("/\D+/g"), "")
+  let formatted = bsb->String.replaceRegExp(/\D+/g, "")
   let firstPart = formatted->String.substring(~start=0, ~end=3)
   let secondPart = formatted->String.substring(~start=3, ~end=6)
 
@@ -984,16 +977,16 @@ let findVersion = (re, content) => {
 
 let browserDetect = content => {
   let patterns = [
-    ("Instagram", %re("/Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Instagram"),
-    ("FBAV", %re("/FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Facebook"),
-    ("Twitter", %re("/iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Twitter"),
-    ("LinkedIn", %re("/LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig"), "LinkedIn"),
-    ("Edg", %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Microsoft Edge"),
-    ("Chrome", %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Chrome"),
-    ("Safari", %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Safari"),
-    ("Opera", %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Opera"),
-    ("Firefox", %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
-    ("fxios", %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
+    ("Instagram", /Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig, "Instagram"),
+    ("FBAV", /FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig, "Facebook"),
+    ("Twitter", /iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig, "Twitter"),
+    ("LinkedIn", /LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig, "LinkedIn"),
+    ("Edg", /Edg\/([\d]+\.[\w]?\.?[\w]+)/ig, "Microsoft Edge"),
+    ("Chrome", /Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig, "Chrome"),
+    ("Safari", /Safari\/([\d]+\.[\w]?\.?[\w]+)/ig, "Safari"),
+    ("Opera", /Opera\/([\d]+\.[\w]?\.?[\w]+)/ig, "Opera"),
+    ("Firefox", /Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig, "Firefox"),
+    ("fxios", /fxios\/([\d]+\.[\w]?\.?[\w]+)/ig, "Firefox"),
   ]
 
   switch patterns
@@ -1843,7 +1836,7 @@ let getStateNameFromCode = (stateCode: string, countryIso: string): string => {
   ->Option.getOr(stateCode)
 }
 
-let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")
+let removeHyphen = str => str->String.replaceRegExp(/-/g, "")
 
 let compareLogic = (a, b) => {
   if a == b {
@@ -2005,7 +1998,7 @@ let isWidgetPresent = (~iframeRef: ref<array<Nullable.t<Dom.element>>>, ~id) => 
 }
 
 let isDigitLimitExceeded = (val, ~digit) => {
-  switch val->String.match(%re("/\d/g")) {
+  switch val->String.match(/\d/g) {
   | Some(matches) => matches->Array.length > digit
   | None => false
   }
@@ -2037,7 +2030,7 @@ let replaceRootHref = (href: string, redirectionFlags: JotaiAtomTypes.redirectio
 }
 
 let isValidHexColor = (color: string): bool => {
-  let hexRegex = %re("/^#([0-9a-f]{6}|[0-9a-f]{3})$/i")
+  let hexRegex = /^#([0-9a-f]{6}|[0-9a-f]{3})$/i
   RegExp.test(hexRegex, color)
 }
 
@@ -2048,7 +2041,7 @@ let validateName = (
   prev: JotaiAtomTypes.field,
   localeString: LocaleStringTypes.localeStrings,
 ) => {
-  let isValid = val !== "" && %re("/^\D*$/")->RegExp.test(val)
+  let isValid = val !== "" && /^\D*$/->RegExp.test(val)
   let errorString = if val === "" {
     prev.errorString
   } else if isValid {

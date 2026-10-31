@@ -4,7 +4,7 @@ open Utils
 
 @react.component
 let make = () => {
-  let cleanBSB = str => str->String.replaceRegExp(%re("/-/g"), "")
+  let cleanBSB = str => str->String.replaceRegExp(/-/g, "")
 
   let loggerState = Jotai.useAtomValue(loggerAtom)
   let setComplete = Jotai.useSetAtom(fieldsComplete)
