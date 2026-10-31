@@ -1524,7 +1524,9 @@ let sanitizeEventData = (data: Types.eventData): Types.eventData => {
   let isCompleteEvent = dict->Dict.get("complete")->Option.isSome
   dict
   ->Dict.toArray
-  ->Array.filter(((key, _)) => key !== "iframeId" && (isCompleteEvent || key !== "elementType"))
+  ->Array.filter(((key, _)) =>
+    key !== "iframeId" && key !== "resize" && (isCompleteEvent || key !== "elementType")
+  )
   ->Dict.fromArray
   ->JSON.Encode.object
   ->eventDataFromJson
@@ -1546,6 +1548,7 @@ let eventHandlerFunc = (
       | Change
       | Click
       | Ready
+      | Resize
       | Focus
       | PaymentComplete
       | ConfirmPayment
