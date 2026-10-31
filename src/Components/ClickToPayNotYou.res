@@ -118,7 +118,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
     let target = ev->ReactEvent.Form.target
     let newValue = target["value"]
     setIdentifierType(_ => newValue)
-    setIdentifier(_ => "") // Clear the input when changing type
+    setIdentifier(_ => "")
   }
 
   let handleCountryCodeChange = ev => {
@@ -129,7 +129,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
 
   let handlePhoneInputChange = ev => {
     let target = ev->ReactEvent.Form.target
-    let newValue = target["value"]->String.replaceRegExp(/\\D/g, "") // Remove non-digit characters
+    let newValue = target["value"]->String.replaceRegExp(/\\D/g, "")
     setIdentifier(_ => newValue)
   }
 
@@ -141,6 +141,15 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
   let handleSubmit = e => {
     e->ReactEvent.Form.preventDefault
     if isValid {
+      SdkLogger.logUser(
+        ~event=CustomerVerificationSubmitted({
+          source: ClickToPayIdentity,
+          provider: ClickToPayHelpers.loggerProviderOfCtpProvider(
+            clickToPayConfig.clickToPayProvider,
+          ),
+        }),
+        ~paymentMethod=Card,
+      )
       let country =
         countryCodes
         ->Array.find(country => countryCode === country.countryISO)
@@ -276,6 +285,10 @@ module ClickToPayNotYouText = {
   @react.component
   let make = (~setIsShowClickToPayNotYou) => {
     let onNotYouClick = _ => {
+      SdkLogger.logUser(
+        ~event=ViewOpened({view: ClickToPayIdentityChange}),
+        ~paymentMethod=Card,
+      )
       setIsShowClickToPayNotYou(_ => true)
     }
 

@@ -19,6 +19,13 @@ let orderIdRef = ref("")
 
 type ctpProviderType = VISA | MASTERCARD | NONE
 
+let loggerProviderOfCtpProvider = provider =>
+  switch provider {
+  | VISA => Some(ClickToPayLoggerEvents.VisaUctp)
+  | MASTERCARD => Some(ClickToPayLoggerEvents.MastercardUctp)
+  | NONE => None
+  }
+
 type element = {
   mutable innerHTML: string,
   appendChild: Window.element => unit,
