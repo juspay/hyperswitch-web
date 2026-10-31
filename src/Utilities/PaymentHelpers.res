@@ -698,7 +698,6 @@ let rec intentCall = (
                     ("paymentMethod", paymentMethod->JSON.Encode.string),
                     ("display_text", displayText->JSON.Encode.string),
                     ("border_color", borderColor->JSON.Encode.string),
-                    ("paymentMethodFlowCancel", paymentMethodFlowCancelMetadata),
                   ]->getJsonFromArrayOfJson
                 handleLogging(
                   ~optLogger,

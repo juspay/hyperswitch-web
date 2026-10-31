@@ -151,7 +151,7 @@ let useSubscriptionEventEmitter = (): emitter => {
 // ---------------------------------------------------------------------------
 // emitFullscreenPaymentMethodFlowCancel
 // ---------------------------------------------------------------------------
-// For steps rendered in the fullscreen iframe (3DS challenge, QR code modal).
+// For steps rendered in the fullscreen iframe (3DS challenge).
 // That iframe never receives the element options, so it cannot read
 // subscriptionEvents; the loader drops the event for merchants who did not subscribe.
 // paymentMethodFlowCancelMetadata is the "paymentMethodFlowCancel" dict the element iframe
