@@ -107,6 +107,10 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @set external id: (Dom.element, string) => unit = "id"
 @set external elementSrc: (Dom.element, string) => unit = "src"
 @set external elementOnload: (Dom.element, unit => unit) => unit = "onload"
+@send
+external addLoadListener: (Dom.element, @as("load") _, unit => unit) => unit = "addEventListener"
+@send
+external addErrorListener: (Dom.element, @as("error") _, exn => unit) => unit = "addEventListener"
 @set external elementOnerror: (Dom.element, exn => unit) => unit = "onerror"
 @set external setTransition: (style, string) => unit = "transition"
 @set external setHeight: (style, string) => unit = "height"
