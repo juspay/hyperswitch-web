@@ -7,6 +7,12 @@ type coordinatorMount = {
   origin: string,
 }
 
+type pendingPort = {
+  fieldName: string,
+  epoch: int,
+  port: MessageChannelBinding.port,
+}
+
 let create = (
   ~parentContainer: Window.body,
   ~localSelectorString: string,
@@ -42,10 +48,55 @@ let create = (
   {iframe, container, fullscreenSlot, origin: URLModule.makeUrl(sdkDomain).origin}
 }
 
+let withPortMeta = (~mountConfig: JSON.t, ~portKey: string, ~portEpoch: int): JSON.t => {
+  let dict = mountConfig->getDictFromJson
+  dict->Dict.set("portKey", portKey->JSON.Encode.string)
+  dict->Dict.set("portEpoch", portEpoch->Int.toFloat->JSON.Encode.float)
+  dict->JSON.Encode.object
+}
+
+let postFieldMountConfigWithPort = (
+  ~fieldIframe: Nullable.t<Dom.element>,
+  ~mountConfig: JSON.t,
+  ~portKey: string,
+  ~portEpoch: int,
+  ~port: MessageChannelBinding.port,
+  ~targetOrigin: string,
+): unit => {
+  fieldIframe->iframePostMessageWithTransfer(
+    withPortMeta(~mountConfig, ~portKey, ~portEpoch)->JSON.stringify,
+    ~targetOrigin,
+    ~transfer=[port],
+  )
+}
+
+let forwardPortToCoordinator = (
+  ~coordinatorIframe: Nullable.t<Dom.element>,
+  ~groupId: string,
+  ~fieldName: string,
+  ~portEpoch: int,
+  ~port: MessageChannelBinding.port,
+  ~targetOrigin: string,
+): unit => {
+  coordinatorIframe->iframePostMessageWithTransfer(
+    [
+      ("cardFieldPort", true->JSON.Encode.bool),
+      ("portKey", CardFormCoordinator.portKey(~groupId, ~fieldName)->JSON.Encode.string),
+      ("portEpoch", portEpoch->Int.toFloat->JSON.Encode.float),
+    ]
+    ->Dict.fromArray
+    ->JSON.Encode.object
+    ->JSON.stringify,
+    ~targetOrigin,
+    ~transfer=[port],
+  )
+}
+
 let fullscreenAnswerListenerName = (localSelectorString: string): string =>
   `onCoordinatorFullscreenAnswer-${localSelectorString}`
 
 let makeFullscreenFlows = (
+  ~context=?,
   ~mount: coordinatorMount,
   ~localSelectorString: string,
   ~sdkDomain: string,
@@ -172,6 +223,7 @@ let makeFullscreenFlows = (
               ("metadata", metadataRef.contents),
               ("options", options),
               ("appearance", appearance),
+              LoggerContext.sharedContext(~context?, ()),
             ]->Dict.fromArray,
             ~targetOrigin=origin,
           )
@@ -190,6 +242,7 @@ let makeFullscreenFlows = (
             [
               ("fullScreenIframeMounted", true->JSON.Encode.bool),
               ("metadata", metadataRef.contents),
+              LoggerContext.sharedContext(~context?, ()),
             ]->Dict.fromArray,
             ~targetOrigin=origin,
           )
@@ -202,7 +255,14 @@ let makeFullscreenFlows = (
   (router, answerer)
 }
 
-let teardown = (~mount: coordinatorMount): unit => {
+let teardown = (~mount: coordinatorMount, ~pendingPorts: array<pendingPort>): unit => {
+  pendingPorts->Array.forEach(({port}) =>
+    try {
+      port->MessageChannelBinding.portClose
+    } catch {
+    | _ => ()
+    }
+  )
   mount.fullscreenSlot->Window.remove
   mount.container->Window.remove
 }

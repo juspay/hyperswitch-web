@@ -5,12 +5,11 @@ open Utils
 @react.component
 let make = (~paymentMethodName: string) => {
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let blikCode = Jotai.useAtomValue(userBlikCode)
   let phoneNumber = Jotai.useAtomValue(userPhoneNumber)
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let intent = PaymentHelpers.usePaymentIntent(Other)
   let {layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
@@ -68,6 +67,10 @@ let make = (~paymentMethodName: string) => {
     ~complete=areRequiredFieldsValid,
     ~empty,
     ~paymentType=paymentMethodDetails.paymentMethodName,
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(
+      ~method=paymentMethodDetails.methodType,
+      ~methodType=paymentMethodDetails.paymentMethodName,
+    ),
   )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete=areRequiredFieldsValid)
 
@@ -117,7 +120,16 @@ let make = (~paymentMethodName: string) => {
           ~manualRetry=isManualRetryEnabled,
         )
       } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+        let message = "Please enter all fields"
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: "Please enter all fields"}),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethodDetails.methodType,
+            ~methodType=paymentMethodDetails.paymentMethodName,
+          ),
+          ~message,
+        )
+        postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
   }, (

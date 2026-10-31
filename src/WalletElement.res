@@ -44,6 +44,8 @@ let make = (~paymentType) => {
     None
   }, [sessionsObj])
 
+  UtilityHooks.useLogAppRendered(~isRendered=walletOptions->Array.length > 0)
+
   <RenderIf condition={walletOptions->Array.length > 0}>
     <div className="flex flex-col place-items-center">
       <ErrorBoundary
