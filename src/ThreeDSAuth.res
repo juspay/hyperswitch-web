@@ -7,6 +7,7 @@ let make = () => {
   let (loader, setloader) = React.useState(_ => true)
 
   let threeDsAuthoriseUrl = React.useRef("")
+  let paymentMethodFlowCancelMetadata = React.useRef(Dict.make())
   let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
   let logger = HyperLogger.make(~source=Elements(Payment))
@@ -20,6 +21,15 @@ let make = () => {
       }
     | None => ()
     }
+  }
+
+  // The close button only shows once the challenge is displayed; expiry still calls handleFrictionLess directly.
+  let handleOnClose = () => {
+    SubscriptionEventHooks.emitFullscreenPaymentMethodFlowCancel(
+      ~paymentMethodFlowCancelMetadata=paymentMethodFlowCancelMetadata.current,
+      ~step=ThreeDsChallenge,
+    )
+    handleFrictionLess()
   }
 
   let eventsToSendToParent = ["confirmParams", "poll_status", "openurl_if_required"]
@@ -47,6 +57,8 @@ let make = () => {
         logger.setClientSecret(paymentIntentId)
         logger.setSdkAuthorization(sdkAuthorization->Option.getOr(""))
         logger.setMerchantId(publishableKey)
+        paymentMethodFlowCancelMetadata.current =
+          metaDataDict->getDictFromDict("paymentMethodFlowCancel")
         let headersDict =
           metaDataDict
           ->getJsonObjectFromDict("headers")
@@ -152,7 +164,7 @@ let make = () => {
     )
   }, [expiryTime])
 
-  <Modal loader={loader} openModal setOpenModal closeCallback={handleFrictionLess}>
+  <Modal loader={loader} openModal setOpenModal closeCallback={handleOnClose}>
     <div className="backdrop-blur-xl">
       <div id="threeDsAuthDiv" className="hidden" />
       <iframe

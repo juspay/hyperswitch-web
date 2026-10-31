@@ -9,6 +9,7 @@ let validSubscriptionEvents = [
   "billingDetailsChange",
   "surchargeInfo",
   "appliedOffersInfo",
+  "paymentMethodFlowCancel",
 ]
 
 let modifiedEventFromString = (str, key) => {
@@ -178,6 +179,28 @@ let createAppliedOffersPayload = (
   [
     ("elementType", "payment"->JSON.Encode.string),
     ("eventName", "appliedOffersInfo"->JSON.Encode.string),
+    ("payload", payload),
+  ]
+}
+
+// elementType defaults to "payment"; flows started from another element pass its componentName
+// so the loader routes the event to that element's listeners.
+let createPaymentMethodFlowCancelPayload = (
+  ~elementType="payment",
+  ~step,
+  ~paymentMethod,
+  ~paymentMethodType,
+  ~canRetryPayment,
+) => {
+  let payload = PaymentEventData.paymentMethodFlowCancelEventToJson(
+    ~step,
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~canRetryPayment,
+  )
+  [
+    ("elementType", elementType->JSON.Encode.string),
+    ("eventName", PaymentMethodFlowCancel->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
