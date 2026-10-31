@@ -677,11 +677,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let isReadyEmitted = SubscriptionEventHooks.useIsReadyEmitted()
   let isContentGated = !optionAtomValue.enableProgressiveLoading && !isReadyEmitted
   // Wallet SDK iframes override visibility, so hide with opacity and block interaction with inert.
+  // Zero height with clipping keeps the hidden content out of the scrollable area.
   let hiddenMountedStyle: JsxDOMStyle.t = {
     position: "absolute",
     top: "0",
     left: "0",
     right: "0",
+    height: "0",
+    overflow: "hidden",
     opacity: "0",
   }
 
