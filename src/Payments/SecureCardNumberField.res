@@ -4,11 +4,7 @@ open JotaiAtoms
 let make = () => {
   let loggerState = Jotai.useAtomValue(loggerAtom)
 
-  let state = CommonCardFieldHooks.useCardNumberField(
-    ~logger=loggerState,
-    ~dualPlane=true,
-    (),
-  )
+  let state = CommonCardFieldHooks.useCardNumberField(~logger=loggerState, ~dualPlane=true, ())
 
   <CommonCardFieldHooks.RenderCardNumber state />
 }

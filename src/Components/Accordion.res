@@ -45,10 +45,12 @@ let make = (
       borderRadius: {borderRadiusStyle},
       borderBottomStyle: borderBottom ? "solid" : "hidden",
     }
-    onClick={_ => setSelectedOption(_ => paymentOption.paymentMethodName)}>
+    onClick={_ => setSelectedOption(_ => paymentOption.paymentMethodName)}
+  >
     <div
       className={`flex flex-row items-center ${accordionClass}`}
-      style={columnGap: themeObj.spacingUnit}>
+      style={columnGap: themeObj.spacingUnit}
+    >
       <RenderIf condition=layoutClass.radios>
         <Radio checked=radioClass />
       </RenderIf>

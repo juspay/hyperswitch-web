@@ -110,7 +110,8 @@ let make = (
       condition={name === "phone" &&
       fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
-      isSpacedInnerLayout}>
+      isSpacedInnerLayout}
+    >
       <div
         className={`Label ${labelClass}`}
         style={
@@ -119,7 +120,8 @@ let make = (
           marginBottom: "5px",
           opacity: "0.6",
         }
-        ariaHidden=true>
+        ariaHidden=true
+      >
         {React.string(fieldName)}
       </div>
     </RenderIf>
@@ -141,7 +143,8 @@ let make = (
         condition={name !== "phone" &&
         fieldName->String.length > 0 &&
         config.appearance.labels == Above &&
-        isSpacedInnerLayout}>
+        isSpacedInnerLayout}
+      >
         <div
           className={`Label ${labelClass}`}
           style={
@@ -150,7 +153,8 @@ let make = (
             marginBottom: "5px",
             opacity: "0.6",
           }
-          ariaHidden=true>
+          ariaHidden=true
+        >
           {React.string(fieldName)}
         </div>
       </RenderIf>
@@ -191,7 +195,8 @@ let make = (
                 },
                 opacity: "0.6",
               }
-              ariaHidden=true>
+              ariaHidden=true
+            >
               {React.string(fieldName)}
             </div>
           </RenderIf>
@@ -209,7 +214,8 @@ let make = (
             alignSelf: "start",
             textAlign: "left",
           }
-          ariaHidden=true>
+          ariaHidden=true
+        >
           {React.string(value.errorString)}
         </div>
       </RenderIf>

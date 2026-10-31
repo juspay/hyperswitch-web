@@ -27,10 +27,7 @@ let create = (
   iframe->Window.setAttribute("id", `orca-coordinator-${localSelectorString}`)
   iframe->Window.setAttribute("src", src)
   iframe->Window.setAttribute("allow", "payment *")
-  iframe->Window.setAttribute(
-    "sandbox",
-    "allow-scripts allow-popups allow-same-origin allow-forms",
-  )
+  iframe->Window.setAttribute("sandbox", "allow-scripts allow-popups allow-same-origin allow-forms")
   iframe->Window.setAttribute(
     "style",
     "position: absolute; width: 0; height: 0; border: none; overflow: hidden; left: -9999px; top: -9999px;",
@@ -116,10 +113,7 @@ let makeFullscreenFlows = (
       fullscreenActiveRef := true
       mount.fullscreenSlot->Window.innerHTML("")
       overlayRef := None
-      let overlaySrc = ApiEndpoint.getFullscreenIframeUrl(
-        ~sdkDomain,
-        ~fullscreenType=paramType,
-      )
+      let overlaySrc = ApiEndpoint.getFullscreenIframeUrl(~sdkDomain, ~fullscreenType=paramType)
       let colorScheme =
         appearance->CardTheme.getColorSchemeFromAppearance->CardTheme.getColorSchemeValue
       mount.fullscreenSlot

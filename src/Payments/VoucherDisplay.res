@@ -66,7 +66,8 @@ let make = () => {
                   ~eventName=DISPLAY_VOUCHER,
                   ~paymentMethod,
                 )
-              }}>
+              }}
+            >
               {React.string("here")}
             </a>
             {React.string(" to download it.")}
@@ -96,7 +97,8 @@ let make = () => {
               }
               onClick={_ => {
                 closeModal()
-              }}>
+              }}
+            >
               {React.string("Done")}
             </button>
           </div>

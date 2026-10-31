@@ -140,8 +140,7 @@ let parseExpiresAtMs = (expiresAtStr: string): float => {
   }
 }
 
-let isExpired = (~expiresAtMs: float): bool =>
-  expiresAtMs > 0.0 && Date.now() >= expiresAtMs
+let isExpired = (~expiresAtMs: float): bool => expiresAtMs > 0.0 && Date.now() >= expiresAtMs
 
 type fieldEntry = {
   iframeRef: ref<Nullable.t<Dom.element>>,
@@ -151,7 +150,6 @@ type fieldEntry = {
 }
 
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
-
 
 let make = (
   options: JSON.t,
@@ -179,7 +177,6 @@ let make = (
   let eventCallbacksRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
 
   let vgsBrokerRef: ref<option<VGSVaultBroker.vgsBrokerHandle>> = ref(None)
-
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
@@ -228,8 +225,9 @@ let make = (
           requiredTypes->Array.includes(fieldType)
         )
       logger.setLogInfo(
-        ~value=(nameComplete ? filledTypes->Array.concat(["cardholderName"]) : filledTypes)
-        ->Array.join(","),
+        ~value=(
+          nameComplete ? filledTypes->Array.concat(["cardholderName"]) : filledTypes
+        )->Array.join(","),
         ~eventName=PAYMENT_METHOD_SESSION_DATA_FILLED,
       )
       if nameComplete {
@@ -269,7 +267,9 @@ let make = (
   // the coordinator's API endpoint.
   let postCoordinatorLoggerConfig = () =>
     coordinator.mountRef.contents->Option.forEach(mount =>
-      mount.iframe->Nullable.make->Window.iframePostMessage(
+      mount.iframe
+      ->Nullable.make
+      ->Window.iframePostMessage(
         [
           ("paymentElementCreate", true->JSON.Encode.bool),
           ("otherElements", false->JSON.Encode.bool),
@@ -398,15 +398,19 @@ let make = (
     }
   }
 
-  let vaultOptionDict =
-    optionsDict->Dict.get("vaultDetails")->Option.flatMap(JSON.Decode.object)
+  let vaultOptionDict = optionsDict->Dict.get("vaultDetails")->Option.flatMap(JSON.Decode.object)
 
   switch vaultOptionDict {
   | Some(vaultDict) => {
       let vaultType = vaultDict->getString("vaultType", "")
       let vaultData = vaultDict->Dict.get("vaultData")->Option.getOr(JSON.Encode.null)
 
-      let syntheticSession = buildSyntheticSession(~pmSessionId, ~customerId, ~vaultType, ~vaultData)
+      let syntheticSession = buildSyntheticSession(
+        ~pmSessionId,
+        ~customerId,
+        ~vaultType,
+        ~vaultData,
+      )
       sessionsDataRef := syntheticSession
 
       let vaultMode = vaultType->VaultHelpers.getVaultModeFromName
@@ -425,16 +429,16 @@ let make = (
       )
       ->Promise.then(retrievedSessionJson => {
         if retrievedSessionJson !== JSON.Encode.null {
-          let sessionJson = retrievedSessionJson->adaptRetrievedSessionToVaultDetails(
-            ~sdkAuthorization=sdkAuthorizationRaw,
-          )
+          let sessionJson =
+            retrievedSessionJson->adaptRetrievedSessionToVaultDetails(
+              ~sdkAuthorization=sdkAuthorizationRaw,
+            )
           sessionsDataRef := sessionJson
           let sessionDict = sessionJson->getDictFromJson
           let expiresAt = sessionDict->getString("expires_at", "")
           expiresAtRef := parseExpiresAtMs(expiresAt)
 
-          let vaultType =
-            sessionDict->getDictFromDict("vault_details")->getString("vault_type", "")
+          let vaultType = sessionDict->getDictFromDict("vault_details")->getString("vault_type", "")
           let vaultMode = vaultType->VaultHelpers.getVaultModeFromName
           let loadedSession: PaymentType.loadType = Loaded(sessionJson)
           let vaultConfigJson = VaultHelpers.buildVaultConfig(loadedSession, vaultMode)
@@ -585,7 +589,9 @@ let make = (
               [
                 ("elementType", fieldType->JSON.Encode.string),
                 ("iframeId", fieldId->JSON.Encode.string),
-              ]->Dict.fromArray->JSON.Encode.object
+              ]
+              ->Dict.fromArray
+              ->JSON.Encode.object
             if isReady {
               logFieldRendered(~fieldId, ~fieldType)
               eventHandlersRef.contents->Dict.get("ready")->Option.forEach(cb => cb(payload))
@@ -598,10 +604,7 @@ let make = (
             } else {
               switch cardStateUpdate {
               | Some(stateJson) =>
-                let changePayload = reshapeCardStateUpdateToChangePayload(
-                  ~fieldType,
-                  ~stateJson,
-                )
+                let changePayload = reshapeCardStateUpdateToChangePayload(~fieldType, ~stateJson)
                 recordFieldComplete(
                   ~fieldId,
                   ~complete=changePayload->getDictFromJson->getBool("complete", false),
@@ -682,9 +685,7 @@ let make = (
     } else {
       switch mapFieldTypeToInternalFieldName(fieldType) {
       | "" => {
-          Console.error(
-            `[PaymentMethodSession] invalid_field_type: ${fieldType}`,
-          )
+          Console.error(`[PaymentMethodSession] invalid_field_type: ${fieldType}`)
           Types.defaultFieldHandle
         }
       | _ =>
@@ -720,8 +721,7 @@ let make = (
                 mount: selector => {
                   logFieldMounted(~fieldId, ~fieldType)
                   uniqueSelectorRef := Some(selector)
-                  broker
-                  .mountField(~fieldId, ~fieldType, ~selector, ~options=optionsForBroker)
+                  broker.mountField(~fieldId, ~fieldType, ~selector, ~options=optionsForBroker)
                   ->Promise.thenResolve(_ => logFieldRendered(~fieldId, ~fieldType))
                   ->Promise.catch(err => {
                     Console.error2(
@@ -818,9 +818,7 @@ let make = (
               handle
             }
           | None => {
-              Console.error(
-                `[PaymentMethodSession] vaultType="vgs" declared but vaultData has no vaultId/environment — cannot mount`,
-              )
+              Console.error(`[PaymentMethodSession] vaultType="vgs" declared but vaultData has no vaultId/environment — cannot mount`)
               Types.defaultFieldHandle
             }
           }
@@ -892,8 +890,7 @@ let make = (
         )
       } else {
         tokenizingRef := true
-        broker
-        .submitForm()
+        broker.submitForm()
         ->Promise.then(result => {
           let resultDict = result->getDictFromJson
           if isErrorResult(result) {
@@ -970,8 +967,7 @@ let make = (
         )
       } else {
         tokenizingRef := true
-        broker
-        .submitForm()
+        broker.submitForm()
         ->Promise.then(result => {
           let resultDict = result->getDictFromJson
           if isErrorResult(result) {
@@ -1017,10 +1013,7 @@ let make = (
     }
   }
 
-  let runCoordinatorRelay = (
-    ~flow: string,
-    ~savedCardBrand: string="",
-  ): promise<JSON.t> => {
+  let runCoordinatorRelay = (~flow: string, ~savedCardBrand: string=""): promise<JSON.t> => {
     switch coordinator.mountRef.contents {
     | None =>
       tokenizingRef := false
@@ -1050,13 +1043,16 @@ let make = (
         }
         coordinatorTokenizePendingRef := Some((tokenizeId, settle))
         try {
-          postCoordinatorCommand(coordinator, [
-            ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
-            ("flow", flow->JSON.Encode.string),
-            ("confirmId", tokenizeId->JSON.Encode.string),
-            ("savedCardBrand", savedCardBrand->JSON.Encode.string),
-            ("locale", locale->JSON.Encode.string),
-          ])
+          postCoordinatorCommand(
+            coordinator,
+            [
+              ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
+              ("flow", flow->JSON.Encode.string),
+              ("confirmId", tokenizeId->JSON.Encode.string),
+              ("savedCardBrand", savedCardBrand->JSON.Encode.string),
+              ("locale", locale->JSON.Encode.string),
+            ],
+          )
         } catch {
         | exn =>
           settle(
@@ -1105,10 +1101,7 @@ let make = (
   }
 
   let tokenize = (): promise<JSON.t> => {
-    logger.setLogInfo(
-      ~value=detectVaultType(),
-      ~eventName=PAYMENT_METHOD_SESSION_TOKENIZE_INIT,
-    )
+    logger.setLogInfo(~value=detectVaultType(), ~eventName=PAYMENT_METHOD_SESSION_TOKENIZE_INIT)
     let outcome = if sessionStateRef.contents != Active {
       Promise.resolve(sessionConsumedResult(~locale, ()))
     } else if tokenizingRef.contents {
@@ -1132,9 +1125,13 @@ let make = (
         | Some(broker) => {
             let entries = broker.fieldsRef.contents->Dict.valuesToArray
             (
-              entries->Array.some(e => e.fieldType === "cardNumber" && e.fieldHandle->Option.isSome),
+              entries->Array.some(e =>
+                e.fieldType === "cardNumber" && e.fieldHandle->Option.isSome
+              ),
               entries->Array.some(e => e.fieldType === "cardCvc" && e.fieldHandle->Option.isSome),
-              entries->Array.some(e => e.fieldType === "cardholderName" && e.fieldHandle->Option.isSome),
+              entries->Array.some(e =>
+                e.fieldType === "cardholderName" && e.fieldHandle->Option.isSome
+              ),
             )
           }
         | None => (false, false, false)
@@ -1147,21 +1144,21 @@ let make = (
           incompleteFieldSet()
         }
       } else {
-        switch (findFieldOfType("cardNumber"), findFieldOfType("cardExpiry"), findFieldOfType("cardCvc")) {
+        switch (
+          findFieldOfType("cardNumber"),
+          findFieldOfType("cardExpiry"),
+          findFieldOfType("cardCvc"),
+        ) {
         | (None, None, None) => incompleteFieldSet()
         | (Some(_field), _, _) =>
           tokenizingRef := true
           runCoordinatorRelay(~flow="save")
-        | (None, Some(_), _) =>
-          incompleteFieldSet()
+        | (None, Some(_), _) => incompleteFieldSet()
         | (None, None, Some(_)) if findFieldOfType("cardholderName")->Option.isSome =>
           incompleteFieldSet()
         | (None, None, Some(field)) =>
           tokenizingRef := true
-          runCoordinatorRelay(
-            ~flow="update",
-            ~savedCardBrand=field.savedCardBrandRef.contents,
-          )
+          runCoordinatorRelay(~flow="update", ~savedCardBrand=field.savedCardBrandRef.contents)
         }
       }
     }
@@ -1172,7 +1169,10 @@ let make = (
   }
 
   let deinit = (): unit => {
-    logger.setLogInfo(~value="Payment method session card form deinitialized", ~eventName=CARD_FORM_FLOW)
+    logger.setLogInfo(
+      ~value="Payment method session card form deinitialized",
+      ~eventName=CARD_FORM_FLOW,
+    )
     if sessionStateRef.contents != Deinitialized {
       fieldsRef.contents
       ->Dict.valuesToArray

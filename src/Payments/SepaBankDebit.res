@@ -73,7 +73,8 @@ let make = () => {
         className="flex flex-col animate-slowShow"
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
-        }>
+        }
+      >
         <RenderIf condition={layoutClass.\"type" === Accordion}>
           <Space height="0" />
         </RenderIf>

@@ -254,7 +254,7 @@ let getCustomerSavedPaymentMethods = (
       let hasCvc = payloadDict->Dict.get("cvc")
       if hasCvc->Option.isSome {
         let cvcString = hasCvc->getStringFromOptionalJson("")
-        let isValidCvc = %re("/^\d{3,4}$/")->RegExp.test(cvcString)
+        let isValidCvc = /^\d{3,4}$/->RegExp.test(cvcString)
         if !isValidCvc {
           handleFailureResponse(
             ~message="CVC must be a string of 3 to 4 numeric digits",

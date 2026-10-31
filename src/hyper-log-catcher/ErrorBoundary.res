@@ -2,7 +2,8 @@ type errorLevel = Top | RequestButton | PaymentMethod
 
 let errorIcon = {
   <svg
-    xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 512 512" id="dead-ghost">
+    xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 512 512" id="dead-ghost"
+  >
     <path
       fill="none"
       stroke="currentColor"
@@ -109,7 +110,8 @@ module ErrorTextAndImage = {
         borderRadius: themeObj.borderRadius,
         borderColor: themeObj.borderColor,
       }
-      className="flex  items-center">
+      className="flex  items-center"
+    >
       <div className="flex flex-row  items-center m-6">
         <div style={marginLeft: "1rem"}> {errorIcon} </div>
         <div className="flex flex-col items-center justify-center" style={marginLeft: "3rem"}>

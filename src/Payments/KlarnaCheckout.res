@@ -86,7 +86,8 @@ let make = () => {
     onClick={_ =>
       if !options.readOnly {
         onKlarnaClick()->ignore
-      }}>
+      }}
+  >
     <div className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
       {if klarnaClicked {
         <Loader />

@@ -29,9 +29,10 @@ let mapFieldTypeToInternalFieldName = CardFormShared.mapFieldTypeToInternalField
 let computeGroupReadiness = (fieldsRef: ref<Dict.t<fieldEntry>>): bool => {
   let entries = fieldsRef.contents->Dict.valuesToArray
   let expectedFieldTypes = ["cardNumber", "cardExpiry", "cardCvc"]
-  let hasAllFields = expectedFieldTypes->Array.every(expectedFieldType =>
-    entries->Array.some(entry => entry.fieldType === expectedFieldType)
-  )
+  let hasAllFields =
+    expectedFieldTypes->Array.every(expectedFieldType =>
+      entries->Array.some(entry => entry.fieldType === expectedFieldType)
+    )
   if !hasAllFields {
     false
   } else {
@@ -76,7 +77,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
   let eventCallbacksRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
   let deinitCallbacksRef: ref<array<unit => unit>> = ref([])
-
 
   let confirmingRef: ref<bool> = ref(false)
 
@@ -191,7 +191,10 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               Promise.resolve()
             })
             ->Promise.catch(err => {
-              Console.error2("[PaymentsGroup] clientList fetch rejected — coordinator continues without pre-warmed list", err)
+              Console.error2(
+                "[PaymentsGroup] clientList fetch rejected — coordinator continues without pre-warmed list",
+                err,
+              )
               Promise.resolve()
             })
             ->ignore
@@ -224,8 +227,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       },
       coordinatorListenerName,
     )
-    deinitCallbacksRef.contents->Array.push(
-      () => EventListenerManager.removeSmartEventListener("message", coordinatorListenerName),
+    deinitCallbacksRef.contents->Array.push(() =>
+      EventListenerManager.removeSmartEventListener("message", coordinatorListenerName)
     )
   }
 
@@ -233,8 +236,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     switch coordinator.mountRef.contents {
     | Some(_) => ()
     | None =>
-      let groupAppearance =
-        config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
+      let groupAppearance = config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
       let groupConfigAsOptions =
         [
           ("clientSecret", config.clientSecret->JSON.Encode.string),
@@ -337,7 +339,10 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         Promise.resolve()
       })
       ->Promise.catch(err => {
-        Console.error2("[PaymentsGroup] clientList fetch rejected — field continues without pre-warmed list", err)
+        Console.error2(
+          "[PaymentsGroup] clientList fetch rejected — field continues without pre-warmed list",
+          err,
+        )
         Promise.resolve()
       })
       ->ignore
@@ -365,7 +370,9 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               [
                 ("elementType", fieldType->JSON.Encode.string),
                 ("iframeId", fieldId->JSON.Encode.string),
-              ]->Dict.fromArray->JSON.Encode.object
+              ]
+              ->Dict.fromArray
+              ->JSON.Encode.object
             if isReady {
               eventHandlersRef.contents->Dict.get("ready")->Option.forEach(cb => cb(payload))
             } else if isFocus {
@@ -373,7 +380,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             } else if isBlur {
               eventHandlersRef.contents->Dict.get("blur")->Option.forEach(cb => cb(payload))
             } else if isConfirmFail {
-              let errorMessage = dict->getString("errorMessage", "Card details incomplete or invalid")
+              let errorMessage =
+                dict->getString("errorMessage", "Card details incomplete or invalid")
               settlePendingConfirm(
                 ~confirmId=dict->getString("confirmId", ""),
                 groupFailureResponse(
@@ -386,10 +394,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               switch cardStateUpdate {
               | Some(stateJson) =>
                 lastStateRef := Some(stateJson)
-                let changePayload = reshapeCardStateUpdateToChangePayload(
-                  ~fieldType,
-                  ~stateJson,
-                )
+                let changePayload = reshapeCardStateUpdateToChangePayload(~fieldType, ~stateJson)
                 eventHandlersRef.contents
                 ->Dict.get("change")
                 ->Option.forEach(cb => cb(changePayload))
@@ -406,14 +411,14 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                 } else if !readiness {
                   hasBeenReadyRef := false
                 }
-               | None => ()
-               }
-             }
-           }
-         },
-         listenerName,
-       )
-     }
+              | None => ()
+              }
+            }
+          }
+        },
+        listenerName,
+      )
+    }
 
     let fieldOptionsDict = options->getDictFromJson
     let appearanceJson = resolveFieldAppearance(~fieldOptionsDict, ~groupAppearance=appearance)
@@ -445,8 +450,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
 
     attachFieldListener()
 
-    deinitCallbacksRef.contents->Array.push(
-      () => EventListenerManager.removeSmartEventListener("message", `onPaymentsV2Field-${fieldId}`),
+    deinitCallbacksRef.contents->Array.push(() =>
+      EventListenerManager.removeSmartEventListener("message", `onPaymentsV2Field-${fieldId}`)
     )
 
     {
@@ -482,20 +487,26 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         if isDoSubmit && isFromOurFrames(ev) && !confirmingRef.contents {
           switch findFieldOfType("cardNumber") {
           | Some(_entry) =>
-            postCoordinatorCommand(coordinator, [
-              ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
-              ("flow", "payments"->JSON.Encode.string),
-            ])
+            postCoordinatorCommand(
+              coordinator,
+              [
+                ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
+                ("flow", "payments"->JSON.Encode.string),
+              ],
+            )
           | None if findFieldOfType("cardholderName")->Option.isSome => ()
           | None =>
             findFieldOfType("cardCvc")->Option.forEach(entry => {
               let paymentToken = entry.savedCardTokenRef.contents
               if paymentToken !== "" {
-                postCoordinatorCommand(coordinator, [
-                  ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
-                  ("flow", "savedCardCvc"->JSON.Encode.string),
-                  ("paymentToken", paymentToken->JSON.Encode.string),
-                ])
+                postCoordinatorCommand(
+                  coordinator,
+                  [
+                    ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
+                    ("flow", "savedCardCvc"->JSON.Encode.string),
+                    ("paymentToken", paymentToken->JSON.Encode.string),
+                  ],
+                )
               }
             })
           }
@@ -505,7 +516,9 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     )
   }
   attachSubmitRelay()
-  deinitCallbacksRef.contents->Array.push(() => EventListenerManager.removeSmartEventListener("message", doSubmitListenerName))
+  deinitCallbacksRef.contents->Array.push(() =>
+    EventListenerManager.removeSmartEventListener("message", doSubmitListenerName)
+  )
 
   let create = (fieldType: string, options: JSON.t): fieldHandle => {
     switch mapFieldTypeToInternalFieldName(fieldType) {
@@ -541,8 +554,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     let attemptsConfirmParamsMutation = newOptionsDict->Dict.get("confirmParams")->Option.isSome
     if attemptsClientSecretMutation || attemptsConfirmParamsMutation {
       Console.warn(
-        "[PaymentsGroup] update() refused: `clientSecret` and `confirmParams` are immutable after mount. " ++
-        "Create a new group (or remount the fields) to switch intents.",
+        "[PaymentsGroup] update() refused: `clientSecret` and `confirmParams` are immutable after mount. " ++ "Create a new group (or remount the fields) to switch intents.",
       )
     } else {
       fieldsRef.contents
@@ -653,13 +665,14 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     })
   }
 
-
   let deinit = (): unit => {
     logger.setLogInfo(~value="Card form deinitialized", ~eventName=CARD_FORM_FLOW)
     fieldsRef.contents
     ->Dict.valuesToArray
     ->Array.forEach(entry => {
-      try entry.handle.destroy() catch { | _ => () }
+      try entry.handle.destroy() catch {
+      | _ => ()
+      }
     })
     fieldsRef := Dict.make()
     fields := Dict.make()->JSON.Encode.object

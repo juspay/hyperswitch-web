@@ -104,7 +104,8 @@ let make = (~paymentMethodType) => {
         borderRadius: themeObj.borderRadius,
         borderColor: themeObj.borderColor,
         borderWidth: "2px",
-      }>
+      }
+    >
       {if showLoader {
         <Loader />
       } else {

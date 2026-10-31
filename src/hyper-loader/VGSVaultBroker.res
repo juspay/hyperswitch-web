@@ -272,8 +272,7 @@ let computeVGSBaseOptions = (~fieldType: string, ~options: JSON.t): JSON.t => {
   | "cardholderName" =>
     let placeholder = optionsDict->getString("placeholder", "")
     VGSConstants.cardHolderNameOptions(placeholder)->Identity.anyTypeToJson
-  | _ =>
-    VGSConstants.cardNumberOptions->Identity.anyTypeToJson
+  | _ => VGSConstants.cardNumberOptions->Identity.anyTypeToJson
   }
 }
 
@@ -295,9 +294,10 @@ let applyMerchantOptionOverrides = (~basis: JSON.t, ~options: JSON.t): JSON.t =>
   merchantOverridableStringKeys->Array.forEach(key => {
     // `placeholder: ""` is a request for no placeholder, so it applies; an empty
     // colour or label is not, so those keep the non-empty guard.
-    let supplied = key === "placeholder"
-      ? optionsDict->getOptionString(key)
-      : optionsDict->getOptionString(key)->getNonEmptyOption
+    let supplied =
+      key === "placeholder"
+        ? optionsDict->getOptionString(key)
+        : optionsDict->getOptionString(key)->getNonEmptyOption
     switch supplied {
     | Some(value) => basisDict->Dict.set(key, value->JSON.Encode.string)
     | None => ()
@@ -485,9 +485,7 @@ let make = (
           lastCardNumberBrandRef := ""
           fieldsRef.contents
           ->Dict.valuesToArray
-          ->Array.filter(entry =>
-            entry.fieldType === "cardExpiry" || entry.fieldType === "cardCvc"
-          )
+          ->Array.filter(entry => entry.fieldType === "cardExpiry" || entry.fieldType === "cardCvc")
           ->Array.forEach(clearVgsField)
         }
       } else {
@@ -553,16 +551,13 @@ let make = (
         | None => ()
         | Some(_) if fieldType === "cardholderName" => ()
         | Some(_) =>
-          describeInvalidField(~state=formStateRef.contents->Dict.get(vgsName))->Option.forEach(
-            message => {
-              let fieldErrors = Dict.make()
-              fieldErrors->Dict.set(
-                "errorMessages",
-                [message->JSON.Encode.string]->JSON.Encode.array,
-              )
-              validationErrors->Dict.set(fieldType, fieldErrors->JSON.Encode.object)
-            },
-          )
+          describeInvalidField(
+            ~state=formStateRef.contents->Dict.get(vgsName),
+          )->Option.forEach(message => {
+            let fieldErrors = Dict.make()
+            fieldErrors->Dict.set("errorMessages", [message->JSON.Encode.string]->JSON.Encode.array)
+            validationErrors->Dict.set(fieldType, fieldErrors->JSON.Encode.object)
+          })
         }
       )
       if validationErrors->Dict.keysToArray->Array.length > 0 {

@@ -2,7 +2,7 @@ open JotaiAtoms
 open Utils
 
 let cleanSocialSecurityNumber = socialSecurityNumber =>
-  socialSecurityNumber->String.replaceRegExp(%re("/\D+/g"), "")
+  socialSecurityNumber->String.replaceRegExp(/\D+/g, "")
 
 let formatSocialSecurityNumber = socialSecurityNumber => {
   let formatted = socialSecurityNumber->cleanSocialSecurityNumber
@@ -58,7 +58,7 @@ let make = () => {
     if confirm.doSubmit {
       if complete {
         let body = PaymentBody.boletoBody(
-          ~socialSecurityNumber=socialSecurityNumber->String.replaceRegExp(%re("/\D+/g"), ""),
+          ~socialSecurityNumber=socialSecurityNumber->String.replaceRegExp(/\D+/g, ""),
         )
         intent(
           ~bodyArr=body,
