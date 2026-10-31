@@ -41,7 +41,7 @@ let make = (
 
   let formattedCardBrand = capitalizeCardBrand(clickToPayCardBrand)
 
-  let getIsChecked = ev => {
+  let getIsChecked = (ev): bool => {
     let target = ev->ReactEvent.Form.target
     target["checked"]
   }
@@ -98,7 +98,17 @@ let make = (
               style={width: "fit-content"}
             >
               <input
-                type_={`checkbox`} onChange={e => setIsSaveDetailsWithClickToPay(e->getIsChecked)}
+                type_={`checkbox`}
+                onChange={e => {
+                  SdkLogger.logUser(
+                    ~event=FieldToggled({
+                      field: "click_to_pay_save_details",
+                      enabled: e->getIsChecked,
+                    }),
+                    ~paymentMethod=Card,
+                  )
+                  setIsSaveDetailsWithClickToPay(_ => e->getIsChecked)
+                }}
               />
               <div className={`checkmark CheckboxInput ${isSaveDetailsCheckedState}`} />
             </label>
@@ -129,7 +139,17 @@ let make = (
               style={width: "fit-content"}
             >
               <input
-                type_={`checkbox`} onChange={e => setIsClickToPayRememberMe(e->getIsChecked)}
+                type_={`checkbox`}
+                onChange={e => {
+                  SdkLogger.logUser(
+                    ~event=FieldToggled({
+                      field: "click_to_pay_remember_me_checkbox",
+                      enabled: e->getIsChecked,
+                    }),
+                    ~paymentMethod=Card,
+                  )
+                  setIsClickToPayRememberMe(_ => e->getIsChecked)
+                }}
               />
               <div className={`checkmark CheckboxInput ${isRememberMeCheckedState}`} />
             </label>

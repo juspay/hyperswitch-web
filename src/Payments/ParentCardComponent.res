@@ -695,15 +695,14 @@ let make = (
 
     switch clickToPayProvider {
     | MASTERCARD =>
-      try {
-        (
-          async () => {
+      (
+        async () => {
+          try {
             let encryptedResult = await ClickToPayHelpers.encryptCardForClickToPay(
               ~cardNumber=cardNumber->CardValidations.clearSpaces,
               ~expiryMonth=month,
               ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
               ~cvcNumber,
-              ~logger=loggerState,
             )
             switch encryptedResult {
             | Ok(encryptedCard) =>
@@ -717,7 +716,6 @@ let make = (
                 ->Option.getOr("")
                 ->String.replace("+", ""),
                 ~rememberMe=isClickToPayRememberMe,
-                ~logger=loggerState,
                 ~clickToPayProvider,
                 ~clickToPayToken=clickToPayConfig.clickToPayToken,
               )
@@ -734,30 +732,20 @@ let make = (
                 ~includeAcceptance=false,
               )
             | Error(err) =>
-              loggerState.setLogError(
-                ~value={
-                  "message": `Error during checkout - ${err->formatException->JSON.stringify}`,
-                  "scheme": clickToPayProvider,
-                }
-                ->JSON.stringifyAny
-                ->Option.getOr(""),
-                ~eventName=CLICK_TO_PAY_FLOW,
+              ClickToPayLogger.logLifecycle(
+                ~event=CheckoutFailed({provider: MastercardUctp}),
+                ~exn=err,
               )
             }
+          } catch {
+          | err =>
+            ClickToPayLogger.logLifecycle(
+              ~event=CheckoutFailed({provider: MastercardUctp}),
+              ~exn=err,
+            )
           }
-        )()->ignore
-      } catch {
-      | err =>
-        loggerState.setLogError(
-          ~value={
-            "message": `Error during checkout - ${err->formatException->JSON.stringify}`,
-            "scheme": clickToPayProvider,
-          }
-          ->JSON.stringifyAny
-          ->Option.getOr(""),
-          ~eventName=CLICK_TO_PAY_FLOW,
-        )
-      }
+        }
+      )()->ignore
     | VISA =>
       let payload = [
         convertKeyValueToJsonStringPair(
@@ -788,7 +776,6 @@ let make = (
               ->Option.getOr("")
               ->String.replace("+", ""),
               ~rememberMe=isClickToPayRememberMe,
-              ~logger=loggerState,
               ~clickToPayProvider,
               ~clickToPayToken=clickToPayConfig.clickToPayToken,
               ~orderId=clientSecret->Option.getOr(""),
@@ -805,15 +792,7 @@ let make = (
             )
           } catch {
           | err =>
-            loggerState.setLogError(
-              ~value={
-                "message": `Error during checkout - ${err->formatException->JSON.stringify}`,
-                "scheme": clickToPayProvider,
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
-            )
+            ClickToPayLogger.logLifecycle(~event=CheckoutFailed({provider: VisaUctp}), ~exn=err)
           }
         }
       )()->ignore

@@ -213,7 +213,6 @@ let make = (
       </RenderIf>
       <RenderIf condition={shouldShowClickToPaySection}>
         <ClickToPayAuthenticate
-          loggerState
           savedMethods
           isClickToPayAuthenticateError
           setIsClickToPayAuthenticateError
@@ -425,7 +424,6 @@ let make = (
       if customerMethod.card.isClickToPayCard {
         ClickToPayHelpers.handleProceedToPay(
           ~srcDigitalCardId=customerMethod.paymentToken,
-          ~logger=loggerState,
           ~clickToPayProvider,
           ~isClickToPayRememberMe,
           ~clickToPayToken=clickToPayConfig.clickToPayToken,
