@@ -37,6 +37,15 @@ let make = () => {
     None
   }, (family, sessions))
 
+  UtilityHooks.useLogAppRendered(
+    ~isRendered=isConfigReady &&
+    switch (family, fieldName) {
+    | (PaymentSurfaceFamily.VaultFamily, _)
+    | (PaymentSurfaceFamily.PaymentsFamily, Some(_)) => true
+    | _ => false
+    },
+  )
+
   <RenderIf condition=isConfigReady>
     <div
       className="font-medium p-0.5"

@@ -815,19 +815,7 @@ let validateRountingNumber = str => {
   }
 }
 
-let handlePostMessageEvents = (
-  ~complete,
-  ~empty,
-  ~paymentType,
-  ~loggerState: HyperLoggerTypes.loggerMake,
-  ~savedMethod=false,
-) => {
-  if complete && paymentType !== "" {
-    let value = `Payment Data Filled: ${savedMethod
-        ? "Saved Payment Method"
-        : "New Payment Method"}`
-    loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
-  }
+let handlePostMessageEvents = (~complete, ~empty, ~paymentType) => {
   messageParentWindow([
     ("elementType", "payment"->JSON.Encode.string),
     ("complete", complete->JSON.Encode.bool),
