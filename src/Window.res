@@ -100,7 +100,9 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @send external preventDefault: (event, unit) => unit = "preventDefault"
 @send external appendChild: (body, Dom.element) => unit = "appendChild"
 @send external remove: Dom.element => unit = "remove"
-@send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
+@new @scope("window")
+external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
+@val @scope("window") external paymentRequestSupported: option<JSON.t> = "PaymentRequest"
 @send external click: Dom.element => unit = "click"
 @set external innerHTML: (Dom.element, string) => unit = "innerHTML"
 @set external className: (Dom.element, string) => unit = "className"
