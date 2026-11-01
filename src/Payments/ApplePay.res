@@ -7,7 +7,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isWallet = walletOptions->Array.includes(paymentMethodType)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
   let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
   let {publishableKey, sdkAuthorization, parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
@@ -15,13 +14,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let setIsShowOrPayUsing = Jotai.useSetAtom(JotaiAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
-  let intent = PaymentHelpers.usePaymentIntent(
-    ~isOneClickWallet=isWallet,
-    Some(loggerState),
-    Applepay,
-  )
+  let intent = PaymentHelpers.usePaymentIntent(Applepay)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Some(loggerState), Applepay)
+  let sync = PaymentHelpers.usePaymentSync(Applepay)
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
   let isApplePaySDKFlow = sessionObj->Option.isSome
@@ -92,6 +87,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType=paymentMethodType,
+
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   SubscriptionEventHooks.useEmitFormStatus(
@@ -273,19 +269,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onApplePayButtonClicked = () => {
+    ()
     if isTestMode {
       Console.warn("Apple Pay button clicked in test mode - interaction disabled")
-      loggerState.setLogInfo(
-        ~value="Apple Pay button clicked in test mode - interaction disabled",
-        ~eventName=APPLE_PAY_FLOW,
-        ~paymentMethod="APPLE_PAY",
-      )
     } else {
-      loggerState.setLogInfo(
-        ~value="Apple Pay Button Clicked",
-        ~eventName=APPLE_PAY_FLOW,
-        ~paymentMethod="APPLE_PAY",
-      )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,
         ~paymentMethodType,
@@ -337,7 +324,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           }
           resolve()
         })
-        ->catch(_ => {
+        ->catch(exn => {
+          ()
           resolve()
         })
         ->ignore
@@ -421,7 +409,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
                 pointerEvents: updateSession ? "none" : "auto",
               }
               className="apple-pay-button-with-text apple-pay-button-black-with-text"
-              onClick={_ => onApplePayButtonClicked()}>
+              onClick={_ => onApplePayButtonClicked()}
+            >
               <span className="text"> {React.string("Pay with")} </span>
               <span className="logo" />
             </button>

@@ -10,10 +10,6 @@ let make = () => {
   let (clientSecret, setClientSecret) = React.useState(_ => "")
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (isForceSync, setIsForceSync) = React.useState(_ => false)
-  let logger = React.useMemo(
-    () => HyperLogger.make(~source=Elements(Payment), ~clientSecret, ~merchantId=publishableKey),
-    (publishableKey, clientSecret),
-  )
 
   React.useEffect(() => {
     let handleParentWindowMessage = (ev: Window.event) => {
@@ -45,7 +41,6 @@ let make = () => {
           setIsReady(_ => true)
         }
       },
-      ~logger,
     )
     None
   }, [pmAuthConnectorsArr])
@@ -55,7 +50,6 @@ let make = () => {
       let json = await PaymentHelpers.retrievePaymentIntent(
         clientSecret,
         ~publishableKey,
-        ~logger,
         ~customPodUri="",
         ~isForceSync=true,
         ~sdkAuthorization=Some(sdkAuthorization),
@@ -64,57 +58,56 @@ let make = () => {
       let status = dict->getString("status", "")
       let return_url = dict->getString("return_url", "")
 
+      let failureMessage = switch status {
+      | "failed" => "Payment failed. Try again!"
+      | _ => "Payment is processing. Try again later!"
+      }
+      switch status {
+      | "succeeded" | "requires_customer_action" | "processing" => ()
+      | _ =>
+        ()
+      }
       switch status {
       | "succeeded" | "requires_customer_action" | "processing" =>
         postSubmitResponse(~jsonData=json, ~url=return_url)
       | "failed" =>
-        postFailedSubmitResponse(
-          ~errortype="confirm_payment_failed",
-          ~message="Payment failed. Try again!",
-        )
-      | _ =>
-        postFailedSubmitResponse(
-          ~errortype="sync_payment_failed",
-          ~message="Payment is processing. Try again later!",
-        )
+        postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message=failureMessage)
+      | _ => postFailedSubmitResponse(~errortype="sync_payment_failed", ~message=failureMessage)
       }
       messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
     } catch {
-    | _ =>
-      logger.setLogError(
-        ~value="Retrieve failed via Plaid",
-        ~eventName=PLAID_SDK,
-        // ~internalMetadata=err->formatException->JSON.stringify,
-        ~paymentMethod="PLAID",
-      )
+    | exn =>
+      ()
     }
   }
 
   let initializePlaid = () => {
+    let startedAt = Date.now()
+    ()
     Plaid.create({
       token: linkToken,
-      onLoad: _ => logger.setLogInfo(~value="Plaid SDK Loaded", ~eventName=PLAID_SDK),
-      onSuccess: (publicToken, _) => {
-        messageParentWindow([
-          ("isPlaid", true->JSON.Encode.bool),
-          ("publicToken", publicToken->JSON.Encode.string),
-        ])
-        if isForceSync {
-          callbackOnSuccessOfPlaidPaymentsFlow()->ignore
-        }
-      },
-      onExit: _ => {
-        if isForceSync {
-          callbackOnSuccessOfPlaidPaymentsFlow()->ignore
-        } else {
+      onLoad: (() =>
+          ()),
+      onSuccess: ((publicToken, _) => {
           messageParentWindow([
-            ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
-            ("isExited", true->JSON.Encode.bool),
-            ("publicToken", ""->JSON.Encode.string),
+            ("publicToken", publicToken->JSON.Encode.string),
           ])
-        }
-      },
+          if isForceSync {
+            callbackOnSuccessOfPlaidPaymentsFlow()->ignore
+          }
+        }),
+      onExit: (_ =>
+          if isForceSync {
+            callbackOnSuccessOfPlaidPaymentsFlow()->ignore
+          } else {
+            messageParentWindow([
+              ("fullscreen", false->JSON.Encode.bool),
+              ("isPlaid", true->JSON.Encode.bool),
+              ("isExited", true->JSON.Encode.bool),
+              ("publicToken", ""->JSON.Encode.string),
+            ])
+          }),
     }).open_()
   }
 
@@ -124,7 +117,7 @@ let make = () => {
     }
 
     None
-  }, (isReady, linkToken, logger))
+  }, (isReady, linkToken))
 
   <div
     className="PlaidIframe h-screen w-screen bg-black/40 backdrop-blur-sm m-auto"

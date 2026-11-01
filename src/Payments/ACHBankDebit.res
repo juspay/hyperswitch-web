@@ -1,6 +1,5 @@
 open JotaiAtoms
 open Utils
-open PaymentModeType
 
 @react.component
 let make = () => {
@@ -10,12 +9,10 @@ let make = () => {
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let {sdkAuthorization} = Jotai.useAtomValue(keys)
 
-  let loggerState = Jotai.useAtomValue(loggerAtom)
-
   let email = Jotai.useAtomValue(userEmailAddress)
   let fullName = Jotai.useAtomValue(userFullName)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHelpers.usePaymentIntent(BankDebits)
 
   let (bankError, setBankError) = React.useState(_ => "")
 
@@ -65,9 +62,16 @@ let make = () => {
     modalData->Option.isSome
   let empty = email.value == "" || fullName.value != ""
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="ach_bank_debit")
+  UtilityHooks.useHandlePostMessages(
+    ~complete,
+    ~empty,
+    ~paymentType="ach_bank_debit",
+
+  )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
+  let paymentMethodType = "ach"
+  let paymentMethod = "bank_debit"
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
@@ -100,14 +104,13 @@ let make = () => {
         }
         ()
       } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+        let message = "Please enter all fields"
+        ()
+        postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
   }, (email, modalData, fullName, isManualRetryEnabled, sdkAuthorization))
   PaymentMessageHooks.useSubmitPaymentData(submitCallback)
-
-  let paymentMethodType = "ach"
-  let paymentMethod = "bank_debit"
 
   <>
     <RenderIf condition={isVerifyPMAuthConnectorConfigured}>
@@ -130,7 +133,8 @@ let make = () => {
                 fontSize: themeObj.fontSizeSm,
                 alignSelf: "start",
                 textAlign: "left",
-              }>
+              }
+            >
               {React.string(bankError)}
             </div>
           </RenderIf>

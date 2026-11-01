@@ -110,9 +110,11 @@ let useHandleSamsungPayResponse = (
         )
       }
       if dict->Dict.get("samsungPayError")->Option.isSome {
+        let message = "Something went wrong"
+        ()
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         if isSavedMethodsFlow || !isWallet {
-          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+          postFailedSubmitResponse(~errortype="server_error", ~message)
         }
       }
     }

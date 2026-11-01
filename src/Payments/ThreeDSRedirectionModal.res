@@ -8,7 +8,6 @@ let make = () => {
   let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   let eventsToSendToParent = ["openurl_if_required"]
   let isTrustedChild = (ev: Window.event) =>
@@ -21,7 +20,8 @@ let make = () => {
       ->Option.getOr(false)
   eventsToSendToParent->UtilityHooks.useSendEventsToParent(~isTrustedChild)
 
-  let handleOnClose = () =>
+  let handleOnClose = () => {
+    ()
     if redirectResponseUrl == "" {
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
       closePaymentLoaderIfAny()
@@ -34,6 +34,7 @@ let make = () => {
         ->getDictFromJson
       messageParentWindow(customEvent->Dict.toArray)
     }
+  }
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -53,9 +54,9 @@ let make = () => {
         }
       } catch {
       | err => {
-          let exceptionMessage = err->formatException->JSON.stringify
-          loggerState.setLogError(~value=exceptionMessage, ~eventName=THREE_DS_POPUP_REDIRECTION)
-          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
+          let message = "Something went wrong."
+          ()
+          postFailedSubmitResponse(~errortype="error", ~message)
         }
       }
     }

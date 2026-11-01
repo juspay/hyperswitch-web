@@ -9,8 +9,6 @@ let make = () => {
   let threeDsAuthoriseUrl = React.useRef("")
   let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
-  let logger = HyperLogger.make(~source=Elements(Payment))
-
   let handleFrictionLess = () => {
     let ele = Window.querySelector("#threeDsAuthDiv")
     switch ele->Nullable.toOption {
@@ -41,12 +39,8 @@ let make = () => {
       if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
-        let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
-        let publishableKey = metaDataDict->getString("publishableKey", "")
+        let clientSecret = metaDataDict->getString("clientSecret", "")
         let sdkAuthorization = metaDataDict->getOptionString("sdkAuthorization")
-        logger.setClientSecret(paymentIntentId)
-        logger.setSdkAuthorization(sdkAuthorization->Option.getOr(""))
-        logger.setMerchantId(publishableKey)
         let headersDict =
           metaDataDict
           ->getJsonObjectFromDict("headers")
@@ -63,8 +57,7 @@ let make = () => {
         let threeDsMethodComp = metaDataDict->getString("3dsMethodComp", "U")
         open Promise
         PaymentHelpers.threeDsAuth(
-          ~logger,
-          ~clientSecret=paymentIntentId,
+          ~clientSecret,
           ~threeDsMethodComp,
           ~headers=headers->Dict.fromArray,
           ~sdkAuthorization,
@@ -73,6 +66,8 @@ let make = () => {
           let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
+            ()
+            messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
             postFailedSubmitResponse(
               ~errortype=errorObj.error.type_,
               ~message=errorObj.error.message,
@@ -91,13 +86,6 @@ let make = () => {
 
             let ele = Window.querySelector("#threeDsAuthDiv")
 
-            LoggerUtils.handleLogging(
-              ~optLogger=Some(logger),
-              ~eventName=DISPLAY_THREE_DS_SDK,
-              ~value=transStatus,
-              ~paymentMethod="CARD",
-            )
-
             switch ele->Nullable.toOption {
             | Some(elem) =>
               if transStatus === "C" {
@@ -109,23 +97,19 @@ let make = () => {
                 form.target = "threeDsAuthFrame"
                 form.appendChild(input)
                 form.submit()
+                ()
               } else {
                 handleFrictionLess()
+                ()
               }
             | None => ()
             }
+            ()
             resolve(json)
           }
         })
         ->catch(err => {
-          let exceptionMessage = err->formatException
-          LoggerUtils.handleLogging(
-            ~optLogger=Some(logger),
-            ~eventName=DISPLAY_THREE_DS_SDK,
-            ~value=exceptionMessage->JSON.stringify,
-            ~paymentMethod="CARD",
-            ~logType=ERROR,
-          )
+          ()
           let errorObj = PaymentError.itemToObjMapper(dict)
           postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
           closePaymentLoaderIfAny()

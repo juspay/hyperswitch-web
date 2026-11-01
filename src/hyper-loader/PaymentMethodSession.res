@@ -33,8 +33,6 @@ let tokenizationInFlightResult = (~locale: string="en", ()): JSON.t =>
 let buildConfirmResult = CardFormCoordinator.buildConfirmResult
 let isErrorResult = CardFormCoordinator.isErrorResult
 
-// vaultDetails is a merchant prop and so is camelCase, but the session it is packed into
-// mirrors the backend payload that VaultHelpers reads, which is snake_case.
 let toSessionVaultData = (vaultData: JSON.t): JSON.t => {
   let merchantData = vaultData->getDictFromJson
   let sessionData = Dict.make()
@@ -71,7 +69,6 @@ let vaultTypeHyperswitch = "hyperswitch"
 let vaultTypeVGS = "vgs"
 
 let resolveSdkAuthorization = (optionsDict: Dict.t<JSON.t>): string => {
-  // An empty camelCase value counts as absent, so it never hides a populated snake_case one.
   let getDictEither = (dict, camelKey, snakeKey) =>
     switch dict->getOptionalDict(camelKey) {
     | Some(camelDict) if camelDict->Dict.keysToArray->Array.length > 0 => camelDict
@@ -82,7 +79,6 @@ let resolveSdkAuthorization = (optionsDict: Dict.t<JSON.t>): string => {
     ->getOptionString(camelKey)
     ->getNonEmptyOption
     ->Option.getOr(dict->getString(snakeKey, ""))
-
   let topLevel = optionsDict->getString("sdkAuthorization", "")
   let vaultDetails = optionsDict->getDictEither("vaultDetails", "vault_details")
   let isHyperswitchVault =
@@ -140,8 +136,7 @@ let parseExpiresAtMs = (expiresAtStr: string): float => {
   }
 }
 
-let isExpired = (~expiresAtMs: float): bool =>
-  expiresAtMs > 0.0 && Date.now() >= expiresAtMs
+let isExpired = (~expiresAtMs: float): bool => expiresAtMs > 0.0 && Date.now() >= expiresAtMs
 
 type fieldEntry = {
   iframeRef: ref<Nullable.t<Dom.element>>,
@@ -152,13 +147,12 @@ type fieldEntry = {
 
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
-
 let make = (
   options: JSON.t,
   ~publishableKey: string,
   ~sdkSessionId: string,
-  ~logger: HyperLoggerTypes.loggerMake,
 ): initPaymentMethodSession => {
+  ()
   let optionsDict = options->getDictFromJson
 
   let sdkAuthorizationRaw = optionsDict->resolveSdkAuthorization
@@ -180,75 +174,12 @@ let make = (
 
   let vgsBrokerRef: ref<option<VGSVaultBroker.vgsBrokerHandle>> = ref(None)
 
-
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
 
-  // Mounted fields as fieldId -> (fieldType, mount timestamp). Drives the mount-to-render
-  // latency and decides when every mounted field is complete. Only field names are logged.
-  let mountedFieldsRef: ref<Dict.t<(string, float)>> = ref(Dict.make())
-  let fieldCompleteRef: ref<Dict.t<bool>> = ref(Dict.make())
-  let dataFilledLoggedRef = ref(false)
-  let cardholderNameFilledLoggedRef = ref(false)
-
-  let logFieldMounted = (~fieldId: string, ~fieldType: string) => {
-    mountedFieldsRef.contents->Dict.set(fieldId, (fieldType, Date.now()))
-    logger.setLogInfo(~value=fieldType, ~eventName=PAYMENT_METHOD_SESSION_FIELD_MOUNTED)
-  }
-
-  let logFieldRendered = (~fieldId: string, ~fieldType: string) =>
-    logger.setLogInfo(
-      ~value=fieldType,
-      ~eventName=PAYMENT_METHOD_SESSION_FIELD_RENDERED,
-      ~latency=?mountedFieldsRef.contents
-      ->Dict.get(fieldId)
-      ->Option.map(((_, mountedAt)) => Date.now() -. mountedAt),
-    )
-
-  let forgetMountedField = (fieldId: string) => {
-    mountedFieldsRef.contents->Dict.delete(fieldId)
-    fieldCompleteRef.contents->Dict.delete(fieldId)
-  }
-
-  let recordFieldComplete = (~fieldId: string, ~complete: bool) => {
-    fieldCompleteRef.contents->Dict.set(fieldId, complete)
-    let isComplete = id => fieldCompleteRef.contents->Dict.get(id)->Option.getOr(false)
-    let mountedFields = mountedFieldsRef.contents->Dict.toArray
-    let isNameField = ((_, (fieldType, _))) => fieldType === "cardholderName"
-    let nameFields = mountedFields->Array.filter(isNameField)
-    let requiredFields = mountedFields->Array.filter(field => !isNameField(field))
-    let requiredComplete =
-      requiredFields->Array.length > 0 && requiredFields->Array.every(((id, _)) => isComplete(id))
-    let nameComplete =
-      nameFields->Array.length > 0 && nameFields->Array.every(((id, _)) => isComplete(id))
-    let logDataFilled = () => {
-      let requiredTypes = requiredFields->Array.map(((_, (fieldType, _))) => fieldType)
-      let filledTypes =
-        ["cardNumber", "cardExpiry", "cardCvc"]->Array.filter(fieldType =>
-          requiredTypes->Array.includes(fieldType)
-        )
-      logger.setLogInfo(
-        ~value=(nameComplete ? filledTypes->Array.concat(["cardholderName"]) : filledTypes)
-        ->Array.join(","),
-        ~eventName=PAYMENT_METHOD_SESSION_DATA_FILLED,
-      )
-      if nameComplete {
-        cardholderNameFilledLoggedRef := true
-      }
-    }
-    if requiredComplete && !dataFilledLoggedRef.contents {
-      dataFilledLoggedRef := true
-      logDataFilled()
-    } else if requiredComplete && nameComplete && !cardholderNameFilledLoggedRef.contents {
-      logDataFilled()
-    }
-  }
-
+  // Track field names and completion only; never retain input values for logging.
   let groupInstanceId = uniqueId(~prefix=`vault-${pmSessionId}`)
-  let coordinator = makeCoordinatorChannel(
-    ~groupId=groupInstanceId,
-    ~origin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
-  )
+  let coordinator = makeCoordinatorChannel(~groupId=groupInstanceId)
   let coordinatorListenerName = `onVaultCoordinator-${groupInstanceId}`
   let coordinatorTokenizePendingRef: ref<option<(string, JSON.t => unit)>> = ref(None)
 
@@ -264,12 +195,17 @@ let make = (
     ->Dict.fromArray
     ->JSON.Encode.object
 
-  // Gives the coordinator's logger the merchant and session, so its vault API logs can be joined
-  // with the loader's. Kept to the keys that matter: endpoint/isSavedCardCvcFlow would re-point
-  // the coordinator's API endpoint.
-  let postCoordinatorLoggerConfig = () =>
+  let postCoordinatorOptions = () =>
+    postCoordinatorCommand(
+      coordinator,
+      [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", coordinatorOptions())],
+    )
+
+  let postCoordinatorConfig = () =>
     coordinator.mountRef.contents->Option.forEach(mount =>
-      mount.iframe->Nullable.make->Window.iframePostMessage(
+      mount.iframe
+      ->Nullable.make
+      ->Window.iframePostMessage(
         [
           ("paymentElementCreate", true->JSON.Encode.bool),
           ("otherElements", false->JSON.Encode.bool),
@@ -289,18 +225,11 @@ let make = (
           ("iframeId", groupInstanceId->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-          ("loggerPaymentId", pmSessionId->JSON.Encode.string),
           ("parentURL", "*"->JSON.Encode.string),
           ("launchTime", Date.now()->JSON.Encode.float),
         ]->Dict.fromArray,
-        ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+        ~targetOrigin=mount.origin,
       )
-    )
-
-  let postCoordinatorOptions = () =>
-    postCoordinatorCommand(
-      coordinator,
-      [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", coordinatorOptions())],
     )
 
   let syncCoordinatorSessions = () => {
@@ -310,7 +239,7 @@ let make = (
         ->Nullable.make
         ->Window.iframePostMessage(
           [("sessions", sessionsDataRef.contents)]->Dict.fromArray,
-          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+          ~targetOrigin=mount.origin,
         )
       )
     }
@@ -331,7 +260,8 @@ let make = (
           let dict = json->getDictFromJson
           if dict->getBool("iframeMounted", false) {
             coordinator.readyRef := true
-            postCoordinatorLoggerConfig()
+            flushPendingPorts(coordinator)
+            postCoordinatorConfig()
             syncCoordinatorSessions()
             postCoordinatorOptions()
             flushPendingCoordinatorCommands(coordinator)
@@ -398,15 +328,19 @@ let make = (
     }
   }
 
-  let vaultOptionDict =
-    optionsDict->Dict.get("vaultDetails")->Option.flatMap(JSON.Decode.object)
+  let vaultOptionDict = optionsDict->Dict.get("vaultDetails")->Option.flatMap(JSON.Decode.object)
 
   switch vaultOptionDict {
   | Some(vaultDict) => {
       let vaultType = vaultDict->getString("vaultType", "")
       let vaultData = vaultDict->Dict.get("vaultData")->Option.getOr(JSON.Encode.null)
 
-      let syntheticSession = buildSyntheticSession(~pmSessionId, ~customerId, ~vaultType, ~vaultData)
+      let syntheticSession = buildSyntheticSession(
+        ~pmSessionId,
+        ~customerId,
+        ~vaultType,
+        ~vaultData,
+      )
       sessionsDataRef := syntheticSession
 
       let vaultMode = vaultType->VaultHelpers.getVaultModeFromName
@@ -421,20 +355,19 @@ let make = (
         ~endpoint,
         ~customPodUri="",
         ~sdkAuthorization=sdkAuthorizationRaw,
-        ~logger,
       )
       ->Promise.then(retrievedSessionJson => {
         if retrievedSessionJson !== JSON.Encode.null {
-          let sessionJson = retrievedSessionJson->adaptRetrievedSessionToVaultDetails(
-            ~sdkAuthorization=sdkAuthorizationRaw,
-          )
+          let sessionJson =
+            retrievedSessionJson->adaptRetrievedSessionToVaultDetails(
+              ~sdkAuthorization=sdkAuthorizationRaw,
+            )
           sessionsDataRef := sessionJson
           let sessionDict = sessionJson->getDictFromJson
           let expiresAt = sessionDict->getString("expires_at", "")
           expiresAtRef := parseExpiresAtMs(expiresAt)
 
-          let vaultType =
-            sessionDict->getDictFromDict("vault_details")->getString("vault_type", "")
+          let vaultType = sessionDict->getDictFromDict("vault_details")->getString("vault_type", "")
           let vaultMode = vaultType->VaultHelpers.getVaultModeFromName
           let loadedSession: PaymentType.loadType = Loaded(sessionJson)
           let vaultConfigJson = VaultHelpers.buildVaultConfig(loadedSession, vaultMode)
@@ -491,17 +424,7 @@ let make = (
       if vaultId->String.length == 0 || environment->String.length == 0 {
         None
       } else {
-        let broker = VGSVaultBroker.make(
-          ~vaultId,
-          ~environment,
-          ~eventCallbacksRef,
-          ~logger,
-          ~onFieldChange=(fieldId, payload) =>
-            recordFieldComplete(
-              ~fieldId,
-              ~complete=payload->getDictFromJson->getBool("complete", false),
-            ),
-        )
+        let broker = VGSVaultBroker.make(~vaultId, ~environment, ~eventCallbacksRef)
         vgsBrokerRef := Some(broker)
         Some(broker)
       }
@@ -529,9 +452,8 @@ let make = (
         ("endpoint", ApiEndpoint.getVaultEndPoint(~publishableKey)->JSON.Encode.string),
       ],
       ~sdkSessionId,
-      ~loggerSource="hyper_vault",
       ~savedCardBrand,
-      ~tailKeys=[("loggerPaymentId", pmSessionId->JSON.Encode.string)],
+      ~tailKeys=[],
     )
   }
 
@@ -549,9 +471,11 @@ let make = (
     let savedCardBrandRef = ref(savedCardDict->savedCardNetwork)
 
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
-      coordinator->postFieldMountConfig(
+      coordinator->openFieldPort(
         ~fieldIframe=mountedIframeRef,
-        ~mountConfig=buildMountConfig(~options, ~fieldId),
+        ~mountConfig=buildMountConfig(~options, ~fieldId)->JSON.Encode.object,
+        ~fieldName=mapFieldTypeToInternalFieldName(fieldType),
+        ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
       )
       if sessionsDataRef.contents != JSON.Encode.null {
         mountedIframeRef->Window.iframePostMessage(
@@ -585,9 +509,10 @@ let make = (
               [
                 ("elementType", fieldType->JSON.Encode.string),
                 ("iframeId", fieldId->JSON.Encode.string),
-              ]->Dict.fromArray->JSON.Encode.object
+              ]
+              ->Dict.fromArray
+              ->JSON.Encode.object
             if isReady {
-              logFieldRendered(~fieldId, ~fieldType)
               eventHandlersRef.contents->Dict.get("ready")->Option.forEach(cb => cb(payload))
             } else if isFocus {
               eventHandlersRef.contents->Dict.get("focus")->Option.forEach(cb => cb(payload))
@@ -598,14 +523,7 @@ let make = (
             } else {
               switch cardStateUpdate {
               | Some(stateJson) =>
-                let changePayload = reshapeCardStateUpdateToChangePayload(
-                  ~fieldType,
-                  ~stateJson,
-                )
-                recordFieldComplete(
-                  ~fieldId,
-                  ~complete=changePayload->getDictFromJson->getBool("complete", false),
-                )
+                let changePayload = reshapeCardStateUpdateToChangePayload(~fieldType, ~stateJson)
                 eventHandlersRef.contents
                 ->Dict.get("change")
                 ->Option.forEach(cb => cb(changePayload))
@@ -644,20 +562,16 @@ let make = (
           savedCardBrandRef := brand
         }
       },
-      ~logger,
     )
     let handle: fieldHandle = {
       ...elementHandle,
       mount: selector => {
-        logFieldMounted(~fieldId, ~fieldType)
         elementHandle.mount(selector)
       },
       unmount: () => {
-        forgetMountedField(fieldId)
         elementHandle.unmount()
       },
       destroy: () => {
-        forgetMountedField(fieldId)
         elementHandle.destroy()
       },
     }
@@ -672,19 +586,18 @@ let make = (
     }
   }
 
-  let create = (fieldType: string, options: JSON.t): fieldHandle => {
-    logger.setLogInfo(~value=`${fieldType} created`, ~eventName=CARD_FORM_FLOW)
+  let createFieldInternal = (fieldType: string, options: JSON.t): fieldHandle => {
     if sessionStateRef.contents != Active {
       Console.warn(
         `[PaymentMethodSession] create("${fieldType}") called on consumed/deinitialized session`,
       )
+      ()
       Types.defaultFieldHandle
     } else {
       switch mapFieldTypeToInternalFieldName(fieldType) {
       | "" => {
-          Console.error(
-            `[PaymentMethodSession] invalid_field_type: ${fieldType}`,
-          )
+          Console.error(`[PaymentMethodSession] invalid_field_type: ${fieldType}`)
+          ()
           Types.defaultFieldHandle
         }
       | _ =>
@@ -716,13 +629,20 @@ let make = (
                 }
               }
 
+              let vgsFieldDetails = [
+                ("field", fieldType->JSON.Encode.string),
+                ("vault", "vgs"->JSON.Encode.string),
+              ]
+
               let handle: fieldHandle = {
                 mount: selector => {
-                  logFieldMounted(~fieldId, ~fieldType)
                   uniqueSelectorRef := Some(selector)
-                  broker
-                  .mountField(~fieldId, ~fieldType, ~selector, ~options=optionsForBroker)
-                  ->Promise.thenResolve(_ => logFieldRendered(~fieldId, ~fieldType))
+
+                  (
+                    () =>
+                      broker.mountField(~fieldId, ~fieldType, ~selector, ~options=optionsForBroker)
+                  )()
+                  ->Promise.thenResolve(_ => ())
                   ->Promise.catch(err => {
                     Console.error2(
                       `[PaymentMethodSession] VGS mountField(${fieldType}, ${selector}) failed`,
@@ -732,20 +652,24 @@ let make = (
                   })
                   ->ignore
                 },
-                unmount: () => {
-                  forgetMountedField(fieldId)
-                  broker.unmountField(~fieldId)
-                  uniqueSelectorRef := None
-                },
-                destroy: () => {
-                  forgetMountedField(fieldId)
-                  broker.unmountField(~fieldId)
-                  uniqueSelectorRef := None
-                },
-                update: newOptions => {
-                  broker.updateField(~fieldId, ~options=newOptions)
-                },
-                focus: () => {
+                unmount: () =>
+                  (
+                    () => {
+                      broker.unmountField(~fieldId)
+                      uniqueSelectorRef := None
+                      ()
+                    }
+                  )(),
+                destroy: () =>
+                  (
+                    () => {
+                      broker.unmountField(~fieldId)
+                      uniqueSelectorRef := None
+                      ()
+                    }
+                  )(),
+                update: newOptions => (() => broker.updateField(~fieldId, ~options=newOptions))(),
+                focus: () =>
                   switch getFieldHandle() {
                   | Some(vgsFieldHandle) =>
                     try {
@@ -761,9 +685,8 @@ let make = (
                     Console.warn(
                       `[PaymentMethodSession] VGS focus(${fieldId}) — field not yet mounted`,
                     )
-                  }
-                },
-                blur: () => {
+                  },
+                blur: () =>
                   switch getFieldHandle() {
                   | Some(vgsFieldHandle) =>
                     try {
@@ -779,9 +702,8 @@ let make = (
                     Console.warn(
                       `[PaymentMethodSession] VGS blur(${fieldId}) — field not yet mounted`,
                     )
-                  }
-                },
-                clear: () => {
+                  },
+                clear: () =>
                   switch getFieldHandle() {
                   | Some(vgsFieldHandle) =>
                     try {
@@ -808,19 +730,18 @@ let make = (
                     Console.warn(
                       `[PaymentMethodSession] VGS clear(${fieldId}) — field not yet mounted`,
                     )
-                  }
-                },
+                  },
                 on: (event, cb) => {
                   let key = `${fieldId}::${event}`
                   eventCallbacksRef.contents->Dict.set(key, cb)
                 },
               }
+              ()
               handle
             }
           | None => {
-              Console.error(
-                `[PaymentMethodSession] vaultType="vgs" declared but vaultData has no vaultId/environment — cannot mount`,
-              )
+              Console.error(`[PaymentMethodSession] vaultType="vgs" declared but vaultData has no vaultId/environment — cannot mount`)
+              ()
               Types.defaultFieldHandle
             }
           }
@@ -837,11 +758,13 @@ let make = (
           let entry = createFieldHandle(fieldType, options, fieldId)
           fieldsRef.contents->Dict.set(fieldId, entry)
           registerField(~fields, ~fieldId, ~fieldType)
+          ()
           entry.handle
         | other => {
             Console.error(
               `[PaymentMethodSession] unsupported_provider: vaultType "${other}" not yet supported`,
             )
+            ()
             Types.defaultFieldHandle
           }
         }
@@ -849,15 +772,18 @@ let make = (
     }
   }
 
+  let create = (fieldType: string, options: JSON.t): fieldHandle =>
+    (() => createFieldInternal(fieldType, options))()
+
   let update = (_options: JSON.t): unit => {
+    ()
     Console.warn(
       "[PaymentMethodSession] session options are fixed at creation; create a new session to change them",
     )
   }
 
-  let on = (event: string, cb: JSON.t => unit): unit => {
+  let on = (event: string, cb: JSON.t => unit): unit =>
     eventCallbacksRef.contents->Dict.set(event, cb)
-  }
 
   let tokenizeVgsFlowA = (): promise<JSON.t> => {
     switch getOrCreateVgsBroker() {
@@ -892,8 +818,7 @@ let make = (
         )
       } else {
         tokenizingRef := true
-        broker
-        .submitForm()
+        broker.submitForm()
         ->Promise.then(result => {
           let resultDict = result->getDictFromJson
           if isErrorResult(result) {
@@ -970,8 +895,7 @@ let make = (
         )
       } else {
         tokenizingRef := true
-        broker
-        .submitForm()
+        broker.submitForm()
         ->Promise.then(result => {
           let resultDict = result->getDictFromJson
           if isErrorResult(result) {
@@ -1017,10 +941,7 @@ let make = (
     }
   }
 
-  let runCoordinatorRelay = (
-    ~flow: string,
-    ~savedCardBrand: string="",
-  ): promise<JSON.t> => {
+  let runCoordinatorRelay = (~flow: string, ~savedCardBrand: string=""): promise<JSON.t> => {
     switch coordinator.mountRef.contents {
     | None =>
       tokenizingRef := false
@@ -1050,13 +971,16 @@ let make = (
         }
         coordinatorTokenizePendingRef := Some((tokenizeId, settle))
         try {
-          postCoordinatorCommand(coordinator, [
-            ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
-            ("flow", flow->JSON.Encode.string),
-            ("confirmId", tokenizeId->JSON.Encode.string),
-            ("savedCardBrand", savedCardBrand->JSON.Encode.string),
-            ("locale", locale->JSON.Encode.string),
-          ])
+          postCoordinatorCommand(
+            coordinator,
+            [
+              ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
+              ("flow", flow->JSON.Encode.string),
+              ("confirmId", tokenizeId->JSON.Encode.string),
+              ("savedCardBrand", savedCardBrand->JSON.Encode.string),
+              ("locale", locale->JSON.Encode.string),
+            ],
+          )
         } catch {
         | exn =>
           settle(
@@ -1079,176 +1003,162 @@ let make = (
     }
   }
 
-  // One outcome event per tokenize; its latency comes from PAYMENT_METHOD_SESSION_TOKENIZE_INIT.
-  // Only the outcome and error code are logged — never the card values. The message is kept
-  // for the Hyperswitch vault only: its messages are fixed strings and field names, while VGS
-  // messages can embed the raw VGS response or field state.
-  let logTokenizeOutcome = (result: JSON.t) => {
-    let errorDict = result->getDictFromJson->getDictFromDict("error")
-    let vaultType = detectVaultType()
-    let vaultTypeEntry = ("vaultType", vaultType->JSON.Encode.string)
-    switch errorDict->Dict.get("code") {
-    | Some(code) =>
-      let message = vaultType === vaultTypeHyperswitch ? errorDict->getString("message", "") : ""
-      logger.setLogError(
-        ~value=[vaultTypeEntry, ("code", code), ("message", message->JSON.Encode.string)]
-        ->getJsonFromArrayOfJson
-        ->JSON.stringify,
-        ~eventName=PAYMENT_METHOD_SESSION_TOKENIZE,
-      )
-    | None =>
-      logger.setLogInfo(
-        ~value=[vaultTypeEntry]->getJsonFromArrayOfJson->JSON.stringify,
-        ~eventName=PAYMENT_METHOD_SESSION_TOKENIZE,
-      )
-    }
-  }
-
-  let tokenize = (): promise<JSON.t> => {
-    logger.setLogInfo(
-      ~value=detectVaultType(),
-      ~eventName=PAYMENT_METHOD_SESSION_TOKENIZE_INIT,
-    )
-    let outcome = if sessionStateRef.contents != Active {
-      Promise.resolve(sessionConsumedResult(~locale, ()))
-    } else if tokenizingRef.contents {
-      Promise.resolve(tokenizationInFlightResult(~locale, ()))
-    } else if isExpired(~expiresAtMs=expiresAtRef.contents) {
-      Promise.resolve(sessionExpiredResult(~locale, ()))
-    } else {
-      let incompleteFieldSet = () =>
-        Promise.resolve(
-          buildConfirmResult(
-            ~outcome=Failure({
-              code: "incomplete_field_set",
-              message: None,
-              locale,
-              typeOverride: Some(ValidationError),
-            }),
-          ),
-        )
-      if detectVaultType() == "vgs" {
-        let (numberMounted, cvcMounted, nameMounted) = switch vgsBrokerRef.contents {
-        | Some(broker) => {
-            let entries = broker.fieldsRef.contents->Dict.valuesToArray
-            (
-              entries->Array.some(e => e.fieldType === "cardNumber" && e.fieldHandle->Option.isSome),
-              entries->Array.some(e => e.fieldType === "cardCvc" && e.fieldHandle->Option.isSome),
-              entries->Array.some(e => e.fieldType === "cardholderName" && e.fieldHandle->Option.isSome),
-            )
-          }
-        | None => (false, false, false)
-        }
-        if numberMounted {
-          tokenizeVgsFlowA()
-        } else if cvcMounted && !nameMounted {
-          tokenizeVgsFlowB()
+  let tokenize = (): promise<JSON.t> =>
+    (
+      () =>
+        if sessionStateRef.contents != Active {
+          Promise.resolve(sessionConsumedResult(~locale, ()))
+        } else if tokenizingRef.contents {
+          Promise.resolve(tokenizationInFlightResult(~locale, ()))
+        } else if isExpired(~expiresAtMs=expiresAtRef.contents) {
+          Promise.resolve(sessionExpiredResult(~locale, ()))
         } else {
-          incompleteFieldSet()
-        }
-      } else {
-        switch (findFieldOfType("cardNumber"), findFieldOfType("cardExpiry"), findFieldOfType("cardCvc")) {
-        | (None, None, None) => incompleteFieldSet()
-        | (Some(_field), _, _) =>
-          tokenizingRef := true
-          runCoordinatorRelay(~flow="save")
-        | (None, Some(_), _) =>
-          incompleteFieldSet()
-        | (None, None, Some(_)) if findFieldOfType("cardholderName")->Option.isSome =>
-          incompleteFieldSet()
-        | (None, None, Some(field)) =>
-          tokenizingRef := true
-          runCoordinatorRelay(
-            ~flow="update",
-            ~savedCardBrand=field.savedCardBrandRef.contents,
-          )
-        }
-      }
-    }
-    outcome->Promise.thenResolve(result => {
-      logTokenizeOutcome(result)
-      result
-    })
-  }
-
-  let deinit = (): unit => {
-    logger.setLogInfo(~value="Payment method session card form deinitialized", ~eventName=CARD_FORM_FLOW)
-    if sessionStateRef.contents != Deinitialized {
-      fieldsRef.contents
-      ->Dict.valuesToArray
-      ->Array.forEach(entry => {
-        try {
-          entry.handle.destroy()
-        } catch {
-        | _ => ()
-        }
-      })
-      fieldsRef := Dict.make()
-
-      vgsBrokerRef.contents->Option.forEach(broker =>
-        try broker.unmountAll() catch {
-        | exn =>
-          Console.error2(
-            "[PaymentMethodSession] VGS unmountAll() threw during deinit",
-            exn->Identity.anyTypeToJson,
-          )
-        }
-      )
-      vgsBrokerRef := None
-
-      switch Window.querySelector(`script[data-vgs-script-loaded]`)->Nullable.toOption {
-      | Some(script) =>
-        try {
-          script->Window.remove
-        } catch {
-        | _ => ()
-        }
-      | None => ()
-      }
-
-      fields := Dict.make()->JSON.Encode.object
-      sessionStateRef := Deinitialized
-      tokenizingRef := false
-
-      coordinator.mountRef.contents->Option.forEach(mount => CoordinatorMount.teardown(~mount))
-      coordinator.mountRef := None
-      coordinator.readyRef := false
-      coordinator.pendingCommandsRef := []
-      coordinatorTokenizePendingRef.contents->Option.forEach(((_pendingId, settle)) =>
-        settle(
-          buildConfirmResult(
-            ~outcome=Failure({
-              code: "tokenization_failed",
-              message: Some(
-                "deinit() was called while a tokenization was in flight — the card may still have been saved",
+          let incompleteFieldSet = () =>
+            Promise.resolve(
+              buildConfirmResult(
+                ~outcome=Failure({
+                  code: "incomplete_field_set",
+                  message: None,
+                  locale,
+                  typeOverride: Some(ValidationError),
+                }),
               ),
-              locale,
-              typeOverride: Some(ApiError),
-            }),
-          ),
-        )
-      )
-      coordinatorTokenizePendingRef := None
-      EventListenerManager.removeSmartEventListener("message", coordinatorListenerName)
-      EventListenerManager.removeSmartEventListener(
-        "message",
-        `onVaultCoordinatorFullscreen-${groupInstanceId}`,
-      )
-      EventListenerManager.removeSmartEventListener(
-        "message",
-        CoordinatorMount.fullscreenAnswerListenerName(groupInstanceId),
-      )
-    }
-  }
+            )
+          if detectVaultType() == "vgs" {
+            let (numberMounted, cvcMounted, nameMounted) = switch vgsBrokerRef.contents {
+            | Some(broker) => {
+                let entries = broker.fieldsRef.contents->Dict.valuesToArray
+                (
+                  entries->Array.some(e =>
+                    e.fieldType === "cardNumber" && e.fieldHandle->Option.isSome
+                  ),
+                  entries->Array.some(e =>
+                    e.fieldType === "cardCvc" && e.fieldHandle->Option.isSome
+                  ),
+                  entries->Array.some(e =>
+                    e.fieldType === "cardholderName" && e.fieldHandle->Option.isSome
+                  ),
+                )
+              }
+            | None => (false, false, false)
+            }
+            if numberMounted {
+              tokenizeVgsFlowA()
+            } else if cvcMounted && !nameMounted {
+              tokenizeVgsFlowB()
+            } else {
+              incompleteFieldSet()
+            }
+          } else {
+            switch (
+              findFieldOfType("cardNumber"),
+              findFieldOfType("cardExpiry"),
+              findFieldOfType("cardCvc"),
+            ) {
+            | (None, None, None) => incompleteFieldSet()
+            | (Some(_field), _, _) =>
+              tokenizingRef := true
+              runCoordinatorRelay(~flow="save")
+            | (None, Some(_), _) => incompleteFieldSet()
+            | (None, None, Some(_)) if findFieldOfType("cardholderName")->Option.isSome =>
+              incompleteFieldSet()
+            | (None, None, Some(field)) =>
+              tokenizingRef := true
+              runCoordinatorRelay(~flow="update", ~savedCardBrand=field.savedCardBrandRef.contents)
+            }
+          }
+        }
+    )()
 
-  let createCardForm = (): vaultCardForm => {
-    create,
-    on,
-    tokenize,
-    deinit,
-    update,
-    fields,
-  }
+  let deinit = (): unit =>
+    (
+      () => {
+        if sessionStateRef.contents != Deinitialized {
+          ()
+          fieldsRef.contents
+          ->Dict.valuesToArray
+          ->Array.forEach(entry => {
+            try {
+              entry.handle.destroy()
+            } catch {
+            | _ => ()
+            }
+          })
+          fieldsRef := Dict.make()
+
+          vgsBrokerRef.contents->Option.forEach(broker =>
+            try broker.unmountAll() catch {
+            | exn =>
+              Console.error2(
+                "[PaymentMethodSession] VGS unmountAll() threw during deinit",
+                exn->Identity.anyTypeToJson,
+              )
+              ()
+            }
+          )
+          vgsBrokerRef := None
+
+          switch Window.querySelector(VGSVaultBroker.vgsScriptSelector)->Nullable.toOption {
+          | Some(script) =>
+            try {
+              script->Window.remove
+            } catch {
+            | _ => ()
+            }
+          | None => ()
+          }
+
+          fields := Dict.make()->JSON.Encode.object
+          sessionStateRef := Deinitialized
+          tokenizingRef := false
+
+          closeInstalledPorts(coordinator)
+          coordinator.mountRef.contents->Option.forEach(mount =>
+            CoordinatorMount.teardown(~mount, ~pendingPorts=coordinator.pendingPortsRef.contents)
+          )
+          coordinator.pendingPortsRef := []
+          coordinator.mountRef := None
+          coordinator.readyRef := false
+          coordinator.pendingCommandsRef := []
+          coordinatorTokenizePendingRef.contents->Option.forEach(((_pendingId, settle)) =>
+            settle(
+              buildConfirmResult(
+                ~outcome=Failure({
+                  code: "tokenization_failed",
+                  message: Some(
+                    "deinit() was called while a tokenization was in flight — the card may still have been saved",
+                  ),
+                  locale,
+                  typeOverride: Some(ApiError),
+                }),
+              ),
+            )
+          )
+          coordinatorTokenizePendingRef := None
+          EventListenerManager.removeSmartEventListener("message", coordinatorListenerName)
+          EventListenerManager.removeSmartEventListener(
+            "message",
+            `onVaultCoordinatorFullscreen-${groupInstanceId}`,
+          )
+          EventListenerManager.removeSmartEventListener(
+            "message",
+            CoordinatorMount.fullscreenAnswerListenerName(groupInstanceId),
+          )
+        }
+      }
+    )()
+
+  let createCardForm = (): vaultCardForm =>
+    (
+      (): vaultCardForm => {
+        create,
+        on,
+        tokenize,
+        deinit,
+        update,
+        fields,
+      }
+    )()
 
   {
     createCardForm,

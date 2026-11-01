@@ -4,10 +4,9 @@ open Utils
 @react.component
 let default = () => {
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
+  let intent = PaymentHelpers.usePaymentIntent(BankTransfer)
   let email = Jotai.useAtomValue(userEmailAddress)
   let fullName = Jotai.useAtomValue(userFullName)
   let setComplete = Jotai.useSetAtom(fieldsComplete)
@@ -22,7 +21,12 @@ let default = () => {
   let paymentMethodType = "bacs"
   let paymentMethod = "bank_transfer"
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethod)
+  UtilityHooks.useHandlePostMessages(
+    ~complete,
+    ~empty,
+    ~paymentType=paymentMethod,
+
+  )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
   React.useEffect(() => {
@@ -47,7 +51,9 @@ let default = () => {
           ~manualRetry=isManualRetryEnabled,
         )
       } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+        let message = "Please enter all fields"
+        ()
+        postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
   }, (isManualRetryEnabled, email, fullName, sdkAuthorization, requiredFieldsBody))

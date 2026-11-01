@@ -4,7 +4,7 @@ type vgsCollectGlobal = {create: (string, string, JSON.t => unit) => JSON.t}
 @val @scope("window") external vgsCollect: Nullable.t<vgsCollectGlobal> = "VGSCollect"
 
 @send external formField: (JSON.t, string, JSON.t) => JSON.t = "field"
-// `submit` is deliberately not bound here — `VGSTypes.returnValue` already describes it.
+
 @send external fieldOn: (JSON.t, string, JSON.t => unit) => unit = "on"
 @send external fieldUpdate: (JSON.t, JSON.t) => unit = "update"
 @send external fieldDelete: JSON.t => unit = "delete"
@@ -13,13 +13,8 @@ type vgsCollectGlobal = {create: (string, string, JSON.t => unit) => JSON.t}
 @get external fieldDeleteHandler: JSON.t => Nullable.t<unit => unit> = "delete"
 @get external fieldClearHandler: JSON.t => Nullable.t<unit => unit> = "clear"
 
-// `JSON.stringify` really returns `undefined` for `undefined`, functions and symbols.
 @val @scope("JSON") external stringifyNullable: JSON.t => Nullable.t<string> = "stringify"
 
-type eventListenerOptions = {once: bool}
-@send
-external addElementEventListener: (Dom.element, string, 'ev => unit, eventListenerOptions) => unit =
-  "addEventListener"
 @send
 external elementQuerySelector: (Dom.element, string) => Nullable.t<Dom.element> = "querySelector"
 @send external setStyleProperty: (Window.style, string, string) => unit = "setProperty"
@@ -132,13 +127,12 @@ let describeJson = (value: JSON.t): string =>
   | None => value->stringifyNullable->Nullable.toOption->getNonEmptyOption->Option.getOr("null")
   }
 
-let emitBrokerError = (
+let notifyBrokerError = (
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
   ~code: string,
   ~message: string,
-  ~logger: HyperLoggerTypes.loggerMake,
 ): unit => {
-  logger.setLogInfo(~value=`${code}: ${message}`, ~eventName=VGS_VAULT_FLOW, ~logType=ERROR)
+  ()
   eventCallbacksRef.contents
   ->Dict.get("error")
   ->Option.forEach(cb =>
@@ -148,6 +142,7 @@ let emitBrokerError = (
         `[VGSVaultBroker] merchant on("error") handler threw`,
         exn->Identity.anyTypeToJson,
       )
+      ()
     }
   )
 }
@@ -184,13 +179,12 @@ let isVGSProvider = (vaultCredentials: JSON.t): bool => {
   }
 }
 
-let scriptMarkerAttribute = "data-vgs-script-loaded"
-let scriptSelector = `script[${scriptMarkerAttribute}]`
-
-let inFlightScriptPromise: ref<option<Promise.t<unit>>> = ref(None)
+let vgsScriptSelector = `script[src="${VGSConstants.vgsScriptURL}"]`
 
 let scriptElementStillPresent = (): bool =>
-  Window.querySelector(scriptSelector)->Nullable.toOption->Option.isSome
+  Window.querySelector(vgsScriptSelector)->Nullable.toOption->Option.isSome
+
+let inFlightScriptPromise: ref<option<Promise.t<unit>>> = ref(None)
 
 let loadVGSScript = (): Promise.t<unit> => {
   switch (inFlightScriptPromise.contents, scriptElementStillPresent()) {
@@ -199,57 +193,26 @@ let loadVGSScript = (): Promise.t<unit> => {
   }
   switch inFlightScriptPromise.contents {
   | Some(scriptLoadPromise) => scriptLoadPromise
-  | None =>
-    let scriptLoadPromise = Promise.make((resolve, reject) => {
-      switch Window.querySelector(scriptSelector)->Nullable.toOption {
-      | Some(existing) =>
-        switch existing->Window.getAttribute(scriptMarkerAttribute)->Nullable.toOption {
-        | Some("loaded") => resolve()
-        | Some("error") =>
-          existing->Window.remove
-          inFlightScriptPromise := None
-          reject(Error.make("vgs-collect previously failed to load")->Error.toException)
-        | _ =>
-          existing->addElementEventListener(
-            "load",
-            _ => {
-              existing->Window.setAttribute(scriptMarkerAttribute, "loaded")
-              resolve()
-            },
-            {once: true},
-          )
-          existing->addElementEventListener(
-            "error",
-            (err: exn) => {
-              existing->Window.setAttribute(scriptMarkerAttribute, "error")
-              existing->Window.remove
-              inFlightScriptPromise := None
-              reject(err)
-            },
-            {once: true},
-          )
-        }
-      | None =>
-        let script = Window.createElement("script")
-        script->Window.elementSrc(VGSConstants.vgsScriptURL)
-        script->Window.setAttribute("integrity", VGSConstants.vgsScriptIntegrity)
-        script->Window.setAttribute("crossorigin", "anonymous")
-        script->Window.setAttribute("async", "true")
-        script->Window.setAttribute(scriptMarkerAttribute, "loading")
-        script->Window.elementOnload(() => {
-          script->Window.setAttribute(scriptMarkerAttribute, "loaded")
-          resolve()
-        })
-        script->Window.elementOnerror(err => {
-          script->Window.setAttribute(scriptMarkerAttribute, "error")
-          inFlightScriptPromise := None
-          reject(err)
-        })
-        let _ = Window.head->Window.appendChildElement(script)
-      }
-    })
-    inFlightScriptPromise := Some(scriptLoadPromise)
-    scriptLoadPromise
+  | None => {
+      let scriptLoadPromise = Promise.make((resolve, reject) =>
+        ResourceLoader.load(
+          ~url=VGSConstants.vgsScriptURL,
+          ~resource=ResourceLoader.Script,
+          ~attributes=[
+            ("integrity", VGSConstants.vgsScriptIntegrity),
+            ("crossorigin", "anonymous"),
+            ("async", "true"),
+          ],
+          ~onLoad=_ => resolve(),
+          ~onError=error => {
+            inFlightScriptPromise := None
+            reject(error)
+          },
+        )
+      )
+      inFlightScriptPromise := Some(scriptLoadPromise)
+      scriptLoadPromise
+    }
   }
 }
 
@@ -272,8 +235,7 @@ let computeVGSBaseOptions = (~fieldType: string, ~options: JSON.t): JSON.t => {
   | "cardholderName" =>
     let placeholder = optionsDict->getString("placeholder", "")
     VGSConstants.cardHolderNameOptions(placeholder)->Identity.anyTypeToJson
-  | _ =>
-    VGSConstants.cardNumberOptions->Identity.anyTypeToJson
+  | _ => VGSConstants.cardNumberOptions->Identity.anyTypeToJson
   }
 }
 
@@ -288,16 +250,14 @@ let merchantOverridableStringKeys = [
 ]
 let merchantOverridableBoolKeys = ["showCardIcon", "disabled", "readOnly", "hideValue"]
 
-// `computeVGSBaseOptions` hands back shared module constants, so copy before writing.
 let applyMerchantOptionOverrides = (~basis: JSON.t, ~options: JSON.t): JSON.t => {
   let basisDict = basis->getDictFromJson->Dict.copy
   let optionsDict = options->getDictFromJson
   merchantOverridableStringKeys->Array.forEach(key => {
-    // `placeholder: ""` is a request for no placeholder, so it applies; an empty
-    // colour or label is not, so those keep the non-empty guard.
-    let supplied = key === "placeholder"
-      ? optionsDict->getOptionString(key)
-      : optionsDict->getOptionString(key)->getNonEmptyOption
+    let supplied =
+      key === "placeholder"
+        ? optionsDict->getOptionString(key)
+        : optionsDict->getOptionString(key)->getNonEmptyOption
     switch supplied {
     | Some(value) => basisDict->Dict.set(key, value->JSON.Encode.string)
     | None => ()
@@ -402,6 +362,7 @@ let dispatchFieldEvent = (
         `[VGSVaultBroker] merchant on("${event}") handler threw`,
         exn->Identity.anyTypeToJson,
       )
+      ()
     }
   )
 }
@@ -410,8 +371,6 @@ let make = (
   ~vaultId: string,
   ~environment: string,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
-  ~logger: HyperLoggerTypes.loggerMake,
-  ~onFieldChange: (string, JSON.t) => unit,
 ): vgsBrokerHandle => {
   let formRef: ref<option<JSON.t>> = ref(None)
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
@@ -442,7 +401,6 @@ let make = (
         }
         if changed {
           lastFieldPayloadRef.contents->Dict.set(fieldId, fingerprint)
-          onFieldChange(fieldId, payload)
           dispatchFieldEvent(~eventCallbacksRef, ~fieldId, ~event="change", ~payload)
         }
       }
@@ -467,13 +425,11 @@ let make = (
           `[VGSVaultBroker] clear(${entry.fieldType}) threw`,
           exn->Identity.anyTypeToJson,
         )
+        ()
       }
     | None => ()
     }
 
-  // CommonCardProps.changeCardNumber clears expiry and CVC in place when the number is wiped;
-  // VGS hosts each field itself, so the broker relays it off the form state channel. The brand
-  // stands in for that code's prevCardBrandRef guard.
   let clearDependentFieldsOnEmptiedCardNumber = (): unit =>
     fieldsRef.contents
     ->Dict.valuesToArray
@@ -485,9 +441,7 @@ let make = (
           lastCardNumberBrandRef := ""
           fieldsRef.contents
           ->Dict.valuesToArray
-          ->Array.filter(entry =>
-            entry.fieldType === "cardExpiry" || entry.fieldType === "cardCvc"
-          )
+          ->Array.filter(entry => entry.fieldType === "cardExpiry" || entry.fieldType === "cardCvc")
           ->Array.forEach(clearVgsField)
         }
       } else {
@@ -508,23 +462,30 @@ let make = (
         let createFormPromise =
           loadVGSScript()
           ->Promise.then(_ => {
-            // VGS's 3rd `create` arg is the form-level state channel, not an error channel.
             let onFormStateChange: JSON.t => unit = state => {
               formStateRef := state->getDictFromJson
               publishFieldStates()
               clearDependentFieldsOnEmptiedCardNumber()
             }
             let form: JSON.t = switch vgsCollect->Nullable.toOption {
-            | Some(collect) => collect.create(vaultId, environment, onFormStateChange)
+            | Some(collect) =>
+              try collect.create(vaultId, environment, onFormStateChange) catch {
+              | err => {
+                  ()
+                  Error.raise(Error.make("VGSCollect create failed"))
+                }
+              }
             | None =>
+              ()
               Error.raise(Error.make("VGSCollect script failed to register window.VGSCollect"))
             }
             formRef := Some(form)
-            logger.setLogInfo(~value="VGS collect form created", ~eventName=VGS_VAULT_FLOW)
+            ()
             Promise.resolve(form)
           })
           ->Promise.catch(err => {
             createFormInFlightRef := None
+            ()
             Promise.reject(err)
           })
         createFormInFlightRef := Some(createFormPromise)
@@ -553,16 +514,13 @@ let make = (
         | None => ()
         | Some(_) if fieldType === "cardholderName" => ()
         | Some(_) =>
-          describeInvalidField(~state=formStateRef.contents->Dict.get(vgsName))->Option.forEach(
-            message => {
-              let fieldErrors = Dict.make()
-              fieldErrors->Dict.set(
-                "errorMessages",
-                [message->JSON.Encode.string]->JSON.Encode.array,
-              )
-              validationErrors->Dict.set(fieldType, fieldErrors->JSON.Encode.object)
-            },
-          )
+          describeInvalidField(
+            ~state=formStateRef.contents->Dict.get(vgsName),
+          )->Option.forEach(message => {
+            let fieldErrors = Dict.make()
+            fieldErrors->Dict.set("errorMessages", [message->JSON.Encode.string]->JSON.Encode.array)
+            validationErrors->Dict.set(fieldType, fieldErrors->JSON.Encode.object)
+          })
         }
       )
       if validationErrors->Dict.keysToArray->Array.length > 0 {
@@ -579,21 +537,16 @@ let make = (
       } else {
         Promise.make((resolve, _reject) => {
           let vgsForm = form->VGSTypes.formFromJson
-          let settleWithFailure = (message: string) =>
+
+          let settleWithFailure = (message: string) => {
             resolve(
               makeErrorEnvelope(~code="tokenization_failed", ~message, ~errorType="api_error"),
             )
-          // VGS routes a transport failure through this SUCCESS callback as (status=null, data="Network Error").
-          let onSuccess: (JSON.t, JSON.t) => unit = (status, data) => {
-            let isSuccessStatus =
-              status->httpStatusCode->Option.mapOr(false, code => code >= 200. && code < 300.)
-            logger.setLogInfo(
-              ~value=`VGS submit status: ${status->describeJson}`,
-              ~eventName=VGS_VAULT_FLOW,
-              ~logType=isSuccessStatus ? INFO : ERROR,
-            )
-            switch (isSuccessStatus, data->JSON.Decode.object) {
-            | (true, Some(vaultResponse)) =>
+          }
+
+          let onSuccess: (JSON.t, JSON.t) => unit = (status, data) =>
+            switch (status->httpStatusCode, data->JSON.Decode.object) {
+            | (Some(code), Some(vaultResponse)) if code >= 200. && code < 300. =>
               let resultDict = Dict.make()
               resultDict->Dict.set("status", "success"->JSON.Encode.string)
               resultDict->Dict.set("vaultResponse", vaultResponse->JSON.Encode.object)
@@ -603,8 +556,7 @@ let make = (
                 `VGS returned no tokenization response (status ${status->describeJson}): ${data->describeJson}`,
               )
             }
-          }
-          // VGS calls the submit error callback with ONE argument: the per-field error map.
+
           let onError: JSON.t => unit = errors => {
             let stringified = try errors->stringifyNullable->Nullable.toOption catch {
             | _ => None
@@ -620,7 +572,7 @@ let make = (
           try {
             let submitReturn =
               vgsForm->VGSTypes.submitReturningValue("/post", emptyPayload, onSuccess, onError)
-            // VGS *rejects* this when the fields aren't loaded yet; unadopted, this promise never settles.
+
             Promise.resolve(submitReturn)
             ->Promise.catch(exn => {
               settleWithFailure(`VGS submit rejected: ${exn->exceptionMessage}`)
@@ -672,8 +624,6 @@ let make = (
           inputFieldHeight
         }
 
-        // VGS renders the input inside its own iframe, so sizing the container alone leaves a
-        // short input in a tall box. Fill it unless the field or the merchant set a height.
         let computedOptions = {
           let optionsDict = computedOptions->getDictFromJson->Dict.copy
           let css = optionsDict->getDictFromDict("css")->Dict.copy
@@ -754,12 +704,7 @@ let make = (
           | exn =>
             let message = `field.on("${event}") could not be wired for fieldId=${fieldId} — ${event} events will never fire: ${exn->exceptionMessage}`
             Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
-            emitBrokerError(
-              ~eventCallbacksRef,
-              ~code="vgs_field_event_binding_failed",
-              ~message,
-              ~logger,
-            )
+            notifyBrokerError(~eventCallbacksRef, ~code="vgs_field_event_binding_failed", ~message)
           }
         }
         wireEvent("focus")
@@ -775,11 +720,10 @@ let make = (
     ->Promise.catch(err => {
       let message = `mountField(${fieldType}, ${selector}) failed: ${err->exceptionMessage}`
       Console.error2(`[VGSVaultBroker] ${message}`, err->Identity.anyTypeToJson)
-      emitBrokerError(
+      notifyBrokerError(
         ~eventCallbacksRef,
         ~code=err->exceptionCodeOr(~fallback="vgs_mount_failed"),
         ~message,
-        ~logger,
       )
       Promise.reject(err)
     })
@@ -798,7 +742,7 @@ let make = (
       | exn =>
         let message = `updateField(${fieldId}) threw — the requested options were not applied: ${exn->exceptionMessage}`
         Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
-        emitBrokerError(~eventCallbacksRef, ~code="vgs_field_update_failed", ~message, ~logger)
+        notifyBrokerError(~eventCallbacksRef, ~code="vgs_field_update_failed", ~message)
       }
     | _ => ()
     }
@@ -827,7 +771,7 @@ let make = (
       | exn =>
         let message = `unmountField(${fieldId}) threw — the secure field may still be in the DOM: ${exn->exceptionMessage}`
         Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
-        emitBrokerError(~eventCallbacksRef, ~code="vgs_field_unmount_failed", ~message, ~logger)
+        notifyBrokerError(~eventCallbacksRef, ~code="vgs_field_unmount_failed", ~message)
       }
       lastFieldPayloadRef.contents->Dict.delete(fieldId)
       fieldsRef.contents->Dict.set(
