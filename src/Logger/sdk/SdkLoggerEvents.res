@@ -36,11 +36,6 @@ type vaultFailure =
   | FormCreationFailed
   | TokenizationFailed
 
-type threeDsMethodFailure =
-  | MissingContainer
-  | FormSubmitFailed
-  | IframeLoadFailed
-
 type threeDsPopupFailure = MessageHandlingFailed
 
 type ddcFailure =
@@ -57,15 +52,9 @@ type walletFailureData = {reason: walletFailure, connector?: string}
 
 type vaultFailureData = {reason: vaultFailure}
 
-type transStatusData = {transStatus: string}
-
-type threeDsMethodFailureData = {reason: threeDsMethodFailure}
-
 type threeDsPopupFailureData = {reason: threeDsPopupFailure}
 
 type ddcFailureData = {reason: ddcFailure}
-
-type paymentOutcomeData = {status: string, manualRetryAllowed?: bool}
 
 type bankAuthSyncFailureData = {status: string}
 
@@ -100,20 +89,12 @@ type paymentMethodSaveData = {operation: paymentMethodSaveOperation}
 
 type paymentMethodSaveOutcomeData = {operation: paymentMethodSaveOperation, status: string}
 
-type retryExhaustionData = {operation: string, attempts: int}
-
 type lifecycleEvent =
   | ElementIframeMounted
   | ElementInitReceived
   | AppRendered
-  | PaymentAttempted
-  | PaymentSucceeded(paymentOutcomeData)
-  | PaymentFailed(paymentOutcomeData)
-  | PaymentRejected
   | PaymentStatusUnknown(paymentStatusUnknownData)
-  | PaymentRetriesExhausted(retryExhaustionData)
   | PaymentErrorHandlingFailed
-  | PaymentStatusPollExhausted
   | PaymentMethodSaveRejected(paymentMethodSaveData)
   | PaymentMethodSaveSucceeded(paymentMethodSaveOutcomeData)
   | PaymentMethodSaveFailed(paymentMethodSaveOutcomeData)
@@ -131,15 +112,6 @@ type lifecycleEvent =
   | NextActionUnsupported(nextActionFailureData)
   | ThreeDsPopupRequested
   | ThreeDsPopupFailed(threeDsPopupFailureData)
-  | ThreeDsChallengeShown(transStatusData)
-  | ThreeDsFrictionlessResolved(transStatusData)
-  | ThreeDsAuthContainerMissing(transStatusData)
-  | ThreeDsAuthRequestFailed
-  | ThreeDsMethodStarted
-  | ThreeDsMethodCompleted
-  | ThreeDsMethodSkipped
-  | ThreeDsMethodFailed(threeDsMethodFailureData)
-  | ThreeDsMethodTimedOut
   | DdcStarted
   | DdcCompleted
   | DdcFailed(ddcFailureData)
@@ -174,12 +146,6 @@ let walletFailureSeverity = reason =>
     Error
   }
 
-let threeDsMethodFailureSeverity = reason =>
-  switch reason {
-  | MissingContainer | FormSubmitFailed => Error
-  | IframeLoadFailed => Warning
-  }
-
 let vaultFailureSeverity = reason =>
   switch reason {
   | FieldBindingFailed
@@ -197,9 +163,6 @@ let lifecycleSeverity = value =>
   | WalletFlowResolved(_)
   | WalletStageReached(_)
   | ThreeDsPopupRequested
-  | ThreeDsMethodStarted
-  | ThreeDsMethodCompleted
-  | ThreeDsMethodSkipped
   | DdcStarted
   | DdcCompleted
   | CountryDataServedFromBundle
@@ -207,20 +170,14 @@ let lifecycleSeverity = value =>
     Debug
   | ElementInitReceived
   | AppRendered
-  | PaymentAttempted
-  | PaymentSucceeded(_)
-  | PaymentFailed(_)
   | PaymentMethodSaveSucceeded(_)
   | PaymentMethodSaveFailed(_)
   | WalletTokenReceived
   | CustomerRedirectStarted(_)
-  | ThreeDsChallengeShown(_)
-  | ThreeDsFrictionlessResolved(_)
   | QrCodeShown
   | VoucherShown
   | BankTransferShown =>
     Info
-  | ThreeDsMethodTimedOut
   | DdcTimedOut
   | BankAuthConnectorUnsupported(_)
   | PaymentMethodUnresolved(_)
@@ -228,16 +185,11 @@ let lifecycleSeverity = value =>
   | WalletFlowExited
   | QrCodeExpired
   | OperationBlocked(_)
-  | PaymentStatusPollExhausted
   | FormValidationFailed(_)
   | EligibilityCheckFailed =>
     Warning
-  | PaymentRetriesExhausted(_) => Error
   | PaymentErrorHandlingFailed
   | PaymentMethodSaveRejected(_)
-  | PaymentRejected
-  | ThreeDsAuthContainerMissing(_)
-  | ThreeDsAuthRequestFailed
   | BankAuthSyncFailed(_)
   | CountryDataUnavailable
   | DdcFailed(_) =>
@@ -246,7 +198,6 @@ let lifecycleSeverity = value =>
   | NextActionUnsupported({recovered}) => recovered ? Warning : Error
   | VaultFlowFailed({reason}) => reason->vaultFailureSeverity
   | WalletFlowFailed({reason}) => reason->walletFailureSeverity
-  | ThreeDsMethodFailed({reason}) => reason->threeDsMethodFailureSeverity
   }
 
 // State
