@@ -225,8 +225,8 @@ let intentCall = (
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else {
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-              SdkLogger.logLifecycle(
-                ~event=PaymentStatusUnknown({inferred: true}),
+              PaymentLogger.logLifecycle(
+                ~event=PaymentLogger.PaymentStatusUnknown({inferred: true}),
                 ~paymentMethod=?loggedPaymentMethod,
                 ~message="Empty authentication status in payment method session response; treated as succeeded",
               )
@@ -264,7 +264,7 @@ let intentCall = (
         }
       } catch {
       | exn =>
-        SdkLogger.logLifecycle(~event=PaymentErrorHandlingFailed, ~exn)
+        PaymentLogger.logLifecycle(~event=PaymentLogger.PaymentErrorHandlingFailed, ~exn)
         if !isPaymentSession {
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
         }

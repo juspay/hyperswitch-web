@@ -66,8 +66,6 @@ type unknownPaymentMethodData = {value: string}
 
 type unsupportedConnectorData = {connector: string}
 
-type paymentStatusUnknownData = {inferred: bool}
-
 type validationFailureData = {reason: string}
 
 type blockedOperation =
@@ -93,8 +91,6 @@ type lifecycleEvent =
   | ElementIframeMounted
   | ElementInitReceived
   | AppRendered
-  | PaymentStatusUnknown(paymentStatusUnknownData)
-  | PaymentErrorHandlingFailed
   | PaymentMethodSaveRejected(paymentMethodSaveData)
   | PaymentMethodSaveSucceeded(paymentMethodSaveOutcomeData)
   | PaymentMethodSaveFailed(paymentMethodSaveOutcomeData)
@@ -181,14 +177,12 @@ let lifecycleSeverity = value =>
   | DdcTimedOut
   | BankAuthConnectorUnsupported(_)
   | PaymentMethodUnresolved(_)
-  | PaymentStatusUnknown(_)
   | WalletFlowExited
   | QrCodeExpired
   | OperationBlocked(_)
   | FormValidationFailed(_)
   | EligibilityCheckFailed =>
     Warning
-  | PaymentErrorHandlingFailed
   | PaymentMethodSaveRejected(_)
   | BankAuthSyncFailed(_)
   | CountryDataUnavailable
