@@ -153,9 +153,10 @@ let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdat
 
 let make = (
   options: JSON.t,
-  ~publishableKey: string,
-  ~sdkSessionId: string,
-  ~logger: HyperLoggerTypes.loggerMake,
+  ~publishableKey: string="",
+  ~sdkSessionId: string="",
+  ~logger: HyperLoggerTypes.loggerMake=LoggerUtils.defaultLoggerConfig,
+  ~context: option<LoggerContext.t>=?,
 ): initPaymentMethodSession => {
   let optionsDict = options->getDictFromJson
 
@@ -331,6 +332,7 @@ let make = (
           let dict = json->getDictFromJson
           if dict->getBool("iframeMounted", false) {
             coordinator.readyRef := true
+            flushPendingPorts(coordinator)
             postCoordinatorLoggerConfig()
             syncCoordinatorSessions()
             postCoordinatorOptions()
@@ -553,9 +555,11 @@ let make = (
     let savedCardBrandRef = ref(savedCardDict->savedCardNetwork)
 
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
-      coordinator->postFieldMountConfig(
+      coordinator->openFieldPort(
         ~fieldIframe=mountedIframeRef,
-        ~mountConfig=buildMountConfig(~options, ~fieldId),
+        ~mountConfig=buildMountConfig(~options, ~fieldId)->JSON.Encode.object,
+        ~fieldName=mapFieldTypeToInternalFieldName(fieldType),
+        ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
       )
       if sessionsDataRef.contents != JSON.Encode.null {
         mountedIframeRef->Window.iframePostMessage(
@@ -1210,7 +1214,11 @@ let make = (
       sessionStateRef := Deinitialized
       tokenizingRef := false
 
-      coordinator.mountRef.contents->Option.forEach(mount => CoordinatorMount.teardown(~mount))
+      closeInstalledPorts(coordinator)
+      coordinator.mountRef.contents->Option.forEach(mount =>
+        CoordinatorMount.teardown(~mount, ~pendingPorts=coordinator.pendingPortsRef.contents)
+      )
+      coordinator.pendingPortsRef := []
       coordinator.mountRef := None
       coordinator.readyRef := false
       coordinator.pendingCommandsRef := []

@@ -1,7 +1,6 @@
 open Types
 
-let make = (options, ~clientSecret, ~publishableKey, ~logger: option<HyperLoggerTypes.loggerMake>=None) => {
-  let _ = logger
+let make = (options, ~clientSecret, ~publishableKey) => {
   let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
 
   let customPodUri = options->Utils.getDictFromJson->Utils.getString("customPodUri", "")

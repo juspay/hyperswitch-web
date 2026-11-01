@@ -33,10 +33,9 @@ let make = (
   let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let setUserError = message => {
+    SdkLogger.logLifecycle(~event=FormValidationFailed({reason: message}))
     postFailedSubmitResponse(~errortype="validation_error", ~message)
-    loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT)
   }
   let {
     displaySavedPaymentMethodsCheckbox,
@@ -79,7 +78,7 @@ let make = (
   let (isEligibilityPending, setIsEligibilityPending) = React.useState(_ => false)
   let eligibilityControllerRef = React.useRef(None)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let intent = PaymentHelpers.usePaymentIntent(Card)
   let savedCardlength = savedMethods->Array.length
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
@@ -187,6 +186,10 @@ let make = (
         <SavedCardItem
           key={i->Int.toString}
           setPaymentToken
+          logSelectionDetails=[
+            ("card_index", i->JSON.Encode.int),
+            ("list_source", "saved_methods"->JSON.Encode.string),
+          ]
           isActive
           paymentItem=obj
           brandIcon={obj->getPaymentMethodBrand}
@@ -262,7 +265,6 @@ let make = (
         ~controllerRef=eligibilityControllerRef,
         ~clientSecret,
         ~publishableKey,
-        ~logger=loggerState,
         ~customPodUri,
         ~bodyArr=eligibilityBody,
         ~sdkAuthorization,
@@ -271,12 +273,11 @@ let make = (
         ~setEligibilitySurchargeDetails,
         ~setEligibilityOfferDetails,
         ~setEligibilityError=Some(setEligibilityError),
-        ~errorLogMessage="Saved card payment eligibility check failed",
+        ~check="saved_card",
         ~fetchEligibility={
           (
             ~clientSecret,
             ~publishableKey,
-            ~logger,
             ~customPodUri,
             ~bodyArr,
             ~sdkAuthorization,
@@ -286,7 +287,6 @@ let make = (
             PaymentHelpers.fetchPaymentMethodEligibility(
               ~clientSecret,
               ~publishableKey,
-              ~logger,
               ~customPodUri,
               ~bodyArr,
               ~sdkAuthorization,
@@ -343,7 +343,16 @@ let make = (
   let paymentMethodType =
     customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
 
-  useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType, ~savedMethod=true)
+  useHandlePostMessages(
+    ~complete,
+    ~empty,
+    ~paymentType=paymentMethodType,
+    ~savedMethod=true,
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(
+      ~method=customerMethod.paymentMethod,
+      ~methodType=customerMethod.paymentMethodType->Option.getOr(""),
+    ),
+  )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
   SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
   SubscriptionEventHooks.useEmitAppliedOffersInfo(~offerDetails=eligibilityOfferDetails)
@@ -696,6 +705,11 @@ let make = (
 
   let showSavedCards = groupSavedMethodsSeparately || !showPaymentMethodsScreen
 
+  let switchToNewPaymentMethods = () => {
+    SdkLogger.logUser(~event=ViewOpened({view: NewPaymentMethods}))
+    setShowPaymentMethodsScreen(_ => true)
+  }
+
   let enableSavedPaymentShimmer = React.useMemo(() => {
     savedCardlength === 0 &&
     !showPaymentMethodsScreen &&
@@ -729,7 +743,7 @@ let make = (
     </RenderIf>
     <RenderIf condition={!enableSavedPaymentShimmer && !groupSavedMethodsSeparately}>
       <SwitchViewButton
-        onClick={_ => setShowPaymentMethodsScreen(_ => true)}
+        onClick={_ => switchToNewPaymentMethods()}
         icon={<Icon name="circle-plus" size=22 />}
         title={localeString.newPaymentMethods}
         ariaLabel="Click to use new payment methods"
@@ -738,7 +752,7 @@ let make = (
           let key = JsxEvent.Keyboard.key(event)
           let keyCode = JsxEvent.Keyboard.keyCode(event)
           if key == "Enter" || keyCode == 13 {
-            setShowPaymentMethodsScreen(_ => true)
+            switchToNewPaymentMethods()
           }
         }}
       />

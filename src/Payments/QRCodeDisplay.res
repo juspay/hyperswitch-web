@@ -16,14 +16,6 @@ type paymentMethodConfig = {
   logoName: string,
 }
 
-let getKeyValue = (json, str) => {
-  json
-  ->Dict.get(str)
-  ->Option.getOr(Dict.make()->JSON.Encode.object)
-  ->JSON.Decode.string
-  ->Option.getOr("")
-}
-
 let parsePaymentMethod = methodString => {
   switch methodString {
   | "duit_now" => DuitNow
@@ -67,12 +59,12 @@ let make = () => {
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (headers, setHeaders) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
     getPaymentMethodConfig(Other)
   )
   let copyTimeoutRef = React.useRef(None)
+  let loggedPaymentMethodRef = React.useRef(None)
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -85,6 +77,10 @@ let make = () => {
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
 
           let paymentMethodStr = metaDataDict->getString("paymentMethod", "")
+          loggedPaymentMethodRef.current = LoggerPaymentMethod.fromPair(
+            ~method=metaDataDict->getString("paymentMethodFamily", ""),
+            ~methodType=paymentMethodStr,
+          )
           let parsedPaymentMethod = parsePaymentMethod(paymentMethodStr)
 
           let defaultConfig = getPaymentMethodConfig(parsedPaymentMethod)
@@ -115,8 +111,8 @@ let make = () => {
             }
           }
 
-          let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
-          setClientSecret(_ => paymentIntentId)
+          let clientSecretVal = metaDataDict->getString("clientSecret", "")
+          setClientSecret(_ => clientSecretVal)
           let sdkAuthorizationVal = metaDataDict->getString("sdkAuthorization", "")
           setSdkAuthorization(_ => sdkAuthorizationVal)
           let headersDict =
@@ -143,16 +139,22 @@ let make = () => {
           try {
             let res = await PaymentHelpers.pollRetrievePaymentIntent(
               ~headers=headers->Dict.toArray->Dict.fromArray,
-              paymentIntentId,
+              clientSecretVal,
               ~publishableKey,
-              ~logger,
               ~customPodUri,
               ~sdkAuthorization=Some(sdkAuthorizationVal),
             )
             Modal.close(setOpenModal)
             postSubmitResponse(~jsonData=res, ~url=return_url)
           } catch {
-          | error => Console.error2("Error while polling payment intent:", error)
+          | error =>
+            SdkLogger.logLifecycle(
+              ~event=PaymentStatusUnknown({inferred: true}),
+              ~exn=error,
+              ~paymentMethod=?loggedPaymentMethodRef.current,
+              ~message="QR payment status polling failed",
+            )
+            Console.error2("Error while polling payment intent:", error)
           }
         }
       }
@@ -169,7 +171,6 @@ let make = () => {
         clientSecret,
         ~headers=headers->Dict.fromArray,
         ~publishableKey,
-        ~logger,
         ~customPodUri,
         ~sdkAuthorization=Some(sdkAuthorization),
       )
@@ -177,12 +178,20 @@ let make = () => {
       postSubmitResponse(~jsonData=json, ~url=return_url)
       Modal.close(setOpenModal)
     } catch {
-    | e => Console.error2("Retrieve Failed", e)
+    | e =>
+      SdkLogger.logLifecycle(
+        ~event=PaymentStatusUnknown({inferred: true}),
+        ~exn=e,
+        ~paymentMethod=?loggedPaymentMethodRef.current,
+        ~message="Payment retrieve after QR close or expiry failed",
+      )
+      Console.error2("Retrieve Failed", e)
     }
   }
 
   React.useEffect(() => {
     if expiryTime < 1000.0 {
+      SdkLogger.logLifecycle(~event=QrCodeExpired, ~paymentMethod=?loggedPaymentMethodRef.current)
       closeModal()->ignore
     }
 
@@ -201,6 +210,7 @@ let make = () => {
   }, [expiryTime])
 
   let handleCopyQrData = _ => {
+    SdkLogger.logUser(~event=QrCodeCopyRequested, ~paymentMethod=?loggedPaymentMethodRef.current)
     messageParentWindow([
       ("copy", true->JSON.Encode.bool),
       ("copyDetails", rawQrData->JSON.Encode.string),

@@ -201,7 +201,10 @@ let make = (
     <RenderIf condition={!showMore && dropDownOptionsDetails->Array.length > 0}>
       <button
         className="AccordionMore flex overflow-auto no-scrollbar"
-        onClick={_ => setShowMore(_ => !showMore)}
+        onClick={_ => {
+          SdkLogger.logUser(~event=ViewToggled({view: MorePaymentMethods, expanded: !showMore}))
+          setShowMore(_ => !showMore)
+        }}
         style={
           borderRadius: themeObj.borderRadius,
           marginTop: themeObj.spacingUnit,

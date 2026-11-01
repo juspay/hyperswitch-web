@@ -1,9 +1,11 @@
+SdkLogger.catchGlobalCrashes(~ownsDocument=false)
+
 let loadHyper = (str, option) => {
   Promise.resolve(Hyper.make(str, option, None))
 }
 
 let loadStripe = (str, option) => {
-  ErrorUtils.manageErrorWarning(DEPRECATED_LOADSTRIPE, ~logger=LoggerUtils.defaultLoggerConfig)
+  ErrorUtils.manageErrorWarning(DeprecatedMethod)
   loadHyper(str, option)
 }
 
