@@ -710,8 +710,8 @@ let rec intentCall = (
                   ]->Dict.fromArray
 
                 if do3dsMethodCall {
-                  SdkLogger.logLifecycle(
-                    ~event=ThreeDsMethodStarted,
+                  AuthenticationLogger.logLifecycle(
+                    ~event=AuthenticationLogger.ThreeDsMethodStarted,
                     ~paymentMethod=?loggedPaymentMethod,
                   )
                   messageParentWindow([
@@ -721,8 +721,8 @@ let rec intentCall = (
                     ("metadata", metaData->JSON.Encode.object),
                   ])
                 } else {
-                  SdkLogger.logLifecycle(
-                    ~event=ThreeDsMethodSkipped,
+                  AuthenticationLogger.logLifecycle(
+                    ~event=AuthenticationLogger.ThreeDsMethodSkipped,
                     ~paymentMethod=?loggedPaymentMethod,
                   )
                   metaData->Dict.set("3dsMethodComp", "U"->JSON.Encode.string)

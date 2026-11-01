@@ -7,7 +7,7 @@ let logLifecycle = (
   ~exn=?,
   ~failure=?,
   ~durationMs=?,
-  ~paymentMethod=LoggerPaymentMethod.Card,
+  ~paymentMethod=?,
   ~context=?,
   ~message=?,
 ) =>
@@ -20,7 +20,7 @@ let logLifecycle = (
     ~exn?,
     ~failure?,
     ~durationMs?,
-    ~paymentMethod,
+    ~paymentMethod?,
     ~context?,
     ~message?,
   )
