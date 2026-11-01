@@ -870,6 +870,7 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                 ~context,
                 ~event=VaultFlowFailed({reason: PaymentMethodSessionLogger.FormCreationFailed}),
                 ~details=[("field", fieldType->JSON.Encode.string)],
+                ~paymentMethod=Card,
                 ~message="Vault credentials missing vaultId or environment; field not created",
               )
               Types.defaultFieldHandle
@@ -1259,6 +1260,7 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                 ~context,
                 ~event=VaultFlowFailed({reason: PaymentMethodSessionLogger.FieldUnmountFailed}),
                 ~exn,
+                ~paymentMethod=Card,
                 ~message="Vault broker unmountAll threw during deinit",
               )
             }
