@@ -29,9 +29,11 @@ let intentCall = (
   ~apiEvent: SdkLogger.apiEvent,
 ) => {
   open Promise
-  let saveOperation: option<SdkLogger.paymentMethodSaveOperation> = switch apiEvent {
-  | SavePaymentMethod => Some(Save)
-  | UpdatePaymentMethod => Some(Update)
+  let saveOperation: option<
+    PaymentMethodSessionLogger.paymentMethodSaveOperation,
+  > = switch apiEvent {
+  | SavePaymentMethod => Some(PaymentMethodSessionLogger.Save)
+  | UpdatePaymentMethod => Some(PaymentMethodSessionLogger.Update)
   | _ => None
   }
   let handleOpenUrl = url => {
@@ -67,8 +69,8 @@ let intentCall = (
           (resolve, _) => {
             switch saveOperation {
             | Some(operation) =>
-              SdkLogger.logLifecycle(
-                ~event=PaymentMethodSaveRejected({operation: operation}),
+              PaymentMethodSessionLogger.logLifecycle(
+                ~event=PaymentMethodSessionLogger.PaymentMethodSaveRejected({operation: operation}),
                 ~failure=data,
                 ~details=data->WebLoggerUtils.intentErrorDetails,
                 ~paymentMethod=?switch paymentType {
@@ -211,13 +213,13 @@ let intentCall = (
               let status = intent.authenticationDetails.status
               switch (saveOperation, status) {
               | (Some(operation), "succeeded") =>
-                SdkLogger.logLifecycle(
-                  ~event=PaymentMethodSaveSucceeded({operation, status}),
+                PaymentMethodSessionLogger.logLifecycle(
+                  ~event=PaymentMethodSessionLogger.PaymentMethodSaveSucceeded({operation, status}),
                   ~paymentMethod=?loggedPaymentMethod,
                 )
               | (Some(operation), "failed") =>
-                SdkLogger.logLifecycle(
-                  ~event=PaymentMethodSaveFailed({operation, status}),
+                PaymentMethodSessionLogger.logLifecycle(
+                  ~event=PaymentMethodSessionLogger.PaymentMethodSaveFailed({operation, status}),
                   ~paymentMethod=?loggedPaymentMethod,
                 )
               | _ => ()

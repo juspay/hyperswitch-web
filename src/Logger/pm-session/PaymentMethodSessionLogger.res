@@ -16,7 +16,8 @@ let logLifecycle = (
   ~context=?,
   ~details=?,
   ~exn=?,
-  ~paymentMethod=LoggerPaymentMethod.Card,
+  ~failure=?,
+  ~paymentMethod=?,
   ~message=?,
 ) =>
   LoggerRuntime.emit(
@@ -27,7 +28,8 @@ let logLifecycle = (
     ~context?,
     ~details?,
     ~exn?,
-    ~paymentMethod,
+    ~failure?,
+    ~paymentMethod?,
     ~message?,
   )
 

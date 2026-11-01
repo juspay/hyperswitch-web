@@ -79,21 +79,10 @@ type blockedOperation =
 
 type operationBlockedData = {operation: blockedOperation, reason: string}
 
-type paymentMethodSaveOperation =
-  | Save
-  | Update
-
-type paymentMethodSaveData = {operation: paymentMethodSaveOperation}
-
-type paymentMethodSaveOutcomeData = {operation: paymentMethodSaveOperation, status: string}
-
 type lifecycleEvent =
   | ElementIframeMounted
   | ElementInitReceived
   | AppRendered
-  | PaymentMethodSaveRejected(paymentMethodSaveData)
-  | PaymentMethodSaveSucceeded(paymentMethodSaveOutcomeData)
-  | PaymentMethodSaveFailed(paymentMethodSaveOutcomeData)
   | OperationBlocked(operationBlockedData)
   | FormValidationFailed(validationFailureData)
   | WalletFlowResolved(walletFlowData)
@@ -166,8 +155,6 @@ let lifecycleSeverity = value =>
     Debug
   | ElementInitReceived
   | AppRendered
-  | PaymentMethodSaveSucceeded(_)
-  | PaymentMethodSaveFailed(_)
   | WalletTokenReceived
   | CustomerRedirectStarted(_)
   | QrCodeShown
@@ -183,7 +170,6 @@ let lifecycleSeverity = value =>
   | FormValidationFailed(_)
   | EligibilityCheckFailed =>
     Warning
-  | PaymentMethodSaveRejected(_)
   | BankAuthSyncFailed(_)
   | CountryDataUnavailable
   | DdcFailed(_) =>

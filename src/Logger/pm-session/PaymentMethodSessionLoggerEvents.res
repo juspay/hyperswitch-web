@@ -22,10 +22,22 @@ type stateEvent =
   | CardFormCompleted(cardFormCompletionData)
   | CardFieldUnmounted(cardFieldData)
 
-type lifecycleEvent = VaultFlowFailed(vaultFailureData)
+type paymentMethodSaveOperation = Save | Update
+type paymentMethodSaveData = {operation: paymentMethodSaveOperation}
+type paymentMethodSaveOutcomeData = {operation: paymentMethodSaveOperation, status: string}
+
+type lifecycleEvent =
+  | VaultFlowFailed(vaultFailureData)
+  | PaymentMethodSaveRejected(paymentMethodSaveData)
+  | PaymentMethodSaveSucceeded(paymentMethodSaveOutcomeData)
+  | PaymentMethodSaveFailed(paymentMethodSaveOutcomeData)
 
 let stateSeverity = (_: stateEvent) => LoggerTypes.Debug
-let lifecycleSeverity = (_: lifecycleEvent) => LoggerTypes.Error
+let lifecycleSeverity = event =>
+  switch event {
+  | VaultFlowFailed(_) | PaymentMethodSaveRejected(_) => LoggerTypes.Error
+  | PaymentMethodSaveSucceeded(_) | PaymentMethodSaveFailed(_) => LoggerTypes.Info
+  }
 
 type functionEvent = VaultFormCreate
 type resourceEvent = VaultScript
