@@ -255,7 +255,7 @@ let makeFullscreenFlows = (
   (router, answerer)
 }
 
-let teardown = (~mount: coordinatorMount, ~pendingPorts: array<pendingPort>=[]): unit => {
+let teardown = (~mount: coordinatorMount, ~pendingPorts: array<pendingPort>): unit => {
   pendingPorts->Array.forEach(({port}) =>
     try {
       port->MessageChannelBinding.portClose

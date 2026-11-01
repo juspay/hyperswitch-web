@@ -17,7 +17,6 @@ let isFromIframe = (~ev: Types.event, ~iframe: option<Dom.element>, ~origin: str
 
 type coordinatorChannel = {
   groupId: string,
-  origin: string,
   mountRef: ref<option<CoordinatorMount.coordinatorMount>>,
   readyRef: ref<bool>,
   pendingPortsRef: ref<array<CoordinatorMount.pendingPort>>,
@@ -26,9 +25,8 @@ type coordinatorChannel = {
   portEpochCounterRef: ref<int>,
 }
 
-let makeCoordinatorChannel = (~groupId: string, ~origin=""): coordinatorChannel => {
+let makeCoordinatorChannel = (~groupId: string): coordinatorChannel => {
   groupId,
-  origin,
   mountRef: ref(None),
   readyRef: ref(false),
   pendingPortsRef: ref([]),
@@ -101,12 +99,6 @@ let openFieldPort = (
     channel.pendingPortsRef.contents->Array.concat([{fieldName, epoch, port: messageChannel.port1}])
   flushPendingPorts(channel)
 }
-
-let postFieldMountConfig = (
-  channel: coordinatorChannel,
-  ~fieldIframe: Nullable.t<Dom.element>,
-  ~mountConfig: Dict.t<JSON.t>,
-): unit => fieldIframe->Window.iframePostMessage(mountConfig, ~targetOrigin=channel.origin)
 
 let mergeSubscriptionEvents = (
   ~subscriptionEventsRef: ref<array<string>>,
@@ -273,10 +265,9 @@ let makeFieldElementAndHandle = (
   ~listenerName: string,
   ~eventHandlersRef: ref<Dict.t<JSON.t => unit>>,
   ~update: JSON.t => unit,
-  ~scope: SdkLogger.cardFormScope=VaultForm,
-  ~vaultProvider: string="hyperswitch",
+  ~scope: SdkLogger.cardFormScope,
+  ~vaultProvider: string,
   ~context=?,
-  ~logger: option<HyperLoggerTypes.loggerMake>=?,
 ): Types.fieldHandle => {
   let element = LoaderPaymentElement.make(
     "paymentMethodsSDK",

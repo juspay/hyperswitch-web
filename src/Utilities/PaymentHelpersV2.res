@@ -299,7 +299,6 @@ let retrievePaymentMethodSession = (
   ~customPodUri,
   ~sdkAuthorization,
   ~context=?,
-  ~logger: option<HyperLoggerTypes.loggerMake>=?,
 ) => {
   let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
