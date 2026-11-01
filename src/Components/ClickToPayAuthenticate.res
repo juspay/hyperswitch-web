@@ -100,11 +100,17 @@ let make = (
                         let isNotYouClicked = exceptionMessage->String.includes("Not you clicked")
 
                         if isNotYouClicked {
-                          ()
+                          SdkLogger.logUser(
+                            ~event=ViewOpened({view: ClickToPayIdentityChange}),
+                            ~paymentMethod=Card,
+                          )
                           setIsCTPAuthenticateNotYouClicked(_ => true)
                           setIsShowClickToPayNotYou(_ => true)
                         } else {
-                          ()
+                          ClickToPayLogger.logLifecycle(
+                            ~event=AuthenticationFailed({provider: MastercardUctp}),
+                            ~exn=err,
+                          )
                           setIsClickToPayAuthenticateError(_ => true)
                         }
 
@@ -115,7 +121,11 @@ let make = (
                     }
                   })
                   ->catch(err => {
-                    ()
+                    ClickToPayLogger.logLifecycle(
+                      ~event=AuthenticationFailed({provider: MastercardUctp}),
+                      ~exn=err,
+                      ~message="Exception while handling authenticate result",
+                    )
                     closeComponentIfSavedMethodsAreEmpty()
                     resolve()
                   })
@@ -128,7 +138,11 @@ let make = (
           }
         } catch {
         | exn =>
-          ()
+          ClickToPayLogger.logLifecycle(
+            ~event=AuthenticationFailed({provider: MastercardUctp}),
+            ~exn,
+            ~message="Exception while mounting Mastercard verification iframe",
+          )
           closeComponentIfSavedMethodsAreEmpty()
         }
       } else if isClickToPayAuthenticateError {

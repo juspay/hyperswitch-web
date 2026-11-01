@@ -128,11 +128,19 @@ let describeJson = (value: JSON.t): string =>
   }
 
 let notifyBrokerError = (
+  ~context: LoggerContext.t,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
+  ~reason: PaymentMethodSessionLogger.vaultFailure,
   ~code: string,
   ~message: string,
 ): unit => {
-  ()
+  PaymentMethodSessionLogger.logLifecycle(
+    ~context,
+    ~event=VaultFlowFailed({reason: reason}),
+    ~details=[("code", code->JSON.Encode.string)],
+    ~paymentMethod=Card,
+    ~message,
+  )
   eventCallbacksRef.contents
   ->Dict.get("error")
   ->Option.forEach(cb =>
@@ -142,7 +150,12 @@ let notifyBrokerError = (
         `[VGSVaultBroker] merchant on("error") handler threw`,
         exn->Identity.anyTypeToJson,
       )
-      ()
+      SdkLogger.logCrash(
+        ~context,
+        ~origin=MerchantCallback,
+        ~exn,
+        ~details=[("callback", "error"->JSON.Encode.string)],
+      )
     }
   )
 }
@@ -186,7 +199,7 @@ let scriptElementStillPresent = (): bool =>
 
 let inFlightScriptPromise: ref<option<Promise.t<unit>>> = ref(None)
 
-let loadVGSScript = (): Promise.t<unit> => {
+let loadVGSScript = (~context): Promise.t<unit> => {
   switch (inFlightScriptPromise.contents, scriptElementStillPresent()) {
   | (Some(_), false) => inFlightScriptPromise := None
   | _ => ()
@@ -195,15 +208,16 @@ let loadVGSScript = (): Promise.t<unit> => {
   | Some(scriptLoadPromise) => scriptLoadPromise
   | None => {
       let scriptLoadPromise = Promise.make((resolve, reject) =>
-        ResourceLoader.load(
+        PaymentMethodSessionLogger.observeResource(
+          ~context,
+          ~event=PaymentMethodSessionLogger.VaultScript,
           ~url=VGSConstants.vgsScriptURL,
-          ~resource=ResourceLoader.Script,
           ~attributes=[
             ("integrity", VGSConstants.vgsScriptIntegrity),
             ("crossorigin", "anonymous"),
             ("async", "true"),
           ],
-          ~onLoad=_ => resolve(),
+          ~onLoad=resolve,
           ~onError=error => {
             inFlightScriptPromise := None
             reject(error)
@@ -348,6 +362,7 @@ let fieldFingerprint = (payload: JSON.t): string =>
   payload->stringifyNullable->Nullable.toOption->Option.getOr("")
 
 let dispatchFieldEvent = (
+  ~context: LoggerContext.t,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
   ~fieldId: string,
   ~event: string,
@@ -362,15 +377,22 @@ let dispatchFieldEvent = (
         `[VGSVaultBroker] merchant on("${event}") handler threw`,
         exn->Identity.anyTypeToJson,
       )
-      ()
+      SdkLogger.logCrash(
+        ~context,
+        ~origin=MerchantCallback,
+        ~exn,
+        ~details=[("callback", event->JSON.Encode.string)],
+      )
     }
   )
 }
 
 let make = (
+  ~context: LoggerContext.t,
   ~vaultId: string,
   ~environment: string,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
+  ~onFieldChange: (string, JSON.t) => unit,
 ): vgsBrokerHandle => {
   let formRef: ref<option<JSON.t>> = ref(None)
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
@@ -401,7 +423,8 @@ let make = (
         }
         if changed {
           lastFieldPayloadRef.contents->Dict.set(fieldId, fingerprint)
-          dispatchFieldEvent(~eventCallbacksRef, ~fieldId, ~event="change", ~payload)
+          onFieldChange(fieldId, payload)
+          dispatchFieldEvent(~context, ~eventCallbacksRef, ~fieldId, ~event="change", ~payload)
         }
       }
     )
@@ -425,7 +448,14 @@ let make = (
           `[VGSVaultBroker] clear(${entry.fieldType}) threw`,
           exn->Identity.anyTypeToJson,
         )
-        ()
+        PaymentMethodSessionLogger.logLifecycle(
+          ~context,
+          ~event=VaultFlowFailed({reason: PaymentMethodSessionLogger.FieldUpdateFailed}),
+          ~exn,
+          ~details=[("field", entry.fieldType->JSON.Encode.string)],
+          ~paymentMethod=Card,
+          ~message="Auto-clear of dependent field failed after card number was emptied",
+        )
       }
     | None => ()
     }
@@ -460,32 +490,64 @@ let make = (
       | Some(createFormPromise) => createFormPromise
       | None =>
         let createFormPromise =
-          loadVGSScript()
+          loadVGSScript(~context)
           ->Promise.then(_ => {
             let onFormStateChange: JSON.t => unit = state => {
               formStateRef := state->getDictFromJson
               publishFieldStates()
               clearDependentFieldsOnEmptiedCardNumber()
             }
+            let startedAt = Date.now()
+            PaymentMethodSessionLogger.logFunction(
+              ~context,
+              ~event=PaymentMethodSessionLogger.VaultFormCreate,
+              ~outcome=Started,
+              ~paymentMethod=Card,
+            )
             let form: JSON.t = switch vgsCollect->Nullable.toOption {
             | Some(collect) =>
               try collect.create(vaultId, environment, onFormStateChange) catch {
               | err => {
-                  ()
+                  PaymentMethodSessionLogger.logFunction(
+                    ~context,
+                    ~event=PaymentMethodSessionLogger.VaultFormCreate,
+                    ~outcome=Failed,
+                    ~startedAt,
+                    ~exn=err->Identity.anyTypeToJson,
+                    ~paymentMethod=Card,
+                  )
                   Error.raise(Error.make("VGSCollect create failed"))
                 }
               }
             | None =>
-              ()
+              PaymentMethodSessionLogger.logFunction(
+                ~context,
+                ~event=PaymentMethodSessionLogger.VaultFormCreate,
+                ~outcome=Failed,
+                ~startedAt,
+                ~paymentMethod=Card,
+                ~message="window.VGSCollect not registered after vault script load",
+              )
               Error.raise(Error.make("VGSCollect script failed to register window.VGSCollect"))
             }
             formRef := Some(form)
-            ()
+            PaymentMethodSessionLogger.logFunction(
+              ~context,
+              ~event=PaymentMethodSessionLogger.VaultFormCreate,
+              ~outcome=Done,
+              ~startedAt,
+              ~paymentMethod=Card,
+            )
             Promise.resolve(form)
           })
           ->Promise.catch(err => {
             createFormInFlightRef := None
-            ()
+            PaymentMethodSessionLogger.logLifecycle(
+              ~context,
+              ~event=VaultFlowFailed({reason: PaymentMethodSessionLogger.FormCreationFailed}),
+              ~exn=err,
+              ~paymentMethod=Card,
+            )
             Promise.reject(err)
           })
         createFormInFlightRef := Some(createFormPromise)
@@ -538,36 +600,79 @@ let make = (
         Promise.make((resolve, _reject) => {
           let vgsForm = form->VGSTypes.formFromJson
 
+          let startedAt = Date.now()
+          let settled = ref(false)
+
+          let event = PaymentMethodSessionLogger.VaultTokenization({
+            scope: PaymentMethodSessionLogger.FullCard,
+          })
+          let logOutcomeOnce = (~outcome, ~details=[], ~exn=?) =>
+            if !settled.contents {
+              settled := true
+              PaymentMethodSessionLogger.logApi(
+                ~context,
+                ~event,
+                ~outcome,
+                ~details=[("vault", "vgs"->JSON.Encode.string)]->Array.concat(details),
+                ~startedAt,
+                ~exn?,
+                ~paymentMethod=Card,
+              )
+            }
+
+          PaymentMethodSessionLogger.logApi(
+            ~context,
+            ~event,
+            ~outcome=Started,
+            ~details=[("vault", "vgs"->JSON.Encode.string)],
+            ~paymentMethod=Card,
+          )
+
           let settleWithFailure = (message: string) => {
+            logOutcomeOnce(~outcome=Failed, ~exn=message->JSON.Encode.string)
             resolve(
               makeErrorEnvelope(~code="tokenization_failed", ~message, ~errorType="api_error"),
             )
           }
 
-          let onSuccess: (JSON.t, JSON.t) => unit = (status, data) =>
-            switch (status->httpStatusCode, data->JSON.Decode.object) {
-            | (Some(code), Some(vaultResponse)) if code >= 200. && code < 300. =>
-              let resultDict = Dict.make()
-              resultDict->Dict.set("status", "success"->JSON.Encode.string)
-              resultDict->Dict.set("vaultResponse", vaultResponse->JSON.Encode.object)
-              resolve(resultDict->JSON.Encode.object)
-            | _ =>
-              settleWithFailure(
-                `VGS returned no tokenization response (status ${status->describeJson}): ${data->describeJson}`,
-              )
-            }
-
-          let onError: JSON.t => unit = errors => {
-            let stringified = try errors->stringifyNullable->Nullable.toOption catch {
-            | _ => None
-            }
-            settleWithFailure(
-              switch errors->describeVGSSubmitErrors {
-              | Some(readable) => readable
-              | None => stringified->getNonEmptyOption->Option.getOr("VGS submit failed")
+          let onSuccess: (JSON.t, JSON.t) => unit = SdkLogger.observeFunctionCallback(
+            ~context,
+            ~event=OnSuccess,
+            ~paymentMethod=Card,
+            ~callback=(status, data) =>
+              switch (status->httpStatusCode, data->JSON.Decode.object) {
+              | (Some(code), Some(vaultResponse)) if code >= 200. && code < 300. =>
+                logOutcomeOnce(
+                  ~outcome=Done,
+                  ~details=[("status_code", code->Float.toInt->JSON.Encode.int)],
+                )
+                let resultDict = Dict.make()
+                resultDict->Dict.set("status", "success"->JSON.Encode.string)
+                resultDict->Dict.set("vaultResponse", vaultResponse->JSON.Encode.object)
+                resolve(resultDict->JSON.Encode.object)
+              | _ =>
+                settleWithFailure(
+                  `VGS returned no tokenization response (status ${status->describeJson}): ${data->describeJson}`,
+                )
               },
-            )
-          }
+          )
+
+          let onError: JSON.t => unit = SdkLogger.observeFunctionCallback(
+            ~context,
+            ~event=OnError,
+            ~paymentMethod=Card,
+            ~callback=errors => {
+              let stringified = try errors->stringifyNullable->Nullable.toOption catch {
+              | _ => None
+              }
+              settleWithFailure(
+                switch errors->describeVGSSubmitErrors {
+                | Some(readable) => readable
+                | None => stringified->getNonEmptyOption->Option.getOr("VGS submit failed")
+                },
+              )
+            },
+          )
           let emptyPayload = JSON.Encode.object(Dict.make())
           try {
             let submitReturn =
@@ -697,14 +802,20 @@ let make = (
           try {
             let handleFieldEvent: JSON.t => unit = _domEvent => {
               let payload = fieldPayload(~fieldType, ~vgsName)
-              dispatchFieldEvent(~eventCallbacksRef, ~fieldId, ~event, ~payload)
+              dispatchFieldEvent(~context, ~eventCallbacksRef, ~fieldId, ~event, ~payload)
             }
             fieldHandle->fieldOn(event, handleFieldEvent)
           } catch {
           | exn =>
             let message = `field.on("${event}") could not be wired for fieldId=${fieldId} — ${event} events will never fire: ${exn->exceptionMessage}`
             Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
-            notifyBrokerError(~eventCallbacksRef, ~code="vgs_field_event_binding_failed", ~message)
+            notifyBrokerError(
+              ~context,
+              ~eventCallbacksRef,
+              ~reason=PaymentMethodSessionLogger.FieldBindingFailed,
+              ~code="vgs_field_event_binding_failed",
+              ~message,
+            )
           }
         }
         wireEvent("focus")
@@ -712,7 +823,13 @@ let make = (
 
         let readyPayload = fieldPayload(~fieldType, ~vgsName)
         lastFieldPayloadRef.contents->Dict.set(fieldId, readyPayload->fieldFingerprint)
-        dispatchFieldEvent(~eventCallbacksRef, ~fieldId, ~event="ready", ~payload=readyPayload)
+        dispatchFieldEvent(
+          ~context,
+          ~eventCallbacksRef,
+          ~fieldId,
+          ~event="ready",
+          ~payload=readyPayload,
+        )
 
         Promise.resolve()
       }
@@ -721,7 +838,9 @@ let make = (
       let message = `mountField(${fieldType}, ${selector}) failed: ${err->exceptionMessage}`
       Console.error2(`[VGSVaultBroker] ${message}`, err->Identity.anyTypeToJson)
       notifyBrokerError(
+        ~context,
         ~eventCallbacksRef,
+        ~reason=PaymentMethodSessionLogger.FieldMountFailed,
         ~code=err->exceptionCodeOr(~fallback="vgs_mount_failed"),
         ~message,
       )
@@ -742,7 +861,13 @@ let make = (
       | exn =>
         let message = `updateField(${fieldId}) threw — the requested options were not applied: ${exn->exceptionMessage}`
         Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
-        notifyBrokerError(~eventCallbacksRef, ~code="vgs_field_update_failed", ~message)
+        notifyBrokerError(
+          ~context,
+          ~eventCallbacksRef,
+          ~reason=PaymentMethodSessionLogger.FieldUpdateFailed,
+          ~code="vgs_field_update_failed",
+          ~message,
+        )
       }
     | _ => ()
     }
@@ -771,7 +896,13 @@ let make = (
       | exn =>
         let message = `unmountField(${fieldId}) threw — the secure field may still be in the DOM: ${exn->exceptionMessage}`
         Console.error2(`[VGSVaultBroker] ${message}`, exn->Identity.anyTypeToJson)
-        notifyBrokerError(~eventCallbacksRef, ~code="vgs_field_unmount_failed", ~message)
+        notifyBrokerError(
+          ~context,
+          ~eventCallbacksRef,
+          ~reason=PaymentMethodSessionLogger.FieldUnmountFailed,
+          ~code="vgs_field_unmount_failed",
+          ~message,
+        )
       }
       lastFieldPayloadRef.contents->Dict.delete(fieldId)
       fieldsRef.contents->Dict.set(

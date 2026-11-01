@@ -211,7 +211,10 @@ let getPaymentMethodAndType = (
     | Some(pm) => Some((pm.payment_method, paymentMethodName))
     | None =>
       if paymentMethods->Array.length > 0 {
-        ()
+        SdkLogger.logLifecycle(
+          ~event=PaymentMethodUnresolved({value: paymentMethodName}),
+          ~message="Selected payment method type not found in payment methods list; payment_method_change event not sent",
+        )
       }
       None
     }

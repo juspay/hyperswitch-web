@@ -49,7 +49,7 @@ let make = (~onClickHandler=?, ~label=?) => {
   }
 
   let onClickHandlerFunc = _ => {
-    ()
+    SdkLogger.logUser(~event=BankDetailsConfirmed)
     switch onClickHandler {
     | Some(fn) => fn()
     | None => ()
@@ -57,6 +57,11 @@ let make = (~onClickHandler=?, ~label=?) => {
   }
 
   let handleOnClick = _ => {
+    let source: SdkLogger.submitSource = switch paymentType {
+    | PaymentMethodsManagement => SaveCardButton
+    | _ => PayButton
+    }
+    SdkLogger.logUser(~event=PaymentSubmitted({source: source}))
     setIsPayNowButtonDisable(_ => true)
     setShowLoader(_ => true)
     EventListenerManager.addSmartEventListener("message", handleMessage, "onSubmitSuccessful")

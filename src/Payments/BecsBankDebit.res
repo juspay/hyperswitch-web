@@ -46,7 +46,7 @@ let make = () => {
     ~complete,
     ~empty,
     ~paymentType="becs_bank_debit",
-
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(~method="bank_debit", ~methodType="becs"),
   )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
@@ -86,7 +86,14 @@ let make = () => {
         }
       } else {
         let message = "Please enter all fields"
-        ()
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: "Please enter all fields"}),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethodType,
+          ),
+          ~message,
+        )
         postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }

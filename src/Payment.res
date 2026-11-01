@@ -6,7 +6,7 @@ open PaymentTypeContext
 open CommonCardProps
 
 let setUserError = message => {
-  ()
+  SdkLogger.logLifecycle(~event=FormValidationFailed({reason: message}), ~paymentMethod=Card)
   Utils.postFailedSubmitResponse(~errortype="validation_error", ~message)
 }
 

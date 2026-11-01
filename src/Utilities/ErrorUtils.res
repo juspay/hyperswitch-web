@@ -4,24 +4,7 @@ type message =
 
 type handling = Fatal | Recoverable
 
-type merchantIssue =
-  | InvalidPublishableKey
-  | InsecureProtocol
-  | MissingParameter
-  | MalformedValue
-  | ImmutableAfterMount
-  | CalledAfterSessionEnd
-  | ExpectedBoolean
-  | ExpectedString
-  | ExpectedNumber
-  | ValueOutOfRange
-  | ConnectorMisconfigured
-  | DynamicFieldsConfig
-  | UnsupportedOptionValue
-  | UnknownOptionKey
-  | DeprecatedMethod
-
-let describe = (issue: merchantIssue) =>
+let describe = (issue: HyperLoaderLogger.merchantIssue) =>
   switch issue {
   | InvalidPublishableKey => (
       Fatal,
@@ -65,12 +48,17 @@ let describe = (issue: merchantIssue) =>
   | UnknownOptionKey => (Recoverable, Dynamic(value => `Unknown Key: '${value}'`))
   }
 
-let manageErrorWarning = (issue: merchantIssue, ~dynamicStr as param="") => {
+let manageErrorWarning = (issue: HyperLoaderLogger.merchantIssue, ~dynamicStr as param="") => {
   let (handling, message) = issue->describe
   let text = switch message {
   | Static(text) => text
   | Dynamic(build) => build(param)
   }
+
+  HyperLoaderLogger.logMerchantIssue(
+    ~issue,
+    ~details=param === "" ? [] : [("param", param->JSON.Encode.string)],
+  )
 
   switch handling {
   | Recoverable => Console.warn(text)
@@ -84,14 +72,27 @@ let manageErrorWarning = (issue: merchantIssue, ~dynamicStr as param="") => {
 let unknownKeysWarning = (validKeysArr, dict: Dict.t<JSON.t>, dictType: string) =>
   dict
   ->Dict.toArray
-  ->Array.forEach(((key, _)) => {
-    if !(validKeysArr->Array.includes(key)) {
-      Console.warn(`Unknown Key: '${key}' key in ${dictType}`)
-    }
-  })
+  ->Array.forEach(((key, _)) =>
+    validKeysArr->Array.includes(key)
+      ? ()
+      : {
+          HyperLoaderLogger.logMerchantIssue(
+            ~issue=UnknownOptionKey,
+            ~details=[("key", key->JSON.Encode.string), ("option", dictType->JSON.Encode.string)],
+          )
+          Console.warn(`Unknown Key: '${key}' key in ${dictType}`)
+        }
+  )
 
 let unknownPropValueWarning = (inValidValue, validValueArr, dictType) => {
   let expectedValues = validValueArr->Array.map(item => `'${item}'`)->Array.join(", ")
+  HyperLoaderLogger.logMerchantIssue(
+    ~issue=UnsupportedOptionValue,
+    ~details=[
+      ("value", inValidValue->JSON.Encode.string),
+      ("option", dictType->JSON.Encode.string),
+    ],
+  )
   Console.warn(`Unknown Value: '${inValidValue}' value in ${dictType}, Expected ${expectedValues}`)
 }
 

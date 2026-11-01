@@ -91,14 +91,24 @@ let make = (
                 )
               } else {
                 let message = "Something went wrong"
-                ()
+                SdkLogger.logLifecycle(
+                  ~event=VaultFlowFailed({reason: TokenizationFailed}),
+                  ~failure=res,
+                  ~paymentMethod=Card,
+                  ~message,
+                )
                 postFailedSubmitResponse(~errortype="server_error", ~message)
               }
               resolve()
             })
             ->catch(err => {
               let message = "Something went wrong"
-              ()
+              SdkLogger.logLifecycle(
+                ~event=VaultFlowFailed({reason: TokenizationFailed}),
+                ~exn=err,
+                ~paymentMethod=Card,
+                ~message,
+              )
               postFailedSubmitResponse(~errortype="server_error", ~message)
               resolve()
             })
@@ -118,7 +128,10 @@ let make = (
               ? localeString.cvcNumberEmptyText
               : localeString.inCompleteCVCErrorText
           setCvcError(_ => errorMsg)
-          ()
+          SdkLogger.logLifecycle(
+            ~event=FormValidationFailed({reason: errorMsg}),
+            ~paymentMethod=Card,
+          )
           if isOuterValid {
             postFailedSubmitResponse(~errortype="validation_error", ~message=errorMsg)
           }

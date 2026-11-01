@@ -46,7 +46,10 @@ module OtpInput = {
         })
       },
       continueClicked: _ => {
-        ()
+        SdkLogger.logUser(
+          ~event=CustomerVerificationSubmitted({source: ClickToPayOtp, provider: Some(VisaUctp)}),
+          ~paymentMethod=Card,
+        )
         let verifyUserAndGetCards = async () => {
           try {
             setIsOtpSubmitting(_ => true)
@@ -54,13 +57,16 @@ module OtpInput = {
             setIsOtpSubmitting(_ => false)
           } catch {
           | err =>
-            ()
+            ClickToPayLogger.logLifecycle(
+              ~event=CardsUnavailable({provider: VisaUctp, code: "otp_verification_exception"}),
+              ~exn=err,
+            )
           }
         }
         verifyUserAndGetCards()->ignore
       },
       resendClicked: _ => {
-        ()
+        SdkLogger.logUser(~event=ClickToPayOtpResendRequested, ~paymentMethod=Card)
         setClickToPayConfig(prev => {
           ...prev,
           otpError: "",
@@ -72,7 +78,10 @@ module OtpInput = {
             setResendLoading(_ => false)
           } catch {
           | exn =>
-            ()
+            ClickToPayLogger.logLifecycle(
+              ~event=CardsUnavailable({provider: VisaUctp, code: "otp_resend_failed"}),
+              ~exn,
+            )
             setResendLoading(_ => false)
           }
         }
@@ -84,7 +93,10 @@ module OtpInput = {
         ->Option.forEach(e => {
           let dict = e->getDictFromJson
           let rememberMe = dict->getDictFromDict("detail")->getBool("rememberMe", false)
-          ()
+          SdkLogger.logUser(
+            ~event=FieldToggled({field: "click_to_pay_remember_me_otp", enabled: rememberMe}),
+            ~paymentMethod=Card,
+          )
           setIsClickToPayRememberMe(_ => rememberMe)
         })
       },

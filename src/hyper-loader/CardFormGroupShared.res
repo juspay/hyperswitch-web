@@ -39,9 +39,7 @@ let postToCoordinator = (
   mount: CoordinatorMount.coordinatorMount,
   fields: array<(string, JSON.t)>,
 ) =>
-  try mount.iframe
-  ->Nullable.make
-  ->Window.iframePostMessage(fields->Dict.fromArray, ~targetOrigin=mount.origin) catch {
+  try mount.iframe->Nullable.make->Window.iframePostMessage(fields->Dict.fromArray, ~targetOrigin=mount.origin) catch {
   | _ => ()
   }
 
@@ -175,6 +173,7 @@ let buildFieldMountConfig = (
   ~publishableKey: string,
   ~credentialKeys: array<(string, JSON.t)>,
   ~sdkSessionId: string,
+  ~loggerSource: string,
   ~savedCardBrand: string,
   ~tailKeys: array<(string, JSON.t)>=[],
 ): Dict.t<JSON.t> => {
@@ -195,10 +194,12 @@ let buildFieldMountConfig = (
   ->Array.concat(credentialKeys)
   ->Array.concat([
     ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+    LoggerContext.sharedContext(),
     ("customPodUri", ""->JSON.Encode.string),
     ("parentURL", "*"->JSON.Encode.string),
     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
     ("launchTime", Date.now()->JSON.Encode.float),
+    ("loggerSource", loggerSource->JSON.Encode.string),
     ("isSavedCardCvcFlow", false->JSON.Encode.bool),
     ("savedCardBrand", savedCardBrand->JSON.Encode.string),
     ("cardCollectionMode", "tokenise"->JSON.Encode.string),
@@ -217,17 +218,26 @@ let buildFieldMountConfig = (
 
 // Shared failure summariser for merchant-facing confirm/tokenize calls:
 // reports the error code of an error-shaped result, or None on success.
+let errorCodeFailureSummary = (result: JSON.t): option<LoggerTypes.errorSummary> =>
+  result
+  ->getDictFromJson
+  ->getDictFromDict("error")
+  ->Dict.get("code")
+  ->Option.map(code => {
+    LoggerTypes.name: code->JSON.Decode.string->Option.getOr("RETURNED_ERROR_RESPONSE"),
+    message: None,
+    details: [],
+  })
+
 let savedCardNetwork = (savedCardDict: Dict.t<JSON.t>): string =>
   savedCardDict
   ->getDictFromDict("paymentMethodData")
   ->getDictFromDict("card")
   ->getString("cardNetwork", "")
 
-let postFieldUpdate = (
-  ~iframeRef: ref<Nullable.t<Dom.element>>,
-  ~newOptions: JSON.t,
-  ~targetOrigin: string,
-): Dict.t<JSON.t> => {
+let postFieldUpdate = (~iframeRef: ref<Nullable.t<Dom.element>>, ~newOptions: JSON.t, ~targetOrigin: string): Dict.t<
+  JSON.t,
+> => {
   iframeRef.contents->Window.iframePostMessage(
     [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", newOptions)]->Dict.fromArray,
     ~targetOrigin,
@@ -255,6 +265,9 @@ let makeFieldElementAndHandle = (
   ~listenerName: string,
   ~eventHandlersRef: ref<Dict.t<JSON.t => unit>>,
   ~update: JSON.t => unit,
+  ~scope: SdkLogger.cardFormScope,
+  ~vaultProvider: string,
+  ~context=?,
 ): Types.fieldHandle => {
   let element = LoaderPaymentElement.make(
     "paymentMethodsSDK",
@@ -269,25 +282,33 @@ let makeFieldElementAndHandle = (
     ~fieldName,
     ~surfaceFamily,
     ~groupId,
+    ~context?,
   )
   let postToOwnIframe = fields =>
-    iframeRef.contents->Window.iframePostMessage(
-      fields->Dict.fromArray,
-      ~targetOrigin=URLModule.makeUrl(sdkDomainUrl).origin,
-    )
+    iframeRef.contents->Window.iframePostMessage(fields->Dict.fromArray, ~targetOrigin=URLModule.makeUrl(sdkDomainUrl).origin)
+  let fieldDetails = [
+    ("field", fieldName->JSON.Encode.string),
+    ("vault", vaultProvider->JSON.Encode.string),
+  ]
   {
     mount: selector => element.mount(selector),
     unmount: () => {
       element.unmount()
-      ()
+      SdkLogger.logState(~event=CardFieldUnmounted({scope, field: fieldName}), ~context?)
     },
     destroy: () => {
       element.destroy()
       iframeRef := Nullable.null
       EventListenerManager.removeSmartEventListener("message", listenerName)
-      ()
+      SdkLogger.logState(~event=CardFieldUnmounted({scope, field: fieldName}), ~context?)
     },
-    update: newOptions => (() => update(newOptions))(),
+    update: newOptions =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.Update({surface: CardField}),
+        ~context?,
+        ~details=fieldDetails,
+        ~call=() => update(newOptions),
+      ),
     focus: () => postToOwnIframe([("doFocus", true->JSON.Encode.bool)]),
     blur: () => postToOwnIframe([("doBlur", true->JSON.Encode.bool)]),
     clear: () => postToOwnIframe([("doClearValues", true->JSON.Encode.bool)]),

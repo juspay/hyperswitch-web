@@ -26,8 +26,16 @@ let intentCall = (
   ~isPaymentSession=false,
   ~isCallbackUsedVal=?,
   ~redirectionFlags,
+  ~apiEvent: SdkLogger.apiEvent,
 ) => {
   open Promise
+  let saveOperation: option<
+    PaymentMethodSessionLogger.paymentMethodSaveOperation,
+  > = switch apiEvent {
+  | SavePaymentMethod => Some(PaymentMethodSessionLogger.Save)
+  | UpdatePaymentMethod => Some(PaymentMethodSessionLogger.Update)
+  | _ => None
+  }
   let handleOpenUrl = url => {
     if isPaymentSession {
       Utils.replaceRootHref(url, redirectionFlags)
@@ -35,11 +43,18 @@ let intentCall = (
       openUrl(url)
     }
   }
-  fetchApi(
-    uri,
-    ~method=fetchMethod,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-    ~bodyStr,
+  SdkLogger.observeApi(
+    ~event=apiEvent,
+    ~url=uri,
+    ~failureOf=WebLoggerUtils.httpFailure,
+    ~detailsOf=WebLoggerUtils.httpDetails,
+    ~call=() =>
+      fetchApi(
+        uri,
+        ~method=fetchMethod,
+        ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+        ~bodyStr,
+      ),
   )
   ->then(res => {
     let url = makeUrl(confirmParam.return_url)
@@ -52,6 +67,24 @@ let intentCall = (
       ->then(data => {
         Promise.make(
           (resolve, _) => {
+            switch saveOperation {
+            | Some(operation) =>
+              PaymentMethodSessionLogger.logLifecycle(
+                ~event=PaymentMethodSessionLogger.PaymentMethodSaveRejected({operation: operation}),
+                ~failure=data,
+                ~details=data->WebLoggerUtils.intentErrorDetails,
+                ~paymentMethod=?switch paymentType {
+                | Card => Some(LoggerPaymentMethod.Card)
+                | _ =>
+                  let body = bodyStr->safeParse->getDictFromJson
+                  LoggerPaymentMethod.fromPair(
+                    ~method=body->getString("payment_method", ""),
+                    ~methodType=body->getString("payment_method_type", ""),
+                  )
+                },
+              )
+            | None => ()
+            }
             let dict = data->getDictFromJson
             let errorObj = PaymentError.itemToObjMapper(dict)
             if !isPaymentSession {
@@ -99,6 +132,7 @@ let intentCall = (
         Promise.make(
           (resolve, _) => {
             let intent = PaymentConfirmTypesV2.itemToPMMConfirmMapper(data->getDictFromJson)
+            let loggedPaymentMethod = Some(LoggerPaymentMethod.Card)
 
             let url = makeUrl(confirmParam.return_url)
             url.searchParams.set("status", intent.authenticationDetails.status)
@@ -138,6 +172,18 @@ let intentCall = (
 
             if intent.authenticationDetails.status == "requires_customer_action" {
               if intent.nextAction.type_ == "redirect_to_url" {
+                let redirectOrigin = try {
+                  makeUrl(intent.nextAction.redirectToUrl).origin
+                } catch {
+                | _ => ""
+                }
+                SdkLogger.logLifecycle(
+                  ~event=CustomerRedirectStarted({
+                    nextAction: intent.nextAction.type_,
+                    redirectOrigin,
+                  }),
+                  ~paymentMethod=?loggedPaymentMethod,
+                )
                 handleOpenUrl(intent.nextAction.redirectToUrl)
               } else {
                 let message = "Payment failed. Try again!"
@@ -145,7 +191,14 @@ let intentCall = (
                   postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
                 }
                 let recovered = uri->String.includes("force_sync=true")
-                ()
+                SdkLogger.logLifecycle(
+                  ~event=NextActionUnsupported({
+                    nextAction: intent.nextAction.type_,
+                    recovered,
+                  }),
+                  ~paymentMethod=?loggedPaymentMethod,
+                  ~message="Unhandled next_action for requires_customer_action",
+                )
                 if recovered {
                   handleOpenUrl(url.href)
                 } else {
@@ -157,10 +210,28 @@ let intentCall = (
                 }
               }
             } else if intent.authenticationDetails.status != "" {
+              let status = intent.authenticationDetails.status
+              switch (saveOperation, status) {
+              | (Some(operation), "succeeded") =>
+                PaymentMethodSessionLogger.logLifecycle(
+                  ~event=PaymentMethodSessionLogger.PaymentMethodSaveSucceeded({operation, status}),
+                  ~paymentMethod=?loggedPaymentMethod,
+                )
+              | (Some(operation), "failed") =>
+                PaymentMethodSessionLogger.logLifecycle(
+                  ~event=PaymentMethodSessionLogger.PaymentMethodSaveFailed({operation, status}),
+                  ~paymentMethod=?loggedPaymentMethod,
+                )
+              | _ => ()
+              }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else {
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-              ()
+              PaymentLogger.logLifecycle(
+                ~event=PaymentLogger.PaymentStatusUnknown({inferred: true}),
+                ~paymentMethod=?loggedPaymentMethod,
+                ~message="Empty authentication status in payment method session response; treated as succeeded",
+              )
               url.searchParams.set("status", "succeeded")
             }
           },
@@ -171,7 +242,12 @@ let intentCall = (
   ->catch(err => {
     Promise.make((resolve, _) => {
       try {
-        ()
+        SdkLogger.logApi(
+          ~event=apiEvent,
+          ~outcome=Failed,
+          ~exn=err,
+          ~message="Request failed or response handling threw; returning server_error",
+        )
         let url = makeUrl(confirmParam.return_url)
         url.searchParams.set("status", "failed")
 
@@ -190,7 +266,7 @@ let intentCall = (
         }
       } catch {
       | exn =>
-        ()
+        PaymentLogger.logLifecycle(~event=PaymentLogger.PaymentErrorHandlingFailed, ~exn)
         if !isPaymentSession {
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
         }
@@ -208,8 +284,9 @@ let fetchPaymentManagementList = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAu
   let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/list-payment-methods`
 
-  fetchApiForSdk(
+  fetchApiWithLogging(
     uri,
+    ~event=PaymentMethodsList,
     ~method=#GET,
     ~headers,
     ~customPodUri=Some(customPodUri),
@@ -218,12 +295,20 @@ let fetchPaymentManagementList = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAu
   )
 }
 
-let retrievePaymentMethodSession = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAuthorization) => {
+let retrievePaymentMethodSession = (
+  ~pmSessionId,
+  ~endpoint,
+  ~customPodUri,
+  ~sdkAuthorization,
+  ~context=?,
+) => {
   let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
 
-  fetchApiForSdk(
+  fetchApiWithLogging(
     uri,
+    ~event=RetrievePaymentMethodSession,
+    ~context?,
     ~method=#GET,
     ~headers,
     ~customPodUri=Some(customPodUri),
@@ -242,8 +327,9 @@ let deletePaymentMethodV2 = (
   let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
 
-  fetchApiForSdk(
+  fetchApiWithLogging(
     uri,
+    ~event=DeletePaymentMethod,
     ~method=#DELETE,
     ~headers,
     ~bodyStr=[("payment_method_token", paymentMethodToken->JSON.Encode.string)]
@@ -260,8 +346,9 @@ let updatePaymentMethod = (~bodyArr, ~pmSessionId, ~customPodUri, ~sdkAuthorizat
   let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
-  fetchApiForSdk(
+  fetchApiWithLogging(
     uri,
+    ~event=UpdatePaymentMethod,
     ~method=#PUT,
     ~headers,
     ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
@@ -312,6 +399,7 @@ let useSaveCard = (paymentType: payment) => {
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~isCallbackUsedVal,
           ~redirectionFlags,
+          ~apiEvent=SavePaymentMethod,
         )->ignore
       }
 
@@ -321,7 +409,10 @@ let useSaveCard = (paymentType: payment) => {
       }
     | None =>
       let message = "Payment failed. Try again!"
-      ()
+      SdkLogger.logLifecycle(
+        ~event=OperationBlocked({operation: PaymentMethodSave, reason: "missing_pm_session_id"}),
+        ~message,
+      )
       postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
     }
   }
@@ -368,6 +459,7 @@ let useUpdateCard = (paymentType: payment) => {
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~isCallbackUsedVal,
           ~redirectionFlags,
+          ~apiEvent=UpdatePaymentMethod,
         )->ignore
       }
 
@@ -377,7 +469,10 @@ let useUpdateCard = (paymentType: payment) => {
       }
     | None =>
       let message = "Payment failed. Try again!"
-      ()
+      SdkLogger.logLifecycle(
+        ~event=OperationBlocked({operation: PaymentMethodUpdate, reason: "missing_pm_session_id"}),
+        ~message,
+      )
       postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
     }
   }
@@ -388,8 +483,9 @@ let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization) => {
   let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/confirm`
 
-  fetchApiForSdk(
+  fetchApiWithLogging(
     uri,
+    ~event=SavePaymentMethod,
     ~method=#POST,
     ~headers,
     ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,

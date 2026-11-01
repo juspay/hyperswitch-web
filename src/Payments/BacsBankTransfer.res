@@ -25,7 +25,10 @@ let default = () => {
     ~complete,
     ~empty,
     ~paymentType=paymentMethod,
-
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(
+      ~method=paymentMethod,
+      ~methodType=paymentMethodType,
+    ),
   )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
@@ -52,7 +55,14 @@ let default = () => {
         )
       } else {
         let message = "Please enter all fields"
-        ()
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: "Please enter all fields"}),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethodType,
+          ),
+          ~message,
+        )
         postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }

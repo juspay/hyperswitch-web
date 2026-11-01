@@ -151,7 +151,10 @@ let reportValidationErrors = (
 
   switch userError.contents {
   | Some(message) => {
-      ()
+      SdkLogger.logLifecycle(
+        ~event=FormValidationFailed({reason: message}),
+        ~paymentMethod=Card,
+      )
       postFailedSubmitResponse(~errortype="validation_error", ~message)
     }
   | None => ()

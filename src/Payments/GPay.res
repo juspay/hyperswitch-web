@@ -28,6 +28,7 @@ let make = (
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let status = CommonHooks.useScript(
     "https://pay.google.com/gp/p/js/pay.js",
+    ~resourceEvent=SdkLogger.GooglePayScript,
   )
   let isGooglePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsGooglePayDelayedSessionFlow()
   let isGooglePaySDKFlow = React.useMemo(() => {
@@ -50,7 +51,7 @@ let make = (
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType=paymentMethodType,
-
+    ~loggedPaymentMethod=Wallet(GooglePay),
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   SubscriptionEventHooks.useEmitFormStatus(
@@ -233,7 +234,12 @@ let make = (
         resolve()
       })
       ->catch(exn => {
-        ()
+        SdkLogger.logLifecycle(
+          ~event=WalletFlowFailed({reason: MessageHandlingFailed}),
+          ~paymentMethod=Wallet(GooglePay),
+          ~exn,
+          ~message="Google Pay payment handling threw after one-click confirmation",
+        )
         resolve()
       })
       ->ignore
@@ -242,7 +248,11 @@ let make = (
 
   let buttonStyle = {
     let base = {
-      "onClick": (onGooglePaymentButtonClicked),
+      "onClick": SdkLogger.observeFunctionCallback(
+        ~event=OnClick,
+        ~paymentMethod=Wallet(GooglePay),
+        ~callback=onGooglePaymentButtonClicked,
+      ),
       "buttonType": resolvedButtonType->getLabel,
       "buttonSizeMode": "fill",
       "buttonColor": resolvedButtonColor,
@@ -302,7 +312,11 @@ let make = (
         }
       } catch {
       | exn =>
-        ()
+        SdkLogger.logLifecycle(
+          ~event=WalletFlowFailed({reason: MessageHandlingFailed}),
+          ~paymentMethod=Wallet(GooglePay),
+          ~exn,
+        )
       }
     }
     Window.addEventListener("message", handleGooglePayMessages)

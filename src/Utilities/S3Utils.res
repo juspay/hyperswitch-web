@@ -38,10 +38,19 @@ let getNormalizedLocale = locale => {
 }
 
 let fetchCountryStateFromS3 = async (endpoint, ~fallbackFor=?) => {
+  let event: SdkLoggerEvents.staticAssetEvent = switch fallbackFor {
+  | Some(_) => CountryStateDataFallback
+  | None => CountryStateData
+  }
   let headers = [("Accept-Encoding", "br, gzip")]->Dict.fromArray
   let decoded = ref(None)
-  let response = await (
-    async () => {
+  let response = await SdkLogger.observeStaticAsset(
+    ~event,
+    ~url=endpoint,
+    ~details=?fallbackFor->Option.map(locale => [
+      ("fallback_for_locale", locale->JSON.Encode.string),
+    ]),
+    ~call=async () => {
       let response = await Utils.fetchApi(endpoint, ~method=#GET, ~headers)
       if response->Fetch.Response.ok {
         switch (await response->Fetch.Response.json)->decodeJsonTocountryStateData {
@@ -50,8 +59,8 @@ let fetchCountryStateFromS3 = async (endpoint, ~fallbackFor=?) => {
         }
       }
       response
-    }
-  )()
+    },
+  )
   switch decoded.contents {
   | Some(data) => data
   | None =>
@@ -87,14 +96,14 @@ let loadCountryStateData = async (~locale) => {
       let fallbackCountries = country
       try {
         let fallbackStates = await Utils.importStates("./../States.json")
-        ()
+        SdkLogger.logLifecycle(~event=CountryDataServedFromBundle)
         {
           countries: fallbackCountries,
           states: fallbackStates.states,
         }
       } catch {
       | exn => {
-          ()
+          SdkLogger.logLifecycle(~event=CountryDataUnavailable, ~exn)
           {
             countries: fallbackCountries,
             states: JSON.Encode.null,

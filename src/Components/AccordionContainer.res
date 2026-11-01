@@ -202,7 +202,7 @@ let make = (
       <button
         className="AccordionMore flex overflow-auto no-scrollbar"
         onClick={_ => {
-          ()
+          SdkLogger.logUser(~event=ViewToggled({view: MorePaymentMethods, expanded: !showMore}))
           setShowMore(_ => !showMore)
         }}
         style={

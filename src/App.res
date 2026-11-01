@@ -10,7 +10,13 @@ let make = () => {
 
   let networkStatus = NetworkInformation.useNetworkInformation()
   React.useMemo0(() =>
-    ()
+    SdkLogger.adoptSessionFromParent(
+      ~source=switch (paymentMode, getQueryParamsDictforKey(url.search, "fullscreenType")) {
+      | ("", "preMountLoader") => PreMountLoader
+      | ("", overlay) => Fullscreen(overlay)
+      | _ => Elements(paymentType)
+      },
+    )
   )
 
   let lastOnline = React.useRef(None)
@@ -20,7 +26,13 @@ let make = () => {
     | Value(val) if lastOnline.current === None && val.isOnline => lastOnline.current = Some(true)
     | Value(val) =>
       lastOnline.current = Some(val.isOnline)
-      ()
+      SdkLogger.logState(
+        ~event=NetworkStatusChanged({online: val.isOnline}),
+        ~details=[
+          ("effective_type", val.effectiveType->JSON.Encode.string),
+          ("downlink", val.downlink->JSON.Encode.float),
+        ],
+      )
     | NOT_AVAILABLE => ()
     }
 
@@ -134,7 +146,13 @@ let make = () => {
         let isSdkParamsEnabled =
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
-        ()
+        LoggerContext.setSessionData(
+          ~sessionId,
+          ~merchantId=publishableKey,
+          ~paymentId=clientSecret->LoggerContext.paymentIdOfClientSecret,
+          ~pmSessionId,
+          (),
+        )
 
         <PreMountLoader
           publishableKey

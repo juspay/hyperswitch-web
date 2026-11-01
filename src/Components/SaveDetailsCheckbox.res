@@ -15,7 +15,7 @@ let make = (
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   let handleChange = value => {
-    ()
+    SdkLogger.logUser(~event=FieldToggled({field: "save_details", enabled: value}))
     setIsChecked(_ => value)
   }
 

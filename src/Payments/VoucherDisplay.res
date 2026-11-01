@@ -64,7 +64,14 @@ let make = () => {
               href=downloadUrl
               ref={linkRef->ReactDOM.Ref.domRef}
               onClick={_ => {
-                ()
+                SdkLogger.logUser(
+                  ~event=VoucherDownloadRequested,
+                  ~details=autoDownloading.current ? [("auto", true->JSON.Encode.bool)] : [],
+                  ~paymentMethod=?LoggerPaymentMethod.fromPair(
+                    ~method=paymentMethodFamily,
+                    ~methodType=paymentMethod,
+                  ),
+                )
               }}
             >
               {React.string("here")}

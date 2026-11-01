@@ -94,8 +94,12 @@ let make = (
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
+  ~context=?,
 ) => {
   try {
+    let surfaceData: HyperLoaderLogger.surfaceData = {
+      surface: fieldName->Option.isSome ? CardField : PaymentElement,
+    }
     let surfaceDetails = switch fieldName {
     | Some(field) => [("field", field->JSON.Encode.string)]
     | None => [("component_type", componentType->JSON.Encode.string)]
@@ -155,7 +159,12 @@ let make = (
       | Some(handler) =>
         currentOneClickHandler :=
           Some(
-            (handler),
+            HyperLoaderLogger.observeMerchantCallback(
+              ~context?,
+              ~event=OnSdkHandleClick(surfaceData),
+              ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
+              ~callback=handler,
+            ),
           )
         isPaymentButtonHandlerProvided := true
       | None => ()
@@ -297,7 +306,11 @@ let make = (
           `onSurchargeInfo-${componentType}-${elementInstanceId}`,
         )
       | _ =>
-        ()
+        HyperLoaderLogger.logMerchantIssue(
+          ~context?,
+          ~issue=UnknownOptionKey,
+          ~details=[("event", eventType->JSON.Encode.string)],
+        )
       }
     }
     let collapse = () => ()
@@ -333,21 +346,31 @@ let make = (
     ]
 
     let unmount = () =>
-      (() => {
+      HyperLoaderLogger.observeMerchantCall(
+        ~context?,
+        ~event=Unmount(surfaceData),
+        ~details=surfaceDetails->Array.concat(containerPresentDetail()),
+        ~call=() => {
           oneClickSources->Dict.delete(elementInstanceId)
           mountedIframeRef := Nullable.null
           fullscreenIframeRef := Nullable.null
           clearMountedContainer()
-        })()
+        },
+      )
 
     let destroy = () =>
-      (() => {
+      HyperLoaderLogger.observeMerchantCall(
+        ~context?,
+        ~event=Destroy(surfaceData),
+        ~details=surfaceDetails->Array.concat(containerPresentDetail()),
+        ~call=() => {
           oneClickSources->Dict.delete(elementInstanceId)
           mountedIframeRef := Nullable.null
           fullscreenIframeRef := Nullable.null
           clearMountedContainer()
           mountId := ""
-        })()
+        },
+      )
 
     let updateElementOptions = newOptions => {
       let flatOption = options->flattenObject(true)
@@ -380,7 +403,12 @@ let make = (
     }
 
     let update = newOptions =>
-      (() => updateElementOptions(newOptions))()
+      HyperLoaderLogger.observeMerchantCall(
+        ~context?,
+        ~event=HyperLoaderLogger.Update({surface: PaymentElement}),
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~call=() => updateElementOptions(newOptions),
+      )
 
     let mountElement = selector => {
       ensureWalletOneClickListener(~ownerId=elementInstanceId, ~isTrustedMessage)
@@ -521,7 +549,8 @@ let make = (
                             ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
                             ("options", options),
-                            ("appearance", appearance)
+                            ("appearance", appearance),
+                            LoggerContext.sharedContext(~context?, ()),
                            ]->Dict.fromArray,
                            ~targetOrigin=fullscreenOrigin,
                         )
@@ -538,7 +567,8 @@ let make = (
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                         fullScreenEle->Window.iframePostMessage(
                           [
-                            ("metadata", fullscreenMetadata.contents)
+                            ("metadata", fullscreenMetadata.contents),
+                            LoggerContext.sharedContext(~context?, ()),
                           ]->Dict.fromArray,
                           ~targetOrigin=fullscreenOrigin,
                         )
@@ -647,12 +677,22 @@ let make = (
         }
 
       | None =>
-        ()
+        HyperLoaderLogger.logMerchantIssue(
+          ~context?,
+          ~issue=MissingParameter,
+          ~details=[("selector", selector->JSON.Encode.string)],
+          ~message="Mount selector did not match any element",
+        )
       }
     }
 
     let mount = selector =>
-      (() => mountElement(selector))()
+      HyperLoaderLogger.observeMerchantCall(
+        ~context?,
+        ~event=Mount(surfaceData),
+        ~details=surfaceDetails,
+        ~call=() => mountElement(selector),
+      )
 
     let on = (eventType, callback) => registerEventHandler(eventType, callback)
 
@@ -673,7 +713,12 @@ let make = (
   | e => {
       Sentry.captureException(e)
 
-      ()
+      SdkLogger.logCrash(
+        ~context?,
+        ~origin=ElementConstructor,
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~exn=e,
+      )
       defaultPaymentElement
     }
   }

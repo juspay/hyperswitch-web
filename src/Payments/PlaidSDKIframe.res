@@ -65,7 +65,10 @@ let make = () => {
       switch status {
       | "succeeded" | "requires_customer_action" | "processing" => ()
       | _ =>
-        ()
+        SdkLogger.logLifecycle(
+          ~event=BankAuthSyncFailed({status: status}),
+          ~paymentMethod=OpenBanking(Plaid),
+        )
       }
       switch status {
       | "succeeded" | "requires_customer_action" | "processing" =>
@@ -77,18 +80,34 @@ let make = () => {
       messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
     } catch {
     | exn =>
-      ()
+      SdkLogger.logLifecycle(
+        ~event=BankAuthSyncFailed({status: "sync_exception"}),
+        ~paymentMethod=OpenBanking(Plaid),
+        ~exn,
+      )
     }
   }
 
   let initializePlaid = () => {
     let startedAt = Date.now()
-    ()
+    SdkLogger.logFunction(~event=PlaidCreate, ~outcome=Started, ~paymentMethod=OpenBanking(Plaid))
     Plaid.create({
       token: linkToken,
-      onLoad: (() =>
-          ()),
-      onSuccess: ((publicToken, _) => {
+      onLoad: SdkLogger.observeFunctionCallback(
+        ~event=OnLoad,
+        ~paymentMethod=OpenBanking(Plaid),
+        ~callback=() =>
+          SdkLogger.logFunction(
+            ~event=PlaidCreate,
+            ~outcome=Done,
+            ~startedAt,
+            ~paymentMethod=OpenBanking(Plaid),
+          ),
+      ),
+      onSuccess: SdkLogger.observeFunctionCallback(
+        ~event=OnSuccess,
+        ~paymentMethod=OpenBanking(Plaid),
+        ~callback=(publicToken, _) => {
           messageParentWindow([
             ("isPlaid", true->JSON.Encode.bool),
             ("publicToken", publicToken->JSON.Encode.string),
@@ -96,8 +115,12 @@ let make = () => {
           if isForceSync {
             callbackOnSuccessOfPlaidPaymentsFlow()->ignore
           }
-        }),
-      onExit: (_ =>
+        },
+      ),
+      onExit: SdkLogger.observeFunctionCallback(
+        ~event=OnExit,
+        ~paymentMethod=OpenBanking(Plaid),
+        ~callback=_ =>
           if isForceSync {
             callbackOnSuccessOfPlaidPaymentsFlow()->ignore
           } else {
@@ -107,7 +130,8 @@ let make = () => {
               ("isExited", true->JSON.Encode.bool),
               ("publicToken", ""->JSON.Encode.string),
             ])
-          }),
+          },
+      ),
     }).open_()
   }
 

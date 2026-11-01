@@ -66,7 +66,11 @@ let make = () => {
           let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
-            ()
+            AuthenticationLogger.logLifecycle(
+              ~event=AuthenticationLogger.ThreeDsAuthRequestFailed,
+              ~failure=json,
+              ~paymentMethod=Card,
+            )
             messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
             postFailedSubmitResponse(
               ~errortype=errorObj.error.type_,
@@ -86,7 +90,7 @@ let make = () => {
 
             let ele = Window.querySelector("#threeDsAuthDiv")
 
-            switch ele->Nullable.toOption {
+            let authEvent: AuthenticationLogger.lifecycleEvent = switch ele->Nullable.toOption {
             | Some(elem) =>
               if transStatus === "C" {
                 setloader(_ => false)
@@ -97,19 +101,24 @@ let make = () => {
                 form.target = "threeDsAuthFrame"
                 form.appendChild(input)
                 form.submit()
-                ()
+                AuthenticationLogger.ThreeDsChallengeShown({transStatus: transStatus})
               } else {
                 handleFrictionLess()
-                ()
+                AuthenticationLogger.ThreeDsFrictionlessResolved({transStatus: transStatus})
               }
-            | None => ()
+            | None => AuthenticationLogger.ThreeDsAuthContainerMissing({transStatus: transStatus})
             }
-            ()
+            AuthenticationLogger.logLifecycle(~event=authEvent, ~paymentMethod=Card)
             resolve(json)
           }
         })
         ->catch(err => {
-          ()
+          AuthenticationLogger.logLifecycle(
+            ~event=AuthenticationLogger.ThreeDsAuthRequestFailed,
+            ~paymentMethod=Card,
+            ~exn=err,
+            ~message="3DS authentication request or its response handling threw",
+          )
           let errorObj = PaymentError.itemToObjMapper(dict)
           postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
           closePaymentLoaderIfAny()

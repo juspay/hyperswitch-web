@@ -17,7 +17,13 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
     paymentOption.icon,
   )
   let onClick = _ => {
-    ()
+    SdkLogger.logUser(
+      ~event=PaymentMethodSelected({method: paymentOption.paymentMethodName}),
+      ~paymentMethod=?PaymentUtils.loggerPaymentMethodOf(
+        ~paymentMethodName=paymentOption.paymentMethodName,
+        ~paymentMethods=paymentMethodListValue.payment_methods,
+      ),
+    )
     setSelectedOption(_ => paymentOption.paymentMethodName)
   }
   <button

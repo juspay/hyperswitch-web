@@ -7,6 +7,7 @@ let make = (options, ~clientSecret, ~publishableKey) => {
   let profileId = options->Utils.getDictFromJson->Utils.getString("profileId", "")
   let authenticationId = options->Utils.getDictFromJson->Utils.getString("authenticationId", "")
   let merchantId = options->Utils.getDictFromJson->Utils.getString("merchantId", "")
+  LoggerContext.setAuthenticationId(authenticationId)
 
   let defaultInitAuthenticationSession = {
     initClickToPaySession: initClickToPaySessionInput =>

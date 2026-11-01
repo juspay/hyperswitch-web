@@ -18,13 +18,10 @@ let mountAuthConnectorScript = (~authConnector, ~onScriptLoaded) => {
   let pmAuthConnectorScriptUrl =
     authConnector->pmAuthNameToTypeMapper->pmAuthConnectorToScriptUrlMapper
   switch pmAuthConnectorScriptUrl {
-  | "" => ()
+  | "" => SdkLogger.logLifecycle(~event=BankAuthConnectorUnsupported({connector: authConnector}))
   | url =>
-    ResourceLoader.load(
-      ~url,
-      ~resource=ResourceLoader.Script,
-      ~onLoad=_ => onScriptLoaded(authConnector),
-      ~onError=_ => (),
+    SdkLogger.observeResource(~event=PmAuthConnectorScript, ~url, ~onLoad=() =>
+      onScriptLoaded(authConnector)
     )
   }
 }

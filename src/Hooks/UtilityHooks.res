@@ -27,6 +27,7 @@ let useHandlePostMessages = (
   ~paymentType,
   ~savedMethod=false,
   ~enabled=true,
+  ~loggedPaymentMethod: option<LoggerPaymentMethod.paymentMethod>=?,
 ) => {
   let wasComplete = React.useRef(false)
 
@@ -44,7 +45,10 @@ let useHandlePostMessages = (
       if !complete {
         sawIncomplete.current = true
       } else if !wasComplete.current && sawIncomplete.current {
-        ()
+        SdkLogger.logState(
+          ~event=PaymentFormCompleted({savedMethod: savedMethod}),
+          ~paymentMethod=?loggedPaymentMethod,
+        )
       }
     }
     wasComplete.current = complete
@@ -126,7 +130,10 @@ let useLogAppRendered = (~isRendered) => {
   React.useEffect(() => {
     if isRendered && !appRenderedLogged.contents {
       appRenderedLogged := true
-      ()
+      SdkLogger.logLifecycle(
+        ~event=AppRendered,
+        ~durationMs=?launchTime > 0.0 ? Some(Date.now() -. launchTime) : None,
+      )
     }
     None
   }, (isRendered, launchTime))

@@ -100,7 +100,13 @@ let make = (
               <input
                 type_={`checkbox`}
                 onChange={e => {
-                  ()
+                  SdkLogger.logUser(
+                    ~event=FieldToggled({
+                      field: "click_to_pay_save_details",
+                      enabled: e->getIsChecked,
+                    }),
+                    ~paymentMethod=Card,
+                  )
                   setIsSaveDetailsWithClickToPay(_ => e->getIsChecked)
                 }}
               />
@@ -135,7 +141,13 @@ let make = (
               <input
                 type_={`checkbox`}
                 onChange={e => {
-                  ()
+                  SdkLogger.logUser(
+                    ~event=FieldToggled({
+                      field: "click_to_pay_remember_me_checkbox",
+                      enabled: e->getIsChecked,
+                    }),
+                    ~paymentMethod=Card,
+                  )
                   setIsClickToPayRememberMe(_ => e->getIsChecked)
                 }}
               />

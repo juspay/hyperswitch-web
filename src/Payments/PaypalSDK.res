@@ -133,6 +133,7 @@ let make = (~sessionObj: SessionsType.token) => {
     ~complete=isCompleted,
     ~empty=!isCompleted,
     ~paymentType=paymentMethodType,
+    ~loggedPaymentMethod=Wallet(PaypalSdk),
   )
 
   let mountPaypalSDK = () => {
@@ -143,23 +144,30 @@ let make = (~sessionObj: SessionsType.token) => {
     let intentParam = if paypalIntent !== "" {
       `&intent=${paypalIntent}`
     } else {
-      ()
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowFailed({reason: MissingIntent}),
+        ~paymentMethod=Wallet(PaypalSdk),
+      )
       ""
     }
 
     let currencyParam = if currency !== "" {
       `&currency=${currency}`
     } else {
-      ()
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowFailed({reason: MissingCurrency}),
+        ~paymentMethod=Wallet(PaypalSdk),
+      )
       ""
     }
 
     let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields${currencyParam}${intentParam}`
-    ResourceLoader.load(
+    SdkLogger.observeResource(
+      ~event=PaypalScript,
       ~url=paypalScriptURL,
-      ~resource=ResourceLoader.Script,
       ~matchQuery=true,
-      ~onLoad=_ => {
+      ~paymentMethod=Wallet(PaypalSdk),
+      ~onLoad=() => {
         PaypalSDKHelpers.loadPaypalSDK(
           ~sdkHandleOneClickConfirmPayment,
           ~buttonStyle,
@@ -188,7 +196,6 @@ let make = (~sessionObj: SessionsType.token) => {
           ~parentOrigin=parentURL,
         )
       },
-      ~onError=_ => (),
     )->ignore
   }
 
@@ -221,7 +228,12 @@ let make = (~sessionObj: SessionsType.token) => {
         }
       }
     } catch {
-    | exn => ()
+    | exn =>
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowFailed({reason: SdkMountFailed}),
+        ~paymentMethod=Wallet(PaypalSdk),
+        ~exn,
+      )
     }
     None
   }, [sdkAuthorization])

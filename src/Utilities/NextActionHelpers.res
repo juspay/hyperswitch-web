@@ -6,6 +6,7 @@ let handleDDC = (
   ~isPaymentSession,
   ~resolve,
   ~data,
+  ~loggedPaymentMethod,
 ) => {
   let {iframeUrl, timeoutMs} = ddcData->Option.getOr(PaymentConfirmTypes.defaultDdcData)
 
@@ -29,10 +30,13 @@ let handleDDC = (
 
   let expectedOrigin = PaymentMessageSecurity.originOf(iframeUrl)
   if expectedOrigin->Option.isNone {
-    ()
+    SdkLogger.logLifecycle(
+      ~event=DdcFailed({reason: MissingUrl}),
+      ~paymentMethod=?loggedPaymentMethod,
+    )
     handleFailure()
   } else {
-    ()
+    SdkLogger.logLifecycle(~event=DdcStarted, ~paymentMethod=?loggedPaymentMethod)
 
     let timeoutIdRef = ref(None)
     let messageHandlerRef = ref(None)
@@ -62,7 +66,14 @@ let handleDDC = (
           } catch {
           | _ => ""
           }
-          ()
+          SdkLogger.logLifecycle(
+            ~event=CustomerRedirectStarted({
+              nextAction: "redirect_to_url",
+              redirectMode,
+              redirectOrigin,
+            }),
+            ~paymentMethod=?loggedPaymentMethod,
+          )
           openUrl(redirectUrl)
         }
       }
@@ -81,7 +92,11 @@ let handleDDC = (
 
       switch parsed {
       | Error(exn) =>
-        ()
+        SdkLogger.logLifecycle(
+          ~event=DdcFailed({reason: UnreadableResponse}),
+          ~exn,
+          ~paymentMethod=?loggedPaymentMethod,
+        )
         cleanup()
         handleFailure()
       | Ok(None) => ()
@@ -94,9 +109,16 @@ let handleDDC = (
           nextActionType === "redirect_to_url" &&
             PaymentMessageSecurity.httpUrl(redirectUrl)->Option.isSome
         ) {
-          ()
+          SdkLogger.logLifecycle(~event=DdcCompleted, ~paymentMethod=?loggedPaymentMethod)
           handleRedirectToUrl(redirectUrl, redirectMode)
         } else {
+          let reason: SdkLogger.ddcFailure =
+            nextActionType === "redirect_to_url" ? MissingRedirectUrl : InvalidNextAction
+          SdkLogger.logLifecycle(
+            ~event=DdcFailed({reason: reason}),
+            ~details=[("next_action", nextActionType->JSON.Encode.string)],
+            ~paymentMethod=?loggedPaymentMethod,
+          )
           handleFailure()
         }
       }
@@ -118,7 +140,7 @@ let handleDDC = (
     iframeRef := Some(iframe)
 
     timeoutIdRef := Some(setTimeout(() => {
-          ()
+          SdkLogger.logLifecycle(~event=DdcTimedOut, ~paymentMethod=?loggedPaymentMethod)
           cleanup()
           handleFailure()
         }, timeoutMs))

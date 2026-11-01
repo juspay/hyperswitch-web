@@ -7,7 +7,7 @@ let make = (~isCollapsed, ~setIsCollapsed) => {
       color: themeObj.colorPrimary,
     }
     onClick={_ => {
-      ()
+      SdkLogger.logUser(~event=ViewToggled({view: SavedMethodList, expanded: isCollapsed}))
       setIsCollapsed(prev => !prev)
     }}
   >

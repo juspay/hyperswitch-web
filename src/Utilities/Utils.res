@@ -1133,8 +1133,11 @@ let fetchApi = (
   })
 }
 
-let fetchApiForSdk = async (
+let fetchApiWithLogging = async (
   uri,
+  ~event: SdkLogger.apiEvent,
+  ~context=?,
+  ~source=?,
   ~onSuccess,
   ~onFailure,
   ~bodyStr="",
@@ -1147,26 +1150,38 @@ let fetchApiForSdk = async (
   ~signal: option<Fetch.AbortSignal.t>=?,
 ) => {
   try {
-    let body = switch method {
-    | #GET => None
-    | _ => Some(Fetch.Body.string(bodyStr))
-    }
-    let response = await Fetch.fetch(
-      uri,
-      {
-        method,
-        ?body,
-        ?signal,
-        headers: getHeaders(
-          ~headers=headers->Option.getOr(Dict.make()),
-          ~uri,
-          ~customPodUri,
-          ~publishableKey,
-          ~sdkAuthorization,
-        ),
+    let (response, data) = await SdkLogger.observeApi(
+      ~event,
+      ~context?,
+      ~source?,
+      ~url=uri,
+      ~failureOf=WebLoggerUtils.httpBodyFailure,
+      ~detailsOf=WebLoggerUtils.httpBodyDetails,
+      ~details=bodyStr->WebLoggerUtils.payloadDetails,
+      ~call=async () => {
+        let body = switch method {
+        | #GET => None
+        | _ => Some(Fetch.Body.string(bodyStr))
+        }
+        let response = await Fetch.fetch(
+          uri,
+          {
+            method,
+            ?body,
+            ?signal,
+            headers: getHeaders(
+              ~headers=headers->Option.getOr(Dict.make()),
+              ~uri,
+              ~customPodUri,
+              ~publishableKey,
+              ~sdkAuthorization,
+            ),
+          },
+        )
+        let data = await response->Fetch.Response.json
+        (response, data)
       },
     )
-    let data = await response->Fetch.Response.json
     response->Fetch.Response.ok ? onSuccess(data) : onFailure(data)
   } catch {
   | err => {

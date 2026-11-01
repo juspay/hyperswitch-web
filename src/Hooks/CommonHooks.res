@@ -26,7 +26,12 @@ type debounce = {
 @send
 external addEventListener: (element, string, event => unit) => unit = "addEventListener"
 
-let useScript = (src: string, ~integrity="", ~crossorigin="") => {
+let useScript = (
+  src: string,
+  ~integrity="",
+  ~crossorigin="",
+  ~resourceEvent: SdkLogger.resourceEvent,
+) => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
   React.useEffect(() => {
     if src == "" {
@@ -36,14 +41,15 @@ let useScript = (src: string, ~integrity="", ~crossorigin="") => {
       let cancelled = ref(false)
       let settle = value => cancelled.contents ? () : setStatus(_ => value)
       setStatus(_ => "loading")
-      ResourceLoader.load(
+      SdkLogger.observeResource(
+        ~event=resourceEvent,
         ~url=src,
-        ~resource=ResourceLoader.Script,
         ~attributes=[("crossorigin", crossorigin), ("integrity", integrity)]
         ->Array.filter(((_, value)) => value != "")
         ->Array.concat([("async", "true")]),
         ~matchQuery=true,
-        ~onLoad=_ => settle("ready"),
+        ~abandoned=() => cancelled.contents,
+        ~onLoad=() => settle("ready"),
         ~onError=_ => settle("error"),
       )
       Some(() => cancelled := true)

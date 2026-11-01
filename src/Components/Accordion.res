@@ -47,7 +47,13 @@ let make = (
       borderBottomStyle: borderBottom ? "solid" : "hidden",
     }
     onClick={_ => {
-      ()
+      SdkLogger.logUser(
+        ~event=PaymentMethodSelected({method: paymentOption.paymentMethodName}),
+        ~paymentMethod=?PaymentUtils.loggerPaymentMethodOf(
+          ~paymentMethodName=paymentOption.paymentMethodName,
+          ~paymentMethods=paymentMethodListValue.payment_methods,
+        ),
+      )
       setSelectedOption(_ => paymentOption.paymentMethodName)
     }}
   >

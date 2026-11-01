@@ -87,17 +87,31 @@ let make = () => {
               form.target = "threeDsAuthFrame"
               form.appendChild(input)
               threeDsMethodStartedAtRef.current = Some(Date.now())
-              ()
+              AuthenticationLogger.logLifecycle(
+                ~event=AuthenticationLogger.ThreeDsMethodStarted,
+                ~details=[("connector", "redsys"->JSON.Encode.string)],
+                ~paymentMethod=Card,
+              )
               form.submit()
             }
           | None =>
-            ()
+            AuthenticationLogger.logLifecycle(
+              ~event=AuthenticationLogger.ThreeDsMethodFailed({
+                reason: AuthenticationLogger.MissingContainer,
+              }),
+              ~details=[("connector", "redsys"->JSON.Encode.string)],
+              ~paymentMethod=Card,
+            )
           }
 
           timeoutRef.current->Option.forEach(clearTimeout)
 
           timeoutRef.current = Some(setTimeout(() => {
-              ()
+              AuthenticationLogger.logLifecycle(
+                ~event=AuthenticationLogger.ThreeDsMethodTimedOut,
+                ~details=[("connector", "redsys"->JSON.Encode.string)],
+                ~paymentMethod=Card,
+              )
               handleCompleteAuthorizeCall(
                 "N",
                 clientSecret,
@@ -113,7 +127,14 @@ let make = () => {
             elem->CommonHooks.addEventListener("load", _ => {
               timeoutRef.current->Option.forEach(clearTimeout)
               if !isCompleteAuthorizeCalledRef.current {
-                ()
+                AuthenticationLogger.logLifecycle(
+                  ~event=AuthenticationLogger.ThreeDsMethodCompleted,
+                  ~details=[("connector", "redsys"->JSON.Encode.string)],
+                  ~paymentMethod=Card,
+                  ~durationMs=?threeDsMethodStartedAtRef.current->Option.map(
+                    startedAt => Date.now() -. startedAt,
+                  ),
+                )
                 handleCompleteAuthorizeCall(
                   "Y",
                   clientSecret,
@@ -129,7 +150,12 @@ let make = () => {
         }
       } catch {
       | exn =>
-        ()
+        SdkLogger.logCrash(
+          ~origin=ParentWindowMessage,
+          ~exn,
+          ~details=[("connector", "redsys"->JSON.Encode.string)],
+          ~message="Redsys 3DS message handling threw; reported complete_authorize_failed",
+        )
         postFailedSubmitResponse(
           ~errortype="complete_authorize_failed",
           ~message="Something went wrong.",

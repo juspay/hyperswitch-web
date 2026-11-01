@@ -66,7 +66,7 @@ let make = (~walletOptions) => {
     ~complete=paypalClicked,
     ~empty=!paypalClicked,
     ~paymentType=paymentMethodType,
-
+    ~loggedPaymentMethod=Wallet(Paypal),
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   SubscriptionEventHooks.useEmitFormStatus(
@@ -76,7 +76,11 @@ let make = (~walletOptions) => {
   )
   let onPaypalClick = (~fromExpressButton=true, _ev) => {
     if fromExpressButton {
-      ()
+      SdkLogger.logUser(
+        ~event=ExpressCheckoutClicked,
+        ~paymentMethod=Wallet(Paypal),
+        ~details=isTestMode ? [("test_mode", true->JSON.Encode.bool)] : [],
+      )
     }
     if isTestMode {
       Console.warn("PayPal button clicked in test mode - interaction disabled")
@@ -154,13 +158,25 @@ let make = (~walletOptions) => {
         if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
           onPaypalClick(~fromExpressButton=false, ev)
         } else if areRequiredFieldsEmpty {
-          ()
+          SdkLogger.logLifecycle(
+            ~event=FormValidationFailed({reason: localeString.enterFieldsText}),
+            ~paymentMethod=?LoggerPaymentMethod.fromPair(
+              ~method=paymentMethod,
+              ~methodType=paymentMethodType,
+            ),
+          )
           Utils.postFailedSubmitResponse(
             ~errortype="validation_error",
             ~message=localeString.enterFieldsText,
           )
         } else if !areRequiredFieldsValid {
-          ()
+          SdkLogger.logLifecycle(
+            ~event=FormValidationFailed({reason: localeString.enterValidDetailsText}),
+            ~paymentMethod=?LoggerPaymentMethod.fromPair(
+              ~method=paymentMethod,
+              ~methodType=paymentMethodType,
+            ),
+          )
           Utils.postFailedSubmitResponse(
             ~errortype="validation_error",
             ~message=localeString.enterValidDetailsText,

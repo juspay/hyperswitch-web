@@ -521,7 +521,7 @@ let generateFontsLink = (fonts: array<CardThemeType.fonts>) => {
     fonts
     ->Array.map(item =>
       if item.cssSrc != "" {
-        ResourceLoader.load(~url=item.cssSrc, ~resource=ResourceLoader.Stylesheet, ~onLoad=_ => (), ~onError=_ => ())
+        SdkLogger.observeResource(~event=FontStylesheet, ~url=item.cssSrc)
       } else if item.family != "" && item.src != "" {
         let newStyle = document["createElement"]("style")
         newStyle["appendChild"](

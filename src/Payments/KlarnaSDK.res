@@ -20,6 +20,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let intent = PaymentHelpers.usePaymentIntent(Other)
   let status = CommonHooks.useScript(
     "https://x.klarnacdn.net/kp/lib/v1/api.js",
+    ~resourceEvent=SdkLogger.KlarnaScript,
   )
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
@@ -59,7 +60,7 @@ let make = (~sessionObj: SessionsType.token) => {
     ~complete=isCompleted,
     ~empty=!isCompleted,
     ~paymentType=paymentMethodType,
-
+    ~loggedPaymentMethod=PayLater(Klarna),
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
@@ -68,19 +69,24 @@ let make = (~sessionObj: SessionsType.token) => {
     if status === "ready" && paymentMethodTypes !== PaymentMethodsRecord.defaultPaymentMethodType {
       let klarnaWrapper = GooglePayType.getElementById(Utils.document, "klarna-payments")
       klarnaWrapper.innerHTML = ""
-      (() =>
+      SdkLogger.observeFunction(~event=KlarnaInit, ~paymentMethod=PayLater(Klarna), ~call=() =>
         klarnaInit.init({
           client_token: sessionObj.token,
-        }))()->ignore
+        })
+      )->ignore
 
       let loadStartedAt = Date.now()
-      ()
+      SdkLogger.logFunction(~event=KlarnaLoad, ~outcome=Started, ~paymentMethod=PayLater(Klarna))
       klarnaInit.load(
         {
           container: "#klarna-payments",
           theme: options.wallets.style.theme == Dark ? "default" : "outlined",
           shape: "default",
-          on_click: (authorize => {
+          on_click: SdkLogger.observeFunctionCallback(
+            ~event=OnClick,
+            ~paymentMethod=PayLater(Klarna),
+            ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
+            ~callback=authorize => {
               if isTestMode {
                 Console.warn("Klarna SDK button clicked in test mode - interaction disabled")
                 resolve()
@@ -156,11 +162,18 @@ let make = (~sessionObj: SessionsType.token) => {
                   },
                 )
               }
-            }),
+            },
+          ),
         },
         loadResult => {
           let loadError = loadResult->getDictFromJson->Dict.get("error")
-          ()
+          SdkLogger.logFunction(
+            ~event=KlarnaLoad,
+            ~outcome=loadError->Option.isSome ? Failed : Done,
+            ~startedAt=loadStartedAt,
+            ~exn=?loadError->Option.map(Identity.anyTypeToJson),
+            ~paymentMethod=PayLater(Klarna),
+          )
           setAreOneClickWalletsRendered(
             prev => {
               ...prev,

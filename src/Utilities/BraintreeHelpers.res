@@ -25,16 +25,14 @@ let braintreeApplePayUrl = "https://js.braintreegateway.com/web/3.92.1/js/apple-
 let braintreeClientUrl = "https://js.braintreegateway.com/web/3.92.1/js/client.min.js"
 
 let loadBraintreeApplePayScripts = () => {
-  ResourceLoader.load(
+  SdkLogger.observeResource(
+    ~event=BraintreeClientScript,
     ~url=braintreeClientUrl,
-    ~resource=ResourceLoader.Script,
-    ~onLoad=_ => (),
-    ~onError=_ => (),
+    ~paymentMethod=Wallet(ApplePay),
   )
-  ResourceLoader.load(
+  SdkLogger.observeResource(
+    ~event=BraintreeApplePayScript,
     ~url=braintreeApplePayUrl,
-    ~resource=ResourceLoader.Script,
-    ~onLoad=_ => (),
-    ~onError=_ => (),
+    ~paymentMethod=Wallet(ApplePay),
   )
 }

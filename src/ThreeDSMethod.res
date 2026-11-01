@@ -25,7 +25,11 @@ let make = () => {
     let iframeId = metadataDict->getString("iframeId", "")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
-      ()
+      AuthenticationLogger.logLifecycle(
+        ~event=AuthenticationLogger.ThreeDsMethodCompleted,
+        ~details=[("inferred", inferred->JSON.Encode.bool)],
+        ~paymentMethod=Card,
+      )
 
       isThreeDSMethodCompletionFired.current = true
       setIsStartTimeout(_ => false)
@@ -90,11 +94,11 @@ let make = () => {
     }
   }
 
-  let handleOnError = () => {
+  let handleOnError = (event: AuthenticationLogger.lifecycleEvent, ~exn=?) => {
     let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
     let iframeId = metadataDict->getString("iframeId", "")
 
-    ()
+    AuthenticationLogger.logLifecycle(~event, ~paymentMethod=Card, ~exn?)
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
       stateMetadataRef.current
@@ -173,7 +177,7 @@ let make = () => {
   React.useEffect(() => {
     if isStartTimeout {
       let timeoutId = setTimeout(() => {
-        handleOnError()
+        handleOnError(AuthenticationLogger.ThreeDsMethodTimedOut)
       }, 15000) // 15 seconds timeout
 
       Some(
@@ -242,15 +246,30 @@ let make = () => {
                 setIsStartTimeout(_ => true)
                 form.submit()
               } catch {
-              | _ => handleOnError()
+              | err =>
+                handleOnError(
+                  AuthenticationLogger.ThreeDsMethodFailed({
+                    reason: AuthenticationLogger.FormSubmitFailed,
+                  }),
+                  ~exn=err,
+                )
               }
             }
-          | None => handleOnError()
+          | None =>
+            handleOnError(
+              AuthenticationLogger.ThreeDsMethodFailed({
+                reason: AuthenticationLogger.MissingContainer,
+              }),
+            )
           }
         }
       } catch {
       | exn =>
-        ()
+        SdkLogger.logCrash(
+          ~origin=ParentWindowMessage,
+          ~exn,
+          ~message="3DS method setup from parent message threw; method form not submitted",
+        )
       }
 
       if consumePostMessageForThreeDsMethodCompletionRef.current && threeDsUrlRef.current !== "" {
@@ -288,7 +307,10 @@ let make = () => {
       ref={iframeRef->ReactDOM.Ref.domRef}
       style={outline: "none"}
       onLoad={handleOnLoad}
-      onError={_ => handleOnError()}
+      onError={_ =>
+        handleOnError(
+          AuthenticationLogger.ThreeDsMethodFailed({reason: AuthenticationLogger.IframeLoadFailed}),
+        )}
     />
   </>
 }

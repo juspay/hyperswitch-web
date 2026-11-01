@@ -41,7 +41,7 @@ let make = (
   let handleFocus = _ => {
     setInputFocused(_ => true)
     if fieldName->String.length > 0 {
-      ()
+      SdkLogger.logUser(~event=FieldFocused({field: fieldName}))
     }
     Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }

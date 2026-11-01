@@ -42,7 +42,7 @@ let make = (
   let handleFocus = ev => {
     setInputFocused(_ => true)
     if name->String.length > 0 {
-      ()
+      SdkLogger.logUser(~event=FieldFocused({field: name}))
     }
     switch setIsValid {
     | Some(fn) => fn(_ => None)
@@ -59,7 +59,7 @@ let make = (
   let handleBlur = ev => {
     setInputFocused(_ => false)
     if name->String.length > 0 {
-      ()
+      SdkLogger.logUser(~event=FieldBlurred({field: name}))
     }
     switch onBlur {
     | Some(fn) => fn(ev)

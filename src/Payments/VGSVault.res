@@ -3,13 +3,25 @@ open VGSTypes
 open VGSHelpers
 open VGSConstants
 
-let submitVaultTokenization = (vault: returnValue, ~onData) => {
+let submitVaultTokenization = (vault: returnValue, ~scope, ~onData) => {
+  let startedAt = Date.now()
+  let event = SdkLogger.VaultTokenization({scope: scope})
+  let details = [("vault", "vgs"->JSON.Encode.string)]
+  let paymentMethod = LoggerPaymentMethod.Card
+  SdkLogger.logApi(~event, ~outcome=Started, ~details, ~paymentMethod)
   let onSuccess = (_, data) => {
-    ()
+    SdkLogger.logApi(~event, ~outcome=Done, ~details, ~startedAt, ~paymentMethod)
     onData(data)
   }
   let onError = err => {
-    ()
+    SdkLogger.logApi(
+      ~event,
+      ~outcome=Failed,
+      ~details,
+      ~startedAt,
+      ~exn=err->Identity.anyTypeToJson,
+      ~paymentMethod,
+    )
     postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
   }
   vault.submit("/post", JSON.Encode.object(Dict.make()), onSuccess, onError)
@@ -47,6 +59,7 @@ let make = (~cvcOnly=false) => {
     vgsScriptURL,
     ~integrity=vgsScriptIntegrity,
     ~crossorigin="anonymous",
+    ~resourceEvent=SdkLogger.VaultScript,
   )
 
   let vaultInitializedRef = React.useRef(false)
@@ -237,7 +250,7 @@ let make = (~cvcOnly=false) => {
           setVgsCVCError(_ => cvcErr)
           emitSavedCardCvcStatus(~dict=stateDict, ~error=cvcErr)
           if cvcErr == "" && isOuterValid {
-            vault->submitVaultTokenization(~onData=data => {
+            vault->submitVaultTokenization(~scope=SaveCardCvc, ~onData=data => {
               let cvcToken = data->getDictFromJson->getString("card_cvc", "")
               messageParentWindow(
                 [
@@ -265,7 +278,7 @@ let make = (~cvcOnly=false) => {
           let cardFieldsValid = cardErr == "" && expiryErr == "" && cvcErr == ""
 
           if cardFieldsValid && isOuterValid {
-            vault->submitVaultTokenization(~onData=data => {
+            vault->submitVaultTokenization(~scope=FullCard, ~onData=data => {
               let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
               messageParentWindow(
                 [
@@ -295,7 +308,11 @@ let make = (~cvcOnly=false) => {
         }
 
       | None =>
-        ()
+        SdkLogger.logLifecycle(
+          ~event=VaultFlowFailed({reason: FormCreationFailed}),
+          ~details=[("vault", "vgs"->JSON.Encode.string)],
+          ~message="Vault form not initialized at submit",
+        )
         Console.error("VGS Vault not initialized for submission")
       }
     }

@@ -34,7 +34,7 @@ let make = (
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let setUserError = message => {
-    ()
+    SdkLogger.logLifecycle(~event=FormValidationFailed({reason: message}))
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
   let {
@@ -348,6 +348,10 @@ let make = (
     ~empty,
     ~paymentType=paymentMethodType,
     ~savedMethod=true,
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(
+      ~method=customerMethod.paymentMethod,
+      ~methodType=customerMethod.paymentMethodType->Option.getOr(""),
+    ),
   )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
   SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
@@ -702,7 +706,7 @@ let make = (
   let showSavedCards = groupSavedMethodsSeparately || !showPaymentMethodsScreen
 
   let switchToNewPaymentMethods = () => {
-    ()
+    SdkLogger.logUser(~event=ViewOpened({view: NewPaymentMethods}))
     setShowPaymentMethodsScreen(_ => true)
   }
 

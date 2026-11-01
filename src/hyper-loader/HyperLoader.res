@@ -1,4 +1,4 @@
-()
+SdkLogger.catchGlobalCrashes(~ownsDocument=false)
 
 let loadHyper = (str, option) => {
   Promise.resolve(Hyper.make(str, option, None))

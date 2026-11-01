@@ -586,7 +586,19 @@ let useLogDynamicFieldsRendered = (
             ->JSON.Encode.object
           )
           ->JSON.Encode.array
-        ()
+        SdkLogger.logState(
+          ~event=DynamicFieldsChanged,
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethod === "card" ? "" : configPaymentMethodType,
+          ),
+          ~details=[
+            ("superposition_base_context", superpositionBaseContext->Identity.anyTypeToJson),
+            ("eligible_connectors", eligibleConnectors->JSON.Encode.array),
+            ("field_count", fields->Array.length->JSON.Encode.int),
+            ("fields", fieldsJson),
+          ],
+        )
       }
     }
     None

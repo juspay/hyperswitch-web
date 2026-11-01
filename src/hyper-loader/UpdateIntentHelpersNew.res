@@ -80,7 +80,10 @@ let sendElementsUpdateToIframes = (iframes, ~newSdkAuthorization, ~newClientSecr
 // Error response when updateIntent is already in progress (used as early return guard).
 let updateIntentInProgressResponse = () => {
   let message = "An updateIntent operation is already in progress."
-  ()
+  SdkLogger.logLifecycle(
+    ~event=OperationBlocked({operation: IntentUpdate, reason: "update_intent_in_progress"}),
+    ~message,
+  )
   getFailedSubmitResponse(~message, ~errorType="update_intent_error")
 }
 
@@ -88,14 +91,20 @@ let updateIntentInProgressResponse = () => {
 // Uses getFailedSubmitResponse (same format as Elements/Hyper).
 let confirmBlockedResponse = () => {
   let message = "Cannot confirm payment while updateIntent is in progress."
-  ()
+  SdkLogger.logLifecycle(
+    ~event=OperationBlocked({operation: PaymentConfirm, reason: "update_intent_in_progress"}),
+    ~message,
+  )
   getFailedSubmitResponse(~message, ~errorType="update_intent_error")
 }
 
 // Same as confirmBlockedResponse but uses handleFailureResponse (used in PaymentSessionMethods).
 let confirmBlockedResponseForSession = () => {
   let message = "Cannot confirm payment while updateIntent is in progress."
-  ()
+  SdkLogger.logLifecycle(
+    ~event=OperationBlocked({operation: PaymentConfirm, reason: "update_intent_in_progress"}),
+    ~message,
+  )
   handleFailureResponse(~message, ~errorType="update_intent_error")
 }
 
@@ -318,8 +327,15 @@ let performUpdateIntent = async (
   ~isSdkParamsEnabled,
   ~selectorString,
   ~shouldWaitForReady,
+  ~surface: HyperLoaderLogger.surface=PaymentSession,
 ) => {
-  let callback = (callback)
+  let source = surface === PaymentSession ? Some(LoggerRuntime.Headless) : None
+  let callback = HyperLoaderLogger.observeMerchantCallback(
+    ~event=UpdateIntent({surface: surface}),
+    ~source?,
+    ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
+    ~callback,
+  )
   if isUpdateIntentInProgress.contents {
     updateIntentInProgressResponse()
   } else {
@@ -374,6 +390,10 @@ let performUpdateIntent = async (
           // All API calls succeeded — now commit state changes
 
           sdkAuthorizationRef.contents = newSdkAuthorization
+          LoggerContext.setPaymentIdFromCredentials(
+            ~clientSecret=clientSecretRef.contents,
+            ~sdkAuthorization=?Some(newSdkAuthorization)->getNonEmptyOption,
+          )
 
           sessionTokensDataPromise.contents = newSessionTokensPromise
           sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
@@ -386,7 +406,7 @@ let performUpdateIntent = async (
             ~newClientSecret=clientSecretRef.contents,
           )
 
-          ()
+          SdkLogger.logState(~source?, ~event=UpdateIntentProgressChanged({inProgress: true}))
 
           // Wait for the payment element to signal ready (only if a payment element is mounted)
           let readyPromise = if shouldWaitForReady {
@@ -421,9 +441,14 @@ let performUpdateIntent = async (
         getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
       }
 
-    let response = await (runUpdateIntent)()
+    let response = await HyperLoaderLogger.observeMerchantCall(
+      ~event=UpdateIntent({surface: surface}),
+      ~source?,
+      ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
+      ~call=runUpdateIntent,
+    )
     isUpdateIntentInProgress.contents = false
-    ()
+    SdkLogger.logState(~source?, ~event=UpdateIntentProgressChanged({inProgress: false}))
     response
   }
 }
