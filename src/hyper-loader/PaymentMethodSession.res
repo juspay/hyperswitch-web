@@ -162,7 +162,10 @@ let make = (
 
   let sdkAuthorizationRaw = optionsDict->resolveSdkAuthorization
   let sdkAuth = sdkAuthorizationRaw->getSdkAuthorizationData
-  let publishableKey = sdkAuth.publishableKey->Option.getOr(publishableKey)
+  let publishableKey = sdkAuth.publishableKey->Option.getOr(
+    context->Option.map(value => value.merchantId)->Option.getOr(publishableKey),
+  )
+  let sdkSessionId = context->Option.map(value => value.sessionId)->Option.getOr(sdkSessionId)
   let pmSessionId = sdkAuth.pmSessionId->Option.getOr("")
   let customerId = sdkAuth.customerId->Option.getOr("")
 
