@@ -148,7 +148,10 @@ type fieldEntry = {
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
 
 let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSession => {
-  SdkLogger.logState(~event=CardFormCreated({scope: VaultForm}), ~context)
+  PaymentMethodSessionLogger.logState(
+    ~event=CardFormCreated({scope: PaymentMethodSessionLogger.VaultForm}),
+    ~context,
+  )
   let optionsDict = options->getDictFromJson
 
   let sdkAuthorizationRaw = optionsDict->resolveSdkAuthorization
@@ -182,12 +185,15 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
 
   let logFieldMounted = (~fieldId: string, ~fieldType: string) => {
     mountedFieldsRef.contents->Dict.set(fieldId, (fieldType, Date.now()))
-    SdkLogger.logState(~event=CardFieldMounted({scope: VaultForm, field: fieldType}), ~context)
+    PaymentMethodSessionLogger.logState(
+      ~event=CardFieldMounted({scope: PaymentMethodSessionLogger.VaultForm, field: fieldType}),
+      ~context,
+    )
   }
 
   let logFieldRendered = (~fieldId: string, ~fieldType: string) =>
-    SdkLogger.logState(
-      ~event=CardFieldRendered({scope: VaultForm, field: fieldType}),
+    PaymentMethodSessionLogger.logState(
+      ~event=CardFieldRendered({scope: PaymentMethodSessionLogger.VaultForm, field: fieldType}),
       ~context,
       ~durationMs=?mountedFieldsRef.contents
       ->Dict.get(fieldId)
@@ -216,9 +222,9 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
         ["cardNumber", "cardExpiry", "cardCvc"]->Array.filter(fieldType =>
           requiredTypes->Array.includes(fieldType)
         )
-      SdkLogger.logState(
+      PaymentMethodSessionLogger.logState(
         ~event=CardFormCompleted({
-          scope: VaultForm,
+          scope: PaymentMethodSessionLogger.VaultForm,
           fields: nameComplete ? filledTypes->Array.concat(["cardholderName"]) : filledTypes,
         }),
         ~context,
@@ -748,9 +754,12 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                       forgetMountedField(fieldId)
                       broker.unmountField(~fieldId)
                       uniqueSelectorRef := None
-                      SdkLogger.logState(
+                      PaymentMethodSessionLogger.logState(
                         ~context,
-                        ~event=CardFieldUnmounted({scope: VaultForm, field: fieldType}),
+                        ~event=CardFieldUnmounted({
+                          scope: PaymentMethodSessionLogger.VaultForm,
+                          field: fieldType,
+                        }),
                       )
                     },
                   ),
@@ -763,9 +772,12 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                       forgetMountedField(fieldId)
                       broker.unmountField(~fieldId)
                       uniqueSelectorRef := None
-                      SdkLogger.logState(
+                      PaymentMethodSessionLogger.logState(
                         ~context,
-                        ~event=CardFieldUnmounted({scope: VaultForm, field: fieldType}),
+                        ~event=CardFieldUnmounted({
+                          scope: PaymentMethodSessionLogger.VaultForm,
+                          field: fieldType,
+                        }),
                       )
                     },
                   ),
@@ -843,19 +855,21 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                   eventCallbacksRef.contents->Dict.set(key, cb)
                 },
               }
-              SdkLogger.logState(
+              PaymentMethodSessionLogger.logState(
                 ~context,
-                ~event=CardFieldCreated({scope: VaultForm, field: fieldType}),
+                ~event=CardFieldCreated({
+                  scope: PaymentMethodSessionLogger.VaultForm,
+                  field: fieldType,
+                }),
               )
               handle
             }
           | None => {
               Console.error(`[PaymentMethodSession] vaultType="vgs" declared but vaultData has no vaultId/environment — cannot mount`)
-              SdkLogger.logLifecycle(
+              PaymentMethodSessionLogger.logLifecycle(
                 ~context,
-                ~event=VaultFlowFailed({reason: FormCreationFailed}),
+                ~event=VaultFlowFailed({reason: PaymentMethodSessionLogger.FormCreationFailed}),
                 ~details=[("field", fieldType->JSON.Encode.string)],
-                ~paymentMethod=Card,
                 ~message="Vault credentials missing vaultId or environment; field not created",
               )
               Types.defaultFieldHandle
@@ -874,9 +888,12 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
           let entry = createFieldHandle(fieldType, options, fieldId)
           fieldsRef.contents->Dict.set(fieldId, entry)
           registerField(~fields, ~fieldId, ~fieldType)
-          SdkLogger.logState(
+          PaymentMethodSessionLogger.logState(
             ~context,
-            ~event=CardFieldCreated({scope: VaultForm, field: fieldType}),
+            ~event=CardFieldCreated({
+              scope: PaymentMethodSessionLogger.VaultForm,
+              field: fieldType,
+            }),
           )
           entry.handle
         | other => {
@@ -1216,7 +1233,10 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
       ~event=HyperLoaderLogger.Deinit({surface: PaymentMethodsSession}),
       ~call=() => {
         if sessionStateRef.contents != Deinitialized {
-          SdkLogger.logState(~context, ~event=CardFormDestroyed({scope: VaultForm}))
+          PaymentMethodSessionLogger.logState(
+            ~context,
+            ~event=CardFormDestroyed({scope: PaymentMethodSessionLogger.VaultForm}),
+          )
           fieldsRef.contents
           ->Dict.valuesToArray
           ->Array.forEach(entry => {
@@ -1235,11 +1255,10 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                 "[PaymentMethodSession] VGS unmountAll() threw during deinit",
                 exn->Identity.anyTypeToJson,
               )
-              SdkLogger.logLifecycle(
+              PaymentMethodSessionLogger.logLifecycle(
                 ~context,
-                ~event=VaultFlowFailed({reason: FieldUnmountFailed}),
+                ~event=VaultFlowFailed({reason: PaymentMethodSessionLogger.FieldUnmountFailed}),
                 ~exn,
-                ~paymentMethod=Card,
                 ~message="Vault broker unmountAll threw during deinit",
               )
             }

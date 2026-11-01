@@ -184,12 +184,14 @@ let rec pollRetrievePaymentIntent = (
     let status = dict->getString("status", "")
 
     if status === "succeeded" || status === "failed" {
-      let outcome: SdkLogger.paymentOutcomeData = {
+      let outcome: PaymentLogger.paymentOutcomeData = {
         status,
         manualRetryAllowed: dict->getBool("manual_retry_allowed", false),
       }
-      SdkLogger.logLifecycle(
-        ~event=status === "succeeded" ? PaymentSucceeded(outcome) : PaymentFailed(outcome),
+      PaymentLogger.logLifecycle(
+        ~event=status === "succeeded"
+          ? PaymentLogger.PaymentSucceeded(outcome)
+          : PaymentLogger.PaymentFailed(outcome),
         ~details=?status === "failed" ? Some(json->WebLoggerUtils.intentErrorDetails) : None,
         ~paymentMethod=?LoggerPaymentMethod.fromPair(
           ~method=dict->getString("payment_method", ""),
@@ -274,7 +276,7 @@ let rec pollStatus = (
       if status === "completed" {
         resolve(json)
       } else if count === 0 {
-        SdkLogger.logLifecycle(~event=PaymentStatusPollExhausted)
+        PaymentLogger.logLifecycle(~event=PaymentLogger.PaymentStatusPollExhausted)
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         openUrl(returnUrl)
       } else {
@@ -415,8 +417,8 @@ let rec intentCall = (
         Promise.make(
           (resolve, _) => {
             if isConfirm {
-              SdkLogger.logLifecycle(
-                ~event=PaymentRejected,
+              PaymentLogger.logLifecycle(
+                ~event=PaymentLogger.PaymentRejected,
                 ~failure=data,
                 ~paymentMethod=?bodyStr->LoggerPaymentMethod.fromRequestBody,
               )
@@ -448,8 +450,11 @@ let rec intentCall = (
           (resolve, _) => {
             if counter >= 5 {
               let message = "Something went wrong"
-              SdkLogger.logLifecycle(
-                ~event=PaymentRetriesExhausted({operation: "retrieve", attempts: counter}),
+              PaymentLogger.logLifecycle(
+                ~event=PaymentLogger.PaymentRetriesExhausted({
+                  operation: "retrieve",
+                  attempts: counter,
+                }),
                 ~message,
               )
               if !isPaymentSession {
@@ -939,19 +944,19 @@ let rec intentCall = (
               }
               resolve(data)
             } else if intent.status != "" {
-              let outcome: SdkLogger.paymentOutcomeData = {
+              let outcome: PaymentLogger.paymentOutcomeData = {
                 status: intent.status,
                 manualRetryAllowed: intent.manualRetryAllowed,
               }
               switch intent.status {
               | "succeeded" =>
-                SdkLogger.logLifecycle(
-                  ~event=PaymentSucceeded(outcome),
+                PaymentLogger.logLifecycle(
+                  ~event=PaymentLogger.PaymentSucceeded(outcome),
                   ~paymentMethod=?loggedPaymentMethod,
                 )
               | "failed" =>
-                SdkLogger.logLifecycle(
-                  ~event=PaymentFailed(outcome),
+                PaymentLogger.logLifecycle(
+                  ~event=PaymentLogger.PaymentFailed(outcome),
                   ~details=data->WebLoggerUtils.intentErrorDetails,
                   ~paymentMethod=?loggedPaymentMethod,
                 )
@@ -963,8 +968,8 @@ let rec intentCall = (
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else {
               let message = "Payment failed. Try again!"
-              SdkLogger.logLifecycle(
-                ~event=PaymentStatusUnknown({inferred: false}),
+              PaymentLogger.logLifecycle(
+                ~event=PaymentLogger.PaymentStatusUnknown({inferred: false}),
                 ~paymentMethod=?loggedPaymentMethod,
                 ~message="Payment response had empty status; reported confirm_payment_failed",
               )
@@ -997,8 +1002,11 @@ let rec intentCall = (
         url.searchParams.set("status", "failed")
         if counter >= 5 {
           let message = "Something went wrong"
-          SdkLogger.logLifecycle(
-            ~event=PaymentRetriesExhausted({operation: "retrieve", attempts: counter}),
+          PaymentLogger.logLifecycle(
+            ~event=PaymentLogger.PaymentRetriesExhausted({
+              operation: "retrieve",
+              attempts: counter,
+            }),
             ~message,
           )
           if !isPaymentSession {
@@ -1054,7 +1062,7 @@ let rec intentCall = (
         }
       } catch {
       | exn =>
-        SdkLogger.logLifecycle(~event=PaymentErrorHandlingFailed, ~exn)
+        PaymentLogger.logLifecycle(~event=PaymentLogger.PaymentErrorHandlingFailed, ~exn)
         if !isPaymentSession {
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
         }
@@ -1351,8 +1359,8 @@ let usePaymentIntent = (~isOneClickWallet=false, paymentType) => {
             headers->Dict.fromArray->Identity.anyTypeToJson->JSON.stringify,
           )
         } else {
-          SdkLogger.logLifecycle(
-            ~event=PaymentAttempted,
+          PaymentLogger.logLifecycle(
+            ~event=PaymentLogger.PaymentAttempted,
             ~details=[("content_length", body->String.length->JSON.Encode.int)],
             ~paymentMethod=?body->LoggerPaymentMethod.fromRequestBody,
           )
@@ -1990,8 +1998,8 @@ let usePostSessionTokens = (
       let uri = `${endpoint}/payments/${paymentIntentId}/post_session_tokens`
 
       let callIntent = body => {
-        SdkLogger.logLifecycle(
-          ~event=PaymentAttempted,
+        PaymentLogger.logLifecycle(
+          ~event=PaymentLogger.PaymentAttempted,
           ~details=[("content_length", body->String.length->JSON.Encode.int)],
           ~paymentMethod=?body->LoggerPaymentMethod.fromRequestBody,
         )

@@ -148,8 +148,8 @@ let make = () => {
             postSubmitResponse(~jsonData=res, ~url=return_url)
           } catch {
           | error =>
-            SdkLogger.logLifecycle(
-              ~event=PaymentStatusUnknown({inferred: true}),
+            PaymentLogger.logLifecycle(
+              ~event=PaymentLogger.PaymentStatusUnknown({inferred: true}),
               ~exn=error,
               ~paymentMethod=?loggedPaymentMethodRef.current,
               ~message="QR payment status polling failed",
@@ -179,8 +179,8 @@ let make = () => {
       Modal.close(setOpenModal)
     } catch {
     | e =>
-      SdkLogger.logLifecycle(
-        ~event=PaymentStatusUnknown({inferred: true}),
+      PaymentLogger.logLifecycle(
+        ~event=PaymentLogger.PaymentStatusUnknown({inferred: true}),
         ~exn=e,
         ~paymentMethod=?loggedPaymentMethodRef.current,
         ~message="Payment retrieve after QR close or expiry failed",

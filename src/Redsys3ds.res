@@ -87,16 +87,18 @@ let make = () => {
               form.target = "threeDsAuthFrame"
               form.appendChild(input)
               threeDsMethodStartedAtRef.current = Some(Date.now())
-              SdkLogger.logLifecycle(
-                ~event=ThreeDsMethodStarted,
+              AuthenticationLogger.logLifecycle(
+                ~event=AuthenticationLogger.ThreeDsMethodStarted,
                 ~details=[("connector", "redsys"->JSON.Encode.string)],
                 ~paymentMethod=Card,
               )
               form.submit()
             }
           | None =>
-            SdkLogger.logLifecycle(
-              ~event=ThreeDsMethodFailed({reason: MissingContainer}),
+            AuthenticationLogger.logLifecycle(
+              ~event=AuthenticationLogger.ThreeDsMethodFailed({
+                reason: AuthenticationLogger.MissingContainer,
+              }),
               ~details=[("connector", "redsys"->JSON.Encode.string)],
               ~paymentMethod=Card,
             )
@@ -105,8 +107,8 @@ let make = () => {
           timeoutRef.current->Option.forEach(clearTimeout)
 
           timeoutRef.current = Some(setTimeout(() => {
-              SdkLogger.logLifecycle(
-                ~event=ThreeDsMethodTimedOut,
+              AuthenticationLogger.logLifecycle(
+                ~event=AuthenticationLogger.ThreeDsMethodTimedOut,
                 ~details=[("connector", "redsys"->JSON.Encode.string)],
                 ~paymentMethod=Card,
               )
@@ -125,8 +127,8 @@ let make = () => {
             elem->CommonHooks.addEventListener("load", _ => {
               timeoutRef.current->Option.forEach(clearTimeout)
               if !isCompleteAuthorizeCalledRef.current {
-                SdkLogger.logLifecycle(
-                  ~event=ThreeDsMethodCompleted,
+                AuthenticationLogger.logLifecycle(
+                  ~event=AuthenticationLogger.ThreeDsMethodCompleted,
                   ~details=[("connector", "redsys"->JSON.Encode.string)],
                   ~paymentMethod=Card,
                   ~durationMs=?threeDsMethodStartedAtRef.current->Option.map(

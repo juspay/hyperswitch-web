@@ -130,11 +130,11 @@ let describeJson = (value: JSON.t): string =>
 let notifyBrokerError = (
   ~context: LoggerContext.t,
   ~eventCallbacksRef: ref<Dict.t<JSON.t => unit>>,
-  ~reason: SdkLogger.vaultFailure,
+  ~reason: PaymentMethodSessionLogger.vaultFailure,
   ~code: string,
   ~message: string,
 ): unit => {
-  SdkLogger.logLifecycle(
+  PaymentMethodSessionLogger.logLifecycle(
     ~context,
     ~event=VaultFlowFailed({reason: reason}),
     ~details=[("code", code->JSON.Encode.string)],
@@ -208,9 +208,9 @@ let loadVGSScript = (~context): Promise.t<unit> => {
   | Some(scriptLoadPromise) => scriptLoadPromise
   | None => {
       let scriptLoadPromise = Promise.make((resolve, reject) =>
-        SdkLogger.observeResource(
+        PaymentMethodSessionLogger.observeResource(
           ~context,
-          ~event=VaultScript,
+          ~event=PaymentMethodSessionLogger.VaultScript,
           ~url=VGSConstants.vgsScriptURL,
           ~attributes=[
             ("integrity", VGSConstants.vgsScriptIntegrity),
@@ -448,9 +448,9 @@ let make = (
           `[VGSVaultBroker] clear(${entry.fieldType}) threw`,
           exn->Identity.anyTypeToJson,
         )
-        SdkLogger.logLifecycle(
+        PaymentMethodSessionLogger.logLifecycle(
           ~context,
-          ~event=VaultFlowFailed({reason: FieldUpdateFailed}),
+          ~event=VaultFlowFailed({reason: PaymentMethodSessionLogger.FieldUpdateFailed}),
           ~exn,
           ~details=[("field", entry.fieldType->JSON.Encode.string)],
           ~paymentMethod=Card,
@@ -498,9 +498,9 @@ let make = (
               clearDependentFieldsOnEmptiedCardNumber()
             }
             let startedAt = Date.now()
-            SdkLogger.logFunction(
+            PaymentMethodSessionLogger.logFunction(
               ~context,
-              ~event=VaultFormCreate,
+              ~event=PaymentMethodSessionLogger.VaultFormCreate,
               ~outcome=Started,
               ~paymentMethod=Card,
             )
@@ -508,9 +508,9 @@ let make = (
             | Some(collect) =>
               try collect.create(vaultId, environment, onFormStateChange) catch {
               | err => {
-                  SdkLogger.logFunction(
+                  PaymentMethodSessionLogger.logFunction(
                     ~context,
-                    ~event=VaultFormCreate,
+                    ~event=PaymentMethodSessionLogger.VaultFormCreate,
                     ~outcome=Failed,
                     ~startedAt,
                     ~exn=err->Identity.anyTypeToJson,
@@ -520,9 +520,9 @@ let make = (
                 }
               }
             | None =>
-              SdkLogger.logFunction(
+              PaymentMethodSessionLogger.logFunction(
                 ~context,
-                ~event=VaultFormCreate,
+                ~event=PaymentMethodSessionLogger.VaultFormCreate,
                 ~outcome=Failed,
                 ~startedAt,
                 ~paymentMethod=Card,
@@ -531,9 +531,9 @@ let make = (
               Error.raise(Error.make("VGSCollect script failed to register window.VGSCollect"))
             }
             formRef := Some(form)
-            SdkLogger.logFunction(
+            PaymentMethodSessionLogger.logFunction(
               ~context,
-              ~event=VaultFormCreate,
+              ~event=PaymentMethodSessionLogger.VaultFormCreate,
               ~outcome=Done,
               ~startedAt,
               ~paymentMethod=Card,
@@ -542,9 +542,9 @@ let make = (
           })
           ->Promise.catch(err => {
             createFormInFlightRef := None
-            SdkLogger.logLifecycle(
+            PaymentMethodSessionLogger.logLifecycle(
               ~context,
-              ~event=VaultFlowFailed({reason: FormCreationFailed}),
+              ~event=VaultFlowFailed({reason: PaymentMethodSessionLogger.FormCreationFailed}),
               ~exn=err,
               ~paymentMethod=Card,
             )
@@ -603,11 +603,13 @@ let make = (
           let startedAt = Date.now()
           let settled = ref(false)
 
-          let event = SdkLogger.VaultTokenization({scope: FullCard})
+          let event = PaymentMethodSessionLogger.VaultTokenization({
+            scope: PaymentMethodSessionLogger.FullCard,
+          })
           let logOutcomeOnce = (~outcome, ~details=[], ~exn=?) =>
             if !settled.contents {
               settled := true
-              SdkLogger.logApi(
+              PaymentMethodSessionLogger.logApi(
                 ~context,
                 ~event,
                 ~outcome,
@@ -618,7 +620,7 @@ let make = (
               )
             }
 
-          SdkLogger.logApi(
+          PaymentMethodSessionLogger.logApi(
             ~context,
             ~event,
             ~outcome=Started,
@@ -810,7 +812,7 @@ let make = (
             notifyBrokerError(
               ~context,
               ~eventCallbacksRef,
-              ~reason=FieldBindingFailed,
+              ~reason=PaymentMethodSessionLogger.FieldBindingFailed,
               ~code="vgs_field_event_binding_failed",
               ~message,
             )
@@ -838,7 +840,7 @@ let make = (
       notifyBrokerError(
         ~context,
         ~eventCallbacksRef,
-        ~reason=FieldMountFailed,
+        ~reason=PaymentMethodSessionLogger.FieldMountFailed,
         ~code=err->exceptionCodeOr(~fallback="vgs_mount_failed"),
         ~message,
       )
@@ -862,7 +864,7 @@ let make = (
         notifyBrokerError(
           ~context,
           ~eventCallbacksRef,
-          ~reason=FieldUpdateFailed,
+          ~reason=PaymentMethodSessionLogger.FieldUpdateFailed,
           ~code="vgs_field_update_failed",
           ~message,
         )
@@ -897,7 +899,7 @@ let make = (
         notifyBrokerError(
           ~context,
           ~eventCallbacksRef,
-          ~reason=FieldUnmountFailed,
+          ~reason=PaymentMethodSessionLogger.FieldUnmountFailed,
           ~code="vgs_field_unmount_failed",
           ~message,
         )

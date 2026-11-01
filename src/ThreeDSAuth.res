@@ -66,8 +66,8 @@ let make = () => {
           let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
-            SdkLogger.logLifecycle(
-              ~event=ThreeDsAuthRequestFailed,
+            AuthenticationLogger.logLifecycle(
+              ~event=AuthenticationLogger.ThreeDsAuthRequestFailed,
               ~failure=json,
               ~paymentMethod=Card,
             )
@@ -90,7 +90,7 @@ let make = () => {
 
             let ele = Window.querySelector("#threeDsAuthDiv")
 
-            let authEvent: SdkLogger.lifecycleEvent = switch ele->Nullable.toOption {
+            let authEvent: AuthenticationLogger.lifecycleEvent = switch ele->Nullable.toOption {
             | Some(elem) =>
               if transStatus === "C" {
                 setloader(_ => false)
@@ -101,20 +101,20 @@ let make = () => {
                 form.target = "threeDsAuthFrame"
                 form.appendChild(input)
                 form.submit()
-                ThreeDsChallengeShown({transStatus: transStatus})
+                AuthenticationLogger.ThreeDsChallengeShown({transStatus: transStatus})
               } else {
                 handleFrictionLess()
-                ThreeDsFrictionlessResolved({transStatus: transStatus})
+                AuthenticationLogger.ThreeDsFrictionlessResolved({transStatus: transStatus})
               }
-            | None => ThreeDsAuthContainerMissing({transStatus: transStatus})
+            | None => AuthenticationLogger.ThreeDsAuthContainerMissing({transStatus: transStatus})
             }
-            SdkLogger.logLifecycle(~event=authEvent, ~paymentMethod=Card)
+            AuthenticationLogger.logLifecycle(~event=authEvent, ~paymentMethod=Card)
             resolve(json)
           }
         })
         ->catch(err => {
-          SdkLogger.logLifecycle(
-            ~event=ThreeDsAuthRequestFailed,
+          AuthenticationLogger.logLifecycle(
+            ~event=AuthenticationLogger.ThreeDsAuthRequestFailed,
             ~paymentMethod=Card,
             ~exn=err,
             ~message="3DS authentication request or its response handling threw",
