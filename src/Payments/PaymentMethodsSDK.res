@@ -37,6 +37,15 @@ let make = () => {
     None
   }, (family, sessions))
 
+  UtilityHooks.useLogAppRendered(
+    ~isRendered=isConfigReady &&
+    switch (family, fieldName) {
+    | (PaymentSurfaceFamily.VaultFamily, _)
+    | (PaymentSurfaceFamily.PaymentsFamily, Some(_)) => true
+    | _ => false
+    },
+  )
+
   <RenderIf condition=isConfigReady>
     <div
       className="font-medium p-0.5"
@@ -74,8 +83,7 @@ let make = () => {
 
       | (PaymentSurfaceFamily.PaymentsFamily, None) =>
         Console.warn(
-          "[PaymentMethodsSDK] PaymentsFamily with no fieldName — " ++
-          "bundled payments surface is not wired. Treat as a bug.",
+          "[PaymentMethodsSDK] PaymentsFamily with no fieldName — " ++ "bundled payments surface is not wired. Treat as a bug.",
         )
         React.null
 

@@ -20,7 +20,6 @@ let taxResponseToObjMapper = resp => {
 
 let calculateTax = (
   ~shippingAddress,
-  ~logger,
   ~clientSecret,
   ~publishableKey,
   ~paymentMethodType,
@@ -32,7 +31,6 @@ let calculateTax = (
     ~apiKey=publishableKey,
     ~paymentMethodType,
     ~shippingAddress,
-    ~logger,
     ~customPodUri="",
     ~sessionId,
     ~sdkAuthorization,

@@ -17,18 +17,22 @@ let isFromIframe = (~ev: Types.event, ~iframe: option<Dom.element>, ~origin: str
 
 type coordinatorChannel = {
   groupId: string,
-  origin: string,
   mountRef: ref<option<CoordinatorMount.coordinatorMount>>,
   readyRef: ref<bool>,
+  pendingPortsRef: ref<array<CoordinatorMount.pendingPort>>,
   pendingCommandsRef: ref<array<array<(string, JSON.t)>>>,
+  installedPortKeysRef: ref<array<string>>,
+  portEpochCounterRef: ref<int>,
 }
 
-let makeCoordinatorChannel = (~groupId: string, ~origin: string): coordinatorChannel => {
+let makeCoordinatorChannel = (~groupId: string): coordinatorChannel => {
   groupId,
-  origin,
   mountRef: ref(None),
   readyRef: ref(false),
+  pendingPortsRef: ref([]),
   pendingCommandsRef: ref([]),
+  installedPortKeysRef: ref([]),
+  portEpochCounterRef: ref(0),
 }
 
 let postToCoordinator = (
@@ -56,18 +60,48 @@ let flushPendingCoordinatorCommands = (channel: coordinatorChannel) =>
   | _ => ()
   }
 
-// The page only sends a field its mount config. The port the field shares with
-// the coordinator is set up between the two iframes (CardFormPortHandshake), so
-// raw card values never travel through anything the merchant page can touch.
-let postFieldMountConfig = (
+let flushPendingPorts = (channel: coordinatorChannel) =>
+  switch (channel.mountRef.contents, channel.readyRef.contents) {
+  | (Some(mount), true) =>
+    channel.pendingPortsRef.contents->Array.forEach(({fieldName, epoch, port}) =>
+      CoordinatorMount.forwardPortToCoordinator(
+        ~coordinatorIframe=mount.iframe->Nullable.make,
+        ~groupId=channel.groupId,
+        ~fieldName,
+        ~portEpoch=epoch,
+        ~port,
+        ~targetOrigin=mount.origin,
+      )
+    )
+    channel.pendingPortsRef := []
+  | _ => ()
+  }
+
+let openFieldPort = (
   channel: coordinatorChannel,
   ~fieldIframe: Nullable.t<Dom.element>,
-  ~mountConfig: Dict.t<JSON.t>,
-): unit => fieldIframe->Window.iframePostMessage(mountConfig, ~targetOrigin=channel.origin)
+  ~mountConfig: JSON.t,
+  ~fieldName: string,
+  ~targetOrigin: string,
+): unit => {
+  channel.portEpochCounterRef := channel.portEpochCounterRef.contents + 1
+  let epoch = channel.portEpochCounterRef.contents
+  let messageChannel = MessageChannelBinding.makeChannel()
+  let portKey = CardFormCoordinator.portKey(~groupId=channel.groupId, ~fieldName)
+  channel.installedPortKeysRef := channel.installedPortKeysRef.contents->Array.concat([portKey])
+  CoordinatorMount.postFieldMountConfigWithPort(
+    ~fieldIframe,
+    ~mountConfig,
+    ~portKey,
+    ~portEpoch=epoch,
+    ~port=messageChannel.port2,
+    ~targetOrigin,
+  )
+  channel.pendingPortsRef :=
+    channel.pendingPortsRef.contents->Array.concat([{fieldName, epoch, port: messageChannel.port1}])
+  flushPendingPorts(channel)
+}
 
-// Merges a field's `create()` subscriptionEvents into the group-level union.
-// Returns true when the union actually grew, so the caller can re-post the
-// coordinator's options for fields created after the coordinator was configured.
 let mergeSubscriptionEvents = (
   ~subscriptionEventsRef: ref<array<string>>,
   ~fieldOptions: JSON.t,
@@ -79,15 +113,21 @@ let mergeSubscriptionEvents = (
     ->Option.flatMap(JSON.Decode.array)
     ->Option.getOr([])
     ->Array.filterMap(JSON.Decode.string)
-  let merged = incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
-    acc->Array.includes(event) ? acc : acc->Array.concat([event])
-  )
+  let merged =
+    incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
+      acc->Array.includes(event) ? acc : acc->Array.concat([event])
+    )
   if merged->Array.length > subscriptionEventsRef.contents->Array.length {
     subscriptionEventsRef := merged
     true
   } else {
     false
   }
+}
+
+let closeInstalledPorts = (channel: coordinatorChannel): unit => {
+  channel.installedPortKeysRef.contents->Array.forEach(key => SadPortRegistry.closePort(~key))
+  channel.installedPortKeysRef := []
 }
 
 let resolveFieldAppearance = (
@@ -135,7 +175,6 @@ let buildFieldMountConfig = (
   ~publishableKey: string,
   ~credentialKeys: array<(string, JSON.t)>,
   ~sdkSessionId: string,
-  ~loggerSource: string,
   ~savedCardBrand: string,
   ~tailKeys: array<(string, JSON.t)>=[],
 ): Dict.t<JSON.t> => {
@@ -160,7 +199,6 @@ let buildFieldMountConfig = (
     ("parentURL", "*"->JSON.Encode.string),
     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
     ("launchTime", Date.now()->JSON.Encode.float),
-    ("loggerSource", loggerSource->JSON.Encode.string),
     ("isSavedCardCvcFlow", false->JSON.Encode.bool),
     ("savedCardBrand", savedCardBrand->JSON.Encode.string),
     ("cardCollectionMode", "tokenise"->JSON.Encode.string),
@@ -177,6 +215,8 @@ let buildFieldMountConfig = (
   ->Dict.fromArray
 }
 
+// Shared failure summariser for merchant-facing confirm/tokenize calls:
+// reports the error code of an error-shaped result, or None on success.
 let savedCardNetwork = (savedCardDict: Dict.t<JSON.t>): string =>
   savedCardDict
   ->getDictFromDict("paymentMethodData")
@@ -215,7 +255,6 @@ let makeFieldElementAndHandle = (
   ~listenerName: string,
   ~eventHandlersRef: ref<Dict.t<JSON.t => unit>>,
   ~update: JSON.t => unit,
-  ~logger: HyperLoggerTypes.loggerMake,
 ): Types.fieldHandle => {
   let element = LoaderPaymentElement.make(
     "paymentMethodsSDK",
@@ -226,7 +265,6 @@ let makeFieldElementAndHandle = (
     ~appearance,
     ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
     ~sdkDomainUrl,
-    ~logger=Some(logger),
     ~confirmPayment=_json => Promise.resolve(JSON.Encode.null),
     ~fieldName,
     ~surfaceFamily,
@@ -237,31 +275,22 @@ let makeFieldElementAndHandle = (
       fields->Dict.fromArray,
       ~targetOrigin=URLModule.makeUrl(sdkDomainUrl).origin,
     )
-  // Card values never leave the field iframes, so every log here carries the field name only.
-  let logField = (action: string) =>
-    logger.setLogInfo(~value=`${fieldName} ${action}`, ~eventName=CARD_FORM_FLOW)
   {
-    mount: selector => {
-      logField("mounted")
-      element.mount(selector)
-    },
+    mount: selector => element.mount(selector),
     unmount: () => {
-      logField("unmounted")
       element.unmount()
+      ()
     },
     destroy: () => {
-      logField("destroyed")
       element.destroy()
       iframeRef := Nullable.null
       EventListenerManager.removeSmartEventListener("message", listenerName)
+      ()
     },
-    update,
+    update: newOptions => (() => update(newOptions))(),
     focus: () => postToOwnIframe([("doFocus", true->JSON.Encode.bool)]),
     blur: () => postToOwnIframe([("doBlur", true->JSON.Encode.bool)]),
-    clear: () => {
-      logger.setLogInfo(~value=fieldName, ~eventName=CLEAR)
-      postToOwnIframe([("doClearValues", true->JSON.Encode.bool)])
-    },
+    clear: () => postToOwnIframe([("doClearValues", true->JSON.Encode.bool)]),
     on: (event, cb) => eventHandlersRef.contents->Dict.set(event, cb),
   }
 }
@@ -274,10 +303,7 @@ let registerField = (
 ): unit => {
   let fieldsDict = fields.contents->getDictFromJson
   let fieldMeta =
-    [
-      ("id", fieldId->JSON.Encode.string),
-      ("type", fieldType->JSON.Encode.string),
-    ]
+    [("id", fieldId->JSON.Encode.string), ("type", fieldType->JSON.Encode.string)]
     ->Array.concat(extraMeta)
     ->Dict.fromArray
     ->JSON.Encode.object

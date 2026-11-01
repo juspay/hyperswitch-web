@@ -12,7 +12,6 @@ let payPalIcon = <Icon size=35 width=90 name="paypal" />
 
 @react.component
 let make = (~walletOptions) => {
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
@@ -62,15 +61,12 @@ let make = (~walletOptions) => {
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
-  let intent = PaymentHelpers.usePaymentIntent(
-    ~isOneClickWallet=isWallet,
-    Some(loggerState),
-    Paypal,
-  )
+  let intent = PaymentHelpers.usePaymentIntent(Paypal)
   UtilityHooks.useHandlePostMessages(
     ~complete=paypalClicked,
     ~empty=!paypalClicked,
     ~paymentType=paymentMethodType,
+
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   SubscriptionEventHooks.useEmitFormStatus(
@@ -78,20 +74,13 @@ let make = (~walletOptions) => {
     ~complete=paypalClicked,
     ~isOneClickWallet=isWallet,
   )
-  let onPaypalClick = _ev => {
+  let onPaypalClick = (~fromExpressButton=true, _ev) => {
+    if fromExpressButton {
+      ()
+    }
     if isTestMode {
       Console.warn("PayPal button clicked in test mode - interaction disabled")
-      loggerState.setLogInfo(
-        ~value="PayPal button clicked in test mode - interaction disabled",
-        ~eventName=PAYPAL_FLOW,
-        ~paymentMethod="PAYPAL",
-      )
     } else {
-      loggerState.setLogInfo(
-        ~value="Paypal Button Clicked",
-        ~eventName=PAYPAL_FLOW,
-        ~paymentMethod="PAYPAL",
-      )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,
         ~paymentMethodType,
@@ -163,13 +152,15 @@ let make = (~walletOptions) => {
         let json = ev.data->Utils.safeParse
         let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
         if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-          onPaypalClick(ev)
+          onPaypalClick(~fromExpressButton=false, ev)
         } else if areRequiredFieldsEmpty {
+          ()
           Utils.postFailedSubmitResponse(
             ~errortype="validation_error",
             ~message=localeString.enterFieldsText,
           )
         } else if !areRequiredFieldsValid {
+          ()
           Utils.postFailedSubmitResponse(
             ~errortype="validation_error",
             ~message=localeString.enterValidDetailsText,
@@ -201,9 +192,11 @@ let make = (~walletOptions) => {
         pointerEvents: updateSession ? "none" : "auto",
         opacity: updateSession ? "0.5" : "1.0",
       }
-      onClick={_ => options.readOnly ? () : onPaypalClick()}>
+      onClick={_ => options.readOnly ? () : onPaypalClick()}
+    >
       <div
-        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
+        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}
+      >
         {if !paypalClicked {
           payPalIcon
         } else {

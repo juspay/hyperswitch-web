@@ -12,30 +12,16 @@ let make = (
   ~sdkSessionId,
   ~publishableKey,
   ~sdkAuthorization,
-  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
+  ~isTrustedPaymentMessage: option<Types.event => bool>=?,
+  ~onFullscreenCreated: (Dom.element, JSON.t) => unit=(_, _) => (),
 ) => {
   let hyperComponentName = PaymentMethodsManagementElements
   try {
     let iframeRef = []
-    let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
-    let fullscreenSources = []
-    let onFullscreenCreated = (iframe, _metadata) => {
-      fullscreenSources->Array.push({source: iframe->Window.contentWindow})->ignore
-    }
-    let isTrustedPaymentMessage = (event: Types.event) =>
-      event.origin === sdkOrigin &&
-        (iframeRef->Array.some(iframe =>
-          iframe
-          ->Nullable.toOption
-          ->Option.map(element =>
-            element->Window.Element.isConnected && event.source === element->Window.contentWindow
-          )
-          ->Option.getOr(false)
-        ) || fullscreenSources->Array.some(entry => event.source === entry.source))
-    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
+    let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
@@ -167,10 +153,9 @@ let make = (
       iframeRef->Array.push(ref)->ignore
       setIframeRef(ref)
     }
-    let getElement = componentName => {
-      savedPaymentElement->Dict.get(componentName)
-    }
-    let update = newOptions => {
+    let getElement = componentName =>
+      (() => savedPaymentElement->Dict.get(componentName))()
+    let updateInternal = newOptions => {
       let newOptionsDict = newOptions->getDictFromJson
       switch newOptionsDict->Dict.get("locale") {
       | Some(val) => localOptions->Dict.set("locale", val)
@@ -194,19 +179,22 @@ let make = (
         iframe->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
       })
     }
+    let update = newOptions =>
+      (() => updateInternal(newOptions))()
     let fetchUpdates = () => {
+      ()
       Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
       })
     }
 
-    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+    let createInternal = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
       let (componentType, newOptions) = parseComponentTypeAndOptions(
         ~componentTypeOrOptions,
         ~legacyOptions,
         ~defaultComponentType="paymentMethodsManagement",
       )
-      componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
+      componentType == "" ? manageErrorWarning(MissingParameter, ~dynamicStr="type") : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
       | "paymentMethodsManagement" => ()
@@ -248,6 +236,7 @@ let make = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+
             ("customPodUri", customPodUri->JSON.Encode.string),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
@@ -288,25 +277,28 @@ let make = (
         ~appearance,
         ~isPaymentManagementElement=true,
         ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
-        ~logger=Some(logger),
         ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
-        ~isTrustedPaymentMessage,
+        ~isTrustedPaymentMessage?,
         ~onFullscreenCreated,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
+    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) =>
+      (() => createInternal(componentTypeOrOptions, legacyOptions))()
     {
       getElement,
       update,
       fetchUpdates,
       create,
-      updateIntent: _ => Promise.resolve(JSON.Encode.null),
+      updateIntent: _ =>
+        (() => Promise.resolve(JSON.Encode.null))(),
       createCardForm: () => defaultCardForm,
     }
   } catch {
   | e => {
       Sentry.captureException(e)
+      ()
       defaultElement
     }
   }

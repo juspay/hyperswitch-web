@@ -23,7 +23,6 @@ module LoadingState = {
 module OtpInput = {
   @react.component
   let make = (~getCards: string => promise<unit>, ~setIsClickToPayRememberMe) => {
-    let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
     let (isOtpSubmitting, setIsOtpSubmitting) = React.useState(_ => false)
     let (clickToPayConfig, setClickToPayConfig) = Jotai.useAtom(JotaiAtoms.clickToPayConfig)
     let otpValueRef = React.useRef("")
@@ -47,6 +46,7 @@ module OtpInput = {
         })
       },
       continueClicked: _ => {
+        ()
         let verifyUserAndGetCards = async () => {
           try {
             setIsOtpSubmitting(_ => true)
@@ -54,20 +54,13 @@ module OtpInput = {
             setIsOtpSubmitting(_ => false)
           } catch {
           | err =>
-            loggerState.setLogError(
-              ~value={
-                "message": `User validation failed - ${err->Utils.formatException->JSON.stringify}`,
-                "scheme": "VISA",
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
-            )
+            ()
           }
         }
         verifyUserAndGetCards()->ignore
       },
       resendClicked: _ => {
+        ()
         setClickToPayConfig(prev => {
           ...prev,
           otpError: "",
@@ -78,16 +71,9 @@ module OtpInput = {
             await getCards("")
             setResendLoading(_ => false)
           } catch {
-          | err =>
-            loggerState.setLogError(
-              ~value={
-                "message": `resend otp failed - ${err->Utils.formatException->JSON.stringify}`,
-                "scheme": "VISA",
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
-            )
+          | exn =>
+            ()
+            setResendLoading(_ => false)
           }
         }
         resendOtp()->ignore
@@ -98,6 +84,7 @@ module OtpInput = {
         ->Option.forEach(e => {
           let dict = e->getDictFromJson
           let rememberMe = dict->getDictFromDict("detail")->getBool("rememberMe", false)
+          ()
           setIsClickToPayRememberMe(_ => rememberMe)
         })
       },

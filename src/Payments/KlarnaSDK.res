@@ -11,15 +11,16 @@ let make = (~sessionObj: SessionsType.token) => {
   let paymentMethodType = "klarna"
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let updateSession = Jotai.useAtomValue(updateSession)
   let {publishableKey, iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
   let options = Jotai.useAtomValue(optionAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Some(loggerState), Other)
-  let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
+  let intent = PaymentHelpers.usePaymentIntent(Other)
+  let status = CommonHooks.useScript(
+    "https://x.klarnacdn.net/kp/lib/v1/api.js",
+  )
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
@@ -64,6 +65,7 @@ let make = (~sessionObj: SessionsType.token) => {
     ~complete=isCompleted,
     ~empty=!isCompleted,
     ~paymentType=paymentMethodType,
+
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
@@ -72,102 +74,95 @@ let make = (~sessionObj: SessionsType.token) => {
     if status === "ready" && paymentMethodTypes !== PaymentMethodsRecord.defaultPaymentMethodType {
       let klarnaWrapper = GooglePayType.getElementById(Utils.document, "klarna-payments")
       klarnaWrapper.innerHTML = ""
-      klarnaInit.init({
-        client_token: sessionObj.token,
-      })
+      (() =>
+        klarnaInit.init({
+          client_token: sessionObj.token,
+        }))()->ignore
 
+      let loadStartedAt = Date.now()
+      ()
       klarnaInit.load(
         {
           container: "#klarna-payments",
           theme: options.wallets.style.theme == Dark ? "default" : "outlined",
           shape: "default",
-          on_click: authorize => {
-            if isTestMode {
-              Console.warn("Klarna SDK button clicked in test mode - interaction disabled")
-              loggerState.setLogInfo(
-                ~value="Klarna SDK button clicked in test mode - interaction disabled",
-                ~eventName=KLARNA_SDK_FLOW,
-                ~paymentMethod="KLARNA",
-              )
-              resolve()
-            } else {
-              loggerState.setLogInfo(
-                ~value="Klarna SDK Button Clicked",
-                ~eventName=KLARNA_SDK_FLOW,
-                ~paymentMethod="KLARNA",
-              )
-              PaymentUtils.emitPaymentMethodInfo(
-                ~paymentMethod="wallet",
-                ~paymentMethodType,
-                ~country,
-                ~state,
-                ~pinCode,
-              )
-              emitter.emitPaymentMethodStatus(
-                ~paymentMethod="wallet",
-                ~paymentMethodType,
-                ~isSavedPaymentMethod=false,
-                ~isOneClickWallet=true,
-              )
-              emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
-              makeOneClickHandlerPromise(sdkHandleIsThere, ~parentOrigin=parentURL)->then(
-                result => {
-                  let result = result->JSON.Decode.bool->Option.getOr(false)
-                  if result {
-                    Utils.messageParentWindow([
-                      ("fullscreen", true->JSON.Encode.bool),
-                      ("param", "paymentloader"->JSON.Encode.string),
-                      ("iframeId", iframeId->JSON.Encode.string),
-                    ])
-                    setIsCompleted(_ => true)
-                    authorize(
-                      {collect_shipping_address: componentName->getIsExpressCheckoutComponent},
-                      Dict.make()->JSON.Encode.object,
-                      (res: res) => {
-                        let connectors = SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
-                          sdkConfigsValue.payment_methods,
-                          paymentMethod,
-                          paymentMethodType,
-                        )
-
-                        let shippingContact =
-                          res.collected_shipping_address->Option.getOr(
-                            defaultCollectedShippingAddress,
+          on_click: (authorize => {
+              if isTestMode {
+                Console.warn("Klarna SDK button clicked in test mode - interaction disabled")
+                resolve()
+              } else {
+                PaymentUtils.emitPaymentMethodInfo(
+                  ~paymentMethod="wallet",
+                  ~paymentMethodType,
+                  ~country,
+                  ~state,
+                  ~pinCode,
+                )
+                emitter.emitPaymentMethodStatus(
+                  ~paymentMethod="wallet",
+                  ~paymentMethodType,
+                  ~isSavedPaymentMethod=false,
+                  ~isOneClickWallet=true,
+                )
+                emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
+                makeOneClickHandlerPromise(sdkHandleIsThere, ~parentOrigin=parentURL)->then(
+                  result => {
+                    let result = result->JSON.Decode.bool->Option.getOr(false)
+                    if result {
+                      Utils.messageParentWindow([
+                        ("fullscreen", true->JSON.Encode.bool),
+                        ("param", "paymentloader"->JSON.Encode.string),
+                        ("iframeId", iframeId->JSON.Encode.string),
+                      ])
+                      setIsCompleted(_ => true)
+                      authorize(
+                        {collect_shipping_address: componentName->getIsExpressCheckoutComponent},
+                        Dict.make()->JSON.Encode.object,
+                        (res: res) => {
+                          let connectors = SdkConfigParser.getEligibleConnectorsFromPaymentMethods(
+                            sdkConfigsValue.payment_methods,
+                            paymentMethod,
+                            paymentMethodType,
                           )
 
-                        let requiredFieldsBody = DynamicFieldsUtils.getKlarnaRequiredFields(
-                          ~shippingContact,
-                          ~requiredFields,
-                        )
-
-                        let klarnaSDKBody = PaymentBody.klarnaSDKbody(
-                          ~token=res.authorization_token,
-                          ~connectors,
-                        )
-
-                        let body = {
-                          klarnaSDKBody->mergeAndFlattenToTuples(requiredFieldsBody)
-                        }
-
-                        res.approved
-                          ? intent(
-                              ~bodyArr=body,
-                              ~confirmParam={
-                                return_url: options.wallets.walletReturnUrl,
-                                publishableKey,
-                              },
-                              ~handleUserError=false,
-                              ~manualRetry=isManualRetryEnabled,
+                          let shippingContact =
+                            res.collected_shipping_address->Option.getOr(
+                              defaultCollectedShippingAddress,
                             )
-                          : handleCloseLoader()
-                      },
-                    )
-                  }
-                  resolve()
-                },
-              )
-            }
-          },
+
+                          let requiredFieldsBody = DynamicFieldsUtils.getKlarnaRequiredFields(
+                            ~shippingContact,
+                            ~requiredFields,
+                          )
+
+                          let klarnaSDKBody = PaymentBody.klarnaSDKbody(
+                            ~token=res.authorization_token,
+                            ~connectors,
+                          )
+
+                          let body = {
+                            klarnaSDKBody->mergeAndFlattenToTuples(requiredFieldsBody)
+                          }
+
+                          res.approved
+                            ? intent(
+                                ~bodyArr=body,
+                                ~confirmParam={
+                                  return_url: options.wallets.walletReturnUrl,
+                                  publishableKey,
+                                },
+                                ~handleUserError=false,
+                                ~manualRetry=isManualRetryEnabled,
+                              )
+                            : handleCloseLoader()
+                        },
+                      )
+                    }
+                    resolve()
+                  },
+                )
+              }
+            }),
         },
         _ => {
           setIsButtonSettled(_ => true)

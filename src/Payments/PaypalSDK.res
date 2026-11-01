@@ -14,7 +14,6 @@ let make = (~sessionObj: SessionsType.token) => {
     parentURL,
   } = Jotai.useAtomValue(JotaiAtoms.keys)
   let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let areOneClickWalletsRendered = Jotai.useSetAtom(JotaiAtoms.areOneClickWalletsRendered)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
   let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
@@ -23,15 +22,11 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
-  let intent = PaymentHelpers.usePostSessionTokens(Some(loggerState), Paypal, Wallet)
-  let confirm = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Some(loggerState), Paypal)
+  let intent = PaymentHelpers.usePostSessionTokens(Paypal, Wallet)
+  let confirm = PaymentHelpers.usePaymentIntent(Paypal)
   let sessions = Jotai.useAtomValue(JotaiAtoms.sessions)
   let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
-  let completeAuthorize = PaymentHelpers.useCompleteAuthorize(
-    ~isOneClickWallet=true,
-    Some(loggerState),
-    Paypal,
-  )
+  let completeAuthorize = PaymentHelpers.useCompleteAuthorize(Paypal)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let checkoutScript =
     Window.document(Window.window)->Window.getElementById("braintree-checkout")->Nullable.toOption
@@ -162,69 +157,54 @@ let make = (~sessionObj: SessionsType.token) => {
     let intentParam = if paypalIntent !== "" {
       `&intent=${paypalIntent}`
     } else {
-      loggerState.setLogInfo(
-        ~value="PayPal SDK: intent is missing from session object, omitting intent param from SDK URL",
-        ~eventName=PAYPAL_SDK_FLOW,
-      )
+      ()
       ""
     }
 
     let currencyParam = if currency !== "" {
       `&currency=${currency}`
     } else {
-      loggerState.setLogInfo(
-        ~value="PayPal SDK: currency is missing from session object, omitting currency param from SDK URL",
-        ~eventName=PAYPAL_SDK_FLOW,
-      )
+      ()
       ""
     }
 
     let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields${currencyParam}${intentParam}`
-    loggerState.setLogInfo(~value="PayPal SDK Script Loading", ~eventName=PAYPAL_SDK_FLOW)
-    let paypalScript = Window.createElement("script")
-    paypalScript->Window.elementSrc(paypalScriptURL)
-    paypalScript->Window.elementOnerror(exn => {
-      onButtonSettled()
-      let err = exn->Identity.anyTypeToJson->JSON.stringify
-      loggerState.setLogError(
-        ~value=`Error During Loading PayPal SDK Script: ${err}`,
-        ~eventName=PAYPAL_SDK_FLOW,
-      )
-    })
-    paypalScript->Window.elementOnload(_ => {
-      loggerState.setLogInfo(~value="PayPal SDK Script Loaded", ~eventName=PAYPAL_SDK_FLOW)
-      PaypalSDKHelpers.loadPaypalSDK(
-        ~parentOrigin=parentURL,
-        ~loggerState,
-        ~onButtonSettled,
-        ~sdkHandleOneClickConfirmPayment,
-        ~buttonStyle,
-        ~iframeId,
-        ~paymentMethodListValue,
-        ~connectors,
-        ~isGuestCustomer,
-        ~postSessionTokens=intent,
-        ~isManualRetryEnabled,
-        ~options,
-        ~publishableKey,
-        ~requiredFields,
-        ~confirm,
-        ~completeAuthorize,
-        ~handleCloseLoader,
-        ~handleCancel,
-        ~areOneClickWalletsRendered,
-        ~setIsCompleted,
-        ~isCallbackUsedVal,
-        ~sdkHandleIsThere,
-        ~sessions,
-        ~clientSecret,
-        ~isTestMode,
-        ~nonPiiAdderessData,
-        ~sdkAuthorization,
-        ~emitter,
-      )
-    })
-    Window.body->Window.appendChild(paypalScript)
+    ResourceLoader.load(
+      ~url=paypalScriptURL,
+      ~resource=ResourceLoader.Script,
+      ~matchQuery=true,
+      ~onLoad=_ => {
+        PaypalSDKHelpers.loadPaypalSDK(
+          ~onButtonSettled,
+          ~sdkHandleOneClickConfirmPayment,
+          ~buttonStyle,
+          ~iframeId,
+          ~paymentMethodListValue,
+          ~connectors,
+          ~isGuestCustomer,
+          ~postSessionTokens=intent,
+          ~isManualRetryEnabled,
+          ~options,
+          ~publishableKey,
+          ~requiredFields,
+          ~confirm,
+          ~completeAuthorize,
+          ~handleCloseLoader,
+          ~areOneClickWalletsRendered,
+          ~setIsCompleted,
+          ~isCallbackUsedVal,
+          ~sdkHandleIsThere,
+          ~sessions,
+          ~clientSecret,
+          ~isTestMode,
+          ~nonPiiAdderessData,
+          ~sdkAuthorization,
+          ~emitter,
+          ~parentOrigin=parentURL,
+        )
+      },
+      ~onError=_ => onButtonSettled(),
+    )->ignore
   }
 
   React.useEffect(() => {
@@ -236,7 +216,6 @@ let make = (~sessionObj: SessionsType.token) => {
         | (Some(_), Some(_)) =>
           PaypalSDKHelpers.loadBraintreePaypalSdk(
             ~parentOrigin=parentURL,
-            ~loggerState,
             ~onButtonSettled,
             ~sdkHandleOneClickConfirmPayment,
             ~token,
@@ -259,13 +238,7 @@ let make = (~sessionObj: SessionsType.token) => {
         }
       }
     } catch {
-    | _ =>
-      loggerState.setLogError(
-        ~value="Error loading Paypal",
-        ~eventName=PAYPAL_SDK_FLOW,
-        // ~internalMetadata=err->Utils.formatException->JSON.stringify,
-        ~paymentMethod="PAYPAL_SDK",
-      )
+    | exn => ()
     }
     None
   }, [sdkAuthorization])

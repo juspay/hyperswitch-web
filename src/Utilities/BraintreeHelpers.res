@@ -24,11 +24,17 @@ external braintreeApplePayPaymentCreate: (applePayConfig, applePayCreateCallback
 let braintreeApplePayUrl = "https://js.braintreegateway.com/web/3.92.1/js/apple-pay.min.js"
 let braintreeClientUrl = "https://js.braintreegateway.com/web/3.92.1/js/client.min.js"
 
-let loadBraintreeApplePayScripts = logger => {
-  Utils.loadScriptIfNotExist(~url=braintreeClientUrl, ~logger, ~eventName=BRAINTREE_CLIENT_SCRIPT)
-  Utils.loadScriptIfNotExist(
+let loadBraintreeApplePayScripts = () => {
+  ResourceLoader.load(
+    ~url=braintreeClientUrl,
+    ~resource=ResourceLoader.Script,
+    ~onLoad=_ => (),
+    ~onError=_ => (),
+  )
+  ResourceLoader.load(
     ~url=braintreeApplePayUrl,
-    ~logger,
-    ~eventName=APPLE_PAY_BRAINTREE_SCRIPT,
+    ~resource=ResourceLoader.Script,
+    ~onLoad=_ => (),
+    ~onError=_ => (),
   )
 }

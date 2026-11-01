@@ -126,6 +126,7 @@ let useHandleGooglePayResponse = (
         )
       }
       if dict->Dict.get("gpayError")->Option.isSome {
+        let message = "Something went wrong"
         // Only a shopper cancel counts; other errors (e.g. Safari failing to open the sheet) are failures.
         // statusCode may be nested under `_1` when the loader forwards a wrapped ReScript exn.
         let gpayErrorDict = dict->getDictFromDict("gpayError")
@@ -146,7 +147,7 @@ let useHandleGooglePayResponse = (
         }
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         if isSavedMethodsFlow || !isWallet {
-          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+          postFailedSubmitResponse(~errortype="server_error", ~message)
         }
       }
     }
@@ -204,11 +205,13 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
         handleGooglePayClicked(~sessionObj, ~componentName, ~iframeId, ~readOnly=options.readOnly)
       } else if areRequiredFieldsEmpty {
+        ()
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterFieldsText,
         )
       } else if !areRequiredFieldsValid {
+        ()
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterValidDetailsText,

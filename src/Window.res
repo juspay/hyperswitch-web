@@ -100,13 +100,19 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @send external preventDefault: (event, unit) => unit = "preventDefault"
 @send external appendChild: (body, Dom.element) => unit = "appendChild"
 @send external remove: Dom.element => unit = "remove"
-@send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
+@new @scope("window")
+external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
+@val @scope("window") external paymentRequestSupported: option<JSON.t> = "PaymentRequest"
 @send external click: Dom.element => unit = "click"
 @set external innerHTML: (Dom.element, string) => unit = "innerHTML"
 @set external className: (Dom.element, string) => unit = "className"
 @set external id: (Dom.element, string) => unit = "id"
 @set external elementSrc: (Dom.element, string) => unit = "src"
 @set external elementOnload: (Dom.element, unit => unit) => unit = "onload"
+@send
+external addLoadListener: (Dom.element, @as("load") _, unit => unit) => unit = "addEventListener"
+@send
+external addErrorListener: (Dom.element, @as("error") _, exn => unit) => unit = "addEventListener"
 @set external elementOnerror: (Dom.element, exn => unit) => unit = "onerror"
 @set external setTransition: (style, string) => unit = "transition"
 @set external setHeight: (style, string) => unit = "height"
@@ -136,7 +142,15 @@ module Navigator = {
 
   @val @scope("navigator")
   external sendBeacon: (string, string) => unit = "sendBeacon"
+  @val @scope("navigator") external trySendBeacon: (string, string) => bool = "sendBeacon"
+
+  let hasSendBeacon: unit => bool = %raw(`function () {
+    return typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function"
+  }`)
 }
+
+@val @scope(("window", "document"))
+external visibilityState: string = "visibilityState"
 
 module Location = {
   @val @scope(("window", "location"))
