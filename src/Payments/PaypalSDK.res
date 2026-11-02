@@ -50,6 +50,8 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  let emitterRef = React.useRef(emitter)
+  emitterRef.current = emitter
 
   let buttonStyle = switch options.wallets.payPal {
   | PaypalConfigObj(cfg) =>
@@ -121,6 +123,14 @@ let make = (~sessionObj: SessionsType.token) => {
     style
   }
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+  let handleCancel = () => {
+    handleCloseLoader()
+    emitterRef.current.emitPaymentMethodFlowCancel(
+      ~paymentMethod,
+      ~paymentMethodType,
+      ~canRetryPayment=true,
+    )
+  }
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
@@ -201,6 +211,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~confirm,
         ~completeAuthorize,
         ~handleCloseLoader,
+        ~handleCancel,
         ~areOneClickWalletsRendered,
         ~setIsCompleted,
         ~isCallbackUsedVal,
@@ -240,6 +251,7 @@ let make = (~sessionObj: SessionsType.token) => {
             ~publishableKey,
             ~requiredFields,
             ~handleCloseLoader,
+            ~handleCancel,
             ~areOneClickWalletsRendered,
             ~isManualRetryEnabled,
           )

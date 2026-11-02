@@ -2,6 +2,18 @@ open PaypalSDKTypes
 open Utils
 open TaxCalculation
 
+// Closing the PayPal popup before it finishes loading rejects through onError
+// ("Window is closed, can not determine type") instead of onCancel.
+// String() covers both Error objects ("Error: Window is closed, ...") and plain string rejections.
+let isPopupClosedError = (err: err) => err->String.make->String.includes("Window is closed")
+
+let handlePaypalError = (err, ~handleCancel, ~handleCloseLoader) =>
+  if err->isPopupClosedError {
+    handleCancel()
+  } else {
+    handleCloseLoader()
+  }
+
 let renderButtons = (buttons: some, ~onButtonSettled) =>
   buttons.render("#paypal-button")
   ->Promise.then(_ => Promise.resolve(onButtonSettled()))
@@ -26,6 +38,7 @@ let loadPaypalSDK = (
   ~confirm: PaymentHelpersTypes.paymentIntent,
   ~completeAuthorize: PaymentHelpersTypes.completeAuthorize,
   ~handleCloseLoader,
+  ~handleCancel,
   ~areOneClickWalletsRendered: (
     JotaiAtoms.areOneClickWalletsRendered => JotaiAtoms.areOneClickWalletsRendered
   ) => unit,
@@ -244,11 +257,9 @@ let loadPaypalSDK = (
       }
     },
     onCancel: _data => {
-      handleCloseLoader()
+      handleCancel()
     },
-    onError: _err => {
-      handleCloseLoader()
-    },
+    onError: err => err->handlePaypalError(~handleCancel, ~handleCloseLoader),
     onClick: () => {
       loggerState.setLogInfo(
         ~value="Paypal SDK Button Clicked",
@@ -280,6 +291,7 @@ let loadBraintreePaypalSdk = (
   ~publishableKey,
   ~requiredFields: array<SuperpositionTypes.fieldConfig>,
   ~handleCloseLoader,
+  ~handleCancel,
   ~areOneClickWalletsRendered: (
     JotaiAtoms.areOneClickWalletsRendered => JotaiAtoms.areOneClickWalletsRendered
   ) => unit,
@@ -353,11 +365,9 @@ let loadBraintreePaypalSdk = (
                         )
                   },
                   onCancel: _data => {
-                    handleCloseLoader()
+                    handleCancel()
                   },
-                  onError: _err => {
-                    handleCloseLoader()
-                  },
+                  onError: err => err->handlePaypalError(~handleCancel, ~handleCloseLoader),
                   onClick: () => {
                     loggerState.setLogInfo(
                       ~value="Paypal Braintree SDK Button Clicked",
