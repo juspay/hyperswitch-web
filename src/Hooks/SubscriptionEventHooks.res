@@ -32,6 +32,13 @@ type emitter = {
 let useSubscriptionEventEmitter = (): emitter => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
+  // The iframe's own element type (e.g. payPal, expressCheckout), so the loader routes
+  // emitted events to that element's listeners.
+  let url = RescriptReactRouter.useUrl()
+  let componentName = switch CardUtils.getQueryParamsDictforKey(url.search, "componentName") {
+  | "" => "payment"
+  | name => name
+  }
 
   let emitCardInfo = (~elementType: string="payment", ~cardInfo: PaymentEventData.cardInfo) => {
     if (
@@ -121,7 +128,12 @@ let useSubscriptionEventEmitter = (): emitter => {
       )
     ) {
       Utils.messageParentWindow(
-        createPaymentMethodFlowCancelPayload(~paymentMethod, ~paymentMethodType, ~canRetryPayment),
+        createPaymentMethodFlowCancelPayload(
+          ~elementType=componentName,
+          ~paymentMethod,
+          ~paymentMethodType,
+          ~canRetryPayment,
+        ),
       )
     }
   }

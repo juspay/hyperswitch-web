@@ -143,6 +143,8 @@ let make = (
       componentType->Utils.canHaveMultipleInstances ? localSelectorRef : ref(componentType)
     let mountedIframeRef = ref(Nullable.null)
     let fullscreenIframeRef = ref(Nullable.null)
+    // Kept current across update() so the Change listener filters on the latest subscriptions.
+    let subscriptionEventsRef = ref(options->getDictFromJson->getStrArray("subscriptionEvents"))
     let iframeOrigin = URLModule.makeUrl(sdkDomainUrl).origin
     let fullscreenOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
 
@@ -277,14 +279,10 @@ let make = (
       | Change =>
         // The fullscreen iframe cannot read subscriptionEvents, so it emits
         // paymentMethodFlowCancel unconditionally; drop it here unless subscribed.
-        let isPaymentMethodFlowCancelSubscribed =
-          options
-          ->getDictFromJson
-          ->getStrArray("subscriptionEvents")
-          ->Array.includes("paymentMethodFlowCancel")
-
+        let isPaymentMethodFlowCancelSubscribed = () =>
+          subscriptionEventsRef.contents->Array.includes("paymentMethodFlowCancel")
         let isUnsubscribedPaymentMethodFlowCancel = (ev: Types.event) =>
-          !isPaymentMethodFlowCancelSubscribed &&
+          !isPaymentMethodFlowCancelSubscribed() &&
           ev.data
           ->anyTypeToJson
           ->getOptionalJsonFromJson("eventName")
@@ -406,6 +404,11 @@ let make = (
     }
 
     let update = newOptions => {
+      switch newOptions->getDictFromJson->Dict.get("subscriptionEvents") {
+      | Some(_) =>
+        subscriptionEventsRef := newOptions->getDictFromJson->getStrArray("subscriptionEvents")
+      | None => ()
+      }
       let flatOption = options->flattenObject(true)
       let newFlatOption = newOptions->flattenObject(true)
 
