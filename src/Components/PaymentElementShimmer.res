@@ -1,7 +1,6 @@
 module Shimmer = {
   @react.component
   let make = (~children, ~classname="") => {
-    ReadyHooks.usePendingWhile(true)
     <div
       className={`relative
       ${classname}

@@ -22,8 +22,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let optionAtomValue = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
-  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.applePayAvailability) == Available
-  let isGPayReady = Jotai.useAtomValue(JotaiAtoms.googlePayAvailability) == Available
+  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
+  let isGPayReady = Jotai.useAtomValue(JotaiAtoms.isGooglePayReady)
   let isVgsScriptReady = Jotai.useAtomValue(JotaiAtoms.isVgsScriptReady)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let isShowOrPayUsing = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsing)
@@ -394,20 +394,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (cardMounted, selectedOption))
 
-  let isPaymentMethodsScreenVisible =
-    groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately || showPaymentMethodsScreen
-
   let paymentFormElement = {
-    let isCardSelected = selectedOption->PaymentModeType.paymentMode == Card
-    let cardIsActive = isCardSelected && isPaymentMethodsScreenVisible
+    let cardIsActive = selectedOption->PaymentModeType.paymentMode == Card
     <>
       <RenderIf condition=cardMounted>
-        <div style={display: isCardSelected ? "" : "none"} ariaHidden={!isCardSelected}>
-          <ReadyHooks.Ignored isIgnored={!isCardSelected}>
-            <ParentCardComponent
-              key={`card-${cardCollectionMode}`} cardCollectionMode isActive=cardIsActive
-            />
-          </ReadyHooks.Ignored>
+        <div style={display: cardIsActive ? "" : "none"} ariaHidden={!cardIsActive}>
+          <ParentCardComponent
+            key={`card-${cardCollectionMode}`} cardCollectionMode isActive=cardIsActive
+          />
         </div>
       </RenderIf>
       <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
@@ -570,8 +564,32 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     if groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately {
       setShowPaymentMethodsScreen(_ => true)
     }
+    let evalMethodsList = () =>
+      switch paymentMethodList {
+      | SemiLoaded | LoadError(_) | Loaded(_) =>
+        SubscriptionEventHooks.emitReady(
+          ~iframeId,
+          ~elementType=CardThemeType.getPaymentModeToString(paymentType),
+        )
+      | _ => ()
+      }
+    if !displaySavedPaymentMethods {
+      evalMethodsList()
+    } else {
+      switch customerPaymentMethods {
+      | LoadingSavedCards => ()
+      | LoadedSavedCards(list, _) =>
+        list->Array.length > 0
+          ? SubscriptionEventHooks.emitReady(
+              ~iframeId,
+              ~elementType=CardThemeType.getPaymentModeToString(paymentType),
+            )
+          : evalMethodsList()
+      | NoResult(_) => evalMethodsList()
+      }
+    }
     None
-  }, (groupSavedMethodsWithPaymentMethods, groupSavedMethodsSeparately))
+  }, (paymentMethodList, customerPaymentMethods))
 
   let shouldShowSavedMethods =
     displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay
@@ -597,7 +615,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let hasPaymentOrWalletOptions =
     paymentOptions->Array.length > 0 || walletOptions->Array.length > 0
 
-  let shouldDisplayPaymentMethodsScreen = isPaymentMethodsScreenVisible
+  let shouldDisplayPaymentMethodsScreen =
+    groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately || showPaymentMethodsScreen
 
   let shouldShowShimmer = clickToPayConfig.isReady->Option.isNone || isLoadingGroupedSavedMethods
 
@@ -607,222 +626,114 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     shouldDisplayPaymentMethodsScreen &&
     clickToPayConfig.isReady->Option.isSome
 
-  // Preloads the payment methods section behind the saved methods screen.
-  let isPaymentSectionPreloaded =
-    !optionAtomValue.enableProgressiveLoading &&
-    shouldShowSavedMethodsScreen &&
-    !isLoadingGroupedSavedMethods &&
-    hasPaymentOrWalletOptions &&
-    clickToPayConfig.isReady->Option.isSome
-  let shouldMountPaymentSection = shouldRenderPaymentSection || isPaymentSectionPreloaded
-
-  let isSavedMethodsScreenShown = !shouldShowShimmer && shouldShowSavedMethodsScreen
-  let (reportSavedMethodsPending, isSavedMethodsLoaded) = ReadyHooks.useSection(
-    ~isMounted=isSavedMethodsScreenShown,
-  )
-  let (reportPaymentMethodsPending, isPaymentMethodsLoaded) = ReadyHooks.useSection(
-    ~isMounted=shouldMountPaymentSection,
-  )
-  let (reportWalletsPending, isWalletsLoaded) = ReadyHooks.useSection(
-    ~isMounted=shouldMountPaymentSection,
-  )
-
-  let hasPaymentMethodsSection = shouldMountPaymentSection && paymentOptions->Array.length > 0
-  let hasWalletsSection = shouldMountPaymentSection && walletOptions->Array.length > 0
-  let isPaymentMethodsReady = hasPaymentMethodsSection && isPaymentMethodsLoaded
-  let isWalletsReady = hasWalletsSection && isWalletsLoaded && sessionToken != Loading
-  let isPaymentSectionReady =
-    (hasPaymentMethodsSection || hasWalletsSection) &&
-    (!hasPaymentMethodsSection || isPaymentMethodsReady) &&
-    (!hasWalletsSection || isWalletsReady)
-  let hasNothingToLoad = switch paymentMethodList {
-  | LoadError(_) => !hasPaymentOrWalletOptions
-  | Loaded(_) => paymentMethodListValue.payment_methods->Array.length == 0
-  | Loading | SemiLoaded => false
-  }
-
-  let isElementReady = if shouldShowShimmer {
-    false
-  } else if optionAtomValue.enableProgressiveLoading {
-    isSavedMethodsScreenShown
-      ? isSavedMethodsLoaded
-      : isPaymentMethodsReady || isWalletsReady || hasNothingToLoad
-  } else {
-    let isPaymentSideReady = isPaymentSectionReady || hasNothingToLoad
-    isSavedMethodsScreenShown ? isSavedMethodsLoaded && isPaymentSideReady : isPaymentSideReady
-  }
-
-  // updateIntent waits for a fresh ready, emitted once its refreshed list has rendered.
-  let isUpdateIntentLoading = Jotai.useAtomValue(JotaiAtoms.isUpdateIntentLoading)
-  let (isAwaitingUpdatedList, setIsAwaitingUpdatedList) = React.useState(_ => false)
-  React.useEffect(() => {
-    setIsAwaitingUpdatedList(_ => isUpdateIntentLoading)
-    None
-  }, [isUpdateIntentLoading])
-  React.useEffect(() => {
-    if isAwaitingUpdatedList {
-      SubscriptionEventHooks.allowReadyAgain()
-      setIsAwaitingUpdatedList(_ => false)
-    }
-    None
-  }, [paymentMethodList])
-
-  // Lets options and selection derived in effects settle before emitting.
-  let readySettleDelayMs = 50
-  React.useEffect(() => {
-    let timeoutId = if isElementReady && !isAwaitingUpdatedList {
-      Some(
-        setTimeout(() => {
-          SubscriptionEventHooks.emitReady(
-            ~iframeId,
-            ~elementType=CardThemeType.getPaymentModeToString(paymentType),
-          )
-        }, readySettleDelayMs),
-      )
-    } else {
-      None
-    }
-    Some(() => timeoutId->Option.forEach(clearTimeout))
-  }, (isElementReady, isAwaitingUpdatedList))
-
-  let isReadyEmitted = SubscriptionEventHooks.useIsReadyEmitted()
-  let isContentGated = !optionAtomValue.enableProgressiveLoading && !isReadyEmitted
-  // Wallet SDK iframes override visibility, so hide with opacity and block interaction with inert.
-  // Zero height with clipping keeps the hidden content out of the scrollable area.
-  let hiddenMountedStyle: JsxDOMStyle.t = {
-    position: "absolute",
-    top: "0",
-    left: "0",
-    right: "0",
-    height: "0",
-    overflow: "hidden",
-    opacity: "0",
-  }
-
   <>
-    <RenderIf condition=isContentGated>
-      <PaymentElementShimmer />
+    <RenderIf condition={paymentLabel->Option.isSome}>
+      <div
+        className="PaymentLabel text-2xl font-semibold text-[#151619] mb-6"
+        role="heading"
+        ariaLevel={1}>
+        {paymentLabel->Option.getOr("")->React.string}
+      </div>
     </RenderIf>
-    <div
-      style={isContentGated ? hiddenMountedStyle : {display: "contents"}} inert=isContentGated>
-      <RenderIf condition={paymentLabel->Option.isSome}>
-        <div
-          className="PaymentLabel text-2xl font-semibold text-[#151619] mb-6"
-          role="heading"
-          ariaLevel={1}>
-          {paymentLabel->Option.getOr("")->React.string}
-        </div>
-      </RenderIf>
-      {if shouldShowShimmer {
-        if areClickToPayUIScriptsLoaded {
-          <ClickToPayHelpers.SrcLoader />
-        } else if groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately {
-          <PaymentElementShimmer />
-        } else {
-          <PaymentElementShimmer.SavedPaymentCardShimmer />
-        }
+    {if shouldShowShimmer {
+      if areClickToPayUIScriptsLoaded {
+        <ClickToPayHelpers.SrcLoader />
+      } else if groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately {
+        <PaymentElementShimmer />
       } else {
-        <RenderIf condition=shouldShowSavedMethodsScreen>
-          <ReadyHooks.provider value=reportSavedMethodsPending>
-            <SavedMethods
-              paymentToken
-              setPaymentToken
-              savedMethods
-              loadSavedCards
-              cvcProps
-              sessions
-              isClickToPayAuthenticateError
-              setIsClickToPayAuthenticateError
-              getVisaCards
-              closeComponentIfSavedMethodsAreEmpty
-            />
-          </ReadyHooks.provider>
-        </RenderIf>
-      }}
-      <RenderIf condition=shouldMountPaymentSection>
-        <PaymentSectionContext.provider value={!isPaymentSectionPreloaded}>
-          <div
-            className="flex flex-col place-items-center"
-            role="region"
-            ariaLabel="Payment Section"
-            tabIndex={0}
-            style=?{isPaymentSectionPreloaded ? Some(hiddenMountedStyle) : None}
-            inert=isPaymentSectionPreloaded>
-            <ReadyHooks.provider value=reportWalletsPending>
-              <ErrorBoundary
-                key="payment_request_buttons_all"
-                level={ErrorBoundary.RequestButton}
-                componentName="PaymentRequestButtonElement">
-                <PaymentRequestButtonElement sessions walletOptions />
-              </ErrorBoundary>
-            </ReadyHooks.provider>
-            <RenderIf
-              condition={paymentOptions->Array.length > 0 &&
-              walletOptions->Array.length > 0 &&
-              checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}>
-              <Or separatorText={layoutClass.separatorText} />
-            </RenderIf>
-            <ReadyHooks.provider value=reportPaymentMethodsPending>
-              {switch layoutClass.\"type" {
-              | Tabs =>
-                <PaymentOptions
-                  setCardsContainerWidth
-                  cardOptions
-                  dropDownOptions
-                  checkoutEle
-                  cardShimmerCount
-                  cardProps
-                  expiryProps
-                  cvcProps
-                />
-              | Accordion =>
-                <AccordionContainer paymentOptions checkoutEle cardProps expiryProps cvcProps />
-              }}
-            </ReadyHooks.provider>
-          </div>
-        </PaymentSectionContext.provider>
-      </RenderIf>
-      <RenderIf condition={shouldShowUseExistingMethodsButton}>
-        <SwitchViewButton
-          icon={<Icon name="circle_dots" size=20 width=19 />}
-          title={localeString.useExistingPaymentMethods}
-          onClick={_ => setShowPaymentMethodsScreen(_ => false)}
-          ariaLabel="Click to use existing payment methods"
-          onKeyDown={event => {
-            let key = JsxEvent.Keyboard.key(event)
-            let keyCode = JsxEvent.Keyboard.keyCode(event)
-            if key == "Enter" || keyCode == 13 {
-              setShowPaymentMethodsScreen(_ => false)
-            }
-          }}
+        <PaymentElementShimmer.SavedPaymentCardShimmer />
+      }
+    } else {
+      <RenderIf condition=shouldShowSavedMethodsScreen>
+        <SavedMethods
+          paymentToken
+          setPaymentToken
+          savedMethods
+          loadSavedCards
+          cvcProps
+          sessions
+          isClickToPayAuthenticateError
+          setIsClickToPayAuthenticateError
+          getVisaCards
+          closeComponentIfSavedMethodsAreEmpty
         />
       </RenderIf>
-      {switch paymentMethodList {
-      | LoadError(_) =>
-        <RenderIf condition={paymentMethodListValue.payment_methods->Array.length === 0}>
-          <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
-        </RenderIf>
-      | _ =>
+    }}
+    <RenderIf condition=shouldRenderPaymentSection>
+      <div
+        className="flex flex-col place-items-center"
+        role="region"
+        ariaLabel="Payment Section"
+        tabIndex={0}>
+        <ErrorBoundary
+          key="payment_request_buttons_all"
+          level={ErrorBoundary.RequestButton}
+          componentName="PaymentRequestButtonElement">
+          <PaymentRequestButtonElement sessions walletOptions />
+        </ErrorBoundary>
         <RenderIf
-          condition={!displaySavedPaymentMethods &&
-          paymentOptions->Array.length == 0 &&
-          walletOptions->Array.length == 0}>
-          {if isVgsScriptReady {
-            <PaymentElementShimmer />
-          } else {
-            // VGS vault script failed → card was removed and no other method
-            // remains. Surface the standard top-level error instead of an
-            // indefinite shimmer.
-            <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
-          }}
+          condition={paymentOptions->Array.length > 0 &&
+          walletOptions->Array.length > 0 &&
+          checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}>
+          <Or separatorText={layoutClass.separatorText} />
         </RenderIf>
-      }}
-      <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
-        <div className="mt-4">
-          <PayNowButton />
-        </div>
+        {switch layoutClass.\"type" {
+        | Tabs =>
+          <PaymentOptions
+            setCardsContainerWidth
+            cardOptions
+            dropDownOptions
+            checkoutEle
+            cardShimmerCount
+            cardProps
+            expiryProps
+            cvcProps
+          />
+        | Accordion =>
+          <AccordionContainer paymentOptions checkoutEle cardProps expiryProps cvcProps />
+        }}
+      </div>
+    </RenderIf>
+    <RenderIf condition={shouldShowUseExistingMethodsButton}>
+      <SwitchViewButton
+        icon={<Icon name="circle_dots" size=20 width=19 />}
+        title={localeString.useExistingPaymentMethods}
+        onClick={_ => setShowPaymentMethodsScreen(_ => false)}
+        ariaLabel="Click to use existing payment methods"
+        onKeyDown={event => {
+          let key = JsxEvent.Keyboard.key(event)
+          let keyCode = JsxEvent.Keyboard.keyCode(event)
+          if key == "Enter" || keyCode == 13 {
+            setShowPaymentMethodsScreen(_ => false)
+          }
+        }}
+      />
+    </RenderIf>
+    {switch paymentMethodList {
+    | LoadError(_) =>
+      <RenderIf condition={paymentMethodListValue.payment_methods->Array.length === 0}>
+        <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
       </RenderIf>
-    </div>
+    | _ =>
+      <RenderIf
+        condition={!displaySavedPaymentMethods &&
+        paymentOptions->Array.length == 0 &&
+        walletOptions->Array.length == 0}>
+        {if isVgsScriptReady {
+          <PaymentElementShimmer />
+        } else {
+          // VGS vault script failed → card was removed and no other method
+          // remains. Surface the standard top-level error instead of an
+          // indefinite shimmer.
+          <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+        }}
+      </RenderIf>
+    }}
+    <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
+      <div className="mt-4">
+        <PayNowButton />
+      </div>
+    </RenderIf>
     <PoweredBy />
   </>
 }

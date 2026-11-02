@@ -11,8 +11,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
   let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
   let {publishableKey, sdkAuthorization, parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
-  let applePayAvailability = Jotai.useAtomValue(JotaiAtoms.applePayAvailability)
-  let isApplePayReady = applePayAvailability == Available
+  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
   let setIsShowOrPayUsing = Jotai.useSetAtom(JotaiAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
@@ -401,13 +400,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
 
   let shouldShowWalletShimmer =
     isApplePayDelayedSessionFlow && isApplePayReady && trustPayScriptStatus === Loading
-
-  ReadyHooks.usePendingWhile(
-    ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,
-    isWallet &&
-    (isInvokeSDKFlow || paymentExperience === PaymentMethodsRecord.RedirectToURL) &&
-    applePayAvailability == JotaiAtoms.AvailabilityUnknown,
-  )
 
   if isWallet {
     <>

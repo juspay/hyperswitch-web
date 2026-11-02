@@ -93,7 +93,7 @@ let getLabel = (var: PaymentType.paypalStyleType) => {
   | Installment => "installment"
   }
 }
-type some = {render: string => promise<unit>}
+type some = {render: string => unit}
 type paypal = {"Buttons": buttons => some, "FUNDING": funding}
 
 @val external braintree: braintree = "braintree"

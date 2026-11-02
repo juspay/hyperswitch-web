@@ -24,8 +24,7 @@ let make = (
   let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=isWallet, Some(loggerState), Gpay)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Some(loggerState), Gpay)
-  let gPayAvailability = Jotai.useAtomValue(googlePayAvailability)
-  let isGPayReady = gPayAvailability == Available
+  let isGPayReady = Jotai.useAtomValue(isGooglePayReady)
   let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
@@ -333,23 +332,6 @@ let make = (
     (isGooglePayDelayedSessionFlow && trustPayScriptStatus === Loaded)) && isWallet
 
   let shouldShowWalletShimmer = isGooglePayDelayedSessionFlow && trustPayScriptStatus === Loading
-
-  // The loader only checks availability when Google Pay is set to auto.
-  let isGooglePayEnabled = switch options.wallets.googlePay {
-  | PaymentType.GooglePayConfigString(Auto) | GooglePayConfigObj({display: Auto}) => true
-  | _ => false
-  }
-  let isAvailabilityPending =
-    isGooglePayEnabled &&
-    isGooglePaySDKFlow &&
-    !isGooglePayDelayedSessionFlow &&
-    paymentExperience != PaymentMethodsRecord.RedirectToURL &&
-    gPayAvailability == AvailabilityUnknown
-  let isButtonPending = isRenderGooglePayButton && status == "loading"
-  ReadyHooks.usePendingWhile(
-    ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,
-    isWallet && (isAvailabilityPending || isButtonPending),
-  )
 
   React.useEffect(() => {
     areOneClickWalletsRendered(prev => {

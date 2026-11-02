@@ -1,12 +1,6 @@
 let useSubmitPaymentData = callback => {
   let {parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
-  let isSectionActive = PaymentSectionContext.useIsActive()
-  let activeCallback = React.useCallback((ev: Window.event) => {
-    if isSectionActive {
-      callback(ev)
-    }
-  }, (callback, isSectionActive))
-  Utils.useSubmitPaymentDataFromParent(activeCallback, ~parentOrigin=parentURL)
+  Utils.useSubmitPaymentDataFromParent(callback, ~parentOrigin=parentURL)
 }
 
 // Pin the browser-provided origin only on an initialization from the direct parent.

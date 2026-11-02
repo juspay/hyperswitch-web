@@ -392,12 +392,12 @@ let make = (
   }, (isSavedCardFlow, savedCardCvcState, iframeId))
 
   React.useEffect(() => {
-    if !isSavedCardFlow && isActive && hasCardFieldStatus {
+    if !isSavedCardFlow && hasCardFieldStatus {
       setComplete(_ => cardFieldsComplete && isInstallmentValid)
       setShowPaymentMethodsScreen(_ => true)
     }
     None
-  }, (isSavedCardFlow, isActive, hasCardFieldStatus, cardFieldsComplete, isInstallmentValid))
+  }, (isSavedCardFlow, hasCardFieldStatus, cardFieldsComplete, isInstallmentValid))
 
   // The legacy direct Card flow emitted this only after all three validation
   // states had resolved. Preserve that timing at the public iframe boundary.
