@@ -144,6 +144,10 @@ let make = (~sessionObj: SessionsType.token) => {
     ~paymentType=paymentMethodType,
   )
 
+  let (isButtonSettled, setIsButtonSettled) = React.useState(_ => false)
+  let onButtonSettled = () => setIsButtonSettled(_ => true)
+  ReadyHooks.usePendingWhile(~timeoutMs=ReadyHooks.walletDecisionTimeoutMs, !isButtonSettled)
+
   let mountPaypalSDK = () => {
     let clientId = sessionObj.token
     let paypalIntent = sessionObj.intent
@@ -174,6 +178,7 @@ let make = (~sessionObj: SessionsType.token) => {
     let paypalScript = Window.createElement("script")
     paypalScript->Window.elementSrc(paypalScriptURL)
     paypalScript->Window.elementOnerror(exn => {
+      onButtonSettled()
       let err = exn->Identity.anyTypeToJson->JSON.stringify
       loggerState.setLogError(
         ~value=`Error During Loading PayPal SDK Script: ${err}`,
@@ -185,6 +190,7 @@ let make = (~sessionObj: SessionsType.token) => {
       PaypalSDKHelpers.loadPaypalSDK(
         ~parentOrigin=parentURL,
         ~loggerState,
+        ~onButtonSettled,
         ~sdkHandleOneClickConfirmPayment,
         ~buttonStyle,
         ~iframeId,
@@ -225,6 +231,7 @@ let make = (~sessionObj: SessionsType.token) => {
           PaypalSDKHelpers.loadBraintreePaypalSdk(
             ~parentOrigin=parentURL,
             ~loggerState,
+            ~onButtonSettled,
             ~sdkHandleOneClickConfirmPayment,
             ~token,
             ~buttonStyle,

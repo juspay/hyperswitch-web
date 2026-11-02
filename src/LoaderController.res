@@ -24,6 +24,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsSamsungPayReady = Jotai.useSetAtom(isSamsungPayReady)
   let setUpdateSession = Jotai.useSetAtom(updateSession)
   let setIsUpdateIntentLoading = Jotai.useSetAtom(isUpdateIntentLoading)
+  let setReadyRearmCount = Jotai.useSetAtom(readyRearmCount)
+  // Messages are handled in order here, so back-to-back updateIntent calls can't be missed.
+  let isAwaitingUpdatedListRef = React.useRef(false)
   let setCardBrandIconOverride = Jotai.useSetAtom(cardBrandIconOverride)
   let setCvcIconOverride = Jotai.useSetAtom(cvcIconOverride)
   let setCardNumberPlaceholder = Jotai.useSetAtom(cardNumberPlaceholder)
@@ -541,9 +544,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           })
         }
         if dict->getDictIsSome("isReadyToPay") {
-          setIsGooglePayReady(_ =>
-            dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
-          )
+          setIsGooglePayReady(_ => Some(
+            dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false),
+          ))
         }
         if dict->getDictIsSome("trustPayScriptStatus") {
           setTrustPayScriptStatus(_ => {
@@ -628,6 +631,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
           setPaymentMethodList(_ => updatedState)
 
+          // updateIntent waits for a fresh ready, emitted once its refreshed list has rendered.
+          if isAwaitingUpdatedListRef.current {
+            isAwaitingUpdatedListRef.current = false
+            SubscriptionEventHooks.allowReadyAgain()
+            setReadyRearmCount(count => count + 1)
+          }
+
           let customerPaymentMethods =
             dict->PaymentType.createCustomerObjArrFromClientList("clientList")
           setOptionsPayment(prev => {
@@ -698,14 +708,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
-          setIsApplePayReady(_ => true)
+          setIsApplePayReady(_ => Some(dict->getBool("applePayCanMakePayments", false)))
         }
         if dict->Dict.get("applePaySessionObjNotPresent")->Option.isSome {
-          setIsApplePayReady(prev => prev && false)
+          setIsApplePayReady(_ => Some(false))
         }
         if dict->Dict.get("updateIntentLoading")->Option.isSome {
           let isLoading = dict->getBool("updateIntentLoading", false)
           setIsUpdateIntentLoading(_ => isLoading)
+          isAwaitingUpdatedListRef.current = isLoading
           if isLoading {
             logger.setLogInfo(~value="Update Intent Loading Started", ~eventName=UPDATE_INTENT)
           } else {
@@ -740,14 +751,43 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   | None => ()
   }
 
+  let iframeHeight = divH->Float.equal(0.0) ? divH : divH +. 1.0
   React.useEffect(() => {
-    let iframeHeight = divH->Float.equal(0.0) ? divH : divH +. 1.0
     messageParentWindow([
       ("iframeHeight", iframeHeight->JSON.Encode.float),
       ("iframeId", iframeId->JSON.Encode.string),
     ])
     None
-  }, (divH, iframeId))
+  }, (iframeHeight, iframeId))
+
+  // A hidden container measures 0, so 0 is never sent.
+  let resizeSettleDelayMs = 100
+  let isReady = SubscriptionEventHooks.useIsReadyEmitted()
+  let lastSentHeightRef = React.useRef(None)
+  let hasSentReadyResizeRef = React.useRef(false)
+  let elementType =
+    paymentMode->CardThemeType.getPaymentMode->CardThemeType.getPaymentModeToString
+  React.useEffect(() => {
+    let isFirstAfterReady = isReady && !hasSentReadyResizeRef.current
+    let hasChanged = lastSentHeightRef.current != Some(iframeHeight)
+    let postResize = () => {
+      lastSentHeightRef.current = Some(iframeHeight)
+      hasSentReadyResizeRef.current = isReady
+      messageParentWindow([
+        ("resize", true->JSON.Encode.bool),
+        ("height", iframeHeight->JSON.Encode.float),
+        ("isReady", isReady->JSON.Encode.bool),
+        ("elementType", elementType->JSON.Encode.string),
+        ("iframeId", iframeId->JSON.Encode.string),
+      ])
+    }
+    let timeoutId = if iframeHeight > 0.0 && iframeId !== "" && (isFirstAfterReady || hasChanged) {
+      Some(setTimeout(postResize, resizeSettleDelayMs))
+    } else {
+      None
+    }
+    Some(() => timeoutId->Option.forEach(clearTimeout))
+  }, (iframeHeight, iframeId, isReady, elementType))
 
   <div ref={divRef->ReactDOM.Ref.domRef} className="relative">
     <UpdateIntentOverlay />

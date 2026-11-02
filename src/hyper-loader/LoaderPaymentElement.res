@@ -292,6 +292,7 @@ let make = (
             !ev.data.focus &&
             !ev.data.blur &&
             !ev.data.ready &&
+            !ev.data.resize &&
             !ev.data.confirmTriggered &&
             !ev.data.oneClickConfirmTriggered &&
             !isUnsubscribedPaymentMethodFlowCancel(ev) &&
@@ -315,6 +316,14 @@ let make = (
           eventHandler,
           Ready,
           `onReady-${componentType}-${elementInstanceId}`,
+          ~isTrustedMessage,
+        )
+      | Resize =>
+        eventHandlerFunc(
+          ev => ev.data.resize && matchesInstance(ev),
+          eventHandler,
+          Resize,
+          `onResize-${componentType}-${elementInstanceId}`,
           ~isTrustedMessage,
         )
       | Focus =>

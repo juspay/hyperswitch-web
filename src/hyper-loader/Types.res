@@ -7,6 +7,7 @@ type eventData = {
   focus: bool,
   blur: bool,
   ready: bool,
+  resize: bool,
   clickTriggered: bool,
   paymentComplete: bool,
   elementType: string,
@@ -314,6 +315,7 @@ type eventType =
   | Change
   | Click
   | Ready
+  | Resize
   | Focus
   | Blur
   | PaymentComplete
@@ -329,6 +331,7 @@ let eventTypeMapper = event => {
   | "change" => Change
   | "clickTriggered" => Click
   | "ready" => Ready
+  | "resize" => Resize
   | "completeDoThis" | "paymentComplete" => PaymentComplete
   | "focus" => Focus
   | "blur" => Blur

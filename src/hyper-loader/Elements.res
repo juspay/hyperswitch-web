@@ -581,6 +581,11 @@ let make = (
           let json = event.data->anyTypeToJson
           let dict = json->getDictFromJson
           let componentName = getString(dict, "componentName", "payment")
+          let postApplePayUnavailable = () =>
+            mountedIframeRef->Window.iframePostMessage(
+              [("applePayCanMakePayments", false->JSON.Encode.bool)]->Dict.fromArray,
+              ~targetOrigin=sdkOrigin,
+            )
 
           if dict->Dict.get("applePayMounted")->Option.isSome {
             if (
@@ -607,6 +612,7 @@ let make = (
                       ~paymentMethod="APPLE_PAY",
                       ~logType=ERROR,
                     )
+                    postApplePayUnavailable()
                   }
                 } catch {
                 | exn => {
@@ -618,9 +624,10 @@ let make = (
                       ~paymentMethod="APPLE_PAY",
                       ~logType=ERROR,
                     )
+                    postApplePayUnavailable()
                   }
                 }
-              | None => ()
+              | None => postApplePayUnavailable()
               }
             } else {
               logger.setLogInfo(
@@ -629,6 +636,7 @@ let make = (
                 ~paymentMethod="APPLE_PAY",
                 ~logType=INFO,
               )
+              postApplePayUnavailable()
             }
           } else if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
             let applePayCanMakePayments = getBool(dict, "applePayCanMakePayments", false)

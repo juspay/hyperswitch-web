@@ -14,8 +14,15 @@ let handlePaypalError = (err, ~handleCancel, ~handleCloseLoader) =>
     handleCloseLoader()
   }
 
+let renderButtons = (buttons: some, ~onButtonSettled) =>
+  buttons.render("#paypal-button")
+  ->Promise.then(_ => Promise.resolve(onButtonSettled()))
+  ->Promise.catch(_ => Promise.resolve(onButtonSettled()))
+  ->ignore
+
 let loadPaypalSDK = (
   ~loggerState: HyperLoggerTypes.loggerMake,
+  ~onButtonSettled,
   ~parentOrigin,
   ~sdkHandleOneClickConfirmPayment as _,
   ~buttonStyle: PaypalSDKTypes.style,
@@ -260,7 +267,7 @@ let loadPaypalSDK = (
         ~paymentMethod="PAYPAL",
       )
     },
-  }).render("#paypal-button")
+  })->renderButtons(~onButtonSettled)
   areOneClickWalletsRendered(prev => {
     ...prev,
     isPaypal: true,
@@ -269,6 +276,7 @@ let loadPaypalSDK = (
 
 let loadBraintreePaypalSdk = (
   ~loggerState: HyperLoggerTypes.loggerMake,
+  ~onButtonSettled,
   ~parentOrigin,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
@@ -367,7 +375,7 @@ let loadBraintreePaypalSdk = (
                       ~paymentMethod="PAYPAL",
                     )
                   },
-                }).render("#paypal-button")
+                })->renderButtons(~onButtonSettled)
                 areOneClickWalletsRendered(
                   prev => {
                     ...prev,
