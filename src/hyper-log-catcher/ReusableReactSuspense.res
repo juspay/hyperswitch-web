@@ -4,7 +4,7 @@ let make = (~children, ~loaderComponent, ~componentName) => {
   <ErrorBoundary level=ErrorBoundary.PaymentMethod componentName publishableKey>
     <React.Suspense
       fallback={<>
-        <span className=ReadyHooks.loadingMarkerClass />
+        <ReadyHooks.Pending />
         loaderComponent
       </>}>
       {children}

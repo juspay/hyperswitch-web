@@ -1,45 +1,57 @@
-// Shimmers use animate-pulse; Suspense fallbacks add loadingMarkerClass as they may render nothing.
-let loadingMarkerClass = "SdkLoading"
-let loadingSelector = `.animate-pulse, .${loadingMarkerClass}`
+// Components that are still loading report it to the nearest section; a section is loaded once
+// it is mounted and nothing inside it is pending.
+let context = React.createContext((_delta: int) => ())
 
-type mutationObserver
-type mutationObserverInit = {
-  childList: bool,
-  subtree: bool,
-  attributes: bool,
-  attributeFilter: array<string>,
-}
-@new external makeMutationObserver: (unit => unit) => mutationObserver = "MutationObserver"
-@send external observe: (mutationObserver, Dom.element, mutationObserverInit) => unit = "observe"
-@send external disconnect: mutationObserver => unit = "disconnect"
-@send external querySelectorAll: (Dom.element, string) => Dom.nodeList = "querySelectorAll"
-@send external closest: (Dom.element, string) => Nullable.t<Dom.element> = "closest"
-@get external childElementCount: Dom.element => int = "childElementCount"
+let provider = React.Context.provider(context)
 
-let hasPendingPlaceholder = section =>
-  section
-  ->querySelectorAll(loadingSelector)
-  ->Window.nodeListToArray
-  ->Array.some(placeholder => placeholder->closest(`[aria-hidden="true"]`)->Nullable.isNullable)
+let ignorePending = (_delta: int) => ()
 
-let useIsSectionLoaded = (sectionRef: React.ref<Nullable.t<Dom.element>>, ~isMounted) => {
-  let (isLoaded, setIsLoaded) = React.useState(_ => false)
-  React.useEffect(() => {
-    switch (isMounted, sectionRef.current->Nullable.toOption) {
-    | (true, Some(section)) =>
-      let update = () =>
-        setIsLoaded(_ => section->childElementCount > 0 && !hasPendingPlaceholder(section))
-      update()
-      let observer = makeMutationObserver(update)
-      observer->observe(
-        section,
-        {childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-hidden"]},
-      )
-      Some(() => observer->disconnect)
-    | _ =>
-      setIsLoaded(_ => false)
+// Bounds the wait for wallets whose availability answer may never arrive.
+let walletDecisionTimeoutMs = 3000
+
+let usePendingWhile = (~timeoutMs=?, isPending) => {
+  let report = React.useContext(context)
+  let (hasTimedOut, setHasTimedOut) = React.useState(_ => false)
+  let isStillPending = isPending && !hasTimedOut
+
+  React.useLayoutEffect(() => {
+    if isStillPending {
+      report(1)
+      Some(() => report(-1))
+    } else {
       None
     }
-  }, [isMounted])
-  isLoaded
+  }, (isStillPending, report))
+
+  React.useEffect(() => {
+    switch (isPending, timeoutMs) {
+    | (true, Some(ms)) =>
+      let timeoutId = setTimeout(() => setHasTimedOut(_ => true), ms)
+      Some(() => clearTimeout(timeoutId))
+    | _ => None
+    }
+  }, (isPending, timeoutMs))
+}
+
+// Hidden content (e.g. an unselected form kept mounted) must not hold its section back.
+module Ignored = {
+  @react.component
+  let make = (~isIgnored, ~children) => {
+    let report = React.useContext(context)
+    React.createElement(provider, {value: isIgnored ? ignorePending : report, children})
+  }
+}
+
+module Pending = {
+  @react.component
+  let make = () => {
+    usePendingWhile(true)
+    React.null
+  }
+}
+
+let useSection = (~isMounted) => {
+  let (pendingCount, setPendingCount) = React.useState(_ => 0)
+  let report = React.useCallback(delta => setPendingCount(count => count + delta), [])
+  (report, isMounted && pendingCount == 0)
 }

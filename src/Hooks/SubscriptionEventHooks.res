@@ -173,7 +173,8 @@ let useEmitFormStatus = (
 ) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
-  let enabled = enabled && PaymentSectionContext.useIsActive()
+  let isSectionActive = PaymentSectionContext.useIsActive()
+  let enabled = enabled && isSectionActive
 
   React.useEffect(() => {
     if enabled && !isOneClickWallet {

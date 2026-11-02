@@ -62,9 +62,11 @@ let userPhoneNumber = Jotai.atom({
   countryCode: "",
 })
 let userCardNickName = Jotai.atom(defaultFieldValues)
-let isGooglePayReady = Jotai.atom(false)
+// Unknown until the loader answers, so callers can wait for the decision instead of reading it as "no".
+type walletAvailability = AvailabilityUnknown | Available | Unavailable
+let googlePayAvailability = Jotai.atom(AvailabilityUnknown)
 let trustPayScriptStatus = Jotai.atom(NotLoaded)
-let isApplePayReady = Jotai.atom(false)
+let applePayAvailability = Jotai.atom(AvailabilityUnknown)
 let isSamsungPayReady = Jotai.atom(false)
 // Card payments via the VGS vault need the VGS Collect.js script. Ready by
 // default; set false when the script fails to load so the card method can be

@@ -22,8 +22,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let optionAtomValue = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
-  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
-  let isGPayReady = Jotai.useAtomValue(JotaiAtoms.isGooglePayReady)
+  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.applePayAvailability) == Available
+  let isGPayReady = Jotai.useAtomValue(JotaiAtoms.googlePayAvailability) == Available
   let isVgsScriptReady = Jotai.useAtomValue(JotaiAtoms.isVgsScriptReady)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let isShowOrPayUsing = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsing)
@@ -403,9 +403,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     <>
       <RenderIf condition=cardMounted>
         <div style={display: isCardSelected ? "" : "none"} ariaHidden={!isCardSelected}>
-          <ParentCardComponent
-            key={`card-${cardCollectionMode}`} cardCollectionMode isActive=cardIsActive
-          />
+          <ReadyHooks.Ignored isIgnored={!isCardSelected}>
+            <ParentCardComponent
+              key={`card-${cardCollectionMode}`} cardCollectionMode isActive=cardIsActive
+            />
+          </ReadyHooks.Ignored>
         </div>
       </RenderIf>
       <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
@@ -614,20 +616,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     clickToPayConfig.isReady->Option.isSome
   let shouldMountPaymentSection = shouldRenderPaymentSection || isPaymentSectionPreloaded
 
-  let savedMethodsSectionRef = React.useRef(Nullable.null)
-  let paymentMethodsSectionRef = React.useRef(Nullable.null)
-  let walletsSectionRef = React.useRef(Nullable.null)
   let isSavedMethodsScreenShown = !shouldShowShimmer && shouldShowSavedMethodsScreen
-  let isSavedMethodsLoaded = ReadyHooks.useIsSectionLoaded(
-    savedMethodsSectionRef,
+  let (reportSavedMethodsPending, isSavedMethodsLoaded) = ReadyHooks.useSection(
     ~isMounted=isSavedMethodsScreenShown,
   )
-  let isPaymentMethodsLoaded = ReadyHooks.useIsSectionLoaded(
-    paymentMethodsSectionRef,
+  let (reportPaymentMethodsPending, isPaymentMethodsLoaded) = ReadyHooks.useSection(
     ~isMounted=shouldMountPaymentSection,
   )
-  let isWalletsLoaded = ReadyHooks.useIsSectionLoaded(
-    walletsSectionRef,
+  let (reportWalletsPending, isWalletsLoaded) = ReadyHooks.useSection(
     ~isMounted=shouldMountPaymentSection,
   )
 
@@ -727,7 +723,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         }
       } else {
         <RenderIf condition=shouldShowSavedMethodsScreen>
-          <div ref={savedMethodsSectionRef->ReactDOM.Ref.domRef} style={display: "contents"}>
+          <ReadyHooks.provider value=reportSavedMethodsPending>
             <SavedMethods
               paymentToken
               setPaymentToken
@@ -740,7 +736,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
               getVisaCards
               closeComponentIfSavedMethodsAreEmpty
             />
-          </div>
+          </ReadyHooks.provider>
         </RenderIf>
       }}
       <RenderIf condition=shouldMountPaymentSection>
@@ -752,21 +748,21 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             tabIndex={0}
             style=?{isPaymentSectionPreloaded ? Some(hiddenMountedStyle) : None}
             inert=isPaymentSectionPreloaded>
-            <div ref={walletsSectionRef->ReactDOM.Ref.domRef} style={display: "contents"}>
+            <ReadyHooks.provider value=reportWalletsPending>
               <ErrorBoundary
                 key="payment_request_buttons_all"
                 level={ErrorBoundary.RequestButton}
                 componentName="PaymentRequestButtonElement">
                 <PaymentRequestButtonElement sessions walletOptions />
               </ErrorBoundary>
-            </div>
+            </ReadyHooks.provider>
             <RenderIf
               condition={paymentOptions->Array.length > 0 &&
               walletOptions->Array.length > 0 &&
               checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}>
               <Or separatorText={layoutClass.separatorText} />
             </RenderIf>
-            <div ref={paymentMethodsSectionRef->ReactDOM.Ref.domRef} style={display: "contents"}>
+            <ReadyHooks.provider value=reportPaymentMethodsPending>
               {switch layoutClass.\"type" {
               | Tabs =>
                 <PaymentOptions
@@ -782,7 +778,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
               | Accordion =>
                 <AccordionContainer paymentOptions checkoutEle cardProps expiryProps cvcProps />
               }}
-            </div>
+            </ReadyHooks.provider>
           </div>
         </PaymentSectionContext.provider>
       </RenderIf>
