@@ -633,10 +633,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     paymentMethodListValue.payment_methods->Array.some(method =>
       method.payment_method_types->Array.some(type_ => type_.payment_method_type === methodType)
     )
+  // The loader only checks Google Pay's availability when it is set to auto.
+  let isGooglePayAuto = switch optionAtomValue.wallets.googlePay {
+  | PaymentType.GooglePayConfigString(Auto) | GooglePayConfigObj({display: Auto}) => true
+  | _ => false
+  }
   let isWalletDecisionPending = ReadyHooks.useIsStillPending(
     ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,
     (hasMethodType("apple_pay") && applePayReadiness->Option.isNone) ||
-      (hasMethodType("google_pay") && gPayReadiness->Option.isNone),
+      (isGooglePayAuto && hasMethodType("google_pay") && gPayReadiness->Option.isNone),
   )
   // Nothing on the list can be shown, e.g. Apple Pay alone on a browser that doesn't support it.
   let hasNothingToLoad = switch paymentMethodList {
@@ -653,7 +658,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   } else if optionAtomValue.enableProgressiveLoading {
     shownSections->Array.some(isLoaded => isLoaded)
   } else {
-    shownSections->Array.every(isLoaded => isLoaded)
+    // A wallet still deciding whether it can be shown would join the payment section later.
+    shownSections->Array.every(isLoaded => isLoaded) &&
+      !(shouldRenderPaymentSection && isWalletDecisionPending)
   }
 
   // Re-armed by updateIntent once its refreshed list arrives, so a fresh ready follows it.

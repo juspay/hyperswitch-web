@@ -27,6 +27,12 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let setAreOneClickWalletsRendered = Jotai.useSetAtom(areOneClickWalletsRendered)
 
+  let (isButtonSettled, setIsButtonSettled) = React.useState(_ => false)
+  ReadyHooks.usePendingWhile(
+    ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,
+    !isButtonSettled && status !== "error",
+  )
+
   let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
   | Klarna(val) => val
@@ -164,6 +170,7 @@ let make = (~sessionObj: SessionsType.token) => {
           },
         },
         _ => {
+          setIsButtonSettled(_ => true)
           setAreOneClickWalletsRendered(
             prev => {
               ...prev,
