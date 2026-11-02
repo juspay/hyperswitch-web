@@ -72,7 +72,7 @@ let make = (~sessions, ~walletOptions) => {
   let sessionObj = React.useMemo(() => itemToObjMapper(dict, Others), [dict])
 
   let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
-  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
+  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)->Option.getOr(false)
 
   let isApplePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsApplePayDelayedSessionFlow()
   let isGooglePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsGooglePayDelayedSessionFlow()

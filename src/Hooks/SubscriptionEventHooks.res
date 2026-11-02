@@ -139,6 +139,14 @@ let emitReady = (~iframeId, ~elementType) => {
   }
 }
 
+// The Payment Element sends ready once per load and once per updateIntent.
+let emitReadyOnce = (~iframeId, ~elementType) =>
+  if !isReadyEmitted.contents {
+    emitReady(~iframeId, ~elementType)
+  }
+
+let allowReadyAgain = () => isReadyEmitted := false
+
 let useIsReadyEmitted = () => {
   let (isReady, setIsReady) = React.useState(_ => isReadyEmitted.contents)
   React.useEffect0(() => {
