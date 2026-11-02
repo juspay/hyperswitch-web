@@ -122,20 +122,27 @@ let useSubscriptionEventEmitter = (): emitter => {
 // emitReady
 // ---------------------------------------------------------------------------
 // Fires unconditionally so every merchant receives the ready lifecycle event
-// regardless of whether subscriptionEvents is configured. Sent once per load and once per updateIntent.
+// regardless of whether subscriptionEvents is configured.
 // Remembered so the resize event can tell whether the element is ready yet.
 let isReadyEmitted = ref(false)
 let readyListeners: array<unit => unit> = []
 
-let emitReady = (~iframeId, ~elementType) =>
+let emitReady = (~iframeId, ~elementType) => {
+  Utils.messageParentWindow([
+    ("ready", true->JSON.Encode.bool),
+    ("elementType", elementType->JSON.Encode.string),
+    ("iframeId", iframeId->JSON.Encode.string),
+  ])
   if !isReadyEmitted.contents {
     isReadyEmitted := true
-    Utils.messageParentWindow([
-      ("ready", true->JSON.Encode.bool),
-      ("elementType", elementType->JSON.Encode.string),
-      ("iframeId", iframeId->JSON.Encode.string),
-    ])
     readyListeners->Array.forEach(listener => listener())
+  }
+}
+
+// The Payment Element sends ready once per load and once per updateIntent.
+let emitReadyOnce = (~iframeId, ~elementType) =>
+  if !isReadyEmitted.contents {
+    emitReady(~iframeId, ~elementType)
   }
 
 let allowReadyAgain = () => isReadyEmitted := false

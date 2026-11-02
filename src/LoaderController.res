@@ -18,12 +18,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setSessionId = Jotai.useSetAtom(sessionId)
   let setBlockConfirm = Jotai.useSetAtom(isConfirmBlocked)
   let setCustomPodUri = Jotai.useSetAtom(customPodUri)
-  let setGooglePayAvailability = Jotai.useSetAtom(googlePayAvailability)
+  let setIsGooglePayReady = Jotai.useSetAtom(isGooglePayReady)
   let setTrustPayScriptStatus = Jotai.useSetAtom(trustPayScriptStatus)
-  let setApplePayAvailability = Jotai.useSetAtom(applePayAvailability)
+  let setIsApplePayReady = Jotai.useSetAtom(isApplePayReady)
   let setIsSamsungPayReady = Jotai.useSetAtom(isSamsungPayReady)
   let setUpdateSession = Jotai.useSetAtom(updateSession)
   let setIsUpdateIntentLoading = Jotai.useSetAtom(isUpdateIntentLoading)
+  let setUpdateIntentStartCount = Jotai.useSetAtom(updateIntentStartCount)
   let setCardBrandIconOverride = Jotai.useSetAtom(cardBrandIconOverride)
   let setCvcIconOverride = Jotai.useSetAtom(cvcIconOverride)
   let setCardNumberPlaceholder = Jotai.useSetAtom(cardNumberPlaceholder)
@@ -541,11 +542,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           })
         }
         if dict->getDictIsSome("isReadyToPay") {
-          setGooglePayAvailability(_ =>
-            dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
-              ? Available
-              : Unavailable
-          )
+          setIsGooglePayReady(_ => Some(
+            dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false),
+          ))
         }
         if dict->getDictIsSome("trustPayScriptStatus") {
           setTrustPayScriptStatus(_ => {
@@ -700,17 +699,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
-          setApplePayAvailability(_ =>
-            dict->getBool("applePayCanMakePayments", false) ? Available : Unavailable
-          )
+          setIsApplePayReady(_ => Some(dict->getBool("applePayCanMakePayments", false)))
         }
         if dict->Dict.get("applePaySessionObjNotPresent")->Option.isSome {
-          setApplePayAvailability(_ => Unavailable)
+          setIsApplePayReady(_ => Some(false))
         }
         if dict->Dict.get("updateIntentLoading")->Option.isSome {
           let isLoading = dict->getBool("updateIntentLoading", false)
           setIsUpdateIntentLoading(_ => isLoading)
           if isLoading {
+            setUpdateIntentStartCount(count => count + 1)
             logger.setLogInfo(~value="Update Intent Loading Started", ~eventName=UPDATE_INTENT)
           } else {
             logger.setLogInfo(~value="Update Intent Loading Completed", ~eventName=UPDATE_INTENT)

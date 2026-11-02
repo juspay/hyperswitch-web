@@ -24,8 +24,8 @@ let make = (
   let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=isWallet, Some(loggerState), Gpay)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Some(loggerState), Gpay)
-  let gPayAvailability = Jotai.useAtomValue(googlePayAvailability)
-  let isGPayReady = gPayAvailability == Available
+  let gPayReadiness = Jotai.useAtomValue(isGooglePayReady)
+  let isGPayReady = gPayReadiness->Option.getOr(false)
   let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
@@ -344,7 +344,7 @@ let make = (
     isGooglePaySDKFlow &&
     !isGooglePayDelayedSessionFlow &&
     paymentExperience != PaymentMethodsRecord.RedirectToURL &&
-    gPayAvailability == AvailabilityUnknown
+    gPayReadiness->Option.isNone
   let isButtonPending = isRenderGooglePayButton && status == "loading"
   ReadyHooks.usePendingWhile(
     ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,

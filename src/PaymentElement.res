@@ -22,8 +22,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let optionAtomValue = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
-  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.applePayAvailability) == Available
-  let isGPayReady = Jotai.useAtomValue(JotaiAtoms.googlePayAvailability) == Available
+  let applePayReadiness = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
+  let gPayReadiness = Jotai.useAtomValue(JotaiAtoms.isGooglePayReady)
+  let isApplePayReady = applePayReadiness->Option.getOr(false)
+  let isGPayReady = gPayReadiness->Option.getOr(false)
   let isVgsScriptReady = Jotai.useAtomValue(JotaiAtoms.isVgsScriptReady)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let isShowOrPayUsing = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsing)
@@ -626,9 +628,20 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         isWalletsLoaded && sessionToken != Loading,
       ),
     ]->Array.filterMap(((isShown, isLoaded)) => isShown ? Some(isLoaded) : None)
+  // A wallet in the list may still be deciding whether it can be shown.
+  let hasMethodType = methodType =>
+    paymentMethodListValue.payment_methods->Array.some(method =>
+      method.payment_method_types->Array.some(type_ => type_.payment_method_type === methodType)
+    )
+  let isWalletDecisionPending = ReadyHooks.useIsStillPending(
+    ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,
+    (hasMethodType("apple_pay") && applePayReadiness->Option.isNone) ||
+      (hasMethodType("google_pay") && gPayReadiness->Option.isNone),
+  )
+  // Nothing on the list can be shown, e.g. Apple Pay alone on a browser that doesn't support it.
   let hasNothingToLoad = switch paymentMethodList {
   | LoadError(_) => !hasPaymentOrWalletOptions
-  | Loaded(_) => paymentMethodListValue.payment_methods->Array.length == 0
+  | Loaded(_) => !hasPaymentOrWalletOptions && !isWalletDecisionPending
   | Loading | SemiLoaded => false
   }
 
@@ -643,9 +656,19 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   // updateIntent waits for a fresh ready, emitted once its refreshed list has rendered.
   let isUpdateIntentLoading = Jotai.useAtomValue(JotaiAtoms.isUpdateIntentLoading)
+  let updateIntentStartCount = Jotai.useAtomValue(JotaiAtoms.updateIntentStartCount)
   let (isAwaitingUpdatedList, setIsAwaitingUpdatedList) = React.useState(_ => false)
+  // Keyed on the start count, since a back-to-back update may never show loading as false.
   React.useEffect(() => {
-    setIsAwaitingUpdatedList(_ => isUpdateIntentLoading)
+    if updateIntentStartCount > 0 {
+      setIsAwaitingUpdatedList(_ => true)
+    }
+    None
+  }, [updateIntentStartCount])
+  React.useEffect(() => {
+    if !isUpdateIntentLoading {
+      setIsAwaitingUpdatedList(_ => false)
+    }
     None
   }, [isUpdateIntentLoading])
   React.useEffect(() => {
@@ -662,7 +685,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let timeoutId = if isElementReady && !isAwaitingUpdatedList {
       Some(
         setTimeout(() => {
-          SubscriptionEventHooks.emitReady(
+          SubscriptionEventHooks.emitReadyOnce(
             ~iframeId,
             ~elementType=CardThemeType.getPaymentModeToString(paymentType),
           )
