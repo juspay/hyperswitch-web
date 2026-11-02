@@ -123,6 +123,7 @@ let useSubscriptionEventEmitter = (): emitter => {
 // ---------------------------------------------------------------------------
 // Fires unconditionally so every merchant receives the ready lifecycle event
 // regardless of whether subscriptionEvents is configured. Sent once per load and once per updateIntent.
+// Remembered so the resize event can tell whether the element is ready yet.
 let isReadyEmitted = ref(false)
 let readyListeners: array<unit => unit> = []
 
