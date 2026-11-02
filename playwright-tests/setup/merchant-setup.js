@@ -636,7 +636,7 @@ async function createMerchant(adminApiKey, apiBaseUrl) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "api-key": adminApiKey,
+        Authorization: `admin-api-key=${adminApiKey}`,
       },
       body: JSON.stringify({
         merchant_id:
@@ -694,7 +694,7 @@ async function createApiKey(adminApiKey, merchantId, apiBaseUrl) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "api-key": adminApiKey,
+      Authorization: `admin-api-key=${adminApiKey}`,
     },
     body: JSON.stringify({
       name: `web_sdk_e2e_key_${Date.now()}`,
