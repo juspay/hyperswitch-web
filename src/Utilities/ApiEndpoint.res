@@ -8,6 +8,15 @@ let setApiEndPoint = str => {
   apiEndPoint := Some(str)
 }
 
+let getFullscreenIframeUrl = (~sdkDomain=sdkDomainUrl, ~fullscreenType) => {
+  let fullscreenType = fullscreenType === "" ? "fullscreen" : fullscreenType
+  let url = `${sdkDomain}/fullscreenIndex.html?fullscreenType=${fullscreenType}`
+  switch apiEndPoint.contents {
+  | Some(endpoint) if endpoint !== "" => `${url}&endpoint=${endpoint}`
+  | _ => url
+  }
+}
+
 let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false) => {
   let testMode = publishableKey->String.startsWith("pk_snd_")
   switch apiEndPoint.contents {

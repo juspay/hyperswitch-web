@@ -93,7 +93,7 @@ let isErrorResult = (result: JSON.t): bool => {
   dict->Dict.get("error")->Option.flatMap(JSON.Decode.object)->Option.isSome
 }
 
-let portKey = (~groupId: string, ~fieldName: string): string => `${groupId}:${fieldName}`
+let portKey = CardFormPortHandshake.portKey
 
 type fieldSnapshotEntry = {payload: JSON.t}
 
@@ -110,6 +110,7 @@ let make = () => {
   let surfaceFamilyStr = CardUtils.getQueryParamsDictforKey(url.search, "surfaceFamily")
   let surfaceFamily = surfaceFamilyStr == "" ? None : Some(surfaceFamilyStr)
   let groupId = CardUtils.getQueryParamsDictforKey(url.search, "groupId")
+  CardFormPortHandshake.useCoordinatorPorts(~groupId)
   let coordinatorFamily = PaymentSurfaceFamily.classifyCoordinatorFromUrl(
     ~componentName,
     ~surfaceFamily,

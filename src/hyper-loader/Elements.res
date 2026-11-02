@@ -1760,6 +1760,7 @@ let make = (
             sdkAuthorization: sdkAuthorizationRef.contents,
             publishableKey: Some(publishableKey),
             endpoint: Some(endpoint),
+            customBackendUrl: Some(customBackendUrl),
             appearance: Some(appearance),
             locale: locale->JSON.Decode.string,
             logger,

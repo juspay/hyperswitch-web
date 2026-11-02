@@ -313,26 +313,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       try {
         let dict = json->getDictFromJson
 
-        let ports = ev->MessageChannelBinding.eventPorts
-        if ports->Array.length > 0 {
-          let handshakeShaped =
-            dict->getDictIsSome("paymentElementCreate") || dict->getDictIsSome("cardFieldPort")
-          if handshakeShaped {
-            switch ports->Array.get(0) {
-            | Some(port) =>
-              let portKey = dict->getString("portKey", "")
-              if portKey !== "" {
-                SadPortRegistry.installPort(
-                  ~key=portKey,
-                  ~epoch=dict->getFloat("portEpoch", 0.0)->Float.toInt,
-                  ~port,
-                )
-              }
-            | None => ()
-            }
-          }
-        }
-
+        // Card-form ports are never taken from the host page: script there could read
+        // every keystroke through them. See CardFormPortHandshake.
         if dict->getDictIsSome("paymentElementCreate") {
           // Pin the browser-provided origin of the direct host, never a payload's wildcard.
           parentOriginRef.current = Some(ev.origin)
