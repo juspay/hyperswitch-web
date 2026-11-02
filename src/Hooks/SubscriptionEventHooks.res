@@ -122,22 +122,22 @@ let useSubscriptionEventEmitter = (): emitter => {
 // emitReady
 // ---------------------------------------------------------------------------
 // Fires unconditionally so every merchant receives the ready lifecycle event
-// regardless of whether subscriptionEvents is configured.
-// Remembered so the resize event can tell whether the element is ready yet.
+// regardless of whether subscriptionEvents is configured. Sent once per load and once per updateIntent.
 let isReadyEmitted = ref(false)
 let readyListeners: array<unit => unit> = []
 
-let emitReady = (~iframeId, ~elementType) => {
-  Utils.messageParentWindow([
-    ("ready", true->JSON.Encode.bool),
-    ("elementType", elementType->JSON.Encode.string),
-    ("iframeId", iframeId->JSON.Encode.string),
-  ])
+let emitReady = (~iframeId, ~elementType) =>
   if !isReadyEmitted.contents {
     isReadyEmitted := true
+    Utils.messageParentWindow([
+      ("ready", true->JSON.Encode.bool),
+      ("elementType", elementType->JSON.Encode.string),
+      ("iframeId", iframeId->JSON.Encode.string),
+    ])
     readyListeners->Array.forEach(listener => listener())
   }
-}
+
+let allowReadyAgain = () => isReadyEmitted := false
 
 let useIsReadyEmitted = () => {
   let (isReady, setIsReady) = React.useState(_ => isReadyEmitted.contents)

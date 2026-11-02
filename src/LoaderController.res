@@ -18,9 +18,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setSessionId = Jotai.useSetAtom(sessionId)
   let setBlockConfirm = Jotai.useSetAtom(isConfirmBlocked)
   let setCustomPodUri = Jotai.useSetAtom(customPodUri)
-  let setIsGooglePayReady = Jotai.useSetAtom(isGooglePayReady)
+  let setGooglePayAvailability = Jotai.useSetAtom(googlePayAvailability)
   let setTrustPayScriptStatus = Jotai.useSetAtom(trustPayScriptStatus)
-  let setIsApplePayReady = Jotai.useSetAtom(isApplePayReady)
+  let setApplePayAvailability = Jotai.useSetAtom(applePayAvailability)
   let setIsSamsungPayReady = Jotai.useSetAtom(isSamsungPayReady)
   let setUpdateSession = Jotai.useSetAtom(updateSession)
   let setIsUpdateIntentLoading = Jotai.useSetAtom(isUpdateIntentLoading)
@@ -559,8 +559,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           })
         }
         if dict->getDictIsSome("isReadyToPay") {
-          setIsGooglePayReady(_ =>
+          setGooglePayAvailability(_ =>
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
+              ? Available
+              : Unavailable
           )
         }
         if dict->getDictIsSome("trustPayScriptStatus") {
@@ -716,10 +718,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
-          setIsApplePayReady(_ => true)
+          setApplePayAvailability(_ =>
+            dict->getBool("applePayCanMakePayments", false) ? Available : Unavailable
+          )
         }
         if dict->Dict.get("applePaySessionObjNotPresent")->Option.isSome {
-          setIsApplePayReady(prev => prev && false)
+          setApplePayAvailability(_ => Unavailable)
         }
         if dict->Dict.get("updateIntentLoading")->Option.isSome {
           let isLoading = dict->getBool("updateIntentLoading", false)
