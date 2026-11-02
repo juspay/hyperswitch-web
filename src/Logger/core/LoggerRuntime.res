@@ -48,10 +48,10 @@ module Host = {
  let mutableDevice = false
  let notifyOnEmit = false
  let detailsBeforeFailure = false
- let enabled = () => LoggerConfig.enabled
+ let enabled = LoggerConfig.enabled
  let minimumRank = () => LoggerConfig.minimumRank
- let maxRowsPerEventName = () => LoggerConfig.maxRowsPerEventName
- let maxUserEventsPerName = () => LoggerConfig.maxUserEventsPerName
+ let maxRowsPerEventName = LoggerConfig.maxRowsPerEventName
+ let maxUserEventsPerName = LoggerConfig.maxUserEventsPerName
  let currentContext = LoggerContext.current
  let fillContext = LoggerContext.fillFrom
  let identifiers = SharedLogger.Platform.webIdentifiers

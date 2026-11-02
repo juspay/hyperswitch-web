@@ -1,5 +1,4 @@
 const webpack = require("webpack");
-const loggerDefaults = require("./shared-code/sdk-utils/logging/LoggerDefaults.json");
 const path = require("path");
 const dotenv = require("dotenv").config();
 const tailwindcss = require("tailwindcss");
@@ -144,12 +143,13 @@ const getEnvVariable = (variable, defaultValue) => {
 const sdkEnv = getEnvVariable("sdkEnv", "local");
 const hyperswitchStack = getEnvVariable("HYPERSWITCH_STACK", "");
 const isEUStack = hyperswitchStack === "eu";
-const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", String(loggerDefaults.enableLogging)) === "true";
+const enableLoggingOverride = getEnvVariable("ENABLE_LOGGING", undefined);
+const ENABLE_LOGGING = enableLoggingOverride === undefined ? undefined : enableLoggingOverride === "true";
 const DISABLE_CSP = getEnvVariable("DISABLE_CSP", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const isPciCompliant = getEnvVariable("IS_PCI_COMPLIANT", "true") === "true";
-const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", loggerDefaults.endpoint);
+const envLoggingUrl = process.env.ENV_LOGGING_URL;
 const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
@@ -224,9 +224,6 @@ const confirmEndPoint =
 
 const logEndpoint = envLoggingUrl;
 
-const loggingLevel = loggerDefaults.loggingLevel;
-const maxLogsPushedPerEventName = loggerDefaults.maxRowsPerEventName;
-const maxUserEventsPerName = loggerDefaults.maxUserEventsPerName;
 
 // Function to determine the current environment type
 const getEnvironmentType = (env) => {
@@ -261,9 +258,6 @@ module.exports = (publicPath = "auto") => {
     sentryDSN: process.env.SENTRY_DSN,
     sentryScriptUrl: process.env.SENTRY_SCRIPT_URL,
     enableLogging: ENABLE_LOGGING,
-    loggingLevel,
-    maxLogsPushedPerEventName,
-    maxUserEventsPerName,
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
@@ -304,7 +298,7 @@ module.exports = (publicPath = "auto") => {
                 font-src ${authorizedFontSources.join(" ")};
                 connect-src ${authorizedConnectSources.join(
                   " "
-                )} ${logEndpoint} ${backendEndPoint};
+                )} ${logEndpoint ?? ""} ${backendEndPoint};
       `,
             },
           },
@@ -329,7 +323,7 @@ module.exports = (publicPath = "auto") => {
           font-src ${authorizedFontSources.join(" ")};
           connect-src ${authorizedConnectSources.join(
             " "
-          )} ${logEndpoint} ${backendEndPoint};
+          )} ${logEndpoint ?? ""} ${backendEndPoint};
           `,
             },
           },
