@@ -26,12 +26,12 @@ type emitter = {
 
 let useSubscriptionEventEmitter = (): emitter => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let subscribedEvents = options.subscriptionEvents
+  let subscriptionEvents = options.subscriptionEvents
 
   let emitCardInfo = (~elementType: string="payment", ~cardInfo: PaymentEventData.cardInfo) => {
     if (
       PaymentEventData.shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
         ~eventType=CardDetailsChange,
       )
     ) {
@@ -47,7 +47,7 @@ let useSubscriptionEventEmitter = (): emitter => {
   ) => {
     if (
       PaymentEventData.shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
         ~eventType=PaymentMethodChange,
       )
     ) {
@@ -65,7 +65,7 @@ let useSubscriptionEventEmitter = (): emitter => {
   let emitBillingAddress = (~country, ~state, ~postalCode) => {
     if (
       PaymentEventData.shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
         ~eventType=BillingDetailsChange,
       )
     ) {
@@ -76,7 +76,7 @@ let useSubscriptionEventEmitter = (): emitter => {
   let emitCvcStatus = (~iframeId, ~isCvcEmpty, ~isCvcComplete) => {
     if (
       PaymentEventData.shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
         ~eventType=CvcStatusChange,
       )
     ) {
@@ -87,7 +87,7 @@ let useSubscriptionEventEmitter = (): emitter => {
   let emitSurcharge = (~surchargeDetails) => {
     if (
       PaymentEventData.shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
         ~eventType=SurchargeInfo,
       ) &&
       surchargeDetails->Option.isSome
@@ -99,7 +99,7 @@ let useSubscriptionEventEmitter = (): emitter => {
   let emitOffers = (~offerDetails) => {
     if (
       PaymentEventData.shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
         ~eventType=AppliedOffersInfo,
       ) &&
       offerDetails->Option.isSome
@@ -141,14 +141,14 @@ let useEmitFormStatus = (
   ~enabled=true,
 ) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let subscribedEvents = options.subscriptionEvents
+  let subscriptionEvents = options.subscriptionEvents
 
   React.useEffect(() => {
     if enabled && !isOneClickWallet {
       let formStatusValue = PaymentEventData.computeFormStatus(~isComplete=complete, ~isEmpty=empty)
       if (
         PaymentEventData.shouldEmitEvent(
-          ~subscribedEvents=subscribedEvents->Option.getOr([]),
+          ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
           ~eventType=FormStatusChange,
         )
       ) {
@@ -156,7 +156,7 @@ let useEmitFormStatus = (
       }
     }
     None
-  }, (empty, complete, isOneClickWallet, subscribedEvents, enabled))
+  }, (empty, complete, isOneClickWallet, subscriptionEvents, enabled))
 }
 
 // ---------------------------------------------------------------------------
@@ -168,19 +168,19 @@ let useEmitBillingAddress = () => {
   let state = Jotai.useAtomValue(JotaiAtoms.userAddressState).value
   let pinCode = Jotai.useAtomValue(JotaiAtoms.userAddressPincode).value
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let subscribedEvents = options.subscriptionEvents
+  let subscriptionEvents = options.subscriptionEvents
 
   React.useEffect(() => {
     if (
       PaymentEventData.shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
         ~eventType=BillingDetailsChange,
       )
     ) {
       Utils.messageParentWindow(createBillingAddressPayload(~country, ~state, ~postalCode=pinCode))
     }
     None
-  }, (country, state, pinCode, subscribedEvents))
+  }, (country, state, pinCode, subscriptionEvents))
 }
 
 // Internal helper: resolves (paymentMethod, paymentMethodType) from method name + list.
@@ -230,12 +230,12 @@ let useEmitPaymentMethodStatus = (
 ) => {
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let subscribedEvents = options.subscriptionEvents
+  let subscriptionEvents = options.subscriptionEvents
 
   React.useEffect(() => {
     if (
       PaymentEventData.shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
         ~eventType=PaymentMethodChange,
       )
     ) {
@@ -253,7 +253,7 @@ let useEmitPaymentMethodStatus = (
       }
     }
     None
-  }, (paymentMethodName, paymentMethods, isSavedPaymentMethod, isOneClickWallet, subscribedEvents))
+  }, (paymentMethodName, paymentMethods, isSavedPaymentMethod, isOneClickWallet, subscriptionEvents))
 }
 
 // ---------------------------------------------------------------------------
@@ -265,12 +265,12 @@ let useEmitSurchargeInfo = (
   ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
 ) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let subscribedEvents = options.subscriptionEvents
+  let subscriptionEvents = options.subscriptionEvents
 
   React.useEffect(() => {
     if (
       PaymentEventData.shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
         ~eventType=SurchargeInfo,
       ) &&
       surchargeDetails->Option.isSome
@@ -278,7 +278,7 @@ let useEmitSurchargeInfo = (
       Utils.messageParentWindow(createSurchargePayload(~surchargeDetails))
     }
     None
-  }, (surchargeDetails, subscribedEvents))
+  }, (surchargeDetails, subscriptionEvents))
 }
 
 // ---------------------------------------------------------------------------
@@ -289,12 +289,12 @@ let useEmitAppliedOffersInfo = (
   ~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
 ) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let subscribedEvents = options.subscriptionEvents
+  let subscriptionEvents = options.subscriptionEvents
 
   React.useEffect(() => {
     if (
       PaymentEventData.shouldEmitEvent(
-        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~subscriptionEvents=subscriptionEvents->Option.getOr([]),
         ~eventType=AppliedOffersInfo,
       ) &&
       offerDetails->Option.isSome
@@ -302,5 +302,5 @@ let useEmitAppliedOffersInfo = (
       Utils.messageParentWindow(createAppliedOffersPayload(~offerDetails))
     }
     None
-  }, (offerDetails, subscribedEvents))
+  }, (offerDetails, subscriptionEvents))
 }
