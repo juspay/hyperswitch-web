@@ -656,10 +656,25 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     isSavedMethodsScreenShown ? isSavedMethodsLoaded && isPaymentSideReady : isPaymentSideReady
   }
 
+  // updateIntent waits for a fresh ready, emitted once its refreshed list has rendered.
+  let isUpdateIntentLoading = Jotai.useAtomValue(JotaiAtoms.isUpdateIntentLoading)
+  let (isAwaitingUpdatedList, setIsAwaitingUpdatedList) = React.useState(_ => false)
+  React.useEffect(() => {
+    setIsAwaitingUpdatedList(_ => isUpdateIntentLoading)
+    None
+  }, [isUpdateIntentLoading])
+  React.useEffect(() => {
+    if isAwaitingUpdatedList {
+      SubscriptionEventHooks.allowReadyAgain()
+      setIsAwaitingUpdatedList(_ => false)
+    }
+    None
+  }, [paymentMethodList])
+
   // Lets options and selection derived in effects settle before emitting.
   let readySettleDelayMs = 50
   React.useEffect(() => {
-    let timeoutId = if isElementReady {
+    let timeoutId = if isElementReady && !isAwaitingUpdatedList {
       Some(
         setTimeout(() => {
           SubscriptionEventHooks.emitReady(
@@ -672,7 +687,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       None
     }
     Some(() => timeoutId->Option.forEach(clearTimeout))
-  }, [isElementReady])
+  }, (isElementReady, isAwaitingUpdatedList))
 
   let isReadyEmitted = SubscriptionEventHooks.useIsReadyEmitted()
   let isContentGated = !optionAtomValue.enableProgressiveLoading && !isReadyEmitted
@@ -729,45 +744,47 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         </RenderIf>
       }}
       <RenderIf condition=shouldMountPaymentSection>
-        <div
-          className="flex flex-col place-items-center"
-          role="region"
-          ariaLabel="Payment Section"
-          tabIndex={0}
-          style=?{isPaymentSectionPreloaded ? Some(hiddenMountedStyle) : None}
-          inert=isPaymentSectionPreloaded>
-          <div ref={walletsSectionRef->ReactDOM.Ref.domRef} style={display: "contents"}>
-            <ErrorBoundary
-              key="payment_request_buttons_all"
-              level={ErrorBoundary.RequestButton}
-              componentName="PaymentRequestButtonElement">
-              <PaymentRequestButtonElement sessions walletOptions />
-            </ErrorBoundary>
+        <PaymentSectionContext.provider value={!isPaymentSectionPreloaded}>
+          <div
+            className="flex flex-col place-items-center"
+            role="region"
+            ariaLabel="Payment Section"
+            tabIndex={0}
+            style=?{isPaymentSectionPreloaded ? Some(hiddenMountedStyle) : None}
+            inert=isPaymentSectionPreloaded>
+            <div ref={walletsSectionRef->ReactDOM.Ref.domRef} style={display: "contents"}>
+              <ErrorBoundary
+                key="payment_request_buttons_all"
+                level={ErrorBoundary.RequestButton}
+                componentName="PaymentRequestButtonElement">
+                <PaymentRequestButtonElement sessions walletOptions />
+              </ErrorBoundary>
+            </div>
+            <RenderIf
+              condition={paymentOptions->Array.length > 0 &&
+              walletOptions->Array.length > 0 &&
+              checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}>
+              <Or separatorText={layoutClass.separatorText} />
+            </RenderIf>
+            <div ref={paymentMethodsSectionRef->ReactDOM.Ref.domRef} style={display: "contents"}>
+              {switch layoutClass.\"type" {
+              | Tabs =>
+                <PaymentOptions
+                  setCardsContainerWidth
+                  cardOptions
+                  dropDownOptions
+                  checkoutEle
+                  cardShimmerCount
+                  cardProps
+                  expiryProps
+                  cvcProps
+                />
+              | Accordion =>
+                <AccordionContainer paymentOptions checkoutEle cardProps expiryProps cvcProps />
+              }}
+            </div>
           </div>
-          <RenderIf
-            condition={paymentOptions->Array.length > 0 &&
-            walletOptions->Array.length > 0 &&
-            checkRenderOrComp(~walletOptions, ~isShowOrPayUsing, ~isShowOrPayUsingWhileLoading)}>
-            <Or separatorText={layoutClass.separatorText} />
-          </RenderIf>
-          <div ref={paymentMethodsSectionRef->ReactDOM.Ref.domRef} style={display: "contents"}>
-            {switch layoutClass.\"type" {
-            | Tabs =>
-              <PaymentOptions
-                setCardsContainerWidth
-                cardOptions
-                dropDownOptions
-                checkoutEle
-                cardShimmerCount
-                cardProps
-                expiryProps
-                cvcProps
-              />
-            | Accordion =>
-              <AccordionContainer paymentOptions checkoutEle cardProps expiryProps cvcProps />
-            }}
-          </div>
-        </div>
+        </PaymentSectionContext.provider>
       </RenderIf>
       <RenderIf condition={shouldShowUseExistingMethodsButton}>
         <SwitchViewButton

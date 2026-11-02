@@ -31,6 +31,7 @@ let useHandlePostMessages = (
   open JotaiAtoms
 
   let loggerState = Jotai.useAtomValue(loggerAtom)
+  let enabled = enabled && PaymentSectionContext.useIsActive()
 
   React.useEffect(() => {
     if enabled {

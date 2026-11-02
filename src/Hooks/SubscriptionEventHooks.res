@@ -122,7 +122,7 @@ let useSubscriptionEventEmitter = (): emitter => {
 // emitReady
 // ---------------------------------------------------------------------------
 // Fires unconditionally so every merchant receives the ready lifecycle event
-// regardless of whether subscriptionEvents is configured. Sent at most once per iframe.
+// regardless of whether subscriptionEvents is configured. Sent once per load and once per updateIntent.
 let isReadyEmitted = ref(false)
 let readyListeners: array<unit => unit> = []
 
@@ -136,6 +136,8 @@ let emitReady = (~iframeId, ~elementType) =>
     ])
     readyListeners->Array.forEach(listener => listener())
   }
+
+let allowReadyAgain = () => isReadyEmitted := false
 
 let useIsReadyEmitted = () => {
   let (isReady, setIsReady) = React.useState(_ => isReadyEmitted.contents)
@@ -171,6 +173,7 @@ let useEmitFormStatus = (
 ) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
+  let enabled = enabled && PaymentSectionContext.useIsActive()
 
   React.useEffect(() => {
     if enabled && !isOneClickWallet {
