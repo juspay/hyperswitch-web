@@ -165,5 +165,5 @@ let defaultRedirectionFlags: redirectionFlags = {
 let redirectionFlagsAtom = Jotai.atom(defaultRedirectionFlags)
 let isTestMode = Jotai.atom(false)
 let isUpdateIntentLoading = Jotai.atom(false)
-// Bumped on every updateIntent start, so back-to-back updates can't merge into one change.
-let updateIntentStartCount = Jotai.atom(0)
+// Bumped when an updateIntent's refreshed list re-arms the ready event.
+let readyRearmCount = Jotai.atom(0)

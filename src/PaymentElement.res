@@ -654,35 +654,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     shownSections->Array.some(isLoaded => isLoaded)
   }
 
-  // updateIntent waits for a fresh ready, emitted once its refreshed list has rendered.
-  let isUpdateIntentLoading = Jotai.useAtomValue(JotaiAtoms.isUpdateIntentLoading)
-  let updateIntentStartCount = Jotai.useAtomValue(JotaiAtoms.updateIntentStartCount)
-  let (isAwaitingUpdatedList, setIsAwaitingUpdatedList) = React.useState(_ => false)
-  // Keyed on the start count, since a back-to-back update may never show loading as false.
-  React.useEffect(() => {
-    if updateIntentStartCount > 0 {
-      setIsAwaitingUpdatedList(_ => true)
-    }
-    None
-  }, [updateIntentStartCount])
-  React.useEffect(() => {
-    if !isUpdateIntentLoading {
-      setIsAwaitingUpdatedList(_ => false)
-    }
-    None
-  }, [isUpdateIntentLoading])
-  React.useEffect(() => {
-    if isAwaitingUpdatedList {
-      SubscriptionEventHooks.allowReadyAgain()
-      setIsAwaitingUpdatedList(_ => false)
-    }
-    None
-  }, [paymentMethodList])
+  // Re-armed by updateIntent once its refreshed list arrives, so a fresh ready follows it.
+  let readyRearmCount = Jotai.useAtomValue(JotaiAtoms.readyRearmCount)
 
   // Lets options and selection derived in effects settle before emitting.
   let readySettleDelayMs = 50
   React.useEffect(() => {
-    let timeoutId = if isElementReady && !isAwaitingUpdatedList {
+    let timeoutId = if isElementReady {
       Some(
         setTimeout(() => {
           SubscriptionEventHooks.emitReadyOnce(
@@ -695,7 +673,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       None
     }
     Some(() => timeoutId->Option.forEach(clearTimeout))
-  }, (isElementReady, isAwaitingUpdatedList))
+  }, (isElementReady, readyRearmCount))
 
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>

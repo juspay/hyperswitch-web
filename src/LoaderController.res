@@ -24,7 +24,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsSamsungPayReady = Jotai.useSetAtom(isSamsungPayReady)
   let setUpdateSession = Jotai.useSetAtom(updateSession)
   let setIsUpdateIntentLoading = Jotai.useSetAtom(isUpdateIntentLoading)
-  let setUpdateIntentStartCount = Jotai.useSetAtom(updateIntentStartCount)
+  let setReadyRearmCount = Jotai.useSetAtom(readyRearmCount)
+  // Messages are handled in order here, so back-to-back updateIntent calls can't be missed.
+  let isAwaitingUpdatedListRef = React.useRef(false)
   let setCardBrandIconOverride = Jotai.useSetAtom(cardBrandIconOverride)
   let setCvcIconOverride = Jotai.useSetAtom(cvcIconOverride)
   let setCardNumberPlaceholder = Jotai.useSetAtom(cardNumberPlaceholder)
@@ -629,6 +631,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
           setPaymentMethodList(_ => updatedState)
 
+          // updateIntent waits for a fresh ready, emitted once its refreshed list has rendered.
+          if isAwaitingUpdatedListRef.current {
+            isAwaitingUpdatedListRef.current = false
+            SubscriptionEventHooks.allowReadyAgain()
+            setReadyRearmCount(count => count + 1)
+          }
+
           let customerPaymentMethods =
             dict->PaymentType.createCustomerObjArrFromClientList("clientList")
           setOptionsPayment(prev => {
@@ -707,8 +716,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         if dict->Dict.get("updateIntentLoading")->Option.isSome {
           let isLoading = dict->getBool("updateIntentLoading", false)
           setIsUpdateIntentLoading(_ => isLoading)
+          isAwaitingUpdatedListRef.current = isLoading
           if isLoading {
-            setUpdateIntentStartCount(count => count + 1)
             logger.setLogInfo(~value="Update Intent Loading Started", ~eventName=UPDATE_INTENT)
           } else {
             logger.setLogInfo(~value="Update Intent Loading Completed", ~eventName=UPDATE_INTENT)
