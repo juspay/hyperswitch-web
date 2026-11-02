@@ -262,8 +262,8 @@ let useGetPaymentMethodList = (
   let paymentMethodListValue = Jotai.useAtomValue(paymentMethodListValue)
   let sdkConfigsValue = Jotai.useAtomValue(sdkConfigsValue)
 
-  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.applePayAvailability) == Available
-  let isGooglePayReady = Jotai.useAtomValue(JotaiAtoms.googlePayAvailability) == Available
+  let isApplePayReady = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)->Option.getOr(false)
+  let isGooglePayReady = Jotai.useAtomValue(JotaiAtoms.isGooglePayReady)->Option.getOr(false)
   let isVgsScriptReady = Jotai.useAtomValue(JotaiAtoms.isVgsScriptReady)
 
   let (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist) = usePaypalFlowStatus(

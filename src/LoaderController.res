@@ -18,12 +18,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setSessionId = Jotai.useSetAtom(sessionId)
   let setBlockConfirm = Jotai.useSetAtom(isConfirmBlocked)
   let setCustomPodUri = Jotai.useSetAtom(customPodUri)
-  let setGooglePayAvailability = Jotai.useSetAtom(googlePayAvailability)
+  let setIsGooglePayReady = Jotai.useSetAtom(isGooglePayReady)
   let setTrustPayScriptStatus = Jotai.useSetAtom(trustPayScriptStatus)
-  let setApplePayAvailability = Jotai.useSetAtom(applePayAvailability)
+  let setIsApplePayReady = Jotai.useSetAtom(isApplePayReady)
   let setIsSamsungPayReady = Jotai.useSetAtom(isSamsungPayReady)
   let setUpdateSession = Jotai.useSetAtom(updateSession)
   let setIsUpdateIntentLoading = Jotai.useSetAtom(isUpdateIntentLoading)
+  let setReadyRearmCount = Jotai.useSetAtom(readyRearmCount)
+  // Messages are handled in order here, so back-to-back updateIntent calls can't be missed.
+  let isAwaitingUpdatedListRef = React.useRef(false)
   let setCardBrandIconOverride = Jotai.useSetAtom(cardBrandIconOverride)
   let setCvcIconOverride = Jotai.useSetAtom(cvcIconOverride)
   let setCardNumberPlaceholder = Jotai.useSetAtom(cardNumberPlaceholder)
@@ -313,26 +316,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       try {
         let dict = json->getDictFromJson
 
-        let ports = ev->MessageChannelBinding.eventPorts
-        if ports->Array.length > 0 {
-          let handshakeShaped =
-            dict->getDictIsSome("paymentElementCreate") || dict->getDictIsSome("cardFieldPort")
-          if handshakeShaped {
-            switch ports->Array.get(0) {
-            | Some(port) =>
-              let portKey = dict->getString("portKey", "")
-              if portKey !== "" {
-                SadPortRegistry.installPort(
-                  ~key=portKey,
-                  ~epoch=dict->getFloat("portEpoch", 0.0)->Float.toInt,
-                  ~port,
-                )
-              }
-            | None => ()
-            }
-          }
-        }
-
+        // Card-form ports are never taken from the host page: script there could read
+        // every keystroke through them. See CardFormPortHandshake.
         if dict->getDictIsSome("paymentElementCreate") {
           // Pin the browser-provided origin of the direct host, never a payload's wildcard.
           parentOriginRef.current = Some(ev.origin)
@@ -559,11 +544,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           })
         }
         if dict->getDictIsSome("isReadyToPay") {
-          setGooglePayAvailability(_ =>
-            dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
-              ? Available
-              : Unavailable
-          )
+          setIsGooglePayReady(_ => Some(
+            dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false),
+          ))
         }
         if dict->getDictIsSome("trustPayScriptStatus") {
           setTrustPayScriptStatus(_ => {
@@ -648,6 +631,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
           setPaymentMethodList(_ => updatedState)
 
+          // updateIntent waits for a fresh ready, emitted once its refreshed list has rendered.
+          if isAwaitingUpdatedListRef.current {
+            isAwaitingUpdatedListRef.current = false
+            SubscriptionEventHooks.allowReadyAgain()
+            setReadyRearmCount(count => count + 1)
+          }
+
           let customerPaymentMethods =
             dict->PaymentType.createCustomerObjArrFromClientList("clientList")
           setOptionsPayment(prev => {
@@ -718,16 +708,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
-          setApplePayAvailability(_ =>
-            dict->getBool("applePayCanMakePayments", false) ? Available : Unavailable
-          )
+          setIsApplePayReady(_ => Some(dict->getBool("applePayCanMakePayments", false)))
         }
         if dict->Dict.get("applePaySessionObjNotPresent")->Option.isSome {
-          setApplePayAvailability(_ => Unavailable)
+          setIsApplePayReady(_ => Some(false))
         }
         if dict->Dict.get("updateIntentLoading")->Option.isSome {
           let isLoading = dict->getBool("updateIntentLoading", false)
           setIsUpdateIntentLoading(_ => isLoading)
+          isAwaitingUpdatedListRef.current = isLoading
           if isLoading {
             logger.setLogInfo(~value="Update Intent Loading Started", ~eventName=UPDATE_INTENT)
           } else {

@@ -9,19 +9,9 @@ let ignorePending = (_delta: int) => ()
 // Bounds the wait for wallets whose availability answer may never arrive.
 let walletDecisionTimeoutMs = 3000
 
-let usePendingWhile = (~timeoutMs=?, isPending) => {
-  let report = React.useContext(context)
+// Whether isPending, once given a timeout, has stayed true for longer than it.
+let useIsStillPending = (~timeoutMs=?, isPending) => {
   let (hasTimedOut, setHasTimedOut) = React.useState(_ => false)
-  let isStillPending = isPending && !hasTimedOut
-
-  React.useLayoutEffect(() => {
-    if isStillPending {
-      report(1)
-      Some(() => report(-1))
-    } else {
-      None
-    }
-  }, (isStillPending, report))
 
   React.useEffect(() => {
     switch (isPending, timeoutMs) {
@@ -31,6 +21,22 @@ let usePendingWhile = (~timeoutMs=?, isPending) => {
     | _ => None
     }
   }, (isPending, timeoutMs))
+
+  isPending && !hasTimedOut
+}
+
+let usePendingWhile = (~timeoutMs=?, isPending) => {
+  let report = React.useContext(context)
+  let isStillPending = useIsStillPending(~timeoutMs?, isPending)
+
+  React.useLayoutEffect(() => {
+    if isStillPending {
+      report(1)
+      Some(() => report(-1))
+    } else {
+      None
+    }
+  }, (isStillPending, report))
 }
 
 // Hidden content (e.g. an unselected form kept mounted) must not hold its section back.
