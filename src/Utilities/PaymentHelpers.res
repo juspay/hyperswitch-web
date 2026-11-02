@@ -149,13 +149,14 @@ let threeDsAuth = async (
   let onFailure = data => {
     let dict = data->getDictFromJson
     let errorObj = PaymentError.itemToObjMapper(dict)
-    closePaymentLoaderIfAny()
+    // Deliver the result before removing a cross-site fullscreen sender.
     postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
+    closePaymentLoaderIfAny()
     JSON.Encode.null
   }
 
   let onCatchCallback = err => {
-    closePaymentLoaderIfAny()
+    // The caller reports the error before closing its fullscreen frame.
     Js.Exn.raiseError(err->JSON.stringify)
   }
 
@@ -354,6 +355,7 @@ let rec intentCall = (
   ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
   ~isTrustpayInterceptorConfirm=false,
+  ~parentOrigin: option<string>=?,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -444,11 +446,11 @@ let rec intentCall = (
             let dict = data->getDictFromJson
             let errorObj = PaymentError.itemToObjMapper(dict)
             if !isPaymentSession {
-              closePaymentLoaderIfAny()
               postFailedSubmitResponse(
                 ~errortype=errorObj.error.type_,
                 ~message=errorObj.error.message,
               )
+              closePaymentLoaderIfAny()
             }
             if handleUserError {
               handleOpenUrl(url.href)
@@ -479,8 +481,8 @@ let rec intentCall = (
             )
             if counter >= 5 {
               if !isPaymentSession {
-                closePaymentLoaderIfAny()
                 postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+                closePaymentLoaderIfAny()
               }
               if handleUserError {
                 handleOpenUrl(url.href)
@@ -505,6 +507,7 @@ let rec intentCall = (
                 : ""
               let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
               intentCall(
+                ~parentOrigin?,
                 ~fetchApi,
                 ~uri=retrieveUri,
                 ~headers,
@@ -574,15 +577,16 @@ let rec intentCall = (
               | (Paypal, false, _) =>
                 if !isPaymentSession {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnCompleteDoThisMessage()
-                  } else {
-                    closePaymentLoaderIfAny()
+                    handleOnPaymentCompleteMessage()
                   }
 
                   postSubmitResponse(~jsonData=data, ~url=url.href)
+                  if !(isCallbackUsedVal->Option.getOr(false)) {
+                    closePaymentLoaderIfAny()
+                  }
                 } else if confirmParam.redirect === Some("always") {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnCompleteDoThisMessage()
+                    handleOnPaymentCompleteMessage()
                   } else {
                     handleOpenUrl(url.href)
                   }
@@ -599,7 +603,7 @@ let rec intentCall = (
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
                   closePaymentLoaderIfAny()
-                  handleOnCompleteDoThisMessage()
+                  handleOnPaymentCompleteMessage()
                 } else {
                   handleOpenUrl(url.href)
                 }
@@ -862,7 +866,9 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  messageParentWindow(message)
+                  parentOrigin
+                  ->Option.filter(PaymentMessageSecurity.isConcreteOrigin)
+                  ->Option.forEach(origin => messageParentWindow(message, ~targetOrigin=origin))
                 }
                 resolve(data)
               } else if intent.nextAction.type_ === "invoke_sdk_client" {
@@ -937,7 +943,9 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  messageParentWindow(message)
+                  parentOrigin
+                  ->Option.filter(PaymentMessageSecurity.isConcreteOrigin)
+                  ->Option.forEach(origin => messageParentWindow(message, ~targetOrigin=origin))
                 }
               } else {
                 handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
@@ -1005,8 +1013,8 @@ let rec intentCall = (
         )
         if counter >= 5 {
           if !isPaymentSession {
-            closePaymentLoaderIfAny()
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            closePaymentLoaderIfAny()
           }
           if handleUserError {
             handleOpenUrl(url.href)
@@ -1029,6 +1037,7 @@ let rec intentCall = (
           let clientSecretParam = isLegacyClientSecretFlow ? `?client_secret=${clientSecret}` : ""
           let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
           intentCall(
+            ~parentOrigin?,
             ~fetchApi,
             ~uri=retrieveUri,
             ~headers,
@@ -1073,11 +1082,15 @@ let rec intentCall = (
   })
 }
 
-let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
+let usePaymentSync = (
+  ~isOneClickWallet=false,
+  optLogger: option<HyperLoggerTypes.loggerMake>,
+  paymentType: payment,
+) => {
   open JotaiAtoms
   let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
   let keys = Jotai.useAtomValue(keys)
-  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed) && isOneClickWallet
   let customPodUri = Jotai.useAtomValue(customPodUri)
   let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
   let setIsManualRetryEnabled = Jotai.useSetAtom(isManualRetryEnabled)
@@ -1106,6 +1119,7 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
 
       let paymentSync = () => {
         intentCall(
+          ~parentOrigin=keys.parentURL,
           ~fetchApi,
           ~uri,
           ~headers,
@@ -1139,7 +1153,7 @@ let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentTyp
   }
 }
 
-let maskStr = str => str->Js.String2.replaceByRe(%re(`/\S/g`), "x")
+let maskStr = str => str->String.replaceRegExp(/\S/g, "x")
 
 let rec maskPayload = payloadJson => {
   switch payloadJson->JSON.Classify.classify {
@@ -1160,12 +1174,12 @@ let rec maskPayload = payloadJson => {
   }
 }
 
-let useCompleteAuthorizeHandler = () => {
+let useCompleteAuthorizeHandler = (~isOneClickWallet=false) => {
   open JotaiAtoms
 
   let customPodUri = Jotai.useAtomValue(customPodUri)
   let setIsManualRetryEnabled = Jotai.useSetAtom(isManualRetryEnabled)
-  let isCallbackUsedVal = Jotai.useAtomValue(isCompleteCallbackUsed)
+  let isCallbackUsedVal = Jotai.useAtomValue(isCompleteCallbackUsed) && isOneClickWallet
   let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
   let keys = Jotai.useAtomValue(keys)
 
@@ -1226,6 +1240,7 @@ let useCompleteAuthorizeHandler = () => {
         ->JSON.stringify
 
       intentCall(
+        ~parentOrigin=keys.parentURL,
         ~fetchApi,
         ~uri,
         ~headers=finalHeaders,
@@ -1253,8 +1268,8 @@ let useCompleteAuthorizeHandler = () => {
     }
 }
 
-let useCompleteAuthorize = (optLogger, paymentType) => {
-  let completeAuthorizeHandler = useCompleteAuthorizeHandler()
+let useCompleteAuthorize = (~isOneClickWallet=false, optLogger, paymentType) => {
+  let completeAuthorizeHandler = useCompleteAuthorizeHandler(~isOneClickWallet)
   let keys = Jotai.useAtomValue(JotaiAtoms.keys)
   let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
   let url = RescriptReactRouter.useUrl()
@@ -1307,7 +1322,7 @@ let useRedsysCompleteAuthorize = optLogger => {
     )
 }
 
-let usePaymentIntent = (optLogger, paymentType) => {
+let usePaymentIntent = (~isOneClickWallet=false, optLogger, paymentType) => {
   open JotaiAtoms
   open Promise
   let url = RescriptReactRouter.useUrl()
@@ -1317,7 +1332,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let customPodUri = Jotai.useAtomValue(customPodUri)
   let paymentMethodList = Jotai.useAtomValue(paymentMethodList)
   let keys = Jotai.useAtomValue(keys)
-  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed) && isOneClickWallet
   let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
 
   let setIsManualRetryEnabled = Jotai.useSetAtom(isManualRetryEnabled)
@@ -1435,6 +1450,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~redirectionFlags,
             ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
             ~isTrustpayInterceptorConfirm,
+            ~parentOrigin=keys.parentURL,
           )
           ->then(val => {
             intentCallback(val)
@@ -2103,6 +2119,7 @@ let usePostSessionTokens = (
         }
 
         intentCall(
+          ~parentOrigin=keys.parentURL,
           ~fetchApi,
           ~uri,
           ~headers,

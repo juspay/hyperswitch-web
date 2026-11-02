@@ -17,6 +17,8 @@ export const connectorEnum = {
   INTERAC: "interac",
   PAYPAL: "paypal",
   TRUSTLY: "trustly",
+  /** TrueLayer (Pay by Bank); its profile also carries a PayPal redirect MCA (merchant-setup.js). */
+  TRUELAYER: "truelayer",
   /** In merchant-setup.js REQUIRED_CONNECTORS (Klarna MCA, redirect_to_url only today). */
   KLARNA: "klarna",
   /** Not provisioned by merchant-setup.js yet (no "plaid" in REQUIRED_CONNECTORS). */

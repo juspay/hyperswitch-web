@@ -133,7 +133,7 @@ let make = (~paymentMethodName: string) => {
     sdkAuthorization,
     shouldSendCustomerAcceptance,
   ))
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
   let paymentMethod = paymentMethodDetails.methodType
 
   <div

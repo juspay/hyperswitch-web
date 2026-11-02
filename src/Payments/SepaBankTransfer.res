@@ -50,7 +50,7 @@ let make = () => {
     requiredFieldsBody,
     sdkAuthorization,
   ))
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "sepa_bank_transfer"
   let paymentMethod = "bank_transfer"

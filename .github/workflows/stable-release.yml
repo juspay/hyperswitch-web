@@ -87,9 +87,9 @@ jobs:
           token: ${{ github.token }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version-file: ".nvmrc"
 
       - name: Validate and process version
         id: version

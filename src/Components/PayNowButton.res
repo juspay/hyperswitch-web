@@ -18,6 +18,7 @@ let make = (~onClickHandler=?, ~label=?) => {
   let (isPayNowButtonDisable, setIsPayNowButtonDisable) = React.useState(() => false)
   let {themeObj, localeString} = configAtom->Jotai.useAtomValue
   let {sdkHandleConfirmPayment} = optionAtom->Jotai.useAtomValue
+  let {parentURL} = keys->Jotai.useAtomValue
 
   let {sdkHandleSavePayment} = optionAtom->Jotai.useAtomValue
   let paymentType = usePaymentType()
@@ -33,15 +34,17 @@ let make = (~onClickHandler=?, ~label=?) => {
   }
 
   let handleMessage = (event: Types.event) => {
-    let json = event.data->Identity.anyTypeToJson->getStringFromJson("")->safeParse
-    let dict = json->getDictFromJson
-    switch dict->Dict.get("submitSuccessful") {
-    | Some(submitSuccessfulVal) =>
-      if !(submitSuccessfulVal->JSON.Decode.bool->Option.getOr(false)) {
-        setIsPayNowButtonDisable(_ => false)
-        setShowLoader(_ => false)
+    if isParentMessage(~parentOrigin=parentURL, event->eventToWindowEvent) {
+      let json = event.data->Identity.anyTypeToJson->getStringFromJson("")->safeParse
+      let dict = json->getDictFromJson
+      switch dict->Dict.get("submitSuccessful") {
+      | Some(submitSuccessfulVal) =>
+        if !(submitSuccessfulVal->JSON.Decode.bool->Option.getOr(false)) {
+          setIsPayNowButtonDisable(_ => false)
+          setShowLoader(_ => false)
+        }
+      | None => ()
       }
-    | None => ()
     }
   }
 
@@ -72,14 +75,16 @@ let make = (~onClickHandler=?, ~label=?) => {
         opacity: {isPayNowButtonDisable ? "0.6" : "1"},
         width: themeObj.buttonWidth,
         border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
-      }>
+      }
+    >
       <span
         id="button-text"
         style={
           color: themeObj.buttonTextColor,
           fontSize: themeObj.buttonTextFontSize,
           fontWeight: themeObj.buttonTextFontWeight,
-        }>
+        }
+      >
         {if showLoader {
           <Loader />
         } else {

@@ -1,5 +1,6 @@
 @react.component
 let make = () => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   open Utils
 
   let (linkToken, setLinkToken) = React.useState(_ => "")
@@ -20,7 +21,7 @@ let make = () => {
       let metaData = json->getDictFromJson->getDictFromDict("metadata")
       let linkToken = metaData->getString("linkToken", "")
 
-      if linkToken->String.length > 0 {
+      if isTrustedParent(ev) && linkToken->String.length > 0 {
         setLinkToken(_ => linkToken)
         setPmAuthConnectorsArr(_ =>
           metaData->getArray("pmAuthConnectorArray")->Array.map(JSON.Decode.string)

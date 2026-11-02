@@ -4,12 +4,7 @@ type coordinatorMount = {
   iframe: Dom.element,
   container: Dom.element,
   fullscreenSlot: Dom.element,
-}
-
-type pendingPort = {
-  fieldName: string,
-  epoch: int,
-  port: MessageChannelBinding.port,
+  origin: string,
 }
 
 let create = (
@@ -41,56 +36,13 @@ let create = (
     "position: absolute; width: 0; height: 0; border: none; overflow: hidden; left: -9999px; top: -9999px;",
   )
   container->Window.appendChildElement(iframe)
+  SdkMessageSources.register(~frame=iframe, ~origin=URLModule.makeUrl(sdkDomain).origin)
 
   let fullscreenSlot = Window.createElement("div")
   fullscreenSlot->Window.setAttribute("id", `orca-fullscreen-iframeRef-${localSelectorString}`)
   container->Window.appendChildElement(fullscreenSlot)
 
-  {iframe, container, fullscreenSlot}
-}
-
-let withPortMeta = (~mountConfig: JSON.t, ~portKey: string, ~portEpoch: int): JSON.t => {
-  let dict = mountConfig->getDictFromJson
-  dict->Dict.set("portKey", portKey->JSON.Encode.string)
-  dict->Dict.set("portEpoch", portEpoch->Int.toFloat->JSON.Encode.float)
-  dict->JSON.Encode.object
-}
-
-let postFieldMountConfigWithPort = (
-  ~fieldIframe: Nullable.t<Dom.element>,
-  ~mountConfig: JSON.t,
-  ~portKey: string,
-  ~portEpoch: int,
-  ~port: MessageChannelBinding.port,
-  ~targetOrigin: string=GlobalVars.targetOrigin,
-): unit => {
-  fieldIframe->iframePostMessageWithTransfer(
-    withPortMeta(~mountConfig, ~portKey, ~portEpoch)->JSON.stringify,
-    ~targetOrigin,
-    ~transfer=[port],
-  )
-}
-
-let forwardPortToCoordinator = (
-  ~coordinatorIframe: Nullable.t<Dom.element>,
-  ~groupId: string,
-  ~fieldName: string,
-  ~portEpoch: int,
-  ~port: MessageChannelBinding.port,
-  ~targetOrigin: string=GlobalVars.targetOrigin,
-): unit => {
-  coordinatorIframe->iframePostMessageWithTransfer(
-    [
-      ("cardFieldPort", true->JSON.Encode.bool),
-      ("portKey", CardFormCoordinator.portKey(~groupId, ~fieldName)->JSON.Encode.string),
-      ("portEpoch", portEpoch->Int.toFloat->JSON.Encode.float),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object
-    ->JSON.stringify,
-    ~targetOrigin,
-    ~transfer=[port],
-  )
+  {iframe, container, fullscreenSlot, origin: URLModule.makeUrl(sdkDomain).origin}
 }
 
 let fullscreenAnswerListenerName = (localSelectorString: string): string =>
@@ -105,82 +57,158 @@ let makeFullscreenFlows = (
 ): (Window.event => unit, Window.event => unit) => {
   let metadataRef: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
   let fullscreenActiveRef = ref(false)
+  let overlayTypeRef = ref("")
+  let methodTransitionPending = ref(false)
+  // Keep the window identity for terminal events queued just before overlay removal.
+  let overlayRef: ref<option<(Dom.element, Dom.element)>> = ref(None)
+  let origin = URLModule.makeUrl(sdkDomain).origin
+  let fromCoordinator = (ev: Window.event) =>
+    mount.iframe->Window.Element.isConnected &&
+      PaymentMessageSecurity.isExpectedSender(
+        ~source=mount.iframe->Window.contentWindow,
+        ~origin,
+        ~eventSource=ev.source,
+        ~eventOrigin=ev.origin,
+      )
+  let fromOverlay = (ev: Window.event, ~allowRedirect=false) => {
+    let redirectOrigin =
+      metadataRef.contents
+      ->getDictFromJson
+      ->getDictFromDict("threeDSData")
+      ->getString("three_ds_authorize_url", "")
+      ->PaymentMessageSecurity.originOf
+    overlayRef.contents
+    ->Option.map(((_, source)) =>
+      ev.source === source &&
+        (ev.origin === origin || (allowRedirect && redirectOrigin === Some(ev.origin)))
+    )
+    ->Option.getOr(false)
+  }
+  let postToCoordinator = fields =>
+    mount.iframe->Nullable.make->Window.iframePostMessage(fields, ~targetOrigin=origin)
 
   let router = (ev: Window.event) => {
-    let json = try ev.data->Identity.anyTypeToJson catch { | _ => JSON.Encode.null }
-    let dict = json->getDictFromJson
+    let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
     let iframeId = dict->getString("iframeId", "")
-    if dict->getBool("fullscreen", false) && iframeId === localSelectorString {
-      metadataRef := dict->getJsonObjectFromDict("metadata")
+    let paramType = dict->getString("param", "")
+    let fromMethod =
+      overlayTypeRef.contents === "3ds" &&
+      paramType === "3dsAuth" &&
+      (fullscreenActiveRef.contents || methodTransitionPending.contents) &&
+      fromOverlay(ev)
+    if (
+      (fromCoordinator(ev) || fromMethod) &&
+      dict->getBool("fullscreen", false) &&
+      iframeId === localSelectorString
+    ) {
+      if fromMethod {
+        // The method overlay may report its result, but cannot replace the
+        // coordinator's credentials or authentication destination.
+        let methodResult = dict->getDictFromDict("metadata")->getString("3dsMethodComp", "N")
+        let metadata = metadataRef.contents->getDictFromJson->Dict.copy
+        metadata->Dict.set("3dsMethodComp", (methodResult === "Y" ? "Y" : "N")->JSON.Encode.string)
+        metadataRef := metadata->JSON.Encode.object
+      } else {
+        metadataRef := dict->getJsonObjectFromDict("metadata")
+      }
+      overlayTypeRef := paramType
+      methodTransitionPending := false
       fullscreenActiveRef := true
       mount.fullscreenSlot->Window.innerHTML("")
-      let paramType = dict->getString("param", "")
-      let overlaySrc =
-        paramType !== ""
-          ? `${sdkDomain}/fullscreenIndex.html?fullscreenType=${paramType}`
-          : `${sdkDomain}/fullscreenIndex.html?fullscreenType=fullscreen`
+      overlayRef := None
+      let overlaySrc = ApiEndpoint.getFullscreenIframeUrl(
+        ~sdkDomain,
+        ~fullscreenType=paramType,
+      )
       let colorScheme =
         appearance->CardTheme.getColorSchemeFromAppearance->CardTheme.getColorSchemeValue
-      mount.fullscreenSlot->Utils.makeIframe(overlaySrc, ~colorScheme)->ignore
-    } else if dict->Dict.get("fullscreen")->Option.isSome && !(dict->getBool("fullscreen", true)) {
+      mount.fullscreenSlot
+      ->Utils.makeIframe(overlaySrc, ~colorScheme, ~onCreate=iframe => {
+        overlayRef := Some((iframe, iframe->Window.contentWindow))
+        SdkMessageSources.register(~frame=iframe, ~origin)
+      })
+      ->ignore
+    } else if (
+      (fromCoordinator(ev) || fromOverlay(ev, ~allowRedirect=true)) &&
+      dict->Dict.get("fullscreen")->Option.isSome &&
+      !(dict->getBool("fullscreen", true))
+    ) {
+      // ThreeDSMethod queues close and open messages consecutively. Retain
+      // that exact source for the one allowed transition after removal.
+      methodTransitionPending :=
+        overlayTypeRef.contents === "3ds" && fromOverlay(ev) && iframeId === localSelectorString
       mount.fullscreenSlot->Window.innerHTML("")
       fullscreenActiveRef := false
-      mount.iframe->Nullable.make->Window.iframePostMessage(
-        [("fullScreenIframeMounted", false->JSON.Encode.bool), ("options", options)]->Dict.fromArray,
+      postToCoordinator(
+        [
+          ("fullScreenIframeMounted", false->JSON.Encode.bool),
+          ("options", options),
+        ]->Dict.fromArray,
       )
-    } else if (
-      fullscreenActiveRef.contents && (
-        dict->Dict.get("confirmParams")->Option.isSome ||
-        dict->Dict.get("poll_status")->Option.isSome ||
-        dict->Dict.get("openurl_if_required")->Option.isSome ||
-        dict->Dict.get("submitSuccessful")->Option.isSome
-      )
-    ) {
-      mount.iframe->Nullable.make->Window.iframePostMessage(dict)
-    } else {
-      ()
+    } else if fullscreenActiveRef.contents && fromOverlay(ev, ~allowRedirect=true) {
+      // Overlay completion cannot add coordinator commands or arbitrary options.
+      let fields =
+        dict
+        ->Dict.toArray
+        ->Array.filter(((key, _)) =>
+          [
+            "confirmParams",
+            "poll_status",
+            "openurl_if_required",
+            "submitSuccessful",
+          ]->Array.includes(key)
+        )
+      if fields->Array.length > 0 {
+        postToCoordinator(fields->Dict.fromArray)
+      }
     }
   }
 
   let answerer = (ev: Window.event) => {
-    let json = try ev.data->Identity.anyTypeToJson catch { | _ => JSON.Encode.null }
-    let dict = json->getDictFromJson
-    let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
-    if fullscreenActiveRef.contents && dict->Dict.get("iframeMountedCallback")->Option.isSome {
-      fullScreenEle->Window.iframePostMessage(
-        [
-          ("fullScreenIframeMounted", true->JSON.Encode.bool),
-          ("metadata", metadataRef.contents),
-          ("options", options),
-          ("appearance", appearance),
-        ]->Dict.fromArray,
-      )
-    }
-    if fullscreenActiveRef.contents && dict->Dict.get("driverMounted")->Option.isSome {
-      mount.iframe->Nullable.make->Window.iframePostMessage(
-        [
-          ("fullScreenIframeMounted", true->JSON.Encode.bool),
-          ("metadata", metadataRef.contents),
-          ("options", options),
-        ]->Dict.fromArray,
-      )
-      fullScreenEle->Window.iframePostMessage(
-        [("metadata", metadataRef.contents)]->Dict.fromArray,
-      )
+    if fullscreenActiveRef.contents && fromOverlay(ev) {
+      let dict = ev.data->Identity.anyTypeToJson->getDictFromJson
+      switch overlayRef.contents {
+      | Some((iframe, _)) =>
+        if dict->Dict.get("iframeMountedCallback")->Option.isSome {
+          iframe
+          ->Nullable.make
+          ->Window.iframePostMessage(
+            [
+              ("fullScreenIframeMounted", true->JSON.Encode.bool),
+              ("metadata", metadataRef.contents),
+              ("options", options),
+              ("appearance", appearance),
+            ]->Dict.fromArray,
+            ~targetOrigin=origin,
+          )
+        }
+        if dict->Dict.get("driverMounted")->Option.isSome {
+          postToCoordinator(
+            [
+              ("fullScreenIframeMounted", true->JSON.Encode.bool),
+              ("metadata", metadataRef.contents),
+              ("options", options),
+            ]->Dict.fromArray,
+          )
+          iframe
+          ->Nullable.make
+          ->Window.iframePostMessage(
+            [
+              ("fullScreenIframeMounted", true->JSON.Encode.bool),
+              ("metadata", metadataRef.contents),
+            ]->Dict.fromArray,
+            ~targetOrigin=origin,
+          )
+        }
+      | None => ()
+      }
     }
   }
 
   (router, answerer)
 }
 
-let teardown = (~mount: coordinatorMount, ~pendingPorts: array<pendingPort>): unit => {
-  pendingPorts->Array.forEach(({port}) =>
-    try {
-      port->MessageChannelBinding.portClose
-    } catch {
-    | _ => ()
-    }
-  )
+let teardown = (~mount: coordinatorMount): unit => {
   mount.fullscreenSlot->Window.remove
   mount.container->Window.remove
 }

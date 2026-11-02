@@ -7,6 +7,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (configAtom, setConfig) = Jotai.useAtom(configAtom)
   let setIsConfigReady = Jotai.useSetAtom(isConfigReady)
   let (keys, setKeys) = Jotai.useAtom(keys)
+  let parentOriginRef = React.useRef(None)
   let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
   let setSdkConfigs = Jotai.useSetAtom(sdkConfigs)
   let setSdkConfigsValue = Jotai.useSetAtom(PaymentUtils.sdkConfigsValue)
@@ -307,36 +308,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   }, [config])
 
   React.useEffect(() => {
-    open Promise
     let handleFun = (ev: Window.event) => {
       let json = ev.data->safeParse
       try {
         let dict = json->getDictFromJson
 
-        let pinnedParentURL = keys.parentURL
-        let isFromHostWindow =
-          ev.source === iframeParent && (pinnedParentURL === "*" || ev.origin === pinnedParentURL)
-        let ports = ev->MessageChannelBinding.eventPorts
-        if isFromHostWindow && ports->Array.length > 0 {
-          let handshakeShaped =
-            dict->getDictIsSome("paymentElementCreate") || dict->getDictIsSome("cardFieldPort")
-          if handshakeShaped {
-            switch ports->Array.get(0) {
-            | Some(port) =>
-              let portKey = dict->getString("portKey", "")
-              if portKey !== "" {
-                SadPortRegistry.installPort(
-                  ~key=portKey,
-                  ~epoch=dict->getFloat("portEpoch", 0.0)->Float.toInt,
-                  ~port,
-                )
-              }
-            | None => ()
-            }
-          }
-        }
-
+        // Card-form ports are never taken from the host page: script there could read
+        // every keystroke through them. See CardFormPortHandshake.
         if dict->getDictIsSome("paymentElementCreate") {
+          // Pin the browser-provided origin of the direct host, never a payload's wildcard.
+          parentOriginRef.current = Some(ev.origin)
+          dict->Dict.set("parentURL", ev.origin->JSON.Encode.string)
+          setKeys(prev => {...prev, parentURL: ev.origin})
+
           // Set iframeId for ALL elements including individual card elements (cardNumber, cardExpiry, cardCvc)
           if dict->getDictIsSome("iframeId") {
             setKeys(prev => {
@@ -379,8 +363,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 logger.setMetadata(metadata)
               }
 
-              if dict->getDictIsSome("onCompleteDoThisUsed") {
-                let isCallbackUsedVal = dict->Utils.getBool("onCompleteDoThisUsed", false)
+              if dict->getDictIsSome("isPaymentCompleteHandlerProvided") {
+                let isCallbackUsedVal =
+                  dict->Utils.getBool("isPaymentCompleteHandlerProvided", false)
                 setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
               }
               if dict->getDictIsSome("isPaymentButtonHandlerProvided") {
@@ -406,24 +391,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 // Update top redirection atom
                 updateRedirectionFlags(paymentOptions)
 
-                switch getThemePromise(paymentOptions) {
-                | Some(promise) =>
-                  promise
-                  ->then(res => {
-                    dict->setConfigs(res)
-                  })
-                  ->catch(_ => {
-                    dict->setConfigs({
-                      default: DefaultTheme.default,
-                      defaultRules: DefaultTheme.defaultRules,
-                    })
-                  })
-                | None =>
-                  dict->setConfigs({
-                    default: DefaultTheme.default,
-                    defaultRules: DefaultTheme.defaultRules,
-                  })
-                }->ignore
+                paymentOptions->loadTheme(res => dict->setConfigs(res))
               }
               let newLaunchTime = dict->getFloat("launchTime", 0.0)
               setLaunchTime(_ => newLaunchTime)
@@ -437,7 +405,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
                 ("paymentId", ""->JSON.Encode.string),
-                ("parentURL", "*"->JSON.Encode.string),
                 ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
               ]->Array.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)
@@ -469,25 +436,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             // Update top redirection atom
             updateRedirectionFlags(paymentOptions)
 
-            switch getThemePromise(paymentOptions) {
-            | Some(promise) =>
-              promise
-              ->then(res => {
-                dict->setConfigs(res)
-              })
-              ->catch(_ => {
-                dict->setConfigs({
-                  default: DefaultTheme.default,
-                  defaultRules: DefaultTheme.defaultRules,
-                })
-              })
-
-            | None =>
-              dict->setConfigs({
-                default: DefaultTheme.default,
-                defaultRules: DefaultTheme.defaultRules,
-              })
-            }->ignore
+            paymentOptions->loadTheme(res => dict->setConfigs(res))
             if dict->getDictIsSome("options") {
               updateOptions(dict)
             }
@@ -541,25 +490,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           | None => ()
           }
           if optionsDict->Dict.keysToArray->Array.length > 0 {
-            switch getThemePromise(optionsDict) {
-            | Some(promise) =>
-              promise
-              ->then(res => {
-                dict->setConfigs(res)
-              })
-              ->catch(_ => {
-                dict->setConfigs({
-                  default: DefaultTheme.default,
-                  defaultRules: DefaultTheme.defaultRules,
-                })
-              })
-
-            | None =>
-              dict->setConfigs({
-                default: DefaultTheme.default,
-                defaultRules: DefaultTheme.defaultRules,
-              })
-            }->ignore
+            optionsDict->loadTheme(res => dict->setConfigs(res))
           }
         }
         if dict->Dict.get("isTestMode")->Option.isSome {
@@ -785,7 +716,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       | _ => setIntegrateErrorError(_ => true)
       }
     }
-    handleMessage(handleFun, "Error in parsing sent Data")
+    let handleHostMessage = (ev: Window.event) => {
+      let isExpectedOrigin =
+        parentOriginRef.current
+        ->Option.map(origin => ev.origin === origin)
+        ->Option.getOr(true)
+      if ev.source === iframeParent && ev.origin !== "null" && isExpectedOrigin {
+        handleFun(ev)
+      }
+    }
+    handleMessage(handleHostMessage, "Error in parsing sent Data")
   }, (paymentMethodOrder, optionsPayment))
 
   let observer = ResizeObserver.newResizerObserver(entries => {

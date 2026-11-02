@@ -86,7 +86,7 @@ let useCardFieldBase = (
   }
   React.useEffect(() => {
     let handleFocusEvent = (ev: Window.event) => {
-      if ev.source === iframeParent && (parentURL === "*" || ev.origin === parentURL) {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) {
         let json = ev.data->safeParse
         let dict = json->getDictFromJson
         if dict->Dict.get("doFocus")->Option.isSome {

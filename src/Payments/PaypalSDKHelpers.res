@@ -4,6 +4,7 @@ open TaxCalculation
 
 let loadPaypalSDK = (
   ~loggerState: HyperLoggerTypes.loggerMake,
+  ~parentOrigin,
   ~sdkHandleOneClickConfirmPayment as _,
   ~buttonStyle: PaypalSDKTypes.style,
   ~iframeId,
@@ -80,7 +81,7 @@ let loadPaypalSDK = (
           ~isOneClickWallet=true,
         )
         emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
-        makeOneClickHandlerPromise(sdkHandleIsThere)->then(result => {
+        makeOneClickHandlerPromise(sdkHandleIsThere, ~parentOrigin)->then(result => {
           let result = result->JSON.Decode.bool->Option.getOr(false)
           if result {
             messageParentWindow([
@@ -257,6 +258,7 @@ let loadPaypalSDK = (
 
 let loadBraintreePaypalSdk = (
   ~loggerState: HyperLoggerTypes.loggerMake,
+  ~parentOrigin,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
   ~buttonStyle: PaypalSDKTypes.style,
@@ -276,7 +278,7 @@ let loadBraintreePaypalSdk = (
   ~isManualRetryEnabled,
 ) => {
   open Promise
-  makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
+  makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment, ~parentOrigin)
   ->then(result => {
     let result = result->JSON.Decode.bool->Option.getOr(false)
     if result {

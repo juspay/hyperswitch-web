@@ -123,6 +123,13 @@ let make = (
       }
     } else {
       let json = ev.data->safeParse
+      let requestId =
+        json->getDictFromJson->getDictFromDict("requestCVCConfirm")->getString("requestId", "")
+      let messageParentWindow = fields =>
+        Utils.messageParentWindow(
+          fields->Array.concat([("cvcWidgetRequestId", requestId->JSON.Encode.string)]),
+          ~targetOrigin=keys.parentURL,
+        )
       try {
         let dict = json->getDictFromJson
         switch dict->Dict.get("requestCVCConfirm") {

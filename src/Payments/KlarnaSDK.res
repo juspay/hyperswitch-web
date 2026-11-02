@@ -15,10 +15,10 @@ let make = (~sessionObj: SessionsType.token) => {
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let updateSession = Jotai.useAtomValue(updateSession)
-  let {publishableKey, iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let {publishableKey, iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
   let options = Jotai.useAtomValue(optionAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Some(loggerState), Other)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
@@ -104,7 +104,7 @@ let make = (~sessionObj: SessionsType.token) => {
                 ~isOneClickWallet=true,
               )
               emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
-              makeOneClickHandlerPromise(sdkHandleIsThere)->then(
+              makeOneClickHandlerPromise(sdkHandleIsThere, ~parentOrigin=parentURL)->then(
                 result => {
                   let result = result->JSON.Decode.bool->Option.getOr(false)
                   if result {

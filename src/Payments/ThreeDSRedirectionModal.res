@@ -3,6 +3,7 @@ type customEvent = {openurl_if_required: string}
 
 @react.component
 let make = () => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (popupUrl, setPopupUrl) = React.useState(_ => "")
   let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
   let (openModal, setOpenModal) = React.useState(_ => false)
@@ -10,12 +11,20 @@ let make = () => {
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   let eventsToSendToParent = ["openurl_if_required"]
-  eventsToSendToParent->UtilityHooks.useSendEventsToParent
+  let isTrustedChild = (ev: Window.event) =>
+    [popupUrl, redirectResponseUrl]
+    ->Array.filterMap(PaymentMessageSecurity.originOf)
+    ->Array.includes(ev.origin) &&
+      Window.querySelector("#threeDsRedirectFrame")
+      ->Nullable.toOption
+      ->Option.map(iframe => ev.source === iframe->Window.contentWindow)
+      ->Option.getOr(false)
+  eventsToSendToParent->UtilityHooks.useSendEventsToParent(~isTrustedChild)
 
   let handleOnClose = () =>
     if redirectResponseUrl == "" {
-      messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
+      closePaymentLoaderIfAny()
     } else {
       let customEvent =
         {
@@ -33,7 +42,7 @@ let make = () => {
       try {
         let json = ev.data->safeParse
         let dict = json->getDictFromJson
-        if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+        if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
           let metadata = dict->getJsonObjectFromDict("metadata")
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
           let popupUrl = metaDataDict->getString("popupUrl", "")
@@ -55,7 +64,7 @@ let make = () => {
   })
   <Modal loader openModal setOpenModal closeCallback=handleOnClose>
     <div className="w-full h-[500px] bg-white">
-      <iframe className="w-full h-full" src={popupUrl} />
+      <iframe id="threeDsRedirectFrame" className="w-full h-full" src={popupUrl} />
     </div>
   </Modal>
 }

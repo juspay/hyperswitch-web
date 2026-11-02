@@ -30,6 +30,7 @@ user_data.sh
 .env.sentry-build-plugin
 
 # Sensitive credential files - DO NOT COMMIT
+/creds.json
 playwright-tests/creds.json
 playwright-tests/test-credentials.json
 playwright-tests/test-credentials-*.json

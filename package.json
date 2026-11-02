@@ -4,7 +4,7 @@
   "main": "index.js",
   "private": true,
   "engines": {
-    "node": ">=20.11.0"
+    "node": ">=22.23.4 <23 || >=24.22.1 <25 || >=26.12.1 <27"
   },
   "dependencies": {
     "@glennsl/rescript-fetch": "^0.2.0",

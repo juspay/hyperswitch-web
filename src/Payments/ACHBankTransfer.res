@@ -48,7 +48,7 @@ let make = () => {
     requiredFieldsBody,
     sdkAuthorization,
   ))
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let paymentMethodType = "ach"
   let paymentMethod = "bank_transfer"

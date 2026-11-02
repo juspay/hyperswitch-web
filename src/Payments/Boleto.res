@@ -72,7 +72,7 @@ let make = () => {
       }
     }
   }, (socialSecurityNumber, isManualRetryEnabled, sdkAuthorization))
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let changeSocialSecurityNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
