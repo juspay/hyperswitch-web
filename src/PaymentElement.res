@@ -643,6 +643,22 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     (hasMethodType("apple_pay") && applePayReadiness->Option.isNone) ||
       (isGooglePayAuto && hasMethodType("google_pay") && gPayReadiness->Option.isNone),
   )
+  // Likewise for a saved wallet, which the saved-methods screen only lists once it is available.
+  let hasSavedMethodType = methodType =>
+    switch customerPaymentMethods {
+    | LoadedSavedCards(savedPaymentMethods, _) =>
+      savedPaymentMethods
+      ->filterSavedMethodsByHiddenList(
+        ~hiddenPaymentMethods=layoutClass.savedMethodCustomization.hiddenPaymentMethods,
+      )
+      ->Array.some(savedMethod => savedMethod.paymentMethodType === Some(methodType))
+    | _ => false
+    }
+  let isSavedWalletDecisionPending = ReadyHooks.useIsStillPending(
+    ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,
+    (hasSavedMethodType("apple_pay") && applePayReadiness->Option.isNone) ||
+      (isGooglePayAuto && hasSavedMethodType("google_pay") && gPayReadiness->Option.isNone),
+  )
   // Nothing on the list can be shown, e.g. Apple Pay alone on a browser that doesn't support it.
   let hasNothingToLoad = switch paymentMethodList {
   | LoadError(_) => !hasPaymentOrWalletOptions
@@ -658,9 +674,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   } else if optionAtomValue.enableProgressiveLoading {
     shownSections->Array.some(isLoaded => isLoaded)
   } else {
-    // A wallet still deciding whether it can be shown would join the payment section later.
+    // A wallet still deciding whether it can be shown would join its screen later.
     shownSections->Array.every(isLoaded => isLoaded) &&
-      !(shouldRenderPaymentSection && isWalletDecisionPending)
+    !(shouldRenderPaymentSection && isWalletDecisionPending) &&
+    !(isSavedMethodsScreenShown && isSavedWalletDecisionPending)
   }
 
   // Re-armed by updateIntent once its refreshed list arrives, so a fresh ready follows it.
