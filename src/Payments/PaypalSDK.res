@@ -50,6 +50,8 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  let emitterRef = React.useRef(emitter)
+  emitterRef.current = emitter
 
   let buttonStyle = switch options.wallets.payPal {
   | PaypalConfigObj(cfg) =>
@@ -123,7 +125,11 @@ let make = (~sessionObj: SessionsType.token) => {
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   let handleCancel = () => {
     handleCloseLoader()
-    emitter.emitPaymentMethodFlowCancel(~paymentMethod, ~paymentMethodType, ~canRetryPayment=true)
+    emitterRef.current.emitPaymentMethodFlowCancel(
+      ~paymentMethod,
+      ~paymentMethodType,
+      ~canRetryPayment=true,
+    )
   }
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
