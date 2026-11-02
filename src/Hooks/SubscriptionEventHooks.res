@@ -23,7 +23,6 @@ type emitter = {
   ) => unit,
   emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
   emitPaymentMethodFlowCancel: (
-    ~step: PaymentEventTypes.paymentMethodFlowStep,
     ~paymentMethod: string,
     ~paymentMethodType: string,
     ~canRetryPayment: bool,
@@ -114,12 +113,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
-  let emitPaymentMethodFlowCancel = (
-    ~step,
-    ~paymentMethod,
-    ~paymentMethodType,
-    ~canRetryPayment,
-  ) => {
+  let emitPaymentMethodFlowCancel = (~paymentMethod, ~paymentMethodType, ~canRetryPayment) => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
@@ -127,12 +121,7 @@ let useSubscriptionEventEmitter = (): emitter => {
       )
     ) {
       Utils.messageParentWindow(
-        createPaymentMethodFlowCancelPayload(
-          ~step,
-          ~paymentMethod,
-          ~paymentMethodType,
-          ~canRetryPayment,
-        ),
+        createPaymentMethodFlowCancelPayload(~paymentMethod, ~paymentMethodType, ~canRetryPayment),
       )
     }
   }
@@ -151,7 +140,7 @@ let useSubscriptionEventEmitter = (): emitter => {
 // ---------------------------------------------------------------------------
 // emitFullscreenPaymentMethodFlowCancel
 // ---------------------------------------------------------------------------
-// For steps rendered in the fullscreen iframe (3DS challenge).
+// For flows rendered in the fullscreen iframe (3DS challenge).
 // That iframe never receives the element options, so it cannot read
 // subscriptionEvents; the loader drops the event for merchants who did not subscribe.
 // paymentMethodFlowCancelMetadata is the "paymentMethodFlowCancel" dict the element iframe
@@ -159,13 +148,11 @@ let useSubscriptionEventEmitter = (): emitter => {
 // to the manual_retry_allowed value carried in that metadata.
 let emitFullscreenPaymentMethodFlowCancel = (
   ~paymentMethodFlowCancelMetadata: Dict.t<JSON.t>,
-  ~step,
   ~canRetryPayment=paymentMethodFlowCancelMetadata->Utils.getBool("canRetryPayment", false),
 ) =>
   Utils.messageParentWindow(
     createPaymentMethodFlowCancelPayload(
       ~elementType=paymentMethodFlowCancelMetadata->Utils.getString("elementType", "payment"),
-      ~step,
       ~paymentMethod=paymentMethodFlowCancelMetadata->Utils.getString("paymentMethod", ""),
       ~paymentMethodType=paymentMethodFlowCancelMetadata->Utils.getString("paymentMethodType", ""),
       ~canRetryPayment,

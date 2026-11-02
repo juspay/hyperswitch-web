@@ -6,7 +6,9 @@ let make = () => {
   let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (popupUrl, setPopupUrl) = React.useState(_ => "")
   let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
-  let (paymentMethodFlowCancelMetadata, setPaymentMethodFlowCancelMetadata) = React.useState(_ => Dict.make())
+  let (paymentMethodFlowCancelMetadata, setPaymentMethodFlowCancelMetadata) = React.useState(_ =>
+    Dict.make()
+  )
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
@@ -28,10 +30,7 @@ let make = () => {
       closePaymentLoaderIfAny()
     } else {
       // Emitted before openurl_if_required so the merchant's handler runs before the redirect.
-      SubscriptionEventHooks.emitFullscreenPaymentMethodFlowCancel(
-        ~paymentMethodFlowCancelMetadata,
-        ~step=ThreeDsChallenge,
-      )
+      SubscriptionEventHooks.emitFullscreenPaymentMethodFlowCancel(~paymentMethodFlowCancelMetadata)
       let customEvent =
         {
           openurl_if_required: redirectResponseUrl,
@@ -55,7 +54,9 @@ let make = () => {
           let redirectResponseUrl = metaDataDict->getString("redirectResponseUrl", "")
           setPopupUrl(_ => popupUrl)
           setRedirectResponseUrl(_ => redirectResponseUrl)
-          setPaymentMethodFlowCancelMetadata(_ => metaDataDict->getDictFromDict("paymentMethodFlowCancel"))
+          setPaymentMethodFlowCancelMetadata(_ =>
+            metaDataDict->getDictFromDict("paymentMethodFlowCancel")
+          )
           setloader(_ => false)
         }
       } catch {

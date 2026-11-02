@@ -123,12 +123,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   let handleCancel = () => {
     handleCloseLoader()
-    emitter.emitPaymentMethodFlowCancel(
-      ~step=PaymentSheet,
-      ~paymentMethod,
-      ~paymentMethodType,
-      ~canRetryPayment=true,
-    )
+    emitter.emitPaymentMethodFlowCancel(~paymentMethod, ~paymentMethodType, ~canRetryPayment=true)
   }
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 

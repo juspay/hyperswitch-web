@@ -27,7 +27,6 @@ let make = () => {
   let handleOnClose = () => {
     SubscriptionEventHooks.emitFullscreenPaymentMethodFlowCancel(
       ~paymentMethodFlowCancelMetadata=paymentMethodFlowCancelMetadata.current,
-      ~step=ThreeDsChallenge,
     )
     handleFrictionLess()
   }

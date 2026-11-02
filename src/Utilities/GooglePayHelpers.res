@@ -139,7 +139,6 @@ let useHandleGooglePayResponse = (
             dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
         ) {
           emitter.emitPaymentMethodFlowCancel(
-            ~step=PaymentSheet,
             ~paymentMethod="wallet",
             ~paymentMethodType="google_pay",
             ~canRetryPayment=true,

@@ -187,13 +187,11 @@ let createAppliedOffersPayload = (
 // so the loader routes the event to that element's listeners.
 let createPaymentMethodFlowCancelPayload = (
   ~elementType="payment",
-  ~step,
   ~paymentMethod,
   ~paymentMethodType,
   ~canRetryPayment,
 ) => {
   let payload = PaymentEventData.paymentMethodFlowCancelEventToJson(
-    ~step,
     ~paymentMethod,
     ~paymentMethodType,
     ~canRetryPayment,
