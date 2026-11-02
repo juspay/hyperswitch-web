@@ -9,6 +9,7 @@ let validSubscriptionEvents = [
   "billingDetailsChange",
   "surchargeInfo",
   "appliedOffersInfo",
+  "customMessageElementClicked",
 ]
 
 let modifiedEventFromString = (str, key) => {
@@ -178,6 +179,26 @@ let createAppliedOffersPayload = (
   [
     ("elementType", "payment"->JSON.Encode.string),
     ("eventName", "appliedOffersInfo"->JSON.Encode.string),
+    ("payload", payload),
+  ]
+}
+
+let createCustomMessageElementClickedPayload = (
+  ~key,
+  ~elementType,
+  ~paymentMethod,
+  ~paymentMethodType,
+) => {
+  let payload =
+    PaymentEventData.buildCustomMessageElementClickedEvent(
+      ~key,
+      ~elementType,
+      ~paymentMethod,
+      ~paymentMethodType,
+    )->PaymentEventData.customMessageElementClickedEventToJson
+  [
+    ("elementType", "payment"->JSON.Encode.string),
+    ("eventName", CustomMessageElementClicked->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }

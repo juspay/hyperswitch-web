@@ -34,11 +34,12 @@ let make = (~styles: JsxDOMStyle.t={}, ~paymentMethod, ~paymentMethodType) => {
     ~paymentMethod,
     ~paymentMethodType,
   )
+  let customMessageSegments = CustomMessageText.useMessageSegments(~message=customMessageConfig)
 
   let (termsText, showTerm) = switch customMessageConfig.displayMode {
   | DefaultSdkMessage => paymentMethodTermsDefaults
   | CustomMessage => {
-      let customMessage = customMessageConfig.value->Option.getOr("")->String.trim
+      let customMessage = customMessageSegments->CustomMessageUtils.segmentsToPlainText
       (customMessage, customMessage->String.length > 0 ? Always : Never)
     }
   | Hidden => ("", Never)
@@ -47,8 +48,13 @@ let make = (~styles: JsxDOMStyle.t={}, ~paymentMethod, ~paymentMethodType) => {
   <RenderIf condition={showTerm == Auto || showTerm == Always}>
     <div
       className="TermsTextLabel opacity-50 text-xs mb-2 text-left"
-      style={...styles, color: themeObj.colorText}>
-      {React.string(termsText)}
+      style={...styles, color: themeObj.colorText}
+    >
+      {switch customMessageConfig.displayMode {
+      | CustomMessage =>
+        <CustomMessageText segments=customMessageSegments paymentMethod paymentMethodType />
+      | DefaultSdkMessage | Hidden => React.string(termsText)
+      }}
     </div>
   </RenderIf>
 }

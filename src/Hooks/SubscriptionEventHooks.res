@@ -22,6 +22,11 @@ type emitter = {
     ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   ) => unit,
   emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
+  emitCustomMessageElementClicked: (
+    ~key: string,
+    ~paymentMethod: string,
+    ~paymentMethodType: string,
+  ) => unit,
 }
 
 let useSubscriptionEventEmitter = (): emitter => {
@@ -108,6 +113,24 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
+  let emitCustomMessageElementClicked = (~key, ~paymentMethod, ~paymentMethodType) => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=CustomMessageElementClicked,
+      )
+    ) {
+      Utils.messageParentWindow(
+        createCustomMessageElementClickedPayload(
+          ~key,
+          ~elementType="link",
+          ~paymentMethod,
+          ~paymentMethodType,
+        ),
+      )
+    }
+  }
+
   {
     emitCardInfo,
     emitPaymentMethodStatus,
@@ -115,6 +138,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     emitCvcStatus,
     emitSurcharge,
     emitOffers,
+    emitCustomMessageElementClicked,
   }
 }
 

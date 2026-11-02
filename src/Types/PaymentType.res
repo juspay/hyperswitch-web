@@ -249,6 +249,8 @@ type messageDisplayMode = DefaultSdkMessage | CustomMessage | Hidden
 type paymentMethodMessage = {
   value: option<string>,
   displayMode: messageDisplayMode,
+  elementStyles: CustomMessageUtils.elementStyles,
+  elements: Dict.t<CustomMessageUtils.element>,
 }
 
 type paymentMethodTypeConfig = {
@@ -515,17 +517,24 @@ let getMessageDisplayMode = (str, key) => {
 let defaultPaymentMethodMessage = {
   value: None,
   displayMode: DefaultSdkMessage,
+  elementStyles: CustomMessageUtils.defaultElementStyles,
+  elements: Dict.make(),
 }
 
 let getPaymentMethodMessage = (dict, logger, context) => {
   let messageDict = dict->getDictFromDict("message")
   if messageDict->Dict.toArray->Array.length > 0 {
-    unknownKeysWarning(["value", "displayMode"], messageDict, context ++ ".message")
+    let messageContext = context ++ ".message"
+    unknownKeysWarning(
+      ["value", "displayMode", "elementStyles", "elements"],
+      messageDict,
+      messageContext,
+    )
     let value = messageDict->getOptionString("value")
     let displayMode = if messageDict->Dict.get("displayMode")->Option.isSome {
       messageDict
       ->getWarningString("displayMode", "default_sdk_message", ~logger)
-      ->getMessageDisplayMode(context ++ ".message.displayMode")
+      ->getMessageDisplayMode(messageContext ++ ".displayMode")
     } else {
       switch value {
       | Some(_) => CustomMessage
@@ -535,6 +544,8 @@ let getPaymentMethodMessage = (dict, logger, context) => {
     {
       value,
       displayMode,
+      elementStyles: messageDict->CustomMessageUtils.parseElementStyles,
+      elements: messageDict->CustomMessageUtils.parseElements(~context=messageContext, ~logger),
     }
   } else {
     defaultPaymentMethodMessage
@@ -1697,17 +1708,26 @@ let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "
 
 let overrideFieldsToExcludeFromMasking = [
   "wallets.walletReturnUrl",
+  "paymentMethodsConfig.message.value",
   "paymentMethodsConfig.paymentMethodTypes.message.value",
 ]
 
-let normalizePath = path => path->String.replaceRegExp(%re("/\[(\d+)\]/g"), "")
+let overridePatternsToExcludeFromMasking = [
+  /^paymentMethodsConfig(\.paymentMethodTypes)?\.message\.elements\.[^.]+\.config\.label$/,
+]
+
+let normalizePath = path => path->String.replaceRegExp(/\[(\d+)\]/g, "")
 
 let isPathStartsWithPattern = (normalizedPath, normalizedPattern) =>
   normalizedPath == normalizedPattern || normalizedPath->String.startsWith(normalizedPattern ++ ".")
 
 let shouldMaskField = path => {
   let normalizedPath = normalizePath(path)
-  let isOverridden = overrideFieldsToExcludeFromMasking->Array.includes(normalizedPath)
+  let isOverridden =
+    overrideFieldsToExcludeFromMasking->Array.includes(normalizedPath) ||
+      overridePatternsToExcludeFromMasking->Array.some(pattern =>
+        pattern->RegExp.test(normalizedPath)
+      )
   let isExcluded =
     fieldsToExcludeFromMasking->Array.some(pattern =>
       isPathStartsWithPattern(normalizedPath, normalizePath(pattern))

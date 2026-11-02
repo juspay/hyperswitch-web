@@ -1,3 +1,4 @@
+let customMessageLinkTestId = elementKey => `custom-message-link-${elementKey}`
 let paymentMethodListTestId = "paymentList"
 let paymentMethodDropDownTestId = "paymentMethodsSelect"
 let cardNoInputTestId = "cardNoInput"

@@ -13,6 +13,7 @@ let make = (
     ~paymentMethod,
     ~paymentMethodType,
   )
+  let customMessageSegments = CustomMessageText.useMessageSegments(~message=customMessageConfig)
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   let handleChange = value => {
@@ -20,11 +21,16 @@ let make = (
     setIsChecked(_ => value)
   }
 
+  let customMessage = customMessageSegments->CustomMessageUtils.segmentsToPlainText
+  let isUsingCustomMessage =
+    !showPaymentMethodsScreen &&
+    customMessageConfig.displayMode == CustomMessage &&
+    customMessage->String.length > 0
+
   let cardLabel = {
-    let customMessage = customMessageConfig.value->Option.getOr("")
     if showPaymentMethodsScreen {
       localeString.saveCardDetails
-    } else if customMessage->String.length > 0 {
+    } else if isUsingCustomMessage {
       customMessage
     } else if customMessageForCardTerms->String.length > 0 {
       customMessageForCardTerms
@@ -42,8 +48,15 @@ let make = (
   | (_, _) => (localeString.savePaymentDetails, "payment details")
   }
 
+  let labelContent =
+    paymentMethod == "card" && isUsingCustomMessage
+      ? Some(<CustomMessageText segments=customMessageSegments paymentMethod paymentMethodType />)
+      : None
+
   let ariaLabelChecked = "Deselect to avoid saving " ++ ariaSubject
   let ariaLabelUnchecked = "Select to save " ++ ariaSubject
 
-  <Checkbox isChecked onChange=handleChange label ariaLabelChecked ariaLabelUnchecked />
+  <Checkbox
+    isChecked onChange=handleChange label ?labelContent ariaLabelChecked ariaLabelUnchecked
+  />
 }
