@@ -491,31 +491,31 @@ let checkoutWithNewCard = async (payload: checkoutWithNewCardPayload) => {
 
 let loadClickToPayScripts = () =>
   Promise.make((resolve, _) => {
-    let pending = ref(2)
-    let settle = () => {
-      pending := pending.contents - 1
-      pending.contents === 0 ? resolve() : ()
-    }
     let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
-    switch querySelector(scriptSelector)->Nullable.toOption {
-    | Some(_) => settle()
-    | None =>
-      let script = createElement("script")
-      script->setType("module")
-      script->setSrc(srcUiKitScriptSrc)
-      script->setOnload(settle)
-      appendChild(script)
-    }
     let linkSelector = `link[href="${srcUiKitCssHref}"]`
-    switch querySelector(linkSelector)->Nullable.toOption {
-    | Some(_) => settle()
-    | None =>
-      let link = createElement("link")
-      link->setRel("stylesheet")
-      link->setHref(srcUiKitCssHref)
-      link->setOnload(settle)
-      appendChild(link)
-    }
+    let scriptPromise = Promise.make((settle, _) => {
+      switch querySelector(scriptSelector)->Nullable.toOption {
+      | Some(_) => settle()
+      | None =>
+        let script = createElement("script")
+        script->setType("module")
+        script->setSrc(srcUiKitScriptSrc)
+        script->setOnload(settle)
+        appendChild(script)
+      }
+    })
+    let cssPromise = Promise.make((settle, _) => {
+      switch querySelector(linkSelector)->Nullable.toOption {
+      | Some(_) => settle()
+      | None =>
+        let link = createElement("link")
+        link->setRel("stylesheet")
+        link->setHref(srcUiKitCssHref)
+        link->setOnload(settle)
+        appendChild(link)
+      }
+    })
+    Promise.all([scriptPromise, cssPromise])->Promise.thenResolve(_ => resolve())->ignore
   })
 
 let loadMastercardScript = clickToPayToken =>

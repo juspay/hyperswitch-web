@@ -31,8 +31,7 @@ let make = () => {
   let isParentMessage = PaymentMessageHooks.useParentMessageCheck(
     ~isInitialization=dict =>
       dict->Utils.getDictIsSome("paymentElementCreate") ||
-      dict->Utils.getBool("fullScreenIframeMounted", false) ||
-      dict->Dict.get("metadata")->Option.isSome,
+      dict->Utils.getBool("fullScreenIframeMounted", false),
   )
 
   React.useEffect0(() => {

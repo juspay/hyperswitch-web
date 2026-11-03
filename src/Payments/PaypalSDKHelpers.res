@@ -11,17 +11,11 @@ let handlePaypalError = (err, ~handleCancel, ~handleCloseLoader) =>
     handleCloseLoader()
   }
 
-let observePaypalButtonsRender = (paypalButtons: some, ~details=[]) =>
-  try {
-    (() => paypalButtons.render("#paypal-button"))()->ignore
-  } catch {
-  | _ => ()
-  }
-
-let renderButtons = (buttons: some, ~onButtonSettled) => {
-  buttons->observePaypalButtonsRender
-  onButtonSettled()
-}
+let renderButtons = (buttons: some, ~onButtonSettled) =>
+  buttons.render("#paypal-button")
+  ->Promise.then(_ => Promise.resolve(onButtonSettled()))
+  ->Promise.catch(_ => Promise.resolve(onButtonSettled()))
+  ->ignore
 
 let loadPaypalSDK = (
   ~onButtonSettled,

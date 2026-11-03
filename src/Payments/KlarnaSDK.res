@@ -79,7 +79,6 @@ let make = (~sessionObj: SessionsType.token) => {
           client_token: sessionObj.token,
         }))()->ignore
 
-      let loadStartedAt = Date.now()
       klarnaInit.load(
         {
           container: "#klarna-payments",

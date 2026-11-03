@@ -37,53 +37,35 @@ let getNormalizedLocale = locale => {
   }
 }
 
-let fetchCountryStateFromS3 = async (endpoint, ~fallbackFor=?) => {
+let fetchCountryStateFromS3 = endpoint => {
+  open Promise
   let headers = [("Accept-Encoding", "br, gzip")]->Dict.fromArray
-  let decoded = ref(None)
-  let response = await (
-    async () => {
-      let response = await Utils.fetchApi(endpoint, ~method=#GET, ~headers)
-      if response->Fetch.Response.ok {
-        switch (await response->Fetch.Response.json)->decodeJsonTocountryStateData {
-        | Some(data) => decoded := Some(data)
-        | None => JsError.throwWithMessage("Failed to decode country state data")
-        }
-      }
-      response
+  Utils.fetchApi(endpoint, ~method=#GET, ~headers)
+  ->Promise.then(resp => resp->Fetch.Response.json)
+  ->then(data =>
+    switch decodeJsonTocountryStateData(data) {
+    | Some(res) => resolve(res)
+    | None => reject(Exn.anyToExnInternal("Failed to decode country state data"))
     }
-  )()
-  switch decoded.contents {
-  | Some(data) => data
-  | None =>
-    JsError.throwWithMessage(
-      `Country state data request failed with status ${response
-        ->Fetch.Response.status
-        ->Int.toString}`,
-    )
-  }
+  )
+  ->catch(_ => reject(Exn.anyToExnInternal("Failed to fetch country state data")))
 }
 
 let getBaseUrl = GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
 
-let pendingByLocale: Dict.t<promise<Country.countryStateData>> = Dict.make()
-
-let loadCountryStateData = async (~locale) => {
+let getCountryStateData = async (~locale="en") => {
   let normalizedLocale = getNormalizedLocale(locale)
   let timestamp = Date.now()->Float.toString
   let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
 
   try {
-    try {
-      await fetchCountryStateFromS3(endpoint)
-    } catch {
-    | _ =>
-      await fetchCountryStateFromS3(
-        `${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`,
-        ~fallbackFor=normalizedLocale,
-      )
-    }
+    await fetchCountryStateFromS3(endpoint)
   } catch {
-  | _ => {
+  | _ =>
+    try {
+      await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
+    } catch {
+    | _ => {
       let fallbackCountries = country
       try {
         let fallbackStates = await Utils.importStates("./../States.json")
@@ -92,25 +74,12 @@ let loadCountryStateData = async (~locale) => {
           states: fallbackStates.states,
         }
       } catch {
-      | exn => {
-          {
-            countries: fallbackCountries,
-            states: JSON.Encode.null,
-          }
+      | _ => {
+          countries: fallbackCountries,
+          states: JSON.Encode.null,
         }
       }
     }
-  }
-}
-
-let getCountryStateData = async (~locale="en") => {
-  let key = locale->getNormalizedLocale
-  switch pendingByLocale->Dict.get(key) {
-  | Some(pending) => await pending
-  | None => {
-      let pending = loadCountryStateData(~locale)
-      pendingByLocale->Dict.set(key, pending)
-      await pending
     }
   }
 }

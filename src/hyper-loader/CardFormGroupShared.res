@@ -17,22 +17,18 @@ let isFromIframe = (~ev: Types.event, ~iframe: option<Dom.element>, ~origin: str
 
 type coordinatorChannel = {
   groupId: string,
+  origin: string,
   mountRef: ref<option<CoordinatorMount.coordinatorMount>>,
   readyRef: ref<bool>,
-  pendingPortsRef: ref<array<CoordinatorMount.pendingPort>>,
   pendingCommandsRef: ref<array<array<(string, JSON.t)>>>,
-  installedPortKeysRef: ref<array<string>>,
-  portEpochCounterRef: ref<int>,
 }
 
-let makeCoordinatorChannel = (~groupId: string): coordinatorChannel => {
+let makeCoordinatorChannel = (~groupId: string, ~origin: string): coordinatorChannel => {
   groupId,
+  origin,
   mountRef: ref(None),
   readyRef: ref(false),
-  pendingPortsRef: ref([]),
   pendingCommandsRef: ref([]),
-  installedPortKeysRef: ref([]),
-  portEpochCounterRef: ref(0),
 }
 
 let postToCoordinator = (
@@ -60,47 +56,12 @@ let flushPendingCoordinatorCommands = (channel: coordinatorChannel) =>
   | _ => ()
   }
 
-let flushPendingPorts = (channel: coordinatorChannel) =>
-  switch (channel.mountRef.contents, channel.readyRef.contents) {
-  | (Some(mount), true) =>
-    channel.pendingPortsRef.contents->Array.forEach(({fieldName, epoch, port}) =>
-      CoordinatorMount.forwardPortToCoordinator(
-        ~coordinatorIframe=mount.iframe->Nullable.make,
-        ~groupId=channel.groupId,
-        ~fieldName,
-        ~portEpoch=epoch,
-        ~port,
-        ~targetOrigin=mount.origin,
-      )
-    )
-    channel.pendingPortsRef := []
-  | _ => ()
-  }
-
-let openFieldPort = (
+// The page only sends mount configuration. SDK sibling iframes exchange card ports directly.
+let postFieldMountConfig = (
   channel: coordinatorChannel,
   ~fieldIframe: Nullable.t<Dom.element>,
-  ~mountConfig: JSON.t,
-  ~fieldName: string,
-  ~targetOrigin: string,
-): unit => {
-  channel.portEpochCounterRef := channel.portEpochCounterRef.contents + 1
-  let epoch = channel.portEpochCounterRef.contents
-  let messageChannel = MessageChannelBinding.makeChannel()
-  let portKey = CardFormCoordinator.portKey(~groupId=channel.groupId, ~fieldName)
-  channel.installedPortKeysRef := channel.installedPortKeysRef.contents->Array.concat([portKey])
-  CoordinatorMount.postFieldMountConfigWithPort(
-    ~fieldIframe,
-    ~mountConfig,
-    ~portKey,
-    ~portEpoch=epoch,
-    ~port=messageChannel.port2,
-    ~targetOrigin,
-  )
-  channel.pendingPortsRef :=
-    channel.pendingPortsRef.contents->Array.concat([{fieldName, epoch, port: messageChannel.port1}])
-  flushPendingPorts(channel)
-}
+  ~mountConfig: Dict.t<JSON.t>,
+): unit => fieldIframe->Window.iframePostMessage(mountConfig, ~targetOrigin=channel.origin)
 
 let mergeSubscriptionEvents = (
   ~subscriptionEventsRef: ref<array<string>>,
@@ -123,11 +84,6 @@ let mergeSubscriptionEvents = (
   } else {
     false
   }
-}
-
-let closeInstalledPorts = (channel: coordinatorChannel): unit => {
-  channel.installedPortKeysRef.contents->Array.forEach(key => SadPortRegistry.closePort(~key))
-  channel.installedPortKeysRef := []
 }
 
 let resolveFieldAppearance = (

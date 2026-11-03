@@ -90,8 +90,6 @@ let make = (
     None
   }, (isExpiryValid, CardUtils.isExpiryComplete(cardExpiry)))
 
-  UtilityHooks.useLogAppRendered(~isRendered=!showAddScreen && !isLoading)
-
   <>
     <RenderIf
       condition={showAddScreen &&

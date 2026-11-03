@@ -110,7 +110,10 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   )
 
   let groupInstanceId = uniqueId(~prefix="payments")
-  let coordinator = makeCoordinatorChannel(~groupId=groupInstanceId)
+  let coordinator = makeCoordinatorChannel(
+    ~groupId=groupInstanceId,
+    ~origin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+  )
   let coordinatorListenerName = `onPaymentsCoordinator-${groupInstanceId}`
 
   let paymentsPaymentOptions = (~appearance: JSON.t) =>
@@ -138,7 +141,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           let dict = json->getDictFromJson
           if dict->getBool("iframeMounted", false) {
             coordinator.readyRef := true
-            flushPendingPorts(coordinator)
             switch coordinator.mountRef.contents {
             | Some(mount) => {
                 let coordinatorPaymentOptions = paymentsPaymentOptions(~appearance)
@@ -271,7 +273,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           "message",
           CoordinatorMount.fullscreenAnswerListenerName(groupInstanceId),
         )
-        CoordinatorMount.teardown(~mount, ~pendingPorts=coordinator.pendingPortsRef.contents)
+        CoordinatorMount.teardown(~mount)
         coordinator.mountRef := None
         coordinator.readyRef := false
       })
@@ -313,11 +315,9 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       options->getDictFromJson->getDictFromDict("savedCard")->getString("paymentToken", ""),
     )
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
-      coordinator->openFieldPort(
+      coordinator->postFieldMountConfig(
         ~fieldIframe=mountedIframeRef,
-        ~mountConfig=buildMountConfig(~options, ~fieldId)->JSON.Encode.object,
-        ~fieldName=mapFieldTypeToInternalFieldName(fieldType),
-        ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+        ~mountConfig=buildMountConfig(~options, ~fieldId),
       )
       clientListDataPromise
       ->Promise.then(json => {
@@ -650,10 +650,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         confirmingRef := false
         coordinator.pendingCommandsRef := []
         coordinatorConfirmPendingRef := None
-        closeInstalledPorts(coordinator)
         deinitCallbacksRef.contents->Array.forEach(cb => cb())
         deinitCallbacksRef := []
-        coordinator.pendingPortsRef := []
         coordinator.mountRef := None
         coordinator.readyRef := false
       })()

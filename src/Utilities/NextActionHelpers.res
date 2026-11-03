@@ -55,11 +55,6 @@ let handleDDC = (
           resolve(data)
         }
       | _ => {
-          let redirectOrigin = try {
-            URLModule.makeUrl(redirectUrl).origin
-          } catch {
-          | _ => ""
-          }
           openUrl(redirectUrl)
         }
       }

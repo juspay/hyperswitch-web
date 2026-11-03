@@ -48,8 +48,10 @@ let make = () => {
       if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
-        let clientSecret = metaDataDict->getString("clientSecret", "")
+        let clientSecret = metaDataDict->getString("paymentIntentId", "")
         let sdkAuthorization = metaDataDict->getOptionString("sdkAuthorization")
+        paymentMethodFlowCancelMetadata.current =
+          metaDataDict->getDictFromDict("paymentMethodFlowCancel")
         let headersDict =
           metaDataDict
           ->getJsonObjectFromDict("headers")
@@ -75,7 +77,6 @@ let make = () => {
           let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
-            messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
             postFailedSubmitResponse(
               ~errortype=errorObj.error.type_,
               ~message=errorObj.error.message,

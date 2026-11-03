@@ -77,7 +77,6 @@ let make = () => {
   }
 
   let initializePlaid = () => {
-    let startedAt = Date.now()
     Plaid.create({
       token: linkToken,
       onLoad: (() =>

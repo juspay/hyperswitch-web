@@ -106,7 +106,7 @@ let make = () => {
             }
           }
 
-          let clientSecretVal = metaDataDict->getString("clientSecret", "")
+          let clientSecretVal = metaDataDict->getString("paymentIntentId", "")
           setClientSecret(_ => clientSecretVal)
           let sdkAuthorizationVal = metaDataDict->getString("sdkAuthorization", "")
           setSdkAuthorization(_ => sdkAuthorizationVal)

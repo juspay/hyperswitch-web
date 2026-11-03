@@ -140,8 +140,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [paymentManagementList])
 
-  UtilityHooks.useLogAppRendered(~isRendered=paymentOptions->Array.length > 0)
-
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div className="text-2xl font-semibold text-[#151619] mb-6">

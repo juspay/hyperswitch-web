@@ -178,7 +178,10 @@ let make = (
 
   // Track field names and completion only; never retain input values for logging.
   let groupInstanceId = uniqueId(~prefix=`vault-${pmSessionId}`)
-  let coordinator = makeCoordinatorChannel(~groupId=groupInstanceId)
+  let coordinator = makeCoordinatorChannel(
+    ~groupId=groupInstanceId,
+    ~origin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+  )
   let coordinatorListenerName = `onVaultCoordinator-${groupInstanceId}`
   let coordinatorTokenizePendingRef: ref<option<(string, JSON.t => unit)>> = ref(None)
 
@@ -259,7 +262,6 @@ let make = (
           let dict = json->getDictFromJson
           if dict->getBool("iframeMounted", false) {
             coordinator.readyRef := true
-            flushPendingPorts(coordinator)
             postCoordinatorConfig()
             syncCoordinatorSessions()
             postCoordinatorOptions()
@@ -470,11 +472,9 @@ let make = (
     let savedCardBrandRef = ref(savedCardDict->savedCardNetwork)
 
     let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
-      coordinator->openFieldPort(
+      coordinator->postFieldMountConfig(
         ~fieldIframe=mountedIframeRef,
-        ~mountConfig=buildMountConfig(~options, ~fieldId)->JSON.Encode.object,
-        ~fieldName=mapFieldTypeToInternalFieldName(fieldType),
-        ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,
+        ~mountConfig=buildMountConfig(~options, ~fieldId),
       )
       if sessionsDataRef.contents != JSON.Encode.null {
         mountedIframeRef->Window.iframePostMessage(
@@ -1103,11 +1103,7 @@ let make = (
           sessionStateRef := Deinitialized
           tokenizingRef := false
 
-          closeInstalledPorts(coordinator)
-          coordinator.mountRef.contents->Option.forEach(mount =>
-            CoordinatorMount.teardown(~mount, ~pendingPorts=coordinator.pendingPortsRef.contents)
-          )
-          coordinator.pendingPortsRef := []
+          coordinator.mountRef.contents->Option.forEach(mount => CoordinatorMount.teardown(~mount))
           coordinator.mountRef := None
           coordinator.readyRef := false
           coordinator.pendingCommandsRef := []

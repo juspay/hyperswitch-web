@@ -336,8 +336,6 @@ let rec intentCall = (
   let isConfirm = uri->String.includes("/confirm")
   let isLegacyClientSecretFlow = sdkAuthorization->Utils.getNonEmptyOption->Option.isNone
 
-  let isCompleteAuthorize = uri->String.includes("/complete_authorize")
-  let isPostSessionTokens = uri->String.includes("/post_session_tokens")
   let handleOpenUrl = url => {
     if isPaymentSession && mode != CardCVCElement {
       replaceRootHref(url, redirectionFlags)
@@ -398,8 +396,8 @@ let rec intentCall = (
             if counter >= 5 {
               let message = "Something went wrong"
               if !isPaymentSession {
-                closePaymentLoaderIfAny()
                 postFailedSubmitResponse(~errortype="server_error", ~message)
+                closePaymentLoaderIfAny()
               }
               if handleUserError {
                 handleOpenUrl(url.href)
@@ -442,7 +440,6 @@ let rec intentCall = (
                 ~componentName,
                 ~redirectionFlags,
                 ~sdkAuthorization,
-                ~isPaymentSession,
               )
               ->then(
                 res => {
@@ -462,10 +459,9 @@ let rec intentCall = (
       ->then(data => {
         Promise.make(
           (resolve, _) => {
-            let intentDict = data->getDictFromJson
-            let intent = PaymentConfirmTypes.itemToObjMapper(intentDict)
+            let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
             let paymentMethod = switch paymentType {
-            | Card => "card"
+            | Card => "CARD"
             | _ => intent.payment_method_type
             }
 
@@ -542,13 +538,6 @@ let rec intentCall = (
                   ("popupUrl", popupUrl->JSON.Encode.string),
                   ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
                   ("paymentMethodFlowCancel", paymentMethodFlowCancelMetadata),
-                  ("paymentMethod", intent.payment_method_type->JSON.Encode.string),
-                  (
-                    "paymentMethodFamily",
-                    intentDict->getString("payment_method", "")->JSON.Encode.string,
-                  ),
-                  ("clientSecret", clientSecret->JSON.Encode.string),
-                  ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                 ]
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
@@ -585,17 +574,13 @@ let rec intentCall = (
                   [
                     ("qrData", qrData->JSON.Encode.string),
                     ("rawQrData", rawQrData->JSON.Encode.string),
-                    ("clientSecret", clientSecret->JSON.Encode.string),
+                    ("paymentIntentId", clientSecret->JSON.Encode.string),
                     ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
                     ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
                     ("expiryTime", expiryTime->Float.toString->JSON.Encode.string),
                     ("url", url.href->JSON.Encode.string),
                     ("paymentMethod", paymentMethod->JSON.Encode.string),
-                    (
-                      "paymentMethodFamily",
-                      intentDict->getString("payment_method", "")->JSON.Encode.string,
-                    ),
                     ("display_text", displayText->JSON.Encode.string),
                     ("border_color", borderColor->JSON.Encode.string),
                   ]->getJsonFromArrayOfJson
@@ -628,7 +613,7 @@ let rec intentCall = (
                 let metaData =
                   [
                     ("threeDSData", threeDsData->JSON.Encode.object),
-                    ("clientSecret", clientSecret->JSON.Encode.string),
+                    ("paymentIntentId", clientSecret->JSON.Encode.string),
                     ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                     ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
@@ -700,13 +685,7 @@ let rec intentCall = (
                     ("reference", voucherData.reference->JSON.Encode.string),
                     ("returnUrl", url.href->JSON.Encode.string),
                     ("paymentMethod", paymentMethod->JSON.Encode.string),
-                    (
-                      "paymentMethodFamily",
-                      intentDict->getString("payment_method", "")->JSON.Encode.string,
-                    ),
                     ("payment_intent_data", data),
-                    ("clientSecret", clientSecret->JSON.Encode.string),
-                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                   ]->Dict.fromArray
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
@@ -849,13 +828,15 @@ let rec intentCall = (
               }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else {
-              let message = "Payment failed. Try again!"
               if !isPaymentSession {
-                postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
+                postFailedSubmitResponse(
+                  ~errortype="confirm_payment_failed",
+                  ~message="Payment failed. Try again!",
+                )
               } else {
                 let failedSubmitResponse = getFailedSubmitResponse(
                   ~errorType="confirm_payment_failed",
-                  ~message,
+                  ~message="Payment failed. Try again!",
                 )
                 resolve(failedSubmitResponse)
               }
@@ -880,8 +861,8 @@ let rec intentCall = (
         if counter >= 5 {
           let message = "Something went wrong"
           if !isPaymentSession {
-            closePaymentLoaderIfAny()
             postFailedSubmitResponse(~errortype="server_error", ~message)
+            closePaymentLoaderIfAny()
           }
           if handleUserError {
             handleOpenUrl(url.href)
@@ -1946,23 +1927,16 @@ let fetchEnabledAuthnMethodsToken = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
-  let response = await (
-    () =>
-      Fetch.fetch(
-        uri,
-        {
-          method: #POST,
-          body: Fetch.Body.string(body->JSON.stringify),
-          headers: getHeaders(
-            ~headers,
-            ~uri,
-            ~customPodUri=Some(customPodUri),
-            ~publishableKey=Some(publishableKey),
-          ),
-        },
-      )
-  )()
-  await response->Fetch.Response.json
+  await fetchApiForSdk(
+    uri,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~headers,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess=data => data,
+    ~onFailure=_ => JSON.Encode.null,
+  )
 }
 
 let fetchEligibilityCheck = async (
@@ -1996,23 +1970,16 @@ let fetchEligibilityCheck = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
-  let response = await (
-    () =>
-      Fetch.fetch(
-        uri,
-        {
-          method: #POST,
-          body: Fetch.Body.string(body->JSON.stringify),
-          headers: getHeaders(
-            ~headers,
-            ~uri,
-            ~customPodUri=Some(customPodUri),
-            ~publishableKey=Some(publishableKey),
-          ),
-        },
-      )
-  )()
-  await response->Fetch.Response.json
+  await fetchApiForSdk(
+    uri,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~headers,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess=data => data,
+    ~onFailure=_ => JSON.Encode.null,
+  )
 }
 
 let fetchAuthenticationSync = async (
@@ -2048,23 +2015,16 @@ let fetchAuthenticationSync = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
-  let response = await (
-    () =>
-      Fetch.fetch(
-        uri,
-        {
-          method: #POST,
-          body: Fetch.Body.string(body->JSON.stringify),
-          headers: getHeaders(
-            ~headers,
-            ~uri,
-            ~customPodUri=Some(customPodUri),
-            ~publishableKey=Some(publishableKey),
-          ),
-        },
-      )
-  )()
-  await response->Fetch.Response.json
+  await fetchApiForSdk(
+    uri,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~headers,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess=data => data,
+    ~onFailure=err => err,
+  )
 }
 
 let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
@@ -2101,25 +2061,13 @@ let fetchSdkConfigs = async (
     },
   )
 
-  let response = await (
-    () =>
-      Utils.fetchApi(
-        uri,
-        ~method=#GET,
-        ~customPodUri=Some(customPodUri),
-        ~publishableKey=Some(publishableKey),
-        ~sdkAuthorization,
-      )
-  )()
-
-  try {
-    let data = await response->Fetch.Response.json
-    if response->Fetch.Response.ok {
-      data
-    } else {
-      JSON.Encode.null
-    }
-  } catch {
-  | _ => JSON.Encode.null
-  }
+  await fetchApiForSdk(
+    uri,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess=data => data,
+    ~onFailure=_ => JSON.Encode.null,
+    ~sdkAuthorization,
+  )
 }

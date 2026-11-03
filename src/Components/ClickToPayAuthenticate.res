@@ -173,15 +173,9 @@ let make = (
       ->Array.mapWithIndex((obj, i) => {
         let customerMethod =
           obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider)
-        let logSelectionDetails = [
-          ("card_brand", obj.paymentCardDescriptor->JSON.Encode.string),
-          ("card_index", i->JSON.Encode.int),
-          ("list_source", "click_to_pay"->JSON.Encode.string),
-        ]
         <SavedCardItem
           key={"ctp_" ++ i->Int.toString}
           setPaymentToken
-          logSelectionDetails
           isActive={paymentTokenVal == customerMethod.paymentToken}
           paymentItem=customerMethod
           brandIcon={customerMethod->CardUtils.getPaymentMethodBrand}

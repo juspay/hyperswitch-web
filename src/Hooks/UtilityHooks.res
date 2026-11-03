@@ -102,14 +102,3 @@ let useUpdateRedirectionFlags = () => {
   }
   updateRedirectionFlagsAtom
 }
-
-let appRenderedLogged = ref(false)
-
-let useLogAppRendered = (~isRendered) => {
-  React.useEffect(() => {
-    if isRendered && !appRenderedLogged.contents {
-      appRenderedLogged := true
-    }
-    None
-  }, [isRendered])
-}

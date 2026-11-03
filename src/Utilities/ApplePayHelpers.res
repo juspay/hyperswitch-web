@@ -3,15 +3,6 @@ open Utils
 open TaxCalculation
 open BraintreeHelpers
 
-let applePaySessionAbortedBySdk = ref(false)
-
-let abortApplePaySession = session => {
-  applePaySessionAbortedBySdk := true
-  try session.abort() catch {
-  | error => Console.error2("Abort fail", error)
-  }
-}
-
 let processPayment = (
   ~bodyArr,
   ~isThirdPartyFlow=false,
@@ -90,7 +81,10 @@ let startApplePaySession = (
   let sdkHandleIsThere = LoaderPaymentElement.isPaymentButtonHandlerProvided.contents
   let ssn = applePaySession(3, paymentRequest)
   switch applePaySessionRef.contents->Nullable.toOption {
-  | Some(session) => session->abortApplePaySession
+  | Some(session) =>
+    try session.abort() catch {
+    | error => Console.error2("Abort fail", error)
+    }
   | None => ()
   }
 
@@ -219,7 +213,6 @@ let startApplePaySession = (
 
   let handleCancel = () => {
     applePaySessionRef := Nullable.null
-    applePaySessionAbortedBySdk := false
     switch onCancel {
     | Some(onCancel) => onCancel()
     | None =>
@@ -464,11 +457,6 @@ let handleApplePayBraintreePaymentSession = (
     let paymentRequest = transactionInfo->applePayInstance.createPaymentRequest
     let sessions = applePaySession(3, paymentRequest)
 
-    let braintreeDetails = [("connector", "braintree"->JSON.Encode.string)]
-
-    // Apple Pay invokes these synchronously, so each logs `callback_triggered`.
-    // The outcome of the Braintree call made inside is reported by
-    // `onSuccess` / `onError` as lifecycle events.
     sessions.onvalidatemerchant = (event: ApplePayTypes.event) =>
       applePayInstance.performValidation(
         {
@@ -480,7 +468,7 @@ let handleApplePayBraintreePaymentSession = (
           | None => sessions.completeMerchantValidation(merchantSession)
           | Some(err) => {
               onError(err)
-              sessions->abortApplePaySession
+              sessions.abort()
             }
           }
         },
@@ -542,11 +530,11 @@ let handleApplePayBraintreeClick = (
       postFailedSubmitResponse(~errortype="validation_error", ~message)
       ()
     } else {
-      event.source->Window.sendPostMessage(
-        [
-          ("applePayBraintreeSuccess", true->JSON.Encode.bool),
-          ("token", token->JSON.Encode.string),
-        ]->Dict.fromArray,
+      event.source->Window.postMessage(
+        [("applePayBraintreeSuccess", true->JSON.Encode.bool), ("token", token->JSON.Encode.string)]
+        ->getJsonFromArrayOfJson
+        ->JSON.stringify,
+        event.origin,
       )
     }
   }
@@ -568,7 +556,6 @@ let handleApplePayBraintreeClick = (
   }
 
   let onCancel = () => {
-    applePaySessionAbortedBySdk := false
     restoreButton()
   }
 

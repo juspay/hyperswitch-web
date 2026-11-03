@@ -697,12 +697,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             ("requestShipping", requestShipping),
             ("shippingType", "shipping"->JSON.Encode.string),
           ]->getJsonFromArrayOfJson
-        switch Window.paymentRequestSupported {
-        | Some(_) => Window.paymentRequest(methodData, details, optionsForPaymentRequest)
-        | None => {
-            JsError.throwWithMessage("PaymentRequest is not supported in this browser")
-          }
-        }
+        Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
 
       let paymentRequest = options => (() => makePaymentRequest(options))()

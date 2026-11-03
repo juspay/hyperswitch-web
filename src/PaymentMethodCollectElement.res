@@ -276,10 +276,6 @@ let make = (~integrateError) => {
     </div>
   }
 
-  UtilityHooks.useLogAppRendered(
-    ~isRendered=!integrateError && availablePaymentMethods->Array.length > 0,
-  )
-
   if integrateError {
     <ErrorOccured />
   } else {

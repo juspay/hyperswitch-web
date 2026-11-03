@@ -110,7 +110,6 @@ let make = (
   ~isVaultCvcFlow=false,
   ~setCvcIframeRef=_ => (),
   ~setSavedCardCvcState=_ => (),
-  ~logSelectionDetails=[],
 ) => {
   let {themeObj, config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {

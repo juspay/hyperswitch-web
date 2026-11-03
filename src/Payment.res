@@ -123,39 +123,29 @@ let make = (~paymentMode, ~integrateError) => {
       | _ => ()
       }
     } else {
-      let userError = ref(None)
-      let noteUserError = message =>
-        switch userError.contents {
-        | None => userError := Some(message)
-        | Some(_) => ()
-        }
       if cardNumber === "" {
         setCardError(_ => localeString.cardNumberEmptyText)
-        noteUserError(localeString.enterFieldsText)
+        setUserError(localeString.enterFieldsText)
       } else if cardEligibilityError->Option.isSome {
         let msg = EligibilityHelpers.getCardEligibilityErrorText(
           ~cardEligibilityError,
           ~localeString,
         )
         setCardError(_ => msg)
-        noteUserError(msg)
+        setUserError(msg)
       } else if isEligibilityPending {
-        noteUserError(localeString.paymentDetailsBeingCheckedText)
+        setUserError(localeString.paymentDetailsBeingCheckedText)
       }
       if cardExpiry === "" {
         setExpiryError(_ => localeString.cardExpiryDateEmptyText)
-        noteUserError(localeString.enterFieldsText)
+        setUserError(localeString.enterFieldsText)
       }
       if cvcNumber === "" {
         setCvcError(_ => localeString.cvcNumberEmptyText)
-        noteUserError(localeString.enterFieldsText)
+        setUserError(localeString.enterFieldsText)
       }
       if !validFormat {
-        noteUserError(localeString.enterValidDetailsText)
-      }
-      switch userError.contents {
-      | Some(message) => setUserError(message)
-      | None => ()
+        setUserError(localeString.enterValidDetailsText)
       }
     }
   }
@@ -198,16 +188,6 @@ let make = (~paymentMode, ~integrateError) => {
     }
     None
   }, (iframeId, paymentMode))
-
-  let isConfigReady = Jotai.useAtomValue(JotaiAtoms.isConfigReady)
-  UtilityHooks.useLogAppRendered(
-    ~isRendered=!integrateError &&
-    isConfigReady &&
-    switch paymentMode->getPaymentMode {
-    | Card | CardNumberElement | CardExpiryElement | CardCVCElement => true
-    | _ => false
-    },
-  )
 
   if integrateError {
     <ErrorOccured />
