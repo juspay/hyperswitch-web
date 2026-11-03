@@ -49,6 +49,7 @@ let fullscreenAnswerListenerName = (localSelectorString: string): string =>
   `onCoordinatorFullscreenAnswer-${localSelectorString}`
 
 let makeFullscreenFlows = (
+  ~context=?,
   ~mount: coordinatorMount,
   ~localSelectorString: string,
   ~sdkDomain: string,
@@ -178,6 +179,7 @@ let makeFullscreenFlows = (
               ("metadata", metadataRef.contents),
               ("options", options),
               ("appearance", appearance),
+              LoggerContext.sharedContext(~context?, ()),
             ]->Dict.fromArray,
             ~targetOrigin=origin,
           )
@@ -196,6 +198,7 @@ let makeFullscreenFlows = (
             [
               ("fullScreenIframeMounted", true->JSON.Encode.bool),
               ("metadata", metadataRef.contents),
+              LoggerContext.sharedContext(~context?, ()),
             ]->Dict.fromArray,
             ~targetOrigin=origin,
           )

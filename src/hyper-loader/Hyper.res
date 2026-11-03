@@ -769,9 +769,27 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
-        confirmTokenization: confirmPayment,
-        initPaymentMethodSession: options =>
-          PaymentMethodSession.make(options, ~publishableKey, ~sdkSessionId=sessionID),
+        confirmTokenization,
+        initPaymentMethodSession: options => {
+          let sdkAuth =
+            options
+            ->getDictFromJson
+            ->PaymentMethodSession.resolveSdkAuthorization
+            ->getSdkAuthorizationData
+          let context: LoggerContext.t = {
+            sessionId: sessionID,
+            merchantId: sdkAuth.publishableKey->Option.getOr(publishableKey),
+            paymentId: sdkAuth.paymentId->Option.getOr(""),
+            pmSessionId: sdkAuth.pmSessionId->Option.getOr(""),
+            authenticationId: "",
+            scoped: true,
+          }
+          HyperLoaderLogger.observeMerchantCall(
+            ~event=HyperLoaderLogger.InitPaymentMethodSession({surface: Hyper}),
+            ~context,
+            ~call=() => PaymentMethodSession.make(options, ~context),
+          )
+        },
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

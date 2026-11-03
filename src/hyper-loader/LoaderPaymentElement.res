@@ -101,8 +101,16 @@ let make = (
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
+  ~context=?,
 ) => {
   try {
+    let surfaceData: HyperLoaderLogger.surfaceData = {
+      surface: fieldName->Option.isSome ? CardField : PaymentElement,
+    }
+    let surfaceDetails = switch fieldName {
+    | Some(field) => [("field", field->JSON.Encode.string)]
+    | None => [("component_type", componentType->JSON.Encode.string)]
+    }
     let mountId = ref("")
     let localSelectorRef = ref("")
     let mountedIframeRef = ref(Nullable.null)
@@ -154,9 +162,20 @@ let make = (
         callbackFuncForExtractingValFromDict("sdkHandleOneClickConfirmPayment"),
         true,
       )
-    let onSDKHandleClick = eventHandler => {
-      if eventHandler->Option.isSome {
-        currentOneClickHandler := eventHandler
+
+
+    let onSDKHandleClick = eventHandler =>
+      switch eventHandler {
+      | Some(handler) =>
+        currentOneClickHandler :=
+          Some(
+            HyperLoaderLogger.observeMerchantCallback(
+              ~context?,
+              ~event=OnSdkHandleClick(surfaceData),
+              ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
+              ~callback=handler,
+            ),
+          )
         isPaymentButtonHandlerProvided := true
       }
     }
@@ -316,7 +335,12 @@ let make = (
           "surchargeInfo",
           `onSurchargeInfo-${componentType}-${elementInstanceId}`,
         )
-      | _ => ()
+      | _ =>
+        HyperLoaderLogger.logMerchantIssue(
+          ~context?,
+          ~issue=UnknownOptionKey,
+          ~details=[("event", eventType->JSON.Encode.string)],
+        )
       }
     }
     let collapse = () => ()
@@ -341,28 +365,34 @@ let make = (
       })
     }
 
-    let unmount = () => {
-      oneClickSources->Dict.delete(elementInstanceId)
-      let id = mountId.contents
-      mountedIframeRef := Nullable.null
-      fullscreenIframeRef := Nullable.null
+    let unmount = () =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~context?,
+        ~event=Unmount(surfaceData),
+        ~details=surfaceDetails->Array.concat(containerPresentDetail()),
+        ~call=() => {
+          oneClickSources->Dict.delete(elementInstanceId)
+          mountedIframeRef := Nullable.null
+          fullscreenIframeRef := Nullable.null
+          clearMountedContainer()
+        },
+      )
 
-      let oElement = Window.querySelector(id)
-      switch oElement->Nullable.toOption {
-      | Some(elem) => elem->Window.innerHTML("")
-      | None =>
-        Console.warn(
-          "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
-        )
-      }
-    }
+    let destroy = () =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~context?,
+        ~event=Destroy(surfaceData),
+        ~details=surfaceDetails->Array.concat(containerPresentDetail()),
+        ~call=() => {
+          oneClickSources->Dict.delete(elementInstanceId)
+          mountedIframeRef := Nullable.null
+          fullscreenIframeRef := Nullable.null
+          clearMountedContainer()
+          mountId := ""
+        },
+      )
 
-    let destroy = () => {
-      unmount()
-      mountId := ""
-    }
-
-    let update = newOptions => {
+    let updateElementOptions = newOptions => {
       switch newOptions->getDictFromJson->Dict.get("subscriptionEvents") {
       | Some(_) =>
         subscriptionEventsRef := newOptions->getDictFromJson->getStrArray("subscriptionEvents")
@@ -397,7 +427,15 @@ let make = (
       })
     }
 
-    let mount = selector => {
+    let update = newOptions =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~context?,
+        ~event=HyperLoaderLogger.Update({surface: PaymentElement}),
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~call=() => updateElementOptions(newOptions),
+      )
+
+    let mountElement = selector => {
       ensureWalletOneClickListener(~ownerId=elementInstanceId, ~isTrustedMessage)
       mountId := selector
       let localSelectorArr = selector->String.split("#")
@@ -527,38 +565,39 @@ let make = (
                   if iframeID == localSelectorString {
                     let handleFullScreenCallback = (ev: Types.event) => {
                       if isTrustedMessage(ev) {
-                        let json = ev.data->anyTypeToJson
-                        let dict = json->Utils.getDictFromJson
-                        if dict->Dict.get("iframeMountedCallback")->Option.isSome {
-                          let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
-                          fullScreenEle->Window.iframePostMessage(
-                            [
-                              ("fullScreenIframeMounted", true->JSON.Encode.bool),
-                              ("metadata", fullscreenMetadata.contents),
-                              ("options", options),
-                              ("appearance", appearance),
-                            ]->Dict.fromArray,
-                            ~targetOrigin=fullscreenOrigin,
-                          )
-                        }
-                        if dict->Dict.get("driverMounted")->Option.isSome {
-                          mainElement->Window.iframePostMessage(
-                            [
-                              ("fullScreenIframeMounted", true->JSON.Encode.bool),
-                              ("metadata", fullscreenMetadata.contents),
-                              ("options", options),
-                            ]->Dict.fromArray,
-                            ~targetOrigin=iframeOrigin,
-                          )
-                          let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
-                          fullScreenEle->Window.iframePostMessage(
-                            [
-                              ("fullScreenIframeMounted", true->JSON.Encode.bool),
-                              ("metadata", fullscreenMetadata.contents),
-                            ]->Dict.fromArray,
-                            ~targetOrigin=fullscreenOrigin,
-                          )
-                        }
+                      let json = ev.data->anyTypeToJson
+                      let dict = json->Utils.getDictFromJson
+                      if dict->Dict.get("iframeMountedCallback")->Option.isSome {
+                        let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
+                        fullScreenEle->Window.iframePostMessage(
+                          [
+                            ("fullScreenIframeMounted", true->JSON.Encode.bool),
+                            ("metadata", fullscreenMetadata.contents),
+                            ("options", options),
+                            ("appearance", appearance),
+                            LoggerContext.sharedContext(~context?, ()),
+                           ]->Dict.fromArray,
+                           ~targetOrigin=fullscreenOrigin,
+                        )
+                      }
+                      if dict->Dict.get("driverMounted")->Option.isSome {
+                        mainElement->Window.iframePostMessage(
+                          [
+                            ("fullScreenIframeMounted", true->JSON.Encode.bool),
+                            ("metadata", fullscreenMetadata.contents),
+                            ("options", options),
+                          ]->Dict.fromArray,
+                          ~targetOrigin=iframeOrigin,
+                        )
+                        let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
+                        fullScreenEle->Window.iframePostMessage(
+                          [
+                            ("metadata", fullscreenMetadata.contents),
+                            LoggerContext.sharedContext(~context?, ()),
+                          ]->Dict.fromArray,
+                          ~targetOrigin=fullscreenOrigin,
+                        )
+                      }
                       }
                     }
                     addSmartEventListener(
@@ -664,9 +703,25 @@ let make = (
           }
         }
 
-      | None => ()
+      | None =>
+        HyperLoaderLogger.logMerchantIssue(
+          ~context?,
+          ~issue=MissingParameter,
+          ~details=[("selector", selector->JSON.Encode.string)],
+          ~message="Mount selector did not match any element",
+        )
       }
     }
+
+    let mount = selector =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~context?,
+        ~event=Mount(surfaceData),
+        ~details=surfaceDetails,
+        ~call=() => mountElement(selector),
+      )
+
+    let on = (eventType, callback) => registerEventHandler(eventType, callback)
 
     {
       on,
@@ -684,6 +739,13 @@ let make = (
   } catch {
   | e => {
       Sentry.captureException(e)
+
+      SdkLogger.logCrash(
+        ~context?,
+        ~origin=ElementConstructor,
+        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~exn=e,
+      )
       defaultPaymentElement
     }
   }

@@ -76,6 +76,14 @@ let make = (
       )
     } catch {
     | error =>
+      PaymentMethodSessionLogger.logLifecycle(
+        ~event=VaultFlowFailed({reason: TokenizationFailed}),
+        ~details=[
+          ("vault", "hyperswitch"->JSON.Encode.string),
+          ("operation", "save_card"->JSON.Encode.string),
+        ],
+        ~exn=error,
+      )
       messageParentWindow([("cardTokenFail", true->JSON.Encode.bool)], ~targetOrigin=parentURL)
       Console.error2("Unable to Save Card ", error->formatException->JSON.stringify)
     }
