@@ -88,7 +88,7 @@ let make = (
     | Some(fontsValue) =>
       HyperLoaderLogger.logMerchantProps(
         ~event=HyperLoaderLogger.Fonts({surface: Elements}),
-        ~details=[("count", decodedFonts->Array.length->JSON.Encode.int)],
+        ~details=[("count", fontsValue->JSON.Decode.array->Option.getOr([])->Array.length->JSON.Encode.int)],
         ~config=fontsValue,
         ~isSensitive=WebLoggerUtils.maskNone,
       )
@@ -905,10 +905,16 @@ let make = (
                       let newSecrets = secrets //<...>//
                       let newPaymentRequest = paymentRequest //<...>//
                       let trustpay = trustPayApi(newSecrets)
-                      trustpay.finishApplePaymentV2(
-                        payment, //<...>//
-                        newPaymentRequest,
-                        Window.Location.hostname,
+                      SdkLogger.observeFunction(
+                        ~event=FinishApplePaymentV2,
+                        ~paymentMethod=Wallet(ApplePay),
+                        ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
+                        ~call=() =>
+                          trustpay.finishApplePaymentV2(
+                            payment, //<...>//
+                            newPaymentRequest,
+                            Window.Location.hostname,
+                          ),
                       )
                       ->then(_ => {
                         SdkLogger.logLifecycle(

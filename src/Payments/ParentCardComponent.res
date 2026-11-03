@@ -693,51 +693,53 @@ let make = (
       try {
         (
           async () => {
-            let encryptedResult = await ClickToPayHelpers.encryptCardForClickToPay(
-              ~cardNumber=cardNumber->CardValidations.clearSpaces,
-              ~expiryMonth=month,
-              ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
-              ~cvcNumber,
-            )
-            switch encryptedResult {
-            | Ok(encryptedCard) =>
-              let response = await ClickToPayHelpers.handleProceedToPay(
-                ~encryptedCard,
-                ~isCheckoutWithNewCard=true,
-                ~isUnrecognizedUser=ctpCards->Array.length == 0,
-                ~email=email.value,
-                ~phoneNumber=phoneNumber.value,
-                ~countryCode=phoneNumber.countryCode
-                ->Option.getOr("")
-                ->String.replace("+", ""),
-                ~rememberMe=isClickToPayRememberMe,
-                ~clickToPayProvider,
-                ~clickToPayToken=clickToPayConfig.clickToPayToken,
+            try {
+              let encryptedResult = await ClickToPayHelpers.encryptCardForClickToPay(
+                ~cardNumber=cardNumber->CardValidations.clearSpaces,
+                ~expiryMonth=month,
+                ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
+                ~cvcNumber,
               )
-              let responseDict = response.payload->getDictFromJson
-              let headers = responseDict->getDictFromDict("headers")
-              let checkoutResponseData = responseDict->getDictFromDict("checkoutResponseData")
-              confirmBody(
-                PaymentBody.mastercardClickToPayBody(
-                  ~merchantTransactionId=headers->getString("merchant-transaction-id", ""),
-                  ~correlationId=checkoutResponseData->getString("srcCorrelationId", ""),
-                  ~xSrcFlowId=headers->getString("x-src-cx-flow-id", ""),
-                ),
-                ~confirmParams,
-                ~includeAcceptance=false,
-              )
-            | Error(err) =>
+              switch encryptedResult {
+              | Ok(encryptedCard) =>
+                let response = await ClickToPayHelpers.handleProceedToPay(
+                  ~encryptedCard,
+                  ~isCheckoutWithNewCard=true,
+                  ~isUnrecognizedUser=ctpCards->Array.length == 0,
+                  ~email=email.value,
+                  ~phoneNumber=phoneNumber.value,
+                  ~countryCode=phoneNumber.countryCode
+                  ->Option.getOr("")
+                  ->String.replace("+", ""),
+                  ~rememberMe=isClickToPayRememberMe,
+                  ~clickToPayProvider,
+                  ~clickToPayToken=clickToPayConfig.clickToPayToken,
+                )
+                let responseDict = response.payload->getDictFromJson
+                let headers = responseDict->getDictFromDict("headers")
+                let checkoutResponseData = responseDict->getDictFromDict("checkoutResponseData")
+                confirmBody(
+                  PaymentBody.mastercardClickToPayBody(
+                    ~merchantTransactionId=headers->getString("merchant-transaction-id", ""),
+                    ~correlationId=checkoutResponseData->getString("srcCorrelationId", ""),
+                    ~xSrcFlowId=headers->getString("x-src-cx-flow-id", ""),
+                  ),
+                  ~confirmParams,
+                  ~includeAcceptance=false,
+                )
+              | Error(err) =>
+                ClickToPayLogger.logLifecycle(
+                  ~event=CheckoutFailed({provider: MastercardUctp}),
+                  ~exn=err,
+                )
+              }
+            } catch {
+            | err =>
               ClickToPayLogger.logLifecycle(
                 ~event=CheckoutFailed({provider: MastercardUctp}),
                 ~exn=err,
               )
             }
-          } catch {
-          | err =>
-            ClickToPayLogger.logLifecycle(
-              ~event=CheckoutFailed({provider: MastercardUctp}),
-              ~exn=err,
-            )
           }
         )()->ignore
       } catch {
@@ -976,6 +978,7 @@ let make = (
                 : Some(LoggerPaymentMethod.Card),
             )
             postFailedSubmitResponse(~errortype="validation_error", ~message)
+          }
           if !areRequiredFieldsValid || !isNicknameValid {
             setUserError(localeString.enterValidDetailsText)
           } else if !isInstallmentValid {

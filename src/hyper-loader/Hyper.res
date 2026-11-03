@@ -74,6 +74,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
     let sdkAuthorization = dict->getString("sdkAuthorization", "")
     let publishableKey = dict->getString("publishableKey", "")
     let isTaxCalculationEnabled = dict->getBool("isTaxCalculationEnabled", false)
+    let sdkSessionId = dict->getString("sdkSessionId", "")
     let isSavedMethodsFlow = dict->getBool("isSavedMethodsFlow", false)
 
     LoggerContext.setSessionData(~sessionId=sdkSessionId, ~merchantId=publishableKey, ())
@@ -342,11 +343,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           )
           ->Option.getOr(false)
         )
+      let isReadyResolved = ref(false)
       let isReadyPromise = Promise.make((resolve, _) => {
         let activity = `handleOnReady-${generateRandomString(16)}`
         let handleOnReady = (event: Types.event) => {
           let dict = event.data->anyTypeToJson->getDictFromJson
           if isFromPaymentIframe(event) && dict->getBool("ready", false) {
+            isReadyResolved := true
             removeSmartEventListener("message", activity)
             resolve(Date.now())
           }
@@ -524,7 +527,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         }
       }
 
-      let confirmPayment = payload => {
+      let gatedConfirmCall = payload => {
         if isUpdateIntentInProgress.contents {
           Promise.resolve(UpdateIntentHelpersNew.confirmBlockedResponse())
         } else {
@@ -587,7 +590,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let elements = elementsOptions => {
+      let makeElements = elementsOptions => {
         let elementsOptionsDict = elementsOptions->JSON.Decode.object
         elementsOptionsDict
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
@@ -680,11 +683,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let confirmCardPaymentFn = (
-        clientSecretId: string,
-        data: option<JSON.t>,
-        _options: option<JSON.t>,
-      ) => {
+      let confirmCardPaymentCall = (clientSecretId: string, data: option<JSON.t>) => {
         pruneRemovedOverlays()
         let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
         Promise.make((resolve, _) => {
@@ -749,7 +748,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
         Some(dict->JSON.Encode.object)
       }
-      let paymentRequest = options => {
+      let makePaymentRequest = options => {
         let optionsDict = options->getDictFromJson
         let currency = optionsDict->getJsonStringFromDict("currency", "")
         let optionsTotal =
@@ -906,12 +905,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
 
       let initAuthenticationSession = authenticationSessionOptions => {
+        let authenticationOptions = authenticationSessionOptions->getDictFromJson
         let clientSecretId =
-          authenticationSessionOptions
-          ->JSON.Decode.object
-          ->Option.flatMap(x => x->Dict.get("clientSecret"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
+          authenticationOptions->getString("clientSecret", "")
         clientSecret := clientSecretId
 
         LoggerContext.setPaymentIdFromCredentials(
@@ -944,7 +940,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         confirmOneClickPayment,
         confirmPayment,
         elements,
-        widgets: elements,
+        widgets,
         confirmCardPayment: confirmCardPaymentFn,
         retrievePaymentIntent: retrievePaymentIntentFn,
         paymentRequest,
@@ -953,7 +949,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
-        confirmTokenization: confirmPayment,
+        confirmTokenization,
         initPaymentMethodSession: options => {
           let sdkAuth =
             options
