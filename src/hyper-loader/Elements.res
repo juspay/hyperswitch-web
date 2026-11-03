@@ -261,13 +261,19 @@ let make = (
               [("trustPayScriptStatus", status->JSON.Encode.string)]->Dict.fromArray,
               ~targetOrigin=sdkOrigin,
             )
-          postTrustPayStatus("loading")
-          ResourceLoader.load(
-            ~url=trustPayScriptURL,
-            ~resource=ResourceLoader.Script,
-            ~onLoad=_ => postTrustPayStatus("loaded"),
-            ~onError=_ => postTrustPayStatus("failed"),
-          )->ignore
+          if (
+            Window.querySelectorAll(`script[src="https://tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0 &&
+              Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0
+          ) {
+            let trustPayScript = Window.createElement("script")
+            postTrustPayStatus("loading")
+            trustPayScript->Window.elementSrc(trustPayScriptURL)
+            trustPayScript->Window.elementOnerror(_ => postTrustPayStatus("failed"))
+            trustPayScript->Window.elementOnload(_ => postTrustPayStatus("loaded"))
+            Window.body->Window.appendChild(trustPayScript)
+          } else {
+            postTrustPayStatus("loaded")
+          }
         }
 
         let paymentMethodList = preloadSDKWithParams->getJsonFromDict("paymentMethodsList", json)

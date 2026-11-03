@@ -99,12 +99,10 @@ let make = () => {
               resolve()
             }
           }
-          ResourceLoader.load(
-            ~url=pazeScriptURL,
-            ~resource=ResourceLoader.Script,
-            ~onLoad=_ => loadPazeSDK()->ignore,
-            ~onError=_ => (),
-          )->ignore
+          let pazeScript = Window.createElement("script")
+          pazeScript->Window.elementSrc(pazeScriptURL)
+          pazeScript->Window.elementOnload(_ => loadPazeSDK()->ignore)
+          Window.body->Window.appendChild(pazeScript)
         }
 
         if (

@@ -17,16 +17,10 @@ let mountAuthConnectorScript = (~authConnector, ~onScriptLoaded) => {
   let authConnector = authConnector->Option.getOr("")
   let pmAuthConnectorScriptUrl =
     authConnector->pmAuthNameToTypeMapper->pmAuthConnectorToScriptUrlMapper
-  switch pmAuthConnectorScriptUrl {
-  | "" => ()
-  | url =>
-    ResourceLoader.load(
-      ~url,
-      ~resource=ResourceLoader.Script,
-      ~onLoad=_ => onScriptLoaded(authConnector),
-      ~onError=_ => (),
-    )
-  }
+  let pmAuthConnectorScript = Window.createElement("script")
+  pmAuthConnectorScript->Window.elementSrc(pmAuthConnectorScriptUrl)
+  pmAuthConnectorScript->Window.elementOnload(_ => onScriptLoaded(authConnector))
+  Window.body->Window.appendChild(pmAuthConnectorScript)
 }
 
 let mountAllRequriedAuthConnectorScripts = (~pmAuthConnectorsArr, ~onScriptLoaded) => {

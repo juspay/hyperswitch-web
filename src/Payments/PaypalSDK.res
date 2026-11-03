@@ -167,11 +167,10 @@ let make = (~sessionObj: SessionsType.token) => {
     }
 
     let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields${currencyParam}${intentParam}`
-    ResourceLoader.load(
-      ~url=paypalScriptURL,
-      ~resource=ResourceLoader.Script,
-      ~matchQuery=true,
-      ~onLoad=_ => {
+    let paypalScript = Window.createElement("script")
+    paypalScript->Window.elementSrc(paypalScriptURL)
+    paypalScript->Window.elementOnerror(_ => onButtonSettled())
+    paypalScript->Window.elementOnload(_ => {
         PaypalSDKHelpers.loadPaypalSDK(
           ~onButtonSettled,
           ~sdkHandleOneClickConfirmPayment,
@@ -201,9 +200,8 @@ let make = (~sessionObj: SessionsType.token) => {
           ~emitter,
           ~parentOrigin=parentURL,
         )
-      },
-      ~onError=_ => onButtonSettled(),
-    )->ignore
+    })
+    Window.body->Window.appendChild(paypalScript)
   }
 
   React.useEffect(() => {

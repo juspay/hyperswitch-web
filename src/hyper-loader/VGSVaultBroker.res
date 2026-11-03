@@ -15,6 +15,11 @@ type vgsCollectGlobal = {create: (string, string, JSON.t => unit) => JSON.t}
 
 @val @scope("JSON") external stringifyNullable: JSON.t => Nullable.t<string> = "stringify"
 
+type eventListenerOptions = {once: bool}
+@send
+external addElementEventListener: (Dom.element, string, 'ev => unit, eventListenerOptions) => unit =
+  "addEventListener"
+
 @send
 external elementQuerySelector: (Dom.element, string) => Nullable.t<Dom.element> = "querySelector"
 @send external setStyleProperty: (Window.style, string, string) => unit = "setProperty"
@@ -178,7 +183,8 @@ let isVGSProvider = (vaultCredentials: JSON.t): bool => {
   }
 }
 
-let vgsScriptSelector = `script[src="${VGSConstants.vgsScriptURL}"]`
+let scriptMarkerAttribute = "data-vgs-script-loaded"
+let vgsScriptSelector = `script[${scriptMarkerAttribute}]`
 
 let scriptElementStillPresent = (): bool =>
   Window.querySelector(vgsScriptSelector)->Nullable.toOption->Option.isSome
@@ -193,22 +199,54 @@ let loadVGSScript = (): Promise.t<unit> => {
   switch inFlightScriptPromise.contents {
   | Some(scriptLoadPromise) => scriptLoadPromise
   | None => {
-      let scriptLoadPromise = Promise.make((resolve, reject) =>
-        ResourceLoader.load(
-          ~url=VGSConstants.vgsScriptURL,
-          ~resource=ResourceLoader.Script,
-          ~attributes=[
-            ("integrity", VGSConstants.vgsScriptIntegrity),
-            ("crossorigin", "anonymous"),
-            ("async", "true"),
-          ],
-          ~onLoad=_ => resolve(),
-          ~onError=error => {
+      let scriptLoadPromise = Promise.make((resolve, reject) => {
+        switch Window.querySelector(vgsScriptSelector)->Nullable.toOption {
+        | Some(existing) =>
+          switch existing->Window.getAttribute(scriptMarkerAttribute)->Nullable.toOption {
+          | Some("loaded") => resolve()
+          | Some("error") =>
+            existing->Window.remove
             inFlightScriptPromise := None
-            reject(error)
-          },
-        )
-      )
+            reject(Error.make("vgs-collect previously failed to load")->Error.toException)
+          | _ =>
+            existing->addElementEventListener(
+              "load",
+              _ => {
+                existing->Window.setAttribute(scriptMarkerAttribute, "loaded")
+                resolve()
+              },
+              {once: true},
+            )
+            existing->addElementEventListener(
+              "error",
+              (err: exn) => {
+                existing->Window.setAttribute(scriptMarkerAttribute, "error")
+                existing->Window.remove
+                inFlightScriptPromise := None
+                reject(err)
+              },
+              {once: true},
+            )
+          }
+        | None =>
+          let script = Window.createElement("script")
+          script->Window.elementSrc(VGSConstants.vgsScriptURL)
+          script->Window.setAttribute("integrity", VGSConstants.vgsScriptIntegrity)
+          script->Window.setAttribute("crossorigin", "anonymous")
+          script->Window.setAttribute("async", "true")
+          script->Window.setAttribute(scriptMarkerAttribute, "loading")
+          script->Window.elementOnload(() => {
+            script->Window.setAttribute(scriptMarkerAttribute, "loaded")
+            resolve()
+          })
+          script->Window.elementOnerror(err => {
+            script->Window.setAttribute(scriptMarkerAttribute, "error")
+            inFlightScriptPromise := None
+            reject(err)
+          })
+          let _ = Window.head->Window.appendChildElement(script)
+        }
+      })
       inFlightScriptPromise := Some(scriptLoadPromise)
       scriptLoadPromise
     }

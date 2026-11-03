@@ -479,45 +479,67 @@ let checkoutWithNewCard = async (payload: checkoutWithNewCardPayload) => {
   }
 }
 
+@val @scope("document") external querySelector: string => Nullable.t<Dom.element> = "querySelector"
+@val @scope("document") external createElement: string => Dom.element = "createElement"
+@val @scope(("document", "head")) external appendChild: Dom.element => unit = "appendChild"
+@set external setType: (Dom.element, string) => unit = "type"
+@set external setSrc: (Dom.element, string) => unit = "src"
+@set external setRel: (Dom.element, string) => unit = "rel"
+@set external setHref: (Dom.element, string) => unit = "href"
+@set external setOnload: (Dom.element, unit => unit) => unit = "onload"
+@set external setOnError: (Dom.element, unit => unit) => unit = "onerror"
+
 let loadClickToPayScripts = () =>
   Promise.make((resolve, _) => {
     let pending = ref(2)
-
     let settle = () => {
       pending := pending.contents - 1
       pending.contents === 0 ? resolve() : ()
     }
-    ResourceLoader.load(
-      ~url=srcUiKitScriptSrc,
-      ~resource=ResourceLoader.Script,
-      ~attributes=[("type", "module")],
-      ~onLoad=_ => settle(),
-      ~onError=_ => settle(),
-    )
-    ResourceLoader.load(
-      ~url=srcUiKitCssHref,
-      ~resource=ResourceLoader.Stylesheet,
-      ~onLoad=_ => settle(),
-      ~onError=_ => settle(),
-    )
+    let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
+    switch querySelector(scriptSelector)->Nullable.toOption {
+    | Some(_) => settle()
+    | None =>
+      let script = createElement("script")
+      script->setType("module")
+      script->setSrc(srcUiKitScriptSrc)
+      script->setOnload(settle)
+      appendChild(script)
+    }
+    let linkSelector = `link[href="${srcUiKitCssHref}"]`
+    switch querySelector(linkSelector)->Nullable.toOption {
+    | Some(_) => settle()
+    | None =>
+      let link = createElement("link")
+      link->setRel("stylesheet")
+      link->setHref(srcUiKitCssHref)
+      link->setOnload(settle)
+      appendChild(link)
+    }
   })
 
 let loadMastercardScript = clickToPayToken =>
-  Promise.make((resolve, reject) =>
-    ResourceLoader.load(
-      ~url=getScriptSrc(),
-      ~resource=ResourceLoader.Script,
-      ~onLoad=_ =>
-        initializeMastercardCheckout(clickToPayToken)
-        ->Promise.thenResolve(resolve)
-        ->Promise.catch(error => {
-          reject(error)
-          Promise.resolve()
-        })
-        ->ignore,
-      ~onError=reject,
-    )
-  )
+  Promise.make((resolve, reject) => {
+    let scriptSrc = getScriptSrc()
+    let initialize = () =>
+      initializeMastercardCheckout(clickToPayToken)
+      ->Promise.thenResolve(resolve)
+      ->Promise.catch(error => {
+        reject(error)
+        Promise.resolve()
+      })
+      ->ignore
+    switch querySelector(`script[src="${scriptSrc}"]`)->Nullable.toOption {
+    | Some(_) => initialize()
+    | None =>
+      let script = createElement("script")
+      script->setType("text/javascript")
+      script->setSrc(scriptSrc)
+      script->setOnload(initialize)
+      script->setOnError(() => reject(JsExn.anyToExnInternal("Failed to load Mastercard script")))
+      appendChild(script)
+    }
+  })
 
 type srcMarkProps = {
   @as("card-brands") cardBrands?: string,
@@ -733,29 +755,33 @@ let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorC
   let scriptSrc = GlobalVars.isProd
     ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
     : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
-  ResourceLoader.load(
-    ~url=scriptSrc,
-    ~resource=ResourceLoader.Script,
-    ~matchQuery=true,
-    ~onLoad=_ => onLoadCallback(),
-    ~onError=_ => onErrorCallback(),
-  )
+  let script = createElement("script")
+  script->setType("text/javascript")
+  script->setSrc(scriptSrc)
+  script->setOnload(onLoadCallback)
+  script->setOnError(onErrorCallback)
+  Window.body->Window.appendChild(script)
 }
 
 let loadClickToPayUIScripts = (scriptLoadedCallback, scriptErrorCallback) => {
-  ResourceLoader.load(
-    ~url=srcUiKitScriptSrc,
-    ~resource=ResourceLoader.Script,
-    ~attributes=[("type", "module")],
-    ~onLoad=_ => scriptLoadedCallback(),
-    ~onError=_ => scriptErrorCallback(),
-  )
-  ResourceLoader.load(
-    ~url=srcUiKitCssHref,
-    ~resource=ResourceLoader.Stylesheet,
-    ~onLoad=_ => (),
-    ~onError=_ => (),
-  )
+  switch querySelector(`script[src="${srcUiKitScriptSrc}"]`)->Nullable.toOption {
+  | Some(_) => ()
+  | None =>
+    let script = createElement("script")
+    script->setType("module")
+    script->setSrc(srcUiKitScriptSrc)
+    script->setOnload(scriptLoadedCallback)
+    script->setOnError(scriptErrorCallback)
+    appendChild(script)
+  }
+  switch querySelector(`link[href="${srcUiKitCssHref}"]`)->Nullable.toOption {
+  | Some(_) => ()
+  | None =>
+    let link = createElement("link")
+    link->setRel("stylesheet")
+    link->setHref(srcUiKitCssHref)
+    appendChild(link)
+  }
 }
 
 let formatOrderId = orderId =>

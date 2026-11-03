@@ -232,28 +232,32 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             manageErrorWarning(InvalidPublishableKey)
           }
 
-          ResourceLoader.load(
-            ~url="https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js",
-            ~resource=ResourceLoader.Script,
-            ~onError=_ => Console.error("ERROR DURING LOADING APPLE PAY"),
-            ~onLoad=_ => (),
-          )->ignore
+          if (
+            Window.querySelectorAll(`script[src="https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"]`)->Array.length === 0
+          ) {
+            let script = Window.createElement("script")
+            script->Window.elementSrc("https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js")
+            script->Window.elementOnerror(err => Console.error2("ERROR DURING LOADING APPLE PAY", err))
+            Window.body->Window.appendChild(script)
+          }
         }
       }->Sentry.sentryLogger
 
-      ResourceLoader.load(
-        ~url="https://pay.google.com/gp/p/js/pay.js",
-        ~resource=ResourceLoader.Script,
-        ~onLoad=_ => (),
-        ~onError=_ => (),
-      )->ignore
+      if (
+        Window.querySelectorAll(`script[src="https://pay.google.com/gp/p/js/pay.js"]`)->Array.length === 0
+      ) {
+        let script = Window.createElement("script")
+        script->Window.elementSrc("https://pay.google.com/gp/p/js/pay.js")
+        Window.body->Window.appendChild(script)
+      }
 
-      ResourceLoader.load(
-        ~url="https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js",
-        ~resource=ResourceLoader.Script,
-        ~onLoad=_ => (),
-        ~onError=_ => (),
-      )->ignore
+      if (
+        Window.querySelectorAll(`script[src="https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js"]`)->Array.length === 0
+      ) {
+        let script = Window.createElement("script")
+        script->Window.elementSrc("https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js")
+        Window.body->Window.appendChild(script)
+      }
 
       let iframeRef = ref([])
       let clientSecret = ref("")
