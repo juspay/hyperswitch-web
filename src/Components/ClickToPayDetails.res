@@ -41,7 +41,7 @@ let make = (
 
   let formattedCardBrand = capitalizeCardBrand(clickToPayCardBrand)
 
-  let getIsChecked = (ev): bool => {
+  let getIsChecked = ev => {
     let target = ev->ReactEvent.Form.target
     target["checked"]
   }
@@ -96,10 +96,7 @@ let make = (
               className={`container CheckboxInput ${isSaveDetailsCheckedState}`}
               style={width: "fit-content"}>
               <input
-                type_={`checkbox`}
-                onChange={e => {
-                  setIsSaveDetailsWithClickToPay(_ => e->getIsChecked)
-                }}
+                type_={`checkbox`} onChange={e => setIsSaveDetailsWithClickToPay(e->getIsChecked)}
               />
               <div className={`checkmark CheckboxInput ${isSaveDetailsCheckedState}`} />
             </label>
@@ -127,10 +124,7 @@ let make = (
               className={`container CheckboxInput ${isRememberMeCheckedState}`}
               style={width: "fit-content"}>
               <input
-                type_={`checkbox`}
-                onChange={e => {
-                  setIsClickToPayRememberMe(_ => e->getIsChecked)
-                }}
+                type_={`checkbox`} onChange={e => setIsClickToPayRememberMe(e->getIsChecked)}
               />
               <div className={`checkmark CheckboxInput ${isRememberMeCheckedState}`} />
             </label>
@@ -142,15 +136,13 @@ let make = (
                 <div className="relative inline-block ml-2">
                   <div className="group cursor-help">
                     <div
-                      className="w-4 h-4 rounded-full bg-[#4a4a4a] flex items-center justify-center cursor-help"
-                    >
+                      className="w-4 h-4 rounded-full bg-[#4a4a4a] flex items-center justify-center cursor-help">
                       <span className="text-white text-xs cursor-help" style={fontSize: "10px"}>
                         {React.string("i")}
                       </span>
                     </div>
                     <div
-                      className="invisible group-hover:visible absolute z-10 w-64 bg-white text-xs rounded-md p-2 left-1/2 transform -translate-x-1/2 bottom-[150%] shadow-md border border-gray-200 before:content-[''] before:absolute before:top-[100%] before:left-1/2 before:ml-[-5px] before:border-[5px] before:border-solid before:border-gray-200 before:border-b-transparent before:border-l-transparent before:border-r-transparent after:content-[''] after:absolute after:top-[100%] after:left-1/2 after:ml-[-4px] after:border-[4px] after:border-solid after:border-white after:border-b-transparent after:border-l-transparent after:border-r-transparent"
-                    >
+                      className="invisible group-hover:visible absolute z-10 w-64 bg-white text-xs rounded-md p-2 left-1/2 transform -translate-x-1/2 bottom-[150%] shadow-md border border-gray-200 before:content-[''] before:absolute before:top-[100%] before:left-1/2 before:ml-[-5px] before:border-[5px] before:border-solid before:border-gray-200 before:border-b-transparent before:border-l-transparent before:border-r-transparent after:content-[''] after:absolute after:top-[100%] after:left-1/2 after:ml-[-4px] after:border-[4px] after:border-solid after:border-white after:border-b-transparent after:border-l-transparent after:border-r-transparent">
                       //   {/* Content */}
                       <div className="flex flex-col space-y-2">
                         <span>
