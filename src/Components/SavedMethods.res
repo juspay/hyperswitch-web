@@ -186,6 +186,10 @@ let make = (
         <SavedCardItem
           key={i->Int.toString}
           setPaymentToken
+          logSelectionDetails=[
+            ("card_index", i->JSON.Encode.int),
+            ("list_source", "saved_methods"->JSON.Encode.string),
+          ]
           isActive
           paymentItem=obj
           brandIcon={obj->getPaymentMethodBrand}

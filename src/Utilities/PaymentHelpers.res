@@ -158,7 +158,7 @@ let threeDsAuth = async (~clientSecret, ~threeDsMethodComp, ~headers, ~sdkAuthor
       ~request={
         method: #POST,
         body: Fetch.Body.string(bodyStr),
-        headers: getHeaders(~headers, ~uri=url, ~sdkAuthorization),
+        headers: Utils.getHeaders(~headers, ~uri=url, ~sdkAuthorization),
       },
     )
     let data = await response->Fetch.Response.json
@@ -393,9 +393,10 @@ let rec intentCall = (
     ~request={
       method: fetchMethod,
       ?body,
-      headers: getHeaders(
-        ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+      headers: Utils.getHeaders(
+        ~headers=headers->Dict.fromArray,
         ~uri,
+        ~customPodUri=Some(customPodUri),
         ~sdkAuthorization,
       ),
     },
@@ -670,6 +671,7 @@ let rec intentCall = (
                     ("expiryTime", expiryTime->Float.toString->JSON.Encode.string),
                     ("url", url.href->JSON.Encode.string),
                     ("paymentMethod", paymentMethod->JSON.Encode.string),
+                    ("paymentMethodFamily", intentDict->getString("payment_method", "")->JSON.Encode.string),
                     ("display_text", displayText->JSON.Encode.string),
                     ("border_color", borderColor->JSON.Encode.string),
                   ]->getJsonFromArrayOfJson
@@ -784,6 +786,7 @@ let rec intentCall = (
                     ("reference", voucherData.reference->JSON.Encode.string),
                     ("returnUrl", url.href->JSON.Encode.string),
                     ("paymentMethod", paymentMethod->JSON.Encode.string),
+                    ("paymentMethodFamily", intentDict->getString("payment_method", "")->JSON.Encode.string),
                     ("payment_intent_data", data),
                   ]->Dict.fromArray
                 SdkLogger.logLifecycle(~event=VoucherShown, ~paymentMethod=?loggedPaymentMethod)
@@ -971,24 +974,16 @@ let rec intentCall = (
                 ~message="Payment failed. Try again!",
               )
             } else {
-              let message = "Payment failed. Try again!"
               SdkLogger.logLifecycle(
                 ~event=SdkLogger.PaymentStatusUnknown({inferred: false}),
                 ~paymentMethod=?loggedPaymentMethod,
                 ~message="Payment response had empty status; reported confirm_payment_failed",
               )
-              if !isPaymentSession {
-                postFailedSubmitResponse(
-                  ~errortype="confirm_payment_failed",
-                  ~message="Payment failed. Try again!",
-                )
-              } else {
-                let failedSubmitResponse = getFailedSubmitResponse(
-                  ~errorType="confirm_payment_failed",
-                  ~message="Payment failed. Try again!",
-                )
-                resolve(failedSubmitResponse)
-              }
+              let failedSubmitResponse = getFailedSubmitResponse(
+                ~errorType="confirm_payment_failed",
+                ~message="Payment failed. Try again!",
+              )
+              resolve(failedSubmitResponse)
             }
           },
         )->then(resolve)
@@ -2158,7 +2153,7 @@ let fetchEnabledAuthnMethodsToken = async (
     ~request={
       method: #POST,
       body: Fetch.Body.string(body->JSON.stringify),
-      headers: getHeaders(
+      headers: Utils.getHeaders(
         ~headers,
         ~uri,
         ~customPodUri=Some(customPodUri),
@@ -2207,7 +2202,7 @@ let fetchEligibilityCheck = async (
     ~request={
       method: #POST,
       body: Fetch.Body.string(body->JSON.stringify),
-      headers: getHeaders(
+      headers: Utils.getHeaders(
         ~headers,
         ~uri,
         ~customPodUri=Some(customPodUri),
@@ -2258,7 +2253,7 @@ let fetchAuthenticationSync = async (
     ~request={
       method: #POST,
       body: Fetch.Body.string(body->JSON.stringify),
-      headers: getHeaders(
+      headers: Utils.getHeaders(
         ~headers,
         ~uri,
         ~customPodUri=Some(customPodUri),
@@ -2303,17 +2298,16 @@ let fetchSdkConfigs = async (
     },
   )
 
-  let response = await SdkLogger.observeStaticAsset(~event=SdkConfigs, ~url=uri, ~call=() =>
-    Utils.fetchApi(
-      uri,
-      ~method=#GET,
-      ~customPodUri=Some(customPodUri),
-      ~publishableKey=Some(publishableKey),
-      ~sdkAuthorization,
-    )
-  )
-
   try {
+    let response = await SdkLogger.observeStaticAsset(~event=SdkConfigs, ~url=uri, ~call=() =>
+      Utils.fetchApi(
+        uri,
+        ~method=#GET,
+        ~customPodUri=Some(customPodUri),
+        ~publishableKey=Some(publishableKey),
+        ~sdkAuthorization,
+      )
+    )
     let data = await response->Fetch.Response.json
     if response->Fetch.Response.ok {
       data
