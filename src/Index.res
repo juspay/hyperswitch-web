@@ -3,6 +3,9 @@
 
 Sentry.initiateSentry(~dsn=GlobalVars.sentryDSN)
 
+WebLoggerAdapter.configure()
+WebLoggerCrashListener.catchGlobalCrashes(~ownsDocument=true)
+
 let app = switch ReactDOM.querySelector("#app") {
 | Some(container) =>
   let root = ReactDOM.Client.createRoot(container)
