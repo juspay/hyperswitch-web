@@ -31,7 +31,6 @@ let make = () => {
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="sepa_bank_debit",
-
   )
 
   let submitCallback = React.useCallback((ev: Window.event) => {

@@ -231,7 +231,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     switch coordinator.mountRef.contents {
     | Some(_) => ()
     | None =>
-      let groupAppearance = config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
+      let groupAppearance =
+        config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
       let groupConfigAsOptions =
         [
           ("clientSecret", config.clientSecret->JSON.Encode.string),
@@ -361,9 +362,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               [
                 ("elementType", fieldType->JSON.Encode.string),
                 ("iframeId", fieldId->JSON.Encode.string),
-              ]
-              ->Dict.fromArray
-              ->JSON.Encode.object
+              ]->Dict.fromArray->JSON.Encode.object
             if isReady {
               eventHandlersRef.contents->Dict.get("ready")->Option.forEach(cb => cb(payload))
             } else if isFocus {
@@ -371,8 +370,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
             } else if isBlur {
               eventHandlersRef.contents->Dict.get("blur")->Option.forEach(cb => cb(payload))
             } else if isConfirmFail {
-              let errorMessage =
-                dict->getString("errorMessage", "Card details incomplete or invalid")
+              let errorMessage = dict->getString("errorMessage", "Card details incomplete or invalid")
               settlePendingConfirm(
                 ~confirmId=dict->getString("confirmId", ""),
                 groupFailureResponse(
@@ -402,14 +400,14 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                 } else if !readiness {
                   hasBeenReadyRef := false
                 }
-              | None => ()
-              }
-            }
-          }
-        },
-        listenerName,
-      )
-    }
+               | None => ()
+               }
+             }
+           }
+         },
+         listenerName,
+       )
+     }
 
     let fieldOptionsDict = options->getDictFromJson
     let appearanceJson = resolveFieldAppearance(~fieldOptionsDict, ~groupAppearance=appearance)
@@ -537,7 +535,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     let attemptsConfirmParamsMutation = newOptionsDict->Dict.get("confirmParams")->Option.isSome
     if attemptsClientSecretMutation || attemptsConfirmParamsMutation {
       Console.warn(
-        "[PaymentsGroup] update() refused: `clientSecret` and `confirmParams` are immutable after mount. " ++ "Create a new group (or remount the fields) to switch intents.",
+        "[PaymentsGroup] update() refused: `clientSecret` and `confirmParams` are immutable after mount. " ++
+        "Create a new group (or remount the fields) to switch intents.",
       )
     } else {
       fieldsRef.contents

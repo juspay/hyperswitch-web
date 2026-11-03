@@ -89,8 +89,7 @@ let make = () => {
               threeDsMethodStartedAtRef.current = Some(Date.now())
               form.submit()
             }
-          | None =>
-            ()
+          | None => ()
           }
 
           timeoutRef.current->Option.forEach(clearTimeout)
