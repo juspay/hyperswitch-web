@@ -242,7 +242,7 @@ module.exports = (publicPath = "auto") => {
     app: "./index.js",
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
     ClickToPayAuthenticationSession:
-      "./src/hyper-loader/AuthenticationSessionMethods.bs.js",
+      "./src/hyper-loader/ClickToPayAuthenticationSessionEntry.bs.js",
   };
 
   const globalVars = {
