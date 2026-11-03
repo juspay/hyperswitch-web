@@ -343,7 +343,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     }
   }
 
-  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
   )

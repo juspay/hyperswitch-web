@@ -7,13 +7,19 @@ let make = () => {
   let (downloadUrl, setDownloadUrl) = React.useState(_ => "")
   let (reference, setReference) = React.useState(_ => "")
   let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
+  let (paymentMethodFamily, setPaymentMethodFamily) = React.useState(_ => "")
   let (paymentIntent, setPaymentIntent) = React.useState(_ => JSON.Encode.null)
   let (loader, setLoader) = React.useState(_ => true)
   let linkRef = React.useRef(Nullable.null)
+  let autoDownloading = React.useRef(false)
 
   React.useEffect(() => {
     switch linkRef.current->Nullable.toOption {
-    | Some(link) => link->Window.click
+    | Some(link) => {
+        autoDownloading.current = true
+        link->Window.click
+        autoDownloading.current = false
+      }
     | None => ()
     }
     None
@@ -31,6 +37,7 @@ let make = () => {
         setDownloadUrl(_ => metaDataDict->getString("voucherUrl", ""))
         setReference(_ => metaDataDict->getString("reference", ""))
         setPaymentMethod(_ => metaDataDict->getString("paymentMethod", ""))
+        setPaymentMethodFamily(_ => metaDataDict->getString("paymentMethodFamily", ""))
         setPaymentIntent(_ => metaDataDict->getJsonObjectFromDict("payment_intent_data"))
         setLoader(_ => false)
       }

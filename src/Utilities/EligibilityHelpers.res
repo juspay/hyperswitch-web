@@ -176,12 +176,12 @@ let performEligibilityCheck = async (
       if exn->WebLoggerUtils.summarizeExn->WebLoggerUtils.isAborted {
         SdkLogger.logLifecycle(
           ~event=EligibilityCheckCancelled,
-          ~details=[("check", check->JSON.Encode.string)],
+          ~details=[("check", "payment_method_eligibility"->JSON.Encode.string)],
         )
       } else {
         SdkLogger.logLifecycle(
           ~event=EligibilityCheckFailed,
-          ~details=[("check", check->JSON.Encode.string)],
+          ~details=[("check", "payment_method_eligibility"->JSON.Encode.string)],
           ~exn,
         )
       }

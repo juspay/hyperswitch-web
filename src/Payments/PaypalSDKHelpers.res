@@ -83,7 +83,7 @@ let loadPaypalSDK = (
     ->Option.getOr("")
   | _ => ""
   }
-  paypal["Buttons"]({
+  let paypalButtons = paypal["Buttons"]({
     style: buttonStyle,
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: SdkLogger.observeFunctionCallback(
@@ -204,7 +204,7 @@ let loadPaypalSDK = (
     onApprove: SdkLogger.observeFunctionCallback(
       ~event=OnApprove,
       ~paymentMethod=Wallet(PaypalSdk),
-      ~callback=(_data, actions) =>
+      ~callback=(_data, actions) => {
         if !options.readOnly {
           actions.order.get()
           ->then(val => {
@@ -237,138 +237,43 @@ let loadPaypalSDK = (
               ~body,
               ~alwaysSend=options.alwaysSendCustomerAcceptance,
             )
-            make((resolve, _) => {
-              if paypalNextAction == "post_session_tokens" {
-                postSessionTokens(
-                  ~bodyArr=modifiedPaymentBody,
-                  ~confirmParam={
-                    return_url: options.wallets.walletReturnUrl,
-                    publishableKey,
-                  },
-                  ~handleUserError=true,
-                  ~intentCallback=val => {
-                    val
-                    ->getDictFromJson
-                    ->getDictFromDict("nextActionData")
-                    ->getString("order_id", "")
-                    ->resolve
-                  },
-                  ~manualRetry=isManualRetryEnabled,
-                )
-              } else {
-                confirm(
-                  ~bodyArr=modifiedPaymentBody,
-                  ~confirmParam={
-                    return_url: options.wallets.walletReturnUrl,
-                    publishableKey,
-                  },
-                  ~handleUserError=true,
-                  ~intentCallback=val => val->getDictFromJson->getString("orderId", "")->resolve,
-                  ~manualRetry=isManualRetryEnabled,
-                )
-              }
-            })
-          } else {
-            resolve("")
-          }
-        })
-      }
-    },
-    onShippingAddressChange: data => {
-      let isTaxCalculationEnabled = paymentMethodListValue.is_tax_calculation_enabled
-      if isTaxCalculationEnabled {
-        let newShippingAddressObj =
-          data
-          ->getDictFromJson
-          ->getDictFromObj("shippingAddress")
-          ->shippingAddressItemToObjMapper
-        let newShippingAddress =
-          [
-            ("state", newShippingAddressObj.state->Option.getOr("")->JSON.Encode.string),
-            ("country", newShippingAddressObj.countryCode->Option.getOr("")->JSON.Encode.string),
-            ("zip", newShippingAddressObj.postalCode->Option.getOr("")->JSON.Encode.string),
-          ]->getJsonFromArrayOfJson
 
-        let paymentMethodType = "paypal"->JSON.Encode.string
+            let bodyArr =
+              requiredFieldsBody
+              ->JSON.Encode.object
+              ->unflattenObject
+              ->getArrayOfTupleFromDict
 
-        calculateTax(
-          ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
-          ~publishableKey,
-          ~clientSecret=clientSecret->Option.getOr(""),
-          ~paymentMethodType,
-          ~sessionId=data->getDictFromJson->Dict.get("orderID"),
-          ~sdkAuthorization,
-        )
-      } else {
-        JSON.Encode.null->resolve
-      }
-    },
-    onApprove: (_data, actions) => {
-      if !options.readOnly {
-        actions.order.get()
-        ->then(val => {
-          let purchaseUnit =
-            val
-            ->getDictFromJson
-            ->getArray("purchase_units")
-            ->Array.get(0)
-            ->Option.flatMap(JSON.Decode.object)
-            ->Option.getOr(Dict.make())
-          let payerDetails =
-            val
-            ->getDictFromJson
-            ->Dict.get("payer")
-            ->Option.flatMap(JSON.Decode.object)
-            ->Option.getOr(Dict.make())
-            ->PaymentType.itemToPayerDetailsObjectMapper
-
-          let details = purchaseUnit->paypalShippingDetails(payerDetails)
-          let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
-            ~details,
-            ~requiredFields,
-          )
-
-          let orderId = val->getDictFromJson->getString("id", "")
-          let body = PaymentBody.paypalSdkBody(~token=orderId, ~connectors)
-          let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
-            ~isGuestCustomer,
-            ~paymentType=paymentMethodListValue.payment_type,
-            ~body,
-            ~alwaysSend=options.alwaysSendCustomerAcceptance,
-          )
-
-          let bodyArr =
-            requiredFieldsBody
-            ->JSON.Encode.object
-            ->unflattenObject
-            ->getArrayOfTupleFromDict
-
-          let confirmBody = bodyArr->Array.concatMany([modifiedPaymentBody])
-          make((_resolve, _) => {
-            if paypalNextAction == "post_session_tokens" {
-              confirm(
-                ~bodyArr=confirmBody,
-                ~confirmParam={
-                  return_url: options.wallets.walletReturnUrl,
-                  publishableKey,
-                },
-                ~handleUserError=true,
-                ~manualRetry=true,
-              )
-            } else {
-              completeAuthorize(
-                ~bodyArr,
-                ~confirmParam={
-                  return_url: options.wallets.walletReturnUrl,
-                  publishableKey,
-                },
-                ~handleUserError=true,
-              )
-            }
+            let confirmBody = bodyArr->Array.concatMany([modifiedPaymentBody])
+            make(
+              (_resolve, _) => {
+                if paypalNextAction == "post_session_tokens" {
+                  confirm(
+                    ~bodyArr=confirmBody,
+                    ~confirmParam={
+                      return_url: options.wallets.walletReturnUrl,
+                      publishableKey,
+                    },
+                    ~handleUserError=true,
+                    ~manualRetry=true,
+                  )
+                } else {
+                  completeAuthorize(
+                    ~bodyArr,
+                    ~confirmParam={
+                      return_url: options.wallets.walletReturnUrl,
+                      publishableKey,
+                    },
+                    ~handleUserError=true,
+                  )
+                }
+              },
+            )
           })
           ->catch(_ => resolve())
           ->ignore
-        },
+        }
+      },
     ),
     onCancel: SdkLogger.observeFunctionCallback(
       ~event=OnCancel,
@@ -457,7 +362,7 @@ let loadBraintreePaypalSdk = (
               () => {
                 let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
                 paypalWrapper.innerHTML = ""
-                paypal["Buttons"]({
+                let paypalButtons = paypal["Buttons"]({
                   style: buttonStyle,
                   fundingSource: paypal["FUNDING"]["PAYPAL"],
                   createBillingAgreement: SdkLogger.observeFunctionCallback(
@@ -488,19 +393,19 @@ let loadBraintreePaypalSdk = (
                                 ~connectors,
                               )
 
-                            let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
-                              ~details=payload.details,
-                              ~requiredFields,
-                            )
+                              let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
+                                ~details=payload.details,
+                                ~requiredFields,
+                              )
 
-                            let paypalBody = body->mergeAndFlattenToTuples(requiredFieldsBody)
+                              let paypalBody = body->mergeAndFlattenToTuples(requiredFieldsBody)
 
-                            let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
-                              ~isGuestCustomer,
-                              ~paymentType=paymentMethodListValue.payment_type,
-                              ~body=paypalBody,
-                              ~alwaysSend=options.alwaysSendCustomerAcceptance,
-                            )
+                              let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
+                                ~isGuestCustomer,
+                                ~paymentType=paymentMethodListValue.payment_type,
+                                ~body=paypalBody,
+                                ~alwaysSend=options.alwaysSendCustomerAcceptance,
+                              )
 
                               intent(
                                 ~bodyArr=modifiedPaymentBody,

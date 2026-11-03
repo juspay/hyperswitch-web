@@ -39,7 +39,11 @@ let intentCall = (
     ~request={
       method: fetchMethod,
       body: Fetch.Body.string(bodyStr),
-      headers: getHeaders(~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri), ~uri),
+      headers: Utils.getHeaders(
+        ~headers=headers->Dict.fromArray,
+        ~uri,
+        ~customPodUri=Some(customPodUri),
+      ),
     },
   )
   ->then(res => {
@@ -227,7 +231,7 @@ let intentCall = (
       })
     }
   })
-  ->catch(_ => {
+  ->catch(err => {
     Promise.make((resolve, _) => {
       try {
         PaymentMethodSessionLogger.logApi(
@@ -277,7 +281,7 @@ let fetchPaymentManagementList = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAu
     uri,
     ~event=PaymentMethodsList,
     ~method=#GET,
-    ~headers,
+    ~headers=headers->Dict.fromArray,
     ~customPodUri=Some(customPodUri),
     ~onSuccess=data => data,
     ~onFailure=_ => JSON.Encode.null,
@@ -291,7 +295,7 @@ let retrievePaymentMethodSession = (
   ~sdkAuthorization,
   ~context=?,
 ) => {
-  let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
 
   LoggedApiFetch.forPmSession(
@@ -316,14 +320,22 @@ let deletePaymentMethodV2 = (
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
 
-  LoggedApiFetch.forPmSession(
-    uri,
+  PaymentMethodSessionLogger.observeApi(
     ~event=DeletePaymentMethod,
-    ~method=#DELETE,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-    ~bodyStr=[("payment_method_token", paymentMethodToken->JSON.Encode.string)]
-    ->getJsonFromArrayOfJson
-    ->JSON.stringify,
+    ~url=uri,
+    ~request={
+      method: #DELETE,
+      body: Fetch.Body.string(
+        [("payment_method_token", paymentMethodToken->JSON.Encode.string)]
+        ->getJsonFromArrayOfJson
+        ->JSON.stringify,
+      ),
+      headers: Utils.getHeaders(
+        ~headers=headers->Dict.fromArray,
+        ~uri,
+        ~customPodUri=Some(customPodUri),
+      ),
+    },
   )
   ->then(resp => {
     if !(resp->Fetch.Response.ok) {

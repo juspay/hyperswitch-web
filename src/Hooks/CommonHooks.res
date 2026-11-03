@@ -23,7 +23,6 @@ type debounce = {
 
 @val @scope(("document", "body")) external appendChild: element => unit = "appendChild"
 
-type event = {\"type": string}
 @send
 external addEventListener: (element, string, event => unit) => unit = "addEventListener"
 
@@ -32,16 +31,12 @@ let useScript = (
   ~integrity="",
   ~crossorigin="",
   ~resourceEvent: option<SdkLogger.resourceEvent>=?,
+  ~vaultScript=false,
 ) => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
   React.useEffect(() => {
     if src == "" {
       setStatus(_ => "idle")
-    }
-    let script = querySelector(`script[src="${src}"]`)
-    switch script->Nullable.toOption {
-    | Some(dom) =>
-      setStatus(_ => dom.getAttribute("data-status"))
       None
     } else {
       let cancelled = ref(false)
@@ -50,10 +45,9 @@ let useScript = (
       let attributes = [("crossorigin", crossorigin), ("integrity", integrity)]
         ->Array.filter(((_, value)) => value != "")
         ->Array.concat([("async", "true")])
-      switch resourceEvent {
-      | Some(event) =>
-        SdkLogger.observeResource(
-          ~event,
+      if vaultScript {
+        PaymentMethodSessionLogger.observeResource(
+          ~event=VaultScript,
           ~url=src,
           ~attributes,
           ~matchQuery=true,
@@ -61,13 +55,15 @@ let useScript = (
           ~onLoad=() => settle("ready"),
           ~onError=_ => settle("error"),
         )->ignore
-      | None =>
-        ResourceLoader.load(
+      } else {
+        let event = resourceEvent->Option.getExn
+        SdkLogger.observeResource(
+          ~event,
           ~url=src,
-          ~resource=ResourceLoader.Script,
           ~attributes,
           ~matchQuery=true,
-          ~onLoad=_ => settle("ready"),
+          ~abandoned=() => cancelled.contents,
+          ~onLoad=() => settle("ready"),
           ~onError=_ => settle("error"),
         )->ignore
       }

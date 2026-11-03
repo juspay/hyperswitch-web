@@ -128,7 +128,7 @@ let make = (~sessionObj: SessionsType.token) => {
   }
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
   )
@@ -205,8 +205,9 @@ let make = (~sessionObj: SessionsType.token) => {
           ~emitter,
           ~parentOrigin=parentURL,
         )
-    })
-    Window.body->Window.appendChild(paypalScript)
+      },
+      ~onError=_ => onButtonSettled(),
+    )->ignore
   }
 
   React.useEffect(() => {

@@ -50,6 +50,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
   let setCardCvcPlaceholder = Jotai.useSetAtom(cardCvcPlaceholder)
   let setCardholderNamePlaceholder = Jotai.useSetAtom(cardholderNamePlaceholder)
   let (divH, setDivH) = React.useState(_ => 0.0)
+  let (launchTime, setLaunchTime) = Jotai.useAtom(JotaiAtoms.launchTime)
   let {paymentMethodOrder} = optionsPayment
   let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
@@ -258,6 +259,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
     | Loading => checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
+    let finalLoadLatency = if launchTime <= 0.0 {0.0} else {Date.now() -. launchTime}
     switch updatedState {
     | SemiLoaded => setPaymentMethodList(_ => updatedState)
     | _ => ()
@@ -535,6 +537,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
         if dict->getDictIsSome("clientList") {
           let clientListJson = dict->getJsonObjectFromDict("clientList")
           let listDict = clientListJson->getDictFromJson
+          let finalLoadLatency = if launchTime <= 0.0 {0.0} else {Date.now() -. launchTime}
           if optionsPayment.business.name === "" {
             setOptionsPayment(prev => {
               ...prev,

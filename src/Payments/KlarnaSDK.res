@@ -51,7 +51,7 @@ let make = (~sessionObj: SessionsType.token) => {
     ~paymentMethodType,
   )
 
-  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
   )
@@ -125,30 +125,9 @@ let make = (~sessionObj: SessionsType.token) => {
                             paymentMethodType,
                           )
 
-                        let requiredFieldsBody = DynamicFieldsUtils.getKlarnaRequiredFields(
-                          ~shippingContact,
-                          ~requiredFields,
-                        )
-
-                        let klarnaSDKBody = PaymentBody.klarnaSDKbody(
-                          ~token=res.authorization_token,
-                          ~connectors,
-                        )
-
-                        let body = {
-                          klarnaSDKBody->mergeAndFlattenToTuples(requiredFieldsBody)
-                        }
-
-                        res.approved
-                          ? intent(
-                              ~bodyArr=body,
-                              ~confirmParam={
-                                return_url: options.wallets.walletReturnUrl,
-                                publishableKey,
-                              },
-                              ~handleUserError=false,
-                              ~manualRetry=isManualRetryEnabled,
-                            )
+                          let shippingContact = res.collected_shipping_address->Option.getOr(
+                            defaultCollectedShippingAddress,
+                          )
 
                           let requiredFieldsBody = DynamicFieldsUtils.getKlarnaRequiredFields(
                             ~shippingContact,

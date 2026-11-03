@@ -9,6 +9,7 @@ let make = (
 ) => {
   let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
   let {layout, customMethodNames} = Jotai.useAtomValue(optionAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (selectedOption, setSelectedOption) = Jotai.useAtom(selectedOptionAtom)
   let (

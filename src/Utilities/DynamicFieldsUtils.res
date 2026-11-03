@@ -3,6 +3,13 @@ type fieldTexts = {
   placeholder: string,
 }
 
+type superpositionResolutionContext = {
+  rawConfigs: option<JSON.t>,
+  configPaymentMethodType: string,
+  eligibleConnectors: array<JSON.t>,
+  superpositionBaseContext: SuperpositionTypes.superpositionBaseContext,
+}
+
 let billingPrefix = "payment_method_data.billing."
 
 let filterByActiveFields = (
@@ -291,12 +298,16 @@ let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
     suppressBillingPrefill,
   ))
 
-  (requiredFields, missingRequiredFields, initialValues)
+  let resolutionContext = React.useMemo(() => {
+    {rawConfigs, configPaymentMethodType, eligibleConnectors, superpositionBaseContext}
+  }, (rawConfigs, configPaymentMethodType, eligibleConnectors, superpositionBaseContext))
+
+  (requiredFields, missingRequiredFields, initialValues, resolutionContext)
 }
 
 let useAreWalletRequiredFieldsPrefilled = (~paymentMethodType) => {
   let {billingAddress} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let (_, missingRequiredFields, _) = useSuperpositionRequiredFields(
+  let (_, missingRequiredFields, _, _) = useSuperpositionRequiredFields(
     ~paymentMethod="wallet",
     ~paymentMethodType,
   )
@@ -526,7 +537,7 @@ let applyBillingDetailsOverride = (
 let useLogDynamicFieldsRendered = (
   ~fields: array<SuperpositionTypes.fieldConfig>,
   ~paymentMethod: string,
-  ~resolutionContext,
+  ~resolutionContext: superpositionResolutionContext,
   ~isSavedCardFlow=false,
 ) => {
   let lastLoggedKey = React.useRef("")

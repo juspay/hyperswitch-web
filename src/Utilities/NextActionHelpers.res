@@ -83,9 +83,31 @@ let handleDDC = (
       try {
         let json = ev.data->Identity.anyTypeToJson
         let dict = json->getDictFromJson
-
-      switch parsed {
-      | Error(exn) =>
+        if dict->Dict.get("next_action")->Option.isSome {
+          let nextAction = PaymentConfirmTypes.getNextAction(dict, "next_action")
+          let nextActionType = nextAction.type_
+          let redirectUrl = nextAction.postDdcRedirectUrl
+          let redirectMode = nextAction.redirectMode
+          cleanup()
+          if (
+            nextActionType === "redirect_to_url" &&
+              PaymentMessageSecurity.httpUrl(redirectUrl)->Option.isSome
+          ) {
+            SdkLogger.logLifecycle(~event=DdcCompleted, ~paymentMethod=?loggedPaymentMethod)
+            handleRedirectToUrl(redirectUrl, redirectMode)
+          } else {
+            let reason: SdkLogger.ddcFailure =
+              nextActionType === "redirect_to_url" ? MissingRedirectUrl : InvalidNextAction
+            SdkLogger.logLifecycle(
+              ~event=DdcFailed({reason: reason}),
+              ~details=[("next_action", nextActionType->JSON.Encode.string)],
+              ~paymentMethod=?loggedPaymentMethod,
+            )
+            handleFailure()
+          }
+        }
+      } catch {
+      | exn =>
         SdkLogger.logLifecycle(
           ~event=DdcFailed({reason: UnreadableResponse}),
           ~exn,
@@ -93,28 +115,6 @@ let handleDDC = (
         )
         cleanup()
         handleFailure()
-      | Ok(None) => ()
-      | Ok(Some(nextAction)) =>
-        let nextActionType = nextAction.type_
-        let redirectUrl = nextAction.postDdcRedirectUrl
-        let redirectMode = nextAction.redirectMode
-        cleanup()
-        if (
-          nextActionType === "redirect_to_url" &&
-            PaymentMessageSecurity.httpUrl(redirectUrl)->Option.isSome
-        ) {
-          SdkLogger.logLifecycle(~event=DdcCompleted, ~paymentMethod=?loggedPaymentMethod)
-          handleRedirectToUrl(redirectUrl, redirectMode)
-        } else {
-          let reason: SdkLogger.ddcFailure =
-            nextActionType === "redirect_to_url" ? MissingRedirectUrl : InvalidNextAction
-          SdkLogger.logLifecycle(
-            ~event=DdcFailed({reason: reason}),
-            ~details=[("next_action", nextActionType->JSON.Encode.string)],
-            ~paymentMethod=?loggedPaymentMethod,
-          )
-          handleFailure()
-        }
       }
     }
 

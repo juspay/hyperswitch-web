@@ -113,28 +113,33 @@ let reportValidationErrors = (
   ~setCvcError,
   ~localeString: LocaleStringTypes.localeStrings,
 ) => {
-  let reportUserError = message => postFailedSubmitResponse(~errortype="validation_error", ~message)
+  let userError = ref(None)
+  let noteUserError = message =>
+    switch userError.contents {
+    | None => userError := Some(message)
+    | Some(_) => ()
+    }
 
   if cardNumber === "" {
     setCardError(_ => localeString.cardNumberEmptyText)
-    reportUserError(localeString.enterFieldsText)
+    noteUserError(localeString.enterFieldsText)
   } else if isCardSupported->Option.getOr(true)->not {
     if cardBrand === "" {
       setCardError(_ => localeString.enterValidCardNumberErrorText)
-      reportUserError(localeString.enterValidDetailsText)
+      noteUserError(localeString.enterValidDetailsText)
     } else {
       let brandError = localeString.cardBrandConfiguredErrorText(cardBrand)
       setCardError(_ => brandError)
-      reportUserError(brandError)
+      noteUserError(brandError)
     }
   }
   if cardExpiry === "" {
     setExpiryError(_ => localeString.cardExpiryDateEmptyText)
-    reportUserError(localeString.enterFieldsText)
+    noteUserError(localeString.enterFieldsText)
   }
   if cvcNumber === "" {
     setCvcError(_ => localeString.cvcNumberEmptyText)
-    reportUserError(localeString.enterFieldsText)
+    noteUserError(localeString.enterFieldsText)
   }
   if !isFormValid {
     noteUserError(localeString.enterValidDetailsText)

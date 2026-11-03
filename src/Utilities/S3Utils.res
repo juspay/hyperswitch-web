@@ -84,23 +84,27 @@ let getCountryStateData = async (~locale="en") => {
   } catch {
   | _ =>
     try {
-      await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
+      await fetchCountryStateFromS3(
+        `${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`,
+        ~fallbackFor=normalizedLocale,
+      )
     } catch {
     | _ => {
-      let fallbackCountries = country
-      try {
-        let fallbackStates = await Utils.importStates("./../States.json")
-        SdkLogger.logLifecycle(~event=CountryDataServedFromBundle)
-        {
-          countries: fallbackCountries,
-          states: fallbackStates.states,
-        }
-      } catch {
-      | exn => {
-          SdkLogger.logLifecycle(~event=CountryDataUnavailable, ~exn)
+        let fallbackCountries = country
+        try {
+          let fallbackStates = await Utils.importStates("./../States.json")
+          SdkLogger.logLifecycle(~event=CountryDataServedFromBundle)
           {
             countries: fallbackCountries,
-            states: JSON.Encode.null,
+            states: fallbackStates.states,
+          }
+        } catch {
+        | exn => {
+            SdkLogger.logLifecycle(~event=CountryDataUnavailable, ~exn)
+            {
+              countries: fallbackCountries,
+              states: JSON.Encode.null,
+            }
           }
         }
       }

@@ -29,6 +29,8 @@ let useHandlePostMessages = (
   ~enabled=true,
   ~loggedPaymentMethod: option<LoggerPaymentMethod.paymentMethod>=?,
 ) => {
+  let wasComplete = React.useRef(false)
+
   React.useEffect(() => {
     if enabled {
       Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType)
@@ -124,6 +126,7 @@ let useUpdateRedirectionFlags = () => {
 let appRenderedLogged = ref(false)
 
 let useLogAppRendered = (~isRendered) => {
+  let launchTime = Jotai.useAtomValue(JotaiAtoms.launchTime)
   React.useEffect(() => {
     if isRendered && !appRenderedLogged.contents {
       appRenderedLogged := true
@@ -133,5 +136,5 @@ let useLogAppRendered = (~isRendered) => {
       )
     }
     None
-  }, [isRendered])
+  }, (isRendered, launchTime))
 }

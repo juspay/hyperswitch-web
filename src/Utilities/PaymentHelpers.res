@@ -522,7 +522,8 @@ let rec intentCall = (
       ->then(data => {
         Promise.make(
           (resolve, _) => {
-            let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
+            let intentDict = data->getDictFromJson
+            let intent = PaymentConfirmTypes.itemToObjMapper(intentDict)
             let paymentMethod = switch paymentType {
             | Card => "CARD"
             | _ => intent.payment_method_type
