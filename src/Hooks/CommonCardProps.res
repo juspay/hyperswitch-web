@@ -235,6 +235,7 @@ let useCardForm = (
         } else if dict->Dict.get("doFocus")->Option.isSome {
           cardRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
         } else if dict->Dict.get("doClearValues")->Option.isSome {
+          //clear all values
           setCardNumber(_ => "")
           setCardExpiry(_ => "")
           setCvcNumber(_ => "")
