@@ -230,26 +230,14 @@ let make = (
         }
         resolve()
       })
-      ->catch(exn => {
-        SdkLogger.logLifecycle(
-          ~event=WalletFlowFailed({reason: MessageHandlingFailed}),
-          ~paymentMethod=Wallet(GooglePay),
-          ~exn,
-          ~message="Google Pay payment handling threw after one-click confirmation",
-        )
-        resolve()
-      })
+      ->catch(_ => resolve())
       ->ignore
     }
   }
 
   let buttonStyle = {
     let base = {
-      "onClick": SdkLogger.observeFunctionCallback(
-        ~event=OnClick,
-        ~paymentMethod=Wallet(GooglePay),
-        ~callback=onGooglePaymentButtonClicked,
-      ),
+      "onClick": onGooglePaymentButtonClicked,
       "buttonType": resolvedButtonType->getLabel,
       "buttonSizeMode": "fill",
       "buttonColor": resolvedButtonColor,
@@ -311,12 +299,7 @@ let make = (
           syncPayment()
         }
       } catch {
-      | exn =>
-        SdkLogger.logLifecycle(
-          ~event=WalletFlowFailed({reason: MessageHandlingFailed}),
-          ~paymentMethod=Wallet(GooglePay),
-          ~exn,
-        )
+      | _ => ()
       }
     }
     Window.addEventListener("message", handleGooglePayMessages)
