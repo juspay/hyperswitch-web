@@ -11,6 +11,7 @@ let make = () => {
   )
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
+  let (loggedPaymentMethod, setLoggedPaymentMethod) = React.useState(_ => None)
 
   let eventsToSendToParent = ["openurl_if_required"]
   let isTrustedChild = (ev: Window.event) =>
@@ -24,6 +25,11 @@ let make = () => {
   eventsToSendToParent->UtilityHooks.useSendEventsToParent(~isTrustedChild)
 
   let handleOnClose = () => {
+    SdkLogger.logUser(
+      ~event=SdkLogger.ThreeDsPopupDismissed,
+      ~details=[("redirect_url_received", (redirectResponseUrl != "")->JSON.Encode.bool)],
+      ~paymentMethod=?loggedPaymentMethod,
+    )
     if redirectResponseUrl == "" {
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
       closePaymentLoaderIfAny()
@@ -57,11 +63,24 @@ let make = () => {
           setPaymentMethodFlowCancelMetadata(_ =>
             metaDataDict->getDictFromDict("paymentMethodFlowCancel")
           )
+          setLoggedPaymentMethod(_ =>
+            LoggerPaymentMethod.fromPair(
+              ~method=metaDataDict->getString("paymentMethodFamily", ""),
+              ~methodType=metaDataDict->getString("paymentMethod", ""),
+            )
+          )
           setloader(_ => false)
         }
       } catch {
       | err => {
           let message = "Something went wrong."
+          SdkLogger.logLifecycle(
+            ~event=SdkLogger.ThreeDsPopupFailed({
+              reason: SdkLogger.ThreeDsPopup.MessageHandlingFailed,
+            }),
+            ~exn=err,
+            ~message,
+          )
           postFailedSubmitResponse(~errortype="error", ~message)
         }
       }
