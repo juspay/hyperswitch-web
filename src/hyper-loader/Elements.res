@@ -67,28 +67,6 @@ let make = (
 
     let isSdkParamsEnabled = preloadSDKWithParams->Dict.toArray->Array.length > 0
 
-    if isSdkParamsEnabled {
-      ()
-    }
-
-    switch localOptions->Dict.get("appearance") {
-    | Some(appearanceValue) => ()
-    | None => ()
-    }
-
-    switch localOptions->Dict.get("fonts") {
-    | Some(fontsValue) => ()
-    | None => ()
-    }
-
-    if blockConfirm {
-      ()
-    }
-
-    if customPodUri !== "" {
-      ()
-    }
-
     let localSelectorString = "hyper-preMountLoader-iframe"
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
@@ -369,7 +347,6 @@ let make = (
     let update = newOptions => (() => updateElementsOptions(newOptions))()
 
     let fetchUpdates = () => {
-      ()
       Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
       })
@@ -567,24 +544,12 @@ let make = (
                     messageTopWindow(msg, ~targetOrigin=Window.Location.origin)
                   } else {
                     Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
-                    logger.setLogInfo(
-                      ~value="CANNOT MAKE PAYMENT USING APPLE PAY",
-                      ~eventName=APPLE_PAY_FLOW,
-                      ~paymentMethod="APPLE_PAY",
-                      ~logType=ERROR,
-                    )
                     postApplePayUnavailable()
                   }
                 } catch {
                 | exn => {
                     let exnString = exn->anyTypeToJson->JSON.stringify
                     Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
-                    logger.setLogInfo(
-                      ~value=exnString,
-                      ~eventName=APPLE_PAY_FLOW,
-                      ~paymentMethod="APPLE_PAY",
-                      ~logType=ERROR,
-                    )
                     postApplePayUnavailable()
                   }
                 }
@@ -678,12 +643,10 @@ let make = (
 
                     Promise.race([polling, executeGooglePayment, timeOut])
                     ->then(_ => {
-                      ()
                       postGooglePaySync()
                       resolve()
                     })
                     ->catch(exn => {
-                      ()
                       postGooglePaySync()
                       resolve()
                     })
@@ -693,7 +656,6 @@ let make = (
                 }
               } catch {
               | err => {
-                  ()
                   let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                   event.source->Window.postMessage(
                     msg->JSON.Encode.object->JSON.stringify,
@@ -735,7 +697,6 @@ let make = (
 
                 switch connector {
                 | "trustpay" =>
-                  ()
 
                   ApplePayInterceptor.setPostToIframe(
                     ~isTrustedResponse=ev =>
@@ -792,7 +753,6 @@ let make = (
                           )
                       )()
                       ->then(_ => {
-                        ()
                         let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                         ApplePayInterceptor.clearPostToIframe()
@@ -806,7 +766,6 @@ let make = (
                       })
                     } catch {
                     | exn => {
-                        ()
                         let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                         ApplePayInterceptor.clearPostToIframe()
@@ -824,7 +783,6 @@ let make = (
                 let applePayPaymentRequest = dict->Utils.getDictFromDict("applePayPaymentRequest")
                 switch connector {
                 | "braintree" =>
-                  ()
                   ApplePayHelpers.handleApplePayBraintreeClick(
                     authToken,
                     applePayPaymentRequest,
@@ -854,7 +812,6 @@ let make = (
             let returnUrl = dict->getString("return_url", "")
             let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecretRef.contents}&status=${status}`
             if redirect.contents === "always" {
-              ()
               Utils.replaceRootHref(redirectUrl, redirectionFlags)
               resolve(JSON.Encode.null)
             } else {
@@ -878,7 +835,6 @@ let make = (
 
             let handleErrorResponse = err => {
               if redirect.contents === "always" {
-                ()
                 Utils.replaceRootHref(url, redirectionFlags)
               }
               onSubmitResponse(
@@ -946,7 +902,6 @@ let make = (
             ->then(json => json->handleRetrievePaymentResponse)
             ->catch(err => {
               if redirect.contents === "always" {
-                ()
                 Utils.replaceRootHref(
                   redirectUrl->JSON.Decode.string->Option.getOr(""),
                   redirectionFlags,
@@ -1086,7 +1041,6 @@ let make = (
                       ->JSON.Decode.bool
                       ->Option.getOr(false)
                     if !isDelayedSessionToken && !isThirdPartyFlow {
-                      ()
 
                       let isSavedMethodsFlow = dict->getBool("isSavedMethodsFlow", false)
 
@@ -1289,7 +1243,6 @@ let make = (
                   Some(GooglePayType.google(gpayClientRequest))
                 } catch {
                 | err =>
-                  ()
                   let msg = [("isReadyToPay", false->JSON.Encode.bool)]->Dict.fromArray
                   mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
                   None
@@ -1351,18 +1304,11 @@ let make = (
                                 ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                               ]->Dict.fromArray
                             event.source->Window.sendPostMessage(msg)
-                            ()
                             resolve()
                           },
                         )
                         ->catch(
                           err => {
-                            logger.setLogInfo(
-                              ~value=err->anyTypeToJson->JSON.stringify,
-                              ~eventName=GOOGLE_PAY_FLOW,
-                              ~paymentMethod="GOOGLE_PAY",
-                              ~logType=DEBUG,
-                            )
 
                             // Unwrap the ReScript exn so the iframe can read Google's statusCode.
                             let gpayError = switch err->JsExn.fromException {
@@ -1384,7 +1330,6 @@ let make = (
                         ->ignore
                       }, 0)->ignore
                     | None =>
-                      ()
                       let msg =
                         [
                           ("gpayError", "GooglePay client unavailable"->JSON.Encode.string),
@@ -1503,7 +1448,6 @@ let make = (
                 )
               } catch {
               | err =>
-                ()
                 Console.error("Error loading Samsung Pay")
               }
             }
@@ -1588,7 +1532,6 @@ let make = (
   } catch {
   | e => {
       Sentry.captureException(e)
-      ()
       defaultElement
     }
   }

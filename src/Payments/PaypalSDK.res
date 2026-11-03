@@ -157,14 +157,12 @@ let make = (~sessionObj: SessionsType.token) => {
     let intentParam = if paypalIntent !== "" {
       `&intent=${paypalIntent}`
     } else {
-      ()
       ""
     }
 
     let currencyParam = if currency !== "" {
       `&currency=${currency}`
     } else {
-      ()
       ""
     }
 
@@ -190,6 +188,7 @@ let make = (~sessionObj: SessionsType.token) => {
           ~confirm,
           ~completeAuthorize,
           ~handleCloseLoader,
+          ~handleCancel,
           ~areOneClickWalletsRendered,
           ~setIsCompleted,
           ~isCallbackUsedVal,

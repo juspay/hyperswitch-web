@@ -24,7 +24,6 @@ let make = () => {
   eventsToSendToParent->UtilityHooks.useSendEventsToParent(~isTrustedChild)
 
   let handleOnClose = () => {
-    ()
     if redirectResponseUrl == "" {
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
       closePaymentLoaderIfAny()
@@ -63,7 +62,6 @@ let make = () => {
       } catch {
       | err => {
           let message = "Something went wrong."
-          ()
           postFailedSubmitResponse(~errortype="error", ~message)
         }
       }

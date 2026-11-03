@@ -644,9 +644,7 @@ let sortBasedOnPriority = (sortArr: array<string>, priorityArr: array<string>) =
   let finalPriorityArr = priorityArr->Array.filter(val => sortArr->Array.includes(val))
   sortArr
   ->Array.map(item => {
-    if finalPriorityArr->Array.includes(item) {
-      ()
-    } else {
+    if !(finalPriorityArr->Array.includes(item)) {
       finalPriorityArr->Array.push(item)->ignore
     }
   })

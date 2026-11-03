@@ -77,9 +77,6 @@ let handleHyperApplePayMounted = (event: Types.event) => {
     let sdkSessionId = dict->getString("sdkSessionId", "")
     let isSavedMethodsFlow = dict->getBool("isSavedMethodsFlow", false)
 
-    ()
-    ()
-    ()
 
     let callBackFunc = payment => {
       let msg =
@@ -155,7 +152,6 @@ addSmartEventListener(
 )
 
 let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
-  ()
   try {
     let publishableKey = switch keys->JSON.Classify.classify {
     | String(val) => val
@@ -225,7 +221,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     | None =>
       {
         () => {
-          ()
           if (
             publishableKey == "" ||
               !(
@@ -341,7 +336,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         | _ => (Some(clientSecretOrSdkAuth), None)
         }
 
-        ()
 
         let uri = APIUtils.generateApiUrlV1(
           ~apiCallType=RetrievePaymentIntent,
@@ -377,9 +371,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
         pruneRemovedOverlays()
         let confirmTimestamp = Date.now()
-        if !isOneClick && !isSdkButton {
-          ()
-        }
         let confirmParams =
           payload
           ->JSON.Decode.object
@@ -532,7 +523,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         sdkAuthorization := sdkAuthorizationId
         clientSecret := clientSecretId
-        ()
 
         Elements.make(
           elementsOptions,
@@ -579,7 +569,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
         pmSessionId := pmSessionIdVal
-        ()
 
         (
           () =>
@@ -707,7 +696,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         switch Window.paymentRequestSupported {
         | Some(_) => Window.paymentRequest(methodData, details, optionsForPaymentRequest)
         | None => {
-            ()
             JsError.throwWithMessage("PaymentRequest is not supported in this browser")
           }
         }
@@ -722,7 +710,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         clientSecret := paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
 
-        ()
 
         (
           () =>
@@ -800,8 +787,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.getOr("")
         clientSecret := clientSecretId
 
-        ()
-        ()
 
         (
           () =>
@@ -836,7 +821,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   } catch {
   | e => {
       Sentry.captureException(e)
-      ()
       defaultHyperInstance
     }
   }

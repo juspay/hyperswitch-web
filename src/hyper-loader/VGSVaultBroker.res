@@ -132,7 +132,6 @@ let notifyBrokerError = (
   ~code: string,
   ~message: string,
 ): unit => {
-  ()
   eventCallbacksRef.contents
   ->Dict.get("error")
   ->Option.forEach(cb =>
@@ -471,21 +470,17 @@ let make = (
             | Some(collect) =>
               try collect.create(vaultId, environment, onFormStateChange) catch {
               | err => {
-                  ()
                   Error.raise(Error.make("VGSCollect create failed"))
                 }
               }
             | None =>
-              ()
               Error.raise(Error.make("VGSCollect script failed to register window.VGSCollect"))
             }
             formRef := Some(form)
-            ()
             Promise.resolve(form)
           })
           ->Promise.catch(err => {
             createFormInFlightRef := None
-            ()
             Promise.reject(err)
           })
         createFormInFlightRef := Some(createFormPromise)

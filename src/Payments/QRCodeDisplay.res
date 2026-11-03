@@ -143,7 +143,6 @@ let make = () => {
             postSubmitResponse(~jsonData=res, ~url=return_url)
           } catch {
           | error =>
-            ()
             Console.error2("Error while polling payment intent:", error)
           }
         }
@@ -169,14 +168,12 @@ let make = () => {
       Modal.close(setOpenModal)
     } catch {
     | e =>
-      ()
       Console.error2("Retrieve Failed", e)
     }
   }
 
   React.useEffect(() => {
     if expiryTime < 1000.0 {
-      ()
       closeModal()->ignore
     }
 
@@ -195,7 +192,6 @@ let make = () => {
   }, [expiryTime])
 
   let handleCopyQrData = _ => {
-    ()
     messageParentWindow([
       ("copy", true->JSON.Encode.bool),
       ("copyDetails", rawQrData->JSON.Encode.string),
@@ -238,8 +234,7 @@ let make = () => {
           borderColor: paymentMethodConfig.showBorder ? displayColor : "transparent",
           backgroundColor: paymentMethodConfig.showBorder ? displayColor : "transparent",
         }
-        className={paymentMethodConfig.showBorder ? "border-[1em] rounded-md" : ""}
-      >
+        className={paymentMethodConfig.showBorder ? "border-[1em] rounded-md" : ""}>
         <div
           className={paymentMethodConfig.showBorder ? "border-[0.5em] border-white rounded-md" : ""}
         >
@@ -255,14 +250,12 @@ let make = () => {
         </RenderIf>
       </div>
       <div
-        className={`flex flex-col ${qrBottomSectionMarginClass} max-w-md justify-between items-center`}
-      >
+        className={`flex flex-col ${qrBottomSectionMarginClass} max-w-md justify-between items-center`}>
         <RenderIf condition={isRawQrDataAvailable}>
           <button
             className="button mb-6 p-2 h-[40px] border border-[#006DF9] rounded-md"
             style={color: "#006DF9", background: "transparent"}
-            onClick={handleCopyQrData}
-          >
+            onClick={handleCopyQrData}>
             {isCopied ? React.string("Copied!") : React.string("Copy QR Data")}
           </button>
         </RenderIf>
@@ -282,8 +275,7 @@ let make = () => {
               }
               onClick={_ => {
                 closeModal()->ignore
-              }}
-            >
+              }}>
               {React.string("Done")}
             </button>
           </div>

@@ -17,7 +17,6 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
     paymentOption.icon,
   )
   let onClick = _ => {
-    ()
     setSelectedOption(_ => paymentOption.paymentMethodName)
   }
   <button

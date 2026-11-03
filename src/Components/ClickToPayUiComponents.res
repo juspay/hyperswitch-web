@@ -46,7 +46,6 @@ module OtpInput = {
         })
       },
       continueClicked: _ => {
-        ()
         let verifyUserAndGetCards = async () => {
           try {
             setIsOtpSubmitting(_ => true)
@@ -60,7 +59,6 @@ module OtpInput = {
         verifyUserAndGetCards()->ignore
       },
       resendClicked: _ => {
-        ()
         setClickToPayConfig(prev => {
           ...prev,
           otpError: "",
@@ -72,7 +70,6 @@ module OtpInput = {
             setResendLoading(_ => false)
           } catch {
           | exn =>
-            ()
             setResendLoading(_ => false)
           }
         }
@@ -84,7 +81,6 @@ module OtpInput = {
         ->Option.forEach(e => {
           let dict = e->getDictFromJson
           let rememberMe = dict->getDictFromDict("detail")->getBool("rememberMe", false)
-          ()
           setIsClickToPayRememberMe(_ => rememberMe)
         })
       },

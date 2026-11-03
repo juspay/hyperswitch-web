@@ -301,8 +301,7 @@ let make = (~integrateError) => {
               <div
                 className="flex flex-col w-full h-max items-center p-6
                 lg:w-4/10 lg:px-12 lg:py-20 lg:h-screen lg:items-end"
-                style={backgroundColor: merchantTheme}
-              >
+                style={backgroundColor: merchantTheme}>
                 <div
                   className="flex flex-col text-white w-full min-w-[300px] max-w-[520px]
                   lg:rounded-md lg:shadow-lg lg:min-w-80 lg:max-w-96 lg:bg-white lg:text-black"

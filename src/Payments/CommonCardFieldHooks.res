@@ -219,8 +219,7 @@ module RenderCardNumber = {
     } = state.cardProps
     <div
       className="animate-slowShow flex flex-col"
-      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}
-    >
+      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}>
       <PaymentInputField
         fieldName=state.localeString.cardNumberLabel
         isValid=isCardValid
@@ -263,8 +262,7 @@ module RenderCardExpiry = {
     } = state.expiryProps
     <div
       className="animate-slowShow flex flex-col"
-      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}
-    >
+      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}>
       <PaymentInputField
         fieldName=state.localeString.validThruText
         isValid=isExpiryValid
@@ -313,8 +311,7 @@ module RenderCardCvc = {
     )
     <div
       className="animate-slowShow flex flex-col"
-      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}
-    >
+      style={{gridGap: "0px", height: themeObj.inputFieldHeight}}>
       <PaymentInputField
         fieldName=state.localeString.cvcTextLabel
         isValid=isCVCValid

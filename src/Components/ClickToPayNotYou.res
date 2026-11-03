@@ -141,7 +141,6 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
   let handleSubmit = e => {
     e->ReactEvent.Form.preventDefault
     if isValid {
-      ()
       let country =
         countryCodes
         ->Array.find(country => countryCode === country.countryISO)
@@ -228,8 +227,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                     {countryCodes
                     ->Array.map(country =>
                       <option
-                        key={`${country.code}-${country.countryISO}`} value={country.countryISO}
-                      >
+                        key={`${country.code}-${country.countryISO}`} value={country.countryISO}>
                         {React.string(`${country.countryISO} ${country.code}`)}
                       </option>
                     )
@@ -264,8 +262,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
             borderRadius: themeObj.buttonBorderRadius,
             fontSize: themeObj.buttonTextFontSize,
           }
-          disabled={!isValid}
-        >
+          disabled={!isValid}>
           {React.string("Switch ID")}
         </button>
       </form>
@@ -277,7 +274,6 @@ module ClickToPayNotYouText = {
   @react.component
   let make = (~setIsShowClickToPayNotYou) => {
     let onNotYouClick = _ => {
-      ()
       setIsShowClickToPayNotYou(_ => true)
     }
 

@@ -40,9 +40,6 @@ let make = (
   }, [options])
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    if fieldName->String.length > 0 {
-      ()
-    }
     Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
   let focusClass = if inputFocused || value.value->String.length > 0 {
@@ -74,8 +71,7 @@ let make = (
       <RenderIf
         condition={fieldName->String.length > 0 &&
         config.appearance.labels == Above &&
-        isSpacedInnerLayout}
-      >
+        isSpacedInnerLayout}>
         <div
           className={`Label ${labelClass} `}
           style={
@@ -104,8 +100,7 @@ let make = (
           onFocus={handleFocus}
           onChange=handleChange
           className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
-          ariaLabel={`${fieldName} option tab`}
-        >
+          ariaLabel={`${fieldName} option tab`}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>
@@ -137,8 +132,7 @@ let make = (
             left: localeString.localeDirection == "rtl" ? "1%" : "97%",
             top: "42%",
             marginLeft: localeString.localeDirection == "rtl" ? "1rem" : "-1rem",
-          }
-        >
+          }>
           <Icon size=10 name={"arrow-down"} />
         </div>
         <RenderIf condition={value.errorString->String.length > 0}>
@@ -149,8 +143,7 @@ let make = (
               fontSize: themeObj.fontSizeSm,
               alignSelf: "start",
               textAlign: "left",
-            }
-          >
+            }>
             {React.string(value.errorString)}
           </div>
         </RenderIf>

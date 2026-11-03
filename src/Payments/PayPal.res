@@ -75,9 +75,6 @@ let make = (~walletOptions) => {
     ~isOneClickWallet=isWallet,
   )
   let onPaypalClick = (~fromExpressButton=true, _ev) => {
-    if fromExpressButton {
-      ()
-    }
     if isTestMode {
       Console.warn("PayPal button clicked in test mode - interaction disabled")
     } else {
@@ -154,13 +151,11 @@ let make = (~walletOptions) => {
         if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
           onPaypalClick(~fromExpressButton=false, ev)
         } else if areRequiredFieldsEmpty {
-          ()
           Utils.postFailedSubmitResponse(
             ~errortype="validation_error",
             ~message=localeString.enterFieldsText,
           )
         } else if !areRequiredFieldsValid {
-          ()
           Utils.postFailedSubmitResponse(
             ~errortype="validation_error",
             ~message=localeString.enterValidDetailsText,
@@ -192,11 +187,9 @@ let make = (~walletOptions) => {
         pointerEvents: updateSession ? "none" : "auto",
         opacity: updateSession ? "0.5" : "1.0",
       }
-      onClick={_ => options.readOnly ? () : onPaypalClick()}
-    >
+      onClick={_ => options.readOnly ? () : onPaypalClick()}>
       <div
-        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}
-      >
+        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
         {if !paypalClicked {
           payPalIcon
         } else {

@@ -75,7 +75,6 @@ let make = () => {
           let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
-            ()
             messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
             postFailedSubmitResponse(
               ~errortype=errorObj.error.type_,
@@ -113,12 +112,10 @@ let make = () => {
               }
             | None => ()
             }
-            ()
             resolve(json)
           }
         })
         ->catch(err => {
-          ()
           let errorObj = PaymentError.itemToObjMapper(dict)
           postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
           closePaymentLoaderIfAny()

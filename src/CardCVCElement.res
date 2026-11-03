@@ -91,14 +91,12 @@ let make = (
                 )
               } else {
                 let message = "Something went wrong"
-                ()
                 postFailedSubmitResponse(~errortype="server_error", ~message)
               }
               resolve()
             })
             ->catch(err => {
               let message = "Something went wrong"
-              ()
               postFailedSubmitResponse(~errortype="server_error", ~message)
               resolve()
             })
@@ -118,7 +116,6 @@ let make = (
               ? localeString.cvcNumberEmptyText
               : localeString.inCompleteCVCErrorText
           setCvcError(_ => errorMsg)
-          ()
           if isOuterValid {
             postFailedSubmitResponse(~errortype="validation_error", ~message=errorMsg)
           }

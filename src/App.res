@@ -9,10 +9,6 @@ let make = () => {
   let paymentType = paymentMode->CardThemeType.getPaymentMode
 
   let networkStatus = NetworkInformation.useNetworkInformation()
-  React.useMemo0(() =>
-    ()
-  )
-
   let lastOnline = React.useRef(None)
   React.useEffect1(() => {
     switch networkStatus {
@@ -138,7 +134,6 @@ let make = () => {
         let isSdkParamsEnabled =
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
-        ()
 
         <PreMountLoader
           publishableKey

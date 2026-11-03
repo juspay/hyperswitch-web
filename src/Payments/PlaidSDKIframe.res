@@ -63,11 +63,6 @@ let make = () => {
       | _ => "Payment is processing. Try again later!"
       }
       switch status {
-      | "succeeded" | "requires_customer_action" | "processing" => ()
-      | _ =>
-        ()
-      }
-      switch status {
       | "succeeded" | "requires_customer_action" | "processing" =>
         postSubmitResponse(~jsonData=json, ~url=return_url)
       | "failed" =>
@@ -83,7 +78,6 @@ let make = () => {
 
   let initializePlaid = () => {
     let startedAt = Date.now()
-    ()
     Plaid.create({
       token: linkToken,
       onLoad: (() =>

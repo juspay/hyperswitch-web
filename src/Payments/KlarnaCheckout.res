@@ -23,7 +23,6 @@ let make = () => {
 
   let onKlarnaClick = async _ev => {
     try {
-      ()
       if isTestMode {
         Console.warn("Klarna checkout button clicked in test mode - interaction disabled")
         resolve()
@@ -60,7 +59,6 @@ let make = () => {
       }
     } catch {
     | exn =>
-      ()
       resolve()
     }
   }
@@ -77,8 +75,7 @@ let make = () => {
     onClick={_ =>
       if !options.readOnly {
         onKlarnaClick()->ignore
-      }}
-  >
+      }}>
     <div className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
       {if klarnaClicked {
         <Loader />

@@ -3,8 +3,6 @@
 
 Sentry.initiateSentry(~dsn=GlobalVars.sentryDSN)
 
-()
-
 let app = switch ReactDOM.querySelector("#app") {
 | Some(container) =>
   let root = ReactDOM.Client.createRoot(container)

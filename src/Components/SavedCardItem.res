@@ -274,7 +274,6 @@ let make = (
       }
       onClick={_ => {
         open JotaiAtomTypes
-        ()
         setPaymentToken(_ => {
           paymentToken: paymentItem.paymentToken,
           customerId: paymentItem.customerId,

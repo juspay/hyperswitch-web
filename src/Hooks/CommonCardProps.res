@@ -231,13 +231,10 @@ let useCardForm = (
         let json = ev.data->safeParse
         let dict = json->Utils.getDictFromJson
         if dict->Dict.get("doBlur")->Option.isSome {
-          ()
           setBlurState(_ => true)
         } else if dict->Dict.get("doFocus")->Option.isSome {
-          ()
           cardRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
         } else if dict->Dict.get("doClearValues")->Option.isSome {
-          ()
           setCardNumber(_ => "")
           setCardExpiry(_ => "")
           setCvcNumber(_ => "")

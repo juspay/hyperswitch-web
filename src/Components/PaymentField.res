@@ -38,9 +38,6 @@ let make = (
 
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    if name->String.length > 0 {
-      ()
-    }
     switch setValue {
     | Some(fn) =>
       fn(prev => {
@@ -55,9 +52,6 @@ let make = (
 
   let handleBlur = ev => {
     setInputFocused(_ => false)
-    if name->String.length > 0 {
-      ()
-    }
     switch onBlur {
     | Some(fn) => fn(ev)
     | None => ()
@@ -104,8 +98,7 @@ let make = (
       condition={name === "phone" &&
       fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
-      isSpacedInnerLayout}
-    >
+      isSpacedInnerLayout}>
       <div
         className={`Label ${labelClass}`}
         style={
@@ -137,8 +130,7 @@ let make = (
         condition={name !== "phone" &&
         fieldName->String.length > 0 &&
         config.appearance.labels == Above &&
-        isSpacedInnerLayout}
-      >
+        isSpacedInnerLayout}>
         <div
           className={`Label ${labelClass}`}
           style={

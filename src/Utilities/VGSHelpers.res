@@ -43,7 +43,6 @@ let getErrorStr = (fieldname, ~empty=false, localeString: LocaleStringTypes.loca
 }
 
 let submitUserError = message => {
-  ()
   postFailedSubmitResponse(~errortype="validation_error", ~message)
 }
 

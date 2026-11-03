@@ -55,7 +55,6 @@ let make = () => {
         )
       } else {
         let message = "Please enter all fields"
-        ()
         postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
@@ -75,8 +74,7 @@ let make = () => {
         className="flex flex-col animate-slowShow"
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
-        }
-      >
+        }>
         <RenderIf condition={layoutClass.\"type" === Accordion}>
           <Space height="0" />
         </RenderIf>

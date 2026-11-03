@@ -212,7 +212,6 @@ let startApplePaySession = (
   let handlePaymentAuthorized = (event: ApplePayTypes.event) => {
     ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson)
     applePaySessionRef := Nullable.null
-    ()
 
     let payment = event.payment
     payment->callBackFunc
@@ -220,11 +219,7 @@ let startApplePaySession = (
 
   let handleCancel = () => {
     applePaySessionRef := Nullable.null
-    let abortedBySdk = applePaySessionAbortedBySdk.contents
     applePaySessionAbortedBySdk := false
-    if abortedBySdk {
-      ()
-    }
     switch onCancel {
     | Some(onCancel) => onCancel()
     | None =>
@@ -267,6 +262,7 @@ let useHandleApplePayResponse = (
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   React.useEffect(() => {
     let handleApplePayMessages = (ev: Window.event) => {
@@ -327,7 +323,6 @@ let useHandleApplePayResponse = (
           setShowApplePayLoader(_ => false)
           if isSavedMethodsFlow || !isWallet {
             let message = "Something went wrong"
-            ()
             postFailedSubmitResponse(~errortype="server_error", ~message)
           }
         } else if dict->Dict.get("applePaySyncPayment")->Option.isSome {
@@ -345,7 +340,6 @@ let useHandleApplePayResponse = (
             ~isManualRetryEnabled,
           )
         } else if dict->Dict.get("applePayConfirmRequest")->Option.isSome {
-          ()
 
           processPayment(
             ~bodyArr=PaymentBody.applePayThirdPartySdkBody(~connectors),
@@ -432,13 +426,11 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
           handleApplePayButtonClicked(~sessionObj, ~componentName, ~paymentMethodListValue)
         }
       } else if areRequiredFieldsEmpty {
-        ()
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterFieldsText,
         )
       } else if !areRequiredFieldsValid {
-        ()
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterValidDetailsText,
@@ -550,7 +542,6 @@ let handleApplePayBraintreeClick = (
       postFailedSubmitResponse(~errortype="validation_error", ~message)
       ()
     } else {
-      ()
       event.source->Window.sendPostMessage(
         [
           ("applePayBraintreeSuccess", true->JSON.Encode.bool),
@@ -577,11 +568,7 @@ let handleApplePayBraintreeClick = (
   }
 
   let onCancel = () => {
-    let abortedBySdk = applePaySessionAbortedBySdk.contents
     applePaySessionAbortedBySdk := false
-    if abortedBySdk {
-      ()
-    }
     restoreButton()
   }
 

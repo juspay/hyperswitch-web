@@ -28,28 +28,12 @@ let useHandlePostMessages = (
   ~savedMethod=false,
   ~enabled=true,
 ) => {
-  let wasComplete = React.useRef(false)
-
   React.useEffect(() => {
     if enabled {
       Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType)
     }
     None
   }, (complete, empty, paymentType, enabled))
-
-  let sawIncomplete = React.useRef(false)
-
-  React.useEffect(() => {
-    if enabled {
-      if !complete {
-        sawIncomplete.current = true
-      } else if !wasComplete.current && sawIncomplete.current {
-        ()
-      }
-    }
-    wasComplete.current = complete
-    None
-  }, (complete, paymentType, savedMethod, enabled))
 }
 
 let useIsCustomerAcceptanceRequired = (
@@ -122,12 +106,10 @@ let useUpdateRedirectionFlags = () => {
 let appRenderedLogged = ref(false)
 
 let useLogAppRendered = (~isRendered) => {
-  let launchTime = Jotai.useAtomValue(JotaiAtoms.launchTime)
   React.useEffect(() => {
     if isRendered && !appRenderedLogged.contents {
       appRenderedLogged := true
-      ()
     }
     None
-  }, (isRendered, launchTime))
+  }, [isRendered])
 }

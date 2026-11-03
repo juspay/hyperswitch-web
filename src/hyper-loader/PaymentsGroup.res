@@ -71,7 +71,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let locale = config.locale->Option.getOr("en")
   let sdkSessionId = config.sdkSessionId->Option.getOr("")
   let customBackendUrl = config.customBackendUrl->Option.getOr("")
-  ()
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
@@ -506,7 +505,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         switch mapFieldTypeToInternalFieldName(fieldType) {
         | "" => {
             Console.error(`[PaymentsGroup] invalid_field_type: ${fieldType}`)
-            ()
             Types.defaultFieldHandle
           }
         | _ =>
@@ -528,7 +526,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           let entry = createFieldHandle(fieldType, options, fieldId)
           fieldsRef.contents->Dict.set(fieldId, entry)
           registerField(~fields, ~fieldId, ~fieldType)
-          ()
           entry.handle
         })()
 
@@ -537,7 +534,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     let attemptsClientSecretMutation = newOptionsDict->Dict.get("clientSecret")->Option.isSome
     let attemptsConfirmParamsMutation = newOptionsDict->Dict.get("confirmParams")->Option.isSome
     if attemptsClientSecretMutation || attemptsConfirmParamsMutation {
-      ()
       Console.warn(
         "[PaymentsGroup] update() refused: `clientSecret` and `confirmParams` are immutable after mount. " ++ "Create a new group (or remount the fields) to switch intents.",
       )
@@ -635,7 +631,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
 
   let deinit = (): unit =>
     (() => {
-        ()
         fieldsRef.contents
         ->Dict.valuesToArray
         ->Array.forEach(entry => {

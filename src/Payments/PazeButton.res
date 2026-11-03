@@ -25,7 +25,6 @@ let make = (~token: SessionsType.token) => {
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onClick = _ => {
-    ()
     if isTestMode {
       Console.warn("Paze button clicked in test mode - interaction disabled")
     } else {
@@ -111,8 +110,7 @@ let make = (~token: SessionsType.token) => {
       border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
       pointerEvents: updateSession ? "none" : "auto",
       opacity: showLoader || updateSession ? "0.5" : "1.0",
-    }
-  >
+    }>
     {showLoader ? <Spinner /> : <Icon name="paze" size=55 />}
   </button>
 }

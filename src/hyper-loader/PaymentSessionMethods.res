@@ -44,7 +44,6 @@ let fetchCustomerSavedPaymentMethods = (
       )
     } catch {
     | err =>
-      ()
       None
     }
 
@@ -173,7 +172,6 @@ let fetchCustomerSavedPaymentMethods = (
                       )
                     ) {
                       // As before, a redirecting confirmation navigates without resolving.
-                      ()
                       stopListening()
                       Window.Location.replace(returnUrl)
                     } else {
@@ -413,7 +411,6 @@ let fetchCustomerSavedPaymentMethods = (
         ->then(json => {
           let metadata = json->Identity.anyTypeToJson
 
-          ()
 
           let completeGooglePayPayment = () => {
             let body = GooglePayHelpers.getGooglePayBodyFromResponse(
@@ -448,7 +445,6 @@ let fetchCustomerSavedPaymentMethods = (
         )
       | None =>
         let message = "Google Pay is not available"
-        ()
         handleFailureResponse(~message, ~errorType="google_pay")->resolve
       }
     }
@@ -615,7 +611,6 @@ let fetchCustomerSavedPaymentMethods = (
         )
         ->catch(
           err => {
-            ()
             resolve()
           },
         )

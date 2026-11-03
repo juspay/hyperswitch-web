@@ -85,8 +85,7 @@ let make = (
           {React.string(" ")}
           <span
             className="underline decoration-1 underline-offset-2 cursor-pointer"
-            onClick={handleLearnMore}
-          >
+            onClick={handleLearnMore}>
             {React.string("Learn more")}
           </span>
         </div>
@@ -95,12 +94,10 @@ let make = (
           <div className={`Checkbox ${isSaveDetailsCheckboxState} flex`}>
             <label
               className={`container CheckboxInput ${isSaveDetailsCheckedState}`}
-              style={width: "fit-content"}
-            >
+              style={width: "fit-content"}>
               <input
                 type_={`checkbox`}
                 onChange={e => {
-                  ()
                   setIsSaveDetailsWithClickToPay(_ => e->getIsChecked)
                 }}
               />
@@ -108,14 +105,12 @@ let make = (
             </label>
             <div
               className={`CheckboxLabel ${isSaveDetailsCheckBoxLabelState} ml-2 w-11/12 text-xs space-y-2`}
-              style={color: "#a9a9a9"}
-            >
+              style={color: "#a9a9a9"}>
               <div>
                 {React.string(`Save my information with ${formattedCardBrand} `)}
                 <span
                   className="underline decoration-1 underline-offset-2 cursor-pointer"
-                  onClick={handleLearnMore}
-                >
+                  onClick={handleLearnMore}>
                   {React.string("Click to Pay")}
                 </span>
                 {React.string(" ")}
@@ -130,12 +125,10 @@ let make = (
           <div className={`Checkbox ${isRememberMeCheckboxState} flex`}>
             <label
               className={`container CheckboxInput ${isRememberMeCheckedState}`}
-              style={width: "fit-content"}
-            >
+              style={width: "fit-content"}>
               <input
                 type_={`checkbox`}
                 onChange={e => {
-                  ()
                   setIsClickToPayRememberMe(_ => e->getIsChecked)
                 }}
               />
@@ -143,8 +136,7 @@ let make = (
             </label>
             <div
               className={`CheckboxLabel ${isRememberMeCheckBoxLabelState} ml-2 w-11/12 text-xs space-y-2`}
-              style={color: "#a9a9a9"}
-            >
+              style={color: "#a9a9a9"}>
               <div className="flex items-center">
                 {React.string("Remember me on this browser")}
                 <div className="relative inline-block ml-2">
@@ -178,16 +170,14 @@ let make = (
                 {React.string(`By continuing, you agree to ${formattedCardBrand}'s `)}
                 <span
                   className="underline decoration-1 underline-offset-2 cursor-pointer"
-                  onClick={ev => handleOpenUrl(ev, getTermsUrl())}
-                >
+                  onClick={ev => handleOpenUrl(ev, getTermsUrl())}>
                   {React.string("Terms")}
                 </span>
                 {React.string(" ")}
                 {React.string("and understand your data will be processed according to the ")}
                 <span
                   className="underline decoration-1 underline-offset-2 cursor-pointer"
-                  onClick={ev => handleOpenUrl(ev, getPrivacyNoticeUrl())}
-                >
+                  onClick={ev => handleOpenUrl(ev, getPrivacyNoticeUrl())}>
                   {React.string("Privacy Notice")}
                 </span>
                 {React.string(".")}

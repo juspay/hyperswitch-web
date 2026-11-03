@@ -95,8 +95,7 @@ let make = (
   <>
     <RenderIf
       condition={showAddScreen &&
-      paymentManagementListValue.paymentMethodsEnabled->Array.length != 0}
-    >
+      paymentManagementListValue.paymentMethodsEnabled->Array.length != 0}>
       <div className="flex flex-col gap-3">
         <RenderIf condition={savedMethodsV2->Array.length != 0}>
           <Icon
@@ -119,8 +118,7 @@ let make = (
     </RenderIf>
     <RenderIf
       condition={showAddScreen &&
-      paymentManagementListValue.paymentMethodsEnabled->Array.length == 0}
-    >
+      paymentManagementListValue.paymentMethodsEnabled->Array.length == 0}>
       <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
     </RenderIf>
     <RenderIf condition={!showAddScreen}>
@@ -139,8 +137,7 @@ let make = (
           ariaLabel="Click to use new payment methods"
           tabIndex=0
           onClick={_ => setShowAddScreen(_ => true)}
-          dataTestId={TestUtils.addNewCardIcon}
-        >
+          dataTestId={TestUtils.addNewCardIcon}>
           <Icon name="plus" size=19 />
           {React.string("Add new card")}
         </div>

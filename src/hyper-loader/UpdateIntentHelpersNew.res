@@ -80,7 +80,6 @@ let sendElementsUpdateToIframes = (iframes, ~newSdkAuthorization, ~newClientSecr
 // Error response when updateIntent is already in progress (used as early return guard).
 let updateIntentInProgressResponse = () => {
   let message = "An updateIntent operation is already in progress."
-  ()
   getFailedSubmitResponse(~message, ~errorType="update_intent_error")
 }
 
@@ -88,14 +87,12 @@ let updateIntentInProgressResponse = () => {
 // Uses getFailedSubmitResponse (same format as Elements/Hyper).
 let confirmBlockedResponse = () => {
   let message = "Cannot confirm payment while updateIntent is in progress."
-  ()
   getFailedSubmitResponse(~message, ~errorType="update_intent_error")
 }
 
 // Same as confirmBlockedResponse but uses handleFailureResponse (used in PaymentSessionMethods).
 let confirmBlockedResponseForSession = () => {
   let message = "Cannot confirm payment while updateIntent is in progress."
-  ()
   handleFailureResponse(~message, ~errorType="update_intent_error")
 }
 
@@ -386,7 +383,6 @@ let performUpdateIntent = async (
             ~newClientSecret=clientSecretRef.contents,
           )
 
-          ()
 
           // Wait for the payment element to signal ready (only if a payment element is mounted)
           let readyPromise = if shouldWaitForReady {
@@ -423,7 +419,6 @@ let performUpdateIntent = async (
 
     let response = await (runUpdateIntent)()
     isUpdateIntentInProgress.contents = false
-    ()
     response
   }
 }

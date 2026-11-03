@@ -100,11 +100,9 @@ let make = (
                         let isNotYouClicked = exceptionMessage->String.includes("Not you clicked")
 
                         if isNotYouClicked {
-                          ()
                           setIsCTPAuthenticateNotYouClicked(_ => true)
                           setIsShowClickToPayNotYou(_ => true)
                         } else {
-                          ()
                           setIsClickToPayAuthenticateError(_ => true)
                         }
 
@@ -115,7 +113,6 @@ let make = (
                     }
                   })
                   ->catch(err => {
-                    ()
                     closeComponentIfSavedMethodsAreEmpty()
                     resolve()
                   })
@@ -128,7 +125,6 @@ let make = (
           }
         } catch {
         | exn =>
-          ()
           closeComponentIfSavedMethodsAreEmpty()
         }
       } else if isClickToPayAuthenticateError {

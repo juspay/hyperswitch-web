@@ -71,7 +71,6 @@ let make = (~paymentMethodType) => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       let message = "Please add Bank Details and then confirm payment with the added payment methods."
-      ()
       postFailedSubmitResponse(~errortype="validation_error", ~message)
     }
   }, [])
@@ -100,8 +99,7 @@ let make = (~paymentMethodType) => {
         borderRadius: themeObj.borderRadius,
         borderColor: themeObj.borderColor,
         borderWidth: "2px",
-      }
-    >
+      }>
       {if showLoader {
         <Loader />
       } else {

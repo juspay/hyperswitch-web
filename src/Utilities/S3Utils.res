@@ -87,14 +87,12 @@ let loadCountryStateData = async (~locale) => {
       let fallbackCountries = country
       try {
         let fallbackStates = await Utils.importStates("./../States.json")
-        ()
         {
           countries: fallbackCountries,
           states: fallbackStates.states,
         }
       } catch {
       | exn => {
-          ()
           {
             countries: fallbackCountries,
             states: JSON.Encode.null,

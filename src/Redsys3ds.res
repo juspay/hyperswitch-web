@@ -87,7 +87,6 @@ let make = () => {
               form.target = "threeDsAuthFrame"
               form.appendChild(input)
               threeDsMethodStartedAtRef.current = Some(Date.now())
-              ()
               form.submit()
             }
           | None =>
@@ -97,7 +96,6 @@ let make = () => {
           timeoutRef.current->Option.forEach(clearTimeout)
 
           timeoutRef.current = Some(setTimeout(() => {
-              ()
               handleCompleteAuthorizeCall(
                 "N",
                 clientSecret,
@@ -113,7 +111,6 @@ let make = () => {
             elem->CommonHooks.addEventListener("load", _ => {
               timeoutRef.current->Option.forEach(clearTimeout)
               if !isCompleteAuthorizeCalledRef.current {
-                ()
                 handleCompleteAuthorizeCall(
                   "Y",
                   clientSecret,
@@ -129,7 +126,6 @@ let make = () => {
         }
       } catch {
       | exn =>
-        ()
         postFailedSubmitResponse(
           ~errortype="complete_authorize_failed",
           ~message="Something went wrong.",

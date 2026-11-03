@@ -118,7 +118,6 @@ let make = (~paymentMethodName: string) => {
         )
       } else {
         let message = "Please enter all fields"
-        ()
         postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
@@ -142,8 +141,7 @@ let make = (~paymentMethodName: string) => {
 
   <div
     className="DynamicFields flex flex-col animate-slowShow"
-    style={gridGap: themeObj.spacingGridColumn}
-  >
+    style={gridGap: themeObj.spacingGridColumn}>
     <RenderIf condition={layoutClass.\"type" === Accordion}>
       <Space height="0" />
     </RenderIf>

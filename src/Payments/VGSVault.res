@@ -5,11 +5,9 @@ open VGSConstants
 
 let submitVaultTokenization = (vault: returnValue, ~onData) => {
   let onSuccess = (_, data) => {
-    ()
     onData(data)
   }
   let onError = err => {
-    ()
     postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
   }
   vault.submit("/post", JSON.Encode.object(Dict.make()), onSuccess, onError)
@@ -295,7 +293,6 @@ let make = (~cvcOnly=false) => {
         }
 
       | None =>
-        ()
         Console.error("VGS Vault not initialized for submission")
       }
     }
@@ -323,8 +320,7 @@ let make = (~cvcOnly=false) => {
                 marginBottom: "5px",
                 fontSize: themeObj.fontSizeLg,
                 opacity: "0.6",
-              }
-            >
+              }>
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
@@ -338,8 +334,7 @@ let make = (~cvcOnly=false) => {
             className="flex flex-row w-full place-content-between"
             style={
               gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-            }
-          >
+            }>
             <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
               <VGSInputComponent
                 fieldName={localeString.validThruText}

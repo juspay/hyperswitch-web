@@ -15,7 +15,6 @@ let make = (
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   let handleChange = value => {
-    ()
     setIsChecked(_ => value)
   }
 

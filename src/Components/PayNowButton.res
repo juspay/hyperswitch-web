@@ -49,7 +49,6 @@ let make = (~onClickHandler=?, ~label=?) => {
   }
 
   let onClickHandlerFunc = _ => {
-    ()
     switch onClickHandler {
     | Some(fn) => fn()
     | None => ()

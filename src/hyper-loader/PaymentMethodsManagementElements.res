@@ -182,7 +182,6 @@ let make = (
     let update = newOptions =>
       (() => updateInternal(newOptions))()
     let fetchUpdates = () => {
-      ()
       Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
       })
@@ -298,7 +297,6 @@ let make = (
   } catch {
   | e => {
       Sentry.captureException(e)
-      ()
       defaultElement
     }
   }

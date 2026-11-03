@@ -152,7 +152,6 @@ let make = (
   ~publishableKey: string,
   ~sdkSessionId: string,
 ): initPaymentMethodSession => {
-  ()
   let optionsDict = options->getDictFromJson
 
   let sdkAuthorizationRaw = optionsDict->resolveSdkAuthorization
@@ -591,13 +590,11 @@ let make = (
       Console.warn(
         `[PaymentMethodSession] create("${fieldType}") called on consumed/deinitialized session`,
       )
-      ()
       Types.defaultFieldHandle
     } else {
       switch mapFieldTypeToInternalFieldName(fieldType) {
       | "" => {
           Console.error(`[PaymentMethodSession] invalid_field_type: ${fieldType}`)
-          ()
           Types.defaultFieldHandle
         }
       | _ =>
@@ -736,12 +733,10 @@ let make = (
                   eventCallbacksRef.contents->Dict.set(key, cb)
                 },
               }
-              ()
               handle
             }
           | None => {
               Console.error(`[PaymentMethodSession] vaultType="vgs" declared but vaultData has no vaultId/environment — cannot mount`)
-              ()
               Types.defaultFieldHandle
             }
           }
@@ -758,13 +753,11 @@ let make = (
           let entry = createFieldHandle(fieldType, options, fieldId)
           fieldsRef.contents->Dict.set(fieldId, entry)
           registerField(~fields, ~fieldId, ~fieldType)
-          ()
           entry.handle
         | other => {
             Console.error(
               `[PaymentMethodSession] unsupported_provider: vaultType "${other}" not yet supported`,
             )
-            ()
             Types.defaultFieldHandle
           }
         }
@@ -776,7 +769,6 @@ let make = (
     (() => createFieldInternal(fieldType, options))()
 
   let update = (_options: JSON.t): unit => {
-    ()
     Console.warn(
       "[PaymentMethodSession] session options are fixed at creation; create a new session to change them",
     )
@@ -1074,7 +1066,6 @@ let make = (
     (
       () => {
         if sessionStateRef.contents != Deinitialized {
-          ()
           fieldsRef.contents
           ->Dict.valuesToArray
           ->Array.forEach(entry => {

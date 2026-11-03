@@ -148,7 +148,6 @@ let loadPaypalSDK = (
                 },
               )
             } else {
-              ()
               resolve("")
             }
           })

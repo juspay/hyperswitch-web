@@ -145,7 +145,6 @@ let intentCall = (
                   postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
                 }
                 let recovered = uri->String.includes("force_sync=true")
-                ()
                 if recovered {
                   handleOpenUrl(url.href)
                 } else {
@@ -160,7 +159,6 @@ let intentCall = (
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else {
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-              ()
               url.searchParams.set("status", "succeeded")
             }
           },
@@ -171,7 +169,6 @@ let intentCall = (
   ->catch(err => {
     Promise.make((resolve, _) => {
       try {
-        ()
         let url = makeUrl(confirmParam.return_url)
         url.searchParams.set("status", "failed")
 
@@ -190,7 +187,6 @@ let intentCall = (
         }
       } catch {
       | exn =>
-        ()
         if !isPaymentSession {
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
         }
@@ -321,7 +317,6 @@ let useSaveCard = (paymentType: payment) => {
       }
     | None =>
       let message = "Payment failed. Try again!"
-      ()
       postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
     }
   }
@@ -377,7 +372,6 @@ let useUpdateCard = (paymentType: payment) => {
       }
     | None =>
       let message = "Payment failed. Try again!"
-      ()
       postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
     }
   }

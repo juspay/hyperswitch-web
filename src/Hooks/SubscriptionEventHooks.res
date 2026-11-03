@@ -300,9 +300,6 @@ let getPaymentMethodAndType = (
     switch found {
     | Some(pm) => Some((pm.payment_method, paymentMethodName))
     | None =>
-      if paymentMethods->Array.length > 0 {
-        ()
-      }
       None
     }
   }

@@ -80,7 +80,6 @@ let make = (~sessionObj: SessionsType.token) => {
         }))()->ignore
 
       let loadStartedAt = Date.now()
-      ()
       klarnaInit.load(
         {
           container: "#klarna-payments",

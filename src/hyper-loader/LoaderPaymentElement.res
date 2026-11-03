@@ -354,6 +354,27 @@ let make = (
       ),
     ]
 
+    let unmount = () => {
+      oneClickSources->Dict.delete(elementInstanceId)
+      let id = mountId.contents
+      mountedIframeRef := Nullable.null
+      fullscreenIframeRef := Nullable.null
+
+      let oElement = Window.querySelector(id)
+      switch oElement->Nullable.toOption {
+      | Some(elem) => elem->Window.innerHTML("")
+      | None =>
+        Console.warn(
+          "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
+        )
+      }
+    }
+
+    let destroy = () => {
+      unmount()
+      mountId := ""
+    }
+
     let update = newOptions => {
       switch newOptions->getDictFromJson->Dict.get("subscriptionEvents") {
       | Some(_) =>
@@ -388,9 +409,6 @@ let make = (
         iframe->Window.iframePostMessage(message, ~targetOrigin=iframeOrigin)
       })
     }
-
-    let update = newOptions =>
-      (() => updateElementOptions(newOptions))()
 
     let mountElement = selector => {
       ensureWalletOneClickListener(~ownerId=elementInstanceId, ~isTrustedMessage)
@@ -531,7 +549,7 @@ let make = (
                             ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
                             ("options", options),
-                            ("appearance", appearance)
+                              ("appearance", appearance),
                            ]->Dict.fromArray,
                            ~targetOrigin=fullscreenOrigin,
                         )
@@ -548,7 +566,8 @@ let make = (
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                         fullScreenEle->Window.iframePostMessage(
                           [
-                            ("metadata", fullscreenMetadata.contents)
+                              ("fullScreenIframeMounted", true->JSON.Encode.bool),
+                              ("metadata", fullscreenMetadata.contents),
                           ]->Dict.fromArray,
                           ~targetOrigin=fullscreenOrigin,
                         )
@@ -683,7 +702,6 @@ let make = (
   | e => {
       Sentry.captureException(e)
 
-      ()
       defaultPaymentElement
     }
   }

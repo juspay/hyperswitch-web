@@ -151,7 +151,6 @@ let reportValidationErrors = (
 
   switch userError.contents {
   | Some(message) => {
-      ()
       postFailedSubmitResponse(~errortype="validation_error", ~message)
     }
   | None => ()

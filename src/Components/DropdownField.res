@@ -45,9 +45,6 @@ let make = (
 
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    if fieldName->String.length > 0 {
-      ()
-    }
     Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
 
@@ -100,8 +97,7 @@ let make = (
         condition={!isLabelHidden &&
         fieldName->String.length > 0 &&
         appearance.labels == Above &&
-        isSpacedInnerLayout}
-      >
+        isSpacedInnerLayout}>
         <div
           className={`Label `}
           style={
@@ -145,8 +141,7 @@ let make = (
           onChange=handleChange
           onFocus=handleFocus
           className={`${inputClassStyles} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
-          ariaLabel={`${fieldName} option tab`}
-        >
+          ariaLabel={`${fieldName} option tab`}>
           {options
           ->Array.mapWithIndex((item, index) => {
             <option key={Int.toString(index)} value=item.value>
@@ -180,8 +175,7 @@ let make = (
             left: localeString.localeDirection == "rtl" ? "1%" : "97%",
             top: "42%",
             marginLeft: localeString.localeDirection == "rtl" ? "1rem" : "-1rem",
-          }
-        >
+          }>
           <Icon size=10 name={"arrow-down"} />
         </div>
       </div>

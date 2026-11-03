@@ -6,7 +6,6 @@ open PaymentTypeContext
 open CommonCardProps
 
 let setUserError = message => {
-  ()
   Utils.postFailedSubmitResponse(~errortype="validation_error", ~message)
 }
 

@@ -76,7 +76,6 @@ let make = (
       )
     } catch {
     | error =>
-      ()
       messageParentWindow([("cardTokenFail", true->JSON.Encode.bool)], ~targetOrigin=parentURL)
       Console.error2("Unable to Save Card ", error->formatException->JSON.stringify)
     }

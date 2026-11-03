@@ -772,7 +772,6 @@ let make = (
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && !hasCardFieldStatus {
-        ()
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterFieldsText,
@@ -799,9 +798,7 @@ let make = (
                   tokenEvent.origin === innerIframeOrigin
               )
               ->Option.getOr(false)
-            if !isInnerCardMessage {
-              ()
-            } else if dict->Dict.get("rawCardEvent")->Option.isSome && isRawMode {
+            if isInnerCardMessage && dict->Dict.get("rawCardEvent")->Option.isSome && isRawMode {
               let rawCardData = dict->getJsonObjectFromDict("rawCardData")->getDictFromJson
               let cardNumber = rawCardData->getString("cardNumber", "")
               let month = rawCardData->getString("month", "")
@@ -895,7 +892,6 @@ let make = (
               )
             } else if dict->Dict.get("cardTokenFail")->Option.isSome {
               let message = "Something went wrong"
-              ()
               postFailedSubmitResponse(~errortype="server_error", ~message)
             }
             if isInnerCardMessage && dict->Dict.get("submitSuccessful")->Option.isSome {
@@ -925,7 +921,6 @@ let make = (
         iframeRef.current->Window.iframePostMessage(innerMessage, ~targetOrigin=innerIframeOrigin)
         if !outerValid {
           let setUserError = message => {
-            ()
             postFailedSubmitResponse(~errortype="validation_error", ~message)
           }
           if !areRequiredFieldsValid || !isNicknameValid {

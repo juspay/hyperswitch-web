@@ -119,7 +119,6 @@ let make = () => {
         ()
       } else {
         let message = "Please enter all fields"
-        ()
         postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }

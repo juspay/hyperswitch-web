@@ -87,7 +87,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
       let message = "Select a payment method"
-      ()
       postFailedSubmitResponse(~errortype="validation_error", ~message)
     }
   }, [selectedOption])

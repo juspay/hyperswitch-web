@@ -244,7 +244,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
       ("applePayMounted", true->JSON.Encode.bool),
       ("componentName", componentName->JSON.Encode.string),
     ])
-    ()
     let updatedState: PaymentType.loadType = switch paymentMethodList {
     | Loading => checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
@@ -366,7 +365,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
               let newLaunchTime = dict->getFloat("launchTime", 0.0)
               setLaunchTime(_ => newLaunchTime)
               let initLoadlatency = Date.now() -. newLaunchTime
-              ()
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
@@ -401,7 +399,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
         } else if dict->getDictIsSome("paymentElementsUpdate") {
           updateOptions(dict)
         } else if dict->getDictIsSome("ElementsUpdate") {
-          ()
           let optionsDict = dict->getDictFromObj("options")
           setPaymentOptionsJson(prev => {
             let updatedPaymentOptions = prev->getDictFromJson->Dict.copy
@@ -608,15 +605,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
           let isLoading = dict->getBool("updateIntentLoading", false)
           setIsUpdateIntentLoading(_ => isLoading)
           isAwaitingUpdatedListRef.current = isLoading
-          if isLoading {
-            ()
-          } else {
-            ()
-          }
         }
       } catch {
       | exn => {
-          ()
           setIntegrateErrorError(_ => true)
         }
       }

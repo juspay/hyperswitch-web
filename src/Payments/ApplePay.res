@@ -270,7 +270,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onApplePayButtonClicked = () => {
-    ()
     if isTestMode {
       Console.warn("Apple Pay button clicked in test mode - interaction disabled")
     } else {
@@ -326,7 +325,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           resolve()
         })
         ->catch(exn => {
-          ()
           resolve()
         })
         ->ignore
@@ -417,8 +415,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
                 pointerEvents: updateSession ? "none" : "auto",
               }
               className="apple-pay-button-with-text apple-pay-button-black-with-text"
-              onClick={_ => onApplePayButtonClicked()}
-            >
+              onClick={_ => onApplePayButtonClicked()}>
               <span className="text"> {React.string("Pay with")} </span>
               <span className="logo" />
             </button>

@@ -32,7 +32,6 @@ let useClickToPay = (
     })
 
   let setVisaComponentState = view => {
-    ()
     setClickToPayConfig(prev => {
       ...prev,
       visaComponentState: view,
@@ -70,7 +69,6 @@ let useClickToPay = (
                   card.paymentCardDescriptor->String.toLowerCase->String.includes(brand)
                 )
                 ->Array.length
-              ()
               switch profilesArray[0] {
               | Some(profile) => Some(profile.maskedCards)
               | None => None
@@ -102,13 +100,11 @@ let useClickToPay = (
             | Some(reason) =>
               switch reason {
               | "VALIDATION_DATA_INVALID" =>
-                ()
                 setClickToPayConfig(prev => {
                   ...prev,
                   otpError: "VALIDATION_DATA_INVALID",
                 })
               | _ =>
-                ()
                 let otpError = reason == "ACCT_INACCESSIBLE" ? "ACCT_INACCESSIBLE" : "NONE"
                 setClickToPayConfig(prev => {
                   ...prev,
@@ -121,12 +117,10 @@ let useClickToPay = (
           }
         } else {
           setVisaComponentState(NONE)
-          ()
         }
       }
     } catch {
     | exn =>
-      ()
       setClickToPayNotReady()
     }
   }
@@ -139,7 +133,6 @@ let useClickToPay = (
 
           setVisaComponentState(CARDS_LOADING)
           let _ = await (() => vsdk.initialize(initConfig))()
-          ()
           let _ = await getVisaCards(~identityValue=email, ~otp="", ~identityType=EMAIL_ADDRESS)
         }
       | None => ()
@@ -148,7 +141,6 @@ let useClickToPay = (
     | err =>
       setClickToPayNotReady()
       closeComponentIfSavedMethodsAreEmpty()
-      ()
     }
   }
 
@@ -201,7 +193,6 @@ let useClickToPay = (
       }
     } catch {
     | exn =>
-      ()
       setClickToPayNotReady()
     }
   }

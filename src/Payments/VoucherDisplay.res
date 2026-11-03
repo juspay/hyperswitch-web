@@ -65,8 +65,7 @@ let make = () => {
               ref={linkRef->ReactDOM.Ref.domRef}
               onClick={_ => {
                 ()
-              }}
-            >
+              }}>
               {React.string("here")}
             </a>
             {React.string(" to download it.")}
@@ -96,8 +95,7 @@ let make = () => {
               }
               onClick={_ => {
                 closeModal()
-              }}
-            >
+              }}>
               {React.string("Done")}
             </button>
           </div>

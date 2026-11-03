@@ -29,10 +29,8 @@ let handleDDC = (
 
   let expectedOrigin = PaymentMessageSecurity.originOf(iframeUrl)
   if expectedOrigin->Option.isNone {
-    ()
     handleFailure()
   } else {
-    ()
 
     let timeoutIdRef = ref(None)
     let messageHandlerRef = ref(None)
@@ -62,7 +60,6 @@ let handleDDC = (
           } catch {
           | _ => ""
           }
-          ()
           openUrl(redirectUrl)
         }
       }
@@ -81,7 +78,6 @@ let handleDDC = (
 
       switch parsed {
       | Error(exn) =>
-        ()
         cleanup()
         handleFailure()
       | Ok(None) => ()
@@ -94,7 +90,6 @@ let handleDDC = (
           nextActionType === "redirect_to_url" &&
             PaymentMessageSecurity.httpUrl(redirectUrl)->Option.isSome
         ) {
-          ()
           handleRedirectToUrl(redirectUrl, redirectMode)
         } else {
           handleFailure()
@@ -118,7 +113,6 @@ let handleDDC = (
     iframeRef := Some(iframe)
 
     timeoutIdRef := Some(setTimeout(() => {
-          ()
           cleanup()
           handleFailure()
         }, timeoutMs))

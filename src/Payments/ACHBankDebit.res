@@ -105,7 +105,6 @@ let make = () => {
         ()
       } else {
         let message = "Please enter all fields"
-        ()
         postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
@@ -133,8 +132,7 @@ let make = () => {
                 fontSize: themeObj.fontSizeSm,
                 alignSelf: "start",
                 textAlign: "left",
-              }
-            >
+              }>
               {React.string(bankError)}
             </div>
           </RenderIf>

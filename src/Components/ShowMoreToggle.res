@@ -7,7 +7,6 @@ let make = (~isCollapsed, ~setIsCollapsed) => {
       color: themeObj.colorPrimary,
     }
     onClick={_ => {
-      ()
       setIsCollapsed(prev => !prev)
     }}
   >

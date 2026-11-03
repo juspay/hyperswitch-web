@@ -330,7 +330,6 @@ let initializeMastercardCheckout = (clickToPayToken: clickToPayToken) => {
 
       let params = switch recognitionToken->Nullable.toOption {
       | Some(token) => {
-          ()
           {...params, recognitionToken: token}
         }
       | None => params
@@ -341,12 +340,10 @@ let initializeMastercardCheckout = (clickToPayToken: clickToPayToken) => {
         | Some(service) =>
           (() => service->init(params))()
           ->then(resp => {
-            ()
             resolve(resp)
           })
           ->catch(err => reject(err))
         | None => {
-            ()
             reject(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
           }
         }
@@ -355,7 +352,6 @@ let initializeMastercardCheckout = (clickToPayToken: clickToPayToken) => {
       }
     }
   | None => {
-      ()
       reject(JsExn.anyToExnInternal("MastercardCheckoutServices is not available"))
     }
   }
@@ -369,7 +365,6 @@ let getCards = async () => {
         Ok(cards)
       }
     | None => {
-        ()
         Ok([])
       }
     }
@@ -410,7 +405,6 @@ let authenticate = async (payload: authenticateInputPayload) => {
         Ok(authentication)
       }
     | None => {
-        ()
         Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
@@ -433,7 +427,6 @@ let checkoutWithCard = async (~windowRef: Types.window, ~srcDigitalCardId: strin
         Ok(checkoutResp)
       }
     | None => {
-        ()
         Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
@@ -456,7 +449,6 @@ let encryptCardForClickToPay = async (~cardNumber, ~expiryMonth, ~expiryYear, ~c
         Ok(encryptedCard)
       }
     | None => {
-        ()
         Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
@@ -479,7 +471,6 @@ let checkoutWithNewCard = async (payload: checkoutWithNewCardPayload) => {
         Ok(checkoutResp)
       }
     | None => {
-        ()
         Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
@@ -974,28 +965,23 @@ let handleCheckoutWithCard = async (
             let actionCode = checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
             switch actionCode {
             | "SUCCESS" => {
-                ()
                 closeWindow(COMPLETE, checkoutResp)
               }
             | "CHANGE_CARD"
             | "SWITCH_CONSUMER" => {
-                ()
                 closeWindow(ERROR, JSON.Encode.null)
               }
             | _ => {
-                ()
                 closeWindow(ERROR, JSON.Encode.null)
               }
             }
           }
         | None => {
-            ()
             closeWindow(ERROR, JSON.Encode.null)
           }
         }
       } catch {
       | exn => {
-          ()
           closeWindow(ERROR, JSON.Encode.null)
         }
       }
@@ -1104,28 +1090,23 @@ let handleProceedToPay = async (
                 checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
               switch actionCode {
               | "SUCCESS" => {
-                  ()
                   closeWindow(COMPLETE, checkoutResp)
                 }
               | "CHANGE_CARD"
               | "SWITCH_CONSUMER" => {
-                  ()
                   closeWindow(ERROR, JSON.Encode.null)
                 }
               | _ => {
-                  ()
                   closeWindow(ERROR, JSON.Encode.null)
                 }
               }
             }
           | None => {
-              ()
               closeWindow(ERROR, JSON.Encode.null)
             }
           }
         } catch {
         | exn => {
-            ()
             closeWindow(ERROR, JSON.Encode.null)
           }
         }

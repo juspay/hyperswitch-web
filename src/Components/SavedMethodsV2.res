@@ -19,7 +19,6 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   let isEmpty = cvcNumber == ""
 
   let setUserError = message => {
-    ()
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
 

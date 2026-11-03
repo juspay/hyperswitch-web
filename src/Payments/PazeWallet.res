@@ -90,7 +90,6 @@ let make = () => {
               resolve()
             } catch {
             | err =>
-              ()
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),
                 ("isPaze", true->JSON.Encode.bool),

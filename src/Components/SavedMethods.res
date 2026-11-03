@@ -34,7 +34,6 @@ let make = (
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let setUserError = message => {
-    ()
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
   let {
@@ -702,7 +701,6 @@ let make = (
   let showSavedCards = groupSavedMethodsSeparately || !showPaymentMethodsScreen
 
   let switchToNewPaymentMethods = () => {
-    ()
     setShowPaymentMethodsScreen(_ => true)
   }
 

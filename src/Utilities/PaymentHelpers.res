@@ -258,7 +258,6 @@ let rec pollStatus = (
       if status === "completed" {
         resolve(json)
       } else if count === 0 {
-        ()
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         openUrl(returnUrl)
       } else {
@@ -379,10 +378,6 @@ let rec intentCall = (
       ->then(data => {
         Promise.make(
           (resolve, _) => {
-            if isConfirm {
-              ()
-            }
-
             let dict = data->getDictFromJson
             let errorObj = PaymentError.itemToObjMapper(dict)
             if !isPaymentSession {
@@ -409,7 +404,6 @@ let rec intentCall = (
           (resolve, _) => {
             if counter >= 5 {
               let message = "Something went wrong"
-              ()
               if !isPaymentSession {
                 closePaymentLoaderIfAny()
                 postFailedSubmitResponse(~errortype="server_error", ~message)
@@ -551,7 +545,6 @@ let rec intentCall = (
               } else if intent.nextAction.type_ == "redirect_inside_popup" {
                 let popupUrl = intent.nextAction.popupUrl
                 let redirectResponseUrl = intent.nextAction.redirectResponseUrl
-                ()
                 let metaData = [
                   ("popupUrl", popupUrl->JSON.Encode.string),
                   ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
@@ -579,7 +572,6 @@ let rec intentCall = (
                 dict->Dict.set("data", data)
                 dict->Dict.set("url", url.href->JSON.Encode.string)
                 if !isPaymentSession {
-                  ()
                   messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `${intent.payment_method_type}BankTransfer`->JSON.Encode.string),
@@ -615,7 +607,6 @@ let rec intentCall = (
                     ("border_color", borderColor->JSON.Encode.string),
                   ]->getJsonFromArrayOfJson
                 if !isPaymentSession {
-                  ()
                   messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `qrData`->JSON.Encode.string),
@@ -654,7 +645,6 @@ let rec intentCall = (
                   ]->Dict.fromArray
 
                 if do3dsMethodCall {
-                  ()
                   messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `3ds`->JSON.Encode.string),
@@ -662,7 +652,6 @@ let rec intentCall = (
                     ("metadata", metaData->JSON.Encode.object),
                   ])
                 } else {
-                  ()
                   metaData->Dict.set("3dsMethodComp", "U"->JSON.Encode.string)
                   messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
@@ -726,7 +715,6 @@ let rec intentCall = (
                     ("clientSecret", clientSecret->JSON.Encode.string),
                     ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                   ]->Dict.fromArray
-                ()
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
                   ("param", `voucherData`->JSON.Encode.string),
@@ -779,7 +767,6 @@ let rec intentCall = (
                     ]
                   }
                 | _ => {
-                    ()
                     []
                   }
                 }
@@ -805,7 +792,6 @@ let rec intentCall = (
                   postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
                 }
                 let recovered = uri->String.includes("force_sync=true")
-                ()
                 if recovered {
                   handleOpenUrl(url.href)
                 } else {
@@ -851,7 +837,6 @@ let rec intentCall = (
                   }
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => {
-                    ()
                     []
                   }
                 }
@@ -872,7 +857,6 @@ let rec intentCall = (
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else {
               let message = "Payment failed. Try again!"
-              ()
               if !isPaymentSession {
                 postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
               } else {
@@ -902,7 +886,6 @@ let rec intentCall = (
         url.searchParams.set("status", "failed")
         if counter >= 5 {
           let message = "Something went wrong"
-          ()
           if !isPaymentSession {
             closePaymentLoaderIfAny()
             postFailedSubmitResponse(~errortype="server_error", ~message)
@@ -956,7 +939,6 @@ let rec intentCall = (
         }
       } catch {
       | exn =>
-        ()
         if !isPaymentSession {
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
         }
@@ -1029,7 +1011,6 @@ let usePaymentSync = (~isOneClickWallet=false, paymentType: payment) => {
       }
     | None =>
       let message = "Sync Payment Failed. Try Again!"
-      ()
       postFailedSubmitResponse(~errortype="sync_payment_failed", ~message)
     }
   }
@@ -1121,7 +1102,6 @@ let useCompleteAuthorizeHandler = (~isOneClickWallet=false, ()) => {
       )->ignore
     | None =>
       let message = "Complete Authorize Failed. Try Again!"
-      ()
       postFailedSubmitResponse(~errortype="complete_authorize_failed", ~message)
     }
 }
@@ -1244,7 +1224,6 @@ let usePaymentIntent = (~isOneClickWallet=false, paymentType) => {
             headers->Dict.fromArray->Identity.anyTypeToJson->JSON.stringify,
           )
         } else {
-          ()
           intentCall(
             ~fetchApi,
             ~uri,
@@ -1323,7 +1302,6 @@ let usePaymentIntent = (~isOneClickWallet=false, paymentType) => {
           }
         } else {
           let message = "Payment Failed. Try again!"
-          ()
           postFailedSubmitResponse(~errortype="payment_methods_empty", ~message)
           Console.warn("Please enable atleast one Payment method.")
         }
@@ -1331,12 +1309,10 @@ let usePaymentIntent = (~isOneClickWallet=false, paymentType) => {
       | SemiLoaded => intentWithoutMandate("")
       | _ =>
         let message = "Please wait. Try again!"
-        ()
         postFailedSubmitResponse(~errortype="payment_methods_loading", ~message)
       }
     | None =>
       let message = "Payment failed. Try again!"
-      ()
       postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
     }
   }
@@ -1861,7 +1837,6 @@ let usePostSessionTokens = (
       let uri = `${endpoint}/payments/${paymentIntentId}/post_session_tokens`
 
       let callIntent = body => {
-        ()
         intentCall(
           ~parentOrigin=keys.parentURL,
           ~fetchApi,
@@ -1936,19 +1911,16 @@ let usePostSessionTokens = (
           }
         } else {
           let message = "Payment Failed. Try again!"
-          ()
           postFailedSubmitResponse(~errortype="payment_methods_empty", ~message)
           Console.warn("Please enable atleast one Payment method.")
         }
       | SemiLoaded => intentWithoutMandate("")
       | _ =>
         let message = "Please wait. Try again!"
-        ()
         postFailedSubmitResponse(~errortype="payment_methods_loading", ~message)
       }
     | None =>
       let message = "Post Session Tokens failed. Try again!"
-      ()
       postFailedSubmitResponse(~errortype="post_session_tokens_failed", ~message)
     }
   }

@@ -213,7 +213,6 @@ let makeClickToPaySession = async (
 
       let statusCode = switch getCardsResponse.actionCode {
       | PENDING_CONSUMER_IDV => {
-          ()
           "TRIGGERED_CUSTOMER_AUTHENTICATION"
         }
       | (SUCCESS | ADD_CARD) as listedActionCode => {
@@ -223,11 +222,9 @@ let makeClickToPaySession = async (
           let listedCards = listedActionCode === SUCCESS ? maskedCards.contents : []
           let (visa, mastercard) = listedCards->countBrands
 
-          ()
           listedCards->Array.length > 0 ? "RECOGNIZED_CARDS_PRESENT" : "NO_CARDS_PRESENT"
         }
       | _ => {
-          ()
           "ERROR"
         }
       }
@@ -268,16 +265,13 @@ let makeClickToPaySession = async (
 
       switch validateCustomerAuthenticationResponse.actionCode {
       | SUCCESS =>
-        ()
         maskedCards := getMaskedCardsListFromResponse(validateCustomerAuthenticationResponse)
 
         let (visa, mastercard) = maskedCards.contents->countBrands
 
-        ()
 
         maskedCards.contents->Identity.anyTypeToJson
       | _ =>
-        ()
         getClickToPayErrorResponse(
           ~error=validateCustomerAuthenticationResponse.error,
           ~defaultErrorMessage=validateCustomerAuthenticationErrorMessage,
@@ -336,7 +330,6 @@ let makeClickToPaySession = async (
             checkoutWithCardResponse->Utils.getDictFromJson->Utils.getString("actionCode", "")
           switch actionCode {
           | "SUCCESS" => {
-              ()
 
               let dict = checkoutWithCardResponse->Utils.getDictFromJson
               let visaClickToPayBodyArr = PaymentBody.visaClickToPayAuthenticationBody(
@@ -369,7 +362,6 @@ let makeClickToPaySession = async (
               }
               let isConsumerNavigation =
                 actionCode === "CHANGE_CARD" || actionCode === "SWITCH_CONSUMER"
-              ()
 
               let errorMsg = switch actionCode {
               | "CHANGE_CARD" => "Consumer wishes to select an alternative card."
@@ -386,13 +378,11 @@ let makeClickToPaySession = async (
           }
         }
       | None => {
-          ()
           getFailedSubmitResponse(~errorType="ERROR", ~message=checkoutWithCardErrorMessage)
         }
       }
     } catch {
     | err => {
-        ()
         handleCloseClickToPayWindow()
         getFailedSubmitResponse(~errorType="ERROR", ~message=checkoutWithCardErrorMessage)
       }
@@ -405,7 +395,6 @@ let makeClickToPaySession = async (
       let unbindAppInstanceResponse = await (() => vsdk.unbindAppInstance())()
       switch unbindAppInstanceResponse.error {
       | Some(_) =>
-        ()
         getClickToPayErrorResponse(
           ~error=unbindAppInstanceResponse.error,
           ~defaultErrorMessage=unbindAppInstanceErrorMessage,
@@ -420,7 +409,6 @@ let makeClickToPaySession = async (
       }
     } catch {
     | exn =>
-      ()
       getFailedSubmitResponse(~errorType="ERROR", ~message=unbindAppInstanceErrorMessage)
     }
   }
@@ -489,7 +477,6 @@ let makeClickToPaySession = async (
               (() =>
                 ClickToPayHelpers.vsdk.initialize(initConfig))()
               ->then(async _ => {
-                ()
                 let mastercardDirectInitData = {
                   srciTransactionId: clientSecret,
                   srcInitiatorId: GlobalVars.isProd
@@ -522,7 +509,6 @@ let makeClickToPaySession = async (
               })
               ->catch(error => {
                 let message = "An unknown error occurred while initializing Click to Pay session."
-                ()
                 let failedErrorResponse = getFailedSubmitResponse(~errorType="ERROR", ~message)
                 resolve(failedErrorResponse)
 
@@ -532,7 +518,6 @@ let makeClickToPaySession = async (
             },
             () => {
               let message = "Failed to load Click to Pay script."
-              ()
               let failedErrorResponse = getFailedSubmitResponse(~errorType="ERROR", ~message)
 
               resolve(failedErrorResponse)
@@ -542,7 +527,6 @@ let makeClickToPaySession = async (
       }
     | None => {
         let message = "An error occured while trying to fetch Click to Pay Details"
-        ()
         let failedErrorResponse = getFailedSubmitResponse(~errorType="ERROR", ~message)
 
         resolve(failedErrorResponse)

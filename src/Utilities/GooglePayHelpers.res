@@ -205,13 +205,11 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
         handleGooglePayClicked(~sessionObj, ~componentName, ~iframeId, ~readOnly=options.readOnly)
       } else if areRequiredFieldsEmpty {
-        ()
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterFieldsText,
         )
       } else if !areRequiredFieldsValid {
-        ()
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterValidDetailsText,

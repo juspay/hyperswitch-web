@@ -1659,7 +1659,6 @@ let shouldMaskField = path => {
 let itemToObjMapper = dict => {
   unknownKeysWarning(allowedPaymentElementOptions, dict, "options")
 
-  ()
 
   {
     defaultValues: getDefaultValues(dict, "defaultValues"),
