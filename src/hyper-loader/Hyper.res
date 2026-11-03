@@ -769,7 +769,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
-        confirmTokenization,
+        confirmTokenization: confirmPayment,
         initPaymentMethodSession: options => {
           let sdkAuth =
             options

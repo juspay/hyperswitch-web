@@ -299,10 +299,7 @@ let make = (~cvcOnly=false) => {
                 ],
                 ~targetOrigin=parentURL,
               )
-            }
-            let onError = _ =>
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-            vault.submit("/post", emptyPayload, onSuccess, onError)
+            })
           } else if cvcErr != "" {
             submitUserError(
               isFieldEmpty(stateDict, "card_cvc")
@@ -338,14 +335,7 @@ let make = (~cvcOnly=false) => {
                 ],
                 ~targetOrigin=parentURL,
               )
-            }
-
-            // Fields are valid, so onError here is a genuine tokenisation/network
-            // failure (not a validation error) — reject the merchant promise.
-            let onError = _ =>
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-
-            vault.submit("/post", emptyPayload, onSuccess, onError)
+            })
           } else if !cardFieldsValid {
             // Card fields invalid → reject the merchant's confirm promise once, with
             // the message that matches the failure (missing field vs. invalid
@@ -398,7 +388,8 @@ let make = (~cvcOnly=false) => {
                 marginBottom: "5px",
                 fontSize: themeObj.fontSizeLg,
                 opacity: "0.6",
-              }>
+              }
+            >
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
@@ -412,7 +403,8 @@ let make = (~cvcOnly=false) => {
             className="flex flex-row w-full place-content-between"
             style={
               gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-            }>
+            }
+          >
             <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
               <VGSInputComponent
                 fieldName={localeString.validThruText}

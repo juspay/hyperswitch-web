@@ -177,8 +177,8 @@ let make = (
             ),
           )
         isPaymentButtonHandlerProvided := true
+      | None => ()
       }
-    }
 
     let on = (eventType, eventHandler) => {
       if componentType->Utils.canHaveMultipleInstances && localSelectorRef.contents === "" {
@@ -363,6 +363,20 @@ let make = (
         let message = [("doClearValues", true->JSON.Encode.bool)]->Dict.fromArray
         iframe->Window.iframePostMessage(message, ~targetOrigin=iframeOrigin)
       })
+    }
+
+    let containerPresentDetail = () =>
+      [("container_present", Window.querySelector(mountId.contents)->Nullable.toOption->Option.isSome->JSON.Encode.bool)]
+
+    let clearMountedContainer = () => {
+      let oElement = Window.querySelector(mountId.contents)
+      switch oElement->Nullable.toOption {
+      | Some(elem) => elem->Window.innerHTML("")
+      | None =>
+        Console.warn(
+          "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
+        )
+      }
     }
 
     let unmount = () =>
@@ -720,8 +734,6 @@ let make = (
         ~details=surfaceDetails,
         ~call=() => mountElement(selector),
       )
-
-    let on = (eventType, callback) => registerEventHandler(eventType, callback)
 
     {
       on,

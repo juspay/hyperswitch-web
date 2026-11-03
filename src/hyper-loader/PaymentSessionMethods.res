@@ -15,7 +15,7 @@ let observeHeadlessFunction = (~event, ~paymentMethod, ~timeoutMs=?, ~call) =>
 let observePaymentSessionCall = (~event, ~details=?, ~timeoutMs=?, ~call) =>
   HyperLoaderLogger.observeMerchantCall(~source=Headless, ~event, ~details?, ~timeoutMs?, ~call)
 
-let getCustomerSavedPaymentMethods = (
+let fetchCustomerSavedPaymentMethods = (
   ~options: option<JSON.t>,
   ~clientSecretRef: ref<string>,
   ~publishableKey,
@@ -335,7 +335,7 @@ let getCustomerSavedPaymentMethods = (
       }
     }
 
-    let confirmWithCustomerDefaultPaymentMethod = payload => {
+    let confirmWithDefaultPaymentMethod = payload => {
       if isUpdateIntentInProgress.contents {
         UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
       } else {
@@ -503,7 +503,7 @@ let getCustomerSavedPaymentMethods = (
       }
     }
 
-    let confirmWithLastUsedPaymentMethod = payload => {
+    let confirmWithLastUsedMethod = payload => {
       if isUpdateIntentInProgress.contents {
         UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
       } else {

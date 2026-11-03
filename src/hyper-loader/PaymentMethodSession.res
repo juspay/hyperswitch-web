@@ -303,12 +303,6 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
       )
     )
 
-  let postCoordinatorOptions = () =>
-    postCoordinatorCommand(
-      coordinator,
-      [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", coordinatorOptions())],
-    )
-
   let syncCoordinatorSessions = () => {
     if sessionsDataRef.contents != JSON.Encode.null && coordinator.readyRef.contents {
       coordinator.mountRef.contents->Option.forEach(mount =>
@@ -667,13 +661,13 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
 
     {
       iframeRef,
-      handle: elementHandle,
+      handle,
       fieldType,
       savedCardBrandRef,
     }
   }
 
-  let create = (fieldType: string, options: JSON.t): fieldHandle => {
+  let createFieldInternal = (fieldType: string, options: JSON.t): fieldHandle => {
     if sessionStateRef.contents != Active {
       Console.warn(
         `[PaymentMethodSession] create("${fieldType}") called on consumed/deinitialized session`,
@@ -724,6 +718,10 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                 }
               }
 
+              let vgsFieldDetails = [
+                ("field", fieldType->JSON.Encode.string),
+                ("vault", "vgs"->JSON.Encode.string),
+              ]
               let handle: fieldHandle = {
                 mount: selector => {
                   logFieldMounted(~fieldId, ~fieldType)
@@ -789,7 +787,7 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                     ~details=vgsFieldDetails,
                     ~call=() => broker.updateField(~fieldId, ~options=newOptions),
                   ),
-                focus: () =>
+                focus: () => {
                   switch getFieldHandle() {
                   | Some(vgsFieldHandle) =>
                     try {

@@ -16,10 +16,6 @@ type vgsCollectGlobal = {create: (string, string, JSON.t => unit) => JSON.t}
 // `JSON.stringify` really returns `undefined` for `undefined`, functions and symbols.
 @val @scope("JSON") external stringifyNullable: JSON.t => Nullable.t<string> = "stringify"
 
-type eventListenerOptions = {once: bool}
-@send
-external addElementEventListener: (Dom.element, string, 'ev => unit, eventListenerOptions) => unit =
-  "addEventListener"
 @send
 external elementQuerySelector: (Dom.element, string) => Nullable.t<Dom.element> = "querySelector"
 @send external setStyleProperty: (Window.style, string, string) => unit = "setProperty"
@@ -197,8 +193,10 @@ let isVGSProvider = (vaultCredentials: JSON.t): bool => {
   }
 }
 
-let scriptMarkerAttribute = "data-vgs-script-loaded"
-let scriptSelector = `script[${scriptMarkerAttribute}]`
+let vgsScriptSelector = `script[src="${VGSConstants.vgsScriptURL}"]`
+
+let scriptElementStillPresent = (): bool =>
+  Window.querySelector(vgsScriptSelector)->Nullable.toOption->Option.isSome
 
 let inFlightScriptPromise: ref<option<Promise.t<unit>>> = ref(None)
 
@@ -223,66 +221,13 @@ let loadVGSScript = (~context): Promise.t<unit> => {
           ~onLoad=resolve,
           ~onError=error => {
             inFlightScriptPromise := None
-            reject(Error.make("vgs-collect previously failed to load")->Error.toException)
-          | _ =>
-            existing->addElementEventListener(
-              "load",
-              _ => {
-                existing->Window.setAttribute(scriptMarkerAttribute, "loaded")
-                resolve()
-              },
-              {once: true},
-            )
-            existing->addElementEventListener(
-              "error",
-              (err: exn) => {
-                existing->Window.setAttribute(scriptMarkerAttribute, "error")
-                existing->Window.remove
-                inFlightScriptPromise := None
-                reject(err)
-              },
-              {once: true},
-            )
-          }
-        | None =>
-          let script = Window.createElement("script")
-          script->Window.elementSrc(VGSConstants.vgsScriptURL)
-          script->Window.setAttribute("integrity", VGSConstants.vgsScriptIntegrity)
-          script->Window.setAttribute("crossorigin", "anonymous")
-          script->Window.setAttribute("async", "true")
-          script->Window.setAttribute(scriptMarkerAttribute, "loading")
-          script->Window.elementOnload(() => {
-            script->Window.setAttribute(scriptMarkerAttribute, "loaded")
-            resolve()
-          })
-          script->Window.elementOnerror(err => {
-            script->Window.setAttribute(scriptMarkerAttribute, "error")
-            inFlightScriptPromise := None
-            reject(err)
-          })
-          let _ = Window.head->Window.appendChildElement(script)
-        }
-      | None =>
-        let script = Window.createElement("script")
-        script->Window.elementSrc(VGSConstants.vgsScriptURL)
-        script->Window.setAttribute("integrity", VGSConstants.vgsScriptIntegrity)
-        script->Window.setAttribute("crossorigin", "anonymous")
-        script->Window.setAttribute("async", "true")
-        script->Window.setAttribute(scriptMarkerAttribute, "loading")
-        script->Window.elementOnload(() => {
-          script->Window.setAttribute(scriptMarkerAttribute, "loaded")
-          resolve()
-        })
-        script->Window.elementOnerror(err => {
-          script->Window.setAttribute(scriptMarkerAttribute, "error")
-          inFlightScriptPromise := None
-          reject(err)
-        })
-        let _ = Window.head->Window.appendChildElement(script)
-      }
-    })
-    inFlightScriptPromise := Some(scriptLoadPromise)
-    scriptLoadPromise
+            reject(error)
+          },
+        )
+      )
+      inFlightScriptPromise := Some(scriptLoadPromise)
+      scriptLoadPromise
+    }
   }
 }
 
@@ -701,6 +646,7 @@ let make = (
             resolve(
               makeErrorEnvelope(~code="tokenization_failed", ~message, ~errorType="api_error"),
             )
+          }
 
           let onSuccess: (JSON.t, JSON.t) => unit = PaymentMethodSessionLogger.observeFunctionCallback(
             ~context,

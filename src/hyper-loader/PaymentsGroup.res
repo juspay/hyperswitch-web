@@ -68,8 +68,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let customBackendUrl = config.customBackendUrl->Option.getOr("")
   let appearance = config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
   let locale = config.locale->Option.getOr("en")
-  let sdkSessionId = config.sdkSessionId->Option.getOr("")
-  let customBackendUrl = config.customBackendUrl->Option.getOr("")
   SdkLogger.logState(~event=SdkLogger.CardFormCreated({scope: "payment_form"}))
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
@@ -158,7 +156,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                     ("customBackendUrl", customBackendUrl->JSON.Encode.string),
                     ("clientSecret", clientSecret->JSON.Encode.string),
                     ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
-                    ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+                    ("sdkSessionId", ""->JSON.Encode.string),
                     LoggerContext.sharedContext(),
                     ("customPodUri", ""->JSON.Encode.string),
                     ("parentURL", "*"->JSON.Encode.string),
@@ -304,7 +302,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         ("endpoint", endpoint->JSON.Encode.string),
         ("clientSecret", clientSecret->JSON.Encode.string),
       ],
-      ~sdkSessionId,
+      ~sdkSessionId="",
       ~loggerSource="hyper_payments_v2",
       ~savedCardBrand,
       ~tailKeys=[("locale", locale->JSON.Encode.string)],
