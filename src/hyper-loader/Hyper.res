@@ -563,8 +563,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~pmSessionId={pmSessionIdVal},
           ~sdkAuthorization=sdkAuthorizationId,
           ~analyticsMetadata,
-          ~isTrustedPaymentMessage,
-          ~onFullscreenCreated,
           ~customBackendUrl=options
           ->Option.getOr(JSON.Encode.null)
           ->getDictFromJson

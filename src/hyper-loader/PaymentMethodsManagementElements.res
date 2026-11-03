@@ -14,14 +14,26 @@ let make = (
   ~sdkAuthorization,
   ~analyticsMetadata,
   ~customBackendUrl,
-  ~isTrustedPaymentMessage: option<Types.event => bool>=?,
-  ~onFullscreenCreated: (Dom.element, JSON.t) => unit=(_, _) => (),
 ) => {
   let hyperComponentName = PaymentMethodsManagementElements
   try {
     let iframeRef = []
-    let savedPaymentElement = Dict.make()
     let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+    let fullscreenSources = []
+    let onFullscreenCreated = (iframe, _metadata) => {
+      fullscreenSources->Array.push({source: iframe->Window.contentWindow})->ignore
+    }
+    let isTrustedPaymentMessage = (event: Types.event) =>
+      event.origin === sdkOrigin &&
+        (iframeRef->Array.some(iframe =>
+          iframe
+          ->Nullable.toOption
+          ->Option.map(element =>
+            element->Window.Element.isConnected && event.source === element->Window.contentWindow
+          )
+          ->Option.getOr(false)
+        ) || fullscreenSources->Array.some(entry => event.source === entry.source))
+    let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
@@ -275,7 +287,7 @@ let make = (
         ~isPaymentManagementElement=true,
         ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
         ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
-        ~isTrustedPaymentMessage?,
+        ~isTrustedPaymentMessage,
         ~onFullscreenCreated,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)

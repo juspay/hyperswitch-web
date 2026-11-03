@@ -129,7 +129,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
 
   let handlePhoneInputChange = ev => {
     let target = ev->ReactEvent.Form.target
-    let newValue = target["value"]->String.replaceRegExp(/\\D/g, "")
+    let newValue = target["value"]->String.replaceRegExp(/\D/g, "") // Remove non-digit characters
     setIdentifier(_ => newValue)
   }
 
