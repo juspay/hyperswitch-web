@@ -5,7 +5,7 @@ open Utils
 let cvcWidgetNotFoundErrorType = "cvc_widget_not_found"
 let cvcValidationErrorType = "cvc_validation"
 
-let fetchCustomerSavedPaymentMethods = (
+let getCustomerSavedPaymentMethods = (
   ~options: option<JSON.t>,
   ~clientSecretRef: ref<string>,
   ~publishableKey,
@@ -43,8 +43,7 @@ let fetchCustomerSavedPaymentMethods = (
         ),
       )
     } catch {
-    | err =>
-      None
+    | _ => None
     }
 
     let customerDetailsDict = customerDetails->JSON.Decode.object->Option.getOr(Dict.make())
@@ -93,27 +92,27 @@ let fetchCustomerSavedPaymentMethods = (
       ->Array.get(0),
     )
 
-    let getCustomerDefaultSavedPaymentMethodData = () =>
-      (() =>
-          switch customerDefaultPaymentMethodRef.contents {
-          | Some(defaultPaymentMethod) => defaultPaymentMethod->Identity.anyTypeToJson
-          | None =>
-            handleFailureResponse(
-              ~message="There is no default saved payment method data for this customer.",
-              ~errorType="no_data",
-            )
-          })()
+    let getCustomerDefaultSavedPaymentMethodData = () => {
+      switch customerDefaultPaymentMethodRef.contents {
+      | Some(defaultPaymentMethod) => defaultPaymentMethod->Identity.anyTypeToJson
+      | None =>
+        handleFailureResponse(
+          ~message="There is no default saved payment method data for this customer.",
+          ~errorType="no_data",
+        )
+      }
+    }
 
-    let getCustomerLastUsedPaymentMethodData = () =>
-      (() =>
-          switch customerPaymentMethodsRef.contents->Array.get(0) {
-          | Some(lastUsedPaymentMethod) => lastUsedPaymentMethod->Identity.anyTypeToJson
-          | None =>
-            handleFailureResponse(
-              ~message="No recent payments found for this customer.",
-              ~errorType="no_data",
-            )
-          })()
+    let getCustomerLastUsedPaymentMethodData = () => {
+      switch customerPaymentMethodsRef.contents->Array.get(0) {
+      | Some(lastUsedPaymentMethod) => lastUsedPaymentMethod->Identity.anyTypeToJson
+      | None =>
+        handleFailureResponse(
+          ~message="No recent payments found for this customer.",
+          ~errorType="no_data",
+        )
+      }
+    }
 
     let confirmWithCVCWidget = (
       ~body,
@@ -299,7 +298,7 @@ let fetchCustomerSavedPaymentMethods = (
       }
     }
 
-    let confirmWithDefaultPaymentMethod = payload => {
+    let confirmWithCustomerDefaultPaymentMethod = payload => {
       if isUpdateIntentInProgress.contents {
         UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
       } else {
@@ -336,9 +335,6 @@ let fetchCustomerSavedPaymentMethods = (
         }
       }
     }
-
-    let confirmWithCustomerDefaultPaymentMethod = payload =>
-      (() => confirmWithDefaultPaymentMethod(payload))()
 
     let handleApplePayConfirmPayment = (
       lastUsedPaymentMethod: PaymentType.customerMethods,
@@ -407,10 +403,9 @@ let fetchCustomerSavedPaymentMethods = (
       | Some(client) =>
         let paymentDataRequest = googlePayTokenRef.contents
 
-        (() => client.loadPaymentData(paymentDataRequest))()
+        client.loadPaymentData(paymentDataRequest)
         ->then(json => {
           let metadata = json->Identity.anyTypeToJson
-
 
           let completeGooglePayPayment = () => {
             let body = GooglePayHelpers.getGooglePayBodyFromResponse(
@@ -444,12 +439,14 @@ let fetchCustomerSavedPaymentMethods = (
           )->resolve
         )
       | None =>
-        let message = "Google Pay is not available"
-        handleFailureResponse(~message, ~errorType="google_pay")->resolve
+        handleFailureResponse(
+          ~message="Google Pay is not available",
+          ~errorType="google_pay",
+        )->resolve
       }
     }
 
-    let confirmWithLastUsedMethod = payload => {
+    let confirmWithLastUsedPaymentMethod = payload => {
       if isUpdateIntentInProgress.contents {
         UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
       } else {
@@ -499,9 +496,6 @@ let fetchCustomerSavedPaymentMethods = (
       }
     }
 
-    let confirmWithLastUsedPaymentMethod = payload =>
-      (() => confirmWithLastUsedMethod(payload))()
-
     let updateCustomerPaymentMethodsRef = (~isFilterApplePay=false, ~isFilterGooglePay=false) => {
       let filterArray = []
       if isFilterApplePay {
@@ -525,13 +519,6 @@ let fetchCustomerSavedPaymentMethods = (
     }
 
     let isGooglePayUsable = isGooglePayPresent && gPayClientOpt->Option.isSome
-
-    let sessionApiJson = {
-      getCustomerDefaultSavedPaymentMethodData,
-      getCustomerLastUsedPaymentMethodData,
-      confirmWithCustomerDefaultPaymentMethod,
-      confirmWithLastUsedPaymentMethod,
-    }->Identity.anyTypeToJson
 
     if (isApplePayPresent && canMakePayments) || isGooglePayUsable {
       PaymentHelpers.fetchSessions(
@@ -576,7 +563,7 @@ let fetchCustomerSavedPaymentMethods = (
         let isGooglePayReadyPromise = switch gPayClientOpt {
         | Some(client) =>
           try {
-            (() => client.isReadyToPay(payRequest))()
+            client.isReadyToPay(payRequest)
             ->then(
               res => {
                 let dict = res->getDictFromJson
@@ -610,7 +597,7 @@ let fetchCustomerSavedPaymentMethods = (
           },
         )
         ->catch(
-          err => {
+          _ => {
             resolve()
           },
         )
@@ -630,17 +617,38 @@ let fetchCustomerSavedPaymentMethods = (
         | _ => updateCustomerPaymentMethodsRef(~isFilterApplePay=true)
         }
 
-        sessionApiJson->resolve
+        {
+          getCustomerDefaultSavedPaymentMethodData,
+          getCustomerLastUsedPaymentMethodData,
+          confirmWithCustomerDefaultPaymentMethod,
+          confirmWithLastUsedPaymentMethod,
+        }
+        ->Identity.anyTypeToJson
+        ->resolve
       })
       ->catch(_ => {
         updateCustomerPaymentMethodsRef(~isFilterApplePay=true, ~isFilterGooglePay=true)
 
-        sessionApiJson->resolve
+        {
+          getCustomerDefaultSavedPaymentMethodData,
+          getCustomerLastUsedPaymentMethodData,
+          confirmWithCustomerDefaultPaymentMethod,
+          confirmWithLastUsedPaymentMethod,
+        }
+        ->Identity.anyTypeToJson
+        ->resolve
       })
     } else {
       updateCustomerPaymentMethodsRef(~isFilterApplePay=true, ~isFilterGooglePay=true)
 
-      sessionApiJson->resolve
+      {
+        getCustomerDefaultSavedPaymentMethodData,
+        getCustomerLastUsedPaymentMethodData,
+        confirmWithCustomerDefaultPaymentMethod,
+        confirmWithLastUsedPaymentMethod,
+      }
+      ->Identity.anyTypeToJson
+      ->resolve
     }
   })
   ->catch(err => {
@@ -648,27 +656,3 @@ let fetchCustomerSavedPaymentMethods = (
     handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
   })
 }
-
-let getCustomerSavedPaymentMethods = (
-  ~options: option<JSON.t>,
-  ~clientSecretRef: ref<string>,
-  ~publishableKey,
-  ~endpoint,
-  ~customPodUri,
-  ~sdkAuthorizationRef: ref<string>,
-  ~redirectionFlags,
-  ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
-  ~isUpdateIntentInProgress: ref<bool>,
-) =>
-  (() =>
-      fetchCustomerSavedPaymentMethods(
-        ~options,
-        ~clientSecretRef,
-        ~publishableKey,
-        ~endpoint,
-        ~customPodUri,
-        ~sdkAuthorizationRef,
-        ~redirectionFlags,
-        ~iframeRef,
-        ~isUpdateIntentInProgress,
-      ))()

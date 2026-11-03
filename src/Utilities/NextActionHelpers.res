@@ -31,7 +31,6 @@ let handleDDC = (
   if expectedOrigin->Option.isNone {
     handleFailure()
   } else {
-
     let timeoutIdRef = ref(None)
     let messageHandlerRef = ref(None)
     let iframeRef = ref(None)
@@ -61,34 +60,29 @@ let handleDDC = (
     }
 
     let processMessage = (ev: Window.event) => {
-      let parsed = try {
+      try {
         let json = ev.data->Identity.anyTypeToJson
         let dict = json->getDictFromJson
-        dict->Dict.get("next_action")->Option.isSome
-          ? Ok(Some(PaymentConfirmTypes.getNextAction(dict, "next_action")))
-          : Ok(None)
-      } catch {
-      | exn => Error(exn)
-      }
 
-      switch parsed {
-      | Error(exn) =>
+        if dict->Dict.get("next_action")->Option.isSome {
+          let nextAction = PaymentConfirmTypes.getNextAction(dict, "next_action")
+          let nextActionType = nextAction.type_
+          let redirectUrl = nextAction.postDdcRedirectUrl
+          let redirectMode = nextAction.redirectMode
+          cleanup()
+          if (
+            nextActionType === "redirect_to_url" &&
+              PaymentMessageSecurity.httpUrl(redirectUrl)->Option.isSome
+          ) {
+            handleRedirectToUrl(redirectUrl, redirectMode)
+          } else {
+            handleFailure()
+          }
+        }
+      } catch {
+      | _ =>
         cleanup()
         handleFailure()
-      | Ok(None) => ()
-      | Ok(Some(nextAction)) =>
-        let nextActionType = nextAction.type_
-        let redirectUrl = nextAction.postDdcRedirectUrl
-        let redirectMode = nextAction.redirectMode
-        cleanup()
-        if (
-          nextActionType === "redirect_to_url" &&
-            PaymentMessageSecurity.httpUrl(redirectUrl)->Option.isSome
-        ) {
-          handleRedirectToUrl(redirectUrl, redirectMode)
-        } else {
-          handleFailure()
-        }
       }
     }
 

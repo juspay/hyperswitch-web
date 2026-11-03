@@ -153,9 +153,10 @@ let make = (
       iframeRef->Array.push(ref)->ignore
       setIframeRef(ref)
     }
-    let getElement = componentName =>
-      (() => savedPaymentElement->Dict.get(componentName))()
-    let updateInternal = newOptions => {
+    let getElement = componentName => {
+      savedPaymentElement->Dict.get(componentName)
+    }
+    let update = newOptions => {
       let newOptionsDict = newOptions->getDictFromJson
       switch newOptionsDict->Dict.get("locale") {
       | Some(val) => localOptions->Dict.set("locale", val)
@@ -179,15 +180,13 @@ let make = (
         iframe->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
       })
     }
-    let update = newOptions =>
-      (() => updateInternal(newOptions))()
     let fetchUpdates = () => {
       Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
       })
     }
 
-    let createInternal = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
       let (componentType, newOptions) = parseComponentTypeAndOptions(
         ~componentTypeOrOptions,
         ~legacyOptions,
@@ -235,7 +234,6 @@ let make = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-
             ("customPodUri", customPodUri->JSON.Encode.string),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
@@ -283,15 +281,12 @@ let make = (
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
-    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) =>
-      (() => createInternal(componentTypeOrOptions, legacyOptions))()
     {
       getElement,
       update,
       fetchUpdates,
       create,
-      updateIntent: _ =>
-        (() => Promise.resolve(JSON.Encode.null))(),
+      updateIntent: _ => Promise.resolve(JSON.Encode.null),
       createCardForm: () => defaultCardForm,
     }
   } catch {

@@ -9,16 +9,12 @@ type merchantIssue =
   | InsecureProtocol
   | MissingParameter
   | MalformedValue
-  | ImmutableAfterMount
-  | CalledAfterSessionEnd
   | ExpectedBoolean
   | ExpectedString
   | ExpectedNumber
   | ValueOutOfRange
   | ConnectorMisconfigured
   | DynamicFieldsConfig
-  | UnsupportedOptionValue
-  | UnknownOptionKey
   | DeprecatedMethod
 
 let describe = (issue: merchantIssue) =>
@@ -44,14 +40,9 @@ let describe = (issue: merchantIssue) =>
       ),
     )
   | MalformedValue => (Fatal, Dynamic(value => value))
-  | ImmutableAfterMount => (
-      Recoverable,
-      Dynamic(value => `INTEGRATION ERROR: '${value}' cannot be changed after mount`),
-    )
-  | UnsupportedOptionValue => (Recoverable, Dynamic(value => `INTEGRATION ERROR: ${value}`))
-  | ExpectedBoolean => (Recoverable, Dynamic(value => `Type Error: '${value}' Expected boolean`))
-  | ExpectedString => (Recoverable, Dynamic(value => `Type Error: '${value}' Expected string`))
-  | ExpectedNumber => (Recoverable, Dynamic(value => `Type Error: '${value}' Expected int`))
+  | ExpectedBoolean => (Fatal, Dynamic(value => `Type Error: '${value}' Expected boolean`))
+  | ExpectedString => (Fatal, Dynamic(value => `Type Error: '${value}' Expected string`))
+  | ExpectedNumber => (Fatal, Dynamic(value => `Type Error: '${value}' Expected int`))
   | ValueOutOfRange => (
       Recoverable,
       Dynamic(value => `Value out of range: '${value}'. Please provide a value inside the range`),
@@ -62,7 +53,6 @@ let describe = (issue: merchantIssue) =>
       Recoverable,
       Static("loadStripe is deprecated. Please use loadHyper instead."),
     )
-  | UnknownOptionKey => (Recoverable, Dynamic(value => `Unknown Key: '${value}'`))
   }
 
 let manageErrorWarning = (issue: merchantIssue, ~dynamicStr as param="") => {
@@ -76,7 +66,7 @@ let manageErrorWarning = (issue: merchantIssue, ~dynamicStr as param="") => {
   | Recoverable => Console.warn(text)
   | Fatal => {
       Console.error(text)
-      JsError.throwWithMessage(text)
+      Exn.raiseError(text)
     }
   }
 }

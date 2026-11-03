@@ -343,7 +343,6 @@ let rec intentCall = (
       openUrl(url)
     }
   }
-
   fetchApi(
     uri,
     ~method=fetchMethod,
@@ -390,13 +389,12 @@ let rec intentCall = (
           },
         )->then(resolve)
       })
-      ->catch(err => {
+      ->catch(_ => {
         Promise.make(
           (resolve, _) => {
             if counter >= 5 {
-              let message = "Something went wrong"
               if !isPaymentSession {
-                postFailedSubmitResponse(~errortype="server_error", ~message)
+                postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
                 closePaymentLoaderIfAny()
               }
               if handleUserError {
@@ -404,7 +402,7 @@ let rec intentCall = (
               } else {
                 let failedSubmitResponse = getFailedSubmitResponse(
                   ~errorType="server_error",
-                  ~message,
+                  ~message="Something went wrong",
                 )
                 resolve(failedSubmitResponse)
               }
@@ -738,9 +736,7 @@ let rec intentCall = (
                       ("metadata", metaData),
                     ]
                   }
-                | _ => {
-                    []
-                  }
+                | _ => []
                 }
 
                 if !isPaymentSession {
@@ -759,17 +755,18 @@ let rec intentCall = (
                   ]->getJsonFromArrayOfJson
                 resolve(response)
               } else {
-                let message = "Payment failed. Try again!"
                 if !isPaymentSession {
-                  postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
+                  postFailedSubmitResponse(
+                    ~errortype="confirm_payment_failed",
+                    ~message="Payment failed. Try again!",
+                  )
                 }
-                let recovered = uri->String.includes("force_sync=true")
-                if recovered {
+                if uri->String.includes("force_sync=true") {
                   handleOpenUrl(url.href)
                 } else {
                   let failedSubmitResponse = getFailedSubmitResponse(
                     ~errorType="confirm_payment_failed",
-                    ~message,
+                    ~message="Payment failed. Try again!",
                   )
                   resolve(failedSubmitResponse)
                 }
@@ -808,9 +805,7 @@ let rec intentCall = (
                     ]
                   }
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
-                | _ => {
-                    []
-                  }
+                | _ => []
                 }
 
                 if !isPaymentSession {
@@ -827,19 +822,17 @@ let rec intentCall = (
                 setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
               }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
+            } else if !isPaymentSession {
+              postFailedSubmitResponse(
+                ~errortype="confirm_payment_failed",
+                ~message="Payment failed. Try again!",
+              )
             } else {
-              if !isPaymentSession {
-                postFailedSubmitResponse(
-                  ~errortype="confirm_payment_failed",
-                  ~message="Payment failed. Try again!",
-                )
-              } else {
-                let failedSubmitResponse = getFailedSubmitResponse(
-                  ~errorType="confirm_payment_failed",
-                  ~message="Payment failed. Try again!",
-                )
-                resolve(failedSubmitResponse)
-              }
+              let failedSubmitResponse = getFailedSubmitResponse(
+                ~errorType="confirm_payment_failed",
+                ~message="Payment failed. Try again!",
+              )
+              resolve(failedSubmitResponse)
             }
           },
         )->then(resolve)
@@ -859,15 +852,17 @@ let rec intentCall = (
         )
         url.searchParams.set("status", "failed")
         if counter >= 5 {
-          let message = "Something went wrong"
           if !isPaymentSession {
-            postFailedSubmitResponse(~errortype="server_error", ~message)
+            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
             closePaymentLoaderIfAny()
           }
           if handleUserError {
             handleOpenUrl(url.href)
           } else {
-            let failedSubmitResponse = getFailedSubmitResponse(~errorType="server_error", ~message)
+            let failedSubmitResponse = getFailedSubmitResponse(
+              ~errorType="server_error",
+              ~message="Something went wrong",
+            )
             resolve(failedSubmitResponse)
           }
         } else {
@@ -912,7 +907,7 @@ let rec intentCall = (
           ->ignore
         }
       } catch {
-      | exn =>
+      | _ =>
         if !isPaymentSession {
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
         }
@@ -984,8 +979,10 @@ let usePaymentSync = (~isOneClickWallet=false, paymentType: payment) => {
       | _ => ()
       }
     | None =>
-      let message = "Sync Payment Failed. Try Again!"
-      postFailedSubmitResponse(~errortype="sync_payment_failed", ~message)
+      postFailedSubmitResponse(
+        ~errortype="sync_payment_failed",
+        ~message="Sync Payment Failed. Try Again!",
+      )
     }
   }
 }
@@ -1075,8 +1072,10 @@ let useCompleteAuthorizeHandler = (~isOneClickWallet=false, ()) => {
         ~sdkAuthorization=sdkAuth,
       )->ignore
     | None =>
-      let message = "Complete Authorize Failed. Try Again!"
-      postFailedSubmitResponse(~errortype="complete_authorize_failed", ~message)
+      postFailedSubmitResponse(
+        ~errortype="complete_authorize_failed",
+        ~message="Complete Authorize Failed. Try Again!",
+      )
     }
 }
 
@@ -1275,19 +1274,25 @@ let usePaymentIntent = (~isOneClickWallet=false, paymentType) => {
           | None => intentWithoutMandate(mandatePaymentType)
           }
         } else {
-          let message = "Payment Failed. Try again!"
-          postFailedSubmitResponse(~errortype="payment_methods_empty", ~message)
+          postFailedSubmitResponse(
+            ~errortype="payment_methods_empty",
+            ~message="Payment Failed. Try again!",
+          )
           Console.warn("Please enable atleast one Payment method.")
         }
 
       | SemiLoaded => intentWithoutMandate("")
       | _ =>
-        let message = "Please wait. Try again!"
-        postFailedSubmitResponse(~errortype="payment_methods_loading", ~message)
+        postFailedSubmitResponse(
+          ~errortype="payment_methods_loading",
+          ~message="Please wait. Try again!",
+        )
       }
     | None =>
-      let message = "Payment failed. Try again!"
-      postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
+      postFailedSubmitResponse(
+        ~errortype="confirm_payment_failed",
+        ~message="Payment failed. Try again!",
+      )
     }
   }
 }
@@ -1884,18 +1889,24 @@ let usePostSessionTokens = (
           | None => intentWithoutMandate(mandatePaymentType)
           }
         } else {
-          let message = "Payment Failed. Try again!"
-          postFailedSubmitResponse(~errortype="payment_methods_empty", ~message)
+          postFailedSubmitResponse(
+            ~errortype="payment_methods_empty",
+            ~message="Payment Failed. Try again!",
+          )
           Console.warn("Please enable atleast one Payment method.")
         }
       | SemiLoaded => intentWithoutMandate("")
       | _ =>
-        let message = "Please wait. Try again!"
-        postFailedSubmitResponse(~errortype="payment_methods_loading", ~message)
+        postFailedSubmitResponse(
+          ~errortype="payment_methods_loading",
+          ~message="Please wait. Try again!",
+        )
       }
     | None =>
-      let message = "Post Session Tokens failed. Try again!"
-      postFailedSubmitResponse(~errortype="post_session_tokens_failed", ~message)
+      postFailedSubmitResponse(
+        ~errortype="post_session_tokens_failed",
+        ~message="Post Session Tokens failed. Try again!",
+      )
     }
   }
 }
@@ -1927,6 +1938,10 @@ let fetchEnabledAuthnMethodsToken = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
   await fetchApiForSdk(
     uri,
     ~method=#POST,
@@ -1934,8 +1949,8 @@ let fetchEnabledAuthnMethodsToken = async (
     ~headers,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
-    ~onSuccess=data => data,
-    ~onFailure=_ => JSON.Encode.null,
+    ~onSuccess,
+    ~onFailure,
   )
 }
 
@@ -1970,6 +1985,10 @@ let fetchEligibilityCheck = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
   await fetchApiForSdk(
     uri,
     ~method=#POST,
@@ -1977,8 +1996,8 @@ let fetchEligibilityCheck = async (
     ~headers,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
-    ~onSuccess=data => data,
-    ~onFailure=_ => JSON.Encode.null,
+    ~onSuccess,
+    ~onFailure,
   )
 }
 
@@ -2015,6 +2034,10 @@ let fetchAuthenticationSync = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
+  let onSuccess = data => data
+
+  let onFailure = err => err
+
   await fetchApiForSdk(
     uri,
     ~method=#POST,
@@ -2022,8 +2045,8 @@ let fetchAuthenticationSync = async (
     ~headers,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
-    ~onSuccess=data => data,
-    ~onFailure=err => err,
+    ~onSuccess,
+    ~onFailure,
   )
 }
 
@@ -2061,13 +2084,17 @@ let fetchSdkConfigs = async (
     },
   )
 
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
   await fetchApiForSdk(
     uri,
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
-    ~onSuccess=data => data,
-    ~onFailure=_ => JSON.Encode.null,
+    ~onSuccess,
+    ~onFailure,
     ~sdkAuthorization,
   )
 }

@@ -276,11 +276,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         )
       } else if !checkPriorityList(paymentMethodOrder) {
         ErrorUtils.manageErrorWarning(
-          UnsupportedOptionValue,
+          ConnectorMisconfigured,
           ~dynamicStr=`'paymentMethodOrder' is ${Array.join(
               paymentMethodOrder->getOptionalArr,
               ", ",
-            )}. Please enable Card Payment as 1st priority to show it as default.`,
+            )} . Please enable Card Payment as 1st priority to show it as default.`,
         )
       }
 

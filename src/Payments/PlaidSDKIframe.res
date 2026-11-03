@@ -58,49 +58,51 @@ let make = () => {
       let status = dict->getString("status", "")
       let return_url = dict->getString("return_url", "")
 
-      let failureMessage = switch status {
-      | "failed" => "Payment failed. Try again!"
-      | _ => "Payment is processing. Try again later!"
-      }
       switch status {
       | "succeeded" | "requires_customer_action" | "processing" =>
         postSubmitResponse(~jsonData=json, ~url=return_url)
       | "failed" =>
-        postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message=failureMessage)
-      | _ => postFailedSubmitResponse(~errortype="sync_payment_failed", ~message=failureMessage)
+        postFailedSubmitResponse(
+          ~errortype="confirm_payment_failed",
+          ~message="Payment failed. Try again!",
+        )
+      | _ =>
+        postFailedSubmitResponse(
+          ~errortype="sync_payment_failed",
+          ~message="Payment is processing. Try again later!",
+        )
       }
       messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
     } catch {
-    | exn =>
-      ()
+    | _ => ()
     }
   }
 
   let initializePlaid = () => {
     Plaid.create({
       token: linkToken,
-      onLoad: (() =>
-          ()),
-      onSuccess: ((publicToken, _) => {
+      onLoad: _ => (),
+      onSuccess: (publicToken, _) => {
+        messageParentWindow([
+          ("isPlaid", true->JSON.Encode.bool),
+          ("publicToken", publicToken->JSON.Encode.string),
+        ])
+        if isForceSync {
+          callbackOnSuccessOfPlaidPaymentsFlow()->ignore
+        }
+      },
+      onExit: _ => {
+        if isForceSync {
+          callbackOnSuccessOfPlaidPaymentsFlow()->ignore
+        } else {
           messageParentWindow([
+            ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
-            ("publicToken", publicToken->JSON.Encode.string),
+            ("isExited", true->JSON.Encode.bool),
+            ("publicToken", ""->JSON.Encode.string),
           ])
-          if isForceSync {
-            callbackOnSuccessOfPlaidPaymentsFlow()->ignore
-          }
-        }),
-      onExit: (_ =>
-          if isForceSync {
-            callbackOnSuccessOfPlaidPaymentsFlow()->ignore
-          } else {
-            messageParentWindow([
-              ("fullscreen", false->JSON.Encode.bool),
-              ("isPlaid", true->JSON.Encode.bool),
-              ("isExited", true->JSON.Encode.bool),
-              ("publicToken", ""->JSON.Encode.string),
-            ])
-          }),
+        }
+      },
     }).open_()
   }
 

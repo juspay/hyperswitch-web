@@ -6,23 +6,6 @@ let make = () => {
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
 
   let paymentMode = getQueryParamsDictforKey(url.search, "componentName")
-  let paymentType = paymentMode->CardThemeType.getPaymentMode
-
-  let networkStatus = NetworkInformation.useNetworkInformation()
-  let lastOnline = React.useRef(None)
-  React.useEffect1(() => {
-    switch networkStatus {
-    | Value(val) if lastOnline.current === Some(val.isOnline) => ()
-    | Value(val) if lastOnline.current === None && val.isOnline => lastOnline.current = Some(true)
-    | Value(val) =>
-      lastOnline.current = Some(val.isOnline)
-      ()
-    | NOT_AVAILABLE => ()
-    }
-
-    None
-  }, [networkStatus])
-
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
   switch getQueryParamsDictforKey(url.search, "endpoint") {
   | "" => ()

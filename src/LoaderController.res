@@ -1,5 +1,4 @@
 open Utils
-
 @react.component
 let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
   open JotaiAtoms
@@ -35,7 +34,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
   let setCardCvcPlaceholder = Jotai.useSetAtom(cardCvcPlaceholder)
   let setCardholderNamePlaceholder = Jotai.useSetAtom(cardholderNamePlaceholder)
   let (divH, setDivH) = React.useState(_ => 0.0)
-  let (launchTime, setLaunchTime) = Jotai.useAtom(JotaiAtoms.launchTime)
   let {paymentMethodOrder} = optionsPayment
   let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
@@ -202,12 +200,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
       let (default, defaultRules) = (themeValues.default, themeValues.defaultRules)
       let config = CardTheme.itemToObjMapper(paymentOptions, default, defaultRules)
       let optionsLocaleString = getWarningString(optionsDict, "locale", "")
-      let optionsAppearance = CardTheme.getAppearance(
-        "appearance",
-        optionsDict,
-        default,
-        defaultRules,
-      )
+      let optionsAppearance = CardTheme.getAppearance("appearance", optionsDict, default, defaultRules)
       let appearance =
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
       let requestedLocale = optionsLocaleString == "" ? config.locale : optionsLocaleString
@@ -247,11 +240,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
     let updatedState: PaymentType.loadType = switch paymentMethodList {
     | Loading => checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
-    }
-    let finalLoadLatency = if launchTime <= 0.0 {
-      0.0
-    } else {
-      Date.now() -. launchTime
     }
     switch updatedState {
     | SemiLoaded => setPaymentMethodList(_ => updatedState)
@@ -362,9 +350,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
 
                 paymentOptions->loadTheme(res => dict->setConfigs(res))
               }
-              let newLaunchTime = dict->getFloat("launchTime", 0.0)
-              setLaunchTime(_ => newLaunchTime)
-              let initLoadlatency = Date.now() -. newLaunchTime
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
@@ -536,11 +521,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
               },
             })
           }
-          let finalLoadLatency = if launchTime <= 0.0 {
-            0.0
-          } else {
-            Date.now() -. launchTime
-          }
           let isClientListError =
             clientListJson == Dict.make()->JSON.Encode.object ||
               listDict->Dict.get("error")->Option.isSome
@@ -585,11 +565,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
           let updatedState: PaymentType.loadType = isSdkConfigsError
             ? LoadError(sdkConfigsJson)
             : Loaded(sdkConfigsJson)
-          let finalLoadLatency = if launchTime <= 0.0 {
-            0.0
-          } else {
-            Date.now() -. launchTime
-          }
           setSdkConfigs(_ => updatedState)
           if !isSdkConfigsError {
             setSdkConfigsValue(_ => sdkConfigsJson->SdkConfigParser.itemToObjMapper)
@@ -607,9 +582,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
           isAwaitingUpdatedListRef.current = isLoading
         }
       } catch {
-      | exn => {
-          setIntegrateErrorError(_ => true)
-        }
+      | _ => setIntegrateErrorError(_ => true)
       }
     }
     let handleHostMessage = (ev: Window.event) => {

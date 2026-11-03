@@ -74,9 +74,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
     let sdkAuthorization = dict->getString("sdkAuthorization", "")
     let publishableKey = dict->getString("publishableKey", "")
     let isTaxCalculationEnabled = dict->getBool("isTaxCalculationEnabled", false)
-    let sdkSessionId = dict->getString("sdkSessionId", "")
     let isSavedMethodsFlow = dict->getBool("isSavedMethodsFlow", false)
-
 
     let callBackFunc = payment => {
       let msg =
@@ -158,15 +156,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     | Object(json) => json->getString("publishableKey", "")
     | _ => ""
     }
-    let isPreloadEnabled =
-      options
-      ->getOptionsDict
-      ->getBool("isPreloadEnabled", true)
-    let isTestMode =
-      options
-      ->getOptionsDict
-      ->getBool("isTestMode", false)
+    let isPreloadEnabled = options->getOptionsDict->getBool("isPreloadEnabled", true)
+    let isTestMode = options->getOptionsDict->getBool("isTestMode", false)
 
+    // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
     let shouldUseTopRedirection =
       options
       ->getOptionsDict
@@ -181,10 +174,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       ->getJsonObjectFromDict("redirectionFlags")
       ->JotaiAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
 
-    let isForceInit =
-      options
-      ->getOptionsDict
-      ->getBool("isForceInit", false)
+    // Reinitialize the loader when the publishable key changes.
+    let isForceInit = options->getOptionsDict->getBool("isForceInit", false)
 
     let analyticsMetadata =
       options
@@ -213,7 +204,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     let isSecure = Window.isSecureContext
     if !isSecure {
       manageErrorWarning(InsecureProtocol, ~dynamicStr=Window.hrefWithoutSearch)
-      JsError.throwWithMessage("Insecure domain: " ++ Window.hrefWithoutSearch)
+      Exn.raiseError("Insecure domain: " ++ Window.hrefWithoutSearch)
     }
     switch Window.getHyper->Nullable.toOption {
     | Some(hyperMethod) if !isForceInit => hyperMethod
@@ -235,9 +226,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           if (
             Window.querySelectorAll(`script[src="https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"]`)->Array.length === 0
           ) {
+            let scriptURL = "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"
             let script = Window.createElement("script")
-            script->Window.elementSrc("https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js")
-            script->Window.elementOnerror(err => Console.error2("ERROR DURING LOADING APPLE PAY", err))
+            script->Window.elementSrc(scriptURL)
+            script->Window.elementOnerror(err => {
+              Console.error2("ERROR DURING LOADING APPLE PAY", err)
+            })
             Window.body->Window.appendChild(script)
           }
         }
@@ -262,17 +256,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let iframeRef = ref([])
       let clientSecret = ref("")
       let sdkAuthorization = ref("")
-      let pmSessionId = ref("")
       let setIframeRef = ref => {
         iframeRef.contents->Array.push(ref)->ignore
       }
       let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
       let fullscreenSources = ref([])
-      let pruneRemovedOverlays = () =>
-        fullscreenSources :=
-          fullscreenSources.contents->Array.filter(entry =>
-            entry.iframe->Window.Element.isConnected
-          )
       let onFullscreenCreated = (iframe, metadata) => {
         let redirectOrigin =
           metadata
@@ -300,13 +288,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           )
           ->Option.getOr(false)
         )
-      let isReadyResolved = ref(false)
       let isReadyPromise = Promise.make((resolve, _) => {
         let activity = `handleOnReady-${generateRandomString(16)}`
         let handleOnReady = (event: Types.event) => {
           let dict = event.data->anyTypeToJson->getDictFromJson
           if isFromPaymentIframe(event) && dict->getBool("ready", false) {
-            isReadyResolved := true
             removeSmartEventListener("message", activity)
             resolve(Date.now())
           }
@@ -331,16 +317,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let sdkConfigsDataPromise = ref(emptyJsonPromise)
       let clientListDataPromise = ref(emptyJsonPromise)
 
-      let retrievePaymentIntentApiCall = async clientSecretOrSdkAuth => {
+      let retrievePaymentIntentFn = async clientSecretOrSdkAuth => {
         let (actualClientSecret, sdkAuthorizationValue) = try {
           clientSecretOrSdkAuth->Utils.getSdkAuthorizationData->ignore
-
           ((None: option<string>), Some(clientSecretOrSdkAuth))
         } catch {
         | _ => (Some(clientSecretOrSdkAuth), None)
         }
-
-
         let uri = APIUtils.generateApiUrlV1(
           ~apiCallType=RetrievePaymentIntent,
           ~params={
@@ -369,8 +352,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let retrievePaymentIntentFn = clientSecretOrSdkAuth =>
-        (() => retrievePaymentIntentApiCall(clientSecretOrSdkAuth))()
+      // Overlays still on the page may belong to an in-flight confirmation.
+      let pruneRemovedOverlays = () =>
+        fullscreenSources :=
+          fullscreenSources.contents->Array.filter(entry =>
+            entry.iframe->Window.Element.isConnected
+          )
 
       let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
         pruneRemovedOverlays()
@@ -417,6 +404,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                   if isOneClick {
                     iframeRef.contents->Array.forEach(
                       ifR => {
+                        // to unset one click button loader
                         ifR->Window.iframePostMessage(
                           [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
                           ~targetOrigin=sdkOrigin,
@@ -472,22 +460,21 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         }
       }
 
-      let gatedConfirmCall = payload =>
+      let confirmPayment = payload => {
         if isUpdateIntentInProgress.contents {
           Promise.resolve(UpdateIntentHelpersNew.confirmBlockedResponse())
         } else {
           confirmPaymentWrapper(payload, false, true)
         }
+      }
 
-      let confirmPayment = payload => (() => gatedConfirmCall(payload))()
+      let confirmOneClickPayment = (payload, result: bool) => {
+        confirmPaymentWrapper(payload, true, result)
+      }
 
-      let confirmTokenization = payload => (() => gatedConfirmCall(payload))()
-
-      let confirmOneClickPayment = (payload, result: bool) =>
-        (() => confirmPaymentWrapper(payload, true, result))()
-
-      let confirmPaymentViaSDKButton = payload =>
-        (() => confirmPaymentWrapper(payload, false, true, ~isSdkButton=true))()
+      let confirmPaymentViaSDKButton = payload => {
+        confirmPaymentWrapper(payload, false, true, ~isSdkButton=true)
+      }
 
       let handleSdkConfirm = (event: Types.event) => {
         if isFromPaymentIframe(event) {
@@ -511,7 +498,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let makeElements = elementsOptions => {
+      let elements = elementsOptions => {
         let elementsOptionsDict = elementsOptions->JSON.Decode.object
         elementsOptionsDict
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
@@ -555,10 +542,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let elements = elementsOptions => (() => makeElements(elementsOptions))()
-
-      let widgets = elementsOptions => (() => makeElements(elementsOptions))()
-
       let paymentMethodsManagementElements = pmManagementOptions => {
         let pmManagementOptionsDict = pmManagementOptions->JSON.Decode.object
         pmManagementOptionsDict
@@ -572,29 +555,29 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
-        pmSessionId := pmSessionIdVal
-
-        (
-          () =>
-            PaymentMethodsManagementElements.make(
-              pmManagementOptions,
-              setIframeRef,
-              ~sdkSessionId=sessionID,
-              ~publishableKey,
-              ~pmSessionId={pmSessionIdVal},
-              ~sdkAuthorization=sdkAuthorizationId,
-              ~analyticsMetadata,
-              ~isTrustedPaymentMessage,
-              ~onFullscreenCreated,
-              ~customBackendUrl=options
-              ->Option.getOr(JSON.Encode.null)
-              ->getDictFromJson
-              ->getString("customBackendUrl", ""),
-            )
-        )()
+        PaymentMethodsManagementElements.make(
+          pmManagementOptions,
+          setIframeRef,
+          ~sdkSessionId=sessionID,
+          ~publishableKey,
+          ~pmSessionId={pmSessionIdVal},
+          ~sdkAuthorization=sdkAuthorizationId,
+          ~analyticsMetadata,
+          ~isTrustedPaymentMessage,
+          ~onFullscreenCreated,
+          ~customBackendUrl=options
+          ->Option.getOr(JSON.Encode.null)
+          ->getDictFromJson
+          ->getString("customBackendUrl", ""),
+        )
       }
 
-      let confirmCardPaymentCall = (clientSecretId: string, data: option<JSON.t>) => {
+      let confirmCardPaymentFn = (
+        clientSecretId: string,
+        data: option<JSON.t>,
+        _options: option<JSON.t>,
+      ) => {
+        pruneRemovedOverlays()
         let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
         Promise.make((resolve, _) => {
           iframeRef.contents
@@ -636,12 +619,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         })
       }
 
-      let confirmCardPaymentFn = (
-        clientSecretId: string,
-        data: option<JSON.t>,
-        _options: option<JSON.t>,
-      ) => (() => confirmCardPaymentCall(clientSecretId, data))()
-
       let addAmountToDict = (dict, currency) => {
         if dict->Dict.get("amount")->Option.isNone {
           Console.error("Amount is not specified, please input an amount")
@@ -653,7 +630,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
         Some(dict->JSON.Encode.object)
       }
-      let makePaymentRequest = options => {
+      let paymentRequest = options => {
         let optionsDict = options->getDictFromJson
         let currency = optionsDict->getJsonStringFromDict("currency", "")
         let optionsTotal =
@@ -700,8 +677,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
 
-      let paymentRequest = options => (() => makePaymentRequest(options))()
-
       let initPaymentSession = paymentSessionOptions => {
         let paymentSessionOptionsDict = paymentSessionOptions->JSON.Decode.object
 
@@ -709,24 +684,20 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         clientSecret := paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
 
-
-        (
-          () =>
-            PaymentSession.make(
-              paymentSessionOptions,
-              ~publishableKey,
-              ~sdkSessionId=sessionID,
-              ~redirectionFlags,
-              ~iframeRef,
-              ~isTestMode,
-              ~isUpdateIntentInProgress,
-              ~clientSecretRef=clientSecret,
-              ~sdkAuthorizationRef=sdkAuthorization,
-              ~sessionTokensDataPromise,
-              ~sdkConfigsDataPromise,
-              ~clientListDataPromise,
-            )
-        )()
+        PaymentSession.make(
+          paymentSessionOptions,
+          ~publishableKey,
+          ~sdkSessionId=sessionID,
+          ~redirectionFlags,
+          ~iframeRef,
+          ~isTestMode,
+          ~isUpdateIntentInProgress,
+          ~clientSecretRef=clientSecret,
+          ~sdkAuthorizationRef=sdkAuthorization,
+          ~sessionTokensDataPromise,
+          ~sdkConfigsDataPromise,
+          ~clientListDataPromise,
+        )
       }
 
       let sessionUpdate = async clientSecret => {
@@ -758,50 +729,39 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         }
       }
 
-      let completeUpdateIntent = clientSecret => (() => sessionUpdate(clientSecret))()
+      let completeUpdateIntent = clientSecret => sessionUpdate(clientSecret)
 
-      let initiateUpdateIntent = () =>
-        (
-          () => {
-            iframeRef.contents->Array.forEach(ifR => {
-              ifR->Window.iframePostMessage(
-                [("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray,
-                ~targetOrigin=sdkOrigin,
-              )
-            })
-            let msg = [("updateInitiated", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
-            Promise.resolve(msg)
-          }
-        )()
+      let initiateUpdateIntent = () => {
+        iframeRef.contents->Array.forEach(ifR => {
+          ifR->Window.iframePostMessage(
+            [("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray,
+            ~targetOrigin=sdkOrigin,
+          )
+        })
+        let msg = [("updateInitiated", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
+        Promise.resolve(msg)
+      }
 
       let initAuthenticationSession = authenticationSessionOptions => {
-        let authenticationOptions =
+        let clientSecretId =
           authenticationSessionOptions
           ->JSON.Decode.object
-          ->Option.getOr(Dict.make())
-        let clientSecretId =
-          authenticationOptions
-          ->Dict.get("clientSecret")
+          ->Option.flatMap(x => x->Dict.get("clientSecret"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
         clientSecret := clientSecretId
-
-
-        (
-          () =>
-            AuthenticationSession.make(
-              authenticationSessionOptions,
-              ~clientSecret={clientSecretId},
-              ~publishableKey,
-            )
-        )()
+        AuthenticationSession.make(
+          authenticationSessionOptions,
+          ~clientSecret={clientSecretId},
+          ~publishableKey,
+        )
       }
 
       let returnObject: hyperInstance = {
         confirmOneClickPayment,
         confirmPayment,
         elements,
-        widgets,
+        widgets: elements,
         confirmCardPayment: confirmCardPaymentFn,
         retrievePaymentIntent: retrievePaymentIntentFn,
         paymentRequest,
@@ -810,7 +770,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
-        confirmTokenization,
+        confirmTokenization: confirmPayment,
         initPaymentMethodSession: options =>
           PaymentMethodSession.make(options, ~publishableKey, ~sdkSessionId=sessionID),
       }

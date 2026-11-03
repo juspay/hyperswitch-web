@@ -268,7 +268,6 @@ let make = (
         ~setEligibilitySurchargeDetails,
         ~setEligibilityOfferDetails,
         ~setEligibilityError=Some(setEligibilityError),
-        ~check="saved_card",
         ~fetchEligibility={
           (
             ~clientSecret,
@@ -696,10 +695,6 @@ let make = (
 
   let showSavedCards = groupSavedMethodsSeparately || !showPaymentMethodsScreen
 
-  let switchToNewPaymentMethods = () => {
-    setShowPaymentMethodsScreen(_ => true)
-  }
-
   let enableSavedPaymentShimmer = React.useMemo(() => {
     savedCardlength === 0 &&
     !showPaymentMethodsScreen &&
@@ -733,7 +728,7 @@ let make = (
     </RenderIf>
     <RenderIf condition={!enableSavedPaymentShimmer && !groupSavedMethodsSeparately}>
       <SwitchViewButton
-        onClick={_ => switchToNewPaymentMethods()}
+        onClick={_ => setShowPaymentMethodsScreen(_ => true)}
         icon={<Icon name="circle-plus" size=22 />}
         title={localeString.newPaymentMethods}
         ariaLabel="Click to use new payment methods"
@@ -742,7 +737,7 @@ let make = (
           let key = JsxEvent.Keyboard.key(event)
           let keyCode = JsxEvent.Keyboard.keyCode(event)
           if key == "Enter" || keyCode == 13 {
-            switchToNewPaymentMethods()
+            setShowPaymentMethodsScreen(_ => true)
           }
         }}
       />

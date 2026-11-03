@@ -25,11 +25,6 @@ let braintreeApplePayUrl = "https://js.braintreegateway.com/web/3.92.1/js/apple-
 let braintreeClientUrl = "https://js.braintreegateway.com/web/3.92.1/js/client.min.js"
 
 let loadBraintreeApplePayScripts = () => {
-  [braintreeClientUrl, braintreeApplePayUrl]->Array.forEach(url => {
-    if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
-      let script = Window.createElement("script")
-      script->Window.elementSrc(url)
-      Window.body->Window.appendChild(script)
-    }
-  })
+  Utils.loadScriptIfNotExist(~url=braintreeClientUrl)
+  Utils.loadScriptIfNotExist(~url=braintreeApplePayUrl)
 }

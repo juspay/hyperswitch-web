@@ -29,8 +29,7 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
       padding: themeObj.spacingUnit,
       cursor: "pointer",
     }
-    onClick
-  >
+    onClick>
     <div className={`TabIcon ${tabIconClass} relative`}>
       {switch icon {
       | Some(ele) => ele

@@ -148,6 +148,8 @@ let make = (
       paymentOptions->Array.includes("saved_methods")
     if layoutClass.defaultCollapsed {
       setSelectedOption(_ => shouldAutoOpenSavedMethods ? "saved_methods" : "")
+    } else {
+      ()
     }
     None
   })

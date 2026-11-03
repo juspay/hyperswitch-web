@@ -25,6 +25,8 @@ let make = (~paymentMode, ~integrateError) => {
 
   let {cardProps, expiryProps, cvcProps, zipProps, blurState} = useCardForm(
     ~paymentType,
+    // The unified Card flow owns eligibility in ParentCardComponent. Keep the
+    // legacy hook enabled for the standalone card-number/expiry/CVC elements.
     ~runEligibility=paymentType !== Card,
   )
   let {

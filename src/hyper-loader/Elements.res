@@ -44,12 +44,12 @@ let make = (
       localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
     let launchTime = localOptions->getFloat("launchTime", 0.0)
 
-    let decodedFonts =
+    let fonts =
       localOptions
       ->Dict.get("fonts")
       ->Option.flatMap(JSON.Decode.array)
       ->Option.getOr([])
-    let fonts = decodedFonts->JSON.Encode.array
+      ->JSON.Encode.array
 
     let blockConfirm =
       GlobalVars.isInteg &&
@@ -65,22 +65,10 @@ let make = (
       ->Option.flatMap(JSON.Decode.string)
       ->Option.getOr("")
 
-    let isSdkParamsEnabled = preloadSDKWithParams->Dict.toArray->Array.length > 0
-
     let localSelectorString = "hyper-preMountLoader-iframe"
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
-
-    switch localOptions->Dict.get("locale") {
-    | Some(_) => ()
-    | None => ()
-    }
-
-    switch localOptions->Dict.get("loader") {
-    | Some(_) => ()
-    | None => ()
-    }
 
     let hasSdkAuthorization = sdkAuthorizationRef.contents !== ""
 
@@ -96,6 +84,8 @@ let make = (
     let isTaxCalculationEnabled = ref(false)
 
     let paymentElementIframeRef: array<Nullable.t<Dom.element>> = []
+
+    let isSdkParamsEnabled = preloadSDKWithParams->Dict.toArray->Array.length > 0
 
     let (
       initialSessionTokensPromise,
@@ -252,32 +242,42 @@ let make = (
         if isApplePayPresent || isGooglePayPresent {
           ApplePayInterceptor.initializeApplePayInterceptor()
 
-          let trustPayScriptURL =
-            publishableKey->String.startsWith("pk_prd_")
-              ? "https://tpgw.trustpay.eu/js/v1.js"
-              : "https://test-tpgw.trustpay.eu/js/v1.js"
-          let postTrustPayStatus = status =>
-            mountedIframeRef->Window.iframePostMessage(
-              [("trustPayScriptStatus", status->JSON.Encode.string)]->Dict.fromArray,
-              ~targetOrigin=sdkOrigin,
-            )
           if (
             Window.querySelectorAll(`script[src="https://tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0 &&
               Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0
           ) {
+            let trustPayScriptURL =
+              publishableKey->String.startsWith("pk_prd_")
+                ? "https://tpgw.trustpay.eu/js/v1.js"
+                : "https://test-tpgw.trustpay.eu/js/v1.js"
             let trustPayScript = Window.createElement("script")
-            postTrustPayStatus("loading")
+            mountedIframeRef->Window.iframePostMessage(
+              [("trustPayScriptStatus", "loading"->JSON.Encode.string)]->Dict.fromArray,
+              ~targetOrigin=sdkOrigin,
+            )
             trustPayScript->Window.elementSrc(trustPayScriptURL)
-            trustPayScript->Window.elementOnerror(_ => postTrustPayStatus("failed"))
-            trustPayScript->Window.elementOnload(_ => postTrustPayStatus("loaded"))
+            trustPayScript->Window.elementOnerror(_ => {
+              mountedIframeRef->Window.iframePostMessage(
+                [("trustPayScriptStatus", "failed"->JSON.Encode.string)]->Dict.fromArray,
+                ~targetOrigin=sdkOrigin,
+              )
+            })
+            trustPayScript->Window.elementOnload(_ => {
+              mountedIframeRef->Window.iframePostMessage(
+                [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
+                ~targetOrigin=sdkOrigin,
+              )
+            })
             Window.body->Window.appendChild(trustPayScript)
           } else {
-            postTrustPayStatus("loaded")
+            mountedIframeRef->Window.iframePostMessage(
+              [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
+              ~targetOrigin=sdkOrigin,
+            )
           }
         }
 
         let paymentMethodList = preloadSDKWithParams->getJsonFromDict("paymentMethodsList", json)
-
         let outgoingPaymentMethodList = if disableSavedPaymentMethods {
           let strippedDict = paymentMethodList->getDictFromJson->Dict.copy
           strippedDict->Dict.set("customer_payment_methods", []->JSON.Encode.array)
@@ -320,8 +320,10 @@ let make = (
       iframeRef->Array.push(ref)->ignore
       setIframeRef(ref)
     }
-    let getElement = componentName => (() => savedPaymentElement->Dict.get(componentName))()
-    let updateElementsOptions = newOptions => {
+    let getElement = componentName => {
+      savedPaymentElement->Dict.get(componentName)
+    }
+    let update = newOptions => {
       let newOptionsDict = newOptions->getDictFromJson
       switch newOptionsDict->Dict.get("locale") {
       | Some(val) => localOptions->Dict.set("locale", val)
@@ -349,9 +351,6 @@ let make = (
         iframe->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
       })
     }
-
-    let update = newOptions => (() => updateElementsOptions(newOptions))()
-
     let fetchUpdates = () => {
       Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
@@ -417,7 +416,7 @@ let make = (
       }
     }
 
-    let createElement = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
       let (componentType, newOptions) = parseComponentTypeAndOptions(
         ~componentTypeOrOptions,
         ~legacyOptions,
@@ -488,36 +487,37 @@ let make = (
             ("redirectionFlags", redirectionFlagsDict->JSON.Encode.object),
             ("subscriptionEvents", subscriptionEventsVal),
           ]->getJsonFromArrayOfJson
-        let message = [
-          (
-            "paymentElementCreate",
-            componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
-          ),
-          ("otherElements", otherElements->JSON.Encode.bool),
-          ("options", newOptions),
-          ("componentType", componentType->JSON.Encode.string),
-          ("paymentOptions", widgetOptions),
-          ("iframeId", selectorString->JSON.Encode.string),
-          ("publishableKey", publishableKey->JSON.Encode.string),
-          ("endpoint", endpoint->JSON.Encode.string),
-          ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-          ("blockConfirm", blockConfirm->JSON.Encode.bool),
-          ("customPodUri", customPodUri->JSON.Encode.string),
-          ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
-          ("parentURL", "*"->JSON.Encode.string),
-          ("analyticsMetadata", analyticsMetadata),
-          ("launchTime", launchTime->JSON.Encode.float),
-          ("customBackendUrl", customBackendUrl->JSON.Encode.string),
-          ("isTestMode", isTestMode->JSON.Encode.bool),
-          (
-            "isPaymentButtonHandlerProvided",
-            LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
-          ),
-          (
-            "isPaymentCompleteHandlerProvided",
-            LoaderPaymentElement.isPaymentCompleteHandlerProvided.contents->JSON.Encode.bool,
-          ),
-        ]->Dict.fromArray
+        let message =
+          [
+            (
+              "paymentElementCreate",
+              componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
+            ),
+            ("otherElements", otherElements->JSON.Encode.bool),
+            ("options", newOptions),
+            ("componentType", componentType->JSON.Encode.string),
+            ("paymentOptions", widgetOptions),
+            ("iframeId", selectorString->JSON.Encode.string),
+            ("publishableKey", publishableKey->JSON.Encode.string),
+            ("endpoint", endpoint->JSON.Encode.string),
+            ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+            ("blockConfirm", blockConfirm->JSON.Encode.bool),
+            ("customPodUri", customPodUri->JSON.Encode.string),
+            ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
+            ("parentURL", "*"->JSON.Encode.string),
+            ("analyticsMetadata", analyticsMetadata),
+            ("launchTime", launchTime->JSON.Encode.float),
+            ("customBackendUrl", customBackendUrl->JSON.Encode.string),
+            ("isTestMode", isTestMode->JSON.Encode.bool),
+            (
+              "isPaymentButtonHandlerProvided",
+              LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
+            ),
+            (
+              "isPaymentCompleteHandlerProvided",
+              LoaderPaymentElement.isPaymentCompleteHandlerProvided.contents->JSON.Encode.bool,
+            ),
+          ]->Dict.fromArray
 
         let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets")
 
@@ -561,6 +561,8 @@ let make = (
                 }
               | None => postApplePayUnavailable()
               }
+            } else {
+              postApplePayUnavailable()
             }
           } else if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
             let applePayCanMakePayments = getBool(dict, "applePayCanMakePayments", false)
@@ -572,8 +574,8 @@ let make = (
                 mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
               } catch {
               | exn => {
-                  Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
-                  ()
+                  let exnString = exn->anyTypeToJson->JSON.stringify
+                  Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
                 }
               }
             }
@@ -644,7 +646,10 @@ let make = (
 
                     let postGooglePaySync = () => {
                       let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                      event.source->Window.sendPostMessage(msg)
+                      event.source->Window.postMessage(
+                        msg->JSON.Encode.object->JSON.stringify,
+                        event.origin,
+                      )
                     }
 
                     Promise.race([polling, executeGooglePayment, timeOut])
@@ -652,7 +657,7 @@ let make = (
                       postGooglePaySync()
                       resolve()
                     })
-                    ->catch(exn => {
+                    ->catch(_ => {
                       postGooglePaySync()
                       resolve()
                     })
@@ -756,15 +761,11 @@ let make = (
                       let newSecrets = secrets //<...>//
                       let newPaymentRequest = paymentRequest //<...>//
                       let trustpay = trustPayApi(newSecrets)
-
-                      (
-                        () =>
-                          trustpay.finishApplePaymentV2(
-                            payment, //<...>//
-                            newPaymentRequest,
-                            Window.Location.hostname,
-                          )
-                      )()
+                      trustpay.finishApplePaymentV2(
+                        payment, //<...>//
+                        newPaymentRequest,
+                        Window.Location.hostname,
+                      )
                       ->then(_ => {
                         let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
@@ -1264,7 +1265,7 @@ let make = (
                 switch gPayClient {
                 | Some(client) =>
                   try {
-                    (() => client.isReadyToPay(payRequest))()
+                    client.isReadyToPay(payRequest)
                     ->then(res => {
                       let dict = res->getDictFromJson
                       let isReadyToPay = getBool(dict, "result", false)
@@ -1308,7 +1309,7 @@ let make = (
                   if gpayClicked && paymentDataRequest !== JSON.Encode.null {
                     switch gPayClient {
                     | Some(client) => setTimeout(() => {
-                        (() => client.loadPaymentData(paymentDataRequest))()
+                        client.loadPaymentData(paymentDataRequest)
                         ->then(
                           json => {
                             let msg =
@@ -1316,7 +1317,10 @@ let make = (
                                 ("gpayResponse", json->anyTypeToJson),
                                 ("isSavedMethodsFlow", isSavedMethodsFlow->JSON.Encode.bool),
                               ]->Dict.fromArray
-                            event.source->Window.sendPostMessage(msg)
+                            event.source->Window.postMessage(
+                              msg->JSON.Encode.object->JSON.stringify,
+                              event.origin,
+                            )
                             resolve()
                           },
                         )
@@ -1361,7 +1365,7 @@ let make = (
                   "onGooglePayMessages",
                 )
               } catch {
-              | err => ()
+              | _ => ()
               }
             }
             if (
@@ -1401,7 +1405,7 @@ let make = (
                 let samsungPayClient = SamsungPayType.samsung({
                   environment: "PRODUCTION",
                 })
-                (() => samsungPayClient.isReadyToPay(payRequest))()
+                samsungPayClient.isReadyToPay(payRequest)
                 ->then(res => {
                   let dict = res->getDictFromJson
                   let isReadyToPay = dict->getBool("result", false)
@@ -1432,7 +1436,7 @@ let make = (
                     ->getBoolFromOptionalJson(false)
 
                   if samsungPayClicked && paymentDataRequest !== JSON.Encode.null {
-                    (() => samsungPayClient.loadPaymentSheet(payRequest, paymentDataRequest))()
+                    samsungPayClient.loadPaymentSheet(payRequest, paymentDataRequest)
                     ->then(json => {
                       let msg =
                         [
@@ -1446,8 +1450,11 @@ let make = (
                       resolve()
                     })
                     ->catch(err => {
-                      event.source->Window.sendPostMessage(
-                        [("samsungPayError", err->anyTypeToJson)]->Dict.fromArray,
+                      event.source->Window.postMessage(
+                        [("samsungPayError", err->anyTypeToJson)]
+                        ->getJsonFromArrayOfJson
+                        ->JSON.stringify,
+                        event.origin,
                       )
                       resolve()
                     })
@@ -1501,39 +1508,25 @@ let make = (
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
-
-    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
-      let (componentType, _) = parseComponentTypeAndOptions(
-        ~componentTypeOrOptions,
-        ~legacyOptions,
-        ~defaultComponentType="payment",
-      )
-      (() => createElement(componentTypeOrOptions, legacyOptions))()
-    }
-
     let cardFormRef = ref((None: option<Types.cardForm>))
     let createCardForm = (): Types.cardForm =>
-      (
-        () =>
-          switch cardFormRef.contents {
-          | Some(group) => group
-          | None =>
-            let group = PaymentsGroup.makeCardForm(
-              ~config={
-                clientSecret: clientSecretRef.contents,
-                sdkAuthorization: sdkAuthorizationRef.contents,
-                publishableKey: Some(publishableKey),
-                endpoint: Some(endpoint),
-                customBackendUrl: Some(customBackendUrl),
-                appearance: Some(appearance),
-                locale: locale->JSON.Decode.string,
-                sdkSessionId: Some(sdkSessionId),
-              },
-            )
-            cardFormRef := Some(group)
-            group
-          }
-      )()
+      switch cardFormRef.contents {
+      | Some(group) => group
+      | None =>
+        let group = PaymentsGroup.makeCardForm(
+          ~config={
+            clientSecret: clientSecretRef.contents,
+            sdkAuthorization: sdkAuthorizationRef.contents,
+            publishableKey: Some(publishableKey),
+            endpoint: Some(endpoint),
+            customBackendUrl: Some(customBackendUrl),
+            appearance: Some(appearance),
+            locale: locale->JSON.Decode.string,
+          },
+        )
+        cardFormRef := Some(group)
+        group
+      }
     {
       getElement,
       update,

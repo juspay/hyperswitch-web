@@ -46,7 +46,6 @@ let useCardEligibility = (~runEligibility=true): eligibilityState => {
       ~setEligibilitySurchargeDetails,
       ~setEligibilityOfferDetails,
       ~setEligibilityError=Some(setCardEligibilityError),
-      ~check="card",
       ~fetchEligibility={
         (
           ~clientSecret,

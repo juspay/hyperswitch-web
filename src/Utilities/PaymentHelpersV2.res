@@ -73,7 +73,7 @@ let intentCall = (
           },
         )->then(resolve)
       })
-      ->catch(err => {
+      ->catch(_ => {
         Promise.make(
           (resolve, _) => {
             if !isPaymentSession {
@@ -140,17 +140,18 @@ let intentCall = (
               if intent.nextAction.type_ == "redirect_to_url" {
                 handleOpenUrl(intent.nextAction.redirectToUrl)
               } else {
-                let message = "Payment failed. Try again!"
                 if !isPaymentSession {
-                  postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
+                  postFailedSubmitResponse(
+                    ~errortype="confirm_payment_failed",
+                    ~message="Payment failed. Try again!",
+                  )
                 }
-                let recovered = uri->String.includes("force_sync=true")
-                if recovered {
+                if uri->String.includes("force_sync=true") {
                   handleOpenUrl(url.href)
                 } else {
                   let failedSubmitResponse = getFailedSubmitResponse(
                     ~errorType="confirm_payment_failed",
-                    ~message,
+                    ~message="Payment failed. Try again!",
                   )
                   resolve(failedSubmitResponse)
                 }
@@ -166,7 +167,7 @@ let intentCall = (
       })
     }
   })
-  ->catch(err => {
+  ->catch(_ => {
     Promise.make((resolve, _) => {
       try {
         let url = makeUrl(confirmParam.return_url)
@@ -186,7 +187,7 @@ let intentCall = (
           resolve(failedSubmitResponse)
         }
       } catch {
-      | exn =>
+      | _ =>
         if !isPaymentSession {
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
         }
@@ -201,28 +202,37 @@ let intentCall = (
 }
 
 let fetchPaymentManagementList = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAuthorization) => {
-  let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
+  open Promise
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/list-payment-methods`
 
-  fetchApiForSdk(
-    uri,
-    ~method=#GET,
-    ~headers,
-    ~customPodUri=Some(customPodUri),
-    ~onSuccess=data => data,
-    ~onFailure=_ => JSON.Encode.null,
-  )
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
+  ->then(res => {
+    if !(res->Fetch.Response.ok) {
+      res
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      res->Fetch.Response.json
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.error2("Error ", exceptionMessage)
+    JSON.Encode.null->resolve
+  })
 }
 
 let retrievePaymentMethodSession = (~pmSessionId, ~endpoint, ~customPodUri, ~sdkAuthorization) => {
-  let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
 
   fetchApiForSdk(
     uri,
     ~method=#GET,
-    ~headers,
-    ~customPodUri=Some(customPodUri),
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
     ~onSuccess=data => data,
     ~onFailure=_ => JSON.Encode.null,
   )
@@ -234,34 +244,46 @@ let deletePaymentMethodV2 = (
   ~customPodUri,
   ~sdkAuthorization,
 ) => {
+  open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
-
-  fetchApiForSdk(
+  fetchApi(
     uri,
     ~method=#DELETE,
-    ~headers,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
     ~bodyStr=[("payment_method_token", paymentMethodToken->JSON.Encode.string)]
     ->getJsonFromArrayOfJson
     ->JSON.stringify,
-    ~customPodUri=Some(customPodUri),
-    ~onSuccess=data => data,
-    ~onFailure=_ => JSON.Encode.null,
   )
+  ->then(resp => {
+    if !(resp->Fetch.Response.ok) {
+      resp
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      Fetch.Response.json(resp)
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.error2("Error ", exceptionMessage)
+    JSON.Encode.null->resolve
+  })
 }
 
 let updatePaymentMethod = (~bodyArr, ~pmSessionId, ~customPodUri, ~sdkAuthorization) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
   fetchApiForSdk(
     uri,
     ~method=#PUT,
-    ~headers,
     ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
-    ~customPodUri=Some(customPodUri),
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
     ~onSuccess=data => data,
     ~onFailure=_ => JSON.Encode.null,
   )
@@ -316,8 +338,10 @@ let useSaveCard = (paymentType: payment) => {
       | _ => ()
       }
     | None =>
-      let message = "Payment failed. Try again!"
-      postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
+      postFailedSubmitResponse(
+        ~errortype="confirm_payment_failed",
+        ~message="Payment failed. Try again!",
+      )
     }
   }
 }
@@ -371,22 +395,24 @@ let useUpdateCard = (paymentType: payment) => {
       | _ => ()
       }
     | None =>
-      let message = "Payment failed. Try again!"
-      postFailedSubmitResponse(~errortype="confirm_payment_failed", ~message)
+      postFailedSubmitResponse(
+        ~errortype="confirm_payment_failed",
+        ~message="Payment failed. Try again!",
+      )
     }
   }
 }
 
 let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Authorization", sdkAuthorization)]->Dict.fromArray
+  let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/confirm`
 
   fetchApiForSdk(
     uri,
     ~method=#POST,
-    ~headers,
     ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri=""),
     ~onSuccess=data => data,
     ~onFailure=_ => JSON.Encode.null,
   )

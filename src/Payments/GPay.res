@@ -83,15 +83,9 @@ let make = (
     )
   }, [sdkConfigsValue.payment_methods])
 
-  let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
-  )
-
-  DynamicFieldsUtils.useLogDynamicFieldsRendered(
-    ~fields=requiredFields,
-    ~paymentMethod,
-    ~resolutionContext,
   )
 
   GooglePayHelpers.useHandleGooglePayResponse(
@@ -289,9 +283,9 @@ let make = (
 
   React.useEffect(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
+      let json = ev.data->safeParse
+      let dict = json->getDictFromJson
       try {
-        let json = ev.data->safeParse
-        let dict = json->getDictFromJson
         if (
           Utils.isParentMessage(~parentOrigin=parentURL, ev) &&
           dict->Dict.get("googlePaySyncPayment")->Option.isSome

@@ -288,6 +288,9 @@ let make = (
   | None => ("", "", cardBrand, "", "")
   }
 
+  // Preserve the pre-split, unconditional `paymentMethodInfo` message. The
+  // legacy top-level hook cannot observe nested card state, so Card now emits
+  // it here while all non-card methods continue using that hook.
   React.useEffect(() => {
     if !isSavedCardFlow && !isBancontact {
       switch cardInfo {
@@ -384,6 +387,8 @@ let make = (
     None
   }, (isSavedCardFlow, hasCardFieldStatus, cardFieldsComplete, isInstallmentValid))
 
+  // The legacy direct Card flow emitted this only after all three validation
+  // states had resolved. Preserve that timing at the public iframe boundary.
   React.useEffect(() => {
     if (
       !isSavedCardFlow &&
@@ -671,9 +676,9 @@ let make = (
 
     switch clickToPayProvider {
     | MASTERCARD =>
-      (
-        async () => {
-          try {
+      try {
+        (
+          async () => {
             let encryptedResult = await ClickToPayHelpers.encryptCardForClickToPay(
               ~cardNumber=cardNumber->CardValidations.clearSpaces,
               ~expiryMonth=month,
@@ -707,13 +712,13 @@ let make = (
                 ~confirmParams,
                 ~includeAcceptance=false,
               )
-            | Error(err) => ()
+            | Error(_) => ()
             }
-          } catch {
-          | err => ()
           }
-        }
-      )()->ignore
+        )()->ignore
+      } catch {
+      | _ => ()
+      }
     | VISA =>
       let payload = [
         convertKeyValueToJsonStringPair(
@@ -759,7 +764,7 @@ let make = (
               ~includeAcceptance=false,
             )
           } catch {
-          | err => ()
+          | _ => ()
           }
         }
       )()->ignore
@@ -772,6 +777,9 @@ let make = (
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && !hasCardFieldStatus {
+        // The public Payment Element can become ready before the nested collector has
+        // installed its submit listener. Settle the merchant promise instead of posting a
+        // message that could be dropped during that startup window.
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterFieldsText,
@@ -798,7 +806,9 @@ let make = (
                   tokenEvent.origin === innerIframeOrigin
               )
               ->Option.getOr(false)
-            if isInnerCardMessage && dict->Dict.get("rawCardEvent")->Option.isSome && isRawMode {
+            if !isInnerCardMessage {
+              ()
+            } else if dict->Dict.get("rawCardEvent")->Option.isSome && isRawMode {
               let rawCardData = dict->getJsonObjectFromDict("rawCardData")->getDictFromJson
               let cardNumber = rawCardData->getString("cardNumber", "")
               let month = rawCardData->getString("month", "")
@@ -891,8 +901,7 @@ let make = (
                 ~confirmParams=confirm.confirmParams,
               )
             } else if dict->Dict.get("cardTokenFail")->Option.isSome {
-              let message = "Something went wrong"
-              postFailedSubmitResponse(~errortype="server_error", ~message)
+              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
             }
             if isInnerCardMessage && dict->Dict.get("submitSuccessful")->Option.isSome {
               messageParentWindow(dict->Dict.toArray)
@@ -920,9 +929,8 @@ let make = (
 
         iframeRef.current->Window.iframePostMessage(innerMessage, ~targetOrigin=innerIframeOrigin)
         if !outerValid {
-          let setUserError = message => {
+          let setUserError = message =>
             postFailedSubmitResponse(~errortype="validation_error", ~message)
-          }
           if !areRequiredFieldsValid || !isNicknameValid {
             setUserError(localeString.enterValidDetailsText)
           } else if !isInstallmentValid {

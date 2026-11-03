@@ -151,7 +151,6 @@ let performEligibilityCheck = async (
     option<eligibilityOfferDetails> => option<eligibilityOfferDetails>
   ) => unit,
   ~setEligibilityError: option<(option<string> => option<string>) => unit>,
-  ~check: string,
   ~fetchEligibility,
 ) => {
   setEligibilitySurchargeDetails(_ => None)
@@ -173,10 +172,9 @@ let performEligibilityCheck = async (
     setEligibilityOfferDetails(_ => offerDetails)
     setIsEligibilityPending(_ => false)
   } catch {
-  | _ => {
-      setEligibilityError->Option.forEach(setter => setter(_ => None))
-      setIsEligibilityPending(_ => false)
-    }
+  | _ =>
+    setEligibilityError->Option.forEach(setter => setter(_ => None))
+    setIsEligibilityPending(_ => false)
   }
 }
 
@@ -192,7 +190,6 @@ let startEligibilityCheck = async (
   ~setEligibilitySurchargeDetails,
   ~setEligibilityOfferDetails,
   ~setEligibilityError,
-  ~check: string,
   ~fetchEligibility,
 ) => {
   controllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
@@ -214,7 +211,6 @@ let startEligibilityCheck = async (
       ~setEligibilitySurchargeDetails,
       ~setEligibilityOfferDetails,
       ~setEligibilityError,
-      ~check,
       ~fetchEligibility,
     )
   | None => setIsEligibilityPending(_ => false)

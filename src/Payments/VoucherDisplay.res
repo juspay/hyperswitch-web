@@ -56,9 +56,7 @@ let make = () => {
               className="text font-medium text-sm text-[#006DF9] underline"
               href=downloadUrl
               ref={linkRef->ReactDOM.Ref.domRef}
-              onClick={_ => {
-                ()
-              }}>
+              onClick={_ => ()}>
               {React.string("here")}
             </a>
             {React.string(" to download it.")}

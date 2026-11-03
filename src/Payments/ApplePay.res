@@ -332,15 +332,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     }
   }
 
-  let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
-  )
-
-  DynamicFieldsUtils.useLogDynamicFieldsRendered(
-    ~fields=requiredFields,
-    ~paymentMethod,
-    ~resolutionContext,
   )
 
   ApplePayHelpers.useHandleApplePayResponse(

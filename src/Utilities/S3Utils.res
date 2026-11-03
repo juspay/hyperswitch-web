@@ -39,15 +39,18 @@ let getNormalizedLocale = locale => {
 
 let fetchCountryStateFromS3 = endpoint => {
   open Promise
+
   let headers = [("Accept-Encoding", "br, gzip")]->Dict.fromArray
+
   Utils.fetchApi(endpoint, ~method=#GET, ~headers)
   ->Promise.then(resp => resp->Fetch.Response.json)
-  ->then(data =>
-    switch decodeJsonTocountryStateData(data) {
+  ->then(data => {
+    let val = decodeJsonTocountryStateData(data)
+    switch val {
     | Some(res) => resolve(res)
     | None => reject(Exn.anyToExnInternal("Failed to decode country state data"))
     }
-  )
+  })
   ->catch(_ => reject(Exn.anyToExnInternal("Failed to fetch country state data")))
 }
 
@@ -66,20 +69,20 @@ let getCountryStateData = async (~locale="en") => {
       await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
     } catch {
     | _ => {
-      let fallbackCountries = country
-      try {
-        let fallbackStates = await Utils.importStates("./../States.json")
-        {
-          countries: fallbackCountries,
-          states: fallbackStates.states,
-        }
-      } catch {
-      | _ => {
-          countries: fallbackCountries,
-          states: JSON.Encode.null,
+        let fallbackCountries = country
+        try {
+          let fallbackStates = await Utils.importStates("./../States.json")
+          {
+            countries: fallbackCountries,
+            states: fallbackStates.states,
+          }
+        } catch {
+        | _ => {
+            countries: fallbackCountries,
+            states: JSON.Encode.null,
+          }
         }
       }
-    }
     }
   }
 }

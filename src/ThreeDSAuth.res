@@ -48,7 +48,7 @@ let make = () => {
       if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
-        let clientSecret = metaDataDict->getString("paymentIntentId", "")
+        let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
         let sdkAuthorization = metaDataDict->getOptionString("sdkAuthorization")
         paymentMethodFlowCancelMetadata.current =
           metaDataDict->getDictFromDict("paymentMethodFlowCancel")
@@ -68,7 +68,7 @@ let make = () => {
         let threeDsMethodComp = metaDataDict->getString("3dsMethodComp", "U")
         open Promise
         PaymentHelpers.threeDsAuth(
-          ~clientSecret,
+          ~clientSecret=paymentIntentId,
           ~threeDsMethodComp,
           ~headers=headers->Dict.fromArray,
           ~sdkAuthorization,
@@ -106,17 +106,15 @@ let make = () => {
                 form.target = "threeDsAuthFrame"
                 form.appendChild(input)
                 form.submit()
-                ()
               } else {
                 handleFrictionLess()
-                ()
               }
             | None => ()
             }
             resolve(json)
           }
         })
-        ->catch(err => {
+        ->catch(_ => {
           let errorObj = PaymentError.itemToObjMapper(dict)
           postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
           closePaymentLoaderIfAny()

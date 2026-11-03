@@ -16,6 +16,14 @@ type paymentMethodConfig = {
   logoName: string,
 }
 
+let getKeyValue = (json, str) => {
+  json
+  ->Dict.get(str)
+  ->Option.getOr(Dict.make()->JSON.Encode.object)
+  ->JSON.Decode.string
+  ->Option.getOr("")
+}
+
 let parsePaymentMethod = methodString => {
   switch methodString {
   | "duit_now" => DuitNow
@@ -106,8 +114,8 @@ let make = () => {
             }
           }
 
-          let clientSecretVal = metaDataDict->getString("paymentIntentId", "")
-          setClientSecret(_ => clientSecretVal)
+          let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
+          setClientSecret(_ => paymentIntentId)
           let sdkAuthorizationVal = metaDataDict->getString("sdkAuthorization", "")
           setSdkAuthorization(_ => sdkAuthorizationVal)
           let headersDict =
@@ -134,7 +142,7 @@ let make = () => {
           try {
             let res = await PaymentHelpers.pollRetrievePaymentIntent(
               ~headers=headers->Dict.toArray->Dict.fromArray,
-              clientSecretVal,
+              paymentIntentId,
               ~publishableKey,
               ~customPodUri,
               ~sdkAuthorization=Some(sdkAuthorizationVal),
@@ -142,8 +150,7 @@ let make = () => {
             Modal.close(setOpenModal)
             postSubmitResponse(~jsonData=res, ~url=return_url)
           } catch {
-          | error =>
-            Console.error2("Error while polling payment intent:", error)
+          | error => Console.error2("Error while polling payment intent:", error)
           }
         }
       }
@@ -167,8 +174,7 @@ let make = () => {
       postSubmitResponse(~jsonData=json, ~url=return_url)
       Modal.close(setOpenModal)
     } catch {
-    | e =>
-      Console.error2("Retrieve Failed", e)
+    | e => Console.error2("Retrieve Failed", e)
     }
   }
 
@@ -225,8 +231,7 @@ let make = () => {
         </div>
       </RenderIf>
       <div
-        className="flex flex-row w-full justify-center items-start mb-8 font-medium text-2xl font-semibold text-[#151A1F] opacity-50"
-      >
+        className="flex flex-row w-full justify-center items-start mb-8 font-medium text-2xl font-semibold text-[#151A1F] opacity-50">
         {expiryString->React.string}
       </div>
       <div
@@ -236,15 +241,15 @@ let make = () => {
         }
         className={paymentMethodConfig.showBorder ? "border-[1em] rounded-md" : ""}>
         <div
-          className={paymentMethodConfig.showBorder ? "border-[0.5em] border-white rounded-md" : ""}
-        >
+          className={paymentMethodConfig.showBorder
+            ? "border-[0.5em] border-white rounded-md"
+            : ""}>
           <img style={height: "13rem"} src=qrCode alt="" />
         </div>
         <RenderIf condition={paymentMethodConfig.footerText !== ""}>
           <div
             style={backgroundColor: displayColor}
-            className="font-bold flex justify-center items-end text-[1em] text-white h-[2em]"
-          >
+            className="font-bold flex justify-center items-end text-[1em] text-white h-[2em]">
             <p> {paymentMethodConfig.footerText->React.string} </p>
           </div>
         </RenderIf>

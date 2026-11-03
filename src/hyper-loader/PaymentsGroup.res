@@ -11,7 +11,6 @@ type groupConfig = {
   customBackendUrl: option<string>,
   appearance: option<JSON.t>,
   locale: option<string>,
-  sdkSessionId: option<string>,
 }
 
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
@@ -29,10 +28,9 @@ let mapFieldTypeToInternalFieldName = CardFormShared.mapFieldTypeToInternalField
 let computeGroupReadiness = (fieldsRef: ref<Dict.t<fieldEntry>>): bool => {
   let entries = fieldsRef.contents->Dict.valuesToArray
   let expectedFieldTypes = ["cardNumber", "cardExpiry", "cardCvc"]
-  let hasAllFields =
-    expectedFieldTypes->Array.every(expectedFieldType =>
-      entries->Array.some(entry => entry.fieldType === expectedFieldType)
-    )
+  let hasAllFields = expectedFieldTypes->Array.every(expectedFieldType =>
+    entries->Array.some(entry => entry.fieldType === expectedFieldType)
+  )
   if !hasAllFields {
     false
   } else {
@@ -67,15 +65,15 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   | Some(e) => e
   | None => ApiEndpoint.getApiEndPoint(~publishableKey)
   }
+  let customBackendUrl = config.customBackendUrl->Option.getOr("")
   let appearance = config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
   let locale = config.locale->Option.getOr("en")
-  let sdkSessionId = config.sdkSessionId->Option.getOr("")
-  let customBackendUrl = config.customBackendUrl->Option.getOr("")
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
   let eventCallbacksRef: ref<Dict.t<JSON.t => unit>> = ref(Dict.make())
   let deinitCallbacksRef: ref<array<unit => unit>> = ref([])
+
 
   let confirmingRef: ref<bool> = ref(false)
 
@@ -157,14 +155,18 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                     ("customBackendUrl", customBackendUrl->JSON.Encode.string),
                     ("clientSecret", clientSecret->JSON.Encode.string),
                     ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
-                    ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-
+                    ("sdkSessionId", ""->JSON.Encode.string),
                     ("customPodUri", ""->JSON.Encode.string),
                     ("parentURL", "*"->JSON.Encode.string),
                     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
                     ("launchTime", Date.now()->JSON.Encode.float),
                   ]->Dict.fromArray
-                mount.iframe->Nullable.make->Window.iframePostMessage(coordinatorConfig, ~targetOrigin=mount.origin)
+                mount.iframe
+                ->Nullable.make
+                ->Window.iframePostMessage(
+                  coordinatorConfig,
+                  ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+                )
               }
             | None => ()
             }
@@ -175,7 +177,10 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               | Some(mount) =>
                 mount.iframe
                 ->Nullable.make
-                ->Window.iframePostMessage([("clientList", json)]->Dict.fromArray, ~targetOrigin=mount.origin)
+                ->Window.iframePostMessage(
+                  [("clientList", json)]->Dict.fromArray,
+                  ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+                )
               | None => ()
               }
               Promise.resolve()
@@ -294,7 +299,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         ("endpoint", endpoint->JSON.Encode.string),
         ("clientSecret", clientSecret->JSON.Encode.string),
       ],
-      ~sdkSessionId,
+      ~sdkSessionId="",
       ~savedCardBrand,
       ~tailKeys=[("locale", locale->JSON.Encode.string)],
     )
@@ -500,34 +505,31 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     EventListenerManager.removeSmartEventListener("message", doSubmitListenerName)
   )
 
-  let create = (fieldType: string, options: JSON.t): fieldHandle =>
-    (() =>
-        switch mapFieldTypeToInternalFieldName(fieldType) {
-        | "" => {
-            Console.error(`[PaymentsGroup] invalid_field_type: ${fieldType}`)
-            Types.defaultFieldHandle
-          }
-        | _ =>
-          let subscriptionEventsChanged = mergeSubscriptionEvents(
-            ~subscriptionEventsRef,
-            ~fieldOptions=options,
-          )
-          ensureCoordinatorMounted()
-          if subscriptionEventsChanged {
-            postCoordinatorCommand(
-              coordinator,
-              [
-                ("paymentElementsUpdate", true->JSON.Encode.bool),
-                ("options", coordinatorOptions()),
-              ],
-            )
-          }
-          let fieldId = uniqueId(~prefix=fieldType)
-          let entry = createFieldHandle(fieldType, options, fieldId)
-          fieldsRef.contents->Dict.set(fieldId, entry)
-          registerField(~fields, ~fieldId, ~fieldType)
-          entry.handle
-        })()
+  let create = (fieldType: string, options: JSON.t): fieldHandle => {
+    switch mapFieldTypeToInternalFieldName(fieldType) {
+    | "" => {
+        Console.error(`[PaymentsGroup] invalid_field_type: ${fieldType}`)
+        Types.defaultFieldHandle
+      }
+    | _ =>
+      let subscriptionEventsChanged = mergeSubscriptionEvents(
+        ~subscriptionEventsRef,
+        ~fieldOptions=options,
+      )
+      ensureCoordinatorMounted()
+      if subscriptionEventsChanged {
+        postCoordinatorCommand(
+          coordinator,
+          [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", coordinatorOptions())],
+        )
+      }
+      let fieldId = uniqueId(~prefix=fieldType)
+      let entry = createFieldHandle(fieldType, options, fieldId)
+      fieldsRef.contents->Dict.set(fieldId, entry)
+      registerField(~fields, ~fieldId, ~fieldType)
+      entry.handle
+    }
+  }
 
   let update = (newOptions: JSON.t): unit => {
     let newOptionsDict = newOptions->getDictFromJson
@@ -538,18 +540,17 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         "[PaymentsGroup] update() refused: `clientSecret` and `confirmParams` are immutable after mount. " ++ "Create a new group (or remount the fields) to switch intents.",
       )
     } else {
-      (() =>
-          fieldsRef.contents
-          ->Dict.valuesToArray
-          ->Array.forEach(entry => {
-            entry.iframeRef.contents->Window.iframePostMessage(
-              [
-                ("paymentElementsUpdate", true->JSON.Encode.bool),
-                ("options", newOptions),
-              ]->Dict.fromArray,
-              ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
-            )
-          }))()
+      fieldsRef.contents
+      ->Dict.valuesToArray
+      ->Array.forEach(entry => {
+        entry.iframeRef.contents->Window.iframePostMessage(
+          [
+            ("paymentElementsUpdate", true->JSON.Encode.bool),
+            ("options", newOptions),
+          ]->Dict.fromArray,
+          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+        )
+      })
     }
   }
 
@@ -584,77 +585,76 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       )
     })
 
-  let confirmPayment = (): promise<JSON.t> =>
-    (() =>
-        if confirmingRef.contents {
+  let confirmPayment = (): promise<JSON.t> => {
+    if confirmingRef.contents {
+      Promise.resolve(
+        groupFailureResponse(
+          ~code="confirm_in_progress",
+          ~errorType="api_error",
+          ~message="confirmPayment() already in progress",
+        ),
+      )
+    } else {
+      switch (findFieldOfType("cardNumber"), findFieldOfType("cardCvc")) {
+      | (Some(_entry), _) => dispatchConfirm(~flow="payments", ~paymentToken=None)
+      | (None, _) if findFieldOfType("cardholderName")->Option.isSome =>
+        Promise.resolve(
+          groupFailureResponse(
+            ~code="validation_error",
+            ~errorType="validation_error",
+            ~message="The cardholderName field needs the cardNumber field in the same card form",
+          ),
+        )
+      | (None, Some(entry)) =>
+        let paymentToken = entry.savedCardTokenRef.contents
+        if paymentToken === "" {
           Promise.resolve(
             groupFailureResponse(
-              ~code="confirm_in_progress",
-              ~errorType="api_error",
-              ~message="confirmPayment() already in progress",
+              ~code="validation_error",
+              ~errorType="validation_error",
+              ~message="savedCard.paymentToken is required for the saved-card CVC flow",
             ),
           )
         } else {
-          switch (findFieldOfType("cardNumber"), findFieldOfType("cardCvc")) {
-          | (Some(_entry), _) => dispatchConfirm(~flow="payments", ~paymentToken=None)
-          | (None, _) if findFieldOfType("cardholderName")->Option.isSome =>
-            Promise.resolve(
-              groupFailureResponse(
-                ~code="validation_error",
-                ~errorType="validation_error",
-                ~message="The cardholderName field needs the cardNumber field in the same card form",
-              ),
-            )
-          | (None, Some(entry)) =>
-            let paymentToken = entry.savedCardTokenRef.contents
-            if paymentToken === "" {
-              Promise.resolve(
-                groupFailureResponse(
-                  ~code="validation_error",
-                  ~errorType="validation_error",
-                  ~message="savedCard.paymentToken is required for the saved-card CVC flow",
-                ),
-              )
-            } else {
-              dispatchConfirm(~flow="savedCardCvc", ~paymentToken=Some(paymentToken))
-            }
-          | (None, None) =>
-            Promise.resolve(
-              groupFailureResponse(
-                ~code="validation_error",
-                ~errorType="validation_error",
-                ~message="No card fields are mounted",
-              ),
-            )
-          }
-        })()
-
-  let deinit = (): unit =>
-    (() => {
-        fieldsRef.contents
-        ->Dict.valuesToArray
-        ->Array.forEach(entry => {
-          try entry.handle.destroy() catch {
-          | _ => ()
-          }
-        })
-        fieldsRef := Dict.make()
-        fields := Dict.make()->JSON.Encode.object
-        settlePendingConfirm(
+          dispatchConfirm(~flow="savedCardCvc", ~paymentToken=Some(paymentToken))
+        }
+      | (None, None) =>
+        Promise.resolve(
           groupFailureResponse(
-            ~code="group_deinitialized",
-            ~errorType="server_error",
-            ~message="deinit() was called while a confirm was in flight — the payment may still have gone through",
+            ~code="validation_error",
+            ~errorType="validation_error",
+            ~message="No card fields are mounted",
           ),
         )
-        confirmingRef := false
-        coordinator.pendingCommandsRef := []
-        coordinatorConfirmPendingRef := None
-        deinitCallbacksRef.contents->Array.forEach(cb => cb())
-        deinitCallbacksRef := []
-        coordinator.mountRef := None
-        coordinator.readyRef := false
-      })()
+      }
+    }
+  }
+
+  let deinit = (): unit => {
+    fieldsRef.contents
+    ->Dict.valuesToArray
+    ->Array.forEach(entry => {
+      try entry.handle.destroy() catch {
+      | _ => ()
+      }
+    })
+    fieldsRef := Dict.make()
+    fields := Dict.make()->JSON.Encode.object
+    settlePendingConfirm(
+      groupFailureResponse(
+        ~code="group_deinitialized",
+        ~errorType="server_error",
+        ~message="deinit() was called while a confirm was in flight — the payment may still have gone through",
+      ),
+    )
+    confirmingRef := false
+    coordinator.pendingCommandsRef := []
+    coordinatorConfirmPendingRef := None
+    deinitCallbacksRef.contents->Array.forEach(cb => cb())
+    deinitCallbacksRef := []
+    coordinator.mountRef := None
+    coordinator.readyRef := false
+  }
 
   let cardForm: Types.cardForm = {
     create,

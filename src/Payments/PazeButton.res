@@ -51,7 +51,6 @@ let make = (~token: SessionsType.token) => {
           ("clientName", token.clientName->JSON.Encode.string),
           ("clientProfileId", token.clientProfileId->JSON.Encode.string),
           ("sessionId", paymentIntentId->JSON.Encode.string),
-          ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
           ("emailAddress", token.email_address->JSON.Encode.string),
           ("transactionAmount", token.transaction_amount->JSON.Encode.string),

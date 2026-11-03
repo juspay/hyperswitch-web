@@ -329,16 +329,15 @@ let initializeMastercardCheckout = (clickToPayToken: clickToPayToken) => {
       }
 
       let params = switch recognitionToken->Nullable.toOption {
-      | Some(token) => {
-          {...params, recognitionToken: token}
-        }
+      | Some(token) => {...params, recognitionToken: token}
       | None => params
       }
 
       try {
         switch mcCheckoutService.contents {
         | Some(service) =>
-          (() => service->init(params))()
+          service
+          ->init(params)
           ->then(resp => {
             resolve(resp)
           })
@@ -361,7 +360,7 @@ let getCards = async () => {
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let cards = await (() => service->getCards())()
+        let cards = await service->getCards()
         Ok(cards)
       }
     | None => {
@@ -393,7 +392,7 @@ let authenticate = async (payload: authenticateInputPayload) => {
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let authentication = await (() => service->authenticate(authenticatePayload))()
+        let authentication = await service->authenticate(authenticatePayload)
 
         let recognitionToken =
           authentication->Utils.getDictFromJson->Utils.getString("recognitionToken", "")
@@ -423,7 +422,7 @@ let checkoutWithCard = async (~windowRef: Types.window, ~srcDigitalCardId: strin
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let checkoutResp = await (() => service->checkoutWithCard(checkoutPayload))()
+        let checkoutResp = await service->checkoutWithCard(checkoutPayload)
         Ok(checkoutResp)
       }
     | None => {
@@ -445,7 +444,7 @@ let encryptCardForClickToPay = async (~cardNumber, ~expiryMonth, ~expiryYear, ~c
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let encryptedCard = await (() => service->encryptCard(card))()
+        let encryptedCard = await service->encryptCard(card)
         Ok(encryptedCard)
       }
     | None => {
@@ -467,7 +466,7 @@ let checkoutWithNewCard = async (payload: checkoutWithNewCardPayload) => {
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let checkoutResp = await (() => service->checkoutWithNewCard(payload->Obj.magic))()
+        let checkoutResp = await service->checkoutWithNewCard(payload->Obj.magic)
         Ok(checkoutResp)
       }
     | None => {
@@ -490,56 +489,87 @@ let checkoutWithNewCard = async (payload: checkoutWithNewCardPayload) => {
 @set external setOnError: (Dom.element, unit => unit) => unit = "onerror"
 
 let loadClickToPayScripts = () =>
-  Promise.make((resolve, _) => {
+  Promise.make((clickToPayScriptsPromiseResolve, _) => {
     let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
     let linkSelector = `link[href="${srcUiKitCssHref}"]`
-    let scriptPromise = Promise.make((settle, _) => {
+    let srcUiKitScriptPromise = Promise.make((scriptPromiseResolve, _) => {
       switch querySelector(scriptSelector)->Nullable.toOption {
-      | Some(_) => settle()
-      | None =>
-        let script = createElement("script")
-        script->setType("module")
-        script->setSrc(srcUiKitScriptSrc)
-        script->setOnload(settle)
-        appendChild(script)
+      | None => {
+          let script = createElement("script")
+          script->setType("module")
+          script->setSrc(srcUiKitScriptSrc)
+          script->setOnload(scriptPromiseResolve)
+          appendChild(script)
+        }
+      | Some(_) => scriptPromiseResolve()
       }
     })
-    let cssPromise = Promise.make((settle, _) => {
+    let srcUiKitCssPromise = Promise.make((cssPromiseResolve, _) => {
       switch querySelector(linkSelector)->Nullable.toOption {
-      | Some(_) => settle()
-      | None =>
-        let link = createElement("link")
-        link->setRel("stylesheet")
-        link->setHref(srcUiKitCssHref)
-        link->setOnload(settle)
-        appendChild(link)
+      | None => {
+          let link = createElement("link")
+          link->setRel("stylesheet")
+          link->setHref(srcUiKitCssHref)
+          link->setOnload(cssPromiseResolve)
+          appendChild(link)
+        }
+      | Some(_) => cssPromiseResolve()
       }
     })
-    Promise.all([scriptPromise, cssPromise])->Promise.thenResolve(_ => resolve())->ignore
+    Promise.all([srcUiKitScriptPromise, srcUiKitCssPromise])
+    ->then(_ => {
+      clickToPayScriptsPromiseResolve()
+      resolve()
+    })
+    ->catch(_ => {
+      resolve()
+    })
+    ->ignore
   })
 
-let loadMastercardScript = clickToPayToken =>
+let loadMastercardScript = clickToPayToken => {
+  let scriptSrc = getScriptSrc()
   Promise.make((resolve, reject) => {
-    let scriptSrc = getScriptSrc()
-    let initialize = () =>
-      initializeMastercardCheckout(clickToPayToken)
-      ->Promise.thenResolve(resolve)
-      ->Promise.catch(error => {
-        reject(error)
-        Promise.resolve()
-      })
-      ->ignore
-    switch querySelector(`script[src="${scriptSrc}"]`)->Nullable.toOption {
-    | Some(_) => initialize()
-    | None =>
-      let script = createElement("script")
-      script->setType("text/javascript")
-      script->setSrc(scriptSrc)
-      script->setOnload(initialize)
-      script->setOnError(() => reject(JsExn.anyToExnInternal("Failed to load Mastercard script")))
-      appendChild(script)
+    let scriptSelector = `script[src="${scriptSrc}"]`
+
+    switch querySelector(scriptSelector)->Nullable.toOption {
+    | Some(_) => {
+        initializeMastercardCheckout(clickToPayToken)
+        ->then(resp => {
+          resp->resolve
+          Promise.resolve()
+        })
+        ->catch(err => {
+          err->reject
+          Promise.resolve()
+        })
+        ->ignore
+      }
+    | None => {
+        let script = createElement("script")
+        script->setType("text/javascript")
+        script->setSrc(scriptSrc)
+        script->setOnload(() => {
+          initializeMastercardCheckout(clickToPayToken)
+          ->then(resp => {
+            resp->resolve
+            Promise.resolve()
+          })
+          ->catch(err => {
+            err->reject
+            Promise.resolve()
+          })
+          ->ignore
+        })
+        script->setOnError(() => {
+          let exn = JsExn.anyToExnInternal("Failed to load Mastercard script")
+          exn->reject
+        })
+        appendChild(script)
+      }
     }
   })
+}
 
 type srcMarkProps = {
   @as("card-brands") cardBrands?: string,
@@ -585,7 +615,7 @@ let signOut = async () => {
 
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let signOutResp = await (() => service->signOutMastercard)()
+        let signOutResp = await service->signOutMastercard
         Ok(signOutResp)
       }
     | None => {
@@ -746,9 +776,9 @@ type visaEncryptCardPayload = {
 @val external mastercardDirectSdk: mastercardDirect = "window.SRCSDK_MASTERCARD"
 @new external createVisaDirectSRCIAdapter: unit => visaDirect = "window.vAdapters.VisaSRCI"
 
-let getCardsVisaUnified = (~getCardsConfig) => (() => vsdk.getCards(getCardsConfig))()
+let getCardsVisaUnified = (~getCardsConfig) => vsdk.getCards(getCardsConfig)
 
-let signOutVisaUnified = () => (() => vsdk.unbindAppInstance())()
+let signOutVisaUnified = () => vsdk.unbindAppInstance()
 
 let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorCallback) => {
   let cardBrands = clickToPayToken.cardBrands->Array.join(",")
@@ -760,27 +790,32 @@ let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorC
   script->setSrc(scriptSrc)
   script->setOnload(onLoadCallback)
   script->setOnError(onErrorCallback)
-  Window.body->Window.appendChild(script)
+  body->Window.appendChild(script)
 }
 
 let loadClickToPayUIScripts = (scriptLoadedCallback, scriptErrorCallback) => {
-  switch querySelector(`script[src="${srcUiKitScriptSrc}"]`)->Nullable.toOption {
+  let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
+  let linkSelector = `link[href="${srcUiKitCssHref}"]`
+
+  switch querySelector(scriptSelector)->Nullable.toOption {
+  | None => {
+      let script = createElement("script")
+      script->setType("module")
+      script->setSrc(srcUiKitScriptSrc)
+      appendChild(script)
+      script->setOnload(() => scriptLoadedCallback())
+      script->setOnError(() => scriptErrorCallback())
+    }
   | Some(_) => ()
-  | None =>
-    let script = createElement("script")
-    script->setType("module")
-    script->setSrc(srcUiKitScriptSrc)
-    script->setOnload(scriptLoadedCallback)
-    script->setOnError(scriptErrorCallback)
-    appendChild(script)
   }
-  switch querySelector(`link[href="${srcUiKitCssHref}"]`)->Nullable.toOption {
+  switch querySelector(linkSelector)->Nullable.toOption {
+  | None => {
+      let link = createElement("link")
+      link->setRel("stylesheet")
+      link->setHref(srcUiKitCssHref)
+      appendChild(link)
+    }
   | Some(_) => ()
-  | None =>
-    let link = createElement("link")
-    link->setRel("stylesheet")
-    link->setHref(srcUiKitCssHref)
-    appendChild(link)
   }
 }
 
@@ -920,7 +955,7 @@ let checkoutVisaUnified = async (
       }
     }
   }
-  await (() => vsdk.checkout(checkoutConfig))()
+  await vsdk.checkout(checkoutConfig)
 }
 
 let closeWindow = (status, payload: JSON.t) => {
@@ -993,21 +1028,15 @@ let handleCheckoutWithCard = async (
             | "SUCCESS" => {
                 closeWindow(COMPLETE, checkoutResp)
               }
-            | "CHANGE_CARD"
-            | "SWITCH_CONSUMER" => {
-                closeWindow(ERROR, JSON.Encode.null)
-              }
             | _ => {
                 closeWindow(ERROR, JSON.Encode.null)
               }
             }
           }
-        | None => {
-            closeWindow(ERROR, JSON.Encode.null)
-          }
+        | None => closeWindow(ERROR, JSON.Encode.null)
         }
       } catch {
-      | exn => {
+      | _ => {
           closeWindow(ERROR, JSON.Encode.null)
         }
       }
@@ -1118,27 +1147,23 @@ let handleProceedToPay = async (
               | "SUCCESS" => {
                   closeWindow(COMPLETE, checkoutResp)
                 }
-              | "CHANGE_CARD"
-              | "SWITCH_CONSUMER" => {
-                  closeWindow(ERROR, JSON.Encode.null)
-                }
               | _ => {
                   closeWindow(ERROR, JSON.Encode.null)
                 }
               }
             }
-          | None => {
-              closeWindow(ERROR, JSON.Encode.null)
-            }
+          | None => closeWindow(ERROR, JSON.Encode.null)
           }
         } catch {
-        | exn => {
+        | _ => {
             closeWindow(ERROR, JSON.Encode.null)
           }
         }
       | NONE => closeWindow(ERROR, JSON.Encode.null)
       }
-    | None => closeWindow(ERROR, JSON.Encode.null)
+    | None => {
+        closeWindow(ERROR, JSON.Encode.null)
+      }
     }
   }
 
@@ -1162,6 +1187,6 @@ let handleProceedToPay = async (
       )
     }
   } catch {
-  | exn => closeWindow(ERROR, JSON.Encode.null)
+  | _ => closeWindow(ERROR, JSON.Encode.null)
   }
 }

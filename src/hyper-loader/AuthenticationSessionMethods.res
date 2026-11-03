@@ -14,7 +14,7 @@ let setClickToPayTokenWithDebounce = (key, promise) => {
   }, 30000)->ignore
 }
 
-let makeClickToPaySession = async (
+let initClickToPaySession = async (
   ~clientSecret,
   ~publishableKey,
   ~customPodUri,
@@ -23,7 +23,7 @@ let makeClickToPaySession = async (
   ~authenticationId,
   ~merchantId,
   ~initClickToPaySessionInput: Types.initClickToPaySessionInput,
-  ~shouldLoadScripts,
+  ~shouldLoadScripts=true,
 ) => {
   let customerEmail = ref("")
   let maskedCards = ref([])
@@ -77,14 +77,6 @@ let makeClickToPaySession = async (
     })
   }
 
-  let countBrands = cards => {
-    let countBrand = brand =>
-      cards
-      ->Array.filter(card => card.paymentCardDescriptor->String.toLowerCase->String.includes(brand))
-      ->Array.length
-    ("visa"->countBrand, "mastercard"->countBrand)
-  }
-
   let getClickToPayErrorResponse = (
     ~error: option<errorObj>,
     ~defaultErrorType="ERROR",
@@ -126,20 +118,11 @@ let makeClickToPaySession = async (
 
     let clickToPayData = []
 
-    let consumerPresentDetails = value => [
-      (
-        "consumer_present",
-        value->Utils.getDictFromJson->Utils.getBool("consumerPresent", false)->JSON.Encode.bool,
-      ),
-    ]
-
-    let mastercardDirectIdentityLookupPromise = (() =>
-        mastercardDirectSdk.identityLookup({
-          consumerIdentity: consumerIdentity,
-        }))()
+    let mastercardDirectIdentityLookupPromise = mastercardDirectSdk.identityLookup({
+      consumerIdentity: consumerIdentity,
+    })
     let visaDirectIdentityLookupPromise = switch visaDirectSdk {
-    | Some(sdk) =>
-      (() => sdk.identityLookup(consumerIdentity))()
+    | Some(sdk) => sdk.identityLookup(consumerIdentity)
     | None => Promise.resolve(JSON.Encode.null)
     }
 
@@ -209,24 +192,23 @@ let makeClickToPaySession = async (
 
     let getUserTypeErrorMessage = "An unknown error occurred while fetching user type."
     try {
-      let getCardsResponse = await (() => vsdk.getCards(getCardsConfig))()
+      let getCardsResponse = await vsdk.getCards(getCardsConfig)
 
       let statusCode = switch getCardsResponse.actionCode {
-      | PENDING_CONSUMER_IDV => {
-          "TRIGGERED_CUSTOMER_AUTHENTICATION"
-        }
-      | (SUCCESS | ADD_CARD) as listedActionCode => {
-          if listedActionCode === SUCCESS {
-            maskedCards := getMaskedCardsListFromResponse(getCardsResponse)
-          }
-          let listedCards = listedActionCode === SUCCESS ? maskedCards.contents : []
-          let (visa, mastercard) = listedCards->countBrands
+      | PENDING_CONSUMER_IDV => "TRIGGERED_CUSTOMER_AUTHENTICATION"
+      | SUCCESS => {
+          maskedCards := getMaskedCardsListFromResponse(getCardsResponse)
 
-          listedCards->Array.length > 0 ? "RECOGNIZED_CARDS_PRESENT" : "NO_CARDS_PRESENT"
+          let areMaskedCardsPresent = maskedCards.contents->Array.length > 0
+
+          if areMaskedCardsPresent {
+            "RECOGNIZED_CARDS_PRESENT"
+          } else {
+            "NO_CARDS_PRESENT"
+          }
         }
-      | _ => {
-          "ERROR"
-        }
+      | ADD_CARD => "NO_CARDS_PRESENT"
+      | _ => "ERROR"
       }
 
       if statusCode !== "ERROR" {
@@ -261,14 +243,11 @@ let makeClickToPaySession = async (
     let validateCustomerAuthenticationErrorMessage = "An unknown error occurred during customer authentication validation."
 
     try {
-      let validateCustomerAuthenticationResponse = await (() => vsdk.getCards(getCardsConfig))()
+      let validateCustomerAuthenticationResponse = await vsdk.getCards(getCardsConfig)
 
       switch validateCustomerAuthenticationResponse.actionCode {
       | SUCCESS =>
         maskedCards := getMaskedCardsListFromResponse(validateCustomerAuthenticationResponse)
-
-        let (visa, mastercard) = maskedCards.contents->countBrands
-
 
         maskedCards.contents->Identity.anyTypeToJson
       | _ =>
@@ -330,7 +309,6 @@ let makeClickToPaySession = async (
             checkoutWithCardResponse->Utils.getDictFromJson->Utils.getString("actionCode", "")
           switch actionCode {
           | "SUCCESS" => {
-
               let dict = checkoutWithCardResponse->Utils.getDictFromJson
               let visaClickToPayBodyArr = PaymentBody.visaClickToPayAuthenticationBody(
                 ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
@@ -352,23 +330,12 @@ let makeClickToPaySession = async (
               authenticationSyncResponse->transformKeysWithoutModifyingValue(CamelCase)
             }
           | _ => {
-              let errorReason = if actionCode == "ERROR" {
-                checkoutWithCardResponse
-                ->Utils.getDictFromJson
-                ->Utils.getDictFromDict("error")
-                ->Utils.getString("reason", "UNKNOWN_ERROR")
-              } else {
-                ""
-              }
-              let isConsumerNavigation =
-                actionCode === "CHANGE_CARD" || actionCode === "SWITCH_CONSUMER"
-
               let errorMsg = switch actionCode {
               | "CHANGE_CARD" => "Consumer wishes to select an alternative card."
               | "SWITCH_CONSUMER" => "Consumer wishes to change Click to Pay profile."
               | _ => checkoutWithCardErrorMessage
               }
-              if !isConsumerNavigation {
+              if actionCode !== "CHANGE_CARD" && actionCode !== "SWITCH_CONSUMER" {
                 Types.window["initializedVSDK"] = false
                 Types.window["visaDirectSdk"] = null
               }
@@ -382,7 +349,7 @@ let makeClickToPaySession = async (
         }
       }
     } catch {
-    | err => {
+    | _ => {
         handleCloseClickToPayWindow()
         getFailedSubmitResponse(~errorType="ERROR", ~message=checkoutWithCardErrorMessage)
       }
@@ -392,7 +359,7 @@ let makeClickToPaySession = async (
   let signOut = async () => {
     let unbindAppInstanceErrorMessage = "Failed to sign out customer."
     try {
-      let unbindAppInstanceResponse = await (() => vsdk.unbindAppInstance())()
+      let unbindAppInstanceResponse = await vsdk.unbindAppInstance()
       switch unbindAppInstanceResponse.error {
       | Some(_) =>
         getClickToPayErrorResponse(
@@ -408,7 +375,7 @@ let makeClickToPaySession = async (
         }
       }
     } catch {
-    | exn =>
+    | _ =>
       getFailedSubmitResponse(~errorType="ERROR", ~message=unbindAppInstanceErrorMessage)
     }
   }
@@ -426,32 +393,19 @@ let makeClickToPaySession = async (
               let email =
                 isCustomerPresentInput->Option.flatMap(customerInput => Some(customerInput.email))
 
-              let emailProvided = switch email {
-              | Some(emailVal) => emailVal->String.trim->String.length > 0
-              | None => false
-              }
-
-              (() => isCustomerPresent(~visaDirectSdk, ~email))()
+              isCustomerPresent(~visaDirectSdk, ~email)
             },
-            getUserType: () =>
-              (() => getUserType())(),
-            getRecognizedCards: () =>
-              (() =>
-                getRecognizedCards())(),
-            validateCustomerAuthentication: otpValue =>
-              (() =>
-                validateCustomerAuthentication(~otpValue))(),
-            checkoutWithCard: checkoutWithCardInput => {
-              (() =>
-                  checkoutWithCard(
-                    ~token,
-                    ~srcDigitalCardId=checkoutWithCardInput.srcDigitalCardId,
-                    ~rememberMe=checkoutWithCardInput.rememberMe,
-                    ~windowRef=checkoutWithCardInput.windowRef,
-                  ))()
-            },
-            signOut: () =>
-              (() => signOut())(),
+            getUserType: () => getUserType(),
+            getRecognizedCards: () => getRecognizedCards(),
+            validateCustomerAuthentication: otpValue => validateCustomerAuthentication(~otpValue),
+            checkoutWithCard: checkoutWithCardInput =>
+              checkoutWithCard(
+                ~token,
+                ~srcDigitalCardId=checkoutWithCardInput.srcDigitalCardId,
+                ~rememberMe=checkoutWithCardInput.rememberMe,
+                ~windowRef=checkoutWithCardInput.windowRef,
+              ),
+            signOut: () => signOut(),
           }->Identity.anyTypeToJson
         }
 
@@ -474,8 +428,7 @@ let makeClickToPaySession = async (
             () => {
               let initConfig = ClickToPayHelpers.getVisaInitConfig(token, Some(clientSecret))
 
-              (() =>
-                ClickToPayHelpers.vsdk.initialize(initConfig))()
+              ClickToPayHelpers.vsdk.initialize(initConfig)
               ->then(async _ => {
                 let mastercardDirectInitData = {
                   srciTransactionId: clientSecret,
@@ -497,19 +450,26 @@ let makeClickToPaySession = async (
                   srciDpaId: token.dpaName,
                 }
 
-                let mastercardInitPromise = (() => ClickToPayHelpers.mastercardDirectSdk.init(mastercardDirectInitData))()
-                let visaInitPromise = (() => visaDirectSdk.init(visaDirectInitData))()
+                let mastercardInitPromise = ClickToPayHelpers.mastercardDirectSdk.init(
+                  mastercardDirectInitData,
+                )
+                let visaInitPromise = visaDirectSdk.init(visaDirectInitData)
 
-                let _ = await Promise.allSettled([mastercardInitPromise, visaInitPromise])
+                let _ = await Promise.allSettled([
+                  mastercardInitPromise,
+                  visaInitPromise,
+                ])
 
                 Types.window["initializedVSDK"] = true
                 Types.window["visaDirectSdk"] = visaDirectSdk
                 resolve(getSessionObject(Some(visaDirectSdk)))
                 JSON.Encode.null
               })
-              ->catch(error => {
-                let message = "An unknown error occurred while initializing Click to Pay session."
-                let failedErrorResponse = getFailedSubmitResponse(~errorType="ERROR", ~message)
+              ->catch(_ => {
+                let failedErrorResponse = getFailedSubmitResponse(
+                  ~errorType="ERROR",
+                  ~message="An unknown error occurred while initializing Click to Pay session.",
+                )
                 resolve(failedErrorResponse)
 
                 Promise.resolve(JSON.Encode.null)
@@ -517,8 +477,10 @@ let makeClickToPaySession = async (
               ->ignore
             },
             () => {
-              let message = "Failed to load Click to Pay script."
-              let failedErrorResponse = getFailedSubmitResponse(~errorType="ERROR", ~message)
+              let failedErrorResponse = getFailedSubmitResponse(
+                ~errorType="ERROR",
+                ~message="Failed to load Click to Pay script.",
+              )
 
               resolve(failedErrorResponse)
             },
@@ -526,8 +488,10 @@ let makeClickToPaySession = async (
         }
       }
     | None => {
-        let message = "An error occured while trying to fetch Click to Pay Details"
-        let failedErrorResponse = getFailedSubmitResponse(~errorType="ERROR", ~message)
+        let failedErrorResponse = getFailedSubmitResponse(
+          ~errorType="ERROR",
+          ~message="An error occured while trying to fetch Click to Pay Details",
+        )
 
         resolve(failedErrorResponse)
       }
@@ -537,7 +501,7 @@ let makeClickToPaySession = async (
   defaultInitClickToPaySession
 }
 
-let initClickToPaySession = (
+let getActiveClickToPaySession = async (
   ~clientSecret,
   ~publishableKey,
   ~customPodUri,
@@ -545,41 +509,18 @@ let initClickToPaySession = (
   ~profileId,
   ~authenticationId,
   ~merchantId,
-  ~initClickToPaySessionInput: Types.initClickToPaySessionInput,
-) =>
-  (() =>
-    makeClickToPaySession(
-      ~clientSecret,
-      ~publishableKey,
-      ~customPodUri,
-      ~endpoint,
-      ~profileId,
-      ~authenticationId,
-      ~merchantId,
-      ~initClickToPaySessionInput,
-      ~shouldLoadScripts=true,
-    ))()
-
-let getActiveClickToPaySession = (
-  ~clientSecret,
-  ~publishableKey,
-  ~customPodUri,
-  ~endpoint,
-  ~profileId,
-  ~authenticationId,
-  ~merchantId,
-) =>
-  (() =>
-    makeClickToPaySession(
-      ~clientSecret,
-      ~publishableKey,
-      ~customPodUri,
-      ~endpoint,
-      ~profileId,
-      ~authenticationId,
-      ~merchantId,
-      ~initClickToPaySessionInput={request3DSAuthentication: None},
-      ~shouldLoadScripts=false,
-    ))()
+) => {
+  await initClickToPaySession(
+    ~clientSecret,
+    ~publishableKey,
+    ~customPodUri,
+    ~endpoint,
+    ~profileId,
+    ~authenticationId,
+    ~merchantId,
+    ~initClickToPaySessionInput={request3DSAuthentication: None},
+    ~shouldLoadScripts=false,
+  )
+}
 
 Types.window["ClickToPayAuthenticationSession"] = initClickToPaySession

@@ -316,7 +316,6 @@ let performUpdateIntent = async (
   ~selectorString,
   ~shouldWaitForReady,
 ) => {
-  let callback = (callback)
   if isUpdateIntentInProgress.contents {
     updateIntentInProgressResponse()
   } else {
@@ -383,7 +382,6 @@ let performUpdateIntent = async (
             ~newClientSecret=clientSecretRef.contents,
           )
 
-
           // Wait for the payment element to signal ready (only if a payment element is mounted)
           let readyPromise = if shouldWaitForReady {
             Some(waitForReady(iframes))
@@ -409,15 +407,15 @@ let performUpdateIntent = async (
           [("status", "succeeded"->JSON.Encode.string)]->getJsonFromArrayOfJson
         }
       } catch {
-      | JsExn(e) =>
-        let msg = JsExn.message(e)->Option.getOr("Something went wrong during updateIntent!")
+      | Exn.Error(e) =>
+        let msg = Exn.message(e)->Option.getOr("Something went wrong during updateIntent!")
         getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
       | _ =>
         let msg = "An unexpected error occurred during updateIntent."
         getFailedSubmitResponse(~message=msg, ~errorType="update_intent_error")
       }
 
-    let response = await (runUpdateIntent)()
+    let response = await runUpdateIntent()
     isUpdateIntentInProgress.contents = false
     response
   }

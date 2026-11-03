@@ -2028,6 +2028,13 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
 }
 
 let getStringFromBool = val => val ? "true" : "false"
+let loadScriptIfNotExist = (~url) => {
+  if Window.querySelectorAll(`script[src="${url}"]`)->Array.length === 0 {
+    let script = Window.createElement("script")
+    script->Window.elementSrc(url)
+    Window.body->Window.appendChild(script)
+  }
+}
 
 let defaultCountryCode = {
   let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone

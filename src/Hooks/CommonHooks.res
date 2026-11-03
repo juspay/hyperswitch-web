@@ -30,7 +30,7 @@ external addEventListener: (element, string, event => unit) => unit = "addEventL
 @send
 external removeEventListener: (element, string, event => unit) => unit = "removeEventListener"
 
-let useScript = (src: string, ~integrity="", ~crossorigin="") => {
+let useScript = (src: string, ~\"type"="", ~integrity="", ~crossorigin="") => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
   React.useEffect(() => {
     if src == "" {
@@ -44,6 +44,12 @@ let useScript = (src: string, ~integrity="", ~crossorigin="") => {
     | None =>
       let script = createElement("script")
       script.src = src
+      if \"type" != "" {
+        script.\"type" = \"type"
+      }
+
+      // Set the subresource-integrity attributes (when provided) before the
+      // element is appended so the browser enforces SRI on the fetch.
       if crossorigin != "" {
         script.setAttribute("crossorigin", crossorigin)
       }
@@ -63,6 +69,7 @@ let useScript = (src: string, ~integrity="", ~crossorigin="") => {
         () => {
           script->removeEventListener("load", setAttributeFromEvent)
           script->removeEventListener("error", setAttributeFromEvent)
+
           if script.getAttribute("data-status") !== "ready" {
             script.remove()
           }

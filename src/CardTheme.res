@@ -374,17 +374,7 @@ let itemToObjMapper = (
   defaultRules: CardThemeType.themeClass => JSON.t,
 ) => {
   unknownKeysWarning(
-    [
-      "appearance",
-      "fonts",
-      "locale",
-      "clientSecret",
-      "loader",
-      "pmSessionId",
-      "sdkAuthorization",
-      "redirectionFlags",
-      "subscriptionEvents",
-    ],
+    ["appearance", "fonts", "locale", "clientSecret", "loader", "pmSessionId", "sdkAuthorization"],
     dict,
     "elements",
   )

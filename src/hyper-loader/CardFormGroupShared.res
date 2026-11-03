@@ -56,13 +56,18 @@ let flushPendingCoordinatorCommands = (channel: coordinatorChannel) =>
   | _ => ()
   }
 
-// The page only sends mount configuration. SDK sibling iframes exchange card ports directly.
+// The page only sends a field its mount config. The port the field shares with
+// the coordinator is set up between the two iframes (CardFormPortHandshake), so
+// raw card values never travel through anything the merchant page can touch.
 let postFieldMountConfig = (
   channel: coordinatorChannel,
   ~fieldIframe: Nullable.t<Dom.element>,
   ~mountConfig: Dict.t<JSON.t>,
 ): unit => fieldIframe->Window.iframePostMessage(mountConfig, ~targetOrigin=channel.origin)
 
+// Merges a field's `create()` subscriptionEvents into the group-level union.
+// Returns true when the union actually grew, so the caller can re-post the
+// coordinator's options for fields created after the coordinator was configured.
 let mergeSubscriptionEvents = (
   ~subscriptionEventsRef: ref<array<string>>,
   ~fieldOptions: JSON.t,
@@ -74,10 +79,9 @@ let mergeSubscriptionEvents = (
     ->Option.flatMap(JSON.Decode.array)
     ->Option.getOr([])
     ->Array.filterMap(JSON.Decode.string)
-  let merged =
-    incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
-      acc->Array.includes(event) ? acc : acc->Array.concat([event])
-    )
+  let merged = incoming->Array.reduce(subscriptionEventsRef.contents, (acc, event) =>
+    acc->Array.includes(event) ? acc : acc->Array.concat([event])
+  )
   if merged->Array.length > subscriptionEventsRef.contents->Array.length {
     subscriptionEventsRef := merged
     true
@@ -171,8 +175,6 @@ let buildFieldMountConfig = (
   ->Dict.fromArray
 }
 
-// Shared failure summariser for merchant-facing confirm/tokenize calls:
-// reports the error code of an error-shaped result, or None on success.
 let savedCardNetwork = (savedCardDict: Dict.t<JSON.t>): string =>
   savedCardDict
   ->getDictFromDict("paymentMethodData")
@@ -232,18 +234,18 @@ let makeFieldElementAndHandle = (
       ~targetOrigin=URLModule.makeUrl(sdkDomainUrl).origin,
     )
   {
-    mount: selector => element.mount(selector),
+    mount: selector => {
+      element.mount(selector)
+    },
     unmount: () => {
       element.unmount()
-      ()
     },
     destroy: () => {
       element.destroy()
       iframeRef := Nullable.null
       EventListenerManager.removeSmartEventListener("message", listenerName)
-      ()
     },
-    update: newOptions => (() => update(newOptions))(),
+    update,
     focus: () => postToOwnIframe([("doFocus", true->JSON.Encode.bool)]),
     blur: () => postToOwnIframe([("doBlur", true->JSON.Encode.bool)]),
     clear: () => postToOwnIframe([("doClearValues", true->JSON.Encode.bool)]),
@@ -259,7 +261,10 @@ let registerField = (
 ): unit => {
   let fieldsDict = fields.contents->getDictFromJson
   let fieldMeta =
-    [("id", fieldId->JSON.Encode.string), ("type", fieldType->JSON.Encode.string)]
+    [
+      ("id", fieldId->JSON.Encode.string),
+      ("type", fieldType->JSON.Encode.string),
+    ]
     ->Array.concat(extraMeta)
     ->Dict.fromArray
     ->JSON.Encode.object
