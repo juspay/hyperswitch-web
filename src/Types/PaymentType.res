@@ -1402,6 +1402,10 @@ let getLayout = (dict, str) => {
   ->Option.getOr(ObjectLayout(defaultLayout))
 }
 
+// Single shared mapper for the customerCard field shape, called both by the
+// old `getCardDetails` (unwrapping a sibling `card` key) and the new
+// clientList path (unwrapping `payment_method_data.card`) — so there is
+// exactly one place that knows the customerCard field mapping.
 let cardJsonToCustomerCard: Dict.t<JSON.t> => customerCard = json => {
   {
     scheme: Some(getString(json, "scheme", "")),
@@ -1471,6 +1475,13 @@ let getBankRedirect = dict => {
   }
 }
 
+// --- clientList (`fetchClientList`) customer_payment_methods decoder ---
+//
+// clientList's customer_payment_methods entries nest card details under
+// `payment_method_data.card` (not a sibling `card` key), and lack
+// `payment_method_id`/`customer_id`/`payment_method_issuer`/`bank`/`billing`
+// entirely — known, accepted gaps (see migration plan), all defaulted the
+// same way the old decoder already defaults them when the key is absent.
 let getCustomerCardDetailsFromPaymentMethodData = dict => {
   dict
   ->getDictFromDict("payment_method_data")
@@ -1760,7 +1771,7 @@ let convertClickToPayCardToCustomerMethod = (
   }
   {
     paymentToken: clickToPayCard.srcDigitalCardId,
-    customerId: "",
+    customerId: "", // Empty as Click to Pay doesn't provide this
     paymentMethod: "card",
     card: {
       scheme: cardScheme,
@@ -1774,18 +1785,18 @@ let convertClickToPayCardToCustomerMethod = (
       cardBin: "",
     },
     paymentMethodType: Some("click_to_pay"),
-    defaultPaymentMethodSet: false,
-    requiresCvv: false,
-    lastUsedAt: Date.make()->Date.toISOString,
+    defaultPaymentMethodSet: false, // Default to false as Click to Pay doesn't provide this
+    requiresCvv: false, // Click to Pay handles CVV internally
+    lastUsedAt: Js.Date.make()->Js.Date.toISOString, // Current timestamp as Click to Pay doesn't provide this
     bank: {
-      mask: "",
+      mask: "", // Just use the mask field that exists in the type
     },
     bankRedirect: {
       bankName: "",
       accountHolderName: "",
       mask: "",
     },
-    recurringEnabled: true,
+    recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
     billing: defaultDisplayBillingDetails,
   }
 }
