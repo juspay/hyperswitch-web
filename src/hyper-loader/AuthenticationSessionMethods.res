@@ -15,7 +15,7 @@ let setClickToPayTokenWithDebounce = (key, promise) => {
   }, 30000)->ignore
 }
 
-let initClickToPaySession = async (
+let makeClickToPaySession = async (
   ~clientSecret,
   ~publishableKey,
   ~customPodUri,
@@ -685,7 +685,7 @@ let initClickToPaySession = async (
   defaultInitClickToPaySession
 }
 
-let getActiveClickToPaySession = async (
+let initClickToPaySession = (
   ~clientSecret,
   ~publishableKey,
   ~customPodUri,
