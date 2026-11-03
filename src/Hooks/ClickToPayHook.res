@@ -31,13 +31,6 @@ let useClickToPay = (
       isReady: Some(false),
     })
 
-  let setVisaComponentState = view => {
-    setClickToPayConfig(prev => {
-      ...prev,
-      visaComponentState: view,
-    })
-  }
-
   let getVisaCards: (
     ~identityValue: string,
     ~otp: string,
@@ -61,36 +54,34 @@ let useClickToPay = (
       switch cardsResult.actionCode {
       | SUCCESS => {
           let cards = switch cardsResult.profiles {
-          | Some(profilesArray) => {
-              let allCards = profilesArray->Array.flatMap(profile => profile.maskedCards)
-              let brandCount = brand =>
-                allCards
-                ->Array.filter(card =>
-                  card.paymentCardDescriptor->String.toLowerCase->String.includes(brand)
-                )
-                ->Array.length
+          | Some(profilesArray) =>
               switch profilesArray[0] {
               | Some(profile) => Some(profile.maskedCards)
               | None => None
               }
-            }
           | None => None
           }
-          setVisaComponentState(NONE)
+          setClickToPayConfig(prev => {
+            ...prev,
+            visaComponentState: NONE,
+          })
 
           setClickToPayConfig(prev => {
             ...prev,
             clickToPayCards: cards,
           })
         }
-      | PENDING_CONSUMER_IDV => {
-          setVisaComponentState(OTP_INPUT)
+      | PENDING_CONSUMER_IDV =>
           setClickToPayConfig(prev => {
             ...prev,
+            visaComponentState: OTP_INPUT,
             maskedIdentity: cardsResult.maskedValidationChannel->Option.getOr(""),
           })
-        }
-      | ADD_CARD => setVisaComponentState(NONE)
+      | ADD_CARD =>
+        setClickToPayConfig(prev => {
+          ...prev,
+          visaComponentState: NONE,
+        })
       | FAILED
       | ERROR =>
         if otp != "" {
@@ -104,23 +95,38 @@ let useClickToPay = (
                   ...prev,
                   otpError: "VALIDATION_DATA_INVALID",
                 })
-              | _ =>
-                let otpError = reason == "ACCT_INACCESSIBLE" ? "ACCT_INACCESSIBLE" : "NONE"
+              | "ACCT_INACCESSIBLE" =>
                 setClickToPayConfig(prev => {
                   ...prev,
-                  otpError,
+                  otpError: "ACCT_INACCESSIBLE",
+                })
+              | _ =>
+                setClickToPayConfig(prev => {
+                  ...prev,
+                  otpError: "NONE",
                 })
               }
-            | None => setVisaComponentState(NONE)
+            | None =>
+              setClickToPayConfig(prev => {
+                ...prev,
+                visaComponentState: NONE,
+              })
             }
-          | None => setVisaComponentState(NONE)
+          | None =>
+            setClickToPayConfig(prev => {
+              ...prev,
+              visaComponentState: NONE,
+            })
           }
         } else {
-          setVisaComponentState(NONE)
+          setClickToPayConfig(prev => {
+            ...prev,
+            visaComponentState: NONE,
+          })
         }
       }
     } catch {
-    | exn =>
+    | _ =>
       setClickToPayNotReady()
     }
   }
@@ -131,14 +137,17 @@ let useClickToPay = (
       | Some(token) => {
           let initConfig = getVisaInitConfig(token, clientSecret)
 
-          setVisaComponentState(CARDS_LOADING)
-          let _ = await (() => vsdk.initialize(initConfig))()
+          setClickToPayConfig(prev => {
+            ...prev,
+            visaComponentState: CARDS_LOADING,
+          })
+          let _ = await vsdk.initialize(initConfig)
           let _ = await getVisaCards(~identityValue=email, ~otp="", ~identityType=EMAIL_ADDRESS)
         }
       | None => ()
       }
     } catch {
-    | err =>
+    | _ =>
       setClickToPayNotReady()
       closeComponentIfSavedMethodsAreEmpty()
     }
@@ -192,7 +201,7 @@ let useClickToPay = (
       | None => setClickToPayNotReady()
       }
     } catch {
-    | exn =>
+    | _ =>
       setClickToPayNotReady()
     }
   }
