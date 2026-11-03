@@ -137,6 +137,17 @@ let reportValidationErrors = (
     reportUserError(localeString.enterFieldsText)
   }
   if !isFormValid {
-    reportUserError(localeString.enterValidDetailsText)
+    noteUserError(localeString.enterValidDetailsText)
+  }
+
+  switch userError.contents {
+  | Some(message) => {
+      SdkLogger.logLifecycle(
+        ~event=FormValidationFailed({reason: message}),
+        ~paymentMethod=Card,
+      )
+      postFailedSubmitResponse(~errortype="validation_error", ~message)
+    }
+  | None => ()
   }
 }

@@ -31,7 +31,10 @@ let make = () => {
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="sepa_bank_debit",
-
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(
+      ~method=paymentMethod,
+      ~methodType=paymentMethodType,
+    ),
   )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
@@ -55,6 +58,14 @@ let make = () => {
         )
       } else {
         let message = "Please enter all fields"
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: "Please enter all fields"}),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethodType,
+          ),
+          ~message,
+        )
         postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }

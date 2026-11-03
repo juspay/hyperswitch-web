@@ -4,10 +4,17 @@ module CoBadgeCardSchemeDropDown = {
     <select
       className="w-4"
       onClick={_ =>
-        ()}
+        SdkLogger.logUser(
+          ~event=ViewOpened({view: CardSchemeMenu}),
+          ~paymentMethod=Card,
+        )}
       onChange={ev => {
         let target = ev->ReactEvent.Form.target
         let value = target["value"]
+        SdkLogger.logUser(
+          ~event=CardSchemeSelected({method: value}),
+          ~paymentMethod=Card,
+        )
         setCardBrand(_ => value)
       }}>
       <option disabled=true> {"Select a card brand"->React.string} </option>
@@ -66,7 +73,16 @@ let make = (
   React.useEffect1(() => {
     if shouldShowCoBadgeCardSchemeDropDown && !isCoBadgedCardDetectedOnce.current {
       isCoBadgedCardDetectedOnce.current = true
-      ()
+      SdkLogger.logState(
+        ~event=CardCoBadgeDetected,
+        ~details=[
+          (
+            "co_badged_schemes",
+            eligibleCardSchemes->Array.map(JSON.Encode.string)->JSON.Encode.array,
+          ),
+        ],
+        ~paymentMethod=Card,
+      )
     }
     None
   }, [shouldShowCoBadgeCardSchemeDropDown])

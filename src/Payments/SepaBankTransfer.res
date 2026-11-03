@@ -18,7 +18,10 @@ let make = () => {
     ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="bank_transfer",
-
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(
+      ~method="bank_transfer",
+      ~methodType="sepa_bank_transfer",
+    ),
   )
 
   let paymentMethodType = "sepa_bank_transfer"
@@ -43,6 +46,14 @@ let make = () => {
         )
       } else {
         let message = "Please enter all fields"
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: "Please enter all fields"}),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethodType,
+          ),
+          ~message,
+        )
         postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }

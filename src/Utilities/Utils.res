@@ -1106,59 +1106,6 @@ let fetchApi = (
   })
 }
 
-let fetchApiForSdk = async (
-  uri,
-  ~onSuccess,
-  ~onFailure,
-  ~bodyStr="",
-  ~headers=?,
-  ~method,
-  ~customPodUri=None,
-  ~publishableKey=None,
-  ~onCatchCallback=None,
-  ~sdkAuthorization=None,
-  ~signal: option<Fetch.AbortSignal.t>=?,
-) => {
-  try {
-    let body = switch method {
-    | #GET => None
-    | _ => Some(Fetch.Body.string(bodyStr))
-    }
-    let response = await Fetch.fetch(
-      uri,
-      {
-        method,
-        ?body,
-        ?signal,
-        headers: getHeaders(
-          ~headers=headers->Option.getOr(Dict.make()),
-          ~uri,
-          ~customPodUri,
-          ~publishableKey,
-          ~sdkAuthorization,
-        ),
-      },
-    )
-    let data = await response->Fetch.Response.json
-    response->Fetch.Response.ok ? onSuccess(data) : onFailure(data)
-  } catch {
-  | err => {
-      let exceptionMessage = err->formatException
-      Console.error2(
-        "Unexpected error while making request:",
-        {
-          "uri": uri,
-          "error": exceptionMessage,
-        },
-      )
-      switch onCatchCallback {
-      | Some(fun) => fun(exceptionMessage)
-      | None => onFailure(exceptionMessage)
-      }
-    }
-  }
-}
-
 let arrayJsonToCamelCase = arr => {
   arr->Array.map(item => {
     item->transformKeysWithoutModifyingValue(CamelCase)
@@ -2044,28 +1991,14 @@ let defaultCountryCode = {
 
 let getSdkAuthorizationData = sdkAuthorization => {
   open Types
-
-  let arrOfKeys =
-    sdkAuthorization
-    ->Window.atob
-    ->String.split(",")
-
-  let getValueFromArrayOfKeys = keyName => {
-    let prefix = keyName ++ "="
-    let keyStr = arrOfKeys->Array.find(key => key->String.startsWith(prefix))
-    keyStr->Option.flatMap(key => {
-      let value = key->String.sliceToEnd(~start=prefix->String.length)
-      value->String.length > 0 ? Some(value) : None
-    })
-  }
-
+  let keys = sdkAuthorization->SdkAuthorization.entries
   {
-    publishableKey: getValueFromArrayOfKeys("publishable_key"),
-    clientSecret: getValueFromArrayOfKeys("client_secret"),
-    customerId: getValueFromArrayOfKeys("customer_id"),
-    profileId: getValueFromArrayOfKeys("profile_id"),
-    pmSessionId: getValueFromArrayOfKeys("payment_method_session_id"),
-    paymentId: getValueFromArrayOfKeys("payment_id"),
+    publishableKey: keys->SdkAuthorization.valueOfEntries("publishable_key"),
+    clientSecret: keys->SdkAuthorization.valueOfEntries("client_secret"),
+    customerId: keys->SdkAuthorization.valueOfEntries("customer_id"),
+    profileId: keys->SdkAuthorization.valueOfEntries("profile_id"),
+    pmSessionId: keys->SdkAuthorization.valueOfEntries("payment_method_session_id"),
+    paymentId: keys->SdkAuthorization.valueOfEntries("payment_id"),
   }
 }
 

@@ -17,10 +17,13 @@ let mountAuthConnectorScript = (~authConnector, ~onScriptLoaded) => {
   let authConnector = authConnector->Option.getOr("")
   let pmAuthConnectorScriptUrl =
     authConnector->pmAuthNameToTypeMapper->pmAuthConnectorToScriptUrlMapper
-  let pmAuthConnectorScript = Window.createElement("script")
-  pmAuthConnectorScript->Window.elementSrc(pmAuthConnectorScriptUrl)
-  pmAuthConnectorScript->Window.elementOnload(_ => onScriptLoaded(authConnector))
-  Window.body->Window.appendChild(pmAuthConnectorScript)
+  switch pmAuthConnectorScriptUrl {
+  | "" => SdkLogger.logLifecycle(~event=BankAuthConnectorUnsupported({connector: authConnector}))
+  | url =>
+    SdkLogger.observeResource(~event=PmAuthConnectorScript, ~url, ~onLoad=() =>
+      onScriptLoaded(authConnector)
+    )
+  }
 }
 
 let mountAllRequriedAuthConnectorScripts = (~pmAuthConnectorsArr, ~onScriptLoaded) => {

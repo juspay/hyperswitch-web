@@ -172,9 +172,22 @@ let performEligibilityCheck = async (
     setEligibilityOfferDetails(_ => offerDetails)
     setIsEligibilityPending(_ => false)
   } catch {
-  | _ =>
-    setEligibilityError->Option.forEach(setter => setter(_ => None))
-    setIsEligibilityPending(_ => false)
+  | exn => {
+      if exn->WebLoggerUtils.summarizeExn->WebLoggerUtils.isAborted {
+        SdkLogger.logLifecycle(
+          ~event=EligibilityCheckCancelled,
+          ~details=[("check", check->JSON.Encode.string)],
+        )
+      } else {
+        SdkLogger.logLifecycle(
+          ~event=EligibilityCheckFailed,
+          ~details=[("check", check->JSON.Encode.string)],
+          ~exn,
+        )
+      }
+      setEligibilityError->Option.forEach(setter => setter(_ => None))
+      setIsEligibilityPending(_ => false)
+    }
   }
 }
 

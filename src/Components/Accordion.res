@@ -45,7 +45,17 @@ let make = (
       borderRadius: {borderRadiusStyle},
       borderBottomStyle: borderBottom ? "solid" : "hidden",
     }
-    onClick={_ => setSelectedOption(_ => paymentOption.paymentMethodName)}>
+    onClick={_ => {
+      SdkLogger.logUser(
+        ~event=PaymentMethodSelected({method: paymentOption.paymentMethodName}),
+        ~paymentMethod=?PaymentUtils.loggerPaymentMethodOf(
+          ~paymentMethodName=paymentOption.paymentMethodName,
+          ~paymentMethods=paymentMethodListValue.payment_methods,
+        ),
+      )
+      setSelectedOption(_ => paymentOption.paymentMethodName)
+    }}
+  >
     <div
       className={`flex flex-row items-center ${accordionClass}`}
       style={columnGap: themeObj.spacingUnit}>

@@ -255,6 +255,20 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   )
   let showAllPaymentMethods = layoutClass.paymentMethodsArrangementForTabs === Grid
 
+  let isPaypalSdkTabsFlow = switch paypalToken {
+  | OtherTokenOptional(Some(_)) => isPaypalSDKFlow
+  | _ => false
+  }
+  React.useEffect(() => {
+    if isPaypalSdkTabsFlow {
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowResolved({flow: PaypalSdkTabs}),
+        ~paymentMethod=Wallet(PaypalSdk),
+      )
+    }
+    None
+  }, [isPaypalSdkTabsFlow])
+
   React.useEffect(() => {
     switch paymentMethodList {
     | Loaded(paymentlist) =>
@@ -340,6 +354,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
       let message = "Select a payment method"
+      SdkLogger.logLifecycle(~event=FormValidationFailed({reason: message}))
       postFailedSubmitResponse(~errortype="validation_error", ~message)
     }
   }, [selectedOption])
