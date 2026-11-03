@@ -353,14 +353,7 @@ let rec intentCall = (
     ~bodyStr,
     ~sdkAuthorization,
   )
-  ->then(res =>
-    res
-    ->Fetch.Response.clone
-    ->Fetch.Response.json
-    ->then(data => resolve((res, data)))
-    ->catch(_ => resolve((res, JSON.Encode.null)))
-  )
-  ->then(((res, _)) => {
+  ->then(res => {
     let url = makeUrl(confirmParam.return_url)
     if isLegacyClientSecretFlow {
       url.searchParams.set("payment_intent_client_secret", clientSecret)

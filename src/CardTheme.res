@@ -64,7 +64,7 @@ let setColorSchemeMeta = (colorScheme: colorScheme) => {
 
 let getShowLoader = str => {
   switch str {
-  | "auto" | "" => Auto
+  | "auto" => Auto
   | "always" => Always
   | "never" => Never
   | str => {

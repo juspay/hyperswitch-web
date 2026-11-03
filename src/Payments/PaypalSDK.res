@@ -23,10 +23,10 @@ let make = (~sessionObj: SessionsType.token) => {
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
   let intent = PaymentHelpers.usePostSessionTokens(Paypal, Wallet)
-  let confirm = PaymentHelpers.usePaymentIntent(Paypal)
+  let confirm = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Paypal)
   let sessions = Jotai.useAtomValue(JotaiAtoms.sessions)
   let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
-  let completeAuthorize = PaymentHelpers.useCompleteAuthorize(Paypal)
+  let completeAuthorize = PaymentHelpers.useCompleteAuthorize(~isOneClickWallet=true, Paypal)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let checkoutScript =
     Window.document(Window.window)->Window.getElementById("braintree-checkout")->Nullable.toOption
