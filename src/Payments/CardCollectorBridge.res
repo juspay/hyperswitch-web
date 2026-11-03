@@ -55,11 +55,7 @@ let useEmitCardState = (
         rawCvc: emitRawCvc && cvcNumber !== "" ? Some(cvcNumber) : None,
       })
       messageParentWindow([("cardStateUpdate", windowPayload)], ~targetOrigin=parentURL)
-      if !SadPortRegistry.postFrame(~key=portKey, portPayload) {
-        Console.warn(
-          `[CardCollectorBridge] dropped port frame for unregistered portKey "${portKey}"`,
-        )
-      }
+      postPortFrame(portPayload)
     } else {
       let stateEntries = [
         ("cardBrand", cardBrand->JSON.Encode.string),
@@ -117,42 +113,30 @@ let reportValidationErrors = (
   ~setCvcError,
   ~localeString: LocaleStringTypes.localeStrings,
 ) => {
-  let userError = ref(None)
-  let noteUserError = message =>
-    switch userError.contents {
-    | None => userError := Some(message)
-    | Some(_) => ()
-    }
+  let reportUserError = message => postFailedSubmitResponse(~errortype="validation_error", ~message)
 
   if cardNumber === "" {
     setCardError(_ => localeString.cardNumberEmptyText)
-    noteUserError(localeString.enterFieldsText)
+    reportUserError(localeString.enterFieldsText)
   } else if isCardSupported->Option.getOr(true)->not {
     if cardBrand === "" {
       setCardError(_ => localeString.enterValidCardNumberErrorText)
-      noteUserError(localeString.enterValidDetailsText)
+      reportUserError(localeString.enterValidDetailsText)
     } else {
       let brandError = localeString.cardBrandConfiguredErrorText(cardBrand)
       setCardError(_ => brandError)
-      noteUserError(brandError)
+      reportUserError(brandError)
     }
   }
   if cardExpiry === "" {
     setExpiryError(_ => localeString.cardExpiryDateEmptyText)
-    noteUserError(localeString.enterFieldsText)
+    reportUserError(localeString.enterFieldsText)
   }
   if cvcNumber === "" {
     setCvcError(_ => localeString.cvcNumberEmptyText)
-    noteUserError(localeString.enterFieldsText)
+    reportUserError(localeString.enterFieldsText)
   }
   if !isFormValid {
-    noteUserError(localeString.enterValidDetailsText)
-  }
-
-  switch userError.contents {
-  | Some(message) => {
-      postFailedSubmitResponse(~errortype="validation_error", ~message)
-    }
-  | None => ()
+    reportUserError(localeString.enterValidDetailsText)
   }
 }
