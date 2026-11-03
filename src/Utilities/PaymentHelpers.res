@@ -1126,8 +1126,8 @@ let useCompleteAuthorizeHandler = (~isOneClickWallet=false, ()) => {
     }
 }
 
-let useCompleteAuthorize = paymentType => {
-  let completeAuthorizeHandler = useCompleteAuthorizeHandler()
+let useCompleteAuthorize = (~isOneClickWallet=false, paymentType) => {
+  let completeAuthorizeHandler = useCompleteAuthorizeHandler(~isOneClickWallet, ())
   let keys = Jotai.useAtomValue(JotaiAtoms.keys)
   let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
   let url = RescriptReactRouter.useUrl()

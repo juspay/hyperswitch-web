@@ -16,7 +16,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   )
   let isWallet = walletOptions->Array.includes("samsung_pay")
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let intent = PaymentHelpers.usePaymentIntent(Samsungpay)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=isWallet, Samsungpay)
   let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 

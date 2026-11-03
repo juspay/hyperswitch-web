@@ -17,7 +17,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let {publishableKey, iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
   let options = Jotai.useAtomValue(optionAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Other)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Other)
   let status = CommonHooks.useScript(
     "https://x.klarnacdn.net/kp/lib/v1/api.js",
   )

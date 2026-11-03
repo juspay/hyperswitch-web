@@ -531,11 +531,8 @@ let make = (
             LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
           ),
           (
-            "onCompleteDoThisUsed",
-            EventListenerManager.eventListenerMap
-            ->Dict.get("onCompleteDoThis")
-            ->Option.isSome
-            ->JSON.Encode.bool,
+            "isPaymentCompleteHandlerProvided",
+            LoaderPaymentElement.isPaymentCompleteHandlerProvided.contents->JSON.Encode.bool,
           ),
         ]->Dict.fromArray
 

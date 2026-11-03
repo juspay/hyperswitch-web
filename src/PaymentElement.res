@@ -285,10 +285,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           ConnectorMisconfigured,
           ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
         )
-      } else if (
-        paymentMethodOrder->getOptionalArr->Array.length > 0 &&
-          !checkPriorityList(paymentMethodOrder)
-      ) {
+      } else if !checkPriorityList(paymentMethodOrder) {
         ErrorUtils.manageErrorWarning(
           UnsupportedOptionValue,
           ~dynamicStr=`'paymentMethodOrder' is ${Array.join(

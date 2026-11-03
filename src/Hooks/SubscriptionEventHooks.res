@@ -281,9 +281,7 @@ let getPaymentMethodAndType = (
   ~paymentMethodName: string,
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
 ) => {
-  if paymentMethodName->String.trim === "" {
-    None
-  } else if paymentMethodName->String.includes("_debit") {
+  if paymentMethodName->String.includes("_debit") {
     Some(("bank_debit", paymentMethodName))
   } else if paymentMethodName->String.includes("_transfer") {
     Some(("bank_transfer", paymentMethodName))

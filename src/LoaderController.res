@@ -336,8 +336,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
               setSessionId(_ => {
                 sdkSessionId
               })
-              if dict->getDictIsSome("onCompleteDoThisUsed") {
-                let isCallbackUsedVal = dict->Utils.getBool("onCompleteDoThisUsed", false)
+              if dict->getDictIsSome("isPaymentCompleteHandlerProvided") {
+                let isCallbackUsedVal =
+                  dict->Utils.getBool("isPaymentCompleteHandlerProvided", false)
                 setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
               }
               if dict->getDictIsSome("isPaymentButtonHandlerProvided") {

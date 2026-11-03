@@ -1679,13 +1679,13 @@ let makeOneClickHandlerPromise = (sdkHandleIsThere, ~parentOrigin, ~parentWindow
 }
 
 let generateRandomString = length => {
-  let characters = "abcdefghijklmnopqrstuvwxyz0123456789"
-  let charactersLength = characters->String.length
+  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   let result = ref("")
-  for _ in 1 to length {
-    let index = (Math.random() *. charactersLength->Int.toFloat)->Float.toInt
-    result := result.contents ++ characters->String.charAt(index)
-  }
+  let charactersLength = characters->String.length
+  Int.range(0, length)->Array.forEach(_ => {
+    let charIndex = mod((Math.random() *. 100.0)->Float.toInt, charactersLength)
+    result := result.contents ++ characters->String.charAt(charIndex)
+  })
   result.contents
 }
 

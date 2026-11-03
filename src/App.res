@@ -28,9 +28,13 @@ let make = () => {
   }, [networkStatus])
 
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
+  switch getQueryParamsDictforKey(url.search, "endpoint") {
+  | "" => ()
+  | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+  }
   let isParentMessage = PaymentMessageHooks.useParentMessageCheck(
     ~isInitialization=dict =>
-      dict->Utils.getBool("paymentElementCreate", false) ||
+      dict->Utils.getDictIsSome("paymentElementCreate") ||
       dict->Utils.getBool("fullScreenIframeMounted", false) ||
       dict->Dict.get("metadata")->Option.isSome,
   )

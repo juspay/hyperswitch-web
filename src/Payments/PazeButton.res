@@ -15,7 +15,7 @@ let make = (~token: SessionsType.token) => {
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Paze)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Paze)
   let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
     ~clientSecret=clientSecret->Option.getOr(""),
     ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
