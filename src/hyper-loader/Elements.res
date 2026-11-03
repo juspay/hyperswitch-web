@@ -740,15 +740,22 @@ let make = (
                     ->Option.getOr("")
 
                   clientListDataPromise.contents
-                  ->then(_ => {
+                  ->then(paymentMethodsJson => {
+                    let pmDict = paymentMethodsJson->getDictFromJson
+                    let currencyCode =
+                      pmDict->getDictFromDict("intent_data")->getString("currency", "EUR")
+                    let amountInt = pmDict->getDictFromDict("intent_data")->getInt("amount", 0)
+                    let amountStr = amountInt->Int.toString //<...>//
                     try {
-                      let trustpay = trustPayApi(secrets)
+                      let newSecrets = secrets //<...>//
+                      let newPaymentRequest = paymentRequest //<...>//
+                      let trustpay = trustPayApi(newSecrets)
 
                       (
                         () =>
                           trustpay.finishApplePaymentV2(
-                            payment,
-                            paymentRequest,
+                            payment, //<...>//
+                            newPaymentRequest,
                             Window.Location.hostname,
                           )
                       )()

@@ -61,7 +61,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   }
 
   let buttonStyle = {
-    "onClick": (onSamsungPaymentButtonClick),
+    "onClick": onSamsungPaymentButtonClick,
     "buttonStyle": "black",
     "type": "buy",
   }->Identity.anyTypeToJson
