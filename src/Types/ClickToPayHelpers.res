@@ -887,6 +887,7 @@ let loadVisaScript = (
 }
 
 let loadClickToPayUIScripts = (scriptLoadedCallback, scriptErrorCallback) => {
+  // Add script if not exists
   ClickToPayLogger.observeResource(
     ~event=UiKitScript,
     ~url=srcUiKitScriptSrc,
@@ -894,6 +895,7 @@ let loadClickToPayUIScripts = (scriptLoadedCallback, scriptErrorCallback) => {
     ~onLoad=scriptLoadedCallback,
     ~onError=_ => scriptErrorCallback(),
   )
+  // Add link if not exists
   ClickToPayLogger.observeResource(~event=UiKitStylesheet, ~url=srcUiKitCssHref)
 }
 
