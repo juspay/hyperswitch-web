@@ -67,6 +67,8 @@ let ensureWalletOneClickListener = (~ownerId, ~isTrustedMessage) => {
   )
 }
 
+// ─── Shared iframe HTML builder ────────────────────────────────────────────────
+// Produces the raw <iframe> HTML fragment used by the `mount` function.
 let buildIframeHtmlString = (~iframeId: string, ~iframeSrc: string, ~additionalStyle: string) =>
   `<iframe
    id="${iframeId}"
@@ -79,9 +81,17 @@ let buildIframeHtmlString = (~iframeId: string, ~iframeSrc: string, ~additionalS
    width="100%"
 ></iframe>`
 
-// Multi-instance support pairs handler-only instances with mounting instances.
-// Register lazily at on()/mount() to avoid accumulating duplicates in StrictMode.
+// Multi-instance support: rendezvous queues that pair handler-only instances
+// (C, created at React render time, calls on()) with mounting instances
+// (O, created in useEffect, calls mount()).
+//
+// React.StrictMode renders components twice and runs effects twice (cleanup +
+// re-run), so we CANNOT register at make() time (duplicates accumulate).
+// Instead we register lazily: mount() queues the selector, on() claims it.
+// Whichever arrives first enqueues; the second dequeues and completes the pair.
+// Selectors from mount() calls waiting for a matching on() call.
 let pendingMountSelectorsByType: Dict.t<array<string>> = Dict.make()
+// Refs from on() calls waiting for a matching mount() selector.
 let pendingOnRefsByType: Dict.t<array<ref<string>>> = Dict.make()
 
 let make = (
@@ -181,6 +191,10 @@ let make = (
       }
 
     let on = (eventType, eventHandler) => {
+      // Multi-instance: if this C instance has no selector yet, try to claim
+      // a pending mount selector.  If none is available, register self in the
+      // pendingOnRefs queue so the next mount() can adopt us.
+      // Guard on "" prevents re-registration on StrictMode effect re-runs.
       if componentType->Utils.canHaveMultipleInstances && localSelectorRef.contents === "" {
         let mounts = pendingMountSelectorsByType->Dict.get(componentType)->Option.getOr([])
         if mounts->Array.length > 0 {
@@ -191,12 +205,15 @@ let make = (
         } else {
           let refs = pendingOnRefsByType->Dict.get(componentType)->Option.getOr([])
 
+          // No mount yet — register ref for adoption when mount() comes.
+          // Avoid duplicate registration (e.g. on() called twice on same instance).
           if !(refs->Array.some(r => r === localSelectorRef)) {
             refs->Array.push(localSelectorRef)->ignore
             pendingOnRefsByType->Dict.set(componentType, refs)
           }
         }
       }
+      // Multi-instance: match by elementType + iframeId so events route to the correct instance.
       let matchesInstance = (ev: Types.event) => {
         if componentType->Utils.canHaveMultipleInstances {
           ev.data.elementType === componentType && ev.data.iframeId === localSelectorRef.contents
@@ -205,6 +222,7 @@ let make = (
         }
       }
 
+      // Subscription event helper: checks eventName in payload, then applies matchesInstance.
       let addSubscriptionEventListener = (subscriptionEventName, activity) => {
         addSmartEventListener(
           "message",
@@ -456,15 +474,19 @@ let make = (
       let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
       localSelectorRef := localSelectorString
 
+      // Multi-instance rendezvous: pair this mount with a waiting on() ref, or
+      // enqueue the selector so a future on() call can claim it.
       if componentType->Utils.canHaveMultipleInstances {
         let refs = pendingOnRefsByType->Dict.get(componentType)->Option.getOr([])
         let emptyIdx = refs->Array.findIndex(r => r.contents === "")
         if emptyIdx >= 0 {
+          // A C instance is already waiting — hand it the selector.
           let siblingRef = refs->Array.getUnsafe(emptyIdx)
           siblingRef := localSelectorString
           let remaining = refs->Array.filterWithIndex((_, i) => i !== emptyIdx)
           pendingOnRefsByType->Dict.set(componentType, remaining)
         } else {
+          // No C instance waiting yet — enqueue for a future on() call.
           let mounts = pendingMountSelectorsByType->Dict.get(componentType)->Option.getOr([])
           mounts->Array.push(localSelectorString)->ignore
           pendingMountSelectorsByType->Dict.set(componentType, mounts)

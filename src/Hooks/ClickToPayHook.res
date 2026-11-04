@@ -55,10 +55,10 @@ let useClickToPay = (
       | SUCCESS => {
           let cards = switch cardsResult.profiles {
           | Some(profilesArray) =>
-              switch profilesArray[0] {
-              | Some(profile) => Some(profile.maskedCards)
-              | None => None
-              }
+            switch profilesArray[0] {
+            | Some(profile) => Some(profile.maskedCards)
+            | None => None
+            }
           | None => None
           }
           setClickToPayConfig(prev => {
@@ -72,11 +72,11 @@ let useClickToPay = (
           })
         }
       | PENDING_CONSUMER_IDV =>
-          setClickToPayConfig(prev => {
-            ...prev,
-            visaComponentState: OTP_INPUT,
-            maskedIdentity: cardsResult.maskedValidationChannel->Option.getOr(""),
-          })
+        setClickToPayConfig(prev => {
+          ...prev,
+          visaComponentState: OTP_INPUT,
+          maskedIdentity: cardsResult.maskedValidationChannel->Option.getOr(""),
+        })
       | ADD_CARD =>
         setClickToPayConfig(prev => {
           ...prev,
