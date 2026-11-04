@@ -404,9 +404,7 @@ let make = (
           ~cvcNumber=cvc,
           ~requiresCvv=customerMethod.requiresCvv,
           ~isCustomerAcceptanceRequired,
-        )
-        ->Array.concat(installmentBody)
-        ->Array.concat(offerDetailsBody)
+        )->Array.concat(installmentBody)->Array.concat(offerDetailsBody)
       | _ => {
           let paymentMethodType = switch customerMethod.paymentMethodType {
           | Some("")
@@ -580,8 +578,7 @@ let make = (
                         ~cvcToken,
                         ~isCustomerAcceptanceRequired,
                       )
-                let vaultBody =
-                  cvcConfirmBody->Array.concat(installmentBody)->Array.concat(offerDetailsBody)
+                let vaultBody = cvcConfirmBody->Array.concat(installmentBody)->Array.concat(offerDetailsBody)
                 intent(
                   ~bodyArr=vaultBody->mergeAndFlattenToTuples(requiredFieldsBody),
                   ~confirmParam=confirm.confirmParams,

@@ -156,8 +156,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
   let _maskedEmail = (~onNotYouClick) => {
     <div className="flex space-x-2 text-sm text-[#484848]">
       <button
-        onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]"
-      >
+        onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]">
         {React.string("Not you?")}
       </button>
     </div>
@@ -186,23 +185,20 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
       </p>
       <form
         onSubmit={handleSubmit}
-        className="w-full flex flex-col justify-center items-center space-y-4"
-      >
+        className="w-full flex flex-col justify-center items-center space-y-4">
         <div className="w-full flex space-x-2">
           <div className="relative w-1/3">
             <select
               value={identifierType->getIdentityType}
               onChange={handleTypeChange}
-              className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none"
-            >
+              className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none">
               <option value={EMAIL_ADDRESS->getIdentityType}> {React.string("Email")} </option>
               <option value={MOBILE_PHONE_NUMBER->getIdentityType}>
                 {React.string("Phone")}
               </option>
             </select>
             <div
-              className="absolute inset-y-0 right-4 flex items-center selection:pointer-events-none"
-            >
+              className="absolute inset-y-0 right-4 flex items-center selection:pointer-events-none">
               <Icon
                 className="absolute z-10 pointer pointer-events-none" name="arrow-down" size=10
               />
@@ -222,8 +218,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                   <select
                     value={countryCode}
                     onChange={handleCountryCodeChange}
-                    className="h-full p-3 appearance-none focus:outline-none"
-                  >
+                    className="h-full p-3 appearance-none focus:outline-none">
                     {countryCodes
                     ->Array.map(country =>
                       <option
@@ -234,8 +229,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                     ->React.array}
                   </select>
                   <div
-                    className="absolute inset-y-0 right-4 flex items-center selection:pointer-events-none"
-                  >
+                    className="absolute inset-y-0 right-4 flex items-center selection:pointer-events-none">
                     <Icon
                       className="absolute z-10 pointer pointer-events-none"
                       name="arrow-down"
@@ -279,8 +273,7 @@ module ClickToPayNotYouText = {
 
     <div className="flex space-x-2 text-sm text-[#484848]">
       <button
-        onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]"
-      >
+        onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]">
         {React.string("Not you?")}
       </button>
     </div>
