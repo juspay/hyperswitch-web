@@ -84,7 +84,6 @@ let startApplePaySession = (
   ~isTaxCalculationEnabled=false,
   ~sdkAuthorization=None,
   ~onCancel=?,
-  ~parentOrigin,
 ) => {
   open Promise
   let sdkHandleIsThere = LoaderPaymentElement.isPaymentButtonHandlerProvided.contents
@@ -102,7 +101,11 @@ let startApplePaySession = (
   applePaySessionRef := ssn->Js.Nullable.return
 
   let handleValidateMerchant = _event => {
-    makeOneClickHandlerPromise(sdkHandleIsThere, ~parentOrigin)
+    makeOneClickHandlerPromise(
+      sdkHandleIsThere,
+      ~parentOrigin=Window.Location.origin,
+      ~parentWindow=window,
+    )
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {

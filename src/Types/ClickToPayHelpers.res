@@ -858,7 +858,6 @@ let loadVisaScript = (
     AuthenticationSessionLogger.observeResource(
       ~event=VisaSdkScript,
       ~url=scriptSrc,
-      ~matchQuery=true,
       ~onLoad=onLoadCallback,
       ~onError=_ => onErrorCallback(),
     )
@@ -866,7 +865,6 @@ let loadVisaScript = (
     ClickToPayLogger.observeResource(
       ~event=VisaSdkScript,
       ~url=scriptSrc,
-      ~matchQuery=true,
       ~onLoad=onLoadCallback,
       ~onError=_ => onErrorCallback(),
     )

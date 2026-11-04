@@ -10,7 +10,7 @@ let emit = (
     ~message?, ~once=once->Option.getOr(false))
 
 let resource = (
-  ~spec, ~severity, ~url, ~resource, ~attributes=?, ~matchQuery=?,
+  ~spec, ~severity, ~url, ~resource, ~attributes=?, ~matchQuery=?, ~inBody=?,
   ~paymentMethod=?, ~context=?, ~source=?, ~abandoned=?, ~message=?,
   ~onLoad=?, ~onError=?,
 ) =>
@@ -19,7 +19,7 @@ let resource = (
     | SharedLoggerRuntime.Script => ResourceLoader.Script
     | SharedLoggerRuntime.Stylesheet => ResourceLoader.Stylesheet
     },
-    ~attributes?, ~matchQuery?, ~paymentMethod?, ~context?, ~source?,
+    ~attributes?, ~matchQuery?, ~inBody?, ~paymentMethod?, ~context?, ~source?,
     ~abandoned?, ~message?, ~onLoad?, ~onError?)
 
 let configure = () => {
