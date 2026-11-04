@@ -370,6 +370,7 @@ let loadBraintreePaypalSdk = (
                     ~details=[("connector", "braintree"->JSON.Encode.string)],
                     ~paymentMethod=Wallet(PaypalSdk),
                     ~callback=() => {
+                      //Paypal Clicked
                       messageParentWindow([
                         ("fullscreen", true->JSON.Encode.bool),
                         ("param", "paymentloader"->JSON.Encode.string),
