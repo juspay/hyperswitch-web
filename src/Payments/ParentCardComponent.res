@@ -804,6 +804,9 @@ let make = (
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && !hasCardFieldStatus {
+        // The public Payment Element can become ready before the nested collector has
+        // installed its submit listener. Settle the merchant promise instead of posting a
+        // message that could be dropped during that startup window.
         SdkLogger.logLifecycle(
           ~event=FormValidationFailed({reason: localeString.enterFieldsText}),
           ~paymentMethod=?isBancontact
