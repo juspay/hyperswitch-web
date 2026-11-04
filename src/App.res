@@ -116,7 +116,6 @@ let make = () => {
         let isSdkParamsEnabled =
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
-
         <PreMountLoader
           publishableKey
           sessionId

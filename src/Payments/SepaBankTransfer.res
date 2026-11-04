@@ -18,7 +18,6 @@ let make = () => {
     ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType="bank_transfer",
-
   )
 
   let paymentMethodType = "sepa_bank_transfer"

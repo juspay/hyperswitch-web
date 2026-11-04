@@ -106,8 +106,7 @@ let make = (
             marginBottom: "5px",
             opacity: "0.6",
           }
-          ariaHidden=true
-        >
+          ariaHidden=true>
           {React.string(fieldName)}
         </div>
       </RenderIf>
@@ -121,8 +120,7 @@ let make = (
               padding: themeObj.spacingUnit,
               width: "calc(100% - 22px)",
             }
-            ariaHidden=true
-          >
+            ariaHidden=true>
             {React.string(displayValue->Option.getOr(""))}
           </div>
         </RenderIf>
@@ -162,8 +160,7 @@ let make = (
               },
               opacity: "0.6",
             }
-            ariaHidden=true
-          >
+            ariaHidden=true>
             {React.string(fieldName)}
           </div>
         </RenderIf>
