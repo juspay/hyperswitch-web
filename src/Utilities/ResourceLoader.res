@@ -10,6 +10,8 @@ type adapter = {
   attach: Dom.element => unit,
 }
 
+type stylesheetPlacement = Head | Body
+
 @val @scope(("document", "head"))
 external appendToHead: Dom.element => unit = "appendChild"
 
@@ -74,10 +76,12 @@ let stylesheetAdapter = {
   attach: appendToHead,
 }
 
-let adapter = (resource, ~matchQuery) =>
+let bodyStylesheetAdapter = {...stylesheetAdapter, attach: element => Window.body->Window.appendChild(element)}
+
+let adapter = (resource, ~matchQuery, ~stylesheetPlacement) =>
   switch resource {
   | Script => scriptAdapter(~matchQuery)
-  | Stylesheet => stylesheetAdapter
+  | Stylesheet => stylesheetPlacement === Body ? bodyStylesheetAdapter : stylesheetAdapter
   }
 
 let statusOf = element => element->Window.getAttribute(statusAttribute)->Nullable.toOption
@@ -100,12 +104,13 @@ let load = (
   ~resource,
   ~attributes=[],
   ~matchQuery=false,
+  ~stylesheetPlacement=Head,
   ~dedupe=true,
   ~onStart=() => (),
   ~onLoad,
   ~onError,
 ) => {
-  let adapter = resource->adapter(~matchQuery)
+  let adapter = resource->adapter(~matchQuery, ~stylesheetPlacement)
 
   let listen = (element, ~result) => {
     element->Window.addLoadListener(() => {
