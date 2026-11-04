@@ -43,32 +43,25 @@ let fetchCountryStateFromS3 = async (endpoint, ~fallbackFor=?) => {
   | None => CountryStateData
   }
   let headers = [("Accept-Encoding", "br, gzip")]->Dict.fromArray
-  let decoded = ref(None)
   let response = await SdkLogger.observeStaticAsset(
     ~event,
     ~url=endpoint,
     ~details=?fallbackFor->Option.map(locale => [
       ("fallback_for_locale", locale->JSON.Encode.string),
     ]),
-    ~call=async () => {
-      let response = await Utils.fetchApi(endpoint, ~method=#GET, ~headers)
-      if response->Fetch.Response.ok {
-        switch (await response->Fetch.Response.json)->decodeJsonTocountryStateData {
-        | Some(data) => decoded := Some(data)
-        | None => JsError.throwWithMessage("Failed to decode country state data")
-        }
-      }
-      response
-    },
+    ~request={method: #GET, headers: Utils.getHeaders(~uri=endpoint, ~headers)},
   )
-  switch decoded.contents {
-  | Some(data) => data
-  | None =>
+  if !(response->Fetch.Response.ok) {
     JsError.throwWithMessage(
       `Country state data request failed with status ${response
         ->Fetch.Response.status
         ->Int.toString}`,
     )
+  } else {
+    switch (await response->Fetch.Response.json)->decodeJsonTocountryStateData {
+    | Some(data) => data
+    | None => JsError.throwWithMessage("Failed to decode country state data")
+    }
   }
 }
 

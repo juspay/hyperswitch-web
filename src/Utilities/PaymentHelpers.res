@@ -2301,14 +2301,18 @@ let fetchSdkConfigs = async (
   )
 
   try {
-    let response = await SdkLogger.observeStaticAsset(~event=SdkConfigs, ~url=uri, ~call=() =>
-      Utils.fetchApi(
-        uri,
-        ~method=#GET,
-        ~customPodUri=Some(customPodUri),
-        ~publishableKey=Some(publishableKey),
-        ~sdkAuthorization,
-      )
+    let response = await SdkLogger.observeStaticAsset(
+      ~event=SdkConfigs,
+      ~url=uri,
+      ~request={
+        method: #GET,
+        headers: Utils.getHeaders(
+          ~uri,
+          ~customPodUri=Some(customPodUri),
+          ~publishableKey=Some(publishableKey),
+          ~sdkAuthorization,
+        ),
+      },
     )
     let data = await response->Fetch.Response.json
     if response->Fetch.Response.ok {
