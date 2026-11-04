@@ -741,7 +741,7 @@ async function createBusinessProfile(
       },
       body: JSON.stringify({
         profile_name: profileName,
-        return_url: "http://localhost:9060/completion",
+        return_url: "https://hyperswitch.io/", // TEMP integ WAF test
       }),
     },
   );
