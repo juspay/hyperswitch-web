@@ -435,7 +435,6 @@ let fetchCustomerSavedPaymentMethods = (
         ~clientSecret=clientSecretRef.contents,
         ~publishableKey,
         ~resolvePromise,
-        ~parentOrigin=Window.Location.origin,
       )
     }
 

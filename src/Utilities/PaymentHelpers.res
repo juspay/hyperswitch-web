@@ -2124,6 +2124,20 @@ let observeClickToPayApi = (~isPaymentSession, ~event, ~url, ~request) =>
     AuthenticationSessionLogger.observeApi(~event, ~url, ~request)
   }
 
+let fetchClickToPayApi = async (~isPaymentSession, ~event, ~url, ~request, ~failureValue) => {
+  try {
+    let response = await observeClickToPayApi(~isPaymentSession, ~event, ~url, ~request)
+    let data = await response->Fetch.Response.json
+    response->Fetch.Response.ok ? data : failureValue(data)
+  } catch {
+  | err => {
+      let exceptionMessage = err->Utils.formatException
+      Console.error2("Unexpected error while making request:", {"uri": url, "error": exceptionMessage})
+      failureValue(exceptionMessage)
+    }
+  }
+}
+
 let fetchEnabledAuthnMethodsToken = async (
   ~clientSecret,
   ~publishableKey,
@@ -2151,10 +2165,11 @@ let fetchEnabledAuthnMethodsToken = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
-  let response = await observeClickToPayApi(
+  await fetchClickToPayApi(
     ~isPaymentSession,
     ~event=EnabledAuthnMethodsToken,
     ~url=uri,
+    ~failureValue=_ => JSON.Encode.null,
     ~request={
       method: #POST,
       body: Fetch.Body.string(body->JSON.stringify),
@@ -2166,7 +2181,6 @@ let fetchEnabledAuthnMethodsToken = async (
       ),
     },
   )
-  await response->Fetch.Response.json
 }
 
 let fetchEligibilityCheck = async (
@@ -2200,10 +2214,11 @@ let fetchEligibilityCheck = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
-  let response = await observeClickToPayApi(
+  await fetchClickToPayApi(
     ~isPaymentSession,
     ~event=EligibilityCheck,
     ~url=uri,
+    ~failureValue=_ => JSON.Encode.null,
     ~request={
       method: #POST,
       body: Fetch.Body.string(body->JSON.stringify),
@@ -2215,7 +2230,6 @@ let fetchEligibilityCheck = async (
       ),
     },
   )
-  await response->Fetch.Response.json
 }
 
 let fetchAuthenticationSync = async (
@@ -2251,10 +2265,11 @@ let fetchAuthenticationSync = async (
 
   let headers = [("x-profile-id", profileId)]->Dict.fromArray
 
-  let response = await observeClickToPayApi(
+  await fetchClickToPayApi(
     ~isPaymentSession,
     ~event=AuthenticationSync,
     ~url=uri,
+    ~failureValue=error => error,
     ~request={
       method: #POST,
       body: Fetch.Body.string(body->JSON.stringify),
@@ -2266,7 +2281,6 @@ let fetchAuthenticationSync = async (
       ),
     },
   )
-  await response->Fetch.Response.json
 }
 
 let getConstructedPaymentMethodName = (~paymentMethod, ~paymentMethodType) => {
