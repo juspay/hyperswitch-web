@@ -368,6 +368,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
                   pmSessionId,
                 })
 
+                // Update top redirection atom
                 updateRedirectionFlags(paymentOptions)
 
                 paymentOptions->loadTheme(res => dict->setConfigs(res))
@@ -400,6 +401,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
               pmSessionId,
             })
 
+            // Update top redirection atom
             updateRedirectionFlags(paymentOptions)
 
             paymentOptions->loadTheme(res => dict->setConfigs(res))
