@@ -35,7 +35,9 @@ let postToCoordinator = (
   mount: CoordinatorMount.coordinatorMount,
   fields: array<(string, JSON.t)>,
 ) =>
-  try mount.iframe->Nullable.make->Window.iframePostMessage(fields->Dict.fromArray, ~targetOrigin=mount.origin) catch {
+  try mount.iframe
+  ->Nullable.make
+  ->Window.iframePostMessage(fields->Dict.fromArray, ~targetOrigin=mount.origin) catch {
   | _ => ()
   }
 
@@ -195,9 +197,11 @@ let savedCardNetwork = (savedCardDict: Dict.t<JSON.t>): string =>
   ->getDictFromDict("card")
   ->getString("cardNetwork", "")
 
-let postFieldUpdate = (~iframeRef: ref<Nullable.t<Dom.element>>, ~newOptions: JSON.t, ~targetOrigin: string): Dict.t<
-  JSON.t,
-> => {
+let postFieldUpdate = (
+  ~iframeRef: ref<Nullable.t<Dom.element>>,
+  ~newOptions: JSON.t,
+  ~targetOrigin: string,
+): Dict.t<JSON.t> => {
   iframeRef.contents->Window.iframePostMessage(
     [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", newOptions)]->Dict.fromArray,
     ~targetOrigin,
@@ -245,7 +249,10 @@ let makeFieldElementAndHandle = (
     ~context?,
   )
   let postToOwnIframe = fields =>
-    iframeRef.contents->Window.iframePostMessage(fields->Dict.fromArray, ~targetOrigin=URLModule.makeUrl(sdkDomainUrl).origin)
+    iframeRef.contents->Window.iframePostMessage(
+      fields->Dict.fromArray,
+      ~targetOrigin=URLModule.makeUrl(sdkDomainUrl).origin,
+    )
   let fieldDetails = [
     ("field", fieldName->JSON.Encode.string),
     ("vault", vaultProvider->JSON.Encode.string),

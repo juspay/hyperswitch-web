@@ -113,8 +113,7 @@ let make = (
           marginBottom: "5px",
           opacity: "0.6",
         }
-        ariaHidden=true
-      >
+        ariaHidden=true>
         {React.string(fieldName)}
       </div>
     </RenderIf>
@@ -145,8 +144,7 @@ let make = (
             marginBottom: "5px",
             opacity: "0.6",
           }
-          ariaHidden=true
-        >
+          ariaHidden=true>
           {React.string(fieldName)}
         </div>
       </RenderIf>
@@ -187,8 +185,7 @@ let make = (
                 },
                 opacity: "0.6",
               }
-              ariaHidden=true
-            >
+              ariaHidden=true>
               {React.string(fieldName)}
             </div>
           </RenderIf>
@@ -206,8 +203,7 @@ let make = (
             alignSelf: "start",
             textAlign: "left",
           }
-          ariaHidden=true
-        >
+          ariaHidden=true>
           {React.string(value.errorString)}
         </div>
       </RenderIf>

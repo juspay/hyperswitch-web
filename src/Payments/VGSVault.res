@@ -21,6 +21,8 @@ let submitVaultTokenization = (vault: returnValue, ~scope, ~onData) => {
     PaymentMethodSessionLogger.logApi(~event, ~outcome=Done, ~details, ~startedAt, ~paymentMethod)
     onData(data)
   }
+  // Fields are valid, so onError here is a genuine tokenisation/network
+  // failure (not a validation error) — reject the merchant promise.
   let onError = err => {
     PaymentMethodSessionLogger.logApi(
       ~event,
@@ -318,6 +320,13 @@ let make = (~cvcOnly=false) => {
           let cardFieldsValid = cardErr == "" && expiryErr == "" && cvcErr == ""
 
           if cardFieldsValid && isOuterValid {
+            // Card fields AND outer required fields are valid → tokenise with VGS.
+            // Gating on isOuterValid here (rather than inside onSuccess) means we
+            // never send card data to VGS when the outer fields are invalid:
+            // ParentCardComponent has already reported that error and isn't
+            // listening for the token. Mirrors the Hyperswitch vault collector's submit gate.
+            // Tokenisation succeeded — forward the aliases to ParentCardComponent so
+            // it can build the confirm body and call intent.
             vault->submitVaultTokenization(~scope=FullCard, ~onData=data => {
               let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
               messageParentWindow(
@@ -388,8 +397,7 @@ let make = (~cvcOnly=false) => {
                 marginBottom: "5px",
                 fontSize: themeObj.fontSizeLg,
                 opacity: "0.6",
-              }
-            >
+              }>
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
@@ -403,8 +411,7 @@ let make = (~cvcOnly=false) => {
             className="flex flex-row w-full place-content-between"
             style={
               gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-            }
-          >
+            }>
             <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
               <VGSInputComponent
                 fieldName={localeString.validThruText}
