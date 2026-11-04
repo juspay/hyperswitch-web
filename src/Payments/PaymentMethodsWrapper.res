@@ -67,6 +67,7 @@ let make = (~paymentMethodName: string) => {
     ~complete=areRequiredFieldsValid,
     ~empty,
     ~paymentType=paymentMethodDetails.paymentMethodName,
+
   )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete=areRequiredFieldsValid)
 

@@ -66,6 +66,7 @@ let make = (~walletOptions) => {
     ~complete=paypalClicked,
     ~empty=!paypalClicked,
     ~paymentType=paymentMethodType,
+
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   SubscriptionEventHooks.useEmitFormStatus(
