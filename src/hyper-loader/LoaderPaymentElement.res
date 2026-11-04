@@ -84,6 +84,9 @@ let buildIframeHtmlString = (~iframeId: string, ~iframeSrc: string, ~additionalS
 let pendingMountSelectorsByType: Dict.t<array<string>> = Dict.make()
 let pendingOnRefsByType: Dict.t<array<ref<string>>> = Dict.make()
 
+type listenerInventory = {selector: ref<string>, names: array<string>, mutable mounted: bool}
+let inventoriesByType: Dict.t<array<listenerInventory>> = Dict.make()
+
 let make = (
   componentType,
   options,
@@ -113,6 +116,22 @@ let make = (
     }
     let mountId = ref("")
     let localSelectorRef = ref("")
+    let listenerInventory = {selector: localSelectorRef, names: [], mounted: false}
+    let logListeners = () => {
+      let matched = inventoriesByType->Dict.get(componentType)->Option.getOr([])
+      ->Array.filter(inventory => inventory.selector.contents === localSelectorRef.contents)
+      let names = matched->Array.flatMap(inventory => inventory.names)
+      let names = names->Array.reduce([], (acc, name) =>
+        acc->Array.includes(name) ? acc : acc->Array.concat([name])
+      )
+      HyperLoaderLogger.logEventListeners(~componentType, ~events=names, ~context?)
+    }
+    let removeInventory = () =>
+      inventoriesByType->Dict.set(
+        componentType,
+        inventoriesByType->Dict.get(componentType)->Option.getOr([])
+        ->Array.filter(inventory => inventory !== listenerInventory),
+      )
     let mountedIframeRef = ref(Nullable.null)
     let fullscreenIframeRef = ref(Nullable.null)
     // Kept current across update() so the Change listener filters on the latest subscriptions.
@@ -196,6 +215,11 @@ let make = (
             pendingOnRefsByType->Dict.set(componentType, refs)
           }
         }
+      }
+      if !(inventoriesByType->Dict.get(componentType)->Option.getOr([])->Array.includes(listenerInventory)) {
+        let inventories = inventoriesByType->Dict.get(componentType)->Option.getOr([])
+        inventories->Array.push(listenerInventory)->ignore
+        inventoriesByType->Dict.set(componentType, inventories)
       }
       let matchesInstance = (ev: Types.event) => {
         if componentType->Utils.canHaveMultipleInstances {
@@ -342,6 +366,17 @@ let make = (
           ~details=[("event", eventType->JSON.Encode.string)],
         )
       }
+      if eventHandler->Option.isSome && !(listenerInventory.names->Array.includes(eventType)) {
+        listenerInventory.names->Array.push(eventType)->ignore
+        if listenerInventory.mounted || (
+          localSelectorRef.contents !== "" &&
+          inventoriesByType->Dict.get(componentType)->Option.getOr([])->Array.some(inventory =>
+            inventory.mounted && inventory.selector.contents === localSelectorRef.contents
+          )
+        ) {
+          logListeners()
+        }
+      }
     }
     let collapse = () => ()
     let blur = () => {
@@ -386,6 +421,7 @@ let make = (
         ~details=surfaceDetails->Array.concat(containerPresentDetail()),
         ~call=() => {
           oneClickSources->Dict.delete(elementInstanceId)
+          removeInventory()
           mountedIframeRef := Nullable.null
           fullscreenIframeRef := Nullable.null
           clearMountedContainer()
@@ -399,6 +435,7 @@ let make = (
         ~details=surfaceDetails->Array.concat(containerPresentDetail()),
         ~call=() => {
           oneClickSources->Dict.delete(elementInstanceId)
+          removeInventory()
           mountedIframeRef := Nullable.null
           fullscreenIframeRef := Nullable.null
           clearMountedContainer()
@@ -450,6 +487,11 @@ let make = (
       )
 
     let mountElement = selector => {
+      if !(inventoriesByType->Dict.get(componentType)->Option.getOr([])->Array.includes(listenerInventory)) {
+        let inventories = inventoriesByType->Dict.get(componentType)->Option.getOr([])
+        inventories->Array.push(listenerInventory)->ignore
+        inventoriesByType->Dict.set(componentType, inventories)
+      }
       ensureWalletOneClickListener(~ownerId=elementInstanceId, ~isTrustedMessage)
       mountId := selector
       let localSelectorArr = selector->String.split("#")
@@ -469,6 +511,10 @@ let make = (
           mounts->Array.push(localSelectorString)->ignore
           pendingMountSelectorsByType->Dict.set(componentType, mounts)
         }
+      }
+      listenerInventory.mounted = true
+      if localSelectorRef.contents !== "" {
+        logListeners()
       }
       let iframeHeightRef = ref(25.0)
       let currentClass = ref("base")
@@ -606,6 +652,7 @@ let make = (
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                         fullScreenEle->Window.iframePostMessage(
                           [
+                            ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
                             LoggerContext.sharedContext(~context?, ()),
                           ]->Dict.fromArray,

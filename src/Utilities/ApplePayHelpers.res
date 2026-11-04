@@ -233,6 +233,12 @@ let startApplePaySession = (
         ~paymentMethod=Wallet(ApplePay),
         ~message="Apple Pay session aborted by SDK",
       )
+    } else {
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowExited,
+        ~paymentMethod=Wallet(ApplePay),
+        ~message="Apple Pay session cancelled by shopper",
+      )
     }
     switch onCancel {
     | Some(onCancel) => onCancel()
@@ -687,6 +693,12 @@ let handleApplePayBraintreeClick = (
     applePaySessionAbortedBySdk := false
     if abortedBySdk {
       SdkLogger.logLifecycle(~event=WalletFlowExited, ~paymentMethod=Wallet(ApplePay))
+    } else {
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowExited,
+        ~paymentMethod=Wallet(ApplePay),
+        ~message="Apple Pay session cancelled by shopper",
+      )
     }
     restoreButton()
   }

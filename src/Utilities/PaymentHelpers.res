@@ -968,22 +968,24 @@ let rec intentCall = (
                 setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
               }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-            } else if !isPaymentSession {
-              postFailedSubmitResponse(
-                ~errortype="confirm_payment_failed",
-                ~message="Payment failed. Try again!",
-              )
             } else {
               SdkLogger.logLifecycle(
                 ~event=SdkLogger.PaymentStatusUnknown({inferred: false}),
                 ~paymentMethod=?loggedPaymentMethod,
                 ~message="Payment response had empty status; reported confirm_payment_failed",
               )
-              let failedSubmitResponse = getFailedSubmitResponse(
-                ~errorType="confirm_payment_failed",
-                ~message="Payment failed. Try again!",
-              )
-              resolve(failedSubmitResponse)
+              if !isPaymentSession {
+                postFailedSubmitResponse(
+                  ~errortype="confirm_payment_failed",
+                  ~message="Payment failed. Try again!",
+                )
+              } else {
+                let failedSubmitResponse = getFailedSubmitResponse(
+                  ~errorType="confirm_payment_failed",
+                  ~message="Payment failed. Try again!",
+                )
+                resolve(failedSubmitResponse)
+              }
             }
           },
         )->then(resolve)

@@ -61,6 +61,7 @@ let make = () => {
   let (rawQrData, setRawQrData) = React.useState(_ => "")
   let (isCopied, setIsCopied) = React.useState(_ => false)
   let (expiryTime, setExpiryTime) = React.useState(_ => maxQRTime)
+  let hasLoggedExpiry = React.useRef(false)
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (return_url, setReturnUrl) = React.useState(_ => "")
   let (clientSecret, setClientSecret) = React.useState(_ => "")
@@ -199,7 +200,10 @@ let make = () => {
 
   React.useEffect(() => {
     if expiryTime < 1000.0 {
-      SdkLogger.logLifecycle(~event=QrCodeExpired, ~paymentMethod=?loggedPaymentMethodRef.current)
+      if !hasLoggedExpiry.current {
+        hasLoggedExpiry.current = true
+        SdkLogger.logLifecycle(~event=QrCodeExpired, ~paymentMethod=?loggedPaymentMethodRef.current)
+      }
       closeModal()->ignore
     }
 
