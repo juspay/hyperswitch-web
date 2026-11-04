@@ -628,9 +628,9 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         if confirmingRef.contents {
           Promise.resolve(
             groupFailureResponse(
-              ~code="validation_error",
-              ~errorType="validation_error",
-              ~message="savedCard.paymentToken is required for the saved-card CVC flow",
+              ~code="confirm_in_progress",
+              ~errorType="api_error",
+              ~message="confirmPayment() already in progress",
             ),
           )
         } else {
@@ -685,9 +685,9 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         fields := Dict.make()->JSON.Encode.object
         settlePendingConfirm(
           groupFailureResponse(
-            ~code="validation_error",
-            ~errorType="validation_error",
-            ~message="No card fields are mounted",
+            ~code="group_deinitialized",
+            ~errorType="server_error",
+            ~message="deinit() was called while a confirm was in flight — the payment may still have gone through",
           ),
         )
         confirmingRef := false
