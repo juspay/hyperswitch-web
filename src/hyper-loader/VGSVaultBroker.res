@@ -650,6 +650,7 @@ let make = (
             )
           }
 
+          // VGS routes a transport failure through this SUCCESS callback as (status=null, data="Network Error").
           let onSuccess: (JSON.t, JSON.t) => unit = PaymentMethodSessionLogger.observeFunctionCallback(
             ~context,
             ~event=OnSuccess,
@@ -673,6 +674,7 @@ let make = (
               },
           )
 
+          // VGS calls the submit error callback with ONE argument: the per-field error map.
           let onError: JSON.t => unit = PaymentMethodSessionLogger.observeFunctionCallback(
             ~context,
             ~event=OnError,

@@ -42,6 +42,8 @@ let useScript = (
       let cancelled = ref(false)
       let settle = value => cancelled.contents ? () : setStatus(_ => value)
       setStatus(_ => "loading")
+      // Set the subresource-integrity attributes (when provided) before the
+      // element is appended so the browser enforces SRI on the fetch.
       let attributes = [("crossorigin", crossorigin), ("integrity", integrity)]
         ->Array.filter(((_, value)) => value != "")
         ->Array.concat([("async", "true")])

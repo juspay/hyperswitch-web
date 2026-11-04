@@ -677,7 +677,8 @@ let constructClass = (~classname, ~dict) => {
   ->Array.map(entry => {
     let (key, value) = entry
 
-    let toKebabCaseIfNeeded = key => key->String.includes("-") ? key : key->toKebabCase
+    let toKebabCaseIfNeeded = key =>
+      key->String.includes("-") ? key : key->toKebabCase
 
     let class = if !(key->String.startsWith(":")) && !(key->String.startsWith(".")) {
       switch value->JSON.Decode.string {

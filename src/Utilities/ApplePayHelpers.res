@@ -392,6 +392,11 @@ let useHandleApplePayResponse = (
             ~isManualRetryEnabled,
           )
         } else if dict->Dict.get("applePayConfirmRequest")->Option.isSome {
+          // The interceptor in the parent window is asking us to call /confirm and
+          // return the TrustPay secrets so it can swap them into TrustPay's
+          // merchant-validation FormData. Reuse processPayment so the confirm goes
+          // through PaymentHelpers; intentCall posts "applePayConfirmSecrets" back to
+          // the parent for the interceptor flow (~isTrustpayInterceptorConfirm=true).
           SdkLogger.logLifecycle(
             ~event=WalletStageReached({stage: ConfirmRequestReceived}),
             ~paymentMethod=Wallet(ApplePay),

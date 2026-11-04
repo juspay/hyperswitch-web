@@ -50,6 +50,7 @@ let handleOpenClickToPayWindow = () => {
 
 type mastercardCheckoutServices
 
+// Response types
 type responsePayloadStatus = COMPLETE | CANCEL | PAY_V3_CARD | ERROR
 
 type responsePayload = {
@@ -303,9 +304,12 @@ external getMastercardCheckoutServices: unit => mastercardCheckoutServices =
 let initializeMastercardCheckout = (clickToPayToken: clickToPayToken) => {
   switch getOptionMastercardCheckoutServices {
   | Some(_) => {
+      // Create new instance by calling the constructor
       mcCheckoutService := Some(getMastercardCheckoutServices())
 
+      // Get recognition token
       let recognitionToken = getLocalStorage(~key=recognitionTokenCookieName)
+      // Construct params
       let params = {
         srcDpaId: clickToPayToken.dpaId,
         dpaData: {
@@ -335,6 +339,7 @@ let initializeMastercardCheckout = (clickToPayToken: clickToPayToken) => {
         cardBrands: clickToPayToken.cardBrands,
       }
 
+      // Add recognition token if exists
       let params = switch recognitionToken->Nullable.toOption {
       | Some(token) => {
           ClickToPayLogger.logLifecycle(~event=RecognitionTokenFound({provider: MastercardUctp}))
@@ -405,6 +410,7 @@ type authenticateInputPayload = {
 }
 
 let authenticate = async (payload: authenticateInputPayload) => {
+  // Construct the authenticate payload
   let authenticatePayload = {
     windowRef: payload.windowRef,
     requestRecognitionToken: true,
@@ -424,6 +430,7 @@ let authenticate = async (payload: authenticateInputPayload) => {
           ~call=() => service->authenticate(authenticatePayload),
         )
 
+        // Check and set recognition token if present
         let recognitionToken =
           authentication->Utils.getDictFromJson->Utils.getString("recognitionToken", "")
 
@@ -547,6 +554,7 @@ let loadClickToPayScripts = () =>
   Promise.make((clickToPayScriptsPromiseResolve, _) => {
     let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
     let linkSelector = `link[href="${srcUiKitCssHref}"]`
+    // Add script if not exists
     let srcUiKitScriptPromise = Promise.make((scriptPromiseResolve, _) => {
       switch querySelector(scriptSelector)->Nullable.toOption {
       | None => {
@@ -559,6 +567,7 @@ let loadClickToPayScripts = () =>
       | Some(_) => scriptPromiseResolve()
       }
     })
+    // Add link if not exists
     let srcUiKitCssPromise = Promise.make((cssPromiseResolve, _) => {
       switch querySelector(linkSelector)->Nullable.toOption {
       | None => {
@@ -589,6 +598,7 @@ let loadMastercardScript = clickToPayToken => {
 
     switch querySelector(scriptSelector)->Nullable.toOption {
     | Some(_) => {
+        // Script already exists, just initialize
         initializeMastercardCheckout(clickToPayToken)
         ->then(resp => {
           resp->resolve
@@ -604,7 +614,9 @@ let loadMastercardScript = clickToPayToken => {
         let script = createElement("script")
         script->setType("text/javascript")
         script->setSrc(scriptSrc)
+        // Set onload handler
         script->setOnload(() => {
+          // Initialize after script loads
           initializeMastercardCheckout(clickToPayToken)
           ->then(resp => {
             resp->resolve
@@ -616,6 +628,7 @@ let loadMastercardScript = clickToPayToken => {
           })
           ->ignore
         })
+        // Set onerror handler
         script->setOnError(() => {
           let exn = JsExn.anyToExnInternal("Failed to load Mastercard script")
           exn->reject
@@ -626,6 +639,7 @@ let loadMastercardScript = clickToPayToken => {
   })
 }
 
+// Define props types for each component
 type srcMarkProps = {
   @as("card-brands") cardBrands?: string,
   height?: string,
@@ -643,6 +657,7 @@ type srcLearnMoreProps = {
   className?: string,
 }
 
+// Components in modules with capitalized names (React convention)
 module SrcMark = {
   @val
   external makeOrig: (@as("src-mark") _, srcMarkProps) => React.element = "React.createElement"

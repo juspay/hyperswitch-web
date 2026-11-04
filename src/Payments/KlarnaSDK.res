@@ -18,6 +18,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let options = Jotai.useAtomValue(optionAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Other)
+  // Klarna SDK script
   let status = CommonHooks.useScript(
     "https://x.klarnacdn.net/kp/lib/v1/api.js",
     ~resourceEvent=SdkLogger.KlarnaScript,

@@ -237,6 +237,7 @@ let useCardForm = (
           SdkLogger.logState(~event=MerchantControlReceived({control: "do_focus"}))
           cardRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
         } else if dict->Dict.get("doClearValues")->Option.isSome {
+          //clear all values
           SdkLogger.logState(~event=MerchantControlReceived({control: "do_clear_values"}))
           setCardNumber(_ => "")
           setCardExpiry(_ => "")

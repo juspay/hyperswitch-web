@@ -185,7 +185,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       ->getJsonObjectFromDict("redirectionFlags")
       ->JotaiAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
 
-    // Reinitialize the loader when the publishable key changes.
+    /*
+     * Forces re-initialization of HyperLoader.
+     * If HyperLoader is already loaded and needs to reload with an updated publishable key,
+     * this flag ensures the script is remounted and re-executed.
+     */
     let isForceInit = options->getOptionsDict->getBool("isForceInit", false)
 
     let analyticsMetadata =
@@ -368,15 +372,21 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           entry.source === event.source && entry.redirectOrigin === Some(event.origin)
         )
 
+      // Shared refs for updateIntent — created once, passed to both Elements and PaymentSession.
       let isUpdateIntentInProgress = ref(false)
       let emptyJsonPromise = Promise.resolve(JSON.Encode.null)
       let sessionTokensDataPromise = ref(emptyJsonPromise)
       let sdkConfigsDataPromise = ref(emptyJsonPromise)
       let clientListDataPromise = ref(emptyJsonPromise)
 
+      // TODO(sdk-configs): profileId is available here at init time for consumers who provide
+      // it at Hyper.init stage. sdk-configs could be prefetched early (before elements() is
+      // called) for a latency optimisation. Currently deferred to PreMountLoader for consistency.
       let retrievePaymentIntentFn = async clientSecretOrSdkAuth => {
+        // Try to decode as base64 — if decodable, it's an SDK authorization token.
         let (actualClientSecret, sdkAuthorizationValue) = try {
           clientSecretOrSdkAuth->Utils.getSdkAuthorizationData->ignore
+          // Successfully decoded — treat as SDK auth; clientSecret is not embedded
           ((None: option<string>), Some(clientSecretOrSdkAuth))
         } catch {
         | _ => (Some(clientSecretOrSdkAuth), None)
