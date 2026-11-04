@@ -260,12 +260,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       Exn.raiseError("Insecure domain: " ++ Window.hrefWithoutSearch)
     }
     switch Window.getHyper->Nullable.toOption {
-    | Some(hyperMethod) if !isForceInit =>
-      HyperLoaderLogger.observeMerchantCall(
+    | Some(hyperMethod) if !isForceInit => {
+      HyperLoaderLogger.logMerchantCall(
         ~event=HyperLoaderLogger.Reinit({surface: Hyper}),
         ~details=[("timestamp", sdkTimestamp->JSON.Encode.string)],
-        ~call=() => hyperMethod,
       )
+      hyperMethod
+    }
     | Some(_)
     | None =>
       let loaderTimestamp = Date.now()->Float.toString
