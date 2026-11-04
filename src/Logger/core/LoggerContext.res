@@ -151,8 +151,12 @@ let startSessionFromMessage = message =>
       sdkAuthorization
       ->pmSessionIdOfSdkAuthorization
       ->Option.getOr(readField("pmSessionId"))
+    let sessionId = readField("sdkSessionId")
+    if context.contents.sessionId === "" {
+      LoggerQueue.bindInitialSession(sessionId)
+    }
     setSessionData(
-      ~sessionId=readField("sdkSessionId"),
+      ~sessionId,
       ~merchantId=readField("publishableKey"),
       ~paymentId,
       ~pmSessionId,

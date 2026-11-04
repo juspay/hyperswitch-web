@@ -2,8 +2,9 @@
 
 let adoptSessionFromParent = (~source) => {
   LoggerRuntime.configure(~source)
+  LoggerQueue.awaitInitialSession()
   Window.addEventListener("message", (ev: Window.event) =>
-    if ev.source === parentWindow && ev.data->LoggerContext.mayCarryContext {
+    if ev.source === parentWindow && PaymentMessageSecurity.isConcreteOrigin(ev.origin) && ev.data->LoggerContext.mayCarryContext {
       switch JSON.parseExn(ev.data)->JSON.Decode.object {
       | Some(message) => message->LoggerContext.startSessionFromMessage
       | None => ()
