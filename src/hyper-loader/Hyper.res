@@ -118,7 +118,6 @@ let handleHyperApplePayMounted = (event: Types.event) => {
       ~resolvePromise,
       ~sdkAuthorization=Some(sdkAuthorization),
       ~onCancel=() => postShowApplePayButton(~isApplePaySheetCancelled=true),
-      ~parentOrigin=Window.Location.origin,
     )
   }
 }
