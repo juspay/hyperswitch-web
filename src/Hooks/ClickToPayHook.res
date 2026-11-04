@@ -148,7 +148,10 @@ let useClickToPay = (
             })
           }
         } else {
-          setClickToPayConfig(prev => {...prev, visaComponentState: NONE})
+          setClickToPayConfig(prev => {
+            ...prev,
+            visaComponentState: NONE,
+          })
           ClickToPayLogger.logLifecycle(
             ~event=CardsUnavailable({
               provider: VisaUctp,
