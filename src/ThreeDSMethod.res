@@ -25,7 +25,6 @@ let make = () => {
     let iframeId = metadataDict->getString("iframeId", "")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
-
       isThreeDSMethodCompletionFired.current = true
       setIsStartTimeout(_ => false)
 
@@ -92,7 +91,6 @@ let make = () => {
   let handleOnError = () => {
     let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
     let iframeId = metadataDict->getString("iframeId", "")
-
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
       stateMetadataRef.current
@@ -247,8 +245,7 @@ let make = () => {
           }
         }
       } catch {
-      | exn =>
-        ()
+      | exn => ()
       }
 
       if consumePostMessageForThreeDsMethodCompletionRef.current && threeDsUrlRef.current !== "" {

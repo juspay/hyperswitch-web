@@ -295,9 +295,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
         // every keystroke through them. See CardFormPortHandshake.
         if dict->getDictIsSome("paymentElementCreate") {
           // Trust the sender's origin, not the parentURL supplied in its payload.
+          // Pin the browser-provided origin of the direct host, never a payload's wildcard.
           parentOriginRef.current = Some(ev.origin)
           dict->Dict.set("parentURL", ev.origin->JSON.Encode.string)
           setKeys(prev => {...prev, parentURL: ev.origin})
+          // Set iframeId for ALL elements including individual card elements (cardNumber, cardExpiry, cardCvc)
           if dict->getDictIsSome("iframeId") {
             setKeys(prev => {
               ...prev,
@@ -437,6 +439,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
           setIsTestMode(_ => isTestMode)
         }
 
+        // Saved-card (return user) CVC iframe is mounted by ParentCardComponent
+        // with isSavedCardCvcFlow=true in its paymentElementCreate mount message;
+        // PaymentMethodsSDK reads this atom to render only the vault CVC field.
         if dict->Dict.get("isSavedCardCvcFlow")->Option.isSome {
           setIsSavedCardCvcFlow(_ => dict->Utils.getBool("isSavedCardCvcFlow", false))
           switch dict->getString("endpoint", "") {
@@ -508,6 +513,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
           }
         }
 
+        // Single clientList message carries both the merchant's enabled
+        // payment methods (payment_methods_enabled) and the customer's
+        // saved payment methods (customer_payment_methods). When the
+        // merchant disables saved payment methods, customer_payment_methods
+        // is already stripped to an empty array at the source
+        // (forwardPaymentMethodsToIframe), so this handler doesn't need its
+        // own send-side gate — it just decodes whatever arrived.
         if dict->getDictIsSome("clientList") {
           let clientListJson = dict->getJsonObjectFromDict("clientList")
           let listDict = clientListJson->getDictFromJson
