@@ -53,6 +53,7 @@ module OtpInput = {
           try {
             setIsOtpSubmitting(_ => true)
             await getCards(otpValueRef.current)
+            setIsOtpSubmitting(_ => false)
           } catch {
           | err =>
             ClickToPayLogger.logLifecycle(
@@ -60,7 +61,6 @@ module OtpInput = {
               ~exn=err,
             )
           }
-          setIsOtpSubmitting(_ => false)
         }
         verifyUserAndGetCards()->ignore
       },
