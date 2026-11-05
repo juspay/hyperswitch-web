@@ -472,6 +472,13 @@ let make = (
               ~handleUserError=false,
               ~manualRetry=isManualRetryEnabled,
             )
+          } else if resp.status === ClickToPayHelpers.PAY_V3_CARD {
+            intent(
+              ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+            )
           } else {
             postFailedSubmitResponse(
               ~errortype=resp.status === ClickToPayHelpers.CANCEL ? "payment_cancelled" : "server_error",

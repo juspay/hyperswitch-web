@@ -705,6 +705,27 @@ let make = (
         ~message,
       )
     }
+    let payWithCard = () =>
+      confirmBody(
+        PaymentBody.cardPaymentBody(
+          ~cardNumber,
+          ~month,
+          ~year,
+          ~cardHolderName=None,
+          ~cvcNumber,
+          ~cardBrand=[
+            (
+              "card_network",
+              switch rawCardData->getString("cardBrand", "") {
+              | "" => JSON.Encode.null
+              | brand => brand->JSON.Encode.string
+              },
+            ),
+          ],
+          ~nickname=nickname.value,
+        ),
+        ~confirmParams,
+      )
 
     switch clickToPayProvider {
     | MASTERCARD =>
@@ -745,6 +766,8 @@ let make = (
                     ~confirmParams,
                     ~includeAcceptance=false,
                   )
+                } else if response.status === ClickToPayHelpers.PAY_V3_CARD {
+                  payWithCard()
                 } else {
                   settleCheckout(response.status)
                 }
@@ -803,6 +826,8 @@ let make = (
                 ~confirmParams,
                 ~includeAcceptance=false,
               )
+            } else if response.status === ClickToPayHelpers.PAY_V3_CARD {
+              payWithCard()
             } else {
               settleCheckout(response.status)
             }
@@ -811,7 +836,10 @@ let make = (
           }
         }
       )()->ignore
-    | NONE => postFailedSubmitResponse(~errortype="server_error", ~message="Click to Pay provider unavailable")
+    | NONE => {
+        ClickToPayHelpers.handleCloseClickToPayWindow()
+        postFailedSubmitResponse(~errortype="server_error", ~message="Click to Pay provider unavailable")
+      }
     }
   }
 
