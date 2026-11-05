@@ -22,11 +22,23 @@ type emitter = {
     ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   ) => unit,
   emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
+  emitPaymentMethodFlowCancel: (
+    ~paymentMethod: string,
+    ~paymentMethodType: string,
+    ~canRetryPayment: bool,
+  ) => unit,
 }
 
 let useSubscriptionEventEmitter = (): emitter => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
+  // The iframe's own element type (e.g. payPal, expressCheckout), so the loader routes
+  // emitted events to that element's listeners.
+  let url = RescriptReactRouter.useUrl()
+  let componentName = switch CardUtils.getQueryParamsDictforKey(url.search, "componentName") {
+  | "" => "payment"
+  | name => name
+  }
 
   let emitCardInfo = (~elementType: string="payment", ~cardInfo: PaymentEventData.cardInfo) => {
     if (
@@ -108,6 +120,24 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
+  let emitPaymentMethodFlowCancel = (~paymentMethod, ~paymentMethodType, ~canRetryPayment) => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=PaymentMethodFlowCancel,
+      )
+    ) {
+      Utils.messageParentWindow(
+        createPaymentMethodFlowCancelPayload(
+          ~elementType=componentName,
+          ~paymentMethod,
+          ~paymentMethodType,
+          ~canRetryPayment,
+        ),
+      )
+    }
+  }
+
   {
     emitCardInfo,
     emitPaymentMethodStatus,
@@ -115,20 +145,82 @@ let useSubscriptionEventEmitter = (): emitter => {
     emitCvcStatus,
     emitSurcharge,
     emitOffers,
+    emitPaymentMethodFlowCancel,
   }
 }
+
+// ---------------------------------------------------------------------------
+// emitFullscreenPaymentMethodFlowCancel
+// ---------------------------------------------------------------------------
+// For flows rendered in the fullscreen iframe (3DS challenge).
+// That iframe never receives the element options, so it cannot read
+// subscriptionEvents; the loader drops the event for merchants who did not subscribe.
+// paymentMethodFlowCancelMetadata is the "paymentMethodFlowCancel" dict the element iframe
+// puts in the fullscreen metadata (see PaymentHelpers.intentCall). canRetryPayment defaults
+// to the manual_retry_allowed value carried in that metadata.
+let emitFullscreenPaymentMethodFlowCancel = (
+  ~paymentMethodFlowCancelMetadata: Dict.t<JSON.t>,
+  ~canRetryPayment=paymentMethodFlowCancelMetadata->Utils.getBool("canRetryPayment", false),
+) =>
+  Utils.messageParentWindow(
+    createPaymentMethodFlowCancelPayload(
+      ~elementType=paymentMethodFlowCancelMetadata->Utils.getString("elementType", "payment"),
+      ~paymentMethod=paymentMethodFlowCancelMetadata->Utils.getString("paymentMethod", ""),
+      ~paymentMethodType=paymentMethodFlowCancelMetadata->Utils.getString("paymentMethodType", ""),
+      ~canRetryPayment,
+    ),
+  )
 
 // ---------------------------------------------------------------------------
 // emitReady
 // ---------------------------------------------------------------------------
 // Fires unconditionally so every merchant receives the ready lifecycle event
 // regardless of whether subscriptionEvents is configured.
-let emitReady = (~iframeId, ~elementType) =>
+// Remembered so the resize event can tell whether the element is ready yet.
+let isReadyEmitted = ref(false)
+let readyListeners: array<unit => unit> = []
+
+let emitReady = (~iframeId, ~elementType) => {
   Utils.messageParentWindow([
     ("ready", true->JSON.Encode.bool),
     ("elementType", elementType->JSON.Encode.string),
     ("iframeId", iframeId->JSON.Encode.string),
   ])
+  if !isReadyEmitted.contents {
+    isReadyEmitted := true
+    readyListeners->Array.forEach(listener => listener())
+  }
+}
+
+// The Payment Element sends ready once per load and once per updateIntent.
+let emitReadyOnce = (~iframeId, ~elementType) =>
+  if !isReadyEmitted.contents {
+    emitReady(~iframeId, ~elementType)
+  }
+
+let allowReadyAgain = () => isReadyEmitted := false
+
+let useIsReadyEmitted = () => {
+  let (isReady, setIsReady) = React.useState(_ => isReadyEmitted.contents)
+  React.useEffect0(() => {
+    let listener = () => setIsReady(_ => true)
+    if isReadyEmitted.contents {
+      listener()
+      None
+    } else {
+      readyListeners->Array.push(listener)->ignore
+      Some(
+        () => {
+          let index = readyListeners->Array.indexOf(listener)
+          if index >= 0 {
+            readyListeners->Array.splice(~start=index, ~remove=1, ~insert=[])
+          }
+        },
+      )
+    }
+  })
+  isReady
+}
 
 // ---------------------------------------------------------------------------
 // useEmitFormStatus

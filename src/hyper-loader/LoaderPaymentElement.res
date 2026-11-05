@@ -143,6 +143,8 @@ let make = (
       componentType->Utils.canHaveMultipleInstances ? localSelectorRef : ref(componentType)
     let mountedIframeRef = ref(Nullable.null)
     let fullscreenIframeRef = ref(Nullable.null)
+    // Kept current across update() so the Change listener filters on the latest subscriptions.
+    let subscriptionEventsRef = ref(options->getDictFromJson->getStrArray("subscriptionEvents"))
     let iframeOrigin = URLModule.makeUrl(sdkDomainUrl).origin
     let fullscreenOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
 
@@ -172,9 +174,9 @@ let make = (
     let setPaymentIframeRef = ref => {
       mountedIframeRef := ref
       setIframeRef(ref)
-      ref->Nullable.toOption->Option.forEach(frame =>
-        SdkMessageSources.register(~frame, ~origin=iframeOrigin)
-      )
+      ref
+      ->Nullable.toOption
+      ->Option.forEach(frame => SdkMessageSources.register(~frame, ~origin=iframeOrigin))
     }
 
     let (elementIframeWrapperDivId, elementIframeId) = if isPaymentManagementElement {
@@ -275,13 +277,25 @@ let make = (
           )
         }
       | Change =>
+        // The fullscreen iframe cannot read subscriptionEvents, so it emits
+        // paymentMethodFlowCancel unconditionally; drop it here unless subscribed.
+        let isPaymentMethodFlowCancelSubscribed = () =>
+          subscriptionEventsRef.contents->Array.includes("paymentMethodFlowCancel")
+        let isUnsubscribedPaymentMethodFlowCancel = (ev: Types.event) =>
+          !isPaymentMethodFlowCancelSubscribed() &&
+          ev.data
+          ->anyTypeToJson
+          ->getOptionalJsonFromJson("eventName")
+          ->getStringFromOptionalJson("") === "paymentMethodFlowCancel"
         eventHandlerFunc(
           ev =>
             !ev.data.focus &&
             !ev.data.blur &&
             !ev.data.ready &&
+            !ev.data.resize &&
             !ev.data.confirmTriggered &&
             !ev.data.oneClickConfirmTriggered &&
+            !isUnsubscribedPaymentMethodFlowCancel(ev) &&
             matchesInstance(ev),
           eventHandler,
           Change,
@@ -302,6 +316,14 @@ let make = (
           eventHandler,
           Ready,
           `onReady-${componentType}-${elementInstanceId}`,
+          ~isTrustedMessage,
+        )
+      | Resize =>
+        eventHandlerFunc(
+          ev => ev.data.resize && matchesInstance(ev),
+          eventHandler,
+          Resize,
+          `onResize-${componentType}-${elementInstanceId}`,
           ~isTrustedMessage,
         )
       | Focus =>
@@ -391,6 +413,11 @@ let make = (
     }
 
     let update = newOptions => {
+      switch newOptions->getDictFromJson->Dict.get("subscriptionEvents") {
+      | Some(_) =>
+        subscriptionEventsRef := newOptions->getDictFromJson->getStrArray("subscriptionEvents")
+      | None => ()
+      }
       let flatOption = options->flattenObject(true)
       let newFlatOption = newOptions->flattenObject(true)
 

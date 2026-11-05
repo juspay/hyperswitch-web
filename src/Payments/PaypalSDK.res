@@ -50,6 +50,8 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  let emitterRef = React.useRef(emitter)
+  emitterRef.current = emitter
 
   let buttonStyle = switch options.wallets.payPal {
   | PaypalConfigObj(cfg) =>
@@ -121,6 +123,14 @@ let make = (~sessionObj: SessionsType.token) => {
     style
   }
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+  let handleCancel = () => {
+    handleCloseLoader()
+    emitterRef.current.emitPaymentMethodFlowCancel(
+      ~paymentMethod,
+      ~paymentMethodType,
+      ~canRetryPayment=true,
+    )
+  }
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
@@ -139,6 +149,10 @@ let make = (~sessionObj: SessionsType.token) => {
     ~empty=!isCompleted,
     ~paymentType=paymentMethodType,
   )
+
+  let (isButtonSettled, setIsButtonSettled) = React.useState(_ => false)
+  let onButtonSettled = () => setIsButtonSettled(_ => true)
+  ReadyHooks.usePendingWhile(~timeoutMs=ReadyHooks.walletDecisionTimeoutMs, !isButtonSettled)
 
   let mountPaypalSDK = () => {
     let clientId = sessionObj.token
@@ -170,6 +184,7 @@ let make = (~sessionObj: SessionsType.token) => {
     let paypalScript = Window.createElement("script")
     paypalScript->Window.elementSrc(paypalScriptURL)
     paypalScript->Window.elementOnerror(exn => {
+      onButtonSettled()
       let err = exn->Identity.anyTypeToJson->JSON.stringify
       loggerState.setLogError(
         ~value=`Error During Loading PayPal SDK Script: ${err}`,
@@ -181,6 +196,7 @@ let make = (~sessionObj: SessionsType.token) => {
       PaypalSDKHelpers.loadPaypalSDK(
         ~parentOrigin=parentURL,
         ~loggerState,
+        ~onButtonSettled,
         ~sdkHandleOneClickConfirmPayment,
         ~buttonStyle,
         ~iframeId,
@@ -195,6 +211,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~confirm,
         ~completeAuthorize,
         ~handleCloseLoader,
+        ~handleCancel,
         ~areOneClickWalletsRendered,
         ~setIsCompleted,
         ~isCallbackUsedVal,
@@ -220,6 +237,7 @@ let make = (~sessionObj: SessionsType.token) => {
           PaypalSDKHelpers.loadBraintreePaypalSdk(
             ~parentOrigin=parentURL,
             ~loggerState,
+            ~onButtonSettled,
             ~sdkHandleOneClickConfirmPayment,
             ~token,
             ~buttonStyle,
@@ -233,6 +251,7 @@ let make = (~sessionObj: SessionsType.token) => {
             ~publishableKey,
             ~requiredFields,
             ~handleCloseLoader,
+            ~handleCancel,
             ~areOneClickWalletsRendered,
             ~isManualRetryEnabled,
           )
