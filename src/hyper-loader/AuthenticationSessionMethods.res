@@ -433,6 +433,10 @@ let makeClickToPaySession = async (
                       provider: VisaUctp,
                       code: errorReason !== "" ? errorReason : actionCode,
                     }),
+                ~details=[
+                  ("action_code", actionCode->JSON.Encode.string),
+                  ("reason", errorReason->JSON.Encode.string),
+                ],
               )
 
               let errorMsg = switch actionCode {
@@ -484,6 +488,10 @@ let makeClickToPaySession = async (
           ~defaultErrorMessage=unbindAppInstanceErrorMessage,
         )
       | None => {
+          AuthenticationSessionLogger.logLifecycle(
+            ~event=SignOutCompleted({provider: VisaUctp}),
+            ~message="SIGNOUT | SUCCESS | Customer signed out successfully from Click to Pay.",
+          )
           let customerSignedOut = [("recognized", false->JSON.Encode.bool)]->getJsonFromArrayOfJson
 
           maskedCards := []

@@ -132,8 +132,20 @@ let useClickToPay = (
                   ...prev,
                   otpError: "VALIDATION_DATA_INVALID",
                 })
+              | "OTP_SEND_FAILED" =>
+                ClickToPayLogger.logLifecycle(
+                  ~event=CardsUnavailable({provider: VisaUctp, code: reason}),
+                  ~message="OTP SEND FAILED",
+                )
+                setClickToPayConfig(prev => {
+                  ...prev,
+                  otpError: "NONE",
+                })
               | "ACCT_INACCESSIBLE" =>
-                ClickToPayLogger.logLifecycle(~event=CardsUnavailable({provider: VisaUctp, code: reason}))
+                ClickToPayLogger.logLifecycle(
+                  ~event=CardsUnavailable({provider: VisaUctp, code: reason}),
+                  ~message=`Maximum getCard call attempts reached (ACCT_INACCESSIBLE) - ${reason}`,
+                )
                 setClickToPayConfig(prev => {
                   ...prev,
                   otpError: "ACCT_INACCESSIBLE",

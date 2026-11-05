@@ -333,19 +333,29 @@ let make = (
               publishableKey->String.startsWith("pk_prd_")
                 ? "https://tpgw.trustpay.eu/js/v1.js"
                 : "https://test-tpgw.trustpay.eu/js/v1.js"
+            let logTrustPayScript = (~outcome: SharedLoggerTypes.outcome, ~severity) =>
+              LoggerRuntime.emit(
+                ~category=Resource,
+                ~spec=SharedLoggerEvent.spec(SdkLogger.TrustpayScript, ~action=Load, ~outcome),
+                ~severity,
+                ~data=[("url", trustPayScriptURL->JSON.Encode.string)],
+              )
             let trustPayScript = Window.createElement("script")
+            logTrustPayScript(~outcome=Started, ~severity=Info)
             mountedIframeRef->Window.iframePostMessage(
               [("trustPayScriptStatus", "loading"->JSON.Encode.string)]->Dict.fromArray,
               ~targetOrigin=sdkOrigin,
             )
             trustPayScript->Window.elementSrc(trustPayScriptURL)
             trustPayScript->Window.elementOnerror(_ => {
+              logTrustPayScript(~outcome=Failed, ~severity=Error)
               mountedIframeRef->Window.iframePostMessage(
                 [("trustPayScriptStatus", "failed"->JSON.Encode.string)]->Dict.fromArray,
                 ~targetOrigin=sdkOrigin,
               )
             })
             trustPayScript->Window.elementOnload(_ => {
+              logTrustPayScript(~outcome=Done, ~severity=Info)
               mountedIframeRef->Window.iframePostMessage(
                 [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
                 ~targetOrigin=sdkOrigin,
