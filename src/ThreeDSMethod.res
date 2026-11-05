@@ -2,6 +2,7 @@ open Utils
 @react.component
 let make = () => {
   let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
+
   let stateMetadataRef = React.useRef(Dict.make()->JSON.Encode.object)
   let consumePostMessageForThreeDsMethodCompletionRef = React.useRef(false)
   let threeDsUrlRef = React.useRef("")
@@ -16,7 +17,7 @@ let make = () => {
   let (isStartTimeout, setIsStartTimeout) = React.useState(_ => false)
   let (isStartPolling, setIsStartPolling) = React.useState(_ => false)
 
-  let handleIframeContentLoaded = (~inferred=false) => {
+  let handleIframeContentLoaded = () => {
     stateMetadataRef.current
     ->Utils.getDictFromJson
     ->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
@@ -26,7 +27,6 @@ let make = () => {
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
       isThreeDSMethodCompletionFired.current = true
-      setIsStartTimeout(_ => false)
 
       // Let the parent replace this frame in one transition. Closing it first
       // can leave the authentication message without a source across sites.
@@ -81,22 +81,22 @@ let make = () => {
             ->Utils.getString("type", "")
 
           if errorName === "SecurityError" {
-            handleIframeContentLoaded(~inferred=true)
+            handleIframeContentLoaded()
           }
         }
       }
     }
   }
 
-  let handleOnError = () => {
+  let handleOnError = _value => {
+    stateMetadataRef.current
+    ->Utils.getDictFromJson
+    ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
+
     let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
     let iframeId = metadataDict->getString("iframeId", "")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
-      stateMetadataRef.current
-      ->Utils.getDictFromJson
-      ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
-
       isThreeDSMethodCompletionFired.current = true
 
       messageParentWindow([
@@ -169,7 +169,7 @@ let make = () => {
   React.useEffect(() => {
     if isStartTimeout {
       let timeoutId = setTimeout(() => {
-        handleOnError()
+        handleOnError("Timeout while waiting for ThreeDS Method completion")
       }, 15000) // 15 seconds timeout
 
       Some(
@@ -238,14 +238,17 @@ let make = () => {
                 setIsStartTimeout(_ => true)
                 form.submit()
               } catch {
-              | _ => handleOnError()
+              | err => {
+                  let exceptionMessage = err->Utils.formatException->JSON.stringify
+                  handleOnError(exceptionMessage)
+                }
               }
             }
-          | None => handleOnError()
+          | None => handleOnError("Unable to Locate threeDsInvisibleDiv")
           }
         }
       } catch {
-      | exn => ()
+      | _err => ()
       }
 
       if consumePostMessageForThreeDsMethodCompletionRef.current && threeDsUrlRef.current !== "" {
@@ -283,7 +286,7 @@ let make = () => {
       ref={iframeRef->ReactDOM.Ref.domRef}
       style={outline: "none"}
       onLoad={handleOnLoad}
-      onError={_ => handleOnError()}
+      onError={_ => handleOnError("ThreeDS Method Iframe Load Error")}
     />
   </>
 }
