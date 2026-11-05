@@ -17,14 +17,13 @@ let make = () => {
   let (isStartPolling, setIsStartPolling) = React.useState(_ => false)
 
   let handleIframeContentLoaded = (~inferred=false) => {
-    stateMetadataRef.current
-    ->Utils.getDictFromJson
-    ->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
-
     let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
     let iframeId = metadataDict->getString("iframeId", "")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
+      stateMetadataRef.current
+      ->Utils.getDictFromJson
+      ->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
       SdkLogger.logLifecycle(
         ~event=SdkLogger.ThreeDsMethodCompleted,
         ~details=[("inferred", inferred->JSON.Encode.bool)],
@@ -98,9 +97,8 @@ let make = () => {
     let metadataDict = stateMetadataRef.current->JSON.Decode.object->Option.getOr(Dict.make())
     let iframeId = metadataDict->getString("iframeId", "")
 
-    SdkLogger.logLifecycle(~event, ~paymentMethod=Card, ~exn?)
-
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
+      SdkLogger.logLifecycle(~event, ~paymentMethod=Card, ~exn?)
       stateMetadataRef.current
       ->Utils.getDictFromJson
       ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
@@ -146,7 +144,7 @@ let make = () => {
 
         if errorName === "SecurityError" {
           setIsClearInterval(_ => true)
-          handleIframeContentLoaded()
+          handleIframeContentLoaded(~inferred=true)
         }
       }
     } else {
