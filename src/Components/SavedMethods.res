@@ -436,49 +436,57 @@ let make = (
           ~orderId=clientSecret->Option.getOr(""),
         )
         ->then(resp => {
-          let dict = resp.payload->Utils.getDictFromJson
+          if resp.status === ClickToPayHelpers.COMPLETE {
+            let dict = resp.payload->Utils.getDictFromJson
 
-          let clickToPayBody = switch clickToPayProvider {
-          | MASTERCARD => {
-              let headers = dict->Utils.getDictFromDict("headers")
-              let merchantTransactionId = headers->Utils.getString("merchant-transaction-id", "")
-              let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
-              let correlationId =
-                dict
-                ->Utils.getDictFromDict("checkoutResponseData")
-                ->Utils.getString("srcCorrelationId", "")
+            let clickToPayBody = switch clickToPayProvider {
+            | MASTERCARD => {
+                let headers = dict->Utils.getDictFromDict("headers")
+                let merchantTransactionId = headers->Utils.getString("merchant-transaction-id", "")
+                let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
+                let correlationId =
+                  dict
+                  ->Utils.getDictFromDict("checkoutResponseData")
+                  ->Utils.getString("srcCorrelationId", "")
 
-              PaymentBody.mastercardClickToPayBody(
-                ~merchantTransactionId,
-                ~correlationId,
-                ~xSrcFlowId,
+                PaymentBody.mastercardClickToPayBody(
+                  ~merchantTransactionId,
+                  ~correlationId,
+                  ~xSrcFlowId,
+                )
+              }
+            | VISA =>
+              PaymentBody.visaClickToPayBody(
+                ~email=clickToPayConfig.email,
+                ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
               )
+            | NONE => []
             }
-          | VISA =>
-            PaymentBody.visaClickToPayBody(
-              ~email=clickToPayConfig.email,
-              ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
-            )
-          | NONE => []
-          }
 
-          intent(
-            ~bodyArr=clickToPayBody
-            ->Array.concat(installmentBody)
-            ->Array.concat(offerDetailsBody)
-            ->mergeAndFlattenToTuples(requiredFieldsBody),
-            ~confirmParam=confirm.confirmParams,
-            ~handleUserError=false,
-            ~manualRetry=isManualRetryEnabled,
-          )
+            intent(
+              ~bodyArr=clickToPayBody
+                ->Array.concat(installmentBody)
+                ->Array.concat(offerDetailsBody)
+                ->mergeAndFlattenToTuples(requiredFieldsBody),
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+            )
+          } else {
+            postFailedSubmitResponse(
+              ~errortype=resp.status === ClickToPayHelpers.CANCEL ? "payment_cancelled" : "server_error",
+              ~message="Click to Pay checkout did not complete",
+            )
+          }
           resolve(resp)
         })
-        ->catch(_ =>
+        ->catch(_ => {
+          postFailedSubmitResponse(~errortype="server_error", ~message="Click to Pay checkout failed")
           resolve({
             ClickToPayHelpers.status: ERROR,
             payload: JSON.Encode.null,
           })
-        )
+        })
         ->ignore
       } else if completeForSubmit && confirm.confirmTimestamp >= confirm.readyTimestamp {
         switch customerMethod.paymentMethodType {

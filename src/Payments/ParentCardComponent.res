@@ -691,10 +691,23 @@ let make = (
     let cvcNumber = rawCardData->getString("cvcNumber", "")
     let {clickToPayProvider} = clickToPayConfig
     ClickToPayHelpers.handleOpenClickToPayWindow()
+    let failCheckout = (~provider, ~exn=?, ~message="Click to Pay checkout failed") => {
+      ClickToPayLogger.logLifecycle(~event=CheckoutFailed({provider: provider}), ~exn?, ~message)
+      ClickToPayHelpers.handleCloseClickToPayWindow()
+      postFailedSubmitResponse(~errortype="server_error", ~message)
+    }
+    let settleCheckout = status => {
+      let message = status === ClickToPayHelpers.CANCEL
+        ? "Click to Pay checkout cancelled"
+        : "Click to Pay checkout failed"
+      postFailedSubmitResponse(
+        ~errortype=status === ClickToPayHelpers.CANCEL ? "payment_cancelled" : "server_error",
+        ~message,
+      )
+    }
 
     switch clickToPayProvider {
     | MASTERCARD =>
-      try {
         (
           async () => {
             try {
@@ -719,36 +732,29 @@ let make = (
                   ~clickToPayProvider,
                   ~clickToPayToken=clickToPayConfig.clickToPayToken,
                 )
-                let responseDict = response.payload->getDictFromJson
-                let headers = responseDict->getDictFromDict("headers")
-                let checkoutResponseData = responseDict->getDictFromDict("checkoutResponseData")
-                confirmBody(
-                  PaymentBody.mastercardClickToPayBody(
-                    ~merchantTransactionId=headers->getString("merchant-transaction-id", ""),
-                    ~correlationId=checkoutResponseData->getString("srcCorrelationId", ""),
-                    ~xSrcFlowId=headers->getString("x-src-cx-flow-id", ""),
-                  ),
-                  ~confirmParams,
-                  ~includeAcceptance=false,
-                )
-              | Error(err) =>
-                ClickToPayLogger.logLifecycle(
-                  ~event=CheckoutFailed({provider: MastercardUctp}),
-                  ~exn=err,
-                )
+                if response.status === ClickToPayHelpers.COMPLETE {
+                  let responseDict = response.payload->getDictFromJson
+                  let headers = responseDict->getDictFromDict("headers")
+                  let checkoutResponseData = responseDict->getDictFromDict("checkoutResponseData")
+                  confirmBody(
+                    PaymentBody.mastercardClickToPayBody(
+                      ~merchantTransactionId=headers->getString("merchant-transaction-id", ""),
+                      ~correlationId=checkoutResponseData->getString("srcCorrelationId", ""),
+                      ~xSrcFlowId=headers->getString("x-src-cx-flow-id", ""),
+                    ),
+                    ~confirmParams,
+                    ~includeAcceptance=false,
+                  )
+                } else {
+                  settleCheckout(response.status)
+                }
+              | Error(err) => failCheckout(~provider=ClickToPayLogger.MastercardUctp, ~exn=err)
               }
             } catch {
-            | err =>
-              ClickToPayLogger.logLifecycle(
-                ~event=CheckoutFailed({provider: MastercardUctp}),
-                ~exn=err,
-              )
+            | err => failCheckout(~provider=ClickToPayLogger.MastercardUctp, ~exn=err)
             }
           }
         )()->ignore
-      } catch {
-      | _ => ()
-      }
     | VISA =>
       let payload = [
         convertKeyValueToJsonStringPair(
@@ -765,10 +771,13 @@ let make = (
 
       (
         async () => {
-          let encryptedCard = await cardPayload
-          ->JSON.Encode.object
-          ->ClickToPayCardEncryption.getEncryptedCard
           try {
+            let encryptedCard = await cardPayload
+            ->JSON.Encode.object
+            ->ClickToPayCardEncryption.getEncryptedCard
+            if encryptedCard === "" {
+              raise(JsExn.anyToExnInternal("Visa Click to Pay card encryption failed"))
+            }
             let response = await ClickToPayHelpers.handleProceedToPay(
               ~visaEncryptedCard=encryptedCard,
               ~isCheckoutWithNewCard=true,
@@ -784,22 +793,25 @@ let make = (
               ~orderId=clientSecret->Option.getOr(""),
               ~fullName=fullName.value,
             )
-            let responseDict = response.payload->getDictFromJson
-            confirmBody(
-              PaymentBody.visaClickToPayBody(
-                ~email=clickToPayConfig.email,
-                ~encryptedPayload=responseDict->getString("checkoutResponse", ""),
-              ),
-              ~confirmParams,
-              ~includeAcceptance=false,
-            )
+            if response.status === ClickToPayHelpers.COMPLETE {
+              let responseDict = response.payload->getDictFromJson
+              confirmBody(
+                PaymentBody.visaClickToPayBody(
+                  ~email=clickToPayConfig.email,
+                  ~encryptedPayload=responseDict->getString("checkoutResponse", ""),
+                ),
+                ~confirmParams,
+                ~includeAcceptance=false,
+              )
+            } else {
+              settleCheckout(response.status)
+            }
           } catch {
-          | err =>
-            ClickToPayLogger.logLifecycle(~event=CheckoutFailed({provider: VisaUctp}), ~exn=err)
+          | err => failCheckout(~provider=ClickToPayLogger.VisaUctp, ~exn=err)
           }
         }
       )()->ignore
-    | NONE => ()
+    | NONE => postFailedSubmitResponse(~errortype="server_error", ~message="Click to Pay provider unavailable")
     }
   }
 
@@ -922,6 +934,11 @@ let make = (
                 confirmBody(vaultBody, ~confirmParams=confirm.confirmParams)
               } else {
                 Console.error("ParentCardComponent: payment token not found in vaultResponse")
+                PaymentMethodSessionLogger.logLifecycle(
+                  ~event=VaultFlowFailed({reason: TokenizationFailed}),
+                  ~message="Payment token not found in vault response",
+                )
+                postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
               }
             } else if dict->Dict.get("vgsTokenEvent")->Option.isSome {
               let vgsCardData = dict->getJsonObjectFromDict("vgsCardData")->getDictFromJson
