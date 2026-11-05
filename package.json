@@ -98,7 +98,7 @@
     "rescript": "^12.3.0",
     "tailwindcss": "^3.1.8",
     "terser-webpack-plugin": "^5.3.10",
-    "webpack": "^5.94.0",
+    "webpack": "^5.101.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^6.1.0",
@@ -125,5 +125,10 @@
     "@eslint/config-array": {
       "minimatch": "^11.0.1"
     }
+  },
+  "resolutions": {
+    "**/@sentry/bundler-plugins/glob": "^14.0.2",
+    "**/eslint/minimatch": "^11.0.1",
+    "**/@eslint/config-array/minimatch": "^11.0.1"
   }
 }
