@@ -1,5 +1,5 @@
 # Stage 1: Install dependencies & build client + server
-FROM node:20 AS builder
+FROM node:24 AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production-ready image
-FROM node:20-slim
+FROM node:24-slim
 
 WORKDIR /app
 
