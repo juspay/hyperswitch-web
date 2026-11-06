@@ -182,6 +182,11 @@ let rec pollRetrievePaymentIntent = (
   ~customPodUri,
   ~isForceSync=false,
   ~sdkAuthorization=None,
+  ~loggerContext: LoggerContext.t={
+    ...LoggerContext.current(),
+    paymentId: Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
+    scoped: true,
+  },
 ) => {
   open Promise
   retrievePaymentIntent(
@@ -212,6 +217,7 @@ let rec pollRetrievePaymentIntent = (
           ~method=dict->getString("payment_method", ""),
           ~methodType=dict->getString("payment_method_type", ""),
         ),
+        ~context=loggerContext,
       )
       resolve(json)
     } else {
@@ -224,6 +230,7 @@ let rec pollRetrievePaymentIntent = (
           ~customPodUri,
           ~isForceSync,
           ~sdkAuthorization,
+          ~loggerContext,
         )
       })
       ->catch(_ => Promise.resolve(JSON.Encode.null))
@@ -238,6 +245,7 @@ let rec pollRetrievePaymentIntent = (
       ~customPodUri,
       ~isForceSync,
       ~sdkAuthorization,
+      ~loggerContext,
     )
   })
 }
@@ -281,6 +289,7 @@ let rec pollStatus = (
   ~count,
   ~returnUrl,
   ~sdkAuthorization,
+  ~loggerContext: LoggerContext.t,
 ) => {
   open Promise
   retrieveStatus(~publishableKey, ~customPodUri, pollId, ~sdkAuthorization)
@@ -291,7 +300,7 @@ let rec pollStatus = (
       if status === "completed" {
         resolve(json)
       } else if count === 0 {
-        SdkLogger.logLifecycle(~event=SdkLogger.PaymentStatusPollExhausted)
+        SdkLogger.logLifecycle(~event=SdkLogger.PaymentStatusPollExhausted, ~context=loggerContext)
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         openUrl(returnUrl)
       } else {
@@ -306,6 +315,7 @@ let rec pollStatus = (
               ~count=count - 1,
               ~returnUrl,
               ~sdkAuthorization,
+              ~loggerContext,
             )->then(
               res => {
                 resolve(res)
@@ -329,6 +339,7 @@ let rec pollStatus = (
       ~count=count - 1,
       ~returnUrl,
       ~sdkAuthorization,
+      ~loggerContext,
     )->then(res => resolve(res))
   })
 }
@@ -391,6 +402,7 @@ let rec intentCall = (
       ~failure?,
       ~paymentMethod?,
       ~context=intentContext,
+      ~source=?isPaymentSession ? Some(LoggerRuntime.Headless) : None,
       ~message?,
     )
   let body = switch fetchMethod {
@@ -788,6 +800,7 @@ let rec intentCall = (
                   ~resolve,
                   ~data,
                   ~loggedPaymentMethod,
+                  ~loggerContext=intentContext,
                 )
               } else if intent.nextAction.type_ === "display_voucher_information" {
                 let voucherData = intent.nextAction.voucher_details->Option.getOr({
@@ -2130,16 +2143,18 @@ let usePostSessionTokens = (
   }
 }
 
-let observeClickToPayApi = (~isPaymentSession, ~event, ~url, ~request) =>
+let observeClickToPayApi = (~isPaymentSession, ~event, ~url, ~request, ~loggerContext=?) =>
   if isPaymentSession {
     ClickToPayLogger.observeApi(~event, ~url, ~request)
   } else {
-    AuthenticationSessionLogger.observeApi(~event, ~url, ~request)
+    AuthenticationSessionLogger.observeApi(~event, ~url, ~request, ~context=?loggerContext)
   }
 
-let fetchClickToPayApi = async (~isPaymentSession, ~event, ~url, ~request, ~failureValue) => {
+let fetchClickToPayApi = async (
+  ~isPaymentSession, ~event, ~url, ~request, ~failureValue, ~loggerContext=?,
+) => {
   try {
-    let response = await observeClickToPayApi(~isPaymentSession, ~event, ~url, ~request)
+    let response = await observeClickToPayApi(~isPaymentSession, ~event, ~url, ~request, ~loggerContext?)
     let data = await response->Fetch.Response.json
     response->Fetch.Response.ok ? data : failureValue(data)
   } catch {
@@ -2159,6 +2174,7 @@ let fetchEnabledAuthnMethodsToken = async (
   ~isPaymentSession=false,
   ~profileId,
   ~authenticationId,
+  ~loggerContext=?,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
     ~apiCallType=FetchEnabledAuthnMethodsToken,
@@ -2180,6 +2196,7 @@ let fetchEnabledAuthnMethodsToken = async (
 
   await fetchClickToPayApi(
     ~isPaymentSession,
+    ~loggerContext?,
     ~event=EnabledAuthnMethodsToken,
     ~url=uri,
     ~failureValue=_ => JSON.Encode.null,
@@ -2204,6 +2221,7 @@ let fetchEligibilityCheck = async (
   ~isPaymentSession=false,
   ~profileId,
   ~authenticationId,
+  ~loggerContext=?,
   ~bodyArr: array<(string, Core__JSON.t)>,
 ) => {
   let uri = APIUtils.generateApiUrlV1(
@@ -2229,6 +2247,7 @@ let fetchEligibilityCheck = async (
 
   await fetchClickToPayApi(
     ~isPaymentSession,
+    ~loggerContext?,
     ~event=EligibilityCheck,
     ~url=uri,
     ~failureValue=_ => JSON.Encode.null,
@@ -2253,6 +2272,7 @@ let fetchAuthenticationSync = async (
   ~isPaymentSession=false,
   ~profileId,
   ~authenticationId,
+  ~loggerContext=?,
   ~merchantId,
   ~bodyArr: array<(string, Core__JSON.t)>,
 ) => {
@@ -2280,6 +2300,7 @@ let fetchAuthenticationSync = async (
 
   await fetchClickToPayApi(
     ~isPaymentSession,
+    ~loggerContext?,
     ~event=AuthenticationSync,
     ~url=uri,
     ~failureValue=error => error,

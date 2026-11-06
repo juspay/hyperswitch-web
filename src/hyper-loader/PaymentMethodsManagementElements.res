@@ -207,11 +207,10 @@ let make = (
         ~event=HyperLoaderLogger.FetchUpdates({surface: PaymentMethodsManagement}),
         ~context=loggerContext,
         ~details=[("implemented", false->JSON.Encode.bool)],
-        ~call=() => (),
+        ~call=() => Promise.make((resolve, _) => {
+          setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
+        }),
       )
-      Promise.make((resolve, _) => {
-        setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
-      })
     }
 
     let createInternal = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {

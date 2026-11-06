@@ -38,13 +38,9 @@ let useHandlePostMessages = (
     None
   }, (complete, empty, paymentType, enabled))
 
-  let sawIncomplete = React.useRef(false)
-
   React.useEffect(() => {
     if enabled {
-      if !complete {
-        sawIncomplete.current = true
-      } else if !wasComplete.current && sawIncomplete.current {
+      if complete && !wasComplete.current {
         SdkLogger.logState(
           ~event=PaymentFormCompleted({savedMethod: savedMethod}),
           ~paymentMethod=?loggedPaymentMethod,
@@ -123,13 +119,12 @@ let useUpdateRedirectionFlags = () => {
   updateRedirectionFlagsAtom
 }
 
-let appRenderedLogged = ref(false)
-
 let useLogAppRendered = (~isRendered) => {
   let launchTime = Jotai.useAtomValue(JotaiAtoms.launchTime)
+  let appRenderedLogged = React.useRef(false)
   React.useEffect(() => {
-    if isRendered && !appRenderedLogged.contents {
-      appRenderedLogged := true
+    if isRendered && !appRenderedLogged.current {
+      appRenderedLogged.current = true
       SdkLogger.logLifecycle(
         ~event=AppRendered,
         ~durationMs=?launchTime > 0.0 ? Some(Date.now() -. launchTime) : None,

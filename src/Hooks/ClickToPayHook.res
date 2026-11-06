@@ -65,9 +65,12 @@ let useClickToPay = (
       | SUCCESS => {
           let cards = switch cardsResult.profiles {
           | Some(profilesArray) => {
-              let allCards = profilesArray->Array.flatMap(profile => profile.maskedCards)
+              let firstProfileCards = switch profilesArray[0] {
+              | Some(profile) => Some(profile.maskedCards)
+              | None => None
+              }
               let brandCount = brand =>
-                allCards
+                firstProfileCards->Option.getOr([])
                 ->Array.filter(card =>
                   card.paymentCardDescriptor->String.toLowerCase->String.includes(brand)
                 )
@@ -80,10 +83,7 @@ let useClickToPay = (
                   mastercard: brandCount("mastercard"),
                 }),
               )
-              switch profilesArray[0] {
-              | Some(profile) => Some(profile.maskedCards)
-              | None => None
-              }
+              firstProfileCards
             }
           | None => {
               ClickToPayLogger.logLifecycle(

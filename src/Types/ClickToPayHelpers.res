@@ -550,7 +550,7 @@ let checkoutWithNewCard = async (payload: checkoutWithNewCardPayload) => {
 @set external setOnload: (Dom.element, unit => unit) => unit = "onload"
 @set external setOnError: (Dom.element, unit => unit) => unit = "onerror"
 
-let loadClickToPayScripts = () =>
+let loadClickToPayScripts = (~logResources=false) =>
   Promise.make((clickToPayScriptsPromiseResolve, _) => {
     let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
     let linkSelector = `link[href="${srcUiKitCssHref}"]`
@@ -558,11 +558,20 @@ let loadClickToPayScripts = () =>
     let srcUiKitScriptPromise = Promise.make((scriptPromiseResolve, _) => {
       switch querySelector(scriptSelector)->Nullable.toOption {
       | None => {
-          let script = createElement("script")
-          script->setType("module")
-          script->setSrc(srcUiKitScriptSrc)
-          script->setOnload(scriptPromiseResolve)
-          appendChild(script)
+          if logResources {
+            ClickToPayLogger.observeResource(
+              ~event=UiKitScript,
+              ~url=srcUiKitScriptSrc,
+              ~attributes=[("type", "module")],
+              ~onLoad=scriptPromiseResolve,
+            )
+          } else {
+            let script = createElement("script")
+            script->setType("module")
+            script->setSrc(srcUiKitScriptSrc)
+            script->setOnload(scriptPromiseResolve)
+            appendChild(script)
+          }
         }
       | Some(_) => scriptPromiseResolve()
       }
@@ -571,11 +580,19 @@ let loadClickToPayScripts = () =>
     let srcUiKitCssPromise = Promise.make((cssPromiseResolve, _) => {
       switch querySelector(linkSelector)->Nullable.toOption {
       | None => {
-          let link = createElement("link")
-          link->setRel("stylesheet")
-          link->setHref(srcUiKitCssHref)
-          link->setOnload(cssPromiseResolve)
-          appendChild(link)
+          if logResources {
+            ClickToPayLogger.observeResource(
+              ~event=UiKitStylesheet,
+              ~url=srcUiKitCssHref,
+              ~onLoad=cssPromiseResolve,
+            )
+          } else {
+            let link = createElement("link")
+            link->setRel("stylesheet")
+            link->setHref(srcUiKitCssHref)
+            link->setOnload(cssPromiseResolve)
+            appendChild(link)
+          }
         }
       | Some(_) => cssPromiseResolve()
       }
@@ -864,6 +881,7 @@ let loadVisaScript = (
   onLoadCallback,
   onErrorCallback,
   ~authenticationSession=false,
+  ~loggerContext: option<LoggerContext.t>=?,
 ) => {
   let cardBrands = clickToPayToken.cardBrands->Array.join(",")
   let scriptSrc = GlobalVars.isProd
@@ -872,6 +890,7 @@ let loadVisaScript = (
   if authenticationSession {
     AuthenticationSessionLogger.observeResource(
       ~event=VisaSdkScript,
+      ~context=?loggerContext,
       ~url=scriptSrc,
       ~matchQuery=true,
       ~onLoad=onLoadCallback,

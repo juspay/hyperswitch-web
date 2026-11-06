@@ -465,13 +465,13 @@ let make = (
       )
 
     let fetchUpdates = () => {
-      HyperLoaderLogger.logMerchantCall(
+      HyperLoaderLogger.observeMerchantCall(
         ~event=FetchUpdates({surface: Elements}),
         ~details=[("implemented", false->JSON.Encode.bool)],
+        ~call=() => Promise.make((resolve, _) => {
+          setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
+        }),
       )
-      Promise.make((resolve, _) => {
-        setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
-      })
     }
 
     let updateIntent = async (callback: unit => promise<JSON.t>) => {
@@ -1098,6 +1098,10 @@ let make = (
               ~count,
               ~returnUrl=url,
               ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
+              ~loggerContext={...LoggerContext.current(), paymentId: Utils.getPaymentIdOrExtractFromSdkAuth(
+                ~clientSecret=clientSecretRef.contents,
+                ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
+              ), scoped: true},
             )
             ->then(_ => {
               PaymentHelpers.retrievePaymentIntent(
