@@ -31,6 +31,16 @@ let useClickToPay = (
       isReady: Some(false),
     })
 
+  let setVisaComponentState = view => {
+    ClickToPayLogger.logState(
+      ~event=ClickToPayViewChanged({view: view->WebLoggerUtils.variantName}),
+    )
+    setClickToPayConfig(prev => {
+      ...prev,
+      visaComponentState: view,
+    })
+  }
+
   let getVisaCards: (
     ~identityValue: string,
     ~otp: string,
@@ -54,10 +64,26 @@ let useClickToPay = (
       switch cardsResult.actionCode {
       | SUCCESS => {
           let cards = switch cardsResult.profiles {
-          | Some(profilesArray) =>
-            switch profilesArray[0] {
-            | Some(profile) => Some(profile.maskedCards)
-            | None => None
+          | Some(profilesArray) => {
+              let allCards = profilesArray->Array.flatMap(profile => profile.maskedCards)
+              let brandCount = brand =>
+                allCards
+                ->Array.filter(card =>
+                  card.paymentCardDescriptor->String.toLowerCase->String.includes(brand)
+                )
+                ->Array.length
+              ClickToPayLogger.logLifecycle(
+                ~event=CardsListed({
+                  provider: VisaUctp,
+                  actionCode: SUCCESS->WebLoggerUtils.variantName,
+                  visa: brandCount("visa"),
+                  mastercard: brandCount("mastercard"),
+                }),
+              )
+              switch profilesArray[0] {
+              | Some(profile) => Some(profile.maskedCards)
+              | None => None
+              }
             }
           | None => None
           }
@@ -91,16 +117,19 @@ let useClickToPay = (
             | Some(reason) =>
               switch reason {
               | "VALIDATION_DATA_INVALID" =>
+                ClickToPayLogger.logLifecycle(~event=OtpRejected({provider: VisaUctp}))
                 setClickToPayConfig(prev => {
                   ...prev,
                   otpError: "VALIDATION_DATA_INVALID",
                 })
               | "ACCT_INACCESSIBLE" =>
+                ClickToPayLogger.logLifecycle(~event=CardsUnavailable({provider: VisaUctp, code: reason}))
                 setClickToPayConfig(prev => {
                   ...prev,
                   otpError: "ACCT_INACCESSIBLE",
                 })
               | _ =>
+                ClickToPayLogger.logLifecycle(~event=CardsUnavailable({provider: VisaUctp, code: reason}))
                 setClickToPayConfig(prev => {
                   ...prev,
                   otpError: "NONE",
@@ -123,10 +152,22 @@ let useClickToPay = (
             ...prev,
             visaComponentState: NONE,
           })
+          ClickToPayLogger.logLifecycle(
+            ~event=CardsUnavailable({
+              provider: VisaUctp,
+              code: cardsResult.error
+              ->Option.flatMap(err => err.reason)
+              ->Option.getOr(cardsResult.actionCode->WebLoggerUtils.variantName),
+            }),
+          )
         }
       }
     } catch {
-    | _ =>
+    | exn =>
+      ClickToPayLogger.logLifecycle(
+        ~event=CardsUnavailable({provider: VisaUctp, code: "processing_exception"}),
+        ~exn,
+      )
       setClickToPayNotReady()
     }
   }
@@ -137,19 +178,21 @@ let useClickToPay = (
       | Some(token) => {
           let initConfig = getVisaInitConfig(token, clientSecret)
 
-          setClickToPayConfig(prev => {
-            ...prev,
-            visaComponentState: CARDS_LOADING,
-          })
-          let _ = await vsdk.initialize(initConfig)
+          setVisaComponentState(CARDS_LOADING)
+          let _ = await ClickToPayLogger.observeFunction(
+            ~event=Initialize({provider: VisaUctp}),
+            ~call=() => vsdk.initialize(initConfig),
+          )
+          ClickToPayLogger.logLifecycle(~event=ProviderReady({provider: VisaUctp}))
           let _ = await getVisaCards(~identityValue=email, ~otp="", ~identityType=EMAIL_ADDRESS)
         }
       | None => ()
       }
     } catch {
-    | _ =>
+    | err =>
       setClickToPayNotReady()
       closeComponentIfSavedMethodsAreEmpty()
+      ClickToPayLogger.logLifecycle(~event=ProviderUnavailable({provider: VisaUctp}), ~exn=err)
     }
   }
 
@@ -201,7 +244,12 @@ let useClickToPay = (
       | None => setClickToPayNotReady()
       }
     } catch {
-    | _ =>
+    | exn =>
+      ClickToPayLogger.logLifecycle(
+        ~event=ProviderUnavailable({provider: VisaUctp}),
+        ~exn,
+        ~message="Exception while injecting Click to Pay UI or Visa scripts",
+      )
       setClickToPayNotReady()
     }
   }

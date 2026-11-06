@@ -13,6 +13,13 @@ let recognitionTokenCookieName = "__mastercard_click_to_pay"
 
 type ctpProviderType = VISA | MASTERCARD | NONE
 
+let loggerProviderOfCtpProvider = provider =>
+  switch provider {
+  | VISA => Some(ClickToPayLoggerEvents.VisaUctp)
+  | MASTERCARD => Some(ClickToPayLoggerEvents.MastercardUctp)
+  | NONE => None
+  }
+
 type element = {
   mutable innerHTML: string,
   appendChild: Window.element => unit,
@@ -334,20 +341,29 @@ let initializeMastercardCheckout = (clickToPayToken: clickToPayToken) => {
 
       // Add recognition token if exists
       let params = switch recognitionToken->Nullable.toOption {
-      | Some(token) => {...params, recognitionToken: token}
+      | Some(token) => {
+          ClickToPayLogger.logLifecycle(~event=RecognitionTokenFound({provider: MastercardUctp}))
+          {...params, recognitionToken: token}
+        }
       | None => params
       }
 
       try {
         switch mcCheckoutService.contents {
         | Some(service) =>
-          service
-          ->init(params)
+          ClickToPayLogger.observeFunction(~event=Init({provider: MastercardUctp}), ~call=() =>
+            service->init(params)
+          )
           ->then(resp => {
+            ClickToPayLogger.logLifecycle(~event=ProviderReady({provider: MastercardUctp}))
             resolve(resp)
           })
           ->catch(err => reject(err))
         | None => {
+            ClickToPayLogger.logLifecycle(
+              ~event=ProviderUnavailable({provider: MastercardUctp}),
+              ~message="Mastercard checkout service instance missing; init skipped",
+            )
             reject(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
           }
         }
@@ -356,6 +372,10 @@ let initializeMastercardCheckout = (clickToPayToken: clickToPayToken) => {
       }
     }
   | None => {
+      ClickToPayLogger.logLifecycle(
+        ~event=ProviderUnavailable({provider: MastercardUctp}),
+        ~message="window.MastercardCheckoutServices missing after Mastercard SDK script load",
+      )
       reject(JsExn.anyToExnInternal("MastercardCheckoutServices is not available"))
     }
   }
@@ -365,10 +385,17 @@ let getCards = async () => {
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let cards = await service->getCards()
+        let cards = await ClickToPayLogger.observeFunction(
+          ~event=GetCards({provider: MastercardUctp}),
+          ~call=() => service->getCards(),
+        )
         Ok(cards)
       }
     | None => {
+        ClickToPayLogger.logLifecycle(
+          ~event=ProviderUnavailable({provider: MastercardUctp}),
+          ~message="Mastercard checkout service not initialized; getCards skipped, returning empty list",
+        )
         Ok([])
       }
     }
@@ -398,7 +425,10 @@ let authenticate = async (payload: authenticateInputPayload) => {
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let authentication = await service->authenticate(authenticatePayload)
+        let authentication = await ClickToPayLogger.observeFunction(
+          ~event=Authenticate({provider: MastercardUctp}),
+          ~call=() => service->authenticate(authenticatePayload),
+        )
 
         // Check and set recognition token if present
         let recognitionToken =
@@ -411,6 +441,10 @@ let authenticate = async (payload: authenticateInputPayload) => {
         Ok(authentication)
       }
     | None => {
+        ClickToPayLogger.logLifecycle(
+          ~event=ProviderUnavailable({provider: MastercardUctp}),
+          ~message="Mastercard checkout service not initialized; authenticate skipped",
+        )
         Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
@@ -429,10 +463,17 @@ let checkoutWithCard = async (~windowRef: Types.window, ~srcDigitalCardId: strin
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let checkoutResp = await service->checkoutWithCard(checkoutPayload)
+        let checkoutResp = await ClickToPayLogger.observeFunction(
+          ~event=CheckoutWithCard({provider: MastercardUctp}),
+          ~call=() => service->checkoutWithCard(checkoutPayload),
+        )
         Ok(checkoutResp)
       }
     | None => {
+        ClickToPayLogger.logLifecycle(
+          ~event=ProviderUnavailable({provider: MastercardUctp}),
+          ~message="Mastercard checkout service not initialized; checkoutWithCard skipped",
+        )
         Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
@@ -451,10 +492,17 @@ let encryptCardForClickToPay = async (~cardNumber, ~expiryMonth, ~expiryYear, ~c
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let encryptedCard = await service->encryptCard(card)
+        let encryptedCard = await ClickToPayLogger.observeFunction(
+          ~event=EncryptCard({provider: MastercardUctp}),
+          ~call=() => service->encryptCard(card),
+        )
         Ok(encryptedCard)
       }
     | None => {
+        ClickToPayLogger.logLifecycle(
+          ~event=ProviderUnavailable({provider: MastercardUctp}),
+          ~message="Mastercard checkout service not initialized; encryptCard skipped",
+        )
         Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
@@ -473,10 +521,17 @@ let checkoutWithNewCard = async (payload: checkoutWithNewCardPayload) => {
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let checkoutResp = await service->checkoutWithNewCard(payload->Obj.magic)
+        let checkoutResp = await ClickToPayLogger.observeFunction(
+          ~event=CheckoutWithNewCard({provider: MastercardUctp}),
+          ~call=() => service->checkoutWithNewCard(payload->Obj.magic),
+        )
         Ok(checkoutResp)
       }
     | None => {
+        ClickToPayLogger.logLifecycle(
+          ~event=ProviderUnavailable({provider: MastercardUctp}),
+          ~message="Mastercard checkout service not initialized; checkoutWithNewCard skipped",
+        )
         Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
@@ -630,7 +685,10 @@ let signOut = async () => {
 
     switch mcCheckoutService.contents {
     | Some(service) => {
-        let signOutResp = await service->signOutMastercard
+        let signOutResp = await ClickToPayLogger.observeFunction(
+          ~event=SignOut({provider: MastercardUctp}),
+          ~call=() => service->signOutMastercard,
+        )
         Ok(signOutResp)
       }
     | None => {
@@ -791,49 +849,54 @@ type visaEncryptCardPayload = {
 @val external mastercardDirectSdk: mastercardDirect = "window.SRCSDK_MASTERCARD"
 @new external createVisaDirectSRCIAdapter: unit => visaDirect = "window.vAdapters.VisaSRCI"
 
-let getCardsVisaUnified = (~getCardsConfig) => vsdk.getCards(getCardsConfig)
+let getCardsVisaUnified = (~getCardsConfig) =>
+  ClickToPayLogger.observeFunction(~event=GetCards({provider: VisaUctp}), ~call=() =>
+    vsdk.getCards(getCardsConfig)
+  )
 
-let signOutVisaUnified = () => vsdk.unbindAppInstance()
+let signOutVisaUnified = () =>
+  ClickToPayLogger.observeFunction(~event=UnbindAppInstance({provider: VisaUctp}), ~call=() =>
+    vsdk.unbindAppInstance()
+  )
 
-let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorCallback) => {
+let loadVisaScript = (
+  clickToPayToken: clickToPayToken,
+  onLoadCallback,
+  onErrorCallback,
+  ~authenticationSession=false,
+) => {
   let cardBrands = clickToPayToken.cardBrands->Array.join(",")
   let scriptSrc = GlobalVars.isProd
     ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
     : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
-  let script = createElement("script")
-  script->setType("text/javascript")
-  script->setSrc(scriptSrc)
-  script->setOnload(onLoadCallback)
-  script->setOnError(onErrorCallback)
-  body->Window.appendChild(script)
+  if authenticationSession {
+    AuthenticationSessionLogger.observeResource(
+      ~event=VisaSdkScript,
+      ~url=scriptSrc,
+      ~onLoad=onLoadCallback,
+      ~onError=_ => onErrorCallback(),
+    )
+  } else {
+    ClickToPayLogger.observeResource(
+      ~event=VisaSdkScript,
+      ~url=scriptSrc,
+      ~onLoad=onLoadCallback,
+      ~onError=_ => onErrorCallback(),
+    )
+  }
 }
 
 let loadClickToPayUIScripts = (scriptLoadedCallback, scriptErrorCallback) => {
-  let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
-  let linkSelector = `link[href="${srcUiKitCssHref}"]`
-
   // Add script if not exists
-  switch querySelector(scriptSelector)->Nullable.toOption {
-  | None => {
-      let script = createElement("script")
-      script->setType("module")
-      script->setSrc(srcUiKitScriptSrc)
-      appendChild(script)
-      script->setOnload(() => scriptLoadedCallback())
-      script->setOnError(() => scriptErrorCallback())
-    }
-  | Some(_) => ()
-  }
+  ClickToPayLogger.observeResource(
+    ~event=UiKitScript,
+    ~url=srcUiKitScriptSrc,
+    ~attributes=[("type", "module")],
+    ~onLoad=scriptLoadedCallback,
+    ~onError=_ => scriptErrorCallback(),
+  )
   // Add link if not exists
-  switch querySelector(linkSelector)->Nullable.toOption {
-  | None => {
-      let link = createElement("link")
-      link->setRel("stylesheet")
-      link->setHref(srcUiKitCssHref)
-      appendChild(link)
-    }
-  | Some(_) => ()
-  }
+  ClickToPayLogger.observeResource(~event=UiKitStylesheet, ~url=srcUiKitCssHref)
 }
 
 let formatOrderId = orderId =>
@@ -972,7 +1035,9 @@ let checkoutVisaUnified = async (
       }
     }
   }
-  await vsdk.checkout(checkoutConfig)
+  await ClickToPayLogger.observeFunction(~event=Checkout({provider: VisaUctp}), ~call=() =>
+    vsdk.checkout(checkoutConfig)
+  )
 }
 
 let closeWindow = (status, payload: JSON.t) => {
@@ -1043,23 +1108,48 @@ let handleCheckoutWithCard = async (
             let actionCode = checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
             switch actionCode {
             | "SUCCESS" => {
+                ClickToPayLogger.logLifecycle(~event=CheckoutCompleted({provider: VisaUctp}))
                 closeWindow(COMPLETE, checkoutResp)
               }
+            | "CHANGE_CARD"
+            | "SWITCH_CONSUMER" => {
+                ClickToPayLogger.logLifecycle(
+                  ~event=CheckoutCancelled({provider: VisaUctp, code: actionCode}),
+                )
+                closeWindow(ERROR, JSON.Encode.null)
+              }
             | _ => {
+                ClickToPayLogger.logLifecycle(
+                  ~event=CheckoutDeclined({provider: VisaUctp, code: actionCode}),
+                )
                 closeWindow(ERROR, JSON.Encode.null)
               }
             }
           }
-        | None => closeWindow(ERROR, JSON.Encode.null)
+        | None => {
+            ClickToPayLogger.logLifecycle(
+              ~event=CheckoutFailed({provider: VisaUctp}),
+              ~message="Click to Pay token missing; Visa checkout not attempted",
+            )
+            closeWindow(ERROR, JSON.Encode.null)
+          }
         }
       } catch {
-      | _ => {
+      | exn => {
+          ClickToPayLogger.logLifecycle(~event=CheckoutFailed({provider: VisaUctp}), ~exn)
           closeWindow(ERROR, JSON.Encode.null)
         }
       }
     | NONE => closeWindow(ERROR, JSON.Encode.null)
     }
-  | None => closeWindow(ERROR, JSON.Encode.null)
+  | None => {
+      clickToPayProvider
+      ->loggerProviderOfCtpProvider
+      ->Option.forEach(provider =>
+        ClickToPayLogger.logLifecycle(~event=PopupBlocked({provider: provider}))
+      )
+      closeWindow(ERROR, JSON.Encode.null)
+    }
   }
 }
 
@@ -1162,23 +1252,46 @@ let handleProceedToPay = async (
                 checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
               switch actionCode {
               | "SUCCESS" => {
+                  ClickToPayLogger.logLifecycle(~event=CheckoutCompleted({provider: VisaUctp}))
                   closeWindow(COMPLETE, checkoutResp)
                 }
+              | "CHANGE_CARD"
+              | "SWITCH_CONSUMER" => {
+                  ClickToPayLogger.logLifecycle(
+                    ~event=CheckoutCancelled({provider: VisaUctp, code: actionCode}),
+                  )
+                  closeWindow(ERROR, JSON.Encode.null)
+                }
               | _ => {
+                  ClickToPayLogger.logLifecycle(
+                    ~event=CheckoutDeclined({provider: VisaUctp, code: actionCode}),
+                  )
                   closeWindow(ERROR, JSON.Encode.null)
                 }
               }
             }
-          | None => closeWindow(ERROR, JSON.Encode.null)
+          | None => {
+              ClickToPayLogger.logLifecycle(
+                ~event=CheckoutFailed({provider: VisaUctp}),
+                ~message="Click to Pay token missing; Visa checkout not attempted",
+              )
+              closeWindow(ERROR, JSON.Encode.null)
+            }
           }
         } catch {
-        | _ => {
+        | exn => {
+            ClickToPayLogger.logLifecycle(~event=CheckoutFailed({provider: VisaUctp}), ~exn)
             closeWindow(ERROR, JSON.Encode.null)
           }
         }
       | NONE => closeWindow(ERROR, JSON.Encode.null)
       }
     | None => {
+        clickToPayProvider
+        ->loggerProviderOfCtpProvider
+        ->Option.forEach(provider =>
+          ClickToPayLogger.logLifecycle(~event=PopupBlocked({provider: provider}))
+        )
         closeWindow(ERROR, JSON.Encode.null)
       }
     }
@@ -1204,6 +1317,17 @@ let handleProceedToPay = async (
       )
     }
   } catch {
-  | _ => closeWindow(ERROR, JSON.Encode.null)
+  | exn => {
+      clickToPayProvider
+      ->loggerProviderOfCtpProvider
+      ->Option.forEach(provider =>
+        ClickToPayLogger.logLifecycle(
+          ~event=CheckoutFailed({provider: provider}),
+          ~exn,
+          ~message="Unhandled exception while proceeding to pay",
+        )
+      )
+      closeWindow(ERROR, JSON.Encode.null)
+    }
   }
 }
