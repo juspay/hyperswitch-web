@@ -12,7 +12,7 @@
     "@rescript/react": "^0.15.0",
     "@rescript/runtime": "^12.3.0",
     "@sentry/react": "^9.9.0",
-    "@sentry/webpack-plugin": "^3.2.2",
+    "@sentry/webpack-plugin": "^11.10.0",
     "final-form": "^5.0.0",
     "jotai": "^2.0.0",
     "react": "^19.2.8",
@@ -84,13 +84,12 @@
     "autoprefixer": "^10.4.8",
     "babel-loader": "^10.0.0",
     "babel-plugin-add-react-displayname": "^0.0.5",
-    "copy-webpack-plugin": "^13.0.0",
+    "copy-webpack-plugin": "^14.0.0",
     "cross-env": "^7.0.3",
     "css-loader": "^7.1.2",
-    "cz-conventional-changelog": "^3.3.0",
-    "eslint": "^9.29.0",
+    "eslint": "^10.14.0",
     "eslint-plugin-promise": "^7.2.1",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "html-webpack-plugin": "^5.6.0",
     "husky": "^9.1.7",
     "mini-css-extract-plugin": "^2.9.2",
@@ -99,10 +98,10 @@
     "rescript": "^12.3.0",
     "tailwindcss": "^3.1.8",
     "terser-webpack-plugin": "^5.3.10",
-    "webpack": "^5.94.0",
+    "webpack": "^5.101.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1",
-    "webpack-dev-server": "^5.1.0",
+    "webpack-dev-server": "^6.1.0",
     "webpack-subresource-integrity": "^5.2.0-rc.1"
   },
   "release": {
@@ -115,5 +114,21 @@
     ],
     "repositoryUrl": "https://github.com/juspay/hyperswitch-web.git"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "overrides": {
+    "@sentry/bundler-plugins": {
+      "glob": "^14.0.2"
+    },
+    "eslint": {
+      "minimatch": "^11.0.1"
+    },
+    "@eslint/config-array": {
+      "minimatch": "^11.0.1"
+    }
+  },
+  "resolutions": {
+    "**/@sentry/bundler-plugins/glob": "^14.0.2",
+    "**/eslint/minimatch": "^11.0.1",
+    "**/@eslint/config-array/minimatch": "^11.0.1"
+  }
 }
