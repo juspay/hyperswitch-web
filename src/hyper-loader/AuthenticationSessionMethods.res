@@ -322,15 +322,17 @@ let makeClickToPaySession = async (
 
         maskedCards.contents->Identity.anyTypeToJson
       | _ =>
-        AuthenticationSessionLogger.logLifecycle(
-          ~event=CardsUnavailable({
-            provider: VisaUctp,
-            code: unavailableCode(
-              ~error=validateCustomerAuthenticationResponse.error,
-              ~actionCode=validateCustomerAuthenticationResponse.actionCode,
-            ),
-          }),
+        let code = unavailableCode(
+          ~error=validateCustomerAuthenticationResponse.error,
+          ~actionCode=validateCustomerAuthenticationResponse.actionCode,
         )
+        if code === "VALIDATION_DATA_INVALID" {
+          AuthenticationSessionLogger.logLifecycle(~event=OtpRejected({provider: VisaUctp}))
+        } else {
+          AuthenticationSessionLogger.logLifecycle(
+            ~event=CardsUnavailable({provider: VisaUctp, code}),
+          )
+        }
         getClickToPayErrorResponse(
           ~error=validateCustomerAuthenticationResponse.error,
           ~defaultErrorMessage=validateCustomerAuthenticationErrorMessage,

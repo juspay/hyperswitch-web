@@ -85,7 +85,17 @@ let useClickToPay = (
               | None => None
               }
             }
-          | None => None
+          | None => {
+              ClickToPayLogger.logLifecycle(
+                ~event=CardsListed({
+                  provider: VisaUctp,
+                  actionCode: SUCCESS->WebLoggerUtils.variantName,
+                  visa: 0,
+                  mastercard: 0,
+                }),
+              )
+              None
+            }
           }
           setClickToPayConfig(prev => {
             ...prev,
