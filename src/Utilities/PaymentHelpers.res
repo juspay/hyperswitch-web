@@ -376,11 +376,12 @@ let rec intentCall = (
     }
   }
 
-  let sdkAuth = sdkAuthorization->Option.map(Utils.getSdkAuthorizationData)
   let intentContext: LoggerContext.t = {
     ...LoggerContext.current(),
     paymentId: Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
-    pmSessionId: sdkAuth->Option.flatMap(auth => auth.pmSessionId)->Option.getOr(""),
+    pmSessionId: sdkAuthorization
+    ->Option.flatMap(auth => SdkAuthorization.value(auth, "payment_method_session_id"))
+    ->Option.getOr(""),
     scoped: true,
   }
   let logIntent = (~event, ~details=?, ~failure=?, ~paymentMethod=?, ~message=?) =>

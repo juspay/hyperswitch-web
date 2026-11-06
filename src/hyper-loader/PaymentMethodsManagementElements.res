@@ -169,6 +169,7 @@ let make = (
     let getElement = componentName =>
       HyperLoaderLogger.observeMerchantCall(
         ~event=HyperLoaderLogger.GetElement({surface: PaymentMethodsManagement}),
+        ~context=loggerContext,
         ~call=() => savedPaymentElement->Dict.get(componentName),
       )
     let updateInternal = newOptions => {
@@ -198,12 +199,15 @@ let make = (
     let update = newOptions =>
       HyperLoaderLogger.observeMerchantCall(
         ~event=HyperLoaderLogger.Update({surface: PaymentMethodsManagement}),
+        ~context=loggerContext,
         ~call=() => updateInternal(newOptions),
       )
     let fetchUpdates = () => {
-      HyperLoaderLogger.logMerchantCall(
+      HyperLoaderLogger.observeMerchantCall(
         ~event=HyperLoaderLogger.FetchUpdates({surface: PaymentMethodsManagement}),
+        ~context=loggerContext,
         ~details=[("implemented", false->JSON.Encode.bool)],
+        ~call=() => (),
       )
       Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
@@ -298,6 +302,7 @@ let make = (
         mountPostMessage,
         ~appearance,
         ~isPaymentManagementElement=true,
+        ~context=loggerContext,
         ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
         ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
         ~isTrustedPaymentMessage,
@@ -309,6 +314,7 @@ let make = (
     let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) =>
       HyperLoaderLogger.observeMerchantCall(
         ~event=HyperLoaderLogger.Create({surface: PaymentMethodsManagement}),
+        ~context=loggerContext,
         ~call=() => createInternal(componentTypeOrOptions, legacyOptions),
       )
     {
@@ -319,6 +325,7 @@ let make = (
       updateIntent: _ =>
         HyperLoaderLogger.observeMerchantCall(
           ~event=HyperLoaderLogger.UpdateIntent({surface: PaymentMethodsManagement}),
+          ~context=loggerContext,
           ~details=[("supported", false->JSON.Encode.bool)],
           ~call=() => Promise.resolve(JSON.Encode.null),
         ),
@@ -328,6 +335,7 @@ let make = (
   | e => {
       Sentry.captureException(e)
       SdkLogger.logCrash(
+        ~context=loggerContext,
         ~origin=EntryPoint,
         ~details=[("entry_point", "payment_management_elements_create"->JSON.Encode.string)],
         ~exn=e,
