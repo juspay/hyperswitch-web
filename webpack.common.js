@@ -129,9 +129,6 @@ const authorizedConnectSources = [
   "https://*.verygoodvault.com",
   "https://eu.playground.klarnaevt.com",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
-  ...(process.env.ENV_LOGGING_URL
-    ? [new URL(process.env.ENV_LOGGING_URL).origin]
-    : []),
   ...localhostSources,
   // Add other trusted sources here
 ];
@@ -145,12 +142,12 @@ const getEnvVariable = (variable, defaultValue) => {
 const sdkEnv = getEnvVariable("sdkEnv", "local");
 const hyperswitchStack = getEnvVariable("HYPERSWITCH_STACK", "");
 const isEUStack = hyperswitchStack === "eu";
+const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const DISABLE_CSP = getEnvVariable("DISABLE_CSP", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
-const logEndpoint = getEnvVariable("ENV_LOGGING_URL", "");
-const enableLogging = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const isPciCompliant = getEnvVariable("IS_PCI_COMPLIANT", "true") === "true";
+const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
 const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
@@ -223,6 +220,11 @@ const confirmEndPoint =
     ? "https://eu.hyperswitch.io/api"
     : `https://${confirmDomain}.hyperswitch.io/api`);
 
+const logEndpoint = envLoggingUrl;
+
+const loggingLevel = "DEBUG";
+const maxLogsPushedPerEventName = 100;
+
 // Function to determine the current environment type
 const getEnvironmentType = (env) => {
   const envType = {
@@ -252,15 +254,17 @@ module.exports = (publicPath = "auto") => {
     sdkUrl,
     backendEndPoint,
     confirmEndPoint,
+    logEndpoint,
     sentryDSN: process.env.SENTRY_DSN,
     sentryScriptUrl: process.env.SENTRY_SCRIPT_URL,
+    enableLogging: ENABLE_LOGGING,
+    loggingLevel,
+    maxLogsPushedPerEventName,
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
     isLocal,
     isPciCompliant,
-    enableLogging,
-    logEndpoint,
   };
 
   const definePluginValues = {
@@ -296,7 +300,7 @@ module.exports = (publicPath = "auto") => {
                 font-src ${authorizedFontSources.join(" ")};
                 connect-src ${authorizedConnectSources.join(
                   " "
-                )} ${backendEndPoint};
+                )} ${logEndpoint} ${backendEndPoint};
       `,
             },
           },
@@ -321,7 +325,7 @@ module.exports = (publicPath = "auto") => {
           font-src ${authorizedFontSources.join(" ")};
           connect-src ${authorizedConnectSources.join(
             " "
-          )} ${backendEndPoint};
+          )} ${logEndpoint} ${backendEndPoint};
           `,
             },
           },
