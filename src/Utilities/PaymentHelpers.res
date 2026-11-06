@@ -376,16 +376,29 @@ let rec intentCall = (
     }
   }
 
-  LoggerContext.setPaymentIdFromCredentials(
-    ~clientSecret,
-    ~sdkAuthorization=?sdkAuthorization->Utils.getNonEmptyOption,
-  )
+  let sdkAuth = sdkAuthorization->Option.map(Utils.getSdkAuthorizationData)
+  let intentContext: LoggerContext.t = {
+    ...LoggerContext.current(),
+    paymentId: Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
+    pmSessionId: sdkAuth->Option.flatMap(auth => auth.pmSessionId)->Option.getOr(""),
+    scoped: true,
+  }
+  let logIntent = (~event, ~details=?, ~failure=?, ~paymentMethod=?, ~message=?) =>
+    SdkLogger.logLifecycle(
+      ~event,
+      ~details?,
+      ~failure?,
+      ~paymentMethod?,
+      ~context=intentContext,
+      ~message?,
+    )
   let body = switch fetchMethod {
   | #GET => None
   | _ => Some(Fetch.Body.string(bodyStr))
   }
   SdkLogger.observeApi(
     ~event=apiEvent,
+    ~context=intentContext,
     ~source=?isPaymentSession ? Some(LoggerRuntime.Headless) : None,
     ~url=uri,
     ~paymentMethod=?isConfirm ? bodyStr->LoggerPaymentMethod.fromRequestBody : None,
@@ -420,7 +433,7 @@ let rec intentCall = (
         Promise.make(
           (resolve, _) => {
             if isConfirm {
-              SdkLogger.logLifecycle(
+              logIntent(
                 ~event=SdkLogger.PaymentRejected,
                 ~failure=data,
                 ~paymentMethod=?bodyStr->LoggerPaymentMethod.fromRequestBody,
@@ -453,7 +466,7 @@ let rec intentCall = (
           (resolve, _) => {
             if counter >= 5 {
               let message = "Something went wrong"
-              SdkLogger.logLifecycle(
+              logIntent(
                 ~event=SdkLogger.PaymentRetriesExhausted({
                   operation: "retrieve",
                   attempts: counter,
@@ -611,6 +624,7 @@ let rec intentCall = (
                   }),
                   ~source=?isPaymentSession ? Some(LoggerRuntime.Headless) : None,
                   ~paymentMethod=?loggedPaymentMethod,
+                  ~context=intentContext,
                 )
                 handleOpenUrl(intent.nextAction.redirectToUrl)
               } else if intent.nextAction.type_ == "redirect_inside_popup" {
@@ -619,6 +633,7 @@ let rec intentCall = (
                 SdkLogger.logLifecycle(
                   ~event=SdkLogger.ThreeDsPopupRequested,
                   ~paymentMethod=?loggedPaymentMethod,
+                  ~context=intentContext,
                 )
                 let metaData = [
                   ("popupUrl", popupUrl->JSON.Encode.string),
@@ -640,7 +655,7 @@ let rec intentCall = (
                 dict->Dict.set("data", data)
                 dict->Dict.set("url", url.href->JSON.Encode.string)
                 if !isPaymentSession {
-                  SdkLogger.logLifecycle(
+                  logIntent(
                     ~event=BankTransferShown,
                     ~paymentMethod=?loggedPaymentMethod,
                   )
@@ -676,7 +691,7 @@ let rec intentCall = (
                     ("border_color", borderColor->JSON.Encode.string),
                   ]->getJsonFromArrayOfJson
                 if !isPaymentSession {
-                  SdkLogger.logLifecycle(~event=QrCodeShown, ~paymentMethod=?loggedPaymentMethod)
+                  logIntent(~event=QrCodeShown, ~paymentMethod=?loggedPaymentMethod)
                   messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `qrData`->JSON.Encode.string),
@@ -715,7 +730,7 @@ let rec intentCall = (
                   ]->Dict.fromArray
 
                 if do3dsMethodCall {
-                  SdkLogger.logLifecycle(
+                  logIntent(
                     ~event=SdkLogger.ThreeDsMethodStarted,
                     ~paymentMethod=?loggedPaymentMethod,
                   )
@@ -726,7 +741,7 @@ let rec intentCall = (
                     ("metadata", metaData->JSON.Encode.object),
                   ])
                 } else {
-                  SdkLogger.logLifecycle(
+                  logIntent(
                     ~event=SdkLogger.ThreeDsMethodSkipped,
                     ~paymentMethod=?loggedPaymentMethod,
                   )
@@ -789,7 +804,7 @@ let rec intentCall = (
                     ("paymentMethodFamily", intentDict->getString("payment_method", "")->JSON.Encode.string),
                     ("payment_intent_data", data),
                   ]->Dict.fromArray
-                SdkLogger.logLifecycle(~event=VoucherShown, ~paymentMethod=?loggedPaymentMethod)
+                logIntent(~event=VoucherShown, ~paymentMethod=?loggedPaymentMethod)
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
                   ("param", `voucherData`->JSON.Encode.string),
@@ -842,7 +857,7 @@ let rec intentCall = (
                     ]
                   }
                 | _ => {
-                    SdkLogger.logLifecycle(
+                    logIntent(
                       ~event=PaymentMethodUnresolved({value: walletName}),
                       ~paymentMethod=?loggedPaymentMethod,
                       ~message="Unhandled wallet in third_party_sdk_session_token next action (status=requires_customer_action)",
@@ -874,7 +889,7 @@ let rec intentCall = (
                   )
                 }
                 let recovered = uri->String.includes("force_sync=true")
-                SdkLogger.logLifecycle(
+                logIntent(
                   ~event=NextActionUnsupported({
                     nextAction: intent.nextAction.type_,
                     recovered,
@@ -927,7 +942,7 @@ let rec intentCall = (
                   }
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => {
-                    SdkLogger.logLifecycle(
+                    logIntent(
                       ~event=PaymentMethodUnresolved({value: walletName}),
                       ~paymentMethod=?loggedPaymentMethod,
                       ~message="Unhandled wallet in third_party_sdk_session_token next action (status=processing)",
@@ -952,12 +967,12 @@ let rec intentCall = (
               }
               switch intent.status {
               | "succeeded" =>
-                SdkLogger.logLifecycle(
+                logIntent(
                   ~event=SdkLogger.PaymentSucceeded(outcome),
                   ~paymentMethod=?loggedPaymentMethod,
                 )
               | "failed" =>
-                SdkLogger.logLifecycle(
+                logIntent(
                   ~event=SdkLogger.PaymentFailed(outcome),
                   ~details=data->PaymentIntentLoggerDetails.intentErrorDetails,
                   ~paymentMethod=?loggedPaymentMethod,
@@ -969,7 +984,7 @@ let rec intentCall = (
               }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else {
-              SdkLogger.logLifecycle(
+              logIntent(
                 ~event=SdkLogger.PaymentStatusUnknown({inferred: false}),
                 ~paymentMethod=?loggedPaymentMethod,
                 ~message="Payment response had empty status; reported confirm_payment_failed",
@@ -1006,7 +1021,7 @@ let rec intentCall = (
         url.searchParams.set("status", "failed")
         if counter >= 5 {
           let message = "Something went wrong"
-          SdkLogger.logLifecycle(
+          logIntent(
             ~event=SdkLogger.PaymentRetriesExhausted({
               operation: "retrieve",
               attempts: counter,

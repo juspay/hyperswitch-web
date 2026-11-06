@@ -14,6 +14,7 @@ let make = (
   ~sdkAuthorization,
   ~analyticsMetadata,
   ~customBackendUrl,
+  ~loggerContext: LoggerContext.t,
 ) => {
   let hyperComponentName = PaymentMethodsManagementElements
   try {
@@ -257,7 +258,7 @@ let make = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-            LoggerContext.sharedContext(),
+            LoggerContext.sharedContext(~context=loggerContext, ()),
             ("customPodUri", customPodUri->JSON.Encode.string),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),

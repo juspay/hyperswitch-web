@@ -204,10 +204,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
     let isReinit = Window.getHyper->Nullable.toOption->Option.isSome && !isForceInit
     let existingSessionId = LoggerContext.current().sessionId
-    let sessionID = switch analyticsInfoDict->getString("sessionID", "") {
-    | "" if isReinit && existingSessionId !== "" => existingSessionId
-    | "" => "hyp_" ++ generateRandomString(8)
-    | provided => provided
+    let sessionID = if isReinit && existingSessionId !== "" {
+      existingSessionId
+    } else {
+      switch analyticsInfoDict->getString("sessionID", "") {
+      | "" => "hyp_" ++ generateRandomString(8)
+      | provided => provided
+      }
     }
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
     HyperLoaderLogger.startSession(~sessionId=sessionID, ~merchantId=publishableKey)
@@ -673,10 +676,18 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
-        LoggerContext.setPaymentIdFromCredentials(~sdkAuthorization=sdkAuthorizationId)
+        let managementContext: LoggerContext.t = {
+          sessionId: sessionID,
+          merchantId: sdkAuthorizationData.publishableKey->Option.getOr(publishableKey),
+          paymentId: sdkAuthorizationData.paymentId->Option.getOr(""),
+          pmSessionId: pmSessionIdVal,
+          authenticationId: "",
+          scoped: true,
+        }
 
         HyperLoaderLogger.observeMerchantCall(
           ~event=HyperLoaderLogger.PaymentMethodsManagementElements({surface: Hyper}),
+          ~context=managementContext,
           ~call=() => PaymentMethodsManagementElements.make(
               pmManagementOptions,
               setIframeRef,
@@ -684,6 +695,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
               ~publishableKey,
               ~pmSessionId={pmSessionIdVal},
               ~sdkAuthorization=sdkAuthorizationId,
+              ~loggerContext=managementContext,
               ~analyticsMetadata,
               ~customBackendUrl=options
               ->Option.getOr(JSON.Encode.null)
