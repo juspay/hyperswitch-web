@@ -196,6 +196,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
           <RenderIf condition={showField(showDetails.address, Country) == Auto}>
             <PaymentDropDownField
               fieldName=localeString.countryLabel
+              fieldKey="country"
               value=country
               className
               setValue=setCountry
@@ -207,6 +208,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               stateNames->Array.length > 0}>
             <PaymentDropDownField
               fieldName=localeString.stateLabel
+              fieldKey="state"
               value=state
               className
               setValue=setState

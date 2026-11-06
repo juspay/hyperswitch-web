@@ -52,10 +52,11 @@ let make = (~sessionObj: SessionsType.token) => {
     ~paymentMethodType,
   )
 
-  let (requiredFields, _, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
   )
+  DynamicFieldsUtils.useLogDynamicFieldsRendered(~fields=requiredFields, ~paymentMethod, ~resolutionContext)
 
   UtilityHooks.useHandlePostMessages(
     ~complete=isCompleted,

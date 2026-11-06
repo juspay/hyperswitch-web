@@ -204,13 +204,18 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
     let isReinit = Window.getHyper->Nullable.toOption->Option.isSome && !isForceInit
     let existingSessionId = LoggerContext.current().sessionId
-    let sessionID = switch analyticsInfoDict->getString("sessionID", "") {
-    | "" if isReinit && existingSessionId !== "" => existingSessionId
-    | "" => "hyp_" ++ generateRandomString(8)
-    | provided => provided
+    let sessionID = if isReinit && existingSessionId !== "" {
+      existingSessionId
+    } else {
+      switch analyticsInfoDict->getString("sessionID", "") {
+      | "" => "hyp_" ++ generateRandomString(8)
+      | provided => provided
+      }
     }
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
-    HyperLoaderLogger.startSession(~sessionId=sessionID, ~merchantId=publishableKey)
+    if !isReinit {
+      HyperLoaderLogger.startSession(~sessionId=sessionID, ~merchantId=publishableKey)
+    }
 
     HyperLoaderLogger.logMerchantProps(
       ~event=TestMode({surface: Hyper}),
@@ -247,7 +252,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
     {
       () => {
-        LoggerContext.setSessionData(~sessionId=sessionID, ~merchantId=publishableKey, ())
+        if !isReinit {
+          LoggerContext.setSessionData(~sessionId=sessionID, ~merchantId=publishableKey, ())
+        }
 
         if !isReinit {
           HyperLoaderLogger.logMerchantCall(
@@ -616,6 +623,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         sdkAuthorization := sdkAuthorizationId
         clientSecret := clientSecretId
+        if sdkAuthorizationId === "" && clientSecretId === "" {
+          LoggerContext.clearPaymentIdentity()
+        }
         LoggerContext.setPaymentIdFromCredentials(
           ~clientSecret=clientSecretId,
           ~sdkAuthorization=?Some(sdkAuthorizationId)->getNonEmptyOption,
@@ -673,10 +683,18 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
-        LoggerContext.setPaymentIdFromCredentials(~sdkAuthorization=sdkAuthorizationId)
+        let managementContext: LoggerContext.t = {
+          sessionId: sessionID,
+          merchantId: sdkAuthorizationData.publishableKey->Option.getOr(publishableKey),
+          paymentId: sdkAuthorizationData.paymentId->Option.getOr(""),
+          pmSessionId: pmSessionIdVal,
+          authenticationId: "",
+          scoped: true,
+        }
 
         HyperLoaderLogger.observeMerchantCall(
           ~event=HyperLoaderLogger.PaymentMethodsManagementElements({surface: Hyper}),
+          ~context=managementContext,
           ~call=() => PaymentMethodsManagementElements.make(
               pmManagementOptions,
               setIframeRef,
@@ -684,6 +702,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
               ~publishableKey,
               ~pmSessionId={pmSessionIdVal},
               ~sdkAuthorization=sdkAuthorizationId,
+              ~loggerContext=managementContext,
               ~analyticsMetadata,
               ~customBackendUrl=options
               ->Option.getOr(JSON.Encode.null)
@@ -920,23 +939,18 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           authenticationOptions->getString("clientSecret", "")
         clientSecret := clientSecretId
 
-        LoggerContext.setPaymentIdFromCredentials(
-          ~clientSecret=clientSecretId,
-          ~sdkAuthorization=?authenticationOptions
-          ->Dict.get("sdkAuthorization")
-          ->Option.flatMap(JSON.Decode.string)
-          ->getNonEmptyOption,
-        )
-        LoggerContext.setAuthenticationId(
-          authenticationOptions
-          ->Dict.get("authenticationId")
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr(""),
-        )
+        let authenticationContext: LoggerContext.t = {
+          ...LoggerContext.current(),
+          authenticationId: authenticationOptions->getString("authenticationId", ""),
+          paymentId: "",
+          pmSessionId: "",
+          scoped: true,
+        }
 
         HyperLoaderLogger.observeMerchantCall(
           ~source=AuthenticationSession,
           ~event=HyperLoaderLogger.InitAuthenticationSession({surface: Hyper}),
+          ~context=authenticationContext,
           ~call=() =>
             AuthenticationSession.make(
               authenticationSessionOptions,
