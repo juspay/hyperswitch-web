@@ -3,6 +3,13 @@ type fieldTexts = {
   placeholder: string,
 }
 
+type superpositionResolutionContext = {
+  rawConfigs: option<JSON.t>,
+  configPaymentMethodType: string,
+  eligibleConnectors: array<JSON.t>,
+  superpositionBaseContext: SuperpositionTypes.superpositionBaseContext,
+}
+
 let billingPrefix = "payment_method_data.billing."
 
 let filterByActiveFields = (
@@ -291,12 +298,16 @@ let useSuperpositionRequiredFields = (~paymentMethod, ~paymentMethodType) => {
     suppressBillingPrefill,
   ))
 
-  (requiredFields, missingRequiredFields, initialValues)
+  let resolutionContext = React.useMemo(() => {
+    {rawConfigs, configPaymentMethodType, eligibleConnectors, superpositionBaseContext}
+  }, (rawConfigs, configPaymentMethodType, eligibleConnectors, superpositionBaseContext))
+
+  (requiredFields, missingRequiredFields, initialValues, resolutionContext)
 }
 
 let useAreWalletRequiredFieldsPrefilled = (~paymentMethodType) => {
   let {billingAddress} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let (_, missingRequiredFields, _) = useSuperpositionRequiredFields(
+  let (_, missingRequiredFields, _, _) = useSuperpositionRequiredFields(
     ~paymentMethod="wallet",
     ~paymentMethodType,
   )
@@ -521,6 +532,80 @@ let applyBillingDetailsOverride = (
   set("payment_method_data.billing.address.zip", billingDetails.address.postal_code)
 
   initialValues
+}
+
+let useLogDynamicFieldsRendered = (
+  ~fields: array<SuperpositionTypes.fieldConfig>,
+  ~paymentMethod: string,
+  ~resolutionContext: superpositionResolutionContext,
+  ~isSavedCardFlow=false,
+) => {
+  let lastLoggedKey = React.useRef("")
+  let {
+    rawConfigs,
+    configPaymentMethodType,
+    eligibleConnectors,
+    superpositionBaseContext,
+  } = resolutionContext
+
+  React.useEffect(() => {
+    if !isSavedCardFlow && rawConfigs->Option.isSome {
+      let dedupeKey = paymentMethod ++ "|" ++ configPaymentMethodType
+      if lastLoggedKey.current !== dedupeKey {
+        lastLoggedKey.current = dedupeKey
+        let fieldsJson =
+          fields
+          ->Array.map(field =>
+            [
+              ("field_type", (field.fieldRenderType :> string)->JSON.Encode.string),
+              ("write_path", field.confirmRequestWritePath->JSON.Encode.string),
+              (
+                "intent_data_read_path",
+                field.intentDataReadPath
+                ->Option.map(JSON.Encode.string)
+                ->Option.getOr(JSON.Null),
+              ),
+              ("is_required", field.isRequired->JSON.Encode.bool),
+              (
+                "validation_rule_type",
+                field.validationRuleType->Option.map(JSON.Encode.string)->Option.getOr(JSON.Null),
+              ),
+              (
+                "validation_regex_pattern",
+                field.validationRegexPattern
+                ->Option.map(JSON.Encode.string)
+                ->Option.getOr(JSON.Null),
+              ),
+            ]
+            ->Dict.fromArray
+            ->JSON.Encode.object
+          )
+          ->JSON.Encode.array
+        SdkLogger.logState(
+          ~event=DynamicFieldsChanged,
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethod === "card" ? "" : configPaymentMethodType,
+          ),
+          ~details=[
+            ("superposition_base_context", superpositionBaseContext->Identity.anyTypeToJson),
+            ("eligible_connectors", eligibleConnectors->JSON.Encode.array),
+            ("field_count", fields->Array.length->JSON.Encode.int),
+            ("fields", fieldsJson),
+          ],
+        )
+      }
+    }
+    None
+  }, (
+    fields,
+    paymentMethod,
+    configPaymentMethodType,
+    rawConfigs,
+    isSavedCardFlow,
+    eligibleConnectors,
+    superpositionBaseContext,
+  ))
 }
 
 // TODO: refactor event emitters to use react-final-forms

@@ -1,4 +1,20 @@
 open Utils
+
+let logLoaderState = (
+  updatedState: PaymentType.loadType,
+  ~source: SdkLogger.loaderSource,
+  ~durationMs=?,
+  ~details=[],
+) => {
+  let (state: SdkLogger.loaderState, failure) = switch updatedState {
+  | Loaded(_) => (Loaded, None)
+  | Loading => (Loading, None)
+  | SemiLoaded => (SemiLoaded, None)
+  | LoadError(x) => (LoadFailed, Some(x))
+  }
+  SdkLogger.logState(~event=LoaderStateChanged({state, source}), ~details, ~durationMs?, ~failure?)
+}
+
 @react.component
 let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
   open JotaiAtoms
@@ -34,6 +50,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
   let setCardCvcPlaceholder = Jotai.useSetAtom(cardCvcPlaceholder)
   let setCardholderNamePlaceholder = Jotai.useSetAtom(cardholderNamePlaceholder)
   let (divH, setDivH) = React.useState(_ => 0.0)
+  let (launchTime, setLaunchTime) = Jotai.useAtom(JotaiAtoms.launchTime)
   let {paymentMethodOrder} = optionsPayment
   let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
@@ -237,14 +254,17 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
       ("applePayMounted", true->JSON.Encode.bool),
       ("componentName", componentName->JSON.Encode.string),
     ])
+    SdkLogger.logLifecycle(~event=ElementIframeMounted)
     let updatedState: PaymentType.loadType = switch paymentMethodList {
     | Loading => checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
+    let finalLoadLatency = if launchTime <= 0.0 {0.0} else {Date.now() -. launchTime}
     switch updatedState {
     | SemiLoaded => setPaymentMethodList(_ => updatedState)
     | _ => ()
     }
+    logLoaderState(updatedState, ~source=IframeMount, ~durationMs=finalLoadLatency)
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
     )
@@ -353,6 +373,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
 
                 paymentOptions->loadTheme(res => dict->setConfigs(res))
               }
+              let newLaunchTime = dict->getFloat("launchTime", 0.0)
+              setLaunchTime(_ => newLaunchTime)
+              let initLoadlatency = Date.now() -. newLaunchTime
+              SdkLogger.logLifecycle(~event=ElementInitReceived, ~durationMs=initLoadlatency)
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
@@ -388,6 +412,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
         } else if dict->getDictIsSome("paymentElementsUpdate") {
           updateOptions(dict)
         } else if dict->getDictIsSome("ElementsUpdate") {
+          SdkLogger.logState(~event=ElementOptionsChanged)
           let optionsDict = dict->getDictFromObj("options")
           setPaymentOptionsJson(prev => {
             let updatedPaymentOptions = prev->getDictFromJson->Dict.copy
@@ -525,6 +550,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
         if dict->getDictIsSome("clientList") {
           let clientListJson = dict->getJsonObjectFromDict("clientList")
           let listDict = clientListJson->getDictFromJson
+          let finalLoadLatency = if launchTime <= 0.0 {0.0} else {Date.now() -. launchTime}
           if optionsPayment.business.name === "" {
             setOptionsPayment(prev => {
               ...prev,
@@ -547,6 +573,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
                 isNonEmptyPaymentMethodList ? Loaded(clientListJson) : LoadError(clientListJson)
               }
 
+          let evalMethodsList = () =>
+            logLoaderState(updatedState, ~durationMs=finalLoadLatency, ~source=PaymentMethodsList)
+
           setPaymentMethodList(_ => updatedState)
 
           // updateIntent waits for a fresh ready, emitted once its refreshed list has rendered.
@@ -563,6 +592,23 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
             customerPaymentMethods,
           })
 
+          if !optionsPayment.displaySavedPaymentMethods {
+            evalMethodsList()
+          } else {
+            switch customerPaymentMethods {
+            | LoadingSavedCards => ()
+            | LoadedSavedCards(list, _) =>
+              list->Array.length > 0
+                ? logLoaderState(
+                    Loaded(clientListJson),
+                    ~durationMs=finalLoadLatency,
+                    ~source=PaymentMethodsList,
+                    ~details=[("saved_methods", list->Array.length->JSON.Encode.int)],
+                  )
+                : evalMethodsList()
+            | NoResult(_) => evalMethodsList()
+            }
+          }
         }
         if dict->getDictIsSome("paymentManagementMethods") {
           let paymentManagementMethods =
@@ -579,6 +625,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
           let updatedState: PaymentType.loadType = isSdkConfigsError
             ? LoadError(sdkConfigsJson)
             : Loaded(sdkConfigsJson)
+          let finalLoadLatency = if launchTime <= 0.0 {
+            0.0
+          } else {
+            Date.now() -. launchTime
+          }
+          logLoaderState(updatedState, ~durationMs=finalLoadLatency, ~source=SdkConfigs)
           setSdkConfigs(_ => updatedState)
           if !isSdkConfigsError {
             setSdkConfigsValue(_ => sdkConfigsJson->SdkConfigParser.itemToObjMapper)
@@ -594,9 +646,21 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
           let isLoading = dict->getBool("updateIntentLoading", false)
           setIsUpdateIntentLoading(_ => isLoading)
           isAwaitingUpdatedListRef.current = isLoading
+          if isLoading {
+            SdkLogger.logState(~event=UpdateIntentProgressChanged({inProgress: true}))
+          } else {
+            SdkLogger.logState(~event=UpdateIntentProgressChanged({inProgress: false}))
+          }
         }
       } catch {
-      | _ => setIntegrateErrorError(_ => true)
+      | exn => {
+          SdkLogger.logCrash(
+            ~origin=ParentWindowMessage,
+            ~exn,
+            ~message="Element failed to process parent message; integration error shown",
+          )
+          setIntegrateErrorError(_ => true)
+        }
       }
     }
     let handleHostMessage = (ev: Window.event) => {

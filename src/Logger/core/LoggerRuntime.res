@@ -293,6 +293,7 @@ let observeResource = (
   ~resource,
   ~attributes=?,
   ~matchQuery=?,
+  ~inBody=false,
   ~paymentMethod=?,
   ~context=LoggerContext.current(),
   ~source=?,
@@ -362,6 +363,7 @@ let observeResource = (
     ~resource,
     ~attributes?,
     ~matchQuery?,
+    ~stylesheetPlacement=inBody ? ResourceLoader.Body : ResourceLoader.Head,
     ~onStart=start,
     ~onLoad=result => {
       if tracker->settle {

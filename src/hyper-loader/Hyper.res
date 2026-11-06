@@ -350,8 +350,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let onFailure = _ => JSON.Encode.null
 
-        await fetchApiForSdk(
+        await LoggedApiFetch.forSdk(
           uri,
+          ~event=RetrievePaymentIntent,
           ~method=#GET,
           ~customPodUri=None,
           ~publishableKey=Some(publishableKey),

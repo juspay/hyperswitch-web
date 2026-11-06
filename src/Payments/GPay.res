@@ -27,7 +27,10 @@ let make = (
   let isGPayReady = gPayReadiness->Option.getOr(false)
   let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
-  let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
+  let status = CommonHooks.useScript(
+    "https://pay.google.com/gp/p/js/pay.js",
+    ~resourceEvent=SdkLogger.GooglePayScript,
+  )
   let isGooglePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsGooglePayDelayedSessionFlow()
   let isGooglePaySDKFlow = React.useMemo(() => {
     sessionObj->Option.isSome
@@ -83,7 +86,7 @@ let make = (
     )
   }, [sdkConfigsValue.payment_methods])
 
-  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
   )

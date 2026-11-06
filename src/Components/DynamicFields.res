@@ -168,7 +168,7 @@ let make = (
 
   let intentData = paymentMethodListValue.intent_data.intentDataObject
 
-  let (requiredFields, missingRequiredFields, superpositionInitialValues) =
+  let (requiredFields, missingRequiredFields, superpositionInitialValues, _) =
     DynamicFieldsUtils.useSuperpositionRequiredFields(~paymentMethod, ~paymentMethodType)
   let initialValues = React.useMemo(
     () => superpositionInitialValues,

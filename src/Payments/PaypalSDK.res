@@ -128,7 +128,7 @@ let make = (~sessionObj: SessionsType.token) => {
   }
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
   )
@@ -137,6 +137,7 @@ let make = (~sessionObj: SessionsType.token) => {
     ~complete=isCompleted,
     ~empty=!isCompleted,
     ~paymentType=paymentMethodType,
+    ~loggedPaymentMethod=Wallet(PaypalSdk),
   )
 
   let (isButtonSettled, setIsButtonSettled) = React.useState(_ => false)
@@ -151,51 +152,62 @@ let make = (~sessionObj: SessionsType.token) => {
     let intentParam = if paypalIntent !== "" {
       `&intent=${paypalIntent}`
     } else {
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowFailed({reason: MissingIntent}),
+        ~paymentMethod=Wallet(PaypalSdk),
+      )
       ""
     }
 
     let currencyParam = if currency !== "" {
       `&currency=${currency}`
     } else {
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowFailed({reason: MissingCurrency}),
+        ~paymentMethod=Wallet(PaypalSdk),
+      )
       ""
     }
 
     let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields${currencyParam}${intentParam}`
-    let paypalScript = Window.createElement("script")
-    paypalScript->Window.elementSrc(paypalScriptURL)
-    paypalScript->Window.elementOnerror(_ => onButtonSettled())
-    paypalScript->Window.elementOnload(_ => {
-      PaypalSDKHelpers.loadPaypalSDK(
-        ~onButtonSettled,
-        ~sdkHandleOneClickConfirmPayment,
-        ~buttonStyle,
-        ~iframeId,
-        ~paymentMethodListValue,
-        ~connectors,
-        ~isGuestCustomer,
-        ~postSessionTokens=intent,
-        ~isManualRetryEnabled,
-        ~options,
-        ~publishableKey,
-        ~requiredFields,
-        ~confirm,
-        ~completeAuthorize,
-        ~handleCloseLoader,
-        ~handleCancel,
-        ~areOneClickWalletsRendered,
-        ~setIsCompleted,
-        ~isCallbackUsedVal,
-        ~sdkHandleIsThere,
-        ~sessions,
-        ~clientSecret,
-        ~isTestMode,
-        ~nonPiiAdderessData,
-        ~sdkAuthorization,
-        ~emitter,
-        ~parentOrigin=parentURL,
-      )
-    })
-    Window.body->Window.appendChild(paypalScript)
+    SdkLogger.observeResource(
+      ~event=PaypalScript,
+      ~url=paypalScriptURL,
+      ~matchQuery=true,
+      ~paymentMethod=Wallet(PaypalSdk),
+      ~onLoad=() => {
+        PaypalSDKHelpers.loadPaypalSDK(
+          ~onButtonSettled,
+          ~sdkHandleOneClickConfirmPayment,
+          ~buttonStyle,
+          ~iframeId,
+          ~paymentMethodListValue,
+          ~connectors,
+          ~isGuestCustomer,
+          ~postSessionTokens=intent,
+          ~isManualRetryEnabled,
+          ~options,
+          ~publishableKey,
+          ~requiredFields,
+          ~confirm,
+          ~completeAuthorize,
+          ~handleCloseLoader,
+          ~handleCancel,
+          ~areOneClickWalletsRendered,
+          ~setIsCompleted,
+          ~isCallbackUsedVal,
+          ~sdkHandleIsThere,
+          ~sessions,
+          ~clientSecret,
+          ~isTestMode,
+          ~nonPiiAdderessData,
+          ~sdkAuthorization,
+          ~emitter,
+          ~parentOrigin=parentURL,
+        )
+      },
+      ~onError=_ => onButtonSettled(),
+    )->ignore
   }
 
   React.useEffect(() => {
@@ -229,7 +241,12 @@ let make = (~sessionObj: SessionsType.token) => {
         }
       }
     } catch {
-    | exn => ()
+    | exn =>
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowFailed({reason: SdkMountFailed}),
+        ~paymentMethod=Wallet(PaypalSdk),
+        ~exn,
+      )
     }
     None
   }, [sdkAuthorization])
