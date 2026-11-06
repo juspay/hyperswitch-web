@@ -55,6 +55,18 @@ test.describe("Fiuu Online Banking FPX payment flow", () => {
     expect(confirm.request.payment_method).toBe("bank_redirect");
     expect(confirm.request.payment_method_type).toBe("online_banking_fpx");
     expect(confirm.status).toBe(200);
+    expect(
+      {
+        status: confirm.body?.status,
+        error_code: confirm.body?.error_code,
+        error_message: confirm.body?.error_message,
+      },
+      "Fiuu must accept the payment before the SDK can redirect to FPX",
+    ).toEqual({
+      status: "requires_customer_action",
+      error_code: null,
+      error_message: null,
+    });
     expect(typeof confirm.body?.next_action?.redirect_to_url).toBe("string");
 
     // The SDK must leave the demo shop for the redirect target.
