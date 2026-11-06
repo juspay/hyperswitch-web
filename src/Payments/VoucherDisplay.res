@@ -6,8 +6,6 @@ let make = () => {
   let (returnUrl, setReturnUrl) = React.useState(_ => "")
   let (downloadUrl, setDownloadUrl) = React.useState(_ => "")
   let (reference, setReference) = React.useState(_ => "")
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
-  let (downloadCounter, setDownloadCounter) = React.useState(_ => 0)
   let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
   let (paymentIntent, setPaymentIntent) = React.useState(_ => JSON.Encode.null)
   let (loader, setLoader) = React.useState(_ => true)
@@ -58,15 +56,7 @@ let make = () => {
               className="text font-medium text-sm text-[#006DF9] underline"
               href=downloadUrl
               ref={linkRef->ReactDOM.Ref.domRef}
-              onClick={_ => {
-                setDownloadCounter(c => c + 1)
-                LoggerUtils.handleLogging(
-                  ~optLogger=Some(logger),
-                  ~value=downloadCounter->Int.toString,
-                  ~eventName=DISPLAY_VOUCHER,
-                  ~paymentMethod,
-                )
-              }}>
+              onClick={_ => ()}>
               {React.string("here")}
             </a>
             {React.string(" to download it.")}

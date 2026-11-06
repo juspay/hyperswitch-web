@@ -5,12 +5,11 @@ open Utils
 @react.component
 let make = (~paymentMethodName: string) => {
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let blikCode = Jotai.useAtomValue(userBlikCode)
   let phoneNumber = Jotai.useAtomValue(userPhoneNumber)
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let intent = PaymentHelpers.usePaymentIntent(Other)
   let {layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
@@ -37,7 +36,7 @@ let make = (~paymentMethodName: string) => {
   let country = Jotai.useAtomValue(userCountry)
   let selectedBank = Jotai.useAtomValue(userBank)
   let setFieldComplete = Jotai.useSetAtom(fieldsComplete)
-  let cleanPhoneNumber = str => str->String.replaceRegExp(%re("/\s/g"), "")
+  let cleanPhoneNumber = str => str->String.replaceRegExp(/\s/g, "")
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
@@ -102,9 +101,11 @@ let make = (~paymentMethodName: string) => {
             ),
             ~paymentExperience=paymentFlow,
           )
-          ->Array.concat(shouldSendCustomerAcceptance
-            ? [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
-            : [])
+          ->Array.concat(
+            shouldSendCustomerAcceptance
+              ? [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
+              : [],
+          )
           ->mergeAndFlattenToTuples(requiredFieldsBody)
 
         intent(
@@ -115,7 +116,8 @@ let make = (~paymentMethodName: string) => {
           ~manualRetry=isManualRetryEnabled,
         )
       } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+        let message = "Please enter all fields"
+        postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
   }, (
