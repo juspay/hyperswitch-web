@@ -165,10 +165,12 @@ let make = (
       iframeRef->Array.push(ref)->ignore
       setIframeRef(ref)
     }
-    let getElement = componentName => {
-      savedPaymentElement->Dict.get(componentName)
-    }
-    let update = newOptions => {
+    let getElement = componentName =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.GetElement({surface: PaymentMethodsManagement}),
+        ~call=() => savedPaymentElement->Dict.get(componentName),
+      )
+    let updateInternal = newOptions => {
       let newOptionsDict = newOptions->getDictFromJson
       switch newOptionsDict->Dict.get("locale") {
       | Some(val) => localOptions->Dict.set("locale", val)
@@ -192,13 +194,22 @@ let make = (
         iframe->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
       })
     }
+    let update = newOptions =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.Update({surface: PaymentMethodsManagement}),
+        ~call=() => updateInternal(newOptions),
+      )
     let fetchUpdates = () => {
+      HyperLoaderLogger.logMerchantCall(
+        ~event=HyperLoaderLogger.FetchUpdates({surface: PaymentMethodsManagement}),
+        ~details=[("implemented", false->JSON.Encode.bool)],
+      )
       Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
       })
     }
 
-    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
+    let createInternal = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
       let (componentType, newOptions) = parseComponentTypeAndOptions(
         ~componentTypeOrOptions,
         ~legacyOptions,
@@ -246,6 +257,7 @@ let make = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+            LoggerContext.sharedContext(),
             ("customPodUri", customPodUri->JSON.Encode.string),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
@@ -293,17 +305,32 @@ let make = (
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
+    let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) =>
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.Create({surface: PaymentMethodsManagement}),
+        ~call=() => createInternal(componentTypeOrOptions, legacyOptions),
+      )
     {
       getElement,
       update,
       fetchUpdates,
       create,
-      updateIntent: _ => Promise.resolve(JSON.Encode.null),
+      updateIntent: _ =>
+        HyperLoaderLogger.observeMerchantCall(
+          ~event=HyperLoaderLogger.UpdateIntent({surface: PaymentMethodsManagement}),
+          ~details=[("supported", false->JSON.Encode.bool)],
+          ~call=() => Promise.resolve(JSON.Encode.null),
+        ),
       createCardForm: () => defaultCardForm,
     }
   } catch {
   | e => {
       Sentry.captureException(e)
+      SdkLogger.logCrash(
+        ~origin=EntryPoint,
+        ~details=[("entry_point", "payment_management_elements_create"->JSON.Encode.string)],
+        ~exn=e,
+      )
       defaultElement
     }
   }
