@@ -359,9 +359,6 @@ module.exports = (publicPath = "auto") => {
         url: process.env.SENTRY_URL,
         release: {
           name: "0.3",
-          uploadLegacySourcemaps: {
-            paths: ["dist"],
-          },
         },
       })
     );
