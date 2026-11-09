@@ -102,6 +102,12 @@ let setPaymentIdFromCredentials = (~clientSecret="", ~sdkAuthorization=?) => {
   sdkAuthorization->Option.flatMap(pmSessionIdOfSdkAuthorization)->Option.forEach(setPmSessionId)
 }
 
+let clearPaymentIdentity = () => {
+  let previous = context.contents
+  let next = {...previous, paymentId: "", pmSessionId: ""}
+  context := next
+}
+
 let setPaymentIdFromClientSecret = clientSecret =>
   clientSecret->paymentIdOfClientSecret->setPaymentId
 

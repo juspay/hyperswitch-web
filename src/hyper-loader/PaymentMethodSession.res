@@ -1272,16 +1272,6 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
           )
           vgsBrokerRef := None
 
-          switch Window.querySelector(VGSVaultBroker.vgsScriptSelector)->Nullable.toOption {
-          | Some(script) =>
-            try {
-              script->Window.remove
-            } catch {
-            | _ => ()
-            }
-          | None => ()
-          }
-
           fields := Dict.make()->JSON.Encode.object
           sessionStateRef := Deinitialized
           tokenizingRef := false

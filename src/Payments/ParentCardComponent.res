@@ -640,6 +640,10 @@ let make = (
         messageParentWindow([("expiryDate", dict->getString("expiryDate", "")->JSON.Encode.string)])
       }
       if isInnerCardMessage && dict->Dict.get("vgsScriptLoadFailed")->Option.isSome {
+        SdkLogger.logLifecycle(
+          ~event=VaultScriptLoadFailed,
+          ~message="Error during loading VGS script",
+        )
         setIsVgsScriptReady(_ => false)
       }
     }

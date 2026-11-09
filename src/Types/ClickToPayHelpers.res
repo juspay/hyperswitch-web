@@ -881,6 +881,7 @@ let loadVisaScript = (
   onLoadCallback,
   onErrorCallback,
   ~authenticationSession=false,
+  ~loggerContext: option<LoggerContext.t>=?,
 ) => {
   let cardBrands = clickToPayToken.cardBrands->Array.join(",")
   let scriptSrc = GlobalVars.isProd
@@ -889,6 +890,7 @@ let loadVisaScript = (
   if authenticationSession {
     AuthenticationSessionLogger.observeResource(
       ~event=VisaSdkScript,
+      ~context=?loggerContext,
       ~url=scriptSrc,
       ~matchQuery=true,
       ~onLoad=onLoadCallback,

@@ -7,7 +7,13 @@ let make = (options, ~clientSecret, ~publishableKey) => {
   let profileId = options->Utils.getDictFromJson->Utils.getString("profileId", "")
   let authenticationId = options->Utils.getDictFromJson->Utils.getString("authenticationId", "")
   let merchantId = options->Utils.getDictFromJson->Utils.getString("merchantId", "")
-  LoggerContext.setAuthenticationId(authenticationId)
+  let loggerContext: LoggerContext.t = {
+    ...LoggerContext.current(),
+    authenticationId,
+    paymentId: "",
+    pmSessionId: "",
+    scoped: true,
+  }
 
   let defaultInitAuthenticationSession = {
     initClickToPaySession: initClickToPaySessionInput =>
@@ -19,6 +25,7 @@ let make = (options, ~clientSecret, ~publishableKey) => {
         ~profileId,
         ~authenticationId,
         ~merchantId,
+        ~loggerContext,
         ~initClickToPaySessionInput,
       ),
     getActiveClickToPaySession: () =>
@@ -30,6 +37,7 @@ let make = (options, ~clientSecret, ~publishableKey) => {
         ~profileId,
         ~authenticationId,
         ~merchantId,
+        ~loggerContext,
       ),
   }
 

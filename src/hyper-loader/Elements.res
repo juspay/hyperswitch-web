@@ -333,19 +333,29 @@ let make = (
               publishableKey->String.startsWith("pk_prd_")
                 ? "https://tpgw.trustpay.eu/js/v1.js"
                 : "https://test-tpgw.trustpay.eu/js/v1.js"
+            let logTrustPayScript = (~outcome: SharedLoggerTypes.outcome, ~severity) =>
+              LoggerRuntime.emit(
+                ~category=Resource,
+                ~spec=SharedLoggerEvent.spec(SdkLogger.TrustpayScript, ~action=Load, ~outcome),
+                ~severity,
+                ~data=[("url", trustPayScriptURL->JSON.Encode.string)],
+              )
             let trustPayScript = Window.createElement("script")
+            logTrustPayScript(~outcome=Started, ~severity=Info)
             mountedIframeRef->Window.iframePostMessage(
               [("trustPayScriptStatus", "loading"->JSON.Encode.string)]->Dict.fromArray,
               ~targetOrigin=sdkOrigin,
             )
             trustPayScript->Window.elementSrc(trustPayScriptURL)
             trustPayScript->Window.elementOnerror(_ => {
+              logTrustPayScript(~outcome=Failed, ~severity=Error)
               mountedIframeRef->Window.iframePostMessage(
                 [("trustPayScriptStatus", "failed"->JSON.Encode.string)]->Dict.fromArray,
                 ~targetOrigin=sdkOrigin,
               )
             })
             trustPayScript->Window.elementOnload(_ => {
+              logTrustPayScript(~outcome=Done, ~severity=Info)
               mountedIframeRef->Window.iframePostMessage(
                 [("trustPayScriptStatus", "loaded"->JSON.Encode.string)]->Dict.fromArray,
                 ~targetOrigin=sdkOrigin,
@@ -455,13 +465,13 @@ let make = (
       )
 
     let fetchUpdates = () => {
-      HyperLoaderLogger.logMerchantCall(
+      HyperLoaderLogger.observeMerchantCall(
         ~event=FetchUpdates({surface: Elements}),
         ~details=[("implemented", false->JSON.Encode.bool)],
+        ~call=() => Promise.make((resolve, _) => {
+          setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
+        }),
       )
-      Promise.make((resolve, _) => {
-        setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
-      })
     }
 
     let updateIntent = async (callback: unit => promise<JSON.t>) => {
@@ -1088,6 +1098,10 @@ let make = (
               ~count,
               ~returnUrl=url,
               ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
+              ~loggerContext={...LoggerContext.current(), paymentId: Utils.getPaymentIdOrExtractFromSdkAuth(
+                ~clientSecret=clientSecretRef.contents,
+                ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
+              ), scoped: true},
             )
             ->then(_ => {
               PaymentHelpers.retrievePaymentIntent(
