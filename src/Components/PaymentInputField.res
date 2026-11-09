@@ -36,13 +36,20 @@ let make = (
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
   let elementType = contextPaymentType->CardThemeType.getPaymentModeToString
+  let loggedField = name
+  let loggedField = switch autocomplete {
+  | "cc-number" => "card_number"
+  | "cc-exp" => "card_expiry"
+  | "cc-csc" => "card_cvc"
+  | _ => type_ === "password" ? "secure_field" : loggedField
+  }
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
   let handleFocus = ev => {
     setInputFocused(_ => true)
-    if name->String.length > 0 {
-      SdkLogger.logUser(~event=FieldFocused({field: name}))
+    if loggedField->String.length > 0 {
+      SdkLogger.logUser(~event=FieldFocused({field: loggedField}))
     }
     switch setIsValid {
     | Some(fn) => fn(_ => None)
@@ -58,8 +65,8 @@ let make = (
 
   let handleBlur = ev => {
     setInputFocused(_ => false)
-    if name->String.length > 0 {
-      SdkLogger.logUser(~event=FieldBlurred({field: name}))
+    if loggedField->String.length > 0 {
+      SdkLogger.logUser(~event=FieldBlurred({field: loggedField}))
     }
     switch onBlur {
     | Some(fn) => fn(ev)
