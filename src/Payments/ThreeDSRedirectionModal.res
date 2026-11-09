@@ -60,13 +60,12 @@ let make = () => {
           let redirectResponseUrl = metaDataDict->getString("redirectResponseUrl", "")
           setPopupUrl(_ => popupUrl)
           setRedirectResponseUrl(_ => redirectResponseUrl)
-          setPaymentMethodFlowCancelMetadata(_ =>
-            metaDataDict->getDictFromDict("paymentMethodFlowCancel")
-          )
+          let cancelMetadata = metaDataDict->getDictFromDict("paymentMethodFlowCancel")
+          setPaymentMethodFlowCancelMetadata(_ => cancelMetadata)
           setLoggedPaymentMethod(_ =>
             LoggerPaymentMethod.fromPair(
-              ~method=metaDataDict->getString("paymentMethodFamily", ""),
-              ~methodType=metaDataDict->getString("paymentMethod", ""),
+              ~method=cancelMetadata->getString("paymentMethod", ""),
+              ~methodType=cancelMetadata->getString("paymentMethodType", ""),
             )
           )
           setloader(_ => false)
