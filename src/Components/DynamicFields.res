@@ -168,7 +168,7 @@ let make = (
 
   let intentData = paymentMethodListValue.intent_data.intentDataObject
 
-  let (requiredFields, missingRequiredFields, superpositionInitialValues, _) =
+  let (requiredFields, missingRequiredFields, superpositionInitialValues, resolutionContext) =
     DynamicFieldsUtils.useSuperpositionRequiredFields(~paymentMethod, ~paymentMethodType)
   let initialValues = React.useMemo(
     () => superpositionInitialValues,
@@ -305,6 +305,14 @@ let make = (
     }
     None
   }, (paymentMethodType, shouldRenderForm))
+
+  // Log which dynamic fields are being rendered for the current payment method.
+  DynamicFieldsUtils.useLogDynamicFieldsRendered(
+    ~fields=missingRequiredFieldsFiltered,
+    ~paymentMethod,
+    ~resolutionContext,
+    ~isSavedCardFlow,
+  )
 
   <>
     <RenderIf condition={!isSavedCardFlow && shouldRenderForm}>

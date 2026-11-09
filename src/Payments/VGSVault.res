@@ -17,8 +17,16 @@ let submitVaultTokenization = (vault: returnValue, ~scope, ~onData) => {
   let details = [("vault", "vgs"->JSON.Encode.string)]
   let paymentMethod = LoggerPaymentMethod.Card
   PaymentMethodSessionLogger.logApi(~event, ~outcome=Started, ~details, ~paymentMethod)
-  let onSuccess = (_, data) => {
-    PaymentMethodSessionLogger.logApi(~event, ~outcome=Done, ~details, ~startedAt, ~paymentMethod)
+  let onSuccess = (status, data) => {
+    let statusCode = status->getFloatFromJson(0.)->Float.toInt
+    let details = details->Array.concat([("status_code", statusCode->JSON.Encode.int)])
+    PaymentMethodSessionLogger.logApi(
+      ~event,
+      ~outcome=statusCode >= 200 && statusCode < 300 ? Done : Failed,
+      ~details,
+      ~startedAt,
+      ~paymentMethod,
+    )
     onData(data)
   }
   // Fields are valid, so onError here is a genuine tokenisation/network
