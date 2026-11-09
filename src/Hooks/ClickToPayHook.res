@@ -65,9 +65,12 @@ let useClickToPay = (
       | SUCCESS => {
           let cards = switch cardsResult.profiles {
           | Some(profilesArray) => {
-              let allCards = profilesArray->Array.flatMap(profile => profile.maskedCards)
+              let firstProfileCards = switch profilesArray[0] {
+              | Some(profile) => Some(profile.maskedCards)
+              | None => None
+              }
               let brandCount = brand =>
-                allCards
+                firstProfileCards->Option.getOr([])
                 ->Array.filter(card =>
                   card.paymentCardDescriptor->String.toLowerCase->String.includes(brand)
                 )
@@ -80,12 +83,19 @@ let useClickToPay = (
                   mastercard: brandCount("mastercard"),
                 }),
               )
-              switch profilesArray[0] {
-              | Some(profile) => Some(profile.maskedCards)
-              | None => None
-              }
+              firstProfileCards
             }
-          | None => None
+          | None => {
+              ClickToPayLogger.logLifecycle(
+                ~event=CardsListed({
+                  provider: VisaUctp,
+                  actionCode: SUCCESS->WebLoggerUtils.variantName,
+                  visa: 0,
+                  mastercard: 0,
+                }),
+              )
+              None
+            }
           }
           setClickToPayConfig(prev => {
             ...prev,
@@ -122,8 +132,20 @@ let useClickToPay = (
                   ...prev,
                   otpError: "VALIDATION_DATA_INVALID",
                 })
+              | "OTP_SEND_FAILED" =>
+                ClickToPayLogger.logLifecycle(
+                  ~event=CardsUnavailable({provider: VisaUctp, code: reason}),
+                  ~message="OTP SEND FAILED",
+                )
+                setClickToPayConfig(prev => {
+                  ...prev,
+                  otpError: "NONE",
+                })
               | "ACCT_INACCESSIBLE" =>
-                ClickToPayLogger.logLifecycle(~event=CardsUnavailable({provider: VisaUctp, code: reason}))
+                ClickToPayLogger.logLifecycle(
+                  ~event=CardsUnavailable({provider: VisaUctp, code: reason}),
+                  ~message=`Maximum getCard call attempts reached (ACCT_INACCESSIBLE) - ${reason}`,
+                )
                 setClickToPayConfig(prev => {
                   ...prev,
                   otpError: "ACCT_INACCESSIBLE",
