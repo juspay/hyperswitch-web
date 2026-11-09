@@ -182,6 +182,11 @@ let rec pollRetrievePaymentIntent = (
   ~customPodUri,
   ~isForceSync=false,
   ~sdkAuthorization=None,
+  ~loggerContext: LoggerContext.t={
+    ...LoggerContext.current(),
+    paymentId: Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
+    scoped: true,
+  },
 ) => {
   open Promise
   retrievePaymentIntent(
@@ -212,6 +217,7 @@ let rec pollRetrievePaymentIntent = (
           ~method=dict->getString("payment_method", ""),
           ~methodType=dict->getString("payment_method_type", ""),
         ),
+        ~context=loggerContext,
       )
       resolve(json)
     } else {
@@ -224,6 +230,7 @@ let rec pollRetrievePaymentIntent = (
           ~customPodUri,
           ~isForceSync,
           ~sdkAuthorization,
+          ~loggerContext,
         )
       })
       ->catch(_ => Promise.resolve(JSON.Encode.null))
@@ -238,6 +245,7 @@ let rec pollRetrievePaymentIntent = (
       ~customPodUri,
       ~isForceSync,
       ~sdkAuthorization,
+      ~loggerContext,
     )
   })
 }

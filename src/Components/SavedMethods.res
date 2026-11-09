@@ -701,16 +701,16 @@ let make = (
 
   let showSavedCards = groupSavedMethodsSeparately || !showPaymentMethodsScreen
 
-  let switchToNewPaymentMethods = () => {
-    SdkLogger.logUser(~event=ViewOpened({view: NewPaymentMethods}))
-    setShowPaymentMethodsScreen(_ => true)
-  }
-
   let enableSavedPaymentShimmer = React.useMemo(() => {
     savedCardlength === 0 &&
     !showPaymentMethodsScreen &&
     (loadSavedCards === PaymentType.LoadingSavedCards || clickToPayConfig.isReady->Option.isNone)
   }, (savedCardlength, loadSavedCards, showPaymentMethodsScreen, clickToPayConfig.isReady))
+
+  let switchToNewPaymentMethods = () => {
+    SdkLogger.logUser(~event=ViewOpened({view: NewPaymentMethods}))
+    setShowPaymentMethodsScreen(_ => true)
+  }
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if enableSavedPaymentShimmer {
@@ -739,7 +739,7 @@ let make = (
     </RenderIf>
     <RenderIf condition={!enableSavedPaymentShimmer && !groupSavedMethodsSeparately}>
       <SwitchViewButton
-        onClick={_ => setShowPaymentMethodsScreen(_ => true)}
+        onClick={_ => switchToNewPaymentMethods()}
         icon={<Icon name="circle-plus" size=22 />}
         title={localeString.newPaymentMethods}
         ariaLabel="Click to use new payment methods"
@@ -748,7 +748,7 @@ let make = (
           let key = JsxEvent.Keyboard.key(event)
           let keyCode = JsxEvent.Keyboard.keyCode(event)
           if key == "Enter" || keyCode == 13 {
-            setShowPaymentMethodsScreen(_ => true)
+            switchToNewPaymentMethods()
           }
         }}
       />
