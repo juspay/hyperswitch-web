@@ -86,6 +86,8 @@ let adapter = (resource, ~matchQuery, ~stylesheetPlacement) =>
 
 let statusOf = element => element->Window.getAttribute(statusAttribute)->Nullable.toOption
 
+@get @return(nullable) external scriptReadyState: Dom.element => option<string> = "readyState"
+
 @val @scope("performance") @return(nullable)
 external getEntriesByName: string => option<array<{..}>> = "getEntriesByName"
 
@@ -135,6 +137,15 @@ let load = (
   let reuse = element =>
     switch element->statusOf {
     | Some("loading") => element->listen(~result=Reused)
+    | None if resource === Script =>
+      switch element->scriptReadyState {
+      | Some("loaded") | Some("complete") => setTimeout(() => onLoad(Reused), 0)->ignore
+      | Some(_) => element->listen(~result=Reused)
+      | None => {
+          element->Window.remove
+          create()
+        }
+      }
     | None if !(url->alreadyFetched) => element->listen(~result=Reused)
     | Some(_) | None => setTimeout(() => onLoad(Reused), 0)->ignore
     }
