@@ -699,6 +699,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
   // A hidden container measures 0, so 0 is never sent.
   let resizeSettleDelayMs = 100
   let isReady = SubscriptionEventHooks.useIsReadyEmitted()
+  UtilityHooks.useLogAppRendered(~isRendered=isReady)
   let lastSentHeightRef = React.useRef(None)
   let hasSentReadyResizeRef = React.useRef(false)
   let elementType =

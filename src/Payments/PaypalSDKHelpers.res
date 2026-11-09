@@ -284,11 +284,13 @@ let loadPaypalSDK = (
       ~event=OnError,
       ~paymentMethod=Wallet(PaypalSdk),
       ~callback=err => {
-        SdkLogger.logLifecycle(
-          ~event=WalletFlowFailed({reason: PaymentDataFailed}),
-          ~paymentMethod=Wallet(PaypalSdk),
-          ~exn=err->JsExn.anyToExnInternal,
-        )
+        if !(err->isPopupClosedError) {
+          SdkLogger.logLifecycle(
+            ~event=WalletFlowFailed({reason: PaymentDataFailed}),
+            ~paymentMethod=Wallet(PaypalSdk),
+            ~exn=err->JsExn.anyToExnInternal,
+          )
+        }
         err->handlePaypalError(~handleCancel, ~handleCloseLoader)
       },
     ),
@@ -431,14 +433,16 @@ let loadBraintreePaypalSdk = (
                     ~details=[("connector", "braintree"->JSON.Encode.string)],
                     ~paymentMethod=Wallet(PaypalSdk),
                     ~callback=err => {
-                      SdkLogger.logLifecycle(
-                        ~event=WalletFlowFailed({
-                          reason: PaymentDataFailed,
-                          connector: "braintree",
-                        }),
-                        ~paymentMethod=Wallet(PaypalSdk),
-                        ~exn=err->JsExn.anyToExnInternal,
-                      )
+                      if !(err->isPopupClosedError) {
+                        SdkLogger.logLifecycle(
+                          ~event=WalletFlowFailed({
+                            reason: PaymentDataFailed,
+                            connector: "braintree",
+                          }),
+                          ~paymentMethod=Wallet(PaypalSdk),
+                          ~exn=err->JsExn.anyToExnInternal,
+                        )
+                      }
                       err->handlePaypalError(~handleCancel, ~handleCloseLoader)
                     },
                   ),
