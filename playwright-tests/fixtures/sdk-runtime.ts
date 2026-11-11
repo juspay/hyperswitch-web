@@ -51,6 +51,7 @@ export const test = base.extend<
                 modules: [path.join(REPO_ROOT, "node_modules"), "node_modules"],
                 alias: {
                   "../../src": path.join(REPO_ROOT, "src"),
+                  "../../shared-code": path.join(REPO_ROOT, "shared-code"),
                   "../recordings": path.join(__dirname, "../recordings"),
                 },
               },
