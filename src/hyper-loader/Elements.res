@@ -35,6 +35,7 @@ let make = (
   try {
     let iframeRef = []
     let savedPaymentElement = Dict.make()
+    let makeEventListenerTracker = ElementListenerTracker.makeFactory()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
@@ -1782,6 +1783,7 @@ let make = (
         mountedIframeRef->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
       }
 
+      let eventListenerTracker = makeEventListenerTracker(componentType)
       let paymentElement = LoaderPaymentElement.make(
         componentType,
         newOptions,
@@ -1791,6 +1793,7 @@ let make = (
         ~appearance,
         ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
         ~confirmPayment,
+        ~eventListenerTracker,
         ~isTrustedPaymentMessage,
         ~onFullscreenCreated,
       )
