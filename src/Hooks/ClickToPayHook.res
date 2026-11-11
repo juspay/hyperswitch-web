@@ -95,6 +95,11 @@ let useClickToPay = (
                   ...prev,
                   otpError: "VALIDATION_DATA_INVALID",
                 })
+              | "OTP_SEND_FAILED" =>
+                setClickToPayConfig(prev => {
+                  ...prev,
+                  otpError: "NONE",
+                })
               | "ACCT_INACCESSIBLE" =>
                 setClickToPayConfig(prev => {
                   ...prev,
