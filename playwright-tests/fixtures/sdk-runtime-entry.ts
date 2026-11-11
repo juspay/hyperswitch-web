@@ -189,7 +189,6 @@ export function mountPaymentHook(
               [],
               confirmParam,
               "test-payment",
-              undefined,
               false,
               paymentType,
               true,
