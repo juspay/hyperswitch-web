@@ -105,6 +105,7 @@ const authorizedConnectSources = [
   "https://dev.hyperswitch.io",
   "https://beta.hyperswitch.io",
   "https://live.hyperswitch.io",
+  "https://api.hyperswitch.io",
   "https://integ.hyperswitch.io",
   "https://integ-api.hyperswitch.io",
   "https://app.hyperswitch.io",
