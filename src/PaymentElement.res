@@ -255,6 +255,20 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   )
   let showAllPaymentMethods = layoutClass.paymentMethodsArrangementForTabs === Grid
 
+  let isPaypalSdkTabsFlow = switch paypalToken {
+  | OtherTokenOptional(Some(_)) => isPaypalSDKFlow
+  | _ => false
+  }
+  React.useEffect(() => {
+    if isPaypalSdkTabsFlow {
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowResolved({flow: PaypalSdkTabs}),
+        ~paymentMethod=Wallet(PaypalSdk),
+      )
+    }
+    None
+  }, [isPaypalSdkTabsFlow])
+
   React.useEffect(() => {
     switch paymentMethodList {
     | Loaded(paymentlist) =>
@@ -341,10 +355,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
       let message = "Select a payment method"
+      SdkLogger.logLifecycle(~event=FormValidationFailed({reason: message}))
       postFailedSubmitResponse(~errortype="validation_error", ~message)
     }
   }, [selectedOption])
   PaymentMessageHooks.useSubmitPaymentData(submitCallback)
+  let defaultSelection = React.useRef("")
   React.useEffect(() => {
     let shouldAutoOpenSavedMethods =
       !layoutClass.savedMethodCustomization.defaultCollapsed &&
@@ -353,19 +369,25 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     setSelectedOption(prev => {
       if prev !== "" && paymentOptions->Array.includes(prev) {
         prev
-      } else if layoutClass.defaultCollapsed {
-        shouldAutoOpenSavedMethods ? "saved_methods" : ""
       } else {
-        switch paymentMethodList {
-        | SemiLoaded
-        | LoadError(_) =>
-          checkPriorityList(paymentMethodOrder) ? "card" : ""
-        | Loaded(_) =>
-          paymentOptions->Array.includes(selectedOption)
-            ? selectedOption
-            : paymentOptions->Array.get(0)->Option.getOr("")
-        | _ => paymentOptions->Array.get(0)->Option.getOr("")
+        let next = if layoutClass.defaultCollapsed {
+          shouldAutoOpenSavedMethods ? "saved_methods" : ""
+        } else {
+          switch paymentMethodList {
+          | SemiLoaded
+          | LoadError(_) =>
+            checkPriorityList(paymentMethodOrder) ? "card" : ""
+          | Loaded(_) =>
+            paymentOptions->Array.includes(selectedOption)
+              ? selectedOption
+              : paymentOptions->Array.get(0)->Option.getOr("")
+          | _ => paymentOptions->Array.get(0)->Option.getOr("")
+          }
         }
+        if prev === "" && next !== "" && defaultSelection.current === "" {
+          defaultSelection.current = next
+        }
+        next
       }
     })
     None
@@ -377,6 +399,25 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     paymentMethodList,
     selectedOption,
   ))
+
+  let defaultSelectionLogged = React.useRef(false)
+  React.useEffect(() => {
+    if !defaultSelectionLogged.current &&
+      selectedOption !== "" &&
+      selectedOption === defaultSelection.current &&
+      paymentOptions->Array.includes(selectedOption) {
+      defaultSelectionLogged.current = true
+      SdkLogger.logUser(
+        ~event=PaymentMethodSelected({method: selectedOption}),
+        ~paymentMethod=?PaymentUtils.loggerPaymentMethodOf(
+          ~paymentMethodName=selectedOption,
+          ~paymentMethods=paymentMethodListValue.payment_methods,
+        ),
+        ~details=[("selection_source", "default"->JSON.Encode.string)],
+      )
+    }
+    None
+  }, (selectedOption, paymentOptions))
 
   let (cardMounted, setCardMounted) = React.useState(() => false)
   React.useEffect(() => {

@@ -27,7 +27,10 @@ let make = (
   let isGPayReady = gPayReadiness->Option.getOr(false)
   let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
-  let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
+  let status = CommonHooks.useScript(
+    "https://pay.google.com/gp/p/js/pay.js",
+    ~resourceEvent=SdkLogger.GooglePayScript,
+  )
   let isGooglePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsGooglePayDelayedSessionFlow()
   let isGooglePaySDKFlow = React.useMemo(() => {
     sessionObj->Option.isSome
@@ -83,9 +86,15 @@ let make = (
     )
   }, [sdkConfigsValue.payment_methods])
 
-  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
+  )
+  DynamicFieldsUtils.useLogDynamicFieldsRendered(
+    ~fields=requiredFields,
+    ~paymentMethod,
+    ~resolutionContext,
+    ~isSavedCardFlow=!isWallet,
   )
 
   GooglePayHelpers.useHandleGooglePayResponse(
@@ -166,6 +175,11 @@ let make = (
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onGooglePaymentButtonClicked = () => {
+    SdkLogger.logUser(
+      ~event=ExpressCheckoutClicked,
+      ~paymentMethod=Wallet(GooglePay),
+      ~details=isTestMode ? [("test_mode", true->JSON.Encode.bool)] : [],
+    )
     if isTestMode {
       Console.warn("Google Pay button clicked in test mode - interaction disabled")
     } else {
@@ -293,7 +307,13 @@ let make = (
           syncPayment()
         }
       } catch {
-      | _ => ()
+      | exn =>
+        SdkLogger.logLifecycle(
+          ~event=WalletFlowFailed({reason: MessageHandlingFailed}),
+          ~paymentMethod=Wallet(GooglePay),
+          ~exn,
+          ~message="Google Pay sync message handling failed",
+        )
       }
     }
     Window.addEventListener("message", handleGooglePayMessages)

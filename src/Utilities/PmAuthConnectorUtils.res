@@ -1,4 +1,6 @@
 type pmAuthConnector = PLAID | NONE
+
+@val @scope("window") @return(nullable) external loadedPlaid: option<JSON.t> = "Plaid"
 let pmAuthNameToTypeMapper = authConnectorName => {
   switch authConnectorName {
   | "plaid" => PLAID
@@ -17,10 +19,15 @@ let mountAuthConnectorScript = (~authConnector, ~onScriptLoaded) => {
   let authConnector = authConnector->Option.getOr("")
   let pmAuthConnectorScriptUrl =
     authConnector->pmAuthNameToTypeMapper->pmAuthConnectorToScriptUrlMapper
-  let pmAuthConnectorScript = Window.createElement("script")
-  pmAuthConnectorScript->Window.elementSrc(pmAuthConnectorScriptUrl)
-  pmAuthConnectorScript->Window.elementOnload(_ => onScriptLoaded(authConnector))
-  Window.body->Window.appendChild(pmAuthConnectorScript)
+  switch pmAuthConnectorScriptUrl {
+  | "" => SdkLogger.logLifecycle(~event=BankAuthConnectorUnsupported({connector: authConnector}))
+  | _ if authConnector === "plaid" && loadedPlaid->Option.isSome =>
+    onScriptLoaded(authConnector)
+  | url =>
+    SdkLogger.observeResource(~event=PmAuthConnectorScript, ~url, ~onLoad=() =>
+      onScriptLoaded(authConnector)
+    )
+  }
 }
 
 let mountAllRequriedAuthConnectorScripts = (~pmAuthConnectorsArr, ~onScriptLoaded) => {

@@ -90,6 +90,11 @@ let make = () => {
               resolve()
             } catch {
             | err =>
+              SdkLogger.logLifecycle(
+                ~event=WalletFlowFailed({reason: PaymentDataFailed}),
+                ~paymentMethod=Wallet(Paze),
+                ~exn=err,
+              )
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),
                 ("isPaze", true->JSON.Encode.bool),
@@ -99,10 +104,12 @@ let make = () => {
               resolve()
             }
           }
-          let pazeScript = Window.createElement("script")
-          pazeScript->Window.elementSrc(pazeScriptURL)
-          pazeScript->Window.elementOnload(_ => loadPazeSDK()->ignore)
-          Window.body->Window.appendChild(pazeScript)
+          SdkLogger.observeResource(
+            ~event=PazeScript,
+            ~url=pazeScriptURL,
+            ~paymentMethod=Wallet(Paze),
+            ~onLoad=() => loadPazeSDK()->ignore,
+          )->ignore
         }
 
         if (

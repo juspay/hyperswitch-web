@@ -127,6 +127,7 @@ let make = (
   })
 
   let toggleDropdown = _ => {
+    SdkLogger.logUser(~event=ViewToggled({view: InstallmentOptions, expanded: !isDropdownOpen}))
     setIsDropdownOpen(prev => !prev)
   }
 

@@ -113,7 +113,13 @@ let reportValidationErrors = (
   ~setCvcError,
   ~localeString: LocaleStringTypes.localeStrings,
 ) => {
-  let reportUserError = message => postFailedSubmitResponse(~errortype="validation_error", ~message)
+  let reportUserError = message => {
+    SdkLogger.logLifecycle(
+      ~event=FormValidationFailed({reason: message}),
+      ~paymentMethod=Card,
+    )
+    postFailedSubmitResponse(~errortype="validation_error", ~message)
+  }
 
   if cardNumber === "" {
     setCardError(_ => localeString.cardNumberEmptyText)

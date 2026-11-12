@@ -22,6 +22,10 @@ let make = () => {
     ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType=paymentMethod,
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(
+      ~method=paymentMethod,
+      ~methodType=paymentMethodType,
+    ),
   )
   SubscriptionEventHooks.useEmitFormStatus(
     ~empty=areRequiredFieldsEmpty,
@@ -47,6 +51,14 @@ let make = () => {
         )
       } else {
         let message = "Please enter all fields"
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: "Please enter all fields"}),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentMethod,
+            ~methodType=paymentMethodType,
+          ),
+          ~message,
+        )
         postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
