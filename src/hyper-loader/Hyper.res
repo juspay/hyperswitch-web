@@ -4,6 +4,8 @@ open Utils
 open EventListenerManager
 open Identity
 
+@module("uuid") external generateLogSessionId: unit => string = "v7"
+
 type fullscreenMessageSource = {
   iframe: Dom.element,
   source: Dom.element,
@@ -208,7 +210,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       existingSessionId
     } else {
       switch analyticsInfoDict->getString("sessionID", "") {
-      | "" => "hyp_" ++ generateRandomString(8)
+      | "" => generateLogSessionId()
       | provided => provided
       }
     }
