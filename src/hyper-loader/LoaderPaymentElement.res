@@ -106,6 +106,7 @@ let make = (
   ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  ~eventListenerTracker: option<ElementListenerTracker.t>=?,
   ~isTrustedPaymentMessage: option<Types.event => bool>=?,
   ~onFullscreenCreated: (Dom.element, JSON.t) => unit=(_, _) => (),
   ~fieldName: option<string>=?,
@@ -114,6 +115,9 @@ let make = (
   ~context=?,
 ) => {
   try {
+    let eventListenerTracker = eventListenerTracker->Option.getOr(
+      ElementListenerTracker.make(~componentType, ~context?),
+    )
     let surfaceData: HyperLoaderLogger.surfaceData = {
       surface: fieldName->Option.isSome ? CardField : PaymentElement,
     }
@@ -123,6 +127,8 @@ let make = (
     }
     let mountId = ref("")
     let localSelectorRef = ref("")
+    let eventListenerSelectorRef =
+      componentType->Utils.canHaveMultipleInstances ? localSelectorRef : ref(componentType)
     let mountedIframeRef = ref(Nullable.null)
     let fullscreenIframeRef = ref(Nullable.null)
     // Kept current across update() so the Change listener filters on the latest subscriptions.
@@ -212,6 +218,10 @@ let make = (
             pendingOnRefsByType->Dict.set(componentType, refs)
           }
         }
+      }
+      eventListenerTracker.register(eventListenerSelectorRef)
+      if eventHandler->Option.isSome {
+        eventListenerTracker.logger.track(eventType)
       }
       // Multi-instance: match by elementType + iframeId so events route to the correct instance.
       let matchesInstance = (ev: Types.event) => {
@@ -417,6 +427,7 @@ let make = (
         ~details=surfaceDetails->Array.concat(containerPresentDetail()),
         ~call=() => {
           oneClickSources->Dict.delete(elementInstanceId)
+          eventListenerTracker.destroy()
           mountedIframeRef := Nullable.null
           fullscreenIframeRef := Nullable.null
           clearMountedContainer()
@@ -492,11 +503,13 @@ let make = (
           pendingMountSelectorsByType->Dict.set(componentType, mounts)
         }
       }
+      eventListenerTracker.onMount(eventListenerSelectorRef.contents)
       let iframeHeightRef = ref(25.0)
       let currentClass = ref("base")
       let fullscreen = ref(false)
       let fullscreenParam = ref("")
       let fullscreenMetadata = ref(Dict.make()->JSON.Encode.object)
+      let mountedWindow = ref((Nullable.null: Nullable.t<Dom.element>))
       let optionsDict = options->getDictFromJson
       let handle = (ev: Types.event) => {
         let eventDataObject = ev.data->anyTypeToJson
@@ -628,6 +641,7 @@ let make = (
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                         fullScreenEle->Window.iframePostMessage(
                           [
+                            ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
                             LoggerContext.sharedContext(~context?, ()),
                           ]->Dict.fromArray,
@@ -669,11 +683,16 @@ let make = (
         }
 
         if iframeMounted->Option.isSome {
-          mountPostMessage(
-            Window.querySelector(`#orca-${elementIframeId}-iframeRef-${localSelectorString}`),
-            localSelectorString,
-            sdkHandleOneClickConfirmPayment,
+          let mountedIframe = Window.querySelector(
+            `#orca-${elementIframeId}-iframeRef-${localSelectorString}`,
           )
+          if (
+            !(mountedWindow.contents->Nullable.isNullable) &&
+            ev.source === mountedWindow.contents->Nullable.getUnsafe
+          ) {
+            eventListenerTracker.logger.logOnMount()
+          }
+          mountPostMessage(mountedIframe, localSelectorString, sdkHandleOneClickConfirmPayment)
         }
       }
 
@@ -730,6 +749,7 @@ let make = (
           let elem = Window.querySelector(`#${iframeElementId}`)
           switch elem->Nullable.toOption {
           | Some(ele) =>
+            mountedWindow := ele->Window.contentWindow->Nullable.make
             ele
             ->Window.style
             ->Window.setTransition(
@@ -767,7 +787,13 @@ let make = (
       destroy,
       update,
       mount,
-      onSDKHandleClick,
+      onSDKHandleClick: eventHandler => {
+        eventListenerTracker.register(eventListenerSelectorRef)
+        if eventHandler->Option.isSome {
+          eventListenerTracker.logger.track("onSDKHandleClick")
+        }
+        onSDKHandleClick(eventHandler)
+      },
       confirmPayment,
     }
   } catch {

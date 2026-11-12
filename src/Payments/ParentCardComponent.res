@@ -60,6 +60,11 @@ let make = (
   let isRawMode = cardCollectionMode === "raw"
   let isRawNewCardFlow = isRawMode && !isSavedCardFlow
   let isPMMFlow = flowType === CardThemeType.PaymentMethodsManagement
+  let loggerSource =
+    "hyper_" ++
+    flowType
+    ->CardThemeType.getPaymentModeToStrMapper
+    ->WebLoggerUtils.snakeCase
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
 
@@ -114,6 +119,7 @@ let make = (
     customPodUri,
     paymentId,
     sdkHandleOneClickConfirmPayment,
+    loggerSource,
     isSavedCardFlow,
     savedCardBrand,
     cardCollectionMode,
@@ -129,6 +135,7 @@ let make = (
       customPodUri,
       paymentId,
       sdkHandleOneClickConfirmPayment,
+      loggerSource,
       isSavedCardFlow,
       savedCardBrand,
       cardCollectionMode,
@@ -144,6 +151,7 @@ let make = (
     customPodUri,
     paymentId,
     sdkHandleOneClickConfirmPayment,
+    loggerSource,
     isSavedCardFlow,
     savedCardBrand,
     cardCollectionMode,
@@ -342,6 +350,9 @@ let make = (
     ~empty=cardFieldsEmpty,
     ~paymentType="card",
     ~enabled=!isSavedCardFlow && isActive,
+    ~loggedPaymentMethod=?isBancontact
+      ? LoggerPaymentMethod.fromPair(~method=paymentMethod, ~methodType=paymentMethodType)
+      : Some(LoggerPaymentMethod.Card),
   )
   SubscriptionEventHooks.useEmitFormStatus(
     ~empty=cardFieldsEmpty,
@@ -422,6 +433,7 @@ let make = (
         currentCustomPodUri,
         currentPaymentId,
         currentHandleOneClickConfirmPayment,
+        currentLoggerSource,
         currentIsSavedCardFlow,
         currentSavedCardBrand,
         currentCardCollectionMode,
@@ -445,6 +457,7 @@ let make = (
           ("publishableKey", currentPublishableKey->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
           ("sdkSessionId", currentSessionId->JSON.Encode.string),
+          LoggerContext.sharedContext(),
           ("customPodUri", currentCustomPodUri->JSON.Encode.string),
           ("paymentId", currentPaymentId->JSON.Encode.string),
           ("parentURL", Window.Location.origin->JSON.Encode.string),
@@ -453,6 +466,7 @@ let make = (
             currentHandleOneClickConfirmPayment->JSON.Encode.bool,
           ),
           ("launchTime", Date.now()->JSON.Encode.float),
+          ("loggerSource", currentLoggerSource->JSON.Encode.string),
           ("isSavedCardCvcFlow", currentIsSavedCardFlow->JSON.Encode.bool),
           ("savedCardBrand", currentSavedCardBrand->JSON.Encode.string),
           ("cardCollectionMode", currentCardCollectionMode->JSON.Encode.string),
@@ -626,6 +640,10 @@ let make = (
         messageParentWindow([("expiryDate", dict->getString("expiryDate", "")->JSON.Encode.string)])
       }
       if isInnerCardMessage && dict->Dict.get("vgsScriptLoadFailed")->Option.isSome {
+        SdkLogger.logLifecycle(
+          ~event=VaultScriptLoadFailed,
+          ~message="Error during loading VGS script",
+        )
         setIsVgsScriptReady(_ => false)
       }
     }
@@ -679,40 +697,52 @@ let make = (
       try {
         (
           async () => {
-            let encryptedResult = await ClickToPayHelpers.encryptCardForClickToPay(
-              ~cardNumber=cardNumber->CardValidations.clearSpaces,
-              ~expiryMonth=month,
-              ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
-              ~cvcNumber,
-            )
-            switch encryptedResult {
-            | Ok(encryptedCard) =>
-              let response = await ClickToPayHelpers.handleProceedToPay(
-                ~encryptedCard,
-                ~isCheckoutWithNewCard=true,
-                ~isUnrecognizedUser=ctpCards->Array.length == 0,
-                ~email=email.value,
-                ~phoneNumber=phoneNumber.value,
-                ~countryCode=phoneNumber.countryCode
-                ->Option.getOr("")
-                ->String.replace("+", ""),
-                ~rememberMe=isClickToPayRememberMe,
-                ~clickToPayProvider,
-                ~clickToPayToken=clickToPayConfig.clickToPayToken,
+            try {
+              let encryptedResult = await ClickToPayHelpers.encryptCardForClickToPay(
+                ~cardNumber=cardNumber->CardValidations.clearSpaces,
+                ~expiryMonth=month,
+                ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
+                ~cvcNumber,
               )
-              let responseDict = response.payload->getDictFromJson
-              let headers = responseDict->getDictFromDict("headers")
-              let checkoutResponseData = responseDict->getDictFromDict("checkoutResponseData")
-              confirmBody(
-                PaymentBody.mastercardClickToPayBody(
-                  ~merchantTransactionId=headers->getString("merchant-transaction-id", ""),
-                  ~correlationId=checkoutResponseData->getString("srcCorrelationId", ""),
-                  ~xSrcFlowId=headers->getString("x-src-cx-flow-id", ""),
-                ),
-                ~confirmParams,
-                ~includeAcceptance=false,
+              switch encryptedResult {
+              | Ok(encryptedCard) =>
+                let response = await ClickToPayHelpers.handleProceedToPay(
+                  ~encryptedCard,
+                  ~isCheckoutWithNewCard=true,
+                  ~isUnrecognizedUser=ctpCards->Array.length == 0,
+                  ~email=email.value,
+                  ~phoneNumber=phoneNumber.value,
+                  ~countryCode=phoneNumber.countryCode
+                  ->Option.getOr("")
+                  ->String.replace("+", ""),
+                  ~rememberMe=isClickToPayRememberMe,
+                  ~clickToPayProvider,
+                  ~clickToPayToken=clickToPayConfig.clickToPayToken,
+                )
+                let responseDict = response.payload->getDictFromJson
+                let headers = responseDict->getDictFromDict("headers")
+                let checkoutResponseData = responseDict->getDictFromDict("checkoutResponseData")
+                confirmBody(
+                  PaymentBody.mastercardClickToPayBody(
+                    ~merchantTransactionId=headers->getString("merchant-transaction-id", ""),
+                    ~correlationId=checkoutResponseData->getString("srcCorrelationId", ""),
+                    ~xSrcFlowId=headers->getString("x-src-cx-flow-id", ""),
+                  ),
+                  ~confirmParams,
+                  ~includeAcceptance=false,
+                )
+              | Error(err) =>
+                ClickToPayLogger.logLifecycle(
+                  ~event=CheckoutFailed({provider: MastercardUctp}),
+                  ~exn=err,
+                )
+              }
+            } catch {
+            | err =>
+              ClickToPayLogger.logLifecycle(
+                ~event=CheckoutFailed({provider: MastercardUctp}),
+                ~exn=err,
               )
-            | Error(_) => ()
             }
           }
         )()->ignore
@@ -764,7 +794,8 @@ let make = (
               ~includeAcceptance=false,
             )
           } catch {
-          | _ => ()
+          | err =>
+            ClickToPayLogger.logLifecycle(~event=CheckoutFailed({provider: VisaUctp}), ~exn=err)
           }
         }
       )()->ignore
@@ -780,6 +811,12 @@ let make = (
         // The public Payment Element can become ready before the nested collector has
         // installed its submit listener. Settle the merchant promise instead of posting a
         // message that could be dropped during that startup window.
+        SdkLogger.logLifecycle(
+          ~event=FormValidationFailed({reason: localeString.enterFieldsText}),
+          ~paymentMethod=?isBancontact
+            ? LoggerPaymentMethod.fromPair(~method=paymentMethod, ~methodType=paymentMethodType)
+            : Some(LoggerPaymentMethod.Card),
+        )
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterFieldsText,
@@ -901,7 +938,18 @@ let make = (
                 ~confirmParams=confirm.confirmParams,
               )
             } else if dict->Dict.get("cardTokenFail")->Option.isSome {
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+              let message = "Something went wrong"
+              PaymentMethodSessionLogger.logLifecycle(
+                ~event=VaultFlowFailed({reason: TokenizationFailed}),
+                ~paymentMethod=?isBancontact
+                  ? LoggerPaymentMethod.fromPair(
+                      ~method=paymentMethod,
+                      ~methodType=paymentMethodType,
+                    )
+                  : Some(LoggerPaymentMethod.Card),
+                ~message,
+              )
+              postFailedSubmitResponse(~errortype="server_error", ~message)
             }
             if isInnerCardMessage && dict->Dict.get("submitSuccessful")->Option.isSome {
               messageParentWindow(dict->Dict.toArray)
@@ -929,8 +977,15 @@ let make = (
 
         iframeRef.current->Window.iframePostMessage(innerMessage, ~targetOrigin=innerIframeOrigin)
         if !outerValid {
-          let setUserError = message =>
+          let setUserError = message => {
+            SdkLogger.logLifecycle(
+              ~event=FormValidationFailed({reason: message}),
+              ~paymentMethod=?isBancontact
+                ? LoggerPaymentMethod.fromPair(~method=paymentMethod, ~methodType=paymentMethodType)
+                : Some(LoggerPaymentMethod.Card),
+            )
             postFailedSubmitResponse(~errortype="validation_error", ~message)
+          }
           if !areRequiredFieldsValid || !isNicknameValid {
             setUserError(localeString.enterValidDetailsText)
           } else if !isInstallmentValid {
