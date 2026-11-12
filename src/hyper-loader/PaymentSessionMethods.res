@@ -4,8 +4,18 @@ open Utils
 
 let cvcWidgetNotFoundErrorType = "cvc_widget_not_found"
 let cvcValidationErrorType = "cvc_validation"
+let paymentSessionSurface: HyperLoaderLogger.surfaceData = {surface: PaymentSession}
 
-let getCustomerSavedPaymentMethods = (
+let logHeadlessLifecycle = (~event, ~paymentMethod=?, ~exn=?, ~message=?) =>
+  SdkLogger.logLifecycle(~source=Headless, ~event, ~paymentMethod?, ~exn?, ~message?)
+
+let observeHeadlessFunction = (~event, ~paymentMethod, ~timeoutMs=?, ~call) =>
+  SdkLogger.observeFunction(~source=Headless, ~event, ~paymentMethod, ~timeoutMs?, ~call)
+
+let observePaymentSessionCall = (~event, ~details=?, ~timeoutMs=?, ~call) =>
+  HyperLoaderLogger.observeMerchantCall(~source=Headless, ~event, ~details?, ~timeoutMs?, ~call)
+
+let fetchCustomerSavedPaymentMethods = (
   ~options: option<JSON.t>,
   ~clientSecretRef: ref<string>,
   ~publishableKey,
@@ -43,7 +53,13 @@ let getCustomerSavedPaymentMethods = (
         ),
       )
     } catch {
-    | _ => None
+    | err =>
+      logHeadlessLifecycle(
+        ~event=WalletFlowFailed({reason: ClientCreationFailed}),
+        ~paymentMethod=Wallet(GooglePay),
+        ~exn=err,
+      )
+      None
     }
 
     let customerDetailsDict = customerDetails->JSON.Decode.object->Option.getOr(Dict.make())
@@ -92,27 +108,42 @@ let getCustomerSavedPaymentMethods = (
       ->Array.get(0),
     )
 
-    let getCustomerDefaultSavedPaymentMethodData = () => {
-      switch customerDefaultPaymentMethodRef.contents {
-      | Some(defaultPaymentMethod) => defaultPaymentMethod->Identity.anyTypeToJson
-      | None =>
-        handleFailureResponse(
-          ~message="There is no default saved payment method data for this customer.",
-          ~errorType="no_data",
-        )
-      }
-    }
+    let getCustomerDefaultSavedPaymentMethodData = () =>
+      observePaymentSessionCall(
+        ~event=HyperLoaderLogger.GetCustomerDefaultSavedPaymentMethodData(paymentSessionSurface),
+        ~details=[
+          ("found", customerDefaultPaymentMethodRef.contents->Option.isSome->JSON.Encode.bool),
+        ],
+        ~call=() =>
+          switch customerDefaultPaymentMethodRef.contents {
+          | Some(defaultPaymentMethod) => defaultPaymentMethod->Identity.anyTypeToJson
+          | None =>
+            handleFailureResponse(
+              ~message="There is no default saved payment method data for this customer.",
+              ~errorType="no_data",
+            )
+          },
+      )
 
-    let getCustomerLastUsedPaymentMethodData = () => {
-      switch customerPaymentMethodsRef.contents->Array.get(0) {
-      | Some(lastUsedPaymentMethod) => lastUsedPaymentMethod->Identity.anyTypeToJson
-      | None =>
-        handleFailureResponse(
-          ~message="No recent payments found for this customer.",
-          ~errorType="no_data",
-        )
-      }
-    }
+    let getCustomerLastUsedPaymentMethodData = () =>
+      observePaymentSessionCall(
+        ~event=HyperLoaderLogger.GetCustomerLastUsedPaymentMethodData(paymentSessionSurface),
+        ~details=[
+          (
+            "found",
+            customerPaymentMethodsRef.contents->Array.get(0)->Option.isSome->JSON.Encode.bool,
+          ),
+        ],
+        ~call=() =>
+          switch customerPaymentMethodsRef.contents->Array.get(0) {
+          | Some(lastUsedPaymentMethod) => lastUsedPaymentMethod->Identity.anyTypeToJson
+          | None =>
+            handleFailureResponse(
+              ~message="No recent payments found for this customer.",
+              ~errorType="no_data",
+            )
+          },
+      )
 
     let confirmWithCVCWidget = (
       ~body,
@@ -171,6 +202,12 @@ let getCustomerSavedPaymentMethods = (
                       )
                     ) {
                       // As before, a redirecting confirmation navigates without resolving.
+                      logHeadlessLifecycle(
+                        ~event=CustomerRedirectStarted({
+                          nextAction: "cvc_confirm_redirect",
+                          redirectOrigin: PaymentMessageSecurity.originOf(returnUrl)->Option.getOr(""),
+                        }),
+                      )
                       stopListening()
                       Window.Location.replace(returnUrl)
                     } else {
@@ -298,7 +335,7 @@ let getCustomerSavedPaymentMethods = (
       }
     }
 
-    let confirmWithCustomerDefaultPaymentMethod = payload => {
+    let confirmWithDefaultPaymentMethod = payload => {
       if isUpdateIntentInProgress.contents {
         UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
       } else {
@@ -335,6 +372,13 @@ let getCustomerSavedPaymentMethods = (
         }
       }
     }
+
+    let confirmWithCustomerDefaultPaymentMethod = payload =>
+      observePaymentSessionCall(
+        ~event=HyperLoaderLogger.ConfirmWithCustomerDefaultPaymentMethod(paymentSessionSurface),
+        ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
+        ~call=() => confirmWithDefaultPaymentMethod(payload),
+      )
 
     let handleApplePayConfirmPayment = (
       lastUsedPaymentMethod: PaymentType.customerMethods,
@@ -402,9 +446,19 @@ let getCustomerSavedPaymentMethods = (
       | Some(client) =>
         let paymentDataRequest = googlePayTokenRef.contents
 
-        client.loadPaymentData(paymentDataRequest)
+        observeHeadlessFunction(
+          ~event=LoadPaymentData,
+          ~paymentMethod=Wallet(GooglePay),
+          ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
+          ~call=() => client.loadPaymentData(paymentDataRequest),
+        )
         ->then(json => {
           let metadata = json->Identity.anyTypeToJson
+
+          logHeadlessLifecycle(
+            ~event=WalletTokenReceived,
+            ~paymentMethod=Wallet(GooglePay),
+          )
 
           let completeGooglePayPayment = () => {
             let body = GooglePayHelpers.getGooglePayBodyFromResponse(
@@ -438,14 +492,17 @@ let getCustomerSavedPaymentMethods = (
           )->resolve
         )
       | None =>
-        handleFailureResponse(
-          ~message="Google Pay is not available",
-          ~errorType="google_pay",
-        )->resolve
+        let message = "Google Pay is not available"
+        logHeadlessLifecycle(
+          ~event=WalletFlowFailed({reason: ClientUnavailable}),
+          ~paymentMethod=Wallet(GooglePay),
+          ~message,
+        )
+        handleFailureResponse(~message, ~errorType="google_pay")->resolve
       }
     }
 
-    let confirmWithLastUsedPaymentMethod = payload => {
+    let confirmWithLastUsedMethod = payload => {
       if isUpdateIntentInProgress.contents {
         UpdateIntentHelpersNew.confirmBlockedResponseForSession()->resolve
       } else {
@@ -494,6 +551,13 @@ let getCustomerSavedPaymentMethods = (
         }
       }
     }
+
+    let confirmWithLastUsedPaymentMethod = payload =>
+      observePaymentSessionCall(
+        ~event=HyperLoaderLogger.ConfirmWithLastUsedPaymentMethod(paymentSessionSurface),
+        ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
+        ~call=() => confirmWithLastUsedMethod(payload),
+      )
 
     let updateCustomerPaymentMethodsRef = (~isFilterApplePay=false, ~isFilterGooglePay=false) => {
       let filterArray = []
@@ -562,7 +626,11 @@ let getCustomerSavedPaymentMethods = (
         let isGooglePayReadyPromise = switch gPayClientOpt {
         | Some(client) =>
           try {
-            client.isReadyToPay(payRequest)
+            observeHeadlessFunction(
+              ~event=IsReadyToPay,
+              ~paymentMethod=Wallet(GooglePay),
+              ~call=() => client.isReadyToPay(payRequest),
+            )
             ->then(
               res => {
                 let dict = res->getDictFromJson
@@ -596,7 +664,13 @@ let getCustomerSavedPaymentMethods = (
           },
         )
         ->catch(
-          _ => {
+          err => {
+            logHeadlessLifecycle(
+              ~event=WalletFlowFailed({reason: PaymentDataFailed}),
+              ~paymentMethod=Wallet(GooglePay),
+              ~exn=err,
+              ~message="Failed to build Google Pay payment data request from session token",
+            )
             resolve()
           },
         )
@@ -655,3 +729,30 @@ let getCustomerSavedPaymentMethods = (
     handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
   })
 }
+
+let getCustomerSavedPaymentMethods = (
+  ~options: option<JSON.t>,
+  ~clientSecretRef: ref<string>,
+  ~publishableKey,
+  ~endpoint,
+  ~customPodUri,
+  ~sdkAuthorizationRef: ref<string>,
+  ~redirectionFlags,
+  ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
+  ~isUpdateIntentInProgress: ref<bool>,
+) =>
+  observePaymentSessionCall(
+    ~event=HyperLoaderLogger.GetCustomerSavedPaymentMethods(paymentSessionSurface),
+    ~call=() =>
+      fetchCustomerSavedPaymentMethods(
+        ~options,
+        ~clientSecretRef,
+        ~publishableKey,
+        ~endpoint,
+        ~customPodUri,
+        ~sdkAuthorizationRef,
+        ~redirectionFlags,
+        ~iframeRef,
+        ~isUpdateIntentInProgress,
+      ),
+  )

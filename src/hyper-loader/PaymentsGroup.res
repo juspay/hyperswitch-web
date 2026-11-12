@@ -68,6 +68,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let customBackendUrl = config.customBackendUrl->Option.getOr("")
   let appearance = config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
   let locale = config.locale->Option.getOr("en")
+  SdkLogger.logState(~event=SdkLogger.CardFormCreated({scope: "payment_form"}))
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
@@ -156,10 +157,12 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                     ("clientSecret", clientSecret->JSON.Encode.string),
                     ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
                     ("sdkSessionId", ""->JSON.Encode.string),
+                    LoggerContext.sharedContext(),
                     ("customPodUri", ""->JSON.Encode.string),
                     ("parentURL", "*"->JSON.Encode.string),
                     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
                     ("launchTime", Date.now()->JSON.Encode.float),
+                    ("loggerSource", "hyper_payments_coordinator"->JSON.Encode.string),
                   ]->Dict.fromArray
                 mount.iframe
                 ->Nullable.make
@@ -301,6 +304,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         ("clientSecret", clientSecret->JSON.Encode.string),
       ],
       ~sdkSessionId="",
+      ~loggerSource="hyper_payments_v2",
       ~savedCardBrand,
       ~tailKeys=[("locale", locale->JSON.Encode.string)],
     )
@@ -429,6 +433,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
           savedCardTokenRef := savedCardToken
         }
       },
+      ~logFieldUnmounted=field => SdkLogger.logState(~event=SdkLogger.CardFieldUnmounted({scope: "payment_form", field})),
+      ~vaultProvider="none",
     )
 
     attachFieldListener()
@@ -503,53 +509,81 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     EventListenerManager.removeSmartEventListener("message", doSubmitListenerName)
   )
 
-  let create = (fieldType: string, options: JSON.t): fieldHandle => {
-    switch mapFieldTypeToInternalFieldName(fieldType) {
-    | "" => {
-        Console.error(`[PaymentsGroup] invalid_field_type: ${fieldType}`)
-        Types.defaultFieldHandle
-      }
-    | _ =>
-      let subscriptionEventsChanged = mergeSubscriptionEvents(
-        ~subscriptionEventsRef,
-        ~fieldOptions=options,
-      )
-      ensureCoordinatorMounted()
-      if subscriptionEventsChanged {
-        postCoordinatorCommand(
-          coordinator,
-          [("paymentElementsUpdate", true->JSON.Encode.bool), ("options", coordinatorOptions())],
-        )
-      }
-      let fieldId = uniqueId(~prefix=fieldType)
-      let entry = createFieldHandle(fieldType, options, fieldId)
-      fieldsRef.contents->Dict.set(fieldId, entry)
-      registerField(~fields, ~fieldId, ~fieldType)
-      entry.handle
-    }
-  }
+  let create = (fieldType: string, options: JSON.t): fieldHandle =>
+    HyperLoaderLogger.observeMerchantCall(
+      ~event=HyperLoaderLogger.Create({surface: CardForm}),
+      ~details=[("field", fieldType->JSON.Encode.string)],
+      ~call=() =>
+        switch mapFieldTypeToInternalFieldName(fieldType) {
+        | "" => {
+            Console.error(`[PaymentsGroup] invalid_field_type: ${fieldType}`)
+            HyperLoaderLogger.logMerchantIssue(
+              ~issue=MalformedValue,
+              ~details=[("field", fieldType->JSON.Encode.string)],
+            )
+            Types.defaultFieldHandle
+          }
+        | _ =>
+          let subscriptionEventsChanged = mergeSubscriptionEvents(
+            ~subscriptionEventsRef,
+            ~fieldOptions=options,
+          )
+          ensureCoordinatorMounted()
+          if subscriptionEventsChanged {
+            postCoordinatorCommand(
+              coordinator,
+              [
+                ("paymentElementsUpdate", true->JSON.Encode.bool),
+                ("options", coordinatorOptions()),
+              ],
+            )
+          }
+          let fieldId = uniqueId(~prefix=fieldType)
+          let entry = createFieldHandle(fieldType, options, fieldId)
+          fieldsRef.contents->Dict.set(fieldId, entry)
+          registerField(~fields, ~fieldId, ~fieldType)
+          SdkLogger.logState(~event=SdkLogger.CardFieldCreated({scope: "payment_form", field: fieldType}))
+          entry.handle
+        },
+    )
 
   let update = (newOptions: JSON.t): unit => {
     let newOptionsDict = newOptions->getDictFromJson
     let attemptsClientSecretMutation = newOptionsDict->Dict.get("clientSecret")->Option.isSome
     let attemptsConfirmParamsMutation = newOptionsDict->Dict.get("confirmParams")->Option.isSome
     if attemptsClientSecretMutation || attemptsConfirmParamsMutation {
+      HyperLoaderLogger.logMerchantIssue(
+        ~issue=ImmutableAfterMount,
+        ~details=[
+          (
+            "field",
+            (attemptsClientSecretMutation ? "clientSecret" : "confirmParams")->JSON.Encode.string,
+          ),
+        ],
+      )
       Console.warn(
         "[PaymentsGroup] update() refused: `clientSecret` and `confirmParams` are immutable after mount. " ++
         "Create a new group (or remount the fields) to switch intents.",
       )
     } else {
-      fieldsRef.contents
-      ->Dict.valuesToArray
-      ->Array.forEach(entry => {
-        entry.iframeRef.contents->Window.iframePostMessage(
-          [
-            ("paymentElementsUpdate", true->JSON.Encode.bool),
-            ("options", newOptions),
-          ]->Dict.fromArray,
-          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
-        )
-      })
+      HyperLoaderLogger.observeMerchantCall(
+        ~event=HyperLoaderLogger.Update({surface: CardForm}),
+        ~details=[
+          ("field_count", fieldsRef.contents->Dict.valuesToArray->Array.length->JSON.Encode.int),
+        ],
+        ~call=() =>
+          fieldsRef.contents
+          ->Dict.valuesToArray
+          ->Array.forEach(entry => {
+            entry.iframeRef.contents->Window.iframePostMessage(
+              [
+                ("paymentElementsUpdate", true->JSON.Encode.bool),
+                ("options", newOptions),
+              ]->Dict.fromArray,
+              ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
+            )
+          }),
+      )
     }
   }
 
@@ -584,76 +618,86 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       )
     })
 
-  let confirmPayment = (): promise<JSON.t> => {
-    if confirmingRef.contents {
-      Promise.resolve(
-        groupFailureResponse(
-          ~code="confirm_in_progress",
-          ~errorType="api_error",
-          ~message="confirmPayment() already in progress",
-        ),
-      )
-    } else {
-      switch (findFieldOfType("cardNumber"), findFieldOfType("cardCvc")) {
-      | (Some(_entry), _) => dispatchConfirm(~flow="payments", ~paymentToken=None)
-      | (None, _) if findFieldOfType("cardholderName")->Option.isSome =>
-        Promise.resolve(
-          groupFailureResponse(
-            ~code="validation_error",
-            ~errorType="validation_error",
-            ~message="The cardholderName field needs the cardNumber field in the same card form",
-          ),
-        )
-      | (None, Some(entry)) =>
-        let paymentToken = entry.savedCardTokenRef.contents
-        if paymentToken === "" {
+  let confirmPayment = (): promise<JSON.t> =>
+    HyperLoaderLogger.observeMerchantCall(
+      ~event=HyperLoaderLogger.ConfirmPayment({surface: CardForm}),
+      ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
+      ~failureOf=errorCodeFailureSummary,
+      ~call=() =>
+        if confirmingRef.contents {
           Promise.resolve(
             groupFailureResponse(
-              ~code="validation_error",
-              ~errorType="validation_error",
-              ~message="savedCard.paymentToken is required for the saved-card CVC flow",
+              ~code="confirm_in_progress",
+              ~errorType="api_error",
+              ~message="confirmPayment() already in progress",
             ),
           )
         } else {
-          dispatchConfirm(~flow="savedCardCvc", ~paymentToken=Some(paymentToken))
-        }
-      | (None, None) =>
-        Promise.resolve(
+          switch (findFieldOfType("cardNumber"), findFieldOfType("cardCvc")) {
+          | (Some(_entry), _) => dispatchConfirm(~flow="payments", ~paymentToken=None)
+          | (None, _) if findFieldOfType("cardholderName")->Option.isSome =>
+            Promise.resolve(
+              groupFailureResponse(
+                ~code="validation_error",
+                ~errorType="validation_error",
+                ~message="The cardholderName field needs the cardNumber field in the same card form",
+              ),
+            )
+          | (None, Some(entry)) =>
+            let paymentToken = entry.savedCardTokenRef.contents
+            if paymentToken === "" {
+              Promise.resolve(
+                groupFailureResponse(
+                  ~code="validation_error",
+                  ~errorType="validation_error",
+                  ~message="savedCard.paymentToken is required for the saved-card CVC flow",
+                ),
+              )
+            } else {
+              dispatchConfirm(~flow="savedCardCvc", ~paymentToken=Some(paymentToken))
+            }
+          | (None, None) =>
+            Promise.resolve(
+              groupFailureResponse(
+                ~code="validation_error",
+                ~errorType="validation_error",
+                ~message="No card fields are mounted",
+              ),
+            )
+          }
+        },
+    )
+
+  let deinit = (): unit =>
+    HyperLoaderLogger.observeMerchantCall(
+      ~event=HyperLoaderLogger.Deinit({surface: CardForm}),
+      ~call=() => {
+        SdkLogger.logState(~event=SdkLogger.CardFormDestroyed({scope: "payment_form"}))
+        fieldsRef.contents
+        ->Dict.valuesToArray
+        ->Array.forEach(entry => {
+          try entry.handle.destroy() catch {
+          | _ => ()
+          }
+        })
+        fieldsRef := Dict.make()
+        fields := Dict.make()->JSON.Encode.object
+        settlePendingConfirm(
           groupFailureResponse(
-            ~code="validation_error",
-            ~errorType="validation_error",
-            ~message="No card fields are mounted",
+            ~code="group_deinitialized",
+            ~errorType="server_error",
+            ~message="deinit() was called while a confirm was in flight — the payment may still have gone through",
           ),
         )
-      }
-    }
-  }
-
-  let deinit = (): unit => {
-    fieldsRef.contents
-    ->Dict.valuesToArray
-    ->Array.forEach(entry => {
-      try entry.handle.destroy() catch {
-      | _ => ()
-      }
-    })
-    fieldsRef := Dict.make()
-    fields := Dict.make()->JSON.Encode.object
-    settlePendingConfirm(
-      groupFailureResponse(
-        ~code="group_deinitialized",
-        ~errorType="server_error",
-        ~message="deinit() was called while a confirm was in flight — the payment may still have gone through",
-      ),
+        confirmingRef := false
+        coordinator.pendingCommandsRef := []
+        coordinatorConfirmPendingRef := None
+        deinitCallbacksRef.contents->Array.forEach(cb => cb())
+        deinitCallbacksRef := []
+        coordinator.mountRef := None
+        coordinator.readyRef := false
+      },
     )
-    confirmingRef := false
-    coordinator.pendingCommandsRef := []
-    coordinatorConfirmPendingRef := None
-    deinitCallbacksRef.contents->Array.forEach(cb => cb())
-    deinitCallbacksRef := []
-    coordinator.mountRef := None
-    coordinator.readyRef := false
-  }
 
   let cardForm: Types.cardForm = {
     create,

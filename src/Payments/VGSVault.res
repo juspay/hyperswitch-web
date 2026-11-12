@@ -11,6 +11,40 @@ open VGSTypes
 open VGSHelpers
 open VGSConstants
 
+let submitVaultTokenization = (vault: returnValue, ~scope, ~onData) => {
+  let startedAt = Date.now()
+  let event = PaymentMethodSessionLogger.VaultTokenization({scope: scope})
+  let details = [("vault", "vgs"->JSON.Encode.string)]
+  let paymentMethod = LoggerPaymentMethod.Card
+  PaymentMethodSessionLogger.logApi(~event, ~outcome=Started, ~details, ~paymentMethod)
+  let onSuccess = (status, data) => {
+    let statusCode = status->getFloatFromJson(0.)->Float.toInt
+    let details = details->Array.concat([("status_code", statusCode->JSON.Encode.int)])
+    PaymentMethodSessionLogger.logApi(
+      ~event,
+      ~outcome=statusCode >= 200 && statusCode < 300 ? Done : Failed,
+      ~details,
+      ~startedAt,
+      ~paymentMethod,
+    )
+    onData(data)
+  }
+  // Fields are valid, so onError here is a genuine tokenisation/network
+  // failure (not a validation error) — reject the merchant promise.
+  let onError = err => {
+    PaymentMethodSessionLogger.logApi(
+      ~event,
+      ~outcome=Failed,
+      ~details,
+      ~startedAt,
+      ~exn=err->Identity.anyTypeToJson,
+      ~paymentMethod,
+    )
+    postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+  }
+  vault.submit("/post", JSON.Encode.object(Dict.make()), onSuccess, onError)
+}
+
 @react.component
 let make = (~cvcOnly=false) => {
   let vaultCredentials = Jotai.useAtomValue(JotaiAtoms.vaultCredentials)
@@ -47,6 +81,7 @@ let make = (~cvcOnly=false) => {
     vgsScriptURL,
     ~integrity=vgsScriptIntegrity,
     ~crossorigin="anonymous",
+    ~vaultScript=true,
   )
   // Guard so the VGS vault + its fields are created exactly once after load.
   let vaultInitializedRef = React.useRef(false)
@@ -265,8 +300,7 @@ let make = (~cvcOnly=false) => {
           setVgsCVCError(_ => cvcErr)
           emitSavedCardCvcStatus(~dict=stateDict, ~error=cvcErr)
           if cvcErr == "" && isOuterValid {
-            let emptyPayload = JSON.Encode.object(Dict.make())
-            let onSuccess = (_, data) => {
+            vault->submitVaultTokenization(~scope=SaveCardCvc, ~onData=data => {
               let cvcToken = data->getDictFromJson->getString("card_cvc", "")
               messageParentWindow(
                 [
@@ -275,10 +309,7 @@ let make = (~cvcOnly=false) => {
                 ],
                 ~targetOrigin=parentURL,
               )
-            }
-            let onError = _ =>
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-            vault.submit("/post", emptyPayload, onSuccess, onError)
+            })
           } else if cvcErr != "" {
             submitUserError(
               isFieldEmpty(stateDict, "card_cvc")
@@ -302,11 +333,9 @@ let make = (~cvcOnly=false) => {
             // never send card data to VGS when the outer fields are invalid:
             // ParentCardComponent has already reported that error and isn't
             // listening for the token. Mirrors the Hyperswitch vault collector's submit gate.
-            let emptyPayload = JSON.Encode.object(Dict.make())
-
             // Tokenisation succeeded — forward the aliases to ParentCardComponent so
             // it can build the confirm body and call intent.
-            let onSuccess = (_, data) => {
+            vault->submitVaultTokenization(~scope=FullCard, ~onData=data => {
               let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
               messageParentWindow(
                 [
@@ -323,14 +352,7 @@ let make = (~cvcOnly=false) => {
                 ],
                 ~targetOrigin=parentURL,
               )
-            }
-
-            // Fields are valid, so onError here is a genuine tokenisation/network
-            // failure (not a validation error) — reject the merchant promise.
-            let onError = _ =>
-              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-
-            vault.submit("/post", emptyPayload, onSuccess, onError)
+            })
           } else if !cardFieldsValid {
             // Card fields invalid → reject the merchant's confirm promise once, with
             // the message that matches the failure (missing field vs. invalid
@@ -346,7 +368,13 @@ let make = (~cvcOnly=false) => {
           }
         }
 
-      | None => Console.error("VGS Vault not initialized for submission")
+      | None =>
+        PaymentMethodSessionLogger.logLifecycle(
+          ~event=VaultFlowFailed({reason: FormCreationFailed}),
+          ~details=[("vault", "vgs"->JSON.Encode.string)],
+          ~message="Vault form not initialized at submit",
+        )
+        Console.error("VGS Vault not initialized for submission")
       }
     }
   }, (form, localeString, cvcOnly, parentURL))
