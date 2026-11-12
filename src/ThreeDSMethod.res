@@ -26,6 +26,8 @@ let make = () => {
     let iframeId = metadataDict->getString("iframeId", "")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
+      SdkLogger.logLifecycle(~event=SdkLogger.ThreeDsMethodCompleted, ~paymentMethod=Card)
+
       isThreeDSMethodCompletionFired.current = true
 
       // Let the parent replace this frame in one transition. Closing it first
@@ -88,7 +90,19 @@ let make = () => {
     }
   }
 
-  let handleOnError = _value => {
+  let handleOnError = value => {
+    SdkLogger.logLifecycle(
+      ~event=switch value {
+      | "Timeout while waiting for ThreeDS Method completion" => SdkLogger.ThreeDsMethodTimedOut
+      | "Unable to Locate threeDsInvisibleDiv" =>
+        SdkLogger.ThreeDsMethodFailed({reason: SdkLogger.MissingContainer})
+      | "ThreeDS Method Iframe Load Error" =>
+        SdkLogger.ThreeDsMethodFailed({reason: SdkLogger.IframeLoadFailed})
+      | _ => SdkLogger.ThreeDsMethodFailed({reason: SdkLogger.FormSubmitFailed})
+      },
+      ~paymentMethod=Card,
+      ~message=value,
+    )
     stateMetadataRef.current
     ->Utils.getDictFromJson
     ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
