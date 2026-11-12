@@ -525,7 +525,6 @@ let loadClickToPayScripts = () =>
       | Some(_) => cssPromiseResolve()
       }
     })
-
     Promise.all([srcUiKitScriptPromise, srcUiKitCssPromise])
     ->then(_ => {
       clickToPayScriptsPromiseResolve()
