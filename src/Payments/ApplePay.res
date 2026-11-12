@@ -7,7 +7,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isWallet = walletOptions->Array.includes(paymentMethodType)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
   let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
   let {publishableKey, sdkAuthorization, parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
@@ -16,13 +15,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let setIsShowOrPayUsing = Jotai.useSetAtom(JotaiAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
-  let intent = PaymentHelpers.usePaymentIntent(
-    ~isOneClickWallet=isWallet,
-    Some(loggerState),
-    Applepay,
-  )
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=isWallet, Applepay)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Some(loggerState), Applepay)
+  let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Applepay)
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
   let isApplePaySDKFlow = sessionObj->Option.isSome
@@ -276,17 +271,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let onApplePayButtonClicked = () => {
     if isTestMode {
       Console.warn("Apple Pay button clicked in test mode - interaction disabled")
-      loggerState.setLogInfo(
-        ~value="Apple Pay button clicked in test mode - interaction disabled",
-        ~eventName=APPLE_PAY_FLOW,
-        ~paymentMethod="APPLE_PAY",
-      )
     } else {
-      loggerState.setLogInfo(
-        ~value="Apple Pay Button Clicked",
-        ~eventName=APPLE_PAY_FLOW,
-        ~paymentMethod="APPLE_PAY",
-      )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,
         ~paymentMethodType,
@@ -338,7 +323,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           }
           resolve()
         })
-        ->catch(_ => {
+        ->catch(exn => {
           resolve()
         })
         ->ignore
@@ -346,15 +331,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     }
   }
 
-  let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
-  )
-
-  DynamicFieldsUtils.useLogDynamicFieldsRendered(
-    ~fields=requiredFields,
-    ~paymentMethod,
-    ~resolutionContext,
   )
 
   ApplePayHelpers.useHandleApplePayResponse(

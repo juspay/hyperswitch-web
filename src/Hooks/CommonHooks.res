@@ -19,11 +19,11 @@ type debounce = {
 
 @val @scope("document") external querySelector: string => Nullable.t<element> = "querySelector"
 
-type event = {\"type": string}
 @val @scope("document") external createElement: string => element = "createElement"
 
 @val @scope(("document", "body")) external appendChild: element => unit = "appendChild"
 
+type event = {\"type": string}
 @send
 external addEventListener: (element, string, event => unit) => unit = "addEventListener"
 

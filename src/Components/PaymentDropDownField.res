@@ -11,7 +11,6 @@ let make = (
   let {config} = Jotai.useAtomValue(configAtom)
   let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
   let {readOnly} = Jotai.useAtomValue(optionAtom)
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
   let {parentURL, iframeId} = Jotai.useAtomValue(keys)
@@ -57,11 +56,6 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
-
-    // Log the dropdown change using fieldName
-    if fieldName->String.length > 0 {
-      LoggerUtils.logInputChangeInfo(fieldName, loggerState)
-    }
     setValue(_ => {
       isValid: Some(true),
       value,

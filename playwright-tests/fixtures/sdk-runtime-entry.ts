@@ -6,7 +6,6 @@ import GPay from "../../src/Payments/GPay.bs.js";
 import * as Atoms from "../../src/Utilities/JotaiAtoms.bs.js";
 import * as CommonHooks from "../../src/Hooks/CommonHooks.bs.js";
 import * as Elements from "../../src/hyper-loader/Elements.bs.js";
-import * as LoggerUtils from "../../src/Utilities/LoggerUtils.bs.js";
 import * as PaymentHelpers from "../../src/Utilities/PaymentHelpers.bs.js";
 import clientList from "../recordings/base/client-list.json";
 
@@ -76,20 +75,11 @@ export function makeElements() {
         event.source === iframe.contentWindow &&
         event.origin === new URL(iframe.src).origin,
     );
-  const logger = {
-    ...LoggerUtils.defaultLoggerConfig,
-    setLogInfo(value: string, eventName: string) {
-      if (eventName === "PAYMENT_ELEMENT_EVENT_LISTENERS") {
-        logs.push(JSON.parse(value));
-      }
-    },
-  };
   const elements = Elements.make(
     {},
     registerFrame,
     "test-session",
     "pk_snd_test",
-    logger,
     undefined,
     "",
     { shouldUseTopRedirection: false, shouldRemoveBeforeUnloadEvents: false },
@@ -179,17 +169,11 @@ export function mountPaymentHook(
     function PaymentHook() {
       const intent = PaymentHelpers.usePaymentIntent(
         isOneClickWallet,
-        undefined,
         paymentType,
       );
-      const sync = PaymentHelpers.usePaymentSync(
-        isOneClickWallet,
-        undefined,
-        paymentType,
-      );
+      const sync = PaymentHelpers.usePaymentSync(isOneClickWallet, paymentType);
       const complete = PaymentHelpers.useCompleteAuthorize(
         isOneClickWallet,
-        undefined,
         paymentType,
       );
       const handler =
@@ -205,7 +189,6 @@ export function mountPaymentHook(
               [],
               confirmParam,
               "test-payment",
-              undefined,
               false,
               paymentType,
               true,
