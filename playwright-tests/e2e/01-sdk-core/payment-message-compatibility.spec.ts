@@ -133,10 +133,8 @@ test.describe("Payment message compatibility @hermetic-only", () => {
               "orca-payment-element-iframeRef-",
               "",
             );
-      const fontUrl = "https://merchant-fonts.example.test/checkout.css";
-      await page.route(fontUrl, (route) =>
-        route.fulfill({ contentType: "text/css", body: "" }),
-      );
+      // The SDK's CSP permits Google Fonts; the hermetic router stubs the stylesheet.
+      const fontUrl = "https://fonts.googleapis.com/compat-checkout.css";
       await frame!.evaluate(
         ({ iframeId, fontUrl }) =>
           parent.postMessage(
