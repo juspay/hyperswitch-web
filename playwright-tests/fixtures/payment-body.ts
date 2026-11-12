@@ -146,7 +146,7 @@ export function confirmBody(
 ): Record<string, unknown> {
   const base = {
     client_secret: "",
-    return_url: `${CLIENT_BASE_URL}/completion`,
+    return_url: "https://hyperswitch.io/", // TEMP integ WAF test
     payment_method: "card",
     payment_method_data: {
       card: {
