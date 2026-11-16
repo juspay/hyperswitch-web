@@ -11,6 +11,7 @@ import "./App.css";
 // Utility functions to help with payment flow
 import {
   getClientSecretFromUrl,
+  getReturnUrl,
   handlePaymentStatus,
   paymentElementOptions,
 } from "./utils";
@@ -60,7 +61,7 @@ export default function CheckoutForm({ layoutQueryParam, optionsQueryParam }) {
       const { error, status } = await hyper.confirmPayment({
         elements,
         confirmParams: {
-          return_url: "https://hyperswitch.io/", // TEMP integ WAF test
+          return_url: getReturnUrl(),
         },
       });
 

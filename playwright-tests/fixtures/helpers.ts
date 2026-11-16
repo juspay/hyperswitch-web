@@ -3,14 +3,15 @@
 //
 //   Card entry + confirm   typeCard, waitForConfirm, expectConfirmedWith, slowConfirm
 //   Redirect flows         submitAndCaptureConfirm, payAndCaptureConfirm, expectConfirmRequest,
-//                          expectRedirectedTo, expectRedirectedToNextAction
+//                          expectRedirectedTo, expectRedirectedToNextAction,
+//                          expectReturnedWith
 //   Page checks            expectCheckoutTitle, expectPaymentElementLoaded, captureConsoleErrors
 //
 // Every `hermetic`-only check is a no-op on the live projects, so a spec can call
 // these unconditionally.
 // ---------------------------------------------------------------------------
 import { expect, type Page, type Response, type Route } from "@playwright/test";
-import { CLIENT_BASE_URL } from "./env";
+import { CLIENT_BASE_URL, RETURN_ORIGIN } from "./env";
 import { testIds } from "./test-ids";
 import type { CardDetails } from "./cards";
 import type { Hermetic } from "./hermetic";
@@ -179,6 +180,30 @@ export function expectConfirmRequest(
       expected.payment_method_data as Record<string, unknown>,
     );
   }
+}
+
+/**
+ * Waits for the router to send the browser back to return_url (the demo shop,
+ * or PUBLIC_RETURN_URL when it runs on localhost) with `status` in the query,
+ * and returns that query. With `paymentId`, also checks the URL is for that
+ * payment.
+ */
+export async function expectReturnedWith(
+  page: Page,
+  status: string,
+  {
+    paymentId,
+    timeout = 45_000,
+  }: { paymentId?: string; timeout?: number } = {},
+): Promise<URLSearchParams> {
+  await page.waitForURL(
+    (url) =>
+      url.origin === RETURN_ORIGIN && url.searchParams.get("status") === status,
+    { timeout, waitUntil: "commit" },
+  );
+  const params = new URL(page.url()).searchParams;
+  if (paymentId) expect(params.get("payment_id")).toBe(paymentId);
+  return params;
 }
 
 /**

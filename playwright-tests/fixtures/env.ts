@@ -61,6 +61,26 @@ export const SDK_URL = process.env.SDK_URL || `http://localhost:${SDK_PORT}`;
 /** Demo shop (Hyperswitch-React-Demo-App webpack dev server). */
 export const CLIENT_BASE_URL =
   process.env.CLIENT_BASE_URL || `http://localhost:${DEMO_PORT}`;
+/**
+ * Sandbox and integ reject (CloudFront/ELB 403) any request body carrying a
+ * localhost URL, so while the demo shop runs on localhost the payments return
+ * to this public URL instead. The router still appends
+ * ?status=…&payment_id=…&payment_intent_client_secret=…, so specs read the
+ * outcome from that URL (see expectReturnedWith in helpers.ts). Keep in sync
+ * with Hyperswitch-React-Demo-App/src/utils.js (getReturnUrl) and setup/merchant-setup.js.
+ */
+export const PUBLIC_RETURN_URL = "http://example.com";
+const LOCAL_HOSTNAMES = ["localhost", "127.0.0.1"];
+/** True when payments return to the demo shop itself rather than PUBLIC_RETURN_URL. */
+export const RETURNS_TO_DEMO_SHOP = !LOCAL_HOSTNAMES.includes(
+  new URL(CLIENT_BASE_URL).hostname,
+);
+/** return_url for server-side payment bodies. */
+export const RETURN_URL = RETURNS_TO_DEMO_SHOP
+  ? `${CLIENT_BASE_URL}/completion`
+  : PUBLIC_RETURN_URL;
+/** Origin the router sends the browser back to after a redirect flow. */
+export const RETURN_ORIGIN = new URL(RETURN_URL).origin;
 /** Demo shop's node server (/config, /urls, /create-intent). */
 export const DEMO_SERVER_URL =
   process.env.DEMO_SERVER_URL || `http://localhost:${DEMO_SERVER_PORT}`;

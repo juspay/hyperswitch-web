@@ -14,7 +14,7 @@
 // the Stripe profile unless the test sets one, e.g.
 // paymentBody({ profile_id: credentials.profileId(connectorEnum.TRUSTPAY) }).
 // ---------------------------------------------------------------------------
-import { CLIENT_BASE_URL } from "./env";
+import { RETURN_URL } from "./env";
 
 export interface Address {
   line1?: string;
@@ -146,7 +146,7 @@ export function confirmBody(
 ): Record<string, unknown> {
   const base = {
     client_secret: "",
-    return_url: "https://hyperswitch.io/", // TEMP integ WAF test
+    return_url: RETURN_URL,
     payment_method: "card",
     payment_method_data: {
       card: {

@@ -9,7 +9,13 @@
 // demo app's .env would provide (HYPERSWITCH_SERVER_URL / HYPERSWITCH_CLIENT_URL).
 // ---------------------------------------------------------------------------
 import type { BrowserContext } from "@playwright/test";
-import { CLIENT_BASE_URL, HYPERSWITCH_API_URL, SDK_URL } from "./env";
+import {
+  CLIENT_BASE_URL,
+  HYPERSWITCH_API_URL,
+  RETURN_ORIGIN,
+  RETURNS_TO_DEMO_SHOP,
+  SDK_URL,
+} from "./env";
 
 export async function installDemoShopConfig(
   context: BrowserContext,
@@ -21,5 +27,25 @@ export async function installDemoShopConfig(
   );
   await context.route(`${base}/payments/config`, (route) =>
     route.fulfill({ json: { publishableKey: "", profileId: "" } }),
+  );
+}
+
+/**
+ * When payments return to PUBLIC_RETURN_URL (demo shop on localhost), answer
+ * that page with a blank document so a redirect flow's landing never depends
+ * on the real site; specs read the outcome from the URL's query. Install after
+ * the hermetic engine so this route wins over its catch-all.
+ */
+export async function installReturnPage(
+  context: BrowserContext,
+): Promise<void> {
+  if (RETURNS_TO_DEMO_SHOP) return;
+  await context.route(
+    (url) => url.origin === RETURN_ORIGIN,
+    (route) =>
+      route.fulfill({
+        contentType: "text/html",
+        body: "<!doctype html><title>Payment return (test stand-in)</title>",
+      }),
   );
 }

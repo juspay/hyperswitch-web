@@ -715,6 +715,20 @@ async function createApiKey(adminApiKey, merchantId, apiBaseUrl) {
 }
 
 /**
+ * Business profile return_url. Sandbox and integ reject (403) any request body
+ * carrying a localhost URL, so a localhost demo shop gets a public URL instead.
+ * Mirrors RETURN_URL in fixtures/env.ts.
+ */
+function profileReturnUrl() {
+  const clientBaseUrl =
+    process.env.CLIENT_BASE_URL ||
+    `http://localhost:${process.env.DEMO_PORT || 9160}`;
+  return ["localhost", "127.0.0.1"].includes(new URL(clientBaseUrl).hostname)
+    ? "http://example.com"
+    : `${clientBaseUrl}/completion`;
+}
+
+/**
  * Creates a dedicated business profile for one connector.
  * @param {string} secretKey
  * @param {string} merchantId
@@ -741,7 +755,7 @@ async function createBusinessProfile(
       },
       body: JSON.stringify({
         profile_name: profileName,
-        return_url: "https://hyperswitch.io/", // TEMP integ WAF test
+        return_url: profileReturnUrl(),
       }),
     },
   );

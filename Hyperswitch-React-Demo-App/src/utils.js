@@ -96,11 +96,21 @@ export const handlePaymentStatus = (status, setMessage, setIsSuccess) => {
   setIsSuccess(status === "succeeded");
 };
 
+// Sandbox and integ reject (403) any request body carrying a localhost URL, so
+// on localhost send the shopper back to a public page instead. The router adds
+// ?status=…&payment_id=…&payment_intent_client_secret=… to it either way.
+// Used for both confirmPayment and wallet buttons (walletReturnUrl).
+const PUBLIC_RETURN_URL = "http://example.com";
+export const getReturnUrl = () =>
+  ["localhost", "127.0.0.1"].includes(window.location.hostname)
+    ? PUBLIC_RETURN_URL
+    : window.location.origin;
+
 export const paymentElementOptions = (layout, extraOptions) => ({
   displayDefaultSavedPaymentIcon: false,
   ...(layout && { layout }),
   wallets: {
-    walletReturnUrl: window.location.origin,
+    walletReturnUrl: getReturnUrl(),
     applePay: "auto",
     googlePay: "auto",
     style: {

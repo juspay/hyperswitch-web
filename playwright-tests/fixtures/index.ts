@@ -40,7 +40,7 @@ import { Recorder } from "./hermetic/recorder";
 import { HyperswitchApi } from "./api";
 import { Checkout } from "./checkout";
 import { Sdk } from "./sdk";
-import { installDemoShopConfig } from "./demo-shop";
+import { installDemoShopConfig, installReturnPage } from "./demo-shop";
 
 export type Mode = "hermetic" | "live";
 
@@ -159,6 +159,8 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     // Demo shop /payments/config + /payments/urls, answered by the harness in every project.
     await installDemoShopConfig(context);
     if (hermetic.engine) await hermetic.engine.install(context);
+    // Public return_url stand-in (after the engine, so it takes precedence).
+    await installReturnPage(context);
 
     const recorder =
       mode === "live" && RECORD ? new Recorder(HYPERSWITCH_API_URL) : undefined;
@@ -243,4 +245,12 @@ export type { Checkout, OpenedCheckout } from "./checkout";
 export type { HyperswitchApi } from "./api";
 export type { TestCredentials } from "./credentials";
 export * from "./helpers";
-export { HYPERSWITCH_API_URL, CLIENT_BASE_URL, SDK_URL, TEST_ENV } from "./env";
+export {
+  HYPERSWITCH_API_URL,
+  CLIENT_BASE_URL,
+  SDK_URL,
+  TEST_ENV,
+  RETURN_URL,
+  RETURN_ORIGIN,
+  RETURNS_TO_DEMO_SHOP,
+} from "./env";

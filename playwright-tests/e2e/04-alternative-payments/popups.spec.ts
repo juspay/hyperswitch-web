@@ -51,7 +51,8 @@ import {
   payAndCaptureConfirm,
   submitAndCaptureConfirm,
   expectRedirectedTo,
-  CLIENT_BASE_URL,
+  RETURN_URL,
+  RETURN_ORIGIN,
 } from "../../fixtures";
 
 const PAYPAL_CUSTOMER = "popups_paypal_user";
@@ -61,7 +62,6 @@ const PAYPAL_REDIRECT_TRUELAYER_CUSTOMER =
   "popups_paypal_redirect_truelayer_user";
 // TrueLayer sandbox mock-bank user whose payments execute.
 const TRUELAYER_SANDBOX_USER = "test_executed";
-const DEMO_SHOP_ORIGIN = new URL(CLIENT_BASE_URL).origin;
 
 /** Why the live variants skip on the merchant provisioned by setup/merchant-setup.js. */
 const LIVE_SETUP = {
@@ -431,7 +431,7 @@ test.describe("PayPal redirect cancelled, then TrueLayer", () => {
         customer_id: PAYPAL_REDIRECT_TRUELAYER_CUSTOMER,
         currency: "GBP",
         // Where PayPal's cancel and TrueLayer's completion send the shopper back to.
-        return_url: `${CLIENT_BASE_URL}/completion`,
+        return_url: RETURN_URL,
         billing: { ...base.billing, address },
         shipping: { ...base.shipping, address },
       }),
@@ -486,7 +486,7 @@ test.describe("PayPal redirect cancelled, then TrueLayer", () => {
       .getByRole("link", { name: /cancel and return/i })
       .first()
       .click({ timeout: 30_000 });
-    await page.waitForURL((url) => url.origin === DEMO_SHOP_ORIGIN, {
+    await page.waitForURL((url) => url.origin === RETURN_ORIGIN, {
       timeout: 30_000,
       waitUntil: "commit",
     });
@@ -542,10 +542,10 @@ async function completeTrueLayerSandboxPayment(page: Page): Promise<void> {
       .first()
       .isVisible()
       .catch(() => false);
-  while (new URL(page.url()).origin !== DEMO_SHOP_ORIGIN) {
+  while (new URL(page.url()).origin !== RETURN_ORIGIN) {
     if (Date.now() > deadline) {
       throw new Error(
-        `TrueLayer sandbox flow did not return to the demo shop; stuck on ${page.url()}`,
+        `TrueLayer sandbox flow did not return to return_url; stuck on ${page.url()}`,
       );
     }
     const mockBank = page.getByText(/mock uk payments.*redirect/i);
