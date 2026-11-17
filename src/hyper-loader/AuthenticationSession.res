@@ -1,6 +1,12 @@
 open Types
 
-let make = (options, ~clientSecret, ~publishableKey) => {
+let make = (
+  options,
+  ~clientSecret,
+  ~publishableKey,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
+) => {
+  let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
 
   let customPodUri = options->Utils.getDictFromJson->Utils.getString("customPodUri", "")
@@ -13,6 +19,7 @@ let make = (options, ~clientSecret, ~publishableKey) => {
       AuthenticationSessionMethods.initClickToPaySession(
         ~clientSecret,
         ~publishableKey,
+        ~logger,
         ~customPodUri,
         ~endpoint,
         ~profileId,
@@ -24,6 +31,7 @@ let make = (options, ~clientSecret, ~publishableKey) => {
       AuthenticationSessionMethods.getActiveClickToPaySession(
         ~clientSecret,
         ~publishableKey,
+        ~logger,
         ~customPodUri,
         ~endpoint,
         ~profileId,

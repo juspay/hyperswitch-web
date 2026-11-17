@@ -138,6 +138,7 @@ let parseEligibilityResponse = json => {
 let performEligibilityCheck = async (
   ~clientSecret: string,
   ~publishableKey: string,
+  ~logger: HyperLoggerTypes.loggerMake,
   ~customPodUri,
   ~bodyArr,
   ~sdkAuthorization,
@@ -151,6 +152,7 @@ let performEligibilityCheck = async (
     option<eligibilityOfferDetails> => option<eligibilityOfferDetails>
   ) => unit,
   ~setEligibilityError: option<(option<string> => option<string>) => unit>,
+  ~errorLogMessage: string,
   ~fetchEligibility,
 ) => {
   setEligibilitySurchargeDetails(_ => None)
@@ -160,6 +162,7 @@ let performEligibilityCheck = async (
     let json = await fetchEligibility(
       ~clientSecret,
       ~publishableKey,
+      ~logger,
       ~customPodUri,
       ~bodyArr,
       ~sdkAuthorization,
@@ -172,7 +175,16 @@ let performEligibilityCheck = async (
     setEligibilityOfferDetails(_ => offerDetails)
     setIsEligibilityPending(_ => false)
   } catch {
-  | _ =>
+  | exn =>
+    logger.setLogError(
+      ~value={
+        "message": errorLogMessage,
+        "error": exn->Identity.anyTypeToJson->JSON.stringify,
+      }
+      ->JSON.stringifyAny
+      ->Option.getOr(""),
+      ~eventName=PAYMENT_METHOD_ELIGIBILITY_CALL,
+    )
     setEligibilityError->Option.forEach(setter => setter(_ => None))
     setIsEligibilityPending(_ => false)
   }
@@ -182,6 +194,7 @@ let startEligibilityCheck = async (
   ~controllerRef: React.ref<option<Fetch.AbortController.t>>,
   ~clientSecret: option<string>,
   ~publishableKey,
+  ~logger,
   ~customPodUri,
   ~bodyArr,
   ~sdkAuthorization,
@@ -190,6 +203,7 @@ let startEligibilityCheck = async (
   ~setEligibilitySurchargeDetails,
   ~setEligibilityOfferDetails,
   ~setEligibilityError,
+  ~errorLogMessage: string,
   ~fetchEligibility,
 ) => {
   controllerRef.current->Option.forEach(c => Fetch.AbortController.abort(c))
@@ -202,6 +216,7 @@ let startEligibilityCheck = async (
     await performEligibilityCheck(
       ~clientSecret,
       ~publishableKey,
+      ~logger,
       ~customPodUri,
       ~bodyArr,
       ~sdkAuthorization,
@@ -211,6 +226,7 @@ let startEligibilityCheck = async (
       ~setEligibilitySurchargeDetails,
       ~setEligibilityOfferDetails,
       ~setEligibilityError,
+      ~errorLogMessage,
       ~fetchEligibility,
     )
   | None => setIsEligibilityPending(_ => false)

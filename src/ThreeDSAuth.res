@@ -10,6 +10,8 @@ let make = () => {
   let paymentMethodFlowCancelMetadata = React.useRef(Dict.make())
   let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
+  let logger = HyperLogger.make(~source=Elements(Payment))
+
   let handleFrictionLess = () => {
     let ele = Window.querySelector("#threeDsAuthDiv")
     switch ele->Nullable.toOption {
@@ -49,7 +51,11 @@ let make = () => {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
+        let publishableKey = metaDataDict->getString("publishableKey", "")
         let sdkAuthorization = metaDataDict->getOptionString("sdkAuthorization")
+        logger.setClientSecret(paymentIntentId)
+        logger.setSdkAuthorization(sdkAuthorization->Option.getOr(""))
+        logger.setMerchantId(publishableKey)
         paymentMethodFlowCancelMetadata.current =
           metaDataDict->getDictFromDict("paymentMethodFlowCancel")
         let headersDict =
@@ -68,6 +74,7 @@ let make = () => {
         let threeDsMethodComp = metaDataDict->getString("3dsMethodComp", "U")
         open Promise
         PaymentHelpers.threeDsAuth(
+          ~logger,
           ~clientSecret=paymentIntentId,
           ~threeDsMethodComp,
           ~headers=headers->Dict.fromArray,
@@ -95,6 +102,13 @@ let make = () => {
 
             let ele = Window.querySelector("#threeDsAuthDiv")
 
+            LoggerUtils.handleLogging(
+              ~optLogger=Some(logger),
+              ~eventName=DISPLAY_THREE_DS_SDK,
+              ~value=transStatus,
+              ~paymentMethod="CARD",
+            )
+
             switch ele->Nullable.toOption {
             | Some(elem) =>
               if transStatus === "C" {
@@ -114,7 +128,15 @@ let make = () => {
             resolve(json)
           }
         })
-        ->catch(_ => {
+        ->catch(err => {
+          let exceptionMessage = err->formatException
+          LoggerUtils.handleLogging(
+            ~optLogger=Some(logger),
+            ~eventName=DISPLAY_THREE_DS_SDK,
+            ~value=exceptionMessage->JSON.stringify,
+            ~paymentMethod="CARD",
+            ~logType=ERROR,
+          )
           let errorObj = PaymentError.itemToObjMapper(dict)
           postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
           closePaymentLoaderIfAny()

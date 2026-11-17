@@ -21,6 +21,7 @@ let renderButtons = (buttons: some, ~onButtonSettled) =>
   ->ignore
 
 let loadPaypalSDK = (
+  ~loggerState: HyperLoggerTypes.loggerMake,
   ~onButtonSettled,
   ~parentOrigin,
   ~sdkHandleOneClickConfirmPayment as _,
@@ -78,6 +79,11 @@ let loadPaypalSDK = (
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: () => {
       if isTestMode {
+        loggerState.setLogInfo(
+          ~value="Paypal SDK createOrder called in test mode - interaction disabled",
+          ~eventName=PAYPAL_SDK_FLOW,
+          ~paymentMethod="PAYPAL",
+        )
         resolve("")
       } else {
         let {country, state, pinCode} = nonPiiAdderessData
@@ -142,6 +148,11 @@ let loadPaypalSDK = (
               }
             })
           } else {
+            loggerState.setLogInfo(
+              ~value="Paypal SDK oneClickDoSubmit - false",
+              ~eventName=PAYPAL_SDK_FLOW,
+              ~paymentMethod="PAYPAL",
+            )
             resolve("")
           }
         })
@@ -166,6 +177,7 @@ let loadPaypalSDK = (
 
         calculateTax(
           ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
+          ~logger=loggerState,
           ~publishableKey,
           ~clientSecret=clientSecret->Option.getOr(""),
           ~paymentMethodType,
@@ -248,7 +260,13 @@ let loadPaypalSDK = (
       handleCancel()
     },
     onError: err => err->handlePaypalError(~handleCancel, ~handleCloseLoader),
-    onClick: () => (),
+    onClick: () => {
+      loggerState.setLogInfo(
+        ~value="Paypal SDK Button Clicked",
+        ~eventName=PAYPAL_SDK_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
+    },
   })->renderButtons(~onButtonSettled)
   areOneClickWalletsRendered(prev => {
     ...prev,
@@ -257,6 +275,7 @@ let loadPaypalSDK = (
 }
 
 let loadBraintreePaypalSdk = (
+  ~loggerState: HyperLoggerTypes.loggerMake,
   ~onButtonSettled,
   ~parentOrigin,
   ~sdkHandleOneClickConfirmPayment,
@@ -349,7 +368,13 @@ let loadBraintreePaypalSdk = (
                     handleCancel()
                   },
                   onError: err => err->handlePaypalError(~handleCancel, ~handleCloseLoader),
-                  onClick: () => (),
+                  onClick: () => {
+                    loggerState.setLogInfo(
+                      ~value="Paypal Braintree SDK Button Clicked",
+                      ~eventName=PAYPAL_SDK_FLOW,
+                      ~paymentMethod="PAYPAL",
+                    )
+                  },
                 })->renderButtons(~onButtonSettled)
                 areOneClickWalletsRendered(
                   prev => {

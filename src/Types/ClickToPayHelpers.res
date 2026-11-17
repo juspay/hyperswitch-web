@@ -1,4 +1,6 @@
 open Promise
+let scriptId = "mastercard-external-script"
+
 let getScriptSrc = () => {
   let clickToPayMastercardBaseUrl = GlobalVars.isProd
     ? "https://src.mastercard.com"
@@ -10,6 +12,10 @@ let srcUiKitScriptSrc = "https://src.mastercard.com/srci/integration/components/
 let srcUiKitCssHref = "https://src.mastercard.com/srci/integration/components/src-ui-kit/src-ui-kit.css"
 
 let recognitionTokenCookieName = "__mastercard_click_to_pay"
+let manualCardId = "click_to_pay_manual_card"
+let savedCardId = "click_to_pay_saved_card_"
+
+let orderIdRef = ref("")
 
 type ctpProviderType = VISA | MASTERCARD | NONE
 
@@ -41,7 +47,12 @@ let handleOpenClickToPayWindow = () => {
   LoaderHTML.injectLoader(clickToPayWindowRef.contents)
 }
 
+// Global window extensions
 type mastercardCheckoutServices
+
+@val
+external mastercardCheckoutServices: mastercardCheckoutServices =
+  "window.MastercardCheckoutServices"
 
 // Response types
 type responsePayloadStatus = COMPLETE | CANCEL | PAY_V3_CARD | ERROR
@@ -101,6 +112,9 @@ type country = {
 }
 
 let defaultCountry: country = {code: "", countryISO: ""}
+
+// Cookie helpers
+@val external document: {..} = "document"
 
 let setLocalStorage = (~key: string, ~value: string) => {
   Window.LocalStorage.setItem(key, value)
@@ -189,6 +203,11 @@ let clickToPayCardItemToObjMapper = (json: JSON.t): clickToPayCard => {
   }
 }
 
+type ctpLogType = {
+  ctpProvider: string,
+  message: string,
+}
+
 type clickToPayToken = {
   dpaId: string,
   dpaName: string,
@@ -224,6 +243,7 @@ let clickToPayTokenItemToObjMapper = (json: JSON.t) => {
   }
 }
 
+// Update the previously defined mastercardCheckoutServices type
 @send
 external getCards: (mastercardCheckoutServices, unit) => promise<array<clickToPayCard>> = "getCards"
 
@@ -259,6 +279,7 @@ type complianceSettings = {
   cookie: complianceSettingsData,
 }
 
+// Add the CheckoutWithNewCardPayload type
 type checkoutWithNewCardPayload = {
   windowRef: Types.window,
   cardBrand: string,
@@ -270,6 +291,7 @@ type checkoutWithNewCardPayload = {
 
 let mcCheckoutService: ref<option<mastercardCheckoutServices>> = ref(None)
 
+// First, let's add the ClickToPayOptions type
 type clickToPayOptions = {
   dpaId: string,
   dpaName: string,
@@ -283,9 +305,11 @@ type clickToPayOptions = {
   cardBrands: array<string>,
 }
 
+// Add the init external
 @send
 external init: (mastercardCheckoutServices, params) => promise<JSON.t> = "init"
 
+// First add this external to check window property
 @val @scope("window")
 external getOptionMastercardCheckoutServices: option<unit => mastercardCheckoutServices> =
   "MastercardCheckoutServices"
@@ -294,14 +318,36 @@ external getOptionMastercardCheckoutServices: option<unit => mastercardCheckoutS
 external getMastercardCheckoutServices: unit => mastercardCheckoutServices =
   "MastercardCheckoutServices"
 
-let initializeMastercardCheckout = (clickToPayToken: clickToPayToken) => {
+// Then update the initialization function
+let initializeMastercardCheckout = (
+  clickToPayToken: clickToPayToken,
+  logger: HyperLoggerTypes.loggerMake,
+) => {
   switch getOptionMastercardCheckoutServices {
   | Some(_) => {
+      logger.setLogInfo(
+        ~value={
+          "message": "MastercardCheckoutServices constructor found",
+          "scheme": "MASTERCARD",
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
       // Create new instance by calling the constructor
       mcCheckoutService := Some(getMastercardCheckoutServices())
 
       // Get recognition token
       let recognitionToken = getLocalStorage(~key=recognitionTokenCookieName)
+      logger.setLogInfo(
+        ~value={
+          "message": "Recognition token fetched",
+          "scheme": "MASTERCARD",
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
       // Construct params
       let params = {
         srcDpaId: clickToPayToken.dpaId,
@@ -340,49 +386,149 @@ let initializeMastercardCheckout = (clickToPayToken: clickToPayToken) => {
 
       try {
         switch mcCheckoutService.contents {
-        | Some(service) =>
-          service
-          ->init(params)
-          ->then(resp => {
-            resolve(resp)
-          })
-          ->catch(err => reject(err))
+        | Some(service) => {
+            logger.setLogInfo(
+              ~value={
+                "message": "Mastercard Checkout Service initialized",
+                "scheme": "MASTERCARD",
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
+            service
+            ->init(params)
+            ->then(resp => {
+              logger.setLogInfo(
+                ~value={
+                  "message": "Mastercard Checkout initialized",
+                  "scheme": "MASTERCARD",
+                }
+                ->JSON.stringifyAny
+                ->Option.getOr(""),
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
+              resolve(resp)
+            })
+            ->catch(err => {
+              logger.setLogError(
+                ~value={
+                  "message": `Error initializing Mastercard Checkout - ${err
+                    ->Utils.formatException
+                    ->JSON.stringify}`,
+                  "scheme": "MASTERCARD",
+                }
+                ->JSON.stringifyAny
+                ->Option.getOr(""),
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
+              reject(err)
+            })
+          }
         | None => {
-            reject(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
+            logger.setLogError(
+              ~value={
+                "message": "Mastercard Checkout Service not initialized",
+                "scheme": "MASTERCARD",
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
+            reject(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
           }
         }
       } catch {
-      | error => reject(error)
+      | error => {
+          logger.setLogError(
+            ~value={
+              "message": `Error initializing Mastercard Checkout - ${error
+                ->Utils.formatException
+                ->JSON.stringify}`,
+              "scheme": "MASTERCARD",
+            }
+            ->JSON.stringifyAny
+            ->Option.getOr(""),
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          reject(error)
+        }
       }
     }
   | None => {
-      reject(JsExn.anyToExnInternal("MastercardCheckoutServices is not available"))
+      logger.setLogError(
+        ~value={
+          "message": "MastercardCheckoutServices is not available",
+          "scheme": "MASTERCARD",
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
+      reject(Exn.anyToExnInternal("MastercardCheckoutServices is not available"))
     }
   }
 }
 
-let getCards = async () => {
+let getCards = async (logger: HyperLoggerTypes.loggerMake) => {
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
         let cards = await service->getCards()
+        logger.setLogInfo(
+          ~value={
+            "message": "Cards returned from API",
+            "scheme": "MASTERCARD",
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
         Ok(cards)
       }
     | None => {
+        logger.setLogError(
+          ~value={
+            "message": "Mastercard Checkout Service not initialized",
+            "scheme": "MASTERCARD",
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
         Ok([])
       }
     }
   } catch {
-  | _ => Ok([])
+  | error => {
+      logger.setLogError(
+        ~value={
+          "message": `Error getting cards - ${error->Utils.formatException->JSON.stringify}`,
+          "scheme": "MASTERCARD",
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
+      Ok([])
+    }
   }
 }
 
+// First, let's define the AuthenticatePayload type
 type authenticateInputPayload = {
   windowRef: Types.window,
   consumerIdentity: consumerIdentity,
 }
 
-let authenticate = async (payload: authenticateInputPayload) => {
+// Add this external for getting hostname
+@val @scope(("window", "location"))
+external hostname: string = "hostname"
+
+let authenticate = async (
+  payload: authenticateInputPayload,
+  logger: HyperLoggerTypes.loggerMake,
+) => {
   // Construct the authenticate payload
   let authenticatePayload = {
     windowRef: payload.windowRef,
@@ -411,15 +557,41 @@ let authenticate = async (payload: authenticateInputPayload) => {
         Ok(authentication)
       }
     | None => {
-        Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
+        logger.setLogError(
+          ~value={
+            "message": "Mastercard Checkout Service not initialized",
+            "scheme": "MASTERCARD",
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+        Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
-  | error => Error(error)
+  | error => {
+      logger.setLogError(
+        ~value={
+          "message": `Error during authentication - ${error
+            ->Utils.formatException
+            ->JSON.stringify}`,
+          "scheme": "MASTERCARD",
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
+      Error(error)
+    }
   }
 }
 
-let checkoutWithCard = async (~windowRef: Types.window, ~srcDigitalCardId: string) => {
+let checkoutWithCard = async (
+  ~windowRef: Types.window,
+  ~srcDigitalCardId: string,
+  ~logger: HyperLoggerTypes.loggerMake,
+) => {
   let checkoutPayload = {
     windowRef,
     srcDigitalCardId,
@@ -433,15 +605,43 @@ let checkoutWithCard = async (~windowRef: Types.window, ~srcDigitalCardId: strin
         Ok(checkoutResp)
       }
     | None => {
-        Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
+        logger.setLogError(
+          ~value={
+            "message": "Mastercard Checkout Service not initialized",
+            "scheme": "MASTERCARD",
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+        Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
-  | error => Error(error)
+  | error => {
+      logger.setLogError(
+        ~value={
+          "message": `Error during checkout with card - ${error
+            ->Utils.formatException
+            ->JSON.stringify}`,
+          "scheme": "MASTERCARD",
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
+      Error(error)
+    }
   }
 }
 
-let encryptCardForClickToPay = async (~cardNumber, ~expiryMonth, ~expiryYear, ~cvcNumber) => {
+let encryptCardForClickToPay = async (
+  ~cardNumber,
+  ~expiryMonth,
+  ~expiryYear,
+  ~cvcNumber,
+  ~logger: HyperLoggerTypes.loggerMake,
+) => {
   let card: encryptCardPayload = {
     primaryAccountNumber: cardNumber,
     panExpirationMonth: expiryMonth,
@@ -451,15 +651,44 @@ let encryptCardForClickToPay = async (~cardNumber, ~expiryMonth, ~expiryYear, ~c
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
+        logger.setLogError(
+          ~value={
+            "message": "Encrypting card for Click to Pay",
+            "scheme": "MASTERCARD",
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
         let encryptedCard = await service->encryptCard(card)
         Ok(encryptedCard)
       }
     | None => {
-        Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
+        logger.setLogError(
+          ~value={
+            "message": "Mastercard Checkout Service not initialized",
+            "scheme": "MASTERCARD",
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+        Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
-  | error => Error(error)
+  | error => {
+      logger.setLogError(
+        ~value={
+          "message": `Error encrypting card - ${error->Utils.formatException->JSON.stringify}`,
+          "scheme": "MASTERCARD",
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
+      Error(error)
+    }
   }
 }
 
@@ -469,7 +698,10 @@ external checkoutWithNewCard: (
   checkoutWithNewCardPayload,
 ) => promise<JSON.t> = "checkoutWithNewCard"
 
-let checkoutWithNewCard = async (payload: checkoutWithNewCardPayload) => {
+let checkoutWithNewCard = async (
+  payload: checkoutWithNewCardPayload,
+  ~logger: HyperLoggerTypes.loggerMake,
+) => {
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
@@ -477,28 +709,63 @@ let checkoutWithNewCard = async (payload: checkoutWithNewCardPayload) => {
         Ok(checkoutResp)
       }
     | None => {
-        Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
+        logger.setLogError(
+          ~value={
+            "message": "Mastercard Checkout Service not initialized",
+            "scheme": "MASTERCARD",
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+        Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
-  | error => Error(error)
+  | error => {
+      logger.setLogError(
+        ~value={
+          "message": `Error during checkout with new card - ${error
+            ->Utils.formatException
+            ->JSON.stringify}`,
+          "scheme": "MASTERCARD",
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
+      Error(error)
+    }
   }
 }
 
-@val @scope("document") external querySelector: string => Nullable.t<Dom.element> = "querySelector"
-@val @scope("document") external createElement: string => Dom.element = "createElement"
-@val @scope(("document", "head")) external appendChild: Dom.element => unit = "appendChild"
+// Add these externals at the top with other DOM-related externals
+@val @scope("document")
+external querySelector: string => Nullable.t<Dom.element> = "querySelector"
+
+@val @scope("document")
+external createElement: string => Dom.element = "createElement"
+
+@val @scope(("document", "head"))
+external appendChild: Dom.element => unit = "appendChild"
+
 @set external setType: (Dom.element, string) => unit = "type"
 @set external setSrc: (Dom.element, string) => unit = "src"
 @set external setRel: (Dom.element, string) => unit = "rel"
 @set external setHref: (Dom.element, string) => unit = "href"
 @set external setOnload: (Dom.element, unit => unit) => unit = "onload"
+@val @scope(("top", "location"))
+external topLocationHref: string = "href"
+
+// Add these externals for script events
 @set external setOnError: (Dom.element, unit => unit) => unit = "onerror"
 
-let loadClickToPayScripts = () =>
+// Add the function at the end of the file
+let loadClickToPayScripts = (logger: HyperLoggerTypes.loggerMake) => {
   Promise.make((clickToPayScriptsPromiseResolve, _) => {
     let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
     let linkSelector = `link[href="${srcUiKitCssHref}"]`
+
     // Add script if not exists
     let srcUiKitScriptPromise = Promise.make((scriptPromiseResolve, _) => {
       switch querySelector(scriptSelector)->Nullable.toOption {
@@ -506,12 +773,21 @@ let loadClickToPayScripts = () =>
           let script = createElement("script")
           script->setType("module")
           script->setSrc(srcUiKitScriptSrc)
-          script->setOnload(scriptPromiseResolve)
+          script->setOnload(
+            () => {
+              logger.setLogInfo(
+                ~value="ClickToPay UI Kit Script Loaded",
+                ~eventName=CLICK_TO_PAY_SCRIPT,
+              )
+              scriptPromiseResolve()
+            },
+          )
           appendChild(script)
         }
       | Some(_) => scriptPromiseResolve()
       }
     })
+
     // Add link if not exists
     let srcUiKitCssPromise = Promise.make((cssPromiseResolve, _) => {
       switch querySelector(linkSelector)->Nullable.toOption {
@@ -519,7 +795,15 @@ let loadClickToPayScripts = () =>
           let link = createElement("link")
           link->setRel("stylesheet")
           link->setHref(srcUiKitCssHref)
-          link->setOnload(cssPromiseResolve)
+          link->setOnload(
+            () => {
+              logger.setLogInfo(
+                ~value="ClickToPay UI Kit CSS Loaded",
+                ~eventName=CLICK_TO_PAY_SCRIPT,
+              )
+              cssPromiseResolve()
+            },
+          )
           appendChild(link)
         }
       | Some(_) => cssPromiseResolve()
@@ -532,20 +816,24 @@ let loadClickToPayScripts = () =>
       resolve()
     })
     ->catch(_ => {
+      logger.setLogError(~value="ClickToPay UI Kit CSS Load Error", ~eventName=CLICK_TO_PAY_SCRIPT)
       resolve()
     })
     ->ignore
   })
+}
 
-let loadMastercardScript = clickToPayToken => {
+// Add this function at the end of the file
+let loadMastercardScript = (clickToPayToken, logger: HyperLoggerTypes.loggerMake) => {
   let scriptSrc = getScriptSrc()
   Promise.make((resolve, reject) => {
     let scriptSelector = `script[src="${scriptSrc}"]`
 
     switch querySelector(scriptSelector)->Nullable.toOption {
     | Some(_) => {
+        logger.setLogInfo(~value="Mastercard Script Already Exists", ~eventName=CLICK_TO_PAY_SCRIPT)
         // Script already exists, just initialize
-        initializeMastercardCheckout(clickToPayToken)
+        initializeMastercardCheckout(clickToPayToken, logger)
         ->then(resp => {
           resp->resolve
           Promise.resolve()
@@ -560,25 +848,40 @@ let loadMastercardScript = clickToPayToken => {
         let script = createElement("script")
         script->setType("text/javascript")
         script->setSrc(scriptSrc)
+
         // Set onload handler
         script->setOnload(() => {
+          logger.setLogInfo(
+            ~value="Script loaded, initializing Mastercard Checkout",
+            ~eventName=CLICK_TO_PAY_SCRIPT,
+          )
           // Initialize after script loads
-          initializeMastercardCheckout(clickToPayToken)
-          ->then(resp => {
-            resp->resolve
-            Promise.resolve()
-          })
-          ->catch(err => {
-            err->reject
-            Promise.resolve()
-          })
+          initializeMastercardCheckout(clickToPayToken, logger)
+          ->then(
+            resp => {
+              resp->resolve
+              Promise.resolve()
+            },
+          )
+          ->catch(
+            err => {
+              err->reject
+              Promise.resolve()
+            },
+          )
           ->ignore
         })
+
         // Set onerror handler
         script->setOnError(() => {
-          let exn = JsExn.anyToExnInternal("Failed to load Mastercard script")
+          logger.setLogError(
+            ~value="Error loading Mastercard script",
+            ~eventName=CLICK_TO_PAY_SCRIPT,
+          )
+          let exn = Exn.anyToExnInternal("Failed to load Mastercard script")
           exn->reject
         })
+
         appendChild(script)
       }
     }
@@ -622,9 +925,34 @@ module SrcLearnMore = {
     "React.createElement"
 }
 
+type paramUrl = {
+  key: string,
+  value: string,
+}
+
+let defaultParamUrl = {
+  key: "",
+  value: "",
+}
+
+let urlToParamUrlItemToObjMapper = url => {
+  let params = url->String.replace("?", "")->String.split("&")
+  params
+  ->Array.filter(param => param !== "")
+  ->Array.map(param => {
+    let paramValues = param->String.split("=")
+    {
+      key: paramValues->Array.get(0)->Option.getOr(""),
+      value: paramValues->Array.get(1)->Option.getOr(""),
+    }
+  })
+}
+
+// First add the external binding for signOut
 @send
 external signOutMastercard: mastercardCheckoutServices => promise<JSON.t> = "signOut"
 
+// Then add the signOut function implementation
 let signOut = async () => {
   try {
     deleteLocalStorage(~key=recognitionTokenCookieName)
@@ -636,7 +964,7 @@ let signOut = async () => {
       }
     | None => {
         Console.error("Mastercard Checkout Service not initialized")
-        Error(JsExn.anyToExnInternal("Mastercard Checkout Service not initialized"))
+        Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
@@ -743,6 +1071,16 @@ type getCardsResultType = {
   maskedValidationChannel?: string,
 }
 
+let getStrFromActionCode = actionCode => {
+  switch actionCode {
+  | SUCCESS => "SUCCESS"
+  | PENDING_CONSUMER_IDV => "PENDING_CONSUMER_IDV"
+  | FAILED => "FAILED"
+  | ERROR => "ERROR"
+  | ADD_CARD => "ADD_CARD"
+  }
+}
+
 type unbindAppInstanceResultType = {error?: errorObj}
 
 type vsdk = {
@@ -793,7 +1131,6 @@ type visaEncryptCardPayload = {
 @new external createVisaDirectSRCIAdapter: unit => visaDirect = "window.vAdapters.VisaSRCI"
 
 let getCardsVisaUnified = (~getCardsConfig) => vsdk.getCards(getCardsConfig)
-
 let signOutVisaUnified = () => vsdk.unbindAppInstance()
 
 let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorCallback) => {
@@ -809,7 +1146,11 @@ let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorC
   body->Window.appendChild(script)
 }
 
-let loadClickToPayUIScripts = (scriptLoadedCallback, scriptErrorCallback) => {
+let loadClickToPayUIScripts = (
+  logger: HyperLoggerTypes.loggerMake,
+  scriptLoadedCallback: unit => unit,
+  scriptErrorCallback: unit => unit,
+) => {
   let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
   let linkSelector = `link[href="${srcUiKitCssHref}"]`
 
@@ -820,11 +1161,17 @@ let loadClickToPayUIScripts = (scriptLoadedCallback, scriptErrorCallback) => {
       script->setType("module")
       script->setSrc(srcUiKitScriptSrc)
       appendChild(script)
-      script->setOnload(() => scriptLoadedCallback())
-      script->setOnError(() => scriptErrorCallback())
+      script->setOnload(() => {
+        scriptLoadedCallback()
+      })
+      script->setOnError(() => {
+        scriptErrorCallback()
+      })
+      logger.setLogInfo(~value="ClickToPay UI Kit Script Loaded", ~eventName=CLICK_TO_PAY_SCRIPT)
     }
   | Some(_) => ()
   }
+
   // Add link if not exists
   switch querySelector(linkSelector)->Nullable.toOption {
   | None => {
@@ -832,6 +1179,7 @@ let loadClickToPayUIScripts = (scriptLoadedCallback, scriptErrorCallback) => {
       link->setRel("stylesheet")
       link->setHref(srcUiKitCssHref)
       appendChild(link)
+      logger.setLogInfo(~value="ClickToPay UI Kit CSS Loaded", ~eventName=CLICK_TO_PAY_SCRIPT)
     }
   | Some(_) => ()
   }
@@ -1001,6 +1349,7 @@ let handleSuccessResponse = response => {
 let handleCheckoutWithCard = async (
   ~clickToPayProvider,
   ~srcDigitalCardId,
+  ~logger,
   ~fullName,
   ~email,
   ~phoneNumber,
@@ -1014,7 +1363,7 @@ let handleCheckoutWithCard = async (
   | Some(window) =>
     switch clickToPayProvider {
     | MASTERCARD => {
-        let checkoutResp = await checkoutWithCard(~windowRef=window, ~srcDigitalCardId)
+        let checkoutResp = await checkoutWithCard(~windowRef=window, ~srcDigitalCardId, ~logger)
         switch checkoutResp {
         | Ok(response) => response->handleSuccessResponse
         | Error(_) => closeWindow(ERROR, JSON.Encode.null)
@@ -1044,9 +1393,27 @@ let handleCheckoutWithCard = async (
             let actionCode = checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
             switch actionCode {
             | "SUCCESS" => {
+                logger.setLogInfo(
+                  ~value={
+                    "message": "Checkout successfull",
+                    "scheme": clickToPayProvider,
+                  }
+                  ->JSON.stringifyAny
+                  ->Option.getOr(""),
+                  ~eventName=CLICK_TO_PAY_FLOW,
+                )
                 closeWindow(COMPLETE, checkoutResp)
               }
             | _ => {
+                logger.setLogError(
+                  ~value={
+                    "message": `Visa checkout failed with card, Action Code -> ${actionCode}`,
+                    "scheme": clickToPayProvider,
+                  }
+                  ->JSON.stringifyAny
+                  ->Option.getOr(""),
+                  ~eventName=CLICK_TO_PAY_FLOW,
+                )
                 closeWindow(ERROR, JSON.Encode.null)
               }
             }
@@ -1054,13 +1421,35 @@ let handleCheckoutWithCard = async (
         | None => closeWindow(ERROR, JSON.Encode.null)
         }
       } catch {
-      | _ => {
+      | err => {
+          logger.setLogError(
+            ~value={
+              "message": `Visa checkout failed with card - ${err
+                ->Utils.formatException
+                ->JSON.stringify}`,
+              "scheme": clickToPayProvider,
+            }
+            ->JSON.stringifyAny
+            ->Option.getOr(""),
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
           closeWindow(ERROR, JSON.Encode.null)
         }
       }
     | NONE => closeWindow(ERROR, JSON.Encode.null)
     }
-  | None => closeWindow(ERROR, JSON.Encode.null)
+  | None => {
+      logger.setLogError(
+        ~value={
+          "message": "Click to Pay window reference is null",
+          "scheme": clickToPayProvider,
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
+      closeWindow(ERROR, JSON.Encode.null)
+    }
   }
 }
 
@@ -1073,6 +1462,7 @@ let handleProceedToPay = async (
   ~phoneNumber: string="",
   ~countryCode: string="",
   ~rememberMe: bool=false,
+  ~logger: HyperLoggerTypes.loggerMake,
   ~visaEncryptedCard: string="",
   ~clickToPayProvider,
   ~isClickToPayRememberMe=false,
@@ -1132,7 +1522,7 @@ let handleProceedToPay = async (
               complianceSettings,
             }
           }
-          let checkoutResp = await checkoutWithNewCard(payload)
+          let checkoutResp = await checkoutWithNewCard(payload, ~logger)
 
           switch checkoutResp {
           | Ok(response) => response->handleSuccessResponse
@@ -1163,9 +1553,27 @@ let handleProceedToPay = async (
                 checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
               switch actionCode {
               | "SUCCESS" => {
+                  logger.setLogInfo(
+                    ~value={
+                      "message": "Checkout successfull",
+                      "scheme": clickToPayProvider,
+                    }
+                    ->JSON.stringifyAny
+                    ->Option.getOr(""),
+                    ~eventName=CLICK_TO_PAY_FLOW,
+                  )
                   closeWindow(COMPLETE, checkoutResp)
                 }
               | _ => {
+                  logger.setLogError(
+                    ~value={
+                      "message": `Visa checkout failed with new card, Action Code -> ${actionCode}`,
+                      "scheme": clickToPayProvider,
+                    }
+                    ->JSON.stringifyAny
+                    ->Option.getOr(""),
+                    ~eventName=CLICK_TO_PAY_FLOW,
+                  )
                   closeWindow(ERROR, JSON.Encode.null)
                 }
               }
@@ -1173,13 +1581,33 @@ let handleProceedToPay = async (
           | None => closeWindow(ERROR, JSON.Encode.null)
           }
         } catch {
-        | _ => {
+        | err => {
+            logger.setLogError(
+              ~value={
+                "message": `Visa checkout failed with new card - ${err
+                  ->Utils.formatException
+                  ->JSON.stringify}`,
+                "scheme": clickToPayProvider,
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
             closeWindow(ERROR, JSON.Encode.null)
           }
         }
       | NONE => closeWindow(ERROR, JSON.Encode.null)
       }
     | None => {
+        logger.setLogError(
+          ~value={
+            "message": "Click to Pay window reference is null",
+            "scheme": clickToPayProvider,
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
         closeWindow(ERROR, JSON.Encode.null)
       }
     }
@@ -1195,6 +1623,7 @@ let handleProceedToPay = async (
       await handleCheckoutWithCard(
         ~clickToPayProvider,
         ~srcDigitalCardId,
+        ~logger,
         ~fullName,
         ~email,
         ~phoneNumber,
@@ -1205,6 +1634,17 @@ let handleProceedToPay = async (
       )
     }
   } catch {
-  | _ => closeWindow(ERROR, JSON.Encode.null)
+  | err => {
+      logger.setLogError(
+        ~value={
+          "message": `Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
+          "scheme": clickToPayProvider,
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
+      closeWindow(ERROR, JSON.Encode.null)
+    }
   }
 }

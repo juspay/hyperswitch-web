@@ -27,6 +27,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let isApplePayReady = applePayReadiness->Option.getOr(false)
   let isGPayReady = gPayReadiness->Option.getOr(false)
   let isVgsScriptReady = Jotai.useAtomValue(JotaiAtoms.isVgsScriptReady)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let isShowOrPayUsing = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsing)
   let isShowOrPayUsingWhileLoading = Jotai.useAtomValue(JotaiAtoms.isShowOrPayUsingWhileLoading)
   let setIsTokenize = Jotai.useSetAtom(JotaiAtoms.isTokenize)
@@ -271,16 +272,18 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
       if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
         ErrorUtils.manageErrorWarning(
-          ConnectorMisconfigured,
+          SDK_CONNECTOR_WARNING,
           ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
+          ~logger=loggerState,
         )
       } else if !checkPriorityList(paymentMethodOrder) {
         ErrorUtils.manageErrorWarning(
-          ConnectorMisconfigured,
+          SDK_CONNECTOR_WARNING,
           ~dynamicStr=`'paymentMethodOrder' is ${Array.join(
               paymentMethodOrder->getOptionalArr,
               ", ",
             )} . Please enable Card Payment as 1st priority to show it as default.`,
+          ~logger=loggerState,
         )
       }
 
@@ -307,6 +310,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         }
       }
     }
+    if selectedOption !== "" {
+      loggerState.setLogInfo(
+        ~value="",
+        ~eventName=PAYMENT_METHOD_CHANGED,
+        ~paymentMethod=selectedOption->String.toUpperCase,
+      )
+    }
+
     None
   }, (selectedOption, cardOptions, dropDownOptions, showAllPaymentMethods, layoutClass))
 
@@ -340,8 +351,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
-      let message = "Select a payment method"
-      postFailedSubmitResponse(~errortype="validation_error", ~message)
+      postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
     }
   }, [selectedOption])
   PaymentMessageHooks.useSubmitPaymentData(submitCallback)
@@ -501,7 +511,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           {switch paypalToken {
           | OtherTokenOptional(optToken) =>
             switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
-            | (Some(_token), true, _) => React.null
+            | (Some(_token), true, _) => {
+                loggerState.setLogInfo(
+                  ~value="PayPal Invoke SDK Flow in Tabs",
+                  ~eventName=PAYPAL_SDK_FLOW,
+                )
+                React.null
+              }
             | (_, _, true) => <PayPalLazy walletOptions />
             | _ => React.null
             }

@@ -1,6 +1,14 @@
+open JotaiAtoms
+
 @react.component
 let make = () => {
-  let state = CommonCardFieldHooks.useCardNumberField(~dualPlane=true, ())
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+
+  let state = CommonCardFieldHooks.useCardNumberField(
+    ~logger=loggerState,
+    ~dualPlane=true,
+    (),
+  )
 
   <CommonCardFieldHooks.RenderCardNumber state />
 }

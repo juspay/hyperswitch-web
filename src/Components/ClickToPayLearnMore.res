@@ -6,13 +6,15 @@ let make = () => {
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (cardBrand, setCardBrand) = React.useState(_ => "")
 
+  let logger = HyperLogger.make(~source=Elements(Payment))
+
   let closeClickToPayModal = () => {
     setOpenModal(_ => false)
     messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }
 
   React.useEffect0(() => {
-    ClickToPayHelpers.loadClickToPayScripts()->ignore
+    ClickToPayHelpers.loadClickToPayScripts(logger)->ignore
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
