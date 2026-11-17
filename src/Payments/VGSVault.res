@@ -370,8 +370,7 @@ let make = (~cvcOnly=false) => {
 
       | None =>
         PaymentMethodSessionLogger.logLifecycle(
-          ~event=VaultFlowFailed({reason: FormCreationFailed}),
-          ~details=[("vault", "vgs"->JSON.Encode.string)],
+          ~event=VaultFlowFailed({reason: FormCreationFailed, vault: "vgs"}),
           ~message="Vault form not initialized at submit",
         )
         Console.error("VGS Vault not initialized for submission")

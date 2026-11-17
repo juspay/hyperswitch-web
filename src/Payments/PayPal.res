@@ -77,9 +77,8 @@ let make = (~walletOptions) => {
   let onPaypalClick = (~fromExpressButton=true, _ev) => {
     if fromExpressButton {
       SdkLogger.logUser(
-        ~event=ExpressCheckoutClicked,
+        ~event=ExpressCheckoutClicked({testMode: ?(isTestMode ? Some(true) : None)}),
         ~paymentMethod=Wallet(Paypal),
-        ~details=isTestMode ? [("test_mode", true->JSON.Encode.bool)] : [],
       )
     }
     if isTestMode {

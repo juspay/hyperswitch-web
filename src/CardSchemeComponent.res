@@ -74,13 +74,7 @@ let make = (
     if shouldShowCoBadgeCardSchemeDropDown && !isCoBadgedCardDetectedOnce.current {
       isCoBadgedCardDetectedOnce.current = true
       SdkLogger.logState(
-        ~event=CardCoBadgeDetected,
-        ~details=[
-          (
-            "co_badged_schemes",
-            eligibleCardSchemes->Array.map(JSON.Encode.string)->JSON.Encode.array,
-          ),
-        ],
+        ~event=CardCoBadgeDetected({coBadgedSchemes: eligibleCardSchemes}),
         ~paymentMethod=Card,
       )
     }
