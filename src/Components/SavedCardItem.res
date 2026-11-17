@@ -110,7 +110,8 @@ let make = (
   ~isVaultCvcFlow=false,
   ~setCvcIframeRef=_ => (),
   ~setSavedCardCvcState=_ => (),
-  ~logSelectionDetails=[],
+  ~logListSource: string,
+  ~logCardBrand: option<string>=?,
 ) => {
   let {themeObj, config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {
@@ -278,8 +279,9 @@ let make = (
           ~event=SavedMethodSelected({
             requiresCvv: paymentItem.requiresCvv,
             isCardExpired,
+            listSource: logListSource,
+            cardBrand: ?logCardBrand,
           }),
-          ~details=logSelectionDetails,
           ~paymentMethod=?LoggerPaymentMethod.fromPair(
             ~method=paymentItem.paymentMethod,
             ~methodType=paymentMethodType,

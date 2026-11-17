@@ -1394,7 +1394,6 @@ let usePaymentIntent = (~isOneClickWallet=false, paymentType) => {
         } else {
           SdkLogger.logLifecycle(
             ~event=SdkLogger.PaymentAttempted,
-            ~details=[("content_length", body->String.length->JSON.Encode.int)],
             ~paymentMethod=?body->LoggerPaymentMethod.fromRequestBody,
           )
           intentCall(
@@ -2031,7 +2030,6 @@ let usePostSessionTokens = (
       let callIntent = body => {
         SdkLogger.logLifecycle(
           ~event=SdkLogger.PaymentAttempted,
-          ~details=[("content_length", body->String.length->JSON.Encode.int)],
           ~paymentMethod=?body->LoggerPaymentMethod.fromRequestBody,
         )
         intentCall(

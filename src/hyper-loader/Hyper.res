@@ -4,6 +4,8 @@ open Utils
 open EventListenerManager
 open Identity
 
+@module("uuid") external generateLogSessionId: unit => string = "v7"
+
 type fullscreenMessageSource = {
   iframe: Dom.element,
   source: Dom.element,
@@ -208,7 +210,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       existingSessionId
     } else {
       switch analyticsInfoDict->getString("sessionID", "") {
-      | "" => "hyp_" ++ generateRandomString(8)
+      | "" => generateLogSessionId()
       | provided => provided
       }
     }
@@ -218,8 +220,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     }
 
     HyperLoaderLogger.logMerchantProps(
-      ~event=TestMode({surface: Hyper}),
-      ~details=[("test_mode", isTestMode->JSON.Encode.bool)],
+      ~event=TestMode({surface: Hyper, testMode: isTestMode}),
     )
 
     switch options {
@@ -279,13 +280,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     }
     | Some(_)
     | None =>
-      let loaderTimestamp = Date.now()->Float.toString
-
       {
         () => {
           HyperLoaderLogger.logMerchantCall(
             ~event=HyperLoaderLogger.LoadHyper({surface: Hyper}),
-            ~details=[("timestamp", loaderTimestamp->JSON.Encode.string)],
           )
           if (
             publishableKey == "" ||
@@ -577,10 +575,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let confirmPaymentViaSDKButton = payload =>
         HyperLoaderLogger.observeMerchantCall(
-          ~event=HyperLoaderLogger.ConfirmPayment({surface: Hyper}),
-          ~details=[("iframe_ready", isReadyResolved.contents->JSON.Encode.bool)]->Array.concat([
-            ("source", "sdk_button"->JSON.Encode.string),
-          ]),
+          ~event=HyperLoaderLogger.ConfirmPayment({
+            surface: Hyper,
+            source: "sdk_button",
+          }),
+          ~details=[("iframe_ready", isReadyResolved.contents->JSON.Encode.bool)],
           ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
           ~call=() => confirmPaymentWrapper(payload, false, true, ~isSdkButton=true),
         )

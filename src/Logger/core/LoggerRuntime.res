@@ -217,7 +217,6 @@ let observe = (
   ~details=?,
   ~timeoutMs=LoggerConfig.defaultTimeoutMs,
   ~failureOf: option<'result => option<errorSummary>>=?,
-  ~detailsOf: option<'result => details>=?,
   ~paymentMethod=?,
   ~context=LoggerContext.current(),
   ~source=?,
@@ -225,24 +224,19 @@ let observe = (
   ~message=?,
   ~call: unit => 'value,
 ): 'value => {
-  let base = WebLoggerUtils.mergeDetails(
-    ~data=data->Option.getOr([]),
-    ~details=details->Option.getOr([]),
-  )
   SharedLoggerOperation.observe(
     ~timeoutMs,
     ~summarizeExn=WebLoggerUtils.summarizeExn,
     ~rethrow,
     ~failureOf?,
-    ~detailsOf?,
     ~syncOutcome,
-    ~onStep=(step, outcomeDetails) =>
+    ~onStep=(step, _, outcomeDetails) =>
       step->emitStep(
         ~category,
         ~spec,
         ~severity,
-        ~data=base,
-        ~details=outcomeDetails,
+        ~data?,
+        ~details=details->Option.getOr([])->Array.concat(outcomeDetails),
         ~paymentMethod?,
         ~context,
         ~source?,

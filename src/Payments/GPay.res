@@ -176,9 +176,8 @@ let make = (
 
   let onGooglePaymentButtonClicked = () => {
     SdkLogger.logUser(
-      ~event=ExpressCheckoutClicked,
+      ~event=ExpressCheckoutClicked({testMode: ?(isTestMode ? Some(true) : None)}),
       ~paymentMethod=Wallet(GooglePay),
-      ~details=isTestMode ? [("test_mode", true->JSON.Encode.bool)] : [],
     )
     if isTestMode {
       Console.warn("Google Pay button clicked in test mode - interaction disabled")
