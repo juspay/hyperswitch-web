@@ -408,12 +408,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       paymentOptions->Array.includes(selectedOption) {
       defaultSelectionLogged.current = true
       SdkLogger.logUser(
-        ~event=PaymentMethodSelected({method: selectedOption}),
+        ~event=PaymentMethodSelected({method: selectedOption, selectionSource: "default"}),
         ~paymentMethod=?PaymentUtils.loggerPaymentMethodOf(
           ~paymentMethodName=selectedOption,
           ~paymentMethods=paymentMethodListValue.payment_methods,
         ),
-        ~details=[("selection_source", "default"->JSON.Encode.string)],
       )
     }
     None

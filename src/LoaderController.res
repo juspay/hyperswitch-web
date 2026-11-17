@@ -4,7 +4,7 @@ let logLoaderState = (
   updatedState: PaymentType.loadType,
   ~source: SdkLogger.loaderSource,
   ~durationMs=?,
-  ~details=[],
+  ~savedMethods=?,
 ) => {
   let (state: SdkLogger.loaderState, failure) = switch updatedState {
   | Loaded(_) => (Loaded, None)
@@ -12,7 +12,11 @@ let logLoaderState = (
   | SemiLoaded => (SemiLoaded, None)
   | LoadError(x) => (LoadFailed, Some(x))
   }
-  SdkLogger.logState(~event=LoaderStateChanged({state, source}), ~details, ~durationMs?, ~failure?)
+  SdkLogger.logState(
+    ~event=LoaderStateChanged({state, source, savedMethods: ?savedMethods}),
+    ~durationMs?,
+    ~failure?,
+  )
 }
 
 @react.component
@@ -603,7 +607,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
                     Loaded(clientListJson),
                     ~durationMs=finalLoadLatency,
                     ~source=PaymentMethodsList,
-                    ~details=[("saved_methods", list->Array.length->JSON.Encode.int)],
+                    ~savedMethods=list->Array.length,
                   )
                 : evalMethodsList()
             | NoResult(_) => evalMethodsList()
