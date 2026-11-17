@@ -12,8 +12,8 @@ let logHeadlessLifecycle = (~event, ~paymentMethod=?, ~exn=?, ~message=?) =>
 let observeHeadlessFunction = (~event, ~paymentMethod, ~timeoutMs=?, ~call) =>
   SdkLogger.observeFunction(~source=Headless, ~event, ~paymentMethod, ~timeoutMs?, ~call)
 
-let observePaymentSessionCall = (~event, ~details=?, ~timeoutMs=?, ~call) =>
-  HyperLoaderLogger.observeMerchantCall(~source=Headless, ~event, ~details?, ~timeoutMs?, ~call)
+let observePaymentSessionCall = (~event, ~timeoutMs=?, ~call) =>
+  HyperLoaderLogger.observeMerchantCall(~source=Headless, ~event, ~timeoutMs?, ~call)
 
 let fetchCustomerSavedPaymentMethods = (
   ~options: option<JSON.t>,
@@ -110,10 +110,10 @@ let fetchCustomerSavedPaymentMethods = (
 
     let getCustomerDefaultSavedPaymentMethodData = () =>
       observePaymentSessionCall(
-        ~event=HyperLoaderLogger.GetCustomerDefaultSavedPaymentMethodData(paymentSessionSurface),
-        ~details=[
-          ("found", customerDefaultPaymentMethodRef.contents->Option.isSome->JSON.Encode.bool),
-        ],
+        ~event=HyperLoaderLogger.GetCustomerDefaultSavedPaymentMethodData({
+          surface: PaymentSession,
+          found: customerDefaultPaymentMethodRef.contents->Option.isSome,
+        }),
         ~call=() =>
           switch customerDefaultPaymentMethodRef.contents {
           | Some(defaultPaymentMethod) => defaultPaymentMethod->Identity.anyTypeToJson
@@ -127,13 +127,10 @@ let fetchCustomerSavedPaymentMethods = (
 
     let getCustomerLastUsedPaymentMethodData = () =>
       observePaymentSessionCall(
-        ~event=HyperLoaderLogger.GetCustomerLastUsedPaymentMethodData(paymentSessionSurface),
-        ~details=[
-          (
-            "found",
-            customerPaymentMethodsRef.contents->Array.get(0)->Option.isSome->JSON.Encode.bool,
-          ),
-        ],
+        ~event=HyperLoaderLogger.GetCustomerLastUsedPaymentMethodData({
+          surface: PaymentSession,
+          found: customerPaymentMethodsRef.contents->Array.get(0)->Option.isSome,
+        }),
         ~call=() =>
           switch customerPaymentMethodsRef.contents->Array.get(0) {
           | Some(lastUsedPaymentMethod) => lastUsedPaymentMethod->Identity.anyTypeToJson
@@ -456,7 +453,7 @@ let fetchCustomerSavedPaymentMethods = (
           let metadata = json->Identity.anyTypeToJson
 
           logHeadlessLifecycle(
-            ~event=WalletTokenReceived,
+            ~event=WalletTokenReceived({}),
             ~paymentMethod=Wallet(GooglePay),
           )
 

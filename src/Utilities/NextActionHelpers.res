@@ -99,8 +99,7 @@ let handleDDC = (
             let reason: SdkLogger.ddcFailure =
               nextActionType === "redirect_to_url" ? MissingRedirectUrl : InvalidNextAction
             SdkLogger.logLifecycle(
-              ~event=DdcFailed({reason: reason}),
-              ~details=[("next_action", nextActionType->JSON.Encode.string)],
+              ~event=DdcFailed({reason: reason, nextAction: nextActionType}),
               ~paymentMethod=?loggedPaymentMethod,
             )
             handleFailure()

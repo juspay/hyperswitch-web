@@ -29,8 +29,6 @@ let maskAll = SharedLoggerFormatting.maskAll
 let maskNone = SharedLoggerFormatting.maskNone
 let configSnapshot = SharedLoggerFormatting.configSnapshot
 
-let mergeDetails = SharedLoggerFormatting.mergeDetails
-
 let fitToBudget = entries =>
   SharedLoggerFormatting.fitToBudget(entries, ~maxDetailBytes=LoggerConfig.maxDetailBytes)
 

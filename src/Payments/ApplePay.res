@@ -271,9 +271,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
 
   let onApplePayButtonClicked = () => {
     SdkLogger.logUser(
-      ~event=ExpressCheckoutClicked,
+      ~event=ExpressCheckoutClicked({testMode: ?(isTestMode ? Some(true) : None)}),
       ~paymentMethod=Wallet(ApplePay),
-      ~details=isTestMode ? [("test_mode", true->JSON.Encode.bool)] : [],
     )
     if isTestMode {
       Console.warn("Apple Pay button clicked in test mode - interaction disabled")
