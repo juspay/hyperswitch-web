@@ -104,8 +104,8 @@ let make = () => {
               resolve()
             }
           }
-          SdkLogger.observeResource(
-            ~event=PazeScript,
+          ResourceLogger.observeResource(
+            ~event=Sdk(PazeScript),
             ~url=pazeScriptURL,
             ~paymentMethod=Wallet(Paze),
             ~onLoad=() => loadPazeSDK()->ignore,

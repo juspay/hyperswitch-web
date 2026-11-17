@@ -24,7 +24,7 @@ let mountAuthConnectorScript = (~authConnector, ~onScriptLoaded) => {
   | _ if authConnector === "plaid" && loadedPlaid->Option.isSome =>
     onScriptLoaded(authConnector)
   | url =>
-    SdkLogger.observeResource(~event=PmAuthConnectorScript, ~url, ~onLoad=() =>
+    ResourceLogger.observeResource(~event=Sdk(PmAuthConnectorScript), ~url, ~onLoad=() =>
       onScriptLoaded(authConnector)
     )
   }
