@@ -718,18 +718,18 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                 }
               }
 
-              let vgsFieldDetails = [
-                ("field", fieldType->JSON.Encode.string),
-                ("vault", "vgs"->JSON.Encode.string),
-              ]
+              let vgsFieldDetails: HyperLoaderLogger.containerData = {
+                surface: CardField,
+                field: fieldType,
+                vault: "vgs",
+              }
               let handle: fieldHandle = {
                 mount: selector => {
                   logFieldMounted(~fieldId, ~fieldType)
                   uniqueSelectorRef := Some(selector)
                   HyperLoaderLogger.observeMerchantCall(
                     ~context,
-                    ~event=HyperLoaderLogger.Mount({surface: CardField}),
-                    ~details=vgsFieldDetails,
+                    ~event=HyperLoaderLogger.Mount(vgsFieldDetails),
                     ~failureOf=_ => None,
                     ~call=() =>
                       broker.mountField(~fieldId, ~fieldType, ~selector, ~options=optionsForBroker),
@@ -747,8 +747,7 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                 unmount: () =>
                   HyperLoaderLogger.observeMerchantCall(
                     ~context,
-                    ~event=HyperLoaderLogger.Unmount({surface: CardField}),
-                    ~details=vgsFieldDetails,
+                    ~event=HyperLoaderLogger.Unmount(vgsFieldDetails),
                     ~call=() => {
                       forgetMountedField(fieldId)
                       broker.unmountField(~fieldId)
@@ -765,8 +764,7 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                 destroy: () =>
                   HyperLoaderLogger.observeMerchantCall(
                     ~context,
-                    ~event=HyperLoaderLogger.Destroy({surface: CardField}),
-                    ~details=vgsFieldDetails,
+                    ~event=HyperLoaderLogger.Destroy(vgsFieldDetails),
                     ~call=() => {
                       forgetMountedField(fieldId)
                       broker.unmountField(~fieldId)
@@ -783,8 +781,7 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
                 update: newOptions =>
                   HyperLoaderLogger.observeMerchantCall(
                     ~context,
-                    ~event=HyperLoaderLogger.Update({surface: CardField}),
-                    ~details=vgsFieldDetails,
+                    ~event=HyperLoaderLogger.Update({surface: CardField, field: fieldType, vault: "vgs"}),
                     ~call=() => broker.updateField(~fieldId, ~options=newOptions),
                   ),
                 focus: () => {
@@ -870,8 +867,10 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
               Console.error(`[PaymentMethodSession] vaultType="vgs" declared but vaultData has no vaultId/environment — cannot mount`)
               PaymentMethodSessionLogger.logLifecycle(
                 ~context,
-                ~event=VaultFlowFailed({reason: PaymentMethodSessionLogger.FormCreationFailed}),
-                ~details=[("field", fieldType->JSON.Encode.string)],
+                ~event=VaultFlowFailed({
+                  reason: PaymentMethodSessionLogger.FormCreationFailed,
+                  field: fieldType,
+                }),
                 ~paymentMethod=Card,
                 ~message="Vault credentials missing vaultId or environment; field not created",
               )
@@ -918,11 +917,11 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
   let create = (fieldType: string, options: JSON.t): fieldHandle =>
     HyperLoaderLogger.observeMerchantCall(
       ~context,
-      ~event=HyperLoaderLogger.Create({surface: CardForm}),
-      ~details=[
-        ("field", fieldType->JSON.Encode.string),
-        ("vault", detectVaultType()->JSON.Encode.string),
-      ],
+      ~event=HyperLoaderLogger.Create({
+        surface: CardForm,
+        field: fieldType,
+        vault: detectVaultType(),
+      }),
       ~call=() => createFieldInternal(fieldType, options),
     )
 
@@ -1164,9 +1163,8 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
   let tokenize = (): promise<JSON.t> =>
     HyperLoaderLogger.observeMerchantCall(
       ~context,
-      ~event=HyperLoaderLogger.Tokenize({surface: PaymentMethodsSession}),
+      ~event=HyperLoaderLogger.Tokenize({surface: PaymentMethodsSession, vault: detectVaultType()}),
       ~timeoutMs=LoggerConfig.userGatedTimeoutMs,
-      ~details=[("vault", detectVaultType()->JSON.Encode.string)],
       ~failureOf=errorCodeFailureSummary,
       ~call=() =>
         if sessionStateRef.contents != Active {
@@ -1321,8 +1319,7 @@ let make = (options: JSON.t, ~context: LoggerContext.t): initPaymentMethodSessio
   let createCardForm = (): vaultCardForm =>
     HyperLoaderLogger.observeMerchantCall(
       ~context,
-      ~event=HyperLoaderLogger.CreateCardForm({surface: PaymentMethodsSession}),
-      ~details=[("vault", detectVaultType()->JSON.Encode.string)],
+      ~event=HyperLoaderLogger.CreateCardForm({surface: PaymentMethodsSession, vault: detectVaultType()}),
       ~call=(): vaultCardForm => {
         create,
         on,

@@ -132,16 +132,8 @@ let makeClickToPaySession = async (
 
     let clickToPayData = []
 
-    let consumerPresentDetails = value => [
-      (
-        "consumer_present",
-        value->Utils.getDictFromJson->Utils.getBool("consumerPresent", false)->JSON.Encode.bool,
-      ),
-    ]
-
     let mastercardDirectIdentityLookupPromise = AuthenticationSessionLogger.observeFunction(
       ~event=IdentityLookup({provider: MastercardDirect}),
-      ~detailsOf=consumerPresentDetails,
       ~call=() =>
         mastercardDirectSdk.identityLookup({
           consumerIdentity: consumerIdentity,
@@ -151,7 +143,6 @@ let makeClickToPaySession = async (
     | Some(sdk) =>
       AuthenticationSessionLogger.observeFunction(
         ~event=IdentityLookup({provider: VisaDirect}),
-        ~detailsOf=consumerPresentDetails,
         ~call=() => sdk.identityLookup(consumerIdentity),
       )
     | None => Promise.resolve(JSON.Encode.null)
@@ -515,17 +506,7 @@ let makeClickToPaySession = async (
               }
 
               AuthenticationSessionLogger.observeMerchantCall(
-                ~method=IsCustomerPresent,
-                ~details=[("email_provided", emailProvided->JSON.Encode.bool)],
-                ~detailsOf=result => [
-                  (
-                    "customer_present",
-                    result
-                    ->Utils.getDictFromJson
-                    ->Utils.getBool("customerPresent", false)
-                    ->JSON.Encode.bool,
-                  ),
-                ],
+                ~method=IsCustomerPresent({emailProvided: emailProvided}),
                 ~call=() => isCustomerPresent(~visaDirectSdk, ~email),
               )
             },
@@ -545,13 +526,11 @@ let makeClickToPaySession = async (
               ),
             checkoutWithCard: checkoutWithCardInput => {
               AuthenticationSessionLogger.observeMerchantCall(
-                ~method=CheckoutWithCard,
+                ~method=CheckoutWithCard({
+                  rememberMe: checkoutWithCardInput.rememberMe->Option.getOr(false),
+                  cardCount: maskedCards.contents->Array.length,
+                }),
                 ~details=[
-                  (
-                    "remember_me",
-                    checkoutWithCardInput.rememberMe->Option.getOr(false)->JSON.Encode.bool,
-                  ),
-                  ("card_count", maskedCards.contents->Array.length->JSON.Encode.int),
                   (
                     "window_provided",
                     checkoutWithCardInput.windowRef

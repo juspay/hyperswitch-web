@@ -201,8 +201,7 @@ let make = (
       )
     let fetchUpdates = () => {
       HyperLoaderLogger.logMerchantCall(
-        ~event=HyperLoaderLogger.FetchUpdates({surface: PaymentMethodsManagement}),
-        ~details=[("implemented", false->JSON.Encode.bool)],
+        ~event=HyperLoaderLogger.FetchUpdates({surface: PaymentMethodsManagement, implemented: false}),
       )
       Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
@@ -317,8 +316,7 @@ let make = (
       create,
       updateIntent: _ =>
         HyperLoaderLogger.observeMerchantCall(
-          ~event=HyperLoaderLogger.UpdateIntent({surface: PaymentMethodsManagement}),
-          ~details=[("supported", false->JSON.Encode.bool)],
+          ~event=HyperLoaderLogger.UpdateIntent({surface: PaymentMethodsManagement, supported: false}),
           ~call=() => Promise.resolve(JSON.Encode.null),
         ),
       createCardForm: () => defaultCardForm,

@@ -137,8 +137,7 @@ let notifyBrokerError = (
 ): unit => {
   PaymentMethodSessionLogger.logLifecycle(
     ~context,
-    ~event=VaultFlowFailed({reason: reason}),
-    ~details=[("code", code->JSON.Encode.string)],
+    ~event=VaultFlowFailed({reason: reason, code}),
     ~paymentMethod=Card,
     ~message,
   )
@@ -454,9 +453,11 @@ let make = (
         )
         PaymentMethodSessionLogger.logLifecycle(
           ~context,
-          ~event=VaultFlowFailed({reason: PaymentMethodSessionLogger.FieldUpdateFailed}),
+          ~event=VaultFlowFailed({
+            reason: PaymentMethodSessionLogger.FieldUpdateFailed,
+            field: entry.fieldType,
+          }),
           ~exn,
-          ~details=[("field", entry.fieldType->JSON.Encode.string)],
           ~paymentMethod=Card,
           ~message="Auto-clear of dependent field failed after card number was emptied",
         )
@@ -618,6 +619,7 @@ let make = (
 
           let event = PaymentMethodSessionLogger.VaultTokenization({
             scope: PaymentMethodSessionLogger.FullCard,
+            vault: "vgs",
           })
           let logOutcomeOnce = (~outcome, ~details=[], ~exn=?) =>
             if !settled.contents {
@@ -626,7 +628,7 @@ let make = (
                 ~context,
                 ~event,
                 ~outcome,
-                ~details=[("vault", "vgs"->JSON.Encode.string)]->Array.concat(details),
+                ~details,
                 ~startedAt,
                 ~exn?,
                 ~paymentMethod=Card,
@@ -637,7 +639,6 @@ let make = (
             ~context,
             ~event,
             ~outcome=Started,
-            ~details=[("vault", "vgs"->JSON.Encode.string)],
             ~paymentMethod=Card,
           )
 
