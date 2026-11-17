@@ -171,8 +171,8 @@ let make = (~sessionObj: SessionsType.token) => {
     }
 
     let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields${currencyParam}${intentParam}`
-    SdkLogger.observeResource(
-      ~event=PaypalScript,
+    ResourceLogger.observeResource(
+      ~event=Sdk(PaypalScript),
       ~url=paypalScriptURL,
       ~matchQuery=true,
       ~paymentMethod=Wallet(PaypalSdk),
