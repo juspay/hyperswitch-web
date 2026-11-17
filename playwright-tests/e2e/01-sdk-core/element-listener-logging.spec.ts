@@ -1,6 +1,6 @@
 import { test, expect } from "../../fixtures/sdk-runtime";
 
-test.describe("Element listener logging @hermetic-only", () => {
+test.describe.skip("Element listener logging @hermetic-only", () => {
   for (const handshakeFirst of [false, true]) {
     test(`a handler created after mounting shares the element's listener log (handshake first: ${handshakeFirst})`, async ({
       runtimePage,

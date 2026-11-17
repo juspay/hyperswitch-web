@@ -4,46 +4,19 @@ let make = () => {
 
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
-  let setLoggerState = Jotai.useSetAtom(JotaiAtoms.loggerAtom)
 
   let paymentMode = getQueryParamsDictforKey(url.search, "componentName")
-  let paymentType = paymentMode->CardThemeType.getPaymentMode
-
-  let networkStatus = NetworkInformation.useNetworkInformation()
-  let (logger, initTimestamp) = React.useMemo0(() => {
-    (HyperLogger.make(~source=Elements(paymentType)), Date.now())
-  })
-
-  React.useEffect1(() => {
-    switch networkStatus {
-    | Value(val) =>
-      logger.setLogInfo(
-        ~value=val->Identity.anyTypeToJson->JSON.stringify,
-        ~eventName=NETWORK_STATE,
-        ~logType=DEBUG,
-      )
-    | NOT_AVAILABLE => ()
-    }
-
-    None
-  }, [networkStatus])
-
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
-
   switch getQueryParamsDictforKey(url.search, "endpoint") {
   | "" => ()
   | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
   }
-
-  React.useEffect(() => {
-    setLoggerState(_ => logger)
-    None
-  }, [logger])
-
-  let isParentMessage = PaymentMessageHooks.useParentMessageCheck(~isInitialization=dict =>
-    dict->Utils.getDictIsSome("paymentElementCreate") ||
-      dict->Utils.getBool("fullScreenIframeMounted", false)
+  let isParentMessage = PaymentMessageHooks.useParentMessageCheck(
+    ~isInitialization=dict =>
+      dict->Utils.getDictIsSome("paymentElementCreate") ||
+      dict->Utils.getBool("fullScreenIframeMounted", false),
   )
+
   React.useEffect0(() => {
     let processMetaDataPostMessage = (ev: Window.event) => {
       let json = ev.data->Utils.safeParse
@@ -59,7 +32,6 @@ let make = () => {
               config->Utils.getDictFromJson,
               DefaultTheme.default,
               DefaultTheme.defaultRules,
-              logger,
             )
 
             generateFontsLink(config.fonts)
@@ -99,15 +71,15 @@ let make = () => {
 
   let renderFullscreen = switch paymentMode {
   | "paymentMethodCollect" =>
-    <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-      <PaymentMethodCollectElement integrateError logger />
+    <LoaderController paymentMode setIntegrateErrorError>
+      <PaymentMethodCollectElement integrateError />
     </LoaderController>
   | "paymentMethodsSDK" =>
-    <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
+    <LoaderController paymentMode setIntegrateErrorError>
       <PaymentMethodsSDK />
     </LoaderController>
   | "cardFormCoordinator" =>
-    <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
+    <LoaderController paymentMode setIntegrateErrorError>
       <CardFormCoordinator />
     </LoaderController>
   | _ =>
@@ -115,7 +87,7 @@ let make = () => {
     | "paymentloader" => <PaymentLoader />
     | "clickToPayLearnMore" => <ClickToPayLearnMore />
     | "plaidSDK" => <PlaidSDKIframe />
-    | "pazeWallet" => <PazeWallet logger />
+    | "pazeWallet" => <PazeWallet />
     | "fullscreen" =>
       <div id="fullscreen">
         <FullScreenDivDriver />
@@ -163,8 +135,8 @@ let make = () => {
     | "sepaBankTransfer" =>
       <BankTransfersPopup transferType=fullscreenMode />
     | _ =>
-      <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-        <Payment paymentMode integrateError logger />
+      <LoaderController paymentMode setIntegrateErrorError>
+        <Payment paymentMode integrateError />
       </LoaderController>
     }
   }

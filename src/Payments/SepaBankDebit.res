@@ -5,13 +5,12 @@ open Utils
 let make = () => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let {sdkAuthorization} = Jotai.useAtomValue(keys)
   let {config, themeObj} = Jotai.useAtomValue(configAtom)
   let {displaySavedPaymentMethods, layout} = Jotai.useAtomValue(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHelpers.usePaymentIntent(BankDebits)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let areRequiredFieldsValid = Jotai.useAtomValue(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Jotai.useAtomValue(areRequiredFieldsEmpty)
@@ -54,7 +53,8 @@ let make = () => {
           ~manualRetry=isManualRetryEnabled,
         )
       } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+        let message = "Please enter all fields"
+        postFailedSubmitResponse(~errortype="validation_error", ~message)
       }
     }
   }, (

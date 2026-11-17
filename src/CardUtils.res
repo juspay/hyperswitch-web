@@ -224,7 +224,7 @@ let normalizeCardBrand = brand => {
   let normalized =
     brand
     ->String.toLowerCase
-    ->String.replaceRegExp(%re("/[-_\s]/g"), "")
+    ->String.replaceRegExp(/[-_\s]/g, "")
   switch normalized {
   | "visa" => "Visa"
   | "mastercard" => "Mastercard"
@@ -324,7 +324,7 @@ let isExpiryComplete = val => {
 
 let getCardBrand = cardNumber => {
   try {
-    let card = cardNumber->String.replaceRegExp(%re("/[^\d]/g"), "")
+    let card = cardNumber->String.replaceRegExp(/[^\d]/g, "")
     let rupayRanges = [
       (508227, 508227),
       (508500, 508999),
@@ -348,7 +348,7 @@ let getCardBrand = cardNumber => {
     let doesFallInRange = (cardRanges, isin) => {
       let intIsin =
         isin
-        ->String.replaceRegExp(%re("/[^\d]/g"), "")
+        ->String.replaceRegExp(/[^\d]/g, "")
         ->String.substring(~start=0, ~end=6)
         ->Int.fromString
         ->Option.getOr(0)
