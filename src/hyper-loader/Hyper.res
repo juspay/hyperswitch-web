@@ -296,8 +296,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             manageErrorWarning(InvalidPublishableKey)
           }
 
-          SdkLogger.observeResource(
-            ~event=ApplePayScript,
+          ResourceLogger.observeResource(
+            ~event=Sdk(ApplePayScript),
             ~url="https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js",
             ~paymentMethod=Wallet(ApplePay),
             ~onError=_ => Console.error("ERROR DURING LOADING APPLE PAY"),
@@ -305,14 +305,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         }
       }->Sentry.sentryLogger
 
-      SdkLogger.observeResource(
-        ~event=GooglePayScript,
+      ResourceLogger.observeResource(
+        ~event=Sdk(GooglePayScript),
         ~url="https://pay.google.com/gp/p/js/pay.js",
         ~paymentMethod=Wallet(GooglePay),
       )->ignore
 
-      SdkLogger.observeResource(
-        ~event=SamsungPayScript,
+      ResourceLogger.observeResource(
+        ~event=Sdk(SamsungPayScript),
         ~url="https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js",
         ~paymentMethod=Wallet(SamsungPay),
       )->ignore

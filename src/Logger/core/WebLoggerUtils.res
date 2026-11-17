@@ -40,14 +40,7 @@ let firstString = SharedLoggerFormatting.firstString
 let summary = (~name, ~message=?, ~details=[]) => {name, message, details}
 
 let summarizeExn = error => {
-  let summary = switch error {
-  | JsExn(jsError) =>
-    SharedLoggerFormatting.summary(
-      ~name=jsError->JsExn.name->Option.getOr("ERROR")->SharedLoggerEvent.screamingSnakeCase,
-      ~message=?jsError->JsExn.message,
-    )
-  | _ => error->SharedLoggerFormatting.summarizeExn
-  }
+  let summary = error->SharedLoggerFormatting.summarizeExn
   {...summary, message: summary.message->Option.map(truncate)}
 }
 

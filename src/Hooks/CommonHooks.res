@@ -48,8 +48,8 @@ let useScript = (
         ->Array.filter(((_, value)) => value != "")
         ->Array.concat([("async", "true")])
       if vaultScript {
-        PaymentMethodSessionLogger.observeResource(
-          ~event=VaultScript,
+        ResourceLogger.observeResource(
+          ~event=PaymentMethodSession(VaultScript),
           ~url=src,
           ~attributes,
           ~matchQuery=true,
@@ -59,8 +59,8 @@ let useScript = (
         )->ignore
       } else {
         let event = resourceEvent->Option.getExn
-        SdkLogger.observeResource(
-          ~event,
+        ResourceLogger.observeResource(
+          ~event=Sdk(event),
           ~url=src,
           ~attributes,
           ~matchQuery=true,

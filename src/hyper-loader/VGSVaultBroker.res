@@ -208,9 +208,9 @@ let loadVGSScript = (~context): Promise.t<unit> => {
   | Some(scriptLoadPromise) => scriptLoadPromise
   | None => {
       let scriptLoadPromise = Promise.make((resolve, reject) =>
-        PaymentMethodSessionLogger.observeResource(
+        ResourceLogger.observeResource(
           ~context,
-          ~event=PaymentMethodSessionLogger.VaultScript,
+          ~event=PaymentMethodSession(VaultScript),
           ~url=VGSConstants.vgsScriptURL,
           ~attributes=[
             ("integrity", VGSConstants.vgsScriptIntegrity),
