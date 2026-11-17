@@ -136,17 +136,9 @@ let makeClickToPaySession = async (
 
     let clickToPayData = []
 
-    let consumerPresentDetails = value => [
-      (
-        "consumer_present",
-        value->Utils.getDictFromJson->Utils.getBool("consumerPresent", false)->JSON.Encode.bool,
-      ),
-    ]
-
     let mastercardDirectIdentityLookupPromise = AuthenticationSessionLogger.observeFunction(
       ~context=loggerContext,
       ~event=IdentityLookup({provider: MastercardDirect}),
-      ~detailsOf=consumerPresentDetails,
       ~call=() =>
         mastercardDirectSdk.identityLookup({
           consumerIdentity: consumerIdentity,
@@ -157,7 +149,6 @@ let makeClickToPaySession = async (
       AuthenticationSessionLogger.observeFunction(
         ~context=loggerContext,
         ~event=IdentityLookup({provider: VisaDirect}),
-        ~detailsOf=consumerPresentDetails,
         ~call=() => sdk.identityLookup(consumerIdentity),
       )
     | None => Promise.resolve(JSON.Encode.null)
@@ -445,15 +436,15 @@ let makeClickToPaySession = async (
               AuthenticationSessionLogger.logLifecycle(
                 ~context=loggerContext,
                 ~event=isConsumerNavigation
-                  ? CheckoutCancelled({provider: VisaUctp, code: actionCode})
+                  ? CheckoutCancelled({
+                      provider: VisaUctp,
+                      code: actionCode,
+                    })
                   : CheckoutDeclined({
                       provider: VisaUctp,
                       code: errorReason !== "" ? errorReason : actionCode,
+                      actionCode,
                     }),
-                ~details=[
-                  ("action_code", actionCode->JSON.Encode.string),
-                  ("reason", errorReason->JSON.Encode.string),
-                ],
               )
 
               let errorMsg = switch actionCode {
@@ -547,17 +538,7 @@ let makeClickToPaySession = async (
 
               AuthenticationSessionLogger.observeMerchantCall(
                 ~context=loggerContext,
-                ~method=IsCustomerPresent,
-                ~details=[("email_provided", emailProvided->JSON.Encode.bool)],
-                ~detailsOf=result => [
-                  (
-                    "customer_present",
-                    result
-                    ->Utils.getDictFromJson
-                    ->Utils.getBool("customerPresent", false)
-                    ->JSON.Encode.bool,
-                  ),
-                ],
+                ~method=IsCustomerPresent({emailProvided: emailProvided}),
                 ~call=() => isCustomerPresent(~visaDirectSdk, ~email),
               )
             },
@@ -580,13 +561,11 @@ let makeClickToPaySession = async (
             checkoutWithCard: checkoutWithCardInput => {
               AuthenticationSessionLogger.observeMerchantCall(
                 ~context=loggerContext,
-                ~method=CheckoutWithCard,
+                ~method=CheckoutWithCard({
+                  rememberMe: checkoutWithCardInput.rememberMe->Option.getOr(false),
+                  cardCount: maskedCards.contents->Array.length,
+                }),
                 ~details=[
-                  (
-                    "remember_me",
-                    checkoutWithCardInput.rememberMe->Option.getOr(false)->JSON.Encode.bool,
-                  ),
-                  ("card_count", maskedCards.contents->Array.length->JSON.Encode.int),
                   (
                     "window_provided",
                     checkoutWithCardInput.windowRef

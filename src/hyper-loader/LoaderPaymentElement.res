@@ -121,9 +121,9 @@ let make = (
     let surfaceData: HyperLoaderLogger.surfaceData = {
       surface: fieldName->Option.isSome ? CardField : PaymentElement,
     }
-    let surfaceDetails = switch fieldName {
-    | Some(field) => [("field", field->JSON.Encode.string)]
-    | None => [("component_type", componentType->JSON.Encode.string)]
+    let surfaceDetails: HyperLoaderLogger.containerData = switch fieldName {
+    | Some(field) => {surface: surfaceData.surface, field}
+    | None => {surface: surfaceData.surface, componentType}
     }
     let mountId = ref("")
     let localSelectorRef = ref("")
@@ -393,9 +393,6 @@ let make = (
       })
     }
 
-    let containerPresentDetail = () =>
-      [("container_present", Window.querySelector(mountId.contents)->Nullable.toOption->Option.isSome->JSON.Encode.bool)]
-
     let clearMountedContainer = () => {
       let oElement = Window.querySelector(mountId.contents)
       switch oElement->Nullable.toOption {
@@ -407,11 +404,14 @@ let make = (
       }
     }
 
+    let containerPresent = () =>
+      Window.querySelector(mountId.contents)->Nullable.toOption->Option.isSome
+
     let unmount = () =>
       HyperLoaderLogger.observeMerchantCall(
         ~context?,
-        ~event=Unmount(surfaceData),
-        ~details=surfaceDetails->Array.concat(containerPresentDetail()),
+        ~event=Unmount(surfaceDetails),
+        ~details=[("container_present", containerPresent()->JSON.Encode.bool)],
         ~call=() => {
           oneClickSources->Dict.delete(elementInstanceId)
           mountedIframeRef := Nullable.null
@@ -423,8 +423,8 @@ let make = (
     let destroy = () =>
       HyperLoaderLogger.observeMerchantCall(
         ~context?,
-        ~event=Destroy(surfaceData),
-        ~details=surfaceDetails->Array.concat(containerPresentDetail()),
+        ~event=Destroy(surfaceDetails),
+        ~details=[("container_present", containerPresent()->JSON.Encode.bool)],
         ~call=() => {
           oneClickSources->Dict.delete(elementInstanceId)
           eventListenerTracker.destroy()
@@ -473,8 +473,7 @@ let make = (
     let update = newOptions =>
       HyperLoaderLogger.observeMerchantCall(
         ~context?,
-        ~event=HyperLoaderLogger.Update({surface: PaymentElement}),
-        ~details=[("component_type", componentType->JSON.Encode.string)],
+        ~event=HyperLoaderLogger.Update({surface: PaymentElement, componentType}),
         ~call=() => updateElementOptions(newOptions),
       )
 
@@ -772,8 +771,7 @@ let make = (
     let mount = selector =>
       HyperLoaderLogger.observeMerchantCall(
         ~context?,
-        ~event=Mount(surfaceData),
-        ~details=surfaceDetails,
+        ~event=Mount(surfaceDetails),
         ~call=() => mountElement(selector),
       )
 

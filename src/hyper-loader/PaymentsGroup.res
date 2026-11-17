@@ -511,8 +511,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
 
   let create = (fieldType: string, options: JSON.t): fieldHandle =>
     HyperLoaderLogger.observeMerchantCall(
-      ~event=HyperLoaderLogger.Create({surface: CardForm}),
-      ~details=[("field", fieldType->JSON.Encode.string)],
+      ~event=HyperLoaderLogger.Create({surface: CardForm, field: fieldType}),
       ~call=() =>
         switch mapFieldTypeToInternalFieldName(fieldType) {
         | "" => {
@@ -567,10 +566,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       )
     } else {
       HyperLoaderLogger.observeMerchantCall(
-        ~event=HyperLoaderLogger.Update({surface: CardForm}),
-        ~details=[
-          ("field_count", fieldsRef.contents->Dict.valuesToArray->Array.length->JSON.Encode.int),
-        ],
+        ~event=HyperLoaderLogger.Update({surface: CardForm, fieldCount: fieldsRef.contents->Dict.valuesToArray->Array.length}),
         ~call=() =>
           fieldsRef.contents
           ->Dict.valuesToArray

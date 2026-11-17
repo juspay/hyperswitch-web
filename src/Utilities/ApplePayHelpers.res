@@ -220,7 +220,7 @@ let startApplePaySession = (
   let handlePaymentAuthorized = event => {
     ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson)
     applePaySessionRef := Nullable.null
-    SdkLogger.logLifecycle(~event=WalletTokenReceived, ~paymentMethod=Wallet(ApplePay))
+    SdkLogger.logLifecycle(~event=WalletTokenReceived({}), ~paymentMethod=Wallet(ApplePay))
 
     let payment = event.payment
     payment->callBackFunc
@@ -654,7 +654,7 @@ let handleApplePayBraintreeClick = (
         ~message,
       )
     } else {
-      SdkLogger.logLifecycle(~event=WalletTokenReceived, ~paymentMethod=Wallet(ApplePay))
+      SdkLogger.logLifecycle(~event=WalletTokenReceived({}), ~paymentMethod=Wallet(ApplePay))
       event.source->Window.postMessage(
         [("applePayBraintreeSuccess", true->JSON.Encode.bool), ("token", token->JSON.Encode.string)]
         ->getJsonFromArrayOfJson

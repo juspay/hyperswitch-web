@@ -89,7 +89,6 @@ let make = (
     | Some(fontsValue) =>
       HyperLoaderLogger.logMerchantProps(
         ~event=HyperLoaderLogger.Fonts({surface: Elements}),
-        ~details=[("count", fontsValue->JSON.Decode.array->Option.getOr([])->Array.length->JSON.Encode.int)],
         ~config=fontsValue,
         ~isSensitive=WebLoggerUtils.maskNone,
       )
@@ -99,14 +98,12 @@ let make = (
     if blockConfirm {
       HyperLoaderLogger.logMerchantProps(
         ~event=HyperLoaderLogger.BlockConfirm({surface: Elements}),
-        ~details=[("block_confirm", blockConfirm->JSON.Encode.bool)],
       )
     }
 
     if customPodUri !== "" {
       HyperLoaderLogger.logMerchantProps(
         ~event=HyperLoaderLogger.CustomPodUri({surface: Elements}),
-        ~details=[("provided", true->JSON.Encode.bool)],
       )
     }
 
@@ -427,7 +424,6 @@ let make = (
     let getElement = componentName =>
       HyperLoaderLogger.observeMerchantCall(
         ~event=GetElement({surface: Elements}),
-        ~detailsOf=result => [("found", result->Option.isSome->JSON.Encode.bool)],
         ~call=() => savedPaymentElement->Dict.get(componentName),
       )
     let updateElementsOptions = newOptions => {
@@ -467,11 +463,11 @@ let make = (
 
     let fetchUpdates = () => {
       HyperLoaderLogger.observeMerchantCall(
-        ~event=FetchUpdates({surface: Elements}),
-        ~details=[("implemented", false->JSON.Encode.bool)],
-        ~call=() => Promise.make((resolve, _) => {
-          setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
-        }),
+        ~event=FetchUpdates({surface: Elements, implemented: false}),
+        ~call=() =>
+          Promise.make((resolve, _) => {
+            setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
+          }),
       )
     }
 
@@ -814,12 +810,9 @@ let make = (
                     Promise.race([polling, executeGooglePayment, timeOut])
                     ->then(_ => {
                       SdkLogger.logLifecycle(
-                        ~event=WalletTokenReceived,
+                        ~event=WalletTokenReceived({flow: ThirdParty}),
+                        ~details=[("settled_by", settledBy.contents->JSON.Encode.string)],
                         ~paymentMethod=Wallet(GooglePay),
-                        ~details=[
-                          ("flow", "third_party"->JSON.Encode.string),
-                          ("settled_by", settledBy.contents->JSON.Encode.string),
-                        ],
                       )
                       postGooglePaySync()
                       resolve()
@@ -962,9 +955,8 @@ let make = (
                       )
                       ->then(_ => {
                         SdkLogger.logLifecycle(
-                          ~event=WalletTokenReceived,
+                          ~event=WalletTokenReceived({flow: ThirdParty}),
                           ~paymentMethod=Wallet(ApplePay),
-                          ~details=[("flow", "third_party"->JSON.Encode.string)],
                         )
                         let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
@@ -1099,10 +1091,14 @@ let make = (
               ~count,
               ~returnUrl=url,
               ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
-              ~loggerContext={...LoggerContext.current(), paymentId: Utils.getPaymentIdOrExtractFromSdkAuth(
-                ~clientSecret=clientSecretRef.contents,
-                ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
-              ), scoped: true},
+              ~loggerContext={
+                ...LoggerContext.current(),
+                paymentId: Utils.getPaymentIdOrExtractFromSdkAuth(
+                  ~clientSecret=clientSecretRef.contents,
+                  ~sdkAuthorization=Some(sdkAuthorizationRef.contents),
+                ),
+                scoped: true,
+              },
             )
             ->then(_ => {
               PaymentHelpers.retrievePaymentIntent(

@@ -77,11 +77,11 @@ let make = (
     } catch {
     | error =>
       PaymentMethodSessionLogger.logLifecycle(
-        ~event=VaultFlowFailed({reason: TokenizationFailed}),
-        ~details=[
-          ("vault", "hyperswitch"->JSON.Encode.string),
-          ("operation", "save_card"->JSON.Encode.string),
-        ],
+        ~event=VaultFlowFailed({
+          reason: TokenizationFailed,
+          vault: "hyperswitch",
+          operation: "save_card",
+        }),
         ~exn=error,
       )
       messageParentWindow([("cardTokenFail", true->JSON.Encode.bool)], ~targetOrigin=parentURL)

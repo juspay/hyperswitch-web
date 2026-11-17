@@ -26,9 +26,8 @@ let make = (~token: SessionsType.token) => {
 
   let onClick = _ => {
     SdkLogger.logUser(
-      ~event=ExpressCheckoutClicked,
+      ~event=ExpressCheckoutClicked({testMode: ?(isTestMode ? Some(true) : None)}),
       ~paymentMethod=Wallet(Paze),
-      ~details=isTestMode ? [("test_mode", true->JSON.Encode.bool)] : [],
     )
     if isTestMode {
       Console.warn("Paze button clicked in test mode - interaction disabled")
