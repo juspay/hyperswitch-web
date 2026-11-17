@@ -559,8 +559,8 @@ let loadClickToPayScripts = (~logResources=false) =>
       switch querySelector(scriptSelector)->Nullable.toOption {
       | None => {
           if logResources {
-            ClickToPayLogger.observeResource(
-              ~event=UiKitScript,
+            ResourceLogger.observeResource(
+              ~event=ClickToPay(UiKitScript),
               ~url=srcUiKitScriptSrc,
               ~attributes=[("type", "module")],
               ~onLoad=scriptPromiseResolve,
@@ -581,8 +581,8 @@ let loadClickToPayScripts = (~logResources=false) =>
       switch querySelector(linkSelector)->Nullable.toOption {
       | None => {
           if logResources {
-            ClickToPayLogger.observeResource(
-              ~event=UiKitStylesheet,
+            ResourceLogger.observeResource(
+              ~event=ClickToPay(UiKitStylesheet),
               ~url=srcUiKitCssHref,
               ~onLoad=cssPromiseResolve,
             )
@@ -888,8 +888,8 @@ let loadVisaScript = (
     ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
     : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${clickToPayToken.dpaName}`
   if authenticationSession {
-    AuthenticationSessionLogger.observeResource(
-      ~event=VisaSdkScript,
+    ResourceLogger.observeResource(
+      ~event=AuthenticationSession(VisaSdkScript),
       ~context=?loggerContext,
       ~url=scriptSrc,
       ~matchQuery=true,
@@ -897,8 +897,8 @@ let loadVisaScript = (
       ~onError=_ => onErrorCallback(),
     )
   } else {
-    ClickToPayLogger.observeResource(
-      ~event=VisaSdkScript,
+    ResourceLogger.observeResource(
+      ~event=ClickToPay(VisaSdkScript),
       ~url=scriptSrc,
       ~matchQuery=true,
       ~onLoad=onLoadCallback,
@@ -909,15 +909,15 @@ let loadVisaScript = (
 
 let loadClickToPayUIScripts = (scriptLoadedCallback, scriptErrorCallback) => {
   // Add script if not exists
-  ClickToPayLogger.observeResource(
-    ~event=UiKitScript,
+  ResourceLogger.observeResource(
+    ~event=ClickToPay(UiKitScript),
     ~url=srcUiKitScriptSrc,
     ~attributes=[("type", "module")],
     ~onLoad=scriptLoadedCallback,
     ~onError=_ => scriptErrorCallback(),
   )
   // Add link if not exists
-  ClickToPayLogger.observeResource(~event=UiKitStylesheet, ~url=srcUiKitCssHref)
+  ResourceLogger.observeResource(~event=ClickToPay(UiKitStylesheet), ~url=srcUiKitCssHref)
 }
 
 let formatOrderId = orderId =>

@@ -203,11 +203,7 @@ let emitPhase = (
 let makeTracker = SharedLoggerOperation.makeTracker
 let elapsed = SharedLoggerOperation.elapsed
 let settle = SharedLoggerOperation.settle
-let rethrow = error =>
-  switch error {
-  | JsExn(jsError) => JsExn.throw(jsError)
-  | error => throw(error)
-  }
+let rethrow = SharedLoggerOperation.rethrow
 
 let observe = (
   ~category,
@@ -227,7 +223,6 @@ let observe = (
   SharedLoggerOperation.observe(
     ~timeoutMs,
     ~summarizeExn=WebLoggerUtils.summarizeExn,
-    ~rethrow,
     ~failureOf?,
     ~syncOutcome,
     ~onStep=(step, _, outcomeDetails) =>
