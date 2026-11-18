@@ -1,0 +1,5 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["*.ts", "../e2e/required-fields-sync.spec.ts"],
+  "exclude": ["dist", "test-results", "../node_modules"]
+}
