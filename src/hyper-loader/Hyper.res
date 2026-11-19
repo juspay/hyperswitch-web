@@ -217,9 +217,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     }
     let analyticsInfoDict =
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-    /* Falls back to the id minted when HyperLoader.js was evaluated, so
-       SDK_SCRIPT_LOADED and everything from APP_INITIATED onward share one
-       session_id. */
     let sessionID = analyticsInfoDict->getString("sessionID", SdkLoadSession.sessionId)
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
     let logger = HyperLogger.make(
@@ -482,12 +479,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           })
         }
 
-        /* Checkpoint 10, for the SDK pay button and the merchant-facing confirm
-           APIs. Deliberately above the isTestMode branch and above the
-           isReadyPromise await: a click that never produces a confirm request —
-           validation failure, a never-resolving ready promise, test mode — is the
-           thing this checkpoint exists to count. In-sheet wallet buttons confirm
-           without passing through here and emit their own. */
         LoggerUtils.logConfirmTriggered(
           ~logger,
           ~trigger=switch (isSdkButton, isOneClick) {

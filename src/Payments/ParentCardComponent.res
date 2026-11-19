@@ -62,7 +62,7 @@ let make = (
   let isRawNewCardFlow = isRawMode && !isSavedCardFlow
   let isPMMFlow = flowType === CardThemeType.PaymentMethodsManagement
   let loggerSource =
-    "hyper_" ++
+    "hyper" ++
     flowType
     ->CardThemeType.getPaymentModeToStrMapper
     ->LoggerUtils.toSnakeCaseWithSeparator("_")

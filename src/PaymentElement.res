@@ -45,7 +45,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
-  // Distinguishes the SDK's default selection from a selection the shopper made.
   let previousSelectedOption = React.useRef("")
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
@@ -312,9 +311,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         }
       }
     }
-    /* Only a transition between methods is a user action. The first non-empty
-       value is the SDK's own default selection, which used to be logged as though
-       the shopper had chosen it. */
     if selectedOption !== "" && previousSelectedOption.current !== selectedOption {
       if previousSelectedOption.current !== "" {
         loggerState.setLogInfo(
@@ -693,16 +689,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   // Lets options and selection derived in effects settle before emitting.
   let readySettleDelayMs = 50
-  // Checkpoint 7 is one row per element, even though ready can be re-armed by
-  // updateIntent. "The sheet became usable" happens once.
   let hasLoggedSheetRendered = React.useRef(false)
   React.useEffect(() => {
     let timeoutId = if isElementReady {
       Some(
         setTimeout(() => {
-          /* Checkpoint 7: the sheet is painted and usable. emitReadyOnce is the only
-             signal in the codebase that means this — LOADER_CHANGED="Loaded" only
-             means the payment-method list came back non-empty. */
           if !hasLoggedSheetRendered.current {
             hasLoggedSheetRendered.current = true
             let eventName: HyperLoggerTypes.eventName = PAYMENT_SHEET_RENDERED
@@ -710,6 +701,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
               ~value=[
                 ("payment_method_count", paymentOptions->Array.length->JSON.Encode.int),
                 ("saved_method_count", savedMethods->Array.length->JSON.Encode.int),
+                ("wallet_count", walletOptions->Array.length->JSON.Encode.int),
                 (
                   "screen",
                   (isSavedMethodsScreenShown ? "saved_methods" : "payment_methods")
@@ -751,7 +743,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   <>
     <RenderIf condition=isContentGated>
-      <PaymentElementShimmer />
+      <>
+        <PaymentSheetLoadingLog reason="first_screen" />
+        <PaymentElementShimmer />
+      </>
     </RenderIf>
     <div
       style={isContentGated ? hiddenMountedStyle : {display: "contents"}} inert=isContentGated>

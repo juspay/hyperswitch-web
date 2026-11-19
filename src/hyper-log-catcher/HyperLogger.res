@@ -63,11 +63,6 @@ let getSourceString = source => {
   }
 }
 
-/* One-shot beacon for checkpoints that fire before any logger instance exists —
-   SDK_SCRIPT_LOADED runs at module evaluation of HyperLoader, where spinning up a
-   full logger would install a 20s timer and a beforeunload listener on every page
-   that merely loads the script without ever calling Hyper.init. No batching, no
-   timer, no IndexedDB. */
 let sendSingleLog = (
   ~eventName,
   ~sessionId,
@@ -120,9 +115,6 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
   let setSessionId = value => {
     sessionId := value
   }
-  /* Mutable so the parent frame can correct it via setSource/`loggerSource`
-     (hyper_vault, hyper_payments_v2, …). Every log row must read
-     sourceRef.contents, never a value captured at construction. */
   let sourceRef = ref(source->getSourceString)
 
   let setSource = value => {
@@ -249,10 +241,6 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
   }
 
   let sendLogsOverNetwork = async () => {
-    /* The beacon for the live batch goes out before any await. During
-       `beforeunload` an awaited IndexedDB round-trip never resumes, so anything
-       after it is silently dropped — which used to lose the whole tail of every
-       redirect flow (3DS, bank redirects, redirect: "always"). */
     try {
       beaconApiCall(mainLogFile)
       clearLogFile(mainLogFile)
@@ -543,8 +531,6 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
 
   let handleBeforeUnload = _event => {
     //event->Window.preventDefault()
-    /* Synchronous beacon only. sendLogs() would route through an async path and,
-     when offline, through IndexedDB — neither completes during unload. */
     beaconApiCall(mainLogFile)
     clearLogFile(mainLogFile)
     switch timeOut.contents {

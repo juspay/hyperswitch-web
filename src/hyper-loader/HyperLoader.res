@@ -40,11 +40,6 @@ let removeBeforeUnloadEventListeners: array<'ev => unit> => unit = handlers => {
   Window.addEventListener("message", iframeMessageHandler)
 }
 
-/* Checkpoint 1: the script was delivered, parsed and evaluated on the merchant
-   page. Emitted with a one-shot beacon rather than a logger instance, so a page
-   that loads the script and never calls Hyper.init pays for no timer and no
-   beforeunload listener. The gap between this count and APP_INITIATED is the
-   client-side read on WAF/CSP script-delivery problems. */
 HyperLogger.sendSingleLog(
   ~eventName=SDK_SCRIPT_LOADED,
   ~sessionId=SdkLoadSession.sessionId,

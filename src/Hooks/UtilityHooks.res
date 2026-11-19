@@ -27,6 +27,7 @@ let useHandlePostMessages = (
   ~paymentType,
   ~savedMethod=false,
   ~enabled=true,
+  ~logDataFilled=true,
 ) => {
   open JotaiAtoms
 
@@ -34,10 +35,17 @@ let useHandlePostMessages = (
 
   React.useEffect(() => {
     if enabled {
-      Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod)
+      Utils.handlePostMessageEvents(
+        ~complete,
+        ~empty,
+        ~paymentType,
+        ~loggerState,
+        ~savedMethod,
+        ~logDataFilled,
+      )
     }
     None
-  }, (complete, empty, paymentType, savedMethod, enabled))
+  }, (complete, empty, paymentType, savedMethod, enabled, logDataFilled))
 }
 
 let useIsCustomerAcceptanceRequired = (

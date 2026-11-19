@@ -124,8 +124,6 @@ type eventName =
   | DYNAMIC_FIELDS_RENDERED
   | DYNAMIC_FIELDS_CONFIG
   | CARD_FORM_FLOW
-  /* Payment-sheet funnel checkpoints. One row per session per checkpoint; see
-   docs/sdk-payment-sheet-analytics-hld.md for the funnel these feed. */
   | SDK_SCRIPT_LOADED
   | PAYMENT_ELEMENT_MOUNTED
   | PAYMENT_SHEET_LOADING

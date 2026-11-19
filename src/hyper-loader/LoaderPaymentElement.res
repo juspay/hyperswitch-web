@@ -134,9 +134,6 @@ let make = (
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
-  /* Seeded onto the iframe URL so the in-iframe logger has a session and merchant
-     id at construction, before the parent's mount reply arrives. Without this,
-     LOG_INITIATED and NETWORK_STATE ship with session_id: "". */
   ~sdkSessionId: string="",
   ~publishableKey: string="",
 ) => {
@@ -176,7 +173,6 @@ let make = (
     // Unique per-instance ID to scope event listener names and prevent collisions.
     let elementInstanceId = generateRandomString(8)
 
-    // Checkpoint 4 is one row per element instance, not per mount() call.
     let hasLoggedMount = ref(false)
 
     let setPaymentIframeRef = ref => {
@@ -459,10 +455,7 @@ let make = (
       ensureWalletOneClickListener(logger, ~ownerId=elementInstanceId, ~isTrustedMessage)
       mountId := selector
 
-      /* Checkpoint 4: the element was created and asked to mount. Loader-side, so
-         `source` is HYPER_LOADER — the element identity goes in `value`. Once per
-         instance, so a remount after unmount() is not counted twice. */
-      if !hasLoggedMount.contents {
+      if !hasLoggedMount.contents && componentType !== "paymentMethodsSDK" {
         hasLoggedMount := true
         let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_MOUNTED
         logger.setLogInfo(

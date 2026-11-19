@@ -73,9 +73,12 @@ let make = (
         | Payment =>
           <ReusableReactSuspense
             loaderComponent={<RenderIf condition={showLoader}>
-              {paymentType->Utils.checkIsWalletElement
-                ? <WalletShimmer />
-                : <PaymentElementShimmer />}
+              <>
+                <PaymentSheetLoadingLog reason="sdk_bundle" />
+                {paymentType->Utils.checkIsWalletElement
+                  ? <WalletShimmer />
+                  : <PaymentElementShimmer />}
+              </>
             </RenderIf>}
             componentName="PaymentElementRendererLazy">
             <PaymentElementRendererLazy paymentType cardProps expiryProps cvcProps />

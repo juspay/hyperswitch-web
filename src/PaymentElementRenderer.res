@@ -37,35 +37,19 @@ let make = (
 
   let isWalletElement = paymentType->Utils.checkIsWalletElement
 
-  /* Checkpoint 6: the shopper is looking at a loading screen rather than a sheet.
-     Gated on showLoader, so `loader: "never"` correctly emits nothing — checkpoints
-     6 and 7 are independent, not a sequence. */
-  let loggerState = Jotai.useAtomValue(loggerAtom)
-  let hasLoggedSheetLoading = React.useRef(false)
-  React.useEffect2(() => {
-    if isLoading && showLoader && !hasLoggedSheetLoading.current {
-      hasLoggedSheetLoading.current = true
-      let reason = switch (paymentType, paymentMethodList, sdkConfigs, paymentManagementList) {
-      | (Payment, Loading, _, _) => "payment_methods"
-      | (Payment, _, Loading, _) => "sdk_configs"
-      | (PaymentMethodsManagement, _, _, LoadingV2) => "payment_management_list"
-      | _ => "unknown"
-      }
-      let eventName: HyperLoggerTypes.eventName = PAYMENT_SHEET_LOADING
-      loggerState.setLogInfo(
-        ~value=[("reason", reason->JSON.Encode.string)]
-        ->Dict.fromArray
-        ->JSON.Encode.object
-        ->JSON.stringify,
-        ~eventName,
-      )
-    }
-    None
-  }, (isLoading, showLoader))
+  let loadingReason = switch (paymentType, paymentMethodList, sdkConfigs, paymentManagementList) {
+  | (Payment, Loading, _, _) => "payment_methods"
+  | (Payment, _, Loading, _) => "sdk_configs"
+  | (PaymentMethodsManagement, _, _, LoadingV2) => "payment_management_list"
+  | _ => "unknown"
+  }
 
   if isLoading {
     <RenderIf condition=showLoader>
-      {isWalletElement ? <WalletShimmer /> : <PaymentElementShimmer />}
+      <>
+        <PaymentSheetLoadingLog reason=loadingReason />
+        {isWalletElement ? <WalletShimmer /> : <PaymentElementShimmer />}
+      </>
     </RenderIf>
   } else if isWalletElement {
     <WalletElement paymentType />

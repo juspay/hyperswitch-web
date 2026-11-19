@@ -828,8 +828,9 @@ let handlePostMessageEvents = (
   ~paymentType,
   ~loggerState: HyperLoggerTypes.loggerMake,
   ~savedMethod=false,
+  ~logDataFilled=true,
 ) => {
-  if complete && paymentType !== "" {
+  if logDataFilled && complete && paymentType !== "" {
     let value = `Payment Data Filled: ${savedMethod
         ? "Saved Payment Method"
         : "New Payment Method"}`

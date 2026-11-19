@@ -19,9 +19,6 @@ let logApi = (
       [("response", data)],
     )
   | NoResponse => (
-      /* 0, not 504. There was no HTTP response at all — an abort, an offline tab, a
-         DNS failure. Reporting 504 made every connectivity blip indistinguishable
-         from a genuine upstream gateway timeout and inflated the 5xx metric. */
       [
         ("url", url->JSON.Encode.string),
         ("statusCode", 0->JSON.Encode.int),
@@ -38,9 +35,6 @@ let logApi = (
       ],
       [("response", data)],
     )
-  /* `result` belongs in `value`: internalMetadata is not serialised into the
-     payload, so CONFIRM_PAYMENT used to record that the merchant callback fired
-     but never whether it reported success. */
   | Method => (
       [("method", paymentMethod->JSON.Encode.string), ("result", result)],
       [("result", result)],
@@ -61,10 +55,6 @@ let logApi = (
   }
 }
 
-/* Checkpoint 8 — the shopper did something. One row per iframe instance, which is
-   the grain we want: "this payment sheet was interactable and was interacted
-   with". Module-level because the first interaction can arrive through either the
-   window click listener or a field change, and only the first one counts. */
 let hasLoggedUserInteraction = ref(false)
 
 let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~kind, ~field="") =>
@@ -80,18 +70,26 @@ let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~kind, ~field="")
     )
   }
 
+let hasLoggedSheetLoading = ref(false)
+
+let logSheetLoading = (~logger: HyperLoggerTypes.loggerMake, ~reason) =>
+  if !hasLoggedSheetLoading.contents {
+    hasLoggedSheetLoading := true
+    let eventName: HyperLoggerTypes.eventName = PAYMENT_SHEET_LOADING
+    logger.setLogInfo(
+      ~value=[("reason", reason->JSON.Encode.string)]
+      ->Dict.fromArray
+      ->JSON.Encode.object
+      ->JSON.stringify,
+      ~eventName,
+    )
+  }
+
 let logInputChangeInfo = (text, logger: HyperLoggerTypes.loggerMake) => {
   logUserInteracted(~logger, ~kind="input", ~field=text)
   logger.setLogInfo(~value=text, ~eventName=INPUT_FIELD_CHANGED)
 }
 
-/* Checkpoint 10 — the shopper asked to pay.
-
-   In-sheet wallet buttons hold their own payment-intent hook and confirm from
-   inside the iframe, so they never reach the loader's confirmPaymentWrapper and
-   need their own emission site. Fires on every click, test mode included: a click
-   that is swallowed before a confirm request is exactly what the
-   checkpoint-10-against-11 ratio is for. */
 let logConfirmTriggered = (
   ~logger: HyperLoggerTypes.loggerMake,
   ~trigger,
