@@ -10,8 +10,19 @@ let make = () => {
   let paymentType = paymentMode->CardThemeType.getPaymentMode
 
   let networkStatus = NetworkInformation.useNetworkInformation()
+  /* Seeded from the iframe URL rather than waiting for the parent's mount reply,
+   so the very first rows this logger emits already carry a session id. */
+  let sdkSessionIdFromUrl = getQueryParamsDictforKey(url.search, "sessionId")
+  let publishableKeyFromUrl = getQueryParamsDictforKey(url.search, "publishableKey")
   let (logger, initTimestamp) = React.useMemo0(() => {
-    (HyperLogger.make(~source=Elements(paymentType)), Date.now())
+    (
+      HyperLogger.make(
+        ~source=Elements(paymentType),
+        ~sessionId=sdkSessionIdFromUrl,
+        ~merchantId=publishableKeyFromUrl,
+      ),
+      Date.now(),
+    )
   })
 
   React.useEffect1(() => {

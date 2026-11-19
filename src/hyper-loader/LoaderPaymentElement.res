@@ -134,6 +134,11 @@ let make = (
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
+  /* Seeded onto the iframe URL so the in-iframe logger has a session and merchant
+     id at construction, before the parent's mount reply arrives. Without this,
+     LOG_INITIATED and NETWORK_STATE ship with session_id: "". */
+  ~sdkSessionId: string="",
+  ~publishableKey: string="",
 ) => {
   try {
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
@@ -170,6 +175,9 @@ let make = (
 
     // Unique per-instance ID to scope event listener names and prevent collisions.
     let elementInstanceId = generateRandomString(8)
+
+    // Checkpoint 4 is one row per element instance, not per mount() call.
+    let hasLoggedMount = ref(false)
 
     let setPaymentIframeRef = ref => {
       mountedIframeRef := ref
@@ -450,6 +458,21 @@ let make = (
     let mount = selector => {
       ensureWalletOneClickListener(logger, ~ownerId=elementInstanceId, ~isTrustedMessage)
       mountId := selector
+
+      /* Checkpoint 4: the element was created and asked to mount. Loader-side, so
+         `source` is HYPER_LOADER — the element identity goes in `value`. Once per
+         instance, so a remount after unmount() is not counted twice. */
+      if !hasLoggedMount.contents {
+        hasLoggedMount := true
+        let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_MOUNTED
+        logger.setLogInfo(
+          ~value=[("component_type", componentType->JSON.Encode.string)]
+          ->Dict.fromArray
+          ->JSON.Encode.object
+          ->JSON.stringify,
+          ~eventName,
+        )
+      }
       let localSelectorArr = selector->String.split("#")
       let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
       localSelectorRef := localSelectorString
@@ -702,6 +725,8 @@ let make = (
             ->appendParam("fieldName", fieldName)
             ->appendParam("surfaceFamily", surfaceFamily)
             ->appendParam("groupId", groupId)
+            ->appendParam("sessionId", Some(sdkSessionId)->Utils.getNonEmptyOption)
+            ->appendParam("publishableKey", Some(publishableKey)->Utils.getNonEmptyOption)
           let iframeDiv = `<div id="orca-${elementIframeWrapperDivId}-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
           ${buildIframeHtmlString(

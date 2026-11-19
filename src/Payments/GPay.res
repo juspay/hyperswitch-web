@@ -173,6 +173,7 @@ let make = (
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onGooglePaymentButtonClicked = () => {
+    LoggerUtils.logConfirmTriggered(~logger=loggerState, ~trigger="wallet", ~paymentMethodType)
     if isTestMode {
       Console.warn("Google Pay button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(

@@ -82,6 +82,11 @@ let make = (~sessionObj: SessionsType.token) => {
           theme: options.wallets.style.theme == Dark ? "default" : "outlined",
           shape: "default",
           on_click: authorize => {
+            LoggerUtils.logConfirmTriggered(
+              ~logger=loggerState,
+              ~trigger="wallet",
+              ~paymentMethodType,
+            )
             if isTestMode {
               Console.warn("Klarna SDK button clicked in test mode - interaction disabled")
               loggerState.setLogInfo(

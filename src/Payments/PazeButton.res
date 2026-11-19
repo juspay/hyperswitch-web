@@ -26,6 +26,11 @@ let make = (~token: SessionsType.token) => {
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onClick = _ => {
+    LoggerUtils.logConfirmTriggered(
+      ~logger=loggerState,
+      ~trigger="wallet",
+      ~paymentMethodType="paze",
+    )
     if isTestMode {
       Console.warn("Paze button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(

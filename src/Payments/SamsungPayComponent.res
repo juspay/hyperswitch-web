@@ -37,6 +37,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     })
 
   let onSamsungPaymentButtonClick = _ => {
+    LoggerUtils.logConfirmTriggered(
+      ~logger=loggerState,
+      ~trigger="wallet",
+      ~paymentMethodType="samsung_pay",
+    )
     if isTestMode {
       Console.warn("Samsung Pay button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(

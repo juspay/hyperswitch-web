@@ -63,6 +63,48 @@ let getSourceString = source => {
   }
 }
 
+/* One-shot beacon for checkpoints that fire before any logger instance exists —
+   SDK_SCRIPT_LOADED runs at module evaluation of HyperLoader, where spinning up a
+   full logger would install a 20s timer and a beforeunload listener on every page
+   that merely loads the script without ever calling Hyper.init. No batching, no
+   timer, no IndexedDB. */
+let sendSingleLog = (
+  ~eventName,
+  ~sessionId,
+  ~value="",
+  ~source: source=Loader,
+  ~logType=INFO,
+  ~logCategory=USER_EVENT,
+  ~merchantId="",
+) =>
+  if GlobalVars.enableLogging && GlobalVars.loggingLevelStr !== "SILENT" {
+    let log: logFile = {
+      logType,
+      timestamp: Date.now()->Float.toString,
+      sessionId,
+      source: source->getSourceString,
+      version: GlobalVars.repoVersion,
+      value,
+      category: logCategory,
+      paymentId: "",
+      merchantId,
+      browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+      platform: Window.Navigator.platform,
+      userAgent: Window.Navigator.userAgent,
+      appId: "",
+      eventName,
+      latency: "",
+      paymentMethod: "",
+      firstEvent: true,
+      metadata: JSON.Encode.null,
+    }
+    Window.Navigator.sendBeacon(
+      GlobalVars.logEndpoint,
+      [log]->Array.map(logFileToObj)->JSON.Encode.array->JSON.stringify,
+    )
+  }
+
 let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~metadata=?) => {
   let loggingLevel = switch GlobalVars.loggingLevelStr {
   | "DEBUG" => DEBUG
@@ -78,7 +120,14 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
   let setSessionId = value => {
     sessionId := value
   }
-  let sourceString = source->getSourceString
+  /* Mutable so the parent frame can correct it via setSource/`loggerSource`
+     (hyper_vault, hyper_payments_v2, …). Every log row must read
+     sourceRef.contents, never a value captured at construction. */
+  let sourceRef = ref(source->getSourceString)
+
+  let setSource = value => {
+    sourceRef := value
+  }
 
   let events = ref(Dict.make())
   let eventsCounter = ref(Dict.make())
@@ -183,12 +232,6 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       )
     }
 
-  let sourceRef = ref(source->getSourceString)
-
-  let setSource = value => {
-    sourceRef := value
-  }
-
   let clearLogFile = mainLogFile => {
     let len = mainLogFile->Array.length
     for _ in 0 to len - 1 {
@@ -206,10 +249,14 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
   }
 
   let sendLogsOverNetwork = async () => {
+    /* The beacon for the live batch goes out before any await. During
+       `beforeunload` an awaited IndexedDB round-trip never resumes, so anything
+       after it is silently dropped — which used to lose the whole tail of every
+       redirect flow (3DS, bank redirects, redirect: "always"). */
     try {
-      await sendCachedLogsFromIDB()
       beaconApiCall(mainLogFile)
       clearLogFile(mainLogFile)
+      await sendCachedLogsFromIDB()
     } catch {
     | _ => ()
     }
@@ -261,6 +308,12 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       DDC_FLOW,
       GOOGLE_PAY_SCRIPT,
       GOOGLE_PAY_FLOW,
+      SDK_SCRIPT_LOADED,
+      PAYMENT_ELEMENT_MOUNTED,
+      PAYMENT_SHEET_LOADING,
+      PAYMENT_SHEET_RENDERED,
+      USER_INTERACTED,
+      PAYMENT_CONFIRM_TRIGGERED,
     ]
     arrayOfLogs
     ->Array.find(log => {
@@ -307,76 +360,6 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     latency > 0. ? latency->Float.toString : ""
   }
 
-  let checkAndPushMissedEvents = (eventName, paymentMethod) => {
-    switch eventName {
-    | PAYMENT_ATTEMPT => {
-        let paymentMethodChangedEventStr = PAYMENT_METHOD_CHANGED->eventNameToStrMapper
-        let paymentDataFilledEventStr = PAYMENT_DATA_FILLED->eventNameToStrMapper
-        let localTimestamp = Date.now()->Float.toString
-        let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
-        let paymentMethodChangedEvent =
-          events.contents->Dict.get(paymentMethodChangedEventStr)->Option.isNone
-        let paymentDataFilledEvent =
-          events.contents->Dict.get(paymentDataFilledEventStr)->Option.isNone
-        if paymentMethodChangedEvent {
-          {
-            logType: INFO,
-            timestamp: localTimestamp,
-            sessionId: sessionId.contents,
-            source: sourceString,
-            version: GlobalVars.repoVersion,
-            value: "",
-            // internalMetadata: "",
-            category: USER_EVENT,
-            paymentId: getPaymentId(),
-            merchantId: merchantId.contents,
-            browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-            browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
-            platform: Window.Navigator.platform,
-            userAgent: Window.Navigator.userAgent,
-            appId: "",
-            eventName: PAYMENT_METHOD_CHANGED,
-            latency: "",
-            paymentMethod,
-            firstEvent: true,
-            metadata: metadata.contents,
-          }
-          ->conditionalLogPush
-          ->ignore
-          events.contents->Dict.set(paymentMethodChangedEventStr, localTimestampFloat)
-        }
-        if paymentDataFilledEvent {
-          {
-            logType: INFO,
-            timestamp: localTimestamp,
-            sessionId: sessionId.contents,
-            source: sourceString,
-            version: GlobalVars.repoVersion,
-            value: "",
-            // internalMetadata: "",
-            category: USER_EVENT,
-            paymentId: getPaymentId(),
-            merchantId: merchantId.contents,
-            browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-            browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
-            platform: Window.Navigator.platform,
-            userAgent: Window.Navigator.userAgent,
-            appId: "",
-            eventName: PAYMENT_DATA_FILLED,
-            latency: "",
-            paymentMethod,
-            firstEvent: true,
-            metadata: metadata.contents,
-          }
-          ->conditionalLogPush
-          ->ignore
-          events.contents->Dict.set(paymentDataFilledEventStr, localTimestampFloat)
-        }
-      }
-    | _ => ()
-    }
-  }
-
   let setLogInfo = (
     ~value,
     // ~internalMetadata="",
@@ -387,7 +370,6 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     ~logCategory=USER_EVENT,
     ~paymentMethod="",
   ) => {
-    checkAndPushMissedEvents(eventName, paymentMethod)
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = switch latency {
@@ -400,7 +382,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       logType,
       timestamp: localTimestamp,
       sessionId: sessionId.contents,
-      source: sourceString,
+      source: sourceRef.contents,
       version: GlobalVars.repoVersion,
       value,
       // internalMetadata,
@@ -450,7 +432,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       logType,
       timestamp: localTimestamp,
       sessionId: sessionId.contents,
-      source: isPaymentSession ? getSourceString(Headless) : sourceString,
+      source: isPaymentSession ? getSourceString(Headless) : sourceRef.contents,
       version: GlobalVars.repoVersion,
       value: switch value {
       | ArrayType(a) => a->Dict.fromArray->JSON.Encode.object->JSON.stringify
@@ -502,7 +484,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       logType,
       timestamp: localTimestamp,
       sessionId: sessionId.contents,
-      source: sourceString,
+      source: sourceRef.contents,
       version: GlobalVars.repoVersion,
       value,
       // internalMetadata,
@@ -536,7 +518,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       eventName,
       timestamp: Date.now()->Float.toString,
       sessionId: sessionId.contents,
-      source: sourceString,
+      source: sourceRef.contents,
       version: GlobalVars.repoVersion,
       category: USER_EVENT,
       value: "log initiated",
@@ -561,7 +543,10 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
 
   let handleBeforeUnload = _event => {
     //event->Window.preventDefault()
-    sendLogs()
+    /* Synchronous beacon only. sendLogs() would route through an async path and,
+     when offline, through IndexedDB — neither completes during unload. */
+    beaconApiCall(mainLogFile)
+    clearLogFile(mainLogFile)
     switch timeOut.contents {
     | Some(val) => clearTimeout(val)
     | None => ()

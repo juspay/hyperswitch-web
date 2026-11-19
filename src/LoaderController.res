@@ -270,9 +270,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         ~latency=finalLoadLatency,
       )
     }
-    Window.addEventListener("click", ev =>
+    Window.addEventListener("click", ev => {
+      // Checkpoint 8. One-shot inside LoggerUtils, so repeat clicks cost nothing.
+      LoggerUtils.logUserInteracted(~logger, ~kind="click")
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
-    )
+    })
     Some(
       () => {
         Window.removeEventListener("click", ev =>
