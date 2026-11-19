@@ -33,6 +33,8 @@ let make = (
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let config = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let isConfigReady = Jotai.useAtomValue(JotaiAtoms.isConfigReady)
+  let sdkSessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
+  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
   let nickname = Jotai.useAtomValue(JotaiAtoms.userCardNickName)
   let email = Jotai.useAtomValue(JotaiAtoms.userEmailAddress)
   let fullName = Jotai.useAtomValue(JotaiAtoms.userFullName)
@@ -506,6 +508,8 @@ let make = (
         ~confirmPayment=_json => Promise.resolve(JSON.Encode.null),
         ~animateResize=false,
         ~surfaceFamily="vault",
+        ~sdkSessionId,
+        ~publishableKey,
       )
       element.mount(`#${containerId}`)
       Some(

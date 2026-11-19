@@ -2,8 +2,10 @@
 let make = (~reason) => {
   let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   React.useEffect(() => {
-    LoggerUtils.logSheetLoading(~logger, ~reason)
+    if logger !== LoggerUtils.defaultLoggerConfig {
+      LoggerUtils.logSheetLoading(~logger, ~reason)
+    }
     None
-  }, [])
+  }, [logger])
   React.null
 }
