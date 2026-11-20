@@ -1,8 +1,3 @@
-type fieldTexts = {
-  label: string,
-  placeholder: string,
-}
-
 type superpositionResolutionContext = {
   rawConfigs: option<JSON.t>,
   configPaymentMethodType: string,
@@ -40,27 +35,11 @@ let lookupLocaleKey = (key: string, locale: LocaleStringTypes.localeStrings): op
 let resolveFieldTexts = (
   ~field: SuperpositionTypes.fieldConfig,
   ~localeObject: LocaleStringTypes.localeStrings,
-): fieldTexts => {
-  let label = switch field.merchantProvidedDisplayName {
-  | Some(name) => name
-  | None =>
-    field.labelLocalizationKey
-    ->Option.flatMap(key => lookupLocaleKey(key, localeObject))
-    ->Option.getOr(field.defaultLabelText)
-  }
-
-  let placeholder = switch field.merchantProvidedPlaceholderText {
-  | Some(text) => text
-  | None =>
-    let defaultPlaceholder =
-      field.defaultPlaceholderText->String.length > 0 ? field.defaultPlaceholderText : label
-    field.placeholderLocalizationKey
-    ->Option.flatMap(key => lookupLocaleKey(key, localeObject))
-    ->Option.getOr(defaultPlaceholder)
-  }
-
-  {label, placeholder}
-}
+): SuperpositionTypes.fieldTexts =>
+  FieldConfigUtils.resolveFieldTexts(
+    ~field,
+    ~getLocalized = key => lookupLocaleKey(key, localeObject),
+  )
 
 let emptyMessageForField = (
   ~field: SuperpositionTypes.fieldConfig,
