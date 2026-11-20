@@ -2,8 +2,13 @@ module Shimmer = {
   @react.component
   let make = (~children, ~classname="", ~pendingTimeoutMs=?) => {
     ReadyHooks.usePendingWhile(~timeoutMs=?pendingTimeoutMs, true)
-    <div
-      className={`relative
+    let isHidden = React.useContext(ReadyHooks.context) === ReadyHooks.ignorePending
+    <>
+      <RenderIf condition={!isHidden}>
+        <PaymentSheetLoadingLog reason="sheet_sections" />
+      </RenderIf>
+      <div
+        className={`relative
       ${classname}
     before:absolute before:inset-0
     before:-translate-x-full
@@ -12,8 +17,9 @@ module Shimmer = {
     before:px-1
     before: rounded
     before:from-transparent before:via-slate-200 before:to-transparent overflow-hidden w-full`}>
-      children
-    </div>
+        children
+      </div>
+    </>
   }
 }
 

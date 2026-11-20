@@ -188,6 +188,9 @@ let make = (
         ~eventName=GOOGLE_PAY_FLOW,
         ~paymentMethod="GOOGLE_PAY",
       )
+      if areRequiredFieldsValid {
+        LoggerUtils.logDataFilled(~logger=loggerState, ~paymentMethod=paymentMethodType)
+      }
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,
         ~paymentMethodType,

@@ -109,6 +109,15 @@ let logConfirmTriggered = (
   )
 }
 
+let logDataFilled = (~logger: HyperLoggerTypes.loggerMake, ~paymentMethod, ~savedMethod=false) => {
+  let eventName: HyperLoggerTypes.eventName = PAYMENT_DATA_FILLED
+  logger.setLogInfo(
+    ~value=`Payment Data Filled: ${savedMethod ? "Saved Payment Method" : "New Payment Method"}`,
+    ~eventName,
+    ~paymentMethod,
+  )
+}
+
 let handleLogging = (
   ~optLogger: option<HyperLoggerTypes.loggerMake>,
   ~value,

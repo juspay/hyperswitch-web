@@ -55,6 +55,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~eventName=SAMSUNG_PAY,
         ~paymentMethod="SAMSUNG_PAY",
       )
+      LoggerUtils.logDataFilled(~logger=loggerState, ~paymentMethod="samsung_pay")
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod="wallet",
         ~paymentMethodType="samsung_pay",

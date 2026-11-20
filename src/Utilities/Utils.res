@@ -831,10 +831,7 @@ let handlePostMessageEvents = (
   ~logDataFilled=true,
 ) => {
   if logDataFilled && complete && paymentType !== "" {
-    let value = `Payment Data Filled: ${savedMethod
-        ? "Saved Payment Method"
-        : "New Payment Method"}`
-    loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
+    LoggerUtils.logDataFilled(~logger=loggerState, ~paymentMethod=paymentType, ~savedMethod)
   }
   messageParentWindow([
     ("elementType", "payment"->JSON.Encode.string),

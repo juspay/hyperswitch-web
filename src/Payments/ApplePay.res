@@ -289,6 +289,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~eventName=APPLE_PAY_FLOW,
         ~paymentMethod="APPLE_PAY",
       )
+      if areRequiredFieldsValid {
+        LoggerUtils.logDataFilled(~logger=loggerState, ~paymentMethod=paymentMethodType)
+      }
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,
         ~paymentMethodType,

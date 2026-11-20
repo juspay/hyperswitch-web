@@ -302,6 +302,8 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       PAYMENT_SHEET_RENDERED,
       USER_INTERACTED,
       PAYMENT_CONFIRM_TRIGGERED,
+      PAYMENT_SUCCESS,
+      PAYMENT_FAILED,
     ]
     arrayOfLogs
     ->Array.find(log => {
