@@ -141,6 +141,14 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
   let handleSubmit = e => {
     e->ReactEvent.Form.preventDefault
     if isValid {
+      ClickToPayLogger.logUser(
+        ~event=CustomerVerificationSubmitted({
+          source: ClickToPayIdentity,
+          provider: ClickToPayHelpers.loggerProviderOfCtpProvider(
+            clickToPayConfig.clickToPayProvider,
+          ),
+        }),
+      )
       let country =
         countryCodes
         ->Array.find(country => countryCode === country.countryISO)
@@ -268,6 +276,7 @@ module ClickToPayNotYouText = {
   @react.component
   let make = (~setIsShowClickToPayNotYou) => {
     let onNotYouClick = _ => {
+      ClickToPayLogger.logUser(~event=ViewOpened({view: ClickToPayIdentityChange}))
       setIsShowClickToPayNotYou(_ => true)
     }
 

@@ -12,7 +12,7 @@ let make = () => {
   }
 
   React.useEffect0(() => {
-    ClickToPayHelpers.loadClickToPayScripts()->ignore
+    ClickToPayHelpers.loadClickToPayScripts(~logResources=true)->ignore
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson

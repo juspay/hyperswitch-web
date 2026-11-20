@@ -96,7 +96,16 @@ let make = (
               className={`container CheckboxInput ${isSaveDetailsCheckedState}`}
               style={width: "fit-content"}>
               <input
-                type_={`checkbox`} onChange={e => setIsSaveDetailsWithClickToPay(e->getIsChecked)}
+                type_={`checkbox`}
+                onChange={e => {
+                  ClickToPayLogger.logUser(
+                    ~event=FieldToggled({
+                      field: "click_to_pay_save_details",
+                      enabled: e->getIsChecked,
+                    }),
+                  )
+                  setIsSaveDetailsWithClickToPay(_ => e->getIsChecked)
+                }}
               />
               <div className={`checkmark CheckboxInput ${isSaveDetailsCheckedState}`} />
             </label>
@@ -124,7 +133,16 @@ let make = (
               className={`container CheckboxInput ${isRememberMeCheckedState}`}
               style={width: "fit-content"}>
               <input
-                type_={`checkbox`} onChange={e => setIsClickToPayRememberMe(e->getIsChecked)}
+                type_={`checkbox`}
+                onChange={e => {
+                  ClickToPayLogger.logUser(
+                    ~event=FieldToggled({
+                      field: "click_to_pay_remember_me_checkbox",
+                      enabled: e->getIsChecked,
+                    }),
+                  )
+                  setIsClickToPayRememberMe(_ => e->getIsChecked)
+                }}
               />
               <div className={`checkmark CheckboxInput ${isRememberMeCheckedState}`} />
             </label>
