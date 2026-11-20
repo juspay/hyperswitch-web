@@ -93,7 +93,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType=paymentMethodType,
-    ~logDataFilled=false,
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   SubscriptionEventHooks.useEmitFormStatus(

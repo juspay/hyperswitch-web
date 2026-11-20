@@ -828,9 +828,8 @@ let handlePostMessageEvents = (
   ~paymentType,
   ~loggerState: HyperLoggerTypes.loggerMake,
   ~savedMethod=false,
-  ~logDataFilled=true,
 ) => {
-  if logDataFilled && complete && paymentType !== "" {
+  if complete && paymentType !== "" {
     LoggerUtils.logDataFilled(~logger=loggerState, ~paymentMethod=paymentType, ~savedMethod)
   }
   messageParentWindow([
