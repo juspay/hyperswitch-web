@@ -16,6 +16,7 @@ let useClickToPay = (
       clickToPayProvider: provider,
     })
 
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let sessionsObj = Jotai.useAtomValue(JotaiAtoms.sessions)
   let {clientSecret} = Jotai.useAtomValue(JotaiAtoms.keys)
 
@@ -55,6 +56,15 @@ let useClickToPay = (
       | SUCCESS => {
           let cards = switch cardsResult.profiles {
           | Some(profilesArray) =>
+            loggerState.setLogInfo(
+              ~value={
+                "message": "Cards fetched successfully",
+                "scheme": clickToPayProvider,
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
             switch profilesArray[0] {
             | Some(profile) => Some(profile.maskedCards)
             | None => None
@@ -96,11 +106,30 @@ let useClickToPay = (
                   otpError: "VALIDATION_DATA_INVALID",
                 })
               | "OTP_SEND_FAILED" =>
+                loggerState.setLogError(
+                  ~value={
+                    "message": "OTP SEND FAILED",
+                    "scheme": clickToPayProvider,
+                  }
+                  ->JSON.stringifyAny
+                  ->Option.getOr(""),
+                  ~eventName=CLICK_TO_PAY_FLOW,
+                )
                 setClickToPayConfig(prev => {
                   ...prev,
                   otpError: "NONE",
                 })
+
               | "ACCT_INACCESSIBLE" =>
+                loggerState.setLogError(
+                  ~value={
+                    "message": `Maximum getCard call attempts reached (ACCT_INACCESSIBLE) - ${reason}`,
+                    "scheme": clickToPayProvider,
+                  }
+                  ->JSON.stringifyAny
+                  ->Option.getOr(""),
+                  ~eventName=CLICK_TO_PAY_FLOW,
+                )
                 setClickToPayConfig(prev => {
                   ...prev,
                   otpError: "ACCT_INACCESSIBLE",
@@ -110,6 +139,15 @@ let useClickToPay = (
                   ...prev,
                   otpError: "NONE",
                 })
+                loggerState.setLogError(
+                  ~value={
+                    "message": `get cards call failed - ${reason}`,
+                    "scheme": clickToPayProvider,
+                  }
+                  ->JSON.stringifyAny
+                  ->Option.getOr(""),
+                  ~eventName=CLICK_TO_PAY_FLOW,
+                )
               }
             | None =>
               setClickToPayConfig(prev => {
@@ -128,11 +166,30 @@ let useClickToPay = (
             ...prev,
             visaComponentState: NONE,
           })
+          loggerState.setLogError(
+            ~value={
+              "message": "initial get cards call failed",
+              "scheme": clickToPayProvider,
+            }
+            ->JSON.stringifyAny
+            ->Option.getOr(""),
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
         }
       }
     } catch {
-    | _ =>
-      setClickToPayNotReady()
+    | err => {
+        setClickToPayNotReady()
+        loggerState.setLogError(
+          ~value={
+            "message": `get cards call failed - ${err->Utils.formatException->JSON.stringify}`,
+            "scheme": clickToPayProvider,
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+      }
     }
   }
 
@@ -152,9 +209,18 @@ let useClickToPay = (
       | None => ()
       }
     } catch {
-    | _ =>
+    | err =>
       setClickToPayNotReady()
       closeComponentIfSavedMethodsAreEmpty()
+      loggerState.setLogError(
+        ~value={
+          "message": `SDK initialization failed - ${err->Utils.formatException->JSON.stringify}`,
+          "scheme": clickToPayProvider,
+        }
+        ->JSON.stringifyAny
+        ->Option.getOr(""),
+        ~eventName=CLICK_TO_PAY_FLOW,
+      )
     }
   }
 
@@ -192,6 +258,7 @@ let useClickToPay = (
   let loadVisaScript = async ctpToken => {
     try {
       ClickToPayHelpers.loadClickToPayUIScripts(
+        loggerState,
         () => setAreClickToPayUIScriptsLoaded(_ => true),
         setClickToPayNotReady,
       )
@@ -200,14 +267,37 @@ let useClickToPay = (
         ClickToPayHelpers.loadVisaScript(
           clickToPayToken,
           () => visaScriptOnLoadCallback(ctpToken),
-          setClickToPayNotReady,
+          () => {
+            setClickToPayNotReady()
+            loggerState.setLogError(
+              ~value={
+                "message": "CTP UI script loading failed",
+                "scheme": clickToPayProvider,
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
+          },
         )
 
       | None => setClickToPayNotReady()
       }
     } catch {
-    | _ =>
-      setClickToPayNotReady()
+    | err => {
+        setClickToPayNotReady()
+        loggerState.setLogError(
+          ~value={
+            "message": `CTP UI script loading failed - ${err
+              ->Utils.formatException
+              ->JSON.stringify}`,
+            "scheme": clickToPayProvider,
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=CLICK_TO_PAY_FLOW,
+        )
+      }
     }
   }
 
@@ -215,14 +305,20 @@ let useClickToPay = (
     open Promise
     switch ctpToken {
     | Some(clickToPayToken) =>
-      ClickToPayHelpers.loadClickToPayScripts()
+      ClickToPayHelpers.loadClickToPayScripts(loggerState)
       ->then(_ => {
         setAreClickToPayUIScriptsLoaded(_ => true)
         resolve()
       })
-      ->catch(_ => resolve())
+      ->catch(_ => {
+        loggerState.setLogError(
+          ~value="ClickToPay UI Kit CSS Load Error",
+          ~eventName=CLICK_TO_PAY_SCRIPT,
+        )
+        resolve()
+      })
       ->ignore
-      ClickToPayHelpers.loadMastercardScript(clickToPayToken)
+      ClickToPayHelpers.loadMastercardScript(clickToPayToken, loggerState)
       ->then(resp => {
         let availableCardBrands =
           resp
@@ -278,7 +374,7 @@ let useClickToPay = (
       (
         async () => {
           try {
-            let cardsResult = await ClickToPayHelpers.getCards()
+            let cardsResult = await ClickToPayHelpers.getCards(loggerState)
             switch cardsResult {
             | Ok(cards) =>
               setClickToPayConfig(prev => {

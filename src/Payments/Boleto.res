@@ -2,7 +2,7 @@ open JotaiAtoms
 open Utils
 
 let cleanSocialSecurityNumber = socialSecurityNumber =>
-  socialSecurityNumber->String.replaceRegExp(/\D+/g, "")
+  socialSecurityNumber->String.replaceRegExp(%re("/\D+/g"), "")
 
 let formatSocialSecurityNumber = socialSecurityNumber => {
   let formatted = socialSecurityNumber->cleanSocialSecurityNumber
@@ -24,10 +24,11 @@ let formatSocialSecurityNumber = socialSecurityNumber => {
 
 @react.component
 let make = () => {
+  let loggerState = Jotai.useAtomValue(loggerAtom)
   let {themeObj, localeString} = Jotai.useAtomValue(configAtom)
   let {iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Other)
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let setComplete = Jotai.useSetAtom(fieldsComplete)
   let (socialSecurityNumber, setSocialSecurityNumber) = React.useState(_ => "")
 
@@ -42,12 +43,7 @@ let make = () => {
     )
   }, [socialSecurityNumber])
 
-  UtilityHooks.useHandlePostMessages(
-    ~complete,
-    ~empty,
-    ~paymentType="boleto",
-
-  )
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="boleto")
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
 
   React.useEffect(() => {
@@ -55,8 +51,6 @@ let make = () => {
     None
   }, [complete])
 
-  let paymentMethod = "voucher"
-  let paymentMethodType = "boleto"
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
@@ -64,7 +58,7 @@ let make = () => {
     if confirm.doSubmit {
       if complete {
         let body = PaymentBody.boletoBody(
-          ~socialSecurityNumber=socialSecurityNumber->cleanSocialSecurityNumber,
+          ~socialSecurityNumber=socialSecurityNumber->String.replaceRegExp(%re("/\D+/g"), ""),
         )
         intent(
           ~bodyArr=body,
@@ -74,8 +68,7 @@ let make = () => {
           ~manualRetry=isManualRetryEnabled,
         )
       } else {
-        let message = "Please enter all fields"
-        postFailedSubmitResponse(~errortype="validation_error", ~message)
+        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
   }, (socialSecurityNumber, isManualRetryEnabled, sdkAuthorization))
@@ -92,6 +85,9 @@ let make = () => {
       setSocialSecurityNumberError(_ => "The social security number entered is invalid.")
     }
   }
+
+  let paymentMethod = "voucher"
+  let paymentMethodType = "boleto"
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <PaymentInputField

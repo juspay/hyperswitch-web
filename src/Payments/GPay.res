@@ -15,14 +15,15 @@ let make = (
   let isWallet = walletOptions->Array.includes(paymentMethodType)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+  let loggerState = Jotai.useAtomValue(loggerAtom)
   let {iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
   let isSDKHandleClick = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey} = Jotai.useAtomValue(keys)
   let updateSession = Jotai.useAtomValue(updateSession)
   let options = Jotai.useAtomValue(optionAtom)
-  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=isWallet, Gpay)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=isWallet, Some(loggerState), Gpay)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
-  let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Gpay)
+  let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Some(loggerState), Gpay)
   let gPayReadiness = Jotai.useAtomValue(isGooglePayReady)
   let isGPayReady = gPayReadiness->Option.getOr(false)
   let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
@@ -83,9 +84,15 @@ let make = (
     )
   }, [sdkConfigsValue.payment_methods])
 
-  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
+  )
+
+  DynamicFieldsUtils.useLogDynamicFieldsRendered(
+    ~fields=requiredFields,
+    ~paymentMethod,
+    ~resolutionContext,
   )
 
   GooglePayHelpers.useHandleGooglePayResponse(
@@ -168,7 +175,17 @@ let make = (
   let onGooglePaymentButtonClicked = () => {
     if isTestMode {
       Console.warn("Google Pay button clicked in test mode - interaction disabled")
+      loggerState.setLogInfo(
+        ~value="Google Pay button clicked in test mode - interaction disabled",
+        ~eventName=GOOGLE_PAY_FLOW,
+        ~paymentMethod="GOOGLE_PAY",
+      )
     } else {
+      loggerState.setLogInfo(
+        ~value="GooglePay Button Clicked",
+        ~eventName=GOOGLE_PAY_FLOW,
+        ~paymentMethod="GOOGLE_PAY",
+      )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,
         ~paymentMethodType,
@@ -293,7 +310,13 @@ let make = (
           syncPayment()
         }
       } catch {
-      | _ => ()
+      | _ =>
+        loggerState.setLogError(
+          ~value="Error in syncing GooglePay Payment",
+          ~eventName=GOOGLE_PAY_FLOW,
+          // ~internalMetadata=err->formatException->JSON.stringify,
+          ~paymentMethod="GOOGLE_PAY",
+        )
       }
     }
     Window.addEventListener("message", handleGooglePayMessages)

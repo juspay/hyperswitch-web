@@ -9,6 +9,7 @@ type cardFieldState = {
 }
 
 let useCardFieldBase = (
+  ~logger: HyperLoggerTypes.loggerMake,
   ~paymentType: CardThemeType.mode,
   ~cardBrandOverride="",
   ~dualPlane=false,
@@ -54,8 +55,10 @@ let useCardFieldBase = (
   }
 
   let {cardProps, expiryProps, cvcProps, blurState: _} = CommonCardProps.useCardForm(
+    ~logger,
     ~paymentType,
     ~runEligibility=false,
+    ~logControlEvents=false,
     ~cardBrandOverride=effectiveCardBrandOverride,
   )
 
@@ -117,24 +120,18 @@ let useCardFieldBase = (
           let frameJson: JSON.t = ev.data->Identity.anyTypeToJson
           switch CardFormPortProtocol.decodePortFrame(frameJson) {
           | Some({kind, payload}) =>
-            if (
-              kind === CardFormPortProtocol.kindDoFocus &&
-                payload->JSON.Decode.bool->Option.getOr(false)
-            ) {
+            if kind === CardFormPortProtocol.kindDoFocus &&
+              payload->JSON.Decode.bool->Option.getOr(false) {
               CardUtils.focusRef(focusTarget)
             } else if kind === CardFormPortProtocol.kindDetectedCardBrand {
               setPortBrandOverride(_ => payload->JSON.Decode.string->Option.getOr(""))
             } else if kind === CardFormPortProtocol.kindClearField {
               clearFieldValue()
             } else {
-              Console.warn(
-                `[CommonCardFieldHooks] dropped port frame on unknown kind "${kind}" (portKey "${portKey}")`,
-              )
+              Console.warn(`[CommonCardFieldHooks] dropped port frame on unknown kind "${kind}" (portKey "${portKey}")`)
             }
           | None =>
-            Console.warn(
-              `[CommonCardFieldHooks] dropped un-decodable port frame (portKey "${portKey}")`,
-            )
+            Console.warn(`[CommonCardFieldHooks] dropped un-decodable port frame (portKey "${portKey}")`)
           }
         })
       | None => ()
@@ -165,7 +162,8 @@ let useCardFieldBase = (
     expiryProps.cardExpiry->CardValidations.clearSpaces->String.length == 4 &&
       expiryProps.isExpiryValid == Some(true)
   | CardThemeType.CardCVCElement =>
-    cvcProps.cvcNumber->String.length == cvcProps.maxCVCLength && cvcProps.isCVCValid == Some(true)
+    cvcProps.cvcNumber->String.length == cvcProps.maxCVCLength &&
+      cvcProps.isCVCValid == Some(true)
   | _ => false
   }
   let _ = CardCollectorBridge.useEmitCardState(
@@ -188,16 +186,45 @@ let useCardFieldBase = (
   {localeString, cardProps, expiryProps, cvcProps}
 }
 
-let useCardNumberField = (~dualPlane=false, ()): cardFieldState => {
-  useCardFieldBase(~paymentType=CardThemeType.CardNumberElement, ~dualPlane, ())
+let useCardNumberField = (
+  ~logger: HyperLoggerTypes.loggerMake,
+  ~dualPlane=false,
+  (),
+): cardFieldState => {
+  useCardFieldBase(
+    ~logger,
+    ~paymentType=CardThemeType.CardNumberElement,
+    ~dualPlane,
+    (),
+  )
 }
 
-let useCardExpiryField = (~dualPlane=false, ()): cardFieldState => {
-  useCardFieldBase(~paymentType=CardThemeType.CardExpiryElement, ~dualPlane, ())
+let useCardExpiryField = (
+  ~logger: HyperLoggerTypes.loggerMake,
+  ~dualPlane=false,
+  (),
+): cardFieldState => {
+  useCardFieldBase(
+    ~logger,
+    ~paymentType=CardThemeType.CardExpiryElement,
+    ~dualPlane,
+    (),
+  )
 }
 
-let useCardCvcField = (~cardBrandOverride="", ~dualPlane=false, ()): cardFieldState => {
-  useCardFieldBase(~paymentType=CardThemeType.CardCVCElement, ~cardBrandOverride, ~dualPlane, ())
+let useCardCvcField = (
+  ~logger: HyperLoggerTypes.loggerMake,
+  ~cardBrandOverride="",
+  ~dualPlane=false,
+  (),
+): cardFieldState => {
+  useCardFieldBase(
+    ~logger,
+    ~paymentType=CardThemeType.CardCVCElement,
+    ~cardBrandOverride,
+    ~dualPlane,
+    (),
+  )
 }
 
 module RenderCardNumber = {
@@ -206,17 +233,7 @@ module RenderCardNumber = {
     let {themeObj} = Jotai.useAtomValue(configAtom)
     let numberPlaceholder =
       Jotai.useAtomValue(cardNumberPlaceholder)->Option.getOr("1234 1234 1234 1234")
-    let {
-      isCardValid,
-      cardNumber,
-      changeCardNumber,
-      handleCardBlur,
-      cardRef,
-      cardError,
-      maxCardLength,
-      icon,
-      setIsCardValid,
-    } = state.cardProps
+    let {isCardValid, cardNumber, changeCardNumber, handleCardBlur, cardRef, cardError, maxCardLength, icon, setIsCardValid} = state.cardProps
     <div
       className="animate-slowShow flex flex-col"
       style={{gridGap: "0px", height: themeObj.inputFieldHeight}}>
@@ -251,15 +268,7 @@ module RenderCardExpiry = {
     let {themeObj} = Jotai.useAtomValue(configAtom)
     let expiryPlaceholder =
       Jotai.useAtomValue(cardExpiryPlaceholder)->Option.getOr(state.localeString.expiryPlaceholder)
-    let {
-      isExpiryValid,
-      cardExpiry,
-      changeCardExpiry,
-      handleExpiryBlur,
-      expiryRef,
-      expiryError,
-      setIsExpiryValid,
-    } = state.expiryProps
+    let {isExpiryValid, cardExpiry, changeCardExpiry, handleExpiryBlur, expiryRef, expiryError, setIsExpiryValid} = state.expiryProps
     <div
       className="animate-slowShow flex flex-col"
       style={{gridGap: "0px", height: themeObj.inputFieldHeight}}>
@@ -293,16 +302,7 @@ module RenderCardCvc = {
     let {themeObj} = Jotai.useAtomValue(configAtom)
     let {layout} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
     let cvcPlaceholder = Jotai.useAtomValue(cardCvcPlaceholder)->Option.getOr("123")
-    let {
-      isCVCValid,
-      cvcNumber,
-      changeCVCNumber,
-      handleCVCBlur,
-      cvcRef,
-      cvcError,
-      maxCVCLength,
-      setIsCVCValid,
-    } = state.cvcProps
+    let {isCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef, cvcError, maxCVCLength, setIsCVCValid} = state.cvcProps
     let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
     let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
       ~cvcNumber,

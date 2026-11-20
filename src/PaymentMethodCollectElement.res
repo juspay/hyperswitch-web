@@ -3,7 +3,7 @@ open PaymentMethodCollectUtils
 open JotaiAtoms
 
 @react.component
-let make = (~integrateError) => {
+let make = (~integrateError, ~logger) => {
   open Promise
   let {localeString} = Jotai.useAtomValue(configAtom)
   let {themeObj} = Jotai.useAtomValue(configAtom)
@@ -102,6 +102,7 @@ let make = (~integrateError) => {
       PaymentHelpers.createPaymentMethod(
         ~clientSecret=keys.clientSecret->Option.getOr(""),
         ~publishableKey=keys.publishableKey,
+        ~logger,
         ~customPodUri="",
         ~endpoint=ApiEndpoint.getApiEndPoint(),
         ~body=pmdBody,
@@ -124,6 +125,7 @@ let make = (~integrateError) => {
       PaymentHelpers.confirmPayout(
         ~clientSecret=keys.clientSecret->Option.getOr(""),
         ~publishableKey=keys.publishableKey,
+        ~logger,
         ~customPodUri="",
         ~endpoint,
         ~body=pmdBody,

@@ -12,6 +12,7 @@ let payPalIcon = <Icon size=35 width=90 name="paypal" />
 
 @react.component
 let make = (~walletOptions) => {
+  let loggerState = Jotai.useAtomValue(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
@@ -61,7 +62,11 @@ let make = (~walletOptions) => {
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
-  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=isWallet, Paypal)
+  let intent = PaymentHelpers.usePaymentIntent(
+    ~isOneClickWallet=isWallet,
+    Some(loggerState),
+    Paypal,
+  )
   UtilityHooks.useHandlePostMessages(
     ~complete=paypalClicked,
     ~empty=!paypalClicked,
@@ -73,10 +78,20 @@ let make = (~walletOptions) => {
     ~complete=paypalClicked,
     ~isOneClickWallet=isWallet,
   )
-  let onPaypalClick = (~fromExpressButton=true, _ev) => {
+  let onPaypalClick = _ev => {
     if isTestMode {
       Console.warn("PayPal button clicked in test mode - interaction disabled")
+      loggerState.setLogInfo(
+        ~value="PayPal button clicked in test mode - interaction disabled",
+        ~eventName=PAYPAL_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
     } else {
+      loggerState.setLogInfo(
+        ~value="Paypal Button Clicked",
+        ~eventName=PAYPAL_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod,
         ~paymentMethodType,
@@ -148,7 +163,7 @@ let make = (~walletOptions) => {
         let json = ev.data->Utils.safeParse
         let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
         if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-          onPaypalClick(~fromExpressButton=false, ev)
+          onPaypalClick(ev)
         } else if areRequiredFieldsEmpty {
           Utils.postFailedSubmitResponse(
             ~errortype="validation_error",

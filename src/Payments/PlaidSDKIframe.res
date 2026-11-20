@@ -10,6 +10,10 @@ let make = () => {
   let (clientSecret, setClientSecret) = React.useState(_ => "")
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (isForceSync, setIsForceSync) = React.useState(_ => false)
+  let logger = React.useMemo(
+    () => HyperLogger.make(~source=Elements(Payment), ~clientSecret, ~merchantId=publishableKey),
+    (publishableKey, clientSecret),
+  )
 
   React.useEffect(() => {
     let handleParentWindowMessage = (ev: Window.event) => {
@@ -41,6 +45,7 @@ let make = () => {
           setIsReady(_ => true)
         }
       },
+      ~logger,
     )
     None
   }, [pmAuthConnectorsArr])
@@ -50,6 +55,7 @@ let make = () => {
       let json = await PaymentHelpers.retrievePaymentIntent(
         clientSecret,
         ~publishableKey,
+        ~logger,
         ~customPodUri="",
         ~isForceSync=true,
         ~sdkAuthorization=Some(sdkAuthorization),
@@ -74,14 +80,20 @@ let make = () => {
       }
       messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
     } catch {
-    | _ => ()
+    | _ =>
+      logger.setLogError(
+        ~value="Retrieve failed via Plaid",
+        ~eventName=PLAID_SDK,
+        // ~internalMetadata=err->formatException->JSON.stringify,
+        ~paymentMethod="PLAID",
+      )
     }
   }
 
   let initializePlaid = () => {
     Plaid.create({
       token: linkToken,
-      onLoad: _ => (),
+      onLoad: _ => logger.setLogInfo(~value="Plaid SDK Loaded", ~eventName=PLAID_SDK),
       onSuccess: (publicToken, _) => {
         messageParentWindow([
           ("isPlaid", true->JSON.Encode.bool),
@@ -112,7 +124,7 @@ let make = () => {
     }
 
     None
-  }, (isReady, linkToken))
+  }, (isReady, linkToken, logger))
 
   <div
     className="PlaidIframe h-screen w-screen bg-black/40 backdrop-blur-sm m-auto"

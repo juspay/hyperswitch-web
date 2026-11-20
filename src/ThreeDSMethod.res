@@ -2,6 +2,7 @@ open Utils
 @react.component
 let make = () => {
   let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
+  let logger = HyperLogger.make(~source=Elements(Payment))
 
   let stateMetadataRef = React.useRef(Dict.make()->JSON.Encode.object)
   let consumePostMessageForThreeDsMethodCompletionRef = React.useRef(false)
@@ -26,6 +27,13 @@ let make = () => {
     let iframeId = metadataDict->getString("iframeId", "")
 
     if iframeId->String.length > 0 && !isThreeDSMethodCompletionFired.current {
+      LoggerUtils.handleLogging(
+        ~optLogger=Some(logger),
+        ~eventName=THREE_DS_METHOD_RESULT,
+        ~value="Y",
+        ~paymentMethod="CARD",
+      )
+
       isThreeDSMethodCompletionFired.current = true
 
       // Let the parent replace this frame in one transition. Closing it first
@@ -88,7 +96,14 @@ let make = () => {
     }
   }
 
-  let handleOnError = _value => {
+  let handleOnError = value => {
+    LoggerUtils.handleLogging(
+      ~optLogger=Some(logger),
+      ~eventName=THREE_DS_METHOD_RESULT,
+      ~value,
+      ~paymentMethod="CARD",
+      ~logType=ERROR,
+    )
     stateMetadataRef.current
     ->Utils.getDictFromJson
     ->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
@@ -212,6 +227,14 @@ let make = () => {
               "consume_post_message_for_three_ds_method_completion",
               false,
             )
+
+          let paymentIntentId = metaDataDict->Utils.getString("paymentIntentId", "")
+          let publishableKey = metaDataDict->Utils.getString("publishableKey", "")
+          let sdkAuthorization = metaDataDict->Utils.getString("sdkAuthorization", "")
+
+          logger.setClientSecret(paymentIntentId)
+          logger.setSdkAuthorization(sdkAuthorization)
+          logger.setMerchantId(publishableKey)
 
           let ele = Window.querySelector("#threeDsInvisibleDiv")
 

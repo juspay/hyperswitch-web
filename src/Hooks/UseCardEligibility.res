@@ -8,7 +8,7 @@ type eligibilityState = {
   resetEligibilityState: unit => unit,
 }
 
-let useCardEligibility = (~runEligibility=true): eligibilityState => {
+let useCardEligibility = (~logger, ~runEligibility=true): eligibilityState => {
   open JotaiAtoms
 
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
@@ -38,6 +38,7 @@ let useCardEligibility = (~runEligibility=true): eligibilityState => {
       ~controllerRef=eligibilityControllerRef,
       ~clientSecret,
       ~publishableKey,
+      ~logger,
       ~customPodUri,
       ~bodyArr=PaymentBody.cardPaymentMethodEligibilityBody(~cardNumber),
       ~sdkAuthorization,
@@ -46,10 +47,12 @@ let useCardEligibility = (~runEligibility=true): eligibilityState => {
       ~setEligibilitySurchargeDetails,
       ~setEligibilityOfferDetails,
       ~setEligibilityError=Some(setCardEligibilityError),
+      ~errorLogMessage="Card payment eligibility check failed",
       ~fetchEligibility={
         (
           ~clientSecret,
           ~publishableKey,
+          ~logger,
           ~customPodUri,
           ~bodyArr,
           ~sdkAuthorization,
@@ -59,6 +62,7 @@ let useCardEligibility = (~runEligibility=true): eligibilityState => {
           PaymentHelpers.fetchPaymentMethodEligibility(
             ~clientSecret,
             ~publishableKey,
+            ~logger,
             ~customPodUri,
             ~bodyArr,
             ~sdkAuthorization,

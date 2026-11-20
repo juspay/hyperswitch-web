@@ -4,6 +4,7 @@ let make = (
   options,
   ~publishableKey,
   ~sdkSessionId,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~iframeRef: ref<array<Nullable.t<Dom.element>>>,
   ~isTestMode=false,
@@ -14,6 +15,7 @@ let make = (
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~clientListDataPromise: ref<promise<JSON.t>>,
 ) => {
+  let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =
     options
     ->JSON.Decode.object
@@ -42,6 +44,7 @@ let make = (
       ~isSdkParamsEnabled=false,
       ~selectorString=localSelectorString,
       ~shouldWaitForReady=false,
+      ~logger,
     )
   }
 
@@ -52,6 +55,7 @@ let make = (
         ~clientSecretRef,
         ~publishableKey,
         ~endpoint,
+        ~logger,
         ~customPodUri,
         ~sdkAuthorizationRef,
         ~redirectionFlags,

@@ -14,8 +14,9 @@ let make = (~token: SessionsType.token) => {
   let options = Jotai.useAtomValue(optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Paze)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Some(loggerState), Paze)
   let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
     ~clientSecret=clientSecret->Option.getOr(""),
     ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
@@ -27,7 +28,17 @@ let make = (~token: SessionsType.token) => {
   let onClick = _ => {
     if isTestMode {
       Console.warn("Paze button clicked in test mode - interaction disabled")
+      loggerState.setLogInfo(
+        ~value="Paze button clicked in test mode - interaction disabled",
+        ~eventName=PAZE_SDK_FLOW,
+        ~paymentMethod="PAZE",
+      )
     } else {
+      loggerState.setLogInfo(
+        ~value="Paze SDK Button Clicked",
+        ~eventName=PAZE_SDK_FLOW,
+        ~paymentMethod="PAZE",
+      )
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod="wallet",
         ~paymentMethodType="paze",

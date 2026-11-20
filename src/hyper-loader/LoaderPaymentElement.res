@@ -12,7 +12,7 @@ let isPaymentButtonHandlerProvided = ref(false)
 let currentOneClickHandler = ref((None: option<unit => Promise.t<unit>>))
 let oneClickSources: Dict.t<Types.event => bool> = Dict.make()
 
-let walletOneClickEventHandler = (event: Types.event) => {
+let walletOneClickEventHandler = (logger: HyperLoggerTypes.loggerMake, event: Types.event) => {
   open Promise
   let json = try {
     event.data->anyTypeToJson
@@ -24,27 +24,48 @@ let walletOneClickEventHandler = (event: Types.event) => {
   if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
     switch currentOneClickHandler.contents {
     | Some(eH) => {
-      resolve()
-      ->then(() => eH())
-      ->then(_ => {
-        let msg =
-          [
-            ("walletClickEvent", true->JSON.Encode.bool),
-            ("walletClickRequestId", dict->getJsonFromDict("walletClickRequestId", JSON.Encode.null)),
-          ]->Dict.fromArray
-        event.source->Window.postMessage(msg->JSON.Encode.object->JSON.stringify, event.origin)
+        logger.setLogInfo(
+          ~value=`One click handler callback execution initiated`,
+          ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+          ~logType=INFO,
+        )
         resolve()
-      })
-      ->catch(_ => {
-        let msg =
-          [
-            ("walletClickEvent", false->JSON.Encode.bool),
-            ("walletClickRequestId", dict->getJsonFromDict("walletClickRequestId", JSON.Encode.null)),
-          ]->Dict.fromArray
-        event.source->Window.postMessage(msg->JSON.Encode.object->JSON.stringify, event.origin)
-        resolve()
-      })
-      ->ignore
+        ->then(() => eH())
+        ->then(_ => {
+          logger.setLogInfo(
+            ~value=`One click handler callback executed successfully`,
+            ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+            ~logType=INFO,
+          )
+          let msg =
+            [
+              ("walletClickEvent", true->JSON.Encode.bool),
+              (
+                "walletClickRequestId",
+                dict->getJsonFromDict("walletClickRequestId", JSON.Encode.null),
+              ),
+            ]->Dict.fromArray
+          event.source->Window.postMessage(msg->JSON.Encode.object->JSON.stringify, event.origin)
+          resolve()
+        })
+        ->catch(_ => {
+          logger.setLogError(
+            ~value=`Error in one click handler callback`,
+            ~eventName=ONE_CLICK_HANDLER_CALLBACK,
+            ~logType=ERROR,
+          )
+          let msg =
+            [
+              ("walletClickEvent", false->JSON.Encode.bool),
+              (
+                "walletClickRequestId",
+                dict->getJsonFromDict("walletClickRequestId", JSON.Encode.null),
+              ),
+            ]->Dict.fromArray
+          event.source->Window.postMessage(msg->JSON.Encode.object->JSON.stringify, event.origin)
+          resolve()
+        })
+        ->ignore
       }
 
     | None => ()
@@ -52,7 +73,7 @@ let walletOneClickEventHandler = (event: Types.event) => {
   }
 }
 
-let ensureWalletOneClickListener = (~ownerId, ~isTrustedMessage) => {
+let ensureWalletOneClickListener = (logger, ~ownerId, ~isTrustedMessage) => {
   oneClickSources->Dict.set(ownerId, isTrustedMessage)
   addSmartEventListener(
     "message",
@@ -60,7 +81,7 @@ let ensureWalletOneClickListener = (~ownerId, ~isTrustedMessage) => {
       // The merchant callback is intentionally global. Retain each SDK
       // owner's live sender check, and invoke the callback only once.
       if oneClickSources->Dict.valuesToArray->Array.some(check => check(event)) {
-        walletOneClickEventHandler(event)
+        walletOneClickEventHandler(logger, event)
       }
     },
     "walletOneClickHandler",
@@ -80,7 +101,6 @@ let buildIframeHtmlString = (~iframeId: string, ~iframeSrc: string, ~additionalS
    style="border: 0px; ${additionalStyle} outline: none;"
    width="100%"
 ></iframe>`
-
 // Multi-instance support: rendezvous queues that pair handler-only instances
 // (C, created at React render time, calls on()) with mounting instances
 // (O, created in useEffect, calls mount()).
@@ -89,6 +109,7 @@ let buildIframeHtmlString = (~iframeId: string, ~iframeSrc: string, ~additionalS
 // re-run), so we CANNOT register at make() time (duplicates accumulate).
 // Instead we register lazily: mount() queues the selector, on() claims it.
 // Whichever arrives first enqueues; the second dequeues and completes the pair.
+
 // Selectors from mount() calls waiting for a matching on() call.
 let pendingMountSelectorsByType: Dict.t<array<string>> = Dict.make()
 // Refs from on() calls waiting for a matching mount() selector.
@@ -105,7 +126,9 @@ let make = (
   ~animateResize=true,
   ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
   ~sdkDomainUrl=ApiEndpoint.sdkDomainUrl,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
+  ~eventListenerTracker=LoggerUtils.defaultEventListenerTracker,
   ~isTrustedPaymentMessage: option<Types.event => bool>=?,
   ~onFullscreenCreated: (Dom.element, JSON.t) => unit=(_, _) => (),
   ~fieldName: option<string>=?,
@@ -113,8 +136,11 @@ let make = (
   ~groupId: option<string>=?,
 ) => {
   try {
+    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let mountId = ref("")
     let localSelectorRef = ref("")
+    let eventListenerSelectorRef =
+      componentType->Utils.canHaveMultipleInstances ? localSelectorRef : ref(componentType)
     let mountedIframeRef = ref(Nullable.null)
     let fullscreenIframeRef = ref(Nullable.null)
     // Kept current across update() so the Change listener filters on the latest subscriptions.
@@ -164,6 +190,7 @@ let make = (
         callbackFuncForExtractingValFromDict("sdkHandleOneClickConfirmPayment"),
         true,
       )
+
     let onSDKHandleClick = eventHandler => {
       if eventHandler->Option.isSome {
         currentOneClickHandler := eventHandler
@@ -184,9 +211,9 @@ let make = (
           pendingMountSelectorsByType->Dict.set(componentType, remaining)
           localSelectorRef := selector
         } else {
+          // No mount yet — register ref for adoption when mount() comes.
           let refs = pendingOnRefsByType->Dict.get(componentType)->Option.getOr([])
 
-          // No mount yet — register ref for adoption when mount() comes.
           // Avoid duplicate registration (e.g. on() called twice on same instance).
           if !(refs->Array.some(r => r === localSelectorRef)) {
             refs->Array.push(localSelectorRef)->ignore
@@ -194,8 +221,12 @@ let make = (
           }
         }
       }
-      // Multi-instance: match by elementType + iframeId so events route to the correct instance.
+      eventListenerTracker.register(eventListenerSelectorRef)
+      if eventHandler->Option.isSome {
+        eventListenerTracker.logger.track(eventType)
+      }
       let matchesInstance = (ev: Types.event) => {
+        // Multi-instance: match by elementType + iframeId so events route to the correct instance.
         if componentType->Utils.canHaveMultipleInstances {
           ev.data.elementType === componentType && ev.data.iframeId === localSelectorRef.contents
         } else {
@@ -376,6 +407,7 @@ let make = (
     }
 
     let destroy = () => {
+      eventListenerTracker.destroy()
       unmount()
       mountId := ""
     }
@@ -416,7 +448,7 @@ let make = (
     }
 
     let mount = selector => {
-      ensureWalletOneClickListener(~ownerId=elementInstanceId, ~isTrustedMessage)
+      ensureWalletOneClickListener(logger, ~ownerId=elementInstanceId, ~isTrustedMessage)
       mountId := selector
       let localSelectorArr = selector->String.split("#")
       let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
@@ -440,11 +472,13 @@ let make = (
           pendingMountSelectorsByType->Dict.set(componentType, mounts)
         }
       }
+      eventListenerTracker.onMount(eventListenerSelectorRef.contents)
       let iframeHeightRef = ref(25.0)
       let currentClass = ref("base")
       let fullscreen = ref(false)
       let fullscreenParam = ref("")
       let fullscreenMetadata = ref(Dict.make()->JSON.Encode.object)
+      let mountedWindow = ref((Nullable.null: Nullable.t<Dom.element>))
       let optionsDict = options->getDictFromJson
       let handle = (ev: Types.event) => {
         let eventDataObject = ev.data->anyTypeToJson
@@ -616,14 +650,19 @@ let make = (
         }
 
         if iframeMounted->Option.isSome {
-          mountPostMessage(
-            Window.querySelector(`#orca-${elementIframeId}-iframeRef-${localSelectorString}`),
-            localSelectorString,
-            sdkHandleOneClickConfirmPayment,
+          let mountedIframe = Window.querySelector(
+            `#orca-${elementIframeId}-iframeRef-${localSelectorString}`,
           )
+
+          if (
+            !(mountedWindow.contents->Nullable.isNullable) &&
+            ev.source === mountedWindow.contents->Nullable.getUnsafe
+          ) {
+            eventListenerTracker.logger.logOnMount()
+          }
+          mountPostMessage(mountedIframe, localSelectorString, sdkHandleOneClickConfirmPayment)
         }
       }
-
       // Multi-instance elements need unique listener names per instance.
       let eventListenerActivityName = if componentType->Utils.canHaveMultipleInstances {
         `onMount-${componentType}-${localSelectorString}`
@@ -677,6 +716,7 @@ let make = (
           let elem = Window.querySelector(`#${iframeElementId}`)
           switch elem->Nullable.toOption {
           | Some(ele) =>
+            mountedWindow := ele->Window.contentWindow->Nullable.make
             ele
             ->Window.style
             ->Window.setTransition(
@@ -700,7 +740,13 @@ let make = (
       destroy,
       update,
       mount,
-      onSDKHandleClick,
+      onSDKHandleClick: eventHandler => {
+        eventListenerTracker.register(eventListenerSelectorRef)
+        if eventHandler->Option.isSome {
+          eventListenerTracker.logger.track("onSDKHandleClick")
+        }
+        onSDKHandleClick(eventHandler)
+      },
       confirmPayment,
     }
   } catch {

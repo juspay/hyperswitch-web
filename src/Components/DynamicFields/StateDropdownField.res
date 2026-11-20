@@ -3,6 +3,7 @@ open SuperpositionTypes
 @react.component
 let make = (~fieldConfig: fieldConfig) => {
   let {config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let {label} = DynamicFieldsUtils.resolveFieldTexts(~field=fieldConfig, ~localeObject=localeString)
   let validate = DynamicFieldsUtils.resolveValidator(~field=fieldConfig, ~localeObject=localeString)
 
@@ -32,8 +33,9 @@ let make = (~fieldConfig: fieldConfig) => {
     if isShowingFallbackStateList {
       let configuredStateCodes = allowedStateCodes->Array.join(", ")
       ErrorUtils.manageErrorWarning(
-        DynamicFieldsConfig,
+        DYNAMIC_FIELDS_CONFIG,
         ~dynamicStr=`None of the configured state options [${configuredStateCodes}] for '${fieldConfig.confirmRequestWritePath}' are valid states of country '${countryIso}'. Falling back to the complete state list.`,
+        ~logger=loggerState,
       )
     }
     None

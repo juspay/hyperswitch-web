@@ -67,6 +67,7 @@ let make = () => {
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (headers, setHeaders) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
+  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
     getPaymentMethodConfig(Other)
@@ -144,6 +145,7 @@ let make = () => {
               ~headers=headers->Dict.toArray->Dict.fromArray,
               paymentIntentId,
               ~publishableKey,
+              ~logger,
               ~customPodUri,
               ~sdkAuthorization=Some(sdkAuthorizationVal),
             )
@@ -167,6 +169,7 @@ let make = () => {
         clientSecret,
         ~headers=headers->Dict.fromArray,
         ~publishableKey,
+        ~logger,
         ~customPodUri,
         ~sdkAuthorization=Some(sdkAuthorization),
       )

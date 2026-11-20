@@ -29,6 +29,7 @@ let make = (
   let {themeObj} = Jotai.useAtomValue(configAtom)
   let {readOnly} = Jotai.useAtomValue(optionAtom)
   let {parentURL, iframeId} = Jotai.useAtomValue(keys)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
@@ -93,6 +94,16 @@ let make = (
   let inputClassStyles = isSpacedInnerLayout ? "Input" : "Input-Compressed"
 
   let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
+
+  // Wrap onChange to include logging
+  let wrappedOnChange = ev => {
+    // Log the input change using the name parameter
+    if name->String.length > 0 {
+      LoggerUtils.logInputChangeInfo(name, loggerState)
+    }
+    // Call the original onChange handler
+    onChange(ev)
+  }
 
   <div className="flex flex-col w-full">
     <RenderIf
@@ -163,7 +174,7 @@ let make = (
               : ""}
             value={value.value}
             autoComplete="on"
-            onChange
+            onChange=wrappedOnChange
             onBlur=handleBlur
             onFocus=handleFocus
             ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}

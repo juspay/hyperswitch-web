@@ -598,6 +598,7 @@ let useEmitPaymentMethodInfo = (
   ~cvcProps: CardUtils.cvcProps,
   ~skipCard=false,
 ) => {
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let {country, state, pinCode} = useNonPiiAddressData()
 
   let {cardNumber, cardBrand} = cardProps
@@ -664,7 +665,10 @@ let useEmitPaymentMethodInfo = (
           ~paymentMethodType=paymentMethodName,
         )
       | None =>
-        ()
+        loggerState.setLogError(
+          ~value="Payment method type not found",
+          ~eventName=PAYMENT_METHOD_TYPE_DETECTION_FAILED,
+        )
       }
     }
 
