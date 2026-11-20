@@ -1,7 +1,7 @@
 open IndexedDB
 
 /* The API failure body is whatever the edge returned — often an HTML error page,
-   or a parse exception quoting one. 
+   or a parse exception quoting one.
    Read the body from the API's own logs instead. */
 let describeErrorPayload = data => {
   let dict = data->CommonUtils.getDictFromJson
