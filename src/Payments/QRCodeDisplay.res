@@ -72,6 +72,7 @@ let make = () => {
     getPaymentMethodConfig(Other)
   )
   let copyTimeoutRef = React.useRef(None)
+  let loggedPaymentMethodRef = React.useRef(None)
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -84,6 +85,10 @@ let make = () => {
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
 
           let paymentMethodStr = metaDataDict->getString("paymentMethod", "")
+          loggedPaymentMethodRef.current = LoggerPaymentMethod.fromPair(
+            ~method=metaDataDict->getString("paymentMethodFamily", ""),
+            ~methodType=paymentMethodStr,
+          )
           let parsedPaymentMethod = parsePaymentMethod(paymentMethodStr)
 
           let defaultConfig = getPaymentMethodConfig(parsedPaymentMethod)
@@ -150,7 +155,14 @@ let make = () => {
             Modal.close(setOpenModal)
             postSubmitResponse(~jsonData=res, ~url=return_url)
           } catch {
-          | error => Console.error2("Error while polling payment intent:", error)
+          | error =>
+            SdkLogger.logLifecycle(
+              ~event=SdkLogger.PaymentStatusUnknown({inferred: true}),
+              ~exn=error,
+              ~paymentMethod=?loggedPaymentMethodRef.current,
+              ~message="QR payment status polling failed",
+            )
+            Console.error2("Error while polling payment intent:", error)
           }
         }
       }
@@ -174,12 +186,20 @@ let make = () => {
       postSubmitResponse(~jsonData=json, ~url=return_url)
       Modal.close(setOpenModal)
     } catch {
-    | e => Console.error2("Retrieve Failed", e)
+    | e =>
+      SdkLogger.logLifecycle(
+        ~event=SdkLogger.PaymentStatusUnknown({inferred: true}),
+        ~exn=e,
+        ~paymentMethod=?loggedPaymentMethodRef.current,
+        ~message="Payment retrieve after QR close or expiry failed",
+      )
+      Console.error2("Retrieve Failed", e)
     }
   }
 
   React.useEffect(() => {
     if expiryTime < 1000.0 {
+      SdkLogger.logLifecycle(~event=QrCodeExpired, ~paymentMethod=?loggedPaymentMethodRef.current)
       closeModal()->ignore
     }
 
@@ -198,6 +218,7 @@ let make = () => {
   }, [expiryTime])
 
   let handleCopyQrData = _ => {
+    SdkLogger.logUser(~event=QrCodeCopyRequested, ~paymentMethod=?loggedPaymentMethodRef.current)
     messageParentWindow([
       ("copy", true->JSON.Encode.bool),
       ("copyDetails", rawQrData->JSON.Encode.string),

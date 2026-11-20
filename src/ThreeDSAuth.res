@@ -77,6 +77,11 @@ let make = () => {
           let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
+            SdkLogger.logLifecycle(
+              ~event=SdkLogger.ThreeDsAuthRequestFailed,
+              ~failure=json,
+              ~paymentMethod=Card,
+            )
             postFailedSubmitResponse(
               ~errortype=errorObj.error.type_,
               ~message=errorObj.error.message,
@@ -95,7 +100,7 @@ let make = () => {
 
             let ele = Window.querySelector("#threeDsAuthDiv")
 
-            switch ele->Nullable.toOption {
+            let authEvent: SdkLogger.lifecycleEvent = switch ele->Nullable.toOption {
             | Some(elem) =>
               if transStatus === "C" {
                 setloader(_ => false)
@@ -106,15 +111,24 @@ let make = () => {
                 form.target = "threeDsAuthFrame"
                 form.appendChild(input)
                 form.submit()
+                SdkLogger.ThreeDsChallengeShown({transStatus: transStatus})
               } else {
                 handleFrictionLess()
+                SdkLogger.ThreeDsFrictionlessResolved({transStatus: transStatus})
               }
-            | None => ()
+            | None => SdkLogger.ThreeDsAuthContainerMissing({transStatus: transStatus})
             }
+            SdkLogger.logLifecycle(~event=authEvent, ~paymentMethod=Card)
             resolve(json)
           }
         })
-        ->catch(_ => {
+        ->catch(err => {
+          SdkLogger.logLifecycle(
+            ~event=SdkLogger.ThreeDsAuthRequestFailed,
+            ~paymentMethod=Card,
+            ~exn=err,
+            ~message="3DS authentication request or its response handling threw",
+          )
           let errorObj = PaymentError.itemToObjMapper(dict)
           postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
           closePaymentLoaderIfAny()
