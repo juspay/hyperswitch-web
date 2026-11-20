@@ -1,4 +1,25 @@
 open IndexedDB
+
+/* The API failure body is whatever the edge returned — often an HTML error page,
+   or a parse exception quoting one. 
+   Read the body from the API's own logs instead. */
+let describeErrorPayload = data => {
+  let dict = data->CommonUtils.getDictFromJson
+  let errorDict = dict->CommonUtils.getDictFromDict("error")
+  let errorType = switch errorDict->CommonUtils.getString("type", "") {
+  | "" => dict->CommonUtils.getString("type", "")
+  | value => value
+  }
+  [
+    ("error_type", errorType->JSON.Encode.string),
+    ("error_code", errorDict->CommonUtils.getString("code", "")->JSON.Encode.string),
+    ("error_message", "error body not logged"->JSON.Encode.string),
+  ]
+}
+
+let describeErrorPayloadAsString = data =>
+  data->describeErrorPayload->Dict.fromArray->JSON.Encode.object->JSON.stringify
+
 let logApi = (
   ~eventName,
   ~statusCode=0,
@@ -12,33 +33,21 @@ let logApi = (
   ~logCategory: HyperLoggerTypes.logCategory=API,
   ~isPaymentSession: bool=false,
 ) => {
-  let (value, _) = switch apiLogType {
-  | Request => ([("url", url->JSON.Encode.string)], [])
-  | Response => (
-      [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)],
-      [("response", data)],
+  // Never put `data` in here unscrubbed; see describeErrorPayload above.
+  let value = switch apiLogType {
+  | Request => [("url", url->JSON.Encode.string)]
+  | Response => [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)]
+  | NoResponse =>
+    [
+      ("url", url->JSON.Encode.string),
+      ("statusCode", 0->JSON.Encode.int),
+      ("reason", "no_response"->JSON.Encode.string),
+    ]->Array.concat(data->describeErrorPayload)
+  | Err =>
+    [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)]->Array.concat(
+      data->describeErrorPayload,
     )
-  | NoResponse => (
-      [
-        ("url", url->JSON.Encode.string),
-        ("statusCode", 0->JSON.Encode.int),
-        ("reason", "no_response"->JSON.Encode.string),
-        ("response", data),
-      ],
-      [("response", data)],
-    )
-  | Err => (
-      [
-        ("url", url->JSON.Encode.string),
-        ("statusCode", statusCode->JSON.Encode.int),
-        ("response", data),
-      ],
-      [("response", data)],
-    )
-  | Method => (
-      [("method", paymentMethod->JSON.Encode.string), ("result", result)],
-      [("result", result)],
-    )
+  | Method => [("method", paymentMethod->JSON.Encode.string), ("result", result)]
   }
   switch optLogger {
   | Some(logger) =>
@@ -55,27 +64,38 @@ let logApi = (
   }
 }
 
-let hasLoggedUserInteraction = ref(false)
+/* The checkpoint asks whether the element was usable, so readiness is in the row:
+   before_ready means the shopper hit a shimmer, which is the opposite answer. One
+   row per readiness state, so a pre-ready click cannot consume the checkpoint —
+   funnel queries read before_ready = false. */
+let hasLoggedInteractionWhenReady = ref(false)
+let hasLoggedInteractionBeforeReady = ref(false)
 
-let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~kind, ~field="") =>
-  if !hasLoggedUserInteraction.contents {
-    hasLoggedUserInteraction := true
+let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~kind, ~field="", ~isReady=true) => {
+  let alreadyLogged = isReady ? hasLoggedInteractionWhenReady : hasLoggedInteractionBeforeReady
+  if !alreadyLogged.contents {
+    alreadyLogged := true
     let eventName: HyperLoggerTypes.eventName = USER_INTERACTED
     logger.setLogInfo(
-      ~value=[("kind", kind->JSON.Encode.string), ("field", field->JSON.Encode.string)]
+      ~value=[
+        ("kind", kind->JSON.Encode.string),
+        ("field", field->JSON.Encode.string),
+        ("before_ready", !isReady->JSON.Encode.bool),
+      ]
       ->Dict.fromArray
       ->JSON.Encode.object
       ->JSON.stringify,
       ~eventName,
     )
   }
+}
 
-let hasLoggedSheetLoading = ref(false)
+let hasLoggedElementLoading = ref(false)
 
-let logSheetLoading = (~logger: HyperLoggerTypes.loggerMake, ~reason) =>
-  if !hasLoggedSheetLoading.contents {
-    hasLoggedSheetLoading := true
-    let eventName: HyperLoggerTypes.eventName = PAYMENT_SHEET_LOADING
+let logElementLoading = (~logger: HyperLoggerTypes.loggerMake, ~reason) =>
+  if !hasLoggedElementLoading.contents {
+    hasLoggedElementLoading := true
+    let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_LOADING
     logger.setLogInfo(
       ~value=[("reason", reason->JSON.Encode.string)]
       ->Dict.fromArray
@@ -640,10 +660,11 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | DYNAMIC_FIELDS_CONFIG
   | SDK_SCRIPT_LOADED
   | PAYMENT_ELEMENT_MOUNTED
-  | PAYMENT_SHEET_LOADING
-  | PAYMENT_SHEET_RENDERED
+  | PAYMENT_ELEMENT_LOADING
+  | PAYMENT_ELEMENT_RENDERED
   | USER_INTERACTED
   | PAYMENT_CONFIRM_TRIGGERED
+  | CONFIRM_NEXT_ACTION
   | CLIENT_LIST_CALL_INIT =>
     None
   }

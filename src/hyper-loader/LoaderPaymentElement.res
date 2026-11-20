@@ -455,11 +455,18 @@ let make = (
       ensureWalletOneClickListener(logger, ~ownerId=elementInstanceId, ~isTrustedMessage)
       mountId := selector
 
+      /* Every merchant-facing .mount() lands here, so surface_family names the
+         flow: "element" = elements.create(...), "payments" = paymentsGroup field,
+         "vault" = cardFormGroup / vault CVC. paymentMethodsSDK is excluded — a
+         field iframe mounts it for itself, the merchant never does. */
       if !hasLoggedMount.contents && componentType !== "paymentMethodsSDK" {
         hasLoggedMount := true
         let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_MOUNTED
         logger.setLogInfo(
-          ~value=[("component_type", componentType->JSON.Encode.string)]
+          ~value=[
+            ("component_type", componentType->JSON.Encode.string),
+            ("surface_family", surfaceFamily->Option.getOr("element")->JSON.Encode.string),
+          ]
           ->Dict.fromArray
           ->JSON.Encode.object
           ->JSON.stringify,

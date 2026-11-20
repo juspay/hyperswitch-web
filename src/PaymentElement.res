@@ -689,14 +689,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   // Lets options and selection derived in effects settle before emitting.
   let readySettleDelayMs = 50
-  let hasLoggedSheetRendered = React.useRef(false)
+  let hasLoggedElementRendered = React.useRef(false)
   React.useEffect(() => {
     let timeoutId = if isElementReady {
       Some(
         setTimeout(() => {
-          if !hasLoggedSheetRendered.current {
-            hasLoggedSheetRendered.current = true
-            let eventName: HyperLoggerTypes.eventName = PAYMENT_SHEET_RENDERED
+          if !hasLoggedElementRendered.current {
+            hasLoggedElementRendered.current = true
+            let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_RENDERED
             loggerState.setLogInfo(
               ~value=[
                 ("payment_method_count", paymentOptions->Array.length->JSON.Encode.int),
@@ -744,7 +744,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   <>
     <RenderIf condition=isContentGated>
       <>
-        <PaymentSheetLoadingLog reason="first_screen" />
+        <PaymentElementLoadingLog reason="first_screen" />
         <PaymentElementShimmer />
       </>
     </RenderIf>

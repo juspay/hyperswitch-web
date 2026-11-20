@@ -124,12 +124,17 @@ type eventName =
   | DYNAMIC_FIELDS_RENDERED
   | DYNAMIC_FIELDS_CONFIG
   | CARD_FORM_FLOW
+  /* Loader script evaluation only — for script-delivery
+     monitoring, and the one event sent without a logger instance. A second
+     emission site makes "delivered but never initialised" uncountable: give a new
+     script its own event name and `type`. */
   | SDK_SCRIPT_LOADED
   | PAYMENT_ELEMENT_MOUNTED
-  | PAYMENT_SHEET_LOADING
-  | PAYMENT_SHEET_RENDERED
+  | PAYMENT_ELEMENT_LOADING
+  | PAYMENT_ELEMENT_RENDERED
   | USER_INTERACTED
   | PAYMENT_CONFIRM_TRIGGERED
+  | CONFIRM_NEXT_ACTION
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

@@ -298,10 +298,11 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       GOOGLE_PAY_FLOW,
       SDK_SCRIPT_LOADED,
       PAYMENT_ELEMENT_MOUNTED,
-      PAYMENT_SHEET_LOADING,
-      PAYMENT_SHEET_RENDERED,
+      PAYMENT_ELEMENT_LOADING,
+      PAYMENT_ELEMENT_RENDERED,
       USER_INTERACTED,
       PAYMENT_CONFIRM_TRIGGERED,
+      CONFIRM_NEXT_ACTION,
       PAYMENT_SUCCESS,
       PAYMENT_FAILED,
     ]

@@ -43,6 +43,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let fieldName = CardUtils.getQueryParamsDictforKey(url.search, "fieldName")
 
   let divRef = React.useRef(Nullable.null)
+  // Read by the click listener, which is registered before isReady exists.
+  let isReadyRef = React.useRef(false)
 
   let {config} = configAtom
   let {iframeId} = keys
@@ -265,13 +267,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     | LoadError(x) =>
       logger.setLogError(
-        ~value="LoadError: " ++ x->JSON.stringify,
+        ~value="LoadError: " ++ x->LoggerUtils.describeErrorPayloadAsString,
         ~eventName=LOADER_CHANGED,
         ~latency=finalLoadLatency,
       )
     }
     Window.addEventListener("click", ev => {
-      LoggerUtils.logUserInteracted(~logger, ~kind="click")
+      LoggerUtils.logUserInteracted(~logger, ~kind="click", ~isReady=isReadyRef.current)
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
     })
     Some(
@@ -623,7 +625,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               )
             | LoadError(x) =>
               logger.setLogError(
-                ~value="LoadError: " ++ x->JSON.stringify,
+                ~value="LoadError: " ++ x->LoggerUtils.describeErrorPayloadAsString,
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
               )
@@ -697,7 +699,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             )
           | LoadError(x) =>
             logger.setLogError(
-              ~value="LoadError: " ++ x->JSON.stringify,
+              ~value="LoadError: " ++ x->LoggerUtils.describeErrorPayloadAsString,
               ~eventName=SDK_CONFIGS_CALL,
               ~latency=finalLoadLatency,
             )
@@ -764,6 +766,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   // A hidden container measures 0, so 0 is never sent.
   let resizeSettleDelayMs = 100
   let isReady = SubscriptionEventHooks.useIsReadyEmitted()
+  isReadyRef.current = isReady
   let lastSentHeightRef = React.useRef(None)
   let hasSentReadyResizeRef = React.useRef(false)
   let elementType =

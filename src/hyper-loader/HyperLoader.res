@@ -43,7 +43,10 @@ let removeBeforeUnloadEventListeners: array<'ev => unit> => unit = handlers => {
 HyperLogger.sendSingleLog(
   ~eventName=SDK_SCRIPT_LOADED,
   ~sessionId=SdkLoadSession.sessionId,
-  ~value=[("version", GlobalVars.repoVersion->JSON.Encode.string)]
+  ~value=[
+    ("type", "HyperLoader"->JSON.Encode.string),
+    ("version", GlobalVars.repoVersion->JSON.Encode.string),
+  ]
   ->Dict.fromArray
   ->JSON.Encode.object
   ->JSON.stringify,

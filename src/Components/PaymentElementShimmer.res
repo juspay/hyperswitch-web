@@ -5,7 +5,7 @@ module Shimmer = {
     let isHidden = React.useContext(ReadyHooks.context) === ReadyHooks.ignorePending
     <>
       <RenderIf condition={!isHidden}>
-        <PaymentSheetLoadingLog reason="sheet_sections" />
+        <PaymentElementLoadingLog reason="element_sections" />
       </RenderIf>
       <div
         className={`relative

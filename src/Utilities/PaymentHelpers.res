@@ -426,7 +426,7 @@ let rec intentCall = (
               }
               handleLogging(
                 ~optLogger,
-                ~value=data->JSON.stringify,
+                ~value=data->LoggerUtils.describeErrorPayloadAsString,
                 ~eventName=PAYMENT_FAILED,
                 ~paymentMethod,
               )
@@ -557,6 +557,33 @@ let rec intentCall = (
             let paymentMethod = switch paymentType {
             | Card => "CARD"
             | _ => intent.payment_method_type
+            }
+
+            /* CONFIRM_CALL only says a 2xx came back; this says what it asked of
+               the shopper. Logged before the branch chain acts on it, so it is
+               already beaconed when a redirect follows. Confirm only: a polling
+               retrieve would repeat it. */
+            if isConfirm {
+              let nextActionType = intent.nextAction.type_
+              handleLogging(
+                ~optLogger,
+                ~value=[
+                  ("status", intent.status->JSON.Encode.string),
+                  ("next_action_type", nextActionType->JSON.Encode.string),
+                  (
+                    "has_next_action",
+                    (intent.status === "requires_customer_action" && nextActionType !== "")
+                    ->JSON.Encode.bool,
+                  ),
+                  ("leaves_page", (nextActionType === "redirect_to_url")->JSON.Encode.bool),
+                  ("manual_retry_allowed", intent.manualRetryAllowed->JSON.Encode.bool),
+                ]
+                ->Dict.fromArray
+                ->JSON.Encode.object
+                ->JSON.stringify,
+                ~eventName=CONFIRM_NEXT_ACTION,
+                ~paymentMethod,
+              )
             }
 
             let url = makeUrl(confirmParam.return_url)

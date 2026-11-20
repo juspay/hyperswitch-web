@@ -35,8 +35,6 @@ let make = (
   | _ => false
   }
 
-  let isWalletElement = paymentType->Utils.checkIsWalletElement
-
   let loadingReason = switch (paymentType, paymentMethodList, sdkConfigs, paymentManagementList) {
   | (Payment, Loading, _, _) => "payment_methods"
   | (Payment, _, Loading, _) => "sdk_configs"
@@ -44,10 +42,12 @@ let make = (
   | _ => "unknown"
   }
 
+  let isWalletElement = paymentType->Utils.checkIsWalletElement
+
   if isLoading {
     <RenderIf condition=showLoader>
       <>
-        <PaymentSheetLoadingLog reason=loadingReason />
+        <PaymentElementLoadingLog reason=loadingReason />
         {isWalletElement ? <WalletShimmer /> : <PaymentElementShimmer />}
       </>
     </RenderIf>
