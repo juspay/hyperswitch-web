@@ -14,6 +14,7 @@ let make = (
   let sdkConfigs = Jotai.useAtomValue(sdkConfigs)
   let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let logger = Jotai.useAtomValue(loggerAtom)
   let setFullName = Jotai.useSetAtom(userFullName)
   let setNickName = Jotai.useSetAtom(userCardNickName)
   let (_, startTransition) = React.useTransition()
@@ -28,28 +29,28 @@ let make = (
 
   let divRef = React.useRef(Nullable.null)
 
-  let isLoading = switch (paymentType, paymentMethodList, sdkConfigs, paymentManagementList) {
-  | (Payment, Loading, _, _)
-  | (Payment, _, Loading, _)
-  | (PaymentMethodsManagement, _, _, LoadingV2) => true
-  | _ => false
-  }
-
   let loadingReason = switch (paymentType, paymentMethodList, sdkConfigs, paymentManagementList) {
-  | (Payment, Loading, _, _) => "payment_methods"
-  | (Payment, _, Loading, _) => "sdk_configs"
-  | (PaymentMethodsManagement, _, _, LoadingV2) => "payment_management_list"
-  | _ => "unknown"
+  | (Payment, Loading, _, _) => Some("payment_methods")
+  | (Payment, _, Loading, _) => Some("sdk_configs")
+  | (PaymentMethodsManagement, _, _, LoadingV2) => Some("payment_management_list")
+  | _ => None
   }
+  let isLoading = loadingReason->Option.isSome
+
+  React.useEffect(() => {
+    switch loadingReason {
+    | Some(reason) if showLoader && logger !== LoggerUtils.defaultLoggerConfig =>
+      LoggerUtils.logElementLoading(~logger, ~reason)
+    | _ => ()
+    }
+    None
+  }, (loadingReason, showLoader, logger))
 
   let isWalletElement = paymentType->Utils.checkIsWalletElement
 
   if isLoading {
     <RenderIf condition=showLoader>
-      <>
-        <PaymentElementLoadingLog reason=loadingReason />
-        {isWalletElement ? <WalletShimmer /> : <PaymentElementShimmer />}
-      </>
+      {isWalletElement ? <WalletShimmer /> : <PaymentElementShimmer />}
     </RenderIf>
   } else if isWalletElement {
     <WalletElement paymentType />

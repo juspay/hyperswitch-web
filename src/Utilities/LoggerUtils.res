@@ -65,9 +65,10 @@ let logApi = (
 }
 
 /* The checkpoint asks whether the element was usable, so readiness is in the row:
-   before_ready means the shopper hit a shimmer, which is the opposite answer. One
-   row per readiness state, so a pre-ready click cannot consume the checkpoint —
-   funnel queries read before_ready = false. */
+   before_ready means the click landed before ready was emitted — a shimmer, or
+   partly loaded sections under progressive loading. One row per readiness state,
+   so a pre-ready click cannot consume the checkpoint — funnel queries read
+   before_ready = false. */
 let hasLoggedInteractionWhenReady = ref(false)
 let hasLoggedInteractionBeforeReady = ref(false)
 

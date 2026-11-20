@@ -743,10 +743,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   <>
     <RenderIf condition=isContentGated>
-      <>
-        <PaymentElementLoadingLog reason="first_screen" />
-        <PaymentElementShimmer />
-      </>
+      <PaymentElementShimmer />
     </RenderIf>
     <div
       style={isContentGated ? hiddenMountedStyle : {display: "contents"}} inert=isContentGated>
