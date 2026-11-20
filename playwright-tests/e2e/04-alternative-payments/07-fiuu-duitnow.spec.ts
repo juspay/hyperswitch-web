@@ -59,6 +59,20 @@ test.describe("Fiuu DuitNow payment flow", () => {
       payment_method_type: "duit_now",
       payment_method_data: { real_time_payment: { duit_now: {} } },
     });
+    expect(confirm.status).toBe(200);
+    expect(
+      {
+        status: confirm.body?.status,
+        error_code: confirm.body?.error_code,
+        error_message: confirm.body?.error_message,
+      },
+      "Fiuu must accept the payment before the SDK can display the DuitNow QR code",
+    ).toEqual({
+      status: "requires_customer_action",
+      error_code: null,
+      error_message: null,
+    });
+    expect(confirm.body?.next_action?.type).toBe("qr_code_information");
 
     await expect(page.locator(FULLSCREEN_IFRAME)).toBeVisible({
       timeout: 30_000,

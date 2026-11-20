@@ -6,7 +6,10 @@
 // hooks.stripe.com/3d_secure_2/hosted > iframe __privateStripeFrame* >
 // iframe #challengeFrame (testmode-acs.stripe.com) > #test-source-authorize-3ds
 // (COMPLETE) / #test-source-fail-3ds (FAIL). The router then sends the browser
-// to return_url?status=succeeded|failed.
+// to return_url?status=succeeded|failed. With the demo shop on localhost that
+// return_url is PUBLIC_RETURN_URL (a stand-in page), so the outcome is read
+// from the URL; the shop's own result message is checked only when it returns
+// to the shop.
 //
 // Hermetic-capable: the spec fixture (recordings/02-cards/stripe-3DS-card-flow-e2e-test.json)
 // answers confirm with requires_customer_action + next_action.redirect_to_url on
@@ -23,8 +26,10 @@ import {
   stripeCards,
   PAYMENT_ELEMENT_IFRAME,
   CLIENT_BASE_URL,
+  RETURNS_TO_DEMO_SHOP,
   expectConfirmedWith,
   expectRedirectedToNextAction,
+  expectReturnedWith,
   typeCard,
 } from "../../fixtures";
 
@@ -70,19 +75,6 @@ async function serveShopReturnPage(
     .route(`${DEMO_SHOP_ORIGIN}/payments/create-intent`, (route) =>
       route.fulfill({ json: { clientSecret: intent.clientSecret } }),
     );
-}
-
-/** Waits for the router to send the browser back to the demo shop with `status` in the query. */
-async function expectReturnedToShopWith(
-  page: Page,
-  status: "succeeded" | "failed",
-): Promise<void> {
-  await page.waitForURL(
-    (url) =>
-      url.origin === DEMO_SHOP_ORIGIN &&
-      url.searchParams.get("status") === status,
-    { timeout: 45_000, waitUntil: "commit" },
-  );
 }
 
 const body = paymentBody({
@@ -143,10 +135,14 @@ test.describe("Stripe 3DS card flow", () => {
     });
     await answerStripeChallenge(page, "authorize");
 
-    await expectReturnedToShopWith(page, "succeeded");
-    await expect(page.getByText("Thanks for your order!")).toBeVisible({
-      timeout: 30_000,
+    await expectReturnedWith(page, "succeeded", {
+      paymentId: checkout.lastIntent!.paymentId,
     });
+    if (RETURNS_TO_DEMO_SHOP) {
+      await expect(page.getByText("Thanks for your order!")).toBeVisible({
+        timeout: 30_000,
+      });
+    }
     await api.pollPaymentStatus(checkout.lastIntent!.paymentId, "succeeded", {
       timeoutMs: 30_000,
     });
@@ -170,10 +166,14 @@ test.describe("Stripe 3DS card flow", () => {
     });
     await answerStripeChallenge(page, "fail");
 
-    await expectReturnedToShopWith(page, "failed");
-    await expect(
-      page.getByText("Payment failed. Please check your payment method."),
-    ).toBeVisible({ timeout: 30_000 });
+    await expectReturnedWith(page, "failed", {
+      paymentId: checkout.lastIntent!.paymentId,
+    });
+    if (RETURNS_TO_DEMO_SHOP) {
+      await expect(
+        page.getByText("Payment failed. Please check your payment method."),
+      ).toBeVisible({ timeout: 30_000 });
+    }
     await api.pollPaymentStatus(checkout.lastIntent!.paymentId, "failed", {
       timeoutMs: 30_000,
     });

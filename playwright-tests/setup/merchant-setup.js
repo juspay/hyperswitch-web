@@ -636,7 +636,7 @@ async function createMerchant(adminApiKey, apiBaseUrl) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "api-key": adminApiKey,
+        Authorization: `admin-api-key=${adminApiKey}`,
       },
       body: JSON.stringify({
         merchant_id:
@@ -694,7 +694,7 @@ async function createApiKey(adminApiKey, merchantId, apiBaseUrl) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "api-key": adminApiKey,
+      Authorization: `admin-api-key=${adminApiKey}`,
     },
     body: JSON.stringify({
       name: `web_sdk_e2e_key_${Date.now()}`,
@@ -712,6 +712,20 @@ async function createApiKey(adminApiKey, merchantId, apiBaseUrl) {
 
   const data = await response.json();
   return data.api_key;
+}
+
+/**
+ * Business profile return_url. Sandbox and integ reject (403) any request body
+ * carrying a localhost URL, so a localhost demo shop gets a public URL instead.
+ * Mirrors RETURN_URL in fixtures/env.ts.
+ */
+function profileReturnUrl() {
+  const clientBaseUrl =
+    process.env.CLIENT_BASE_URL ||
+    `http://localhost:${process.env.DEMO_PORT || 9160}`;
+  return ["localhost", "127.0.0.1"].includes(new URL(clientBaseUrl).hostname)
+    ? "http://example.com"
+    : `${clientBaseUrl}/completion`;
 }
 
 /**
@@ -741,7 +755,7 @@ async function createBusinessProfile(
       },
       body: JSON.stringify({
         profile_name: profileName,
-        return_url: "http://localhost:9060/completion",
+        return_url: profileReturnUrl(),
       }),
     },
   );
