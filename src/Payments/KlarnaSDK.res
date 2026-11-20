@@ -84,7 +84,7 @@ let make = (~sessionObj: SessionsType.token) => {
           on_click: authorize => {
             LoggerUtils.logConfirmTriggered(
               ~logger=loggerState,
-              ~trigger="wallet",
+              ~source=Wallet,
               ~paymentMethodType,
             )
             if isTestMode {

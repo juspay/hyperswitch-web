@@ -45,7 +45,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
-  let previousSelectedOption = React.useRef("")
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
   let (dropDownOptions: array<string>, setDropDownOptions) = React.useState(_ => [])
@@ -311,15 +310,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         }
       }
     }
-    if selectedOption !== "" && previousSelectedOption.current !== selectedOption {
-      if previousSelectedOption.current !== "" {
-        loggerState.setLogInfo(
-          ~value="",
-          ~eventName=PAYMENT_METHOD_CHANGED,
-          ~paymentMethod=selectedOption->String.toUpperCase,
-        )
-      }
-      previousSelectedOption.current = selectedOption
+    if selectedOption !== "" {
+      loggerState.setLogInfo(
+        ~value="",
+        ~eventName=PAYMENT_METHOD_CHANGED,
+        ~paymentMethod=selectedOption->String.toUpperCase,
+      )
     }
 
     None
@@ -699,9 +695,18 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_RENDERED
             loggerState.setLogInfo(
               ~value=[
-                ("payment_method_count", paymentOptions->Array.length->JSON.Encode.int),
-                ("saved_method_count", savedMethods->Array.length->JSON.Encode.int),
-                ("wallet_count", walletOptions->Array.length->JSON.Encode.int),
+                ("payment_methods", paymentOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
+                (
+                  "saved_methods",
+                  savedMethods
+                  ->Array.map(savedMethod =>
+                    savedMethod.paymentMethodType
+                    ->Option.getOr(savedMethod.paymentMethod)
+                    ->JSON.Encode.string
+                  )
+                  ->JSON.Encode.array,
+                ),
+                ("wallets", walletOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
                 (
                   "screen",
                   (isSavedMethodsScreenShown ? "saved_methods" : "payment_methods")

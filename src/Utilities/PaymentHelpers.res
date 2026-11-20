@@ -426,7 +426,7 @@ let rec intentCall = (
               }
               handleLogging(
                 ~optLogger,
-                ~value=data->LoggerUtils.describeErrorPayloadAsString,
+                ~value=data->JSON.stringify,
                 ~eventName=PAYMENT_FAILED,
                 ~paymentMethod,
               )

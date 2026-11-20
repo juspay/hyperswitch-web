@@ -479,14 +479,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           })
         }
 
-        LoggerUtils.logConfirmTriggered(
-          ~logger,
-          ~trigger=switch (isSdkButton, isOneClick) {
-          | (true, _) => "sdk_button"
-          | (_, true) => "one_click"
-          | _ => "merchant"
-          },
-        )
+        let confirmTrigger = switch (isSdkButton, isOneClick) {
+        | (true, _) => HyperLoggerTypes.SdkButton
+        | (_, true) => HyperLoggerTypes.OneClick
+        | _ => HyperLoggerTypes.Merchant
+        }
+
+        LoggerUtils.logConfirmTriggered(~logger, ~source=confirmTrigger)
 
         if isTestMode {
           let errorResponse = getFailedSubmitResponse(

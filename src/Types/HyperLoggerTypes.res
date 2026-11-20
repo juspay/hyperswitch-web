@@ -2,6 +2,8 @@ type apiLogType = Request | Response | NoResponse | Method | Err
 type logType = DEBUG | INFO | ERROR | WARNING | SILENT
 type logCategory = API | USER_ERROR | USER_EVENT | MERCHANT_EVENT
 
+type confirmTrigger = SdkButton | OneClick | Merchant | Wallet
+
 type eventName =
   | APP_RENDERED
   | PAYMENT_METHOD_CHANGED

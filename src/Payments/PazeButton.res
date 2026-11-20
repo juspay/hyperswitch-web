@@ -28,7 +28,7 @@ let make = (~token: SessionsType.token) => {
   let onClick = _ => {
     LoggerUtils.logConfirmTriggered(
       ~logger=loggerState,
-      ~trigger="wallet",
+      ~source=Wallet,
       ~paymentMethodType="paze",
     )
     if isTestMode {
@@ -44,7 +44,6 @@ let make = (~token: SessionsType.token) => {
         ~eventName=PAZE_SDK_FLOW,
         ~paymentMethod="PAZE",
       )
-      LoggerUtils.logDataFilled(~logger=loggerState, ~paymentMethod="paze")
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod="wallet",
         ~paymentMethodType="paze",

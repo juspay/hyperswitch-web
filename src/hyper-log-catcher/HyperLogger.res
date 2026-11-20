@@ -115,11 +115,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
   let setSessionId = value => {
     sessionId := value
   }
-  let sourceRef = ref(source->getSourceString)
-
-  let setSource = value => {
-    sourceRef := value
-  }
+  let sourceString = source->getSourceString
 
   let events = ref(Dict.make())
   let eventsCounter = ref(Dict.make())
@@ -224,6 +220,12 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       )
     }
 
+  let sourceRef = ref(source->getSourceString)
+
+  let setSource = value => {
+    sourceRef := value
+  }
+
   let clearLogFile = mainLogFile => {
     let len = mainLogFile->Array.length
     for _ in 0 to len - 1 {
@@ -242,9 +244,9 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
 
   let sendLogsOverNetwork = async () => {
     try {
+      sendCachedLogsFromIDB()->ignore
       beaconApiCall(mainLogFile)
       clearLogFile(mainLogFile)
-      await sendCachedLogsFromIDB()
     } catch {
     | _ => ()
     }
@@ -300,13 +302,12 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       PAYMENT_ELEMENT_MOUNT_CALLED,
       PAYMENT_ELEMENT_MOUNTED,
       PRE_MOUNT_LOADER_CLEANUP,
+      PRE_MOUNT_LOADER_INIT,
       PAYMENT_ELEMENT_LOADING,
       PAYMENT_ELEMENT_RENDERED,
       USER_INTERACTED,
       PAYMENT_CONFIRM_TRIGGERED,
       CONFIRM_NEXT_ACTION,
-      PAYMENT_SUCCESS,
-      PAYMENT_FAILED,
     ]
     arrayOfLogs
     ->Array.find(log => {
@@ -369,7 +370,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
             logType: INFO,
             timestamp: localTimestamp,
             sessionId: sessionId.contents,
-            source: sourceRef.contents,
+            source: sourceString,
             version: GlobalVars.repoVersion,
             value: "",
             // internalMetadata: "",
@@ -396,7 +397,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
             logType: INFO,
             timestamp: localTimestamp,
             sessionId: sessionId.contents,
-            source: sourceRef.contents,
+            source: sourceString,
             version: GlobalVars.repoVersion,
             value: "",
             // internalMetadata: "",
@@ -446,7 +447,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       logType,
       timestamp: localTimestamp,
       sessionId: sessionId.contents,
-      source: sourceRef.contents,
+      source: sourceString,
       version: GlobalVars.repoVersion,
       value,
       // internalMetadata,
@@ -496,7 +497,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       logType,
       timestamp: localTimestamp,
       sessionId: sessionId.contents,
-      source: isPaymentSession ? getSourceString(Headless) : sourceRef.contents,
+      source: isPaymentSession ? getSourceString(Headless) : sourceString,
       version: GlobalVars.repoVersion,
       value: switch value {
       | ArrayType(a) => a->Dict.fromArray->JSON.Encode.object->JSON.stringify
@@ -548,7 +549,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       logType,
       timestamp: localTimestamp,
       sessionId: sessionId.contents,
-      source: sourceRef.contents,
+      source: sourceString,
       version: GlobalVars.repoVersion,
       value,
       // internalMetadata,
@@ -582,7 +583,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       eventName,
       timestamp: Date.now()->Float.toString,
       sessionId: sessionId.contents,
-      source: sourceRef.contents,
+      source: sourceString,
       version: GlobalVars.repoVersion,
       category: USER_EVENT,
       value: "log initiated",
@@ -607,8 +608,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
 
   let handleBeforeUnload = _event => {
     //event->Window.preventDefault()
-    beaconApiCall(mainLogFile)
-    clearLogFile(mainLogFile)
+    sendLogs()
     switch timeOut.contents {
     | Some(val) => clearTimeout(val)
     | None => ()

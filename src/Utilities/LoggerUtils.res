@@ -1,25 +1,5 @@
 open IndexedDB
 
-/* The API failure body is whatever the edge returned — often an HTML error page,
-   or a parse exception quoting one.
-   Read the body from the API's own logs instead. */
-let describeErrorPayload = data => {
-  let dict = data->CommonUtils.getDictFromJson
-  let errorDict = dict->CommonUtils.getDictFromDict("error")
-  let errorType = switch errorDict->CommonUtils.getString("type", "") {
-  | "" => dict->CommonUtils.getString("type", "")
-  | value => value
-  }
-  [
-    ("errorType", errorType->JSON.Encode.string),
-    ("errorCode", errorDict->CommonUtils.getString("code", "")->JSON.Encode.string),
-    ("errorMessage", "error body not logged"->JSON.Encode.string),
-  ]
-}
-
-let describeErrorPayloadAsString = data =>
-  data->describeErrorPayload->Dict.fromArray->JSON.Encode.object->JSON.stringify
-
 let logApi = (
   ~eventName,
   ~statusCode=0,
@@ -33,21 +13,25 @@ let logApi = (
   ~logCategory: HyperLoggerTypes.logCategory=API,
   ~isPaymentSession: bool=false,
 ) => {
-  // Never put `data` in here unscrubbed; see describeErrorPayload above.
-  let value = switch apiLogType {
-  | Request => [("url", url->JSON.Encode.string)]
-  | Response => [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)]
-  | NoResponse =>
-    [
-      ("url", url->JSON.Encode.string),
-      ("statusCode", 0->JSON.Encode.int),
-      ("reason", "no_response"->JSON.Encode.string),
-    ]->Array.concat(data->describeErrorPayload)
-  | Err =>
-    [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)]->Array.concat(
-      data->describeErrorPayload,
+  let (value, _) = switch apiLogType {
+  | Request => ([("url", url->JSON.Encode.string)], [])
+  | Response => (
+      [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)],
+      [("response", data)],
     )
-  | Method => [("method", paymentMethod->JSON.Encode.string), ("result", result)]
+  | NoResponse => (
+      [("url", url->JSON.Encode.string), ("statusCode", 504->JSON.Encode.int), ("response", data)],
+      [("response", data)],
+    )
+  | Err => (
+      [
+        ("url", url->JSON.Encode.string),
+        ("statusCode", statusCode->JSON.Encode.int),
+        ("response", data),
+      ],
+      [("response", data)],
+    )
+  | Method => ([("method", paymentMethod->JSON.Encode.string)], [("result", result)])
   }
   switch optLogger {
   | Some(logger) =>
@@ -93,12 +77,12 @@ let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~kind, ~field="",
 
 let hasLoggedElementLoading = ref(false)
 
-let logElementLoading = (~logger: HyperLoggerTypes.loggerMake, ~reason) =>
+let logElementLoading = (~logger: HyperLoggerTypes.loggerMake, ~shimmerRendered) =>
   if !hasLoggedElementLoading.contents {
     hasLoggedElementLoading := true
     let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_LOADING
     logger.setLogInfo(
-      ~value=[("reason", reason->JSON.Encode.string)]
+      ~value=[("shimmerRendered", shimmerRendered->JSON.Encode.bool)]
       ->Dict.fromArray
       ->JSON.Encode.object
       ->JSON.stringify,
@@ -111,15 +95,23 @@ let logInputChangeInfo = (text, logger: HyperLoggerTypes.loggerMake) => {
   logger.setLogInfo(~value=text, ~eventName=INPUT_FIELD_CHANGED)
 }
 
+let confirmTriggerSourceToString = (source: HyperLoggerTypes.confirmTrigger) =>
+  switch source {
+  | SdkButton => "sdk_button"
+  | OneClick => "one_click"
+  | Merchant => "merchant"
+  | Wallet => "wallet"
+  }
+
 let logConfirmTriggered = (
   ~logger: HyperLoggerTypes.loggerMake,
-  ~trigger,
+  ~source: HyperLoggerTypes.confirmTrigger,
   ~paymentMethodType="",
 ) => {
   let eventName: HyperLoggerTypes.eventName = PAYMENT_CONFIRM_TRIGGERED
   logger.setLogInfo(
     ~value=[
-      ("trigger", trigger->JSON.Encode.string),
+      ("source", source->confirmTriggerSourceToString->JSON.Encode.string),
       ("paymentMethodType", paymentMethodType->JSON.Encode.string),
     ]
     ->Dict.fromArray

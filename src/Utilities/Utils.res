@@ -830,7 +830,10 @@ let handlePostMessageEvents = (
   ~savedMethod=false,
 ) => {
   if complete && paymentType !== "" {
-    LoggerUtils.logDataFilled(~logger=loggerState, ~paymentMethod=paymentType, ~savedMethod)
+    let value = `Payment Data Filled: ${savedMethod
+        ? "Saved Payment Method"
+        : "New Payment Method"}`
+    loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
   }
   messageParentWindow([
     ("elementType", "payment"->JSON.Encode.string),
@@ -1067,26 +1070,27 @@ let getHeaders = (
 let formatException = exc =>
   switch exc {
   | JsExn(obj) =>
-    let message = JsExn.message(obj)
-    let name = JsExn.name(obj)
-    let stack = JsExn.stack(obj)
-    let fileName = JsExn.fileName(obj)
+    let message = JsExn.message(obj)->Option.getOr("Unknown Error")
+    let name = JsExn.name(obj)->Option.getOr("UnknownError")
+    let stack = JsExn.stack(obj)->Option.getOr("Unknown")
+    let fileName = JsExn.fileName(obj)->Option.getOr("Unknown")
 
-    if (
-      message->Option.isSome ||
-      name->Option.isSome ||
-      stack->Option.isSome ||
-      fileName->Option.isSome
-    ) {
-      [
-        ("message", message->Option.getOr("Unknown Error")->JSON.Encode.string),
-        ("type", name->Option.getOr("Unknown")->JSON.Encode.string),
-        ("stack", stack->Option.getOr("Unknown")->JSON.Encode.string),
-        ("fileName", fileName->Option.getOr("Unknown")->JSON.Encode.string),
-      ]->getJsonFromArrayOfJson
-    } else {
-      exc->Identity.anyTypeToJson
+    let errorArray = switch name {
+    | "ChunkLoadError" => [
+        ("message", message->JSON.Encode.string),
+        ("stack", stack->JSON.Encode.string),
+      ]
+    | "SyntaxError" => [("message", "Response is not valid JSON"->JSON.Encode.string)]
+    | _ => [("message", message->JSON.Encode.string)]
     }
+
+    errorArray->Array.pushMany([
+      ("type", name->JSON.Encode.string),
+      ("fileName", fileName->JSON.Encode.string),
+    ])
+
+    errorArray->getJsonFromArrayOfJson
+
   | _ => exc->Identity.anyTypeToJson
   }
 

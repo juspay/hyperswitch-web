@@ -29,22 +29,19 @@ let make = (
 
   let divRef = React.useRef(Nullable.null)
 
-  let loadingReason = switch (paymentType, paymentMethodList, sdkConfigs, paymentManagementList) {
-  | (Payment, Loading, _, _) => Some("payment_methods")
-  | (Payment, _, Loading, _) => Some("sdk_configs")
-  | (PaymentMethodsManagement, _, _, LoadingV2) => Some("payment_management_list")
-  | _ => None
+  let isLoading = switch (paymentType, paymentMethodList, sdkConfigs, paymentManagementList) {
+  | (Payment, Loading, _, _)
+  | (Payment, _, Loading, _)
+  | (PaymentMethodsManagement, _, _, LoadingV2) => true
+  | _ => false
   }
-  let isLoading = loadingReason->Option.isSome
 
   React.useEffect(() => {
-    switch loadingReason {
-    | Some(reason) if showLoader && logger !== LoggerUtils.defaultLoggerConfig =>
-      LoggerUtils.logElementLoading(~logger, ~reason)
-    | _ => ()
+    if isLoading && logger !== LoggerUtils.defaultLoggerConfig {
+      LoggerUtils.logElementLoading(~logger, ~shimmerRendered=showLoader)
     }
     None
-  }, (loadingReason, showLoader, logger))
+  }, (isLoading, showLoader, logger))
 
   let isWalletElement = paymentType->Utils.checkIsWalletElement
 

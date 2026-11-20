@@ -267,7 +267,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     | LoadError(x) =>
       logger.setLogError(
-        ~value="LoadError: " ++ x->LoggerUtils.describeErrorPayloadAsString,
+        ~value="LoadError: " ++ x->JSON.stringify,
         ~eventName=LOADER_CHANGED,
         ~latency=finalLoadLatency,
       )
@@ -625,7 +625,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               )
             | LoadError(x) =>
               logger.setLogError(
-                ~value="LoadError: " ++ x->LoggerUtils.describeErrorPayloadAsString,
+                ~value="LoadError: " ++ x->JSON.stringify,
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
               )
@@ -699,7 +699,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             )
           | LoadError(x) =>
             logger.setLogError(
-              ~value="LoadError: " ++ x->LoggerUtils.describeErrorPayloadAsString,
+              ~value="LoadError: " ++ x->JSON.stringify,
               ~eventName=SDK_CONFIGS_CALL,
               ~latency=finalLoadLatency,
             )

@@ -79,7 +79,7 @@ let make = (~walletOptions) => {
     ~isOneClickWallet=isWallet,
   )
   let onPaypalClick = _ev => {
-    LoggerUtils.logConfirmTriggered(~logger=loggerState, ~trigger="wallet", ~paymentMethodType)
+    LoggerUtils.logConfirmTriggered(~logger=loggerState, ~source=Wallet, ~paymentMethodType)
     if isTestMode {
       Console.warn("PayPal button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(

@@ -39,7 +39,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let onSamsungPaymentButtonClick = _ => {
     LoggerUtils.logConfirmTriggered(
       ~logger=loggerState,
-      ~trigger="wallet",
+      ~source=Wallet,
       ~paymentMethodType="samsung_pay",
     )
     if isTestMode {
@@ -55,7 +55,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         ~eventName=SAMSUNG_PAY,
         ~paymentMethod="SAMSUNG_PAY",
       )
-      LoggerUtils.logDataFilled(~logger=loggerState, ~paymentMethod="samsung_pay")
       PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod="wallet",
         ~paymentMethodType="samsung_pay",

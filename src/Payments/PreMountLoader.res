@@ -13,7 +13,7 @@ let sendPromiseData = (promise, key, ~targetOrigin) => {
   executePromise()->ignore
 }
 
-let useMessageHandler = (~logger: HyperLoggerTypes.loggerMake, getMessageHandler) => {
+let useMessageHandler = getMessageHandler => {
   React.useEffect(_ => {
     let processMessage = getMessageHandler()
     let parentOrigin = ref(None)
@@ -38,13 +38,6 @@ let useMessageHandler = (~logger: HyperLoggerTypes.loggerMake, getMessageHandler
       Utils.messageParentWindow(message, ~targetOrigin=parentOrigin.contents->Option.getOr("*"))
     }
 
-    let hasLoggedCleanup = ref(false)
-    let logCleanup = () =>
-      if !hasLoggedCleanup.contents {
-        hasLoggedCleanup := true
-        logger.setLogInfo(~value="", ~eventName=PRE_MOUNT_LOADER_CLEANUP)
-      }
-
     let setupMessageListener = _ => {
       Window.addEventListener("message", messageHandler)
       sendLifecycleMessage([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
@@ -53,7 +46,6 @@ let useMessageHandler = (~logger: HyperLoggerTypes.loggerMake, getMessageHandler
     let cleanupMessageListener = _ => {
       Window.removeEventListener("message", messageHandler)
       sendLifecycleMessage([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
-      logCleanup()
     }
 
     let handleCleanUpEventListener = (ev: Window.event) => {
@@ -76,8 +68,6 @@ let useMessageHandler = (~logger: HyperLoggerTypes.loggerMake, getMessageHandler
     Window.addEventListener("message", handleResendMountedCallback)
 
     setupMessageListener()
-
-    logger.setLogInfo(~value="", ~eventName=PRE_MOUNT_LOADER_INIT)
 
     Some(
       () => {
@@ -186,7 +176,7 @@ module PreMountLoaderForElements = {
     ~isTestMode=false,
     ~isSdkParamsEnabled=false,
   ) => {
-    useMessageHandler(~logger, () =>
+    useMessageHandler(() =>
       getMessageHandlerV1Elements(
         ~sdkAuthorization,
         ~clientSecret,
@@ -207,7 +197,7 @@ module PreMountLoaderForElements = {
 module PreMountLoaderForPMMElements = {
   @react.component
   let make = (~logger, ~endpoint, ~customPodUri, ~pmSessionId, ~sdkAuthorization) => {
-    useMessageHandler(~logger, () =>
+    useMessageHandler(() =>
       getMessageHandlerV2PMM(~pmSessionId, ~sdkAuthorization, ~logger, ~customPodUri, ~endpoint)
     )
 
@@ -235,6 +225,11 @@ let make = (
     ~merchantId=publishableKey,
     ~clientSecret,
   )
+
+  React.useEffect0(() => {
+    logger.setLogInfo(~value="", ~eventName=PRE_MOUNT_LOADER_INIT)
+    None
+  })
 
   switch hyperComponentName {
   | Elements =>
